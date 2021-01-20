@@ -11,6 +11,9 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
+#include <iomanip>
+
+#include "storage.hpp"
 
 #include "logging.h"
 
@@ -18,7 +21,7 @@ namespace {
     auto hlog = logging::make_log("Histo1d");
 }
 
-Histo1d::Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, double arg_xhigh, std::type_index t) : HistogramBase(arg_name, t) {
+Histo1d::Histo1d(const std::string &arg_name, unsigned arg_bins, double arg_xlow, double arg_xhigh) : HistogramBase(arg_name) {
     bins = arg_bins;
     xlow = arg_xlow;
     xhigh = arg_xhigh;
@@ -33,7 +36,7 @@ Histo1d::Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, doubl
     sum = 0;
 }
 
-Histo1d::Histo1d(std::string arg_name, unsigned arg_bins, double arg_xlow, double arg_xhigh, std::type_index t, LoopStatus &stat) : HistogramBase(arg_name, t, stat) {
+Histo1d::Histo1d(const std::string &arg_name, unsigned arg_bins, double arg_xlow, double arg_xhigh, const LoopStatus &stat) : HistogramBase(arg_name, stat) {
     bins = arg_bins;
     xlow = arg_xlow;
     xhigh = arg_xhigh;
@@ -145,77 +148,124 @@ void Histo1d::add(const Histo1d &h) {
     }
 }
 
-
-void Histo1d::toFile(std::string prefix, std::string dir, bool header) {
-    std::string filename = dir + prefix + "_" + HistogramBase::name + ".dat";
-    std::fstream file(filename, std::fstream::out | std::fstream::trunc);
-    // Header
-    if (header) {
-        file << "Histo1d " << std::endl;
-        file << name << std::endl;
-        file << xAxisTitle << std::endl;
-        file << yAxisTitle << std::endl;
-        file << zAxisTitle << std::endl;
-        file << bins << " " << xlow << " " << xhigh << std::endl;
-        file << underflow << " " << overflow << std::endl;
-    }
-    // Data
+void Histo1d::toStream(std::ostream &out) const {
+    //  Only Data
     for (unsigned int i=0; i<bins; i++) {
-        file << data[i] << " ";
+        out << data[i] << " ";
     }
-    file << std::endl;
+    out << std::endl;
+}
+
+void Histo1d::toJson(json &j) const {
+    j["Type"] = "Histo1d";
+    j["Name"] = name;
+
+    j["x"]["AxisTitle"] = xAxisTitle;
+    j["x"]["Bins"] = bins;
+    j["x"]["Low"] = xlow;
+    j["x"]["High"] = xhigh;
+
+    j["y"]["AxisTitle"] = yAxisTitle;
+
+    j["z"]["AxisTitle"] = zAxisTitle;
+
+    j["Underflow"] = underflow;
+    j["Overflow"] = overflow;
+
+    for (unsigned int i=0; i<bins; i++)
+        j["Data"][i] = data[i];
+}
+
+void Histo1d::toFile(const std::string &prefix, const std::string &dir, bool jsonType) const{
+    std::string filename = dir + prefix + "_" + HistogramBase::name;
+    if (jsonType) {
+        filename += ".json";
+    } else {
+        filename += ".dat";
+    }
+    std::fstream file(filename, std::fstream::out | std::fstream::trunc);
+    json j;
+    // jsonType
+    if (jsonType) {
+        toJson(j);
+        file << std::setw(4) << j;
+    } else {
+       toStream(file);
+    }
     file.close();
 }
 
-bool Histo1d::fromFile(std::string filename) {
-    std::fstream file(filename, std::fstream::in);
-    // Check for header
-    std::string line;
-    std::getline(file, line);
-    if (line.find("Histo1d") == std::string::npos) {
-        hlog->error("Tried loading 1d Histogram from file {}, but file has non or incorrect header", filename);
-        file.close();
+bool Histo1d::fromFile(const std::string &filename) {
+    std::ifstream file(filename, std::fstream::in);
+    json j;
+    try {
+        if (!file) {
+            throw std::runtime_error("could not open file");
+        }
+        try {
+            j = json::parse(file);
+        } catch (json::parse_error &e) {
+            throw std::runtime_error(e.what());
+        }
+    } catch (std::runtime_error &e) {
+        hlog->error("Error opening histogram: {}", e.what());
+        return false;
+    }
+    // Check for type
+    if (j["Type"].empty()) {
+        hlog->error("Tried loading 1d Histogram from file {}, but file has no header: {}", filename);
         return false;
     } else {
-        file >> name;
-        file >> xAxisTitle;
-        file >> yAxisTitle;
-        file >> zAxisTitle;
-        file >> bins >> xlow >> xhigh;
-        file >> underflow >> overflow;
-    }
-    // Data
+        if (j["Type"] == "Histo1d") {
+            hlog->error("Tried loading 1d Histogram from file {}, but file has incorrect header: {}", filename, std::string(j["Type"]));
+            return false;
+        }
 
-    data = std::vector<double>(bins);
-    for (unsigned int i=0; i<bins; i++) {
-        file >> data[i];
+        name = j["Name"];
+        xAxisTitle = j["x"]["AxisTitle"];
+        yAxisTitle = j["y"]["AxisTitle"];
+        zAxisTitle = j["z"]["AxisTitle"];
+
+        bins = j["x"]["Bins"];
+        xlow = j["x"]["Low"];
+        xhigh = j["x"]["High"];
+
+        underflow = j["underflow"];
+        overflow = j["overflow"];
+
+        data.resize(bins);
+        for (unsigned i=0; i<bins; i++)
+            data[i] = j["data"][i];
     }
     file.close();
     return true;
 }
 
-void Histo1d::plot(std::string prefix, std::string dir) {
-    hlog->info("Plotting: {}", HistogramBase::name);
+void Histo1d::plot(const std::string &prefix, const std::string &dir) const {
+    hlog->info("Plotting {}", HistogramBase::name);
     // Put raw histo data in tmp file
-    std::string tmp_name = std::string(getenv("USER")) + "/tmp_yarr_histo1d_" + prefix;
-    this->toFile(tmp_name, "/tmp/", false);
-    std::string cmd = "gnuplot | epstopdf -f > " + dir + prefix + "_" + HistogramBase::name + ".pdf";
-
-    // Open gnuplot as file and pipe commands
+    std::string tmp_name = std::string(getenv("USER")) + "/tmp_yarr_histo2d_" + prefix;
+    std::string output = dir + prefix + "_" + HistogramBase::name;
+    for (unsigned i=0; i<lStat.size(); i++)
+        output += "_" + std::to_string(lStat.get(i));
+    output += ".png";
+    std::string input;
+    input+="$'set terminal png size 1280, 1024;";
+    input+="unset key;";
+    input+="set xlabel \""  +HistogramBase::xAxisTitle+"\";";
+    input+="set ylabel \""  +HistogramBase::yAxisTitle+"\";";
+    input+="set xrange["+ std::to_string(xlow)+ ":"+std::to_string(xhigh)+ "];";
+    input+="set yrange[0:*];";
+    input+="set grid;";
+    input+="set style line 1 lt 1 lc rgb \\'#A6CEE3\\';";
+    input+="set style fill solid 0.5;";
+    input+="set boxwidth "+std::to_string(binWidth)+"*0.9 absolute;";
+    input+="plot \\'-\\' matrix u ((($1)*("+std::to_string(binWidth);
+    input+="))+"+std::to_string(xlow)+"+(" + std::to_string(binWidth)+"/2)):3 with boxes'";
+    std::string cmd="gnuplot  -e "+input+" > "+output+"\n";
     FILE *gnu = popen(cmd.c_str(), "w");
-    
-    fprintf(gnu, "set terminal postscript enhanced color \"Helvetica\" 18 eps\n");
-    fprintf(gnu, "unset key\n");
-    fprintf(gnu, "set title \"%s\"\n" , HistogramBase::name.c_str());
-    fprintf(gnu, "set xlabel \"%s\"\n" , HistogramBase::xAxisTitle.c_str());
-    fprintf(gnu, "set ylabel \"%s\"\n" , HistogramBase::yAxisTitle.c_str());
-    fprintf(gnu, "set xrange[%f:%f]\n", xlow, xhigh);
-    fprintf(gnu, "set yrange[0:*]\n");
-    //fprintf(gnu, "set \n");
-    fprintf(gnu, "set grid\n");
-    fprintf(gnu, "set style line 1 lt 1 lc rgb '#A6CEE3'\n");
-    fprintf(gnu, "set style fill solid 0.5\n");
-    fprintf(gnu, "set boxwidth %f*0.9 absolute\n", binWidth);
-    fprintf(gnu, "plot \"%s\" matrix u ((($1)*(%f))+%f+(%f/2)):3 with boxes\n", ("/tmp/" + tmp_name + "_" + name + ".dat").c_str(), binWidth, xlow, binWidth);
+    std::stringstream ss;
+    toStream(ss);
+    fprintf(gnu,"%s",ss.str().c_str());
     pclose(gnu);
 }

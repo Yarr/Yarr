@@ -30,6 +30,11 @@ class ClipBoard {
             }
         }
 
+        ClipBoard(ClipBoard &&o) = delete;
+        ClipBoard(const ClipBoard &o) = delete;
+        ClipBoard& operator=(const ClipBoard &l) = delete;
+        ClipBoard& operator=(const ClipBoard &&l) = delete;
+
         void pushData(std::unique_ptr<T> data) {
             queueMutex.lock();
             if (data != NULL) dataQueue.push_back(std::move(data));
@@ -52,7 +57,8 @@ class ClipBoard {
         }
 
         bool empty() {
-            return dataQueue.empty();
+            std::lock_guard<std::mutex> lock(queueMutex);
+            return rawEmpty();
         }
 
         bool isDone() {
@@ -67,10 +73,14 @@ class ClipBoard {
         void waitNotEmptyOrDone() {
           std::unique_lock<std::mutex> lk(queueMutex);
           cvNotEmpty.wait(lk,
-                            [&] { return doneFlag || !empty(); } );
+                            [&] { return doneFlag || !rawEmpty(); } );
         }
 
     private:
+        bool rawEmpty() {
+            return dataQueue.empty();
+        }
+
         std::condition_variable cvNotEmpty;
 
         std::mutex queueMutex;

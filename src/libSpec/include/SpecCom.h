@@ -20,6 +20,9 @@
 
 #define ARRAYLENGTH 252
 
+template<typename TYPE, std::size_t SIZE>
+std::size_t array_length(const TYPE (&)[SIZE]){return SIZE;}
+
 enum SPEC_DMA_REG {
     DMACTRLR = 0x0,
     DMASTATR = 0x1,
@@ -39,6 +42,13 @@ enum SPEC_DMA_STATUS {
     DMAERROR = 0x3,
     DMAABORTED = 0x4
 };
+
+const static std::string specIdentHw[] = {"undefined", "Trenz TEF1001_R1", "Trenz TEF1001_R2",
+    "PLDA XpressK7 160", "PLDA XpressK7 325", "Xilinx KC705", "CERN SPEC S6"};
+const static std::string specIdentChip[] = {"undefined", "FE-I4", "FE65-P2", "RD53A/B", "ABC/HCCStar"};
+const static std::string specIdentFmc[] = {"undefined", "Creotech 32Ch LVDS (VHDCI)", "Ohio Card (Display Port)"};
+const static std::string specIdentSpeed[] = {"undefined", "160Mbps", "320Mbps", "640Mbps", "1280Mbps"};
+const static std::string specIdentChCfg[] = {"undefined", "4x4", "16x1", "8x4", "32x1"};
 
 struct dma_linked_list {
     uint32_t carrier_start;
@@ -108,6 +118,12 @@ class SpecCom {
         void startDma();
         void abortDma();
         uint32_t getDmaStatus();
+
+        std::string getSpecIdentHw   (uint32_t fw_ident);
+        std::string getSpecIdentChip (uint32_t fw_ident);
+        std::string getSpecIdentFmc  (uint32_t fw_ident);
+        std::string getSpecIdentSpeed(uint32_t fw_ident);
+        std::string getSpecIdentChCfg(uint32_t fw_ident);
 
 };
 #endif

@@ -19,7 +19,7 @@ void SpecRxCore::setRxEnable(uint32_t value) {
 void SpecRxCore::setRxEnable(std::vector<uint32_t> channels) {
     uint32_t mask = 0;
     for (uint32_t channel : channels) {
-        mask += (1 << channel);
+        mask |= (1 << channel);
 
     }
     SPDLOG_LOGGER_TRACE(srxlog, "Value {0:x}", mask);
@@ -49,8 +49,8 @@ RawData* SpecRxCore::readData() {
         real_dma_count = dma_count;
         if (dma_count%32 != 0)
             dma_count += 32-(dma_count%32);
-            
-        SPDLOG_LOGGER_DEBUG(srxlog, "Read data to Addr {0:x}, Count {}", dma_addr, dma_count);
+
+        SPDLOG_LOGGER_DEBUG(srxlog, "Read data to Addr 0x{:x}, Count {}", dma_addr, dma_count);
         uint32_t *buf = new uint32_t[dma_count];
         std::memset(buf, 0x0, sizeof(uint32_t)*dma_count);
         if (SpecCom::readDma(dma_addr, buf, dma_count)) {
@@ -86,4 +86,12 @@ bool SpecRxCore::isBridgeEmpty() {
 
 uint32_t SpecRxCore::getCurCount() {
     return SpecCom::readSingle(RX_BRIDGE | RX_CUR_COUNT);
+}
+
+void SpecRxCore::setRxPolarity(uint32_t value) {
+    SpecCom::writeSingle(RX_ADDR | RX_POLARITY, value);
+}
+
+uint32_t SpecRxCore::getRxPolarity() {
+    return SpecCom::readSingle(RX_ADDR | RX_POLARITY);
 }

@@ -75,7 +75,7 @@ void Rd53a::writeRegister(Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value) {
 }
 
 void Rd53a::readRegister(Rd53aReg Rd53aGlobalCfg::*ref) {
-        rdRegister(m_chipId, (this->*ref).addr());
+  rdRegister(m_chipId, (this->*ref).addr());
 }
 
 void Rd53a::configure() {
@@ -112,6 +112,10 @@ void Rd53a::configureInit() {
     this->globalPulse(m_chipId, 8);
     while(!core->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    //Sync frames required by BDAQ
+    for (int i=0;i<32;++i)
+        this->sync();
+    while(!core->isCmdEmpty()){;}
     this->writeRegister(&Rd53a::GlobalPulseRt, 0x4100); //activate monitor and prime sync FE AZ
     while(!core->isCmdEmpty()){;}
     this->globalPulse(m_chipId, 8);
@@ -258,13 +262,15 @@ int Rd53a::checkCom() {
     uint32_t regAddr = 21;
     uint32_t regValue = m_cfg[regAddr];
     rdRegister(m_chipId, regAddr);
+    while(!core->isCmdEmpty()){;} // Required by the rdRegister() above 
+                                  // (when relying on isCmdEmpty() to actually send commands).
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     
     // TODO not happy about this, rx knowledge should not be here
     RawData *data = m_rxcore->readData();
 
     if (data != NULL) {
-        if (!(data->words == 2 || data->words == 4)) {
+        if (!(data->words == 2 || data->words == 4 || data->words == 8 || data->words == 12 || data->words == 6)) {
             logger->error("Received wrong number of words ({}) for {}", data->words, this->name);
             return 0;
         }
@@ -286,7 +292,7 @@ int Rd53a::checkCom() {
     }
 }
 
-std::pair<uint32_t, uint32_t> Rd53a::decodeSingleRegRead(uint32_t higher, uint32_t lower) {
+std::pair<uint32_t, uint32_t> decodeSingleRegRead(uint32_t higher, uint32_t lower) {
     if ((higher & 0x55000000) == 0x55000000) {
         return std::make_pair((lower>>16)&0x3FF, lower&0xFFFF);
     } else if ((higher & 0x99000000) == 0x99000000) {
@@ -297,3 +303,43 @@ std::pair<uint32_t, uint32_t> Rd53a::decodeSingleRegRead(uint32_t higher, uint32
     }
     return std::make_pair(999, 666);
 }
+
+void Rd53a::confADC(uint16_t MONMUX,bool doCur=false) {
+    //This only works for voltage MUX values. 
+    uint16_t OriginalGlobalRT = this->GlobalPulseRt.read();
+
+    if(doCur) {
+        this->writeRegister(&Rd53a::MonitorVmonMux,  11); //Forward via VMUX    
+        this->writeRegister(&Rd53a::MonitorImonMux,  MONMUX); //Select what to monitor
+    } else {
+        this->writeRegister(&Rd53a::MonitorVmonMux,  MONMUX); //Select what to monitor    
+    }
+
+    this->writeRegister(&Rd53a::MonitorEnable, 1); //Enabling monitoring 
+
+    this->writeRegister(&Rd53a::GlobalPulseRt ,64); //ResetADC
+    this->idle();
+    this->globalPulse(m_chipId, 4);  
+    std::this_thread::sleep_for(std::chrono::microseconds(100)); 
+
+    this->writeRegister(&Rd53a::GlobalPulseRt ,4096); //Trigger ADC Conversion
+    this->idle();
+    this->globalPulse(m_chipId, 4);  
+
+    std::this_thread::sleep_for(std::chrono::microseconds(1000)); //This is neccessary to clean. This might be controller dependent.  
+
+    this->writeRegister(&Rd53a::GlobalPulseRt ,OriginalGlobalRT); //Trigger ADC Conversion
+}
+
+void Rd53a::runRingOsc(uint16_t duration) {
+    uint16_t OriginalGlobalRT = this->GlobalPulseRt.read();
+
+    this->writeRegister(&Rd53a::GlobalPulseRt ,0x2000); //Ring Osc Enable Rout
+    this->idle();
+    this->globalPulse(m_chipId, duration);  
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1)); //This is neccessary to clean. This might be controller dependent.  
+
+    this->writeRegister(&Rd53a::GlobalPulseRt ,OriginalGlobalRT); //Trigger ADC Conversion
+}
+

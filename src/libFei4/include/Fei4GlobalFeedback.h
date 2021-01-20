@@ -7,42 +7,42 @@
 #define FEI4GLOBALFEEDBACK_H
 
 #include <queue>
-#include <mutex>
 #include "Fei4.h"
 #include "LoopActionBase.h"
 #include "FeedbackBase.h"
 
 #include "logging.h"
 
-class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
+class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver {
     static logging::Logger &logger() {
         static logging::LoggerStore instance = logging::make_log("Fei4GlobalFeedback");
         return *instance;
     }
 
     public:
-    Fei4GlobalFeedback() {
+    Fei4GlobalFeedback() : LoopActionBase(LOOP_STYLE_GLOBAL_FEEDBACK) {
         loopType = typeid(this);
     };
 
-    Fei4GlobalFeedback(Fei4Register Fei4GlobalCfg::*ref) :parPtr(ref) { 
+    Fei4GlobalFeedback(Fei4Register Fei4GlobalCfg::*ref) : LoopActionBase(LOOP_STYLE_GLOBAL_FEEDBACK), parPtr(ref) {
         loopType = typeid(this);
     };
 
     // Step down feedback algorithm
-    void feedback(unsigned channel, double sign, bool last = false) {
+    void feedback(unsigned channel, double sign, bool last = false) override {
+        ChannelInfo &chan = chanInfo[channel];
         // Calculate new step and val
-        if (sign != oldSign[channel]) {
-            oldSign[channel] = 0;
-            localStep[channel] = localStep[channel]/2;
+        if (sign != chan.oldSign) {
+            chan.oldSign = 0;
+            chan.localStep = chan.localStep/2;
         }
-        int val = (values[channel]+(localStep[channel]*sign));
+        int val = (chan.values+(chan.localStep*sign));
         if (val > (int)max) val = max;
         if (val < 0) val = 0;
-        values[channel] = val;
+        chan.values = val;
         doneMap[channel] |= last;
 
-        if (localStep[channel] == 1) {
+        if (chan.localStep == 1) {
             doneMap[channel] = true;
         }
 
@@ -50,74 +50,67 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
         if (val < 50) {
             doneMap[channel] = true;
         }
-        // Unlock the mutex to let the scan proceed
-        keeper->mutexMap[channel].unlock();
     }
 
     // Binary search feedback algorithm
-    void feedbackBinary(unsigned channel, double sign, bool last = false) {
+    void feedbackBinary(unsigned channel, double sign, bool last = false) override {
+        ChannelInfo &chan = chanInfo[channel];
         // Calculate new step and value
-        int val = (values[channel]+(localStep[channel]*sign));
+        int val = (chan.values+(chan.localStep*sign));
         if (val < 0) val = 0;
-        values[channel] = val;
-        localStep[channel]  = localStep[channel]/2;
+        chan.values = val;
+        chan.localStep  = chan.localStep/2;
         doneMap[channel] |= last;
 
-        if (localStep[channel] == 1) {
+        if (chan.localStep == 1) {
             doneMap[channel] = true;
         }
-
-        // Unlock the mutex to let the scan proceed
-        keeper->mutexMap[channel].unlock();
     }
-    void writeConfig(json &config);
-    void loadConfig(json &config);
+    void writeConfig(json &config) override;
+    void loadConfig(json &config) override;
     private:
     std::string parName = "";
-    void init() {
+    void init() override {
         m_done = false;
         cur = 0;
         // Init all maps:
         for(unsigned int k=0; k<keeper->feList.size(); k++) {
             if(keeper->feList[k]->getActive()) {
                 unsigned ch = dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel();
-                localStep[ch] = step;
-                values[ch] = max;
-                oldSign[ch] = -1;
+                ChannelInfo &info = chanInfo[ch];
+                info.localStep = step;
+                info.values = max;
+                info.oldSign = -1;
                 doneMap[ch] = false;
             }
         }
         this->writePar();
     }
 
-    void end() {
+    void end() override {
         for(unsigned int k=0; k<keeper->feList.size(); k++) {
             if(keeper->feList[k]->getActive()) {	
                 unsigned ch = dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel();
-                logger().info(" --> Final parameter of Fe {} is {}", ch, values[ch]);
+                logger().info(" --> Final parameter of Fe {} is {}", ch, chanInfo[ch].values);
             }
         }
     }
 
-    void execPart1() {
+    void execPart1() override {
         g_stat->set(this, cur);
-        // Lock all mutexes if open
-        for(unsigned int k=0; k<keeper->feList.size(); k++) {
-            if(keeper->feList[k]->getActive()) {	
-                keeper->mutexMap[dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel()].try_lock();
-            }
-        }
         m_done = allDone();
     }
 
-    void execPart2() {
+    void execPart2() override {
         // Wait for mutexes to be unlocked by feedback
         for(unsigned int k=0; k<keeper->feList.size(); k++) {
             if(keeper->feList[k]->getActive()) {
-                keeper->mutexMap[dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel()].lock();
+                unsigned ch = dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel();
+                waitForFeedback(ch);
+
                 logger().info(" --> Received Feedback on Channel {} with value: {}",
                         dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel(),
-                        values[dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel()]);
+                        chanInfo[dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel()].values);
             }
         }
         cur++;
@@ -130,8 +123,13 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
         }
         for(unsigned int k=0; k<keeper->feList.size(); k++) {
             if(keeper->feList[k]->getActive()) {
-                g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getTxChannel());
-                dynamic_cast<Fei4*>(keeper->feList[k])->writeRegister(parPtr, values[dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel()]);
+                auto fe = dynamic_cast<Fei4*>(keeper->feList[k]);
+                auto fe_cfg = dynamic_cast<FrontEndCfg*>(fe);
+                auto tx_channel = fe_cfg->getTxChannel();
+                auto rx_channel = fe_cfg->getRxChannel();
+                
+                g_tx->setCmdEnable(tx_channel);
+                fe->writeRegister(parPtr, chanInfo[fe_cfg->getRxChannel()].values);
                 while(!g_tx->isCmdEmpty());
             }
         }
@@ -152,11 +150,18 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackBase {
     Fei4Register Fei4GlobalCfg::*parPtr;
 
     protected:
-    std::mutex fbMutex;
-    std::map<unsigned, unsigned> values;
-    std::map<unsigned, unsigned> localStep;
-    std::map<unsigned, double> oldSign;
+
+    struct ChannelInfo {
+      unsigned values;
+      unsigned localStep;
+      unsigned oldSign;
+    };
+
+    std::map<unsigned, ChannelInfo> chanInfo;
     unsigned cur;
+
+    // Somehow we need to register logger at static init time
+    friend void logger_static_init_fei4();
 };
 
 #endif

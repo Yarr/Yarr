@@ -1,0 +1,10 @@
+{
+    "chipType" : "Star",
+    "chips" : [
+        {
+            "config": "configs/defaults/default_star.json",
+            "tx" : 0,
+            "rx" : 0
+        }
+    ]
+}

@@ -13,214 +13,284 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+
+#include "logging.h"
+#include "LoggingConfig.h"
 #include "DBHandler.h"
 
-
+auto logger = logging::make_log("dbAccessor");
 
 void printHelp();
 
-int main(int argc, char *argv[]){
+void setLog() {
+    // default log setting
+    std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
+    spdlog::set_pattern(defaultLogPattern);
+    json j; // empty
+    j["pattern"] = defaultLogPattern;
+    j["log_config"][0]["name"] = "all";
+    j["log_config"][0]["level"] = "info";
+    logging::setupLoggers(j);
+}
 
-    std::string home = getenv("HOME");
-    std::string hostname = "default_host";
-    if (getenv("HOSTNAME")) {
-        hostname = getenv("HOSTNAME");
-    } else {
-        std::cout << "HOSTNAME environmental variable not found. (Proceeding with 'default_host')" << std::endl;
-    }
-    std::string dbDirPath = home+"/.yarr/localdb";
-    std::string cfg_path = dbDirPath+"/"+hostname+"_database.json";
-    std::string user_cfg_path = dbDirPath+"/user.json";
-    std::string site_cfg_path = dbDirPath+"/"+hostname+"_site.json";
-    std::string registerType = "";
+int main(int argc, char *argv[]){
+    std::string db_cfg_path   = "";
+    std::string user_cfg_path = "";
+    std::string site_cfg_path = "";
+    std::string commandType = "";
 
     std::string commandLine= argv[0];
 
     // Init parameters
-    std::string dcs_path = "";
-    std::string conn_path = "";
-    std::string scanlog_path = "";
+    std::string scan_dir_path = "";
+    std::string dcs_cfg_path = "";
+    std::string influx_cfg_path = "";
+    std::string conn_cfg_path = "";
+    std::string scan_log_path = "";
+    std::string comp_name = "";
+    std::string user_name = "";
+    std::string site_name = "";
+    std::string output_dir_path = "";
 
-    //for influxDB
-    std::string influx_conn_path="";
-    std::string influx_chip_name="";
-
+    bool setQCMode = false;
+    bool setInteractiveMode = false;
 
     int c;
-    while ((c = getopt(argc, argv, "hIRCE:Mc:s:i:d:u:F:n:")) != -1 ){
+    opterr = 0;
+    while ((c = getopt(argc, argv, "hNS:E:F:RDCLQIc:s:i:p:d:u:n:")) != -1 ){
         switch (c) {
-	case 'h':
+            case 'h':
                 printHelp();
                 return 0;
                 break;
-            case 'I':
-                registerType = "Initialize";
+            case 'N': // command
+                if (commandType=="") commandType = "Initialize";
                 break;
-            case 'R':
-                registerType = "Cache";
+            case 'S': // command
+                if (commandType=="") commandType = "Scan";
+                scan_dir_path = std::string(optarg);
                 break;
-            case 'C':
-                registerType = "Component";
+            case 'E': // command
+                if (commandType=="") commandType = "Environment";
+                dcs_cfg_path = std::string(optarg);
                 break;
-            case 'E':
-                registerType = "Environment";
-                dcs_path = std::string(optarg);
+            case 'F' : // command
+                if (commandType=="") commandType= "Influxdb";
+                influx_cfg_path= std::string(optarg);
+  	            break;
+            case 'R': // command
+                if (commandType=="") commandType = "Cache";
                 break;
-            case 'M':
-                registerType = "Module";
+            case 'D': // command
+                if (commandType=="") commandType = "Config";
                 break;
-            case 'c':
-                conn_path = std::string(optarg);
+            case 'C': // command
+                if (commandType=="") commandType = "Component";
                 break;
-            case 's':
-                scanlog_path = std::string(optarg);
+            case 'L': // command
+                if (commandType=="") commandType = "Log";
                 break;
-            case 'i':
+            case 'Q': // option
+                setQCMode = true;
+                break;
+            case 'I': // option
+                setInteractiveMode = true;
+                break;
+            case 'c': // option
+                conn_cfg_path = std::string(optarg);
+                break;
+            case 's': // option
+                scan_log_path = std::string(optarg);
+                break;
+            case 'i': // option
                 site_cfg_path = std::string(optarg);
+                site_name = std::string(optarg);
                 break;
-            case 'd':
-                cfg_path = std::string(optarg);
+            case 'p': // option
+                output_dir_path = std::string(optarg);
                 break;
-	    case 'u':
+            case 'd': // option
+                db_cfg_path = std::string(optarg);
+                break;
+            case 'u': // option
                 user_cfg_path = std::string(optarg);
+                user_name = std::string(optarg);
                 break;
-	    case 'F' :
-	        registerType= "Influxdb";
-	        influx_conn_path= std::string(optarg);
-		break;
-	    case 'n' :
-	        influx_chip_name= std::string(optarg);
-		break;
+            case 'n' : // option
+                comp_name= std::string(optarg);
+                break;
             case '?':
-                if(optopt=='R'||optopt=='U'||optopt=='C'||optopt=='E'||optopt=='S'||optopt=='D'||optopt=='G'||optopt=='F'){
-                    std::cerr << "-> Option " << (char)optopt
-                              << " requires a parameter! Aborting... " << std::endl;
-                    return -1;
+                if (optopt=='S'||optopt=='E'||optopt=='F') {
+                    std::cerr << "-> Option " << (char)optopt << " requires a parameter! Aborting..." << std::endl;
+                    return 1;
+                } else if (optopt=='c'||optopt=='s'||optopt=='i'||optopt=='p'||optopt=='d'||optopt=='u'||optopt=='n') {
+                    std::cerr << "-> Option " << (char)optopt << " requires a parameter! (Proceeding with default)" << std::endl;
                 } else {
                     std::cerr << "-> Unknown parameter: " << (char)optopt << std::endl;
                 }
                 break;
             default:
-                std::cerr << "-> #DB ERROR# while parsing command line parameters!" << std::endl;
+                std::cerr << "-> Error while parsing command line parameters!" << std::endl;
                 return 1;
         }
     }
 
-    if (registerType == "") printHelp();
+    if (commandType == "") {
+        printHelp();
+        return 1;
+    }
+
+    setLog();
+
+    std::unique_ptr<DBHandler> database ( new DBHandler() );
+    int status = 0;
 
     // Initialize
-    if (registerType == "Initialize") {
-        DBHandler *database = new DBHandler();
-        database->initialize(cfg_path, commandLine);
-        int status = database->checkConnection();
-        delete database;
-        return status;
+    if (commandType == "Initialize") {
+        logger->info("DBHandler: Check DB Connection");
+        database->initialize(db_cfg_path, commandLine);
+        status = database->checkConnection();
     }
 
     // register cache
-    if (registerType == "Cache") {
-        DBHandler *database = new DBHandler();
-        database->initialize(cfg_path, commandLine);
-        int status = database->setCache(user_cfg_path, site_cfg_path);
-        delete database;
-        return status;
+    if (commandType == "Cache") {
+        logger->info("DBHandler: Register Data from Cache");
+        database->initialize(db_cfg_path, commandLine, setQCMode, setInteractiveMode);
+        status = database->setCache(user_cfg_path, site_cfg_path);
+    }
+
+    // register scan
+    if (commandType == "Scan") {
+        logger->info("DBHandler: Register Scan Data");
+        database->initialize(db_cfg_path, commandLine, setQCMode, setInteractiveMode);
+        database->cleanUp("scan", scan_dir_path, false, setInteractiveMode);
+        status = 0;
     }
 
     // register component
-    if (registerType=="Component") {
-        if (conn_path == "") {
-            std::cerr << "#DB ERROR# No component connecivity config file path given, please specify file path under -c option!" << std::endl;
+    if (commandType == "Component") {
+        logger->info("DBHandler: Register Component Data");
+        if (conn_cfg_path == "") {
+            logger->error("No component connecivity config file path given.");
+            logger->error("Please specify file path under -c option!");
             return 1;
         }
-        DBHandler *database = new DBHandler();
-        database->initialize(cfg_path, commandLine, "register");
-        int status = database->setComponent(conn_path, user_cfg_path, site_cfg_path);
-        delete database;
-        return status;
+        if (user_cfg_path == "") {
+            logger->error("No user config file path given.");
+            logger->error("Please specify file path under -u option!");
+            return 1;
+        }
+        if (site_cfg_path == "") {
+            logger->error("No site config file path given.");
+            logger->error("Please specify file path under -i option!");
+            return 1;
+        }
+        database->initialize(db_cfg_path, commandLine, setQCMode, setInteractiveMode);
+        status = database->setComponent(conn_cfg_path, user_cfg_path, site_cfg_path);
+    }
+
+    // Retrieve/Create config files
+    if (commandType == "Config") {
+        logger->info("DBHandler: Retrieve Config Files");
+        database->initialize(db_cfg_path, commandLine, setQCMode, setInteractiveMode);
+        status = database->retrieveData(comp_name, conn_cfg_path, output_dir_path);
     }
 
     // cache DCS
-    if (registerType == "Environment") {
-        DBHandler *database = new DBHandler();
-        if (scanlog_path == "") {
-            std::cerr << "#DB ERROR# No scan log file path given, please specify file path under -s option!" << std::endl;
+    if (commandType == "Environment") {
+        logger->info("DBHandler: Register Environment Data");
+        if (scan_log_path == "") {
+            logger->error("No scan log file path given.");
+            logger->error("Please specify file path under -s option!");
             return 1;
         }
-        std::cout << "DBHandler: Register Environment:" << std::endl;
-        std::cout << "\tenvironmental config file : " << dcs_path << std::endl;
-
-        database->initialize(cfg_path, commandLine, "register");
-        database->setDCSCfg(dcs_path, scanlog_path, user_cfg_path, site_cfg_path);
-        database->cleanUp("dcs", "");
-
-        delete database;
-        return 0;
+        else if (scan_log_path.substr(scan_log_path.find_last_of(".") + 1) != "json"){
+            logger->error("Please specify the path to scanLog.json (including the file name) under -s theoption");
+            return 1;
+        }
+        database->initialize(db_cfg_path, commandLine, setQCMode, setInteractiveMode);
+        database->setDCSCfg(dcs_cfg_path, scan_log_path);
+        database->cleanUp("dcs", "", false, setInteractiveMode);
+        status = 0;
     }
 
-    if (registerType == "Module") {
-        DBHandler *database = new DBHandler();
-        database->initialize(cfg_path, commandLine);
-        int status = database->checkModule();
-        delete database;
-        return status;
-    }
-    if (registerType == "Influxdb") {
-      if (scanlog_path == "") {
-	std::cerr << "#DB ERROR# No scan log file path given, please specify file path under -s option!" << std::endl;
-	return 1;
-      }
-      if (influx_chip_name == "") {
-	std::cerr << "#DB ERROR# No chip name given, please specify chipname under -n option!" << std::endl;
-	return 1;
-      }
-      int success=0;
-      DBHandler *database = new DBHandler();
-      database->initialize(cfg_path, commandLine, "register");
-      database->init_influx(commandLine);
-      success=database->retrieveFromInflux(influx_conn_path,influx_chip_name,scanlog_path);
-      if(success==0){
-	size_t last_slash=scanlog_path.find_last_of('/');
-	std::string scandir="";
-	if (std::string::npos != last_slash){
-	  scandir=scanlog_path.substr(0,last_slash);
-	  //std::string dcs_path=scandir+"/dcsDataInfo.json";
-	  std::string dcs_path="/tmp/dcsDataInfo.json";
+    if (commandType == "Influxdb") {
+        logger->info("DBHandler: Retrieve Influx DB");
+        if (scan_log_path == "") {
+            logger->error("No scan log file path given.");
+            logger->error("Please specify file path under -s option!");
+            return 1;
+        }
+        else if (scan_log_path.substr(scan_log_path.find_last_of(".") + 1) != "json"){
+            logger->error("Please specify the path to scanLog.json (including the file name) under -s theoption");
+            return 1;
+        }
+        if (comp_name == "") {
+            logger->error("No chip name given.");
+            logger->error("Please specify chip name under -n option!");
+            return 1;
+        }
+        int success=0;
+        database->initialize(db_cfg_path, commandLine, setQCMode, setInteractiveMode);
+        success=database->retrieveFromInflux(influx_cfg_path,comp_name,scan_log_path);
+        if(success==0){
+            size_t last_slash=scan_log_path.find_last_of('/');
+            std::string scandir="";
+            if (std::string::npos != last_slash){
+                scandir=scan_log_path.substr(0,last_slash);
+                //std::string dcs_cfg_path=scandir+"/dcsDataInfo.json";
+                std::string dcs_cfg_path="/tmp/dcsDataInfo.json";
 
-	  std::cout << "DBHandler: Register Environment:" << std::endl;
-	  std::cout << "\tenvironmental config file : " << dcs_path << std::endl;
+                logger->info("DBHandler: Register Environment Data");
 
-	  database->setDCSCfg(dcs_path, scanlog_path, user_cfg_path, site_cfg_path);
-	  database->cleanUp("dcs", "");
-	  database->cleanDataDir();
-	}
-      }
-      delete database;
-      return 0;
+                database->setDCSCfg(dcs_cfg_path, scan_log_path);
+                database->cleanUp("dcs", "", false, setInteractiveMode);
+                database->cleanDataDir();
+            }
+        }
+        status = 0;
     }
-    return 0;
+
+    if (commandType == "Log") {
+        logger->info("DBHandler: Retrieve Test Log");
+        database->initialize(db_cfg_path, commandLine, setQCMode, setInteractiveMode);
+        status = database->checkLog(user_name, site_name, comp_name);
+    }
+
+    return status;
 }
 
 void printHelp() {
-    std::string home = getenv("HOME");
-    std::string hostname = "default_host";
-    if (getenv("HOSTNAME")) {
-        hostname = getenv("HOSTNAME");
-    } else {
-        std::cout << "HOSTNAME environmental variable not found. (Proceeding with 'default_host')" << std::endl;
-    }
-    std::string dbDirPath = home+"/.yarr/localdb";
-    std::cout << "Help:" << std::endl;
-    std::cout << " -h: Shows this." << std::endl;
-    std::cout << " -I: Check the connection to Local DB." << std::endl;
-    std::cout << " -C: Upload component data into Local DB." << std::endl;
-    std::cout << "     -c <component.json> : Provide component connectivity configuration." << std::endl;
-    std::cout << " -R: Upload data into Local DB from cache." << std::endl;
-    std::cout << " -E <dcs.json> : Provide DCS configuration to upload DCS data into Local DB." << std::endl;
-    std::cout << "     -s <scanLog.json> : Provide scan log file." << std::endl;
-    std::cout << " -M : Retrieve Module list from Local DB." << std::endl;
-    std::cout << " " << std::endl;
-    std::cout << " -d <database.json> : Provide database configuration. (Default " << dbDirPath << "/" << hostname << "_database.json)" << std::endl;
-    std::cout << " -i <site.json> : Provide site configuration. (Default " << dbDirPath << "/" << hostname << "_site.json)" << std::endl;
-    std::cout << " -u <user.json> : Provide user configuration. (Default " << dbDirPath << "/user.json)" << std::endl;
+    std::cout << "Usage: dbAccessor <-command> [-option]" << std::endl;
+    std::cout << "These are common DB commands used in verious situations:" << std::endl;
+    std::cout << std::endl;
+    std::cout << "    -h                     Shows this." << std::endl;
+    std::cout << "    -N                     Check the connection to Local DB." << std::endl;
+    std::cout << "    -S <result dir>        Upload scan data from the specified scan result directory into Local DB." << std::endl;
+    std::cout << "    -E <dcs.json>          Upload DCS data according to the specified DCS config file into Local DB." << std::endl;
+    std::cout << "       -s <scanLog.json>   Provide path to log file of scan result data to link the DCS data." << std::endl;
+    std::cout << "    -F <influx.json>       Retrieve DCS data from influxDB and Upload the data according to the specified influxDB config file into Local DB." << std::endl;
+    std::cout << "       -n <component name> Provide component name to link the DCS data." << std::endl;
+    std::cout << "       -s <scanLog.json>   Provide path to log file of scan result data to link the DCS data." << std::endl;
+    std::cout << "    -R                     Upload scan/DCS data recorded in the cache ($HOME/.yarr/localdb/run.dat or dcs.dat) into Local DB." << std::endl;
+    std::cout << "       [-u <user.json>]    Provide path to user config file." << std::endl;
+    std::cout << "       [-i <site.json>]    Provide path to site config file." << std::endl;
+    std::cout << "    -D                     Retrieve data from Local DB. (Default. most recently saved data)" << std::endl;
+    std::cout << "       [-n <cmp name>]     Provide component (chip/module) name." << std::endl;
+    std::cout << "       [-p <output dir>]   Provide path to directory to put config files. (Default. ./db-data)" << std::endl;
+    std::cout << "       [-c <cmp.json>]     Provide path to component connectivity config file to create chip config files." << std::endl;
+    std::cout << "    -C                     Upload non-QC component data into Local DB." << std::endl;
+    std::cout << "       -c <cmp.json>       Provide path to component connectivity config file to upload." << std::endl;
+    std::cout << "       -u <user.json>      Provide path to user config file." << std::endl;
+    std::cout << "       -i <site.json>      Provide path to site config file." << std::endl;
+    std::cout << "    -L                     Display log of test data in Local DB." << std::endl;
+    std::cout << "       [-u <user name>]    Provide user name to query." << std::endl;
+    std::cout << "       [-i <site name>]    Provide site name to query." << std::endl;
+    std::cout << "       [-n <cmp name>]     Provide component (chip/module) name to query." << std::endl;
+    std::cout << std::endl;
+    std::cout << "optional arguments:" << std::endl;
+    std::cout << "    -Q                     Set QC mode (add a step to check if the data to upload is suitable for QC)." << std::endl;
+    std::cout << "    -I                     Set interactive mode (add a step to ask the user to check the data to upload interactively)." << std::endl;
+    std::cout << "    -d <database.json>     Provide path to database config file." << std::endl;
     std::cout << std::endl;
 }

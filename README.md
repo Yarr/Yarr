@@ -1,18 +1,14 @@
-![docs](http://readthedocs.org/projects/yarr/badge/?version=latest)
-
-![https://gitlab.cern.ch/YARR/YARR/pipelines](https://gitlab.cern.ch/YARR/YARR/badges/master/pipeline.svg)
-
 ![logo](docs/images/logo_blue_inv.png)
 
 # YARR: Yet Another Rapid Readout
 
 ## Documentation
 
-For details please refer to the documentation covering installation and usage, which can be found here http://yarr.rtfd.org 
+For details please refer to the documentation covering installation and usage, which can be found here http://cern.ch/yarr
 
 This README only includes quick install guide.
 
-(If you are working with the devel branch refer to http://yarr.readthedocs.org/en/devel/ )
+(If you are working with the devel branch refer to http://cern.ch/yarr/devel/ )
 
 ## Mailing list
 
@@ -24,7 +20,7 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
 
 ### Software:
 
-- CentOS 7
+- CentOS 7 or 8
 - cmake 3.6
 - GCC version 7 or higher
     - for example from devtoolset-7, instruction can be found here https://www.softwarecollections.org/en/scls/rhscl/devtoolset-7
@@ -42,7 +38,7 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
     - ``$ cd Yarr``
     - ``$ mkdir build``
     - ``$ cd build``
-    - ``$ source scl_source enable devtoolset-7
+    - ``$ source scl_source enable devtoolset-7``
     - ``$ cmake3 ..``
     - ``$ make install -j4``
     - ``$ cd ..``

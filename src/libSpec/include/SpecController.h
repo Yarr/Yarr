@@ -31,6 +31,14 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
                 this->writeSingle(0x6<<14 | 0x1, 0xF);
             }
 
+            if (!j["rxPolarity"].empty()) {
+                this->setRxPolarity(j["rxPolarity"]);
+            }
+
+            if (!j["txPolarity"].empty()) {
+                this->setTxPolarity(j["txPolarity"]);
+            }
+            
             // Configure trigger logic
             if (!j["trigConfig"].empty()) {
                 if(!j["trigConfig"]["mask"].empty())
@@ -56,35 +64,60 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
                     this->setTriggerDeadtime(j["trigConfig"]["deadtime"]);
             }
 
-            // Configure auto-zero logic
-            if (!j["autoZero"].empty()) {
-                if (!j["autoZero"]["word"].empty()) {
-                    this->setAzWord(j["autoZero"]["word"]);
-                    m_azWord = j["autoZero"]["word"];
+            // Configure pulse logic
+            if (!j["pulse"].empty()) {
+                if (!j["pulse"]["word"].empty()) {
+                    this->setPulseWord(j["pulse"]["word"]);
+                    m_pulseWord = j["pulse"]["word"];
                 }
-                if (!j["autoZero"]["interval"].empty()) {
-                    this->setAzInterval(j["autoZero"]["interval"]);
-                    m_azInterval = j["autoZero"]["interval"];
+                if (!j["pulse"]["interval"].empty()) {
+                    this->setPulseInterval(j["pulse"]["interval"]);
+                    m_pulseInterval = j["pulse"]["interval"];
+                }
+            }
+            
+            // Configure sync logic
+            if (!j["sync"].empty()) {
+                if (!j["sync"]["word"].empty()) {
+                    this->setSyncWord(j["sync"]["word"]);
+                    m_syncWord = j["sync"]["word"];
+                }
+                if (!j["sync"]["interval"].empty()) {
+                    this->setSyncInterval(j["sync"]["interval"]);
+                    m_syncInterval = j["sync"]["interval"];
+                }
+            }
+
+            // Configure sync logic
+            if (!j["idle"].empty()) {
+                if (!j["idle"]["word"].empty()) {
+                    this->setIdleWord(j["idle"]["word"]);
+                    m_idleWord = j["idle"]["word"];
                 }
             }
 
             // Configure Tx speed
             if (!j["cmdPeriod"].empty()) {
-	      SpecTxCore::m_clk_period = (float)j["cmdPeriod"]; //fix for variant 
+                SpecTxCore::m_clk_period = (float)j["cmdPeriod"]; //fix for variant 
             }
         }
 
         void setupMode() override final{
-            this->setAzWord(0x0);
+            this->setPulseWord(0x0);
         }
 
         void runMode() override final {
-            this->setAzWord(m_azWord);
+            this->setPulseWord(m_pulseWord);
         }
 
     private:
-        uint32_t m_azWord;
-        uint32_t m_azInterval;
+        uint32_t m_pulseWord;
+        uint32_t m_pulseInterval;
+
+        uint32_t m_syncWord;
+        uint32_t m_syncInterval;
+
+        uint32_t m_idleWord;
 };
 
 #endif

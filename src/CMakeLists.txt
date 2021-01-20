@@ -12,7 +12,14 @@ else()
 endif()
 add_compile_options(-Wfatal-errors)
 add_compile_options(-Wno-deprecated)
+add_compile_options(-Wnon-virtual-dtor)
 add_compile_options(-std=c++17)
+
+if ( USE_JSON )
+    add_definitions( -DUSE_JSON )
+endif()
+
+link_libraries(-lstdc++fs)
 
 # Add -fPIC for (e.g. linking to shared libraries)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -31,7 +38,7 @@ set(YARR_ALL_FRONT_ENDS
     Fe65p2 Fei4 Rd53a Star)
 
 set(YARR_ALL_CONTROLLERS
-    Spec Emu Rce Boc KU040 Rogue NetioHW)
+    Spec Emu Rce Boc KU040 Rogue NetioHW Bdaq Itsdaq)
 
 if( YARR_FRONT_ENDS_TO_BUILD STREQUAL "all" )
   set( YARR_FRONT_ENDS_TO_BUILD ${YARR_ALL_FRONT_ENDS} )
@@ -61,7 +68,9 @@ foreach(lib ${libs})
     add_definitions( -DNO_PYTHON )
     include_directories(lib${lib}/include)
     include_directories(BEFORE SYSTEM ${PROJECT_BINARY_DIR}/include)
-    file(GLOB SrcFiles lib${lib}/*.cpp)
+    file(GLOB SrcFiles
+         CONFIGURE_DEPENDS
+         lib${lib}/*.cpp)
     list(APPEND LibSrcFiles ${SrcFiles})
 endforeach()
 
@@ -73,12 +82,22 @@ add_library(Yarr STATIC ${LibSrcFiles})
 YARR_ADD_VARIANT()
 add_dependencies(Yarr variant)
 YARR_ADD_TBB()
-add_dependencies(Yarr tbb_2019)
+add_dependencies(Yarr tbb_2020)
+
+# Plotting Tools
+find_package(ROOT COMPONENTS Hist Graf)
+if (${ROOT_FOUND})
+    YARR_ADD_PLOTTING()
+    add_dependencies(Yarr plotting_tools)
+    INSTALL(DIRECTORY ${CMAKE_BINARY_DIR}/src/external/src/plotting_tools/bin DESTINATION ${TARGET_INSTALL_AREA} FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ WORLD_EXECUTE WORLD_READ GROUP_EXECUTE GROUP_READ)
+else (${ROOT_FOUND})
+    MESSAGE(STATUS "Could not locate ROOT. Will not compile plotting tools!")
+endif (${ROOT_FOUND})
 
 if ("Rogue" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   YARR_ADD_ROGUE()
-  add_dependencies(Yarr tbb_2019 rogue)
-  set(YARR_EXEC_DEPS ${YARR_EXEC_DEPS} rogue tbb_2019)
+  add_dependencies(Yarr tbb_2020 rogue)
+  set(YARR_EXEC_DEPS ${YARR_EXEC_DEPS} rogue tbb_2020)
   set(YARR_LIB_DEPS ${YARR_LIB_DEPS} rogue-core)
   set(TBB_DEPS tbb)
 endif()
@@ -88,7 +107,7 @@ if ("NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   YARR_ADD_FELIX()
   add_dependencies(Yarr felixbase4 netio4)
 
-  set(YARR_EXEC_DEPS ${YARR_EXEC_DEPS} tbb_2019 felixbase4 netio4)
+  set(YARR_EXEC_DEPS ${YARR_EXEC_DEPS} tbb_2020 felixbase4 netio4)
   set(YARR_LIB_DEPS ${YARR_LIB_DEPS} netio)
   set(TBB_DEPS tbb)
 
@@ -96,8 +115,14 @@ if ("NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/netio4)
 endif()
 
+if ("Bdaq" IN_LIST YARR_CONTROLLERS_TO_BUILD )
+  set(YARR_LIB_DEPS ${YARR_LIB_DEPS} boost_system)
+endif()
+
 #add executables
-file(GLOB tools tools/*.cpp)
+file(GLOB tools
+     CONFIGURE_DEPENDS
+     tools/*.cpp)
 
 if (NOT "NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   list(FILTER tools EXCLUDE REGEX tools/testNetioHw.cpp|tools/testBitStream.cpp|tools/testScan.cpp)
@@ -138,12 +163,14 @@ install(DIRECTORY ${PROJECT_BINARY_DIR}/bin DESTINATION ${TARGET_INSTALL_AREA}  
     WORLD_EXECUTE WORLD_READ GROUP_EXECUTE GROUP_READ  )
 
 # Tests
-file(GLOB_RECURSE test_src tests/test_*.cpp)
+file(GLOB_RECURSE test_src
+     CONFIGURE_DEPENDS
+     tests/test_*.cpp)
 
 # Make one executable
 add_executable(test_main ${test_src} tests/main.cpp)
 target_link_libraries(test_main ${YARR_LINK_LIB_COMMAND})
 add_dependencies(test_main Yarr)
 
-# Add custom target so we can run "make test"
-add_custom_target(test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/test_main)
+# This uses features of CTest, so requires enable_testing somewhere
+add_test(catch2_tests ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/test_main)

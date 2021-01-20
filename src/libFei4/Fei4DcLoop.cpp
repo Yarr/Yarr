@@ -11,7 +11,7 @@ namespace {
     auto logger = logging::make_log("Fei4DcLoop");
 }
 
-Fei4DcLoop::Fei4DcLoop() : LoopActionBase() {
+Fei4DcLoop::Fei4DcLoop() : LoopActionBase(LOOP_STYLE_MASK) {
     m_mode = SINGLE_DC;
     min = 0;
     max = 40;

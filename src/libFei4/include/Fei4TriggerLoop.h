@@ -8,16 +8,15 @@
 
 #include "LoopActionBase.h"
 #include "Fei4.h"
+#include "StdTriggerAction.h"
 
 #define TRIG_CMD 0xe8000000
 #define CAL_CMD  0x00000164
 
-class Fei4TriggerLoop: public LoopActionBase {
+class Fei4TriggerLoop: public LoopActionBase, public StdTriggerAction {
     public:
         Fei4TriggerLoop();
         
-        void setTrigCnt(unsigned int cnt);
-        unsigned getTrigCnt();
         void setTrigDelay(unsigned int delay);
         unsigned getTrigDelay();
         void setTrigFreq(double freq);
@@ -34,7 +33,6 @@ class Fei4TriggerLoop: public LoopActionBase {
         void writeConfig(json &config);
         void loadConfig(json &config);
     private:
-        unsigned m_trigCnt;
         unsigned m_trigDelay;
         float m_trigFreq;
         float m_trigTime;

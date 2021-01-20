@@ -29,7 +29,7 @@ ScanConsole normally requires at min. three types of configuration files (more d
 Note: If you omit the scan config, your chip will only be configurated.
 
 
-Additional command line arguements for the scanConsole are:
+Additional command line arguments for the scanConsole are:
     
 - **-h** : this, prints all available command line arguments
 - **-t  ``<target_charge>`` [``<target_tot>``]** : Set target values for threshold (charge only) and tot (charge and tot).
@@ -37,6 +37,7 @@ Additional command line arguements for the scanConsole are:
 - **-o ``<dir>``** : Output directory. (Default ./data/)
 - **-m ``<int>``** : 0 = disable pixel masking, 1 = reset pixel masking, default = enable pixel masking
 - **-k**: Report known items (Scans, Hardware etc.)
+- **-l ``<path>``** => Logger config : this points to a json file to configure the [logging](logging.json) system. The default is to print info, warnings and errors to the console with appropriate colorization.
 
 ### Controller Config
 Example of a controller config:
@@ -51,6 +52,8 @@ Example of a controller config:
 }
 ```
 The "type" specifies which hardware controller should be used. Any fields in the "cfg" field are specific the hardware and details can be found here: [TODO](todo)
+
+If you are running with multiple PCIexpress cards, each should have its own controller configuration with the appropriate value for `specNum`.
 
 ### Connectivity Config
 Example of a connectivity config:
@@ -76,8 +79,71 @@ Example of a connectivity config:
 }
 
 ```
+In the above example, the chip using tx 0 and rx 0 is enabled, meaning that transmission and reception will be established with that chip using the display port cable located in slot 0. Tx refers to transmission to the FE chip, while rx refers to reception of data from the FE chip. That chip will have a default configuration file made, called `rd53a_test.json`, located in the `configs/` folder. The chip on the tx/rx line 1 is ignored. 
+
 The "chipType" can be one of three: `RD53A`, `FEI4B`, or `FE65P2`.
 "chips" contains an array of chips, each element needs to contain the path to the config, and the tx and rx channel/link. Each chip can be read out individually by toggling "enable". The chip config can be prevented from overwriting if it is locked.
+
+#### Configuration for multiple FE chips with each FE receiving its own command line
+For each chip to receive its own command, the connectivity configuration needs to specify the `tx`, `rx`, and `enable` for each chip. 
+
+An example configuration set to communicate with multiple FEs looks like this:
+```json
+{
+    "chipType" : "RD53A",
+    "chips" : [
+        {
+            "config" : "configs/rd53a_TripletA_IndCmdChipA.json",
+            "tx" : 0,
+            "rx" : 0,
+            "enable" : 1,
+            "locked" : 0
+        },
+        {
+            "config" : "configs/rd53a_TripletA_IndCmdChipB.json",
+            "tx" : 1,
+            "rx" : 1,
+            "enable" : 0,
+            "locked" : 0
+        },
+        {
+            "config" : "configs/rd53a_TripletA_IndCmdChipC.json",
+            "tx" : 2,
+            "rx" : 2,
+            "enable" : 1,
+            "locked" : 0
+        }
+    ]
+}
+```
+Each chip is given its own configuration file named, labeled under `config`. In this example, the 2nd chip (tx/rx 1 is disabled) but all remaining chips are enabled.
+
+#### Configuration for multiple FE chips with each FE sharing one command line
+An example of this type of configuration is:
+```json
+{
+    "chipType" : "RD53A",
+    "chips" : [
+
+        {
+            "config" : "configs/rd53a_Quad_ChipA.json",
+            "tx" : 0,
+            "rx" : 0,
+            "enable" : 1,
+            "locked" : 0
+        },
+        {
+            "config" : "configs/rd53a_Quad_ChipB.json",
+            "tx" : 0,
+            "rx" : 1,
+            "enable" : 1,
+            "locked" : 0
+        }
+    ]
+}
+```
+In the above configuration, the command will be sent using tx0 but each chip uses its own rx line.
+
 
 ### Scan Config
 
@@ -93,6 +159,15 @@ The scan config can be split in multiple parts:
   }
 }
 ```
+
+The `ChipId` and the chip `Name`, which will be the name used in the plots, are set in the `Parameters` section of the configuration file.
+```json
+"Parameter": {
+  "ChipId": 0,
+  "Name": "JohnDoe_0",            
+}
+```
+The default ChipId is 0 so please compare the wire-bonded chip ID with the one set in the configuration file.
 
 1. Analysis:
    
@@ -195,9 +270,9 @@ Example:
 The 'prescan' config includes specific FrontEnd registers which are necessary for the scan and overwrite whatever is in the chip config (however these values will not be transferred into the chip config, they only exist for the time of the scan). Register names in the 'prescan' need to match those in the chip configuration.
 Loop actions are specific to the FrontEnd type and are listed on the respective FrontEnd page:
     
-- [RD53A](rd53a)
-- [FE-I4](fei4)
-- [FE65-P2](fe65-p2)
+- [RD53A](rd53a.md)
+- [FE-I4](fei4.md)
+- [FE65-P2](fe65p2.md)
 
 **Important Notes:**
     

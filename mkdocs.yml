@@ -9,9 +9,15 @@ pages:
     - FE-I4: fei4.md
     - FE65-P2: fe65p2.md
     - RD53A: rd53a.md
+    - RD53B: rd53b.md
+    - Star: star.md
     - Local DB: localdb.md
-    - Root Scripts: rootscripts.md
+    - Plotting Tools: plotting.md
+    - Logging configuration: logging.md
     - Firmware Guide: fw_guide.md
+    - NetIO: netio.md
+    - ITSDAQ FW: itsdaq.md
     - Troubleshooting: troubleshooting.md
+    - Emulator: emulator.md
     - Version Log: version.md
 theme: readthedocs

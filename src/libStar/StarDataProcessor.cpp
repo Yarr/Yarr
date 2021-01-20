@@ -8,11 +8,16 @@
 
 #include "StarChipPacket.h"
 
-// Used to transfer data to histogrammers
-#include "Fei4EventData.h"
+#include "EventData.h"
+
+#include "logging.h"
+
+namespace {
+  auto logger = logging::make_log("StarDataProcessor");
+}
 
 void process_data(RawData &curIn,
-                  Fei4Data &curOut);
+                  FrontEndData &curOut);
 
 bool star_proc_registered =
   StdDict::registerDataProcessor("Star", []() { return std::unique_ptr<DataProcessor>(new StarDataProcessor());});
@@ -36,7 +41,7 @@ void StarDataProcessor::run() {
     const unsigned int numThreads = std::thread::hardware_concurrency();
     for (unsigned i=0; i<numThreads; i++) {
         thread_ptrs.emplace_back( new std::thread(&StarDataProcessor::process, this) );
-        std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
+        logger->info("  -> Processor thread #{} started!", i);
     }
 }
 
@@ -48,7 +53,6 @@ void StarDataProcessor::join() {
 
 void StarDataProcessor::process() {
     while(true) {
-        std::unique_lock<std::mutex> lk(mtx);
         input->waitNotEmptyOrDone();
 
         process_core();
@@ -70,10 +74,9 @@ void StarDataProcessor::process_core() {
             continue;
 
         // Create Output Container
-        std::map<unsigned, std::unique_ptr<Fei4Data>> curOut;
+        std::map<unsigned, std::unique_ptr<FrontEndData>> curOut;
         for (unsigned i=0; i<activeChannels.size(); i++) {
-            curOut[activeChannels[i]].reset(new Fei4Data());
-            curOut[activeChannels[i]]->lStat = curInV->stat;
+            curOut[activeChannels[i]].reset(new FrontEndData(curInV->stat));
         }
 
         unsigned size = curInV->size();
@@ -81,6 +84,13 @@ void StarDataProcessor::process_core() {
         for(unsigned c=0; c<size; c++) {
             RawData r(curInV->adr[c], curInV->buf[c], curInV->words[c]);
             unsigned channel = curInV->adr[c]; //elink number
+            if(!curOut[channel]) {
+              logger->warn("Channel {} not found", channel);
+              for (unsigned i=0; i<activeChannels.size(); i++) {
+                logger->warn(" Active channel {} is {}", i, activeChannels[i]);
+              }
+              continue;
+            }
             process_data(r, *curOut[channel]);
         }
 
@@ -92,7 +102,7 @@ void StarDataProcessor::process_core() {
 }
 
 void process_data(RawData &curIn,
-                  Fei4Data &curOut) {
+                  FrontEndData &curOut) {
     StarChipPacket packet;
 
     packet.add_word(0x13C); //add SOP, only to make decoder happy
@@ -103,9 +113,16 @@ void process_data(RawData &curIn,
     }
     packet.add_word(0x1DC); //add EOP, only to make decoder happy
 
-    packet.parse();
-    // std::cout << __PRETTY_FUNCTION__ << ": Data for Channel " << channel << "\n";
-    // packet.print_more();
+    if(packet.parse()) {
+      logger->error("Star packet parsing failed, continuing with the extracted data\n");
+    }
+    
+    logger->debug("Process data");
+    if(logger->should_log(spdlog::level::trace)) {
+      std::stringstream os;
+      packet.print_clusters(os);
+      logger->trace("{}", os.str());
+    }
 
     PacketType packetType = packet.getType();
     if(packetType == TYP_LP || packetType == TYP_PR){
@@ -115,27 +132,29 @@ void process_data(RawData &curIn,
         auto l1id = packet.l0id;
         auto bcid = packet.bcid;
 
-        std::cout << "new physics event packet !!!!!!!!!! "<< std::endl;
         curOut.newEvent(tag, l1id, bcid);
 
-        packet.print_clusters(std::cout);
         for(unsigned  ithCluster=0; ithCluster < packet.clusters.size(); ++ithCluster){
             Cluster cluster = packet.clusters.at(ithCluster);
 
+            int row = ((cluster.address>>7)&1)+1;
+
             // Split hits into two rows of strips
-            curOut.curEvent->addHit(cluster.address&0x7f,
-                                    (cluster.address>>7)&1, 0);
+            curOut.curEvent->addHit( row,
+                                     cluster.input_channel*128+((cluster.address&0x7f)+1), 1);
+            //NOTE::tot(1) is just dummy value, because of """if(curHit.tot > 0)""" in Fei4Histogrammer::XXX::processEvent(Fei4Data *data)
+            //row and col both + 1 because pixel row & col numbering start from 1, see Fei4Histogrammer & Fei4Analysis
 
             std::bitset<3> nextPattern (cluster.next);
             for(unsigned i=0; i<3; i++){
                 if(!nextPattern.test(i)) continue;
-                auto nextAddress = cluster.address+i+1;
-                curOut.curEvent->addHit(nextAddress & 0x7f,
-                                        (nextAddress>>7)&1, 0);
+                auto nextAddress = cluster.address+(3-i);
+                curOut.curEvent->addHit( row,
+                                         cluster.input_channel*128+((nextAddress&0x7f)+1),1);
 
                 // It's an error for cluster to escape either "side"
-                if((cluster.address+i+1) > 127) {
-                    std::cout << " address > 127 " << std::endl;
+                if((cluster.address & (~0x7f)) != (nextAddress & (~0x7f))) {
+                    logger->warn(" strip address > 128");
                 }
             }
         }
@@ -143,3 +162,6 @@ void process_data(RawData &curIn,
         packet.print_more(std::cout);
     }
 }
+
+// Need to instantiate something to register the logger
+bool parser_logger_registered = [](){ StarChipPacket::make_logger(); return true; }();

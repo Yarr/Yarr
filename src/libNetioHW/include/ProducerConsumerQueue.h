@@ -62,7 +62,7 @@ struct ProducerConsumerQueue {
     // We need to destruct anything that may still exist in our queue.
     // (No real synchronization needed at destructor time: only one
     // thread can be doing this.)
-    std::cout << "### folly::~ProducerConsumerQueue -> Flushing queue! Population: " << sizeGuess() << "\n";
+    std::cerr << "### folly::~ProducerConsumerQueue -> Flushing queue! Population: " << sizeGuess() << "\n";
     if (!std::is_trivially_destructible<T>::value) {
       size_t read = readIndex_;
       size_t end = writeIndex_;

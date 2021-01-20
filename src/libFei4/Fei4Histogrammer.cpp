@@ -10,96 +10,65 @@
 
 #include <iostream>
 
+#include "AllHistogrammers.h"
+
 #include "logging.h"
 
 namespace {
     auto alog = logging::make_log("Fei4Histogrammer");
 }
 
-Fei4Histogrammer::Fei4Histogrammer() {
+namespace {
+    // Needs filename from somewhere...
+    // bool da_registered =
+    //   StdDict::registerHistogrammer("DataArchiver",
+    //                             []() { return std::unique_ptr<HistogramAlgorithm>(new DataArchiver());});
+
+    bool om_registered =
+      StdDict::registerHistogrammer("OccupancyMap",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new OccupancyMap());});
+
+    bool tot_registered =
+      StdDict::registerHistogrammer("TotMap",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new TotMap());});
+
+    bool tot2_registered =
+      StdDict::registerHistogrammer("Tot2Map",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new Tot2Map());});
+
+    bool tot_dist_registered =
+      StdDict::registerHistogrammer("TotDist",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new TotDist());});
+
+    bool tot3d_registered =
+      StdDict::registerHistogrammer("Tot3d",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new Tot3d());});
+
+    bool l1dist_registered =
+      StdDict::registerHistogrammer("L1Dist",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new L1Dist());});
+
+    bool l13d_registered =
+      StdDict::registerHistogrammer("L13d",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new L13d());});
+
+    bool hpe_registered =
+      StdDict::registerHistogrammer("HitsPerEvent",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new HitsPerEvent());});
 }
 
-Fei4Histogrammer::~Fei4Histogrammer() {
-    for (unsigned i=0; i<algorithms.size(); i++)
-        delete algorithms[i];
-}
-
-void Fei4Histogrammer::init() {
-}
-
-void Fei4Histogrammer::clearHistogrammers() {
-    for(unsigned int i = 0; i < algorithms.size(); i++) {
-        delete (algorithms.at(i));
-    }
-    algorithms.clear();
-}
-
-
-void Fei4Histogrammer::run() {
-    thread_ptr.reset( new std::thread( &Fei4Histogrammer::process, this ) );
-}
-
-void Fei4Histogrammer::join() {
-    if( thread_ptr->joinable() ) thread_ptr->join();
-}
-
-void Fei4Histogrammer::process() {
-    while( true ) {
-        std::unique_lock<std::mutex> lk(mtx);
-        input->waitNotEmptyOrDone();
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        process_core();
-
-        if( input->isDone() ) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(200));
-            process_core();  // this line is needed if the data comes in before scanDone is changed.
-            alog->info("Histogrammer done!");
-            break;
-        }
-    }
-
-    process_core();
-}
-
-void Fei4Histogrammer::process_core() {
-    while (!input->empty()) {
-        auto d = input->popData();
-        Fei4Data *data = dynamic_cast<Fei4Data*>(d.get());
-        if (data == nullptr)
-            continue;
-        for (unsigned i=0; i<algorithms.size(); i++) {
-            algorithms[i]->create(data->lStat);
-            algorithms[i]->processEvent(data);
-        }
-        this->publish();
-    }
-}
-
-void Fei4Histogrammer::publish() {
-    for (unsigned i=0; i<algorithms.size(); i++) {
-        auto ptr = algorithms[i]->getHisto();
-        if(ptr) {
-            output->pushData(std::move(ptr));
-        }
-    }
-}
-
-void DataArchiver::processEvent(Fei4Data *data) {
-    for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
-        Fei4Event curEvent = *eventIt;
+void DataArchiver::processEvent(FrontEndData *data) {
+    for (const FrontEndEvent &curEvent: data->events) {
         // Save Event to File
         curEvent.toFileBinary(fileHandle);
     }
 }
 
 
-void OccupancyMap::processEvent(Fei4Data *data) {
-    for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
-        Fei4Event curEvent = *eventIt;
+void OccupancyMap::processEvent(FrontEndData *data) {
+    for (const FrontEndEvent &curEvent: data->events) {
         if (curEvent.nHits > 0) {
-            for (std::list<Fei4Hit>::iterator hitIt = curEvent.hits.begin(); hitIt!=curEvent.hits.end(); ++hitIt) {   
-                Fei4Hit curHit = *hitIt;
+            for (const FrontEndHit &curHit: curEvent.hits) {
                 if(curHit.tot > 0)
                     h->fill(curHit.col, curHit.row);
             }
@@ -107,12 +76,10 @@ void OccupancyMap::processEvent(Fei4Data *data) {
     }
 }
 
-void TotMap::processEvent(Fei4Data *data) {
-    for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
-        Fei4Event curEvent = *eventIt;
+void TotMap::processEvent(FrontEndData *data) {
+    for (const FrontEndEvent &curEvent: data->events) {
         if (curEvent.nHits > 0) {
-            for (std::list<Fei4Hit>::iterator hitIt = curEvent.hits.begin(); hitIt!=curEvent.hits.end(); ++hitIt) {   
-                Fei4Hit curHit = *hitIt;
+            for (const FrontEndHit &curHit: curEvent.hits) {   
                 if(curHit.tot > 0)
                     h->fill(curHit.col, curHit.row, curHit.tot);
             }
@@ -120,12 +87,10 @@ void TotMap::processEvent(Fei4Data *data) {
     }
 }
 
-void Tot2Map::processEvent(Fei4Data *data) {
-    for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
-        Fei4Event curEvent = *eventIt;
+void Tot2Map::processEvent(FrontEndData *data) {
+    for (const FrontEndEvent &curEvent: data->events) {
         if (curEvent.nHits > 0) {
-            for (std::list<Fei4Hit>::iterator hitIt = curEvent.hits.begin(); hitIt!=curEvent.hits.end(); ++hitIt) {   
-                Fei4Hit curHit = *hitIt;
+            for (const FrontEndHit &curHit: curEvent.hits) {   
                 if(curHit.tot > 0)
                     h->fill(curHit.col, curHit.row, curHit.tot*curHit.tot);
             }
@@ -133,12 +98,10 @@ void Tot2Map::processEvent(Fei4Data *data) {
     }
 }
 
-void TotDist::processEvent(Fei4Data *data) {
-    for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
-        Fei4Event curEvent = *eventIt;
+void TotDist::processEvent(FrontEndData *data) {
+    for (const FrontEndEvent &curEvent: data->events) {
         if (curEvent.nHits > 0) {
-            for (std::list<Fei4Hit>::iterator hitIt = curEvent.hits.begin(); hitIt!=curEvent.hits.end(); ++hitIt) {   
-                Fei4Hit curHit = *hitIt;
+            for (const FrontEndHit &curHit: curEvent.hits) {   
                 if(curHit.tot > 0)
                     h->fill(curHit.tot);
             }
@@ -146,12 +109,10 @@ void TotDist::processEvent(Fei4Data *data) {
     }
 }
 
-void Tot3d::processEvent(Fei4Data *data) {
-    for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
-        Fei4Event curEvent = *eventIt;
+void Tot3d::processEvent(FrontEndData *data) {
+    for (const FrontEndEvent &curEvent: data->events) {
         if (curEvent.nHits > 0) {
-            for (std::list<Fei4Hit>::iterator hitIt = curEvent.hits.begin(); hitIt!=curEvent.hits.end(); ++hitIt) {   
-                Fei4Hit curHit = *hitIt;
+            for (const FrontEndHit &curHit: curEvent.hits) {   
                 if(curHit.tot > 0)
                     h->fill(curHit.col, curHit.row, curHit.tot);
             }
@@ -159,10 +120,9 @@ void Tot3d::processEvent(Fei4Data *data) {
     }
 }
 
-void L1Dist::processEvent(Fei4Data *data) {
+void L1Dist::processEvent(FrontEndData *data) {
     // Event Loop
-    for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
-        Fei4Event curEvent = *eventIt;
+    for (const FrontEndEvent &curEvent: data->events) {
         if(curEvent.l1id != l1id) {
             l1id = curEvent.l1id;
             if (curEvent.bcid - bcid_offset > 16) {
@@ -186,9 +146,8 @@ void L1Dist::processEvent(Fei4Data *data) {
     }
 }
 
-void L13d::processEvent(Fei4Data *data) {
-    for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
-        Fei4Event curEvent = *eventIt;
+void L13d::processEvent(FrontEndData *data) {
+    for (const FrontEndEvent &curEvent: data->events) {
         
         /*if(curEvent.l1id != l1id) {
             l1id = curEvent.l1id;
@@ -206,8 +165,7 @@ void L13d::processEvent(Fei4Data *data) {
         */
         
         if (curEvent.nHits > 0) {
-            for (std::list<Fei4Hit>::iterator hitIt = curEvent.hits.begin(); hitIt!=curEvent.hits.end(); ++hitIt) {   
-                Fei4Hit curHit = *hitIt;
+            for (const FrontEndHit &curHit: curEvent.hits) {   
                 if(curHit.tot > 0)
                     h->fill(curHit.col, curHit.row, curEvent.l1id%16);
             }
@@ -215,10 +173,9 @@ void L13d::processEvent(Fei4Data *data) {
     }
 }
 
-void HitsPerEvent::processEvent(Fei4Data *data) {
+void HitsPerEvent::processEvent(FrontEndData *data) {
     // Event Loop
-    for (std::list<Fei4Event>::iterator eventIt = (data->events).begin(); eventIt!=data->events.end(); ++eventIt) {   
-        Fei4Event curEvent = *eventIt;
+    for (const FrontEndEvent &curEvent: data->events) {
         h->fill(curEvent.nHits);
     }
 }

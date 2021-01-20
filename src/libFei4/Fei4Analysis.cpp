@@ -8,100 +8,55 @@
 
 #include "Fei4Analysis.h"
 
+#include "AllAnalyses.h"
+#include "Bookkeeper.h"
+#include "Fei4Histogrammer.h"
+#include "Fei4MaskLoop.h"
+#include "StdTriggerAction.h"
+#include "lmcurve.h"
+
 #include "logging.h"
 
 namespace {
     auto alog = logging::make_log("Fei4Analysis");
 }
 
-Fei4Analysis::Fei4Analysis() {
+namespace {
+    bool oa_registered =
+      StdDict::registerAnalysis("OccupancyAnalysis",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new OccupancyAnalysis());});
 
-}
+    bool l1_registered =
+      StdDict::registerAnalysis("L1Analysis",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new L1Analysis());});
 
-Fei4Analysis::Fei4Analysis(Bookkeeper *b, unsigned ch) {
-    bookie = b;
-    channel = ch;
-}
+    bool tot_registered =
+      StdDict::registerAnalysis("TotAnalysis",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new TotAnalysis());});
 
-Fei4Analysis::~Fei4Analysis() {
-    for (unsigned i=0; i<algorithms.size(); i++) {
-        delete algorithms[i];
-    }
-}
+    bool no_registered =
+      StdDict::registerAnalysis("NoiseAnalysis",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new NoiseAnalysis());});
 
-void Fei4Analysis::init() {
-    for (unsigned i=0; i<algorithms.size(); i++) {
-        algorithms[i]->connect(output);
-        algorithms[i]->init(scan);
-    }
-}
+    bool no_tune_registered =
+      StdDict::registerAnalysis("NoiseTuning",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new NoiseTuning());});
 
-void Fei4Analysis::run() {
-    SPDLOG_LOGGER_TRACE(alog, "");
-    thread_ptr.reset( new std::thread( &Fei4Analysis::process, this ) );
-}
+    bool sf_registered =
+      StdDict::registerAnalysis("ScurveFitter",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new ScurveFitter());});
 
-void Fei4Analysis::loadConfig(json &j){
-    for (unsigned i=0; i<algorithms.size(); i++) {
-        if (!j[std::to_string(i)]["config"].empty()){
-	    algorithms[i]->loadConfig(j[std::to_string(i)]["config"]);
-	}
-    }
-}
+    bool gbl_thr_registered =
+      StdDict::registerAnalysis("OccGlobalThresholdTune",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new OccGlobalThresholdTune());});
 
-void Fei4Analysis::join() {
-    if( thread_ptr->joinable() ) thread_ptr->join();
-}
+    bool pix_thr_registered =
+      StdDict::registerAnalysis("OccPixelThresholdTune",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new OccPixelThresholdTune());});
 
-void Fei4Analysis::process() {
-    while( true ) {
-
-        std::unique_lock<std::mutex> lk(mtx);
-        input->waitNotEmptyOrDone();
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        process_core();
-
-        if( input->isDone() ) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(200));
-            process_core();  // this line is needed if the data comes in before scanDone is changed.
-            alog->info("Analysis done!");
-            break;
-        }
-    }
-
-    process_core();
-
-    end();
-
-}
-
-void Fei4Analysis::process_core() {
-    while(!input->empty()) {
-        auto h = input->popData();
-        if (h != NULL) {
-            for (unsigned i=0; i<algorithms.size(); i++) {
-                algorithms[i]->processHistogram(&*h);
-            }
-        }
-    }
-}
-
-void Fei4Analysis::end() {
-    SPDLOG_LOGGER_TRACE(alog, "");
-    for (unsigned i=0; i<algorithms.size(); i++) {
-        algorithms[i]->end();
-    }
-}
-
-void Fei4Analysis::addAlgorithm(AnalysisAlgorithm *a) {
-    algorithms.push_back(a);
-    a->setBookkeeper(bookie);
-    a->setChannel(channel);
-}
-
-void Fei4Analysis::addAlgorithm(AnalysisAlgorithm *a, unsigned ch) {
-    algorithms.push_back(a);
+    bool del_registered =
+      StdDict::registerAnalysis("DelayAnalysis",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new DelayAnalysis());});
 }
 
 void OccupancyAnalysis::init(ScanBase *s) {
@@ -110,16 +65,7 @@ void OccupancyAnalysis::init(ScanBase *s) {
     injections = 0;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ((l->type() != typeid(Fei4TriggerLoop*) &&
-                    l->type() != typeid(Rd53aMaskLoop*) &&
-                    l->type() != typeid(Rd53aTriggerLoop*) &&
-                    l->type() != typeid(Rd53aCoreColLoop*) &&
-                    l->type() != typeid(Fe65p2MaskLoop*) &&
-                    l->type() != typeid(Fe65p2TriggerLoop*) &&
-                    l->type() != typeid(Fe65p2QcLoop*) &&
-                    l->type() != typeid(Fei4MaskLoop*) &&
-                    l->type() != typeid(StdDataLoop*) &&
-                    l->type() != typeid(Fei4DcLoop*))) {
+        if (!(l->isMaskLoop() || l->isTriggerLoop() || l->isDataLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -128,24 +74,20 @@ void OccupancyAnalysis::init(ScanBase *s) {
                 cnt = 1;
             n_count = n_count*cnt;
         }
-        if (l->type() == typeid(Fei4TriggerLoop*)) {
-            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
-            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-        if (l->type() == typeid(Rd53aTriggerLoop*)) {
-            Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
+        if (l->isTriggerLoop()) {
+            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            if(trigLoop == nullptr) {
+                alog->error("OccupancyAnalysis: loop declared as trigger loop, does not have a trigger count");
+            } else {
+                injections = trigLoop->getTrigCnt();
+            }
         }
     }
 }
 
 void OccupancyAnalysis::processHistogram(HistogramBase *h) {
     // Check if right Histogram
-    if (h->getType() != typeid(OccupancyMap*))
+    if (h->getName() != OccupancyMap::outputName())
         return;
 
     // Select correct output container
@@ -164,7 +106,7 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
 
     // Check if Histogram exists
     if (occMaps[ident] == nullptr) {
-        std::unique_ptr<Histo2d> hh(new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this)));
+        std::unique_ptr<Histo2d> hh(new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
         hh->setZaxisTitle("Hits");
@@ -177,7 +119,7 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
     innerCnt[ident]++;
     // Got all data, finish up Analysis
     if (innerCnt[ident] == n_count) {
-        std::unique_ptr<Histo2d> mask(new Histo2d(name2, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this)));
+        std::unique_ptr<Histo2d> mask(new Histo2d(name2, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
         mask->setXaxisTitle("Column");
         mask->setYaxisTitle("Rows");
         mask->setZaxisTitle("Enable");
@@ -207,10 +149,6 @@ void OccupancyAnalysis::loadConfig(json &j){
 }
 
 void TotAnalysis::init(ScanBase *s) {
-    std::shared_ptr<LoopActionBase> tmpVcalLoop(new Fei4ParameterLoop(&Fei4::PlsrDAC));
-    std::shared_ptr<LoopActionBase> tmpVcalLoop2(new Fe65p2ParameterLoop(&Fe65p2::PlsrDac));
-    std::shared_ptr<LoopActionBase> tmpVcalLoop3(new Rd53aParameterLoop());
-
     useScap = true;
     useLcap = true;
     n_count = 1;
@@ -220,16 +158,7 @@ void TotAnalysis::init(ScanBase *s) {
     hasVcalLoop = false;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ((l->type() != typeid(Fei4TriggerLoop*) &&
-                    l->type() != typeid(Rd53aMaskLoop*) &&
-                    l->type() != typeid(Rd53aTriggerLoop*) &&
-                    l->type() != typeid(Rd53aCoreColLoop*) &&
-                    l->type() != typeid(Fe65p2MaskLoop*) &&
-                    l->type() != typeid(Fe65p2TriggerLoop*) &&
-                    l->type() != typeid(Fe65p2QcLoop*) &&
-                    l->type() != typeid(Fei4MaskLoop*) &&
-                    l->type() != typeid(StdDataLoop*) &&
-                    l->type() != typeid(Fei4DcLoop*))) {
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -239,38 +168,28 @@ void TotAnalysis::init(ScanBase *s) {
             n_count = n_count*cnt;
         }
 
-        if (l->type() == typeid(Fei4TriggerLoop*)) {
-            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
+        if (l->isTriggerLoop()) {
+            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            if(trigLoop == nullptr) {
+                alog->error("TotAnalysis: loop declared as trigger loop, does not have a trigger count");
+            } else {
+                injections = trigLoop->getTrigCnt();
+            }
         }
 
-        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
-            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
+        if (l->isGlobalFeedbackLoop()) {
+            alog->debug("Found global feedback loop");
+            globalFb.reset(new GlobalFeedbackSender(feedback));
+            alog->debug("Connect global feedback");
         }
 
-        if (l->type() == typeid(Rd53aTriggerLoop*)) {
-            Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-
-        std::shared_ptr<LoopActionBase> tmpPrmpFb(new Fei4GlobalFeedback(&Fei4::PrmpVbpf));
-        if (l->type() == tmpPrmpFb->type()) {
-            globalFb = dynamic_cast<GlobalFeedbackBase*>(l.get());  
-        }
-
-        if (l->type() == typeid(Rd53aGlobalFeedback*)) {
-            globalFb = dynamic_cast<GlobalFeedbackBase*>(l.get());  
-        }
-
-        if (l->type() == typeid(Fei4PixelFeedback*)) {
-            pixelFb = dynamic_cast<PixelFeedbackBase*>(l.get());  
+        if (l->isPixelFeedbackLoop()) {
+            alog->debug("Found pixel feedback loop");
+            pixelFb.reset(new PixelFeedbackSender(feedback));
         }
 
         // Vcal Loop
-        if (l->type() == tmpVcalLoop->type() ||
-                l->type() == tmpVcalLoop2->type() ||
-                l->type() == tmpVcalLoop3->type()) {
+        if (l->isParameterLoop()) {
             vcalMax = l->getMax();
             vcalMin = l->getMin();
             vcalStep = l->getStep();
@@ -298,19 +217,19 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
 
     // Check if Histogram exists
     if (occMaps[ident] == NULL) {
-        Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
         hh->setZaxisTitle("Hits");
         occMaps[ident].reset(hh);
         occInnerCnt[ident] = 0;
-        hh = new Histo2d(name2, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        hh = new Histo2d(name2, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
         hh->setZaxisTitle("{/Symbol S}(ToT)");
         totMaps[ident].reset(hh);
         totInnerCnt[ident] = 0;
-        hh = new Histo2d(name3, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        hh = new Histo2d(name3, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
         hh->setZaxisTitle("{/Symbol S}(ToT^2)");
@@ -324,7 +243,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         double chargeMax = feCfg->toCharge(vcalMax, useScap, useLcap);
         double chargeStep = feCfg->toCharge(vcalStep, useScap, useLcap);
 
-        Histo2d *hh = new Histo2d("ChargeVsTotMap", vcalBins+1, chargeMin-chargeStep/2, chargeMax+chargeStep/2, 160, 0.05, 16.05, typeid(this));
+        Histo2d *hh = new Histo2d("ChargeVsTotMap", vcalBins+1, chargeMin-chargeStep/2, chargeMax+chargeStep/2, 160, 0.05, 16.05);
         hh->setXaxisTitle("Injected Charge [e]");
         hh->setYaxisTitle("ToT");
         hh->setZaxisTitle("Pixels");
@@ -332,13 +251,13 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
     }
 
     // Gather Histogram
-    if (h->getType() == typeid(OccupancyMap*)) {
+    if (h->getName() == OccupancyMap::outputName()) {
         occMaps[ident]->add(*(Histo2d*)h);
         occInnerCnt[ident]++;
-    } else if (h->getType() == typeid(TotMap*)) {
+    } else if (h->getName() == TotMap::outputName()) {
         totMaps[ident]->add(*(Histo2d*)h);
         totInnerCnt[ident]++;
-    } else if (h->getType() == typeid(Tot2Map*)) {
+    } else if (h->getName() == Tot2Map::outputName()) {
         tot2Maps[ident]->add(*(Histo2d*)h);
         tot2InnerCnt[ident]++;
     } else {
@@ -349,29 +268,29 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
     if (occInnerCnt[ident] == n_count &&
             totInnerCnt[ident] == n_count &&
             tot2InnerCnt[ident] == n_count) {
-        std::unique_ptr<Histo2d> meanTotMap(new Histo2d("MeanTotMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this)));
+        std::unique_ptr<Histo2d> meanTotMap(new Histo2d("MeanTotMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
         meanTotMap->setXaxisTitle("Column");
         meanTotMap->setYaxisTitle("Row");
         meanTotMap->setZaxisTitle("Mean ToT [bc]");
-        std::unique_ptr<Histo2d> sumTotMap(new Histo2d("SumTotMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this)));
+        std::unique_ptr<Histo2d> sumTotMap(new Histo2d("SumTotMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
         sumTotMap->setXaxisTitle("Column");
         sumTotMap->setYaxisTitle("Row");
         sumTotMap->setZaxisTitle("Mean ToT [bc]");
-        std::unique_ptr<Histo2d> sumTot2Map(new Histo2d("MeanTot2Map-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this)));
+        std::unique_ptr<Histo2d> sumTot2Map(new Histo2d("MeanTot2Map-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
         sumTot2Map->setXaxisTitle("Column");
         sumTot2Map->setYaxisTitle("Row");
         sumTot2Map->setZaxisTitle("Mean ToT^2 [bc^2]");
-        std::unique_ptr<Histo2d> sigmaTotMap(new Histo2d("SigmaTotMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this)));
+        std::unique_ptr<Histo2d> sigmaTotMap(new Histo2d("SigmaTotMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
         sigmaTotMap->setXaxisTitle("Column");
         sigmaTotMap->setYaxisTitle("Row");
         sigmaTotMap->setZaxisTitle("Sigma ToT [bc]");
-        std::unique_ptr<Histo1d> meanTotDist(new Histo1d("MeanTotDist-"+std::to_string(ident), 16, 0.5, 16.5, typeid(this)));
+        std::unique_ptr<Histo1d> meanTotDist(new Histo1d("MeanTotDist-"+std::to_string(ident), 16, 0.5, 16.5));
         meanTotDist->setXaxisTitle("Mean ToT [bc]");
         meanTotDist->setYaxisTitle("Number of Pixels");
-        std::unique_ptr<Histo1d> sigmaTotDist(new Histo1d("SigmaTotDist-"+std::to_string(ident), 101, -0.05, 1.05, typeid(this)));
+        std::unique_ptr<Histo1d> sigmaTotDist(new Histo1d("SigmaTotDist-"+std::to_string(ident), 101, -0.05, 1.05));
         sigmaTotDist->setXaxisTitle("Sigma ToT [bc]");
         sigmaTotDist->setYaxisTitle("Number of Pixels");
-        Histo1d *tempMeanTotDist = new Histo1d("MeanTotDistFine-"+std::to_string(ident), 160, 0.05, 16.05, typeid(this));
+        std::unique_ptr<Histo1d> tempMeanTotDist(new Histo1d("MeanTotDistFine-"+std::to_string(ident), 160, 0.05, 16.05));
 
         meanTotMap->add(*totMaps[ident]);
         meanTotMap->divide(*occMaps[ident]);
@@ -425,7 +344,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
 
         if (pixelFb != NULL) {
             double targetTot = bookie->getTargetTot();
-            Histo2d *fbHisto = new Histo2d("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+            auto fbHisto = std::make_unique<Histo2d>("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
             for (unsigned i=0; i<meanTotMap->size(); i++) {
                 int sign = 0;
                 double mean = meanTotMap->getBin(i);
@@ -439,7 +358,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
                 fbHisto->setBin(i, sign);
             }
 
-            pixelFb->feedback(channel, fbHisto);
+            pixelFb->feedback(channel, std::move(fbHisto));
         }
 
         output->pushData(std::move(meanTotMap));
@@ -459,9 +378,6 @@ void TotAnalysis::end() {
 }
 
 void ScurveFitter::init(ScanBase *s) {
-    std::shared_ptr<LoopActionBase> tmpVcalLoop(new Fei4ParameterLoop(&Fei4::PlsrDAC));
-    std::shared_ptr<LoopActionBase> tmpVcalLoop2(new Fe65p2ParameterLoop(&Fe65p2::PlsrDac));
-    std::shared_ptr<LoopActionBase> tmpVcalLoop3(new Rd53aParameterLoop());
     fb = NULL;
     scan = s;
     n_count = 1;
@@ -471,26 +387,12 @@ void ScurveFitter::init(ScanBase *s) {
     useLcap = true;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if (l->type() != typeid(Fei4TriggerLoop*) &&
-                l->type() != typeid(Rd53aMaskLoop*) &&
-                l->type() != typeid(Rd53aTriggerLoop*) &&
-                l->type() != typeid(Rd53aCoreColLoop*) &&
-                l->type() != typeid(Fe65p2TriggerLoop*) &&
-                l->type() != typeid(Fei4MaskLoop*) &&
-                l->type() != typeid(Fe65p2MaskLoop*) &&
-                l->type() != typeid(StdDataLoop*) &&
-                l->type() != typeid(Fei4DcLoop*) &&
-                l->type() != typeid(Fe65p2QcLoop*) &&
-                l->type() != tmpVcalLoop3->type() &&
-                l->type() != tmpVcalLoop2->type() &&
-                l->type() != tmpVcalLoop->type()) {
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || l->isParameterLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
             unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
-            if (l->type() == tmpVcalLoop3->type() ||
-                l->type() == tmpVcalLoop2->type() ||
-                l->type() == tmpVcalLoop->type()) {
+            if (l->isParameterLoop()) {
                 cnt++; // Parameter loop interval is inclusive
             }
             if (cnt == 0)
@@ -498,9 +400,7 @@ void ScurveFitter::init(ScanBase *s) {
             n_count = n_count*cnt;
         }
         // Vcal Loop
-        if (l->type() == tmpVcalLoop->type() ||
-                l->type() == tmpVcalLoop2->type() ||
-                l->type() == tmpVcalLoop3->type()) {
+        if (l->isParameterLoop()) {
             vcalLoop = n;
             vcalMax = l->getMax();
             vcalMin = l->getMin();
@@ -508,17 +408,13 @@ void ScurveFitter::init(ScanBase *s) {
             vcalBins = (vcalMax-vcalMin)/vcalStep;
         }
 
-        if (l->type() == typeid(Fei4TriggerLoop*)) {
-            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
-            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-        if (l->type() == typeid(Rd53aTriggerLoop*)) {
-            Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
+        if (l->isTriggerLoop()) {
+            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            if(trigLoop == nullptr) {
+                alog->error("ScurveFitter: loop declared as trigger loop, does not have a trigger count");
+            } else {
+                injections = trigLoop->getTrigCnt();
+            }
         }
 
         // check injection capacitor for FEI-4
@@ -527,18 +423,14 @@ void ScurveFitter::init(ScanBase *s) {
             useScap = msk->getScap();
             useLcap = msk->getLcap();
         }
-        
-        // Find potential pixel feedback
-        if (l->type() == typeid(Fei4PixelFeedback*)) {
-            fb = (PixelFeedbackBase*)((Fei4PixelFeedback*) l.get());  
-        }
-        if (l->type() == typeid(Fe65p2PixelFeedback*)) {
-            fb = (PixelFeedbackBase*)((Fe65p2PixelFeedback*) l.get());  
-        }
-        if (l->type() == typeid(Rd53aPixelFeedback*)) {
-            fb = (PixelFeedbackBase*)((Rd53aPixelFeedback*) l.get());  
-        }
 
+        // find potential pixel feedback
+        if (l->isPixelFeedbackLoop()) {
+            fb.reset(new PixelFeedbackSender(feedback));
+            if(fb == nullptr) {
+                alog->error("ScurveFitter: loop declared as pixel feedback, does not implement feedback");
+            }
+        }
     }
 
     for (unsigned i=vcalMin; i<=vcalMax; i+=vcalStep) {
@@ -562,7 +454,7 @@ double scurveFct(double x, const double *par) {
 void ScurveFitter::processHistogram(HistogramBase *h) {
     cnt++;
     // Check if right Histogram
-    if (h->getType() != typeid(OccupancyMap*))
+    if (h->getName() != OccupancyMap::outputName())
         return;
 
     Histo2d *hh = (Histo2d*) h;
@@ -599,14 +491,14 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 
                 // Check if Histogram exists
                 if (histos[ident] == NULL) {
-                    Histo1d *hhh = new Histo1d(name, vcalBins+1, vcalMin-((double)vcalStep/2.0), vcalMax+((double)vcalStep/2.0), typeid(this));
+                    Histo1d *hhh = new Histo1d(name, vcalBins+1, vcalMin-((double)vcalStep/2.0), vcalMax+((double)vcalStep/2.0));
                     hhh->setXaxisTitle("Vcal");
                     hhh->setYaxisTitle("Occupancy");
                     histos[ident].reset(hhh);
                     innerCnt[ident] = 0;
                 }
                 if (sCurve[outerIdent] == NULL) {
-                    Histo2d *hhh = new Histo2d("sCurve-" + std::to_string(outerIdent), vcalBins+1, vcalMin-((double)vcalStep/2.0), vcalMax+((double)vcalStep/2.0), injections-1, 0.5, injections-0.5, typeid(this));
+                    Histo2d *hhh = new Histo2d("sCurve-" + std::to_string(outerIdent), vcalBins+1, vcalMin-((double)vcalStep/2.0), vcalMax+((double)vcalStep/2.0), injections-1, 0.5, injections-0.5);
                     hhh->setXaxisTitle("Vcal");
                     hhh->setYaxisTitle("Occupancy");
                     hhh->setZaxisTitle("Number of pixels");
@@ -638,41 +530,41 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     end = std::chrono::high_resolution_clock::now();
                     std::chrono::microseconds fitTime = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
                     if (thrMap[outerIdent] == NULL) {
-                        Histo2d *hh2 = new Histo2d("ThresholdMap-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+                        Histo2d *hh2 = new Histo2d("ThresholdMap-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
                         hh2->setXaxisTitle("Column");
                         hh2->setYaxisTitle("Row");
                         hh2->setZaxisTitle("Threshold [e]");
                         thrMap[outerIdent].reset(hh2);
-                        hh2 = new Histo2d("NoiseMap-"+std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+                        hh2 = new Histo2d("NoiseMap-"+std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
                         hh2->setXaxisTitle("Column");
                         hh2->setYaxisTitle("Row");
                         hh2->setZaxisTitle("Noise [e]");
 
                         sigMap[outerIdent].reset(hh2);
 
-                        Histo1d *hh1 = new Histo1d("Chi2Dist-"+std::to_string(outerIdent), 51, -0.025, 2.525, typeid(this));
+                        Histo1d *hh1 = new Histo1d("Chi2Dist-"+std::to_string(outerIdent), 51, -0.025, 2.525);
                         hh1->setXaxisTitle("Fit Chi/ndf");
                         hh1->setYaxisTitle("Number of Pixels");
                         chiDist[outerIdent].reset(hh1);
 
-                        hh2 = new Histo2d("Chi2Map-"+std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+                        hh2 = new Histo2d("Chi2Map-"+std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
                         hh2->setXaxisTitle("Column");
                         hh2->setYaxisTitle("Row");
                         hh2->setZaxisTitle("Chi2");
                         chi2Map[outerIdent].reset(hh2);     
 
-                        hh2 = new Histo2d("StatusMap-"+std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+                        hh2 = new Histo2d("StatusMap-"+std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
                         hh2->setXaxisTitle("Column");
                         hh2->setYaxisTitle("Row");
                         hh2->setZaxisTitle("Fit Status");
                         statusMap[outerIdent].reset(hh2);
 
-                        hh1 = new Histo1d("StatusDist-"+std::to_string(outerIdent), 11, -0.5, 10.5, typeid(this));
+                        hh1 = new Histo1d("StatusDist-"+std::to_string(outerIdent), 11, -0.5, 10.5);
                         hh1->setXaxisTitle("Fit Status ");
                         hh1->setYaxisTitle("Number of Pixels");
                         statusDist[outerIdent].reset(hh1);
 
-                        hh1 = new Histo1d("TimePerFitDist-"+std::to_string(outerIdent), 201, -1, 401, typeid(this));
+                        hh1 = new Histo1d("TimePerFitDist-"+std::to_string(outerIdent), 201, -1, 401);
                         hh1->setXaxisTitle("Fit Time [us]");
                         hh1->setYaxisTitle("Number of Pixels");
                         timeDist[outerIdent].reset(hh1);
@@ -713,15 +605,15 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
         }
 
         if (step[outerIdent] == nullptr) {
-            Histo2d *hh2 = new Histo2d("StepMap-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+            auto hh2 = std::make_unique<Histo2d>("StepMap-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
             hh2->setXaxisTitle("Column");
             hh2->setYaxisTitle("Row");
             hh2->setZaxisTitle("TDAC change");
-            step[outerIdent].reset(hh2);
+            step[outerIdent] = std::move(hh2);
         }
         
         if (deltaThr[outerIdent] == nullptr) {
-            Histo2d *hh2 = new Histo2d("DeltaThreshold-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+            Histo2d *hh2 = new Histo2d("DeltaThreshold-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
             hh2->setXaxisTitle("Column");
             hh2->setYaxisTitle("Row");
             hh2->setZaxisTitle("Delta Threshold [e]");
@@ -759,7 +651,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
         }
         prevOuter = outerIdent;
         alog->info("[{}] --> Sending feedback #{}", this->channel, outerIdent);
-        fb->feedback(this->channel, step[outerIdent].get());
+        fb->feedback(this->channel, std::move(std::make_unique<Histo2d>(*(step[outerIdent].get()))));
     }
 }
 
@@ -792,7 +684,7 @@ void ScurveFitter::end() {
                 xhigh += ((xhigh-xlow)%bin_width);
             bins = (xhigh-xlow)/bin_width;
 
-            Histo1d *hh1 = new Histo1d("ThresholdDist-" + std::to_string(i), bins, xlow, xhigh, typeid(this));
+            Histo1d *hh1 = new Histo1d("ThresholdDist-" + std::to_string(i), bins, xlow, xhigh);
             hh1->setXaxisTitle("Threshold [e]");
             hh1->setYaxisTitle("Number of Pixels");
             thrDist[i].reset(hh1);
@@ -807,7 +699,7 @@ void ScurveFitter::end() {
                 xhigh += ((xhigh-xlow)%bin_width);
             bins = (xhigh-xlow)/bin_width;
 
-            hh1 = new Histo1d("NoiseDist-" + std::to_string(i), bins, xlow, xhigh, typeid(this));
+            hh1 = new Histo1d("NoiseDist-" + std::to_string(i), bins, xlow, xhigh);
             hh1->setXaxisTitle("Noise [e]");
             hh1->setYaxisTitle("Number of Pixels");
             sigDist[i].reset(hh1);
@@ -843,22 +735,10 @@ void ScurveFitter::end() {
 }
 
 void OccGlobalThresholdTune::init(ScanBase *s) {
-    std::shared_ptr<LoopActionBase> tmpVthinFb(new Fei4GlobalFeedback(&Fei4::Vthin_Fine));
-    std::shared_ptr<LoopActionBase> tmpVthinFb2(new Fe65p2GlobalFeedback(&Fe65p2::Vthin1Dac));
-    std::shared_ptr<LoopActionBase> tmpVthinFb3(new Rd53aGlobalFeedback());
     n_count = 1;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ((l->type() != typeid(Fei4TriggerLoop*) &&
-                    l->type() != typeid(Rd53aMaskLoop*) &&
-                    l->type() != typeid(Rd53aTriggerLoop*) &&
-                    l->type() != typeid(Rd53aCoreColLoop*) &&
-                    l->type() != typeid(Fe65p2TriggerLoop*) &&
-                    l->type() != typeid(Fei4MaskLoop*) &&
-                    l->type() != typeid(Fe65p2MaskLoop*) &&
-                    l->type() != typeid(StdDataLoop*) &&
-                    l->type() != typeid(Fe65p2QcLoop*) &&
-                    l->type() != typeid(Fei4DcLoop*))) {
+        if (!(l->isDataLoop() || l->isTriggerLoop() || l->isMaskLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -868,34 +748,25 @@ void OccGlobalThresholdTune::init(ScanBase *s) {
             n_count = n_count*cnt;
         }
 
-        if (l->type() == typeid(Fei4TriggerLoop*)) {
-            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
+        if (l->isTriggerLoop()) {
+            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            if(trigLoop == nullptr) {
+                alog->error("OccGlobalThresholdTune: loop declared as trigger does not have a count");
+            } else {
+                injections = trigLoop->getTrigCnt();
+            }
         }
 
-        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
-            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-
-        if (l->type() == typeid(Rd53aTriggerLoop*)) {
-            Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-
-        if (l->type() == tmpVthinFb->type() 
-                || l->type() == tmpVthinFb2->type()
-                || l->type() == tmpVthinFb3->type()) {
-            fb = dynamic_cast<GlobalFeedbackBase*>(l.get()); 
+        if (l->isGlobalFeedbackLoop()) {
+            fb.reset(new GlobalFeedbackSender(feedback));
             lb = (LoopActionBase*) l.get(); 
         }
     }
-
 }
 
 void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
     // Check if right Histogram
-    if (h->getType() != typeid(OccupancyMap*))
+    if (h->getName() != OccupancyMap::outputName())
         return;
 
     // Select correct output container
@@ -914,14 +785,14 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
 
     // Check if Histogram exists
     if (occMaps[ident] == NULL) {
-        Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
         hh->setZaxisTitle("Hits");
         occMaps[ident].reset(hh);
         //Histo1d *hhh = new Histo1d(name2, injections+1, -0.5, injections+0.5, typeid(this));
         // Ignore first and last bin to dismiss masked or not functioning pixels
-        Histo1d *hhh = new Histo1d(name2, injections-1, 0.5, injections-0.5, typeid(this));
+        Histo1d *hhh = new Histo1d(name2, injections-1, 0.5, injections-0.5);
         hhh->setXaxisTitle("Occupancy");
         hhh->setYaxisTitle("Number of Pixels");
         occDists[ident].reset(hhh);
@@ -975,16 +846,7 @@ void OccPixelThresholdTune::init(ScanBase *s) {
     n_count = 1;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ((l->type() != typeid(Fei4TriggerLoop*) &&
-                    l->type() != typeid(Rd53aMaskLoop*) &&
-                    l->type() != typeid(Rd53aTriggerLoop*) &&
-                    l->type() != typeid(Rd53aCoreColLoop*) &&
-                    l->type() != typeid(Fe65p2TriggerLoop*) &&
-                    l->type() != typeid(Fei4MaskLoop*) &&
-                    l->type() != typeid(Fe65p2MaskLoop*) &&
-                    l->type() != typeid(StdDataLoop*) &&
-                    l->type() != typeid(Fe65p2QcLoop*) &&
-                    l->type() != typeid(Fei4DcLoop*))) {
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -994,29 +856,20 @@ void OccPixelThresholdTune::init(ScanBase *s) {
             n_count = n_count*cnt;
         }
 
-        if (l->type() == typeid(Fei4TriggerLoop*)) {
-            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
+        if (l->isTriggerLoop()) {
+            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            if(trigLoop == nullptr) {
+                alog->error("OccPixelThresholdTune: loop declared as trigger does not have a count");
+            } else {
+                injections = trigLoop->getTrigCnt();
+            }
         }
 
-        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
-            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-
-        if (l->type() == typeid(Rd53aTriggerLoop*)) {
-            Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-
-        if (l->type() == typeid(Fei4PixelFeedback*)) {
-            fb = (PixelFeedbackBase*)((Fei4PixelFeedback*) l.get());  
-        }
-        if (l->type() == typeid(Fe65p2PixelFeedback*)) {
-            fb = (PixelFeedbackBase*)((Fe65p2PixelFeedback*) l.get());  
-        }
-        if (l->type() == typeid(Rd53aPixelFeedback*)) {
-            fb = (PixelFeedbackBase*)((Rd53aPixelFeedback*) l.get());  
+        if (l->isPixelFeedbackLoop()) {
+            fb.reset(new PixelFeedbackSender(feedback));
+            if(fb == nullptr) {
+                alog->error("OccPixelThresholdTune: loop declared as pixel feedback does not implement feedback");
+            }
         }
     }
 
@@ -1024,7 +877,7 @@ void OccPixelThresholdTune::init(ScanBase *s) {
 
 void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
     // Check if right Histogram
-    if (h->getType() != typeid(OccupancyMap*))
+    if (h->getName() != OccupancyMap::outputName())
         return;
 
     // Select correct output container
@@ -1043,7 +896,7 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
 
     // Check if Histogram exists
     if (occMaps[ident] == NULL) {
-        Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
         hh->setZaxisTitle("Hits");
@@ -1057,8 +910,8 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
     // Got all data, finish up Analysis
     if (innerCnt[ident] == n_count) {
         double mean = 0;
-        Histo2d *fbHisto = new Histo2d("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
-        std::unique_ptr<Histo1d> occDist(new Histo1d(name2, injections-1, 0.5, injections-0.5, typeid(this)));
+        auto fbHisto = std::make_unique<Histo2d>("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
+        std::unique_ptr<Histo1d> occDist(new Histo1d(name2, injections-1, 0.5, injections-0.5));
         occDist->setXaxisTitle("Occupancy");
         occDist->setYaxisTitle("Number of Pixels");
         for (unsigned i=0; i<fbHisto->size(); i++) {
@@ -1076,7 +929,7 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
         alog->info("[{}] Mean Occupancy = {}", channel, mean/(nCol*nRow*(double)injections));
         alog->info("[{}] RMS = {}", channel, occDist->getStdDev());
 
-        fb->feedback(this->channel, fbHisto);
+        fb->feedback(this->channel, std::move(fbHisto));
         output->pushData(std::move(occMaps[ident]));
         output->pushData(std::move(occDist));
         innerCnt[ident] = 0;
@@ -1092,16 +945,7 @@ void L1Analysis::init(ScanBase *s) {
     injections = 0;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ((l->type() != typeid(Fei4TriggerLoop*) &&
-                    l->type() != typeid(Rd53aMaskLoop*) &&
-                    l->type() != typeid(Rd53aTriggerLoop*) &&
-                    l->type() != typeid(Rd53aCoreColLoop*) &&
-                    l->type() != typeid(Fei4MaskLoop*) &&
-                    l->type() != typeid(StdDataLoop*) &&
-                    l->type() != typeid(Fei4DcLoop*)) &&
-                l->type() != typeid(Fe65p2MaskLoop*) &&
-                l->type() != typeid(Fe65p2QcLoop*) &&
-                l->type() != typeid(Fe65p2TriggerLoop*)) {
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -1110,19 +954,14 @@ void L1Analysis::init(ScanBase *s) {
                 cnt = 1;
             n_count = n_count*cnt;
         }
-        if (l->type() == typeid(Fei4TriggerLoop*)) {
-            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
 
-        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
-            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-
-        if (l->type() == typeid(Rd53aTriggerLoop*)) {
-            Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
+        if (l->isTriggerLoop()) {
+            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            if(trigLoop == nullptr) {
+                alog->error("L1Analysis: loop declared as trigger does not have a count");
+            } else {
+                injections = trigLoop->getTrigCnt();
+            }
         }
     }
 }
@@ -1142,7 +981,7 @@ void L1Analysis::processHistogram(HistogramBase *h) {
 
     // Check if Histogram exists
     if (l1Histos[ident] == NULL) {
-        Histo1d *hh = new Histo1d(name, 16, -0.5, 15.5, typeid(this));
+        Histo1d *hh = new Histo1d(name, 16, -0.5, 15.5);
         hh->setXaxisTitle("L1Id");
         hh->setYaxisTitle("Hits");
         l1Histos[ident].reset(hh);
@@ -1150,7 +989,7 @@ void L1Analysis::processHistogram(HistogramBase *h) {
     }
 
     // Add up Histograms
-    if (h->getType() == typeid(L1Dist*)) {
+    if (h->getName() == L1Dist::outputName()) {
         l1Histos[ident]->add(*(Histo1d*)h);
         innerCnt[ident]++;
     } else {
@@ -1170,22 +1009,9 @@ void L1Analysis::end() {
 void TotDistPlotter::init(ScanBase *s) {
     n_count = 1;
     injections = 0;
-    std::shared_ptr<LoopActionBase> tmpVcalLoop(new Fei4ParameterLoop(&Fei4::PlsrDAC));
-    std::shared_ptr<LoopActionBase> tmpVcalLoop2(new Fe65p2ParameterLoop(&Fe65p2::PlsrDac));
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ((l->type() != typeid(Fei4TriggerLoop*) &&
-                    l->type() != typeid(Rd53aMaskLoop*) &&
-                    l->type() != typeid(Rd53aTriggerLoop*) &&
-                    l->type() != typeid(Rd53aCoreColLoop*) &&
-                    l->type() != typeid(Fei4MaskLoop*) &&
-                    l->type() != typeid(StdDataLoop*) &&
-                    l->type() != typeid(Fei4DcLoop*)) &&
-                l->type() != typeid(Fe65p2MaskLoop*) &&
-                l->type() != typeid(Fe65p2QcLoop*) &&
-                l->type() != typeid(Fe65p2TriggerLoop*) &&
-                l->type() != tmpVcalLoop->type() &&
-                l->type() != tmpVcalLoop2->type()) {
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || l->isParameterLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -1194,20 +1020,20 @@ void TotDistPlotter::init(ScanBase *s) {
                 cnt = 1;
             n_count = n_count*cnt;
         }
-        if (l->type() == typeid(Fei4TriggerLoop*)) {
-            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
-            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
+        if (l->isTriggerLoop()) {
+            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            if(trigLoop == nullptr) {
+                alog->error("L1Analysis: loop declared as trigger does not have a count");
+            } else {
+                injections = trigLoop->getTrigCnt();
+            }
         }
     }
 }
 
 void TotDistPlotter::processHistogram(HistogramBase *h) {
     // Check if right Histogram
-    if (h->getType() != typeid(TotDist*))
+    if (h->getName() != TotDist::outputName())
         return;
 
     // Select correct output container
@@ -1224,7 +1050,7 @@ void TotDistPlotter::processHistogram(HistogramBase *h) {
 
     // Check if Histogram exists
     if (tot[ident] == NULL) {
-        Histo1d *hh = new Histo1d(name, 16, 0.5, 16.5, typeid(this));
+        Histo1d *hh = new Histo1d(name, 16, 0.5, 16.5);
         hh->setXaxisTitle("ToT [bc]");
         hh->setYaxisTitle("Hits");
         tot[ident].reset(hh);
@@ -1243,7 +1069,7 @@ void TotDistPlotter::processHistogram(HistogramBase *h) {
 
 void NoiseAnalysis::init(ScanBase *s) {
     // We assume the nosie scan only has one trigger and data loop
-    occ.reset(new Histo2d("Occupancy", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this)));
+    occ.reset(new Histo2d("Occupancy", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
     occ->setXaxisTitle("Col");
     occ->setYaxisTitle("Row");
     occ->setZaxisTitle("Hits");
@@ -1251,9 +1077,9 @@ void NoiseAnalysis::init(ScanBase *s) {
 }
 
 void NoiseAnalysis::processHistogram(HistogramBase *h) {
-    if (h->getType() == typeid(OccupancyMap*)) {
+    if (h->getName() == OccupancyMap::outputName()) {
         occ->add(*(Histo2d*)h);
-    } else if (h->getType() == typeid(HitsPerEvent*)) {
+    } else if (h->getName() == HitsPerEvent::outputName()) {
         n_trigger += ((Histo1d*)h)->getEntries();       
     }
 }
@@ -1266,12 +1092,12 @@ void NoiseAnalysis::loadConfig(json &j){
 }
 
 void NoiseAnalysis::end() {
-    std::unique_ptr<Histo2d> noiseOcc(new Histo2d("NoiseOccupancy", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this)));
+    std::unique_ptr<Histo2d> noiseOcc(new Histo2d("NoiseOccupancy", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
     noiseOcc->setXaxisTitle("Col");
     noiseOcc->setYaxisTitle("Row");
     noiseOcc->setZaxisTitle("Noise Occupancy hits/bc");
 
-    std::unique_ptr<Histo2d> mask(new Histo2d("NoiseMask", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this)));
+    std::unique_ptr<Histo2d> mask(new Histo2d("NoiseMask", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
     mask->setXaxisTitle("Col");
     mask->setYaxisTitle("Row");
     mask->setZaxisTitle("Mask");
@@ -1302,17 +1128,7 @@ void NoiseTuning::init(ScanBase *s) {
     globalFb = NULL;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ((l->type() != typeid(Fei4TriggerLoop*) &&
-                    l->type() != typeid(Rd53aMaskLoop*) &&
-                    l->type() != typeid(Rd53aTriggerLoop*) &&
-                    l->type() != typeid(Rd53aCoreColLoop*) &&
-                    l->type() != typeid(Fei4MaskLoop*) &&
-                    l->type() != typeid(StdDataLoop*) &&
-                    l->type() != typeid(Fei4DcLoop*)) &&
-                l->type() != typeid(Fe65p2MaskLoop*) &&
-                l->type() != typeid(Fe65p2QcLoop*) &&
-                l->type() != typeid(Fe65p2TriggerLoop*) &&
-                l->type() != typeid(StdRepeater*)) {
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -1322,27 +1138,18 @@ void NoiseTuning::init(ScanBase *s) {
             n_count = n_count*cnt;
         }
 
-        std::shared_ptr<LoopActionBase> tmpPrmpFb(new Fei4GlobalFeedback(&Fei4::PrmpVbpf));
-        if (l->type() == tmpPrmpFb->type()) {
-            globalFb = dynamic_cast<GlobalFeedbackBase*>(l.get());  
+        if (l->isGlobalFeedbackLoop()) {
+            globalFb.reset(new GlobalFeedbackSender(feedback));
         }
 
-        if (l->type() == typeid(Rd53aGlobalFeedback*)) {
-            globalFb = dynamic_cast<GlobalFeedbackBase*>(l.get());  
-        }
-
-        if (l->type() == typeid(Fei4PixelFeedback*)) {
-            pixelFb = dynamic_cast<PixelFeedbackBase*>(l.get());  
-        }
-
-        if (l->type() == typeid(Rd53aPixelFeedback*)) {
-            pixelFb = dynamic_cast<PixelFeedbackBase*>(l.get());  
+        if (l->isPixelFeedbackLoop()) {
+            pixelFb.reset(new PixelFeedbackSender(feedback));
         }
     }
 }
 
 void NoiseTuning::processHistogram(HistogramBase *h) {
-    if (!(h->getType() == typeid(OccupancyMap*)))
+    if (!(h->getName() == OccupancyMap::outputName()))
         return;
 
     // Select correct output container
@@ -1359,7 +1166,7 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
 
 
     if (occMaps[ident] == NULL) {
-        Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+        Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
         hh->setZaxisTitle("Hits");
@@ -1390,7 +1197,7 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
         }
 
         if (pixelFb != NULL) { // Pixel Threshold Tuning
-            Histo2d *fbHisto = new Histo2d("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this));
+            auto fbHisto = std::make_unique<Histo2d>("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
             SPDLOG_LOGGER_TRACE(alog, "");
             unsigned pixelWoHits = 0;
             for (unsigned i=0; i<occMaps[ident]->size(); i++) {
@@ -1403,7 +1210,7 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
             }
             alog->info("[{}] Number of pixels with hits: {}", channel, pixelWoHits);
 
-            pixelFb->feedbackStep(channel, fbHisto);
+            pixelFb->feedbackStep(channel, std::move(fbHisto));
         }
         output->pushData(std::move(occMaps[ident]));
         occMaps[ident] = NULL;
@@ -1414,23 +1221,12 @@ void NoiseTuning::end() {
 }
 
 void DelayAnalysis::init(ScanBase *s) {
-    std::shared_ptr<LoopActionBase> tmpVcalLoop(new Rd53aParameterLoop());
     scan = s;
     n_count = nCol*nRow;
     injections = 50;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if (l->type() != typeid(Fei4TriggerLoop*) &&
-                l->type() != typeid(Rd53aMaskLoop*) &&
-                l->type() != typeid(Rd53aTriggerLoop*) &&
-                l->type() != typeid(Rd53aCoreColLoop*) &&
-                l->type() != typeid(Fe65p2TriggerLoop*) &&
-                l->type() != typeid(Fei4MaskLoop*) &&
-                l->type() != typeid(Fe65p2MaskLoop*) &&
-                l->type() != typeid(StdDataLoop*) &&
-                l->type() != typeid(Fei4DcLoop*) &&
-                l->type() != typeid(Fe65p2QcLoop*) &&
-                l->type() != tmpVcalLoop->type()) {
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || l->isParameterLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -1441,24 +1237,20 @@ void DelayAnalysis::init(ScanBase *s) {
         }
 
         // Vcal Loop
-        if (l->type() == tmpVcalLoop->type() ) {
+        if (l->isParameterLoop()) {
             delayLoop = n;
             delayMax = l->getMax();
             delayMin = l->getMin();
             delayStep = l->getStep();
         }
 
-        if (l->type() == typeid(Fei4TriggerLoop*)) {
-            Fei4TriggerLoop *trigLoop = (Fei4TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-        if (l->type() == typeid(Fe65p2TriggerLoop*)) {
-            Fe65p2TriggerLoop *trigLoop = (Fe65p2TriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
-        if (l->type() == typeid(Rd53aTriggerLoop*)) {
-            Rd53aTriggerLoop *trigLoop = (Rd53aTriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
+        if (l->isTriggerLoop()) {
+            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            if(trigLoop == nullptr) {
+                alog->error("DelayAnalysis: loop declared as trigger does not have a count");
+            } else {
+                injections = trigLoop->getTrigCnt();
+            }
         }
     }
     count = 0;
@@ -1466,7 +1258,7 @@ void DelayAnalysis::init(ScanBase *s) {
 
 void DelayAnalysis::processHistogram(HistogramBase *h) {
     // Check if right Histogram
-    if (h->getType() != typeid(L13d*))
+    if (h->getName() != L13d::outputName())
         return;
 
 
@@ -1498,7 +1290,7 @@ void DelayAnalysis::processHistogram(HistogramBase *h) {
 
                     // Check if Histogram exists
                     if (histos[ident] == NULL) {
-                        Histo1d *hhh = new Histo1d(name, 256, -0.5, 255.5, typeid(this)); // TODO hardcoded
+                        Histo1d *hhh = new Histo1d(name, 256, -0.5, 255.5); // TODO hardcoded
                         hhh->setXaxisTitle("Delay");
                         hhh->setYaxisTitle("Occupancy");
                         histos[ident].reset(hhh);
@@ -1513,13 +1305,13 @@ void DelayAnalysis::processHistogram(HistogramBase *h) {
                     // Got all data, finish up Analysis
                     if (delay == delayMax) { // TODO hardcoded
                         if (delayMap == nullptr) {
-                            delayMap.reset(new Histo2d("DelayMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this)));
+                            delayMap.reset(new Histo2d("DelayMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
                             delayMap->setXaxisTitle("Col");
                             delayMap->setYaxisTitle("Row");
                             delayMap->setZaxisTitle("Mean Delay");
                         }
                         if (rmsMap == nullptr) {
-                            rmsMap.reset(new Histo2d("RmsMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, typeid(this)));
+                            rmsMap.reset(new Histo2d("RmsMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
                             rmsMap->setXaxisTitle("Col");
                             rmsMap->setYaxisTitle("Row");
                             rmsMap->setZaxisTitle("RMS");

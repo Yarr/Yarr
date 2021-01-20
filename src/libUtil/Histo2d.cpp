@@ -11,6 +11,9 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <iomanip>
+
+#include "storage.hpp"
 
 #include "logging.h"
 
@@ -18,8 +21,8 @@ namespace {
     auto hlog = logging::make_log("Histo2d");
 }
 
-Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
-        unsigned arg_ybins, double arg_ylow, double arg_yhigh, std::type_index t) : HistogramBase(arg_name, t) {
+Histo2d::Histo2d(const std::string &arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh,
+                 unsigned arg_ybins, double arg_ylow, double arg_yhigh) : HistogramBase(arg_name) {
     xbins = arg_xbins;
     xlow = arg_xlow;
     xhigh = arg_xhigh;
@@ -40,8 +43,8 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
 
 }
 
-Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
-        unsigned arg_ybins, double arg_ylow, double arg_yhigh, std::type_index t, LoopStatus &stat) : HistogramBase(arg_name, t, stat) {
+Histo2d::Histo2d(const std::string &arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh,
+                 unsigned arg_ybins, double arg_ylow, double arg_yhigh, const LoopStatus &stat) : HistogramBase(arg_name, stat) {
     xbins = arg_xbins;
     xlow = arg_xlow;
     xhigh = arg_xhigh;
@@ -61,7 +64,7 @@ Histo2d::Histo2d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     entries = 0;
 }
 
-Histo2d::Histo2d(Histo2d *h) : HistogramBase(h->getName(), h->getType()) {
+Histo2d::Histo2d(Histo2d *h) : HistogramBase(h->getName()) {
     xbins = h->getXbins();
     xlow = h->getXlow();
     xhigh = h->getXhigh();
@@ -220,91 +223,149 @@ int Histo2d::binNum(double x, double y) {
     }
 }
 
-
-void Histo2d::toFile(std::string prefix, std::string dir, bool header) {
-    std::string filename = dir + prefix + "_" + name + ".dat";
-    std::fstream file(filename, std::fstream::out | std::fstream::trunc);
-    // Header
-    if (header) {
-        file << "Histo2d " <<  std::endl;
-        file << name << std::endl;
-        file << xAxisTitle << std::endl;
-        file << yAxisTitle << std::endl; 
-        file << zAxisTitle << std::endl;
-        file << xbins << " " << xlow << " " << xhigh << std::endl;
-        file << ybins << " " << ylow << " " << yhigh << std::endl;
-        file << underflow << " " << overflow << std::endl;
-    }
-    // Data
+void Histo2d::toStream(std::ostream &out) const{
+    // Raw Data
     for (unsigned int i=0; i<ybins; i++) {
         for (unsigned int j=0; j<xbins; j++) {
-            file << data[i+(j*ybins)] << " ";
+            out << data[i+(j*ybins)] << " ";
         }
-        file << std::endl;
+        out << std::endl;
+    }
+}
+
+void Histo2d::toJson(json &j) const{
+    j["Type"] = "Histo2d";
+    j["Name"] = name;
+
+    j["x"]["AxisTitle"] = xAxisTitle;
+    j["x"]["Bins"] = xbins;
+    j["x"]["Low"] = xlow;
+    j["x"]["High"] = xhigh;
+
+    j["y"]["AxisTitle"] = yAxisTitle;
+    j["y"]["Bins"] = ybins;
+    j["y"]["Low"] = ylow;
+    j["y"]["High"] = yhigh;
+
+    j["z"]["AxisTitle"] = zAxisTitle;
+
+    j["Underflow"] = underflow;
+    j["Overflow"] = overflow;
+
+    for (unsigned int y=0; y<ybins; y++) {
+        for (unsigned int x=0; x<xbins; x++) {
+            j["Data"][x][y] = data[y+(x*ybins)] ;
+        }
+    }
+}
+
+void Histo2d::toFile(const std::string &prefix, const std::string &dir, bool jsonType) const{
+    std::string filename = dir + prefix + "_" + HistogramBase::name;
+    json j;
+
+    if (jsonType) {
+        filename += ".json";
+    } else {
+        filename += ".dat";
+    }
+    std::fstream file(filename, std::fstream::out | std::fstream::trunc);
+    // jsonType
+    if (jsonType) {
+       toJson(j);
+       file << std::setw(4) << j;
+    } else {
+       toStream(file);
     }
     file.close();
 }
 
-bool Histo2d::fromFile(std::string filename) {
-    std::fstream file(filename, std::fstream::in);
-    // Check for header
-    std::string line;
-    std::getline(file, line);
-    if (line.find("Histo2d") == std::string::npos) {
-        std::cerr << "ERROR: Tried loading 2d Histogram from file " << filename << ", but file has non or incorrect header" << std::endl;
-        file.close();
+bool Histo2d::fromFile(const std::string &filename) {
+    std::ifstream file(filename, std::fstream::in);
+    json j;
+    try {
+        if (!file) {
+            throw std::runtime_error("could not open file");
+        }
+        try {
+            j = json::parse(file);
+        } catch (json::parse_error &e) {
+            throw std::runtime_error(e.what());
+        }
+    } catch (std::runtime_error &e) {
+        std::cerr << "#ERROR# opening histogram: " << e.what() << std::endl;
+        return false;
+    }
+    // Check for type
+    if (j["Type"].empty()) {
+        std::cerr << "#ERROR# this does not seem to be a histogram file, could not parse." << std::endl;
         return false;
     } else {
-        file >> name;
-        file >> xAxisTitle;
-        file >> yAxisTitle;
-        file >> zAxisTitle;
-        file >> xbins >> xlow >> xhigh;
-        file >> ybins >> ylow >> yhigh;
-        file >> underflow >> overflow;
-    }
-    // Data
+        if (j["Type"] == "Histo2d") {
+            std::cerr << "#ERROR# File contains the wrong type: " << j["Type"] <<  std::endl;
+            return false;
+        }
 
-    data = std::vector<double>(xbins*ybins);
-    for (unsigned int i=0; i<ybins; i++) {
-        for (unsigned int j=0; j<xbins; j++) {
-            file >> data[i+(j*ybins)];
+        name = j["Name"];
+        xAxisTitle = j["x"]["AxisTitle"];
+        yAxisTitle = j["y"]["AxisTitle"];
+        zAxisTitle = j["z"]["AxisTitle"];
+
+        xbins = j["x"]["Bins"];
+        xlow = j["x"]["Low"];
+        xhigh = j["x"]["High"];
+
+        ybins = j["y"]["Bins"];
+        xlow = j["y"]["Low"];
+        xhigh = j["y"]["High"];
+        
+        underflow = j["underflow"];
+        overflow = j["overflow"];
+
+        data = std::vector<double>(xbins*ybins);
+        for (unsigned int x=0; x<ybins; x++) {
+            for (unsigned int y=0; y<xbins; y++) {
+                data[x+(y*ybins)] = j["Data"][x][y];
+            }
         }
     }
     file.close();
     return true;
 }
 
-void Histo2d::plot(std::string prefix, std::string dir) {
+void Histo2d::plot(const std::string &prefix, const std::string &dir) const{
     hlog->info("Plotting {}", HistogramBase::name);
     // Put raw histo data in tmp file
     std::string tmp_name = std::string(getenv("USER")) + "/tmp_yarr_histo2d_" + prefix;
-    this->toFile(tmp_name, "/tmp/", false);
-    //std::string cmd = "gnuplot | epstopdf -f > " + dir + prefix + "_" + HistogramBase::name;
-    std::string cmd = "gnuplot > " + dir + prefix + "_" + HistogramBase::name;
+    std::string output = dir + prefix + "_" + HistogramBase::name;
     for (unsigned i=0; i<lStat.size(); i++)
-        cmd += "_" + std::to_string(lStat.get(i));
-    //cmd += ".pdf";
-    cmd += ".png";
+        output += "_" + std::to_string(lStat.get(i));
+    output += ".png";
 
     // Open gnuplot as file and pipe commands
+
+    std::string input;
+
+    input+="$'set terminal png size 1280, 1024;";
+    input+="set palette negative defined ( 0 \\'#D53E4F\\', 1 \\'#F46D43\\', 2 \\'#FDAE61\\', 3 \\'#FEE08B\\', 4 \\'#E6F598\\', 5 \\'#ABDDA4\\', 6 \\'#66C2A5\\', 7 \\'#3288BD\\');";
+    input+="unset key;";
+    input+="set title \""  +HistogramBase::name+"\";";
+    input+="set xlabel \""  +HistogramBase::xAxisTitle+"\";";
+    input+="set ylabel \""  +HistogramBase::yAxisTitle+"\";";
+    input+="set cblabel \""  +HistogramBase::zAxisTitle+"\";";
+    input+="set xrange["+ std::to_string(xlow)+ ":"+std::to_string(xhigh)+ "];";
+    input+="set yrange["+ std::to_string(ylow)+ ":"+std::to_string(yhigh)+ "];";
+    input+="plot \\'-\\' matrix u (($1)*(("+std::to_string(xhigh);
+    input+="-"+std::to_string(xlow)+")/";
+    input+=std::to_string(xbins)+".0)+"+std::to_string(xlow +(xhigh-xlow)/(xbins*2.0));
+    input+= "):(($2)*(("+std::to_string(yhigh);
+    input+="-"+std::to_string(ylow)+")/";
+    input+=std::to_string(ybins)+".0)+"+std::to_string(ylow +(yhigh-ylow)/(ybins*2.0));
+    input+="):3 with image'";
+    std::string cmd="gnuplot  -e "+input+" > "+output+"\n";
     FILE *gnu = popen(cmd.c_str(), "w");
-    
-    //fprintf(gnu, "set terminal postscript enhanced color \"Helvetica\" 18 eps\n");
-    fprintf(gnu, "set terminal png size 1280, 1024\n");
-    fprintf(gnu, "set palette negative defined ( 0 '#D53E4F', 1 '#F46D43', 2 '#FDAE61', 3 '#FEE08B', 4 '#E6F598', 5 '#ABDDA4', 6 '#66C2A5', 7 '#3288BD')\n");
-    //fprintf(gnu, "set pm3d map\n");
-    fprintf(gnu, "unset key\n");
-    fprintf(gnu, "set title \"%s\"\n" , HistogramBase::name.c_str());
-    fprintf(gnu, "set xlabel \"%s\"\n" , HistogramBase::xAxisTitle.c_str());
-    fprintf(gnu, "set ylabel \"%s\"\n" , HistogramBase::yAxisTitle.c_str());
-    fprintf(gnu, "set cblabel \"%s\"\n" , HistogramBase::zAxisTitle.c_str());
-    fprintf(gnu, "set xrange[%f:%f]\n", xlow, xhigh);
-    fprintf(gnu, "set yrange[%f:%f]\n", ylow, yhigh);
-    //fprintf(gnu, "set cbrange[0:120]\n");
-    //fprintf(gnu, "splot \"/tmp/tmp_%s.dat\" matrix u (($1)*((%f-%f)/%d)):(($2)*((%f-%f)/%d)):3\n", HistogramBase::name.c_str(), xhigh, xlow, xbins, yhigh, ylow, ybins);
-    fprintf(gnu, "plot \"%s\" matrix u (($1)*((%f-%f)/%d.0)+%f):(($2)*((%f-%f)/%d.0)+%f):3 with image\n", ("/tmp/" + tmp_name + "_" + name + ".dat").c_str(), xhigh, xlow, xbins, xlow +(xhigh-xlow)/(xbins*2.0), yhigh, ylow, ybins, ylow+(yhigh-ylow)/(ybins*2.0));
-   // fprintf(gnu, "plot \"%s\" matrix u (($1)):(($2)):3 with image\n", ("/tmp/" + tmp_name + "_" + name + ".dat").c_str());
+    std::stringstream ss;
+    toStream(ss);
+    fprintf(gnu,"%s",ss.str().c_str());
     pclose(gnu);
 }
 

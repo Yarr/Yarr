@@ -4,6 +4,97 @@ Two kinds of setups have to be distinguished, those that use Series 7 FPGAs (Xpr
 
 ![Supported PCIe cards](images/pcie_cards.png)
 
+## Series 7 FPGA
+
+The FPGA programming for the Series 7 FPGAs is somewhat more complicated, as in this case the FPGA is directly attached to the PCIe bus. This might also lead to some issues discussed at the end of this section.
+
+### Prerequisites
+
+* Xilinx Vivado Design Suite 2016.2 or latest Vivado Lab Solutions
+* A JTAG programmer attached to the JTAG port to the PCIe card
+  * I can recommend the [Digilent JTAG HS3](https://www.digikey.com/product-detail/en/digilent-inc/210-299/1286-1047-ND/5015666)
+* Install the Xilinx cable driver, refer to [UG973](https://www.xilinx.com/support/documentation/sw_manuals/xilinx2016_4/ug973-vivado-release-notes-install-license.pdf)
+
+### Setting up the Xilinx environment
+
+Execute the following command to setup the Xilinx environment:
+- For Vivado Design Suite
+```bash
+source /opt/Xilinx/Vivado/2016.4/settings64.sh
+```
+- For Vivado Lab Solutions
+```bash
+source /opt/Xilinx/Vivado_Lab/2016.4/settings64.sh
+```
+- This is the default install path, if the path is not correct you need to point it to your installation.
+
+### Flashing the Firmware
+
+In order to flash the firmware, download the following script: [flash.sh](http://yarr.web.cern.ch/yarr/firmware/flash.sh)
+
+```bash
+$ wget --backups=1 http://yarr.web.cern.ch/yarr/firmware/flash.sh
+$ <text>
+$ ./flash.sh
+```
+
+Please check the [FW Guide](fw_guide.md) for more information for your specific card!
+
+Once you have flashed the firmware reboot your PC.
+
+### Check the PCIe Status
+
+- After the system has booted again check that firmware is loaded correctly.
+  1. Check that the card appears in ``lspci``
+```bash
+$ lspci
+<Some text>
+02:00.0 Signal processing controller: Xilinx Corporation Device 7024
+<Possibly more text>
+```
+  2. Check if the test programs runs successfully (Note that the ``Could not map BAR4, ...`` is normal for the Series 7 FPGAs)
+```bash
+$ cd Yarr/src
+$ bin/specComTest 
+void SpecCom::init() -> Opening SPEC with id #0
+void SpecCom::init() -> Mapping BARs
+void SpecCom::init() -> Mapped BAR0 at 0x0x7f075e4b2000 with size 0x100000
+void SpecCom::init() -> Mmap failed
+void SpecCom::init() -> Could not map BAR4, this might be OK!
+Starting DMA write/read test ...
+... writing 8192 byte.
+... read 8192 byte.
+Success! No errors.
+```
+
+- Your system is now ready to use
+
+## Adapter Cards
+
+### Ohio RD53A Multi Module Adapter
+
+- In order to power correctly the adapter card, a jumper needs to be added to **3V PCI** pin, as shown on picture below.
+
+![Jumper on FMC Multi-Module Adapter Card ](images/Ohio_jumper.png)
+
+When the board is powered correctly, a red LED should light up. More information about the adapter card can be found [Multi Chip Adapter Card](https://twiki.cern.ch/twiki/bin/viewauth/RD53/RD53ATesting#Multi_Chip_FMC).
+
+On a SCC [Single Chip Card](https://twiki.cern.ch/twiki/bin/viewauth/RD53/RD53ATesting#RD53A_Single_Chip_Card_SCC) the CMD line is AC coupled. On the older Ohio card (before 2019 and serial number < 200) there is additional AC coupling as shown on the picture. This is corrected for the newer Ohio cards from 2019 on with serial number starting from 200.
+
+![Ohio Unmodified CMD ](images/OhioUnmodified_Cmd.png)
+
+To avoid double AC coupling on the CMD line, one should replace the capacitors with jumpers and remove the termination, as shown on the picture.
+
+![Ohio Modified CMD ](images/OhioModified_Cmd.png)
+
+In order to read the HitOrs from Port B and Port D, one has to modify the AC coupling of the data lines on the Ohio card:
+
+![Ohio Unmodified Data ](images/OhioUnmodified_Data.png)
+
+The capacitors should be replaced with jummpers as shown on the picture:
+
+![Ohio Modified Data ](images/OhioModified_Data.png)
+
 ## Spartan 6
 
 For the Spartan 6 case it is required to have installed the software first. Then using the software the firmware is loaded into the board:
@@ -58,122 +149,3 @@ Success! No errors.
 ```
 - The firmware has to be loaded after *every* reboot or power cycle of the system!
 
-## Series 7 FPGA
-
-The FPGA programming for the Series 7 FPGAs is somewhat more complicated, as in this case the FPGA is directly attached to the PCIe bus. This might also lead to some issues discussed at the end of this section.
-
-### Prerequisites
-
-* Xilinx Vivado Design Suite 2016.2 or latest Vivado Lab Solutions
-* A JTAG programmer attached to the JTAG port to the PCIe card
-  * I can recommend the [Digilent JTAG HS3](https://www.digikey.com/product-detail/en/digilent-inc/210-299/1286-1047-ND/5015666)
-* Install the Xilinx cable driver, refer to [UG973](https://www.xilinx.com/support/documentation/sw_manuals/xilinx2016_4/ug973-vivado-release-notes-install-license.pdf)
-
-### Setting up the Xilinx environment
-
-Execute the following command to setup the Xilinx environment:
-- For Vivado Design Suite
-```bash
-source /opt/Xilinx/Vivado/2016.4/settings64.sh
-```
-- For Vivado Lab Solutions
-```bash
-source /opt/Xilinx/Vivado_Lab/2016.4/settings64.sh
-```
-- This is the default install path, if the path is not correct you need to point it to your installation.
-
-### Flashing the Firmware
-
-Details can be found in the [Yarr-FW](https://github.com/Yarr/Yarr-fw/blob/master/syn/xpressk7/README.md). The following will describe the simplest way:
-
-- Execute the ``flash.py`` python script if you use the XpressK7 and the ``flash-trenz.py`` id you are using the Trenz card:
-```bash
-$ cd Yarr-fw/script
-$ python flash.py
-Several bit files found: 
-0: /local/theim/Yarr-fw/syn/spec/fe65p2_revB/yarr.bit
-1: /local/theim/Yarr-fw/syn/spec/fe65p2_revB/fe65p2_revB.bit
-2: /local/theim/Yarr-fw/syn/spec/fe65p2_revC/yarr.bit
-<More files listed>
-Choose a file by typing a number:
-```
-- From the list select the correct firmware you want to program. Generally you have to choose the one specific to your PCIe card, FPGA, and Adapter card. A guide on how to choose firmware can be found [here](fw_guide.md)
-
-- Once you entered the number it will take a few minutes to flash the firmware
-
-- The firmware is written into non-volatile memory and will persist between reboots/power cycles
-
-- After the programming you have to reboot the computer, for instance via:
-```bash
-$ sudo reboot
-```
-
-- After the system has booted again check that firmware is loaded correctly.
-  1. Check that the card appears in ``lspci``
-```bash
-$ lspci
-<Some text>
-02:00.0 Signal processing controller: Xilinx Corporation Device 7024
-<Possibly more text>
-```
-  2. Check if the test programs runs successfully (Note that the ``Could not map BAR4, ...`` is normal for the Series 7 FPGAs)
-```bash
-$ cd Yarr/src
-$ bin/specComTest 
-void SpecCom::init() -> Opening SPEC with id #0
-void SpecCom::init() -> Mapping BARs
-void SpecCom::init() -> Mapped BAR0 at 0x0x7f075e4b2000 with size 0x100000
-void SpecCom::init() -> Mmap failed
-void SpecCom::init() -> Could not map BAR4, this might be OK!
-Starting DMA write/read test ...
-... writing 8192 byte.
-... read 8192 byte.
-Success! No errors.
-```
-
-- Your system is now ready to use
-
-
-## Troubleshooting
-
-If you encounter errors concerning permissions, e.g. 
-```
-# open_hw_target
-ERROR: [Labtoolstcl 44-469] There is no current hw_target.
-```
-you might have to add a ``udev`` rule. Run ``lsusb`` and identify your JTAG cable, e.g. ``Bus 001 Device 007: ID 0403:6014``.
-Open ``/etc/udev/rules.d/99-usb.rules`` and add the line
-```
-SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6014", MODE:="0666"
-```
-with the correct vendor and product ID from ``lsusb``. Reload ``udev`` rules with
-```
-sudo udevadm control --reload-rules && sudo udevadm trigger
-```
-
-
-## Adapter Cards
-
-### Ohio RD53A Multi Module Adapter
-
-- In order to power correctly the adapter card, a jumper needs to be added to **3V PCI** pin, as shown on picture below.
-
-![Jumper on FMC Multi-Module Adapter Card ](images/Ohio_jumper.png)
-
-When the board is powered correctly, a red LED should light up. More information about the adapter card can be found [Multi Chip Adapter Card](https://twiki.cern.ch/twiki/bin/viewauth/RD53/RD53ATesting#Multi_Chip_FMC).
-
-On a SCC [Single Chip Card](https://twiki.cern.ch/twiki/bin/viewauth/RD53/RD53ATesting#RD53A_Single_Chip_Card_SCC) the CMD line is AC coupled. On the older Ohio card (before 2019 and serial number < 200) there is additional AC coupling as shown on the picture. This is corrected for the newer Ohio cards from 2019 on with serial number starting from 200.
-
-![Ohio Unmodified CMD ](images/OhioUnmodified_Cmd.png)
-
-To avoid double AC coupling on the CMD line, one should replace the capacitors with jumpers and remove the termination, as shown on the picture.
-
-![Ohio Modified CMD ](images/OhioModified_Cmd.png)
-
-In order to read the HitOrs from Port B and Port D, one has to modify the AC coupling of the data lines on the Ohio card:
-
-![Ohio Unmodified Data ](images/OhioUnmodified_Data.png)
-
-The capacitors should be replaced with jummpers as shown on the picture:
-
-![Ohio Modified Data ](images/OhioModified_Data.png)

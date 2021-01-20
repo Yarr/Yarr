@@ -13,7 +13,8 @@ namespace {
     auto srlog = logging::make_log("StdRepeater");
 }
 
-StdRepeater::StdRepeater() : LoopActionBase() {
+// Query style?
+StdRepeater::StdRepeater() : LoopActionBase(LOOP_STYLE_MASK) {
     loopType = typeid(this);
     min = 0;
     max = 0;

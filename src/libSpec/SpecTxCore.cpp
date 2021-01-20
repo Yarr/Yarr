@@ -35,7 +35,7 @@ void SpecTxCore::setCmdEnable(uint32_t value) {
 void SpecTxCore::setCmdEnable(std::vector<uint32_t> channels) {
     uint32_t mask = 0;
     for (uint32_t channel : channels) {
-        mask += (1 << channel);
+        mask |= (1 << channel);
     }
     SPDLOG_LOGGER_TRACE(stxlog, "Value {0:x}", mask);
     SpecCom::writeSingle(TX_ADDR | TX_ENABLE, mask);
@@ -133,3 +133,10 @@ uint32_t SpecTxCore::getTrigInCount() {
     return (SpecCom::readSingle(TX_ADDR | TRIG_IN_CNT));
 }
 
+void SpecTxCore::setTxPolarity(uint32_t value) {
+    SpecCom::writeSingle(TX_ADDR | TX_POLARITY, value);
+}
+
+uint32_t SpecTxCore::getTxPolarity() {
+    return SpecCom::readSingle(TX_ADDR | TX_POLARITY);
+}

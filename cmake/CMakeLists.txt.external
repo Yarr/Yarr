@@ -1,6 +1,18 @@
+# Plotting tools
+function(YARR_ADD_PLOTTING)
+    ExternalProject_Add (
+        plotting_tools
+        GIT_REPOSITORY https://gitlab.cern.ch/YARR/utilities/plotting-tools.git
+        GIT_TAG master
+        CMAKE_ARGS 
+            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+        PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
+        )
+endfunction()
+
 # TBB
 function(YARR_ADD_TBB)
-    if (TARGET tbb_2019)
+    if (TARGET tbb_2020)
         return()
     endif()
 
@@ -21,17 +33,17 @@ function(YARR_ADD_TBB)
     endif()
 
     ExternalProject_Add (
-        tbb_2019
+        tbb_2020
         GIT_REPOSITORY https://github.com/intel/tbb.git
-        GIT_TAG 2019_U8
+        GIT_TAG 2020_U2
         UPDATE_COMMAND ""
         INSTALL_COMMAND ${PROJECT_SOURCE_DIR}/scripts/install_tbb.sh ${CMAKE_CURRENT_BINARY_DIR}  ${CMAKE_CURRENT_BINARY_DIR}
-        BUILD_COMMAND cd ${CMAKE_CURRENT_BINARY_DIR}/external/src/tbb_2019 &&  make -j4 ${TBB_COMP} ${TBB_ARCH} extra_inc=big_iron.inc
+        BUILD_COMMAND cd ${CMAKE_CURRENT_BINARY_DIR}/external/src/tbb_2020 &&  make -j4 ${TBB_COMP} ${TBB_ARCH} extra_inc=big_iron.inc
         CONFIGURE_COMMAND ""
         PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
         )
     link_directories(${CMAKE_CURRENT_BINARY_DIR}/lib)
-    include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/tbb_2019/include)
+    include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/tbb_2020/include)
 endfunction()
 
 function(YARR_ADD_NETIO)
@@ -48,8 +60,8 @@ function(YARR_ADD_NETIO)
         PATCH_COMMAND cp ${PROJECT_SOURCE_DIR}/cmake/CMakeLists.txt.netio ${CMAKE_CURRENT_BINARY_DIR}/external/src/netio4/CMakeLists.txt
         INSTALL_COMMAND ""
         PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
-        CMAKE_ARGS "${TOOLCHAIN}"
-        DEPENDS tbb_2019
+        CMAKE_ARGS "${TOOLCHAIN}" -DCMAKE_CXX_FLAGS=-fPIC
+        DEPENDS tbb_2020
         )
 
     include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/netio4)
@@ -92,7 +104,7 @@ function(YARR_ADD_ROGUE)
         INSTALL_COMMAND make install
         PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
         CMAKE_ARGS "-DNO_PYTHON=1" "-DNO_ZMQ=1" "-DNO_BZIP=1" "-DSTATIC_LIB=1" "${TOOLCHAIN}"
-        DEPENDS tbb_2019
+        DEPENDS tbb_2020
         )
 
     link_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/rogue/lib)

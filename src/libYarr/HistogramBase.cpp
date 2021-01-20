@@ -8,28 +8,26 @@
 
 #include "HistogramBase.h"
 
-HistogramBase::HistogramBase(std::string arg_name, std::type_index t, LoopStatus &stat) : type(typeid(void)){
+HistogramBase::HistogramBase(const std::string &arg_name, const LoopStatus &stat)
+  : lStat(stat) {
     name = arg_name;
     xAxisTitle = "x";
     yAxisTitle = "y";
     zAxisTitle = "z";
-    lStat = stat;
-    type = t;
 }
 
-HistogramBase::HistogramBase(std::string arg_name, std::type_index t) : type(typeid(void)){
-    name = arg_name;
+HistogramBase::HistogramBase(const std::string &arg_name)
+  : lStat(std::move(LoopStatus::empty())) ,name(std::move(arg_name)){
     xAxisTitle = "x";
     yAxisTitle = "y";
     zAxisTitle = "z";
-    type = t;
 }
 
 HistogramBase::~HistogramBase() {
 
 }
 
-std::string HistogramBase::getName() {
+const std::string & HistogramBase::getName() const{
     return name;
 }
 
@@ -39,15 +37,15 @@ void HistogramBase::setAxisTitle(std::string x, std::string y, std::string z) {
     zAxisTitle = z;
 }
 
-std::string HistogramBase::getXaxisTitle() {
+const std::string & HistogramBase::getXaxisTitle() const {
     return xAxisTitle;
 }
 
-std::string HistogramBase::getYaxisTitle() {
+const std::string & HistogramBase::getYaxisTitle() const {
     return yAxisTitle;
 }
 
-std::string HistogramBase::getZaxisTitle() {
+const std::string & HistogramBase::getZaxisTitle() const {
     return zAxisTitle;
 }
 

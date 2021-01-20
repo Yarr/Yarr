@@ -9,7 +9,7 @@
 namespace {
     auto logger = logging::make_log("emu_controller");
 }
-
+/*
 template<class FE, class ChipEmu>
 std::unique_ptr<HwController> makeEmu() {
   // nikola's hack to use RingBuffer
@@ -18,6 +18,12 @@ std::unique_ptr<HwController> makeEmu() {
 
   std::unique_ptr<HwController> ctrl(new EmuController<FE, ChipEmu>(std::move(rx), std::move(tx)));
 
+  return ctrl;
+}
+*/
+template<class FE, class ChipEmu>
+std::unique_ptr<HwController> makeEmu() {
+  auto ctrl = std::make_unique< EmuController<FE, ChipEmu> >();
   return ctrl;
 }
 
@@ -34,15 +40,22 @@ void EmuController<Fei4, Fei4Emu>::loadConfig(json &j) {
 //    EmuTxCore::setCom(new EmuShm(j["tx"]["id"], j["tx"]["size"], true));
 //    EmuRxCore::setCom(new EmuShm(j["rx"]["id"], j["rx"]["size"], true));
 
-  auto tx = EmuTxCore<Fei4>::getCom();
-  auto rx = EmuRxCore<Fei4>::getCom();
+  // Tx EmuCom
+  tx_coms.emplace_back(new RingBuffer(128));
+  EmuTxCore<Fei4>::setCom(0, tx_coms.back().get());
+  // Rx EmuCom
+  rx_coms.emplace_back(new RingBuffer(128));
+  EmuRxCore<Fei4>::setCom(0, rx_coms.back().get());
+
+  auto tx = EmuTxCore<Fei4>::getCom(0);
+  auto rx = EmuRxCore<Fei4>::getCom(0);
 
   //TODO make nice
   logger->info("Starting FEI4 Emulator");
   std::string emuCfgFile = j["feCfg"];
   logger->info(" read {}", emuCfgFile);
-  emu.reset(new Fei4Emu(emuCfgFile, emuCfgFile, rx, tx));
-  emuThreads.push_back(std::thread(&Fei4Emu::executeLoop, emu.get()));
+  emus.emplace_back(new Fei4Emu(emuCfgFile, emuCfgFile, rx, tx));
+  emuThreads.push_back(std::thread(&Fei4Emu::executeLoop, emus.back().get()));
 }
 
 
@@ -58,14 +71,20 @@ void EmuController<Rd53a, Rd53aEmu>::loadConfig(json &j) {
     infotoken = " Random Seed Fixed";
   }
 
-  auto tx = EmuTxCore<Rd53a>::getCom();
-  auto rx = EmuRxCore<Rd53a>::getCom();
+  // Tx EmuCom
+  tx_coms.emplace_back(new RingBuffer(128));
+  EmuTxCore<Rd53a>::setCom(0, tx_coms.back().get());
+  // Rx EmuCom
+  rx_coms.emplace_back(new RingBuffer(128));
+  EmuRxCore<Rd53a>::setCom(0, rx_coms.back().get());
+
+  auto tx = EmuTxCore<Rd53a>::getCom(0);
+  auto rx = EmuRxCore<Rd53a>::getCom(0);
 
   //TODO make nice
   logger->info("Starting RD53a Emulator" + infotoken);
   std::string emuCfgFile = j["feCfg"];
   logger->info(" read {}", emuCfgFile);
-  emu.reset(new Rd53aEmu( rx_com.get(), tx_com.get(), emuCfgFile , srand_seed));
-  emuThreads.push_back(std::thread(&Rd53aEmu::executeLoop, emu.get()));
+  emus.emplace_back(new Rd53aEmu( rx, tx, emuCfgFile, srand_seed ));
+  emuThreads.push_back(std::thread(&Rd53aEmu::executeLoop, emus.back().get()));
 }
-

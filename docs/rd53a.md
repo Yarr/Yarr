@@ -21,11 +21,92 @@ Default settings for operation in **LDO mode**
 
 After all jumpers are placed on the SCC, connect the DisplayPort cable to DP1 and power cable to PWR_IN.
 
-Set the power supply to <span style="color:red">**1.8**</span> V, the current should be around 0.5 A and power on the chip. For the LDO operation, e.g. the jumper configuration shown in previous figure, make sure <span style="color:red"> not to apply higher voltage than **1.8 V**</span>.
+Set the power supply to <span style="color:red">**1.8**</span> V, the current should be around 0.5 A (combined for analog and digital) and power on the chip. For the LDO operation, e.g. the jumper configuration shown in previous figure, make sure <span style="color:red"> not to apply higher voltage than **1.8 V**</span>.
+
+
+## Running RD53a in ShuLDO mode
+
+To run the SCC in shunt mode, shunt resistors needed to be appropriately loaded, as well as adding additional jumpers. For more information, please refer to [this presentation](https://indico.cern.ch/event/858912/contributions/3616969/attachments/1932760/3201729/sldo_calibration_er.pdf)
+
+### Loading shunt resistors
+![Locations of the shunt resistor ](images/shuntresistor.png)
+![Schematic for shunt resistors](images/shuntschematic.png)
+
+4 shunt resistors need to be soldered on the back of the SCC, pictured above, and in the schematic:
+
+- RextA: analog external resistor, resistor that sets the slope for the analog shunt IV. The value of this resistor is `1.15k` ohm.
+- RextD: digital external resistor, resistor that sets the slope for the digital shunt IV. The value of this resistor is `1.07k` ohm.
+- RIoffsA: analog offset resistor, resistor that sets the offset for the analog IV curve. The value of this resistor is `232k` ohm.
+- RIoffsD: digital offset resistor, resistor that sets the offset for the digital IV curve. The value of this resistor is `226k` ohm.
+
+### Jumper configuration for shunt mode operation
+![Jumper configuration on the SCC ](images/shunt_jumper.png)
+
+In addition to soldering shunt resistors, jumpers are needed to select the ShuLDO operation mode.
+- VDD Shnt A and VDD Shnt D: select shunt mode operation
+- Rext A and Rext D: select slope resistors soldered on the SCC as opposed to the internal shunt resistors
+
+### Shunt mode operation
+LDO mode is set in <span style="color:red">constant voltage</span>, where the power supply voltage is set and the current consumed by the chip can be measured.
+
+In shunt mode, the power supply is set in <span style="color:red">constant current</span> mode. The maximum voltage is set to <span style="color:red">**1.8 V**</span>, and the current is set to <span style="color:red">**1.1 A**</span>. The current to the chip will be 1.1 A and the voltage measured is 1.6 V (less than the maximum value of 1.8V).
+
+All scans described above can be performed in shunt mode.
+
+
+## Running with multiple RD53a chips
+
+All subsequent scans assume single chip operation; however, when testing triplets or quads, there will be 3-4 FE ends. Operation will be the same as for a SCC except for the set-up.
+
+Here are some things to be mindful of as you are planning on running with multiple RD53a:
+
+- multiple PCIexpress cards: each PCIexpress card has its own `specNum`; therefore, the user needs to creat one specCfg-rd53a.json per PCIExpress card.
+- setting up the configuration for whether each RD53a receives its own command or will share a command line. Both of these instances are described in [ScanConsole](scanconsole).
+- setting up the correct chipId for each RD53a in a triplet or a quad. After running a scan or just running scanConsole without running a scan, a configuration for each chip will be created. The `ChipId` for each FE will be set to 0 (default). You must change this value to match the wire-bonded value in each configuration. 
+
+### Running scans with multiple chips
+The scans will be run on all chips that are enabled. If an error occurs, it will be associated with a chip number.
+```bash
+629258304 [1] Received data not valid: [17723,50400] = 0xcc53ff2f
+```
+In the above example, chip with tx/rx 1 did not receive valid data.
+
+### Additional configuration changes for quad modules
+To run quad modules, you need to set up the chips such that all 4 chips share one command line. This is further described in [ScanConsole](scanconsole).
+
+If you have a 4-display port adaptor card, you only need to share the command line but can use different display ports for the return data.
+
+Additional changes for the quad module's chip configurations:
+
+- `ChipId`: the ChipId for each chip should be set according to wirebonding map (Chip1-1, Chip2-2,Chip3-3,Chip4-4)
+- `OutputActiveLanes`: 7 instead of 15 because only 3 data lanes are connected, not 4
+- `CmlEn`: 7 instead of 15
+
+## Readout Speed
+
+The readout speed that the chip is confgured to has to match the readout speed of the firmware (which is fixed). In order to chanege the readout frequency of the chip one has to change the ``CdrSelSerClk`` register. These settings correspond to the different readout frequencies (the value is the divider from 1.28Gbps):
+
+- ``0`` : 1280Mbps
+- ``1`` : 640Mbps
+- ``2`` : 320Mbps
+- ``3`` : 160Mbps
 
 # Scan Console for RD53A
 
-More general information about hwo to use the scanConsole, can be found on the main page: [ScanConsole](ScanConsole).
+The general structure of the Scan Console commands is:
+
+```bash
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/<type of scan>.json -p
+```
+which specifies the controller (`-r`), the chip list and chip type (`-c`), and the scan (`-s`). The option `-p` selects plotting so plots are produced after the scans.
+If you run a scan for the first time, it will create a default configuration for the chip along with running the scan.
+
+To create the default chip configuration without running a scan:
+```bash
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json
+```
+
+More general information about how to use the scanConsole, can be found on the main page: [ScanConsole](scanconsole). This page details each of the configuration settings. 
 
 In case you run into problems or have abnormal results please consult the troubleshooting page here: [Troubleshooting](troubleshooting)
 
@@ -86,7 +167,7 @@ Some general tips when operating RD53A with YARR:
 
 To run a digital scan for RD53A with the default configuration execute the following command:
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json -p
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json -p
 ```
 An example of occupancy map after a successful digital scan is given below.
 ![Occupancy map digital scan](images/JohnDoe_DigitalScan_OccupancyMap.png)
@@ -95,7 +176,7 @@ An example of occupancy map after a successful digital scan is given below.
 
 To run a analog scan for RD53A with the default configuration execute the following command:
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_analogscan.json -p
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_analogscan.json -p
 ```
 An example of the occupancy map after a successful analog scan is given below.
 ![Occupancy map analog scan](images/JohnDoe_AnalogScan_OccupancyMap.png)
@@ -103,7 +184,7 @@ An example of the occupancy map after a successful analog scan is given below.
 ### Analog scan for only one analog FrontEnd
 
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/diff_analogscan.json -p
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/diff_analogscan.json -p
 ```
 ![Occupancy map analog scan for DIFF FE](images/JohnDoe_AnalogScanDiff_OccupancyMap.png)
 - There are similar scan configs for the linear and sync FE
@@ -112,7 +193,7 @@ bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/examp
 
 To run a threshold scan for RD53A with the default configuration execute the following command:
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_thresholdscan.json -p
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_thresholdscan.json -p
 ```
 
 Config parameters for ``InjVcalDiff``:  
@@ -129,25 +210,12 @@ The threshold and noise mean and dispersion value (for everything scanned) will 
 Example of the s-curve, threshold distribution, threshold map and noise distribution are given below:
 ![S-curve threshold scan](images/JohnDoe_ThresholdScan_sCurve.png)
 ![Threshold distribution](images/JohnDoe_ThresholdDist.png)
-![Threshold map](images/JohnDoe_ThresholdMap.png)
+![Threshold map](images/JohnDoe_ThresholdMap.png)c
 ![Noise distribution](images/JohnDoe_NoiseDist.png)
-
-## Time over Threshold Scan
-
-```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_totscan.json -p -t 10000
-```
-The ToT mean value will be given in the output of the code, for example:
-```text
-[0] ToT Mean = 8.9869 +- 1.39282
-```
-
-ToT scan shown here is after tuning to 8ToT at 10000
-![Mean ToT Map](images/JohnDoe_MeanTotMap0.png)
-![Mean ToT Distribution](images/JohnDoe_MeanTotDist_0.png)
 
 
 ## Tuning
+RD53a has 3 FEs: synchronous, differential, and linear. Each FE needs to be tuned independently. The full tuning procedure is described in the Tuning Routine section.
 
 The tuning usually starts by tuning the global threshold DAC of the FrontEnd you want to tune:
 
@@ -159,7 +227,7 @@ Below is an example of tuning the global threshold of the linear FE to 2500e. Th
 In a similar manner the differential and synchronous global threshold DAC can be tuned.
 
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/lin_tune_globalthreshold.json -t 2500 -p
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/lin_tune_globalthreshold.json -t 2500 -p
 ```
 | ![Occupancy distribution](images/JohnDoe_OccupancyDist-0-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-1-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-3-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-4-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-5-LinTuning.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-6-LinTuning.png) |
 |:---:|:---:|:---:|:---:|:---:|:---:|
@@ -168,7 +236,7 @@ bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/examp
 Then, the pixel tuning can be performed. See below an example of tuning the differential pixel TDACs to 2500e. The initial bathtub of the global threshold tune appear again, but with each step the values should converge more and more towards the center. In a similar manner the pixel TDACs of the linear FE can be tuned.
 
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/diff_tune_pixelthreshold.json -t 2500 -p
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/diff_tune_pixelthreshold.json -t 2500 -p
 ```
 | ![Occupancy distribution](images/JohnDoe_OccupancyDist-0.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-1.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-2.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-3.png) | ![Occupancy distribution](images/JohnDoe_OccupancyDist-4.png) |
 |:---:|:---:|:---:|:---:|:---:|
@@ -186,6 +254,30 @@ Once the full tuning routine (as outlined in the beginning of this page) has bee
 ![Threshold map after tuning](images/JohnDoe_ThresholdMap_AfterTuning.png)
 
 
+## Time over Threshold Scan
+Before performing the time over threshold scan, one should first tune each FE.
+```bash
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/diff_tune_globalpreamp.json -t 10000 8 -p
+```
+
+This command has the same format as all other scans, except for the `-t 10000 8`, which sets the target charge to `10000` and the TOT to `8`.
+
+Similarly, the totscan also requires the user to specify the target charge, in this case `10000`.
+
+```bash
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_totscan.json -p -t 10000
+```
+
+The ToT mean value will be given in the output of the code, for example:
+```text
+[0] ToT Mean = 8.9869 +- 1.39282
+```
+
+ToT scan shown here is after tuning to 8 ToT at 10000
+![Mean ToT Map](images/JohnDoe_MeanTotMap0.png)
+![Mean ToT Distribution](images/JohnDoe_MeanTotDist_0.png)
+
+
 ## Cross-talk
 
 For more information please have a look at [this presentation](https://cernbox.cern.ch/index.php/s/1awEj4E3hc0VoDi).
@@ -194,7 +286,7 @@ The cross-talk is evaluated injecting in the neighboring pixels and checking the
 
 To check if there is cross-talk for your chip+sensor, use the following command:
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_crosstalk.json  -p
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_crosstalk.json  -p
 ```
 For the defaul settings and a fully depleated sensor, the OccupancyMap.png plot should show hits in half of the pixels.
 
@@ -202,7 +294,7 @@ For the defaul settings and a fully depleated sensor, the OccupancyMap.png plot 
 
 To identify the threhsold at which cross-talk appear, run the following command:
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_crosstalk_scan.json  -p
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_crosstalkscan.json  -p
 ```
 
 Config parameters:
@@ -210,11 +302,20 @@ Config parameters:
  - max ``<int>``: number of mask stages
  - min ``<int>``: mask stage to start with
  - step ``<int>``: step size of mask stage (do not use a value lower than 64)
- - maskType  ``<int>``: for standard threshold scans (0), or for cross-talk (1 and 2, depending on the cross-talk definition)
+ - maskType  ``<int>``: for standard threshold scans (0), or for cross-talk (1 or 2 depending on the cross-talk definition)
  - maskSize  ``<int>``: define in which neighbouring pixels charge is injected
  - includedPixels ``<int>``: define if and which pixel edges are not considered to measure cross-talk 
  - sensorType  ``<int>``: square sensor (0), rectangular sensor with bump-bond (0,0) bonded with the pixel at the corner (1), and rectangular sensor with bump-bond (0,1) bonded with the pixel at the corner (2)
 
+The illustration below show the differences between the configurations of `maskType`:
+
+![maskType settings](images/mask.png)
+
+The masSize are illustrated:
+![maskSize settings](images/maskSize.png)
+
+The two different sensorType and the impact of maskSize are shown in the following images:
+![sensor types and checking bump bonding](images/sensortype.png)
 
 Example of the s-curve, threshold distribution, threshold map and noise distribution for the tuned linear front-end are given below:
 ![S-curve threshold scan](images/JohnDoe_crosstalkscan_sCurve.png)
@@ -224,9 +325,9 @@ Example of the s-curve, threshold distribution, threshold map and noise distribu
 
 To run do
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_crosstalk_scan_checkBumpBonding.json  -p
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_crosstalkscan_checkBumpBonding.json  -p
 ```
-There are 2 ways to bump bond $25 \times 100 \mu m^2$ sensor pixels onto the $50 \times 50 \mu m^2$ chip pixels. This scan shows crosstalk for sensor type 1 and no crosstalk for sensor type 0 ($50 \times 50 \mu m^2$) or 2 ($25 \times 100 \mu m^2$ but different bump bonding scheme than type 1) as can be distinguished below:
+There are 2 ways to bump bond 25x100 sensor pixels onto the 50x50 chip pixels. This scan shows crosstalk for sensor type 1 and no crosstalk for sensor type 0 (50x50) or 2 (25x100 but different bump bonding scheme than type 1) as can be distinguished below:
 
 ![Check Bump Bonding Scheme type 1](images/0x0A59_ThresholdMap-0_STACK_BumpBond.png)
 ![Check Bump Bonding Scheme type 0](images/0x0A57_ThresholdMap-0_STACK_BumpBond.png)
@@ -237,7 +338,7 @@ There are 2 ways to bump bond $25 \times 100 \mu m^2$ sensor pixels onto the $50
 Uses crosstalk scan to identify pixels without any crosstalk - which are likely be due to disconnected bumps. Based on analog scan with crosstalk mask. This scan uses the same config parameters as the crosstalk scan.
 Run the following command:
 ```bash
-bin/scanConsole -r configs/controller/specCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_discbumpscan.json  -p
+bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_discbumpscan.json  -p
 ```
 
 ![disconnected bumps scan](images/JohnDoe_OccupancyMap_DiscBump.png)
@@ -263,29 +364,28 @@ The trigger loop in this scan does not sent an ECR signal during the scan. The s
 
 ### Hit-Or ("self-trigger")
 
-For the "self-triggering" source scan using Hit-Or as a trigger, a second DP-miniDP cable is needed to connect to the second DP port in the SCC and port B on the Ohio card. The multi-chip firmware cannot be used.
-Instead of the `specCfg.json` `specCfgExtTrigger.json` is to be used. The Hit-Or lines have to be enabled in the chip config:
+For the "self-triggering" source scan using Hit-Or as a trigger, a second DP-miniDP cable is needed to connect to the second DP port in the SCC and port B on the Ohio card, which should have the [modifications](ohio-rd53a-multi-module-adapter) on port B. The corresponding firmware has to be used and can be obtained from firmware [v0.9.2](https://github.com/Yarr/Yarr-fw/tree/v0.9.2) as the bit files which do not end with ``_4chip.bit``. For the controller configuration, instead of the `specCfg-rd53a.json` `specCfgExtTrigger.json` is to be used. The Hit-Or lines have to be enabled in the chip config:
 ```
-"HitOr0MaskDiff0": 65536,
+"HitOr0MaskDiff0": 65535,
 "HitOr0MaskDiff1": 1,
-"HitOr0MaskLin0": 65536,
+"HitOr0MaskLin0": 65535,
 "HitOr0MaskLin1": 1,
-"HitOr0MaskSync": 65536,
-"HitOr1MaskDiff0": 65536,
+"HitOr0MaskSync": 65535,
+"HitOr1MaskDiff0": 65535,
 "HitOr1MaskDiff1": 1,
-"HitOr1MaskLin0": 65536,
+"HitOr1MaskLin0": 65535,
 "HitOr1MaskLin1": 1,
-"HitOr1MaskSync": 65536,
-"HitOr2MaskDiff0": 65536,
+"HitOr1MaskSync": 65535,
+"HitOr2MaskDiff0": 65535,
 "HitOr2MaskDiff1": 1,
-"HitOr2MaskLin0": 65536,
+"HitOr2MaskLin0": 65535,
 "HitOr2MaskLin1": 1,
-"HitOr2MaskSync": 65536,
-"HitOr3MaskDiff0": 65536,
+"HitOr2MaskSync": 65535,
+"HitOr3MaskDiff0": 65535,
 "HitOr3MaskDiff1": 1,
-"HitOr3MaskLin0": 65536,
+"HitOr3MaskLin0": 65535,
 "HitOr3MaskLin1": 1,
-"HitOr3MaskSync": 65536,
+"HitOr3MaskSync": 65535,
 ```
 
 ### External trigger
@@ -386,3 +486,28 @@ Config parameters:
 - tuneDiff ``<bool>``: enable adjustment of diff FE pixel regs
 - tuneLin ``<bool>``: enable adjustment of lin FE pixel regs
 - resetTdac ``<bool>``: reset TDACs to defaults
+
+## Rd53aReadRegLoop:
+
+The ReadRegister Loop talks with the rd53a chip inorder to read out the Registers, ADC and the Ring Osiccilators. Prints out the measured values.
+
+Config parameters:
+
+- Registers ``<array<string>>``: Name of the registers that should be readout. The names should be matching Rd53AGlobalCfg. If "All" is given a input,  all registers are readout.
+- VoltMux ``<array<int>>`` : List of ADC monitor analog voltage multiplexer values that should be readout. The detailed list can be found in the RD53A Manual Section: "MONITOR_MUX"
+- CurMux ``<array<int>>`` : List of ADC monitor analog current multiplexer values that should be readout. The detailed list can be found in the RD53A Manual Section: "MONITOR_MUX"
+- EnblRingosc ``<int>`` : 8bit value of which Ring ossicilators should be enabled. As an example: if the 1st and last Ring ossicilator should be enabledm the value should be  set to 1b10000001 -> 129.
+- RingOscRep ``<int>`` : Numberof times the ring oscillator measurement shall be averaged over.
+- RingOscDur ``<int>`` : Lenght of the global pulse duration. Calculted as 2^RingOscDur clock cycles.  
+
+## Disabling FEs
+
+The default values for the FEs in the chip configuration are
+
+- `EnCoreColDiff1`: 65535; enables each bit in the 16 core columns 
+- `EnCoreColDiff2`: 1; enables the 17th core column
+- `EnCoreColLin1`: 65535; enables each bit in the 16 core columns
+- `EnCoreColLin2`: 1; enables the 17th core column
+- `EnCoreColSync`: 65535; enables each bit in the 16 core columns
+
+To disable a FE, you need to set the appropriate `EnCoreCol` to 0.

@@ -11,13 +11,13 @@
 #include "Histo2d.h"
 #include "Fe65p2.h"
 
-class Fe65p2PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
+class Fe65p2PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
     public:
         Fe65p2PixelFeedback();
 
-        void feedback(unsigned channel, Histo2d *h);
+        void feedback(unsigned channel, std::unique_ptr<Histo2d> h) override;
     private:
-        std::map<unsigned, Histo2d*> fbHistoMap;
+        std::map<unsigned, std::unique_ptr<Histo2d>> fbHistoMap;
         unsigned step, oldStep;
         unsigned cur;
 
@@ -26,10 +26,10 @@ class Fe65p2PixelFeedback : public LoopActionBase, public PixelFeedbackBase {
         void writePixelCfg(unsigned channel);
         void addFeedback(unsigned channel);
 
-        void init();
-        void end();
-        void execPart1();
-        void execPart2();
+        void init() override;
+        void end() override;
+        void execPart1() override;
+        void execPart2() override;
 };
 
 #endif

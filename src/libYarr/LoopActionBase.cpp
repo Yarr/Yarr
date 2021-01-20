@@ -12,7 +12,9 @@ namespace {
     auto llog = logging::make_log("LoopActionBase");
 }
 
-LoopActionBase::LoopActionBase() : loopType(typeid(void)){
+LoopActionBase::LoopActionBase(LoopStyle l)
+  : m_style(l), loopType(typeid(void))
+{
     g_fe = NULL;
     g_tx = NULL;
     g_rx = NULL;
@@ -20,7 +22,7 @@ LoopActionBase::LoopActionBase() : loopType(typeid(void)){
     m_done = false;
 }
 
-void LoopActionBase::setup(LoopStatus *stat, Bookkeeper *k) {
+void LoopActionBase::setup(LoopStatusMaster *stat, Bookkeeper *k) {
     SPDLOG_LOGGER_DEBUG(llog, "");
     g_stat = stat;
     g_fe = k->g_fe;

@@ -18,14 +18,14 @@ class Fei4ParameterLoop : public LoopActionBase{
         }
 
     public:
-        Fei4ParameterLoop() {
+        Fei4ParameterLoop() : LoopActionBase(LOOP_STYLE_PARAMETER) {
 	  min=0;
 	  max=100;
 	  step=1;
             loopType = typeid(this);
         }
 
-        Fei4ParameterLoop(Fei4Register Fei4GlobalCfg::*ref) : parPtr(ref){ 
+        Fei4ParameterLoop(Fei4Register Fei4GlobalCfg::*ref) : LoopActionBase(LOOP_STYLE_PARAMETER), parPtr(ref) {
 	  min=0;
 	  max=100;
 	  step=1;
@@ -73,7 +73,8 @@ class Fei4ParameterLoop : public LoopActionBase{
 
         Fei4Register Fei4GlobalCfg::*parPtr;
 
-
+        // Somehow we need to register logger at static init time
+        friend void logger_static_init_fei4();
 };
 
 #endif

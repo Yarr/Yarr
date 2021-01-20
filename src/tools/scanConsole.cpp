@@ -9,15 +9,11 @@
 #include <iostream>
 #include <string>
 #include <sstream>
-#include <unistd.h>
 #include <fstream>
 #include <chrono>
 #include <thread>
-#include <mutex>
 #include <vector>
 #include <iomanip>
-#include <cctype> //w'space detection
-#include <ctime>
 #include <map>
 #include <sstream>
 
@@ -28,26 +24,24 @@
 
 #include "HwController.h"
 
+#include "AllAnalyses.h"
 #include "AllHwControllers.h"
+#include "AllHistogrammers.h"
 #include "AllChips.h"
 #include "AllProcessors.h"
+#include "AllStdActions.h"
 
 #include "Bookkeeper.h"
+#include "FeedbackBase.h"
+
+// For masking
 #include "Fei4.h"
+#include "Rd53a.h"
+
 #include "ScanBase.h"
 #include "ScanFactory.h"
-#include "Fei4DataProcessor.h"
-#include "Fei4Histogrammer.h"
-#include "Fei4Analysis.h"
 
 #include "DBHandler.h"
-#if defined(__linux__) || defined(__APPLE__) && defined(__MACH__)
-
-//  #include <errno.h>
-//  #include <sys/stat.h>
-#include <cstdlib> //I am not proud of this ):
-
-#endif
 
 #include "storage.hpp"
 
@@ -64,15 +58,40 @@ void printHelp();
 void listScans();
 void listKnown();
 
-std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie );
+std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie, FeedbackClipboardMap *fbData);
 
-// In order to build Histogrammer, bookie is not needed --> good sign!
-// Do not want to use the raw pointer ScanBase*
-void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& histogrammers, const std::string& scanType, std::vector<FrontEnd*>& feList, ScanBase* s, std::string outputDir);
+static std::string getHostname() {
+  std::string hostname = "default_host";
+  if (getenv("HOSTNAME")) {
+    hostname = getenv("HOSTNAME");
+  } else {
+    spdlog::error("HOSTNAME environmental variable not found ... using default: {}", hostname);
+  }
+  return hostname;
+}
 
-// In order to build Analysis, bookie is needed --> deep dependency!
-// Do not want to use the raw pointer ScanBase*
-void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, int mask_opt);
+static std::string defaultDbDirPath() {
+  std::string home;
+  if(getenv("HOME")) {
+    home = getenv("HOME");
+  } else {
+    home = ".";
+    spdlog::error("HOME not set, using local directory for configuration");
+  }
+  return home+"/.yarr/localdb";
+}
+
+static std::string defaultDbCfgPath() {
+  return defaultDbDirPath()+"/"+getHostname()+"_database.json";
+}
+
+static std::string defaultDbSiteCfgPath() {
+  return defaultDbDirPath()+"/"+getHostname()+"_site.json";
+}
+
+static std::string defaultDbUserCfgPath() {
+  return defaultDbDirPath()+"/user.json";
+}
 
 int main(int argc, char *argv[]) {
     std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
@@ -82,14 +101,6 @@ int main(int argc, char *argv[]) {
     spdlog::info("\033[1;31m#####################################\033[0m");
 
     spdlog::info("-> Parsing command line parameters ...");
-
-    std::string home = getenv("HOME");
-    std::string hostname = "default_host";
-    if (getenv("HOSTNAME")) {
-        hostname = getenv("HOSTNAME");
-    } else {
-        spdlog::error("HOSTNAME environmental variable not found ... using default: {}", hostname);
-    }
 
     // Init parameters
     std::string scanType = "";
@@ -102,18 +113,17 @@ int main(int argc, char *argv[]) {
     int mask_opt = -1;
 
     bool dbUse = false;
-    std::string dbDirPath = home+"/.yarr/localdb";
-    std::string dbCfgPath = dbDirPath+"/"+hostname+"_database.json";
-    std::string dbSiteCfgPath = dbDirPath+"/"+hostname+"_site.json""";
-    std::string dbUserCfgPath = dbDirPath+"/user.json""";
+    std::string dbCfgPath = defaultDbCfgPath();
+    std::string dbSiteCfgPath = defaultDbSiteCfgPath();
+    std::string dbUserCfgPath = defaultDbUserCfgPath();
+    bool setQCMode = false;
+    bool setInteractiveMode = false;
 
     std::string logCfgPath = "";
-    
-    unsigned runCounter = 0;
 
     int nThreads = 4;
     int c;
-    while ((c = getopt(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:l:")) != -1) {
+    while ((c = getopt(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:l:QI")) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
@@ -184,6 +194,12 @@ int main(int argc, char *argv[]) {
             case 'u': // Database config file
                 dbUserCfgPath = std::string(optarg);
                 break;
+            case 'Q':
+                setQCMode = true;
+                break;
+            case 'I':
+                setInteractiveMode = true;
+                break;
             case '?':
                 if(optopt == 's' || optopt == 'n'){
                     spdlog::error("Option {} requires a parameter! (Proceeding with default)", (char)optopt);
@@ -199,7 +215,7 @@ int main(int argc, char *argv[]) {
                 return -1;
         }
     }
-    
+
     spdlog::info("Configuring logger ...");
     if(!logCfgPath.empty()) {
         auto j = ScanHelper::openJsonFile(logCfgPath);
@@ -214,26 +230,7 @@ int main(int argc, char *argv[]) {
     }
     // Can use actual logger now
 
-    // Load run counter
-    if (system("mkdir -p ~/.yarr") < 0) {
-        logger->error("Loading run counter ~/.yarr!");
-    }
-
-    std::fstream iF((home + "/.yarr/runCounter").c_str(), std::ios::in);
-    if (iF) {
-        iF >> runCounter;
-        runCounter += 1;
-    } else {
-        if (system("echo \"1\n\" > ~/.yarr/runCounter") < 0) {
-            logger->error("Could not increment run counter in file");
-        }
-        runCounter = 1;
-    }
-    iF.close();
-
-    std::fstream oF((home + "/.yarr/runCounter").c_str(), std::ios::out);
-    oF << runCounter << std::endl;
-    oF.close();
+    unsigned runCounter = ScanHelper::newRunCounter();
 
     if (cConfigPaths.size() == 0) {
         logger->error("Error: no config files given, please specify config file name under -c option, even if file does not exist!");
@@ -308,26 +305,6 @@ int main(int argc, char *argv[]) {
     scanLog["targetTot"] = target_tot;
     scanLog["testType"] = strippedScan;
 
-    // Initial setting local DBHandler
-    DBHandler *database = new DBHandler();
-    if (dbUse) {
-        logger->info("\033[1;31m################\033[0m");
-        logger->info("\033[1;31m# Set Database #\033[0m");
-        logger->info("\033[1;31m################\033[0m");
-        logger->info("-> Setting user's information");
-
-        database->initialize(dbCfgPath, argv[0]);
-
-        json dbCfg = ScanHelper::openJsonFile(dbCfgPath);
-        scanLog["dbCfg"] = dbCfg;
-
-        // set/check user config if specified
-        json userCfg = database->setUser(dbUserCfgPath);
-        scanLog["userCfg"] = userCfg;
-        // set/check site config if specified
-        json siteCfg = database->setSite(dbSiteCfgPath);
-        scanLog["siteCfg"] = siteCfg;
-    }
     logger->info("\033[1;31m#################\033[0m");
     logger->info("\033[1;31m# Init Hardware #\033[0m");
     logger->info("\033[1;31m#################\033[0m");
@@ -379,10 +356,21 @@ int main(int argc, char *argv[]) {
         scanLog["connectivity"].push_back(config);
     }
 
+    // Initial setting local DBHandler
+    DBHandler *database = new DBHandler();
     if (dbUse) {
-        logger->info("Setting Connectivity Configs");
-        // set/check connectivity config files
-        database->setConnCfg(cConfigPaths);
+        logger->info("\033[1;31m################\033[0m");
+        logger->info("\033[1;31m# Set Database #\033[0m");
+        logger->info("\033[1;31m################\033[0m");
+        database->initialize(dbCfgPath, argv[0], setQCMode, setInteractiveMode);
+        if (database->checkConfigs(dbUserCfgPath, dbSiteCfgPath, cConfigPaths)==1)
+            return -1;
+        json dbCfg = ScanHelper::openJsonFile(dbCfgPath);
+        scanLog["dbCfg"] = dbCfg;
+        json userCfg = ScanHelper::openJsonFile(dbUserCfgPath);
+        scanLog["userCfg"] = userCfg;
+        json siteCfg = ScanHelper::openJsonFile(dbSiteCfgPath);
+        scanLog["siteCfg"] = siteCfg;
     }
 
     // Reset masks
@@ -390,17 +378,19 @@ int main(int argc, char *argv[]) {
         for (FrontEnd* fe : bookie.feList) {
             // TODO make mask generic?
             if (chipType == "FEI4B") {
+                auto fei4 = dynamic_cast<Fei4*>(fe);
                 logger->info("Resetting enable/hitbus pixel mask to all enabled!");
-                for (unsigned int dc = 0; dc < dynamic_cast<Fei4*>(fe)->n_DC; dc++) {
-                    dynamic_cast<Fei4*>(fe)->En(dc).setAll(1);
-                    dynamic_cast<Fei4*>(fe)->Hitbus(dc).setAll(0);
+                for (unsigned int dc = 0; dc < fei4->n_DC; dc++) {
+                    fei4->En(dc).setAll(1);
+                    fei4->Hitbus(dc).setAll(0);
                 }
             } else if (chipType == "RD53A") {
+                auto rd53a = dynamic_cast<Rd53a*>(fe);
                 logger->info("Resetting enable/hitbus pixel mask to all enabled!");
-                for (unsigned int col = 0; col < dynamic_cast<Rd53a*>(fe)->n_Col; col++) {
-                    for (unsigned row = 0; row < dynamic_cast<Rd53a*>(fe)->n_Row; row ++) {
-                        dynamic_cast<Rd53a*>(fe)->setEn(col, row, 1);
-                        dynamic_cast<Rd53a*>(fe)->setHitbus(col, row, 1);
+                for (unsigned int col = 0; col < rd53a->n_Col; col++) {
+                    for (unsigned row = 0; row < rd53a->n_Row; row ++) {
+                        rd53a->setEn(col, row, 1);
+                        rd53a->setHitbus(col, row, 1);
                     }
                 }
             }
@@ -418,9 +408,10 @@ int main(int argc, char *argv[]) {
 
     std::chrono::steady_clock::time_point cfg_start = std::chrono::steady_clock::now();
     for ( FrontEnd* fe : bookie.feList ) {
-        logger->info("Configuring {}", dynamic_cast<FrontEndCfg*>(fe)->getName());
+        auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
+        logger->info("Configuring {}", feCfg->getName());
         // Select correct channel
-        hwCtrl->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+        hwCtrl->setCmdEnable(feCfg->getTxChannel());
         // Configure
         fe->configure();
         // Wait for fifo to be empty
@@ -430,16 +421,18 @@ int main(int argc, char *argv[]) {
     std::chrono::steady_clock::time_point cfg_end = std::chrono::steady_clock::now();
     logger->info("All FEs configured in {} ms!",
                  std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count());
-    
+
     // Wait for rx to sync with FE stream
     // TODO Check RX sync
+    hwCtrl->checkRxSync(); // As it is implemented in BDAQ, I added it here. Should be harmless to other HWs.
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
     hwCtrl->flushBuffer();
     for ( FrontEnd* fe : bookie.feList ) {
-        logger->info("Checking com {}", dynamic_cast<FrontEndCfg*>(fe)->getName());
+        auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
+        logger->info("Checking com {}", feCfg->getName());
         // Select correct channel
-        hwCtrl->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
-        hwCtrl->setRxEnable(dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
+        hwCtrl->setCmdEnable(feCfg->getTxChannel());
+        hwCtrl->setRxEnable(feCfg->getRxChannel());
         // Configure
         if (fe->checkCom() != 1) {
             logger->critical("Can't establish communication, aborting!");
@@ -460,7 +453,7 @@ int main(int argc, char *argv[]) {
         logger->info("Enabling Rx channel {}", channel);
     }
 
-    hwCtrl->runMode();
+    //hwCtrl->runMode();
 
     logger->info("\033[1;31m##############\033[0m");
     logger->info("\033[1;31m# Setup Scan #\033[0m");
@@ -478,10 +471,13 @@ int main(int argc, char *argv[]) {
         cfgFile.close();
     }
 
+    // For sending feedback data
+    FeedbackClipboardMap fbData;
+
     // TODO Make this nice
     std::unique_ptr<ScanBase> s;
     try {
-        s = buildScan(scanType, bookie );
+        s = buildScan(scanType, bookie, &fbData);
     } catch (const char *msg) {
         logger->warn("No scan to run, exiting with msg: {}", msg);
         return 0;
@@ -492,8 +488,9 @@ int main(int argc, char *argv[]) {
     std::map<FrontEnd*, std::unique_ptr<DataProcessor> > analyses;
 
     // TODO not to use the raw pointer!
-    buildHistogrammers( histogrammers, scanType, bookie.feList, s.get(), outputDir);
-    buildAnalyses( analyses, scanType, bookie, s.get(), mask_opt);
+    ScanHelper::buildHistogrammers( histogrammers, scanType, bookie.feList, s.get(), outputDir);
+    ScanHelper::buildAnalyses( analyses, scanType, bookie, s.get(),
+                               &fbData, mask_opt);
 
     logger->info("Running pre scan!");
     s->init();
@@ -508,7 +505,7 @@ int main(int argc, char *argv[]) {
 
           histogrammers[fe]->init();
           histogrammers[fe]->run();
-          
+
           logger->info(" .. started threads of Fe {}", dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
         }
     }
@@ -542,7 +539,7 @@ int main(int argc, char *argv[]) {
     proc->join();
     std::chrono::steady_clock::time_point processor_done = std::chrono::steady_clock::now();
     logger->info("Processor done, waiting for histogrammer ...");
-    
+
     for (unsigned i=0; i<bookie.feList.size(); i++) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
@@ -554,9 +551,9 @@ int main(int argc, char *argv[]) {
     for( auto& histogrammer : histogrammers ) {
       histogrammer.second->join();
     }
-    
+
     logger->info("Processor done, waiting for analysis ...");
-    
+
     for (unsigned i=0; i<bookie.feList.size(); i++) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
@@ -615,48 +612,51 @@ int main(int argc, char *argv[]) {
     for (unsigned i=0; i<bookie.feList.size(); i++) {
         FrontEnd *fe = bookie.feList[i];
         if (fe->isActive()) {
+            auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
 
             // Save config
-            if (!dynamic_cast<FrontEndCfg*>(fe)->isLocked()) {
+            if (!feCfg->isLocked()) {
                 logger->info("Saving config of FE {} to {}",
-                             dynamic_cast<FrontEndCfg*>(fe)->getName(), feCfgMap.at(fe));
+                             feCfg->getName(), feCfgMap.at(fe));
                 json jTmp;
-                dynamic_cast<FrontEndCfg*>(fe)->toFileJson(jTmp);
+                feCfg->toFileJson(jTmp);
                 std::ofstream oFTmp(feCfgMap.at(fe));
                 oFTmp << std::setw(4) << jTmp;
                 oFTmp.close();
             } else {
-                logger->warn("Not saving config for FE {} as it is protected!", dynamic_cast<FrontEndCfg*>(fe)->getName());
+                logger->warn("Not saving config for FE {} as it is protected!", feCfg->getName());
             }
 
             // Save extra config in data folder
-            std::ofstream backupCfgFile(outputDir + dynamic_cast<FrontEndCfg*>(fe)->getConfigFile() + ".after");
+            std::ofstream backupCfgFile(outputDir + feCfg->getConfigFile() + ".after");
             json backupCfg;
-            dynamic_cast<FrontEndCfg*>(fe)->toFileJson(backupCfg);
+            feCfg->toFileJson(backupCfg);
             backupCfgFile << std::setw(4) << backupCfg;
             backupCfgFile.close();
 
             // Plot
-            if (doPlots||dbUse) {
-                logger->info("-> Plotting histograms of FE {}", dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
-                std::string outputDirTmp = outputDir;
-
-                auto &output = *fe->clipResult;
-                std::string name = dynamic_cast<FrontEndCfg*>(fe)->getName();
-
+            // store output results (if any)
+            if(analyses.size()) {
+                logger->info("-> Storing output results of FE {}", feCfg->getRxChannel());
+                auto& output = *fe->clipResult;
+                std::string name = feCfg->getName();
                 if (output.empty()) {
                     logger->warn("There were no results for chip {}, this usually means that the chip did not send any data at all.", name);
                 } else {
                     while(!output.empty()) {
-                        std::unique_ptr<HistogramBase> histo = output.popData();
-                        histo->plot(name, outputDirTmp);
+                        auto histo = output.popData();
+                        // only create the image files if asked to
+                        if(doPlots) {
+                            histo->plot(name, outputDir);
+                        }
+                        // always dump the data
                         histo->toFile(name, outputDir);
-                    }
+                    } // while
                 }
             }
-        }
-    }
-    std::string lsCmd = "ls -1 " + dataDir + "last_scan/*.p*";
+        } // fe active
+    } // i
+    std::string lsCmd = "ls -1 " + dataDir + "last_scan/";
     logger->info("Finishing run: {}", runCounter);
     if(doPlots && (system(lsCmd.c_str()) < 0)) {
         logger->info("Find plots in: {}last_scan", dataDir);
@@ -664,7 +664,7 @@ int main(int argc, char *argv[]) {
 
     // Register test info into database
     if (dbUse) {
-        database->cleanUp("scan", outputDir);
+        database->cleanUp("scan", outputDir, false, false);
     }
     delete database;
 
@@ -672,15 +672,9 @@ int main(int argc, char *argv[]) {
 }
 
 void printHelp() {
-    std::string home = getenv("HOME");
-    std::string hostname = "default_host";
-    if (getenv("HOSTNAME")) {
-        hostname = getenv("HOSTNAME");
-    } else {
-        logger->error("HOSTNAME environmental variable not found ... using default: {}", hostname);
-    }
-
-    std::string dbDirPath = home+"/.yarr/localdb";
+    std::string dbCfgPath = defaultDbCfgPath();
+    std::string dbSiteCfgPath = defaultDbSiteCfgPath();
+    std::string dbUserCfgPath = defaultDbDirPath();
 
     std::cout << "Help:" << std::endl;
     std::cout << " -h: Shows this." << std::endl;
@@ -696,10 +690,12 @@ void printHelp() {
     std::cout << " -m <int> : 0 = pixel masking disabled, 1 = start with fresh pixel mask, default = pixel masking enabled" << std::endl;
     std::cout << " -k: Report known items (Scans, Hardware etc.)\n";
     std::cout << " -W: Enable using Local DB." << std::endl;
-    std::cout << " -d <database.json> : Provide database configuration. (Default " << dbDirPath << "/" << hostname << "_database.json)" << std::endl;
-    std::cout << " -i <site.json> : Provide site configuration. (Default " << dbDirPath << "/" << hostname << "_site.json)" << std::endl;
-    std::cout << " -u <user.json> : Provide user configuration. (Default " << dbDirPath << "/user.json)" << std::endl;
+    std::cout << " -d <database.json> : Provide database configuration. (Default " << dbCfgPath << ")" << std::endl;
+    std::cout << " -i <site.json> : Provide site configuration. (Default " << dbSiteCfgPath << ")" << std::endl;
+    std::cout << " -u <user.json> : Provide user configuration. (Default " << dbUserCfgPath << ")" << std::endl;
     std::cout << " -l <log_cfg.json> : Provide logger configuration." << std::endl;
+    std::cout << " -Q: Set QC scan mode." << std::endl;
+    std::cout << " -I: Set interactive mode." << std::endl;
 }
 
 void listChips() {
@@ -752,11 +748,10 @@ void listKnown() {
     logging::listLoggers();
 }
 
-std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie ) {
-    std::unique_ptr<ScanBase> s ( nullptr );
+std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie,  FeedbackClipboardMap *fbData) {
 
     logger->info("Found Scan config, constructing scan ...");
-    s.reset( new ScanFactory(&bookie) );
+    std::unique_ptr<ScanFactory> s ( new ScanFactory(&bookie, fbData) );
     json scanCfg;
     try {
         scanCfg = ScanHelper::openJsonFile(scanType);
@@ -764,160 +759,8 @@ std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bo
         logger->error("Opening scan config: {}", e.what());
         throw("buildScan failure");
     }
-    dynamic_cast<ScanFactory&>(*s).loadConfig(scanCfg);
+
+    s->loadConfig(scanCfg);
 
     return s;
-}
-
-
-void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& histogrammers, const std::string& scanType, std::vector<FrontEnd*>& feList, ScanBase* s, std::string outputDir) {
-    logger->info("Loading histogrammer ...");
-    json scanCfg;
-    try {
-        scanCfg = ScanHelper::openJsonFile(scanType);
-    } catch (std::runtime_error &e) {
-        logger->error("Opening scan config: {}", e.what());
-        throw("buildHistogrammer failure");
-    }
-    json histoCfg = scanCfg["scan"]["histogrammer"];
-    json anaCfg = scanCfg["scan"]["analysis"];
-
-    for (FrontEnd *fe : feList ) {
-        if (fe->isActive()) {
-            // TODO this loads only FE-i4 specific stuff, bad
-            // Load histogrammer
-            histogrammers[fe].reset( new Fei4Histogrammer );
-            auto& histogrammer = static_cast<Fei4Histogrammer&>( *(histogrammers[fe]) );
-
-            histogrammer.connect(fe->clipData, fe->clipHisto);
-
-            auto add_histo = [&](std::string algo_name) {
-                if (algo_name == "OccupancyMap") {
-                    logger->debug("  ... adding {}", algo_name);
-                    histogrammer.addHistogrammer(new OccupancyMap());
-                } else if (algo_name == "TotMap") {
-                    logger->debug("  ... adding {}", algo_name);
-                    histogrammer.addHistogrammer(new TotMap());
-                } else if (algo_name == "Tot2Map") {
-                    logger->debug("  ... adding {}", algo_name);
-                    histogrammer.addHistogrammer(new Tot2Map());
-                } else if (algo_name == "L1Dist") {
-                    histogrammer.addHistogrammer(new L1Dist());
-                    logger->debug("  ... adding {}", algo_name);
-                } else if (algo_name == "HitsPerEvent") {
-                    histogrammer.addHistogrammer(new HitsPerEvent());
-                    logger->debug("  ... adding {}", algo_name);
-                } else if (algo_name == "DataArchiver") {
-                    histogrammer.addHistogrammer(new DataArchiver((outputDir + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_data.raw")));
-                    logger->debug("  ... adding {}", algo_name);
-                } else if (algo_name == "Tot3d") {
-                    logger->debug("  ... adding {}", algo_name);
-                    histogrammer.addHistogrammer(new Tot3d());
-                } else if (algo_name == "L13d") {
-                    logger->debug("  ... adding {}", algo_name);
-                    histogrammer.addHistogrammer(new L13d());
-                } else {
-                    logger->error("Error, Histogrammer \"{} unknown, skipping!", algo_name);
-                }
-            };
-
-            try {
-                int nHistos = histoCfg["n_count"];
-
-                for (int j=0; j<nHistos; j++) {
-                    std::string algo_name = histoCfg[std::to_string(j)]["algorithm"];
-                    add_histo(algo_name);
-                }
-            } catch(/* json::type_error &te*/ ... ) { //FIXME
-                int nHistos = histoCfg.size();
-                for (int j=0; j<nHistos; j++) {
-                    std::string algo_name = histoCfg[j]["algorithm"];
-                    add_histo(algo_name);
-                }
-            }
-            histogrammer.setMapSize(fe->geo.nCol, fe->geo.nRow);
-        }
-    }
-    logger->info("... done!");
-}
-
-
-void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, int mask_opt) {
-    if (scanType.find("json") != std::string::npos) {
-        logger->info("Loading analyses ...");
-        json scanCfg;
-        try {
-            scanCfg = ScanHelper::openJsonFile(scanType);
-        } catch (std::runtime_error &e) {
-            logger->error("Opening scan config: {}", e.what());
-            throw("buildAnalyses failure");
-        }
-        json histoCfg = scanCfg["scan"]["histogrammer"];
-        json anaCfg = scanCfg["scan"]["analysis"];
-
-        for (FrontEnd *fe : bookie.feList ) {
-            if (fe->isActive()) {
-                // TODO this loads only FE-i4 specific stuff, bad
-                // TODO hardcoded
-                analyses[fe].reset( new Fei4Analysis(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) );
-                auto& ana = static_cast<Fei4Analysis&>( *(analyses[fe]) );
-                ana.connect(s, fe->clipHisto, fe->clipResult);
-
-                auto add_analysis = [&](std::string algo_name) {
-                    if (algo_name == "OccupancyAnalysis") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new OccupancyAnalysis());
-                     } else if (algo_name == "L1Analysis") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new L1Analysis());
-                     } else if (algo_name == "TotAnalysis") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new TotAnalysis());
-                     } else if (algo_name == "NoiseAnalysis") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new NoiseAnalysis());
-                     } else if (algo_name == "NoiseTuning") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new NoiseTuning());
-                     } else if (algo_name == "ScurveFitter") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new ScurveFitter());
-                     } else if (algo_name == "OccGlobalThresholdTune") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new OccGlobalThresholdTune());
-                     } else if (algo_name == "OccPixelThresholdTune") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new OccPixelThresholdTune());
-                     } else if (algo_name == "DelayAnalysis") {
-                        logger->debug("  ... adding {}", algo_name);
-                        ana.addAlgorithm(new DelayAnalysis());
-                     }
-                };
-
-                try {
-                  int nAnas = anaCfg["n_count"];
-                  logger->debug("Found {} Analysis!", nAnas);
-                  for (int j=0; j<nAnas; j++) {
-                    std::string algo_name = anaCfg[std::to_string(j)]["algorithm"];
-                    add_analysis(algo_name);
-                  }
-                  ana.loadConfig(anaCfg);
-                } catch(/* json::type_error &te */ ...) { //FIXME
-                  int nAnas = anaCfg.size();
-                  logger->debug("Found {} Analysis!", nAnas);
-                  for (int j=0; j<nAnas; j++) {
-                    std::string algo_name = anaCfg[j]["algorithm"];
-                    add_analysis(algo_name);
-                  }
-                }
-
-                // Disable masking of pixels
-                if(mask_opt == 0) {
-                    logger->info("Disabling masking for this scan!");
-                    ana.setMasking(false);
-                }
-                ana.setMapSize(fe->geo.nCol, fe->geo.nRow);
-            }
-        }
-    }
 }

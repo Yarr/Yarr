@@ -19,14 +19,14 @@
 #include "FeedbackBase.h"
 #include "Rd53a.h"
 
-class Rd53aPixelFeedback : public LoopActionBase, public PixelFeedbackBase {
+class Rd53aPixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
     public:
         Rd53aPixelFeedback();
 
-        void writeConfig(json &j);
-        void loadConfig(json &j);
+        void writeConfig(json &j) override;
+        void loadConfig(json &j) override;
 
-        void feedback(unsigned channel, Histo2d *h);
+        void feedback(unsigned channel, std::unique_ptr<Histo2d> h) override;
 
     protected:
     private:
@@ -36,15 +36,15 @@ class Rd53aPixelFeedback : public LoopActionBase, public PixelFeedbackBase {
         bool m_resetTdac;
         std::vector<unsigned> m_steps;
 
-        std::map<unsigned, Histo2d*> m_fb;
+        std::map<unsigned, std::unique_ptr<Histo2d>> m_fb;
 
         void addFeedback(unsigned ch);
         void writePixelCfg(Rd53a *fe);
 
-        void init();
-        void end();
-        void execPart1();
-        void execPart2();
+        void init() override;
+        void end() override;
+        void execPart1() override;
+        void execPart2() override;
 };
 
 

@@ -15,7 +15,7 @@ namespace {
   auto logger = logging::make_log("Rd53aGlobalFeedback");
 }
 
-Rd53aGlobalFeedback::Rd53aGlobalFeedback() {
+Rd53aGlobalFeedback::Rd53aGlobalFeedback() : LoopActionBase(LOOP_STYLE_GLOBAL_FEEDBACK) {
     min = 0;
     max = 255;
     step = 1;
@@ -26,7 +26,7 @@ Rd53aGlobalFeedback::Rd53aGlobalFeedback() {
     m_pixelReg = {0, 0};
 }
 
-Rd53aGlobalFeedback::Rd53aGlobalFeedback(Rd53aReg Rd53aGlobalCfg::*ref) : parPtr(ref) {
+Rd53aGlobalFeedback::Rd53aGlobalFeedback(Rd53aReg Rd53aGlobalCfg::*ref) : LoopActionBase(LOOP_STYLE_GLOBAL_FEEDBACK), parPtr(ref) {
     min = 0;
     max = 255;
     step = 1;
@@ -87,8 +87,6 @@ void Rd53aGlobalFeedback::feedback(unsigned channel, double sign, bool last) {
     if (val <= min) {
         m_doneMap[channel] = true;
     }
-    // Unlock the mutex to let the scan proceed
-    keeper->mutexMap[channel].unlock();
 }
 
 void Rd53aGlobalFeedback::feedbackBinary(unsigned channel, double sign, bool last) {
@@ -102,16 +100,11 @@ void Rd53aGlobalFeedback::feedbackBinary(unsigned channel, double sign, bool las
     if (m_localStep[channel] == 1) {
         m_doneMap[channel] = true;
     }
-
-    // Unlock the mutex to let the scan proceed
-    keeper->mutexMap[channel].unlock();
-
 }
 
 void Rd53aGlobalFeedback::feedbackStep(unsigned channel, double sign, bool last) {
     m_values[channel] = m_values[channel] + sign;
     m_doneMap[channel] |= last;
-    keeper->mutexMap[channel].unlock();
 }
 
 
@@ -128,10 +121,11 @@ bool Rd53aGlobalFeedback::allDone() {
 void Rd53aGlobalFeedback::writePar() {
     for (auto *fe : keeper->feList) {
         if(fe->getActive()) {
+            auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
             // Enable single channel
-            g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+            g_tx->setCmdEnable(feCfg->getTxChannel());
             // Write parameter
-            dynamic_cast<Rd53a*>(fe)->writeRegister(parPtr, m_values[dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()]);
+            dynamic_cast<Rd53a*>(fe)->writeRegister(parPtr, m_values[feCfg->getRxChannel()]);
             while(!g_tx->isCmdEmpty()){}
         }
     }
@@ -222,12 +216,6 @@ void Rd53aGlobalFeedback::init() {
 
 void Rd53aGlobalFeedback::execPart1() {
     g_stat->set(this, m_cur);
-    // Lock all mutexes
-    for (auto fe : keeper->feList) {
-        if (fe->getActive()) {
-            keeper->mutexMap[dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()].try_lock();
-        }
-    }
 }
 
 void Rd53aGlobalFeedback::execPart2() {
@@ -235,8 +223,9 @@ void Rd53aGlobalFeedback::execPart2() {
     for (auto fe: keeper->feList) {
         if (fe->getActive()) {
             unsigned rx = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-            keeper->mutexMap[rx].lock();
-            logger->info(" --> Received Feedback on Channel {} with value:", rx, m_values[rx]);
+
+            waitForFeedback(rx);
+            logger->info(" --> Received Feedback on Channel {} with value: {}", rx, m_values[rx]);
         }
     }
     m_cur++;

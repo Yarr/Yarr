@@ -1,114 +1,106 @@
 #!/bin/bash
-##################################################################
-# Log in mongoDB
-# Usage : ./login_mongodb.sh [-i IP address] [-p port]
-# Contacts : Hiroki Okuyama (okuyama@hep.phys.titech.ac.jp)
-##################################################################
-ITSNAME="[LDB]"
+#################################
+# Contacts: Arisa Kubota
+# Email: arisa.kubota at cern.ch
+# Date: July 2020
+# Project: Local Database for Yarr
+# Usage: source login_mongodb.sh [-d path/to/db/config]
+################################
+
+function usage {
+    cat <<EOF
+
+Login Local DB with your account by:
+
+    source login_mongodb.sh
+
+You can specify the DB config as following:
+
+    source login_mongodb.sh [-d path/to/db/config]
+
+    - h         Show this usage
+    - d <path>  path to DB config file (default: ${HOME}/.yarr/localdb/${HOSTNAME}_database.json)
+    - Q         set QC scan mode
+
+EOF
+}
+
+function unsetvariables {
+    unset md5command
+    unset username_hash
+    unset password_hash
+    unset dbcfg
+    unset usercfg
+    unset sitecfg
+    unset qc
+}
 
 if [ ! `echo ${0} | grep bash` ]; then
     echo -e "Use 'source'"
     exit
 fi
 
-# Usage
-function usage {
-    cat <<EOF
-
-Usage:
-    ./setup_viewer.sh [-i ip address] [-p port] [-c config]
-
-Options:
-    - i <IP address>  Local DB server IP address, default: 127.0.0.1
-    - p <port>        Local DB server port, default: 27017
-    - c <config>      Config file name, default: conf.yml
-
-EOF
-}
-
-### Confirmation
-which mongo > /dev/null 2>&1
-if [ $? = 1 ]; then
-    printf '\033[31m%s\033[m\n' "[ERROR] 'mongo' command is required."
-    exit 1
-fi
-
-tools_dir=$(cd $(dirname $0); pwd)
-
-dbip=127.0.0.1
-dbport=27017
-
-while getopts i:p:c: OPT
+qc=false
+dbcfg=${HOME}/.yarr/localdb/${HOSTNAME}_database.json
+OPTIND=1
+while getopts hd:Q OPT
 do
     case ${OPT} in
-        i ) dbip=${OPTARG} ;;
-        p ) dbport=${OPTARG} ;;
-        u ) user_config=${OPTARG} ;;
-        a ) admin_config=${OPTARG} ;;
+        h ) usage
+            exit ;;
+        d ) dbcfg=${OPTARG} ;;
+        Q ) qc=true ;;
         * ) usage
             exit ;;
     esac
 done
 
-echo "Local DB Server IP address: ${dbip}"
-echo "Local DB Server port: ${dbport}"
-echo " "
-echo "${ITSNAME} Are you sure that's correct? [y/n]"
-unset answer
-read -p "> " answer
-while [ -z ${answer} ];
-do
-echo "${ITSNAME} Are you sure that's correct? [y/n]"
-    read -p "> " answer
-done
-echo " "
-if [ ${answer} != "y" ]; then
-    printf '\033[31m%s\033[m\n' "[ERROR] Try again login_mongodb.sh, Exit ..."
-    exit 1
-fi
-
-# input username and password
-read -p "Input mongoDB username: " user
-if [ -z ${user} ]; then
-    printf '\033[31m%s\033[m\n' "[ERROR] Does not match the administrator account."
-    printf '\033[31m%s\033[m\n' "        Please input correct password. Try again login_mongodb.sh, Exit ..."
-    exit 1
-fi
-
-read -sp "Input mongoDB password: " password
-if [ -z ${password} ]; then
-    printf '\033[31m%s\033[m\n' "[ERROR] Does not match the administrator account."
-    printf '\033[31m%s\033[m\n' "        Please input correct password. Try again login_mongodb.sh, Exit ..."
-    exit 1
-fi
-
-# confirmation 
-python3 << EOF
-import sys
-from pymongo import MongoClient, errors
-url = 'mongodb://${dbip}:${dbport}'
-client = MongoClient(url,serverSelectionTimeoutMS=1)
-localdb = client['localdb']
-try:
-    localdb.authenticate('${user}','${password}')
-    sys.exit(0)
-except errors.OperationFailure as err:
-    print(err)
-    sys.exit(1)
-EOF
+shell_dir=$(cd $(dirname ${BASH_SOURCE}); pwd)
+md5command=md5sum
+which ${md5command} > /dev/null 2>&1
 if [ $? = 1 ]; then
-    echo -e ""
-    printf '\033[31m%s\033[m\n' "[ERROR] You cannot connect this LocalDB because protected."
-    printf '\033[31m%s\033[m\n' "        Please input correct username and password."
-    exit 1
-else
-    echo -e "" 
-    printf "${ITSNAME} Authentication succeeded!"
+    md5command=md5
+    which md5 >/dev/null 2>&1
+    if [ $? = 1 ]; then
+        printf '\033[31m%s\033[m\n' "[ERROR] 'md5sum' or 'md5' command is required."
+        unsetvariables
+        return 1
+    fi
 fi
 
-export username=${user}
-export password=${password}
-
+read -p "Input mongodb account's username: " username
+read -sp "Input mongodb account's password: " password
 echo ""
-echo "${ITSNAME} You can use LocalDB tools."
+username_hash=`echo -n ${username}|${md5command}|sed -e "s/-//"|sed -e "s/ //g"`
+password_hash=`echo -n ${password}|${md5command}|sed -e "s/-//"|sed -e "s/ //g"`
+export username=${username}
+export password=${password_hash}
 
+usercfg=${HOME}/.yarr/localdb/user.json
+sitecfg=${HOME}/.yarr/localdb/${HOSTNAME}_site.json
+
+python3 << EOF
+import json
+path = '${usercfg}'
+doc = { 'viewerUser': '${username}' }
+with open(path, 'w') as f:
+    json.dump(doc, f, indent=4)
+EOF
+
+if "${qc}"; then
+${shell_dir}/bin/localdbtool-retrieve user --user ${usercfg} --site ${sitecfg} --QC
+else
+${shell_dir}/bin/localdbtool-retrieve user --user ${usercfg} --site ${sitecfg}
+fi
+if [ $? -ne 0 ]; then
+    echo ""
+    printf '\033[31m%s\033[m\n' "[LDB] Login failed."
+    unsetvariables
+    unset username
+    unset password
+    return 1
+fi
+echo ""
+echo "[LDB] Login successful."
+echo "[LDB] Username and password are saved."
+unsetvariables

@@ -3,10 +3,11 @@ image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_build
 job_build_and_test:
     stage: build
     script:
+      - yum -y install boost-devel
       - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
       - cd build
-      - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
+      - CXXFLAGS=-Werror cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
       - make install -j4
       - export USER=test
       - echo $USER
@@ -18,11 +19,12 @@ job_build_and_test:
       - ls
       - ls ./data/
       - ls ./data/000001_std_digitalscan/
-      - cat ./data/000001_std_digitalscan/*_OccupancyMap.dat
-      - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.dat | grep -o 100 | wc -l`
+      - cat ./data/000001_std_digitalscan/*_OccupancyMap.json
+      - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
       - if [ "$NUM100" != "26880" ]; then exit 2; fi
       - bin/scanConsole -k
       - bin/test_main
+      - bin/star_test -r 0 configs/controller/emuCfg_star.json
 
 job_build_all:
     stage: build
@@ -31,6 +33,7 @@ job_build_all:
           - bin
           - build
     script:
+      - yum -y install boost-devel
       - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
       - cd build
@@ -41,11 +44,12 @@ job_build_all:
 job_build_clang:
     stage: build
     script:
+      - yum -y install boost-devel
       - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - source scl_source enable llvm-toolset-6.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir -p build
       - cd build 
-      - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang
+      - CXXFLAGS=-Werror cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang
       - make install -j4
       - cd ..
       - bin/scanConsole -k
@@ -87,3 +91,40 @@ job_test_code_coverage:
       - ls /tmp/
       - cd ../
       - scripts/cc_tool.sh
+
+build_docs:
+    stage: build
+    before_script:
+        - pip install mkdocs
+    script:
+        - export LC_ALL=en_US.utf-8
+        - export LANG=en_US.utf-8
+        - mkdocs build
+    artifacts:
+        paths:
+            - site
+          
+
+deploy_master:
+    stage: deploy
+    dependencies: ["build_docs"]
+    only:
+        - master@YARR/YARR
+    variables:
+        "EOS_PATH" : "/eos/user/t/theim/www/yarr"
+        "CI_OUTPUT_DIR" : "site/"
+    image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
+    script:
+        - deploy-eos
+
+deploy_devel:
+    stage: deploy
+    dependencies: ["build_docs"]
+    only:
+        - devel@YARR/YARR
+    variables:
+        "EOS_PATH" : "/eos/user/t/theim/www/yarr/devel"
+        "CI_OUTPUT_DIR" : "site/"
+    image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
+    script:
+        - deploy-eos
