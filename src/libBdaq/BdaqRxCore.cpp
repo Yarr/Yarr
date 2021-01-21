@@ -8,17 +8,17 @@ namespace {
 }
 
 //BDAQ word identifiers
-#define USERK_FRAME_ID  0x01000000
-#define HEADER_ID       0x00010000
-#define TRIGGER_ID      0x80000000
-#define TDC_ID_0        0x10000000
-#define TDC_ID_1        0x20000000
-#define TDC_ID_2        0x30000000
-#define TDC_ID_3        0x40000000
-#define TDC_HEADER_MASK 0xF0000000
+#define USERK_FRAME_ID   0x01000000
+#define USERK_FRAME_MASK 0x0F000000
+#define TLU_ID           0x80000000
+#define TLU_MASK         0xF0000000
+#define TDC_ID_0         0x10000000
+#define TDC_ID_1         0x20000000
+#define TDC_ID_2         0x30000000
+#define TDC_ID_3         0x40000000
+#define TDC_HEADER_MASK  0xF0000000
 
 BdaqRxCore::BdaqRxCore() {
-    userkCounter = 0;
     mSetupMode = true;
 }
 
@@ -90,10 +90,11 @@ RawData* BdaqRxCore::readData() {
         fifo.readData(inBuf, size);
         size = sortChannels(inBuf);
         uint32_t* outBuf = new uint32_t[size];
-        buildStream(outBuf, size);
+        size = buildStream(outBuf, size);
         if (size > 0) {
             return new RawData(0x0, outBuf, size);
         } 
+        //delete[] outBuf;
         return NULL;
     }
     return NULL;
@@ -103,7 +104,9 @@ void BdaqRxCore::flushBuffer() {
     std::stringstream d; 
     d << __PRETTY_FUNCTION__;
     logger->debug(d.str());
-    //auroraRx->resetLogic();
+    for (uint i=0;i<7;++i) {
+        rx.at(i).resetLogic();
+    }
     fifo.flushBuffer();
 }
 
@@ -125,30 +128,6 @@ bool BdaqRxCore::isBridgeEmpty() {
 // BDAQ Decoding
 // =============================================================================
 
-void BdaqRxCore::initSortBuffer() {
-    sBuffer.clear();
-    for (uint c : activeChannels) {
-        sBuffer.push_back(std::deque<uint32_t>(0));
-    }
-}
-
-void BdaqRxCore::buildStream(uint32_t* out, uint size) {
-    // Building continuous stream
-    for (uint i=0;i<size;i++) {
-        // n words of each channel, sequentially
-        uint nChannel = (i/2)%activeChannels.size();
-        if (sBuffer.at(nChannel).size() < 2) {
-            out[i] = 0xFFFF0000;
-        } else {
-            uint32_t hi = sBuffer.at(nChannel).at(0) & 0xFFFF;
-            uint32_t lo = sBuffer.at(nChannel).at(1) & 0xFFFF;
-            out[i] = (hi << 16) | lo;
-            sBuffer.at(nChannel).pop_front();
-            sBuffer.at(nChannel).pop_front();
-        }
-    }
-}
-
 void BdaqRxCore::printSortStatus() {
     uint nChannel = 0;
     for (const auto& c : activeChannels) {    
@@ -157,85 +136,118 @@ void BdaqRxCore::printSortStatus() {
     }
 }
 
+void BdaqRxCore::initSortBuffer() {
+    sBuffer.clear();
+    for (uint c : activeChannels) {
+        //sBuffer.push_back(std::deque<uint32_t>(0));
+        sBuffer.push_back(std::queue<uint32_t>());
+    }
+}
+
 uint BdaqRxCore::sortChannels(std::vector<uint32_t>& in) {
     // Sorting
     for (const auto& word : in) {
-        if (word & TRIGGER_ID) { // CHECK THIS
-            logger->critical("TLU data is not yet supported.");
+        if ((word & TLU_MASK) == TLU_ID) {
+            logger->critical("TLU data is not supported.");
             exit(-1);
         } 
         if (checkTDC(word)) {
-            logger->critical("TDC data is not yet supported.");
+            logger->critical("TDC data is not supported.");
             exit(-1);
         } 
-        if (word & USERK_FRAME_ID) {
-            //index = decodeUserk(word, out, index);
-            continue;
-        } 
-        uint nChannel = 0;
-        for (const auto& c : activeChannels) {
+        uint bIndex = 0;
+        for (const auto& channelId : activeChannels) {
             // Testing Aurora RX Identifier 
-            if (((word >> 20) & 0xF) == c) {
-                sBuffer.at(nChannel).push_back(word);
+            if (((word >> 20) & 0xF) == channelId) {
+                sBuffer.at(bIndex).push(word);
             }
-            ++nChannel;
+            ++bIndex;
         }
     }
-    // Calculating Total Size
+    // Calculating Size
     uint acc = 0;
-    uint nChannel = 0;
-    for (const auto& c : activeChannels) {
-        acc += sBuffer.at(nChannel).size();
-        ++nChannel;
+    uint bIndex = 0;
+    for (const auto& channelId : activeChannels) {
+        acc += sBuffer.at(bIndex).size();
+        ++bIndex;
     }
-    return acc; // Total size.
+    return acc;
+}
+
+void BdaqRxCore::buildData(uint32_t* out, uint bIndex, uint oIndex) {
+    uint32_t hi = sBuffer.at(bIndex).front() & 0xFFFF;
+    sBuffer.at(bIndex).pop();
+    uint32_t lo = sBuffer.at(bIndex).front() & 0xFFFF;
+    sBuffer.at(bIndex).pop();
+    out[oIndex] = (hi << 16) | lo;
+    /*hi = sBuffer.at(bIndex).front() & 0xFFFF;
+    sBuffer.at(bIndex).pop();
+    lo = sBuffer.at(bIndex).front() & 0xFFFF;
+    sBuffer.at(bIndex).pop();
+    out[oIndex+1] = (hi << 16) | lo;*/
+}
+
+void BdaqRxCore::buildUserk(uint32_t* out, uint bIndex, uint oIndex) {
+    // Building USERK frame (userkWordA and userkWordB)
+    uint32_t hi = sBuffer.at(bIndex).front() & 0xFFFF;
+    logger->critical("USERK: 0x{0:X}", sBuffer.at(bIndex).front());
+    sBuffer.at(bIndex).pop();
+    uint32_t lo = sBuffer.at(bIndex).front() & 0xFFFF;
+    logger->critical("USERK: 0x{0:X}", sBuffer.at(bIndex).front());
+    sBuffer.at(bIndex).pop();
+    uint64_t userkWordA = (hi << 16) | lo;
+    hi = sBuffer.at(bIndex).front() & 0xFFFF;
+    logger->critical("USERK: 0x{0:X}", sBuffer.at(bIndex).front());
+    sBuffer.at(bIndex).pop();
+    lo = sBuffer.at(bIndex).front() & 0xFFFF;
+    logger->critical("USERK: 0x{0:X}", sBuffer.at(bIndex).front());
+    sBuffer.at(bIndex).pop();
+    uint64_t userkWordB = (hi << 16) | lo;
+
+    // Interpreting the USERK frame ang getting register data
+    BdaqRxCore::userkDataT userkData = 
+        interpretUserkFrame(userkWordA, userkWordB);
+    std::vector<regDataT> regData = getRegData(userkData);
+    // Encoding to YARR format
+    for (const auto& reg : regData) {
+        encodeToYarr(reg, out, oIndex); //inserts 2 words in the out stream.
+        oIndex+=2;
+    }
+}
+
+uint BdaqRxCore::buildStream(uint32_t* out, uint size) {
+    uint procSize = 0;
+    uint oIndex = 0;
+    //logger->critical("buildStream()");
+    //logger->info("size = {:d}", size);
+    while (procSize < size) {
+        for (uint bIndex=0; bIndex<activeChannels.size(); ++bIndex) {
+            //logger->info("procSize = {:d}, bIndex = {:d}, bSize = {:d}, word = 0x{:X}", procSize, bIndex, sBuffer.at(bIndex).size(), sBuffer.at(bIndex).front());  
+            if (sBuffer.at(bIndex).size() < 4) {
+                out[oIndex  ] = 0xFFFF0000;
+                out[oIndex+1] = 0xFFFF0000;
+                procSize += sBuffer.at(bIndex).size();
+            } else if ((sBuffer.at(bIndex).front() & USERK_FRAME_MASK) == USERK_FRAME_ID) {
+                logger->critical("buildUserk()");
+                buildUserk(out, bIndex, oIndex);
+                procSize += 4;
+                oIndex += 2;
+            } else {
+                buildData(out, bIndex, oIndex);
+                procSize += 2; //4;
+                oIndex += 1;
+            }
+            //oIndex += 2;
+        }
+    }
+    return oIndex; // Output stream size
 }
 
 // USERK Decoding ==============================================================
 
-unsigned int BdaqRxCore::decodeUserk(const uint32_t& word, uint32_t* out, 
-                                        unsigned int index) {                                            
-    logger->debug("USERK word {} = {}", userkCounter, word);
-    buildUserkFrame(word, userkCounter);
-    // 4 USERK readout words are necessary to build an USERK frame.
-    if (userkCounter == 3) {
-        userkCounter = 0;
-        BdaqRxCore::userkDataT userkData = interpretUserkFrame();
-        std::vector<regDataT> regData = getRegData(userkData);
-        // regData might contain data from either 1 or 2 registers.
-        // The code below will insert this data into the output stream
-        // using one of the YARR expected formats.                                        
-        for (const auto& reg : regData) {
-            encodeToYarr(reg, out, index); //inserts 2 words in the out stream.
-            index+=2;
-        }
-    } else {
-        ++userkCounter;
-    }
-    return index;
-}
-
-// An USERK frame is composed by 2 32-bit words (userkWordA and userkWordB).
-// To build the frame, 4 readout words are neccesary (identified by id).
-void BdaqRxCore::buildUserkFrame(const uint32_t& word, unsigned int id) {
-    switch(id) {
-        case 0:
-            userkWordA = word & 0xFFFF;
-        break;
-        case 1:
-            userkWordA = userkWordA << 16 | (word & 0xFFFF);
-        break;
-        case 2:
-            userkWordB = word & 0xFFFF;
-        break;
-        case 3:
-            userkWordB = userkWordB << 16 | (word & 0xFFFF);
-        break;
-    }    
-}
-
 // Extracts the data from an USERK frame (userkWordA + userkWordB).
-BdaqRxCore::userkDataT BdaqRxCore::interpretUserkFrame() {
+BdaqRxCore::userkDataT BdaqRxCore::interpretUserkFrame(uint64_t userkWordA, 
+                                                        uint64_t userkWordB) {  
     uint64_t userkBlock, Data0, Data1;
     userkDataT u;
 
@@ -260,7 +272,7 @@ BdaqRxCore::userkDataT BdaqRxCore::interpretUserkFrame() {
     return u;
 }
 
-// Get register data according to AuroraKWord.
+// Get register data from AuroraKWord.
 std::vector<BdaqRxCore::regDataT> BdaqRxCore::getRegData(BdaqRxCore::userkDataT in) {
     BdaqRxCore::regDataT o;
     std::vector<BdaqRxCore::regDataT> regData;
@@ -291,7 +303,7 @@ std::vector<BdaqRxCore::regDataT> BdaqRxCore::getRegData(BdaqRxCore::userkDataT 
     return regData;
 }
 
-// Emulating the YARR expected readout format for a register frame
+// Emulating the data format, expected by YARR, for a register read
 void BdaqRxCore::encodeToYarr(BdaqRxCore::regDataT in, uint32_t* out, 
                                 unsigned int index) {
     out[index  ] = 0x55000000;

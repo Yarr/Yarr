@@ -425,21 +425,22 @@ int main(int argc, char *argv[]) {
     // Wait for rx to sync with FE stream
     // TODO Check RX sync
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
+    hwCtrl->flushBuffer();
     for ( FrontEnd* fe : bookie.feList ) {
         auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
         logger->info("Checking com {}", feCfg->getName());
         // Select correct channel
         hwCtrl->setCmdEnable(feCfg->getTxChannel());
         hwCtrl->setRxEnable(feCfg->getRxChannel());
-        hwCtrl->checkRxSync(); // Should be done per fe (Aurora link) and after setRxEnable().
+        hwCtrl->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
         // Configure
-        // USERK decoding in TEMPORARILY disabled in BdaqRxCore. Not supposed to be merged.
-        /*if (fe->checkCom() != 1) { 
+        if (fe->checkCom() != 1) { 
             logger->critical("Can't establish communication, aborting!");
             return -1;
-        }*/
+        }
         logger->info("... success!");
     }
+    //return -1;
 
     // Enable all active channels
     logger->info("Enabling Tx channels");
