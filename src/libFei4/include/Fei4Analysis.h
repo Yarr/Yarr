@@ -132,6 +132,8 @@ class ScurveFitter : public AnalysisAlgorithm {
         std::map<unsigned, std::unique_ptr<Histo2d>> statusMap; 
         std::map<unsigned, std::unique_ptr<Histo1d>> statusDist;
 
+        std::map<unsigned, std::unique_ptr<Histo2d>> sCurveMap;
+
         std::unique_ptr<PixelFeedbackSender> fb;
         std::map<unsigned, std::unique_ptr<Histo2d>> step;
         std::map<unsigned, std::unique_ptr<Histo2d>> deltaThr;

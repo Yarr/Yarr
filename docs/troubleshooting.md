@@ -2,6 +2,65 @@
 
 The topics in this section are ordered in increasing complexity. If a problem occurs the best way is to start at the basics and crosscheck those first to exclude them. Knowing that these points have been crosschecked will help if further support is needed.
 
+
+## Firmware Troubleshooting
+
+If you encounter errors concerning permissions, e.g. 
+```
+# open_hw_target
+ERROR: [Labtoolstcl 44-469] There is no current hw_target.
+```
+try installing cable drivers:
+```cd /opt/Xilinx/Vivado/2020.1/data/xicom/cable_drivers/lin64/install_script/install_drivers/
+sudo ./install_drivers
+```
+
+Alternatively you might have to add a ``udev`` rule. Run ``lsusb`` and identify your JTAG cable, e.g. ``Bus 001 Device 007: ID 0403:6014``.
+Open ``/etc/udev/rules.d/99-usb.rules`` and add the line
+```
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6014", MODE:="0666"
+```
+with the correct vendor and product ID from ``lsusb``. Reload ``udev`` rules with
+```
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
+
+### Centos 8
+
+#### Kernel driver does not load on start up
+In ``/etc/modules-load.d/`` add a line to a config file (or create one if none existing) e.g. ``modules.conf`` with ``specDriver``
+
+#### Installing Vivado
+```
+No protocol specified
+No protocol specified
+ERROR: Installer could not be started. Could not initialize class java.awt.GraphicsEnvironment$LocalGE
+java.lang.NoClassDefFoundError: Could not initialize class java.awt.GraphicsEnvironment$LocalGE
+	at java.desktop/java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment(GraphicsEnvironment.java:129)
+	at java.desktop/java.awt.Window.initGC(Window.java:487)
+	at java.desktop/java.awt.Window.init(Window.java:507)
+	at java.desktop/java.awt.Window.<init>(Window.java:549)
+	at java.desktop/java.awt.Frame.<init>(Frame.java:423)
+	at java.desktop/java.awt.Frame.<init>(Frame.java:388)
+	at java.desktop/javax.swing.JFrame.<init>(JFrame.java:180)
+	at h.b.<init>(Unknown Source)
+	at com.xilinx.installer.gui.F.<init>(Unknown Source)
+	at com.xilinx.installer.gui.InstallerGUI.<init>(Unknown Source)
+	at com.xilinx.installer.gui.InstallerGUI.<clinit>(Unknown Source)
+	at com.xilinx.installer.api.InstallerLauncher.main(Unknown Source)
+```
+
+Execute ``xhost +``.
+
+#### Couldn't load "librdi_commontasks.so": libtinfo.so.5
+
+```
+application-specific initialization failed: couldn't load file "librdi_commontasks.so": libtinfo.so.5: cannot open shared object file: No such file or directory
+```
+
+In ``/usr/lib64`` make a symblink ``sudo ln -s libtinfo.so.6 libtinfo.so.5``.
+
+
 ## PCIe Card Troubleshooting
 
 The following points are specific to PCIe cards.

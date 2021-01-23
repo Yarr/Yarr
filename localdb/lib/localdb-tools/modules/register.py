@@ -1141,17 +1141,26 @@ class DcsData(RegisterData):
             self.logger.error('Not found DCS data file.')
             self.logger.error('\tfile: {0}'.format(i_path))
             raise DcsDataError
+
         # key and num
         key_lines = data.readline().splitlines()
         if key_lines==[]:
             self.logger.error('Not found DCS keys in the 1st line.')
             self.logger.error('\tfile: {0}'.format(i_path))
             raise DcsDataError
+
         num_lines = data.readline().splitlines()
         if num_lines==[]:
             self.logger.error('Not found DCS nums in the 2nd line.')
             self.logger.error('\tfile: {0}'.format(i_path))
             raise DcsDataError
+
+        setting_lines = data.readline().splitlines()
+        if setting_lines==[]:
+            self.logger.error('Not found DCS nums in the 3nd line.')
+            self.logger.error('\tfile: {0}'.format(i_path))
+            raise DcsDataError
+
         key = -1
         for j, tmp_key in enumerate(key_lines[0].split(separator)):
             tmp_key = tmp_key.lower().replace(' ','_')
@@ -1165,14 +1174,16 @@ class DcsData(RegisterData):
             self.logger.error('\tkey: {0}  num: {1}'.format(env_key, i_num))
             self.logger.error('Please check the key and num given in the DCS config file are set in the DCS data file.')
             raise DcsDataError
+
         # value
         env_lines = data.readline().splitlines()
         if env_lines==[]:
-            self.logger.error('Not found DCS values from the 3rd line.')
+            self.logger.error('Not found DCS values from the 4rd line.')
             self.logger.error('\tfile: {0}'.format(i_path))
             raise DcsDataError
         l = 3
         array = []
+
         while env_lines:
             if len(env_lines[0].split(separator)) < key: break
             try:
@@ -1196,7 +1207,7 @@ class DcsData(RegisterData):
                         'date' : datetime.utcfromtimestamp(date),
                         'value': value
                     })
-            env_lines = data.readline()
+            env_lines = data.readline().splitlines()
             l = l+1
         return array
 

@@ -544,10 +544,19 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     hhh->setZaxisTitle("Number of pixels");
                     sCurve[outerIdent].reset(hhh);
                 }
+                if (sCurveMap[outerIdent] == NULL) {
+                    Histo2d *hhh = new Histo2d("sCurveMap-" + std::to_string(outerIdent), nCol*nRow, -0.5, nCol*nRow-0.5, vcalBins+1, vcalMin-((double)vcalStep/2.0), vcalMax+((double)vcalStep/2.0));
+                    hhh->setXaxisTitle("Channel Number");
+                    hhh->setYaxisTitle("Vcal [LSB]");
+                    hhh->setZaxisTitle("Number of Hits");
+                    sCurveMap[outerIdent].reset(hhh);
+                }
 
                 // Add up Histograms
-                histos[ident]->fill(vcal, hh->getBin(bin));
-                sCurve[outerIdent]->fill(vcal, hh->getBin(bin));
+                double thisBin = hh->getBin(bin);
+                histos[ident]->fill(vcal, thisBin);
+                sCurve[outerIdent]->fill(vcal, thisBin);
+                sCurveMap[outerIdent]->fill(bin, vcal, thisBin);
                 innerCnt[ident]++;
 
                 // Got all data, finish up Analysis
@@ -627,12 +636,11 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     } else {
                         n_failedfit++;
                         alog->debug("Failed fit Col({}) Row({}) Threshold({}) Chi2({}) Status({}) Entries({}) Mean({})", col, row, thrMap[outerIdent]->getBin(bin), chi2, status.outcome, histos[ident]->getEntries(), histos[ident]->getMean());
-                        if (row < 50 && col < 20)
-                        output->pushData(std::move(histos[ident]));
                     }
-                    if (row == nRow%50 && col%50 == 0) {
-                        //output->pushData(std::move(histos[ident]));
-                    }
+                    // TODO make this selectable via config
+                    //if (row == nRow/2 && col%10 == 0) {
+                    //    output->pushData(std::move(histos[ident]));
+                    //}
                     histos[ident].reset(nullptr);
                 }
             }
@@ -771,6 +779,7 @@ void ScurveFitter::end() {
         output->pushData(std::move(sigMap[i]));
         output->pushData(std::move(chiDist[i]));
         output->pushData(std::move(timeDist[i]));
+        output->pushData(std::move(sCurveMap[i]));
     }
 
 
