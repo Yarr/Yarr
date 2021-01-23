@@ -140,6 +140,8 @@ uint64_t Rd53bDataProcessor::retrieve(const unsigned length, const bool checkEOS
             // logger->error("Data error: end of current packet reached while still reading stream!");
         }
 
+        if (unlikely(((_data[2] >> 31) & 0x1)))
+            logger->error("Expect unfinished stream while NS = 1");
         variable |= (((_bitIdx + length) < (HALFBLOCKSIZE + BLOCKSIZE)) ? ((_data[2] & 0x7FFFFFFFUL) >> (95 - (_bitIdx + length))) : (((_data[2] & 0x7FFFFFFFUL) << (_bitIdx + length - 95)) | (_data[3] >> (127 - (length + _bitIdx)))));
 
         ++_blockIdx; // Increase block index
@@ -228,7 +230,8 @@ void Rd53bDataProcessor::process_core()
                     if (unlikely(_blockIdx >= blocks))
                         break; // End of data processing
                     _data = &_curIn->buf[2 * _blockIdx];
-
+                    if (unlikely(!(_data[0] >> 31 & 0x1)))
+                        logger->error("Expect new stream while NS = 0");
                     tag[channel] = (_data[0] >> 23) & 0xFF;
                     ++_blockIdx; // Increase block index
                     _bitIdx = 9; // Reset bit index = NS + tag
