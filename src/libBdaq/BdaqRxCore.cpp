@@ -89,12 +89,11 @@ RawData* BdaqRxCore::readData() {
         std::vector<uint32_t> inBuf;
         fifo.readData(inBuf, size);
         size = sortChannels(inBuf);
-        uint32_t* outBuf = new uint32_t[128000];
+        uint32_t* outBuf = new uint32_t[size*activeChannels.size()];
         size = buildStream(outBuf, size);
         if (size > 0) {
             return new RawData(0x0, outBuf, size);
         } 
-        //delete[] outBuf;
         return NULL;
     }
     return NULL;
@@ -139,7 +138,6 @@ void BdaqRxCore::printSortStatus() {
 void BdaqRxCore::initSortBuffer() {
     sBuffer.clear();
     for (uint c : activeChannels) {
-        //sBuffer.push_back(std::deque<uint32_t>(0));
         sBuffer.push_back(std::queue<uint32_t>());
     }
 }
@@ -164,14 +162,14 @@ uint BdaqRxCore::sortChannels(std::vector<uint32_t>& in) {
             ++bIndex;
         }
     }
-    // Calculating Size
+    // Calculating total size
     uint acc = 0;
     uint bIndex = 0;
     for (const auto& channelId : activeChannels) {
         acc += sBuffer.at(bIndex).size();
         ++bIndex;
     }
-    return acc;
+    return acc; // Total size
 }
 
 void BdaqRxCore::buildData(uint32_t* out, uint bIndex, uint oIndex) {
@@ -180,11 +178,6 @@ void BdaqRxCore::buildData(uint32_t* out, uint bIndex, uint oIndex) {
     uint32_t lo = sBuffer.at(bIndex).front() & 0xFFFF;
     sBuffer.at(bIndex).pop();
     out[oIndex] = (hi << 16) | lo;
-    hi = sBuffer.at(bIndex).front() & 0xFFFF;
-    sBuffer.at(bIndex).pop();
-    lo = sBuffer.at(bIndex).front() & 0xFFFF;
-    sBuffer.at(bIndex).pop();
-    out[oIndex+1] = (hi << 16) | lo;
 }
 
 void BdaqRxCore::buildUserk(uint32_t* out, uint bIndex, uint oIndex) {
@@ -218,42 +211,24 @@ void BdaqRxCore::buildUserk(uint32_t* out, uint bIndex, uint oIndex) {
 uint BdaqRxCore::buildStream(uint32_t* out, uint size) {
     uint procSize = 0;
     uint oIndex = 0;
-    //logger->critical("buildStream()");
-    //logger->info("size = {:d}", size);
+    uint counter = 0;
     while (procSize < size) {
-        for (uint bIndex=0; bIndex<activeChannels.size(); ++bIndex) {
-            //logger->info("procSize = {:d}, bIndex = {:d}, bSize = {:d}, word = 0x{:X}", procSize, bIndex, sBuffer.at(bIndex).size(), sBuffer.at(bIndex).front());  
-            /*if (sBuffer.at(bIndex).size() < 4) {
-                out[oIndex  ] = 0xFFFF0000;
-                out[oIndex+1] = 0xFFFF0000;
-                procSize += sBuffer.at(bIndex).size();
-            } else if ((sBuffer.at(bIndex).front() & USERK_FRAME_MASK) == USERK_FRAME_ID) {
-                logger->critical("buildUserk()");
-                buildUserk(out, bIndex, oIndex);
-                procSize += 4;
-                oIndex += 2;
-            } else {
-                buildData(out, bIndex, oIndex);
-                procSize += 2; //4;
-                oIndex += 1;
-            }*/
-            if ((sBuffer.at(bIndex).size() > 3) && 
-            (sBuffer.at(bIndex).front() & USERK_FRAME_MASK) == USERK_FRAME_ID) {
-                logger->critical("buildUserk()");
-                buildUserk(out, bIndex, oIndex);
-                procSize += 4;
-                oIndex += 2;
-            } else if (sBuffer.at(bIndex).size() > 3) {
-                buildData(out, bIndex, oIndex);
-                procSize += 4;
-                oIndex += 2;
-            } else {
-                out[oIndex  ] = 0xFFFF0000;
-                out[oIndex+1] = 0xFFFF0000;
-                procSize += sBuffer.at(bIndex).size();
-                oIndex += 2;
-            }
-            //oIndex += 2;
+        uint bIndex = (counter/2)%activeChannels.size(); 
+        counter++;
+        if ((sBuffer.at(bIndex).size() > 3) && 
+        (sBuffer.at(bIndex).front() & USERK_FRAME_MASK) == USERK_FRAME_ID) {
+            logger->critical("buildUserk()");
+            buildUserk(out, bIndex, oIndex);
+            procSize += 4;
+            oIndex += 2;
+        } else if (sBuffer.at(bIndex).size() > 1) {
+            buildData(out, bIndex, oIndex);
+            procSize += 2;
+            oIndex += 1;
+        } else {
+            out[oIndex] = 0xFFFF0000;
+            procSize += sBuffer.at(bIndex).size();
+            oIndex += 1;
         }
     }
     return oIndex; // Output stream size
