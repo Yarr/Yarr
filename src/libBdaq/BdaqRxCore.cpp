@@ -89,7 +89,7 @@ RawData* BdaqRxCore::readData() {
         std::vector<uint32_t> inBuf;
         fifo.readData(inBuf, size);
         size = sortChannels(inBuf);
-        uint32_t* outBuf = new uint32_t[size];
+        uint32_t* outBuf = new uint32_t[128000];
         size = buildStream(outBuf, size);
         if (size > 0) {
             return new RawData(0x0, outBuf, size);
@@ -180,11 +180,11 @@ void BdaqRxCore::buildData(uint32_t* out, uint bIndex, uint oIndex) {
     uint32_t lo = sBuffer.at(bIndex).front() & 0xFFFF;
     sBuffer.at(bIndex).pop();
     out[oIndex] = (hi << 16) | lo;
-    /*hi = sBuffer.at(bIndex).front() & 0xFFFF;
+    hi = sBuffer.at(bIndex).front() & 0xFFFF;
     sBuffer.at(bIndex).pop();
     lo = sBuffer.at(bIndex).front() & 0xFFFF;
     sBuffer.at(bIndex).pop();
-    out[oIndex+1] = (hi << 16) | lo;*/
+    out[oIndex+1] = (hi << 16) | lo;
 }
 
 void BdaqRxCore::buildUserk(uint32_t* out, uint bIndex, uint oIndex) {
@@ -243,14 +243,15 @@ uint BdaqRxCore::buildStream(uint32_t* out, uint size) {
                 buildUserk(out, bIndex, oIndex);
                 procSize += 4;
                 oIndex += 2;
-            } else if (sBuffer.at(bIndex).size() > 1) {
+            } else if (sBuffer.at(bIndex).size() > 3) {
                 buildData(out, bIndex, oIndex);
-                procSize += 2;
-                oIndex += 1;
+                procSize += 4;
+                oIndex += 2;
             } else {
                 out[oIndex  ] = 0xFFFF0000;
                 out[oIndex+1] = 0xFFFF0000;
                 procSize += sBuffer.at(bIndex).size();
+                oIndex += 2;
             }
             //oIndex += 2;
         }
