@@ -223,7 +223,7 @@ uint BdaqRxCore::buildStream(uint32_t* out, uint size) {
     while (procSize < size) {
         for (uint bIndex=0; bIndex<activeChannels.size(); ++bIndex) {
             //logger->info("procSize = {:d}, bIndex = {:d}, bSize = {:d}, word = 0x{:X}", procSize, bIndex, sBuffer.at(bIndex).size(), sBuffer.at(bIndex).front());  
-            if (sBuffer.at(bIndex).size() < 4) {
+            /*if (sBuffer.at(bIndex).size() < 4) {
                 out[oIndex  ] = 0xFFFF0000;
                 out[oIndex+1] = 0xFFFF0000;
                 procSize += sBuffer.at(bIndex).size();
@@ -236,6 +236,21 @@ uint BdaqRxCore::buildStream(uint32_t* out, uint size) {
                 buildData(out, bIndex, oIndex);
                 procSize += 2; //4;
                 oIndex += 1;
+            }*/
+            if ((sBuffer.at(bIndex).size() > 3) && 
+            (sBuffer.at(bIndex).front() & USERK_FRAME_MASK) == USERK_FRAME_ID) {
+                logger->critical("buildUserk()");
+                buildUserk(out, bIndex, oIndex);
+                procSize += 4;
+                oIndex += 2;
+            } else if (sBuffer.at(bIndex).size() > 1) {
+                buildData(out, bIndex, oIndex);
+                procSize += 2;
+                oIndex += 1;
+            } else {
+                out[oIndex  ] = 0xFFFF0000;
+                out[oIndex+1] = 0xFFFF0000;
+                procSize += sBuffer.at(bIndex).size();
             }
             //oIndex += 2;
         }
