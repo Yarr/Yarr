@@ -55,18 +55,26 @@
         "config": {}
       },
       "3": {
-        "algorithm": "TagDist",
+        "algorithm": "ToaMap",
         "config": {}
       },
       "4": {
-        "algorithm": "HitsPerEvent",
+        "algorithm": "Toa2Map",
         "config": {}
       },
       "5": {
+        "algorithm": "TagDist",
+        "config": {}
+      },
+      "6": {
+        "algorithm": "HitsPerEvent",
+        "config": {}
+      },
+      "7": {
         "algorithm": "DataArchiver",
         "config": {}
       },
-      "n_count": 5
+      "n_count": 7
     },
     "loops": [
       {
