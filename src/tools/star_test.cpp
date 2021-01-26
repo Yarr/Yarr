@@ -209,6 +209,9 @@ int main(int argc, char *argv[]) {
       s.writeSingle(0x6<<14 | 0x1, 0xF);
     }
     spec.setCmdEnable(0xFFFF); // LCB Port D
+    if (controllerType == "emu_Star") {
+      spec.setCmdEnable(0x0);
+    }
     // First disable all input
     spec.disableRx();
 
