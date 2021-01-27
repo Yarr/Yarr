@@ -260,8 +260,7 @@ int Rd53b::checkCom() {
     RawData *data = m_rxcore->readData();
 
     if (data != NULL) {
-        std::cout << "Size: " << data->words << std::endl;
-
+        
         if (!(data->words == 2 || data->words == 4 || data->words == 8 || data->words == 12 || data->words == 6)) {
             logger->error("Received wrong number of words ({}) for {}", data->words, this->name);
             return 0;
