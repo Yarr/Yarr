@@ -446,9 +446,10 @@ void ScurveFitter::init(ScanBase *s) {
 // par[0] = Mean
 // par[1] = Sigma
 // par[2] = Normlization
+// par[3] = Offset
 #define SQRT2 1.414213562
 double scurveFct(double x, const double *par) {
-    return 0.5*( 2-erfc( (x-par[0])/(par[1]*SQRT2) ) )*par[2];
+    return par[3] + 0.5*( 2-erfc( (x-par[0])/(par[1]*SQRT2) ) )*par[2];
 }
 
 void ScurveFitter::processHistogram(HistogramBase *h) {
@@ -529,9 +530,9 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     control = lm_control_float;
                     //control.verbosity = 3;
                     control.verbosity = 0;
-                    const unsigned n_par = 3;
+                    const unsigned n_par = 4;
                     //double par[n_par] = {((vcalMax-vcalMin)/2.0)+vcalMin,  5 , (double) injections};
-                    double par[n_par] = {((vcalMax-vcalMin)/2.0)+vcalMin,  0.05*(((vcalMax-vcalMin)/2.0)+vcalMin)  , (double) injections};
+                    double par[n_par] = {((vcalMax-vcalMin)/2.0)+vcalMin,  0.05*(((vcalMax-vcalMin)/2.0)+vcalMin)  , (double) injections, 0};
                     std::chrono::high_resolution_clock::time_point start;
                     std::chrono::high_resolution_clock::time_point end;
                     start = std::chrono::high_resolution_clock::now();
