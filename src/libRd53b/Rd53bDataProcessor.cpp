@@ -140,10 +140,12 @@ uint64_t Rd53bDataProcessor::retrieve(const unsigned length, const bool checkEOS
             // logger->error("Data error: end of current packet reached while still reading stream!");
         }
 
-        if (!skipNSCheck && unlikely(((_data[2] >> 31) & 0x1)))
-            logger->error("Expect unfinished stream while NS = 1");
-        variable |= (((_bitIdx + length) < (HALFBLOCKSIZE + BLOCKSIZE)) ? ((_data[2] & 0x7FFFFFFFUL) >> (95 - (_bitIdx + length))) : (((_data[2] & 0x7FFFFFFFUL) << (_bitIdx + length - 95)) | (_data[3] >> (127 - (length + _bitIdx)))));
-
+        if (_bitIdx + length - BLOCKSIZE > 0)
+        {
+            if (!skipNSCheck && unlikely(((_data[2] >> 31) & 0x1)))
+                logger->error("Expect unfinished stream while NS = 1. Current data: 0x{:x}{:x} New data: 0x{:x}{:x} Remaining length to read: {}", _data[0], _data[1], _data[2], _data[3], _bitIdx + length - BLOCKSIZE);
+            variable |= (((_bitIdx + length) < (HALFBLOCKSIZE + BLOCKSIZE)) ? ((_data[2] & 0x7FFFFFFFUL) >> (95 - (_bitIdx + length))) : (((_data[2] & 0x7FFFFFFFUL) << (_bitIdx + length - 95)) | (_data[3] >> (127 - (length + _bitIdx)))));
+        }
         ++_blockIdx; // Increase block index
         _data = &_data[2];
 
