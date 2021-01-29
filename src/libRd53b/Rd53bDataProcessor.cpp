@@ -140,7 +140,7 @@ uint64_t Rd53bDataProcessor::retrieve(const unsigned length, const bool checkEOS
             // logger->error("Data error: end of current packet reached while still reading stream!");
         }
 
-        if (unlikely(((_data[2] >> 31) & 0x1)))
+        if (!skipNSCheck && unlikely(((_data[2] >> 31) & 0x1)))
             logger->error("Expect unfinished stream while NS = 1");
         variable |= (((_bitIdx + length) < (HALFBLOCKSIZE + BLOCKSIZE)) ? ((_data[2] & 0x7FFFFFFFUL) >> (95 - (_bitIdx + length))) : (((_data[2] & 0x7FFFFFFFUL) << (_bitIdx + length - 95)) | (_data[3] >> (127 - (length + _bitIdx)))));
 
@@ -254,7 +254,7 @@ void Rd53bDataProcessor::process_core()
                 uint16_t islast_isneighbor_qrow = 0;
                 do
                 {
-                    islast_isneighbor_qrow = retrieve(10);
+                    islast_isneighbor_qrow = retrieve(10, false, true);
                     if (islast_isneighbor_qrow & 0x100)
                     {
                         ++qrow;
@@ -265,7 +265,7 @@ void Rd53bDataProcessor::process_core()
                         qrow = islast_isneighbor_qrow & 0xFF;
                     }
 
-                    uint16_t hitmap = retrieve(16);
+                    uint16_t hitmap = retrieve(16, false, true);
                     if (_isCompressedHitmap)
                     {
                         // First read 16-bit, then see whether it is enough
@@ -279,7 +279,7 @@ void Rd53bDataProcessor::process_core()
                             /* Remove the offset and read the second row */
                             if (hitmap_rollBack != 0xff)
                                 rollBack(hitmap_rollBack);
-                            const uint16_t rowMap = retrieve(14);
+                            const uint16_t rowMap = retrieve(14, false, true);
                             hitmap |= (_LUT_BinaryTreeRowHMap[rowMap] << 8);
                             rollBack((_LUT_BinaryTreeRowHMap[rowMap] & 0xFF00) >> 8);
                         }
