@@ -1,0 +1,18 @@
+{
+    "ctrlCfg" : {
+        "type": "emu_Rd53a",
+        "cfg" : {
+            "type" : "rd53a",
+            "tx" : {
+                "id" : 1337,
+                "size" : 256
+            },
+            "rx" : {
+                "id" : 1338,
+                "size" : 256
+            },
+            "feCfg" : "configs/emulator/emu_fe0_rd53a.json",
+            "seed" : "fixed"
+        }
+    }
+}
