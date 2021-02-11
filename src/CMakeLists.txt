@@ -85,7 +85,9 @@ YARR_ADD_TBB()
 add_dependencies(Yarr tbb_2020)
 
 # Plotting Tools
+set(CMAKE_MESSAGE_LOG_LEVEL "ERROR")
 find_package(ROOT COMPONENTS Hist Graf)
+set(CMAKE_MESSAGE_LOG_LEVEL "STATUS")
 if (${ROOT_FOUND})
     YARR_ADD_PLOTTING()
     add_dependencies(Yarr plotting_tools)
