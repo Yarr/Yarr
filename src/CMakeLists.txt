@@ -122,7 +122,12 @@ endif()
 #add executables
 file(GLOB tools
      CONFIGURE_DEPENDS
-     tools/*.cpp)
+     tools/*.cpp
+)
+# Remove unit tests that are inside of tools if we are not building the YARR test suite
+if(NOT BUILD_TESTS)
+    list(FILTER tools EXCLUDE REGEX ".*/test_*")
+endif()
 
 if (NOT "NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   list(FILTER tools EXCLUDE REGEX tools/testNetioHw.cpp|tools/testBitStream.cpp|tools/testScan.cpp)
@@ -163,14 +168,17 @@ install(DIRECTORY ${PROJECT_BINARY_DIR}/bin DESTINATION ${TARGET_INSTALL_AREA}  
     WORLD_EXECUTE WORLD_READ GROUP_EXECUTE GROUP_READ  )
 
 # Tests
-file(GLOB_RECURSE test_src
-     CONFIGURE_DEPENDS
-     tests/test_*.cpp)
+if(BUILD_TESTS)
+    file(GLOB_RECURSE test_src
+        CONFIGURE_DEPENDS
+        tests/test_*.cpp
+    )
 
-# Make one executable
-add_executable(test_main ${test_src} tests/main.cpp)
-target_link_libraries(test_main ${YARR_LINK_LIB_COMMAND})
-add_dependencies(test_main Yarr)
+    # Make one executable
+    add_executable(test_main ${test_src} tests/main.cpp)
+    target_link_libraries(test_main ${YARR_LINK_LIB_COMMAND})
+    add_dependencies(test_main Yarr)
 
-# This uses features of CTest, so requires enable_testing somewhere
-add_test(catch2_tests ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/test_main)
+    # This uses features of CTest, so requires enable_testing somewhere
+    add_test(catch2_tests ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/test_main)
+endif()

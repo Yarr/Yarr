@@ -199,7 +199,7 @@ int checkJson(json &jsonConfig, ConfigType jsonFileType) {
 }
 
 void printHelp() {
-    std::cout << "testJson help:" << std::endl;
+    std::cout << "test_json help:" << std::endl;
     std::cout << "  Read in json configuration files to check parsing\n";
     std::cout << "\n";
     std::cout << "Parameters\n";
