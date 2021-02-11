@@ -6,16 +6,16 @@
 // # Comment: Base class for I2C devices
 // ################################
 
-#include "PeriphialI2C.h"
+#include "PeripheralI2C.h"
 #include "I2CRegs.h"
 #include <unistd.h>
 #include <iostream>
 
-PeriphialI2C::PeriphialI2C(SpecCom *arg_spec) {
+PeripheralI2C::PeripheralI2C(SpecCom *arg_spec) {
     spec = arg_spec;
 }
 
-int PeriphialI2C::checkTip() {
+int PeripheralI2C::checkTip() {
     unsigned timeout_cnt = 0;
     while ((spec->readSingle(I2C_ADDR | I2C_STAT) & I2C_STAT_TIP) == I2C_STAT_TIP &&
             timeout_cnt < I2C_TIMEOUT)
@@ -27,7 +27,7 @@ int PeriphialI2C::checkTip() {
 }
 
 
-void PeriphialI2C::init() {
+void PeripheralI2C::init() {
     // Stop core
     spec->writeSingle(I2C_ADDR | I2C_CTRL, 0x0);
     // Program clock prescaler, assume 200MHz sys clock
@@ -40,7 +40,7 @@ void PeriphialI2C::init() {
     spec->writeSingle(I2C_ADDR | I2C_CTRL, I2C_CTRL_I2C_EN);
 }
 
-int PeriphialI2C::setAddr(uint32_t dev_addr, uint32_t reg_addr) {
+int PeripheralI2C::setAddr(uint32_t dev_addr, uint32_t reg_addr) {
     // Set Slave address and write bit
     spec->writeSingle(I2C_ADDR | I2C_TX, 0x0 | ((dev_addr << 1) & 0xfe));
     // Enable start and write in command reg
@@ -67,7 +67,7 @@ int PeriphialI2C::setAddr(uint32_t dev_addr, uint32_t reg_addr) {
     return 0;
 }
 
-int PeriphialI2C::writeData(uint32_t value) {
+int PeripheralI2C::writeData(uint32_t value) {
     // Set slave reg data
     spec->writeSingle(I2C_ADDR | I2C_TX, value & 0xFF);
     // Enable write
@@ -81,7 +81,7 @@ int PeriphialI2C::writeData(uint32_t value) {
     return 0;
 }
 
-int PeriphialI2C::setupWrite(uint32_t dev_addr) {
+int PeripheralI2C::setupWrite(uint32_t dev_addr) {
     // Set Slave address and write bit
     spec->writeSingle(I2C_ADDR | I2C_TX, 0x0 | ((dev_addr << 1) & 0xfe));
     // Enable start and write in command reg
@@ -96,7 +96,7 @@ int PeriphialI2C::setupWrite(uint32_t dev_addr) {
 }
 
 
-int PeriphialI2C::setupRead(uint32_t dev_addr) {
+int PeripheralI2C::setupRead(uint32_t dev_addr) {
     // Set Slave address and read bit
     spec->writeSingle(I2C_ADDR | I2C_TX, 0x1 | ((dev_addr << 1) & 0xfe));
     // Enable start and write in command reg
@@ -109,7 +109,7 @@ int PeriphialI2C::setupRead(uint32_t dev_addr) {
     return 0;
 }
 
-int PeriphialI2C::readData(uint32_t *value) {
+int PeripheralI2C::readData(uint32_t *value) {
     // Issue read + ACK (I2C_CMD_ACK=0)
     spec->writeSingle(I2C_ADDR | I2C_CMD, I2C_CMD_RD);
     // Check TIP to make sure command is done
@@ -124,7 +124,7 @@ int PeriphialI2C::readData(uint32_t *value) {
     return 0;
 }
 
-int PeriphialI2C::sendNack() {
+int PeripheralI2C::sendNack() {
     // Send nack
     spec->writeSingle(I2C_ADDR | I2C_CMD, I2C_CMD_RD | I2C_CMD_ACK);
     // Check TIP to make sure command is done
@@ -135,7 +135,7 @@ int PeriphialI2C::sendNack() {
     return 0;
 }
 
-int PeriphialI2C::readReg(uint32_t dev_addr, uint32_t reg_addr, uint32_t *value) {
+int PeripheralI2C::readReg(uint32_t dev_addr, uint32_t reg_addr, uint32_t *value) {
     if(this->setAddr(dev_addr, reg_addr)) {
         std::cerr << __PRETTY_FUNCTION__ << " : Setting address failed!" << std::endl;
         return -1;
@@ -159,7 +159,7 @@ int PeriphialI2C::readReg(uint32_t dev_addr, uint32_t reg_addr, uint32_t *value)
     return 0;
 }
 
-int PeriphialI2C::writeReg(uint32_t dev_addr, uint32_t reg_addr, uint32_t value) {
+int PeripheralI2C::writeReg(uint32_t dev_addr, uint32_t reg_addr, uint32_t value) {
     if(setAddr(dev_addr, reg_addr)) {
         std::cerr << __PRETTY_FUNCTION__ << " : Setting address failed!" << std::endl;
         return -1;
