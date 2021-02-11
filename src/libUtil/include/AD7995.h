@@ -13,9 +13,9 @@
 #include <iostream>
 
 #include "SpecCom.h"
-#include "PeriphialI2C.h"
+#include "PeripheralI2C.h"
 
-class AD7995 : public PeriphialI2C {
+class AD7995 : public PeripheralI2C {
     public:
         AD7995(SpecCom *arg_spec);
         ~AD7995();
