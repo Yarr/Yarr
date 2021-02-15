@@ -101,12 +101,12 @@ void Rd53bDataProcessor::process()
     process_core();
 }
 
-uint64_t Rd53bDataProcessor::retrieve(const unsigned length, const bool checkEOS)
+uint64_t Rd53bDataProcessor::retrieve(const unsigned length, const bool checkEOS, const bool skipNSCheck)
 {
     if (unlikely(length == 0))
         return 0;
     // Should never happen: should be enough protection when going through the data stream
-    if (unlikely((_blockIdx >> 1) > _curIn->words))
+    if (unlikely((_blockIdx << 1) > _curIn->words))
         logger->error("Data error: end of current packet reached while still reading stream!");
 
     if (checkEOS && (_data[0] >> 31) && _bitIdx == 1)
@@ -131,7 +131,7 @@ uint64_t Rd53bDataProcessor::retrieve(const unsigned length, const bool checkEOS
 
         variable = (((_bitIdx < HALFBLOCKSIZE) ? (((_data[0] & (0xFFFFFFFFUL >> _bitIdx)) << HALFBLOCKSIZE) | _data[1]) : (_data[1] & (0xFFFFFFFFUL >> (_bitIdx - HALFBLOCKSIZE)))) << (length + _bitIdx - BLOCKSIZE));
 
-        if (unlikely((_blockIdx >> 1) >= _curIn->words))
+        if (unlikely((_blockIdx << 1) >= _curIn->words))
         {
             // Corner case that we are literally reading the stream until the last bit
             // if (_bitIdx + length == BLOCKSIZE)
@@ -140,10 +140,12 @@ uint64_t Rd53bDataProcessor::retrieve(const unsigned length, const bool checkEOS
             // logger->error("Data error: end of current packet reached while still reading stream!");
         }
 
-        if (unlikely(((_data[2] >> 31) & 0x1)))
-            logger->error("Expect unfinished stream while NS = 1");
-        variable |= (((_bitIdx + length) < (HALFBLOCKSIZE + BLOCKSIZE)) ? ((_data[2] & 0x7FFFFFFFUL) >> (95 - (_bitIdx + length))) : (((_data[2] & 0x7FFFFFFFUL) << (_bitIdx + length - 95)) | (_data[3] >> (127 - (length + _bitIdx)))));
-
+        if (_bitIdx + length - BLOCKSIZE > 0)
+        {
+            if (!skipNSCheck && unlikely(((_data[2] >> 31) & 0x1)))
+                logger->error("Expect unfinished stream while NS = 1. Current data: 0x{:x}{:x} New data: 0x{:x}{:x} Remaining length to read: {}", _data[0], _data[1], _data[2], _data[3], _bitIdx + length - BLOCKSIZE);
+            variable |= (((_bitIdx + length) < (HALFBLOCKSIZE + BLOCKSIZE)) ? ((_data[2] & 0x7FFFFFFFUL) >> (95 - (_bitIdx + length))) : (((_data[2] & 0x7FFFFFFFUL) << (_bitIdx + length - 95)) | (_data[3] >> (127 - (length + _bitIdx)))));
+        }
         ++_blockIdx; // Increase block index
         _data = &_data[2];
 
@@ -254,7 +256,7 @@ void Rd53bDataProcessor::process_core()
                 uint16_t islast_isneighbor_qrow = 0;
                 do
                 {
-                    islast_isneighbor_qrow = retrieve(10);
+                    islast_isneighbor_qrow = retrieve(10, false, true);
                     if (islast_isneighbor_qrow & 0x100)
                     {
                         ++qrow;
@@ -265,7 +267,7 @@ void Rd53bDataProcessor::process_core()
                         qrow = islast_isneighbor_qrow & 0xFF;
                     }
 
-                    uint16_t hitmap = retrieve(16);
+                    uint16_t hitmap = retrieve(16, false, true);
                     if (_isCompressedHitmap)
                     {
                         // First read 16-bit, then see whether it is enough
@@ -279,7 +281,7 @@ void Rd53bDataProcessor::process_core()
                             /* Remove the offset and read the second row */
                             if (hitmap_rollBack != 0xff)
                                 rollBack(hitmap_rollBack);
-                            const uint16_t rowMap = retrieve(14);
+                            const uint16_t rowMap = retrieve(14, false, true);
                             hitmap |= (_LUT_BinaryTreeRowHMap[rowMap] << 8);
                             rollBack((_LUT_BinaryTreeRowHMap[rowMap] & 0xFF00) >> 8);
                         }
