@@ -56,7 +56,7 @@ private:
     bool _dropToT;
 
     // Inline functions frequently used
-    inline uint64_t retrieve(const unsigned length, const bool checkEOS = false);	// Retrieve bit string with length
+    inline uint64_t retrieve(const unsigned length, const bool checkEOS = false, const bool skipNSCheck = false);	// Retrieve bit string with length
     inline void rollBack(const unsigned length);									// Roll back bit index
     inline uint8_t getBitPair(uint16_t &lowestLayer, uint8_t depth, uint8_t shift); // Get decoded bit pair used in hit map
     inline void process_core();
