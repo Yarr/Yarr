@@ -80,7 +80,7 @@
     "name": "DigitalScan",
     "prescan": {
         "InjVcalMed": 100,
-        "InjVcalHigh": 1000,
+        "InjVcalHigh": 2000,
         "InjVcalRange": 1,
         "InjDigEn": 0,
         "Latency": 60

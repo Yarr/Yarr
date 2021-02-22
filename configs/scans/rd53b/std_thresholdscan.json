@@ -41,25 +41,25 @@
         "config": {
           "max": 64,
           "min": 0,
-          "step": 4
+          "step": 1
         },
         "loopAction": "Rd53bMaskLoop"
       },
       {
         "config": {
-          "max": 600,
+          "max": 300,
           "min": 0,
-          "step": 10,
+          "step": 5,
           "parameter":"InjVcalDiff"
         },
         "loopAction": "Rd53bParameterLoop"
       },
       {
         "config": {
-          "max": 1,
+          "max": 50,
           "min": 0,
           "step": 1,
-          "nSteps": 1
+          "nSteps": 5
         },
         "loopAction": "Rd53bCoreColLoop"
       },
