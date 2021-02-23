@@ -152,8 +152,8 @@ void Rd53bGlobalCfg::init() {
 
     // Power
     //38
-    SldoEnUndershuntA.init  ( 38, &m_cfg[ 38], 6,  1, 0); regMap["SldoEnUndershuntA"] = &Rd53bGlobalCfg::SldoEnUndershuntA;
-    SldoEnUndershuntD.init  ( 38, &m_cfg[ 38], 5,  1, 0); regMap["SldoEnUndershuntD"] = &Rd53bGlobalCfg::SldoEnUndershuntD;
+    SldoEnUndershuntA.init  ( 38, &m_cfg[ 38], 9,  1, 0); regMap["SldoEnUndershuntA"] = &Rd53bGlobalCfg::SldoEnUndershuntA;
+    SldoEnUndershuntD.init  ( 38, &m_cfg[ 38], 8,  1, 0); regMap["SldoEnUndershuntD"] = &Rd53bGlobalCfg::SldoEnUndershuntD;
     SldoTrimA.init          ( 38, &m_cfg[ 38], 4,  4, 8); regMap["SldoTrimA"] = &Rd53bGlobalCfg::SldoTrimA;
     SldoTrimD.init          ( 38, &m_cfg[ 38], 0,  4, 8); regMap["SldoTrimD"] = &Rd53bGlobalCfg::SldoTrimD;
 
