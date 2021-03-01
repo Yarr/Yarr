@@ -112,6 +112,8 @@ void ItsdaqTxCore::setTrigEnable(uint32_t value){
       break;
     default:
       // Should not occur, else stuck
+      logger->error("No config for trigger, aborting loop");
+      m_trigEnabled = false;
       break;
     }
   }
