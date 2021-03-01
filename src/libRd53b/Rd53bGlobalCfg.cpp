@@ -239,7 +239,7 @@ void Rd53bGlobalCfg::init() {
     DataMergeInPol.init     ( 68, &m_cfg[ 68], 8,  4, 0); regMap["DataMergeInPol"] = &Rd53bGlobalCfg::DataMergeInPol;
     EnChipId.init           ( 68, &m_cfg[ 68], 7,  1, 0); regMap["EnChipId"] = &Rd53bGlobalCfg::EnChipId;
     DataMergeEnClkGate.init ( 68, &m_cfg[ 68], 6,  1, 0); regMap["DataMergeSelClk"] = &Rd53bGlobalCfg::DataMergeSelClk;
-    DataMergeSelClk.init    ( 68, &m_cfg[ 68], 5,  1, 1); regMap["DataMergeEnClkGate"] = &Rd53bGlobalCfg::DataMergeEnClkGate;
+    DataMergeSelClk.init    ( 68, &m_cfg[ 68], 5,  1, 0); regMap["DataMergeEnClkGate"] = &Rd53bGlobalCfg::DataMergeEnClkGate;
     DataMergeEn.init        ( 68, &m_cfg[ 68], 1,  4, 0); regMap["DataMergeEn"] = &Rd53bGlobalCfg::DataMergeEn;
     DataMergeEnBond.init    ( 68, &m_cfg[ 68], 0,  1, 0); regMap["DataMergeEnBond"] = &Rd53bGlobalCfg::DataMergeEnBond;
     //69
