@@ -1,10 +1,10 @@
 # Software Installation
 
-Adding BDAQ support to the Yarr software requires one extra dependency and enabling the BDAQ controller for compilation. To achieve this, follow the further instructions.
+Adding BDAQ support to the Yarr software requires one extra dependency and enabling the BDAQ controller for compilation. To achieve this, follow the instructions ahead.
 
 # Dependencies
 
-1. Install the typical Yarr software dependencies [install.md#dependencies]
+1. Install the [typical Yarr software dependencies](install.md#dependencies)
 1. Install the following extra dependency
 
 ```bash
@@ -13,7 +13,7 @@ $ sudo yum install boost-devel
 
 # Get the appropriate software version
 
-BDAQ support is either on the devel branch or on appropriate tag.
+BDAQ support is either on the *devel* branch or on an *appropriate tag*.
 
 ```bash
 $ git clone -b devel https://github.com/Yarr/Yarr.git Yarr
@@ -32,10 +32,15 @@ $ cmake3 "-DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;Bdaq" ../
 
 The BDAQ hardware must have one of the following firmwares deployed to its FPGA:
 
-- **Recommended:** [1.2.0_BDAQ53_1LANE_RX640] 
-(https://gitlab.cern.ch/silab/bdaq53/uploads/936860f3e449cb8cd1a8fecc4f215318/1.2.0_BDAQ53_1LANE_RX640.tar.gz)
+- **Recommended:** [1.2.0_BDAQ53_1LANE_RX640](https://gitlab.cern.ch/silab/bdaq53/uploads/936860f3e449cb8cd1a8fecc4f215318/1.2.0_BDAQ53_1LANE_RX640.tar.gz)
 - [...](...)
+- For more information, refer to: https://gitlab.cern.ch/silab/bdaq53/-/releases
+- Firmware installation instructions: https://gitlab.cern.ch/silab/bdaq53/-/wikis/Bdaq-firmware-manager
 
 # Connectivity
-
 ...
+
+![BDAQ Connectivity](./images/bdaqConn.jpg)
+
+# RD53A register configuration
+
