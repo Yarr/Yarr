@@ -74,7 +74,7 @@ With the [Osaka 1DP Adapter](https://gitlab.cern.ch/itk-pixel-hybrid/rd53a_testb
 
 ## Command Driver (transmitter) mapping
 
-| Software Identifier | DisplayPort |    BDAQ   |    1DP Adapter    |
+| Software Identifier | Displayport |    BDAQ   |    1DP Adapter    |
 |:-------------------:|:-----------:|:---------:|:-----------------:|
 |       "tx" : 0      |     DP 0    | CMD (AUX) | Chip 1, CMD (AUX) |
 |       "tx" : 0      |     DP 0    | CMD (AUX) | Chip 2, CMD (AUX) |
@@ -134,7 +134,7 @@ A suggested setup is connecting ***DisplayPort 1***, ***DisplayPort 2***, ***Dis
 
 ## Command Driver (transmitter) mapping
 
-| Software Identifier | DisplayPort |    BDAQ   |    4DP Adapter    |
+| Software Identifier | Displayport |    BDAQ   |    1DP Adapter    |
 |:-------------------:|:-----------:|:---------:|:-----------------:|
 |       "tx" : 0      |     DP 0    | CMD (AUX) | Chip 1, CMD (AUX) |
 |       "tx" : 0      |     DP 1    | CMD (AUX) | Chip 2, CMD (AUX) |
@@ -152,6 +152,7 @@ A suggested setup is connecting ***DisplayPort 1***, ***DisplayPort 2***, ***Dis
 |       "rx" : 4      |     DP 1    |   RX 0  | Chip 2, GTX 0 |
 |       "rx" : 5      |     DP 2    |   RX 0  | Chip 3, GTX 0 |
 |       "rx" : 6      |     DP 3    |   RX 0  | Chip 4, GTX 0 |
+
 *The ***GTX 1***, ***GTX 2*** and ***GTX 3***, for all the Chips, are indeed not reachable.
 
 ### Sample connectivity configuration file for the 4DP Adapter:
