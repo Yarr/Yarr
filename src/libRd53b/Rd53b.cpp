@@ -114,6 +114,16 @@ void Rd53b::configureInit() {
     
     // Reset Core
     logger->debug("Reset Cores!");
+    uint16_t tmpRstCoreCol0 = this->RstCoreCol0.read();
+    uint16_t tmpRstCoreCol1 = this->RstCoreCol1.read();
+    uint16_t tmpRstCoreCol2 = this->RstCoreCol2.read();
+    uint16_t tmpRstCoreCol3 = this->RstCoreCol3.read();
+
+    uint16_t tmpEnCoreCol0 = this->EnCoreCol0.read();
+    uint16_t tmpEnCoreCol1 = this->EnCoreCol1.read();
+    uint16_t tmpEnCoreCol2 = this->EnCoreCol2.read();
+    uint16_t tmpEnCoreCol3 = this->EnCoreCol3.read();
+
     for (unsigned i=0; i<16; i++) {
         this->writeRegister(&Rd53b::RstCoreCol0, 1<<i);
         this->writeRegister(&Rd53b::RstCoreCol1, 1<<i);
@@ -129,17 +139,15 @@ void Rd53b::configureInit() {
         while(!core->isCmdEmpty()){;}
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
-    
-    // Enable all for now, will be overwritten by global config
-    this->writeRegister(&Rd53b::RstCoreCol0, 0xFFFF);
-    this->writeRegister(&Rd53b::RstCoreCol1, 0xFFFF);
-    this->writeRegister(&Rd53b::RstCoreCol2, 0xFFFF);
-    this->writeRegister(&Rd53b::RstCoreCol3, 0x3F);
-    this->writeRegister(&Rd53b::EnCoreCol0, 0xFFFF);
-    this->writeRegister(&Rd53b::EnCoreCol1, 0xFFFF);
-    this->writeRegister(&Rd53b::EnCoreCol2, 0xFFFF);
-    this->writeRegister(&Rd53b::EnCoreCol3, 0x3F);
-    while(!core->isCmdEmpty()){;}
+        
+    this->writeRegister(&Rd53b::RstCoreCol0, tmpRstCoreCol0);
+    this->writeRegister(&Rd53b::RstCoreCol1, tmpRstCoreCol1);
+    this->writeRegister(&Rd53b::RstCoreCol2, tmpRstCoreCol2);
+    this->writeRegister(&Rd53b::RstCoreCol3, tmpRstCoreCol3);
+    this->writeRegister(&Rd53b::EnCoreCol0, tmpEnCoreCol0);
+    this->writeRegister(&Rd53b::EnCoreCol1, tmpEnCoreCol1);
+    this->writeRegister(&Rd53b::EnCoreCol2, tmpEnCoreCol2);
+    this->writeRegister(&Rd53b::EnCoreCol3, tmpEnCoreCol3);
     
     // Send a clear cmd
     logger->debug(" ... sending clear command");
@@ -156,9 +164,10 @@ void Rd53b::configureGlobal() {
         this->sendWrReg(m_chipId, addr, m_cfg[addr]);
         
         // Special handling of preamp register
-        if (addr == 13) // specifically wait after setting preamp bias
+        if (addr == 13) { // specifically wait after setting preamp bias
             while(!core->isCmdEmpty()){;}
             std::this_thread::sleep_for(std::chrono::microseconds(100));
+        }
 
         if (addr % 20 == 0) // Wait every 20 regs to not overflow a buffer
             while(!core->isCmdEmpty()){;}
