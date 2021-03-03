@@ -57,14 +57,14 @@
           "max": 50,
           "min": 0,
           "step": 1,
-          "nSteps": 2
+          "nSteps": 1
         },
         "loopAction": "Rd53bCoreColLoop"
       },
       {
         "config": {
-          "count": 50,
-          "delay": 56,
+          "count": 100,
+          "delay": 58,
           "extTrigger": false,
           "frequency": 5000,
           "noInject": false,

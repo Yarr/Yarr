@@ -43,7 +43,7 @@
                 "max": 15,
                 "min": -15,
                 "steps": [1,1,1,1,1,1],
-                "resetTdac": false
+                "rstPixelReg": false
             },
             "loopAction": "Rd53bPixelFeedback"
         },
@@ -60,7 +60,7 @@
                 "max": 50,
                 "min": 0,
                 "step": 1,
-                "nSteps": 2
+                "nSteps": 5
             },
             "loopAction": "Rd53bCoreColLoop"
         },
@@ -82,8 +82,6 @@
         ],
         "name": "TunePixelTreshold",
         "prescan": {
-            "InjVcalMed": 100,
-            "InjVcalHigh": 1600,
             "InjVcalRange": 1,
             "InjDigEn": 0,
             "Latency": 60

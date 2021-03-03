@@ -57,7 +57,7 @@
           "max": 50,
           "min": 0,
           "step": 1,
-          "nSteps": 2
+          "nSteps": 5
         },
         "loopAction": "Rd53bCoreColLoop"
       },
@@ -79,8 +79,6 @@
     ],
     "name": "DigitalScan",
     "prescan": {
-        "InjVcalMed": 100,
-        "InjVcalHigh": 2000,
         "InjVcalRange": 1,
         "InjDigEn": 0,
         "Latency": 60
