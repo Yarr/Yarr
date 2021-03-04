@@ -2,7 +2,7 @@
 
 Adding BDAQ support to the Yarr software requires one extra dependency and enabling the ***BDAQ controller*** for compilation. To achieve this, follow the instructions ahead.
 
-# Dependencies
+## Dependencies
 
 1. Install the [typical Yarr software dependencies](install.md#dependencies)
 1. Install the following extra dependency
@@ -11,7 +11,7 @@ Adding BDAQ support to the Yarr software requires one extra dependency and enabl
 $ sudo yum install boost-devel
 ```
 
-# Get the appropriate software version
+## Get the appropriate software version
 
 BDAQ support is either on the *devel* branch or on an *appropriate tag*.
 
@@ -19,7 +19,7 @@ BDAQ support is either on the *devel* branch or on an *appropriate tag*.
 $ git clone -b devel https://github.com/Yarr/Yarr.git Yarr
 ```
 
-# Compile the software
+## Compile the software
 
 ```bash
 $ cd Yarr/
