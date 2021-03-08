@@ -314,8 +314,8 @@ class Rd53bGlobalCfg {
         //68
         Rd53bReg DataMergeInPol;
         Rd53bReg EnChipId;
-        Rd53bReg DataMergeSelClk;
         Rd53bReg DataMergeEnClkGate;
+        Rd53bReg DataMergeSelClk;
         Rd53bReg DataMergeEn;
         Rd53bReg DataMergeEnBond;
         //69
