@@ -66,6 +66,9 @@ class AbcStarRegInfo {
   //This is a map from each register address to the register info.  Thus abcregisterMap[addr]
   std::map<unsigned, std::shared_ptr<RegisterInfo>> abcregisterMap;
 
+  /// Registers to write in normal operation
+  std::map<unsigned, std::shared_ptr<RegisterInfo>> abcWriteMap;
+
   //This is a 2D map of each subregister to the ABC subregister name.  For example abcSubRegisterMap_all[NAME]
   std::map<ABCStarSubRegister, std::shared_ptr<SubRegisterInfo>> abcSubRegisterMap_all;
 

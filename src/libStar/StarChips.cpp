@@ -204,7 +204,7 @@ bool StarChips::writeRegisters(){
         // First write HCC
         int hccId = getHCCchipID();
 
-        const auto &hcc_regs = HccStarRegInfo::instance()->hccregisterMap;
+        const auto &hcc_regs = HccStarRegInfo::instance()->hccWriteMap;
 	logger->info("Starting on HCC {} with {} registers", hccId, hcc_regs.size());
 
         for(auto &map_iter: hcc_regs) {
@@ -217,7 +217,7 @@ bool StarChips::writeRegisters(){
         this->reset();
 
         // Then each ABC
-        const auto &abc_regs = AbcStarRegInfo::instance()->abcregisterMap;
+        const auto &abc_regs = AbcStarRegInfo::instance()->abcWriteMap;
 	eachAbc([&](auto &abc) {
                 int this_chipID = abc.getABCchipID();
 
