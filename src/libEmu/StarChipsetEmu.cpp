@@ -243,7 +243,8 @@ void StarChipsetEmu::writeRegister(const uint32_t data, const uint8_t address,
         address == ABCStarRegister::STAT2 or
         address == ABCStarRegister::STAT3 or
         address == ABCStarRegister::STAT4 or
-        address == ABCStarRegister::HPR) {
+        address == ABCStarRegister::HPR
+        or (address >= ABCStarRegister::Counter(0) && address <= ABCStarRegister::Counter(63))) {
       logger->warn("A register write command is received for a read-only HCCStar register 0x{:x}. Skip writing.", address);
       return;
     } else {
