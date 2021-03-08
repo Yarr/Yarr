@@ -22,25 +22,6 @@
 
 using std::shared_ptr;
 
-enum LoopStyle {
-    /// Data loop generates data (connected to FE output)
-    LOOP_STYLE_DATA,
-    /// Loop over many triggers (implements StdTriggerAction)
-    LOOP_STYLE_TRIGGER,
-    /// Changes to mask, which are summed over in histogram
-    LOOP_STYLE_MASK,
-    /// Change to a paramter, different bin in analysis
-    LOOP_STYLE_PARAMETER,
-    /// Waits for feedback to pixel level from analysis
-    LOOP_STYLE_PIXEL_FEEDBACK,
-    /// Waits for coarse grained feedback from analysis
-    LOOP_STYLE_GLOBAL_FEEDBACK,
-    /// Loop action that has no other effect on scan
-    LOOP_STYLE_NOP,
-    /// Sentinel
-    LOOP_STYLE_END
-};
-
 class LoopActionBase {
     public:
         explicit LoopActionBase(LoopStyle s);
@@ -76,6 +57,10 @@ class LoopActionBase {
 
         bool isGlobalFeedbackLoop() {
             return m_style == LOOP_STYLE_GLOBAL_FEEDBACK;
+        }
+
+        LoopStyle getStyle() {
+            return m_style;
         }
 
         unsigned getMin();

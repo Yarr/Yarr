@@ -29,6 +29,10 @@ namespace {
     bool l1_registered =
       StdDict::registerAnalysis("L1Analysis",
                                 []() { return std::unique_ptr<AnalysisAlgorithm>(new L1Analysis());});
+    
+    bool tag_registered =
+      StdDict::registerAnalysis("TagAnalysis",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new TagAnalysis());});
 
     bool tot_registered =
       StdDict::registerAnalysis("TotAnalysis",
@@ -82,6 +86,10 @@ void OccupancyAnalysis::init(ScanBase *s) {
                 injections = trigLoop->getTrigCnt();
             }
         }
+        if (l->type() == typeid(Rd53bTriggerLoop*)) {
+            Rd53bTriggerLoop *trigLoop = (Rd53bTriggerLoop*) l.get();
+            injections = trigLoop->getTrigCnt();
+        }
     }
 }
 
@@ -124,16 +132,18 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
         mask->setYaxisTitle("Rows");
         mask->setZaxisTitle("Enable");
 
-
+        unsigned failed_cnt = 0;
         for (unsigned i=0; i<occMaps[ident]->size(); i++) {
             if (occMaps[ident]->getBin(i) == injections) {
                 mask->setBin(i, 1);
             } else {
+                failed_cnt++;
                 if (make_mask&&createMask) {
                     bookie->getFe(channel)->maskPixel((i/nRow), (i%nRow));
                 }
             }
         }
+        alog->info("\033[1m\033[31mTotal number of failing pixels: {}\033[0m", failed_cnt);
         output->pushData(std::move(mask)); // TODO push this mask to the specific configuration
         output->pushData(std::move(occMaps[ident]));
 
@@ -148,6 +158,34 @@ void OccupancyAnalysis::loadConfig(json &j){
     }
 }
 
+void TotAnalysis::loadConfig(json &j) {
+
+    // check for valid ToT histogram bin configuration
+    if (!j["tot_bins"].empty()) {
+        auto j_bins = j["tot_bins"];
+        if(!j_bins["n_bins"].empty() && !j_bins["x_lo"].empty() && !j_bins["x_hi"].empty()) {
+            tot_bins_n = static_cast<unsigned>(j_bins["n_bins"]);
+            tot_bins_x_lo = static_cast<float>(j_bins["x_lo"]);
+            tot_bins_x_hi = static_cast<float>(j_bins["x_hi"]);
+        } // has all required bin specifications
+    }
+
+    // ToT unit
+    if (!j["tot_unit"].empty()) {
+        tot_unit = static_cast<std::string>(j["tot_unit"]);
+    }
+
+    // check for valid ToT sigma histogram bin configuration
+    if (!j["tot_sigma_bins"].empty()) {
+        auto j_bins = j["tot_sigma_bins"];
+        if(!j_bins["n_bins"].empty() && !j_bins["x_lo"].empty() && !j_bins["x_hi"].empty()) {
+            tot_sigma_bins_n = static_cast<unsigned>(j_bins["n_bins"]);
+            tot_sigma_bins_x_lo = static_cast<float>(j_bins["x_lo"]);
+            tot_sigma_bins_x_hi = static_cast<float>(j_bins["x_hi"]);
+        } // has all required bin specification
+    }
+}
+
 void TotAnalysis::init(ScanBase *s) {
     useScap = true;
     useLcap = true;
@@ -156,6 +194,7 @@ void TotAnalysis::init(ScanBase *s) {
     pixelFb = NULL;
     globalFb = NULL;
     hasVcalLoop = false;
+
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
         if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
@@ -198,6 +237,7 @@ void TotAnalysis::init(ScanBase *s) {
         }
     }
 }
+
 
 void TotAnalysis::processHistogram(HistogramBase *h) {
     // Select correct output container
@@ -243,7 +283,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         double chargeMax = feCfg->toCharge(vcalMax, useScap, useLcap);
         double chargeStep = feCfg->toCharge(vcalStep, useScap, useLcap);
 
-        Histo2d *hh = new Histo2d("ChargeVsTotMap", vcalBins+1, chargeMin-chargeStep/2, chargeMax+chargeStep/2, 160, 0.05, 16.05);
+        Histo2d *hh = new Histo2d("ChargeVsTotMap", vcalBins+1, chargeMin-chargeStep/2, chargeMax+chargeStep/2, tot_bins_n * 10, tot_bins_x_lo + 0.5, tot_bins_x_hi + 0.5);
         hh->setXaxisTitle("Injected Charge [e]");
         hh->setYaxisTitle("ToT");
         hh->setZaxisTitle("Pixels");
@@ -271,26 +311,26 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         std::unique_ptr<Histo2d> meanTotMap(new Histo2d("MeanTotMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
         meanTotMap->setXaxisTitle("Column");
         meanTotMap->setYaxisTitle("Row");
-        meanTotMap->setZaxisTitle("Mean ToT [bc]");
+        meanTotMap->setZaxisTitle("Mean ToT ["+tot_unit+"]");
         std::unique_ptr<Histo2d> sumTotMap(new Histo2d("SumTotMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
         sumTotMap->setXaxisTitle("Column");
         sumTotMap->setYaxisTitle("Row");
-        sumTotMap->setZaxisTitle("Mean ToT [bc]");
+        sumTotMap->setZaxisTitle("Mean ToT ["+tot_unit+"]");
         std::unique_ptr<Histo2d> sumTot2Map(new Histo2d("MeanTot2Map-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
         sumTot2Map->setXaxisTitle("Column");
         sumTot2Map->setYaxisTitle("Row");
-        sumTot2Map->setZaxisTitle("Mean ToT^2 [bc^2]");
+        sumTot2Map->setZaxisTitle("Mean ToT^2 ["+tot_unit+"^2]");
         std::unique_ptr<Histo2d> sigmaTotMap(new Histo2d("SigmaTotMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
         sigmaTotMap->setXaxisTitle("Column");
         sigmaTotMap->setYaxisTitle("Row");
-        sigmaTotMap->setZaxisTitle("Sigma ToT [bc]");
-        std::unique_ptr<Histo1d> meanTotDist(new Histo1d("MeanTotDist-"+std::to_string(ident), 16, 0.5, 16.5));
-        meanTotDist->setXaxisTitle("Mean ToT [bc]");
+        sigmaTotMap->setZaxisTitle("Sigma ToT ["+tot_unit+"]");
+        std::unique_ptr<Histo1d> meanTotDist(new Histo1d("MeanTotDist-"+std::to_string(ident), tot_bins_n, tot_bins_x_lo + 0.5, tot_bins_x_hi + 0.5));
+        meanTotDist->setXaxisTitle("Mean ToT ["+tot_unit+"]");
         meanTotDist->setYaxisTitle("Number of Pixels");
-        std::unique_ptr<Histo1d> sigmaTotDist(new Histo1d("SigmaTotDist-"+std::to_string(ident), 101, -0.05, 1.05));
-        sigmaTotDist->setXaxisTitle("Sigma ToT [bc]");
+        std::unique_ptr<Histo1d> sigmaTotDist(new Histo1d("SigmaTotDist-"+std::to_string(ident), tot_sigma_bins_n, tot_sigma_bins_x_lo, tot_sigma_bins_x_hi));
+        sigmaTotDist->setXaxisTitle("Sigma ToT ["+tot_unit+"]");
         sigmaTotDist->setYaxisTitle("Number of Pixels");
-        std::unique_ptr<Histo1d> tempMeanTotDist(new Histo1d("MeanTotDistFine-"+std::to_string(ident), 160, 0.05, 16.05));
+        std::unique_ptr<Histo1d> tempMeanTotDist(new Histo1d("MeanTotDistFine-"+std::to_string(ident), tot_bins_n*10, tot_bins_x_lo + 0.05, tot_bins_x_hi + 0.05));
 
         meanTotMap->add(*totMaps[ident]);
         meanTotMap->divide(*occMaps[ident]);
@@ -311,7 +351,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
                 chargeVsTotMap->fill(currentCharge, (i+1)*0.1, tempMeanTotDist->getBin(i));
             }
         }
-        alog->info("[{}] ToT Mean = {} +- {}", channel, meanTotDist->getMean(), meanTotDist->getStdDev());
+        alog->info("\033[1;33mChannel:{} ScanID:{} ToT Mean = {} +- {}\033[0m", channel, ident,  meanTotDist->getMean(), meanTotDist->getStdDev());
 
         if (globalFb != NULL) {
             double mean = 0;
@@ -596,7 +636,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 
                     } else {
                         n_failedfit++;
-                           alog->debug("Failed fit Col({}) Row({}) Threshold({}) Chi2({}) Status({}) Entries({}) Mean({})", col, row, thrMap[outerIdent]->getBin(bin), chi2, status.outcome, histos[ident]->getEntries(), histos[ident]->getMean());
+                        alog->debug("Failed fit Col({}) Row({}) Threshold({}) Chi2({}) Status({}) Entries({}) Mean({})", col, row, thrMap[outerIdent]->getBin(bin), chi2, status.outcome, histos[ident]->getEntries(), histos[ident]->getMean());
                     }
                     // TODO make this selectable via config
                     //if (row == nRow/2 && col%10 == 0) {
@@ -854,6 +894,13 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
 
 }
 
+void OccPixelThresholdTune::loadConfig(json &j){
+    if (!j["occLowCut"].empty())
+        m_occLowCut=j["occLowCut"];
+    if (!j["occHighCut"].empty())
+        m_occHighCut=j["occHighCut"];
+}
+
 void OccPixelThresholdTune::init(ScanBase *s) {
     n_count = 1;
     for (unsigned n=0; n<s->size(); n++) {
@@ -884,7 +931,6 @@ void OccPixelThresholdTune::init(ScanBase *s) {
             }
         }
     }
-
 }
 
 void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
@@ -926,11 +972,12 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
         std::unique_ptr<Histo1d> occDist(new Histo1d(name2, injections-1, 0.5, injections-0.5));
         occDist->setXaxisTitle("Occupancy");
         occDist->setYaxisTitle("Number of Pixels");
+         
         for (unsigned i=0; i<fbHisto->size(); i++) {
             double occ = occMaps[ident]->getBin(i);
-            if ((occ/(double)injections) > 0.7) {
+            if ((occ/(double)injections) > m_occHighCut) {
                 fbHisto->setBin(i, -1);
-            } else if ((occ/(double)injections) < 0.3) {
+            } else if ((occ/(double)injections) < m_occLowCut) {
                 fbHisto->setBin(i, +1);
             } else {
                 fbHisto->setBin(i, 0);
@@ -938,6 +985,7 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
             mean += occMaps[ident]->getBin(i);
             occDist->fill(occMaps[ident]->getBin(i));
         }
+        
         alog->info("[{}] Mean Occupancy = {}", channel, mean/(nCol*nRow*(double)injections));
         alog->info("[{}] RMS = {}", channel, occDist->getStdDev());
 
@@ -1018,6 +1066,64 @@ void L1Analysis::processHistogram(HistogramBase *h) {
 void L1Analysis::end() {
 }
 
+void TagAnalysis::init(ScanBase *s) {
+    n_count = 1;
+    injections = 0;
+    for (unsigned n=0; n<s->size(); n++) {
+        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
+            loops.push_back(n);
+            loopMax.push_back((unsigned)l->getMax());
+        } else {
+            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
+            if (cnt == 0)
+                cnt = 1;
+            n_count = n_count*cnt;
+        }
+
+    }
+}
+
+void TagAnalysis::processHistogram(HistogramBase *h) {
+    // Select correct output container
+    unsigned ident = 0;
+    unsigned offset = 0;
+
+    // Determine identifier
+    std::string name = "TagDist";
+    for (unsigned n=0; n<loops.size(); n++) {
+        ident += h->getStat().get(loops[n])+offset;
+        offset += loopMax[n];
+        name += "-" + std::to_string(h->getStat().get(loops[n]));
+    }
+
+    // Check if Histogram exists
+    if (tagHistos[ident] == NULL) {
+        Histo1d *hh = new Histo1d(name, 257, -0.5, 256.5);
+        hh->setXaxisTitle("Tag");
+        hh->setYaxisTitle("Hits");
+        tagHistos[ident].reset(hh);
+        innerCnt[ident] = 0;
+    }
+
+    // Add up Histograms
+    if (h->getName() == TagDist::outputName()) {
+        tagHistos[ident]->add(*(Histo1d*)h);
+        innerCnt[ident]++;
+    } else {
+        return;
+    }
+
+    // Got all data, finish up Analysis
+    if (innerCnt[ident] == n_count) {
+        output->pushData(std::move(tagHistos[ident]));
+        innerCnt[ident] = 0;
+    }
+}
+
+void TagAnalysis::end() {
+}
+
 void TotDistPlotter::init(ScanBase *s) {
     n_count = 1;
     injections = 0;
@@ -1035,7 +1141,7 @@ void TotDistPlotter::init(ScanBase *s) {
         if (l->isTriggerLoop()) {
             auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
             if(trigLoop == nullptr) {
-                alog->error("L1Analysis: loop declared as trigger does not have a count");
+                alog->error("TotDistPlotter: loop declared as trigger does not have a count");
             } else {
                 injections = trigLoop->getTrigCnt();
             }

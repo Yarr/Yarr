@@ -185,9 +185,6 @@ void Rd53aMaskLoop::execPart1() {
                 }	     
             }//end row
         }//end column
-
-        // TODO make configrue for subset
-        // TODO set cmeEnable correctly
         rd53a->configurePixels(modPixels);
         while(!g_tx->isCmdEmpty()) {}
     }

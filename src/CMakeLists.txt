@@ -24,7 +24,7 @@ link_libraries(-lstdc++fs)
 # Add -fPIC for (e.g. linking to shared libraries)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-set(YARR_FRONT_ENDS_TO_BUILD "Fei4;Rd53a;Star;Fe65p2"
+set(YARR_FRONT_ENDS_TO_BUILD "Fei4;Rd53a;Star;Fe65p2;Rd53b"
     CACHE STRING "Semicolon-separated list of front-ends to build, or \"all\".")
 
 set(YARR_CONTROLLERS_TO_BUILD "Spec;Emu"
@@ -35,7 +35,7 @@ set(YARR_ACTIVE_LOGGER_LEVEL DEBUG
     CACHE BOOL "This sets SPDLOG_ACTIVE_LEVEL, below which logger macros are disabled at build time. One of TRACE, DEBUG, INFO, WARN, ERROR, CRITICAL, OFF")
 
 set(YARR_ALL_FRONT_ENDS
-    Fe65p2 Fei4 Rd53a Star)
+    Fe65p2 Fei4 Rd53a Rd53b Star)
 
 set(YARR_ALL_CONTROLLERS
     Spec Emu Rce Boc KU040 Rogue NetioHW Bdaq Itsdaq)
