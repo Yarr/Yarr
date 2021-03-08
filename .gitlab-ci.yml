@@ -56,7 +56,7 @@ job_build_clang:
 
 job_test_json_parsing:
     stage: test
-    dependencies: ["job_build_all"]
+    needs: ["job_build_all"]
     script:
       # Check schema by loading configs in turn
       - for file in $(find configs/defaults -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t FRONT_END || break; done
@@ -72,6 +72,25 @@ job_test_json:
     script:
       - npm install jsonlint -g
       - for file in $(find ../configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
+
+job_test_code_coverage:
+    stage: build
+    artifacts:
+        paths:
+          - cc_tests
+    script:
+      - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+      - mkdir  build
+      - cd build
+      - cmake3 .. -DCMAKE_BUILD_TYPE=Coverage -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
+      - make install -j4
+      - export USER=test
+      - echo $USER
+      - /bin/pwd
+      - mkdir /tmp/test
+      - ls /tmp/
+      - cd ../
+      - scripts/cc_tool.sh
 
 build_docs:
     stage: build

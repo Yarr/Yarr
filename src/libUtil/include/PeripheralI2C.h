@@ -1,5 +1,5 @@
-#ifndef PERIPHIALI2C_H
-#define PERIPHIALI2C_H
+#ifndef PERIPHERALI2C_H
+#define PERIPHERALI2C_H
 // #################################
 // # Author: Timon Heim
 // # Email: timon.heim at cern.ch
@@ -10,10 +10,10 @@
 
 #include "SpecCom.h"
 
-class PeriphialI2C {
+class PeripheralI2C {
     public:
     protected:
-        PeriphialI2C(SpecCom *arg_spec);
+        PeripheralI2C(SpecCom *arg_spec);
 
         void init();
         int writeReg(uint32_t dev_addr, uint32_t reg_addr, uint32_t value);
