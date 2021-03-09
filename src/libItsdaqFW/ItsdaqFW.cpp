@@ -32,6 +32,39 @@ public:
 
 void ItsdaqFWController::loadConfig(json &j) {
   logger->debug("Load config from json");
+
+  std::string remote = j["remote"];
+  int rPort = j["remotePort"];
+
+  int lPort;
+
+  if(j["localPort"].empty()) {
+    // Pick automatically
+    lPort = 0;
+  } else {
+    lPort = j["localPort"];
+  }
+
+  uint32_t remoteIp;
+
+  // Parse: 192.168.222.22 to 0x16dea8c0
+  for(int i=0; i<4; i++) {
+    auto f = remote.find(".");
+    if(i<3 && f == std::string::npos) {
+      throw std::runtime_error("Can't parse IP address from ItsdaqFW config");
+    }
+    auto segment = remote.substr(0, f);
+    if(segment.empty() || segment.size() > 3) {
+      throw std::runtime_error("Can't parse segment of IP address from ItsdaqFW config");
+    }
+    remoteIp >>= 8;
+    remoteIp |= (std::atoi(segment.c_str()) << 24);
+
+    if(i < 3) remote = remote.substr(f+1);
+  }
+
+  h.reconfigure(remoteIp, lPort, rPort);
+
   ItsdaqTxCore::fromFileJson(j);
   ItsdaqRxCore::fromFileJson(j);
 }

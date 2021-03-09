@@ -51,7 +51,9 @@ void UdpSocket::setup(uint32_t remote, int srcPort, int dstPort)
   else if(((addr_ip4 & 0xff) == 192) && (((addr_ip4>>8) & 0xff) == 168)) ip_address_ok = true;
 
   if(!ip_address_ok) {
-    logger->warn("*** Validation failed, address outside 192.168.*.* and 127.0.0.1 not allowed");
+    logger->warn("*** Validation of {}.{}.{}.{} failed, address outside 192.168.*.* and 127.0.0.1 not allowed",
+                 (addr_ip4>>0)&0xff, (addr_ip4>>8)&0xff,
+                 (addr_ip4>>16)&0xff, (addr_ip4>>24)&0xff);
     logger->info( "***   Using 127.0.0.1!");
     addr_ip4 = 0x0100007f;
   }

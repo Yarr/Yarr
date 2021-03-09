@@ -28,6 +28,10 @@ public:
 
   ~ItsdaqPrivate();
 
+  void reconfigure(uint32_t remote_IP, uint16_t srcPort, uint16_t dstPort) {
+    sock.setup(remote_IP, srcPort, dstPort);
+  }
+
   UdpSocket sock;
 
   std::unique_ptr<RawData> GetData();
@@ -53,6 +57,10 @@ ItsdaqHandler::ItsdaqHandler(uint32_t remote_IP,
 
 ItsdaqHandler::~ItsdaqHandler() {
   priv.reset();
+}
+
+void ItsdaqHandler::reconfigure(uint32_t remote, uint16_t srcPort, uint16_t dstPort) {
+  priv->reconfigure(remote, srcPort, dstPort);
 }
 
 void ItsdaqHandler::SendOpcode(uint16_t opcode, uint16_t *data, uint16_t length)

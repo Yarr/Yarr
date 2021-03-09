@@ -145,4 +145,7 @@ void ItsdaqRxCore::fromFileJson(json &j) {
   if(j["streamConfig"]) {
     m_streamConfig =  j["streamConfig"];
   }
+
+  // Potentially, the UDP socket has been reconfigured, so resend
+  init();
 }
