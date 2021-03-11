@@ -142,6 +142,10 @@ void EmuTxCore<FE>::setTrigEnable(uint32_t value) {
 
 template<class FE>
 void EmuTxCore<FE>::setCmdEnable(uint32_t channel) {
+    // disable all channels first
+    this->disableCmd();
+
+    // enable channel
     // check if the channel exists
     if (m_coms.find(channel) != m_coms.end())
         m_channels[channel] = true;
@@ -151,8 +155,10 @@ void EmuTxCore<FE>::setCmdEnable(uint32_t channel) {
 
 template<class FE>
 void EmuTxCore<FE>::setCmdEnable(std::vector<uint32_t> channels) {
+    this->disableCmd();
     for (auto channel : channels) {
-        this->setCmdEnable(channel);
+        if (m_coms.find(channel) != m_coms.end())
+            m_channels[channel] = true;
     }
 }
 

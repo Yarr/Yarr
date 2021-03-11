@@ -244,7 +244,7 @@ void StarChipsetEmu::writeRegister(const uint32_t data, const uint8_t address,
         address == ABCStarRegister::STAT3 or
         address == ABCStarRegister::STAT4 or
         address == ABCStarRegister::HPR) {
-      logger->warn("A register write command is received for a read-only HCCStar register 0x{:x}. Skip writing.", address);
+      logger->debug("A register write command is received for a read-only HCCStar register 0x{:x}. Skip writing.", address);
       return;
     } else {
       m_starCfg->setABCRegister(address, data, ABCID);
@@ -259,7 +259,7 @@ void StarChipsetEmu::writeRegister(const uint32_t data, const uint8_t address,
         address == HCCStarRegister::ADCStatus or
         address == HCCStarRegister::Status or
         address == HCCStarRegister::HPR) {
-      logger->warn("A register write command is received for a read-only ABCStar register 0x{:x}. Skip writing.", address);
+      logger->debug("A register write command is received for a read-only ABCStar register 0x{:x}. Skip writing.", address);
       return;
     } else if (address == HCCStarRegister::Addressing) {
       // special case for dynamic addressing
