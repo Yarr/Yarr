@@ -247,7 +247,19 @@ void StarChips::writeNamedRegister(std::string name, uint16_t reg_value) {
     }
   } else  if (strPrefix=="ABCs") {
     auto subRegName = name.substr(5); // Including _
-    if(!ABCStarSubRegister::_is_valid(subRegName.c_str())) {
+    if(subRegName == "MASKs") {
+      // Special case for digitial scan
+      uint32_t val = (reg_value == 0)?0:0xffffffff;
+      logger->trace("Writing {:08x} to mask register for all ABCStar chips.", val);
+      eachAbc([&](auto &cfg) {
+          for(int m = ABCStarRegister::MaskInput(0);
+              m <= ABCStarRegister::MaskInput(7); m++) {
+            cfg.setRegisterValue(ABCStarRegister::_from_integral(m), val);
+            sendCmd( write_abc_register(m, val,
+                                        getHCCchipID(), cfg.getABCchipID()));
+          }
+        });
+    } else if(!ABCStarSubRegister::_is_valid(subRegName.c_str())) {
       logger->error(" --> Error: Could not find ABC sub-register \"{}\"", subRegName);
     } else {
       logger->trace("Writing {} on setting '{}' for all ABCStar chips.", reg_value, name);
