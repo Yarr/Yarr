@@ -40,6 +40,16 @@ set(YARR_ALL_FRONT_ENDS
 set(YARR_ALL_CONTROLLERS
     Spec Emu Rce Boc KU040 Rogue NetioHW Bdaq Itsdaq)
 
+# User-specified variables that short-circuit the controllers, front ends, and tools lists for more targeted builds
+set(SELECT_LIBS "" CACHE STRING "Target a set of libraries (front-ends or controllers) to be built")
+set(SELECT_TOOLS "" CACHE STRING "Target a set of executables to be built")
+
+# Trim off non-targeted controllers and front-ends if requested
+if( NOT SELECT_LIBS STREQUAL "" )
+    list(FILTER YARR_FRONT_ENDS_TO_BUILD INCLUDE REGEX "${SELECT_LIBS}")
+    list(FILTER YARR_CONTROLLERS_TO_BUILD INCLUDE REGEX "${SELECT_LIBS}")
+endif()
+
 if( YARR_FRONT_ENDS_TO_BUILD STREQUAL "all" )
   set( YARR_FRONT_ENDS_TO_BUILD ${YARR_ALL_FRONT_ENDS} )
 endif()
@@ -124,7 +134,12 @@ endif()
 #add executables
 file(GLOB tools
      CONFIGURE_DEPENDS
-     tools/*.cpp)
+     tools/*.cpp
+)
+# Trim off non-targeted executables if requested
+if( NOT SELECT_TOOLS STREQUAL "" )
+    list(FILTER tools INCLUDE REGEX "${SELECT_TOOLS}")
+endif()
 
 if (NOT "NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
   list(FILTER tools EXCLUDE REGEX tools/testNetioHw.cpp|tools/testBitStream.cpp|tools/testScan.cpp)
