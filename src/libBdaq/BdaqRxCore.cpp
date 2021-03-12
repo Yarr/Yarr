@@ -183,17 +183,17 @@ void BdaqRxCore::buildData(uint32_t* out, uint bIndex, uint oIndex) {
 void BdaqRxCore::buildUserk(uint32_t* out, uint bIndex, uint oIndex) {
     // Building USERK frame (userkWordA and userkWordB)
     uint32_t hi = sBuffer.at(bIndex).front() & 0xFFFF;
-    logger->critical("USERK: 0x{0:X}", sBuffer.at(bIndex).front());
+    logger->debug("USERK: 0x{0:X}", sBuffer.at(bIndex).front());
     sBuffer.at(bIndex).pop();
     uint32_t lo = sBuffer.at(bIndex).front() & 0xFFFF;
-    logger->critical("USERK: 0x{0:X}", sBuffer.at(bIndex).front());
+    logger->debug("USERK: 0x{0:X}", sBuffer.at(bIndex).front());
     sBuffer.at(bIndex).pop();
     uint64_t userkWordA = (hi << 16) | lo;
     hi = sBuffer.at(bIndex).front() & 0xFFFF;
-    logger->critical("USERK: 0x{0:X}", sBuffer.at(bIndex).front());
+    logger->debug("USERK: 0x{0:X}", sBuffer.at(bIndex).front());
     sBuffer.at(bIndex).pop();
     lo = sBuffer.at(bIndex).front() & 0xFFFF;
-    logger->critical("USERK: 0x{0:X}", sBuffer.at(bIndex).front());
+    logger->debug("USERK: 0x{0:X}", sBuffer.at(bIndex).front());
     sBuffer.at(bIndex).pop();
     uint64_t userkWordB = (hi << 16) | lo;
 
@@ -268,7 +268,7 @@ std::vector<BdaqRxCore::regDataT> BdaqRxCore::getRegData(BdaqRxCore::userkDataT 
     BdaqRxCore::regDataT o;
     std::vector<BdaqRxCore::regDataT> regData;
 
-    logger->info("AuroraKWord = {}", in.AuroraKWord);
+    logger->debug("AuroraKWord = {}", in.AuroraKWord);
 
     // There is data in both Data0 and Data1 (data from 2 different registers?)
     if (in.AuroraKWord == 0) {
