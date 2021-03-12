@@ -440,7 +440,6 @@ int main(int argc, char *argv[]) {
         }
         logger->info("... success!");
     }
-    //return -1;
 
     // Enable all active channels
     logger->info("Enabling Tx channels");
@@ -574,8 +573,6 @@ int main(int argc, char *argv[]) {
 
     hwCtrl->disableCmd();
     hwCtrl->disableRx();
-
-    hwCtrl->printSortStatus();
 
     logger->info("\033[1;31m##########\033[0m");
     logger->info("\033[1;31m# Timing #\033[0m");
