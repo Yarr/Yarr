@@ -26,6 +26,8 @@ $ cd Yarr/
 $ mkdir build
 $ cd build
 $ cmake3 "-DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;Bdaq" ../
+$ make -j4
+$ make install
 ```
 
 # Firmware
@@ -42,6 +44,8 @@ The BDAQ hardware must have one of the following firmwares deployed to its FPGA:
 When running [*scanConsole*](scanconsole.md), the [connectivity configuration file ](scanconsole.md#Command%20Line%20Arguments) must reflect your setup, according to the mappings shown below:
 
 ## Command Driver (transmitter) mapping
+
+BDAQ has only one Command Driver, always tx0...
 
 | Software Identifier | DisplayPort |    BDAQ   |
 |:-------------------:|:-----------:|:---------:|
@@ -65,6 +69,20 @@ When running [*scanConsole*](scanconsole.md), the [connectivity configuration fi
 Refer to the figure below to identify the DisplayPort connectors in the BDAQ hardware.
 
 ![BDAQ Connectivity](./images/bdaqConn.jpg)
+
+# Running
+
+Running with BDAQ controller should be the same as with any other hardware controller, just watch out for the controller configuration file. Here are some examples:
+
+## Digital scan
+
+# Trigger Frequency
+
+When running with a single chip, the default trigger frequencies, set in the scan configuration files, should work normally. However, when reading out more than 1 chip, at the same time, the trigger frequency should be reduced.
+
+One possibility is to divide the trigger frequency by the number of chips running, e.g., for a threshold scan with a default 30 kHz trigger, set it to 15 kHz for 2-chip operation, or 7.5 kHz for 4-chip operation.
+
+The achievable trigger frequency is a function of the entire DAQ system ability to read-out chip data, without letting it overrun (with triggers). The DAQ computer specifications, system load, network activity, etc will have an impact into this ability. If you are experiencing errors such... a potential culprit is the trigger frequency.
 
 # Module Testing
 
@@ -199,3 +217,12 @@ A suggested setup is connecting ***DisplayPort 1***, ***DisplayPort 2***, ***Dis
 # BDAQ controller parameters (bdaqCfg.json)
 ...
 
+# Troubleshooting
+
+- No Aurora Synchronization
+- Invalid Data
+
+# Known Issues
+
+- Noise Scans
+  
