@@ -191,7 +191,4 @@ void Rd53aTriggerLoop::loadConfig(json &config) {
         m_trigMultiplier = config["trigMultiplier"];
     if (!config["sendEcr"].empty())
         m_sendEcr = config["sendEcr"];
-    //this->setTrigDelay(m_trigDelay); // Removing it from here makes "g_tx" reachable inside setTrigDelay().
-                                       // Otherwise, "g_tx" is accessed before being created: crash
-                                       // Also, it doesn't seem necessary here, because it's called in Rd53aTriggerLoop::init()
 }
