@@ -69,7 +69,7 @@
           "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 7500,
+          "frequency": 10000,
           "noInject": false,
           "time": 0,
           "sendEcr": true
