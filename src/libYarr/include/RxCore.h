@@ -34,8 +34,6 @@ class RxCore {
         virtual std::chrono::microseconds getWaitTime() {
             return m_waitTime;
         }
-
-        virtual void printSortStatus() {}
         
     protected:
         RxCore();
