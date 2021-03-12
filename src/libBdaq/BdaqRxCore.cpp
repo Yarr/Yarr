@@ -217,7 +217,6 @@ uint BdaqRxCore::buildStream(uint32_t* out, uint size) {
         counter++;
         if ((sBuffer.at(bIndex).size() > 3) && 
         (sBuffer.at(bIndex).front() & USERK_FRAME_MASK) == USERK_FRAME_ID) {
-            logger->critical("buildUserk()");
             buildUserk(out, bIndex, oIndex);
             procSize += 4;
             oIndex += 2;
