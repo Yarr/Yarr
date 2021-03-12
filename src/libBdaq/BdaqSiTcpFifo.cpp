@@ -31,7 +31,7 @@ std::size_t BdaqSiTcpFifo::readData(uint32_t* buffer) {
 
 void BdaqSiTcpFifo::readData(std::vector<uint32_t>& buffer, std::size_t size) {
 	//std::size_t wCount = getAvailableWords();
-	//buffer.reserve(size);
+	buffer.reserve(size);
 	std::vector<uint8_t> buf(size * 4);
 	tcp.read(buf);
 	uint32_t temp;
