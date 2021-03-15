@@ -80,6 +80,24 @@ class TotAnalysis : public AnalysisAlgorithm {
         float tot_sigma_bins_x_hi = 1.05;
 };
 
+class NPointGain : public AnalysisAlgorithm {
+    public:
+        NPointGain() : AnalysisAlgorithm() {}
+        ~NPointGain() {}
+
+        void init(ScanBase *s) {}
+        void processHistogram(HistogramBase *h);
+        void end();
+        void loadConfig(json& config) {}
+    private:
+        std::unique_ptr<Histo1d> respCurve;
+
+        std::vector<double> inj;
+        std::vector<double> inj_err;
+        std::vector<double> thr;
+        std::vector<double> thr_err;
+};
+
 class ScurveFitter : public AnalysisAlgorithm {
     public:
         ScurveFitter() : AnalysisAlgorithm() {}
@@ -88,7 +106,7 @@ class ScurveFitter : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-        void loadConfig(json &config){}
+        void loadConfig(json &config);
     private:
         unsigned vcalLoop;
         unsigned vcalMin;
