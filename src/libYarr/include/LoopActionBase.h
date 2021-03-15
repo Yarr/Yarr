@@ -70,6 +70,8 @@ class LoopActionBase {
         void setMax(unsigned v);
         void setStep(unsigned v);
 
+        virtual std::string getLabel() {return {};}
+
         virtual void loadConfig(json &config) {}
         virtual void writeConfig(json &config) {}
 		

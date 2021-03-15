@@ -7,11 +7,43 @@
 // ################################
 
 #include "AnalysisAlgorithm.h"
+#include "AllStdActions.h"
 
 #include "logging.h"
 
 namespace {
     auto alog = logging::make_log("AnalysisAlgorithm");
+}
+
+bool AnalysisAlgorithm::isOuterLoop(LoopActionBase *l) {
+    // Determine if a given loop l is an outer loop for this analysis algorithm
+    // m_outerLoopNames is set by AnalysisAlgorithm::loadConfig
+    for (const auto& loopname : m_outerLoopNames) {
+        // loopname is expected to have the format "LoopName[:Label]" (Label optional)
+        auto lname = loopname.substr(0, loopname.find(":"));
+        std::unique_ptr<LoopActionBase> outerLoop(StdDict::getLoopAction(lname));
+        if (outerLoop == nullptr) {
+            alog->error("Unknown Loop Action: {}  ... skipping!", lname);
+            continue;
+        }
+
+        // Get the label if it is provided
+        // For a Parameter Loop, for instance, this is the parameter name.
+        std::string label;
+        if (loopname.find(":") != std::string::npos)
+            label = loopname.substr(loopname.find(":")+1);
+
+        if (l->getStyle() == outerLoop->getStyle()) { // match loop style
+            if (label.empty()) {
+                return true;
+            } else {
+                // match labels
+                if (l->getLabel() == label) return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 AnalysisProcessor::AnalysisProcessor() {

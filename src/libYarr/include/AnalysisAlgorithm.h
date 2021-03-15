@@ -52,6 +52,9 @@ class AnalysisAlgorithm {
         FeedbackClipboard *feedback;
         bool make_mask;
         unsigned nCol, nRow;
+
+        std::vector<std::string> m_outerLoopNames;
+        bool isOuterLoop(LoopActionBase *l);
 };
 
 /**
