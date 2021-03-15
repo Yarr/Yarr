@@ -63,11 +63,12 @@ class AnalysisProcessor : public DataProcessor {
         AnalysisProcessor(Bookkeeper *b, unsigned ch);
         ~AnalysisProcessor();
 
-        void connect(ScanBase *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output, FeedbackClipboard *arg_fb) {
+        void connect(ScanBase *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output, FeedbackClipboard *arg_fb, bool storeInput=false) {
             scan = arg_s;
             input = arg_input;
             output = arg_output;
             feedback = arg_fb;
+            storeInputHisto = storeInput;
         }
 
         void init();
@@ -100,6 +101,7 @@ class AnalysisProcessor : public DataProcessor {
         FeedbackClipboard *feedback;
         ScanBase *scan;
         std::unique_ptr<std::thread> thread_ptr;
+        bool storeInputHisto;
         
         std::vector<std::unique_ptr<AnalysisAlgorithm>> algorithms;
 };

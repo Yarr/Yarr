@@ -4,6 +4,7 @@
 #include <fstream>
 #include <exception>
 #include <iomanip>
+#include <numeric>
 
 #include "AllAnalyses.h"
 #include "AllChips.h"
@@ -241,7 +242,7 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
     bhlog->info("... done!");
 }
 
-void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, FeedbackClipboardMap *fbData, int mask_opt) {
+void buildAnalyses( std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcessor>> >& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, FeedbackClipboardMap *fbData, int mask_opt) {
     if (scanType.find("json") != std::string::npos) {
         balog->info("Loading analyses ...");
         json scanCfg;
@@ -251,56 +252,139 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
             balog->error("Opening scan config: {}", e.what());
             throw("buildAnalyses failure");
         }
-        json histoCfg = scanCfg["scan"]["histogrammer"];
         json anaCfg = scanCfg["scan"]["analysis"];
+
+        // Parse scan config and build analysis hierarchy
+        // Use a 2D vector to hold algorithm indices for all tiers of analysis processors
+        std::vector<std::vector<int>> algoIndexTiers;
+        try {
+            buildAnalysisHierarchy(algoIndexTiers, anaCfg);
+        } catch (std::runtime_error &e) {
+            balog->error("Building analysis hierarchy: {}", e.what());
+            throw("buildAnalyses failure");
+        }
 
         for (FrontEnd *fe : bookie.feList ) {
             if (fe->isActive()) {
                 // TODO this loads only FE-i4 specific stuff, bad
                 // TODO hardcoded
-                analyses[fe].reset( new AnalysisProcessor(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) );
-                auto& ana = static_cast<AnalysisProcessor&>( *(analyses[fe]) );
                 auto channel = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-                ana.connect(s, fe->clipHisto, fe->clipResult, &((*fbData)[channel]));
 
-                auto add_analysis = [&](std::string algo_name) {
-                    auto analysis = StdDict::getAnalysis(algo_name);
-                    if(analysis) {
-                        balog->debug("  ... adding {}", algo_name);
-                        balog->debug(" connecting feedback (if required)");
-                        // analysis->connectFeedback(&(*fbData)[channel]);
-                        ana.addAlgorithm(std::move(analysis));
+                for (unsigned t=0; t<algoIndexTiers.size(); t++) {
+                    // Add analysis processors
+                    analyses[fe].emplace_back( new AnalysisProcessor(&bookie, channel) );
+                    auto& ana = static_cast<AnalysisProcessor&>( *(analyses[fe].back()) );
+
+                    // Create the ClipBoard to store its output and establish connection
+                    fe->clipResult->emplace_back(new ClipBoard<HistogramBase>());
+                    if (t==0) {
+                        ana.connect(s, fe->clipHisto, (fe->clipResult->back()).get(), &((*fbData)[channel]) );
                     } else {
-                        balog->error("Error, Analysis Algorithm \"{} unknown, skipping!", algo_name);
+                        ana.connect(s, (*(fe->clipResult->rbegin()+1)).get(),
+                                    (*(fe->clipResult->rbegin())).get(),
+                                    &((*fbData)[channel]), true);
                     }
-                };
 
-                try {
-                    int nAnas = anaCfg["n_count"];
-                    balog->debug("Found {} Analysis!", nAnas);
-                    for (int j=0; j<nAnas; j++) {
-                        std::string algo_name = anaCfg[std::to_string(j)]["algorithm"];
-                        add_analysis(algo_name);
-                    }
-                    ana.loadConfig(anaCfg);
-                } catch(/* json::type_error &te */ ...) { //FIXME
-                    int nAnas = anaCfg.size();
-                    balog->debug("Found {} Analysis!", nAnas);
-                    for (int j=0; j<nAnas; j++) {
-                        std::string algo_name = anaCfg[j]["algorithm"];
-                        add_analysis(algo_name);
-                    }
-                }
+                    auto add_analysis = [&](std::string algo_name, json& j) {
+                        auto analysis = StdDict::getAnalysis(algo_name);
+                        if(analysis) {
+                            balog->debug("  ... adding {}", algo_name);
+                            balog->debug(" connecting feedback (if required)");
+                            // analysis->connectFeedback(&(*fbData)[channel]);
+                            analysis->loadConfig(j);
+                            ana.addAlgorithm(std::move(analysis));
+                        } else {
+                            balog->error("Error, Analysis Algorithm \"{} unknown, skipping!", algo_name);
+                        }
+                    };
 
-                // Disable masking of pixels
-                if(mask_opt == 0) {
-                    balog->info("Disabling masking for this scan!");
-                    ana.setMasking(false);
+                    // Add all AnalysisAlgorithms of the t-th tier
+                    for (int aIndex : algoIndexTiers[t]) {
+                        std::string algo_name = anaCfg[std::to_string(aIndex)]["algorithm"];
+                        json algo_config = anaCfg[std::to_string(aIndex)]["config"];
+                        add_analysis(algo_name, algo_config);
+                    }
+
+                    // Disable masking of pixels
+                    if(mask_opt == 0) {
+                        balog->info("Disabling masking for this scan!");
+                        ana.setMasking(false);
+                    }
+                    ana.setMapSize(fe->geo.nCol, fe->geo.nRow);
+                } // for (unsigned t=0; t<algoIndexTiers.size(); t++)
+            } // if (fe->isActive())
+        } // for (FrontEnd *fe : bookie.feList )
+    }
+}
+
+void buildAnalysisHierarchy(std::vector<std::vector<int>>& indexTiers, json& anaCfg) {
+    std::map<std::string, int> tierMap; // key: algorithm name; value: tier
+
+    if (anaCfg["n_count"].empty())
+        throw std::runtime_error("No \"n_count\" field in analysis config");
+
+    int nAnas = anaCfg["n_count"];
+    balog->debug("Found {} analysis!", nAnas);
+
+    auto fillIndexVector = [&indexTiers](unsigned tier, unsigned index) {
+        while (indexTiers.size() <= tier) {
+            indexTiers.emplace_back();
+        }
+        indexTiers[tier].push_back(index);
+    };
+
+    // Algorithm indices
+    std::deque<unsigned> indices(nAnas);
+    std::iota(std::begin(indices), std::end(indices), 0);
+    int loopcnt = 0;
+
+    while (not indices.empty()) {
+        int j = indices.front();
+        indices.pop_front();
+
+        std::string algo_name = anaCfg[std::to_string(j)]["algorithm"];
+        if (anaCfg[std::to_string(j)]["dependOn"].empty()) {
+            // This algorithm does not depend on the results of others
+            // It can be placed at the first tier
+            tierMap[algo_name] = 0;
+            fillIndexVector(0, j);
+        } else {
+            // This algorithm depends on outputs of other algorithms
+            int maxuptier = 0;
+            // Check all algorithms on which this one depends
+            for (unsigned k=0; k<anaCfg[std::to_string(j)]["dependOn"].size(); k++) {
+                std::string upstream = anaCfg[std::to_string(j)]["dependOn"][k];
+                if (tierMap.find(upstream) != tierMap.end()) {
+                    // Get the tier of the upstream algorithm from tierMap
+                    // and compare to the current max tier
+                    if (tierMap[upstream] > maxuptier)
+                        maxuptier = tierMap[upstream];
+                } else {
+                    // The tier of this upstream algorithm has not been determined yet.
+                    // Skip for now and come back later
+                    indices.push_back(j);
+                    maxuptier = -1;
+                    break;
                 }
-                ana.setMapSize(fe->geo.nCol, fe->geo.nRow);
+            }
+
+            if (maxuptier >= 0) {
+                // The tiers of all upstream algorithms on which this algorithm depends have been determined
+                // So this algorithm's tier is the maximum of all upstream tiers + 1
+                tierMap[algo_name] = maxuptier + 1;
+                fillIndexVector(maxuptier + 1, j);
             }
         }
-    }
+
+        loopcnt++;
+
+        // In case it took too many loop iterations to figure out the tiers
+        if (loopcnt > ((nAnas+1)*nAnas/2) ) {
+            balog->error("Fail to build analysis hierarchy. This is likely due to circular dependency of analysis algorithms in the scan configuration.");
+            throw std::runtime_error("buildAnalysisHierarchy failure");
+            break;
+        }
+    } // while (not indices.empty())
 }
 
 } // Close namespace}

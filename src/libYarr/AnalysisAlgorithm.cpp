@@ -79,6 +79,8 @@ void AnalysisProcessor::process_core() {
                 algorithms[i]->processHistogram(&*h);
             }
         }
+        // Pass input histogram to output if needed
+        if (storeInputHisto) output->pushData(std::move(h));
     }
 }
 
