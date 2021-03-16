@@ -274,7 +274,7 @@ Some parameters from BDAQ controller might be configured via the hardware contro
 - No Aurora Synchronization
   - Confirm these [RD53A register settings](#RD53A-register-configuration)
   - Confirm proper settings for RD53A **"SldoAnalogTrim"** and **"SldoDigitalTrim"** registers
-  - Disable the Si570 configuration by setting "configSi570" to **false**, [more details](#bdaq-controller-parameters-bdaqcfgjson)
+  - Disable the Si570 configuration by setting **"configSi570"** to **false**, [more details](#bdaq-controller-parameters-bdaqcfgjson)
   
 - Errors like: **[ error  ][Rd53aDataProcessor]: [0] Received data not valid:**
   - Confirm scan [trigger frequency settings](#trigger-frequency)
@@ -285,7 +285,7 @@ Some parameters from BDAQ controller might be configured via the hardware contro
     
   <img src="./images/bdaqDigitalPattern.png" alt="Digital Pattern" width="400"/>
 
-  - Increase "rxWaitTime", 5 ms steps seem reasonable. More information [here](#bdaq-controller-parameters-bdaqcfgjson)
+  - Increase **"rxWaitTime"**, **5 ms steps** seem reasonable. More information [here](#bdaq-controller-parameters-bdaqcfgjson)
 
 
 # Known Issues
