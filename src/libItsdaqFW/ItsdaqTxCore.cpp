@@ -94,9 +94,10 @@ bool ItsdaqTxCore::isCmdEmpty() {
 }
 
 void ItsdaqTxCore::setTrigEnable(uint32_t value){
+  if(m_trigProc.joinable()) {
+    m_trigProc.join();
+  }
   if(value == 0) {
-    if(m_trigProc.joinable()) 
-      m_trigProc.join();
     m_trigEnabled = false;
   } else {
     m_trigEnabled = true;
