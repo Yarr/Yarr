@@ -46,7 +46,7 @@ Running with BDAQ controller should be the same as with any other hardware contr
 
 BDAQ controller works with the original BDAQ firmware. Below one can find links for the firmware bitstream (firmware building output) download, placed here for convenience. These links point to the official BDAQ repository. For more information, refer to: https://gitlab.cern.ch/silab/bdaq53/-/releases
 
-- (**Recommended:**) **v1.2**, 640 Mbps, 1-lane per chip: [1.2.0_BDAQ53_1LANE_RX640](https://gitlab.cern.ch/silab/bdaq53/uploads/936860f3e449cb8cd1a8fecc4f215318/1.2.0_BDAQ53_1LANE_RX640.tar.gz)
+- (**Recommended**) **v1.2**, 640 Mbps, 1-lane per chip: [1.2.0_BDAQ53_1LANE_RX640](https://gitlab.cern.ch/silab/bdaq53/uploads/936860f3e449cb8cd1a8fecc4f215318/1.2.0_BDAQ53_1LANE_RX640.tar.gz)
 - **v1.2**, 1.28 Gbps, 1-lane per chip, [1.2.0_BDAQ53_1LANE_RX1280](https://gitlab.cern.ch/silab/bdaq53/uploads/f085eba35ff1760250f829c62147c8d7/1.2.0_BDAQ53_1LANE_RX1280.tar.gz)
 
 ## Firmware Installation
@@ -268,15 +268,30 @@ Some parameters from BDAQ controller might be configured via the hardware contro
 |   "i2cAddr"   |    "0x1000"   |                                                                                                   FPGA i2c controller address.                                                                                                  |
 |   "cmdAddr"   |    "0x9000"   |                                                                                             FPGA Command Driver controller address.                                                                                             |
 | "controlAddr" |    "0x2100"   |                                                                                                  FPGA GPIO controller address.                                                                                                  |
-<br/>
 
 # Troubleshooting
 
 - No Aurora Synchronization
-- Invalid Data
-- Pattern digital scan
-- 
+  - Confirm these [RD53A register settings](#RD53A-register-configuration)
+  - Confirm proper settings for RD53A **"SldoAnalogTrim"** and **"SldoDigitalTrim"** registers
+  - Disable the Si570 configuration by setting "configSi570" to **false**, [more details](#bdaq-controller-parameters-bdaqcfgjson)
+  
+- Errors like: **[ error  ][Rd53aDataProcessor]: [0] Received data not valid:**
+  - Confirm scan [trigger frequency settings](#trigger-frequency)
+  - This is a [known issue](#known-issues) with noise scans
+  - Confirm proper settings for RD53A **"SldoAnalogTrim"** and **"SldoDigitalTrim"** registers
+  
+- Hit patterns in digital scans
+    
+  <img src="./images/bdaqDigitalPattern.png" alt="Digital Pattern" width="400"/>
+
+  - Increase "rxWaitTime", 5 ms steps seem reasonable. More information [here](#bdaq-controller-parameters-bdaqcfgjson)
+
+
 # Known Issues
 
-- Noise Scans
+- Noise scans generate errors like: **[ error  ][Rd53aDataProcessor]: [0] Received data not valid:**
+  - Hit (noise) data is unfortunately being lost
+  - The resulting noise map will be an underestimation of the real noise
+  - This issue is being investigated  
   
