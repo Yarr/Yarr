@@ -271,19 +271,25 @@ Some parameters from BDAQ controller might be configured via the hardware contro
 
 # Troubleshooting
 
-- No Aurora Synchronization
-  - Confirm these [RD53A register settings](#rd53a-register-configuration)
-  - Confirm proper settings for RD53A **"SldoAnalogTrim"** and **"SldoDigitalTrim"** registers
-  - Disable the Si570 configuration by setting **"configSi570"** to **false**, [more details](#bdaq-controller-parameters-bdaqcfgjson)
-<br/>
-- Errors like: **[ error  ][Rd53aDataProcessor]: [0] Received data not valid:**
-  - Confirm scan [trigger frequency settings](#trigger-frequency)
-  - This is a [known issue](#known-issues) with noise scans
-  - Confirm proper settings for RD53A **"SldoAnalogTrim"** and **"SldoDigitalTrim"** registers
-<br/>
-- Hit patterns in digital scans    
+Here is a compilation of potential issues, with their solutions.
+
+## No Aurora Synchronization
+- Confirm these [RD53A register settings](#rd53a-register-configuration)
+- Confirm proper settings for RD53A **"SldoAnalogTrim"** and **"SldoDigitalTrim"** registers
+- Disable the Si570 configuration by setting **"configSi570"** to **false**, [more details](#bdaq-controller-parameters-bdaqcfgjson)
+
+## Errors like: **[ error  ][Rd53aDataProcessor]: [0] Received data not valid:**
+- Confirm scan [trigger frequency settings](#trigger-frequency)
+- This is a [known issue](#known-issues) with noise scans
+- Confirm proper settings for RD53A **"SldoAnalogTrim"** and **"SldoDigitalTrim"** registers
+
+## Hit patterns in digital scans
+
+Hit patterns similar to the one below:
+
   <img src="./images/bdaqDigitalPattern.png" alt="Digital Pattern" width="400"/>
-  - Increase **"rxWaitTime"**, **5 ms steps** seem reasonable. More information [here](#bdaq-controller-parameters-bdaqcfgjson)
+  
+- Increase **"rxWaitTime"**, **5 ms steps** seem reasonable. More information [here](#bdaq-controller-parameters-bdaqcfgjson)
 
 # Known Issues
 
