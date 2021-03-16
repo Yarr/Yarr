@@ -89,11 +89,11 @@ Refer to the figure below to identify the DisplayPort connectors in the BDAQ har
 
 # Trigger Frequency
 
-When running with a single chip, the default trigger frequencies, set in the scan configuration files, should work normally. However, when reading out more than 1 chip, at the same time, the trigger frequency should be reduced.
+When running with a single chip, the default trigger frequencies, set in the scan configuration files, should work out-of-the-box. However, when reading out **more than 1 chip**, at the same time, the **trigger frequency should be reduced**.
 
-One possibility is to divide the trigger frequency by the number of chips running, e.g., for a threshold scan with a default 30 kHz trigger, set it to 15 kHz for 2-chip operation, or 7.5 kHz for 4-chip operation.
+One possibility is to **divide** the trigger frequency **by the number of chips running**, e.g., for a threshold scan with a default 30 kHz trigger, set it to 15 kHz for 2-chip operation, or 7.5 kHz for 4-chip operation. Another possibility is just choosing a **reasonable value**, let's say **5 kHz**, as a default for any configuration.
 
-The achievable trigger frequency is a function of the entire DAQ system ability to read-out chip data, without letting it overrun (with triggers). The DAQ computer specifications, system load, network activity, etc will have an impact into this ability. If you are experiencing errors such... a potential culprit is the trigger frequency.
+The achievable trigger frequency is a function of the entire DAQ system ability to read-out chip data, without letting it overrun. The DAQ computer specifications, system load, network activity, etc will have an impact into this ability. If you are experiencing errors such as **"[ error  ][Rd53aDataProcessor]: [0] Received data not valid:"**, a too high trigger frequency setting is a potential culprit. If possible, **use a dedicated network interface for BDAQ**.
 
 # Module Testing
 
@@ -263,7 +263,7 @@ Some parameters from BDAQ controller might be configured via the hardware contro
 |   "tcpPort"   |       24      |                                                                                                    Ethernet module TCP port.                                                                                                    |
 |  "rxWaitTime" |       15      |                                                    Time, in milliseconds, that<br/> Data Loop waits before reading<br/> the last data block after a<br/> Mask Stage finishes.                                                   |
 |  "softwareAZ" |      true     |                                                                Auto-Zero feature for<br/> Synchronous front-end.<br/> **true**: enabled<br/> **false**: disabled                                                                |
-| "configSi570" |      true     | Configures the oscillator that<br/> generates the reference clock for<br/> chip CDR and Aurora receivers.<br/> **true**: frequency is set to 160 MHz<br/> **false**: oscillator is left with factory<br/> frequency, 156.25 MHz |
+| "configSi570" |      true     | Configures the oscillator that<br/> generates the reference clock for<br/> chip CDR and Aurora receivers.<br/> **true**: frequency is set to 160 MHz<br/> **false**: oscillator is left with the factory<br/> frequency, 156.25 MHz |
 |    "rxAddr"   |    "0x6000"   |                                                                                          FPGA Aurora receiver modules (first) address.                                                                                          |
 |   "i2cAddr"   |    "0x1000"   |                                                                                                   FPGA i2c controller address.                                                                                                  |
 |   "cmdAddr"   |    "0x9000"   |                                                                                             FPGA Command Driver controller address.                                                                                             |
@@ -272,7 +272,7 @@ Some parameters from BDAQ controller might be configured via the hardware contro
 # Troubleshooting
 
 - No Aurora Synchronization
-  - Confirm these [RD53A register settings](#RD53A-register-configuration)
+  - Confirm these [RD53A register settings](#rd53a-register-configuration)
   - Confirm proper settings for RD53A **"SldoAnalogTrim"** and **"SldoDigitalTrim"** registers
   - Disable the Si570 configuration by setting **"configSi570"** to **false**, [more details](#bdaq-controller-parameters-bdaqcfgjson)
   
