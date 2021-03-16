@@ -1,6 +1,6 @@
-BDAQ is...
+# BDAQ controller
 
-Go thru Software Inst and Running
+The BDAQ controller adds to Yarr the ability of using the [BDAQ hardware](https://gitlab.cern.ch/silab/bdaq53/-/wikis/Hardware/Readout-Hardware#bdaq53), which is one of the read-out cards supported by the [BDAQ system](https://gitlab.cern.ch/silab/bdaq53), for RD53A testing (RD53B support is under development). The BDAQ controller code is based on the original BDAQ system Python software, plus additional code for making the BDAQ hardware compatible with Yarr. This document will guide you through the needed [software installation](#software-installation) steps and on how to get the system [running](#running).
 
 # Software Installation
 
@@ -54,6 +54,22 @@ Running with BDAQ controller should be the same as with any other hardware contr
 
 
 ### Digital scan
+
+```
+bin/scanConsole -r configs/controller/bdaqCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json -p -m 1
+```
+
+### Analog scan
+
+```
+bin/scanConsole -r configs/controller/bdaqCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_analogscan.json -p
+```
+
+### Threshold scan
+
+```
+bin/scanConsole -r configs/controller/bdaqCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_thresholdscan.json -p
+```
 
 # Firmware
 
@@ -141,7 +157,7 @@ Below one can find the connectivity settings for module testing with either the 
 
 With the [Osaka 1DP Adapter](https://gitlab.cern.ch/itk-pixel-hybrid/rd53a_testboard_japan/-/blob/master/1DP_Adapter_Board_V3.pdf), only ***DP 0*** of the BDAQ hardware can be used. The command driver and receivers mappings are shown in the tables below:
 
-## Command Driver (transmitter) mapping
+### Command Driver (transmitter) mapping
 
 BDAQ has only one Command Driver, thus "tx" : 0 is always used.
 
@@ -152,7 +168,7 @@ BDAQ has only one Command Driver, thus "tx" : 0 is always used.
 |       "tx" : 0      |     DP 0    | CMD (AUX) | Chip 3, CMD (AUX) |
 |       "tx" : 0      |     DP 0    | CMD (AUX) | Chip 4, CMD (AUX) |
 
-## Aurora Receivers mapping
+### Aurora Receivers mapping
 
 | Software Identifier | DisplayPort | BDAQ RX |  1DP Adapter  |
 |:-------------------:|:-----------:|:-------:|:-------------:|
@@ -203,7 +219,7 @@ BDAQ has only one Command Driver, thus "tx" : 0 is always used.
 
 A suggested setup is connecting ***DisplayPort 1***, ***DisplayPort 2***, ***DisplayPort 3*** and ***DisplayPort 4***, of the [Osaka 4DP Adapter](https://gitlab.cern.ch/itk-pixel-hybrid/rd53a_testboard_japan/-/blob/master/Adapter_Board_V3.pdf), respectively, to ***DP 0***, ***DP 1***, ***DP 2*** and ***DP 3*** of the BDAQ hardware. With this setup, the command driver and receivers mappings are as follows:
 
-## Command Driver (transmitter) mapping
+### Command Driver (transmitter) mapping
 
 BDAQ has only one Command Driver, thus "tx" : 0 is always used.
 
@@ -214,7 +230,7 @@ BDAQ has only one Command Driver, thus "tx" : 0 is always used.
 |       "tx" : 0      |     DP 2    | CMD (AUX) | Chip 3, CMD (AUX) |
 |       "tx" : 0      |     DP 3    | CMD (AUX) | Chip 4, CMD (AUX) |
 
-## Aurora Receivers mapping
+### Aurora Receivers mapping
 
 | Software Identifier | DisplayPort | BDAQ RX |  4DP Adapter  |
 |:-------------------:|:-----------:|:-------:|:-------------:|
@@ -305,8 +321,8 @@ Some parameters from BDAQ controller might be configured via the hardware contro
 |   "udpPort"   |      4660     |                                                                                                    Ethernet module UDP port.                                                                                                    |
 |   "tcpPort"   |       24      |                                                                                                    Ethernet module TCP port.                                                                                                    |
 |  "rxWaitTime" |       15      |                                                    Time, in milliseconds, that<br/> Data Loop waits before reading<br/> the last data block after a<br/> Mask Stage finishes.                                                   |
-|  "softwareAZ" |      true     |                                                                Auto-Zero feature for<br/> Synchronous front-end.<br/> **true**: enabled<br/> **false**: disabled                                                                |
-| "configSi570" |      true     | Configures the oscillator that<br/> generates the reference clock for<br/> chip CDR and Aurora receivers.<br/> **true**: frequency is set to 160 MHz<br/> **false**: oscillator is left with the factory<br/> frequency, 156.25 MHz |
+|  "softwareAZ" |      true     |                                                                Auto-Zero feature for<br/> Synchronous front-end.<br/> **true**: enabled.<br/> **false**: disabled.                                                               |
+| "configSi570" |      true     | Configures the oscillator that<br/> generates the reference clock for<br/> chip CDR and Aurora receivers.<br/> **true**: frequency is set to 160 MHz.<br/> **false**: oscillator is left with the factory<br/> frequency, 156.25 MHz. |
 |    "rxAddr"   |    "0x6000"   |                                                                                          FPGA Aurora receiver modules (first) address.                                                                                          |
 |   "i2cAddr"   |    "0x1000"   |                                                                                                   FPGA i2c controller address.                                                                                                  |
 |   "cmdAddr"   |    "0x9000"   |                                                                                             FPGA Command Driver controller address.                                                                                             |
