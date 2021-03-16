@@ -23,7 +23,7 @@ BDAQ support is either on the *devel* branch or on an *appropriate tag*.
 $ git clone -b devel https://github.com/Yarr/Yarr.git Yarr
 ```
 
-## Compile the software
+## Compile and install the software
 
 ```bash
 $ cd Yarr/
@@ -36,11 +36,24 @@ $ make install
 
 # Running
 
-Before running, check the following sections. If everything is already set, one can jump to the examples below. If running (no pun intended) into trouble, refer to:
+Before running, check the following sections. If everything is already set, one can jump to the [examples](#examples) below.
+
+1. [Firmware](#firmware)
+2. [Connectivity](#connectivity)
+3. [RD53A registers configuration](#rd53a-registers-configuration) - **Note that some settings differ from Yarr defaults**
+4. [Trigger Frequency](#trigger-frequency)
+
+Running into trouble? Refer to:
+1. [Troubleshooting](#troubleshooting)
+2. [Known Issues](#known-issues)
+3. [BDAQ controller parameters](#bdaq-controller-parameters-bdaqcfgjson)
+
+## Examples
 
 Running with BDAQ controller should be the same as with any other hardware controller, just watch out for the hardware controller configuration file. Here are some examples:
 
-## Digital scan
+
+### Digital scan
 
 # Firmware
 
@@ -54,9 +67,9 @@ BDAQ controller works with the original BDAQ firmware. Below one can find links 
 
 # Connectivity
 
-When running [*scanConsole*](scanconsole.md), the [connectivity configuration file ](scanconsole.md#Command%20Line%20Arguments) must reflect your setup according to the mappings shown below:
+When running [*scanConsole*](scanconsole.md), the [connectivity configuration file ](scanconsole.md#command-line-arguments) must reflect your setup according to the mappings shown below:
 
-For Module Testing connectivity hints, refer to: [Module Testing](Module%20Testing) in this document, as well as,
+For Module Testing connectivity hints, refer to: [Module Testing](#module-testing) in this document, as well as the [RD53A](rd53a.md) main document.
 
 ## Command Driver (transmitter) mapping
 
@@ -87,6 +100,32 @@ Refer to the figure below to identify the DisplayPort connectors in the BDAQ har
 
 ![BDAQ Connectivity](./images/bdaqConn.jpg)
 
+# RD53A registers configuration
+
+To match the BDAQ hardware/firmware configuration, the RD53A Clock and Data Recovery (CDR) circuitry and the Aurora transmitters must be configured as follows:
+
+- Set the following CDR register to
+  
+```
+"CdrPdDel": 4
+```
+
+- Set Aurora transmitter to work with 1-lane, routed to GTX0 only
+```
+"CmlEn": 1
+"OutputActiveLanes": 1
+```
+
+- For 640 Mbps operation (Aurora transfer rate), set:
+```
+"CdrSelSerClk": 1
+```
+
+- For 1.28 Gbps operation (Aurora transfer rate), set:
+```
+"CdrSelSerClk": 0
+```
+
 # Trigger Frequency
 
 When running with a single chip, the default trigger frequencies, set in the scan configuration files, should work out-of-the-box. However, when reading out **more than 1 chip**, at the same time, the **trigger frequency should be reduced**.
@@ -96,6 +135,7 @@ One possibility is to **divide** the trigger frequency **by the number of chips 
 The achievable trigger frequency is a function of the entire DAQ system ability to read-out chip data, without letting it overrun. The DAQ computer specifications, system load, network activity, etc will have an impact into this ability. If you are experiencing errors such as **"[ error  ][Rd53aDataProcessor]: [0] Received data not valid:"**, a too high trigger frequency setting is a potential culprit. If possible, **use a dedicated network interface for BDAQ**.
 
 # Module Testing
+Below one can find the connectivity settings for module testing with either the [1DP Adapter](#1dp-adapter) or the [4DP Adapter](#4dp-adapter).
 
 ## 1DP Adapter
 
@@ -226,55 +266,12 @@ BDAQ has only one Command Driver, thus "tx" : 0 is always used.
 }
 ```
 
-# RD53A register configuration
-
-To match the BDAQ hardware/firmware configuration, the RD53A Clock and Data Recovery (CDR) circuitry and the Aurora transmitters must be configured as follows:
-
-- Set the following CDR register to
-  
-```
-"CdrPdDel": 4
-```
-
-- Set Aurora transmitter to work with 1-lane, routed to GTX0 only
-```
-"CmlEn": 1
-"OutputActiveLanes": 1
-```
-
-- For 640 Mbps operation (Aurora transfer rate), set:
-```
-"CdrSelSerClk": 1
-```
-
-- For 1.28 Gbps operation (Aurora transfer rate), set:
-```
-"CdrSelSerClk": 0
-```
-
-# BDAQ controller parameters (bdaqCfg.json)
-
-Some parameters from BDAQ controller might be configured via the hardware controller configuration file, under ***configs/controller/bdaqCfg.json***. The table below shows a brief explanation of those parameters.
-
-|   Parameter   | Default value |                                                                                                           Description                                                                                                           |
-|:-------------:|:-------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
-|    "ipAddr"   | 192.168.10.12 |                                                                                                 FPGA Ethernet module IP address.                                                                                                |
-|   "udpPort"   |      4660     |                                                                                                    Ethernet module UDP port.                                                                                                    |
-|   "tcpPort"   |       24      |                                                                                                    Ethernet module TCP port.                                                                                                    |
-|  "rxWaitTime" |       15      |                                                    Time, in milliseconds, that<br/> Data Loop waits before reading<br/> the last data block after a<br/> Mask Stage finishes.                                                   |
-|  "softwareAZ" |      true     |                                                                Auto-Zero feature for<br/> Synchronous front-end.<br/> **true**: enabled<br/> **false**: disabled                                                                |
-| "configSi570" |      true     | Configures the oscillator that<br/> generates the reference clock for<br/> chip CDR and Aurora receivers.<br/> **true**: frequency is set to 160 MHz<br/> **false**: oscillator is left with the factory<br/> frequency, 156.25 MHz |
-|    "rxAddr"   |    "0x6000"   |                                                                                          FPGA Aurora receiver modules (first) address.                                                                                          |
-|   "i2cAddr"   |    "0x1000"   |                                                                                                   FPGA i2c controller address.                                                                                                  |
-|   "cmdAddr"   |    "0x9000"   |                                                                                             FPGA Command Driver controller address.                                                                                             |
-| "controlAddr" |    "0x2100"   |                                                                                                  FPGA GPIO controller address.                                                                                                  |
-
 # Troubleshooting
 
 Here is a compilation of potential issues, with their solutions.
 
 ## No Aurora Synchronization
-- Confirm these [RD53A register settings](#rd53a-register-configuration)
+- Confirm these [RD53A register settings](#rd53a-registers-configuration)
 - Confirm proper settings for RD53A **"SldoAnalogTrim"** and **"SldoDigitalTrim"** registers
 - Disable the Si570 configuration by setting **"configSi570"** to **false**, [more details](#bdaq-controller-parameters-bdaqcfgjson)
 
@@ -293,8 +290,24 @@ Hit patterns similar to the one below:
 
 # Known Issues
 
-- Noise scans generate errors like: **[ error  ][Rd53aDataProcessor]: [0] Received data not valid:**
-  - Hit (noise) data is unfortunately being lost
-  - The resulting noise map will be an underestimation of the real noise
-  - This issue is being investigated  
-  
+## Noise scans generate errors like: **[ error  ][Rd53aDataProcessor]: [0] Received data not valid:**
+- Hit (noise) data is unfortunately being lost
+- The resulting noise map will be an underestimation of the real noise
+- This issue is being investigated  
+
+# BDAQ controller parameters (bdaqCfg.json)
+
+Some parameters from BDAQ controller might be configured via the hardware controller configuration file, under ***configs/controller/bdaqCfg.json***. The table below shows a brief explanation of those parameters.
+
+|   Parameter   | Default value |                                                                                                           Description                                                                                                           |
+|:-------------:|:-------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
+|    "ipAddr"   | 192.168.10.12 |                                                                                                 FPGA Ethernet module IP address.                                                                                                |
+|   "udpPort"   |      4660     |                                                                                                    Ethernet module UDP port.                                                                                                    |
+|   "tcpPort"   |       24      |                                                                                                    Ethernet module TCP port.                                                                                                    |
+|  "rxWaitTime" |       15      |                                                    Time, in milliseconds, that<br/> Data Loop waits before reading<br/> the last data block after a<br/> Mask Stage finishes.                                                   |
+|  "softwareAZ" |      true     |                                                                Auto-Zero feature for<br/> Synchronous front-end.<br/> **true**: enabled<br/> **false**: disabled                                                                |
+| "configSi570" |      true     | Configures the oscillator that<br/> generates the reference clock for<br/> chip CDR and Aurora receivers.<br/> **true**: frequency is set to 160 MHz<br/> **false**: oscillator is left with the factory<br/> frequency, 156.25 MHz |
+|    "rxAddr"   |    "0x6000"   |                                                                                          FPGA Aurora receiver modules (first) address.                                                                                          |
+|   "i2cAddr"   |    "0x1000"   |                                                                                                   FPGA i2c controller address.                                                                                                  |
+|   "cmdAddr"   |    "0x9000"   |                                                                                             FPGA Command Driver controller address.                                                                                             |
+| "controlAddr" |    "0x2100"   |                                                                                                  FPGA GPIO controller address.                                                                                                  |
