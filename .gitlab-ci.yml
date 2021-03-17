@@ -32,6 +32,7 @@ job_build_all:
         paths:
           - bin
           - build
+          - lib
     script:
       - yum -y install boost-devel
       - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
