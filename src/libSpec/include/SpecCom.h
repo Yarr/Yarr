@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <string>
 
+#include "storage.hpp"
 #include <SpecDevice.h>
 #include <KernelMemory.h>
 #include <UserMemory.h>
@@ -74,6 +75,7 @@ class SpecCom {
         int getBarSize(unsigned int bar);
 
         void init(unsigned int id);
+        const json getStatus();
 
         void writeSingle(uint32_t off, uint32_t val);
         uint32_t readSingle(uint32_t off);
@@ -100,6 +102,8 @@ class SpecCom {
         bool is_initialized;
         SpecDevice *spec;
         void *bar0, *bar4;
+        uint32_t fw_vers;
+        uint32_t fw_ident;
 
         void init();
         void configure();
