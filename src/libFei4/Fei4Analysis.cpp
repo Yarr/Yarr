@@ -86,10 +86,6 @@ void OccupancyAnalysis::init(ScanBase *s) {
                 injections = trigLoop->getTrigCnt();
             }
         }
-        if (l->type() == typeid(Rd53bTriggerLoop*)) {
-            Rd53bTriggerLoop *trigLoop = (Rd53bTriggerLoop*) l.get();
-            injections = trigLoop->getTrigCnt();
-        }
     }
 }
 
