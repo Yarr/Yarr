@@ -76,6 +76,14 @@ StarChips::StarChips(HwController *arg_core, unsigned arg_txChannel, unsigned ar
 	geo.nCol = 128;
 }
 
+void StarChips::enableAll() {
+    eachAbc([&](auto &abc) {
+        for(int m=0; m<8; m++) {
+          abc.setRegisterValue(ABCStarRegister::MaskInput(m), 0);
+        }
+      });
+}
+
 void StarChips::init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
 	logger->debug("Running init {} {} {}", (void*)arg_core, arg_txChannel, arg_rxChannel);
 	m_txcore  = arg_core;
