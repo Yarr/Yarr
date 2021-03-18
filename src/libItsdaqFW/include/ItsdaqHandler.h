@@ -30,6 +30,9 @@ public:
                 uint16_t srcPort = 60001, uint16_t dstPort = 60002);
 
   ~ItsdaqHandler();
+
+  const std::vector<uint16_t> &LatestStatus();
+  const std::vector<uint16_t> &LatestSysStatus();
 };
 
 #endif

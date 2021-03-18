@@ -21,6 +21,7 @@ ItsdaqRxCore::~ItsdaqRxCore(){
 }
 
 void ItsdaqRxCore::init() {
+  logger->debug("init");
   bridge_watcher = std::chrono::steady_clock::now();
 
   // Shutdown stream output if not done by previous run
@@ -46,6 +47,18 @@ void ItsdaqRxCore::init() {
   const uint16_t READ_STATUS_BLOCK = 0x0019;
   logger->trace("Read status block");
   m_h.SendOpcode(READ_STATUS_BLOCK, noContents.data(), 0);
+
+  const uint16_t READ_SYS_STATUS_BLOCK = 0x00f9;
+  logger->trace("Read system status block");
+  m_h.SendOpcode(READ_SYS_STATUS_BLOCK, noContents.data(), 0);
+
+  while(1) {
+    std::this_thread::sleep_for(std::chrono::microseconds(10));
+    if(!m_h.LatestStatus().empty() && !m_h.LatestSysStatus().empty()) {
+      logger->trace("Received status response");
+      break;
+    }
+  }
 }
 
 void ItsdaqRxCore::setRxEnable(uint32_t stream) {
