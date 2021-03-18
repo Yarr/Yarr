@@ -43,8 +43,7 @@ Before running, check the following sections. If everything is already set, one 
 
 Running into trouble? Refer to:
 1. [Troubleshooting](#troubleshooting)
-2. [Known Issues](#known-issues)
-3. [BDAQ controller parameters](#bdaq-controller-parameters-bdaqcfgjson)
+2. [BDAQ controller parameters](#bdaq-controller-parameters-bdaqcfgjson)
 
 ## Examples
 
@@ -280,35 +279,6 @@ BDAQ has only one Command Driver, thus "tx" : 0 is always used.
 }
 ```
 
-# Troubleshooting
-
-Here is a compilation of potential issues, with their solutions.
-
-## No Aurora Synchronization
-- Confirm these [RD53A register settings](#rd53a-registers-configuration)
-- Confirm proper settings for RD53A **"SldoAnalogTrim"** and **"SldoDigitalTrim"** registers
-- Disable the Si570 configuration by setting **"configSi570"** to **false**, [more details](#bdaq-controller-parameters-bdaqcfgjson)
-
-## Errors like: **[ error  ][Rd53aDataProcessor]: [0] Received data not valid:**
-- Confirm scan [trigger frequency settings](#trigger-frequency)
-- This is a [known issue](#known-issues) with noise scans
-- Confirm proper settings for RD53A **"SldoAnalogTrim"** and **"SldoDigitalTrim"** registers
-
-## Hit patterns in digital scans
-
-Hit patterns similar to the one below:
-
-  <img src="./images/bdaqDigitalPattern.png" alt="Digital Pattern" width="400"/>
-  
-- Increase **"rxWaitTime"**, **5 ms steps** seem reasonable. More information [here](#bdaq-controller-parameters-bdaqcfgjson)
-
-# Known Issues
-
-## Noise scans generate errors like: **[ error  ][Rd53aDataProcessor]: [0] Received data not valid:**
-- Hit (noise) data is unfortunately being lost
-- The resulting noise map will be an underestimation of the real noise
-- This issue is being investigated  
-
 # BDAQ controller parameters (bdaqCfg.json)
 
 Some parameters from BDAQ controller might be configured via the hardware controller configuration file, under ***configs/controller/bdaqCfg.json***. The table below shows a brief explanation of those parameters.
@@ -325,3 +295,26 @@ Some parameters from BDAQ controller might be configured via the hardware contro
 |   "i2cAddr"   |    "0x1000"   |                                                                                                   FPGA i2c controller address.                                                                                                  |
 |   "cmdAddr"   |    "0x9000"   |                                                                                             FPGA Command Driver controller address.                                                                                             |
 | "controlAddr" |    "0x2100"   |                                                                                                  FPGA GPIO controller address.                                                                                                  |
+
+# Troubleshooting
+
+Here is a compilation of potential issues, with their solutions.
+
+## No Aurora Synchronization
+- Confirm these [RD53A register settings](#rd53a-registers-configuration)
+- Confirm proper settings for RD53A **"SldoAnalogTrim"** and **"SldoDigitalTrim"** registers
+- Disable the Si570 configuration by setting **"configSi570"** to **false**, [more details](#bdaq-controller-parameters-bdaqcfgjson)
+
+## Errors like: **[ error  ][Rd53aDataProcessor]: [0] Received data not valid:**
+- Confirm scan [trigger frequency settings](#trigger-frequency)
+- Confirm proper settings for RD53A **"SldoAnalogTrim"** and **"SldoDigitalTrim"** registers
+- If BDAQ is not running with a dedicated network interface, try setting a direct route...
+- DAQ computer might be overloaded
+  
+## Hit patterns in digital scans
+
+Hit patterns similar to the one below:
+
+  <img src="./images/bdaqDigitalPattern.png" alt="Digital Pattern" width="400"/>
+  
+- Increase **"rxWaitTime"**, **5 ms steps** seem reasonable. More information [here](#bdaq-controller-parameters-bdaqcfgjson)
