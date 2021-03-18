@@ -21,8 +21,7 @@ public:
   ItsdaqFWController()
     : ItsdaqTxCore(h), ItsdaqRxCore(h)
   {
-    // Do some initialisation that requires ItsdaqHandler to exist
-    ItsdaqRxCore::init();
+    // NB initialisation is only done in loadConfig
   }
 
   void loadConfig(json &j) override;

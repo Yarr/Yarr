@@ -52,11 +52,18 @@ void ItsdaqRxCore::init() {
   logger->trace("Read system status block");
   m_h.SendOpcode(READ_SYS_STATUS_BLOCK, noContents.data(), 0);
 
+  auto t = std::chrono::steady_clock::now();
+
   while(1) {
     std::this_thread::sleep_for(std::chrono::microseconds(10));
     if(!m_h.LatestStatus().empty() && !m_h.LatestSysStatus().empty()) {
       logger->trace("Received status response");
       break;
+    }
+
+    if((std::chrono::steady_clock::now() - t) > std::chrono::seconds(1)) {
+      logger->critical("Didn't receive status opcode response from itsdaq FW, check configuration");
+      exit(-1);
     }
   }
 }
