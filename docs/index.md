@@ -8,6 +8,7 @@ YARR is a readout system based around the concept of moving intelligence from th
 * FELIX + NETIO
 * ATLAS IBL BOC
 * Wuppertal's KU040
+* BDAQ Hardware 
 
 The currently supported readout chips are:
 
@@ -47,6 +48,7 @@ Support for YARR can be found in the [YARR Matter Most channel.](https://matterm
 |-- doc : Documentation
 |-- src : Main software dir
     |-- kernel : Custom PCIe kernel driver
+    |-- libBdaq : BDAQ hw driver
     |-- libBoc : ATLAS IBL BOC hw driver
     |-- libEmu : FE Emulator hw driver
     |-- libFe65p2 : FE65p2 implementation
