@@ -117,12 +117,6 @@ Refer to the figure below to identify the DisplayPort connectors in the BDAQ har
 
 To match the BDAQ hardware/firmware configuration, the RD53A Clock and Data Recovery (CDR) circuitry and the Aurora transmitters must be configured as follows:
 
-- Set the following CDR register to
-  
-```
-"CdrPdDel": 4
-```
-
 - Set Aurora transmitter to work with 1-lane, routed to GTX0 only
 ```
 "CmlEn": 1
