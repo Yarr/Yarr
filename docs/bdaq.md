@@ -283,18 +283,18 @@ BDAQ has only one Command Driver, thus "tx" : 0 is always used.
 
 Some parameters from BDAQ controller might be configured via the hardware controller configuration file, under ***configs/controller/bdaqCfg.json***. The table below shows a brief explanation of those parameters.
 
-|   Parameter   | Default value |                                                                                                           Description                                                                                                           |
-|:-------------:|:-------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
-|    "ipAddr"   | 192.168.10.12 |                                                                                                 FPGA Ethernet module IP address.                                                                                                |
-|   "udpPort"   |      4660     |                                                                                                    Ethernet module UDP port.                                                                                                    |
-|   "tcpPort"   |       24      |                                                                                                    Ethernet module TCP port.                                                                                                    |
-|  "rxWaitTime" |       15      |                                                    Time, in milliseconds, that<br/> Data Loop waits before reading<br/> the last data block after a<br/> Mask Stage finishes.                                                   |
-|  "softwareAZ" |      true     |                                                                Auto-Zero feature for<br/> Synchronous front-end.<br/> **true**: enabled.<br/> **false**: disabled.                                                               |
-| "configSi570" |      true     | Configures the oscillator that<br/> generates the reference clock for<br/> chip CDR and Aurora receivers.<br/> **true**: frequency is set to 160 MHz.<br/> **false**: oscillator is left with the factory<br/> frequency, 156.25 MHz. |
-|    "rxAddr"   |    "0x6000"   |                                                                                          FPGA Aurora receiver modules (first) address.                                                                                          |
-|   "i2cAddr"   |    "0x1000"   |                                                                                                   FPGA i2c controller address.                                                                                                  |
-|   "cmdAddr"   |    "0x9000"   |                                                                                             FPGA Command Driver controller address.                                                                                             |
-| "controlAddr" |    "0x2100"   |                                                                                                  FPGA GPIO controller address.                                                                                                  |
+| Parameter | Default value | Description |
+|:-:|:-:|:-:|
+| "ipAddr" | 192.168.10.12 | FPGA Ethernet module IP address.<br>This settings must reflect the hardware<br>IP address, more information [here](https://gitlab.cern.ch/silab/bdaq53/-/wikis/Hardware/fpga-configuration#ip-address-configuration). |
+| "udpPort" | 4660 | Ethernet module UDP port. |
+| "tcpPort" | 24 | Ethernet module TCP port. |
+| "rxWaitTime" | 15 | Time, in milliseconds, that<br>Data Loop waits before reading<br>the last data block after a<br>Mask Stage finishes. |
+| "softwareAZ" | true | Auto-Zero feature for<br>Synchronous front-end.<br>**true**: enabled.<br>**false**: disabled. |
+| "configSi570" | true | Configures the oscillator that<br>generates the reference clock for<br>chip CDR and Aurora receivers.<br>**true**: frequency is set to 160 MHz.<br>**false**: oscillator is left with the factory<br> frequency, 156.25 MHz.  |
+| "rxAddr" | "0x6000" | FPGA Aurora receiver modules (first) address. |
+| "i2cAddr" | "0x1000" | FPGA i2c controller address. |
+| "cmdAddr" | "0x9000" | FPGA Command Driver controller address. |
+| "controlAddr" | "0x2100" | FPGA GPIO controller address. |
 
 # Troubleshooting
 
