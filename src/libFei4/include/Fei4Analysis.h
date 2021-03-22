@@ -24,12 +24,6 @@
 
 #include "FeedbackBase.h"
 
-#include "AllFei4Actions.h"
-#include "AllFe65p2Actions.h"
-#include "AllRd53aActions.h"
-#include "AllRd53bActions.h"
-#include "AllStdActions.h"
-
 #include "AnalysisAlgorithm.h"
 
 class OccupancyAnalysis : public AnalysisAlgorithm {

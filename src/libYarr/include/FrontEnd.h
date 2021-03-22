@@ -29,6 +29,9 @@ class FrontEnd {
         // col/row starting at 0,0
         virtual void maskPixel(unsigned col, unsigned row) = 0;
 
+        /// Enable (disable mask) for all pixels
+        virtual void enableAll() = 0;
+
         bool getActive();
 		bool isActive();
 		void setActive(bool active);

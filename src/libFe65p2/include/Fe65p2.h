@@ -36,6 +36,8 @@ class Fe65p2 : public FrontEnd, public Fe65p2Cfg, public Fe65p2Cmd {
             this->setPixConf(col+1, row+1, 0x0);
         }
 
+        void enableAll() override;
+
         void writeNamedRegister(std::string name, uint16_t value) override;
         
         void setInjCharge(double charge, bool sCap=true, bool lCap=true) override final {

@@ -35,6 +35,8 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
   void setInjCharge(double, bool, bool) override {}
   void maskPixel(unsigned col, unsigned row) override {}
 
+  void enableAll() override;
+
     //! configure
     //! brief configure the chip (virtual)
     void configure() override final;

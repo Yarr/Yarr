@@ -39,6 +39,8 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
             this->setHitbus(col, row, 0);
         }
 
+        void enableAll() override;
+
         void writeRegister(Rd53bReg Rd53bGlobalCfg::*ref, uint16_t value);
         void readRegister(Rd53bReg Rd53bGlobalCfg::*ref);
         void writeNamedRegister(std::string name, uint16_t value) override;
