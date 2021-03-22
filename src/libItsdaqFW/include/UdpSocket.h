@@ -32,6 +32,8 @@ class UdpSocket {
   bool receive(std::array<char, MAX_PACKET_SIZE> &packet, size_t &output_length, int timeout);
 
   void interrupt() { shutting_down = true; }
+
+  friend class ItsdaqPrivate;
 };
 
 #endif

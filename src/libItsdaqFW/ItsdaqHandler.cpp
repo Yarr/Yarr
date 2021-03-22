@@ -28,9 +28,16 @@ public:
 
   ~ItsdaqPrivate();
 
+  void reconfigure(uint32_t remote_IP, uint16_t srcPort, uint16_t dstPort) {
+    sock.setup(remote_IP, srcPort, dstPort);
+  }
+
   UdpSocket sock;
 
   std::unique_ptr<RawData> GetData();
+
+  std::vector<uint16_t> latest_status_regs;
+  std::vector<uint16_t> latest_sys_status_regs;
 
 private:
   std::thread receiver;
@@ -50,6 +57,10 @@ ItsdaqHandler::ItsdaqHandler(uint32_t remote_IP,
 
 ItsdaqHandler::~ItsdaqHandler() {
   priv.reset();
+}
+
+void ItsdaqHandler::reconfigure(uint32_t remote, uint16_t srcPort, uint16_t dstPort) {
+  priv->reconfigure(remote, srcPort, dstPort);
 }
 
 void ItsdaqHandler::SendOpcode(uint16_t opcode, uint16_t *data, uint16_t length)
@@ -85,6 +96,14 @@ void ItsdaqHandler::SendOpcode(uint16_t opcode, uint16_t *data, uint16_t length)
 
 std::unique_ptr<RawData> ItsdaqHandler::GetData() {
   return priv->GetData();
+}
+
+const std::vector<uint16_t> &ItsdaqHandler::LatestStatus() {
+  return priv->latest_status_regs;
+}
+
+const std::vector<uint16_t> &ItsdaqHandler::LatestSysStatus() {
+  return priv->latest_sys_status_regs;
 }
 
 ItsdaqPrivate::~ItsdaqPrivate() {
@@ -242,17 +261,37 @@ void ItsdaqPrivate::ReceiverMain() {
         buf16[b_o] = ntohs(buf16[b_o]);
       }
 
-      if(opcode == 0x19 || opcode == 0x15) {
-        logger->debug("Report FW {} block", (opcode==0x15)?"register":"status");
+      if(opcode == 0x19 || opcode == 0x15 || opcode == 0xf9) {
+        logger->debug("Report FW {} block",
+                      (opcode==0x15)?"register":((opcode==0x19)?"status":"sysstat"));
         std::array<uint16_t, 4> line_data;
         for(int i=0; i<(output_bytes/2)-7; i++) {
           line_data[i%4] = buf16[i+7];
           if((i % 4) == 3)  {
-            logger->debug(" {}: {:04x} {:04x} {:04x} {:04x}", i-3,
+            logger->debug(" {:2}: {:04x} {:04x} {:04x} {:04x}", i-3,
                           line_data[0], line_data[1],
                           line_data[2], line_data[3]);
           }
         }
+        if(opcode == 0x19) {
+          std::vector<uint16_t> status_regs;
+
+          for(int i=0; i<(output_bytes/2)-7; i++) {
+            status_regs.push_back(buf16[i+7]);
+          }
+
+          latest_status_regs = status_regs;
+        }
+        if(opcode == 0xf9) {
+          std::vector<uint16_t> status_regs;
+
+          for(int i=0; i<(output_bytes/2)-7; i++) {
+            status_regs.push_back(buf16[i+7]);
+          }
+
+          latest_sys_status_regs = status_regs;
+        }
+
         continue;
       }
 
