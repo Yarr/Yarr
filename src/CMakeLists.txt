@@ -15,9 +15,8 @@ add_compile_options(-Wno-deprecated)
 add_compile_options(-Wnon-virtual-dtor)
 add_compile_options(-std=c++17)
 
-SET(CMAKE_SKIP_BUILD_RPATH FALSE)
-SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-SET(CMAKE_INSTALL_RPATH ${TARGET_INSTALL_AREA}/lib)
+SET(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
+SET(CMAKE_BUILD_RPATH ../lib)
 
 
 if ( USE_JSON )
