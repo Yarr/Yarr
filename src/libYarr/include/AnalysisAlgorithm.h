@@ -31,7 +31,7 @@ class AnalysisAlgorithm {
             feedback = fb;
         }
         virtual void init(ScanBase *s) {}
-	virtual void loadConfig(json &config){}
+        virtual void loadConfig(json &config);
         virtual void processHistogram(HistogramBase *h) {}
         virtual void end() {}
 
@@ -53,8 +53,8 @@ class AnalysisAlgorithm {
         bool make_mask;
         unsigned nCol, nRow;
 
-        std::vector<std::string> m_outerLoopNames;
-        bool isOuterLoop(LoopActionBase *l);
+        std::vector<std::string> m_parametersOfInterest;
+        bool isPOILoop(LoopActionBase *l);
 };
 
 /**

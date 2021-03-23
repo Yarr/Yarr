@@ -432,7 +432,7 @@ void ScurveFitter::init(ScanBase *s) {
     useLcap = true;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || l->isParameterLoop()) || isOuterLoop(l.get())) {
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || (l->isParameterLoop() && isPOILoop(l.get())) )) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -445,7 +445,7 @@ void ScurveFitter::init(ScanBase *s) {
             n_count = n_count*cnt;
         }
         // Vcal Loop
-        if (l->isParameterLoop() && !isOuterLoop(l.get())) {
+        if (l->isParameterLoop() && isPOILoop(l.get())) {
             vcalLoop = n;
             vcalMax = l->getMax();
             vcalMin = l->getMin();
@@ -578,7 +578,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     end = std::chrono::high_resolution_clock::now();
                     std::chrono::microseconds fitTime = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
                     if (thrMap[outerIdent] == NULL) {
-                        Histo2d *hh2 = new Histo2d("ThresholdMap-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
+                        Histo2d *hh2 = new Histo2d("ThresholdMap-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, hh->getStat());
                         hh2->setXaxisTitle("Column");
                         hh2->setYaxisTitle("Row");
                         hh2->setZaxisTitle("Threshold [e]");
@@ -785,9 +785,18 @@ void ScurveFitter::end() {
 }
 
 void ScurveFitter::loadConfig(json &j) {
-    if (!j["outerLoops"].empty()) {
-        for (unsigned l=0; l<j["outerLoops"].size(); l++) {
-            m_outerLoopNames.push_back(j["outerLoops"][l]);
+    AnalysisAlgorithm::loadConfig(j);
+}
+
+void NPointGain::init(ScanBase *s) {
+    for (unsigned n=0; n<s->size(); n++) {
+        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        if ( l->isParameterLoop() && isPOILoop(l.get()) ) {
+            par_loopindex = n;
+            par_min = l->getMin();
+            par_max = l->getMax();
+            par_step = l->getStep();
+            break;
         }
     }
 }
@@ -803,8 +812,9 @@ void NPointGain::processHistogram(HistogramBase *h) {
         return;
 
     // Get the scan parameter value (BCAL)
-    std::string par_str = hname.substr(hname.find("-")+1);
-    int par = std::stoi(par_str);
+    //std::string par_str = hname.substr(hname.find("-")+1);
+    //int par = std::stoi(par_str);
+    int par = h->getStat().get(par_loopindex);
 
     inj.push_back(par);
     inj_err.push_back(0);
@@ -833,6 +843,10 @@ void NPointGain::end() {
 
     // Output
     output->pushData(std::move(respCurve));
+}
+
+void NPointGain::loadConfig(json &j) {
+    AnalysisAlgorithm::loadConfig(j);
 }
 
 void OccGlobalThresholdTune::init(ScanBase *s) {

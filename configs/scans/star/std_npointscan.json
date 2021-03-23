@@ -4,12 +4,14 @@
       "0": {
         "algorithm": "ScurveFitter",
         "config": {
-          "outerLoops": ["StdParameterLoop:ABCs_BCAL"]
+          "parametersOfInterest": ["ABCs_BVT"]
         }
       },
       "1": {
         "algorithm": "NPointGain",
-        "config": {},
+        "config": {
+          "parametersOfInterest": ["ABCs_BCAL"]
+        },
         "dependOn": ["ScurveFitter"]
       },
       "n_count": 2

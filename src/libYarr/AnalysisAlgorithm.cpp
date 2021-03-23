@@ -15,32 +15,25 @@ namespace {
     auto alog = logging::make_log("AnalysisAlgorithm");
 }
 
-bool AnalysisAlgorithm::isOuterLoop(LoopActionBase *l) {
-    // Determine if a given loop l is an outer loop for this analysis algorithm
-    // m_outerLoopNames is set by AnalysisAlgorithm::loadConfig
-    for (const auto& loopname : m_outerLoopNames) {
-        // loopname is expected to have the format "LoopName[:Label]" (Label optional)
-        auto lname = loopname.substr(0, loopname.find(":"));
-        std::unique_ptr<LoopActionBase> outerLoop(StdDict::getLoopAction(lname));
-        if (outerLoop == nullptr) {
-            alog->error("Unknown Loop Action: {}  ... skipping!", lname);
-            continue;
+void AnalysisAlgorithm::loadConfig(json &j) {
+    if (!j["parametersOfInterest"].empty()) {
+        for (unsigned i=0; i<j["parametersOfInterest"].size(); i++) {
+            m_parametersOfInterest.push_back(j["parametersOfInterest"][i]);
         }
+    }
+}
 
-        // Get the label if it is provided
-        // For a Parameter Loop, for instance, this is the parameter name.
-        std::string label;
-        if (loopname.find(":") != std::string::npos)
-            label = loopname.substr(loopname.find(":")+1);
+bool AnalysisAlgorithm::isPOILoop(LoopActionBase *l) {
+    // Determine if a given loop l is iterating a parameter that is in the m_parametersOfInterest
+    // m_parametersOfInterest is set in AnalysisAlgorithm::loadConfig
 
-        if (l->getStyle() == outerLoop->getStyle()) { // match loop style
-            if (label.empty()) {
-                return true;
-            } else {
-                // match labels
-                if (l->getLabel() == label) return true;
-            }
-        }
+    // If m_parametersOfInterest is not set, treat all parameter loops as POI loops
+    if ( m_parametersOfInterest.empty() and l->isParameterLoop() )
+        return true;
+
+    for (const auto& poi : m_parametersOfInterest) {
+        if (l->getLabel() == poi)
+            return true;
     }
 
     return false;

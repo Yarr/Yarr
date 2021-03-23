@@ -85,10 +85,10 @@ class NPointGain : public AnalysisAlgorithm {
         NPointGain() : AnalysisAlgorithm() {}
         ~NPointGain() {}
 
-        void init(ScanBase *s) {}
+        void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-        void loadConfig(json& config) {}
+        void loadConfig(json& config);
     private:
         std::unique_ptr<Histo1d> respCurve;
 
@@ -96,6 +96,11 @@ class NPointGain : public AnalysisAlgorithm {
         std::vector<double> inj_err;
         std::vector<double> thr;
         std::vector<double> thr_err;
+
+        unsigned par_loopindex;
+        unsigned par_min;
+        unsigned par_max;
+        unsigned par_step;
 };
 
 class ScurveFitter : public AnalysisAlgorithm {
