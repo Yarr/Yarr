@@ -1,7 +1,5 @@
 #ifndef RD53A_H
 #define RD53A_H
-
-
 // #################################
 // # Author: Timon Heim
 // # Email: timon.heim at cern.ch
@@ -22,7 +20,6 @@
 #include "Rd53aCfg.h"
 #include "Rd53aCmd.h"
 
-std::pair<uint32_t, uint32_t> decodeSingleRegRead(uint32_t higher, uint32_t lower);
 
 class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
     public:
@@ -49,6 +46,8 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
             this->setHitbus(col, row, 0);
         }
 
+        void enableAll() override;
+
         void writeRegister(Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value);
         void readRegister(Rd53aReg Rd53aGlobalCfg::*ref);
         void writeNamedRegister(std::string name, uint16_t value) override;
@@ -62,6 +61,8 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
         
         void confADC(uint16_t MONUX, bool doCur);
         void runRingOsc(uint16_t duration);
+
+        static std::pair<uint32_t, uint32_t> decodeSingleRegRead(uint32_t higher, uint32_t lower);
 
     protected:
     private:

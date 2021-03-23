@@ -34,10 +34,6 @@
 #include "Bookkeeper.h"
 #include "FeedbackBase.h"
 
-// For masking
-#include "Fei4.h"
-#include "Rd53a.h"
-
 #include "ScanBase.h"
 #include "ScanFactory.h"
 
@@ -322,6 +318,7 @@ int main(int argc, char *argv[]) {
     }
     // Add to scan log
     scanLog["ctrlCfg"] = ctrlCfg;
+    scanLog["ctrlStatus"] = hwCtrl->getStatus();
 
     hwCtrl->setupMode();
 
@@ -376,26 +373,8 @@ int main(int argc, char *argv[]) {
     // Reset masks
     if (mask_opt == 1) {
         for (FrontEnd* fe : bookie.feList) {
-            // TODO make mask generic?
-            if (chipType == "FEI4B") {
-                auto fei4 = dynamic_cast<Fei4*>(fe);
-                logger->info("Resetting enable/hitbus pixel mask to all enabled!");
-                for (unsigned int dc = 0; dc < fei4->n_DC; dc++) {
-                    fei4->En(dc).setAll(1);
-                    fei4->Hitbus(dc).setAll(0);
-                }
-            } else if (chipType == "RD53A") {
-                auto rd53a = dynamic_cast<Rd53a*>(fe);
-                logger->info("Resetting enable/hitbus pixel mask to all enabled!");
-                for (unsigned int col = 0; col < rd53a->n_Col; col++) {
-                    for (unsigned row = 0; row < rd53a->n_Row; row ++) {
-                        rd53a->setEn(col, row, 1);
-                        rd53a->setHitbus(col, row, 1);
-                    }
-                }
-            }
+            fe->enableAll();
         }
-        // TODO add FE65p2
     }
 
     bookie.initGlobalFe(StdDict::getFrontEnd(chipType).release());

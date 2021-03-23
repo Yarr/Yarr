@@ -1,0 +1,12 @@
+{
+    "chipType" : "RD53B",
+    "chips" : [
+        {
+            "config" : "configs/rd53b_test.json",
+            "tx" : 0,
+            "rx" : 0,
+            "enable" : 1,
+            "locked" : 0
+        }
+    ]
+}

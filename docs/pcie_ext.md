@@ -15,5 +15,7 @@ It is possible to run YARR without a dedicated computer through a PCIe to Thunde
  * Currently, the ``specNum`` registered by the computer increases by one on each reconnection of the external PCIe card.
      * The number has either to be changed in the ``specCfg.json`` accordingly (up to maximum 9), or
      * the kernel driver has to be reloaded ``sudo modprobe -r specDriver && sudo modprobe -v specDriver``
+ * Be careful when running this setup from a laptop being fully floating. Make sure to have some DC connection from the module to the DAQ in this case.
+ 
 ![Bios setting for Thunderbolt 3](images/biosTB3.png)
 ![Thunderbolt 3 device authorisation](images/tb3cc7.png)

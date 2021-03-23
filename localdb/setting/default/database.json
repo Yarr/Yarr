@@ -23,6 +23,7 @@
         "vddcom_current",
         "hv_voltage",
         "hv_current",
-        "temperature"
+        "temperature",
+        "temperature_moduleNTC"
     ]
 }

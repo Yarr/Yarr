@@ -5,7 +5,7 @@
 // # Author: Timon Heim
 // # Email: timon.heim at cern.ch
 // # Project: Yarr
-// # Description: Histograms Fei4 data
+// # Description: Histograms FrontEnd data
 // # Comment: 
 // ################################
 
@@ -151,6 +151,30 @@ class Tot3d : public HistogramAlgorithm {
         void processEvent(FrontEndData *data) override;
     private:
         Histo3d *h;
+};
+
+class TagDist : public HistogramAlgorithm {
+    public:
+        TagDist() : HistogramAlgorithm() {
+            h = nullptr;
+            r = nullptr;
+        }
+
+        ~TagDist() {
+        }
+
+        void create(const LoopStatus &stat) override {
+            h = new Histo1d(outputName(), 257, -0.5, 256.5, stat);
+            h->setXaxisTitle("Tag");
+            h->setYaxisTitle("Hits");
+            r.reset(h);
+        }
+
+        void processEvent(FrontEndData *data) override;
+
+        static std::string outputName() { return "TagDist"; }
+    private:
+        Histo1d *h;
 };
 
 class L1Dist : public HistogramAlgorithm {

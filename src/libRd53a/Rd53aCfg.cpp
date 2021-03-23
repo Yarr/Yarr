@@ -11,13 +11,15 @@
     Rd53aCfg::Rd53aCfg()
     : m_chipId  ( 0 )
     , m_injCap  ( 8.2 )
-      , m_vcalPar ( {{ -1.0, 0.215, 0.0, 0.0 }} )
-, m_ADCcalPar ( {{ 10.53, 0.1932}} )
-, m_TempSenPar ( {{  {{-279.97381641899443, 3502.8474113779985}},
+    , m_vcalPar ( {{ -1.0, 0.215, 0.0, 0.0 }} )
+    , m_ADCcalPar ( {{ 10.53, 0.1932}} )
+    , m_TempSenPar ( {{
+        {{-278.0, 3502.8}},
         {{-270.3, 3414.7}},	                 
         {{-271.2, 3403.0}},
         {{-267.4, 3363.1}} }} )
-, m_RadSenPar ( {{   {{-259.5, 4086.4}},
+    , m_RadSenPar ( {{
+        {{-259.5, 4086.4}},
         {{-273.3, 4271.0}},
         {{-263.0, 4139.3}},
         {{-271.1, 4212.4}} }} )
@@ -60,6 +62,10 @@ float Rd53aCfg::VtoTemp(float V, uint16_t Sensor=1, bool isRadSensor=false) {
 
 void Rd53aCfg::setChipId(unsigned id) {
     m_chipId = id;
+}
+
+unsigned Rd53aCfg::getChipId() {
+    return m_chipId;
 }
 
 void Rd53aCfg::toFileJson(json &j) {

@@ -20,6 +20,7 @@ class HwController : virtual public TxCore, virtual public RxCore {
         
         virtual void setupMode() {}
         virtual void runMode() {}
+        virtual const json getStatus() { return json{}; };
 
         virtual ~HwController() {}
 };

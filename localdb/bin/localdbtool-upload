@@ -223,6 +223,12 @@ def verifyData(self, i_log={}):
     ctr_oids = []
     for env_json in i_log['environments']:
         env_json = self.verifyDcsData(env_json)
+        if env_json['chip'] and env_json['chips']==[] and env_json['registered_chips']==[]:
+            self.logger.error("Your chip/module '{}' may be not registered in Local DB.".format(env_json['chip']))
+            self.logger.error("Please register your chip/module in Local DB before associating DCS data to it.")
+            self.logger.error("No DCS data was uploaded to Local DB.")
+            raise DataError
+
         if not env_json['registered_oids']==[]:
             if not args.log and args.interactive:
                 self.confirmDcsData(env_json)

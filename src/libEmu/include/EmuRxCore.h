@@ -105,6 +105,9 @@ RawData* EmuRxCore<FE>::readData() {
 
 template<class FE>
 void EmuRxCore<FE>::setRxEnable(uint32_t channel) {
+    // disable all channels first
+    this->disableRx();
+
     // check if the channel exists
     if (m_coms.find(channel) != m_coms.end())
         m_channels[channel] = true;
@@ -114,8 +117,10 @@ void EmuRxCore<FE>::setRxEnable(uint32_t channel) {
 
 template<class FE>
 void EmuRxCore<FE>::setRxEnable(std::vector<uint32_t> channels) {
+    this->disableRx();
     for (auto channel : channels) {
-        this->setRxEnable(channel);
+        if (m_coms.find(channel) != m_coms.end())
+            m_channels[channel] = true;
     }
 }
 

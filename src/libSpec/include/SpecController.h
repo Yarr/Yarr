@@ -20,6 +20,10 @@
 class SpecController : public HwController, public SpecTxCore, public SpecRxCore {
     public:
 
+        const json getStatus() override {
+            return this->SpecCom::getStatus();
+        }
+
         void loadConfig(json &j) override {
             if (!j["specNum"].empty())
                 this->SpecCom::init(j["specNum"]);

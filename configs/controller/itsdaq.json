@@ -1,0 +1,14 @@
+{
+    "ctrlCfg" : {
+        "type": "Itsdaq",
+        "remark": "streamConfig = 64 => 0x40 is capture 2",
+        "remark": "streamConfig = 576 => 0x240 is capture 2 + HCC mode?",
+        "remark": "streamConfig = 1600 => 0x640 is capture 2 + speed?",
+        "remark": "streamConfig = 1088 => 0x440 is capture 2 + 8b10b",
+        "cfg" : {
+            "remote": "192.168.222.16",
+            "remotePort": 60003,
+            "streamConfig": 1088
+        }
+    }
+}

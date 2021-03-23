@@ -144,7 +144,7 @@ std::unique_ptr<MyTxCore> runWithConfig(json &j) {
 
   // Normally registered by LoopEngine
   ls.init(1);
-  ls.addLoop(0, &*action);
+  ls.addLoop(0, &*action, LOOP_STYLE_NOP);
 
   action->setup(&ls, &bk);
   action->execute();

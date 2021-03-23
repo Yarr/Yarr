@@ -21,7 +21,13 @@
 struct FrontEndHit {
     uint16_t col : 16;
     uint16_t row : 16;
-    uint16_t tot : 16;
+    union {
+        uint16_t tot : 16;
+        struct {
+            uint16_t ptot : 11;
+            uint8_t ptoa : 5;
+        };
+    };
 };
 
 class FrontEndCluster {

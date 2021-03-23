@@ -55,6 +55,7 @@ void ScanFactory::preScan() {
                 // Enable single channel
                 g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
                 // Write parameter
+                sflog->info("Target charge specified as: {}", g_bk->getTargetCharge());
                 fe->setInjCharge(g_bk->getTargetCharge(), true, true); // TODO need sCap/lCap for FEI4
                 while(!g_tx->isCmdEmpty()){}
             }

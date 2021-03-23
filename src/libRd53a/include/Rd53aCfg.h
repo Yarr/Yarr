@@ -55,6 +55,11 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
          */
         void setChipId(unsigned id);
 
+        /**
+         * get the chip ID
+         */
+        unsigned getChipId();
+
     protected:
         unsigned m_chipId;
 

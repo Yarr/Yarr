@@ -23,6 +23,8 @@ StdDict::registerFrontEnd
 StarChips::StarChips()
 : StarCmd(), FrontEnd()
 {
+	m_txcore  = nullptr;
+
 	txChannel = 99;
 	rxChannel = 99;
 	active = false;
@@ -74,7 +76,16 @@ StarChips::StarChips(HwController *arg_core, unsigned arg_txChannel, unsigned ar
 	geo.nCol = 128;
 }
 
+void StarChips::enableAll() {
+    eachAbc([&](auto &abc) {
+        for(int m=0; m<8; m++) {
+          abc.setRegisterValue(ABCStarRegister::MaskInput(m), 0);
+        }
+      });
+}
+
 void StarChips::init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
+	logger->debug("Running init {} {} {}", (void*)arg_core, arg_txChannel, arg_rxChannel);
 	m_txcore  = arg_core;
 	m_rxcore = arg_core;
 	txChannel = arg_txChannel;
@@ -90,6 +101,11 @@ void StarChips::init(HwController *arg_core, unsigned arg_txChannel, unsigned ar
 void StarChips::setHccId(unsigned hccID) {
   //First step will consist in setting the HCC ID (serial number might be different depending on fuse !)
   //Load the eFuse serial number (and stop HPR)
+  if(!m_txcore) {
+    logger->warn("Set HCC ID (to {}) called before init", hccID);
+    return;
+  }
+
   sendCmd(write_hcc_register(16, 0x5, 0xf));
   //Let's reset the HCC ID with a broadcast write of the HCCID+SN on reg 17
   uint32_t newReg17val = (hccID<<28) | m_sn;

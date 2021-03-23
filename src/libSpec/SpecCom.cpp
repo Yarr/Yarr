@@ -30,11 +30,15 @@ namespace {
 SpecCom::SpecCom() {
     is_initialized = false;
     specId = 0;
+    fw_vers = 0x0;
+    fw_ident = 0x0;
 }
 
 SpecCom::SpecCom(unsigned int id) {
     specId = id;
     is_initialized = false;
+    fw_vers = 0x0;
+    fw_ident = 0x0;
     try {
         this->init();
         this->configure();
@@ -209,20 +213,21 @@ void SpecCom::init() {
         bar4 = NULL;
     }
 
-    // Print FW info
-    uint32_t fw_vers = readSingle(0x7<<14 | 0x6);
-    uint32_t fw_ident = readSingle(0x7<<14 | 0x7);
+    // Get FW info
+    fw_vers = readSingle(0x7<<14 | 0x6);
+    fw_ident = readSingle(0x7<<14 | 0x7);
     if (fw_ident == 0xFFFFFFFF || fw_vers == 0xFFFFFFFF) {
         slog->error("Could not read FW version or identifier!");
     } else {
+        auto status = getStatus();
         slog->info("~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        slog->info("Firmware Version: 0x{:x}", fw_vers);
-        slog->info("Firmware Identifier: 0x{:x}", fw_ident);
-        slog->info("FPGA card: {}", getSpecIdentHw(fw_ident));
-        slog->info("FE Chip Type: {}", getSpecIdentChip(fw_ident));
-        slog->info("FMC Card Type: {}", getSpecIdentFmc(fw_ident));
-        slog->info("RX Speed: {}", getSpecIdentSpeed(fw_ident));
-        slog->info("Channel Configuration: {}", getSpecIdentChCfg(fw_ident));
+        slog->info("Firmware Version: {}", static_cast<std::string>(status["firmware_version"]));
+        slog->info("Firmware Identifier: {}", static_cast<std::string>(status["firmware_identifier"]));
+        slog->info("FPGA card: {}", static_cast<std::string>(status["fpga_card"]));
+        slog->info("FE Chip Type: {}", static_cast<std::string>(status["fe_chip_type"]));
+        slog->info("FMC Card Type: {}", static_cast<std::string>(status["fmc_card_type"]));
+        slog->info("RX Speed: {}", static_cast<std::string>(status["rx_speed"]));
+        slog->info("Channel Configuration: {}", static_cast<std::string>(status["channel_configuration"]));
         slog->info("~~~~~~~~~~~~~~~~~~~~~~~~~~~");
     } 
     // TODO decode firmware identifier
@@ -231,6 +236,24 @@ void SpecCom::init() {
     this->flushDma();
     slog->info("Init success!");
     return;
+}
+
+const json SpecCom::getStatus() {
+    json j_status;
+    // turn the version and id into hex strings here (it is easier to convert
+    // a hex string to an int than it is an int to a hex string in C++, so just
+    // do it here and rely on only std::string being in the returned JSON object)
+    std::stringstream fw_string;
+    fw_string << "0x" << std::hex << fw_vers;
+    j_status["firmware_version"] = fw_string.str(); fw_string.str("");
+    fw_string << "0x" << std::hex << fw_ident;
+    j_status["firmware_identifier"] = fw_string.str(); fw_string.str("");
+    j_status["fpga_card"] = getSpecIdentHw(fw_ident);
+    j_status["fe_chip_type"] = getSpecIdentChip(fw_ident);
+    j_status["fmc_card_type"] = getSpecIdentFmc(fw_ident);
+    j_status["rx_speed"] = getSpecIdentSpeed(fw_ident);
+    j_status["channel_configuration"] = getSpecIdentChCfg(fw_ident);
+    return j_status;
 }
 
 void SpecCom::configure() {

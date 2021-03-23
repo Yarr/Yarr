@@ -663,10 +663,12 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
 
     // Read all MaskInput0 registers
     // Enable all tx channels first
+    std::vector<uint32_t> enabled_tx;
     for (unsigned i=0; i<nchannels; i++) {
       unsigned chn_tx = 2*i;
-      emu->setCmdEnable(chn_tx);
+      enabled_tx.push_back(chn_tx);
     }
+    emu->setCmdEnable(enabled_tx);
     auto readABCCmd_mask0 = star.read_abc_register(16); // broadcast reg read
     sendCommand(*emu, readABCCmd_mask0);
 
@@ -710,8 +712,7 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
 
     // Disable trigger commands in all channels except for tx channel 2 and 4
     emu->disableCmd();
-    emu->setCmdEnable(2);
-    emu->setCmdEnable(4);
+    emu->setCmdEnable({2, 4});
 
     while(!emu->isCmdEmpty());
 
