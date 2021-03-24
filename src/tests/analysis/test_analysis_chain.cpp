@@ -6,7 +6,7 @@
 
 #include "../EmptyHw.h"
 
-TEST_CASE("AnalysisHierarchy", "[analysis]") {
+TEST_CASE("AnalysisHierarchy", "[Analysis]") {
 
   // Configuration
   json cfg;
@@ -40,7 +40,7 @@ TEST_CASE("AnalysisHierarchy", "[analysis]") {
   REQUIRE (algoIndexTiers == expIndexTiers);
 }
 
-TEST_CASE("AnalysisChainIO", "[analysis]") {
+TEST_CASE("AnalysisChainIO", "[Analysis]") {
 
   EmptyHw hwCtrl;
   Bookkeeper bookie(&hwCtrl, &hwCtrl);
@@ -50,7 +50,6 @@ TEST_CASE("AnalysisChainIO", "[analysis]") {
   // Add one FE
   auto fe = StdDict::getFrontEnd("FEI4B");
   fe->setActive(true);
-  // setMapsize
 
   unsigned channel = 42;
   bookie.addFe(fe.release(), channel);
@@ -122,7 +121,7 @@ TEST_CASE("AnalysisChainIO", "[analysis]") {
 
   while(!output.empty()) {
     auto result = output.popData();
-    CAPTURE (result->getName() );
+    CAPTURE (result->getName());
     // Two histograms are expected in the ouput: OccupancyMap and EnMask
     // Both are from the OccupancyAnalysis
 
