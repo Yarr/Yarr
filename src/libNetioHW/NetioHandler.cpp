@@ -196,17 +196,22 @@ void NetioHandler::addChannel(uint64_t chn){
           uint32_t my_chn=header.elinkid;
 	  my_chn += header.gbtid*64; 
 
-          uint32_t numWords = (uint32_t)((msg_size-offset)/4); //each RD53A word is 4 bytes (32 bits)
+          // Copy a whole number of 32-bit words
+          uint32_t numWords = (uint32_t)((msg_size-offset + 3)/4);
 
-	  
-	  if((offset+4*numWords) != msg_size && m_feType == "rd53a") // this is rd53a specific; there may need to be a similar thing for strips
-		nlog->warn("WARNING: the message size is not compatible with RD53A data format.");
+          // Strip packets are byte-wise, so no check on length here
+
+          //each RD53A word is 4 bytes (32 bits)
+          if((offset+4*numWords) != msg_size && m_feType == "rd53a") {
+                nlog->warn("WARNING: the message size is not compatible with RD53A data format.");
+          }
 
 	  if(numWords==0)
 		return;
 
 	  uint32_t *buffer = new uint32_t[numWords]; 
-	  memcpy(buffer, (uint32_t *)&data[offset], numWords*4);
+          // Copy number of bytes to avoid dereferencing a bad word on the end
+          memcpy(buffer, &data[offset], msg_size-offset);
 
 	  //Sasha: print out the data
 	  nlog->debug("msg size: {}", numWords);

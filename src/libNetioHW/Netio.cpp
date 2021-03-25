@@ -4,6 +4,12 @@
 #include "AllHwControllers.h"
 #include "HwController.h"
 
+#include "logging.h"
+
+namespace {
+  auto nlog = logging::make_log("Netio::Controller");
+}
+
 class NetioController
   : public HwController, public NetioTxCore, public NetioRxCore
 {
@@ -15,8 +21,19 @@ public:
 };
 
 void NetioController::loadConfig(json &j) {
-  NetioTxCore::fromFileJson(j);
-  NetioRxCore::fromFileJson(j);
+  try {
+    NetioTxCore::fromFileJson(j);
+  } catch(std::runtime_error &je) {
+    nlog->error("Failed reading NetioTxCore config");
+    throw je;
+  }
+
+  try {
+    NetioRxCore::fromFileJson(j);
+  } catch(std::runtime_error &je) {
+    nlog->error("Failed reading NetioRxCore config");
+    throw je;
+  }
 }
 
 bool netio_registered =
