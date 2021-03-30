@@ -1,105 +1,118 @@
-#include "BdaqCmdRd53.h"
+#include "BdaqDriver.h"
 #include "logging.h"
 
 namespace {
-  auto logger = logging::make_log("BdaqCmdRd53");
+  auto logger = logging::make_log("BdaqDriver");
 }
 
 
-void BdaqCmdRd53::checkVersion () {
+void BdaqDriver::checkVersion () {
 	BdaqRegister::checkVersion(requireVersion, "auroraRx");
 }
 
-void BdaqCmdRd53::init() {
+void BdaqDriver::init() {
 	memSize = getMemSize();
 }
 
-uint16_t BdaqCmdRd53::getMemSize() {
+uint16_t BdaqDriver::getMemSize() {
 	return (*this)["MEM_BYTES"];
 }
 
-uint16_t BdaqCmdRd53::getCmdSize() {
+uint16_t BdaqDriver::getCmdSize() {
 	return (*this)["SIZE"];
 }
 
-void BdaqCmdRd53::start() {
+void BdaqDriver::start() {
 	(*this)["START"] = 0xff;
 }
 
-void BdaqCmdRd53::setSize(uint16_t value) {
+void BdaqDriver::setSize(uint16_t value) {
 	//CMD buffer size
 	(*this)["SIZE"] = value;
 }
 
-uint16_t BdaqCmdRd53::getSize() { //same as getCmdSize()
+uint16_t BdaqDriver::getSize() { //same as getCmdSize()
 	//CMD buffer size
 	return (*this)["SIZE"];
 }
 
-void BdaqCmdRd53::setRepetitions(uint16_t value) {
+void BdaqDriver::setRepetitions(uint16_t value) {
 	//CMD repetitions
 	(*this)["REPETITIONS"] = value;
 }
 
-uint16_t BdaqCmdRd53::getRepetitions() {
+uint16_t BdaqDriver::getRepetitions() {
 	//CMD repetitions
 	return (*this)["REPETITIONS"];
 }
 
-void BdaqCmdRd53::setExtTrigger(bool value) { 
+void BdaqDriver::setExtTrigger(bool value) { 
 	//External trigger input enable
 	(*this)["EXT_TRIGGER_EN"] = value;
 }
 
-bool BdaqCmdRd53::getExtTrigger() { 
+bool BdaqDriver::getExtTrigger() { 
 	//External trigger input enable
 	return (*this)["EXT_TRIGGER_EN"];
 }
 
-void BdaqCmdRd53::setExtStart(bool value) { 
+void BdaqDriver::setExtStart(bool value) { 
 	//External start input enable
 	(*this)["EXT_START_EN"] = value;
 }
 
-bool BdaqCmdRd53::getExtStart() { 
+bool BdaqDriver::getExtStart() { 
 	//External start input enable
 	return (*this)["EXT_START_EN"];
 }
 
-void BdaqCmdRd53::setOutputEn(bool value) {
+void BdaqDriver::setOutputEn(bool value) {
 	//CMD output driver. False=high impedance
 	(*this)["OUTPUT_EN"] = value;
 }
 
-void BdaqCmdRd53::setBypassMode(bool value) {
-	//CDS bypass mode (KC705+FMC_LPC). Enables output drivers and sends cmd and serializer clock to the chip.
+void BdaqDriver::setBypassMode(bool value) {
+	//CDR bypass mode (KC705+FMC_LPC). Enables output drivers and sends cmd and serializer clock to the chip.
 	//Probably not useful for YARR-BDAQ integration, since the idea is to support the BDAQ hardware onlye (no KC705).
 	(*this)["BYPASS_MODE"] = value;
 }
 
-bool BdaqCmdRd53::getBypassMode() {
-	//CDS bypass mode (KC705+FMC_LPC). Enables output drivers and sends cmd and serializer clock to the chip.
+bool BdaqDriver::getBypassMode() {
+	//CDR bypass mode (KC705+FMC_LPC). Enables output drivers and sends cmd and serializer clock to the chip.
 	//Probably not useful for YARR-BDAQ integration, since the idea is to support the BDAQ hardware onlye (no KC705).
 	return (*this)["BYPASS_MODE"];
 }
 
-bool BdaqCmdRd53::isDone() {
+void BdaqDriver::setAutoSync(bool value) {
+	(*this)["AUTO_SYNC"] = value;
+}
+
+bool BdaqDriver::getAutoSync() {
+	return (*this)["AUTO_SYNC"];
+}
+
+bool BdaqDriver::isDone() {
 	return (*this)["READY"];
 }
 
-void BdaqCmdRd53::setAzVetoCycles(uint16_t value) {
+void BdaqDriver::setAzVetoCycles(uint16_t value) {
 	//Veto clock cycles in 1/160 Mhz during AZ
 	(*this)["AZ_VETO_CYCLES"] = value;
 }
 
-uint16_t BdaqCmdRd53::getAzVetoCycles() {
+uint16_t BdaqDriver::getAzVetoCycles() {
 	//Veto clock cycles in 1/160 Mhz during AZ
 	return (*this)["AZ_VETO_CYCLES"];
 }
 
-void BdaqCmdRd53::setData (std::vector<uint8_t>& data, uint8_t addr) {
+void BdaqDriver::setChipType(uint8_t value) {
+	//Defines chip type for DAQ 0 = RD53A, 1 = ITKPixV1
+	(*this)["CHIP_TYPE"] = value;
+}
+
+void BdaqDriver::setData (std::vector<uint8_t>& data, uint8_t addr) {
 	if (memSize < data.size()) {
-		std::string error = "BdaqCmdRd53::setData(): Size of data (" + 
+		std::string error = "BdaqDriver::setData(): Size of data (" + 
 		std::to_string(data.size()) + " bytes) is bigger than memory (" + 
 		std::to_string(memSize) + " bytes).";
 		logger->critical(error);
@@ -108,7 +121,7 @@ void BdaqCmdRd53::setData (std::vector<uint8_t>& data, uint8_t addr) {
 	intf.write(base + memOffset + addr, data);
 }
 
-void BdaqCmdRd53::getData(std::vector<uint8_t>& data, uint8_t size, uint8_t addr) {
+void BdaqDriver::getData(std::vector<uint8_t>& data, uint8_t size, uint8_t addr) {
 	if (memSize < size) {
 		std::string error = "Bdaq_i2c::getData(): Size of data (" + 
 		std::to_string(data.size()) + " bytes) is bigger than memory (" + 

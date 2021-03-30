@@ -71,9 +71,10 @@ void Rd53aTriggerLoop::setTrigDelay(uint32_t delay) {
     // Rearm
     m_trigWord[2] = 0x69696363; // Header
     m_trigWord[1] = Rd53aCmd::genCal(8, 1, 0, 0, 0, 0); // Arm inject
-    // Pulse
-    //m_trigWord[0] = 0x5c5c0000 + (Rd53aCmd::encode5to8(0x8<<1)<<8) + (Rd53aCmd::encode5to8(m_pulseDuration<<1)); // global pulse for sync FE
-    
+    // Global Pulse (software AZ) for sync FE
+    if (g_tx->getSoftwareAZ()) {
+        m_trigWord[0] = 0x5c5c0000 + (Rd53aCmd::encode5to8(0x8<<1)<<8) + (Rd53aCmd::encode5to8(m_pulseDuration<<1));
+    }
     logger->debug("Trigger buffer set to:");
     for (unsigned i=0; i<m_trigWordLength; i++) {
       logger->debug("[{}: 0x{:x}", 31-i, m_trigWord[31-i]);
@@ -132,6 +133,10 @@ void Rd53aTriggerLoop::execPart1() {
     rd53a->idle();
     rd53a->idle();
     rd53a->idle();
+    // AZ level for sync FE 
+    if (g_tx->getSoftwareAZ()) {
+        rd53a->globalPulse(8, m_pulseDuration);
+    }
     std::this_thread::sleep_for(std::chrono::microseconds(200));
     g_rx->flushBuffer();
     while(!g_tx->isCmdEmpty());
@@ -186,5 +191,4 @@ void Rd53aTriggerLoop::loadConfig(json &config) {
         m_trigMultiplier = config["trigMultiplier"];
     if (!config["sendEcr"].empty())
         m_sendEcr = config["sendEcr"];
-    this->setTrigDelay(m_trigDelay);
 }

@@ -8,7 +8,7 @@
 #include "Bdaq_i2c.h"
 #include "BdaqSi570.h"
 #include "BdaqAuroraRx.h"
-#include "BdaqCmdRd53.h"
+#include "BdaqDriver.h"
 #include "BdaqTCP.h"
 #include "BdaqSiTcpFifo.h"
 #include "BdaqGPIO.h"
@@ -17,9 +17,10 @@ struct bdaqConfig {
     std::string ipAddr;
     uint        udpPort;
     uint        tcpPort;
+    bool        configSi570;
     uint        fifoAddr;
     uint        i2cAddr;
-    uint        gpioAddr;
+    uint        controlAddr;
     uint        rxAddr;
     uint        cmdAddr;
 };
@@ -27,24 +28,23 @@ struct bdaqConfig {
 struct daqVersion {
     std::string fwVersion;
     std::string boardVersion;
+    int         numRxChannels;
     int         boardOptions;
     std::string connectorVersion;
-    int         rxLanes;
-    int         rxChannels; 
 };
 
-class Bdaq53 {
+class Bdaq {
 	public:
-        const std::string VERSION = "0.11"; // Must match FW version.
+        const std::string VERSION = "1.2"; // Must match FW version.
 
         BdaqRBCP rbcp;
         Bdaq_i2c i2c;
         BdaqSi570 si570;
-        BdaqAuroraRx auroraRx;
-        BdaqCmdRd53 cmd;
+        std::vector<BdaqAuroraRx> rx;
+        BdaqDriver cmd;
         BdaqTCP tcp;
         BdaqSiTcpFifo fifo;
-        BdaqGPIO dpControl;
+        BdaqGPIO bdaqControl;
         
         std::map<int, std::string> hwMap = {
             {0, "SIMULATION"},
@@ -66,13 +66,18 @@ class Bdaq53 {
             {0x01, "640Mbps"}
         };
         
-        Bdaq53();
-		~Bdaq53() {}
+        Bdaq();
+		~Bdaq() {}
         
         void initialize(bdaqConfig c);
 		daqVersion getDaqVersion();
         bool waitForPllLock(uint timeout=1000);
         void setupAurora();
+        void setChipTypeRD53A();
+        void setChipTypeITkPixV1();
+        void enableAutoSync();
+        void disableAutoSync();
+        void setMonitorFilter(BdaqAuroraRx::userkFilterMode mode);
                 
 	private:
         daqVersion dv;
