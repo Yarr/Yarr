@@ -243,8 +243,7 @@ bool Histo1d::fromFile(const std::string &filename) {
 
 void Histo1d::plot(const std::string &prefix, const std::string &dir) const {
     hlog->info("Plotting {}", HistogramBase::name);
-    // Put raw histo data in tmp file
-    std::string tmp_name = std::string(getenv("USER")) + "/tmp_yarr_histo2d_" + prefix;
+
     std::string output = dir + prefix + "_" + HistogramBase::name;
     for (unsigned i=0; i<lStat.size(); i++)
         output += "_" + std::to_string(lStat.get(i));
