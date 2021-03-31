@@ -7,6 +7,10 @@
 
 #include "StdAnalysis.h"
 
+// NB if we don't include this, it compiles, but we get a linker error,
+// presumably because it picks up names from C rather than C++
+#include <cmath>
+
 #include "AllAnalyses.h"
 #include "Bookkeeper.h"
 #include "Histo1d.h"
