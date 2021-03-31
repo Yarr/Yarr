@@ -300,7 +300,7 @@ bool Histo2d::fromFile(const std::string &filename) {
         std::cerr << "#ERROR# this does not seem to be a histogram file, could not parse." << std::endl;
         return false;
     } else {
-        if (j["Type"] == "Histo2d") {
+        if (j["Type"] != "Histo2d") {
             std::cerr << "#ERROR# File contains the wrong type: " << j["Type"] <<  std::endl;
             return false;
         }

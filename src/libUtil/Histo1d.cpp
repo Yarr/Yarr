@@ -216,7 +216,7 @@ bool Histo1d::fromFile(const std::string &filename) {
         hlog->error("Tried loading 1d Histogram from file {}, but file has no header: {}", filename);
         return false;
     } else {
-        if (j["Type"] == "Histo1d") {
+        if (j["Type"] != "Histo1d") {
             hlog->error("Tried loading 1d Histogram from file {}, but file has incorrect header: {}", filename, std::string(j["Type"]));
             return false;
         }
