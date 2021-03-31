@@ -292,16 +292,16 @@ bool Histo2d::fromFile(const std::string &filename) {
             throw std::runtime_error(e.what());
         }
     } catch (std::runtime_error &e) {
-        std::cerr << "#ERROR# opening histogram: " << e.what() << std::endl;
+        hlog->error("Error opening histogram: {}", e.what());
         return false;
     }
     // Check for type
     if (j["Type"].empty()) {
-        std::cerr << "#ERROR# this does not seem to be a histogram file, could not parse." << std::endl;
+        hlog->error("ERROR this does not seem to be a histogram file, could not parse.");
         return false;
     } else {
         if (j["Type"] != "Histo2d") {
-            std::cerr << "#ERROR# File contains the wrong type: " << j["Type"] <<  std::endl;
+            hlog->error("ERROR File contains the wrong type: {}", std::string(j["Type"]));
             return false;
         }
 
