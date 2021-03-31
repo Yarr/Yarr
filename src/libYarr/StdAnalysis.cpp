@@ -13,7 +13,6 @@
 #include "Histo2d.h"
 #include "Histo3d.h"
 #include "StdHistogrammer.h"
-#include "Fei4MaskLoop.h"
 #include "StdTriggerAction.h"
 
 #include "lmcurve.h"
@@ -453,13 +452,6 @@ void ScurveFitter::init(ScanBase *s) {
             } else {
                 injections = trigLoop->getTrigCnt();
             }
-        }
-
-        // check injection capacitor for FEI-4
-        if(l->type() == typeid(Fei4MaskLoop*)) {
-            std::shared_ptr<Fei4MaskLoop> msk = std::dynamic_pointer_cast<Fei4MaskLoop>(l);
-            useScap = msk->getScap();
-            useLcap = msk->getLcap();
         }
 
         // find potential pixel feedback
