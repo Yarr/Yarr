@@ -180,121 +180,121 @@ namespace ScanHelper {
         return chipType;        
     }
 
-    void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& histogrammers, const std::string& scanType, std::vector<FrontEnd*>& feList, ScanBase* s, std::string outputDir) {
-        bhlog->info("Loading histogrammer ...");
+void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& histogrammers, const std::string& scanType, std::vector<FrontEnd*>& feList, ScanBase* s, std::string outputDir) {
+    bhlog->info("Loading histogrammer ...");
+    json scanCfg;
+    try {
+        scanCfg = ScanHelper::openJsonFile(scanType);
+    } catch (std::runtime_error &e) {
+        bhlog->error("Opening scan config: {}", e.what());
+        throw("buildHistogrammer failure");
+    }
+    json histoCfg = scanCfg["scan"]["histogrammer"];
+    json anaCfg = scanCfg["scan"]["analysis"];
+
+    for (FrontEnd *fe : feList ) {
+        if (fe->isActive()) {
+            // TODO this loads only FE-i4 specific stuff, bad
+            // Load histogrammer
+            histogrammers[fe].reset( new HistogrammerProcessor );
+            auto& histogrammer = static_cast<HistogrammerProcessor&>( *(histogrammers[fe]) );
+
+            histogrammer.connect(fe->clipData, fe->clipHisto);
+
+            auto add_histo = [&](std::string algo_name) {
+                auto histo = StdDict::getHistogrammer(algo_name);
+                if(histo) {
+                    bhlog->debug("  ... adding {}", algo_name);
+                    histogrammer.addHistogrammer(std::move(histo));
+                } else if (algo_name == "DataArchiver") {
+                    histo.reset(new DataArchiver((outputDir + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_data.raw")));
+                    histogrammer.addHistogrammer(std::move(histo));
+                    bhlog->debug("  ... adding {}", algo_name);
+                } else {
+                    bhlog->error("Error, Histogrammer \"{} unknown, skipping!", algo_name);
+                }
+            };
+
+            try {
+                int nHistos = histoCfg["n_count"];
+
+                for (int j=0; j<nHistos; j++) {
+                    std::string algo_name = histoCfg[std::to_string(j)]["algorithm"];
+                    add_histo(algo_name);
+                }
+            } catch(/* json::type_error &te*/ ... ) { //FIXME
+                int nHistos = histoCfg.size();
+                for (int j=0; j<nHistos; j++) {
+                    std::string algo_name = histoCfg[j]["algorithm"];
+                    add_histo(algo_name);
+                }
+            }
+            histogrammer.setMapSize(fe->geo.nCol, fe->geo.nRow);
+        }
+    }
+    bhlog->info("... done!");
+}
+
+void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, FeedbackClipboardMap *fbData, int mask_opt) {
+    if (scanType.find("json") != std::string::npos) {
+        balog->info("Loading analyses ...");
         json scanCfg;
         try {
             scanCfg = ScanHelper::openJsonFile(scanType);
         } catch (std::runtime_error &e) {
-            bhlog->error("Opening scan config: {}", e.what());
-            throw("buildHistogrammer failure");
+            balog->error("Opening scan config: {}", e.what());
+            throw("buildAnalyses failure");
         }
         json histoCfg = scanCfg["scan"]["histogrammer"];
         json anaCfg = scanCfg["scan"]["analysis"];
 
-        for (FrontEnd *fe : feList ) {
+        for (FrontEnd *fe : bookie.feList ) {
             if (fe->isActive()) {
                 // TODO this loads only FE-i4 specific stuff, bad
-                // Load histogrammer
-                histogrammers[fe].reset( new HistogrammerProcessor );
-                auto& histogrammer = static_cast<HistogrammerProcessor&>( *(histogrammers[fe]) );
+                // TODO hardcoded
+                analyses[fe].reset( new AnalysisProcessor(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) );
+                auto& ana = static_cast<AnalysisProcessor&>( *(analyses[fe]) );
+                auto channel = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
+                ana.connect(s, fe->clipHisto, fe->clipResult, &((*fbData)[channel]));
 
-                histogrammer.connect(fe->clipData, fe->clipHisto);
-
-                auto add_histo = [&](std::string algo_name) {
-                    auto histo = StdDict::getHistogrammer(algo_name);
-                    if(histo) {
-                        bhlog->debug("  ... adding {}", algo_name);
-                        histogrammer.addHistogrammer(std::move(histo));
-                    } else if (algo_name == "DataArchiver") {
-                        histo.reset(new DataArchiver((outputDir + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_data.raw")));
-                        histogrammer.addHistogrammer(std::move(histo));
-                        bhlog->debug("  ... adding {}", algo_name);
+                auto add_analysis = [&](std::string algo_name) {
+                    auto analysis = StdDict::getAnalysis(algo_name);
+                    if(analysis) {
+                        balog->debug("  ... adding {}", algo_name);
+                        balog->debug(" connecting feedback (if required)");
+                        // analysis->connectFeedback(&(*fbData)[channel]);
+                        ana.addAlgorithm(std::move(analysis));
                     } else {
-                        bhlog->error("Error, Histogrammer \"{} unknown, skipping!", algo_name);
+                        balog->error("Error, Analysis Algorithm \"{} unknown, skipping!", algo_name);
                     }
                 };
 
                 try {
-                    int nHistos = histoCfg["n_count"];
-
-                    for (int j=0; j<nHistos; j++) {
-                        std::string algo_name = histoCfg[std::to_string(j)]["algorithm"];
-                        add_histo(algo_name);
+                    int nAnas = anaCfg["n_count"];
+                    balog->debug("Found {} Analysis!", nAnas);
+                    for (int j=0; j<nAnas; j++) {
+                        std::string algo_name = anaCfg[std::to_string(j)]["algorithm"];
+                        add_analysis(algo_name);
                     }
-                } catch(/* json::type_error &te*/ ... ) { //FIXME
-                    int nHistos = histoCfg.size();
-                    for (int j=0; j<nHistos; j++) {
-                        std::string algo_name = histoCfg[j]["algorithm"];
-                        add_histo(algo_name);
+                    ana.loadConfig(anaCfg);
+                } catch(/* json::type_error &te */ ...) { //FIXME
+                    int nAnas = anaCfg.size();
+                    balog->debug("Found {} Analysis!", nAnas);
+                    for (int j=0; j<nAnas; j++) {
+                        std::string algo_name = anaCfg[j]["algorithm"];
+                        add_analysis(algo_name);
                     }
                 }
-                histogrammer.setMapSize(fe->geo.nCol, fe->geo.nRow);
-            }
-        }
-        bhlog->info("... done!");
-    }
 
-    void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, FeedbackClipboardMap *fbData, int mask_opt) {
-        if (scanType.find("json") != std::string::npos) {
-            balog->info("Loading analyses ...");
-            json scanCfg;
-            try {
-                scanCfg = ScanHelper::openJsonFile(scanType);
-            } catch (std::runtime_error &e) {
-                balog->error("Opening scan config: {}", e.what());
-                throw("buildAnalyses failure");
-            }
-            json histoCfg = scanCfg["scan"]["histogrammer"];
-            json anaCfg = scanCfg["scan"]["analysis"];
-
-            for (FrontEnd *fe : bookie.feList ) {
-                if (fe->isActive()) {
-                    // TODO this loads only FE-i4 specific stuff, bad
-                    // TODO hardcoded
-                    analyses[fe].reset( new AnalysisProcessor(&bookie, dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()) );
-                    auto& ana = static_cast<AnalysisProcessor&>( *(analyses[fe]) );
-                    auto channel = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-                    ana.connect(s, fe->clipHisto, fe->clipResult, &((*fbData)[channel]));
-
-                    auto add_analysis = [&](std::string algo_name) {
-                        auto analysis = StdDict::getAnalysis(algo_name);
-                        if(analysis) {
-                            balog->debug("  ... adding {}", algo_name);
-                            balog->debug(" connecting feedback (if required)");
-                            // analysis->connectFeedback(&(*fbData)[channel]);
-                            ana.addAlgorithm(std::move(analysis));
-                        } else {
-                            balog->error("Error, Analysis Algorithm \"{} unknown, skipping!", algo_name);
-                        }
-                    };
-
-                    try {
-                        int nAnas = anaCfg["n_count"];
-                        balog->debug("Found {} Analysis!", nAnas);
-                        for (int j=0; j<nAnas; j++) {
-                            std::string algo_name = anaCfg[std::to_string(j)]["algorithm"];
-                            add_analysis(algo_name);
-                        }
-                        ana.loadConfig(anaCfg);
-                    } catch(/* json::type_error &te */ ...) { //FIXME
-                        int nAnas = anaCfg.size();
-                        balog->debug("Found {} Analysis!", nAnas);
-                        for (int j=0; j<nAnas; j++) {
-                            std::string algo_name = anaCfg[j]["algorithm"];
-                            add_analysis(algo_name);
-                        }
-                    }
-
-                    // Disable masking of pixels
-                    if(mask_opt == 0) {
-                        balog->info("Disabling masking for this scan!");
-                        ana.setMasking(false);
-                    }
-                    ana.setMapSize(fe->geo.nCol, fe->geo.nRow);
+                // Disable masking of pixels
+                if(mask_opt == 0) {
+                    balog->info("Disabling masking for this scan!");
+                    ana.setMasking(false);
                 }
+                ana.setMapSize(fe->geo.nCol, fe->geo.nRow);
             }
         }
     }
+}
 
 } // Close namespace}
