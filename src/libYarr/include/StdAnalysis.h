@@ -1,12 +1,11 @@
-#ifndef FEI4ANALYSIS_H
-#define FEI4ANALYSIS_H
+#ifndef STD_ANALYSIS_H
+#define STD_ANALYSIS_H
 
 // #################################
 // # Author: Timon Heim
 // # Email: timon.heim at cern.ch
 // # Project: Yarr
 // # Description: Analysis Base class
-// # Comment: 
 // ################################
 
 #include <iostream>

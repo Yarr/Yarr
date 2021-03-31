@@ -2,20 +2,17 @@
 // # Author: Timon Heim
 // # Email: timon.heim at cern.ch
 // # Project: Yarr
-// # Description: Histograms Fei4 data
-// # Comment: 
+// # Description: Histograms event data
 // ################################
 
-#include "Fei4Histogrammer.h"
-
-#include <iostream>
+#include "StdHistogrammer.h"
 
 #include "AllHistogrammers.h"
 
 #include "logging.h"
 
 namespace {
-    auto alog = logging::make_log("Fei4Histogrammer");
+    auto alog = logging::make_log("StdHistogrammer");
 }
 
 namespace {

@@ -1,5 +1,5 @@
-#ifndef FEI4HISTOGRAMMER_H
-#define FEI4HISTOGRAMMER_H
+#ifndef STD_HISTOGRAMMER_H
+#define STD_HISTOGRAMMER_H
 
 // #################################
 // # Author: Timon Heim

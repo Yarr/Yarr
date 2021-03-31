@@ -3,22 +3,20 @@
 // # Email: timon.heim at cern.ch
 // # Project: Yarr
 // # Description: Analysis Base class
-// # Comment: 
 // ################################
 
-#include "Fei4Analysis.h"
-
+#include "StdAnalysis.h"
 #include "AllAnalyses.h"
 #include "Bookkeeper.h"
-#include "Fei4Histogrammer.h"
+#include "StdHistogrammer.h"
 #include "Fei4MaskLoop.h"
 #include "StdTriggerAction.h"
-#include "lmcurve.h"
 
+#include "lmcurve.h"
 #include "logging.h"
 
 namespace {
-    auto alog = logging::make_log("Fei4Analysis");
+    auto alog = logging::make_log("StdAnalysis");
 }
 
 namespace {

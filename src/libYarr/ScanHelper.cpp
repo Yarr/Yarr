@@ -12,9 +12,7 @@
 
 #include "AnalysisAlgorithm.h"
 #include "HistogramAlgorithm.h"
-
-// Need to pass info to DataArchiver constructor
-#include "Fei4Histogrammer.h"
+#include "StdHistogrammer.h" // needed for special handling of DataArchiver
 
 #include "logging.h"
 
