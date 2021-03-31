@@ -6,23 +6,16 @@
 // # Email: timon.heim at cern.ch
 // # Project: Yarr
 // # Description: Histograms FrontEnd data
-// # Comment: 
 // ################################
 
-#include <fstream>
-#include <vector>
-#include <typeinfo>
-#include <thread>
-
-#include "DataProcessor.h"
-#include "ClipBoard.h"
 #include "EventData.h"
 #include "HistogramAlgorithm.h"
 #include "HistogramBase.h"
-#include "Histo1d.h"
-#include "Histo2d.h"
-#include "Histo3d.h"
-#include "LoopStatus.h"
+
+class Histo1d;
+class Histo2d;
+class Histo3d;
+class LoopStatus;
 
 class DataArchiver : public HistogramAlgorithm {
     public:

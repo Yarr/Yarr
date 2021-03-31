@@ -8,6 +8,9 @@
 #include "StdHistogrammer.h"
 
 #include "AllHistogrammers.h"
+#include "Histo1d.h"
+#include "Histo2d.h"
+#include "Histo3d.h"
 
 #include "logging.h"
 

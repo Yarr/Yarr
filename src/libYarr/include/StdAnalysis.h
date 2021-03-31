@@ -8,22 +8,14 @@
 // # Description: Analysis Base class
 // ################################
 
-#include <iostream>
 #include <vector>
-#include <typeinfo>
-#include <cmath>
-#include <functional>
-#include <chrono>
-
-#include "ScanBase.h"
-#include "HistogramBase.h"
-#include "Histo1d.h"
-#include "Histo2d.h"
-#include "Histo3d.h"
-
-#include "FeedbackBase.h"
 
 #include "AnalysisAlgorithm.h"
+
+class HistogramBase;
+class Histo1d;
+class Histo2d;
+class Histo3d;
 
 class OccupancyAnalysis : public AnalysisAlgorithm {
     public:

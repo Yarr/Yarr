@@ -6,8 +6,12 @@
 // ################################
 
 #include "StdAnalysis.h"
+
 #include "AllAnalyses.h"
 #include "Bookkeeper.h"
+#include "Histo1d.h"
+#include "Histo2d.h"
+#include "Histo3d.h"
 #include "StdHistogrammer.h"
 #include "Fei4MaskLoop.h"
 #include "StdTriggerAction.h"
