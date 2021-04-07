@@ -242,6 +242,9 @@ void Rd53bDataProcessor::process_core()
             _data = &_curIn->buf[2 * _blockIdx];
 
             // Get event tag. TODO: add support of chip ID
+            if (unlikely(!(_data[0] >> 31 & 0x1)))
+                logger->error("Expect new stream while NS = 0 at the beginning of the packet");
+
             tag[channel] = (_data[0] >> 23) & 0xFF;
             ++_blockIdx; // Increase block index
             _bitIdx = 9; // Reset bit index = NS + tag
