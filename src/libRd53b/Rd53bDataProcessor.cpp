@@ -143,11 +143,11 @@ uint64_t Rd53bDataProcessor::retrieve(const unsigned length, const bool checkEOS
         // If the block index already reaches the end of the packet, stop here
         if (unlikely((_blockIdx << 1) >= _curIn->words))
         {
-            // Corner case that we are literally reading the stream until the last bit
-            // if (_bitIdx + length == BLOCKSIZE)
-                return variable;
-            // Otherwise there is an error...
-            // logger->error("Data error: end of current packet reached while still reading stream!");
+            if (_bitIdx + length > BLOCKSIZE)
+                logger->error("Data error: end of current packet reached while still reading stream!");
+                
+            _blockIdx++;
+            return variable;
         }
 
         // Check the NS bit of the next 64-bit block
@@ -242,6 +242,9 @@ void Rd53bDataProcessor::process_core()
             _data = &_curIn->buf[2 * _blockIdx];
 
             // Get event tag. TODO: add support of chip ID
+            if (unlikely(!(_data[0] >> 31 & 0x1)))
+                logger->error("Expect new stream while NS = 0 at the beginning of the packet");
+
             tag[channel] = (_data[0] >> 23) & 0xFF;
             ++_blockIdx; // Increase block index
             _bitIdx = 9; // Reset bit index = NS + tag
