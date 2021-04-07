@@ -143,11 +143,11 @@ uint64_t Rd53bDataProcessor::retrieve(const unsigned length, const bool checkEOS
         // If the block index already reaches the end of the packet, stop here
         if (unlikely((_blockIdx << 1) >= _curIn->words))
         {
-            // Corner case that we are literally reading the stream until the last bit
-            // if (_bitIdx + length == BLOCKSIZE)
-                return variable;
-            // Otherwise there is an error...
-            // logger->error("Data error: end of current packet reached while still reading stream!");
+            if (_bitIdx + length > BLOCKSIZE)
+                logger->error("Data error: end of current packet reached while still reading stream!");
+                
+            _blockIdx++;
+            return variable;
         }
 
         // Check the NS bit of the next 64-bit block
