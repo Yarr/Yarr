@@ -364,7 +364,7 @@ void NetioTxCore::prepareTrigger(){
     if (m_feType == "rd53a")
         writeFifo(&m_trigFifo[it->first],0x817e817e);
 
-    for(int32_t j=15; j>=0;j--){
+    for(int32_t j=m_trigWords.size()-1; j>=0;j--){
       writeFifo(&m_trigFifo[it->first],m_trigWords[j]);
     }
     //writeFifo(&m_trigFifo[it->first],0x0); //Waste!
