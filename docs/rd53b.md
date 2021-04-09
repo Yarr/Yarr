@@ -43,9 +43,9 @@ Preferred mode for testing should be LDO mode.
     - ``SHUNT_EN`` should be closed
     - Crosscheck value of ``R_EXTA``, ``R_EXTD``, ``R_IOFS``, and ``R_IOFS_LB`` to be according to your operational needs (read manual for further info).
 
-# DAQ specifics for RD53B
+## DAQ specifics for RD53B
 
-## Readout Speed
+### Readout Speed
 
 The readout speed that the chip is confgured to has to match the readout speed of the firmware (which is fixed). In order to chanege the readout frequency of the chip one has to change the ``CdrClkSel`` register. These settings correspond to the different readout frequencies (the value is the divider from 1.28Gbps):
 
@@ -56,11 +56,11 @@ The readout speed that the chip is confgured to has to match the readout speed o
 
 Recommended is 640Mbps.
 
-## Number Data Lanes
+### Number Data Lanes
 
 At the current point in time it is necessary to only one lane (default). This can be chosen via the ``AuroraActiveLanes`` register where each bit represents one lane.
 
-# Scan Console for RD53B
+## Scan Console for RD53B
 
 The general structure of the scanConsole command is:
 ```bash
@@ -72,13 +72,13 @@ If you run a scan for the first time, it will create a default configuration for
 
 Note currently the decoder needs to be limited to one thread ``-n 1``.
 
-# Start-up
+## Start-up
 
-## ITkPixV1
+### ITkPixV1
 
 ITkPixV1 contains a bug which leads to large current on the digital rail caused by wrongly designed ToT latch. It is not desireable to leave the chip in this high current state for too long without at least passive cooling of some sort. The current can be reduced either by running a ``std_digitalscan`` or the ``clear_tot_mem`` routine (``clear_tot_mem`` might need to be run two times``). Once the current has been reduced it should stay in this mode until fully power cycled.
 
-### Current
+#### Current
 
 Expected current draw at start-up:
 
@@ -90,11 +90,11 @@ After ``std_digitalscan``:
 - Digital: around 600mA
 - Analog: around 750mA (depending on config)
 
-## ITkPixV1.1
+### ITkPixV1.1
 
-### Current
+#### Current
 
-# Tuning Routine
+## Tuning Routine
 
 We recommend the following tuning routine:
 
