@@ -91,7 +91,7 @@ The readout speed that the chip is confgured to has to match the readout speed o
 - ``2`` : 320Mbps
 - ``3`` : 160Mbps
 
-# Scan Console for RD53A
+## Scan Console for RD53A
 
 The general structure of the Scan Console commands is:
 
@@ -110,7 +110,7 @@ More general information about how to use the scanConsole, can be found on the m
 
 In case you run into problems or have abnormal results please consult the troubleshooting page here: [Troubleshooting](troubleshooting)
 
-## Tuning routine
+### Tuning routine
 
 Examples of the result and how to run different scans is shown below. If you have mastered the basics, you probably just need this information.
 Basics tuning routine:
@@ -153,7 +153,7 @@ If you also want to tune the ToT conversion we need to insert those tunings and 
 - `std_totscan.json` (with target charge equal to MIP, e.g. 12ke)
 - `std_noisescan.json` (measure noise occupancy, will mask noisy pixels, might fail if too noisy)
 
-## Common misconceptions and issues
+### Common misconceptions and issues
 
 Some general tips when operating RD53A with YARR:
 
@@ -163,7 +163,7 @@ Some general tips when operating RD53A with YARR:
 - Auto-zeroing is performed by the hardware and therefore the auto-zero frequency is set by the hardware controller.
 - Auto-zeroing can cause transients on the power line which can cause other FEs to be noisy. So if someone chooses not to use the sync FE, one should also turn-off auto-zeroing in the controller config (by setting the auto-zero word to `0`).
 
-## Digital Scan
+### Digital Scan
 
 To run a digital scan for RD53A with the default configuration execute the following command:
 ```bash
@@ -172,7 +172,7 @@ bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity
 An example of occupancy map after a successful digital scan is given below.
 ![Occupancy map digital scan](images/JohnDoe_DigitalScan_OccupancyMap.png)
 
-## Analog Scan
+### Analog Scan
 
 To run a analog scan for RD53A with the default configuration execute the following command:
 ```bash
@@ -181,7 +181,7 @@ bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity
 An example of the occupancy map after a successful analog scan is given below.
 ![Occupancy map analog scan](images/JohnDoe_AnalogScan_OccupancyMap.png)
 
-### Analog scan for only one analog FrontEnd
+#### Analog scan for only one analog FrontEnd
 
 ```bash
 bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/diff_analogscan.json -p
@@ -189,7 +189,7 @@ bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity
 ![Occupancy map analog scan for DIFF FE](images/JohnDoe_AnalogScanDiff_OccupancyMap.png)
 - There are similar scan configs for the linear and sync FE
 
-## Threshold Scan
+### Threshold Scan
 
 To run a threshold scan for RD53A with the default configuration execute the following command:
 ```bash
@@ -214,7 +214,7 @@ Example of the s-curve, threshold distribution, threshold map and noise distribu
 ![Noise distribution](images/JohnDoe_NoiseDist.png)
 
 
-## Tuning
+### Tuning
 RD53a has 3 FEs: synchronous, differential, and linear. Each FE needs to be tuned independently. The full tuning procedure is described in the Tuning Routine section.
 
 The tuning usually starts by tuning the global threshold DAC of the FrontEnd you want to tune:
@@ -254,7 +254,7 @@ Once the full tuning routine (as outlined in the beginning of this page) has bee
 ![Threshold map after tuning](images/JohnDoe_ThresholdMap_AfterTuning.png)
 
 
-## Time over Threshold Scan
+### Time over Threshold Scan
 Before performing the time over threshold scan, one should first tune each FE.
 ```bash
 bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/diff_tune_globalpreamp.json -t 10000 8 -p
@@ -278,7 +278,7 @@ ToT scan shown here is after tuning to 8 ToT at 10000
 ![Mean ToT Distribution](images/JohnDoe_MeanTotDist_0.png)
 
 
-## Cross-talk
+### Cross-talk
 
 For more information please have a look at [this presentation](https://cernbox.cern.ch/index.php/s/1awEj4E3hc0VoDi).
 
@@ -290,7 +290,7 @@ bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity
 ```
 For the defaul settings and a fully depleated sensor, the OccupancyMap.png plot should show hits in half of the pixels.
 
-## Cross-talk scan
+### Cross-talk scan
 
 To identify the threhsold at which cross-talk appear, run the following command:
 ```bash
@@ -321,7 +321,7 @@ Example of the s-curve, threshold distribution, threshold map and noise distribu
 ![S-curve threshold scan](images/JohnDoe_crosstalkscan_sCurve.png)
 ![Threshold distribution](images/JohnDoe_crosstalkscan_ThrehsoldDist.png)
 
-## Cross-talk - check bump bonding scheme
+### Cross-talk - check bump bonding scheme
 
 To run do
 ```bash
@@ -333,7 +333,7 @@ There are 2 ways to bump bond 25x100 sensor pixels onto the 50x50 chip pixels. T
 ![Check Bump Bonding Scheme type 0](images/0x0A57_ThresholdMap-0_STACK_BumpBond.png)
 
 
-## Disconnected Bump Scan
+### Disconnected Bump Scan
 
 Uses crosstalk scan to identify pixels without any crosstalk - which are likely be due to disconnected bumps. Based on analog scan with crosstalk mask. This scan uses the same config parameters as the crosstalk scan.
 Run the following command:
@@ -343,7 +343,7 @@ bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity
 
 ![disconnected bumps scan](images/JohnDoe_OccupancyMap_DiscBump.png)
 
-## Source Scan
+### Source Scan
 
 There are 3 different possibilities for a source scan:
  
@@ -351,18 +351,18 @@ There are 3 different possibilities for a source scan:
  2. external trigger scan with Hit-Or ("self-trigger")
  3. external trigger scan with a real trigger, e.g. scintilltor (external trigger)
  
-### Random Trigger
+#### Random Trigger
 
 Run `std_digitalscan`, `std_analogscan` and at least 3 `std_noisescan` (with the default duration of 5 minutes) before a source scan with random trigger to mask digital/analog bad pixels and noisy pixels.
 Modify in `std_noisescan.json`: ``"createMask": false`` and to prevent changing the enable mask and ``"time": 300`` in seconds to set the scan duration.
 
-#### Known Problem (to be verified)
+##### Known Problem (to be verified)
 
 The trigger loop in this scan does not sent an ECR signal during the scan. The sync FE does not delete 0-ToT hits in the buffer and/or the EOC logic gets stuck (with too many hits?) if no ECR is sent. Therefore a stripy pattern can occur in the sync FE.
 
 ![stripy pattern source scan](images/0x0967_Occupancy_NoiseScanSource.png)
 
-### Hit-Or ("self-trigger")
+#### Hit-Or ("self-trigger")
 
 For the "self-triggering" source scan using Hit-Or as a trigger, a second DP-miniDP cable is needed to connect to the second DP port in the SCC and port B on the Ohio card, which should have the [modifications](ohio-rd53a-multi-module-adapter) on port B. The corresponding firmware has to be used and can be obtained from firmware [v0.9.2](https://github.com/Yarr/Yarr-fw/tree/v0.9.2) as the bit files which do not end with ``_4chip.bit``. For the controller configuration, instead of the `specCfg-rd53a.json` `specCfgExtTrigger.json` is to be used. The Hit-Or lines have to be enabled in the chip config:
 ```
@@ -388,11 +388,11 @@ For the "self-triggering" source scan using Hit-Or as a trigger, a second DP-min
 "HitOr3MaskSync": 65535,
 ```
 
-### External trigger
+#### External trigger
 
 One easy way to use the external trigger scan is to connect a scintillator to a TLU and use the DUT interface with the RJ45 outputs through a RJ45-DP adapter (for EUDET TLU) or with the HDMI outputs using a HDMI-miniDP cable (AIDA TLU).
 
-#### Hardware
+##### Hardware
  - a scintillator with a PMT
  - an EUDET TLU
    - a RJ45 cable
@@ -401,7 +401,7 @@ One easy way to use the external trigger scan is to connect a scintillator to a 
  - OR an AIDA TLU
    - HDMI-miniDP cable
  
-#### Installation
+##### Installation
 
 For running the TLU in standalone mode you need to install ``libusb`` and ``libusb-devel`` version 0.1 (!) on your (CentOS) computer.
 Get eudaq from [here](https://github.com/eudaq/eudaq/tree/master/user/tlu) and compile it with ``USER_TLU_BUILD=ON`` option.
@@ -410,11 +410,11 @@ The TLU only produces trigger when the software is running with e.g. ``./EudetTl
 The second DP-miniDP cable connects the RJ45-DP connector to port D which should accept TLU input with the non-multichip FW on the FPGA.
 
 
-# Loop Actions
+## Loop Actions
 
 List of available loop actions and their configuration parameters.
 
-## Rd53aTriggerLoop
+### Rd53aTriggerLoop
 Will repeatably send a 512-bit command from the burst buffer to the FE.
 
 Config parameters:
@@ -427,7 +427,7 @@ Config parameters:
 - time ``<int>``: time in seconds, if count is set to 0 will run for this amount of time (default 0)
 - edgeMode ``<bool>``: switches cal injection command to edge mode, e.g. for digital scan (default false)
 
-## Rd53aCoreColLoop
+### Rd53aCoreColLoop
 Loops of core columns in specified pattern
 
 Config parameters:
@@ -437,7 +437,7 @@ Config parameters:
 - step ``<int>``: step size (1 will scan all cores, more than 1 will skip cores)
 - nSteps ``<int>``: how many steps should be used to scan over cores
 
-## Rd53aMaskLoop
+### Rd53aMaskLoop
 Loops over pixels. All pixels in one core column are serialized on the following fashion.
     
 ```
@@ -454,7 +454,7 @@ Config parameters:
  - min ``<int>``: mask stage to start with
  - step ``<int>``: step size of mask stage
 
-## Rd53aParameterLoop
+### Rd53aParameterLoop
 Loops over a specifed range of an RD53A global register
 
 Config parameters:
@@ -464,7 +464,7 @@ Config parameters:
 - step ``<int>``: parameter step size
 - parameter ``<string>``: name of the global register (as in chip config)
 
-## Rd53aGlobalFeedback
+### Rd53aGlobalFeedback
 Receives feedback from the selected analysis algorithm and adjusts the selected RD53A global register.
 
 Config parameters:
@@ -475,7 +475,7 @@ Config parameters:
 - parameter ``<string>``: name of the global register (as in chip config) to tune
 - pixelRegs ``<0,1,2,3>``: `0` (default) does not change TDACs, `1` sets all TDACs to default, `2` sets all TDACs to max, `3` sets all TDACs to min 
 
-## Rd53aPixelFeedback
+### Rd53aPixelFeedback
 Receives feedback from the selected analysis algorithm and adjusts the selected RD53A pixel TDAC register.
 
 Config parameters:
@@ -487,7 +487,7 @@ Config parameters:
 - tuneLin ``<bool>``: enable adjustment of lin FE pixel regs
 - resetTdac ``<bool>``: reset TDACs to defaults
 
-## Rd53aReadRegLoop:
+### Rd53aReadRegLoop:
 
 The ReadRegister Loop talks with the rd53a chip inorder to read out the Registers, ADC and the Ring Osiccilators. Prints out the measured values.
 
@@ -500,7 +500,7 @@ Config parameters:
 - RingOscRep ``<int>`` : Numberof times the ring oscillator measurement shall be averaged over.
 - RingOscDur ``<int>`` : Lenght of the global pulse duration. Calculted as 2^RingOscDur clock cycles.  
 
-## Disabling FEs
+### Disabling FEs
 
 The default values for the FEs in the chip configuration are
 
