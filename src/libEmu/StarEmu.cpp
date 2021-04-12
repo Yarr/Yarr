@@ -247,7 +247,16 @@ std::unique_ptr<HwController> makeEmu() {
 }
 
 EmuRxCore<StarChips>::EmuRxCore() {}
-EmuRxCore<StarChips>::~EmuRxCore() {}
+
+EmuRxCore<StarChips>::~EmuRxCore() {
+    // detele data that are not read out
+    for (auto& q : m_queues) {
+        while(not q.second->empty()) {
+            std::unique_ptr<RawData> tmp = q.second->popData();
+            delete [] tmp->buf;
+        }
+    }
+}
 
 void EmuRxCore<StarChips>::setCom(uint32_t chn, std::unique_ptr<ClipBoard<RawData>> queue) {
     m_queues[chn] = std::move(queue);
