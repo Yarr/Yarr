@@ -132,7 +132,7 @@ int main (int argc, char *argv[]) {
 
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     hwCtrl->setRxEnable(0);
-    int globalPulseWidth=50;	
+    int globalPulseWidth=30;	
     int nPulse=11;
  
     // Bank A ring oscillators	
@@ -192,7 +192,7 @@ int main (int argc, char *argv[]) {
     while (data) {
         if  (data) {
 		auto answer = rd53b.decodeSingleRegRead(data->buf[0], data->buf[1]);
-		frequency=(answer.second & 0xFFF)/(2*(globalPulseWidth+1)*0.025);
+		frequency=(answer.second & 0xFFF)/(2*(globalPulseWidth)*0.025);
 		min_freq=std::min(min_freq,frequency);
 		max_freq=std::max(max_freq,frequency);
 	        if (!(m%nPulse)){
