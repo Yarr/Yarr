@@ -1,35 +1,26 @@
-#ifndef FEI4ANALYSIS_H
-#define FEI4ANALYSIS_H
+#ifndef STD_ANALYSIS_H
+#define STD_ANALYSIS_H
 
 // #################################
 // # Author: Timon Heim
 // # Email: timon.heim at cern.ch
 // # Project: Yarr
 // # Description: Analysis Base class
-// # Comment: 
 // ################################
 
-#include <iostream>
 #include <vector>
-#include <typeinfo>
-#include <cmath>
-#include <functional>
-#include <chrono>
-
-#include "ScanBase.h"
-#include "HistogramBase.h"
-#include "Histo1d.h"
-#include "Histo2d.h"
-#include "Histo3d.h"
-
-#include "FeedbackBase.h"
 
 #include "AnalysisAlgorithm.h"
 
+class HistogramBase;
+class Histo1d;
+class Histo2d;
+class Histo3d;
+
 class OccupancyAnalysis : public AnalysisAlgorithm {
     public:
-        OccupancyAnalysis() : AnalysisAlgorithm() {};
-        ~OccupancyAnalysis() {};
+        OccupancyAnalysis() : AnalysisAlgorithm() {}
+        ~OccupancyAnalysis() {}
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
@@ -47,8 +38,8 @@ class OccupancyAnalysis : public AnalysisAlgorithm {
 
 class TotAnalysis : public AnalysisAlgorithm {
     public:
-        TotAnalysis() : AnalysisAlgorithm() {};
-        ~TotAnalysis() {};
+        TotAnalysis() : AnalysisAlgorithm() {}
+        ~TotAnalysis() {}
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
@@ -91,8 +82,8 @@ class TotAnalysis : public AnalysisAlgorithm {
 
 class ScurveFitter : public AnalysisAlgorithm {
     public:
-        ScurveFitter() : AnalysisAlgorithm() {};
-        ~ScurveFitter() {};
+        ScurveFitter() : AnalysisAlgorithm() {}
+        ~ScurveFitter() {}
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
@@ -143,12 +134,12 @@ class ScurveFitter : public AnalysisAlgorithm {
 
 class OccGlobalThresholdTune : public AnalysisAlgorithm {
     public:
-        OccGlobalThresholdTune() : AnalysisAlgorithm()  {};
-        ~OccGlobalThresholdTune() {};
+        OccGlobalThresholdTune() : AnalysisAlgorithm()  {}
+        ~OccGlobalThresholdTune() {}
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
-        void end() {};
+        void end() {}
         void loadConfig(json &config){}
     private:
         std::vector<unsigned> loops;
@@ -165,12 +156,12 @@ class OccGlobalThresholdTune : public AnalysisAlgorithm {
 
 class GlobalPreampTune : public AnalysisAlgorithm {
     public:
-        GlobalPreampTune() : AnalysisAlgorithm()  {};
-        ~GlobalPreampTune() {};
+        GlobalPreampTune() : AnalysisAlgorithm()  {}
+        ~GlobalPreampTune() {}
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
-        void end() {};
+        void end() {}
         void loadConfig(json &config){}
 
     private:
@@ -191,12 +182,12 @@ class OccPixelThresholdTune : public AnalysisAlgorithm {
         OccPixelThresholdTune() : AnalysisAlgorithm()  {
             m_occLowCut = 0.3;
             m_occHighCut = 0.7;
-        };
-        ~OccPixelThresholdTune() {};
+        }
+        ~OccPixelThresholdTune() {}
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
-        void end() {};
+        void end() {}
         void loadConfig(json &config);
 
     private:
@@ -214,8 +205,8 @@ class OccPixelThresholdTune : public AnalysisAlgorithm {
 
 class L1Analysis : public AnalysisAlgorithm {
     public:
-        L1Analysis() : AnalysisAlgorithm() {};
-        ~L1Analysis() {};
+        L1Analysis() : AnalysisAlgorithm() {}
+        ~L1Analysis() {}
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
@@ -233,8 +224,8 @@ class L1Analysis : public AnalysisAlgorithm {
 
 class TagAnalysis : public AnalysisAlgorithm {
     public:
-        TagAnalysis() : AnalysisAlgorithm() {};
-        ~TagAnalysis() {};
+        TagAnalysis() : AnalysisAlgorithm() {}
+        ~TagAnalysis() {}
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
@@ -252,8 +243,8 @@ class TagAnalysis : public AnalysisAlgorithm {
 
 class TotDistPlotter : public AnalysisAlgorithm {
     public:
-        TotDistPlotter() : AnalysisAlgorithm() {};
-        ~TotDistPlotter() {};
+        TotDistPlotter() : AnalysisAlgorithm() {}
+        ~TotDistPlotter() {}
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
@@ -270,8 +261,8 @@ class TotDistPlotter : public AnalysisAlgorithm {
 
 class NoiseAnalysis : public AnalysisAlgorithm {
     public:
-        NoiseAnalysis() : AnalysisAlgorithm() {};
-        ~NoiseAnalysis() {};
+        NoiseAnalysis() : AnalysisAlgorithm() {}
+        ~NoiseAnalysis() {}
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
@@ -285,8 +276,8 @@ class NoiseAnalysis : public AnalysisAlgorithm {
 
 class NoiseTuning : public AnalysisAlgorithm {
     public:
-        NoiseTuning() : AnalysisAlgorithm() {};
-        ~NoiseTuning() {};
+        NoiseTuning() : AnalysisAlgorithm() {}
+        ~NoiseTuning() {}
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
@@ -304,8 +295,8 @@ class NoiseTuning : public AnalysisAlgorithm {
 
 class DelayAnalysis : public AnalysisAlgorithm {
     public:
-        DelayAnalysis() : AnalysisAlgorithm() {};
-        ~DelayAnalysis() {};
+        DelayAnalysis() : AnalysisAlgorithm() {}
+        ~DelayAnalysis() {}
 
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);

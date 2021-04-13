@@ -2,27 +2,26 @@
 // # Author: Timon Heim
 // # Email: timon.heim at cern.ch
 // # Project: Yarr
-// # Description: Histograms Fei4 data
-// # Comment: 
+// # Description: Histograms event data
 // ################################
 
-#include "Fei4Histogrammer.h"
-
-#include <iostream>
+#include "StdHistogrammer.h"
 
 #include "AllHistogrammers.h"
+#include "Histo1d.h"
+#include "Histo2d.h"
+#include "Histo3d.h"
 
 #include "logging.h"
 
 namespace {
-    auto alog = logging::make_log("Fei4Histogrammer");
+    auto alog = logging::make_log("StdHistogrammer");
 }
 
 namespace {
-    // Needs filename from somewhere...
-    // bool da_registered =
-    //   StdDict::registerHistogrammer("DataArchiver",
-    //                             []() { return std::unique_ptr<HistogramAlgorithm>(new DataArchiver());});
+    bool da_registered =
+      StdDict::registerHistogrammer("DataArchiver",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new DataArchiver());});
 
     bool om_registered =
       StdDict::registerHistogrammer("OccupancyMap",
@@ -61,13 +60,26 @@ namespace {
                                 []() { return std::unique_ptr<HistogramAlgorithm>(new HitsPerEvent());});
 }
 
+bool DataArchiver::open(std::string filename) {
+    fileHandle.open(filename.c_str(), std::fstream::out | std::fstream::binary | std::fstream::trunc);
+    return fileHandle.good();
+}
+
 void DataArchiver::processEvent(FrontEndData *data) {
-    for (const FrontEndEvent &curEvent: data->events) {
-        // Save Event to File
-        curEvent.toFileBinary(fileHandle);
+    if(fileHandle.is_open()) {
+        for (const FrontEndEvent &curEvent: data->events) {
+            curEvent.toFileBinary(fileHandle);
+        }
     }
 }
 
+void OccupancyMap::create(const LoopStatus &stat) {
+    h = new Histo2d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, stat);
+    h->setXaxisTitle("Column");
+    h->setYaxisTitle("Row");
+    h->setZaxisTitle("Hits");
+    r.reset(h);
+}
 
 void OccupancyMap::processEvent(FrontEndData *data) {
     for (const FrontEndEvent &curEvent: data->events) {
@@ -78,6 +90,14 @@ void OccupancyMap::processEvent(FrontEndData *data) {
             }
         }
     }
+}
+
+void TotMap::create(const LoopStatus &stat) {
+    h = new Histo2d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, stat);
+    h->setXaxisTitle("Column");
+    h->setYaxisTitle("Row");
+    h->setZaxisTitle("Total ToT");
+    r.reset(h);
 }
 
 void TotMap::processEvent(FrontEndData *data) {
@@ -91,6 +111,14 @@ void TotMap::processEvent(FrontEndData *data) {
     }
 }
 
+void Tot2Map::create(const LoopStatus &stat) {
+    h = new Histo2d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, stat);
+    h->setXaxisTitle("Column");
+    h->setYaxisTitle("Row");
+    h->setZaxisTitle("Total ToT2");
+    r.reset(h);
+}
+
 void Tot2Map::processEvent(FrontEndData *data) {
     for (const FrontEndEvent &curEvent: data->events) {
         if (curEvent.nHits > 0) {
@@ -100,6 +128,13 @@ void Tot2Map::processEvent(FrontEndData *data) {
             }
         }
     }
+}
+
+void TotDist::create(const LoopStatus &stat) {
+    h = new Histo1d(outputName(), 16, 0.5, 16.5, stat);
+    h->setXaxisTitle("ToT [bc]");
+    h->setYaxisTitle("# of Hits");
+    r.reset(h);
 }
 
 void TotDist::processEvent(FrontEndData *data) {
@@ -113,6 +148,14 @@ void TotDist::processEvent(FrontEndData *data) {
     }
 }
 
+void Tot3d::create(const LoopStatus &stat) {
+    h = new Histo3d("Tot3d", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, 16, 0.5, 16.5, stat);
+    h->setXaxisTitle("Column");
+    h->setYaxisTitle("Row");
+    h->setZaxisTitle("ToT");
+    r.reset(h);
+}
+
 void Tot3d::processEvent(FrontEndData *data) {
     for (const FrontEndEvent &curEvent: data->events) {
         if (curEvent.nHits > 0) {
@@ -124,11 +167,27 @@ void Tot3d::processEvent(FrontEndData *data) {
     }
 }
 
+void TagDist::create(const LoopStatus &stat) {
+    h = new Histo1d(outputName(), 257, -0.5, 256.5, stat);
+    h->setXaxisTitle("Tag");
+    h->setYaxisTitle("Hits");
+    r.reset(h);
+}
+
 void TagDist::processEvent(FrontEndData *data) {
     // Event Loop
     for (const FrontEndEvent &curEvent: data->events) {
         h->fill(curEvent.tag, curEvent.nHits);
     }
+}
+
+void L1Dist::create(const LoopStatus &stat) {
+    h = new Histo1d(outputName(), 16, -0.5, 15.5, stat);
+    h->setXaxisTitle("L1A");
+    h->setYaxisTitle("Hits");
+    r.reset(h);
+    l1id = 33;
+    bcid_offset = 0;
 }
 
 void L1Dist::processEvent(FrontEndData *data) {
@@ -157,6 +216,16 @@ void L1Dist::processEvent(FrontEndData *data) {
     }
 }
 
+void L13d::create(const LoopStatus &stat) {
+    h = new Histo3d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, 16, -0.5, 15.5, stat);
+    h->setXaxisTitle("Column");
+    h->setYaxisTitle("Row");
+    h->setZaxisTitle("L1A");
+    r.reset(h);
+    l1id = 33;
+    bcid_offset = 0;
+}
+
 void L13d::processEvent(FrontEndData *data) {
     for (const FrontEndEvent &curEvent: data->events) {
         
@@ -182,6 +251,13 @@ void L13d::processEvent(FrontEndData *data) {
             }
         }
     }
+}
+
+void HitsPerEvent::create(const LoopStatus &stat) {
+    h = new Histo1d(outputName(), 16, -0.5, 15.5, stat);
+    h->setXaxisTitle("Number of Hits");
+    h->setYaxisTitle("Events");
+    r.reset(h);
 }
 
 void HitsPerEvent::processEvent(FrontEndData *data) {

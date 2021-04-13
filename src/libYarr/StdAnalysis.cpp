@@ -3,22 +3,27 @@
 // # Email: timon.heim at cern.ch
 // # Project: Yarr
 // # Description: Analysis Base class
-// # Comment: 
 // ################################
 
-#include "Fei4Analysis.h"
+#include "StdAnalysis.h"
+
+// NB if we don't include this, it compiles, but we get a linker error,
+// presumably because it picks up names from C rather than C++
+#include <cmath>
 
 #include "AllAnalyses.h"
 #include "Bookkeeper.h"
-#include "Fei4Histogrammer.h"
-#include "Fei4MaskLoop.h"
+#include "Histo1d.h"
+#include "Histo2d.h"
+#include "Histo3d.h"
+#include "StdHistogrammer.h"
 #include "StdTriggerAction.h"
-#include "lmcurve.h"
 
+#include "lmcurve.h"
 #include "logging.h"
 
 namespace {
-    auto alog = logging::make_log("Fei4Analysis");
+    auto alog = logging::make_log("StdAnalysis");
 }
 
 namespace {
@@ -451,13 +456,6 @@ void ScurveFitter::init(ScanBase *s) {
             } else {
                 injections = trigLoop->getTrigCnt();
             }
-        }
-
-        // check injection capacitor for FEI-4
-        if(l->type() == typeid(Fei4MaskLoop*)) {
-            std::shared_ptr<Fei4MaskLoop> msk = std::dynamic_pointer_cast<Fei4MaskLoop>(l);
-            useScap = msk->getScap();
-            useLcap = msk->getLcap();
         }
 
         // find potential pixel feedback
