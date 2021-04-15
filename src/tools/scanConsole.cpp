@@ -354,7 +354,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Initial setting local DBHandler
-    DBHandler *database = new DBHandler();
+    std::unique_ptr<DBHandler> database = std::make_unique<DBHandler>();
     if (dbUse) {
         logger->info("\033[1;31m################\033[0m");
         logger->info("\033[1;31m# Set Database #\033[0m");
@@ -645,7 +645,6 @@ int main(int argc, char *argv[]) {
     if (dbUse) {
         database->cleanUp("scan", outputDir, false, false);
     }
-    delete database;
 
     return 0;
 }
