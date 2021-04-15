@@ -99,6 +99,7 @@ int main(int argc, char *argv[]) {
     spdlog::info("-> Parsing command line parameters ...");
 
     // Init parameters
+    bool scan_config_provided = false;
     std::string scanType = "";
     std::vector<std::string> cConfigPaths;
     std::string outputDir = "./data/";
@@ -133,6 +134,7 @@ int main(int argc, char *argv[]) {
                 listKnown();
                 return 0;
             case 's':
+                scan_config_provided = true;
                 scanType = std::string(optarg);
                 break;
             case 'm':
@@ -245,7 +247,11 @@ int main(int argc, char *argv[]) {
     std::string dataDir = outputDir;
     outputDir += (toString(runCounter, 6) + "_" + strippedScan + "/");
 
-    logger->info("Scan Type/Config {}", scanType);
+    if(scan_config_provided) {
+        logger->info("Scan Type/Config {}", scanType);
+    } else {
+        logger->info("No scan configuration provided, will only configure front-ends");
+    }
 
     logger->info("Connectivity:");
     for(std::string const& sTmp : cConfigPaths){
@@ -400,6 +406,11 @@ int main(int argc, char *argv[]) {
     std::chrono::steady_clock::time_point cfg_end = std::chrono::steady_clock::now();
     logger->info("All FEs configured in {} ms!",
                  std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count());
+
+    if(!scan_config_provided) {
+        return 0;
+    }
+
 
     // Wait for rx to sync with FE stream
     // TODO Check RX sync
