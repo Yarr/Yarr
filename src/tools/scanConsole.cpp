@@ -404,13 +404,8 @@ int main(int argc, char *argv[]) {
         while(!hwCtrl->isCmdEmpty());
     }
     std::chrono::steady_clock::time_point cfg_end = std::chrono::steady_clock::now();
-    logger->info("All FEs configured in {} ms!",
+    logger->info("Sent configuration to all FEs in {} ms!",
                  std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count());
-
-    if(!scan_config_provided) {
-        return 0;
-    }
-
 
     // Wait for rx to sync with FE stream
     // TODO Check RX sync
@@ -429,6 +424,11 @@ int main(int argc, char *argv[]) {
             return -1;
         }
         logger->info("... success!");
+    }
+
+    // at this point, if we're not running a scan we should just exit
+    if(!scan_config_provided) {
+        return 0;
     }
 
     // Enable all active channels
