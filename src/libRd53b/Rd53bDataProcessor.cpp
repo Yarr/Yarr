@@ -36,7 +36,7 @@ bool rd53b_proc_registered =
 Rd53bDataProcessor::Rd53bDataProcessor()
 {
     m_input = NULL;
-    m_numThreads = std::thread::hardware_concurrency();
+    m_numThreads = 1;
 
     _blockIdx = 0; // Index of the first 64-bit block. Starting from 0
     _bitIdx = 0;   // Index of the first bit within the 64-bit block. Starting from 0
