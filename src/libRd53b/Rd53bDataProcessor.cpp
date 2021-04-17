@@ -40,7 +40,8 @@ Rd53bDataProcessor::Rd53bDataProcessor()
 
     _blockIdx = 0; // Index of the first 64-bit block. Starting from 0
     _bitIdx = 0;   // Index of the first bit within the 64-bit block. Starting from 0
-    _rawDataIdx = 0;  // Index of the first raw data. Starting from 0
+    _rawDataIdx = 0;       // Index of the first raw data. Starting from 0
+    _containerIdx = 0;     // Index of the first raw data container. Starting from 0
     _procRawDataSize = 0;  // Size of processed raw data. Starting from 0
     _NB = 0;               // Total number of blocks to be processed. Starting from 0
     _data = nullptr; // Pointer to the 32-bit data word. E.g. _data[0] is the first half of the 64-bit block and _data[1] is the second half
@@ -109,17 +110,22 @@ uint64_t Rd53bDataProcessor::retrieve(const unsigned length, const bool checkEOS
 {
     // Should never happen: reading 0 bit
     if (unlikely(length == 0))
+    {
+        logger->warn("Retrieving 0 length from data stream");
         return 0;
-    // Should never happen: end of packet reached when this function is called
+    }
+
     if (unlikely(_blockIdx >= _NB))
-        logger->error("Data error: end of current raw data container reached while still reading stream!");
+    {
+        logger->error("Data error: end of data reached while still reading stream!");
+        return 0;
+    }
 
     // If need to check end of stream (checkEOS = true), need to protect for the corner case where end of event mark (0000000) is suppressed and there is 0 orphan bit at the end of the stream
     if (checkEOS && (_data[0] >> 31) && _bitIdx == 1)
-    {                
-        // Correct raw data index and processed raw data size if needed
-        if (_blockIdx-- <= _procRawDataSize)
-            _procRawDataSize -= (_curInV->words[--_rawDataIdx] >> 1);
+    {
+        getPreviousDataBlock();
+        _bitIdx = 64; // All the bits in previous block has been processed
         return 0;
     }
     uint64_t variable = 0;  // Used to save the retrieved bits
@@ -141,10 +147,8 @@ uint64_t Rd53bDataProcessor::retrieve(const unsigned length, const bool checkEOS
         variable = (((_bitIdx < HALFBLOCKSIZE) ? (((_data[0] & (0xFFFFFFFFUL >> _bitIdx)) << HALFBLOCKSIZE) | _data[1]) : (_data[1] & (0xFFFFFFFFUL >> (_bitIdx - HALFBLOCKSIZE)))) << (length + _bitIdx - BLOCKSIZE));
 
         // Move to the next block
-        getNextDataBlock();
-
         // If the block index already reaches the end of the raw data container, stop here
-        if (unlikely(_blockIdx >= _NB))
+        if (!getNextDataBlock())
         {
             // If check end of stream is requested, return 0
             if(checkEOS)
@@ -152,7 +156,7 @@ uint64_t Rd53bDataProcessor::retrieve(const unsigned length, const bool checkEOS
 
             // If the reading size is too large, give error message and return the current variable
             if (_bitIdx + length > BLOCKSIZE && !skipNSCheck)
-                logger->error("Data error: end of current raw container reached while still reading stream!");
+                logger->error("Data error: end of data reached while still reading stream!");
 
             return variable;
         }
@@ -160,12 +164,11 @@ uint64_t Rd53bDataProcessor::retrieve(const unsigned length, const bool checkEOS
         // Check the NS bit of the next 64-bit block
         if (_data[0] >> 31)
         {
-            // If check end of stream is requested, return 0
+            // If check end of stream is requested, roll back to previous block and return 0
             if (checkEOS)
             {
-                // Correct raw data index and processed raw data size if needed
-                if (_blockIdx-- <= _procRawDataSize)
-                    _procRawDataSize -= (_curInV->words[--_rawDataIdx] >> 1);
+                getPreviousDataBlock();
+                _bitIdx = 64; // All the bits in previous block has been processed
                 return 0;
             }
             // We are over-drafting bits and would expect non-zero probablitiy of running into the end of the stream. In this case, stop retrieving more bits and return the current value
@@ -177,7 +180,7 @@ uint64_t Rd53bDataProcessor::retrieve(const unsigned length, const bool checkEOS
             // Otherwise only throw an error essage. Keep reading the next block neglecting the NS bit
             // TODO: apply corrective action?
             else
-                logger->error("Expect unfinished stream while NS = 1");
+                logger->error("Expect unfinished stream while NS = 1: {}{}", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
         }
 
         // Retrieve the bits overflow to the next 64-bit data block. Here we need to separate the cases where the overflow bits are fully contained in the first 32-bit data word, or extend to the second 32-bit data word
@@ -204,11 +207,7 @@ void Rd53bDataProcessor::rollBack(const unsigned length)
     else
     {                              
         _bitIdx += (63 - length);  // Correct the bit index. Keep in mind there is NS bit
-        // Correct raw data index and processed raw data size if needed
-        if (_blockIdx <= _procRawDataSize)
-            _procRawDataSize -= (_curInV->words[--_rawDataIdx] >> 1);
-
-        _data = &_curInV->buf[_rawDataIdx][(--_blockIdx - _procRawDataSize) << 1]; // Also roll back the block index and data word pointer
+        getPreviousDataBlock();
     }
 }
 
@@ -224,225 +223,187 @@ void Rd53bDataProcessor::process_core()
         hits[i] = 0;
     }
 
+    // Prepare counters: reset values to initial
+    _rawDataIdx = 0;
+    _procRawDataSize = 0;
+    _blockIdx = 0;
+    _bitIdx = 0;
+    _containerIdx = 0;
+    _NB = 0;
+    _curInV.clear();
+
     uint8_t qrow = 0;  // Quarter-row index
-    while (!m_input->empty())
+
+    // Check whether input is empty
+    if (m_input->empty())
+        return;
+
+    // Get data containers
+    _curInV.push_back(m_input->popData());
+    if (_curInV.back() == nullptr)
     {
-        // Get data containers
-        _curInV = m_input->popData();
-        if (_curInV == nullptr)
+        logger->error("Cannot get initial raw data");
+        return;
+    }
+
+    // Calculate total number of 32-bit words
+    unsigned words = 0;
+    for (unsigned c = 0; c < _curInV.back()->size(); c++)
+        words += _curInV.back()->words[c];
+    _NB += (words >> 1);
+
+    // Create Output Container
+    std::map<unsigned, std::unique_ptr<FrontEndData>> curOut;
+    std::map<unsigned, int> events;
+    for (unsigned i = 0; i < activeChannels.size(); i++)
+    {
+        curOut[activeChannels[i]].reset(new FrontEndData(_curInV[_containerIdx]->stat));
+        events[activeChannels[i]] = 0;
+    }
+    /* For now use only the first active channel */
+    /* Support for multi-channel will be added later */
+    unsigned channel = activeChannels[0];
+
+    // This is how we locate the data block in the 3D container-raw data-block array
+    // _data = &_curInV[_containerIdx]->buf[_rawDataIdx][(_blockIdx - _procRawDataSize) << 1];
+
+    _data = &_curInV[0]->buf[0][0];
+    // Get event tag. TODO: add support of chip ID
+    if (unlikely(!(_data[0] >> 31 & 0x1)))
+        logger->error("Expect new stream while NS = 0 in the first data block: {}{}", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+
+    tag[channel] = (_data[0] >> 23) & 0xFF;
+    _bitIdx = 9; // Reset bit index = NS + tag
+
+    // Create a new event
+    // RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
+    curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
+    //logger->info("New Stream, New Event: {} ", tag[channel]);
+    events[channel]++;
+
+    // Start looping over data words in the current packet
+    while (_blockIdx < _NB)
+    {
+        // Start from getting core column index
+        // This is also the ONLY place where we check end-of-stream. In other places we simply assuming continuation of stream, and will throw an error message if the end of stream is somehow reached.
+        const uint8_t ccol = retrieve(6, true);
+        // if(_debug) std::cout << "Column number: " << HEXF(6, ccol) << std::endl;
+
+        // End of stream is marked with 0b000000. This is ensured in software in spite of the chip orphan bit configuration
+        if (ccol == 0)
+        {
+            // ++++++++++++++ Start a new stream ++++++++++++++++
+            // Move the data word pointer to the next 64-bit block
+            if (!getNextDataBlock())
+                break; // End of data processing as end of raw data container is reached
+
+            // Check the NS bit. If it is not 0, throw an error message
+            // TODO: implement corrective action?
+            if (unlikely(!(_data[0] >> 31 & 0x1)))
+                logger->error("Expect new stream while NS = 0: {}{}", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+            // Get 8-bit event tag
+            tag[channel] = (_data[0] >> 23) & 0xFF;
+            _bitIdx = 9; // Reset bit index = NS + tag. TODO: add support for chip ID
+            // Create a new event
+            curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
+            //logger->info("Same Stream, New Event: {} ", tag[channel]);
+            events[channel]++;
             continue;
-
-        // Create Output Container
-        std::map<unsigned, std::unique_ptr<FrontEndData>> curOut;
-        std::map<unsigned, int> events;
-        for (unsigned i = 0; i < activeChannels.size(); i++)
-        {
-            curOut[activeChannels[i]].reset(new FrontEndData(_curInV->stat));
-            events[activeChannels[i]] = 0;
         }
-        /* For now use only the first active channel */
-        /* Support for multi-channel will be added later */
-        unsigned channel = activeChannels[0];
-
-        // Calculate total number of 32-bit words
-        unsigned words = 0;
-        for (unsigned c = 0; c < _curInV->size(); c++)
-            words += _curInV->words[c];
-
-        _NB = (words >> 1);
-
-        // Prepare counters: reset values to initial
-        _rawDataIdx = 0;
-        _procRawDataSize = 0;
-        _blockIdx = 0;
-        _bitIdx = 0;
-        _data = &_curInV->buf[0][0];
-
-        // Get event tag. TODO: add support of chip ID
-        if (unlikely(!(_data[0] >> 31 & 0x1)))
-            logger->error("Expect new stream while NS = 0 at the beginning of the raw data container");
-
-        tag[channel] = (_data[0] >> 23) & 0xFF;
-        _bitIdx = 9; // Reset bit index = NS + tag
-
-        // Create a new event
-        // RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
-        curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
-        //logger->info("New Stream, New Event: {} ", tag[channel]);
-        events[channel]++;
-
-        // Start looping over data words in the current packet
-        while (_blockIdx < _NB)
+        else if (ccol >= 0x38) // Internal tag
         {
-            // Start from getting core column index
-            // This is also the ONLY place where we check end-of-stream. In other places we simply assuming continuation of stream, and will throw an error message if the end of stream is somehow reached.
-            const uint8_t ccol = retrieve(6, true);
-            // if(_debug) std::cout << "Column number: " << HEXF(6, ccol) << std::endl;
+            // Internal tag is 11-bit. So need to retrieve 5 more bits
+            tag[channel] = (ccol << 5) | retrieve(5);
 
-            // End of stream is marked with 0b000000. This is ensured in software in spite of the chip orphan bit configuration
-            if (ccol == 0)
+            // Create a new event
+            // There is no L1ID and BCID in RD53B data stream. Currently put dummy values
+            curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
+            //logger->info("Same Stream, New Event: {} ", tag[channel]);
+            events[channel]++;
+            continue;
+        }
+
+        // Loop over all the hits in the current event
+        uint16_t islast_isneighbor_qrow = 0;
+        do
+        {
+            // ###### Step 1. read islast, isneighbor, and qrow ######
+            // Read islast, isneighbor, and 8-bit qrow together, in total 10 bits
+            // Note the qrow index will be absent if isneighbor = 1
+            // Reading more bits is nonetheless found creating larger bandwidth
+            islast_isneighbor_qrow = retrieve(10, false, true);
+
+            // If isneighbor = 1, roll back 8 bits to cancel the qrow readout
+            if (islast_isneighbor_qrow & 0x100)
             {
-                // ++++++++++++++ Start a new stream ++++++++++++++++
-                // Move the data word pointer to the next 64-bit block
-                if (!getNextDataBlock())
-                    break; // End of data processing as end of raw data container is reached
-                    
-                // Check the NS bit. If it is not 0, throw an error message
-                // TODO: implement corrective action?
-                if (unlikely(!(_data[0] >> 31 & 0x1)))
-                    logger->error("Expect new stream while NS = 0");
-                // Get 8-bit event tag
-                tag[channel] = (_data[0] >> 23) & 0xFF;
-                _bitIdx = 9; // Reset bit index = NS + tag. TODO: add support for chip ID
-                // Create a new event
-                curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
-                //logger->info("Same Stream, New Event: {} ", tag[channel]);
-                events[channel]++;
-                continue;
+                ++qrow;
+                rollBack(8);
             }
-            else if (ccol >= 0x38) // Internal tag
+            // Otherwise keep the qrow value
+            else
             {
-                // Internal tag is 11-bit. So need to retrieve 5 more bits
-                tag[channel] = (ccol << 5) | retrieve(5);
-
-                // Create a new event
-                // There is no L1ID and BCID in RD53B data stream. Currently put dummy values
-                curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
-                //logger->info("Same Stream, New Event: {} ", tag[channel]);
-                events[channel]++;
-                continue;
+                qrow = islast_isneighbor_qrow & 0xFF;
             }
+            // ############ Step 2. read hit map ############
+            // The hit map decoding is based on look-up table
+            uint16_t hitmap = retrieve(16, false, true);
 
-            // Loop over all the hits in the current event
-            uint16_t islast_isneighbor_qrow = 0;
-            do
+            // Compressed hit map
+            if (_isCompressedHitmap)
             {
-                // ###### Step 1. read islast, isneighbor, and qrow ######
-                // Read islast, isneighbor, and 8-bit qrow together, in total 10 bits
-                // Note the qrow index will be absent if isneighbor = 1
-                // Reading more bits is nonetheless found creating larger bandwidth
-                islast_isneighbor_qrow = retrieve(10, false, true);
+                // Since the hit map length is unpredictable in the compressed case, here we will retrieve 16-bit and feed it into the look-up table (LUT). 16-bit is enough to cover the hit-map in most cases. Using more or less bits are found to be less efficient
+                // The LUT entry is 32-bit and contains three parts
+                // 1. 8-bit indicating whether the hit map is fully contained in the 16-bit retrieved. If not, (16 - length of the hit map for the first row) is saved (maximum length of the hit map for the first row is 16)
+                // 2. 8-bit saving (16 - length of the hit map) if the hit map is fully contained in the 16 bits
+                // 3. 16-bit decompressed raw hit map, one bit for each pixel
+                const uint16_t hitmap_raw = hitmap;
+                hitmap = (_LUT_BinaryTreeHitMap[hitmap_raw] & 0xFFFF);
+                const uint8_t hitmap_rollBack = ((_LUT_BinaryTreeHitMap[hitmap_raw] & 0xFF000000) >> 24);
 
-                // If isneighbor = 1, roll back 8 bits to cancel the qrow readout
-                if (islast_isneighbor_qrow & 0x100)
+                // If the hit map is not fully contained in 16 bits
+                if (hitmap_rollBack > 0)
                 {
-                    ++qrow;
-                    rollBack(8);
+                    // Remove the offset and read the hit map for the second row
+                    if (hitmap_rollBack != 0xff)
+                        rollBack(hitmap_rollBack);
+                    // The length of the hit map for the second row can be 14 bits maximum
+                    const uint16_t rowMap = retrieve(14, false, true);
+                    // This part is handled by another LUT focusing on decoding hit map for a single row (8 pixels)
+                    // The entry of this LUT contains two parts
+                    // 1. 8-bit saving (14 - length of the hit map for the second row)
+                    // 2. 8-bit raw hit map for the row (1 bit for each pixel)
+                    hitmap |= (_LUT_BinaryTreeRowHMap[rowMap] << 8);
+                    rollBack((_LUT_BinaryTreeRowHMap[rowMap] & 0xFF00) >> 8);
                 }
-                // Otherwise keep the qrow value
+                // Otherwise, remove the offset as preparation for reading ToT
                 else
                 {
-                    qrow = islast_isneighbor_qrow & 0xFF;
+                    rollBack((_LUT_BinaryTreeHitMap[hitmap_raw] & 0xFF0000) >> 16);
                 }
-                // ############ Step 2. read hit map ############
-                // The hit map decoding is based on look-up table
-                uint16_t hitmap = retrieve(16, false, true);
+            }
 
-                // Compressed hit map
-                if (_isCompressedHitmap)
+            // ############ Step 3. read ToT ############
+            // Check whether it is precision ToT (PToT) data. PToT data is indicated by unphysical qrow index 196
+            if (qrow >= 196)
+            {
+                // logger->info("Hit: ccol({}) qrow({}) hitmap (0x{:x})) ", ccol, qrow, hitmap);
+                for (unsigned ibus = 0; ibus < 4; ibus++)
                 {
-                    // Since the hit map length is unpredictable in the compressed case, here we will retrieve 16-bit and feed it into the look-up table (LUT). 16-bit is enough to cover the hit-map in most cases. Using more or less bits are found to be less efficient
-                    // The LUT entry is 32-bit and contains three parts
-                    // 1. 8-bit indicating whether the hit map is fully contained in the 16-bit retrieved. If not, (16 - length of the hit map for the first row) is saved (maximum length of the hit map for the first row is 16)
-                    // 2. 8-bit saving (16 - length of the hit map) if the hit map is fully contained in the 16 bits
-                    // 3. 16-bit decompressed raw hit map, one bit for each pixel
-                    const uint16_t hitmap_raw = hitmap;
-                    hitmap = (_LUT_BinaryTreeHitMap[hitmap_raw] & 0xFFFF);
-                    const uint8_t hitmap_rollBack = ((_LUT_BinaryTreeHitMap[hitmap_raw] & 0xFF000000) >> 24);
-
-                    // If the hit map is not fully contained in 16 bits
-                    if (hitmap_rollBack > 0)
+                    uint8_t hitsub = (hitmap >> (ibus << 2)) & 0xF;
+                    if (hitsub)
                     {
-                        // Remove the offset and read the hit map for the second row
-                        if (hitmap_rollBack != 0xff)
-                            rollBack(hitmap_rollBack);
-                        // The length of the hit map for the second row can be 14 bits maximum
-                        const uint16_t rowMap = retrieve(14, false, true);
-                        // This part is handled by another LUT focusing on decoding hit map for a single row (8 pixels)
-                        // The entry of this LUT contains two parts
-                        // 1. 8-bit saving (14 - length of the hit map for the second row)
-                        // 2. 8-bit raw hit map for the row (1 bit for each pixel)
-                        hitmap |= (_LUT_BinaryTreeRowHMap[rowMap] << 8);
-                        rollBack((_LUT_BinaryTreeRowHMap[rowMap] & 0xFF00) >> 8);
-                    }
-                    // Otherwise, remove the offset as preparation for reading ToT
-                    else
-                    {
-                        rollBack((_LUT_BinaryTreeHitMap[hitmap_raw] & 0xFF0000) >> 16);
-                    }
-                }
-
-                // ############ Step 3. read ToT ############
-                // Check whether it is precision ToT (PToT) data. PToT data is indicated by unphysical qrow index 196
-                if (qrow >= 196)
-                {
-                    // logger->info("Hit: ccol({}) qrow({}) hitmap (0x{:x})) ", ccol, qrow, hitmap);
-                    for (unsigned ibus = 0; ibus < 4; ibus++)
-                    {
-                        uint8_t hitsub = (hitmap >> (ibus << 2)) & 0xF;
-                        if (hitsub)
+                        uint16_t ptot_ptoa_buf = 0xFFFF;
+                        // There is a bug in ITkPix-V1 (First version of ATLAS RD53B) that suppress "0b1111" in PToT data. Therefore we have to add these missing bits back by hand
+                        for (unsigned iread = 0; iread < 4; iread++)
                         {
-                            uint16_t ptot_ptoa_buf = 0xFFFF;
-                            // There is a bug in ITkPix-V1 (First version of ATLAS RD53B) that suppress "0b1111" in PToT data. Therefore we have to add these missing bits back by hand
-                            for (unsigned iread = 0; iread < 4; iread++)
-                            {
-                                if ((hitsub >> iread) & 0x1)
-                                    ptot_ptoa_buf &= ~((~retrieve(4) & 0xF) << (iread << 2));
-                            }
-
-                            // PToT data for each pixel contain 16 bits. First 5 bits are for time of arrival, and 11 bits for time over threshold. Both are counted in 640 MHz clock
-                            uint16_t PToT = ptot_ptoa_buf & 0x7FF;
-                            uint16_t PToA = ptot_ptoa_buf >> 11;
-
-                            if (events[channel] == 0)
-                            {
-                                logger->warn("[{}] No header in data fragment!", channel);
-                                curOut[channel]->newEvent(666, l1id[channel], bcid[channel]);
-                                events[channel]++;
-                            }
-
-                            // Reverse enginner the pixel address using mask staging
-                            static unsigned maskLoopIndex = 0;
-                            static bool check_loop_index = true;
-                            if (check_loop_index)
-                            {
-                                for (unsigned loop = 0; loop < curOut[channel]->lStat.size(); loop++)
-                                {
-                                    if (curOut[channel]->lStat.getStyle(loop) == LOOP_STYLE_MASK)
-                                    {
-                                        maskLoopIndex = loop;
-                                        check_loop_index = false;
-                                        break;
-                                    }
-                                }
-                            }
-                            const unsigned step = curOut[channel]->lStat.get(maskLoopIndex);
-                            const uint16_t pix_col = (ccol - 1) * 8 + PToT_maskStaging[step % 4][ibus] + 1;
-                            const uint16_t pix_row = step / 2 + 1;
-                            // logger->info("Hit: row({}) col({}) tot({}) ", pix_row, pix_col, PToT);
-                            // curOut[channel]->curEvent->addHit(pix_row, pix_col, (PToT >> 4) - 1);
-
-                            curOut[channel]->curEvent->addHit({pix_col, pix_row, static_cast<uint16_t>(PToT | (PToA << 11))});
+                            if ((hitsub >> iread) & 0x1)
+                                ptot_ptoa_buf &= ~((~retrieve(4) & 0xF) << (iread << 2));
                         }
-                    }
-                }
-                else
-                {
-                    // If drop ToT, the ToT value saved in the output event will be 0
-                    // Otherwise we will translate the raw 16-bit hit map into number of hits and pixel addresses using yet another LUT
-                    uint64_t ToT = _dropToT ? 0 : retrieve(_LUT_PlainHMap_To_ColRow_ArrSize[hitmap] << 2);
-                    if (_LUT_PlainHMap_To_ColRow_ArrSize[hitmap] == 0)
-                    {
-                        logger->warn("Received fragment with no ToT! ({} , {})", ccol, qrow);
-                    }
-                    for (unsigned ihit = 0; ihit < _LUT_PlainHMap_To_ColRow_ArrSize[hitmap]; ++ihit)
-                    {
-                        const uint8_t pix_tot = (ToT >> (ihit << 2)) & 0xF;
-                        // First pixel is 1,1, last pixel is 400,384
-                        const uint16_t pix_col = ((ccol - 1) * 8) + (_LUT_PlainHMap_To_ColRow[hitmap][ihit] >> 4) + 1;
-                        const uint16_t pix_row = ((qrow)*2) + (_LUT_PlainHMap_To_ColRow[hitmap][ihit] & 0xF) + 1;
 
-                        // For now fill in events without checking whether the addresses are valid
+                        // PToT data for each pixel contain 16 bits. First 5 bits are for time of arrival, and 11 bits for time over threshold. Both are counted in 640 MHz clock
+                        uint16_t PToT = ptot_ptoa_buf & 0x7FF;
+                        uint16_t PToA = ptot_ptoa_buf >> 11;
+
                         if (events[channel] == 0)
                         {
                             logger->warn("[{}] No header in data fragment!", channel);
@@ -450,26 +411,75 @@ void Rd53bDataProcessor::process_core()
                             events[channel]++;
                         }
 
-                        curOut[channel]->curEvent->addHit({pix_col, pix_row, pix_tot});
-                        //logger->info("Hit: row({}) col({}) tot({}) ", pix_row, pix_col, pix_tot);
-                        hits[channel]++;
+                        // Reverse enginner the pixel address using mask staging
+                        static unsigned maskLoopIndex = 0;
+                        static bool check_loop_index = true;
+                        if (check_loop_index)
+                        {
+                            for (unsigned loop = 0; loop < curOut[channel]->lStat.size(); loop++)
+                            {
+                                if (curOut[channel]->lStat.getStyle(loop) == LOOP_STYLE_MASK)
+                                {
+                                    maskLoopIndex = loop;
+                                    check_loop_index = false;
+                                    break;
+                                }
+                            }
+                        }
+                        const unsigned step = curOut[channel]->lStat.get(maskLoopIndex);
+                        const uint16_t pix_col = (ccol - 1) * 8 + PToT_maskStaging[step % 4][ibus] + 1;
+                        const uint16_t pix_row = step / 2 + 1;
+                        // logger->info("Hit: row({}) col({}) tot({}) ", pix_row, pix_col, PToT);
+                        // curOut[channel]->curEvent->addHit(pix_row, pix_col, (PToT >> 4) - 1);
+
+                        curOut[channel]->curEvent->addHit({pix_col, pix_row, static_cast<uint16_t>(PToT | (PToA << 11))});
                     }
                 }
-            } while (!(islast_isneighbor_qrow & 0x200) && (_blockIdx < _NB)); // Need to keep track of block index to make sure it is within the packet while we loop over the hits in the event
-            //logger->info("total number of hits: {}", hits[channel]);
-        }
-        // Push data out
-        for (unsigned i = 0; i < activeChannels.size(); i++)
-        {
-            if (events[activeChannels[i]] > 0)
-            {
-                m_outMap->at(activeChannels[i]).pushData(std::move(curOut[activeChannels[i]]));
             }
             else
             {
-                // Maybe wait for end of method instead of deleting here?
-                curOut[activeChannels[i]].reset();
+                // If drop ToT, the ToT value saved in the output event will be 0
+                // Otherwise we will translate the raw 16-bit hit map into number of hits and pixel addresses using yet another LUT
+                uint64_t ToT = _dropToT ? 0 : retrieve(_LUT_PlainHMap_To_ColRow_ArrSize[hitmap] << 2);
+                if (_LUT_PlainHMap_To_ColRow_ArrSize[hitmap] == 0)
+                {
+                    logger->warn("Received fragment with no ToT! ({} , {})", ccol, qrow);
+                }
+                for (unsigned ihit = 0; ihit < _LUT_PlainHMap_To_ColRow_ArrSize[hitmap]; ++ihit)
+                {
+                    const uint8_t pix_tot = (ToT >> (ihit << 2)) & 0xF;
+                    // First pixel is 1,1, last pixel is 400,384
+                    const uint16_t pix_col = ((ccol - 1) * 8) + (_LUT_PlainHMap_To_ColRow[hitmap][ihit] >> 4) + 1;
+                    const uint16_t pix_row = ((qrow)*2) + (_LUT_PlainHMap_To_ColRow[hitmap][ihit] & 0xF) + 1;
+
+                    // logger->info("Ccol: {} Qrow: {} col: {} row: {} ToT: {}", ccol, qrow, pix_col, pix_row, pix_tot);
+                    // For now fill in events without checking whether the addresses are valid
+                    if (events[channel] == 0)
+                    {
+                        logger->warn("[{}] No header in data fragment!", channel);
+                        curOut[channel]->newEvent(666, l1id[channel], bcid[channel]);
+                        events[channel]++;
+                    }
+
+                    curOut[channel]->curEvent->addHit({pix_col, pix_row, pix_tot});
+                    //logger->info("Hit: row({}) col({}) tot({}) ", pix_row, pix_col, pix_tot);
+                    hits[channel]++;
+                }
             }
+        } while (!(islast_isneighbor_qrow & 0x200) && (_blockIdx < _NB)); // Need to keep track of block index to make sure it is within the packet while we loop over the hits in the event
+        //logger->info("total number of hits: {}", hits[channel]);
+    }
+    // Push data out
+    for (unsigned i = 0; i < activeChannels.size(); i++)
+    {
+        if (events[activeChannels[i]] > 0)
+        {
+            m_outMap->at(activeChannels[i]).pushData(std::move(curOut[activeChannels[i]]));
+        }
+        else
+        {
+            // Maybe wait for end of method instead of deleting here?
+            curOut[activeChannels[i]].reset();
         }
         //Cleanup
     }
@@ -482,23 +492,64 @@ bool Rd53bDataProcessor::getNextDataBlock()
     // Cannot get more data: return failure code
     if (unlikely(_blockIdx >= _NB))
     {
+        if (_curInV.back() == nullptr)
+            return false;        
+
+        // Increase processed raw data size
         _procRawDataSize = _NB;
-        _rawDataIdx = _curInV->size();
-        return false;
+        // Reset raw data index
+        _rawDataIdx = 0;
+        // Increase container index
+        _containerIdx++;
+
+        _curInV.push_back(m_input->popData());
+        if (_curInV.back() == nullptr)
+            return false;
+
+        // Inrease total number of blocks
+        unsigned words = 0;
+        for (unsigned c = 0; c < _curInV.back()->size(); c++)
+            words += _curInV.back()->words[c];
+        _NB += (words >> 1);
+
+        _data = &_curInV[_containerIdx]->buf[0][0];
+        return true;
     }
     // The next data block is in the next raw data
-    if ((_blockIdx - _procRawDataSize) >= (_curInV->words[_rawDataIdx] >> 1))
+    if ((_blockIdx - _procRawDataSize) >= (_curInV[_containerIdx]->words[_rawDataIdx] >> 1))
     {
-        _procRawDataSize += (_curInV->words[_rawDataIdx] >> 1); // Increase the size of processed raw data
+        _procRawDataSize += (_curInV[_containerIdx]->words[_rawDataIdx] >> 1); // Increase the size of processed raw data
         _rawDataIdx++;
+        if (_rawDataIdx >= _curInV[_containerIdx]->size())
+        {
+            _containerIdx++;
+            _rawDataIdx = 0;
+
+            // If the next container is null
+            if (_curInV[_containerIdx] == nullptr)
+                return false;
+        }
     }
 
     // Upate the data pointer. Note the meaning of block index is the first block that is *unprocessed*
-    _data = &_curInV->buf[_rawDataIdx][(_blockIdx - _procRawDataSize) << 1];
-
-    // Bit index will be handled in retrieve() method
-    // _bitIdx = 1; // Reset bit index within the block. Note the value starts from 1 as we assume the NS bit has been read
+    _data = &_curInV[_containerIdx]->buf[_rawDataIdx][(_blockIdx - _procRawDataSize) << 1];
 
     // Return success code
     return true;
+}
+
+void Rd53bDataProcessor::getPreviousDataBlock()
+{
+    // Correct raw data index and processed raw data size if needed
+    if (_blockIdx-- <= _procRawDataSize)
+    {
+        --_rawDataIdx;
+        if (_rawDataIdx < 0)
+        {
+            _containerIdx--;                                  // Roll back container index
+            _rawDataIdx = _curInV[_containerIdx]->size() - 1; // Go back to previous container
+        }
+        _procRawDataSize -= (_curInV[_containerIdx]->words[_rawDataIdx] >> 1); // Subtract the previous raw data size
+    }
+    _data = &_curInV[_containerIdx]->buf[_rawDataIdx][(_blockIdx - _procRawDataSize) << 1]; // Also roll back the block index and data word pointer
 }
