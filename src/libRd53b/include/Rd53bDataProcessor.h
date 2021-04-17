@@ -34,9 +34,12 @@ public:
     void process() override final;
 
     const uint32_t *_data; // Pointer to one data block
-    unsigned _blockIdx;	   // Index of the data block
+    unsigned _blockIdx;	   // Index of the data block under processing
     unsigned _bitIdx;	   // Index of the first bit in datablock which is not processed yet. It starts from 0. The first half thus ends at 31, and the 2nd starts at 32
-    std::unique_ptr<RawData> _curIn;
+    unsigned _rawDataIdx;  // Index of the raw data within each raw data container
+    unsigned _procRawDataSize; // Size of the raw data that has been processed (in unit of 64-bit blocks)
+    unsigned _NB;              // Total number of blocks to be processed
+    std::unique_ptr<RawDataContainer> _curInV;
     void setCompressedHitmap(bool flag) { _isCompressedHitmap = flag; }
     void setDropToT(bool flag){_dropToT = flag;}
 
@@ -59,6 +62,7 @@ private:
     inline uint64_t retrieve(const unsigned length, const bool checkEOS = false, const bool skipNSCheck = false);	// Retrieve bit string with length
     inline void rollBack(const unsigned length);									// Roll back bit index
     inline uint8_t getBitPair(uint16_t &lowestLayer, uint8_t depth, uint8_t shift); // Get decoded bit pair used in hit map
+    inline bool getNextDataBlock();
     inline void process_core();
 };
 #endif
