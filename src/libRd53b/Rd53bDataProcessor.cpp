@@ -169,7 +169,7 @@ uint64_t Rd53bDataProcessor::retrieve(const unsigned length, const bool checkEOS
                 return 0;
             }
             // We are over-drafting bits and would expect non-zero probablitiy of running into the end of the stream. In this case, stop retrieving more bits and return the current value
-            else if (skipNSCheck)
+            else if (skipNSCheck || _bitIdx + length == BLOCKSIZE)
             {
                 _bitIdx -= (63 - length); // Still move the bit index as if we have retrieved the overflow bits in the next block. The index will be rolled back in the process() method
                 return variable;
@@ -282,13 +282,11 @@ void Rd53bDataProcessor::process_core()
             // End of stream is marked with 0b000000. This is ensured in software in spite of the chip orphan bit configuration
             if (ccol == 0)
             {
-                if (unlikely(_blockIdx >= _NB))
-                    break; // End of data processing as end of raw data container is reached
-
                 // ++++++++++++++ Start a new stream ++++++++++++++++
                 // Move the data word pointer to the next 64-bit block
-                getNextDataBlock();
-
+                if (!getNextDataBlock())
+                    break; // End of data processing as end of raw data container is reached
+                    
                 // Check the NS bit. If it is not 0, throw an error message
                 // TODO: implement corrective action?
                 if (unlikely(!(_data[0] >> 31 & 0x1)))
