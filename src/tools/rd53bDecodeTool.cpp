@@ -1,10 +1,16 @@
-#include "Rd53bDataProcessor.h"
-#include "LUT_PlainHMapToColRow.h"
-
 #include <bitset>
 #include <getopt.h>
 #include <sstream>
 #include <fstream>
+#include <vector>
+#include <memory>
+
+#include "LUT_PlainHMapToColRow.h"
+#include "RawData.h"
+
+#define BLOCKSIZE 64
+#define HALFBLOCKSIZE 32
+#define BINARYTREE_DEPTH 4
 
 static constexpr uint8_t _LUT_BinaryTreeMaskSize[3] = {4, 2, 1};
 static constexpr uint8_t _LUT_BinaryTreeMask[3][8] = {
@@ -21,6 +27,10 @@ struct option longopts[] = {
     {0, 0, 0, 0}};
 
 std::vector<uint32_t> _buffer;
+int _blockIdx = 0;
+int _bitIdx = 0;
+uint32_t *_data = NULL;
+std::unique_ptr<RawData> _curIn;
 
 void printHelp(const std::string exe)
 {
@@ -119,89 +129,89 @@ void Rd53bDecodeHelper::remain(const std::string input)
     _remain = input;
 }
 
-void startNewStream(Rd53bDataProcessor *p, Rd53bDecodeHelper *h, unsigned &nEvents)
+void startNewStream(Rd53bDecodeHelper *h, unsigned &nEvents)
 {
     /* Start a new stream */
-    p->_data = &p->_curInV[0]->buf[0][2 * p->_blockIdx];
+    _data = &_curIn->buf[2 * _blockIdx];
 
-    uint8_t tag = (p->_data[0] >> 23) & 0xFF;
-    p->_blockIdx++; // Increase block index
-    p->_bitIdx = 9; // Reset bit index = NS + tag
+    uint8_t tag = (_data[0] >> 23) & 0xFF;
+    _blockIdx++; // Increase block index
+    _bitIdx = 9; // Reset bit index = NS + tag
 
-    h->block((uint64_t(p->_data[0]) << 32) | p->_data[1]);
-    h->fill(std::bitset<1>(p->_data[0] >> 31).to_string(), "", "NS", true);
+    h->block((uint64_t(_data[0]) << 32) | _data[1]);
+    h->fill(std::bitset<1>(_data[0] >> 31).to_string(), "", "NS", true);
     h->fill(std::bitset<8>(tag).to_string(), std::to_string(tag), "Tag");
     nEvents++;
 }
 
-uint64_t retrieve(Rd53bDataProcessor *p, Rd53bDecodeHelper *h, const unsigned length, const bool checkEOS = false)
+uint64_t retrieve(Rd53bDecodeHelper *h, const unsigned length, const bool checkEOS = false)
 {
     if (length == 0)
         return 0;
-    if (checkEOS && (p->_data[0] >> 31) && p->_bitIdx == 1)
+    if (checkEOS && (_data[0] >> 31) && _bitIdx == 1)
     {					// Corner case where end of event mark (0000000) is suppressed and there is no orphan bits
-        p->_blockIdx--; // Roll back block index by 1. A new stream will start in the next loop iteration
+        _blockIdx--; // Roll back block index by 1. A new stream will start in the next loop iteration
         return 0;
     }
     uint64_t variable = 0;
 
-    if (p->_bitIdx + length <= BLOCKSIZE)
+    if (_bitIdx + length <= BLOCKSIZE)
     { // Need to read in next block
-        variable = (((p->_bitIdx + length) <= HALFBLOCKSIZE) || (p->_bitIdx >= HALFBLOCKSIZE)) ? ((p->_data[p->_bitIdx / HALFBLOCKSIZE] & (0xFFFFFFFFUL >> (p->_bitIdx - ((p->_bitIdx >> 5) << 5)))) >> ((((p->_bitIdx >> 5) + 1) << 5) - length - p->_bitIdx))
-                                                                                               : (((p->_data[0] & (0xFFFFFFFFUL >> p->_bitIdx)) << (length + p->_bitIdx - HALFBLOCKSIZE)) | (p->_data[1] >> (BLOCKSIZE - length - p->_bitIdx)));
-        p->_bitIdx += length; // Move bit index
+        variable = (((_bitIdx + length) <= HALFBLOCKSIZE) || (_bitIdx >= HALFBLOCKSIZE)) ? ((_data[_bitIdx / HALFBLOCKSIZE] & (0xFFFFFFFFUL >> (_bitIdx - ((_bitIdx >> 5) << 5)))) >> ((((_bitIdx >> 5) + 1) << 5) - length - _bitIdx))
+                                                                                               : (((_data[0] & (0xFFFFFFFFUL >> _bitIdx)) << (length + _bitIdx - HALFBLOCKSIZE)) | (_data[1] >> (BLOCKSIZE - length - _bitIdx)));
+        _bitIdx += length; // Move bit index
     }
     else
     {
-        if (checkEOS && (p->_data[2] >> 31))
+        if (checkEOS && (_data[2] >> 31))
         { // Check end of stream
             return 0;
         }
 
         // If the actual length of curIn->buf is curIn->words + 2, the following line can be removed.
         // This can be easily done by filling in 0
-        variable = (((p->_bitIdx < HALFBLOCKSIZE) ? (((p->_data[0] & (0xFFFFFFFFUL >> p->_bitIdx)) << HALFBLOCKSIZE) | p->_data[1])
-                                                  : (p->_bitIdx == BLOCKSIZE ? 0
-                                                                             : (p->_data[1] & (0xFFFFFFFFUL >> (p->_bitIdx - HALFBLOCKSIZE)))))
-                    << (length + p->_bitIdx - BLOCKSIZE)) |
-                   (((p->_bitIdx + length) < (HALFBLOCKSIZE + BLOCKSIZE)) ? ((p->_data[2] & 0x7FFFFFFFUL) >> (0x5F & ~(p->_bitIdx + length)))
-                                                                          : (((p->_data[2] & 0x7FFFFFFFUL) << (p->_bitIdx + length - 0x5F)) | (p->_data[3] >> (0x7F & ~(length + p->_bitIdx)))));
+        variable = (((_bitIdx < HALFBLOCKSIZE) ? (((_data[0] & (0xFFFFFFFFUL >> _bitIdx)) << HALFBLOCKSIZE) | _data[1])
+                                                  : (_bitIdx == BLOCKSIZE ? 0
+                                                                             : (_data[1] & (0xFFFFFFFFUL >> (_bitIdx - HALFBLOCKSIZE)))))
+                    << (length + _bitIdx - BLOCKSIZE)) |
+                   (((_bitIdx + length) < (HALFBLOCKSIZE + BLOCKSIZE)) ? ((_data[2] & 0x7FFFFFFFUL) >> (0x5F & ~(_bitIdx + length)))
+                                                                          : (((_data[2] & 0x7FFFFFFFUL) << (_bitIdx + length - 0x5F)) | (_data[3] >> (0x7F & ~(length + _bitIdx)))));
 
-        if (p->_bitIdx < BLOCKSIZE)
-            h->remain((std::bitset<64>((uint64_t(p->_data[0]) << 32) | p->_data[1]).to_string()).substr(p->_bitIdx));
+        if (_bitIdx < BLOCKSIZE)
+            h->remain((std::bitset<64>((uint64_t(_data[0]) << 32) | _data[1]).to_string()).substr(_bitIdx));
 
-        p->_blockIdx++; // Increase block index
-        p->_data = &p->_data[2];
-        p->_bitIdx -= (63 - length); // Reset bit index. Since we always read the NS bit the index should always start from 1
-        h->fill(std::bitset<1>(p->_data[0] >> 31).to_string(), "", "NS", true);
-        h->block((uint64_t(p->_data[0]) << 32) | p->_data[1]);
+        _blockIdx++; // Increase block index
+        _data = &_data[2];
+        _bitIdx -= (63 - length); // Reset bit index. Since we always read the NS bit the index should always start from 1
+        h->fill(std::bitset<1>(_data[0] >> 31).to_string(), "", "NS", true);
+        h->block((uint64_t(_data[0]) << 32) | _data[1]);
     }
 
     return variable;
 }
 
-void rollBack(Rd53bDataProcessor *p, const unsigned length)
+void rollBack(const unsigned length)
 { // Roll back bit index
     if (length == 0)
         return;
-    if (p->_bitIdx >= (length + 1))
-        p->_bitIdx -= length; // Keep in mind there is one extra bit from NS
+    if (_bitIdx >= (length + 1))
+        _bitIdx -= length; // Keep in mind there is one extra bit from NS
     else
     { // Across block, roll back by length
-        p->_bitIdx += (63 & ~length);
-        p->_data = &p->_curInV[0]->buf[0][2 * (--p->_blockIdx - 1)];
+        _bitIdx += (63 & ~length);
+        _data = &_curIn->buf[2 * (--_blockIdx - 1)];
     }
 }
 
-uint8_t getBitPair(Rd53bDataProcessor *p, Rd53bDecodeHelper *h)
+uint8_t getBitPair(Rd53bDecodeHelper *h)
 {
     // if(_debug >= 3) std::cout << __PRETTY_FUNCTION__ << std::endl;
-    const uint8_t bitpair = retrieve(p, h, 2);
+    const uint8_t bitpair = retrieve(h, 2);
     // There is only 11 and 10, and 01 is replaced with 0
     // Whenever 00 or 01 show up, replace the first 0 with 01, and move 1-bit back
     if (bitpair == 0x0 || bitpair == 0x1)
     {
-        rollBack(p, 1); // Moving bit index back by 1
+        rollBack(1); // Moving bit index back by 1
         h->fill("0", "0(1)", "");
         return 0x1;
     }
@@ -212,7 +222,7 @@ uint8_t getBitPair(Rd53bDataProcessor *p, Rd53bDecodeHelper *h)
     }
 }
 
-uint16_t readRow(Rd53bDataProcessor *p, Rd53bDecodeHelper *h)
+uint16_t readRow(Rd53bDecodeHelper *h)
 {
     uint16_t hitmap = 0XFF; // Start from all 1. Pixels not fired will be masked by 0
     uint8_t nRead[BINARYTREE_DEPTH] = {1, 0, 0, 0};
@@ -222,7 +232,7 @@ uint16_t readRow(Rd53bDataProcessor *p, Rd53bDecodeHelper *h)
         // std::cout << "Depth = " << int(lv) << std::endl;
         for (uint8_t ir = 0; ir < nRead[lv]; ir++)
         {
-            uint8_t bitpair = getBitPair(p, h);
+            uint8_t bitpair = getBitPair(h);
             // if(lv == BINARYTREE_DEPTH - 1) continue;
             switch (bitpair)
             {
@@ -245,7 +255,7 @@ uint16_t readRow(Rd53bDataProcessor *p, Rd53bDecodeHelper *h)
     return hitmap;
 }
 
-int readInData(std::string inputStreamFileName, Rd53bDataProcessor *p, int nStream = -1)
+int readInData(std::string inputStreamFileName, int nStream = -1)
 {
     std::cout << "Reading encoded data...";
     uint32_t address = 0xFFFFFFFF;
@@ -270,9 +280,7 @@ int readInData(std::string inputStreamFileName, Rd53bDataProcessor *p, int nStre
     _buffer.push_back(0);
     _buffer.push_back(0);
 
-    std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(LoopStatus::empty()));
-    p->_curInV.push_back(std::move(rdc));
-    p->_curInV[0]->add(new RawData(address, &_buffer[0], words));
+    _curIn.reset(new RawData(address, &_buffer[0], words));
     std::cout << "Done." << std::endl;
     return words;
 }
@@ -321,32 +329,31 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    Rd53bDataProcessor *p = new Rd53bDataProcessor();
     Rd53bDecodeHelper *h = new Rd53bDecodeHelper();
 
-    readInData(inputFileName, p);
-    const unsigned blocks = p->_curInV[0]->words[0] / 2;
+    readInData(inputFileName);
+    const unsigned blocks = _curIn->words / 2;
     uint8_t qrow = 0, ccol = 0;
     uint8_t islast = 0, isneighbor = 0;
 
     unsigned nHits = 0, nEvents = 0;
-    startNewStream(p, h, nEvents);
-    while (p->_blockIdx <= blocks)
+    startNewStream(h, nEvents);
+    while (_blockIdx <= blocks)
     {
         // Start from getting core column
-        ccol = retrieve(p, h, 6, true);
+        ccol = retrieve(h, 6, true);
         // End of stream marked with 000000 in current stream
         if (ccol == 0)
         {
             h->fill(std::bitset<6>(ccol).to_string(), "", "End of stream");
-            if (p->_blockIdx >= blocks)
+            if (_blockIdx >= blocks)
                 break; // End of data processing
-            startNewStream(p, h, nEvents);
+            startNewStream(h, nEvents);
             continue;
         }
         else if (ccol >= 0x38)
         { // Internal tag
-            const uint16_t intTag = (ccol << 5) | retrieve(p, h, 5);
+            const uint16_t intTag = (ccol << 5) | retrieve(h, 5);
             h->fill(std::bitset<11>(intTag).to_string(), "", "Int tag");
             nEvents++;
             continue;
@@ -355,10 +362,10 @@ int main(int argc, char **argv)
         // Loop over all the hits
         do
         {
-            if (p->_blockIdx > blocks)
+            if (_blockIdx > blocks)
                 break; // End of data processing
-            islast = retrieve(p, h, 1);
-            isneighbor = retrieve(p, h, 1);
+            islast = retrieve(h, 1);
+            isneighbor = retrieve(h, 1);
             h->fill(std::bitset<1>(islast).to_string(), "", "islast");
             h->fill(std::bitset<1>(isneighbor).to_string(), "", "isnext");
 
@@ -366,27 +373,27 @@ int main(int argc, char **argv)
                 ++qrow;
             else
             {
-                qrow = retrieve(p, h, 8);
+                qrow = retrieve(h, 8);
                 h->fill(std::bitset<8>(qrow).to_string(), std::to_string(qrow), "qrow");
             }
 
             uint16_t hitmap = 0x0;
             if (compressed){
                 // ++++++++++++++++++++++++ Brute force approach ++++++++++++++++++++++++
-                uint8_t root = getBitPair(p, h);
+                uint8_t root = getBitPair(h);
                 if (root & 0x2)
                 { // Read the first row
-                    hitmap = (readRow(p, h) & 0x00FF);
+                    hitmap = (readRow(h) & 0x00FF);
                 }
                 if (root & 0x1)
                 { // Read the second row
-                    hitmap |= (readRow(p, h) << 8);
+                    hitmap |= (readRow(h) << 8);
                 }
                 h->fill("", std::bitset<16>(hitmap).to_string(), "Hit map");
             }
             else
             {
-                hitmap = retrieve(p, h, 16);
+                hitmap = retrieve(h, 16);
                 h->fill(std::bitset<16>(hitmap).to_string(), "", "Hit map");
             }
 
@@ -399,7 +406,7 @@ int main(int argc, char **argv)
                         uint16_t ptot_ptoa_buf = 0xFFFF;
                         for(int iread = 0; iread < 4; iread++){
                             if ((hitsub >> iread) & 0x1){
-                                uint8_t fourbit = retrieve(p, h, 4);
+                                uint8_t fourbit = retrieve(h, 4);
                                 ptot_ptoa_buf &= ~((~fourbit & 0xF) << (iread << 2));
                                 h->fill(std::bitset<4>(fourbit).to_string(), "", "");
                             }
@@ -418,7 +425,7 @@ int main(int argc, char **argv)
                 nHits += RD53BDecoding::_LUT_PlainHMap_To_ColRow_ArrSize[hitmap];
                 for (int ihit = 0; ihit < RD53BDecoding::_LUT_PlainHMap_To_ColRow_ArrSize[hitmap]; ++ihit)
                 {
-                    uint8_t pix_tot = retrieve(p, h, 4);
+                    uint8_t pix_tot = retrieve(h, 4);
                     h->fill(std::bitset<4>(pix_tot).to_string(), std::to_string(pix_tot), "ToT" + std::to_string(ihit));
                 }
             }
