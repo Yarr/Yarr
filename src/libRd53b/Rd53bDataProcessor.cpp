@@ -136,12 +136,6 @@ bool Rd53bDataProcessor::retrieve(uint64_t &variable, const unsigned length, con
         return true;
     }
 
-    if (unlikely(_rawDataIdx >= _curInV->size()))
-    {
-        logger->error("Data error: end of data reached while still reading stream!");
-        return false;
-    }
-
     // If need to check end of stream (checkEOS = true), need to protect for the corner case where end of event mark (0000000) is suppressed and there is 0 orphan bit at the end of the stream
     if (checkEOS && (_data[0] >> 31) && _bitIdx == 1)
     {
@@ -170,7 +164,10 @@ bool Rd53bDataProcessor::retrieve(uint64_t &variable, const unsigned length, con
         // Move to the next block
         // If the block index already reaches the end of the raw data container, stop here
         if (!getNextDataBlock())
+        {
+            getPreviousDataBlock();
             return false;
+        }
 
         // Check the NS bit of the next 64-bit block
         if (_data[0] >> 31)
@@ -474,6 +471,8 @@ void Rd53bDataProcessor::process_core()
                         _hits[_channel]++;
                     }
                 }
+            default:
+                logger->error("Faulty data processor status {}", _status);
             }
             _status = ILIN;
         } while (!(_islast_isneighbor & 0x2)); // Need to keep track of block index to make sure it is within the packet while we loop over the hits in the event
@@ -484,17 +483,16 @@ void Rd53bDataProcessor::process_core()
 
 bool Rd53bDataProcessor::getNextDataBlock()
 {
-    // Cross raw data container
-    if (unlikely(_rawDataIdx < 0))
-    {
-        _rawDataIdx = 0;
-        _wordIdx = 0;
-        _data = &_curInV->buf[0][0];
-        return true;
-    }
-
     if (_curInV != nullptr)
     {
+        // Cross raw data container
+        if (unlikely(_rawDataIdx < 0))
+        {
+            _rawDataIdx = 0;
+            _wordIdx = 0;
+            _data = &_curInV->buf[0][0];
+            return true;
+        }
         _wordIdx += 2; // Increase block index
         if (_wordIdx >= _curInV->words[_rawDataIdx])
         {
@@ -506,13 +504,13 @@ bool Rd53bDataProcessor::getNextDataBlock()
     // Cannot get more data: return failure code
     if (_curInV == nullptr || _rawDataIdx >= _curInV->size())
     {
+        // Reset raw data index and word index
+        _rawDataIdx = 0;
+        _wordIdx = 0;
+
         // Keep track of last block
         if (_curInV != nullptr)
         {
-            // Reset raw data index and word index
-            _rawDataIdx = 0;
-            _wordIdx = 0;
-
             // Save the last 64-bit data            
             _data_pre[0] = _curInV->buf[_curInV->size() - 1][_curInV->words[_curInV->size() - 1] - 2];
             _data_pre[1] = _curInV->buf[_curInV->size() - 1][_curInV->words[_curInV->size() - 1] - 1];
