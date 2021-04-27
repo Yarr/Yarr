@@ -190,7 +190,10 @@ bool Rd53bDataProcessor::retrieve(uint64_t &variable, const unsigned length, con
             // TODO: apply corrective action?
             else
             {
-                logger->error("Expect unfinished stream while NS = 1: {}{}", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+                logger->error("Expect unfinished stream while NS = 1: {}{}. Will start a new event...", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+                getPreviousDataBlock();
+                _status = INIT;
+                return false;
             }
         }
 
@@ -235,7 +238,8 @@ void Rd53bDataProcessor::process_core()
         // Get event tag. TODO: add support of chip ID
         if (unlikely(!(_data[0] >> 31 & 0x1)))
         {
-            logger->error("Expect new stream while NS = 0: {}{} in the initial block", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+            logger->error("Expect new stream while NS = 0: {}{}. Skipping block...", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+            return;
         }
         _tag[_channel] = (_data[0] >> 23) & 0xFF;
         _bitIdx = 9; // Reset bit index = NS + tag
@@ -273,7 +277,8 @@ void Rd53bDataProcessor::process_core()
                 // Get event tag. TODO: add support of chip ID
                 if (unlikely(!(_data[0] >> 31 & 0x1)))
                 {
-                    logger->error("Expect new stream while NS = 0: {}{}", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+                    logger->error("Expect new stream while NS = 0: {}{}. Skipping block...", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+                    continue;
                 }
                 _tag[_channel] = (_data[0] >> 23) & 0xFF;
                 _bitIdx = 9; // Reset bit index = NS + tag
@@ -303,6 +308,8 @@ void Rd53bDataProcessor::process_core()
                 _status = CCOL;
                 continue;
             }
+        default:
+            break;
         }
 
         // Loop over all the hits in the current event
@@ -406,7 +413,8 @@ void Rd53bDataProcessor::process_core()
 
                             if (_events[_channel] == 0)
                             {
-                                logger->warn("[{}] No header in data fragment!", _channel);
+                                // This is now possible if the event is so long that it spreads over raw data containers
+                                // logger->warn("[{}] No header in data fragment!", _channel);
                                 _curOut[_channel]->newEvent(_tag[_channel], _l1id[_channel], _bcid[_channel]);
                                 _events[_channel]++;
                             }
@@ -461,7 +469,8 @@ void Rd53bDataProcessor::process_core()
                         // For now fill in _events without checking whether the addresses are valid
                         if (_events[_channel] == 0)
                         {
-                            logger->warn("[{}] No header in data fragment!", _channel);
+                            // This is now possible if an event is so long that it spread over raw data containers
+                            // logger->warn("[{}] No header in data fragment!", _channel);
                             _curOut[_channel]->newEvent(_tag[_channel], _l1id[_channel], _bcid[_channel]);
                             _events[_channel]++;
                         }
@@ -472,7 +481,7 @@ void Rd53bDataProcessor::process_core()
                     }
                 }
             default:
-                logger->error("Faulty data processor status {}", _status);
+                break;
             }
             _status = ILIN;
         } while (!(_islast_isneighbor & 0x2)); // Need to keep track of block index to make sure it is within the packet while we loop over the hits in the event
@@ -483,7 +492,7 @@ void Rd53bDataProcessor::process_core()
 
 bool Rd53bDataProcessor::getNextDataBlock()
 {
-    if (_curInV != nullptr)
+    if (_curInV != nullptr && _curInV->size() > 0)
     {
         // Cross raw data container
         if (unlikely(_rawDataIdx < 0))
@@ -502,14 +511,14 @@ bool Rd53bDataProcessor::getNextDataBlock()
     }
 
     // Cannot get more data: return failure code
-    if (_curInV == nullptr || _rawDataIdx >= _curInV->size())
+    if (_curInV == nullptr || _curInV->size() == 0 || _rawDataIdx >= _curInV->size())
     {
         // Reset raw data index and word index
         _rawDataIdx = 0;
         _wordIdx = 0;
 
         // Keep track of last block
-        if (_curInV != nullptr)
+        if (_curInV != nullptr && _curInV->size() > 0)
         {
             // Save the last 64-bit data            
             _data_pre[0] = _curInV->buf[_curInV->size() - 1][_curInV->words[_curInV->size() - 1] - 2];
@@ -535,7 +544,7 @@ bool Rd53bDataProcessor::getNextDataBlock()
 
         // Try to get data
         _curInV = m_input->popData();
-        if (_curInV == nullptr)
+        if (_curInV == nullptr || _curInV->size() == 0)
             return false;
 
         for (unsigned i = 0; i < _activeChannels.size(); i++)
