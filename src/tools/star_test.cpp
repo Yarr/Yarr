@@ -147,8 +147,9 @@ int main(int argc, char *argv[]) {
 
     // Original Spec version
     int rxChannel = 6;
+    int txChannel = 0xFFFF;
     int c;
-    while ((c = getopt(argc, argv, "hl:r:")) != -1) {
+    while ((c = getopt(argc, argv, "hl:r:t:")) != -1) {
       switch(c) {
       case 'h':
         printHelp();
@@ -165,6 +166,9 @@ int main(int argc, char *argv[]) {
         break;
       case 'r':
         rxChannel = atoi(optarg);
+        break;
+      case 't':
+        txChannel = atoi(optarg);
         break;
       default:
         spdlog::critical("Error while parsing command line parameters!");
@@ -208,10 +212,9 @@ int main(int argc, char *argv[]) {
       s.writeSingle(0x6<<14 | 0x0, 0x9ce730);
       s.writeSingle(0x6<<14 | 0x1, 0xF);
     }
-    spec.setCmdEnable(0xFFFF); // LCB Port D
-    if (controllerType == "emu_Star") {
-      spec.setCmdEnable(0x0);
-    }
+
+    spec.setCmdEnable(txChannel);
+
     // First disable all input
     spec.disableRx();
 
@@ -282,5 +285,6 @@ void printHelp() {
   std::cout << "   Run Star FE tests with HardwareController configuration from HW_CONFIG\n";
   std::cout << " -h: Show this help.\n";
   std::cout << " -r <channel> : Rx channel to enable.\n";
+  std::cout << " -t <channel> : Tx channel to enable.\n";
   std::cout << " -l <log_config> : Configure loggers.\n";
 }
