@@ -12,81 +12,8 @@
 
 static void printHelp();
 
-void sendCommands(StarChips &star, HwController &spec, std::string controllerType) {
-    uint32_t regNum = 41;
-    // Default (power-on) value
-    uint32_t regVal = 0x00020001;
-    //Turn-off 8b10b
-    // Bit 16 = 1, Bit 17 = 0
-    regVal |= (1<<16);
-    regVal &= ~(1<<17);
-
-    std::array<uint16_t, 9> part1 = star.write_hcc_register(regNum, regVal);
-    // Need to write two registers
-    std::array<uint16_t, 9> part2 = star.write_hcc_register(regNum+1, regVal);
-
-    spec.writeFifo((LCB::IDLE << 16) + LCB::IDLE);
-    spec.writeFifo((part1[0] << 16) + part1[1]);
-    spec.writeFifo((part1[2] << 16) + part1[3]);
-    spec.writeFifo((part1[4] << 16) + part1[5]);
-    spec.writeFifo((part1[6] << 16) + part1[7]);
-    spec.writeFifo((part1[8] << 16) + LCB::IDLE);
-    spec.writeFifo((LCB::IDLE << 16) + LCB::IDLE);
-    spec.writeFifo((part2[0] << 16) + part2[1]);
-    spec.writeFifo((part2[2] << 16) + part2[3]);
-    spec.writeFifo((part2[4] << 16) + part2[5]);
-    spec.writeFifo((part2[6] << 16) + part2[7]);
-    spec.writeFifo((part2[8] << 16) + LCB::IDLE);
-    spec.writeFifo((LCB::IDLE << 16) + LCB::IDLE);
-
-    // Test emulator
-    if (controllerType == "emu_Star") {
-      // Send fast commands:
-      spec.writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::ABC_HIT_COUNT_RESET, 0));
-      spec.writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::ABC_HIT_COUNT_START, 0));
-      spec.writeFifo((LCB::IDLE << 16) + LCB::IDLE);
-
-      // Write to ABCStar register CREG0 to enable hit counters
-      std::array<LCB::Frame, 9> writeABCCmd = star.write_abc_register(32, 0x00000020); 
-      spec.writeFifo((writeABCCmd[0] << 16) + writeABCCmd[1]);
-      spec.writeFifo((writeABCCmd[2] << 16) + writeABCCmd[3]);
-      spec.writeFifo((writeABCCmd[4] << 16) + writeABCCmd[5]);
-      spec.writeFifo((writeABCCmd[6] << 16) + writeABCCmd[7]);
-      spec.writeFifo((writeABCCmd[8] << 16) + LCB::IDLE);
-
-      // send an L0A
-      spec.writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(10, 0, false));
-
-      // read an HCCStar register
-      //
-      std::array<LCB::Frame, 9> readHCCCmd = star.read_hcc_register(44);
-      spec.writeFifo((readHCCCmd[0] << 16) + readHCCCmd[1]);
-      spec.writeFifo((readHCCCmd[2] << 16) + readHCCCmd[8]);
-
-      // read another HCCStar register
-      std::array<LCB::Frame, 9> readHCCCmd2 = star.read_hcc_register(17);
-      spec.writeFifo((readHCCCmd2[0] << 16) + readHCCCmd2[1]);
-      // the read command is interupted by an L0A
-      spec.writeFifo((LCB::l0a_mask(1, 0, false) << 16) + readHCCCmd2[2]);
-      spec.writeFifo((readHCCCmd2[8] << 16) + LCB::IDLE);
-
-      // read an ABCStar register with broadcast addresses
-      // HitCountReg60: hit counts for front-end channel 243, 242, 241, and 240
-      std::array<LCB::Frame, 9> readABCCmd = star.read_abc_register(172);
-      spec.writeFifo((readABCCmd[0] << 16) + readABCCmd[1]);
-      //////
-      // readABCCmd[3:7] not really needed
-      // read_abc_register() returns a command sequence of 9 frames instead of 4 for a read sequence
-      // They are ignored in the emulator
-      spec.writeFifo((readABCCmd[2] << 16) + readABCCmd[3]);
-      spec.writeFifo((readABCCmd[4] << 16) + readABCCmd[5]);
-      spec.writeFifo((readABCCmd[6] << 16) + readABCCmd[7]);
-      //////
-      spec.writeFifo((readABCCmd[8] << 16) + LCB::IDLE);
-    }
-
-    spec.releaseFifo();
-}
+void configureChips(StarChips &star, const std::string& controllerType);
+void runTests(StarChips &star);
 
 void reportData(RawData &data, std::string controllerType) {
   std::cout << "Raw data from RxCore:\n";
@@ -217,12 +144,13 @@ int main(int argc, char *argv[]) {
 
     // First disable all input
     spec.disableRx();
-
-    StarChips star(&spec);
-
     spec.setRxEnable(rxChannel);
 
-    sendCommands(star, spec, controllerType);
+    StarChips star;
+    star.init(&spec, txChannel, rxChannel);
+
+    configureChips(star, controllerType);
+    runTests(star);
 
     std::unique_ptr<uint32_t[]> tidy_up;
     std::unique_ptr<RawData> data(spec.readData());
@@ -278,6 +206,148 @@ int main(int argc, char *argv[]) {
     }
 
     return 0;
+}
+
+void configureChips(StarChips &star, const std::string& controllerType) {
+  // reset
+  star.sendCmd(LCB::fast_command(LCB::LOGIC_RESET, 0));
+  star.sendCmd(LCB::fast_command(LCB::HCC_REG_RESET, 0));
+
+  //////////
+  // Configure HCCStar first to establish communication with ABCStars
+  // All commands are broadcasted
+  bool do_spec_specific = controllerType == "spec";
+
+  if (do_spec_specific) {
+    //Turn-off 8b10b
+    uint32_t regNum = 41;
+    // Default (power-on) value
+    uint32_t regVal = 0x00020001;
+    // Bit 16 = 1, Bit 17 = 0
+    regVal |= (1<<16);
+    regVal &= ~(1<<17);
+
+    std::array<uint16_t, 9> part1 = star.write_hcc_register(regNum, regVal);
+    // Need to write two registers
+    std::array<uint16_t, 9> part2 = star.write_hcc_register(regNum+1, regVal);
+
+    star.sendCmd(part1);
+    star.sendCmd(part2);
+  }
+
+  // Register 32 (Delay1): delays for signals to ABCStar
+  auto hcc_reg32_w = star.write_hcc_register(32, 0x02400000);
+  star.sendCmd(hcc_reg32_w);
+
+  // Register 33, 34 (Delay2, Delay3): delays for data from ABCStar
+  auto hcc_reg33_w = star.write_hcc_register(33, 0x44444444);
+  auto hcc_reg34_w = star.write_hcc_register(34, 0x00000444);
+  star.sendCmd(hcc_reg33_w);
+  star.sendCmd(hcc_reg34_w);
+
+  // Register 38 (DRV1): enable driver and currents
+  auto hcc_reg38_w = star.write_hcc_register(38, 0x0fffffff);
+  star.sendCmd(hcc_reg38_w);
+
+  // Register 40 (ICenable): enable input channels
+  auto hcc_reg40_w = star.write_hcc_register(40, 0x000007ff);
+  star.sendCmd(hcc_reg40_w);
+
+  //////////
+  // Configure ABCStar
+  // reset ABCStar
+  star.sendCmd(LCB::fast_command(LCB::ABC_REG_RESET, 0));
+  star.sendCmd(LCB::fast_command(LCB::ABC_SLOW_COMMAND_RESET, 0));
+
+  // Register 32 (CREG0): Set RR mode to 1, enable LP and PR
+  auto abc_reg32_w = star.write_abc_register(32, 0x00000700);
+  star.sendCmd(abc_reg32_w);
+}
+
+void runTests(StarChips &star) {
+  std::array<uint16_t, 9> cmd;
+
+  // Turn off HCC HPR
+  cmd = star.write_hcc_register(43, 0x00000100);
+  star.sendCmd(cmd);
+  cmd = star.write_hcc_register(16, 0x00000001);
+  star.sendCmd(cmd);
+
+  // Turn off ABC HPR
+  cmd = star.write_abc_register(32, 0x00000740);
+  star.sendCmd(cmd);
+  cmd = star.write_abc_register(0, 0x00000004);
+  star.sendCmd(cmd);
+
+  //////////
+  // Read HCCStar registers
+  // register 17: Addressing
+  star.readHCCRegister(17);
+  // register 40: ICenable
+  star.readHCCRegister(40);
+
+  //////////
+  // Read ABCStar registers
+  // register 32: CREG0
+  star.readABCRegister(32, 0xf); // broadcast
+  // register 34: CREG2
+  star.readABCRegister(34, 0xf); // broadcast
+
+  //////////
+  // Read data packets
+
+  // Set some mask registers
+  cmd = star.write_abc_register(19, 0xfffe0000); // MaskInput3
+  star.sendCmd(cmd);
+  cmd = star.write_abc_register(23, 0xfffe0000); // MaskInput7
+  star.sendCmd(cmd);
+
+  // Enable hit counters
+  cmd = star.write_abc_register(32, 0x00000760);
+
+  // Reset and start ABCStar hit counters
+  star.sendCmd(LCB::fast_command(LCB::ABC_HIT_COUNT_RESET, 0));
+  star.sendCmd(LCB::fast_command(LCB::ABC_HIT_COUNT_START, 0));
+  // Enable PR & LP
+  star.sendCmd(LCB::fast_command(LCB::HCC_START_PRLP, 0));
+  // BC Reset
+  star.sendCmd(LCB::lonely_bcr());
+
+  /////
+  // Static test mode: TM = 1
+  cmd = star.write_abc_register(32, 0x00010760);
+  star.sendCmd(cmd);
+
+  // Send a trigger
+  star.sendCmd(LCB::l0a_mask(1, 42, false));
+
+  /////
+  // Test pulse mode: TM = 2
+  // Single digital pulse: TestPulseEnable = 1, TestPattEnable = 0
+  cmd = star.write_abc_register(32, 0x00020770);
+  star.sendCmd(cmd);
+
+  // Set the L0 pipeline latency to a smaller value: 15 BC
+  cmd = star.write_abc_register(34, 0x0000000f);
+  star.sendCmd(cmd);
+
+  // Also set BCIDrstDelay in the HCC to L0 latency - 2 to avoid BCID errors
+  auto hcc_reg44_w = star.write_hcc_register(44, 0x0000000d);
+  star.sendCmd(hcc_reg44_w);
+
+  star.sendCmd(LCB::lonely_bcr());
+
+  // Send a digital pulse followed by a trigger
+  cmd = {LCB::IDLE, LCB::IDLE,
+         LCB::fast_command(LCB::ABC_DIGITAL_PULSE, 0), LCB::IDLE,
+         LCB::IDLE, LCB::IDLE,
+         LCB::l0a_mask(1, 43, false), LCB::IDLE,
+         LCB::IDLE};
+   star.sendCmd(cmd);
+
+   // Read a ABCStar hit count
+   // register 191: HitCountREG63
+   star.readABCRegister(191, 0xf); // broadcast
 }
 
 void printHelp() {
