@@ -15,7 +15,7 @@ static void printHelp();
 void sendCommand(const std::array<uint16_t, 9>& cmd, HwController& hwCtrl);
 void sendCommand(uint16_t cmd, HwController& hwCtrl);
 void configureChips(StarCmd &star, HwController& hwCtrl, bool doReset);
-void runTests(StarCmd &star, HwController& hwCtrl);
+void runTests(StarCmd &star, HwController& hwCtrl, bool hprOff);
 
 void reportData(RawData &data, std::string controllerType) {
   std::cout << "Raw data from RxCore:\n";
@@ -149,8 +149,9 @@ int main(int argc, char *argv[]) {
 
     StarCmd star;
 
+    // For now
     configureChips(star, *hwCtrl, true);
-    runTests(star, *hwCtrl);
+    runTests(star, *hwCtrl, true);
 
     std::unique_ptr<uint32_t[]> tidy_up;
     std::unique_ptr<RawData> data(hwCtrl->readData());
@@ -244,15 +245,17 @@ void configureChips(StarCmd &star, HwController& hwCtrl, bool doReset) {
   sendCommand( star.write_abc_register(32, 0x00000700), hwCtrl);
 }
 
-void runTests(StarCmd &star, HwController& hwCtrl) {
+void runTests(StarCmd &star, HwController& hwCtrl, bool hprOff) {
 
-  // Turn off HCC HPR
-  sendCommand( star.write_hcc_register(43, 0x00000100), hwCtrl);
-  sendCommand( star.write_hcc_register(16, 0x00000001), hwCtrl);
+  if (hprOff) {
+    // Turn off HCC HPR
+    sendCommand( star.write_hcc_register(43, 0x00000100), hwCtrl);
+    sendCommand( star.write_hcc_register(16, 0x00000001), hwCtrl);
 
-  // Turn off ABC HPR
-  sendCommand( star.write_abc_register(32, 0x00000740), hwCtrl);
-  sendCommand( star.write_abc_register(0, 0x00000004), hwCtrl);
+    // Turn off ABC HPR
+    sendCommand( star.write_abc_register(32, 0x00000740), hwCtrl);
+    sendCommand( star.write_abc_register(0, 0x00000004), hwCtrl);
+  }
 
   //////////
   // Read HCCStar registers
