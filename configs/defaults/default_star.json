@@ -1,7 +1,7 @@
 {
     "name": "Barrel_Hybrid_Example",
     "HCC": {
-        "ID": 15,
+        "ID": 0,
 
         "regs": {
             "Delay1": "02400000",
