@@ -14,7 +14,7 @@ static void printHelp();
 
 void sendCommand(const std::array<uint16_t, 9>& cmd, HwController& hwCtrl);
 void sendCommand(uint16_t cmd, HwController& hwCtrl);
-void configureChips(StarCmd &star, HwController& hwCtrl);
+void configureChips(StarCmd &star, HwController& hwCtrl, bool doReset);
 void runTests(StarCmd &star, HwController& hwCtrl);
 
 void reportData(RawData &data, std::string controllerType) {
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
 
     StarCmd star;
 
-    configureChips(star, *hwCtrl);
+    configureChips(star, *hwCtrl, true);
     runTests(star, *hwCtrl);
 
     std::unique_ptr<uint32_t[]> tidy_up;
@@ -208,10 +208,12 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-void configureChips(StarCmd &star, HwController& hwCtrl) {
+void configureChips(StarCmd &star, HwController& hwCtrl, bool doReset) {
   // reset
-  sendCommand( LCB::fast_command(LCB::LOGIC_RESET, 0), hwCtrl);
-  sendCommand( LCB::fast_command(LCB::HCC_REG_RESET, 0), hwCtrl);
+  if (doReset) {
+    sendCommand( LCB::fast_command(LCB::LOGIC_RESET, 0), hwCtrl);
+    sendCommand( LCB::fast_command(LCB::HCC_REG_RESET, 0), hwCtrl);
+  }
 
   //////////
   // Configure HCCStar first to establish communication with ABCStars
@@ -233,8 +235,10 @@ void configureChips(StarCmd &star, HwController& hwCtrl) {
   //////////
   // Configure ABCStar
   // reset ABCStar
-  sendCommand( LCB::fast_command(LCB::ABC_REG_RESET, 0), hwCtrl );
-  sendCommand( LCB::fast_command(LCB::ABC_SLOW_COMMAND_RESET, 0), hwCtrl);
+  if (doReset) {
+    sendCommand( LCB::fast_command(LCB::ABC_REG_RESET, 0), hwCtrl );
+    sendCommand( LCB::fast_command(LCB::ABC_SLOW_COMMAND_RESET, 0), hwCtrl);
+  }
 
   // Register 32 (CREG0): Set RR mode to 1, enable LP and PR
   sendCommand( star.write_abc_register(32, 0x00000700), hwCtrl);
