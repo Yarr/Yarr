@@ -126,9 +126,8 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    HwController &spec = *hwCtrl;
-    spec.toggleTrigAbort();
-    spec.setTrigEnable(0);
+    hwCtrl->toggleTrigAbort();
+    hwCtrl->setTrigEnable(0);
 
     // In fact, mostly needed only for a specific test version of Spec FW
     bool do_spec_specific = controllerType == "spec";
@@ -140,20 +139,20 @@ int main(int argc, char *argv[]) {
       s.writeSingle(0x6<<14 | 0x1, 0xF);
     }
 
-    spec.setCmdEnable(txChannel);
+    hwCtrl->setCmdEnable(txChannel);
 
     // First disable all input
-    spec.disableRx();
-    spec.setRxEnable(rxChannel);
+    hwCtrl->disableRx();
+    hwCtrl->setRxEnable(rxChannel);
 
     StarChips star;
-    star.init(&spec, txChannel, rxChannel);
+    star.init(hwCtrl.get(), txChannel, rxChannel);
 
     configureChips(star);
     runTests(star);
 
     std::unique_ptr<uint32_t[]> tidy_up;
-    std::unique_ptr<RawData> data(spec.readData());
+    std::unique_ptr<RawData> data(hwCtrl->readData());
     if(data) {
       std::cout << "Use data: " << (void*)data->buf << " (init)\n";
       tidy_up.reset(data->buf);
@@ -169,7 +168,7 @@ int main(int argc, char *argv[]) {
 
         reportData(*data, controllerType);
 
-        data.reset(spec.readData());
+        data.reset(hwCtrl->readData());
         if(data) {
           std::cout << "Use data: " << (void*)data->buf << " (main)\n";
           tidy_up.reset(data->buf);
@@ -188,7 +187,7 @@ int main(int argc, char *argv[]) {
 
         std::this_thread::sleep_for( SLEEP_TIME );
 
-        data.reset(spec.readData());
+        data.reset(hwCtrl->readData());
         if(data) {
           std::cout << "Use data: " << (void*)data->buf << " (while)\n";
           tidy_up.reset(data->buf);
@@ -198,7 +197,7 @@ int main(int argc, char *argv[]) {
       if (data == nullptr) break;
     }
 
-    spec.disableRx();
+    hwCtrl->disableRx();
 
     if(nodata) {
       std::cout << "No data\n";
