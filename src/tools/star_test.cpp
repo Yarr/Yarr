@@ -12,7 +12,7 @@
 
 static void printHelp();
 
-void configureChips(StarChips &star, const std::string& controllerType);
+void configureChips(StarChips &star);
 void runTests(StarChips &star);
 
 void reportData(RawData &data, std::string controllerType) {
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
     StarChips star;
     star.init(&spec, txChannel, rxChannel);
 
-    configureChips(star, controllerType);
+    configureChips(star);
     runTests(star);
 
     std::unique_ptr<uint32_t[]> tidy_up;
@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-void configureChips(StarChips &star, const std::string& controllerType) {
+void configureChips(StarChips &star) {
   // reset
   star.sendCmd(LCB::fast_command(LCB::LOGIC_RESET, 0));
   star.sendCmd(LCB::fast_command(LCB::HCC_REG_RESET, 0));
@@ -216,24 +216,6 @@ void configureChips(StarChips &star, const std::string& controllerType) {
   //////////
   // Configure HCCStar first to establish communication with ABCStars
   // All commands are broadcasted
-  bool do_spec_specific = controllerType == "spec";
-
-  if (do_spec_specific) {
-    //Turn-off 8b10b
-    uint32_t regNum = 41;
-    // Default (power-on) value
-    uint32_t regVal = 0x00020001;
-    // Bit 16 = 1, Bit 17 = 0
-    regVal |= (1<<16);
-    regVal &= ~(1<<17);
-
-    std::array<uint16_t, 9> part1 = star.write_hcc_register(regNum, regVal);
-    // Need to write two registers
-    std::array<uint16_t, 9> part2 = star.write_hcc_register(regNum+1, regVal);
-
-    star.sendCmd(part1);
-    star.sendCmd(part2);
-  }
 
   // Register 32 (Delay1): delays for signals to ABCStar
   auto hcc_reg32_w = star.write_hcc_register(32, 0x02400000);
