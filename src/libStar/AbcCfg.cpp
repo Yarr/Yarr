@@ -82,6 +82,17 @@ AbcStarRegInfo::AbcStarRegInfo() {
         abcregisterMap[addr] = std::make_shared<RegisterInfo>(addr);
     }
 
+    for (ABCStarRegister reg : ABCStarRegister::_values()) {
+        int addr = reg;
+        if((addr == ABCStarRegister::SCReg)
+           || (addr >= ABCStarRegs::STAT0 && addr <= ABCStarRegs::HPR)
+           || addr >= ABCStarRegs::HitCountREG0) {
+          continue;
+        }
+
+        abcWriteMap[addr] = abcregisterMap[addr];
+    }
+
     for (auto def : s_abcsubregdefs) {
         auto reg_id = std::get<0>(def);
         std::string subregname = std::string(reg_id._to_string());

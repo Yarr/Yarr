@@ -86,6 +86,8 @@ void ItsdaqRxCore::setRxEnable(uint32_t stream) {
 }
 
 void ItsdaqRxCore::disableRx() {
+  logger->debug("Disable Rx (all streams)");
+
   // Disable all streams
   // Mask, (stream, value)*
   static const size_t length = 1 + max_stream *2;

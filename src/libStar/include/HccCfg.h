@@ -45,6 +45,9 @@ class HccStarRegInfo {
         //This is a map from each register address to the register info.  Thus hccregisterMap[addr]
         std::map<unsigned, std::shared_ptr<RegisterInfo>> hccregisterMap;
 
+        /// The list of registers to write to
+        std::map<unsigned, std::shared_ptr<RegisterInfo>> hccWriteMap;
+
         //This is a 2D map of each subregister to the HCC subregister name.  For example hccSubRegisterMap_all[NAME]
         // SubRegister is owned by the Registers
         std::map<HCCStarSubRegister, std::shared_ptr<SubRegisterInfo>> hccSubRegisterMap_all;   //register record
