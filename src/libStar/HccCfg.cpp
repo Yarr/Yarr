@@ -110,6 +110,7 @@ HccStarRegInfo::HccStarRegInfo() {
   }
 
   for (HCCStarRegister reg: {
+      //HCCStarRegister::Addressing,  // TODO: need to reconcile this with StarChips::setHccId
       HCCStarRegister::Delay1, HCCStarRegister::Delay2, HCCStarRegister::Delay3,
       HCCStarRegister::PLL1, HCCStarRegister::PLL2, HCCStarRegister::PLL3, HCCStarRegister::DRV1, HCCStarRegister::DRV2,
       HCCStarRegister::ICenable, HCCStarRegister::OPmode, HCCStarRegister::OPmodeC, HCCStarRegister::Cfg1, HCCStarRegister::Cfg2,
