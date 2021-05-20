@@ -138,7 +138,7 @@ if( NOT SELECT_TOOLS STREQUAL "" )
 endif()
 
 if (NOT "NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
-  list(FILTER tools EXCLUDE REGEX tools/testNetioHw.cpp|tools/testBitStream.cpp|tools/testScan.cpp)
+  list(FILTER tools EXCLUDE REGEX tools/testNetioHw.cpp)
 endif()
 
 message("Executeables to build:")
