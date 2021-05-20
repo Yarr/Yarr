@@ -503,4 +503,21 @@ class ParameterAnalysis : public AnalysisAlgorithm {
         bool m_createMap = false;
 };
 
+class TriggerThrottleAnalysis : public AnalysisAlgorithm {
+     public:
+ TriggerThrottleAnalysis() : AnalysisAlgorithm() {};
+    ~TriggerThrottleAnalysis() {};
+    
+    void init(ScanBase *s);
+    void processHistogram(HistogramBase *h);
+    void end();
+    void loadConfig(json &config) {}
+ private:
+    std::vector<unsigned> loops;
+    std::vector<unsigned> loopMax;
+    int n_count;
+    int injections;
+    std::unique_ptr<GlobalFeedbackSender> fb;
+};
+
 #endif

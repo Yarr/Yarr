@@ -2088,3 +2088,99 @@ void ParameterAnalysis::end() {
         output->pushData(std::move(paramMaps[i]));
     }
 }
+
+void TriggerThrottleAnalysis::init(ScanBase *s) {
+    n_count = 1;
+    int receivers;
+    for (unsigned n=0; n<s->size(); n++) {
+        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
+            loops.push_back(n);
+            loopMax.push_back((unsigned)l->getMax());
+        } else {
+            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
+            if (cnt == 0)
+                cnt = 1;
+            n_count = n_count*cnt;
+        }
+
+        if (l->isTriggerLoop()) {
+            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            if(trigLoop == nullptr) {
+                alog->error("TriggerThrottleAnalysis");
+            } else {
+                injections = trigLoop->getTrigCnt();
+            }
+        }
+
+        if (l->isGlobalFeedbackLoop()) {
+            fb.reset(new GlobalFeedbackSender(feedback));
+            if(fb == nullptr) {
+                alog->error("TriggerThrottleAnalysis");
+            }
+        }
+    }
+}
+
+void TriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
+    // Check if right Histogram
+    if (h->getName() != OccupancyMap::outputName())
+        return;
+
+    // Select correct output container
+    unsigned ident = 0;
+    unsigned offset = 0;
+
+    // Determine identifier
+    std::string name = "OccupancyMap";
+    for (unsigned n=0; n<loops.size(); n++) {
+        ident += h->getStat().get(loops[n])+offset;
+        offset += loopMax[n];
+        name += "-" + std::to_string(h->getStat().get(loops[n]));
+    }
+
+    // Check if Histogram exists
+    if (occMaps[ident] == NULL) {
+        Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
+        hh->setXaxisTitle("Column");
+        hh->setYaxisTitle("Row");
+        hh->setZaxisTitle("Hits");
+        occMaps[ident].reset(hh);
+        innerCnt[ident] = 0;
+    }
+
+    // Add up Histograms
+    occMaps[ident]->add(*(Histo2d*)h);
+    innerCnt[ident]++;
+
+    // Got all data, finish up Analysis
+    if (innerCnt[ident] == n_count) {
+
+        double sign = 1;
+
+        for(unsigned i=0; i<occMaps[ident]->size(); i++) {
+            double occupancy = (occMaps[ident]->getBin(i))/(double)injections; 
+            if (sign == 1 && occupancy > 0.25)
+                sign = 0;
+            if (sign >= 0 && occupancy > 0.75) {
+                sign = -1;
+                break;
+            }
+        }        
+
+        fb->feedback(this->channel, sign, done);
+        //output->pushData(std::move(occMaps[ident]));
+        innerCnt[ident] = 0;
+        //delete occMaps[ident];
+        occMaps[ident] = nullptr;
+    }
+
+}
+
+void TriggerThrottleAnalysis::end() {
+
+}
+
+void TriggerThrottleAnalysis::loadConfig(json &config) {
+
+}
