@@ -30,8 +30,9 @@ double StarCfg::toCharge(double vcal, bool sCap, bool lCap) { return toCharge(vc
 
 int StarCfg::hccChannelForABCchipID(unsigned int chipID) {
   auto itr = std::find_if(m_ABCchips.begin(), m_ABCchips.end(),
-                        [this, chipID](auto &it) { return it.getABCchipID() == chipID; });
-  return std::distance(m_ABCchips.begin(), itr);
+                        [this, chipID](auto &it) { return it.second.getABCchipID() == chipID; });
+  return itr->first;
+  //return std::distance(m_ABCchips.begin(), itr);
 }
 
 //HCC register accessor functions
@@ -125,7 +126,7 @@ void StarCfg::toFileJson(json &j) {
     std::vector<std::map<std::string, std::string>> regs(numABCs());
 
     for (int iABC = 0; iABC < numABCs(); iABC++) {
-        if (!abcAtIndex(hccChan))
+        if (!abcAtIndex(iABC))
             break;
         auto &abc = abcFromIndex(iABC+1);
         j["ABCs"]["IDs"][iABC] = abc.getABCchipID();
@@ -312,7 +313,7 @@ void StarCfg::fromFileJson(json &j) {
 
 	if (abcs["inChannels"].empty()) {
 	  for (int iABC = 0; iABC < ids.size(); iABC++) {
-		addABCchipID(ids[iABC]);
+              addABCchipID(ids[iABC], iABC);
 	  }
 	} else {
 	  auto &hccins = abcs["inChannels"];

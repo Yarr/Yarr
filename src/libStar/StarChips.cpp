@@ -34,7 +34,7 @@ StarChips::StarChips()
 
 	//Create dummy configuration as placeholder for globalFe in preScan routines
 	setHCCChipId(0xf);
-	addABCchipID(0xf);
+	addABCchipID(0xf, 0);
 }
 
 StarChips::StarChips(HwController *arg_core)

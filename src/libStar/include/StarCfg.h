@@ -53,31 +53,23 @@ class StarCfg : public FrontEndCfg {
   const unsigned int getABCchipID(unsigned int chipIndex) { return abcFromIndex(chipIndex).getABCchipID(); }
 
   void addABCchipID(unsigned int chipID) {
-      m_ABCchips.push_back({});
-      m_ABCchips.back().emplace();
-      m_ABCchips.back().value().setABCChipId(chipID);
+      //highest key +1 (~std::vector::push_back)
+      addABCchipID(chipID, m_ABCchips.rbegin()->first +1);
   }
 
   void addABCchipID(unsigned int chipID, unsigned int hccIn) {
-      if (hccIn < m_ABCchips.size()) {
-          m_ABCchips[hccIn].reset();
-          m_ABCchips[hccIn].emplace();
-          m_ABCchips[hccIn].value().setABCChipId(chipID);
-      } else {
-          for (int i=m_ABCchips.size(); i < hccIn; i++) {
-              m_ABCchips.push_back({});
-          }
-          m_ABCchips.push_back({});
-          m_ABCchips.back().emplace();
-          m_ABCchips.back().value().setABCChipId(chipID);
-      }
+      m_ABCchips.emplace(hccIn,AbcCfg{});
+      m_ABCchips[hccIn].setABCChipId(chipID);
   }
+
+  void clearABCchipIDs() { m_ABCchips.clear();}
 
   void setSubRegisterValue(int chipIndex, std::string subRegName, uint32_t value) {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
       return m_hcc.setSubRegisterValue(subRegName, value);
     } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
-      return abcFromIndex(chipIndex).setSubRegisterValue(subRegName, value);
+        if (abcAtIndex(chipIndex))
+            return abcFromIndex(chipIndex).setSubRegisterValue(subRegName, value);
     }else {
       std::cerr << " --> Error: Could not find register \""<< subRegName << "\"" << std::endl;
     }
@@ -88,7 +80,8 @@ class StarCfg : public FrontEndCfg {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
       return m_hcc.getSubRegisterValue(subRegName);
     } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
-      return abcFromIndex(chipIndex).getSubRegisterValue(subRegName);
+        if (abcAtIndex(chipIndex))
+            return abcFromIndex(chipIndex).getSubRegisterValue(subRegName);
     }else {
       std::cerr << " --> Error: Could not find register \""<< subRegName << "\"" << std::endl;
     }
@@ -111,7 +104,8 @@ class StarCfg : public FrontEndCfg {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
       return m_hcc.getSubRegisterParentValue(subRegName);
     } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
-      return abcFromIndex(chipIndex).getSubRegisterParentValue(subRegName);
+        if (abcAtIndex(chipIndex))
+            return abcFromIndex(chipIndex).getSubRegisterParentValue(subRegName);
     }else {
       std::cerr << " --> Error: Could not find register \""<< subRegName << "\"" << std::endl;
     }
@@ -144,8 +138,7 @@ class StarCfg : public FrontEndCfg {
   /// Iterate over ABCs, avoiding chipIndex
   void eachAbc(std::function<void (AbcCfg&)> f) {
     for(auto &abc: m_ABCchips) {
-	if (abc)
-      		f(abc.value());
+        f(abc.second);
     }
   }
 
@@ -155,35 +148,41 @@ class StarCfg : public FrontEndCfg {
 
  protected:
   AbcCfg &abcFromChipID(unsigned int chipID) {
-      //auto abcOptional = *std::find_if(m_ABCchips.begin(), m_ABCchips.end(),
-      //                               [this, chipID](auto &it) { if (it) return it->getABCchipID() == chipID; });
-      for(int i=0; i < m_ABCchips.size(); i++) {
-          if (m_ABCchips[i]->getABCchipID() == chipID)
-              return m_ABCchips[i].value();
+      //auto abcPair =  *std::find_if(m_ABCchips.begin(), m_ABCchips.end(),
+      //                       [this, chipID](auto &it) { return it->second.getABCchipID() == chipID; });
+  //return abcPair.second;
+      for(auto &abcPair : m_ABCchips) {
+          auto &abc = abcPair.second;
+          if (abc.getABCchipID() == chipID)
+              return abc;
       }
-      return m_ABCchips.back().value();
+      return (*m_ABCchips.end()).second;
   }
 
   uint32_t m_sn=0;//serial number set by eFuse bits
 
   HccCfg m_hcc;
 
-  std::vector<std::optional<AbcCfg>> m_ABCchips;
+  std::map<unsigned, AbcCfg> m_ABCchips;
 
-  bool abcAtIndex(int chipIndex) {
-      return m_ABCchips[chipIndex-1].has_value();
+  bool abcAtIndex(int chipIndex) const {
+    assert(chipIndex > 0);
+    assert(chipIndex <= m_ABCchips.size());
+    return (m_ABCchips.count(chipIndex-1) > 0);
   }
 
+  //Doesn't check if chip exists!!
   AbcCfg &abcFromIndex(int chipIndex) {
     assert(chipIndex > 0);
     assert(chipIndex <= m_ABCchips.size());
-    return m_ABCchips[chipIndex-1].value();
+    return m_ABCchips[chipIndex-1];
   }
 
+  //Doesn't check if chip exists!!
   const AbcCfg &abcFromIndex(int chipIndex) const {
     assert(chipIndex > 0);
     assert(chipIndex <= m_ABCchips.size());
-    return m_ABCchips[chipIndex-1].value();
+    return m_ABCchips.at(chipIndex-1);
   }
 };
 
