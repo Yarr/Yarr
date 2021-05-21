@@ -59,44 +59,39 @@ void StarCfg::setTrimDAC(unsigned col, unsigned row, int value)  {
     ////      the trimDAC_4lsb_name for each chip is trimdac_4lsb_<nthRow[2:1]>_<nthCol[128:1]>
     ////      the trimDAC_1msb_name for each chip is trimdac_1msb_<nthRow[2:1]>_<nthCol[128:1]>
 
+    ////NOTE: The above NOTE is outdated. TODO: fix the NOTE
+
     ////NOTE: row and col pass from histogram starts from 1, while channel starts from 0
 
-    int nthRow = row%2 ==0 ? 2 : 1;
+    int hccChan = ( (col-1) >> 7);
 
-    int channel=0;
-    int chn_tmp = floor((col-1)/2);
-    if(nthRow==1) channel = (col-1) + chn_tmp*2;
-    else if(nthRow==2) channel = (col-1) + (chn_tmp+1)*2;
+    int channel=128*(row-1) + ( (col-1) & 0x7f);
 
     SPDLOG_LOGGER_TRACE(logger,
                         "row:{} col:{} chn_tmp:{} channel:{}",
                         row-1, col-1, chn_tmp, channel);
 
-    unsigned chipIndex = ceil(row/2.0);
-
-    auto &abc = abcFromIndex(chipIndex);
-
-    abc.setTrimDACRaw(channel, value);
+    if (abcAtIndex(hccChan)) {
+        auto &abc = abcFromIndex(hccChan);
+        abc.setTrimDACRaw(channel, value);
+    }
 }
 
 
-int StarCfg::getTrimDAC(unsigned col, unsigned row) const {
-    int nthRow = row%2 ==0 ? 2 : 1;
+int StarCfg::getTrimDAC(unsigned col, unsigned row) const{
 
-    int channel=0;
-    int chn_tmp = floor((col-1)/2);
-    if(nthRow==1) channel = (col-1) + chn_tmp*2;
-    else if(nthRow==2) channel = (col-1) + (chn_tmp+1)*2;
+    int hccChan = ( (col-1) >> 7);
 
+    int channel=128*(row-1) + ( (col-1) & 0x7f);
     SPDLOG_LOGGER_TRACE(logger,
                         " row:{} col:{} chn_tmp:{} channel:{}",
                         row-1, col-1, chn_tmp, channel);
 
-    unsigned chipIndex = ceil(row/2.0);
-
-    const auto &abc = abcFromIndex(chipIndex);
-
-    return abc.getTrimDACRaw(channel);
+    if (abcAtIndex(hccChan)) {
+        const auto &abc = abcFromIndex(hccChan);
+        return abc.getTrimDACRaw(channel);
+    }
+    return 0;
 }
 
 void StarCfg::toFileJson(json &j) {
@@ -130,8 +125,12 @@ void StarCfg::toFileJson(json &j) {
     std::vector<std::map<std::string, std::string>> regs(numABCs());
 
     for (int iABC = 0; iABC < numABCs(); iABC++) {
+        if (!abcAtIndex(hccChan))
+            break;
         auto &abc = abcFromIndex(iABC+1);
         j["ABCs"]["IDs"][iABC] = abc.getABCchipID();
+	//TODO: only add this if the ordering is wrong
+	j["ABCs"]["inChannels"][iABC] = iABC;
 
         for(auto &reg_i: abcRegs) {
             auto &info = reg_i.second;
@@ -311,8 +310,17 @@ void StarCfg::fromFileJson(json &j) {
     if (!abcs["IDs"].empty()) {
         auto &ids = abcs["IDs"];
 
-        for (int iABC = 0; iABC < ids.size(); iABC++) {
-            addABCchipID(ids[iABC]);
+	if (abcs["inChannels"].empty()) {
+	  for (int iABC = 0; iABC < ids.size(); iABC++) {
+		addABCchipID(ids[iABC]);
+	  }
+	} else {
+	  auto &hccins = abcs["inChannels"];
+	  if (hccins.size() < ids.size())
+	    logger->error("Not enough HCC input Channels Specified");
+	  for (int iABC = 0; iABC < ids.size(); iABC++) {
+	    addABCchipID(ids[iABC], hccins[iABC]);
+	  }
         }
     }
 
@@ -326,7 +334,8 @@ void StarCfg::fromFileJson(json &j) {
     // Initialize register maps for consistency
     for( int iABC = 0; iABC < abc_count; ++iABC) {
         // Make all registers and subregisters for the ABC
-        abcFromIndex(iABC+1).setDefaults();
+        if (abcAtIndex(iABC)) 
+            abcFromIndex(iABC+1).setDefaults();
     }
 
     // First, commont register settings
@@ -347,8 +356,10 @@ void StarCfg::fromFileJson(json &j) {
             try {
                 auto addr = ABCStarRegister::_from_string(regName.c_str());
                 for (int iABC = 0; iABC < numABCs(); iABC++) {
-                    auto &abc = abcFromIndex(iABC+1);
-                    abc.setRegisterValue(addr, regValue);
+                    if (abcAtIndex(iABC))  {
+                        auto &abc = abcFromIndex(iABC+1);
+                        abc.setRegisterValue(addr, regValue);
+                    }
                 }
                 logger->trace("All ABCs reg {} has been set to {:08x}", regName, regValue);
             } catch(std::runtime_error &e) {
@@ -367,6 +378,8 @@ void StarCfg::fromFileJson(json &j) {
         }
 
         for (int iABC = 0; iABC < numABCs(); iABC++) {
+            if(!abcAtIndex(iABC))
+                break;
             auto &chipRegs = regArray[iABC];
 
             if(chipRegs.is_null()) continue;

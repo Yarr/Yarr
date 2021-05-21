@@ -7,6 +7,7 @@
 // # Comment: Star configuration class
 // ################################
 
+#include <optional>
 #include <algorithm>
 #include <cmath>
 #include <functional>
@@ -52,11 +53,25 @@ class StarCfg : public FrontEndCfg {
   const unsigned int getABCchipID(unsigned int chipIndex) { return abcFromIndex(chipIndex).getABCchipID(); }
 
   void addABCchipID(unsigned int chipID) {
-    m_ABCchips.push_back({});
-    m_ABCchips.back().setABCChipId(chipID);
+      m_ABCchips.push_back({});
+      m_ABCchips.back().emplace();
+      m_ABCchips.back().value().setABCChipId(chipID);
   }
 
-  void clearABCchipIDs() { m_ABCchips.clear(); }
+  void addABCchipID(unsigned int chipID, unsigned int hccIn) {
+      if (hccIn < m_ABCchips.size()) {
+          m_ABCchips[hccIn].reset();
+          m_ABCchips[hccIn].emplace();
+          m_ABCchips[hccIn].value().setABCChipId(chipID);
+      } else {
+          for (int i=m_ABCchips.size(); i < hccIn; i++) {
+              m_ABCchips.push_back({});
+          }
+          m_ABCchips.push_back({});
+          m_ABCchips.back().emplace();
+          m_ABCchips.back().value().setABCChipId(chipID);
+      }
+  }
 
   void setSubRegisterValue(int chipIndex, std::string subRegName, uint32_t value) {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
@@ -129,7 +144,8 @@ class StarCfg : public FrontEndCfg {
   /// Iterate over ABCs, avoiding chipIndex
   void eachAbc(std::function<void (AbcCfg&)> f) {
     for(auto &abc: m_ABCchips) {
-      f(abc);
+	if (abc)
+      		f(abc.value());
     }
   }
 
@@ -139,26 +155,35 @@ class StarCfg : public FrontEndCfg {
 
  protected:
   AbcCfg &abcFromChipID(unsigned int chipID) {
-    return *std::find_if(m_ABCchips.begin(), m_ABCchips.end(),
-                        [this, chipID](auto &it) { return it.getABCchipID() == chipID; });
+      //auto abcOptional = *std::find_if(m_ABCchips.begin(), m_ABCchips.end(),
+      //                               [this, chipID](auto &it) { if (it) return it->getABCchipID() == chipID; });
+      for(int i=0; i < m_ABCchips.size(); i++) {
+          if (m_ABCchips[i]->getABCchipID() == chipID)
+              return m_ABCchips[i].value();
+      }
+      return m_ABCchips.back().value();
   }
 
   uint32_t m_sn=0;//serial number set by eFuse bits
 
   HccCfg m_hcc;
 
-  std::vector<AbcCfg> m_ABCchips;
+  std::vector<std::optional<AbcCfg>> m_ABCchips;
+
+  bool abcAtIndex(int chipIndex) {
+      return m_ABCchips[chipIndex-1].has_value();
+  }
 
   AbcCfg &abcFromIndex(int chipIndex) {
     assert(chipIndex > 0);
     assert(chipIndex <= m_ABCchips.size());
-    return m_ABCchips[chipIndex-1];
+    return m_ABCchips[chipIndex-1].value();
   }
 
   const AbcCfg &abcFromIndex(int chipIndex) const {
     assert(chipIndex > 0);
     assert(chipIndex <= m_ABCchips.size());
-    return m_ABCchips.at(chipIndex-1);
+    return m_ABCchips[chipIndex-1].value();
   }
 };
 
