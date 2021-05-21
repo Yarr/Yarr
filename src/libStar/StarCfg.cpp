@@ -126,7 +126,7 @@ void StarCfg::toFileJson(json &j) {
     std::vector<std::map<std::string, std::string>> regs(numABCs());
 
     for (int iABC = 0; iABC < numABCs(); iABC++) {
-        if (!abcAtIndex(iABC))
+        if (!abcAtIndex(iABC+1))
             break;
         auto &abc = abcFromIndex(iABC+1);
         j["ABCs"]["IDs"][iABC] = abc.getABCchipID();
@@ -335,7 +335,7 @@ void StarCfg::fromFileJson(json &j) {
     // Initialize register maps for consistency
     for( int iABC = 0; iABC < abc_count; ++iABC) {
         // Make all registers and subregisters for the ABC
-        if (abcAtIndex(iABC)) 
+        if (abcAtIndex(iABC+1)) 
             abcFromIndex(iABC+1).setDefaults();
     }
 
@@ -356,8 +356,8 @@ void StarCfg::fromFileJson(json &j) {
 
             try {
                 auto addr = ABCStarRegister::_from_string(regName.c_str());
-                for (int iABC = 0; iABC < numABCs(); iABC++) {
-                    if (abcAtIndex(iABC))  {
+                for (int iABC = 0; iABC < highestABC(); iABC++) {
+                    if (abcAtIndex(iABC+1))  {
                         auto &abc = abcFromIndex(iABC+1);
                         abc.setRegisterValue(addr, regValue);
                     }
@@ -378,10 +378,11 @@ void StarCfg::fromFileJson(json &j) {
             return;
         }
 
-        for (int iABC = 0; iABC < numABCs(); iABC++) {
-            if(!abcAtIndex(iABC))
+        int nABC = 0;
+        for (int iABC = 0; iABC < highestABC(); iABC++) {
+            if(!abcAtIndex(iABC+1))
                 break;
-            auto &chipRegs = regArray[iABC];
+            auto &chipRegs = regArray[nABC];
 
             if(chipRegs.is_null()) continue;
 
@@ -406,6 +407,7 @@ void StarCfg::fromFileJson(json &j) {
                   logger->warn("Reg {} in JSON file does not exist as an ABC register.  It will be ignored!", regName);
                 }
             }
+            nABC++;
         } // Loop over ABCs
     }
 
@@ -420,8 +422,11 @@ void StarCfg::fromFileJson(json &j) {
 
         auto abcSubRegs = AbcStarRegInfo::instance()->abcSubRegisterMap_all;
 
-        for (int iABC = 0; iABC < numABCs(); iABC++) {
-            auto &chipSubRegs = subregArray[iABC];
+        int nABC = 0;
+        for (int iABC = 0; iABC < highestABC(); iABC++) {
+            if(!abcAtIndex(iABC+1))
+               break;
+            auto &chipSubRegs = subregArray[nABC];
 
             if(chipSubRegs.is_null()) continue;
 
@@ -444,6 +449,7 @@ void StarCfg::fromFileJson(json &j) {
                 auto regPost = abc.getSubRegisterParentValue(subRegName);
                 logger->trace("Load from JSON: For ABC index {}, {} has been set to {} (check {}) {:08x} -> {:08x}", iABC, subRegName, subRegValue, retrieved, regPre, regPost);
             }
+            nABC++;
         } // Loop over ABCs
     }
 
@@ -456,13 +462,17 @@ void StarCfg::fromFileJson(json &j) {
         }
 
         // Each chip has a list of strips
-        for (int iABC = 0; iABC < numABCs(); iABC++) {
-            auto &maskedStrips = maskArray[iABC];
+        int nABC=0;
+        for (int iABC = 0; iABC < highestABC(); iABC++) {
+            if(!abcAtIndex(iABC+1))
+               break;
+            auto &maskedStrips = maskArray[nABC];
 
             for(int strip: maskedStrips) {
                 auto &abc = abcFromIndex(iABC+1);
                 abc.setMask(strip, true);
             }
+            nABC++;
         }
     }
 
@@ -475,10 +485,13 @@ void StarCfg::fromFileJson(json &j) {
         }
 
         // Each chip has either single integer (all the same), or array of value per strip
-        for (int iABC = 0; iABC < numABCs(); iABC++) {
+        int nABC = 0;
+        for (int iABC = 0; iABC < highestABC(); iABC++) {
+            if(!abcAtIndex(iABC+1))
+               break;
             auto &abc = abcFromIndex(iABC+1);
 
-            auto &chipValue = trimArray[iABC];
+            auto &chipValue = trimArray[nABC];
             if(chipValue.is_number()) {
                 int trim = chipValue;
                 for(int m=0; m<256; m++) {
@@ -491,6 +504,7 @@ void StarCfg::fromFileJson(json &j) {
                     abc.setTrimDACRaw(m, trim);
                 }
             }
+            nABC++;
         }
     }
 }

@@ -134,6 +134,7 @@ class StarCfg : public FrontEndCfg {
   void fromFileJson(json &j) override;
 
   size_t numABCs() { return m_ABCchips.size(); }
+  size_t highestABC() { return m_ABCchips.rbegin()->first; } 
 
   /// Iterate over ABCs, avoiding chipIndex
   void eachAbc(std::function<void (AbcCfg&)> f) {
