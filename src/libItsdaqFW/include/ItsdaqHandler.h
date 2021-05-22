@@ -25,8 +25,9 @@ public:
   std::unique_ptr<RawData> GetData();
 
 public:
-  ItsdaqHandler(uint32_t remote = 0x16dea8c0, // 192.168.222.22
-                uint16_t srcPort = 0, uint16_t dstPort = 60002);
+  ItsdaqHandler(uint32_t remote = //0x16dea8c0, // 192.168.222.22
+                0x10dea8c0, //192.168.222.16
+                uint16_t srcPort = 60001, uint16_t dstPort = 60002);
 
   void reconfigure(uint32_t remote, uint16_t srcPort, uint16_t dstPort);
 

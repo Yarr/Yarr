@@ -138,7 +138,10 @@ class StarCfg : public FrontEndCfg {
 
   /// Iterate over ABCs, avoiding chipIndex
   void eachAbc(std::function<void (AbcCfg&)> f) {
+      std::cout << "welcome ot eachabc \n";
+      std::cout << m_ABCchips.size() << std::endl;
     for(auto &abc: m_ABCchips) {
+        std::cout <<"ddk\n"; 
         f(abc.second);
     }
   }
@@ -168,21 +171,21 @@ class StarCfg : public FrontEndCfg {
 
   bool abcAtIndex(int chipIndex) const {
     assert(chipIndex > 0);
-    assert(chipIndex <= m_ABCchips.size());
+    //assert(chipIndex <= m_ABCchips.size());
     return (m_ABCchips.count(chipIndex-1) > 0);
   }
 
   //Doesn't check if chip exists!!
   AbcCfg &abcFromIndex(int chipIndex) {
     assert(chipIndex > 0);
-    assert(chipIndex <= m_ABCchips.size());
+    //assert(chipIndex <= m_ABCchips.size());
     return m_ABCchips[chipIndex-1];
   }
 
   //Doesn't check if chip exists!!
   const AbcCfg &abcFromIndex(int chipIndex) const {
     assert(chipIndex > 0);
-    assert(chipIndex <= m_ABCchips.size());
+    //assert(chipIndex <= m_ABCchips.size());
     return m_ABCchips.at(chipIndex-1);
   }
 };
