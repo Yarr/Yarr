@@ -125,13 +125,14 @@ void StarCfg::toFileJson(json &j) {
     // Store until we know which are not common
     std::vector<std::map<std::string, std::string>> regs(numABCs());
 
-    for (int iABC = 0; iABC < numABCs(); iABC++) {
+    int nABC = 0;
+    for (int iABC = 0; iABC <= highestABC(); iABC++) {
         if (!abcAtIndex(iABC+1))
-            break;
+            continue;
         auto &abc = abcFromIndex(iABC+1);
-        j["ABCs"]["IDs"][iABC] = abc.getABCchipID();
+        j["ABCs"]["IDs"][nABC] = abc.getABCchipID();
 	//TODO: only add this if the ordering is wrong
-	j["ABCs"]["inChannels"][iABC] = iABC;
+	j["ABCs"]["inChannels"][nABC] = iABC;
 
         for(auto &reg_i: abcRegs) {
             auto &info = reg_i.second;
@@ -163,9 +164,9 @@ void StarCfg::toFileJson(json &j) {
             ss << std::hex << std::setw(8) << std::setfill('0') << val;
             std::string regKey = reg._to_string();
             std::string regValue = ss.str();
-            regs[iABC][regKey] = regValue;
+            regs[nABC][regKey] = regValue;
 
-            if(iABC == 0) {
+            if(nABC == 0) {
                 common[regKey] = regValue;
             } else {
                 auto i = common.find(regKey);
@@ -185,15 +186,16 @@ void StarCfg::toFileJson(json &j) {
                 continue;
             }
 
-            j["ABCs"]["masked"][iABC].push_back(m);
+            j["ABCs"]["masked"][nABC].push_back(m);
         }
         if(sameTrims) {
-            j["ABCs"]["trims"][iABC] = trims[0];
+            j["ABCs"]["trims"][nABC] = trims[0];
         } else {
             for(int m=0; m<256; m++) {
-                j["ABCs"]["trims"][iABC][m] = trims[m];
+                j["ABCs"]["trims"][nABC][m] = trims[m];
             }
         }
+        nABC++;
     }
 
     for(size_t a=0; a<regs.size(); a++) {
@@ -356,7 +358,7 @@ void StarCfg::fromFileJson(json &j) {
 
             try {
                 auto addr = ABCStarRegister::_from_string(regName.c_str());
-                for (int iABC = 0; iABC < highestABC(); iABC++) {
+                for (int iABC = 0; iABC <= highestABC(); iABC++) {
                     if (abcAtIndex(iABC+1))  {
                         auto &abc = abcFromIndex(iABC+1);
                         abc.setRegisterValue(addr, regValue);
@@ -379,9 +381,9 @@ void StarCfg::fromFileJson(json &j) {
         }
 
         int nABC = 0;
-        for (int iABC = 0; iABC < highestABC(); iABC++) {
+        for (int iABC = 0; iABC <= highestABC(); iABC++) {
             if(!abcAtIndex(iABC+1))
-                break;
+                continue;
             auto &chipRegs = regArray[nABC];
 
             if(chipRegs.is_null()) continue;
@@ -423,9 +425,9 @@ void StarCfg::fromFileJson(json &j) {
         auto abcSubRegs = AbcStarRegInfo::instance()->abcSubRegisterMap_all;
 
         int nABC = 0;
-        for (int iABC = 0; iABC < highestABC(); iABC++) {
+        for (int iABC = 0; iABC <= highestABC(); iABC++) {
             if(!abcAtIndex(iABC+1))
-               break;
+               continue;
             auto &chipSubRegs = subregArray[nABC];
 
             if(chipSubRegs.is_null()) continue;
@@ -463,9 +465,9 @@ void StarCfg::fromFileJson(json &j) {
 
         // Each chip has a list of strips
         int nABC=0;
-        for (int iABC = 0; iABC < highestABC(); iABC++) {
+        for (int iABC = 0; iABC <= highestABC(); iABC++) {
             if(!abcAtIndex(iABC+1))
-               break;
+               continue;
             auto &maskedStrips = maskArray[nABC];
 
             for(int strip: maskedStrips) {
@@ -486,9 +488,9 @@ void StarCfg::fromFileJson(json &j) {
 
         // Each chip has either single integer (all the same), or array of value per strip
         int nABC = 0;
-        for (int iABC = 0; iABC < highestABC(); iABC++) {
+        for (int iABC = 0; iABC <= highestABC(); iABC++) {
             if(!abcAtIndex(iABC+1))
-               break;
+               continue;
             auto &abc = abcFromIndex(iABC+1);
 
             auto &chipValue = trimArray[nABC];

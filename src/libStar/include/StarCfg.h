@@ -138,10 +138,7 @@ class StarCfg : public FrontEndCfg {
 
   /// Iterate over ABCs, avoiding chipIndex
   void eachAbc(std::function<void (AbcCfg&)> f) {
-      std::cout << "welcome ot eachabc \n";
-      std::cout << m_ABCchips.size() << std::endl;
     for(auto &abc: m_ABCchips) {
-        std::cout <<"ddk\n"; 
         f(abc.second);
     }
   }
