@@ -344,7 +344,7 @@ TEST_CASE("StarJsonAbcCommon", "[star][json]") {
   cfg["ABCs"]["regs"][1]["ADCS2"] = 0x87654321;
   cfg["ABCs"]["regs"][2] = nullptr;
 
-  cfg.dump(4);
+  //cfg.dump(4);
 
   auto fe = StdDict::getFrontEnd("Star");
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
@@ -355,7 +355,7 @@ TEST_CASE("StarJsonAbcCommon", "[star][json]") {
   fecfg->toFileJson(output);
 
   // debugging
-  output.dump(4);
+  //output.dump(4);
 
   REQUIRE(output["name"] == cfg["name"]);
 
@@ -368,6 +368,61 @@ TEST_CASE("StarJsonAbcCommon", "[star][json]") {
   check(0, "12345678");
   check(1, "87654321");
   check(2, "12345678");
+
+  bounce_check(output);
+}
+
+// Check for random nulls
+TEST_CASE("StarJsonNullChan", "[star][json]") {
+  json cfg;
+
+  cfg["name"] = "testname";
+
+  cfg["HCC"]["ID"] = 12;
+
+  cfg["ABCs"]["IDs"][0] = 4;
+  cfg["ABCs"]["IDs"][1] = nullptr; //Will become 1
+  cfg["ABCs"]["IDs"][2] = nullptr; //Will become 2
+  cfg["ABCs"]["IDs"][3] = 10;
+
+  cfg["ABCs"]["inChannels"][1] = 6;
+  cfg["ABCs"]["inChannels"][2] = nullptr; //Will become 2
+  cfg["ABCs"]["inChannels"][3] = 8;
+
+  cfg["ABCs"]["regs"][0]["ADCS2"] = 0x00000000;
+  cfg["ABCs"]["regs"][1]["ADCS2"] = 0x11111111;
+  cfg["ABCs"]["regs"][2]["ADCS2"] = 0x22222222;
+  cfg["ABCs"]["regs"][3]["ADCS2"] = 0x33333333;
+
+  //cfg.dump(4);
+
+  auto fe = StdDict::getFrontEnd("Star");
+  auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
+  REQUIRE(fecfg);
+  fecfg->fromFileJson(cfg);
+
+  json output;
+  fecfg->toFileJson(output);
+
+  // debugging
+  //output.dump(4);
+
+  REQUIRE(output["name"] == cfg["name"]);
+
+  auto check = [&](int i, std::string val, int hcc, int abcID) {
+    std::string out_val = output["ABCs"]["regs"][i]["ADCS2"];
+    int out_hcc = output["ABCs"]["inChannels"][i];
+    int out_id = output["ABCs"]["IDs"][i];
+    CAPTURE(i, val, hcc, abcID);
+    REQUIRE(out_val == val);
+    REQUIRE(out_hcc == hcc);
+    REQUIRE(out_id == abcID);
+  };
+
+  check(0, "00000000", 0, 4);
+  check(1, "22222222", 2, 2);
+  check(2, "11111111", 6, 1);
+  check(3, "33333333", 8, 10);
 
   bounce_check(output);
 }
