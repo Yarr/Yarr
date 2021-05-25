@@ -53,8 +53,11 @@ class StarCfg : public FrontEndCfg {
   const unsigned int getABCchipID(unsigned int chipIndex) { return abcFromIndex(chipIndex).getABCchipID(); }
 
   void addABCchipID(unsigned int chipID) {
+      if (m_ABCchips.size() == 0)
+          addABCchipID(chipID, 0);
       //highest key +1 (~std::vector::push_back)
-      addABCchipID(chipID, m_ABCchips.rbegin()->first +1);
+      else
+          addABCchipID(chipID, m_ABCchips.rbegin()->first +1);
   }
 
   void addABCchipID(unsigned int chipID, unsigned int hccIn) {
@@ -134,7 +137,11 @@ class StarCfg : public FrontEndCfg {
   void fromFileJson(json &j) override;
 
   size_t numABCs() { return m_ABCchips.size(); }
-  size_t highestABC() { return m_ABCchips.rbegin()->first; } 
+  int highestABC() { 
+      if (m_ABCchips.size() == 0)
+          return -1;
+      return m_ABCchips.rbegin()->first; 
+  } 
 
   /// Iterate over ABCs, avoiding chipIndex
   void eachAbc(std::function<void (AbcCfg&)> f) {

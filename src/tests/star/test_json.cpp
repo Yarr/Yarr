@@ -88,6 +88,7 @@ TEST_CASE("StarJsonMinimal", "[star][json]") {
   auto fe = StdDict::getFrontEnd("Star");
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
   REQUIRE(fecfg);
+
   fecfg->fromFileJson(cfg);
 
   json output;
@@ -343,7 +344,7 @@ TEST_CASE("StarJsonAbcCommon", "[star][json]") {
   cfg["ABCs"]["regs"][1]["ADCS2"] = 0x87654321;
   cfg["ABCs"]["regs"][2] = nullptr;
 
-  // cfg.dump(4);
+  cfg.dump(4);
 
   auto fe = StdDict::getFrontEnd("Star");
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
@@ -354,7 +355,7 @@ TEST_CASE("StarJsonAbcCommon", "[star][json]") {
   fecfg->toFileJson(output);
 
   // debugging
-  //  output.dump(4);
+  output.dump(4);
 
   REQUIRE(output["name"] == cfg["name"]);
 

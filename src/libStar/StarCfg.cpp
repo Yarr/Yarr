@@ -69,12 +69,14 @@ void StarCfg::setTrimDAC(unsigned col, unsigned row, int value)  {
     int channel=128*(row-1) + ( (col-1) & 0x7f);
 
     SPDLOG_LOGGER_TRACE(logger,
-                        "row:{} col:{} chn_tmp:{} channel:{}",
-                        row-1, col-1, chn_tmp, channel);
+                        "row:{} col:{} hccChan:{} channel:{}",
+                        row-1, col-1, hccChan, channel);
 
-    if (abcAtIndex(hccChan)) {
-        auto &abc = abcFromIndex(hccChan);
+    if (abcAtIndex(hccChan+1)) {
+        auto &abc = abcFromIndex(hccChan+1);
         abc.setTrimDACRaw(channel, value);
+    } else {
+        logger->error("setTrimDAC for non-existent ABC {}",hccChan);
     }
 }
 
@@ -88,9 +90,11 @@ int StarCfg::getTrimDAC(unsigned col, unsigned row) const{
                         " row:{} col:{} chn_tmp:{} channel:{}",
                         row-1, col-1, chn_tmp, channel);
 
-    if (abcAtIndex(hccChan)) {
-        const auto &abc = abcFromIndex(hccChan);
+    if (abcAtIndex(hccChan+1)) {
+        const auto &abc = abcFromIndex(hccChan+1);
         return abc.getTrimDACRaw(channel);
+    }else {
+        logger->error("getTrimDAC for non-existent ABC {}",hccChan);
     }
     return 0;
 }
