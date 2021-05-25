@@ -87,8 +87,8 @@ int StarCfg::getTrimDAC(unsigned col, unsigned row) const{
 
     int channel=128*(row-1) + ( (col-1) & 0x7f);
     SPDLOG_LOGGER_TRACE(logger,
-                        " row:{} col:{} chn_tmp:{} channel:{}",
-                        row-1, col-1, chn_tmp, channel);
+                        " row:{} col:{} hccChan:{} channel:{}",
+                        row-1, col-1, hccChan, channel);
 
     if (abcAtIndex(hccChan+1)) {
         const auto &abc = abcFromIndex(hccChan+1);
