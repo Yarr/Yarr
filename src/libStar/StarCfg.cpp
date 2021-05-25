@@ -384,10 +384,11 @@ void StarCfg::fromFileJson(json &j) {
             return;
         }
 
-        int nABC = 0;
+        int nABC = -1;
         for (int iABC = 0; iABC <= highestABC(); iABC++) {
             if(!abcAtIndex(iABC+1))
                 continue;
+            nABC++;
             auto &chipRegs = regArray[nABC];
 
             if(chipRegs.is_null()) continue;
@@ -413,7 +414,6 @@ void StarCfg::fromFileJson(json &j) {
                   logger->warn("Reg {} in JSON file does not exist as an ABC register.  It will be ignored!", regName);
                 }
             }
-            nABC++;
         } // Loop over ABCs
     }
 
