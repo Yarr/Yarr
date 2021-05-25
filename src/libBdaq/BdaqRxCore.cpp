@@ -8,42 +8,49 @@ namespace {
 }
 
 //BDAQ word identifiers
-#define USERK_FRAME_ID  0x01000000
-#define HEADER_ID       0x00010000
-#define TRIGGER_ID      0x80000000
-#define TDC_ID_0        0x10000000
-#define TDC_ID_1        0x20000000
-#define TDC_ID_2        0x30000000
-#define TDC_ID_3        0x40000000
-#define TDC_HEADER_MASK 0xF0000000
+#define USERK_FRAME_ID   0x01000000
+#define USERK_FRAME_MASK 0x0F000000
+#define TLU_ID           0x80000000
+#define TLU_MASK         0xF0000000
+#define TDC_ID_0         0x10000000
+#define TDC_ID_1         0x20000000
+#define TDC_ID_2         0x30000000
+#define TDC_ID_3         0x40000000
+#define TDC_HEADER_MASK  0xF0000000
 
 BdaqRxCore::BdaqRxCore() {
-    userkCounter = 0;
-    
-    isEventHeader = false;
-    isHighWord = true;
-
     mSetupMode = true;
 }
 
 void BdaqRxCore::setupMode() {
     mSetupMode = true;
+    logger->debug("Setup Mode");
+    // Enable register data monitoring
+    Bdaq::setMonitorFilter(BdaqAuroraRx::filter);
 }
 
 void BdaqRxCore::runMode() {
     mSetupMode = false;
+    logger->debug("Run Mode");
+    // Disable register data monitoring
+    Bdaq::setMonitorFilter(BdaqAuroraRx::block);
 }
 
+// val: whatever is passed in "rx"
 void BdaqRxCore::setRxEnable(uint32_t val) {
-    std::stringstream d; 
-    d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << val << std::dec;
-    logger->debug(d.str());
+    logger->debug("setRxEnable(): value = {}", val);
+    activeChannels.clear();
+    activeChannels.push_back(val);
+    initSortBuffer();
 }
 
-void BdaqRxCore::setRxEnable(std::vector<uint32_t>) {
-    std::stringstream d; 
-    d << __PRETTY_FUNCTION__;
-    logger->debug(d.str());
+void BdaqRxCore::setRxEnable(std::vector<uint32_t> channels) {
+    activeChannels.clear();
+    for (uint32_t channel : channels) {
+        logger->debug("setRxEnable(): channels = {}", channel);
+        activeChannels.push_back(channel);
+    }
+    initSortBuffer();
 }
 
 void BdaqRxCore::maskRxEnable(uint32_t val, uint32_t mask) {
@@ -55,11 +62,18 @@ void BdaqRxCore::maskRxEnable(uint32_t val, uint32_t mask) {
 
 void BdaqRxCore::checkRxSync() {
 	uint time = 0;
-	while (time < 1000 && auroraRx.getRxReady() == false) {
+    bool rxReady = true;
+    for (uint c : activeChannels) {
+        rxReady &= rx.at(c).getRxReady();
+    }
+	while (time < 1000 && rxReady == false) {
 		++time;
+        for (uint c : activeChannels) {
+            rxReady &= rx.at(c).getRxReady();
+        }
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
-	if (auroraRx.getRxReady()) {
+	if (rxReady) {
 		logger->info("Aurora link is synchronized!");
 	}
 	else {
@@ -70,22 +84,15 @@ void BdaqRxCore::checkRxSync() {
 }
 
 RawData* BdaqRxCore::readData() {
-    std::stringstream d; 
-    d << __PRETTY_FUNCTION__;
-    logger->debug(d.str());
-    std::size_t wCount = fifo.getAvailableWords(); 
-    std::vector<uint32_t> inBuf;
-    fifo.readData(inBuf, wCount);
-
-    if (wCount > 0) {
-        std::size_t inSize = wCount;
-        // outBuf size is always < wCount. 
-        uint32_t* outBuf = new uint32_t[wCount]; 
-        // now wCount has the number of decoded (thus, usable) words
-        wCount = decode(inBuf, outBuf);
-        if (wCount > 0) {
-            std::size_t outSize = wCount;
-            return new RawData(0x0, outBuf, wCount);
+    uint size = fifo.getAvailableWords();
+    if (size > 0) {
+        std::vector<uint32_t> inBuf;
+        fifo.readData(inBuf, size);
+        size = sortChannels(inBuf);
+        uint32_t* outBuf = new uint32_t[size*activeChannels.size()];
+        size = buildStream(outBuf, size);
+        if (size > 0) {
+            return new RawData(0x0, outBuf, size);
         } 
         return NULL;
     }
@@ -96,7 +103,9 @@ void BdaqRxCore::flushBuffer() {
     std::stringstream d; 
     d << __PRETTY_FUNCTION__;
     logger->debug(d.str());
-    auroraRx.resetLogic();
+    for (uint i=0;i<7;++i) {
+        rx.at(i).resetLogic();
+    }
     fifo.flushBuffer();
 }
 
@@ -118,109 +127,122 @@ bool BdaqRxCore::isBridgeEmpty() {
 // BDAQ Decoding
 // =============================================================================
 
-// Readout stream processing is "global", assuming that USERK words
-// (encapsulating service frames: register or monitoring) might arrive
-// separetely (with other word types in between) or in separated 
-// readout blocks. The same applies to Pixel Data words. This behavior
-// is due to the arbiter (selecting either USERK or Pixel Data) inside
-// the BDAQ RX core (rx_aurora).
+void BdaqRxCore::printSortStatus() {
+    uint nChannel = 0;
+    for (const auto& c : activeChannels) {    
+        logger->info("RX ID = {}, Buffer Index = {}, Size = {}", c, nChannel, sBuffer.at(nChannel).size());
+        ++nChannel;
+    }
+}
 
-unsigned int BdaqRxCore::decode(std::vector<uint32_t>& in, uint32_t* out) {
-    
-    unsigned int index = 0;
-    
+void BdaqRxCore::initSortBuffer() {
+    sBuffer.clear();
+    for (uint c : activeChannels) {
+        sBuffer.push_back(std::queue<uint32_t>());
+    }
+}
+
+uint BdaqRxCore::sortChannels(std::vector<uint32_t>& in) {
+    // Sorting
     for (const auto& word : in) {
-
-        if (word & TRIGGER_ID) {
-            logger->critical("TLU data is not yet supported.");
+        if ((word & TLU_MASK) == TLU_ID) {
+            logger->critical("TLU data is not supported.");
             exit(-1);
         } 
         if (checkTDC(word)) {
-            logger->critical("TDC data is not yet supported.");
+            logger->critical("TDC data is not supported.");
             exit(-1);
         } 
-        if (word & USERK_FRAME_ID) {
-            index = decodeUserk(word, out, index);
-            continue;
-        } 
-
-        if (word & HEADER_ID) {
-            isEventHeader = true;
-            isHighWord = true;
+        uint bIndex = 0;
+        for (const auto& channelId : activeChannels) {
+            // Testing Aurora RX Identifier 
+            if (((word >> 20) & 0xF) == channelId) {
+                sBuffer.at(bIndex).push(word);
+            }
+            ++bIndex;
         }
-
-        if (isHighWord) {
-            dataWord = word & 0xFFFF;
-            isHighWord = false; // Next low word
-            continue;
-        } else {
-            dataWord = (dataWord << 16) | (word & 0xFFFF);
-            isHighWord = true; // Next is high word
-        }
-
-        if (isEventHeader) {
-            isEventHeader = false;
-            out[index] = dataWord;
-            ++index;
-        } else {
-            out[index] = dataWord;
-            ++index;
-        }
-
     }
-    return index;
+    // Calculating total size
+    uint acc = 0;
+    uint bIndex = 0;
+    for (const auto& channelId : activeChannels) {
+        acc += sBuffer.at(bIndex).size();
+        ++bIndex;
+    }
+    return acc; // Total size
+}
+
+void BdaqRxCore::buildData(uint32_t* out, uint bIndex, uint oIndex) {
+    uint32_t hi = sBuffer.at(bIndex).front() & 0xFFFF;
+    sBuffer.at(bIndex).pop();
+    uint32_t lo = sBuffer.at(bIndex).front() & 0xFFFF;
+    sBuffer.at(bIndex).pop();
+    out[oIndex] = (hi << 16) | lo;
+}
+
+void BdaqRxCore::buildUserk(uint32_t* out, uint bIndex, uint oIndex) {
+    // Building USERK frame (userkWordA and userkWordB)
+    uint32_t hi = sBuffer.at(bIndex).front() & 0xFFFF;
+    logger->debug("USERK: 0x{0:X}", sBuffer.at(bIndex).front());
+    sBuffer.at(bIndex).pop();
+    uint32_t lo = sBuffer.at(bIndex).front() & 0xFFFF;
+    logger->debug("USERK: 0x{0:X}", sBuffer.at(bIndex).front());
+    sBuffer.at(bIndex).pop();
+    uint64_t userkWordA = (hi << 16) | lo;
+    hi = sBuffer.at(bIndex).front() & 0xFFFF;
+    logger->debug("USERK: 0x{0:X}", sBuffer.at(bIndex).front());
+    sBuffer.at(bIndex).pop();
+    lo = sBuffer.at(bIndex).front() & 0xFFFF;
+    logger->debug("USERK: 0x{0:X}", sBuffer.at(bIndex).front());
+    sBuffer.at(bIndex).pop();
+    uint64_t userkWordB = (hi << 16) | lo;
+
+    // Interpreting the USERK frame ang getting register data
+    BdaqRxCore::userkDataT userkData = 
+        interpretUserkFrame(userkWordA, userkWordB);
+    std::vector<regDataT> regData = getRegData(userkData);
+    // Encoding to YARR format
+    for (const auto& reg : regData) {
+        encodeToYarr(reg, out, oIndex); //inserts 2 words in the out stream.
+        oIndex+=2;
+    }
+}
+
+uint BdaqRxCore::buildStream(uint32_t* out, uint size) {
+    uint procSize = 0;
+    uint oIndex = 0;
+    uint counter = 0;
+    while (procSize < size) {
+        uint bIndex = (counter/2)%activeChannels.size(); 
+        counter++;
+        if ((sBuffer.at(bIndex).size() > 3) && 
+        (sBuffer.at(bIndex).front() & USERK_FRAME_MASK) == USERK_FRAME_ID) {
+            buildUserk(out, bIndex, oIndex);
+            procSize += 4;
+            oIndex += 2;
+        } else if (sBuffer.at(bIndex).size() > 1) {
+            buildData(out, bIndex, oIndex);
+            procSize += 2;
+            oIndex += 1;
+        } else {
+            out[oIndex] = 0xFFFF0000;
+            procSize += sBuffer.at(bIndex).size();
+            oIndex += 1;
+        }
+    }
+    return oIndex; // Output stream size
 }
 
 // USERK Decoding ==============================================================
 
-unsigned int BdaqRxCore::decodeUserk(const uint32_t& word, uint32_t* out, 
-                                        unsigned int index) {
-    buildUserkFrame(word, userkCounter);
-    // 4 USERK readout words are necessary to build an USERK frame.
-    if (userkCounter == 3) {
-        userkCounter = 0;
-        BdaqRxCore::userkDataT userkData = interpretUserkFrame();
-        std::vector<regDataT> regData = getRegData(userkData);
-        // regData might contain data from either 1 or 2 registers.
-        // The code below will insert this data into the output stream
-        // using one of the YARR expected formats.                                        
-        if (regData.size() == 0) {
-            logger->critical("regData.size() = 0");
-            exit(-1);
-        } 
-        for (const auto& reg : regData) {
-            encodeToYarr(reg, out, index); //inserts 2 words in the out stream.
-            index+=2;
-        }
-    } else {
-        ++userkCounter;
-    }
-    return index;
-}
-
-// An USERK frame is composed by 2 32-bit words (userkWordA and userkWordB).
-// To build the frame, 4 readout words are neccesary (identified by id).
-void BdaqRxCore::buildUserkFrame(const uint32_t& word, unsigned int id) {
-    switch(id) {
-        case 0:
-            userkWordA = word & 0xFFFF;
-        break;
-        case 1:
-            userkWordA = userkWordA << 16 | (word & 0xFFFF);
-        break;
-        case 2:
-            userkWordB = word & 0xFFFF;
-        break;
-        case 3:
-            userkWordB = userkWordB << 16 | (word & 0xFFFF);
-        break;
-    }    
-}
-
 // Extracts the data from an USERK frame (userkWordA + userkWordB).
-BdaqRxCore::userkDataT BdaqRxCore::interpretUserkFrame() {
+BdaqRxCore::userkDataT BdaqRxCore::interpretUserkFrame(uint64_t userkWordA, 
+                                                        uint64_t userkWordB) {  
     uint64_t userkBlock, Data0, Data1;
     userkDataT u;
+
+    logger->debug("userkWordA = {}", userkWordA);
+    logger->debug("userkWordB = {}", userkWordB);
 
     userkWordA = (userkWordB & 0x3) << 32 | userkWordA;
     userkBlock = userkWordB >> 2;
@@ -240,10 +262,12 @@ BdaqRxCore::userkDataT BdaqRxCore::interpretUserkFrame() {
     return u;
 }
 
-// Get register data according to AuroraKWord.
+// Get register data from AuroraKWord.
 std::vector<BdaqRxCore::regDataT> BdaqRxCore::getRegData(BdaqRxCore::userkDataT in) {
     BdaqRxCore::regDataT o;
     std::vector<BdaqRxCore::regDataT> regData;
+
+    logger->debug("AuroraKWord = {}", in.AuroraKWord);
 
     // There is data in both Data0 and Data1 (data from 2 different registers?)
     if (in.AuroraKWord == 0) {
@@ -269,7 +293,7 @@ std::vector<BdaqRxCore::regDataT> BdaqRxCore::getRegData(BdaqRxCore::userkDataT 
     return regData;
 }
 
-// Emulating the YARR expected readout format for a register frame
+// Emulating the data format, expected by YARR, for a register read
 void BdaqRxCore::encodeToYarr(BdaqRxCore::regDataT in, uint32_t* out, 
                                 unsigned int index) {
     out[index  ] = 0x55000000;

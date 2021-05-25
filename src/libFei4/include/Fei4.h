@@ -73,6 +73,8 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
             this->setHitbus(col+1, row+1, 1);
         }
 
+        void enableAll() override;
+
         void writeRegister(Fei4Register Fei4GlobalCfg::*ref, uint16_t cfgBits){
             setValue(ref, cfgBits);
             writeRegister(ref);

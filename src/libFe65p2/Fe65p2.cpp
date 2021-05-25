@@ -1,6 +1,12 @@
 #include "AllChips.h"
 #include "Fe65p2.h"
 
+#include "logging.h"
+
+namespace {
+    auto flog = logging::make_log("Fe65p2");
+}
+
 bool fe65p2_registered =
   StdDict::registerFrontEnd("FE65P2",
                                 []() { return std::unique_ptr<FrontEnd>(new Fe65p2());});
@@ -160,6 +166,10 @@ void Fe65p2::configurePixels() {
     setValue(&Fe65p2::ColEn, colEn);
     configureGlobal();
 
+}
+
+void Fe65p2::enableAll() {
+    flog->warn("Enable all pixels not implemented for Fe65p2");
 }
 
 void Fe65p2::writeNamedRegister(std::string name, uint16_t reg_value) {

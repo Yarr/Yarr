@@ -34,8 +34,11 @@ void StdParameterLoop::execPart1() {
 
 void StdParameterLoop::execPart2() {
     m_cur += step;
-    if ((int)m_cur > max) m_done = true;
-    this->writePar();
+    if ((int)m_cur > max) {
+      m_done = true;
+    } else {
+      this->writePar();
+    }
 }
 
 void StdParameterLoop::end() {

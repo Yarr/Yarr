@@ -7,7 +7,7 @@
 // yarr
 #include "Rd53bHistogrammer.h"
 #include "AllAnalyses.h"
-#include "Fei4Histogrammer.h" // knowledge of other analyses/etc
+#include "StdHistogrammer.h" // knowledge of other analyses/etc
 #include "StdTriggerAction.h"
 #include "logging.h"
 

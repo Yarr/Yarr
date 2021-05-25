@@ -21,6 +21,7 @@ ItsdaqRxCore::~ItsdaqRxCore(){
 }
 
 void ItsdaqRxCore::init() {
+  logger->debug("init");
   bridge_watcher = std::chrono::steady_clock::now();
 
   // Shutdown stream output if not done by previous run
@@ -46,6 +47,25 @@ void ItsdaqRxCore::init() {
   const uint16_t READ_STATUS_BLOCK = 0x0019;
   logger->trace("Read status block");
   m_h.SendOpcode(READ_STATUS_BLOCK, noContents.data(), 0);
+
+  const uint16_t READ_SYS_STATUS_BLOCK = 0x00f9;
+  logger->trace("Read system status block");
+  m_h.SendOpcode(READ_SYS_STATUS_BLOCK, noContents.data(), 0);
+
+  auto t = std::chrono::steady_clock::now();
+
+  while(1) {
+    std::this_thread::sleep_for(std::chrono::microseconds(10));
+    if(!m_h.LatestStatus().empty() && !m_h.LatestSysStatus().empty()) {
+      logger->trace("Received status response");
+      break;
+    }
+
+    if((std::chrono::steady_clock::now() - t) > std::chrono::seconds(1)) {
+      logger->critical("Didn't receive status opcode response from itsdaq FW, check configuration");
+      exit(-1);
+    }
+  }
 }
 
 void ItsdaqRxCore::setRxEnable(uint32_t stream) {
@@ -66,6 +86,8 @@ void ItsdaqRxCore::setRxEnable(uint32_t stream) {
 }
 
 void ItsdaqRxCore::disableRx() {
+  logger->debug("Disable Rx (all streams)");
+
   // Disable all streams
   // Mask, (stream, value)*
   static const size_t length = 1 + max_stream *2;
@@ -132,4 +154,7 @@ void ItsdaqRxCore::fromFileJson(json &j) {
   if(j["streamConfig"]) {
     m_streamConfig =  j["streamConfig"];
   }
+
+  // Potentially, the UDP socket has been reconfigured, so resend
+  init();
 }

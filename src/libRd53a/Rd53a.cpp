@@ -77,6 +77,16 @@ void Rd53a::readRegister(Rd53aReg Rd53aGlobalCfg::*ref) {
     rdRegister(m_chipId, (this->*ref).addr());
 }
 
+void Rd53a::enableAll() {
+    logger->info("Resetting enable/hitbus pixel mask to all enabled!");
+    for (unsigned int col = 0; col < n_Col; col++) {
+        for (unsigned row = 0; row < n_Row; row ++) {
+            setEn(col, row, 1);
+            setHitbus(col, row, 1);
+        }
+    }
+}
+
 void Rd53a::configure() {
     this->configureInit();
     // Turn off clock to matrix

@@ -10,12 +10,14 @@
 // ################################
 
 #include <iostream>
+#include <vector>
+#include <queue>
 
 #include "RxCore.h"
-#include "Bdaq53.h"
+#include "Bdaq.h"
 #include "RawData.h"
 
-class BdaqRxCore : virtual public RxCore, virtual public Bdaq53 {
+class BdaqRxCore : virtual public RxCore, virtual public Bdaq {
     public:
         BdaqRxCore();
 
@@ -39,17 +41,17 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq53 {
             return m_waitTime;
         }
 
-        void printBufferStatus();
+        void printSortStatus();
     
     protected:
         std::chrono::microseconds m_waitTime; 
 
-    private:
-        bool mSetupMode;        
+    private:        
+        bool mSetupMode;
         
-        unsigned int userkCounter; 
-        uint64_t userkWordA, userkWordB;
-
+        std::vector<uint> activeChannels; 
+        std::vector<std::queue<uint32_t>> sBuffer;
+                
         struct userkDataT {
             uint8_t  AuroraKWord;
             uint8_t  Status;
@@ -67,23 +69,16 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq53 {
             uint16_t Address;
             uint16_t Data;
         };
-
-        
-        bool isEventHeader;
-        bool isHighWord;
-        uint32_t dataWord;
-        
-        unsigned int decode(std::vector<uint32_t>& in, uint32_t* out);
-        
-        unsigned int decodeUserk(const uint32_t& word, uint32_t* out, 
-                                    unsigned int index);
-
-        void buildUserkFrame(const uint32_t& word, unsigned int id);
-        
-        BdaqRxCore::userkDataT interpretUserkFrame(); 
-        
+               
+        void initSortBuffer();
+        uint sortChannels(std::vector<uint32_t>& in);
+        void buildData(uint32_t* out, uint bIndex, uint oIndex);
+        void buildUserk(uint32_t* out, uint bIndex, uint oIndex);
+        uint buildStream(uint32_t* out, uint size);
+                
+        BdaqRxCore::userkDataT interpretUserkFrame(uint64_t userkWordA, 
+                                                    uint64_t userkWordB); 
         std::vector<BdaqRxCore::regDataT> getRegData(BdaqRxCore::userkDataT in);
-
         void encodeToYarr(BdaqRxCore::regDataT in, uint32_t* out, 
                             unsigned int index);
 

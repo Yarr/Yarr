@@ -50,6 +50,9 @@ class TxCore {
         virtual void setTrigWord(uint32_t *word, uint32_t length) = 0; // 4 words, start at Msb
         virtual void toggleTrigAbort() = 0;
 
+        // Software AZ (for select hw controllers)
+        virtual bool getSoftwareAZ() { return false; }
+
         // Trigger interface
         virtual void setTriggerLogicMask(uint32_t mask) = 0;
         virtual void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) = 0;

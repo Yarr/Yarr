@@ -3,10 +3,11 @@
 
 #include <iostream>
 #include <vector>
+#include <thread>
 #include "TxCore.h"
-#include "Bdaq53.h"
+#include "Bdaq.h"
 
-class BdaqTxCore : virtual public TxCore, virtual public Bdaq53 {
+class BdaqTxCore : virtual public TxCore, virtual public Bdaq {
     public:
         BdaqTxCore();
         ~BdaqTxCore();
@@ -34,6 +35,7 @@ class BdaqTxCore : virtual public TxCore, virtual public Bdaq53 {
         void setTrigWordLength(uint32_t length); // From Msb
         void setTrigWord(uint32_t *word, uint32_t length); // 4 words, start at Msb
         void toggleTrigAbort();
+        bool getSoftwareAZ() { return m_softwareAZ; }
 
         // Trigger interface (This is the TLU stuff)
         void setTriggerLogicMask(uint32_t mask) {}
@@ -41,13 +43,33 @@ class BdaqTxCore : virtual public TxCore, virtual public Bdaq53 {
         void resetTriggerLogic() {}
         uint32_t getTrigInCount() { return 0; }
     protected:
+        bool m_softwareAZ;
 
     private:
-        uint16_t trgRepetitions = 0;
-        uint32_t trgEnable = 0;
+        // Registers Configuration
         std::vector<uint8_t> cmdData;
-        std::vector<uint8_t> trgData; //Let's keep things separated for now.
         void sendCommand();
+
+        // Common Command Repeater (Trigger)
+        uint32_t trgEnable = 0; // Emulating SPEC register.
+        std::vector<uint8_t> trgData;
+        
+        // Hardware Command Repeater (Trigger)
+        uint16_t hardwareTriggerCount = 0;
+        uint hardwareTriggerNoop = 0;
+        void hardwareTriggerSet();
+        void hardwareTriggerRun();
+
+        // Emulated Timed Trigger 
+        bool timedTrigger = false;
+        bool timedTriggerAbort = false;
+        bool timedTriggerDone = false;
+        double timedTriggerFreq = 0;
+        double timedTriggerTime = 0;
+        std::thread timedTriggerThread;
+        void timedTriggerSet();
+        void timedTriggerRun();
+
 };
 
 #endif

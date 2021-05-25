@@ -34,11 +34,6 @@
 #include "Bookkeeper.h"
 #include "FeedbackBase.h"
 
-// For masking
-#include "Fei4.h"
-#include "Rd53a.h"
-#include "Rd53b.h"
-
 #include "ScanBase.h"
 #include "ScanFactory.h"
 
@@ -104,6 +99,7 @@ int main(int argc, char *argv[]) {
     spdlog::info("-> Parsing command line parameters ...");
 
     // Init parameters
+    bool scan_config_provided = false;
     std::string scanType = "";
     std::vector<std::string> cConfigPaths;
     std::string outputDir = "./data/";
@@ -138,6 +134,7 @@ int main(int argc, char *argv[]) {
                 listKnown();
                 return 0;
             case 's':
+                scan_config_provided = true;
                 scanType = std::string(optarg);
                 break;
             case 'm':
@@ -250,7 +247,11 @@ int main(int argc, char *argv[]) {
     std::string dataDir = outputDir;
     outputDir += (toString(runCounter, 6) + "_" + strippedScan + "/");
 
-    logger->info("Scan Type/Config {}", scanType);
+    if(scan_config_provided) {
+        logger->info("Scan Type/Config {}", scanType);
+    } else {
+        logger->info("No scan configuration provided, will only configure front-ends");
+    }
 
     logger->info("Connectivity:");
     for(std::string const& sTmp : cConfigPaths){
@@ -323,6 +324,7 @@ int main(int argc, char *argv[]) {
     }
     // Add to scan log
     scanLog["ctrlCfg"] = ctrlCfg;
+    scanLog["ctrlStatus"] = hwCtrl->getStatus();
 
     hwCtrl->setupMode();
 
@@ -358,7 +360,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Initial setting local DBHandler
-    DBHandler *database = new DBHandler();
+    std::unique_ptr<DBHandler> database = std::make_unique<DBHandler>();
     if (dbUse) {
         logger->info("\033[1;31m################\033[0m");
         logger->info("\033[1;31m# Set Database #\033[0m");
@@ -377,35 +379,8 @@ int main(int argc, char *argv[]) {
     // Reset masks
     if (mask_opt == 1) {
         for (FrontEnd* fe : bookie.feList) {
-            // TODO make mask generic?
-            if (chipType == "FEI4B") {
-                auto fei4 = dynamic_cast<Fei4*>(fe);
-                logger->info("Resetting enable/hitbus pixel mask to all enabled!");
-                for (unsigned int dc = 0; dc < fei4->n_DC; dc++) {
-                    fei4->En(dc).setAll(1);
-                    fei4->Hitbus(dc).setAll(0);
-                }
-            } else if (chipType == "RD53A") {
-                auto rd53a = dynamic_cast<Rd53a*>(fe);
-                logger->info("Resetting enable/hitbus pixel mask to all enabled!");
-                for (unsigned int col = 0; col < rd53a->n_Col; col++) {
-                    for (unsigned row = 0; row < rd53a->n_Row; row ++) {
-                        rd53a->setEn(col, row, 1);
-                        rd53a->setHitbus(col, row, 1);
-                    }
-                }
-            } else if (chipType == "RD53B") {
-                auto rd53b = dynamic_cast<Rd53b*>(fe);
-                logger->info("Resetting enable/hitbus pixel mask to all enabled!");
-                for (unsigned int col = 0; col < rd53b->n_Col; col++) {
-                    for (unsigned row = 0; row < rd53b->n_Row; row ++) {
-                        rd53b->setEn(col, row, 1);
-                        rd53b->setHitbus(col, row, 1);
-                    }
-                }
-            }
+            fe->enableAll();
         }
-        // TODO add FE65p2
     }
 
     bookie.initGlobalFe(StdDict::getFrontEnd(chipType).release());
@@ -429,12 +404,11 @@ int main(int argc, char *argv[]) {
         while(!hwCtrl->isCmdEmpty());
     }
     std::chrono::steady_clock::time_point cfg_end = std::chrono::steady_clock::now();
-    logger->info("All FEs configured in {} ms!",
+    logger->info("Sent configuration to all FEs in {} ms!",
                  std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count());
 
     // Wait for rx to sync with FE stream
     // TODO Check RX sync
-    hwCtrl->checkRxSync(); // As it is implemented in BDAQ, I added it here. Should be harmless to other HWs.
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
     hwCtrl->flushBuffer();
     for ( FrontEnd* fe : bookie.feList ) {
@@ -443,12 +417,18 @@ int main(int argc, char *argv[]) {
         // Select correct channel
         hwCtrl->setCmdEnable(feCfg->getTxChannel());
         hwCtrl->setRxEnable(feCfg->getRxChannel());
+        hwCtrl->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
         // Configure
         if (fe->checkCom() != 1) {
             logger->critical("Can't establish communication, aborting!");
             return -1;
         }
         logger->info("... success!");
+    }
+
+    // at this point, if we're not running a scan we should just exit
+    if(!scan_config_provided) {
+        return 0;
     }
 
     // Enable all active channels
@@ -676,7 +656,6 @@ int main(int argc, char *argv[]) {
     if (dbUse) {
         database->cleanUp("scan", outputDir, false, false);
     }
-    delete database;
 
     return 0;
 }

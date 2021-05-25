@@ -32,12 +32,12 @@ const std::vector<abcsubregdef> s_abcsubregdefs = {
   {ABCStarSubRegister::ADC_BIAS			,4	,0	,4}	,
   {ABCStarSubRegister::ADC_CH			,4	,4	,4}	,
   {ABCStarSubRegister::ADC_ENABLE		,4	,8	,1}	,
-  {ABCStarSubRegister::D_S			,6	,0	,15}	,
-  {ABCStarSubRegister::D_LOW			,6	,15	,1}	,
-  {ABCStarSubRegister::D_EN_CTRL		,6	,16	,1}	,
+  {ABCStarSubRegister::D_S			,6	,0	,16}	,
+  {ABCStarSubRegister::D_LOW			,6	,16	,1}	,
+  {ABCStarSubRegister::D_EN_CTRL		,6	,17	,1}	,
   {ABCStarSubRegister::BTMUX			,7	,0	,14}	,
   {ABCStarSubRegister::BTMUXD			,7	,14	,1}	,
-  {ABCStarSubRegister::A_S			,7	,15	,15}	,
+  {ABCStarSubRegister::A_S			,7	,15	,16}	,
   {ABCStarSubRegister::A_EN_CTRL		,7	,31	,1}	,
   {ABCStarSubRegister::TEST_PULSE_ENABLE	,32	,4	,1}	,
   {ABCStarSubRegister::ENCOUNT			,32	,5	,1}	,
@@ -80,6 +80,17 @@ AbcStarRegInfo::AbcStarRegInfo() {
     for (ABCStarRegister reg : ABCStarRegister::_values()) {
         int addr = reg;
         abcregisterMap[addr] = std::make_shared<RegisterInfo>(addr);
+    }
+
+    for (ABCStarRegister reg : ABCStarRegister::_values()) {
+        int addr = reg;
+        if((addr == ABCStarRegister::SCReg)
+           || (addr >= ABCStarRegs::STAT0 && addr <= ABCStarRegs::HPR)
+           || addr >= ABCStarRegs::HitCountREG0) {
+          continue;
+        }
+
+        abcWriteMap[addr] = abcregisterMap[addr];
     }
 
     for (auto def : s_abcsubregdefs) {

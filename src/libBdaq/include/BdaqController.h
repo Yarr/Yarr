@@ -10,7 +10,7 @@
 // ################################
 
 #include "HwController.h"
-#include "Bdaq53.h"
+#include "Bdaq.h"
 #include "BdaqTxCore.h"
 #include "BdaqRxCore.h"
 
@@ -41,6 +41,16 @@ class BdaqController : public HwController, public BdaqTxCore, public BdaqRxCore
                 rxWaitTime = std::chrono::microseconds(uint(j["rxWaitTime"])*1000);
             else
                 rxWaitTime = std::chrono::microseconds(10*1000); // converting from ms to us.            
+            // Configure Si570 oscillator (MGT reference clock)
+            if (!j["configSi570"].empty())
+                c.configSi570 = j["configSi570"];
+            else
+                c.configSi570 = true;
+            // Software AZ for Sycnhronous FE
+            if (!j["softwareAZ"].empty())
+                softwareAZ = j["softwareAZ"];
+            else
+                softwareAZ = true;
             // RX Module Address
             if (!j["rxAddr"].empty())
                 c.rxAddr = std::stoi(j["rxAddr"], nullptr, 16);
@@ -58,19 +68,26 @@ class BdaqController : public HwController, public BdaqTxCore, public BdaqRxCore
                 c.cmdAddr = 0x9000;
             // GPIO Module Address
             if (!j["gpioAddr"].empty())
-                c.gpioAddr = std::stoi(j["gpioAddr"], nullptr, 16);
+                c.controlAddr = std::stoi(j["controlAddr"], nullptr, 16);
             else
-                c.gpioAddr = 0x2100;
+                c.controlAddr = 0x2100;
             // Initialize controller with the above configuration
             initialize(c);
+        }
+        
+        void setupMode() override final {
+            BdaqTxCore::m_softwareAZ = softwareAZ;
+            BdaqRxCore::setupMode();
         }
 
         void runMode() override final {
             BdaqRxCore::m_waitTime = rxWaitTime;
+            BdaqRxCore::runMode();
         }
 
     private:
         std::chrono::microseconds rxWaitTime;
+        bool softwareAZ;
 };
 
 #endif
