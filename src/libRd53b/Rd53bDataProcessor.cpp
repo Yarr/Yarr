@@ -391,6 +391,10 @@ void Rd53bDataProcessor::process_core()
                 if (_qrow >= 196)
                 {
                     // logger->info("Hit: ccol({}) qrow({}) hitmap (0x{:x})) ", ccol, qrow, hitmap);
+                    if (!retrieve(_ToT, _LUT_PlainHMap_To_ColRow_ArrSize[_hitmap] << 2))
+                        return;
+
+                    int idx = 0;
                     for (unsigned ibus = 0; ibus < 4; ibus++)
                     {
                         uint8_t hitsub = (_hitmap >> (ibus << 2)) & 0xF;
@@ -402,8 +406,7 @@ void Rd53bDataProcessor::process_core()
                             {
                                 if ((hitsub >> iread) & 0x1)
                                 {
-                                    retrieve(_ToT, 4);
-                                    ptot_ptoa_buf &= ~((~_ToT & 0xF) << (iread << 2));
+                                    ptot_ptoa_buf &= ~((~(_ToT >> ((_LUT_PlainHMap_To_ColRow_ArrSize[_hitmap] - (++idx)) << 2)) & 0xF) << (iread << 2));
                                 }
                             }
 
@@ -448,7 +451,6 @@ void Rd53bDataProcessor::process_core()
                 {
                     // If drop ToT, the ToT value saved in the output event will be 0
                     // Otherwise we will translate the raw 16-bit hit map into number of hits and pixel addresses using yet another LUT
-                    _ToT = 0;
                     if (!_dropToT)
                     {
                         if (!retrieve(_ToT, _LUT_PlainHMap_To_ColRow_ArrSize[_hitmap] << 2))
