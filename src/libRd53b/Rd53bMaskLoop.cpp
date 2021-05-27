@@ -24,6 +24,7 @@ Rd53bMaskLoop::Rd53bMaskLoop() : LoopActionBase(LOOP_STYLE_MASK) {
     loopType = typeid(this);
     m_done = false;
     m_maskType = StandardMask;
+    bool m_applyEnMask = false;
 }
 
 void Rd53bMaskLoop::init() {
@@ -72,6 +73,9 @@ void Rd53bMaskLoop::execPart1() {
                 }		
                 // Enable pixels of current mask stage
                 if (applyMask(col,row)){
+                    // If the pixel is disabled, skip it
+                    if(m_applyEnMask && !((m_pixRegs[fe][col/2][row] >> ((col&0x1)*8)) & 0x1)) continue;
+
                     //logger->info("Enabling {};{}", col, row);
                     rd53b->setEn(col, row, (m_maskType == PToTMask) ? 0 : 1); // TODO Make configurable
                     rd53b->setInjEn(col, row, 1);
@@ -127,6 +131,7 @@ void Rd53bMaskLoop::writeConfig(json &j) {
     j["max"] = max;
     j["step"] = step;
     j["maskType"] = m_maskType;
+    j["applyEnMask"] = m_applyEnMask;
 }
 
 void Rd53bMaskLoop::loadConfig(json &j) {
@@ -138,4 +143,6 @@ void Rd53bMaskLoop::loadConfig(json &j) {
         step = j["step"];
     if (!j["maskType"].empty())
         m_maskType = j["maskType"];
+    if (!j["applyEnMask"].empty())
+        m_applyEnMask = j["applyEnMask"];        
 }
