@@ -29,6 +29,7 @@ class Rd53bMaskLoop: public LoopActionBase {
         std::map<FrontEnd*, std::array<std::array<uint16_t, Rd53b::n_Row>, Rd53b::n_DC> > m_pixRegs;
         int m_maskType;
         bool m_applyEnMask;
+        
         void init();
         void end();
         void execPart1();
