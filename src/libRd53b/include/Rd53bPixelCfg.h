@@ -54,8 +54,8 @@ class Rd53bPixelCfg {
         void fromJson(json &j);
     
     private:
-        inline uint16_t setBit(uint16_t in, uint8_t bit, uint8_t val);
-        inline uint16_t getBit(uint16_t in, uint8_t bit);
+        inline static uint16_t setBit(uint16_t in, uint8_t bit, uint8_t val);
+        inline static uint16_t getBit(uint16_t in, uint8_t bit);
 
 };
 
