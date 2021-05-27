@@ -56,22 +56,21 @@ TEST_CASE("StarCfgTrims", "[star][config]") {
   StarCfg test_config;
   test_config.setHCCChipId(2);
   const int abc_id = 3;
-  const int hcc_in_channel = 4;
-  test_config.addABCchipID(abc_id,hcc_in_channel);
+  test_config.addABCchipID(abc_id);
 
   // Default to 15 on all strips
   // Two rows of 128 strips (odd and even)
   for(unsigned l = 0; l < 2; l++) {
     for(unsigned s = 0; s < 128; s++) {
-      CAPTURE (l, s+128*hcc_in_channel);
+      CAPTURE (l, s);
 
       // Currently expects indices base 1
-      CHECK (test_config.getTrimDAC(s+1+128*hcc_in_channel, l+1) == 15);
+      CHECK (test_config.getTrimDAC(s+1, l+1) == 15);
     }
   }
 
-  test_config.setTrimDAC(10+128*hcc_in_channel, 2, 18);
-  REQUIRE (test_config.getTrimDAC(10+128*hcc_in_channel, 2) == 18);
+  test_config.setTrimDAC(10, 2, 18);
+  REQUIRE (test_config.getTrimDAC(10, 2) == 18);
 
   for(unsigned r = 0; r < 32; r++) {
     CAPTURE (r);
@@ -104,8 +103,8 @@ TEST_CASE("StarCfgTrims", "[star][config]") {
 
       int set_trim = s%32;
       // Currently expects indices base 1
-      test_config.setTrimDAC(s+1+128*hcc_in_channel, l+1, set_trim);
-      CHECK (test_config.getTrimDAC(s+1+128*hcc_in_channel, l+1) == set_trim);
+      test_config.setTrimDAC(s+1, l+1, set_trim);
+      CHECK (test_config.getTrimDAC(s+1, l+1) == set_trim);
     }
   }
 

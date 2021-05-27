@@ -201,10 +201,6 @@ void AbcCfg::setDefaults() {
 
 void AbcCfg::setTrimDACRaw(unsigned channel, int value) {
 
-    //Switch numbering from strip order to physical pad
-    auto tmp = channel;
-    channel = ((channel & 0x7e) << 1) + ((channel >> 6) & 2) + (channel & 1);
-
     std::string trimDAC_1msb_name = "trimdac_1msb_"+std::to_string(channel);
 
     if (m_info->trimDAC_4LSB_RegisterMap_all.find(channel) != m_info->trimDAC_4LSB_RegisterMap_all.end()) {
@@ -225,9 +221,6 @@ void AbcCfg::setTrimDACRaw(unsigned channel, int value) {
 }
 
 int AbcCfg::getTrimDACRaw(unsigned channel) const {
-
-    //Switch numbering from strip order to physical pad
-    channel = ((channel & 0x7e) << 1) + ((channel >> 6) & 2) + (channel & 1);
 
     std::string trimDAC_4lsb_name = "trimdac_4lsb_"+std::to_string(channel);
     std::string trimDAC_1msb_name = "trimdac_1msb_"+std::to_string(channel);

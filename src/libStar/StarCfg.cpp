@@ -64,39 +64,42 @@ void StarCfg::setTrimDAC(unsigned col, unsigned row, int value)  {
 
     ////NOTE: row and col pass from histogram starts from 1, while channel starts from 0
 
-    int hccChan = ( (col-1) >> 7);
+    int nthRow = row%2 ==0 ? 2 : 1;
 
-    int channel=128*(row-1) + ( (col-1) & 0x7f);
+    int channel=0;
+    int chn_tmp = floor((col-1)/2);
+    if(nthRow==1) channel = (col-1) + chn_tmp*2;
+    else if(nthRow==2) channel = (col-1) + (chn_tmp+1)*2;
 
     SPDLOG_LOGGER_TRACE(logger,
-                        "row:{} col:{} hccChan:{} channel:{}",
-                        row-1, col-1, hccChan, channel);
+                        "row:{} col:{} chn_tmp:{} channel:{}",
+                        row-1, col-1, chn_tmp, channel);
 
-    if (abcAtIndex(hccChan+1)) {
-        auto &abc = abcFromIndex(hccChan+1);
-        abc.setTrimDACRaw(channel, value);
-    } else {
-        logger->error("setTrimDAC for non-existent ABC {}",hccChan);
-    }
+    unsigned chipIndex = ceil(row/2.0);
+
+    auto &abc = abcFromIndex(chipIndex);
+
+    abc.setTrimDACRaw(channel, value);
 }
 
 
-int StarCfg::getTrimDAC(unsigned col, unsigned row) const{
+int StarCfg::getTrimDAC(unsigned col, unsigned row) const {
+    int nthRow = row%2 ==0 ? 2 : 1;
 
-    int hccChan = ( (col-1) >> 7);
+    int channel=0;
+    int chn_tmp = floor((col-1)/2);
+    if(nthRow==1) channel = (col-1) + chn_tmp*2;
+    else if(nthRow==2) channel = (col-1) + (chn_tmp+1)*2;
 
-    int channel=128*(row-1) + ( (col-1) & 0x7f);
     SPDLOG_LOGGER_TRACE(logger,
-                        " row:{} col:{} hccChan:{} channel:{}",
-                        row-1, col-1, hccChan, channel);
+                        " row:{} col:{} chn_tmp:{} channel:{}",
+                        row-1, col-1, chn_tmp, channel);
 
-    if (abcAtIndex(hccChan+1)) {
-        const auto &abc = abcFromIndex(hccChan+1);
-        return abc.getTrimDACRaw(channel);
-    }else {
-        logger->error("getTrimDAC for non-existent ABC {}",hccChan);
-    }
-    return 0;
+    unsigned chipIndex = ceil(row/2.0);
+
+    const auto &abc = abcFromIndex(chipIndex);
+
+    return abc.getTrimDACRaw(channel);
 }
 
 void StarCfg::toFileJson(json &j) {
