@@ -74,7 +74,7 @@ void Rd53bMaskLoop::execPart1() {
                 // Enable pixels of current mask stage
                 if (applyMask(col,row)){
                     // If the pixel is disabled, skip it
-                    if(m_applyEnMask && !((m_pixRegs[fe][col/2][row] >> ((col&0x1)*8)) & 0x1)) continue;
+                    if(m_applyEnMask && !Rd53b::getPixelBit(m_pixRegs[fe], col, row, 0)) continue;
 
                     //logger->info("Enabling {};{}", col, row);
                     rd53b->setEn(col, row, (m_maskType == PToTMask) ? 0 : 1); // TODO Make configurable
