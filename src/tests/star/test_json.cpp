@@ -372,7 +372,7 @@ TEST_CASE("StarJsonAbcCommon", "[star][json]") {
   bounce_check(output);
 }
 
-// Check for random nulls
+// Check case of missing ABCs
 TEST_CASE("StarJsonNullChan", "[star][json]") {
   json cfg;
 
@@ -381,13 +381,9 @@ TEST_CASE("StarJsonNullChan", "[star][json]") {
   cfg["HCC"]["ID"] = 12;
 
   cfg["ABCs"]["IDs"][0] = 4;
-  cfg["ABCs"]["IDs"][1] = nullptr; //Will become 1
-  cfg["ABCs"]["IDs"][2] = nullptr; //Will become 2
+  cfg["ABCs"]["IDs"][1] = nullptr;
+  cfg["ABCs"]["IDs"][2] = nullptr;
   cfg["ABCs"]["IDs"][3] = 10;
-
-  cfg["ABCs"]["inChannels"][1] = 6;
-  cfg["ABCs"]["inChannels"][2] = nullptr; //Will become 2
-  cfg["ABCs"]["inChannels"][3] = 8;
 
   cfg["ABCs"]["regs"][0]["ADCS2"] = 0x00000000;
   cfg["ABCs"]["regs"][1]["ADCS2"] = 0x11111111;
@@ -400,7 +396,6 @@ TEST_CASE("StarJsonNullChan", "[star][json]") {
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
   REQUIRE(fecfg);
   fecfg->fromFileJson(cfg);
-
   json output;
   fecfg->toFileJson(output);
 
@@ -409,20 +404,29 @@ TEST_CASE("StarJsonNullChan", "[star][json]") {
 
   REQUIRE(output["name"] == cfg["name"]);
 
-  auto check = [&](int i, std::string val, int hcc, int abcID) {
-    std::string out_val = output["ABCs"]["regs"][i]["ADCS2"];
-    int out_hcc = output["ABCs"]["inChannels"][i];
-    int out_id = output["ABCs"]["IDs"][i];
-    CAPTURE(i, val, hcc, abcID);
-    REQUIRE(out_val == val);
-    REQUIRE(out_hcc == hcc);
+  auto check = [&](int i, std::string val, int abcID, bool is_null) {
+    std::string out_val = "none";
+    bool out_val_null = true;
+    if (!output["ABCs"]["regs"][i].is_null()) {
+        out_val = output["ABCs"]["regs"][i]["ADCS2"];
+        out_val_null = false;
+    }
+    int out_id = -1;
+    if (!output["ABCs"]["IDs"][i].is_null()) {
+        out_id = output["ABCs"]["IDs"][i];
+    }
+    CAPTURE(i, val, abcID, is_null);
+    if (is_null)
+        REQUIRE(out_val_null == is_null);
+    else
+        REQUIRE(out_val == val);
     REQUIRE(out_id == abcID);
   };
 
-  check(0, "00000000", 0, 4);
-  check(1, "22222222", 2, 2);
-  check(2, "11111111", 6, 1);
-  check(3, "33333333", 8, 10);
+  check(0, "00000000", 4, false);
+  check(1, "none", -1, true);
+  check(2, "none", -1, true);
+  check(3, "33333333", 10, false);
 
   bounce_check(output);
 }

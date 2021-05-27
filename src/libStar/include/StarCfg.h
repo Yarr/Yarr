@@ -142,6 +142,11 @@ class StarCfg : public FrontEndCfg {
           return -1;
       return m_ABCchips.rbegin()->first; 
   } 
+  int lowestABC() { 
+      if (m_ABCchips.size() == 0)
+          return -1;
+      return m_ABCchips.begin()->first; 
+  } 
 
   /// Iterate over ABCs, avoiding chipIndex
   void eachAbc(std::function<void (AbcCfg&)> f) {

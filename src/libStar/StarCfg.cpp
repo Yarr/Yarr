@@ -127,16 +127,13 @@ void StarCfg::toFileJson(json &j) {
 
     std::map<std::string, std::string> common;
     // Store until we know which are not common
-    std::vector<std::map<std::string, std::string>> regs(numABCs());
+    std::vector<std::map<std::string, std::string>> regs(highestABC()+1);
 
-    int nABC = 0;
     for (int iABC = 0; iABC <= highestABC(); iABC++) {
         if (!abcAtIndex(iABC+1))
             continue;
         auto &abc = abcFromIndex(iABC+1);
-        j["ABCs"]["IDs"][nABC] = abc.getABCchipID();
-	//TODO: only add this if the ordering is wrong
-	j["ABCs"]["inChannels"][nABC] = iABC;
+        j["ABCs"]["IDs"][iABC] = abc.getABCchipID();
 
         for(auto &reg_i: abcRegs) {
             auto &info = reg_i.second;
@@ -168,9 +165,9 @@ void StarCfg::toFileJson(json &j) {
             ss << std::hex << std::setw(8) << std::setfill('0') << val;
             std::string regKey = reg._to_string();
             std::string regValue = ss.str();
-            regs[nABC][regKey] = regValue;
+            regs[iABC][regKey] = regValue;
 
-            if(nABC == 0) {
+            if(iABC == lowestABC()) {
                 common[regKey] = regValue;
             } else {
                 auto i = common.find(regKey);
@@ -190,16 +187,15 @@ void StarCfg::toFileJson(json &j) {
                 continue;
             }
 
-            j["ABCs"]["masked"][nABC].push_back(m);
+            j["ABCs"]["masked"][iABC].push_back(m);
         }
         if(sameTrims) {
-            j["ABCs"]["trims"][nABC] = trims[0];
+            j["ABCs"]["trims"][iABC] = trims[0];
         } else {
             for(int m=0; m<256; m++) {
-                j["ABCs"]["trims"][nABC][m] = trims[m];
+                j["ABCs"]["trims"][iABC][m] = trims[m];
             }
         }
-        nABC++;
     }
 
     for(size_t a=0; a<regs.size(); a++) {
@@ -313,32 +309,20 @@ void StarCfg::fromFileJson(json &j) {
 
     auto &abcs = j["ABCs"];
 
+    unsigned abc_arr_length = 0;
+
     // Load the IDs
     if (!abcs["IDs"].empty()) {
         auto &ids = abcs["IDs"];
-
-	if (abcs["inChannels"].empty()) {
-	  for (int iABC = 0; iABC < ids.size(); iABC++) {
-              auto &id = ids[iABC];
-              if (id.is_null())
-                  id = iABC;
-              addABCchipID(id);
-	  }
-	} else {
-	  auto &hccins = abcs["inChannels"];
-	  if (hccins.size() < ids.size())
-	    logger->error("Not enough HCC input Channels Specified");
-	  for (int iABC = 0; iABC < ids.size(); iABC++) {
-              auto &hccin = hccins[iABC];
-              auto &id = ids[iABC];
-              if (hccin.is_null())
-                  hccin = iABC;
-              if (id.is_null())
-                  id = iABC;
-              addABCchipID(id, hccin);
-	  }
+        abc_arr_length = ids.size();
+        for (int iABC = 0; iABC < ids.size(); iABC++) {
+            auto &id = ids[iABC];
+            if (id.is_null())
+                continue;
+            addABCchipID(id, iABC);
         }
     }
+
 
     auto abc_count = numABCs();
 
@@ -347,12 +331,12 @@ void StarCfg::fromFileJson(json &j) {
         return; //No ABCs to load
     }
 
+    //We need to null check these later. If it's empty, we already returned.
+    auto &ids = abcs["IDs"];
+
     // Initialize register maps for consistency
-    for( int iABC = 0; iABC < abc_count; ++iABC) {
-        // Make all registers and subregisters for the ABC
-        if (abcAtIndex(iABC+1)) 
-            abcFromIndex(iABC+1).setDefaults();
-    }
+    // Make all registers and subregisters for the ABC
+    eachAbc( [&](auto &abc) {abc.setDefaults();});
 
     // First, commont register settings
     if(abcs.find("common") != abcs.end()) {
@@ -388,18 +372,14 @@ void StarCfg::fromFileJson(json &j) {
     if(abcs.find("regs") != abcs.end()) {
         auto &regArray = abcs["regs"];
 
-        if(regArray.size() != numABCs()) {
+        if(regArray.size() != abc_arr_length) {
             logger->error("ABCs/regs array size does not match number of ABCs");
             return;
         }
 
-        for (int iABC = 0; iABC < numABCs(); iABC++) {
-            int hccin = iABC;
-            if (!abcs["inChannels"].empty()) {
-                if (!abcs["inChannels"][iABC].is_null()) {
-                    hccin = abcs["inChannels"][iABC];
-                }
-            }
+        for (int iABC = 0; iABC < abc_arr_length; iABC++) {
+            if (ids[iABC].is_null())
+                continue;
 
             auto &chipRegs = regArray[iABC];
 
@@ -410,7 +390,7 @@ void StarCfg::fromFileJson(json &j) {
                 return;
             }
 
-            auto &abc = abcFromIndex(hccin+1);
+            auto &abc = abcFromIndex(iABC+1);
 
             auto b = chipRegs.begin();
             auto e = chipRegs.end();
@@ -433,19 +413,16 @@ void StarCfg::fromFileJson(json &j) {
     if(abcs.find("subregs") != abcs.end()) {
         auto &subregArray = abcs["subregs"];
 
-        if(subregArray.size() != numABCs()) {
+        if(subregArray.size() != abc_arr_length) {
             logger->error("ABCs/subregs array size does not match number of ABCs");
             return;
         }
 
         auto abcSubRegs = AbcStarRegInfo::instance()->abcSubRegisterMap_all;
 
-        for (int iABC = 0; iABC < numABCs(); iABC++) {
-            int hccin = iABC;
-            if (!abcs["inChannels"].empty()) {
-                if (!abcs["inChannels"][iABC].is_null())
-                    hccin = abcs["inChannels"][iABC];
-            }
+        for (int iABC = 0; iABC < abc_arr_length; iABC++) {
+            if (ids[iABC].is_null())
+                continue;
 
             auto &chipSubRegs = subregArray[iABC];
 
@@ -456,7 +433,7 @@ void StarCfg::fromFileJson(json &j) {
                 return;
             }
 
-            auto &abc = abcFromIndex(hccin+1);
+            auto &abc = abcFromIndex(iABC+1);
 
             auto b = chipSubRegs.begin();
             auto e = chipSubRegs.end();
@@ -476,22 +453,19 @@ void StarCfg::fromFileJson(json &j) {
     if(abcs.find("masked") != abcs.end()) {
         auto &maskArray = abcs["masked"];
 
-        if(maskArray.size() != numABCs()) {
+        if(maskArray.size() != abc_arr_length) {
             logger->error("ABCs/masked array size does not match number of ABCs");
             return;
         }
 
         // Each chip has a list of strips
-        for (int iABC = 0; iABC < numABCs(); iABC++) {
-            int hccin = iABC;
-            if (!abcs["inChannels"].empty()) {
-                if (!abcs["inChannels"][iABC].is_null())
-                    hccin = abcs["inChannels"][iABC];
-            }
+        for (int iABC = 0; iABC < abc_arr_length; iABC++) {
+            if (ids[iABC].is_null())
+                continue;
             auto &maskedStrips = maskArray[iABC];
 
             for(int strip: maskedStrips) {
-                auto &abc = abcFromIndex(hccin+1);
+                auto &abc = abcFromIndex(iABC+1);
                 abc.setMask(strip, true);
             }
         }
@@ -500,19 +474,16 @@ void StarCfg::fromFileJson(json &j) {
     if(abcs.find("trims") != abcs.end()) {
         auto &trimArray = abcs["trims"];
 
-        if(trimArray.size() != numABCs()) {
+        if(trimArray.size() != abc_arr_length) {
             logger->error("ABCs/trims array size does not match number of ABCs");
             return;
         }
 
         // Each chip has either single integer (all the same), or array of value per strip
-        for (int iABC = 0; iABC < numABCs(); iABC++) {
-            int hccin = iABC;
-            if (!abcs["inChannels"].empty()) {
-                if (!abcs["inChannels"][iABC].is_null())
-                    hccin = abcs["inChannels"][iABC];
-            }
-            auto &abc = abcFromIndex(hccin+1);
+        for (int iABC = 0; iABC < abc_arr_length; iABC++) {
+            if (ids[iABC].is_null())
+                continue;
+            auto &abc = abcFromIndex(iABC+1);
 
             auto &chipValue = trimArray[iABC];
             if(chipValue.is_number()) {
