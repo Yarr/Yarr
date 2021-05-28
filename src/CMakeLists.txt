@@ -77,7 +77,7 @@ list(APPEND libs ${YARR_FRONT_ENDS_TO_BUILD} )
 
 YARR_ADD_VARIANT()
 YARR_ADD_TBB()
-foreach(lib ${libs})   
+foreach(lib ${libs})
     add_definitions( -DNO_PYTHON )
     include_directories(lib${lib}/include)
     include_directories(BEFORE SYSTEM ${PROJECT_BINARY_DIR}/include)
@@ -180,6 +180,7 @@ if(BUILD_TESTS)
     foreach(lib ${libs})
        target_link_libraries(test_main ${lib})
     endforeach()
+    target_link_libraries(test_main pthread rt ${YARR_LIB_DEPS} )
     add_dependencies(test_main Yarr)
 
     # This uses features of CTest, so requires enable_testing somewhere
