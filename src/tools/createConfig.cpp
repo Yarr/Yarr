@@ -77,6 +77,12 @@ int main (int argc, char *argv[]) {
     logger->info("Chip Name   : {}", chipName);
     logger->info("Ouput directory  : {}", outputDir);
 
+    // Make output directory
+    if (system(("mkdir -p "+outputDir).c_str()) != 0) {
+        logger->error("Failed to create output directory: {}", outputDir);
+        return -1;
+    }
+
     // Create FE object
     std::unique_ptr<FrontEnd> fe = StdDict::getFrontEnd(chipType);
     if (!fe) {
@@ -89,6 +95,7 @@ int main (int argc, char *argv[]) {
     feCfg->setName(chipName);
 
     // Write example config files
+    logger->info("Writing default config to file ... ");
     try {
         feCfg->createExampleConfig(outputDir, systemType);
     } catch (const std::exception& e) {
