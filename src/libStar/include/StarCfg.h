@@ -124,6 +124,11 @@ class StarCfg : public FrontEndCfg {
   void toFileJson(json &j) override;
   void fromFileJson(json &j) override;
 
+  using configFuncMap = std::unordered_map<std::string, void(StarCfg::*)(const std::string&)>;
+  static configFuncMap createConfigs;
+
+  void createExampleConfig(const std::string& outputDir, const std::string& systemType) override;
+
   size_t numABCs() { return m_ABCchips.size(); }
 
   /// Iterate over ABCs, avoiding chipIndex
@@ -160,6 +165,10 @@ class StarCfg : public FrontEndCfg {
     assert(chipIndex <= m_ABCchips.size());
     return m_ABCchips.at(chipIndex-1);
   }
+
+  void createConfigSingleFE(const std::string& outputDir);
+  void createConfigLSStave(const std::string& outputDir);
+  void createConfigPetal(const std::string& outputDir);
 };
 
 #endif
