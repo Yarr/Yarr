@@ -57,15 +57,15 @@ void Rd53bPixelCfg::setTDAC(unsigned col, unsigned row, int v) {
 }   
 
 unsigned Rd53bPixelCfg::getEn(unsigned col, unsigned row) {
-   return getBit(pixRegs[col/2][row], (col&0x1)*8 + 0);
+   return getPixelBit(pixRegs, col, row, 0);
 }
 
 unsigned Rd53bPixelCfg::getInjEn(unsigned col, unsigned row) {
-   return getBit(pixRegs[col/2][row], (col&0x1)*8 + 1);
+   return getPixelBit(pixRegs, col, row, 1);
 }
 
 unsigned Rd53bPixelCfg::getHitbus(unsigned col, unsigned row) {
-   return getBit(pixRegs[col/2][row], (col&0x1)*8 + 2);
+   return getPixelBit(pixRegs, col, row, 2);
 }
 
 int Rd53bPixelCfg::getTDAC(unsigned col, unsigned row) {
