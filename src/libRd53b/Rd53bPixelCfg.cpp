@@ -98,6 +98,6 @@ void Rd53bPixelCfg::fromJson(json &j) {
     }
 }
 
-uint16_t Rd53bPixelCfg::getPixelBit(std::array<std::array<uint16_t, n_Row>, n_DC> input, unsigned col, unsigned row, unsigned bit){
+uint16_t Rd53bPixelCfg::getPixelBit(std::array<std::array<uint16_t, n_Row>, n_DC> &input, unsigned col, unsigned row, unsigned bit){
     return getBit(input[col/2][row], (col&0x1)*8 + bit);
 }
