@@ -10,6 +10,10 @@ namespace AllStarActionsRegistry {
 
   bool mask_loop_registered = registerLoopAction("StarMaskLoop",
                        []() { return std::unique_ptr<LoopActionBase>(new StarMaskLoop); });
+
+  bool counter_loop_registered = registerLoopAction("StarCounterLoop",
+                       []() { return std::unique_ptr<LoopActionBase>(new StarCounterLoop); });
+
 }
 
 
