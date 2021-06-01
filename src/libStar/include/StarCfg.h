@@ -7,7 +7,6 @@
 // # Comment: Star configuration class
 // ################################
 
-#include <optional>
 #include <algorithm>
 #include <cmath>
 #include <functional>
@@ -161,9 +160,6 @@ class StarCfg : public FrontEndCfg {
 
  protected:
   AbcCfg &abcFromChipID(unsigned int chipID) {
-      //auto abcPair =  *std::find_if(m_ABCchips.begin(), m_ABCchips.end(),
-      //                       [this, chipID](auto &it) { return it->second.getABCchipID() == chipID; });
-  //return abcPair.second;
       for(auto &abcPair : m_ABCchips) {
           auto &abc = abcPair.second;
           if (abc.getABCchipID() == chipID)
@@ -180,21 +176,17 @@ class StarCfg : public FrontEndCfg {
 
   bool abcAtIndex(int chipIndex) const {
     assert(chipIndex > 0);
-    //assert(chipIndex <= m_ABCchips.size());
     return (m_ABCchips.count(chipIndex-1) > 0);
   }
 
-  //Doesn't check if chip exists!!
   AbcCfg &abcFromIndex(int chipIndex) {
-    assert(chipIndex > 0);
-    //assert(chipIndex <= m_ABCchips.size());
+    assert(abcAtIndex(chipIndex));
     return m_ABCchips[chipIndex-1];
   }
 
-  //Doesn't check if chip exists!!
   const AbcCfg &abcFromIndex(int chipIndex) const {
     assert(chipIndex > 0);
-    //assert(chipIndex <= m_ABCchips.size());
+    assert(abcAtIndex(chipIndex));
     return m_ABCchips.at(chipIndex-1);
   }
 };
