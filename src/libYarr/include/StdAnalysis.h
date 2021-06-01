@@ -321,4 +321,32 @@ class DelayAnalysis : public AnalysisAlgorithm {
         unsigned delayStep;
         unsigned count;
 };
+
+class Analysis2D : public AnalysisAlgorithm {
+    public:
+        Analysis2D() : AnalysisAlgorithm() {};
+        ~Analysis2D() {};
+
+        void init(ScanBase *s);
+        void processHistogram(HistogramBase *h);
+        void end();
+	void loadConfig(json &config) {}
+    private:
+        std::vector<unsigned> loops;
+        std::vector<unsigned> loopMax;
+	bool createMask;
+        unsigned n_count;
+        unsigned injections;
+	unsigned paramLoop;
+	unsigned paramMin;
+	unsigned paramMax;
+	unsigned paramStep;
+	unsigned count;
+        std::string paramName;
+        std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
+        std::map<unsigned, unsigned> innerCnt;
+        std::unique_ptr<Histo2d> paramMap;
+
+};
+
 #endif

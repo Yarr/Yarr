@@ -18,6 +18,7 @@
 #include "Histo3d.h"
 #include "StdHistogrammer.h"
 #include "StdTriggerAction.h"
+#include "StdParameterLoop.h"
 
 #include "lmcurve.h"
 #include "logging.h"
@@ -66,6 +67,10 @@ namespace {
     bool del_registered =
       StdDict::registerAnalysis("DelayAnalysis",
                                 []() { return std::unique_ptr<AnalysisAlgorithm>(new DelayAnalysis());});
+    bool analysis2d_registered = 
+      StdDict::registerAnalysis("Analysis2D",
+				[]() { return std::unique_ptr<AnalysisAlgorithm>(new Analysis2D());});
+
 }
 
 void OccupancyAnalysis::init(ScanBase *s) {
@@ -1448,4 +1453,107 @@ void DelayAnalysis::end() {
             bin+=1000;
         }
     }
+}
+
+
+void Analysis2D::init(ScanBase *s) {
+    createMask=false;
+    n_count = 1;
+    scan = s;
+    alog->info("Analysis2D init");
+    for (unsigned n=0; n<s->size(); n++) {
+        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || l->isParameterLoop())) {
+            loops.push_back(n);
+            loopMax.push_back((unsigned)l->getMax());
+        } else {
+            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
+            if (cnt == 0)
+                cnt = 1;
+            n_count = n_count*cnt;
+        }
+
+        // Parameter Loop
+        if (l->isParameterLoop()) {
+            paramLoop = n;
+            paramMax = l->getMax();
+            paramMin = l->getMin();
+            paramStep = l->getStep();
+            auto paramLoop = dynamic_cast<StdParameterLoop*>(l.get());
+            if(paramLoop == nullptr) {
+                alog->error("Analysis2d: loop declared as parameter loop does not have a name");
+            } else {
+                paramName = paramLoop->getParName();
+            }
+        }
+
+        if (l->isTriggerLoop()) {
+            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            if(trigLoop == nullptr) {
+                alog->error("Analysis2D: loop declared as trigger does not have a count");
+            } else {
+                injections = trigLoop->getTrigCnt();
+            }
+        }
+    }
+    unsigned steps = 1+(paramMax - paramMin)/paramStep;
+    unsigned bins = nCol*nRow;
+    //    paramMap = std::unique_ptr<Histo2d>(new Histo2d(name, bins, -0.5, bins-0.5, steps, paramMin-0.5*paramStep, paramMax+0.5*paramStep));
+    paramMap = std::unique_ptr<Histo2d>(new Histo2d(paramName+"_Scan", bins, -0.5, bins-0.5, steps, paramMin-0.5*paramStep, paramMax+0.5*paramStep));
+    paramMap->setXaxisTitle("Channel");
+    paramMap->setZaxisTitle("Occupancy");
+    paramMap->setYaxisTitle(paramName);
+}
+
+void Analysis2D::processHistogram(HistogramBase *h) {
+  // Check if right Histogram
+  if (h->getName() != OccupancyMap::outputName())
+    return;
+
+  alog->trace("Analysis2D processHisto");
+  Histo2d* hh = (Histo2d*) h;
+  for(unsigned col=1; col<=nCol; col++) {
+    for (unsigned row=1; row<=nRow; row++) {
+      long unsigned bin = hh->binNum(col, row);
+      if (hh->getBin(bin) != 0) {
+	//std::cout << col << " " << row << " " << l1 << " " << bin << std::endl;
+	// Select correct output containe
+	alog->trace("Row and Col");
+	alog->trace(col);
+	alog->trace(row);
+	alog->trace(nCol);
+	alog->trace(bin);
+	unsigned ident = (col-1)+((row-1)*(nCol));
+	alog->trace(ident);
+	unsigned param = hh->getStat().get(paramLoop);
+	alog->trace("param");
+	// Determine identifier
+	// Check for other loops
+	/*
+	  unsigned outerIdent = 0;
+	  unsigned offset = nCol*nRow;
+	  unsigned outerOffset = 0;
+	  for (unsigned n=0; n<loops.size(); n++) {
+	  ident += hh->getStat().get(loops[n])+offset;
+	  outerIdent += hh->getStat().get(loops[n])+offset;
+	  offset += loopMax[n];
+	  outerOffset += loopMax[n];
+	  name += "-" + std::to_string(hh->getStat().get(loops[n]));
+	  }*/
+
+	// Check if Histogram exists
+
+	// Add up Histograms
+	paramMap->fill(ident, param, hh->getBin(bin));
+	alog->trace("filled");
+
+	// Got all data, finish up Analysis
+      }
+    }
+  }
+}
+
+void Analysis2D::end() {
+  alog->trace("Analysis2D end");
+  output->pushData(std::move(paramMap));
 }
