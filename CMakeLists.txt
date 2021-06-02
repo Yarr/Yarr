@@ -37,8 +37,12 @@ add_compile_options(-std=c++17)
 
 include(cmake/CMakeLists.txt.external)
 
-# This needs to be in the top-level Lists file
-enable_testing()
+# This needs to be in the top-level CMakeLists file
+option(BUILD_TESTS "Build the YARR test suite" OFF)
+if(BUILD_TESTS)
+    message(STATUS "Building the YARR test suite")
+    enable_testing()
+endif()
 
 add_subdirectory(src)
 

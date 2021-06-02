@@ -23,6 +23,7 @@ TEST_CASE("StarCfg", "[star][config]") {
   REQUIRE (test_config.getABCRegister(ABCStarRegister::CREG0, abc_id) == 0x87654321);
 
   test_config.eachAbc([&](AbcCfg &abc) {
+
       REQUIRE (abc.getABCchipID() == abc_id);
 
       REQUIRE (abc.getSubRegisterParentAddr("TESTPATT1") == ABCStarRegister::CREG0);
