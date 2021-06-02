@@ -34,7 +34,7 @@ StarChips::StarChips()
 
 	//Create dummy configuration as placeholder for globalFe in preScan routines
 	setHCCChipId(0xf);
-	addABCchipID(0xf);
+	addABCchipID(0xf, 0);
 }
 
 StarChips::StarChips(HwController *arg_core)
@@ -156,7 +156,7 @@ void StarChips::configure() {
 	this->writeRegisters();
 
 	// Make histo size match number of configured ABCs
-	geo.nCol = 128 * numABCs();
+	geo.nCol = 128 * (highestABC()+1);
 }
 
 void StarChips::sendCmd(uint16_t cmd){

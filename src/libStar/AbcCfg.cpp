@@ -200,6 +200,7 @@ void AbcCfg::setDefaults() {
 }
 
 void AbcCfg::setTrimDACRaw(unsigned channel, int value) {
+
     std::string trimDAC_1msb_name = "trimdac_1msb_"+std::to_string(channel);
 
     if (m_info->trimDAC_4LSB_RegisterMap_all.find(channel) != m_info->trimDAC_4LSB_RegisterMap_all.end()) {
@@ -220,6 +221,7 @@ void AbcCfg::setTrimDACRaw(unsigned channel, int value) {
 }
 
 int AbcCfg::getTrimDACRaw(unsigned channel) const {
+
     std::string trimDAC_4lsb_name = "trimdac_4lsb_"+std::to_string(channel);
     std::string trimDAC_1msb_name = "trimdac_1msb_"+std::to_string(channel);
 
