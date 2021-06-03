@@ -67,9 +67,9 @@ namespace {
     bool del_registered =
       StdDict::registerAnalysis("DelayAnalysis",
                                 []() { return std::unique_ptr<AnalysisAlgorithm>(new DelayAnalysis());});
-    bool analysis2d_registered = 
-      StdDict::registerAnalysis("Analysis2D",
-				[]() { return std::unique_ptr<AnalysisAlgorithm>(new Analysis2D());});
+    bool param_registered = 
+      StdDict::registerAnalysis("ParameterAnalysis",
+				[]() { return std::unique_ptr<AnalysisAlgorithm>(new ParameterAnalysis());});
 
 }
 
@@ -537,26 +537,10 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     histos[ident].reset(hhh);
                     innerCnt[ident] = 0;
                 }
-                if (sCurve[outerIdent] == NULL) {
-                    Histo2d *hhh = new Histo2d("sCurve-" + std::to_string(outerIdent), vcalBins+1, vcalMin-((double)vcalStep/2.0), vcalMax+((double)vcalStep/2.0), injections-1, 0.5, injections-0.5);
-                    hhh->setXaxisTitle("Vcal");
-                    hhh->setYaxisTitle("Occupancy");
-                    hhh->setZaxisTitle("Number of pixels");
-                    sCurve[outerIdent].reset(hhh);
-                }
-                if (sCurveMap[outerIdent] == NULL) {
-                    Histo2d *hhh = new Histo2d("sCurveMap-" + std::to_string(outerIdent), nCol*nRow, -0.5, nCol*nRow-0.5, vcalBins+1, vcalMin-((double)vcalStep/2.0), vcalMax+((double)vcalStep/2.0));
-                    hhh->setXaxisTitle("Channel Number");
-                    hhh->setYaxisTitle("Vcal [LSB]");
-                    hhh->setZaxisTitle("Number of Hits");
-                    sCurveMap[outerIdent].reset(hhh);
-                }
 
                 // Add up Histograms
                 double thisBin = hh->getBin(bin);
                 histos[ident]->fill(vcal, thisBin);
-                sCurve[outerIdent]->fill(vcal, thisBin);
-                sCurveMap[outerIdent]->fill(bin, vcal, thisBin);
                 innerCnt[ident]++;
 
                 // Got all data, finish up Analysis
@@ -765,7 +749,6 @@ void ScurveFitter::end() {
             alog->info("\033[1;33m[{}][{}] Threshold Mean = {} +- {}\033[0m", channel, i, thrMap[i]->getMean(), thrMap[i]->getStdDev());
             alog->info("\033[1;33m[{}][{}] Noise Mean = {} +- {}\033[0m", channel, i, sigMap[i]->getMean(), sigMap[i]->getStdDev());
             alog->info("\033[1;33m[{}][{}] Number of failed fits = {}\033[0m", channel, i, n_failedfit);
-            output->pushData(std::move(sCurve[i]));
             output->pushData(std::move(thrDist[i]));
             output->pushData(std::move(thrMap[i]));
             output->pushData(std::move(sigDist[i]));
@@ -779,10 +762,7 @@ void ScurveFitter::end() {
         output->pushData(std::move(sigMap[i]));
         output->pushData(std::move(chiDist[i]));
         output->pushData(std::move(timeDist[i]));
-        output->pushData(std::move(sCurveMap[i]));
     }
-
-
 }
 
 void OccGlobalThresholdTune::init(ScanBase *s) {
@@ -1456,11 +1436,10 @@ void DelayAnalysis::end() {
 }
 
 
-void Analysis2D::init(ScanBase *s) {
-    createMask=false;
+void ParameterAnalysis::init(ScanBase *s) {
     n_count = 1;
     scan = s;
-    alog->info("Analysis2D init");
+    alog->info("ParameterAnalysis init");
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
         if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || l->isParameterLoop())) {
@@ -1468,6 +1447,9 @@ void Analysis2D::init(ScanBase *s) {
             loopMax.push_back((unsigned)l->getMax());
         } else {
             unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
+            if (l->isParameterLoop()) {
+                cnt++; // Parameter loop interval is inclusive
+            }
             if (cnt == 0)
                 cnt = 1;
             n_count = n_count*cnt;
@@ -1475,10 +1457,11 @@ void Analysis2D::init(ScanBase *s) {
 
         // Parameter Loop
         if (l->isParameterLoop()) {
-            paramLoop = n;
+            paramLoopNo = n;
             paramMax = l->getMax();
             paramMin = l->getMin();
             paramStep = l->getStep();
+            paramBins = (paramMax-paramMin)/paramStep;
             auto paramLoop = dynamic_cast<StdParameterLoop*>(l.get());
             if(paramLoop == nullptr) {
                 alog->error("Analysis2d: loop declared as parameter loop does not have a name");
@@ -1490,70 +1473,76 @@ void Analysis2D::init(ScanBase *s) {
         if (l->isTriggerLoop()) {
             auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
             if(trigLoop == nullptr) {
-                alog->error("Analysis2D: loop declared as trigger does not have a count");
+                alog->error("ParameterAnalysis: loop declared as trigger does not have a count");
             } else {
                 injections = trigLoop->getTrigCnt();
             }
         }
     }
-    unsigned steps = 1+(paramMax - paramMin)/paramStep;
-    unsigned bins = nCol*nRow;
-    //    paramMap = std::unique_ptr<Histo2d>(new Histo2d(name, bins, -0.5, bins-0.5, steps, paramMin-0.5*paramStep, paramMax+0.5*paramStep));
-    paramMap = std::unique_ptr<Histo2d>(new Histo2d(paramName+"_Scan", bins, -0.5, bins-0.5, steps, paramMin-0.5*paramStep, paramMax+0.5*paramStep));
-    paramMap->setXaxisTitle("Channel");
-    paramMap->setZaxisTitle("Occupancy");
-    paramMap->setYaxisTitle(paramName);
 }
 
-void Analysis2D::processHistogram(HistogramBase *h) {
-  // Check if right Histogram
-  if (h->getName() != OccupancyMap::outputName())
-    return;
+void ParameterAnalysis::processHistogram(HistogramBase *h) {
+    // Check if right Histogram
+    if (h->getName() != OccupancyMap::outputName())
+        return;
 
-  alog->trace("Analysis2D processHisto");
-  Histo2d* hh = (Histo2d*) h;
-  for(unsigned col=1; col<=nCol; col++) {
-    for (unsigned row=1; row<=nRow; row++) {
-      long unsigned bin = hh->binNum(col, row);
-      if (hh->getBin(bin) != 0) {
-	//std::cout << col << " " << row << " " << l1 << " " << bin << std::endl;
-	// Select correct output containe
-	alog->trace("Row and Col");
-	alog->trace(col);
-	alog->trace(row);
-	alog->trace(nCol);
-	alog->trace(bin);
-	unsigned ident = (col-1)+((row-1)*(nCol));
-	alog->trace(ident);
-	unsigned param = hh->getStat().get(paramLoop);
-	alog->trace("param");
-	// Determine identifier
-	// Check for other loops
-	/*
-	  unsigned outerIdent = 0;
-	  unsigned offset = nCol*nRow;
-	  unsigned outerOffset = 0;
-	  for (unsigned n=0; n<loops.size(); n++) {
-	  ident += hh->getStat().get(loops[n])+offset;
-	  outerIdent += hh->getStat().get(loops[n])+offset;
-	  offset += loopMax[n];
-	  outerOffset += loopMax[n];
-	  name += "-" + std::to_string(hh->getStat().get(loops[n]));
-	  }*/
+    Histo2d *hh = (Histo2d*) h;
 
-	// Check if Histogram exists
-
-	// Add up Histograms
-	paramMap->fill(ident, param, hh->getBin(bin));
-	alog->trace("filled");
-
-	// Got all data, finish up Analysis
-      }
+    unsigned outerIdent = 0;
+    unsigned outerOffset = 0;
+    for (unsigned n=0; n<loops.size(); n++) {
+        outerIdent += hh->getStat().get(loops[n])+outerOffset;
+        outerOffset += loopMax[n];
     }
-  }
+
+    for(unsigned col=1; col<=nCol; col++) {
+        for (unsigned row=1; row<=nRow; row++) {
+            unsigned bin = hh->binNum(col, row);
+            if (hh->getBin(bin) != 0) {
+                // Select correct output containe
+                unsigned ident = bin;
+                unsigned offset = nCol*nRow;
+                unsigned param = hh->getStat().get(paramLoopNo);
+                // Determine identifier
+                std::string name = "Param";
+                name += "-" + std::to_string(col) + "-" + std::to_string(row);
+                // Check for other loops
+                for (unsigned n=0; n<loops.size(); n++) {
+                    ident += hh->getStat().get(loops[n])+offset;
+                    offset += loopMax[n];
+                    name += "-" + std::to_string(hh->getStat().get(loops[n]));
+                }
+
+                // Check if Histogram exists
+                if (sCurve[outerIdent] == NULL) {
+                    Histo2d *hhh = new Histo2d(paramName, paramBins+1, paramMin-((double)paramStep/2.0), paramMax+((double)paramStep/2.0), injections-1, 0.5, injections-0.5);
+                    hhh->setXaxisTitle(paramName);
+                    hhh->setYaxisTitle("Occupancy");
+                    hhh->setZaxisTitle("Number of pixels");
+                    sCurve[outerIdent].reset(hhh);
+                }
+                if (paramCurves[outerIdent] == NULL) {
+                    Histo2d *hhh = new Histo2d(paramName + "_Map", nCol*nRow, -0.5, nCol*nRow-0.5, paramBins+1, paramMin-((double)paramStep/2.0), paramMax+((double)paramStep/2.0));
+                    hhh->setXaxisTitle("Channel Number");
+                    hhh->setYaxisTitle(paramName);
+                    hhh->setZaxisTitle("Number of Hits");
+                    paramCurves[outerIdent].reset(hhh);
+                }
+
+                // Add up Histograms
+                double thisBin = hh->getBin(bin);
+                sCurve[outerIdent]->fill(param, thisBin);
+                paramCurves[outerIdent]->fill(bin, param, thisBin);
+                innerCnt[ident]++;
+            }
+        }
+    }
 }
 
-void Analysis2D::end() {
-  alog->trace("Analysis2D end");
-  output->pushData(std::move(paramMap));
+void ParameterAnalysis::end() {
+  alog->trace("ParameterAnalysis end");
+  for (unsigned i=0; i<paramCurves.size(); i++) {
+      output->pushData(std::move(sCurve[i]));
+      output->pushData(std::move(paramCurves[i]));
+  }
 }
