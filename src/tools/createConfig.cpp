@@ -10,6 +10,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <iomanip>
 
 #include "storage.hpp"
 #include "logging.h"
@@ -89,15 +90,49 @@ int main (int argc, char *argv[]) {
         logger->error("Unknown chip type: {}", chipType);
         return -1;
     }
-
     FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(fe.get());
 
     feCfg->setName(chipName);
 
-    // Write example config files
-    logger->info("Writing default config to file ... ");
+    logger->info("Retrieving presets ...");
     try {
-        feCfg->createExampleConfig(outputDir, systemType);
+        auto [connectivity, chipCfgs] = feCfg->getPreset(systemType);
+
+        // Check a few things first
+        if (connectivity["chipType"].empty() or connectivity["chips"].empty()) {
+            logger->error("Invalid connectivity config.");
+            return -1;
+        }
+        if (connectivity["chips"].size() != chipCfgs.size()) {
+            logger->error("Bad presets: the number of chips is not consistent.");
+            return -1;
+        }
+
+        logger->info("Writing default config to file ... ");
+
+        // Chip configurations first
+        for (unsigned i=0; i<chipCfgs.size(); i++) {
+            // Update config file path to outputDir/
+            std::string cfgPath = connectivity["chips"][i]["config"];
+            cfgPath = outputDir + cfgPath;
+            connectivity["chips"][i]["config"] = cfgPath;
+
+            // Write to file
+            logger->info("write chip config to file {}", cfgPath);
+            std::ofstream outfile(cfgPath);
+            outfile << std::setw(4) << chipCfgs[i];
+            outfile.close();
+        }
+
+        // Finally write the connectivity configuration to file
+        connectivity["chipType"] = chipType;
+        std::string outFilePath(outputDir+"example_"+chipType+"_"+systemType+".json");
+
+        logger->info("Write connectivity config to file {}", outFilePath);
+        std::ofstream outputfile(outFilePath);
+        outputfile << std::setw(4) << connectivity;
+        outputfile.close();
+
     } catch (const std::exception& e) {
         logger->error(e.what());
         logger->info("Failed to create config files.");

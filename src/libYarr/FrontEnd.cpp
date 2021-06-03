@@ -8,8 +8,6 @@
 
 #include "FrontEnd.h"
 
-#include <iomanip>
-
 bool FrontEnd::isActive() {
 	return active;
 }
@@ -22,17 +20,29 @@ void FrontEnd::setActive(bool arg_active) {
 	active = arg_active;
 }
 
-void FrontEndCfg::createExampleConfig(const std::string& outputDir, const std::string& systemType) {
+std::tuple<json, std::vector<json>> FrontEndCfg::getPreset(const std::string& systemType) {
+	// Return a json object for connectivity configuration and a vector json objects for chip configurations
+
+	std::tuple<json, std::vector<json>> preset;
+	auto& [connectivity, chips] = preset;
+
 	if (systemType != "SingleChip") {
 		throw std::runtime_error("Unknown system type: "+systemType);
 	}
 
+	// Add a front end config
 	json cfg;
 	this->toFileJson(cfg);
+	chips.push_back(std::move(cfg));
 
-	std::string outFilePath(outputDir+name+".json");
+	// connectivity configuration
+	connectivity["chipType"] = "";
 
-	std::ofstream outfile(outFilePath);
-	outfile << std::setw(4) << cfg;
-	outfile.close();
+	connectivity["chips"][0]["config"] = name+".json";
+	connectivity["chips"][0]["tx"] = 0;
+	connectivity["chips"][0]["rx"] = 0;
+	connectivity["chips"][0]["locked"] = 1;
+	connectivity["chips"][0]["enable"] = 1;
+
+	return preset;
 }

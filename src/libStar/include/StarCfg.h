@@ -124,10 +124,9 @@ class StarCfg : public FrontEndCfg {
   void toFileJson(json &j) override;
   void fromFileJson(json &j) override;
 
-  using configFuncMap = std::unordered_map<std::string, void(StarCfg::*)(const std::string&)>;
+  using configFuncMap = std::unordered_map<std::string, std::tuple<json, std::vector<json>>(StarCfg::*)(void)>;
   static configFuncMap createConfigs;
-
-  void createExampleConfig(const std::string& outputDir, const std::string& systemType) override;
+  std::tuple<json, std::vector<json>> getPreset(const std::string& systemType) override;
 
   size_t numABCs() { return m_ABCchips.size(); }
 
@@ -166,9 +165,9 @@ class StarCfg : public FrontEndCfg {
     return m_ABCchips.at(chipIndex-1);
   }
 
-  void createConfigSingleFE(const std::string& outputDir);
-  void createConfigLSStave(const std::string& outputDir);
-  void createConfigPetal(const std::string& outputDir);
+  std::tuple<json, std::vector<json>> createConfigSingleFE();
+  std::tuple<json, std::vector<json>> createConfigLSStave();
+  std::tuple<json, std::vector<json>> createConfigPetal();
 };
 
 #endif

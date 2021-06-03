@@ -490,19 +490,20 @@ namespace {
         unsigned tx; unsigned rx;
     };
 
-    void createConfigStarObject(StarCfg* feCfg,
-                                const std::array<StarModule, 14>& modules,
-                                const std::string& outputDir,
-                                const std::string& configName) {
+    std::tuple<json, std::vector<json>> createConfigStarObject(
+        StarCfg* feCfg, const std::array<StarModule, 14>& modules) {
+
+        std::tuple<json, std::vector<json>> preset;
+        auto& [systemCfg, chips] = preset;
+
         const std::string chipName(feCfg->getName());
 
         // Connectivity config
-        json systemCfg;
         systemCfg["chipType"] = "Star";
 
         for (int i=0; i<modules.size(); i++) {
             std::string mName(chipName+"_"+modules[i].name);
-            systemCfg["chips"][i]["config"] = outputDir+mName+".json";
+            systemCfg["chips"][i]["config"] = mName+".json";
             systemCfg["chips"][i]["tx"] = modules[i].tx;
             systemCfg["chips"][i]["rx"] = modules[i].rx;
             systemCfg["chips"][i]["locked"] = 1;
@@ -517,33 +518,22 @@ namespace {
                 feCfg->addABCchipID(iABC);
             }
 
-            // Write chip config to file
             json chipCfg;
             feCfg->toFileJson(chipCfg);
 
-            std::string chipFilePath(systemCfg["chips"][i]["config"]);
-            logger->info("Write chip config to file {} ... ", chipFilePath);
-
-            std::ofstream chipfile(chipFilePath);
-            chipfile << std::setw(4) << chipCfg;
-            chipfile.close();
+            // Add chip config to list
+            chips.push_back(std::move(chipCfg));
         }
 
-        // Write connectivity config to file
-        std::string outFilePath(outputDir+configName);
-        logger->info("Write connectivity config to file {} ... ", outFilePath);
-
-        std::ofstream outfile(outFilePath);
-        outfile << std::setw(4) << systemCfg;
-        outfile.close();
+        return preset;
     }
 }
 
-void StarCfg::createConfigSingleFE(const std::string& outputDir) {
-    FrontEndCfg::createExampleConfig(outputDir);
+std::tuple<json, std::vector<json>> StarCfg::createConfigSingleFE() {
+    return FrontEndCfg::getPreset("SingleChip");
 }
 
-void StarCfg::createConfigLSStave(const std::string& outputDir) {
+std::tuple<json, std::vector<json>> StarCfg::createConfigLSStave() {
     // 14 HCCStars on one side of a long strip stave
     const std::array<StarModule, 14> lsstave {{
         {.name="LS0",  .hccID=0,  .numABCs=10, .tx=100, .rx=13 },
@@ -562,10 +552,10 @@ void StarCfg::createConfigLSStave(const std::string& outputDir) {
         {.name="LS13", .hccID=13, .numABCs=10, .tx=103, .rx=0  }
     }};
 
-    createConfigStarObject(this, lsstave, outputDir, "example_lsstave_setup.json");
+    return createConfigStarObject(this, lsstave);
 }
 
-void StarCfg::createConfigPetal(const std::string& outputDir) {
+std::tuple<json, std::vector<json>> StarCfg::createConfigPetal() {
     // 14 HCCStars on one side of a petal
     const std::array<StarModule, 14> petal {{
         {.name="R0_H0", .hccID=0,  .numABCs=8,  .tx=102, .rx=16 },
@@ -584,7 +574,7 @@ void StarCfg::createConfigPetal(const std::string& outputDir) {
         {.name="R5_H1", .hccID=13, .numABCs=9,  .tx=103, .rx=10 }
     }};
 
-    createConfigStarObject(this, petal, outputDir, "example_petal_setup.json");
+    return createConfigStarObject(this, petal);
 }
 
 StarCfg::configFuncMap StarCfg::createConfigs = {
@@ -593,14 +583,18 @@ StarCfg::configFuncMap StarCfg::createConfigs = {
     {"StripPetal", &StarCfg::createConfigPetal}
 };
 
-void StarCfg::createExampleConfig(const std::string& outputDir, const std::string& systemType) {
+std::tuple<json, std::vector<json>> StarCfg::getPreset(const std::string& systemType) {
     try {
-        (this->*createConfigs.at(systemType))(outputDir);
+        auto preset = (this->*createConfigs.at(systemType))();
+        return preset;
     } catch (std::out_of_range &oor) {
         logger->error("Unknown system type: {}", systemType);
         std::string knowntypes;
-        for (const auto& f : StarCfg::createConfigs) knowntypes += f.first+" ";
+        for (const auto& f : StarCfg::createConfigs)
+            knowntypes += f.first+" ";
         logger->info("Known system types are: {}", knowntypes);
+        throw;
+    } catch (...) {
         throw;
     }
 }

@@ -76,7 +76,7 @@ class FrontEndCfg {
         virtual void toFileJson(json&)=0;
         virtual void fromFileJson(json&)=0;
 
-        virtual void createExampleConfig(const std::string& outputDir, const std::string& systemType="SingleChip");
+        virtual std::tuple<json, std::vector<json>> getPreset(const std::string& systemType="SingleChip");
 
         unsigned getChannel() {return rxChannel;}
 		unsigned getTxChannel() {return txChannel;}
