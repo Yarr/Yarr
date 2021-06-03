@@ -142,8 +142,7 @@ void Rd53aCmd::wrRegisterBlock(uint32_t chipId, uint32_t address, uint16_t value
     tmp = (this->encode5to8(value[5]>>5) << 24);
     tmp += (this->encode5to8(value[5]) << 16);
     tmp += 0x6969;
-
-
+    core->writeFifo(tmp);
     core->releaseFifo();
 
 }

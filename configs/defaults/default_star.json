@@ -31,9 +31,9 @@
 
         "common": {
             "ADCS1": "000d0f0d",
-            "ADCS3": "100f100d",
-            "ADCS4": "00000d02",
-            "ADCS5": "0000000c",
+            "ADCS2": "100f100d",
+            "ADCS3": "00000d02",
+            "ADCS4": "0000000c",
             "ADCS6": "0002000c",
             "ADCS7": "80070000",
             "CREG0": "00000700",
@@ -56,8 +56,8 @@
                     {"STR_DEL": 22, "BTRANGE": 3, "BVT": 21, "D_S": "01ff", "A_S": "01ff"},
                     {"STR_DEL": 21, "BTRANGE": 0, "BVT": 22, "D_S": "01ff", "A_S": "01ff"}],
 
-        "masks": [null, null, null, null, null, null, null, null, null, null],
-        "trim": [16, 16, 16, 16, 16, 16, 16, 16, 16, 16],
+        "masked": [null, null, null, null, null, null, null, null, null, null],
+        "trims": [16, 16, 16, 16, 16, 16, 16, 16, 16, 16],
 
         "comment": "Useful to end with a comment"
     }

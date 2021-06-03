@@ -8,6 +8,8 @@
 // # Description: Histograms FrontEnd data
 // ################################
 
+#include <fstream>
+
 #include "EventData.h"
 #include "HistogramAlgorithm.h"
 #include "HistogramBase.h"

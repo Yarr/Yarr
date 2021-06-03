@@ -34,7 +34,7 @@ StarChips::StarChips()
 
 	//Create dummy configuration as placeholder for globalFe in preScan routines
 	setHCCChipId(0xf);
-	addABCchipID(0xf);
+	addABCchipID(0xf, 0);
 }
 
 StarChips::StarChips(HwController *arg_core)
@@ -156,7 +156,7 @@ void StarChips::configure() {
 	this->writeRegisters();
 
 	// Make histo size match number of configured ABCs
-	geo.nCol = 128 * numABCs();
+	geo.nCol = 128 * (highestABC()+1);
 }
 
 void StarChips::sendCmd(uint16_t cmd){
@@ -204,7 +204,7 @@ bool StarChips::writeRegisters(){
         // First write HCC
         int hccId = getHCCchipID();
 
-        const auto &hcc_regs = HccStarRegInfo::instance()->hccregisterMap;
+        const auto &hcc_regs = HccStarRegInfo::instance()->hccWriteMap;
 	logger->info("Starting on HCC {} with {} registers", hccId, hcc_regs.size());
 
         for(auto &map_iter: hcc_regs) {
@@ -217,7 +217,7 @@ bool StarChips::writeRegisters(){
         this->reset();
 
         // Then each ABC
-        const auto &abc_regs = AbcStarRegInfo::instance()->abcregisterMap;
+        const auto &abc_regs = AbcStarRegInfo::instance()->abcWriteMap;
 	eachAbc([&](auto &abc) {
                 int this_chipID = abc.getABCchipID();
 
@@ -247,7 +247,19 @@ void StarChips::writeNamedRegister(std::string name, uint16_t reg_value) {
     }
   } else  if (strPrefix=="ABCs") {
     auto subRegName = name.substr(5); // Including _
-    if(!ABCStarSubRegister::_is_valid(subRegName.c_str())) {
+    if(subRegName == "MASKs") {
+      // Special case for digitial scan
+      uint32_t val = (reg_value == 0)?0:0xffffffff;
+      logger->trace("Writing {:08x} to mask register for all ABCStar chips.", val);
+      eachAbc([&](auto &cfg) {
+          for(int m = ABCStarRegister::MaskInput(0);
+              m <= ABCStarRegister::MaskInput(7); m++) {
+            cfg.setRegisterValue(ABCStarRegister::_from_integral(m), val);
+            sendCmd( write_abc_register(m, val,
+                                        getHCCchipID(), cfg.getABCchipID()));
+          }
+        });
+    } else if(!ABCStarSubRegister::_is_valid(subRegName.c_str())) {
       logger->error(" --> Error: Could not find ABC sub-register \"{}\"", subRegName);
     } else {
       logger->trace("Writing {} on setting '{}' for all ABCStar chips.", reg_value, name);

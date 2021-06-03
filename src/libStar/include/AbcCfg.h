@@ -50,6 +50,7 @@ class ABCStarRegister : public ABCStarRegs {
     ABCStarRegister(const ABCStarRegs::_enumerated & other) : ABCStarRegs::ABCStarRegs(other) {}
     static  ABCStarRegister MaskInput(int i) { return ABCStarRegs::_from_integral((int)(ABCStarRegs::MaskInput0) + i);}
     static  ABCStarRegister CalReg(int i) { return ABCStarRegs::_from_integral((int)(ABCStarRegs::CalREG0) + i);}
+    static  ABCStarRegister Counter(int i) { return ABCStarRegs::_from_integral((int)(ABCStarRegs::HitCountREG0) + i);}
     /// 32 registers containing lo 4 bits of trim
     static  ABCStarRegister TrimLo(int i) { return ABCStarRegs::_from_integral((int)(ABCStarRegs::TrimDAC0) + i);}
     /// 8 registers containing hi 1 bits of trim
@@ -64,6 +65,9 @@ class AbcStarRegInfo {
 
   //This is a map from each register address to the register info.  Thus abcregisterMap[addr]
   std::map<unsigned, std::shared_ptr<RegisterInfo>> abcregisterMap;
+
+  /// Registers to write in normal operation
+  std::map<unsigned, std::shared_ptr<RegisterInfo>> abcWriteMap;
 
   //This is a 2D map of each subregister to the ABC subregister name.  For example abcSubRegisterMap_all[NAME]
   std::map<ABCStarSubRegister, std::shared_ptr<SubRegisterInfo>> abcSubRegisterMap_all;

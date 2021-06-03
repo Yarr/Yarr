@@ -179,6 +179,7 @@ void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
     std::unique_ptr<uint32_t[]> buf(new uint32_t[len32]);
     buf[0] = 0;
     size_t buf_off = 0;
+    bool seen_sop = false;
     for(int o=0; o<len64; o++) {
       auto word = get64(o+startOffset);
       // 0-6 bits indicate cntrl (3c, dc, 0 are SOP, EOP, IDLE)
@@ -197,11 +198,18 @@ void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
             buf_off = 0;
             buf.reset(new uint32_t[len32]);
             buf[0] = 0;
+          } else if(byte == 0x3c) {
+            seen_sop = true;
           } else if(!((byte == 0x3c) || (byte == 0xdc) || (byte == 0))) {
             logger->warn("QueueData {}.{}: Bad control {:02x}",
                          o, m, byte);
           }
         } else {
+          if(buf_off == 0 && !seen_sop) {
+            logger->warn("QueueData {}.{}: Bad data before SOP {:02x}",
+                         o, m, byte);
+          }
+
           buf[buf_off/4] |= byte << ((buf_off%4) * 8);
           // logger->trace("QueueData {}.{}: {} {:08x}", o, m,
           //               buf_off, buf[buf_off/4]);

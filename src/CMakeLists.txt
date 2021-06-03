@@ -77,7 +77,7 @@ list(APPEND libs ${YARR_FRONT_ENDS_TO_BUILD} )
 
 YARR_ADD_VARIANT()
 YARR_ADD_TBB()
-foreach(lib ${libs})   
+foreach(lib ${libs})
     add_definitions( -DNO_PYTHON )
     include_directories(lib${lib}/include)
     include_directories(BEFORE SYSTEM ${PROJECT_BINARY_DIR}/include)
@@ -137,8 +137,13 @@ if( NOT SELECT_TOOLS STREQUAL "" )
     list(FILTER tools INCLUDE REGEX "${SELECT_TOOLS}")
 endif()
 
+# Remove unit tests that are inside of tools if we are not building the YARR test suite
+if(NOT BUILD_TESTS)
+    list(FILTER tools EXCLUDE REGEX ".*/test_*")
+endif()
+
 if (NOT "NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )
-  list(FILTER tools EXCLUDE REGEX tools/testNetioHw.cpp|tools/testBitStream.cpp|tools/testScan.cpp)
+  list(FILTER tools EXCLUDE REGEX tools/testNetioHw.cpp)
 endif()
 
 message("Executeables to build:")
@@ -164,17 +169,20 @@ install(DIRECTORY ${PROJECT_BINARY_DIR}/lib DESTINATION ${TARGET_INSTALL_AREA}  
     WORLD_EXECUTE WORLD_READ GROUP_EXECUTE GROUP_READ  )
 
 # Tests
-file(GLOB_RECURSE test_src
-     CONFIGURE_DEPENDS
-     tests/test_*.cpp)
+if(BUILD_TESTS)
+    file(GLOB_RECURSE test_src
+        CONFIGURE_DEPENDS
+        tests/test_*.cpp
+    )
 
-# Make one executable
-add_executable(test_main ${test_src} tests/main.cpp)
-foreach(lib ${libs})
+    # Make one executable
+    add_executable(test_main ${test_src} tests/main.cpp)
+    foreach(lib ${libs})
        target_link_libraries(test_main ${lib})
-endforeach()
-target_link_libraries(test_main pthread rt ${YARR_LIB_DEPS} )
-add_dependencies(test_main Yarr)
+    endforeach()
+    target_link_libraries(test_main pthread rt ${YARR_LIB_DEPS} )
+    add_dependencies(test_main Yarr)
 
-# This uses features of CTest, so requires enable_testing somewhere
-add_test(catch2_tests ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/test_main)
+    # This uses features of CTest, so requires enable_testing somewhere
+    add_test(catch2_tests ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/test_main)
+endif()

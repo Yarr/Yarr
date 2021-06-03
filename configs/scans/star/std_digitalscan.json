@@ -41,6 +41,8 @@
     ],
     "name": "StarDigitalScan",
     "prescan": {
+	"ABCs_MASKs": 1,
+	"ABCs_TM": 1
     }
   }
 }
