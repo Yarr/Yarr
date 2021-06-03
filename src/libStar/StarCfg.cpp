@@ -5,6 +5,7 @@
 // ################################
 
 #include "StarCfg.h"
+#include "StarPreset.h"
 
 #include <iomanip>
 
@@ -481,107 +482,23 @@ void StarCfg::fromFileJson(json &j) {
     }
 }
 
-//////////
-// Generate example configurations
-
-namespace {
-    struct StarModule {
-        std::string name; unsigned hccID; unsigned numABCs;
-        unsigned tx; unsigned rx;
-    };
-
-    std::tuple<json, std::vector<json>> createConfigStarObject(
-        StarCfg* feCfg, const std::array<StarModule, 14>& modules) {
-
-        std::tuple<json, std::vector<json>> preset;
-        auto& [systemCfg, chips] = preset;
-
-        const std::string chipName(feCfg->getName());
-
-        // Connectivity config
-        systemCfg["chipType"] = "Star";
-
-        for (int i=0; i<modules.size(); i++) {
-            std::string mName(chipName+"_"+modules[i].name);
-            systemCfg["chips"][i]["config"] = mName+".json";
-            systemCfg["chips"][i]["tx"] = modules[i].tx;
-            systemCfg["chips"][i]["rx"] = modules[i].rx;
-            systemCfg["chips"][i]["locked"] = 1;
-
-            // Chip config
-            feCfg->setName(mName);
-            feCfg->setHCCChipId(modules[i].hccID);
-
-            // Add ABCStars
-            feCfg->clearABCchipIDs();
-            for (int iABC=0; iABC<modules[i].numABCs; iABC++) {
-                feCfg->addABCchipID(iABC);
-            }
-
-            json chipCfg;
-            feCfg->toFileJson(chipCfg);
-
-            // Add chip config to list
-            chips.push_back(std::move(chipCfg));
-        }
-
-        return preset;
-    }
-}
+StarCfg::configFuncMap StarCfg::createConfigs = {
+    {"SingleChip", &StarCfg::createConfigSingleFE},
+    {"StripLSStave", &StarCfg::createConfigLSStave},
+    {"StripPetal", &StarCfg::createConfigPetal}
+};
 
 std::tuple<json, std::vector<json>> StarCfg::createConfigSingleFE() {
     return FrontEndCfg::getPreset("SingleChip");
 }
 
 std::tuple<json, std::vector<json>> StarCfg::createConfigLSStave() {
-    // 14 HCCStars on one side of a long strip stave
-    const std::array<StarModule, 14> lsstave {{
-        {.name="LS0",  .hccID=0,  .numABCs=10, .tx=100, .rx=13 },
-        {.name="LS1",  .hccID=1,  .numABCs=10, .tx=100, .rx=12 },
-        {.name="LS2",  .hccID=2,  .numABCs=10, .tx=100, .rx=11 },
-        {.name="LS3",  .hccID=3,  .numABCs=10, .tx=100, .rx=10 },
-        {.name="LS4",  .hccID=4,  .numABCs=10, .tx=101, .rx=9  },
-        {.name="LS5",  .hccID=5,  .numABCs=10, .tx=101, .rx=8  },
-        {.name="LS6",  .hccID=6,  .numABCs=10, .tx=101, .rx=7  },
-        {.name="LS7",  .hccID=7,  .numABCs=10, .tx=101, .rx=6  },
-        {.name="LS8",  .hccID=8,  .numABCs=10, .tx=102, .rx=5  },
-        {.name="LS9",  .hccID=9,  .numABCs=10, .tx=102, .rx=4  },
-        {.name="LS10", .hccID=10, .numABCs=10, .tx=102, .rx=3  },
-        {.name="LS11", .hccID=11, .numABCs=10, .tx=102, .rx=2  },
-        {.name="LS12", .hccID=12, .numABCs=10, .tx=102, .rx=1  },
-        {.name="LS13", .hccID=13, .numABCs=10, .tx=103, .rx=0  }
-    }};
-
-    return createConfigStarObject(this, lsstave);
+    return StarPreset::createConfigStarObject(this, StarPreset::lsstave);
 }
 
 std::tuple<json, std::vector<json>> StarCfg::createConfigPetal() {
-    // 14 HCCStars on one side of a petal
-    const std::array<StarModule, 14> petal {{
-        {.name="R0_H0", .hccID=0,  .numABCs=8,  .tx=102, .rx=16 },
-        {.name="R0_H1", .hccID=1,  .numABCs=9,  .tx=102, .rx=24 },
-        {.name="R1_H0", .hccID=2,  .numABCs=10, .tx=102, .rx=20 },
-        {.name="R1_H1", .hccID=3,  .numABCs=11, .tx=102, .rx=26 },
-        {.name="R2_H0", .hccID=4,  .numABCs=6,  .tx=101, .rx=22 },
-        {.name="R2_H1", .hccID=5,  .numABCs=6,  .tx=101, .rx=12 },
-        {.name="R3_H0", .hccID=6,  .numABCs=7,  .tx=101, .rx=14 },
-        {.name="R3_H1", .hccID=7,  .numABCs=7,  .tx=101, .rx=18 },
-        {.name="R3_H2", .hccID=8,  .numABCs=7,  .tx=101, .rx=0  },
-        {.name="R3_H3", .hccID=9,  .numABCs=7,  .tx=101, .rx=2  },
-        {.name="R4_H0", .hccID=10, .numABCs=8,  .tx=103, .rx=4  },
-        {.name="R4_H1", .hccID=11, .numABCs=8,  .tx=103, .rx=8  },
-        {.name="R5_H0", .hccID=12, .numABCs=9,  .tx=103, .rx=6  },
-        {.name="R5_H1", .hccID=13, .numABCs=9,  .tx=103, .rx=10 }
-    }};
-
-    return createConfigStarObject(this, petal);
+    return StarPreset::createConfigStarObject(this, StarPreset::petal);
 }
-
-StarCfg::configFuncMap StarCfg::createConfigs = {
-    {"SingleChip", &StarCfg::createConfigSingleFE},
-    {"StripLSStave", &StarCfg::createConfigLSStave},
-    {"StripPetal", &StarCfg::createConfigPetal}
-};
 
 std::tuple<json, std::vector<json>> StarCfg::getPreset(const std::string& systemType) {
     try {
