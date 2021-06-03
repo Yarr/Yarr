@@ -161,8 +161,9 @@ void ItsdaqTxCore::buildTriggerSequence() {
   auto words32 = std::min(trigLen, m_trigWords.size());
 
   m_trigBuffer.clear();
-  for(int i=0; i<words32; i++) {
-    buildSequenceWord(m_trigBuffer, m_trigWords[i], 0x78557855);
+  //for(int i=0; i<words32; i++) {
+  for(int i=words32-1; i >= 0; i--) { //Need to send last word first
+          buildSequenceWord(m_trigBuffer, m_trigWords[i], 0x78557855);
   }
 }
 
