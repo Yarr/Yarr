@@ -1,48 +1,52 @@
 {
-  "scan": {
-    "analysis": [
-      {
-        "algorithm": "OccupancyAnalysis",
-        "config": {
-          "createMask": true
+    "scan": {
+	"analysis": [
+	    {
+		"algorithm": "OccupancyAnalysis",
+		"config": {}
+	    }
+	],
+	"histogrammer": [
+	    {
+		"algorithm": "OccupancyMap",
+		"config": {}
+	    }
+	],
+	"loops": [
+	    
+	    {
+		"config": {
+		    "max": 255,
+		    "min": 0,
+		    "step": 1,
+		    "parameter":"ABCs_LATENCY"
+		},
+		"loopAction": "StdParameterLoop"
+	    },
+	    {
+		"config": {
+		    "trig_count": 50,
+		    "trig_frequency": 1000,
+		    "trig_time": 1,
+		    "l0_latency": 30,
+		    "extTrigger": false,
+		    "noInject": false,
+                    "digital": true
+		},
+		"loopAction": "StarTriggerLoop"
+	    },
+	    {
+		"loopAction": "StdDataLoop"
+	    }
+	],
+	"name": "strobeDelayScan",
+        "prescan": {
+            "ABCs_TEST_PULSE_ENABLE": 1,
+            "ABCs_LP_ENABLE": 1,
+            "ABCs_PR_ENABLE": 1,
+            "ABCs_TM": 2,
+            "ABCs_DETMODE": 1,
+            "ABCs_RRMODE": 1
         }
-      }
-    ],
-    "histogrammer": [
-        {
-            "algorithm": "OccupancyMap",
-            "config": {}
-        },
-        {
-            "algorithm": "L1Dist",
-            "config": {}
-        },
-        {
-            "algorithm": "HitsPerEvent",
-            "config": {}
-        }
-    ],
-    "loops": [
-      {
-        "config": {
-          "min": 0,
-          "max": 4,
-          "step": 1,
-          "name": "None"
-        },
-        "loopAction": "StdParameterLoop"
-      },
-      {
-        "loopAction": "StarTriggerLoop"
-      },
-      {
-        "loopAction": "StdDataLoop"
-      }
-    ],
-    "name": "StarDigitalScan",
-    "prescan": {
-	"ABCs_MASKs": 1,
-	"ABCs_TM": 1
     }
-  }
 }
