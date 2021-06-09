@@ -1,0 +1,43 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "OccupancyAnalysis",
+        "config": {}
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "n_count": 1
+    },
+    "loops": [       
+      {
+        "config": {
+        },
+        "loopAction": "StarRegDump"
+      },
+
+      {
+	  "config": {
+	      "trig_count": 2,
+	      "trig_frequency": 100,
+	      "trig_time": 0,
+	      "l0_latency": 5,
+	      "noInject": true
+	  },
+        "loopAction": "StarTriggerLoop"
+      },
+      {
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "RegDumpScan",
+    "prescan": {
+	"ABCs_BCAL": 114
+    }
+  }
+}
