@@ -42,8 +42,8 @@ void StarTriggerLoop::init() {
 
 	g_tx->setTrigFreq(m_trigFreq);
 	g_tx->setTrigCnt(getTrigCnt());
-    g_tx->setTrigWord(&m_trigWord[0], m_trigWordLength);
-    g_tx->setTrigWordLength(m_trigWordLength);
+        g_tx->setTrigWord(&m_trigWord[0], m_trigWordLength);
+        g_tx->setTrigWordLength(m_trigWordLength);
 	g_tx->setTrigTime(m_trigTime);
 
     g_tx->setCmdEnable(keeper->getTxMask());
