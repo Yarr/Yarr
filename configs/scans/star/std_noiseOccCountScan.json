@@ -1,12 +1,7 @@
 {
     "scan": {
 	"analysis": {
-	    "0": {
-		"algorithm": "Analysis2D",
-		"config": {
-		}
-	    },
-            "1": {
+            "0": {
                 "algorithm": "OccupancyAnalysis"
             },
 	    
@@ -40,7 +35,7 @@
 		    "trig_count": 250,
 		    "trig_frequency": 1e3,
 		    "trig_time": 0,
-		    "l0_latency": 30,
+		    "l0_latency": 2,
 		    "noInject": true
 		},
 		"loopAction": "StarCounterLoop"

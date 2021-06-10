@@ -83,7 +83,7 @@ void StarCounterLoop::execPart1() {
     for ( FrontEnd* fe : keeper->feList ) {
       SPDLOG_LOGGER_DEBUG(logger, fe->isActive());
         if (!fe->isActive()) {continue;}
-        ((StarChips*) fe)->setAndWriteABCSubRegister("ENCOUNT", 1, 2);
+        ((StarChips*) fe)->setAndWriteABCSubRegister("ENCOUNT", 1, 0xf);
         SPDLOG_LOGGER_DEBUG(logger, "Did ENCOUNT");
         ((StarChips*) fe)->setAndWriteABCSubRegister("PR_ENABLE", 0, 0xf);
         ((StarChips*) fe)->setAndWriteABCSubRegister("LP_ENABLE", 0, 0xf);
