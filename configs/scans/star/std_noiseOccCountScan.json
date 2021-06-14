@@ -42,15 +42,10 @@
 	    }	],
 	"name": "NoiseOccCountScan",
 	"prescan": {
-            "ABCs_CALPULSE_ENABLE": 1,
-            "ABCs_LP_ENABLE": 1,
-            "ABCs_BCFLAG_ENABLE": 0,
             "ABCs_MASKHPR": 1,
             "ABCs_STOPHPR": 1,
             "HCC_MASKHPR": 1,
-            "HCC_STOPHPR": 1,
-            "ABCs_BTRANGE": 6,
-            "ABCs_DETMODE": 1
+            "HCC_STOPHPR": 1
 	}
     }
 }
