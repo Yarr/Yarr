@@ -341,10 +341,8 @@ class ParameterAnalysis : public AnalysisAlgorithm {
 	unsigned count;
         std::string paramName;
         std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
-        std::map<unsigned, unsigned> innerCnt;
         std::map<unsigned, std::unique_ptr<Histo2d>> paramCurves;
-        std::map<unsigned, std::unique_ptr<Histo2d>> sCurve;
-        std::unique_ptr<Histo2d> paramMap;
+        std::map<unsigned, std::unique_ptr<Histo2d>> paramMaps;
 
 };
 

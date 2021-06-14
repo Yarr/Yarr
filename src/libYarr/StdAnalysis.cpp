@@ -125,7 +125,6 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
         hh->setYaxisTitle("Row");
         hh->setZaxisTitle("Hits");
         occMaps[ident] = std::move(hh);
-        innerCnt[ident] = 0;
     }
 
     // Add up Histograms
@@ -1514,12 +1513,12 @@ void ParameterAnalysis::processHistogram(HistogramBase *h) {
                 }
 
                 // Check if Histogram exists
-                if (sCurve[outerIdent] == NULL) {
+                if (paramMaps[outerIdent] == NULL) {
                     Histo2d *hhh = new Histo2d(paramName, paramBins+1, paramMin-((double)paramStep/2.0), paramMax+((double)paramStep/2.0), injections-1, 0.5, injections-0.5);
                     hhh->setXaxisTitle(paramName);
                     hhh->setYaxisTitle("Occupancy");
                     hhh->setZaxisTitle("Number of pixels");
-                    sCurve[outerIdent].reset(hhh);
+                    paramMaps[outerIdent].reset(hhh);
                 }
                 if (paramCurves[outerIdent] == NULL) {
                     Histo2d *hhh = new Histo2d(paramName + "_Map", nCol*nRow, -0.5, nCol*nRow-0.5, paramBins+1, paramMin-((double)paramStep/2.0), paramMax+((double)paramStep/2.0));
@@ -1531,9 +1530,8 @@ void ParameterAnalysis::processHistogram(HistogramBase *h) {
 
                 // Add up Histograms
                 double thisBin = hh->getBin(bin);
-                sCurve[outerIdent]->fill(param, thisBin);
+                paramMaps[outerIdent]->fill(param, thisBin);
                 paramCurves[outerIdent]->fill(bin, param, thisBin);
-                innerCnt[ident]++;
             }
         }
     }
@@ -1542,7 +1540,7 @@ void ParameterAnalysis::processHistogram(HistogramBase *h) {
 void ParameterAnalysis::end() {
   alog->trace("ParameterAnalysis end");
   for (unsigned i=0; i<paramCurves.size(); i++) {
-      output->pushData(std::move(sCurve[i]));
+      output->pushData(std::move(paramMaps[i]));
       output->pushData(std::move(paramCurves[i]));
   }
 }
