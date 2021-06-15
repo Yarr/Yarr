@@ -1,0 +1,63 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "OccPixelThresholdTune",
+	"config": {
+	    "isVCal": false,
+            "occLowCut": 0.45,
+            "occHighCut": 0.55
+        }
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "n_count": 1
+    },
+    "loops": [
+      { 
+        "config": {
+          "max": 31,
+          "min": 0,
+          "steps": [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+	  "resetTdac": true
+
+        },
+        "loopAction": "StarChannelFeedback"
+      },      
+      {
+        "config": {
+          "trig_count": 1000,
+          "trig_frequency": 1000,
+          "trig_time": 0,
+          "l0_latency": 30,
+          "verbose": false,
+          "extTrigger": false,
+          "noInject": true
+        },
+        "loopAction": "StarTriggerLoop"
+      },
+      {
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "StdChannelThresholdTune",
+    "prescan": {
+       	"ABCs_PR_ENABLE":      1,
+	"ABCs_LP_ENABLE":      1,
+        "ABCs_BTRANGE": 6,
+	"ABCs_TM":    	  0,
+	"ABCs_CALPULSE_ENABLE":    1,
+	"ABCs_CALPULSE_POLARITY":    0,
+        "ABCs_MASKHPR": 1,
+        "ABCs_STOPHPR": 1,
+        "ABCs_BVT": 15,
+        "HCC_MASKHPR": 1,
+        "HCC_STOPHPR": 1
+    }
+  }
+}
