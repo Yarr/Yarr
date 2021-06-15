@@ -31,7 +31,7 @@
       },      
       {
         "config": {
-          "trig_count": 1000,
+          "trig_count": 5000,
           "trig_frequency": 1000,
           "trig_time": 0,
           "l0_latency": 30,
@@ -47,17 +47,22 @@
     ],
     "name": "StdChannelThresholdTune",
     "prescan": {
-       	"ABCs_PR_ENABLE":      1,
-	"ABCs_LP_ENABLE":      1,
-        "ABCs_BTRANGE": 6,
-	"ABCs_TM":    	  0,
-	"ABCs_CALPULSE_ENABLE":    1,
-	"ABCs_CALPULSE_POLARITY":    0,
-        "ABCs_MASKHPR": 1,
-        "ABCs_STOPHPR": 1,
-        "ABCs_BVT": 15,
-        "HCC_MASKHPR": 1,
-        "HCC_STOPHPR": 1
+       	"ABCs_PR_ENABLE":  1,
+	"ABCs_LP_ENABLE":  1,
+        "ABCs_BTRANGE":    6,
+            "ABCs_B8BREF":    13,
+            "ABCs_BVREF":     13,
+            "ABCs_BIREF":     15,
+
+	"ABCs_TM":    	   0,
+        "ABCs_DETMODE":    1,
+        "ABCs_MASKHPR":    1,
+        "ABCs_STOPHPR":    1,
+        "ABCs_BVT":       15,
+            "ABCs_COMBIAS":   16,
+
+        "HCC_MASKHPR":     1,
+        "HCC_STOPHPR":     1
     }
   }
 }

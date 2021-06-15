@@ -77,9 +77,11 @@ void StarCfg::setTrimDAC(unsigned col, unsigned row, int value)  {
 
     unsigned chipIndex = ceil(row/2.0);
 
-    auto &abc = abcFromIndex(chipIndex);
+    if(abcAtIndex(chipIndex)) {
+        auto &abc = abcFromIndex(chipIndex);
+        abc.setTrimDACRaw(channel, value);
+    }
 
-    abc.setTrimDACRaw(channel, value);
 }
 
 
@@ -97,9 +99,11 @@ int StarCfg::getTrimDAC(unsigned col, unsigned row) const {
 
     unsigned chipIndex = ceil(row/2.0);
 
-    const auto &abc = abcFromIndex(chipIndex);
-
-    return abc.getTrimDACRaw(channel);
+    if(abcAtIndex(chipIndex)) {
+        const auto &abc = abcFromIndex(chipIndex);
+        return abc.getTrimDACRaw(channel);
+    }
+    return 0;
 }
 
 void StarCfg::toFileJson(json &j) {

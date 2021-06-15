@@ -46,16 +46,13 @@ void StarChannelFeedback::loadConfig(json &j) {
         m_steps.clear();
         for(auto i: j["steps"])
             m_steps.push_back(i);
-        std::cout << "Got " << m_steps.size() << " steps!!" << std::endl;
     }
 }
 
 void StarChannelFeedback::feedback(unsigned channel, std::unique_ptr<Histo2d> h) {
-	std::cout << __PRETTY_FUNCTION__ << "   " << h->getName() <<std::endl;
     // TODO Check on NULL pointer
     if (h->size() != m_nRow*m_nCol) {
-        std::cout << __PRETTY_FUNCTION__ 
-            << " --> ERROR : Wrong type of feedback histogram on channel " << channel << std::endl;
+        logger->error("Wrong type of feedback histogram on channel {}.", channel);
         doneMap[channel] = true;
     } else {
         m_fb[channel] = std::move(h);
@@ -64,10 +61,11 @@ void StarChannelFeedback::feedback(unsigned channel, std::unique_ptr<Histo2d> h)
                 int sign = m_fb[channel]->getBin(m_fb[channel]->binNum(col, row));
 
                 //getTrimDAC and setTrimDAC use an old histogram layout converting here for now
-                unsigned row_alt = row % 128;
-                unsigned col_alt = col + 2*(row >> 7);
+                unsigned col_alt = ((col-1) % 128)+1;
+                unsigned row_alt = row + 2*( (col-1) >> 7);
 
                 int v = dynamic_cast<StarChips*>(keeper->getFe(channel))->getTrimDAC(col_alt, row_alt);
+                logger->trace("row {}, col {}, v {}, sign {}, row_alt {}, col_alt {}",row,col,v,sign,row_alt,col_alt);
 
                 v = v + ((m_steps[m_cur])*sign);
                 if (v<min) v = min;
@@ -87,8 +85,6 @@ void StarChannelFeedback::writeChannelCfg(StarChips *fe) {
 }
 
 void StarChannelFeedback::init() {
-    if (1)
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
     m_done = false;
     m_cur = 0;
     // Init maps
@@ -100,9 +96,13 @@ void StarChannelFeedback::init() {
                 unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
                 m_fb[ch] = NULL;
                 for (unsigned row=1; row<=m_nRow; row++) {
-                	for (unsigned col=1; col<=m_nCol; col++) {
+                    for (unsigned col=1; col<=m_nCol; col++) {
+
+                        unsigned col_alt = ((col-1) % 128)+1;
+                        unsigned row_alt = row + 2*( (col-1) >> 7);
+                        
                         //Initial TDAC in mid of the range
-                    	dynamic_cast<StarChips*>(keeper->getFe(ch))->setTrimDAC(col, row, 15);
+                        dynamic_cast<StarChips*>(keeper->getFe(ch))->setTrimDAC(col_alt, row_alt, 15);
                     }
                 }
             }
@@ -111,7 +111,6 @@ void StarChannelFeedback::init() {
 }
 
 void StarChannelFeedback::execPart1() {
-	std::cout << __PRETTY_FUNCTION__ << std::endl;
     g_stat->set(this, m_cur);
     // Lock all mutexes
     for (auto fe : keeper->feList) {
@@ -119,11 +118,9 @@ void StarChannelFeedback::execPart1() {
             this->writeChannelCfg(dynamic_cast<StarChips*>(fe));
         }
     }
-    std::cout << " -> Feedback step " << m_cur << " with size " << m_steps[m_cur] << std::endl;
 }
 
 void StarChannelFeedback::execPart2() {
-	std::cout << __PRETTY_FUNCTION__ << std::endl;
     // Wait for mutexes to be unlocked by feedback
     for (auto fe: keeper->feList) {
         if (fe->getActive()) {
