@@ -62,37 +62,26 @@ void StarChannelFeedback::feedback(unsigned channel, std::unique_ptr<Histo2d> h)
         for (unsigned row=1; row<=m_nRow; row++) {
             for (unsigned col=1; col<=m_nCol; col++) {
                 int sign = m_fb[channel]->getBin(m_fb[channel]->binNum(col, row));
-                int v = dynamic_cast<StarChips*>(keeper->getFe(channel))->getTrimDAC(col, row);
+
+                //getTrimDAC and setTrimDAC use an old histogram layout converting here for now
+                unsigned row_alt = row % 128;
+                unsigned col_alt = col + 2*(row >> 7);
+
+                int v = dynamic_cast<StarChips*>(keeper->getFe(channel))->getTrimDAC(col_alt, row_alt);
 
                 v = v + ((m_steps[m_cur])*sign);
                 if (v<min) v = min;
                 if (v>max) v = max;
-//                int this_chipID = static_cast<StarChips*> (fe)->getABCchipID(iChip);
-                dynamic_cast<StarChips*>(keeper->getFe(channel))->setTrimDAC(col, row, v);
-                //std::cout << "------trimdac after :" << v << std::endl<< std::endl ;
+                dynamic_cast<StarChips*>(keeper->getFe(channel))->setTrimDAC(col_alt, row_alt, v);
             }
         }
     }
-    //keeper->mutexMap[channel].unlock();
-
-//    for ( FrontEnd* fe : keeper->feList ) {
-//    		if (!fe->isActive()) {continue;}
-//    //		std::cout << "static_cast<StarChips*> (fe)->m_nABC: " << static_cast<StarChips*> (fe)->m_nABC  << std::endl;
-//    		for(int iChip = 1; iChip < static_cast<StarChips*> (fe)->m_nABC+1; ++iChip){ //exclude iChip=0 which is the Hcc
-//    			int this_chipID = static_cast<StarChips*> (fe)->getABCchipID(iChip);
-//
-//    //			std::cout << "static_cast<StarChips*> (fe)->m_nABC: " << static_cast<StarChips*> (fe)->m_nABC << "  " << iChip << " ichip with id: " << this_chipID << std::endl;
-//
-//    			static_cast<StarChips*> (fe)->setAndWriteABCSubRegister(m_subRegName, m_cur, this_chipID);
-//    		}
-//    	}
 
 }
 
 void StarChannelFeedback::writeChannelCfg(StarChips *fe) {
     g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
     fe->writeTrims();
-    //fe->configure();
     while(!g_tx->isCmdEmpty());
     g_tx->setCmdEnable(keeper->getTxMask());
 }
@@ -106,9 +95,8 @@ void StarChannelFeedback::init() {
     if (m_resetTdac) {
         for (auto *fe : keeper->feList) {
             if (fe->getActive()) {
-            	m_nRow = fe->geo.nRow;//*static_cast<StarChips*> (fe)->m_nABC; // used in StarChannelFeedback  --- if better/safer way to declare/access this number is found, pls change.
-            	m_nCol = fe->geo.nCol;  // used in StarChannelFeedback
-            	std::cout << "nrow: " << m_nRow << " ncol: "<< m_nCol<< std::endl;
+            	m_nRow = fe->geo.nRow;
+            	m_nCol = fe->geo.nCol; 
                 unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
                 m_fb[ch] = NULL;
                 for (unsigned row=1; row<=m_nRow; row++) {
@@ -150,13 +138,11 @@ void StarChannelFeedback::execPart2() {
 }
 
 void StarChannelFeedback::end() {
-    /*
+    
     for (auto fe: keeper->feList) {
         if (fe->getActive()) {
-            unsigned rx = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-            keeper->mutexMap[rx].lock();
             this->writeChannelCfg(dynamic_cast<StarChips*>(fe));
         }
     }
-    */
+    
 }
