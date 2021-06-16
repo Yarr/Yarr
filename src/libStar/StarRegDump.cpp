@@ -33,17 +33,6 @@ void StarRegDump::execPart1() {
 
     for ( FrontEnd* fe : keeper->feList ) {
         if (!fe->isActive()) {continue;}
-	
-        auto readReg = [&](auto words) {
-            g_tx->writeFifo((words[0] << 16) + words[1]);
-            g_tx->writeFifo((words[2] << 16) + words[3]);
-            g_tx->writeFifo((words[4] << 16) + words[5]);
-            g_tx->writeFifo((words[6] << 16) + words[7]);
-            g_tx->writeFifo((words[8] << 16) + LCB::IDLE);
-
-            // Could have this once for all regs though...
-            g_tx->releaseFifo();
-        };
 
         if (m_addr == -1) { //Default to looping over all regs
 
