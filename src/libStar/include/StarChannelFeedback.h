@@ -2,11 +2,8 @@
 #define STARCHANNELFEEDBACK_H
 
 // #################################
-// # Author:
-// # Email:
 // # Project: Yarr
 // # Description: Star Channel Feedback Loopaction
-// # Comment: 
 // # Date: Nov 2019
 // ################################
 
@@ -28,10 +25,8 @@ class StarChannelFeedback : public LoopActionBase, public PixelFeedbackReceiver 
 
         void feedback(unsigned channel, std::unique_ptr<Histo2d> h);
 
-    protected:
     private:
         unsigned m_cur;
-        bool tuneLin;
         bool m_resetTdac;
         std::vector<unsigned> m_steps;
 
@@ -44,9 +39,6 @@ class StarChannelFeedback : public LoopActionBase, public PixelFeedbackReceiver 
         void end();
         void execPart1();
         void execPart2();
-
-        int m_nRow;
-        int m_nCol;
 };
 
 

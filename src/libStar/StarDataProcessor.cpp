@@ -159,9 +159,7 @@ void process_data(RawData &curIn,
             }
         }
     } else if(packetType == TYP_ABC_RR || packetType == TYP_HCC_RR || packetType == TYP_ABC_HPR || packetType == TYP_HCC_HPR) {
-        if (logger->should_log(spdlog::level::debug)) {
-            packet.print_more(std::cout);
-        }
+        packet.print_more(std::cout);
     }
 }
 

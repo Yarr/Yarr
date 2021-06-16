@@ -60,8 +60,6 @@ void StarCfg::setTrimDAC(unsigned col, unsigned row, int value)  {
     ////      the trimDAC_4lsb_name for each chip is trimdac_4lsb_<nthRow[2:1]>_<nthCol[128:1]>
     ////      the trimDAC_1msb_name for each chip is trimdac_1msb_<nthRow[2:1]>_<nthCol[128:1]>
 
-    ////NOTE: The above NOTE is outdated. TODO: fix the NOTE
-
     ////NOTE: row and col pass from histogram starts from 1, while channel starts from 0
 
     int nthRow = row%2 ==0 ? 2 : 1;

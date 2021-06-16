@@ -7,7 +7,7 @@
 // # Date: April 2018
 // ################################
 
-#include "include/StarChannelFeedback.h"
+#include "StarChannelFeedback.h"
 #include "logging.h"
 
 namespace {
@@ -21,7 +21,6 @@ StarChannelFeedback::StarChannelFeedback() : LoopActionBase(LOOP_STYLE_PIXEL_FEE
     m_cur = 0;
     loopType = typeid(this);
     m_done = false;
-    tuneLin = true;
     m_resetTdac = true;
 }
 
@@ -29,7 +28,6 @@ void StarChannelFeedback::writeConfig(json &j) {
     j["min"] = min;
     j["max"] = max;
     j["steps"] = m_steps;
-    j["tuneLin"] = tuneLin;
     j["resetTdac"] = m_resetTdac;
 }
 
@@ -38,8 +36,6 @@ void StarChannelFeedback::loadConfig(json &j) {
         min = j["min"];
     if (!j["max"].empty())
         max = j["max"];
-    if (!j["tuneLin"].empty())
-        tuneLin = j["tuneLin"];
     if (!j["resetTdac"].empty())
         m_resetTdac = j["resetTdac"];
     if (!j["steps"].empty()) {
@@ -51,6 +47,9 @@ void StarChannelFeedback::loadConfig(json &j) {
 
 void StarChannelFeedback::feedback(unsigned channel, std::unique_ptr<Histo2d> h) {
     // TODO Check on NULL pointer
+    StarChips* fe = (StarChips*) keeper->getFe(channel);
+    int m_nRow = fe->geo.nRow;
+    int m_nCol = fe->geo.nCol;
     if (h->size() != m_nRow*m_nCol) {
         logger->error("Wrong type of feedback histogram on channel {}.", channel);
         doneMap[channel] = true;
@@ -64,17 +63,16 @@ void StarChannelFeedback::feedback(unsigned channel, std::unique_ptr<Histo2d> h)
                 unsigned col_alt = ((col-1) % 128)+1;
                 unsigned row_alt = row + 2*( (col-1) >> 7);
 
-                int v = dynamic_cast<StarChips*>(keeper->getFe(channel))->getTrimDAC(col_alt, row_alt);
+                int v = fe->getTrimDAC(col_alt, row_alt);
                 logger->trace("row {}, col {}, v {}, sign {}, row_alt {}, col_alt {}",row,col,v,sign,row_alt,col_alt);
 
                 v = v + ((m_steps[m_cur])*sign);
                 if (v<min) v = min;
                 if (v>max) v = max;
-                dynamic_cast<StarChips*>(keeper->getFe(channel))->setTrimDAC(col_alt, row_alt, v);
+                fe->setTrimDAC(col_alt, row_alt, v);
             }
         }
     }
-
 }
 
 void StarChannelFeedback::writeChannelCfg(StarChips *fe) {
@@ -91,8 +89,8 @@ void StarChannelFeedback::init() {
     if (m_resetTdac) {
         for (auto *fe : keeper->feList) {
             if (fe->getActive()) {
-            	m_nRow = fe->geo.nRow;
-            	m_nCol = fe->geo.nCol; 
+            	int m_nRow = fe->geo.nRow;
+            	int m_nCol = fe->geo.nCol; 
                 unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
                 m_fb[ch] = NULL;
                 for (unsigned row=1; row<=m_nRow; row++) {
@@ -102,7 +100,7 @@ void StarChannelFeedback::init() {
                         unsigned row_alt = row + 2*( (col-1) >> 7);
                         
                         //Initial TDAC in mid of the range
-                        dynamic_cast<StarChips*>(keeper->getFe(ch))->setTrimDAC(col_alt, row_alt, 15);
+                        dynamic_cast<StarChips*>(fe)->setTrimDAC(col_alt, row_alt, 15);
                     }
                 }
             }

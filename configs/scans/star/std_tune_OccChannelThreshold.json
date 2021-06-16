@@ -4,7 +4,6 @@
       "0": {
         "algorithm": "OccPixelThresholdTune",
 	"config": {
-	    "isVCal": false,
             "occLowCut": 0.45,
             "occHighCut": 0.55
         }
@@ -35,7 +34,6 @@
           "trig_frequency": 1000,
           "trig_time": 0,
           "l0_latency": 30,
-          "verbose": false,
           "extTrigger": false,
           "noInject": true
         },
