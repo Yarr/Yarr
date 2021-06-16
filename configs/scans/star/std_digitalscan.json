@@ -39,7 +39,7 @@
 		"loopAction": "StdDataLoop"
 	    }
 	],
-	"name": "strobeDelayScan",
+	"name": "StarDigitalScan",
         "prescan": {
             "ABCs_TEST_PULSE_ENABLE": 1,
             "ABCs_LP_ENABLE": 1,
