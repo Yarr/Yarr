@@ -47,20 +47,20 @@ void StarRegDump::execPart1() {
 
         if (m_addr == -1) { //Default to looping over all regs
 
-                logger->trace("Dumping all regs");
+            logger->trace("Dumping all regs");
           
             for (int index = 0; index < ABCStarRegs::_size(); ++index) {
                 logger->trace(ABCStarRegs::_names()[index]);
-                readReg( ((StarChips*) fe)->read_abc_register(ABCStarRegs::_values()[index]));
+                ((StarChips*) fe)->sendCmd( ((StarChips*) fe)->read_abc_register(ABCStarRegs::_values()[index]));
             }
 
             for (int index = 0; index < HCCStarRegister::_size(); ++index) {
                 logger->trace(HCCStarRegister::_names()[index]);
-                readReg( ((StarChips*) fe)->read_hcc_register(HCCStarRegister::_values()[index]));
+                ((StarChips*) fe)->sendCmd( ((StarChips*) fe)->read_hcc_register(HCCStarRegister::_values()[index]));
             }
         } else {
                 logger->trace(m_addr);
-                readReg( ((StarChips*) fe)->read_abc_register(m_addr));
+                ((StarChips*) fe)->sendCmd( ((StarChips*) fe)->read_abc_register(m_addr));
         }
     }
 }

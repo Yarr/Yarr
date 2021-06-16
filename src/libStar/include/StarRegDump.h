@@ -10,10 +10,9 @@
 // ################################
 
 #include "LoopActionBase.h"
-#include "StdTriggerAction.h"
 #include "StarChips.h"
 
-class StarRegDump: public LoopActionBase, public StdTriggerAction {
+class StarRegDump: public LoopActionBase {
     public:
         StarRegDump();
         void writeConfig(json &config);
