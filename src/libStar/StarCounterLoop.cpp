@@ -63,18 +63,6 @@ void StarCounterLoop::init() {
 void StarCounterLoop::execPart1() {
     SPDLOG_LOGGER_DEBUG(logger, "");
 
-    //Enable Counters
-    auto writeReg = [&](auto words) {
-        g_tx->writeFifo((words[0] << 16) + words[1]);
-        g_tx->writeFifo((words[2] << 16) + words[3]);
-        g_tx->writeFifo((words[4] << 16) + words[5]);
-        g_tx->writeFifo((words[6] << 16) + words[7]);
-        g_tx->writeFifo((words[8] << 16) + LCB::IDLE);
-
-        // Could have this once for all regs though...
-        g_tx->releaseFifo();
-    };
-
     // NB currently using broadcast writes.
     // I the future this could be expanded to allow an overriding
     // mask for each front-end, but that requires a more complex
@@ -92,9 +80,6 @@ void StarCounterLoop::execPart1() {
         ((StarChips*) fe)->sendCmd(LCB::fast_command(LCB::FastCmdType::ABC_HIT_COUNT_START,4));
     }
 
-    std::chrono::microseconds delay(1000);
-    std::this_thread::sleep_for(delay);
-
     // Enable Trigger
     g_tx->setTrigEnable(0x1);
 
@@ -105,9 +90,6 @@ void StarCounterLoop::execPart2() {
     SPDLOG_LOGGER_DEBUG(logger, "Triggers finished");
     // Disable Trigger
     g_tx->setTrigEnable(0x0);
-
-    std::chrono::microseconds delay(1000);
-    std::this_thread::sleep_for(delay);
 
     //Disable Counters
     auto readReg = [&](auto words) {
@@ -127,12 +109,9 @@ void StarCounterLoop::execPart2() {
         ((StarChips*) fe)->sendCmd(LCB::fast_command(LCB::FastCmdType::ABC_HIT_COUNT_STOP,4));
         for (int addr = 0x80; addr <= 0xbf; addr++) { //Hit Counter Regs 0x70-0xaf
                 logger->trace(addr);
-                readReg( ((StarChips*) fe)->read_abc_register(addr));
+                ((StarChips*) fe)->sendCmd( ((StarChips*) fe)->read_abc_register(addr));
         }
-
     }
-
-    std::this_thread::sleep_for(delay);
 
     m_done = true;
 }
