@@ -20,10 +20,10 @@ class StarChannelFeedback : public LoopActionBase, public PixelFeedbackReceiver 
     public:
         StarChannelFeedback();
 
-        void writeConfig(json &j);
-        void loadConfig(json &j);
+        void writeConfig(json &j) override;
+        void loadConfig(json &j) override;
 
-        void feedback(unsigned channel, std::unique_ptr<Histo2d> h);
+        void feedback(unsigned channel, std::unique_ptr<Histo2d> h) override;
 
     private:
         unsigned m_cur;
@@ -35,10 +35,10 @@ class StarChannelFeedback : public LoopActionBase, public PixelFeedbackReceiver 
         void addFeedback(unsigned ch);
         void writeChannelCfg(StarChips *fe);
 
-        void init();
-        void end();
-        void execPart1();
-        void execPart2();
+        void init() override;
+        void end() override;
+        void execPart1() override;
+        void execPart2() override;
 };
 
 
