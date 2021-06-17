@@ -16,7 +16,7 @@
 	    
 	    {
 		"config": {
-		    "max": 255,
+		    "max": 50,
 		    "min": 0,
 		    "step": 1,
 		    "parameter":"ABCs_LATENCY"
