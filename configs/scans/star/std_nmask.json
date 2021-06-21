@@ -52,7 +52,8 @@
         "ABCs_PR_ENABLE": 1,
         "ABCs_TM": 2,
         "ABCs_DETMODE": 1,
-        "ABCs_RRMODE": 1
+        "ABCs_RRMODE": 1,
+        "ABCs_LATENCY": 6
     }
   }
 }
