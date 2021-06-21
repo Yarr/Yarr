@@ -46,17 +46,17 @@ void StarChannelFeedback::loadConfig(json &j) {
 }
 
 void StarChannelFeedback::feedback(unsigned channel, std::unique_ptr<Histo2d> h) {
-    // TODO Check on NULL pointer
     StarChips* fe = (StarChips*) keeper->getFe(channel);
-    int m_nRow = fe->geo.nRow;
-    int m_nCol = fe->geo.nCol;
-    if (h->size() != m_nRow*m_nCol) {
+    int nRow = fe->geo.nRow;
+    int nCol = fe->geo.nCol;
+    // TODO Check on NULL pointer
+    if (h->size() != nRow*nCol) {
         logger->error("Wrong type of feedback histogram on channel {}.", channel);
         doneMap[channel] = true;
     } else {
         m_fb[channel] = std::move(h);
-        for (unsigned row=1; row<=m_nRow; row++) {
-            for (unsigned col=1; col<=m_nCol; col++) {
+        for (unsigned row=1; row<=nRow; row++) {
+            for (unsigned col=1; col<=nCol; col++) {
                 int sign = m_fb[channel]->getBin(m_fb[channel]->binNum(col, row));
 
                 //getTrimDAC and setTrimDAC use an old histogram layout converting here for now
@@ -86,12 +86,12 @@ void StarChannelFeedback::init() {
     if (m_resetTdac) {
         for (auto *fe : keeper->feList) {
             if (fe->getActive()) {
-            	int m_nRow = fe->geo.nRow;
-            	int m_nCol = fe->geo.nCol; 
+            	int nRow = fe->geo.nRow;
+            	int nCol = fe->geo.nCol; 
                 unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
                 m_fb[ch] = NULL;
-                for (unsigned row=1; row<=m_nRow; row++) {
-                    for (unsigned col=1; col<=m_nCol; col++) {                        
+                for (unsigned row=1; row<=nRow; row++) {
+                    for (unsigned col=1; col<=nCol; col++) {                        
                         //Initial TDAC in mid of the range
                         dynamic_cast<StarChips*>(fe)->setTrimDAC(col, row, 15);
                     }
