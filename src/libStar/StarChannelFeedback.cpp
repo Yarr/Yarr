@@ -60,16 +60,13 @@ void StarChannelFeedback::feedback(unsigned channel, std::unique_ptr<Histo2d> h)
                 int sign = m_fb[channel]->getBin(m_fb[channel]->binNum(col, row));
 
                 //getTrimDAC and setTrimDAC use an old histogram layout converting here for now
-                unsigned col_alt = ((col-1) % 128)+1;
-                unsigned row_alt = row + 2*( (col-1) >> 7);
-
-                int v = fe->getTrimDAC(col_alt, row_alt);
-                logger->trace("row {}, col {}, v {}, sign {}, row_alt {}, col_alt {}",row,col,v,sign,row_alt,col_alt);
+                int v = fe->getTrimDAC(col, row);
+                logger->trace("row {}, col {}, v {}, sign {}",row,col,v,sign);
 
                 v = v + ((m_steps[m_cur])*sign);
                 if (v<min) v = min;
                 if (v>max) v = max;
-                fe->setTrimDAC(col_alt, row_alt, v);
+                fe->setTrimDAC(col, row, v);
             }
         }
     }
@@ -94,13 +91,9 @@ void StarChannelFeedback::init() {
                 unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
                 m_fb[ch] = NULL;
                 for (unsigned row=1; row<=m_nRow; row++) {
-                    for (unsigned col=1; col<=m_nCol; col++) {
-
-                        unsigned col_alt = ((col-1) % 128)+1;
-                        unsigned row_alt = row + 2*( (col-1) >> 7);
-                        
+                    for (unsigned col=1; col<=m_nCol; col++) {                        
                         //Initial TDAC in mid of the range
-                        dynamic_cast<StarChips*>(fe)->setTrimDAC(col_alt, row_alt, 15);
+                        dynamic_cast<StarChips*>(fe)->setTrimDAC(col, row, 15);
                     }
                 }
             }
