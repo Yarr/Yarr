@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "AnalysisAlgorithm.h"
+#include "StdTriggerAction.h"
 
 // Need size to make unique_ptr destructors
 #include "Histo1d.h"
@@ -511,13 +512,17 @@ class TriggerThrottleAnalysis : public AnalysisAlgorithm {
     void init(ScanBase *s);
     void processHistogram(HistogramBase *h);
     void end();
-    void loadConfig(json &config) {}
+    void loadConfig(json &config);
  private:
     std::vector<unsigned> loops;
     std::vector<unsigned> loopMax;
+    std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
+    std::map<unsigned, unsigned> innerCnt;
+    unsigned target_occ, target_inj, current_inj;
     int n_count;
-    int injections;
+    int injections, start_inj;
     std::unique_ptr<GlobalFeedbackSender> fb;
+    StdTriggerAction* trigLoop;
 };
 
 #endif

@@ -1,5 +1,5 @@
-#ifndef STARGLOBALFEEDBACK_H
-#define STARGLOBALFEEDBACK_H
+#ifndef STARTHROTTLELOOP_H
+#define STARTHROTTLELOOP_H
 
 // #################################
 // # Author:
@@ -19,28 +19,24 @@
 #include "FeedbackBase.h"
 #include "StarChips.h"
 
-class StarGlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver {
+class StarThrottleLoop : public LoopActionBase, public GlobalFeedbackReceiver {
     public:
-        StarGlobalFeedback();
-        StarGlobalFeedback(std::string subRegName);
-        StarGlobalFeedback(Register StarCfg::*ref);
+        StarThrottleLoop();
+        StarThrottleLoop(std::string subRegName);
+        StarThrottleLoop(Register StarCfg::*ref);
 
         void writeConfig(json &j);
         void loadConfig(json &j);
 
         // TODO should probably register a single function
-        void feedback(unsigned channel, double sign, bool last = false);
-        void feedbackBinary(unsigned channel, double sign, bool last = false);
-        void feedback(unsigned channel, bool stop = false); //@@ for noise occ
+        void feedback(unsigned channel, double sign, bool last = false) override;
+        void feedbackBinary(unsigned channel, double sign, bool last) {};
 
-        std::string getScannedParameterName(){return m_subRegName;}
-
-    protected:
     private:
         Register StarCfg::*parPtr;
         SubRegister* StarCfg::*subRegPtr;
         std::string m_subRegName;
-        int m_cur;
+        unsigned m_iters, m_trigs, max_iters, m_curStep;
 
         std::mutex m_fbMutex;
         std::map<unsigned, int> m_values;
@@ -48,7 +44,6 @@ class StarGlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
         std::map<unsigned, int> m_oldSign;
         std::map<unsigned, bool> m_doneMap;
 
-        void writePar();
         bool allDone();
         
         void init();
