@@ -2182,12 +2182,15 @@ void TriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
             trigLoop->setTrigCnt(injections);
         } else if (sign == -1) {
             injections /= 2;
-            trigLoop->setTrigCnt(injections);
         }
         if (done) {
             current_inj = 0;
             injections = start_inj;
+        } else if (injections+current_inj > target_inj) {
+            injections = target_inj - current_inj;
         }
+        trigLoop->setTrigCnt(injections);
+
         //output->pushData(std::move(occMaps[ident]));
         innerCnt[ident] = 0;
         //delete occMaps[ident];
