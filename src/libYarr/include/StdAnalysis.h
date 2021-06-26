@@ -517,6 +517,7 @@ class TriggerThrottleAnalysis : public AnalysisAlgorithm {
     std::vector<unsigned> loops;
     std::vector<unsigned> loopMax;
     std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
+    std::map<unsigned, std::unique_ptr<Histo2d>> outerOccMaps;
     std::map<unsigned, unsigned> innerCnt;
     unsigned target_occ, target_inj, current_inj;
     int n_count;

@@ -2139,10 +2139,12 @@ void TriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
 
     // Determine identifier
     std::string name = "OccupancyMap";
+    std::string name2 = "OuterOccupancyMap";
     for (unsigned n=0; n<loops.size(); n++) {
         ident += h->getStat().get(loops[n])+offset;
         offset += loopMax[n];
         name += "-" + std::to_string(h->getStat().get(loops[n]));
+        name2 += "-" + std::to_string(h->getStat().get(loops[n]));
     }
 
     // Check if Histogram exists
@@ -2152,11 +2154,17 @@ void TriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
         hh->setYaxisTitle("Row");
         hh->setZaxisTitle("Hits");
         occMaps[ident].reset(hh);
+        hh = new Histo2d(name2, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
+        hh->setXaxisTitle("Column");
+        hh->setYaxisTitle("Row");
+        hh->setZaxisTitle("Hits");
+        outerOccMaps[ident].reset(hh);
         innerCnt[ident] = 0;
     }
 
     // Add up Histograms
     occMaps[ident]->add(*(Histo2d*)h);
+    outerOccMaps[ident]->add(*(Histo2d*)h);
     innerCnt[ident]++;
 
     // Got all data, finish up Analysis
@@ -2175,7 +2183,6 @@ void TriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
         }        
         current_inj += injections;
         bool done = current_inj >= target_inj;
-        fb->feedback(this->channel, sign, done);
         alog->trace("Throttling trigger with {} injections, sign {}. Total inj {}. Target {}.",injections,sign, current_inj, target_inj);
         if (sign == 1) {
             injections *= 2;
@@ -2186,10 +2193,13 @@ void TriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
         if (done) {
             current_inj = 0;
             injections = start_inj;
+            output->pushData(std::move(outerOccMaps[ident]));
+            outerOccMaps[ident] = nullptr;
         } else if (injections+current_inj > target_inj) {
             injections = target_inj - current_inj;
         }
         trigLoop->setTrigCnt(injections);
+        fb->feedback(this->channel, sign, done);
 
         //output->pushData(std::move(occMaps[ident]));
         innerCnt[ident] = 0;

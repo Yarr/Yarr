@@ -25,7 +25,7 @@ class StarThrottleLoop : public LoopActionBase, public GlobalFeedbackReceiver {
         StarThrottleLoop(std::string subRegName);
         StarThrottleLoop(Register StarCfg::*ref);
 
-        void writeConfig(json &j);
+        void writeConfig(json &j) override;
         void loadConfig(json &j);
 
         // TODO should probably register a single function
