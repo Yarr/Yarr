@@ -36,7 +36,8 @@
           "trig_frequency": 100,
           "trig_time": 0,
           "l0_latency": 5,
-          "noInject": true       
+          "noInject": false,
+          "digital": true
         },
         "loopAction": "StarTriggerLoop"
       },
@@ -46,8 +47,13 @@
     ],
     "name": "MaskTestScan",
     "prescan": {
+        "ABCs_TEST_PULSE_ENABLE": 1,
+        "ABCs_LP_ENABLE": 1,
         "ABCs_PR_ENABLE": 1,
-	"ABCs_TM": 1
+        "ABCs_TM": 2,
+        "ABCs_DETMODE": 1,
+        "ABCs_RRMODE": 1,
+        "ABCs_LATENCY": 6
     }
   }
 }
