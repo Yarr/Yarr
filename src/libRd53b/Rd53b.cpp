@@ -313,3 +313,35 @@ std::pair<uint32_t, uint32_t> Rd53b::decodeSingleRegRead(uint32_t higher, uint32
     }
     return std::make_pair(999, 666);
 }
+
+uint32_t Rd53b::readEfuses() {
+
+    //
+    // put E-fuse programmer circuit block into READ mode
+    //
+    this->writeRegister(&Rd53b::EfuseConfig, 0x0f0f);
+    while(!core->isCmdEmpty()) {}
+
+    //
+    // send E-fuse circuit the reset signal to halt any other state (reset E-fuse block FSM)
+    //
+    this->writeRegister(&Rd53b::GlobalPulseConf, 0x100);
+    this->writeRegister(&Rd53b::GlobalPulseWidth, 200);
+    while(!core->isCmdEmpty()) {}
+    this->sendGlobalPulse(m_chipId);
+
+    //
+    // read back the E-fuse registers
+    //
+    uint32_t efuse_data_0 = 0;
+    uint32_t efuse_data_1 = 0;
+    try {
+        efuse_data_0 = readSingleRegister(&Rd53b::EfuseReadData0);
+        efuse_data_1 = readSingleRegister(&Rd53b::EfuseReadData1);
+    } catch (std::exception& e) {
+        logger->warn("Failed to readback E-fuse data for chip with {}, exception received: {}", m_chipId, e.what());
+        return 0;
+    }
+    uint32_t efuse_data = ((efuse_data_1 & 0xffff) << 16) | (efuse_data_0 & 0xffff);
+    return efuse_data;
+}
