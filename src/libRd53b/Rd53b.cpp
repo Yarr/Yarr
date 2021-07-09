@@ -294,6 +294,20 @@ int Rd53b::checkCom() {
             return 0;
         }
 
+
+        // check that the E-fuse data corresponds to the user-provided configuration
+        EfuseInfo info = this->readEfuses();
+        if(enforceChipIdInName) {
+            std::stringstream id_from_efuse;
+            id_from_efuse << std::hex << info.fields.chipId;
+            bool id_in_name = name.find(id_from_efuse.str()) != std::string::npos;
+            if(!id_in_name) {
+                logger->error("Chip serial number from e-fuse data (0x{:x}) does not appear in Chip \"Name\" field in config (\"{}\") for chip with ChipId = {}", info.fields.chipId, name, m_chipId);
+                return 0;
+            }
+        }
+        logger->info("Chip serial numer obtained from e-fuse data: 0x{:x} (raw e-fuse data: 0x{:x})", info.fields.chipId, info.data);
+
         logger->debug("... success");
         return 1;
     } else {
@@ -314,7 +328,7 @@ std::pair<uint32_t, uint32_t> Rd53b::decodeSingleRegRead(uint32_t higher, uint32
     return std::make_pair(999, 666);
 }
 
-uint32_t Rd53b::readEfuses() {
+Rd53b::EfuseInfo Rd53b::readEfuses() {
 
     //
     // put E-fuse programmer circuit block into READ mode
@@ -325,10 +339,10 @@ uint32_t Rd53b::readEfuses() {
     //
     // send E-fuse circuit the reset signal to halt any other state (reset E-fuse block FSM)
     //
-    this->writeRegister(&Rd53b::GlobalPulseConf, 0x100);
-    this->writeRegister(&Rd53b::GlobalPulseWidth, 200);
-    while(!core->isCmdEmpty()) {}
-    this->sendGlobalPulse(m_chipId);
+    //this->writeRegister(&Rd53b::GlobalPulseConf, 0x100);
+    //this->writeRegister(&Rd53b::GlobalPulseWidth, 200);
+    //while(!core->isCmdEmpty()) {}
+    //this->sendGlobalPulse(m_chipId);
 
     //
     // read back the E-fuse registers
@@ -340,8 +354,37 @@ uint32_t Rd53b::readEfuses() {
         efuse_data_1 = readSingleRegister(&Rd53b::EfuseReadData1);
     } catch (std::exception& e) {
         logger->warn("Failed to readback E-fuse data for chip with {}, exception received: {}", m_chipId, e.what());
-        return 0;
+        return EfuseInfo{0};
     }
     uint32_t efuse_data = ((efuse_data_1 & 0xffff) << 16) | (efuse_data_0 & 0xffff);
-    return efuse_data;
+    return EfuseInfo{efuse_data};
+}
+
+uint32_t Rd53b::readSingleRegister(Rd53bReg Rd53bGlobalCfg::*ref) {
+
+    // send a read register command to the chip so that it
+    // sends back the current value of the register
+    this->sendRdReg(m_chipId, (this->*ref).addr());
+    while(!core->isCmdEmpty()) {}
+    std::this_thread::sleep_for(std::chrono::milliseconds(10)) ;
+
+    // go through the incoming data stream and get the register read data
+    RawData *data = m_rxcore->readData();
+    if(data != NULL) {
+        if(!data->words >= 2) {
+            logger->warn("readSingleRegister failed, received wrong number of words ({}) for FE with chipId {}", data->words, m_chipId);
+            return 0;
+        }
+
+        auto [received_address, register_value] = Rd53b::decodeSingleRegRead(data->buf[0], data->buf[1]);
+        //std::pair<uint32_t, uint32_t> answer = Rd53b::decodeSingleRegRead(data->buf[0], data->buf[1]);
+        if(received_address != (this->*ref).addr()) {
+            logger->warn("readSingleRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
+            return 0;
+        }
+        return register_value;
+    }
+
+    logger->warn("readSingleRegister failed, did not received register readback data from chip with chipId {}", m_chipId);
+    return 0;
 }

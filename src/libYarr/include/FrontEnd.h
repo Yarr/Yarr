@@ -67,6 +67,7 @@ class FrontEndCfg {
             txChannel = 99;
             rxChannel = 99;
             lockCfg = false;
+            enforceChipIdInName = false;
         }
         virtual ~FrontEndCfg(){}
         
@@ -97,6 +98,7 @@ class FrontEndCfg {
         unsigned rxChannel;
         std::string configFile;
         bool lockCfg;
+        bool enforceChipIdInName;
 };
 
 #endif

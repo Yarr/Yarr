@@ -41,6 +41,7 @@ void Rd53bCfg::toFileJson(json &j) {
     j["RD53B"]["Parameter"]["InjCap"] = m_injCap;
     for(unsigned  i=0;i<m_vcalPar.size();i++)  
         j["RD53B"]["Parameter"]["VcalPar"][i]= m_vcalPar[i];
+    j["RD53B"]["Parameter"]["EnforceNameIdCheck"] = enforceChipIdInName;
 
     Rd53bGlobalCfg::toJson(j);
     Rd53bPixelCfg::toJson(j);
@@ -56,6 +57,8 @@ void Rd53bCfg::fromFileJson(json &j) {
     if (!j["RD53B"]["Parameter"]["VcalPar"].empty())
         for(unsigned  i=0;i<m_vcalPar.size();i++)
             m_vcalPar[i] = j["RD53B"]["Parameter"]["VcalPar"][i];
+    if (!j["RD53B"]["Parameter"]["EnforceNameIdCheck"].empty())
+        enforceChipIdInName = j["RD53B"]["Parameter"]["EnforceNameIdCheck"];
 
     Rd53bGlobalCfg::fromJson(j);
     Rd53bPixelCfg::fromJson(j);
