@@ -371,7 +371,7 @@ uint32_t Rd53b::readSingleRegister(Rd53bReg Rd53bGlobalCfg::*ref) {
     // go through the incoming data stream and get the register read data
     RawData *data = m_rxcore->readData();
     if(data != NULL) {
-        if(!data->words >= 2) {
+        if(!(data->words >= 2)) {
             logger->warn("readSingleRegister failed, received wrong number of words ({}) for FE with chipId {}", data->words, m_chipId);
             return 0;
         }
