@@ -377,7 +377,6 @@ uint32_t Rd53b::readSingleRegister(Rd53bReg Rd53bGlobalCfg::*ref) {
         }
 
         auto [received_address, register_value] = Rd53b::decodeSingleRegRead(data->buf[0], data->buf[1]);
-        //std::pair<uint32_t, uint32_t> answer = Rd53b::decodeSingleRegRead(data->buf[0], data->buf[1]);
         if(received_address != (this->*ref).addr()) {
             logger->warn("readSingleRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
             return 0;
