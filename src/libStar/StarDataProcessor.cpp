@@ -158,8 +158,33 @@ void process_data(RawData &curIn,
                 }
             }
         }
-    } else if(packetType == TYP_ABC_RR || packetType == TYP_HCC_RR || packetType == TYP_ABC_HPR || packetType == TYP_HCC_HPR) {
-        packet.print_more(std::cout);
+    } else if(packetType == TYP_ABC_RR || packetType == TYP_HCC_RR) {
+        //Assume we don't want to see hit counter reads but want to see other RR's
+        if(logger->should_log(spdlog::level::debug) || packet.address < 0x80 || packet.address > 0xbf) {
+            packet.print_more(std::cout);
+        }
+        if(packet.address >= 0x80 && packet.address <= 0xbf) {
+            //Hit Counter Register Read
+            if (packet.value == 0) return; //No Hits
+            logger->trace("Adding hits from HitCounter",packet.address);
+              
+            curOut.newEvent(0,0,0); //No l0id or bcid
+            int start_channel = (packet.address - 0x80)*4;
+            for (int i=0; i < 4; i++) {
+                int channel = start_channel+i;
+                int row = (channel&1)+1;
+                int hits = (packet.value>>(8*i)) & 0xff;
+                for(int j=0; j<hits; j++)
+                    curOut.curEvent->addHit( row,
+                                             packet.channel_abc*128+( ((channel>>1)&0x7f)+1), 1);
+            }
+        }
+    } else if (packetType == TYP_ABC_HPR || packetType == TYP_HCC_HPR) {
+        if(logger->should_log(spdlog::level::trace)) {
+            std::stringstream os;
+            packet.print_clusters(os);
+            logger->trace("{}", os.str());
+        }
     }
 }
 
