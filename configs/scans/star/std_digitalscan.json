@@ -20,7 +20,7 @@
           "nMaskedStripsPerGroup": 1,
           "nEnabledStripsPerGroup": 1,
 	  "EnabledMaskedShift":1,
-          "doNmask": true,
+          "doNmask": false,
           "mask_only": true,
           "parameter": true,
           "min": 0,
