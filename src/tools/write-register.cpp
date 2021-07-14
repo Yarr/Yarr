@@ -145,7 +145,6 @@ int main(int argc, char* argv[]) {
     size_t n_chips = chip_configs.size();
     for (size_t ichip = 0; ichip < n_chips; ichip++) {
         fs::path chip_register_file_path{chip_configs[ichip]["config"]};
-        bool config_exists = fs::exists(chip_register_file_path);
         bool do_chip_by_idx = !use_chip_name && ((chip_idx < 0) || (chip_idx == ichip));
         if(!fs::exists(chip_register_file_path)) {
             std::cerr << "WARNING: Chip config for chip at index " << ichip << " in connectivity file does not exist, skipping" << std::endl;
