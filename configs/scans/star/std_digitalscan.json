@@ -17,14 +17,14 @@
     "loops": [       
       {
         "config": {
-          "nMaskedStripsPerGroup": 1,
+          "nMaskedStripsPerGroup": 7,
           "nEnabledStripsPerGroup": 1,
 	  "EnabledMaskedShift":1,
           "doNmask": false,
           "maskOnly": true,
           "parameter": false,
           "min": 0,
-          "max": 32,
+          "max": 8,
           "step": 1
         },
         "loopAction": "StarMaskLoop"
