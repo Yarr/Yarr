@@ -53,7 +53,7 @@
             "ABCs_BIREF":     15,
 
 	"ABCs_TM":    	   0,
-        "ABCs_DETMODE":    1,
+        "ABCs_DETMODE":    0,
         "ABCs_MASKHPR":    1,
         "ABCs_STOPHPR":    1,
         "ABCs_BVT":       15,

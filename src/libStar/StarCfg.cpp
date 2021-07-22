@@ -504,7 +504,7 @@ void StarCfg::fromFileJson(json &j) {
                 // Not the same
                 for(int m=0; m<256; m++) {
                   int trim = chipValue[m];
-                    abc.setTrimDACRaw(m, trim);
+                  abc.setTrimDACRaw(m, trim);
                 }
             }
         }
