@@ -50,7 +50,8 @@ Rd53bDataProcessor::Rd53bDataProcessor()
     // Data stream components
     _ccol = 0;
     // Core column index starts from 1. So _qrow[0] will never be used
-    for (int i = 0; i <= Rd53b::n_Col / 8; i++)
+    // Use 54 as total number of core columns to be compatible with CMS chip geometry
+    for (int i = 0; i <= 54; i++)
         _qrow[i] = 0;
     _islast_isneighbor = 0;
     _hitmap = 0;
