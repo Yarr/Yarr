@@ -72,7 +72,7 @@ private:
 
     // Data stream components
     uint64_t _ccol;
-    uint64_t _qrow;
+    uint64_t _qrow[Rd53b::n_Col / 8 + 1]; // One counter for each core column. Note core column index starts from 1
     uint64_t _islast_isneighbor;
     uint64_t _hitmap;
     uint64_t _ToT;
