@@ -2154,12 +2154,15 @@ void TriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
         hh->setYaxisTitle("Row");
         hh->setZaxisTitle("Hits");
         occMaps[ident].reset(hh);
-        hh = new Histo2d(name2, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
+        innerCnt[ident] = 0;
+    }
+
+    if (outerOccMaps[ident] == NULL) {
+        Histo2d *hh = new Histo2d(name2, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
         hh->setZaxisTitle("Hits");
         outerOccMaps[ident].reset(hh);
-        innerCnt[ident] = 0;
     }
 
     // Add up Histograms
