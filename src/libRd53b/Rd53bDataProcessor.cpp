@@ -460,7 +460,7 @@ void Rd53bDataProcessor::process_core()
                     }
                     if (_LUT_PlainHMap_To_ColRow_ArrSize[_hitmap] == 0)
                     {
-                        logger->warn("Received fragment with no ToT! ({} , {})", _ccol, _qrow);
+                        logger->warn("Received fragment with no ToT! ({} , {})", _ccol, _qrow[_ccol]);
                     }
                     for (unsigned ihit = 0; ihit < _LUT_PlainHMap_To_ColRow_ArrSize[_hitmap]; ++ihit)
                     {
