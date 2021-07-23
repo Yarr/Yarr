@@ -389,8 +389,8 @@ void Rd53bDataProcessor::process_core()
                 // logger->warn("Read ToT");
                 _status = TOT;
                 // ############ Step 3. read ToT ############
-                // Check whether it is precision ToT (PToT) data. PToT data is indicated by unphysical qrow index 196
-                if (_qrow >= 196)
+                // Check whether it is precision ToT (PToT) data. PToT data is indicated by unphysical qrow index 196, and it should not be aggregated by the isnext bit
+                if (_qrow[_ccol] == 196 && !(_islast_isneighbor & 0x1))
                 {
                     // logger->info("Hit: ccol({}) qrow({}) hitmap (0x{:x})) ", ccol, qrow, hitmap);
                     if (!retrieve(_ToT, _LUT_PlainHMap_To_ColRow_ArrSize[_hitmap] << 2))
