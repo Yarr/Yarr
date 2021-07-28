@@ -26,7 +26,7 @@ class StarThrottleLoop : public LoopActionBase, public GlobalFeedbackReceiver {
         StarThrottleLoop(Register StarCfg::*ref);
 
         void writeConfig(json &j) override;
-        void loadConfig(json &j);
+        void loadConfig(json &j) override;
 
         // TODO should probably register a single function
         void feedback(unsigned channel, double sign, bool last = false) override;
