@@ -52,6 +52,7 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
   void sendCmd(uint16_t cmd);
 
   bool writeRegisters();
+  bool writeTrims();
   void readRegisters();
 
   void writeHCCRegister(int addr);
