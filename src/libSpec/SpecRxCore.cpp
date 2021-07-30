@@ -8,6 +8,7 @@ namespace {
 }
 
 SpecRxCore::SpecRxCore() {
+    m_rxActiveLanes = 15; 
 }
 
 void SpecRxCore::setRxEnable(uint32_t value) {
@@ -88,6 +89,10 @@ uint32_t SpecRxCore::getCurCount() {
     return SpecCom::readSingle(RX_BRIDGE | RX_CUR_COUNT);
 }
 
+uint32_t SpecRxCore::getLinkStatus() {
+    return SpecCom::readSingle(RX_ADDR | RX_STATUS);
+}
+
 void SpecRxCore::setRxPolarity(uint32_t value) {
     SpecCom::writeSingle(RX_ADDR | RX_POLARITY, value);
 }
@@ -95,3 +100,33 @@ void SpecRxCore::setRxPolarity(uint32_t value) {
 uint32_t SpecRxCore::getRxPolarity() {
     return SpecCom::readSingle(RX_ADDR | RX_POLARITY);
 }
+
+void SpecRxCore::setRxActiveLanes(uint32_t value) {
+    SpecCom::writeSingle(RX_ADDR | RX_ACTIVE_LANES, value);
+}
+
+uint32_t SpecRxCore::getRxActiveLanes() {
+    return SpecCom::readSingle(RX_ADDR | RX_ACTIVE_LANES);
+}
+
+void SpecRxCore::checkRxSync() {
+    uint32_t status = this->getLinkStatus();
+    uint32_t enable_mask = SpecCom::readSingle(RX_ADDR | RX_ENABLE);
+    srxlog->info("Active Rx channels: 0x{:x}", enable_mask);    
+    srxlog->info("Active Rx lanes: 0x{:x}", m_rxActiveLanes);
+    srxlog->info("Rx Status 0x{:x}", status);
+    for (unsigned i=0; i<32; i++) {
+        if ((1 << i) & enable_mask) {
+            for (unsigned l=0; l<4; l++) {
+                if ((1 << l) & m_rxActiveLanes) {
+                    if (status & (1 << ((i*8)+l+4))) {
+                        srxlog->info("Channel {} Lane {} synchronized!", i, l);
+                    } else {
+                        srxlog->error("Channel {} Lane {} not synchronized!", i, l);
+                    }
+                }
+            }
+        }
+    }
+}
+
