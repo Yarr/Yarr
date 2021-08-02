@@ -93,6 +93,18 @@ job_test_code_coverage:
       - cd ../
       - scripts/cc_tool.sh
 
+deploy_coverage:
+    stage: deploy
+    dependencies: ["job_test_code_coverage"]
+    only:
+        - devel@YARR/YARR
+    variables:
+        "EOS_PATH" : "/eos/user/t/theim/www/yarr/devel/coverage"
+        "CI_OUTPUT_DIR" : "cc_tests/"
+    image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
+    script:
+        - deploy-eos
+
 build_docs:
     stage: build
     before_script:
