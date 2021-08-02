@@ -26,6 +26,30 @@ job_build_and_test:
       - bin/test_main
       - bin/star_test -r 0 configs/controller/emuCfg_star.json
 
+job_build_and_test_out_of_source:
+    stage: build
+    script:
+      - yum -y install boost-devel
+      - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+      - CXXFLAGS=-Werror cmake3 -S . -B /tmp/build -DCMAKE_TOOLCHAIN_FILE=cmake/linux-gcc
+      - cmake3 --build /tmp/build -j4
+      - cmake3 --install /tmp/build
+      - export USER=test
+      - echo $USER
+      - /bin/pwd
+      - mkdir /tmp/test
+      - ls /tmp/
+      - /tmp/build/bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p -l configs/logging/trace_all.json
+      - ls
+      - ls ./data/
+      - ls ./data/000001_std_digitalscan/
+      - cat ./data/000001_std_digitalscan/*_OccupancyMap.json
+      - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
+      - if [ "$NUM100" != "26880" ]; then exit 2; fi
+      - /tmp/build/bin/scanConsole -k
+      - /tmp/build/bin/test_main
+      - /tmp/build/bin/star_test -r 0 configs/controller/emuCfg_star.json
+
 job_build_all:
     stage: build
     artifacts:
