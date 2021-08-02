@@ -49,7 +49,10 @@ Rd53bDataProcessor::Rd53bDataProcessor()
     _channel = 0;               // Channel number
     // Data stream components
     _ccol = 0;
-    _qrow = 0;
+    // Core column index starts from 1. So _qrow[0] will never be used
+    // Use 54 as total number of core columns to be compatible with CMS chip geometry
+    for (int i = 0; i <= 54; i++)
+        _qrow[i] = 0;
     _islast_isneighbor = 0;
     _hitmap = 0;
     _ToT = 0;
@@ -331,10 +334,10 @@ void Rd53bDataProcessor::process_core()
                 // logger->warn("Read qrow");
                 // If isneighbor = 1, aggregate qrow
                 if (_islast_isneighbor & 0x1)
-                    ++_qrow;
+                    ++_qrow[_ccol];
 
                 // Otherwise read the qrow value
-                else if (!retrieve(_qrow, 8))
+                else if (!retrieve(_qrow[_ccol], 8))
                     return;
             case HMAP1:
                 _status = HMAP1;
@@ -387,8 +390,8 @@ void Rd53bDataProcessor::process_core()
                 // logger->warn("Read ToT");
                 _status = TOT;
                 // ############ Step 3. read ToT ############
-                // Check whether it is precision ToT (PToT) data. PToT data is indicated by unphysical qrow index 196
-                if (_qrow >= 196)
+                // Check whether it is precision ToT (PToT) data. PToT data is indicated by unphysical qrow index 196, and it should not be aggregated by the isnext bit
+                if (_qrow[_ccol] == 196 && !(_islast_isneighbor & 0x1))
                 {
                     // logger->info("Hit: ccol({}) qrow({}) hitmap (0x{:x})) ", ccol, qrow, hitmap);
                     if (!retrieve(_ToT, _LUT_PlainHMap_To_ColRow_ArrSize[_hitmap] << 2))
@@ -458,14 +461,14 @@ void Rd53bDataProcessor::process_core()
                     }
                     if (_LUT_PlainHMap_To_ColRow_ArrSize[_hitmap] == 0)
                     {
-                        logger->warn("Received fragment with no ToT! ({} , {})", _ccol, _qrow);
+                        logger->warn("Received fragment with no ToT! ({} , {})", _ccol, _qrow[_ccol]);
                     }
                     for (unsigned ihit = 0; ihit < _LUT_PlainHMap_To_ColRow_ArrSize[_hitmap]; ++ihit)
                     {
                         const uint8_t pix_tot = (_ToT >> (ihit << 2)) & 0xF;
                         // First pixel is 1,1, last pixel is 400,384
                         const uint16_t pix_col = ((_ccol - 1) * 8) + (_LUT_PlainHMap_To_ColRow[_hitmap][ihit] >> 4) + 1;
-                        const uint16_t pix_row = ((_qrow)*2) + (_LUT_PlainHMap_To_ColRow[_hitmap][ihit] & 0xF) + 1;
+                        const uint16_t pix_row = ((_qrow[_ccol])*2) + (_LUT_PlainHMap_To_ColRow[_hitmap][ihit] & 0xF) + 1;
 
                         // logger->info("Ccol: {} Qrow: {} col: {} row: {} ToT: {}", _ccol, _qrow, pix_col, pix_row, pix_tot);
                         // For now fill in _events without checking whether the addresses are valid
