@@ -734,7 +734,8 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     double chi2= status.fnorm/(double)status.nfev;
 
                     if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0 
-                            && chi2 < 2.5 && chi2 > 1e-6) {
+                            && chi2 < 2.5 && chi2 > 1e-6
+                            && fabs((par[2] - par[3])/injections - 1) < 0.1) {  // Add new criteria: difference between 100% baseline and 0% baseline should agree with number of injections within 10%
                         FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
                         thrMap[outerIdent]->setBin(bin, feCfg->toCharge(par[0], useScap, useLcap));
                         // Reudce effect of vcal offset on this, don't want to probe at low vcal
