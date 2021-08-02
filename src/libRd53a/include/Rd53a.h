@@ -46,6 +46,10 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
             this->setHitbus(col, row, 0);
         }
 
+	unsigned getPixelEn(unsigned col, unsigned row) override {
+	    return this->getEn(col, row);
+	}
+
         void enableAll() override;
 
         void writeRegister(Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value);

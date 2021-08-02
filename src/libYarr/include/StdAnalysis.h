@@ -67,6 +67,8 @@ class TotAnalysis : public AnalysisAlgorithm {
         unsigned vcalStep;
         unsigned vcalBins;
         std::unique_ptr<Histo2d> chargeVsTotMap;
+	std::unique_ptr<Histo2d> pixelTotMap;
+	std::unique_ptr<Histo1d> RMSTotVsCharge;
 
         // histogram configuration for ToT distributions
         unsigned tot_bins_n = 16;
