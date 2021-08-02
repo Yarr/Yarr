@@ -46,9 +46,11 @@ class Rd53bPixelCfg {
             Rd53bPixelCfg::pixelFields s;
             uint8_t u8;
         };
-    
-        std::array<std::array<uint16_t, n_Row>, n_DC> pixRegs;
-        static uint16_t getPixelBit(std::array<std::array<uint16_t, n_Row>, n_DC> &input, unsigned col, unsigned row, unsigned bit);
+        
+        using PixelArray = std::array<std::array<uint16_t, n_Row>, n_DC>;
+
+        PixelArray pixRegs;
+        static uint16_t getPixelBit(PixelArray &input, unsigned col, unsigned row, unsigned bit);
 
     protected:
         void toJson(json &j);
