@@ -211,7 +211,6 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
                         bhlog->error("Unable to open DataArchiver output file \"{}\"", output_filename);
                         throw std::runtime_error("Can't open requested output data file \"" + output_filename + "\"");
                     } 
-                    histo.reset(archiver);
                 }
                 if(histo) {
                     bhlog->debug(" ... adding {}", algo_name);

@@ -1,11 +1,11 @@
-#ifndef STARTRIGGERLOOP_H
-#define STARTRIGGERLOOP_H
+#ifndef STARCOUNTERLOOP_H
+#define STARCOUNTERLOOP_H
 
 // #################################
 // # Author:
 // # Email:
 // # Project: Yarr
-// # Description: TriggerLoop ABCStar
+// # Description: CounterLoop ABCStar
 // # Comment:
 // ################################
 
@@ -13,9 +13,9 @@
 #include "StdTriggerAction.h"
 #include "StarChips.h"
 
-class StarTriggerLoop: public LoopActionBase, public StdTriggerAction {
+class StarCounterLoop: public LoopActionBase, public StdTriggerAction {
     public:
-        StarTriggerLoop();
+        StarCounterLoop();
 
         void setTrigDelay(uint32_t delay) {m_trigDelay = delay;}
         uint32_t getTrigDelay() {return m_trigDelay;}
@@ -25,9 +25,6 @@ class StarTriggerLoop: public LoopActionBase, public StdTriggerAction {
 
         void setTrigTime(double time){m_trigTime = time;}
         double getTrigTime(){return m_trigTime;}
-
-        void setDigital(bool digital){m_digital = digital;}
-        bool getDigital(){return m_digital;}
 
         void setNoInject();
         void setTrigWord();
@@ -46,7 +43,6 @@ class StarTriggerLoop: public LoopActionBase, public StdTriggerAction {
         std::array<uint32_t, 32> m_trigWord;
 
         bool m_noInject;
-        bool m_digital;
 
         void init();
         void end();

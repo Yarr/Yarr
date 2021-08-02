@@ -38,6 +38,10 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
             this->setEn(col, row, 0);
             this->setHitbus(col, row, 0);
         }
+	unsigned getPixelEn(unsigned col, unsigned row) override {
+	    return this->getEn(col, row);
+	}
+
 
         void enableAll() override;
 

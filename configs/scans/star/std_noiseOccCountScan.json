@@ -1,0 +1,51 @@
+{
+    "scan": {
+	"analysis": {
+            "0": {
+                "algorithm": "OccupancyAnalysis"
+            },
+	    
+	    "n_count": 1
+	},
+	"histogrammer": {
+	    "0": {
+		"algorithm": "OccupancyMap",
+		"config": {}
+	    },
+	    
+	    "n_count": 1
+	},
+	"loops": [
+	    {
+		"config": {
+		    "max": 40,
+		    "min": 0,
+		    "step": 1,
+		    "parameter": "ABCs_BVT"
+		},
+		"loopAction": "StdParameterLoop"
+	    },
+
+	    {
+		"loopAction": "StdDataLoop"
+	    },
+
+	    {
+		"config": {
+		    "trig_count": 250,
+		    "trig_frequency": 1e3,
+		    "trig_time": 0,
+		    "l0_latency": 2,
+		    "noInject": true
+		},
+		"loopAction": "StarCounterLoop"
+	    }	],
+	"name": "NoiseOccCountScan",
+	"prescan": {
+            "ABCs_MASKHPR": 1,
+            "ABCs_STOPHPR": 1,
+            "HCC_MASKHPR": 1,
+            "HCC_STOPHPR": 1
+	}
+    }
+}

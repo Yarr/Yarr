@@ -46,7 +46,7 @@
     ],
     "name": "MaskTestScan",
     "prescan": {
-	"ABCs_PR_ENABLE": 1,
+        "ABCs_PR_ENABLE": 1,
 	"ABCs_TM": 1
     }
   }
