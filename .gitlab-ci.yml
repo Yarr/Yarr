@@ -31,7 +31,7 @@ job_build_and_test_out_of_source:
     script:
       - yum -y install boost-devel
       - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-      - CXXFLAGS=-Werror cmake3 -S . -B /tmp/build -DCMAKE_TOOLCHAIN_FILE=cmake/linux-gcc
+      - CXXFLAGS=-Werror cmake3 -S . -B /tmp/build -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=cmake/linux-gcc
       - cmake3 --build /tmp/build -j4
       - cmake3 --install /tmp/build
       - export USER=test
@@ -48,7 +48,6 @@ job_build_and_test_out_of_source:
       - if [ "$NUM100" != "26880" ]; then exit 2; fi
       - /tmp/build/bin/scanConsole -k
       - /tmp/build/bin/test_main
-      - /tmp/build/bin/star_test -r 0 configs/controller/emuCfg_star.json
 
 job_build_all:
     stage: build
