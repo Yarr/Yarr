@@ -99,7 +99,7 @@ void Rd53aGlobalCfg::init() {
     //27
     DiffVth2.init(27, &m_cfg[27], 0, 10, 50); regMap["DiffVth2"] = &Rd53aGlobalCfg::DiffVth2;
     //28
-    DiffLcc.init(28, &m_cfg[28], 0, 10, 20); regMap["DiffLcc"] = &Rd53aGlobalCfg::DiffLcc;
+    DiffLcc.init(28, &m_cfg[28], 0, 10, 200); regMap["DiffLcc"] = &Rd53aGlobalCfg::DiffLcc;
     //29
     DiffLccEn.init(29, &m_cfg[29], 1, 1, 0); regMap["DiffLccEn"] = &Rd53aGlobalCfg::DiffLccEn;
     DiffFbCapEn.init(29, &m_cfg[29], 0, 1, 0); regMap["DiffFbCapEn"] = &Rd53aGlobalCfg::DiffFbCapEn;
