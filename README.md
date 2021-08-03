@@ -8,7 +8,7 @@ For details please refer to the documentation covering installation and usage, w
 
 This README only includes quick install guide.
 
-(If you are working with the devel branch refer to http://cern.ch/yarr/devel/ )
+(If you are working with the devel branch refer to http://cern.ch/yarr/devel/ and see the current coverage report at https://yarr.web.cern.ch/yarr/devel/coverage/)
 
 ## Mailing list
 
