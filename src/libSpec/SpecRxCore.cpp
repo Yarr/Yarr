@@ -119,7 +119,7 @@ void SpecRxCore::checkRxSync() {
         if ((1 << i) & enable_mask) {
             for (unsigned l=0; l<4; l++) {
                 if ((1 << l) & m_rxActiveLanes) {
-                    if (status & (1 << ((i*8)+l+4))) {
+                    if (status & (1 << ((i*m_rxActiveLanes)+l))) {
                         srxlog->info("Channel {} Lane {} synchronized!", i, l);
                     } else {
                         srxlog->error("Channel {} Lane {} not synchronized!", i, l);
