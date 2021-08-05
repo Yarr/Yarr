@@ -6,6 +6,7 @@
             "spiConfig" : 541200,
             "rxPolarity" : 0,
             "txPolarity" : 0,
+            "rxActiveLanes": 15,
             "pulse" : {
                 "word" : 1549575846,
                 "interval" : 500
