@@ -76,6 +76,10 @@ class ClipBoard {
                             [&] { return doneFlag || !rawEmpty(); } );
         }
 
+        void reset() {
+            doneFlag = false;
+        };
+
     private:
         bool rawEmpty() {
             return dataQueue.empty();
