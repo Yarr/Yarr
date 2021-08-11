@@ -24,7 +24,7 @@ Rd53bMaskLoop::Rd53bMaskLoop() : LoopActionBase(LOOP_STYLE_MASK) {
     loopType = typeid(this);
     m_done = false;
     m_maskType = StandardMask;
-    bool m_applyEnMask = false;
+    m_applyEnMask = false;
 }
 
 void Rd53bMaskLoop::init() {
