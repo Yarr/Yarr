@@ -40,7 +40,7 @@
       },
       {
         "config": {
-          "max": 64,
+          "max": 256,
           "min": 0,
           "step": 4
         },
@@ -51,7 +51,7 @@
           "max": 16,
           "min": 0,
           "step": 1,
-          "nSteps": 2,
+          "nSteps": 1,
           "delayArray": [0]
         },
         "loopAction": "Rd53aCoreColLoop"
@@ -61,7 +61,7 @@
           "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 10000,
+          "frequency": 20000,
           "noInject": false,
           "time": 0,
           "sendEcr": true
@@ -77,8 +77,10 @@
         "InjEnDig": 0,
         "LatencyConfig": 48,
         "GlobalPulseRt": 16384,
-        "LinVth": 500,
-        "DiffVth1": 500
+        "EnCoreColLin1": 0,
+        "EnCoreColLin2": 0,
+        "EnCoreColDiff1": 0,
+        "EnCoreColDiff2": 0
     }
   }
 }
