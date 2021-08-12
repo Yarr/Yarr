@@ -41,7 +41,7 @@
           "frequency": 5000,
           "noInject": true,
           "time": 30,
-          "sendEcr": true
+          "sendEcr": false
         },
         "loopAction": "Rd53aTriggerLoop"
       },
@@ -52,7 +52,11 @@
     "name": "NoiseScan",
     "prescan": {
         "GlobalPulseRt": 16384,
-        "LatencyConfig": 80
+        "LatencyConfig": 80,
+        "EnCoreColLin1": 0,
+        "EnCoreColLin2": 0,
+        "EnCoreColDiff1": 0,
+        "EnCoreColDiff2": 0
     }
   }
 }
