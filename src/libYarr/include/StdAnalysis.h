@@ -239,7 +239,11 @@ class TagAnalysis : public AnalysisAlgorithm {
         unsigned n_count;
         unsigned injections;
         std::map<unsigned, std::unique_ptr<Histo1d>> tagHistos;
-        std::map<unsigned, unsigned> innerCnt;
+        std::map<unsigned, std::unique_ptr<Histo2d>> tagMaps;
+        std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
+        std::map<unsigned, unsigned> tagDistInnerCnt;
+        std::map<unsigned, unsigned> tagMapInnerCnt;
+        std::map<unsigned, unsigned> occInnerCnt;
 
 };
 
