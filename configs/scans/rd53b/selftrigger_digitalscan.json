@@ -41,7 +41,7 @@
         "algorithm": "DataArchiver",
         "config": {}
       },
-      "n_count": 6
+      "n_count": 4
     },
     "loops": [
       {
@@ -57,21 +57,21 @@
           "max": 50,
           "min": 0,
           "step": 1,
-          "nSteps": 10
+          "nSteps": 1
         },
         "loopAction": "Rd53bCoreColLoop"
       },
       {
         "config": {
-          "count": 50,
-          "delay": 56,
+          "count": 100,
+          "delay": 58,
           "extTrigger": false,
-          "frequency": 10000,
+          "frequency": 5000,
           "noInject": false,
           "time": 0,
           "edgeMode": true,
           "edgeDuration": 20,
-		  "trigMultiplier": 0
+          "trigMultiplier": 0
         },
         "loopAction": "Rd53bTriggerLoop"
       },
@@ -83,11 +83,11 @@
     "prescan": {
         "InjDigEn": 1,
         "Latency": 60,
-		"SelfTrigEn": 1,
-		"SelfTrigDigThrEn": 1,
-		"SelfTrigDigThr": 1,
-		"SelfTrigMulti": 16,
-		"SelfTrigDelay": 45
+        "SelfTrigEn": 1,
+        "SelfTrigDigThrEn": 1,
+        "SelfTrigDigThr": 1,
+        "SelfTrigMulti": 16,
+        "SelfTrigDelay": 45
     }
   }
 }

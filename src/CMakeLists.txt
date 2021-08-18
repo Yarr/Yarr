@@ -139,7 +139,7 @@ endif()
 
 # Remove unit tests that are inside of tools if we are not building the YARR test suite
 if(NOT BUILD_TESTS)
-    list(FILTER tools EXCLUDE REGEX ".*/test_*")
+    list(FILTER tools EXCLUDE REGEX ".*/test_*.cpp")
 endif()
 
 if (NOT "NetioHW" IN_LIST YARR_CONTROLLERS_TO_BUILD )

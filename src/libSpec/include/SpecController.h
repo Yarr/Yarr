@@ -104,6 +104,12 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
             if (!j["cmdPeriod"].empty()) {
                 SpecTxCore::m_clk_period = (float)j["cmdPeriod"]; //fix for variant 
             }
+            
+            // Set number of active lanes
+            if (!j["rxActiveLanes"].empty()) {
+                this->setRxActiveLanes(j["rxActiveLanes"]);
+                SpecRxCore::m_rxActiveLanes = j["rxActiveLanes"];
+            }
         }
 
         void setupMode() override final{
