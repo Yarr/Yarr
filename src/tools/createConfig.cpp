@@ -96,7 +96,9 @@ int main (int argc, char *argv[]) {
 
     logger->info("Retrieving presets ...");
     try {
-        auto [connectivity, chipCfgs] = feCfg->getPreset(systemType);
+        json connectivity;
+        std::vector<json> chipCfgs;
+        std::tie(connectivity, chipCfgs) = feCfg->getPreset(systemType);
 
         // Check a few things first
         if (connectivity["chipType"].empty() or connectivity["chips"].empty()) {
