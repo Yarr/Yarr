@@ -47,12 +47,12 @@ namespace StarPreset {
   }};
 
   std::tuple<json, std::vector<json>> createConfigStarObject(
-    StarCfg* feCfg, const std::array<StarModule, 14>& modules) {
+    StarCfg& feCfg, const std::array<StarModule, 14>& modules) {
 
     std::tuple<json, std::vector<json>> preset;
     auto& [systemCfg, chips] = preset;
 
-    const std::string chipName(feCfg->getName());
+    const std::string chipName(feCfg.getName());
 
     // Connectivity config
     systemCfg["chipType"] = "Star";
@@ -65,17 +65,17 @@ namespace StarPreset {
       systemCfg["chips"][i]["locked"] = 1;
 
       // Chip config
-      feCfg->setName(mName);
-      feCfg->setHCCChipId(modules[i].hccID);
+      feCfg.setName(mName);
+      feCfg.setHCCChipId(modules[i].hccID);
 
       // Add ABCStars
-      feCfg->clearABCchipIDs();
+      feCfg.clearABCchipIDs();
       for (int iABC=0; iABC<modules[i].numABCs; iABC++) {
-        feCfg->addABCchipID(iABC);
+        feCfg.addABCchipID(iABC);
       }
 
       json chipCfg;
-      feCfg->toFileJson(chipCfg);
+      feCfg.toFileJson(chipCfg);
 
       // Add chip config to list
       chips.push_back(std::move(chipCfg));
