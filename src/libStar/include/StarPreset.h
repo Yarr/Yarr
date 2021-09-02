@@ -86,6 +86,26 @@ namespace StarPreset {
     return preset;
   }
 
+  std::tuple<json, std::vector<json>> createConfigSingleStar(StarCfg& feCfg) {
+    std::tuple<json, std::vector<json>> preset;
+	auto& [connectivity, chips] = preset;
+
+    // Config for one HCCStar + several ABCStars
+    json cfg;
+    feCfg.toFileJson(cfg);
+    chips.push_back(std::move(cfg));
+
+    // Connectivity configuration
+    connectivity["chipType"] = "Star";
+    connectivity["chips"][0]["config"] = feCfg.getName()+".json";
+    connectivity["chips"][0]["tx"] = 0;
+	connectivity["chips"][0]["rx"] = 1;
+	connectivity["chips"][0]["locked"] = 1;
+	connectivity["chips"][0]["enable"] = 1;
+
+    return preset;
+  }
+
 } // close namespace StarPreset
 
 #endif

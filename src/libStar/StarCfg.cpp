@@ -513,7 +513,7 @@ StarCfg::configFuncMap StarCfg::createConfigs = {
 };
 
 std::tuple<json, std::vector<json>> StarCfg::createConfigSingleFE() {
-    return FrontEndCfg::getPreset("SingleChip");
+    return StarPreset::createConfigSingleStar(*this);
 }
 
 std::tuple<json, std::vector<json>> StarCfg::createConfigLSStave() {
@@ -525,6 +525,8 @@ std::tuple<json, std::vector<json>> StarCfg::createConfigPetal() {
 }
 
 std::tuple<json, std::vector<json>> StarCfg::getPreset(const std::string& systemType) {
+    // Return a json object for connectivity configuration and
+    // a vector of json objects for chip configurations
     try {
         auto preset = (this->*createConfigs.at(systemType))();
         return preset;
