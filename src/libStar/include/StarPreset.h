@@ -6,12 +6,13 @@
 // For generating example configurations
 namespace StarPreset {
 
-  struct StarModule {
+  struct HybridInfo {
     std::string name; unsigned hccID; unsigned numABCs; unsigned tx; unsigned rx;
   };
 
   // 14 HCCStars on one side of a long strip stave
-  const std::array<StarModule, 14> lsstave {{
+  // An example configuration based on the ITSDAQ GLIB setup
+  const std::array<HybridInfo, 14> lsstave {{
       {.name="LS0",  .hccID=0,  .numABCs=10, .tx=100, .rx=13 },
       {.name="LS1",  .hccID=1,  .numABCs=10, .tx=100, .rx=12 },
       {.name="LS2",  .hccID=2,  .numABCs=10, .tx=100, .rx=11 },
@@ -29,7 +30,8 @@ namespace StarPreset {
   }};
 
   // 14 HCCStars on one side of a petal
-  const std::array<StarModule, 14> petal {{
+  // An example configuration based on the ITSDAQ GLIB setup
+  const std::array<HybridInfo, 14> petal {{
       {.name="R0_H0", .hccID=0,  .numABCs=8,  .tx=102, .rx=16 },
       {.name="R0_H1", .hccID=1,  .numABCs=9,  .tx=102, .rx=24 },
       {.name="R1_H0", .hccID=2,  .numABCs=10, .tx=102, .rx=20 },
@@ -47,7 +49,7 @@ namespace StarPreset {
   }};
 
   std::tuple<json, std::vector<json>> createConfigStarObject(
-    StarCfg& feCfg, const std::array<StarModule, 14>& modules) {
+    StarCfg& feCfg, const std::array<HybridInfo, 14>& modules) {
 
     std::tuple<json, std::vector<json>> preset;
     auto& [systemCfg, chips] = preset;
