@@ -52,7 +52,7 @@
             {
                 "config": {
                     "max": 50, 
-                    "min": 0, 
+                    "min": 33, 
                     "step": 1, 
                     "nSteps": 1
                 }, 
@@ -73,11 +73,13 @@
                 "loopAction": "StdDataLoop"
             }
         ], 
-        "name": "CrosstalkScan",
+        "name": "CrosstalkScan", 
         "prescan": {
             "InjEnDig": 0, 
             "LatencyConfig": 50, 
-            "GlobalPulseRt": 16384, 
+            "GlobalPulseRt": 0, 
+            "LinVth": 500, 
+            "SyncVth": 500, 
             "InjVcalMed": 0
         }
     }

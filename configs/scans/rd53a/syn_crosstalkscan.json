@@ -30,7 +30,7 @@
         "loops": [
             {
                 "config": {
-                    "max": 64,
+                    "max": 256,
                     "min": 0, 
                     "step": 1,
                     "maskType": 1, 
@@ -51,7 +51,7 @@
             }, 
             {
                 "config": {
-                    "max": 50, 
+                    "max": 16, 
                     "min": 0, 
                     "step": 1, 
                     "nSteps": 1
@@ -63,9 +63,10 @@
                     "count": 100, 
                     "delay": 48, 
                     "extTrigger": false, 
-                    "frequency": 5000, 
+                    "frequency": 10000, 
                     "noInject": false, 
-                    "time": 0
+                    "time": 0,
+                    "sendEcr": true
                 }, 
                 "loopAction": "Rd53aTriggerLoop"
             }, 
@@ -73,11 +74,13 @@
                 "loopAction": "StdDataLoop"
             }
         ], 
-        "name": "CrosstalkScan",
+        "name": "CrosstalkScan", 
         "prescan": {
             "InjEnDig": 0, 
             "LatencyConfig": 50, 
             "GlobalPulseRt": 16384, 
+            "DiffVth1": 500, 
+            "LinVth": 500, 
             "InjVcalMed": 0
         }
     }
