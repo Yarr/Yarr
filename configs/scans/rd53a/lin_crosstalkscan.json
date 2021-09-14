@@ -51,8 +51,8 @@
             }, 
             {
                 "config": {
-                    "max": 50, 
-                    "min": 0, 
+                    "max": 33, 
+                    "min": 16, 
                     "step": 1, 
                     "nSteps": 1
                 }, 
@@ -63,7 +63,7 @@
                     "count": 100, 
                     "delay": 48, 
                     "extTrigger": false, 
-                    "frequency": 5000, 
+                    "frequency": 10000, 
                     "noInject": false, 
                     "time": 0
                 }, 
@@ -73,11 +73,13 @@
                 "loopAction": "StdDataLoop"
             }
         ], 
-        "name": "CrosstalkScan",
+        "name": "CrosstalkScan", 
         "prescan": {
             "InjEnDig": 0, 
             "LatencyConfig": 50, 
-            "GlobalPulseRt": 16384, 
+            "GlobalPulseRt": 0, 
+            "DiffVth1": 500, 
+            "SyncVth": 500, 
             "InjVcalMed": 0
         }
     }

@@ -51,7 +51,7 @@
       {
         "config": {
           "max": 50,
-          "min": 0,
+          "min": 16,
           "step": 1,
           "nSteps": 1
         },
@@ -76,10 +76,12 @@
     "prescan": {
         "InjEnDig": 0,
         "LatencyConfig": 48,
-        "GlobalPulseRt": 16384,
+        "GlobalPulseRt": 0,
+        "SyncVth": 500,
         "InjVcalDiff": 0,
         "InjVcalHigh": 4000,
-        "InjVcalMed": 0
+        "InjVcalMed": 0,
+        
     }
   }
 }
