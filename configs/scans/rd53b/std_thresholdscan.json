@@ -5,9 +5,12 @@
         "algorithm": "ScurveFitter"
       },
      "1": {
+        "algorithm": "ParameterAnalysis"
+      },
+     "2": {
         "algorithm": "OccupancyAnalysis"
       },
-      "n_count": 1
+      "n_count": 2
     },
     "histogrammer": {
       "0": {
@@ -41,7 +44,7 @@
         "config": {
           "max": 64,
           "min": 0,
-          "step": 1
+          "step": 16
         },
         "loopAction": "Rd53bMaskLoop"
       },
@@ -52,7 +55,7 @@
           "step": 5,
           "parameter":"InjVcalDiff"
         },
-        "loopAction": "Rd53bParameterLoop"
+        "loopAction": "StdParameterLoop"
       },
       {
         "config": {
