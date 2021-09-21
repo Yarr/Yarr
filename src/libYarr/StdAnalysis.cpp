@@ -1581,7 +1581,7 @@ void ParameterAnalysis::init(ScanBase *s) {
             paramBins = (paramMax-paramMin)/paramStep;
             auto paramLoop = dynamic_cast<StdParameterLoop*>(l.get());
             if(paramLoop == nullptr) {
-                alog->error("Analysis2d: loop declared as parameter loop does not have a name");
+                alog->error("ParameterAnalysis: loop declared as parameter loop does not have a name");
             } else {
                 paramName = paramLoop->getParName();
             }
