@@ -28,6 +28,7 @@ class StdParameterLoop : public LoopActionBase {
         void execPart2() override;
 
         unsigned m_cur;
+        std::chrono::microseconds m_waitTime;
 };
 
 #endif
