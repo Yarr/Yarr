@@ -1,7 +1,7 @@
 /*
  */
 
-#include "include/StarTriggerLoop.h"
+#include "include/StarCounterLoop.h"
 
 #include <iostream>
 #include <iomanip>
@@ -9,24 +9,23 @@
 #include "logging.h"
 
 namespace {
-    auto logger = logging::make_log("StarTriggerLoop");
+    auto logger = logging::make_log("StarCounterLoop");
 }
 
-StarTriggerLoop::StarTriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) {
+StarCounterLoop::StarCounterLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) {
 
 	setTrigCnt(50); // Maximum number of triggers to send
 	m_trigDelay = 45; // L0_delay 34
 	m_trigFreq = 1e3; // 1kHz
 	m_trigTime = 10; // 10s
 	m_noInject = false;
-        m_digital = false;
 	min = 0;
 	max = 0;
 	step = 1;
 	loopType = typeid(this);
 }
 
-void StarTriggerLoop::init() {
+void StarCounterLoop::init() {
 	m_done = false;
 	SPDLOG_LOGGER_DEBUG(logger, "init");
 	// Setup Trigger
@@ -47,46 +46,85 @@ void StarTriggerLoop::init() {
         g_tx->setTrigWordLength(m_trigWordLength);
 	g_tx->setTrigTime(m_trigTime);
 
-	if (m_noInject) {
-		setNoInject();
-	}
-
         g_tx->setCmdEnable(keeper->getTxMask());
-
+        
 	logger->trace("Built trigger words {}:", m_trigWordLength);
         if(logger->should_log(spdlog::level::trace)) {
-          for(int i=0; i<m_trigWordLength; i++) {
-            logger->trace("{:08x}", m_trigWord[i]);
-          }
+            for(int i=0; i<m_trigWordLength; i++) {
+                logger->trace("{:08x}", m_trigWord[i]);
+            }
         }
 
 	while(!g_tx->isCmdEmpty());
+
 }
 
 
-void StarTriggerLoop::execPart1() {
-	SPDLOG_LOGGER_DEBUG(logger, "");
-	// Enable Trigger
-	g_tx->setTrigEnable(0x1);
+void StarCounterLoop::execPart1() {
+    SPDLOG_LOGGER_DEBUG(logger, "");
+
+    // NB currently using broadcast writes.
+    // I the future this could be expanded to allow an overriding
+    // mask for each front-end, but that requires a more complex
+    // configuration architecture.
+
+    for ( FrontEnd* fe : keeper->feList ) {
+      SPDLOG_LOGGER_DEBUG(logger, fe->isActive());
+        if (!fe->isActive()) {continue;}
+        ((StarChips*) fe)->setAndWriteABCSubRegister("ENCOUNT", 1, 0xf);
+        SPDLOG_LOGGER_DEBUG(logger, "Did ENCOUNT");
+        ((StarChips*) fe)->setAndWriteABCSubRegister("PR_ENABLE", 0, 0xf);
+        ((StarChips*) fe)->setAndWriteABCSubRegister("LP_ENABLE", 0, 0xf);
+        ((StarChips*) fe)->sendCmd(LCB::fast_command(LCB::FastCmdType::ABC_HIT_COUNT_RESET,0));
+        SPDLOG_LOGGER_DEBUG(logger, "Reset sent, sending start");
+        ((StarChips*) fe)->sendCmd(LCB::fast_command(LCB::FastCmdType::ABC_HIT_COUNT_START,4));
+    }
+
+    // Enable Trigger
+    g_tx->setTrigEnable(0x1);
+
 }
 
-void StarTriggerLoop::execPart2() {
-	SPDLOG_LOGGER_DEBUG(logger, "");
-	while(!g_tx->isTrigDone());
-	// Disable Trigger
-	g_tx->setTrigEnable(0x0);
-	m_done = true;
+void StarCounterLoop::execPart2() {
+    while(!g_tx->isTrigDone());
+    SPDLOG_LOGGER_DEBUG(logger, "Triggers finished");
+    // Disable Trigger
+    g_tx->setTrigEnable(0x0);
+
+    //Disable Counters
+    auto readReg = [&](auto words) {
+        g_tx->writeFifo((words[0] << 16) + words[1]);
+        g_tx->writeFifo((words[2] << 16) + words[3]);
+        g_tx->writeFifo((words[4] << 16) + words[5]);
+        g_tx->writeFifo((words[6] << 16) + words[7]);
+        g_tx->writeFifo((words[8] << 16) + LCB::IDLE);
+
+        // Could have this once for all regs though...
+        g_tx->releaseFifo();
+    };
+
+    for ( FrontEnd* fe : keeper->feList ) {
+        if (!fe->isActive()) {continue;}
+
+        ((StarChips*) fe)->sendCmd(LCB::fast_command(LCB::FastCmdType::ABC_HIT_COUNT_STOP,4));
+        for (int addr = 0x80; addr <= 0xbf; addr++) { //Hit Counter Regs 0x70-0xaf
+                logger->trace(addr);
+                ((StarChips*) fe)->sendCmd( ((StarChips*) fe)->read_abc_register(addr));
+        }
+    }
+
+    m_done = true;
 }
 
 
-void StarTriggerLoop::end() {
+void StarCounterLoop::end() {
 	SPDLOG_LOGGER_DEBUG(logger, "");
 
 	// Go back to general state of FE, do something here (if needed)
 	while(!g_tx->isCmdEmpty());
 }
 
-void StarTriggerLoop::setTrigWord() {
+void StarCounterLoop::setTrigWord() {
 // latency (unit::1 BC),   1 LCB::frame (16 bits) covers 4 BCs, 1 trigWord (32 bits) covers 8 BCs
 
 	// Last 32-bit word goes first in buffer.
@@ -106,11 +144,9 @@ void StarTriggerLoop::setTrigWord() {
 	unsigned int remainder = m_trigDelay - (full_words * 8);
 
 	// Final word in buffer goes first
+	//	auto cmd_word = LCB::fast_command(LCB::ABC_CAL_PULSE, 3-(remainder%4));
 	auto cmd_word = LCB::fast_command(LCB::ABC_CAL_PULSE, 3-(remainder%4));
-        if (m_digital) {
-                cmd_word = LCB::fast_command(LCB::ABC_DIGITAL_PULSE, 3-(remainder%4));
-        }
-
+	//   Or LCB::ABC_DIGITAL_PULSE
 	if(remainder < 4) {
 		// Send idle then cmd_word (then everything else)
 		m_trigWord[full_words + 1] = (LCB::IDLE << 16) + cmd_word;
@@ -124,7 +160,7 @@ void StarTriggerLoop::setTrigWord() {
 
 }
 
-void StarTriggerLoop::setNoInject() {
+void StarCounterLoop::setNoInject() {
 	m_trigWord[0] = (LCB::IDLE << 16) + LCB::IDLE;
 	m_trigWord[1] = (LCB::IDLE << 16) + LCB::IDLE;
 	m_trigWord[2] = (LCB::IDLE << 16) + LCB::IDLE;
@@ -133,16 +169,15 @@ void StarTriggerLoop::setNoInject() {
 }
 
 
-void StarTriggerLoop::writeConfig(json &config) {
+void StarCounterLoop::writeConfig(json &config) {
 	config["trig_count"] = getTrigCnt();
 	config["trig_frequency"] = m_trigFreq;
 	config["trig_time"] = m_trigTime;
 	config["l0_latency"] = m_trigDelay;
 	config["noInject"] = m_noInject;
-	config["digital"] = m_digital;
 }
 
-void StarTriggerLoop::loadConfig(json &config) {
+void StarCounterLoop::loadConfig(json &config) {
 
 	if (!config["trig_count"].empty())
 		setTrigCnt(config["trig_count"]);
@@ -158,9 +193,6 @@ void StarTriggerLoop::loadConfig(json &config) {
 
 	if (!config["noInject"].empty())
 		m_noInject = config["noInject"];
-
-	if (!config["digital"].empty())
-		m_digital = config["digital"];
 
 	logger->info("Configured trigger loop: trig_count: {} trig_frequency: {} l0_delay: {}",
                       getTrigCnt(), m_trigFreq, m_trigDelay);

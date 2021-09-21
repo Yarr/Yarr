@@ -53,53 +53,59 @@ void StarCfg::setABCRegister(ABCStarRegister addr, uint32_t val, int32_t chipID)
   abc.setRegisterValue(addr, val);
 }
 
-void StarCfg::setTrimDAC(unsigned col, unsigned row, int value)  {
-    ////NOTE: Each chip is divided in 2 row x 128 col. Histogram bins are adjusted based on number of activated chips. Does not have gap in between rows.
-    ////      Let's say, of the 10 ABC in one hybrid, only chip 0, 4 and 6 are activated, the histogram has 6 rows x 128 cols.
-    ////      i.e row 1&2 belong to chip_0; row 3&4 belong to chip_4;  row 5&6 belong to chip_6.
+uint8_t trimChannelFromHistogramLocation(unsigned col, unsigned row) {
+    ////NOTE: Each chip is divided in 2 row x 128 col. Histogram bins are adjusted based on number of activated chips.
+    ////      Let's say, of the 10 ABC in one hybrid, only chip 0, 4 and 6 are activated, the histogram has 2 rows x 896 (=128*7) cols.
+    ////      i.e Cols 0 to 128 belong to chip_0; Cols 512 to 640 belong to chip_4;  row Cols 768 to 896 belong to chip_6.
     ////      the trimDAC_4lsb_name for each chip is trimdac_4lsb_<nthRow[2:1]>_<nthCol[128:1]>
     ////      the trimDAC_1msb_name for each chip is trimdac_1msb_<nthRow[2:1]>_<nthCol[128:1]>
 
-    ////NOTE: The above NOTE is outdated. TODO: fix the NOTE
-
     ////NOTE: row and col pass from histogram starts from 1, while channel starts from 0
 
-    int nthRow = row%2 ==0 ? 2 : 1;
+    ////NOTE: numbering in trim registers is slightly different from physical strip order. In the register numbering, bits 7-2 together with bit 0 correspond to the strip location while bit 1 corresponds to the stream/row number
 
-    int channel=0;
-    int chn_tmp = floor((col-1)/2);
-    if(nthRow==1) channel = (col-1) + chn_tmp*2;
-    else if(nthRow==2) channel = (col-1) + (chn_tmp+1)*2;
+    uint8_t chn_tmp = (col-1) % 128; //Physical channel position within the row, 0 indexed
+    uint8_t channel= ((chn_tmp & ~0x1) << 1) + (chn_tmp & 0x1) + 2*(row-1); //Conversion to register ordering.
+    return channel;
+}
+
+uint8_t trimIndexFromHistogramLocation(unsigned col, unsigned row) {
+    //See NOTE in trimChannelFromHistogramLocation()
+    return 1+((col-1) >> 7);
+}
+
+void StarCfg::setTrimDAC(unsigned col, unsigned row, int value)  {
+
+    uint8_t channel= trimChannelFromHistogramLocation(col, row);
 
     SPDLOG_LOGGER_TRACE(logger,
-                        "row:{} col:{} chn_tmp:{} channel:{}",
-                        row-1, col-1, chn_tmp, channel);
+                        "row:{} col:{} channel:{}",
+                        row-1, col-1, channel);
 
-    unsigned chipIndex = ceil(row/2.0);
+    uint8_t chipIndex = trimIndexFromHistogramLocation(col, row);
 
-    auto &abc = abcFromIndex(chipIndex);
+    if(abcAtIndex(chipIndex)) {
+        auto &abc = abcFromIndex(chipIndex);
+        abc.setTrimDACRaw(channel, value);
+    }
 
-    abc.setTrimDACRaw(channel, value);
 }
 
 
 int StarCfg::getTrimDAC(unsigned col, unsigned row) const {
-    int nthRow = row%2 ==0 ? 2 : 1;
-
-    int channel=0;
-    int chn_tmp = floor((col-1)/2);
-    if(nthRow==1) channel = (col-1) + chn_tmp*2;
-    else if(nthRow==2) channel = (col-1) + (chn_tmp+1)*2;
+    uint8_t channel= trimChannelFromHistogramLocation(col, row);
 
     SPDLOG_LOGGER_TRACE(logger,
-                        " row:{} col:{} chn_tmp:{} channel:{}",
-                        row-1, col-1, chn_tmp, channel);
+                        "row:{} col:{} channel:{}",
+                        row-1, col-1, channel);
 
-    unsigned chipIndex = ceil(row/2.0);
+    uint8_t chipIndex = trimIndexFromHistogramLocation(col, row);
 
-    const auto &abc = abcFromIndex(chipIndex);
-
-    return abc.getTrimDACRaw(channel);
+    if(abcAtIndex(chipIndex)) {
+        const auto &abc = abcFromIndex(chipIndex);
+        return abc.getTrimDACRaw(channel);
+    }
+    return 0;
 }
 
 void StarCfg::toFileJson(json &j) {
@@ -498,7 +504,7 @@ void StarCfg::fromFileJson(json &j) {
                 // Not the same
                 for(int m=0; m<256; m++) {
                   int trim = chipValue[m];
-                    abc.setTrimDACRaw(m, trim);
+                  abc.setTrimDACRaw(m, trim);
                 }
             }
         }

@@ -195,6 +195,27 @@ void StarChips::sendCmd(std::array<uint16_t, 9> cmd){
 
 }
 
+bool StarChips::writeTrims(){
+    //Write only TrimDAC registers so we don't overwrite the prescan when doing a trim
+    auto num_abc = numABCs();
+    int hccId = getHCCchipID();
+
+    // Then each ABC
+    const auto &abc_regs = AbcStarRegInfo::instance()->abcregisterMap;
+    eachAbc([&](auto &abc) {
+            int this_chipID = abc.getABCchipID();
+
+            logger->info("Starting on ABC {} with {} registers", this_chipID, abc_regs.size());
+            for(unsigned int addr = ABCStarRegister::TrimDAC0; addr <= ABCStarRegister::TrimDAC39; addr++) {
+                logger->debug("Writing Register {} for chipID {}", addr, this_chipID);
+                writeABCRegister(addr, abc);
+            }
+            logger->info("Done with ABC {}", this_chipID);
+        });
+
+    return true;
+    
+}
 
 bool StarChips::writeRegisters(){
 	//Write all register to their setting, both for HCC & all ABCs

@@ -36,6 +36,10 @@ class Fe65p2 : public FrontEnd, public Fe65p2Cfg, public Fe65p2Cmd {
             this->setPixConf(col+1, row+1, 0x0);
         }
 
+	unsigned getPixelEn(unsigned col, unsigned row) override {
+	  return 1; // getPixelEn() made for Rd53a chips which have getEn(), needs further modification for Fe65p2
+        }
+
         void enableAll() override;
 
         void writeNamedRegister(std::string name, uint16_t value) override;

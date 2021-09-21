@@ -2,12 +2,18 @@
   "scan": {
     "analysis": {
       "0": {
-        "algorithm": "ScurveFitter"
+        "algorithm": "TotAnalysis"
       },
       "1": {
+        "algorithm": "OccupancyAnalysis",
+        "config": {
+          "createMask": false
+        }
+      },
+      "2": {
         "algorithm": "L1Analysis"
       },
-      "n_count": 1
+      "n_count": 3
     },
     "histogrammer": {
       "0": {
@@ -33,9 +39,18 @@
       "n_count": 5
     },
     "loops": [
+    {
+        "config": {
+          "max": 3600,
+          "min": 100,
+          "step": 10,
+	  "parameter":"InjVcalDiff"
+        },
+        "loopAction": "Rd53aParameterLoop"
+      },
       {
         "config": {
-         "max": 64,
+          "max": 64,
           "min": 0,
           "step": 1
         },
@@ -43,20 +58,10 @@
       },
       {
         "config": {
-          "max": 350,
-          "min": 50,
-          "step": 5,
-          "parameter":"InjVcalDiff"
-        },
-        "loopAction": "Rd53aParameterLoop"
-      },
-      {
-        "config": {
-          "max": 16,
-          "min": 0,
+          "max": 50,
+          "min": 33,
           "step": 1,
-          "nSteps": 2,
-	  "delayArray": [0]
+          "nSteps": 2
         },
         "loopAction": "Rd53aCoreColLoop"
       },
@@ -65,10 +70,9 @@
           "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 10000,
+          "frequency": 7500,
           "noInject": false,
-          "time": 0,
-          "sendEcr": true
+          "time": 0
         },
         "loopAction": "Rd53aTriggerLoop"
       },
@@ -76,17 +80,12 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "ThresholdScan",
+    "name": "TotScan",
     "prescan": {
         "InjEnDig": 0,
-        "LatencyConfig": 48,
-        "GlobalPulseRt": 16384,
-        "InjVcalMed": 1000,
-        "InjVcalHigh": 1000,
-        "EnCoreColLin1": 0,
-        "EnCoreColLin2": 0,
-        "EnCoreColDiff1": 0,
-        "EnCoreColDiff2": 0
+	"InjVcalMed": 100,
+        "LatencyConfig": 50,
+        "GlobalPulseRt": 16384
     }
   }
 }

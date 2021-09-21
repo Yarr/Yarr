@@ -295,6 +295,19 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         chargeVsTotMap.reset(hh);
     }
 
+    if (pixelTotMap == NULL && hasVcalLoop) {
+        FrontEndCfg *feCfgp = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
+	double chargeMinp = feCfgp->toCharge(vcalMin, useScap, useLcap);
+	double chargeMaxp = feCfgp->toCharge(vcalMax, useScap, useLcap);
+	double chargeStepp = feCfgp->toCharge(vcalStep, useScap, useLcap);
+
+	Histo2d *pp2 = new Histo2d("PixelTotMap", nCol*nRow, 0, nCol*nRow, vcalBins+1, chargeMinp-chargeStepp/2, chargeMaxp+chargeStepp/2);
+	pp2->setXaxisTitle("Pixels");
+	pp2->setYaxisTitle("Injected Charge [e]");
+	pp2->setZaxisTitle("avg ToT");
+	pixelTotMap.reset(pp2);
+    }
+
     // Gather Histogram
     if (h->getName() == OccupancyMap::outputName()) {
         occMaps[ident]->add(*(Histo2d*)h);
@@ -349,13 +362,16 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
             sigmaTotDist->fill(sigma);
         }
         if (hasVcalLoop) {
-            // Tot vs charge map
             FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
             double currentCharge = feCfg->toCharge(ident, useScap, useLcap);
             for (unsigned i=0; i<tempMeanTotDist->size(); i++) {
                 chargeVsTotMap->fill(currentCharge, (i+1)*0.1, tempMeanTotDist->getBin(i));
             }
+	    for (unsigned n=0; n<meanTotMap->size(); n++) {
+	      pixelTotMap->fill(n, currentCharge, meanTotMap->getBin(n));
+	    }
         }
+
         alog->info("\033[1;33mChannel:{} ScanID:{} ToT Mean = {} +- {}\033[0m", channel, ident,  meanTotDist->getMean(), meanTotDist->getStdDev());
 
         if (globalFb != NULL) {
@@ -418,7 +434,108 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
 
 void TotAnalysis::end() {
     if (hasVcalLoop) {
-        output->pushData(std::move(chargeVsTotMap));
+      FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel)); //replace these with more dynamic conversions 
+	double injQMin = feCfg->toCharge(vcalMin, useScap, useLcap);
+	double injQMax = feCfg->toCharge(vcalMax, useScap, useLcap);
+	double injQStep = feCfg->toCharge(vcalStep, useScap, useLcap);
+	std::unique_ptr<Histo1d> avgTotVsCharge( new Histo1d("avgTotVsCharge", vcalBins+1, injQMin-injQStep/2.0, injQMax+injQStep/2.0));
+	avgTotVsCharge->setXaxisTitle("Injected Charge [e]");
+	avgTotVsCharge->setYaxisTitle("avg ToT");
+
+	for (unsigned k=0; k<avgTotVsCharge->size(); k++) {  
+	  double injQ = feCfg->toCharge(vcalMin+k*vcalStep, useScap, useLcap); 
+	  double sum = 0;
+	  double entries = 0;
+	  for (float measToT=0.0; measToT<=16.0; measToT+=0.1) {
+	    int n = chargeVsTotMap->binNum(injQ, measToT);
+	    sum += (chargeVsTotMap->getBin(n))*(measToT); 
+	    entries += chargeVsTotMap->getBin(n);
+	  }
+	  double averageToT = sum/entries;
+	  avgTotVsCharge->fill(injQ, averageToT);
+	}
+
+	//extracting ToT-to-charge data now
+	std::unique_ptr<Histo3d> measQtemp ( new Histo3d("measQtemp", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5, vcalBins+1,  injQMin-injQStep/2.0, injQMax+injQStep/2.0) ); 
+
+	int Nmessage = 0;  //boolean to be used for a message to user; in presence of middle holes, user may wish to use finer injQ steps.
+	
+	std::unique_ptr<Histo2d> measQOut ( new Histo2d("measQOut", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5) );
+	std::unique_ptr<Histo2d> measQRMSOut ( new Histo2d("measQRMSOut", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5) );
+	for (unsigned n=0; n<nCol*nRow; n++) {
+	  if (bookie->getFe(channel)->getPixelEn((n/nRow), (n%nRow)) == 0) { //if pixel isn't masked
+	    int anyzero = 0;
+	    for (unsigned k=0; k<avgTotVsCharge->size(); k++) {
+	      double q = feCfg->toCharge(vcalMin+k*vcalStep, useScap, useLcap);
+	      double avgTot = pixelTotMap->getBin(pixelTotMap->binNum(n, q));
+	      double frac = fmod(avgTot,1);
+	      double tot = avgTot - fmod(avgTot,1);
+	      measQtemp->fill(n, tot, q, 100*(1-frac)); 
+	      if (frac != 0.0) { measQtemp->fill(n, tot+1, q, 100*(frac)); }
+	    }
+	    for (unsigned tot = 0; tot < 16; tot++) { 
+	      double mean = 0; 
+	      double count = 0;
+	      double meanSq = 0;
+	      for(unsigned k=0; k<avgTotVsCharge->size(); k++) {
+		double q = feCfg->toCharge(vcalMin+k*vcalStep, useScap, useLcap);
+		int binNum = measQtemp->binNum(n, tot, q);
+		mean += measQtemp->getBin(binNum)*q;
+		meanSq += measQtemp->getBin(binNum)*q*q;
+		count += measQtemp->getBin(binNum);
+	      }
+	      if (count!=0) { 
+		mean = mean/count; 
+		meanSq = meanSq/count;
+		meanSq = std::sqrt(std::fabs(mean*mean - meanSq)); 
+	      }
+	      measQOut->fill(n, tot, mean); 
+	      measQRMSOut->fill(n,tot, meanSq);
+	    }
+	    
+	    bool message = false;  //boolean to be used for a message to user; in presence of middle holes, user may wish to use finer injQ steps.
+	    for (unsigned tot = 1; tot < 16; tot++) {  //Extrapolation starts here
+              int binNum = measQOut->binNum(n, tot);  
+              double measQ = measQOut->getBin(binNum);
+	      unsigned tmaxIndex=tot;
+	      unsigned tminIndex=tot;
+	      double tmaxMeasQ = 0.0;
+	      double tminMeasQ = 0.0;
+              if (measQ == 0.0) {
+	    	while (tmaxMeasQ == 0.0 && tmaxIndex < 15) {
+	    	  tmaxIndex += 1;
+	    	  int tempBinNum = measQOut->binNum(n, tmaxIndex);
+	    	  tmaxMeasQ = measQOut->getBin(tempBinNum);
+	    	}
+	    	while (tminMeasQ == 0.0 && tminIndex > 1) {
+                  tminIndex -= 1;
+                  int tempBinNum = measQOut->binNum(n, tminIndex);
+                  tminMeasQ = measQOut->getBin(tempBinNum); 
+                }
+	    	if (tmaxIndex == 15 && tmaxMeasQ == 0.0) { 
+	    	  measQOut->fill(n, tot, tminMeasQ);
+	    	  measQRMSOut->fill(n, tot, -1); 
+	    	} else {
+	    	  double stepMeasQ = (tmaxMeasQ - tminMeasQ)/(tmaxIndex - tminIndex);
+	    	  measQOut->fill(n, tot, tminMeasQ + stepMeasQ);
+		  if (!message  && tminIndex != 1) {message = true;} //if there are middle holes, add message to log for users.
+	    	}
+	      }
+	    } //end of extrapolation code
+	    if (message) {Nmessage += 1;}
+	  } //end of that specific pixel loop
+	} //end of VCal = true test.  
+	if (Nmessage != 0) {
+	  alog->info("Used linear extrapolation to fill missing measured charge values for middle ToT values.");
+	  alog->info("User may wish to use finer injection charge steps");
+	  alog->info("{} pixels needed extrapolation for middle ToT cases (not edge cases)", Nmessage);
+	}
+
+	output->pushData(std::move(chargeVsTotMap));
+        output->pushData(std::move(pixelTotMap));
+	output->pushData(std::move(avgTotVsCharge));
+	output->pushData(std::move(measQOut));
+	output->pushData(std::move(measQRMSOut));
     }
 }
 
@@ -605,7 +722,8 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     double chi2= status.fnorm/(double)status.nfev;
 
                     if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0 
-                            && chi2 < 2.5 && chi2 > 1e-6) {
+                            && chi2 < 2.5 && chi2 > 1e-6
+                            && fabs((par[2] - par[3])/injections - 1) < 0.1) {  // Add new criteria: difference between 100% baseline and 0% baseline should agree with number of injections within 10%
                         FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
                         thrMap[outerIdent]->setBin(bin, feCfg->toCharge(par[0], useScap, useLcap));
                         // Reudce effect of vcal offset on this, don't want to probe at low vcal

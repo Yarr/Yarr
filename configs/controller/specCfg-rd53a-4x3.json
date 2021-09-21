@@ -1,0 +1,24 @@
+{
+    "ctrlCfg" : {
+        "type": "spec",
+        "cfg" : {
+            "specNum" : 0,
+            "spiConfig" : 541200,
+            "rxPolarity" : 0,
+            "txPolarity" : 0,
+            "rxActiveLanes": 7,
+            "pulse" : {
+                "word" : 1549575846,
+                "interval" : 500
+            },
+            "sync" : {
+                "word" : 2172551550,
+                "interval" : 32
+            },
+            "idle" : {
+                "word" : 1768515945
+            },
+            "cmdPeriod" : 6.25e-9
+        }
+    }
+}
