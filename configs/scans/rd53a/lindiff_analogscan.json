@@ -2,12 +2,15 @@
   "scan": {
     "analysis": {
       "0": {
-        "algorithm": "ScurveFitter"
+        "algorithm": "OccupancyAnalysis",
+        "config": {
+          "createMask": true
+        }
       },
-     "1": {
-        "algorithm": "OccupancyAnalysis"
+      "1": {
+        "algorithm": "L1Analysis"
       },
-      "n_count": 1
+      "n_count": 2
     },
     "histogrammer": {
       "0": {
@@ -35,7 +38,7 @@
     "loops": [
       {
         "config": {
-          "max": 256,
+          "max": 64,
           "min": 0,
           "step": 1
         },
@@ -43,33 +46,21 @@
       },
       {
         "config": {
-          "max": 250,
-          "min": 0,
-          "step": 5,
-          "parameter":"InjVcalDiff"
-        },
-        "loopAction": "Rd53aParameterLoop"
-      },
-      {
-        "config": {
-          "max": 16,
-          "min": 0,
+          "max": 50,
+          "min": 16,
           "step": 1,
-          "nSteps": 16,
-	  "delayArray": [10,10,10,10,10,11,11,11,11,11,11,11,11,11,10,10]
+          "nSteps": 4
         },
         "loopAction": "Rd53aCoreColLoop"
       },
       {
         "config": {
-          "count": 50,
+          "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 20000,
+          "frequency": 30000,
           "noInject": false,
-          "time": 0,
-	      "trigMultiplier": 1,
-          "sendEcr": true
+          "time": 0
         },
         "loopAction": "Rd53aTriggerLoop"
       },
@@ -77,16 +68,15 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "ThresholdScan",
+    "name": "AnalogScan",
     "prescan": {
         "InjEnDig": 0,
-        "LatencyConfig": 42,
-        "OutputActiveLanes": 1,
-        "GlobalPulseRt": 16384,
-        "EnCoreColLin1": 0,
-        "EnCoreColLin2": 0,
-        "EnCoreColDiff1": 0,
-        "EnCoreColDiff2": 0
+        "LatencyConfig": 48,
+        "EnCoreColSync": 0,
+        "GlobalPulseRt": 0,
+        "InjVcalDiff": 0,
+        "InjVcalHigh": 2500,
+        "InjVcalMed": 500
     }
   }
 }

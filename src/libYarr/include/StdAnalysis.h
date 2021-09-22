@@ -107,7 +107,6 @@ class ScurveFitter : public AnalysisAlgorithm {
         std::vector<unsigned> loopMax;
 
         std::map<unsigned, std::unique_ptr<Histo1d>> histos;
-        std::map<unsigned, std::unique_ptr<Histo2d>> sCurve;
         std::map<unsigned, std::unique_ptr<Histo2d>> thrMap;
         std::map<unsigned, std::unique_ptr<Histo1d>> thrDist;
         std::map<unsigned, std::unique_ptr<Histo2d>> sigMap;
@@ -118,8 +117,6 @@ class ScurveFitter : public AnalysisAlgorithm {
         std::map<unsigned, std::unique_ptr<Histo2d>> chi2Map;   
         std::map<unsigned, std::unique_ptr<Histo2d>> statusMap; 
         std::map<unsigned, std::unique_ptr<Histo1d>> statusDist;
-
-        std::map<unsigned, std::unique_ptr<Histo2d>> sCurveMap;
 
         std::unique_ptr<PixelFeedbackSender> fb;
         std::map<unsigned, std::unique_ptr<Histo2d>> step;
@@ -324,4 +321,32 @@ class DelayAnalysis : public AnalysisAlgorithm {
         unsigned delayStep;
         unsigned count;
 };
+
+class ParameterAnalysis : public AnalysisAlgorithm {
+    public:
+        ParameterAnalysis() : AnalysisAlgorithm() {};
+        ~ParameterAnalysis() {};
+
+        void init(ScanBase *s);
+        void processHistogram(HistogramBase *h);
+        void end();
+	void loadConfig(json &config) {}
+    private:
+        std::vector<unsigned> loops;
+        std::vector<unsigned> loopMax;
+        unsigned n_count;
+        unsigned injections;
+	unsigned paramLoopNo;
+	unsigned paramMin;
+	unsigned paramMax;
+	unsigned paramStep;
+        unsigned paramBins;
+	unsigned count;
+        std::string paramName;
+        std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
+        std::map<unsigned, std::unique_ptr<Histo2d>> paramCurves;
+        std::map<unsigned, std::unique_ptr<Histo2d>> paramMaps;
+
+};
+
 #endif

@@ -72,7 +72,7 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "AnalogScan",
+    "name": "DiscBumpScan",
     "prescan": {
         "InjEnDig": 0,
         "LatencyConfig": 48,
