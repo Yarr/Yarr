@@ -23,6 +23,7 @@ bool rd53b_registred =
 Rd53b::Rd53b() : FrontEnd(), Rd53bCfg(), Rd53bCmd(){
     txChannel = 99;
     rxChannel = 99;
+    enforceChipIdInName = true;
     active = true;
     geo.nRow = 384;
     geo.nCol = 400;
@@ -32,6 +33,7 @@ Rd53b::Rd53b(HwController *core) : FrontEnd(), Rd53bCfg(), Rd53bCmd(core) {
     m_rxcore = core;
     txChannel = 99;
     rxChannel = 99;
+    enforceChipIdInName = true;
     active = true;
     geo.nRow = 384;
     geo.nCol = 400;
@@ -42,6 +44,7 @@ Rd53b::Rd53b(HwController *core, unsigned arg_channel) : FrontEnd(), Rd53bCfg(),
     m_rxcore = core;
     txChannel = arg_channel;
     rxChannel = arg_channel;
+    enforceChipIdInName = true;
     active = true;
     geo.nRow = 384;
     geo.nCol = 400;
@@ -53,6 +56,7 @@ void Rd53b::init(HwController *core, unsigned arg_txChannel, unsigned arg_rxChan
     m_rxcore = core;
     txChannel = arg_txChannel;
     rxChannel = arg_rxChannel;
+    enforceChipIdInName = true;
     geo.nRow = 384;
     geo.nCol = 400;
     core->setClkPeriod(6.25e-9);
