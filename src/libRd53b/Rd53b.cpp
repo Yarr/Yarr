@@ -169,6 +169,18 @@ void Rd53b::configureInit() {
 }
 
 void Rd53b::configureGlobal() {
+    // Read current threshold values
+    uint16_t tmpTh1L = this->DiffTh1L.read();
+    uint16_t tmpTh1R = this->DiffTh1R.read();
+    uint16_t tmpTh1M = this->DiffTh1M.read();
+    uint16_t tmpTh2 = this->DiffTh2.read();
+    // Set high threshold during config
+    this->writeRegister(&Rd53b::DiffTh1L, 500);
+    this->writeRegister(&Rd53b::DiffTh1R, 500);
+    this->writeRegister(&Rd53b::DiffTh1M, 500);
+    this->writeRegister(&Rd53b::DiffTh2, 0);
+    while(!core->isCmdEmpty()){;}
+
     logger->debug("Configuring all registers ...");
     for (unsigned addr=0; addr<numRegs; addr++) {
         this->sendWrReg(m_chipId, addr, m_cfg[addr]);
@@ -176,13 +188,19 @@ void Rd53b::configureGlobal() {
         // Special handling of preamp register
         if (addr == 13) { // specifically wait after setting preamp bias
             while(!core->isCmdEmpty()){;}
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
+            std::this_thread::sleep_for(std::chrono::microseconds(5000));
         }
 
         if (addr % 20 == 0) // Wait every 20 regs to not overflow a buffer
             while(!core->isCmdEmpty()){;}
     }
     while(!core->isCmdEmpty());
+    
+    this->writeRegister(&Rd53b::DiffTh1L, tmpTh1L);
+    this->writeRegister(&Rd53b::DiffTh1R, tmpTh1R);
+    this->writeRegister(&Rd53b::DiffTh1M, tmpTh1M);
+    this->writeRegister(&Rd53b::DiffTh2, tmpTh2);
+    while(!core->isCmdEmpty()){;}
 }
 
 void Rd53b::configurePixels() {
