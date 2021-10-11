@@ -120,7 +120,9 @@ void SpecRxCore::checkRxSync() {
     numOfLanes = this->getSpecIdentChCfg(fw_ident).back() - 48;
     if (numOfLanes == 0 || numOfLanes > 4) {
         srxlog->error("Number of Lanes not acceptable: {}", numOfLanes);
+        return;
     }
+    srxlog->info("Number of lanes: {}", numOfLanes);
     for (unsigned i=0; i<32; i++) {
         if ((1 << i) & enable_mask) {
             for (unsigned l=0; l<4; l++) {
