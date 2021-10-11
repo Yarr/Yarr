@@ -115,11 +115,17 @@ void SpecRxCore::checkRxSync() {
     srxlog->info("Active Rx channels: 0x{:x}", enable_mask);    
     srxlog->info("Active Rx lanes: 0x{:x}", m_rxActiveLanes);
     srxlog->info("Rx Status 0x{:x}", status);
+    uint32_t numOfLanes = 0;
+    // Convert last digit (lanes) to int
+    numOfLanes = this->getSpecIdentChCfg(fw_ident).back() - 48;
+    if (numOfLanes == 0 || numOfLanes > 4) {
+        srxlog->error("Number of Lanes not acceptable: {}", numOfLanes);
+    }
     for (unsigned i=0; i<32; i++) {
         if ((1 << i) & enable_mask) {
             for (unsigned l=0; l<4; l++) {
                 if ((1 << l) & m_rxActiveLanes) {
-                    if (status & (1 << ((i*m_rxActiveLanes)+l))) {
+                    if (status & (1 << ((i*numOfLanes)+l))) {
                         srxlog->info("Channel {} Lane {} synchronized!", i, l);
                     } else {
                         srxlog->error("Channel {} Lane {} not synchronized!", i, l);
