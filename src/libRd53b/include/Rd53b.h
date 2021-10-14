@@ -43,6 +43,7 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         void configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels);
         
         int checkCom() override;
+        bool hasValidName() override;
 
         void maskPixel(unsigned col, unsigned row) override {
             this->setEn(col, row, 0);

@@ -39,6 +39,8 @@ class FrontEnd {
        
         virtual void configure()=0;
         virtual int checkCom() {return 1;}
+        virtual bool hasValidName();
+
 
         /// Write to a register using a string name (most likely from json)
         virtual void writeNamedRegister(std::string name, uint16_t value) = 0;
@@ -82,6 +84,8 @@ class FrontEndCfg {
 		unsigned getTxChannel() {return txChannel;}
 		unsigned getRxChannel() {return rxChannel;}
         std::string getName() {return name;}
+        bool checkChipIdInName() { return enforceChipIdInName; }
+
         
         void setChannel(unsigned channel) {txChannel = channel; rxChannel = channel;}
 		void setChannel(unsigned arg_txChannel, unsigned arg_rxChannel) {txChannel = arg_txChannel; rxChannel = arg_rxChannel;}

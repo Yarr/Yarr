@@ -418,9 +418,16 @@ int main(int argc, char *argv[]) {
         hwCtrl->setCmdEnable(feCfg->getTxChannel());
         hwCtrl->setRxEnable(feCfg->getRxChannel());
         hwCtrl->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-        // Configure
+
+        // check communication with FE by reading back a register
         if (fe->checkCom() != 1) {
             logger->critical("Can't establish communication, aborting!");
+            return -1;
+        }
+
+        // check that the current FE name is valid
+        if (!fe->hasValidName()) {
+            logger->critical("Invalid chip name, aborting!");
             return -1;
         }
         logger->info("... success!");

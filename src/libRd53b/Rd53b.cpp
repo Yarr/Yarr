@@ -298,26 +298,31 @@ int Rd53b::checkCom() {
             return 0;
         }
 
-
-        // check that the E-fuse data corresponds to the user-provided configuration
-        EfuseInfo info = this->readEfuses();
-        if(enforceChipIdInName) {
-            std::stringstream id_from_efuse;
-            id_from_efuse << std::hex << info.fields.chipId;
-            bool id_in_name = name.find(id_from_efuse.str()) != std::string::npos;
-            if(!id_in_name) {
-                logger->error("Chip serial number from e-fuse data (0x{:x}) does not appear in Chip \"Name\" field in config (\"{}\") for chip with ChipId = {}", info.fields.chipId, name, m_chipId);
-                return 0;
-            }
-        }
-        logger->info("Chip serial numer obtained from e-fuse data: 0x{:x} (raw e-fuse data: 0x{:x})", info.fields.chipId, info.data);
-
         logger->debug("... success");
         return 1;
     } else {
         logger->error("Did not receive any data for {}", this->name);
         return 0;
     }
+}
+
+bool Rd53b::hasValidName() {
+    if (this->ServiceBlockEn.read() == 0) {
+        logger->error("Register messages not enabled, can't check chip id (set \"ServiceBlockEn\" to 1 in chip config");
+        return false;
+    }
+    // if user is requested to enforce that the chip id be in the FrontEnd "name"
+    // field, then readback the E-fuses to get the actual chip's ID
+    EfuseInfo info = this->readEfuses();
+    std::stringstream id_from_efuse;
+    id_from_efuse << std::hex << info.fields.chipId;
+    bool id_in_name = name.find(id_from_efuse.str()) != std::string::npos;
+    if(!id_in_name) {
+        logger->error("Chip serial number from e-fuse data (0x{:x}) does not appear in Chip \"name\" field (\"{}\") in loaded configuration  for chip with ChipId = {}", info.fields.chipId, name, m_chipId);
+        return false;
+    }
+    logger->info("Chip serial number obtained from e-fuse data: 0x{:x} (raw e-fuse data: 0x{:x})", info.fields.chipId, info.data);
+    return true;
 }
 
 std::pair<uint32_t, uint32_t> Rd53b::decodeSingleRegRead(uint32_t higher, uint32_t lower) {
