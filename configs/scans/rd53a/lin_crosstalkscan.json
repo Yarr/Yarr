@@ -80,7 +80,10 @@
             "GlobalPulseRt": 0, 
             "DiffVth1": 500, 
             "SyncVth": 500, 
-            "InjVcalMed": 0
+            "InjVcalMed": 0,
+            "EnCoreColDiff1": 0,
+            "EnCoreColDiff2": 0,
+            "EnCoreColSync": 0
         }
     }
 }
