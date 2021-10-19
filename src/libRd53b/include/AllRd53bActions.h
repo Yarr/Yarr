@@ -4,3 +4,4 @@
 #include "Rd53bParameterLoop.h"
 #include "Rd53bGlobalFeedback.h"
 #include "Rd53bPixelFeedback.h"
+#include "Rd53bReadRegLoop.h"
