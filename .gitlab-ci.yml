@@ -95,7 +95,7 @@ job_test_json:
     stage: build
     script:
       - npm install jsonlint -g
-      - for file in $(find ../configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
+      - for file in $(find configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
 
 job_test_code_coverage:
     stage: build
