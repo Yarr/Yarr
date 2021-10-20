@@ -307,10 +307,19 @@ int Rd53b::checkCom() {
 }
 
 bool Rd53b::hasValidName() {
+
+    // return true if no check is requested
+    if(auto cfg = dynamic_cast<Rd53bCfg*>(this); !cfg->checkChipIdInName()) {
+        return true;
+    }
+
+    // Rd53b stores serial numbers in on-chip registers, so service blocks be
+    // enabled in order to query them
     if (this->ServiceBlockEn.read() == 0) {
         logger->error("Register messages not enabled, can't check chip id (set \"ServiceBlockEn\" to 1 in chip config");
         return false;
     }
+
     // if user is requested to enforce that the chip id be in the FrontEnd "name"
     // field, then readback the E-fuses to get the actual chip's ID
     EfuseInfo info = this->readEfuses();
