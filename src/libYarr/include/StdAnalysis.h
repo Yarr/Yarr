@@ -129,7 +129,7 @@ class ScurveFitter : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> vcalCnt;
         bool useScap;
         bool useLcap;
-        bool reverse;
+        bool reverse = false;
 };
 
 class OccGlobalThresholdTune : public AnalysisAlgorithm {
