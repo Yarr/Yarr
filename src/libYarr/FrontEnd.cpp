@@ -19,8 +19,3 @@ bool FrontEnd::getActive() {
 void FrontEnd::setActive(bool arg_active) {
 	active = arg_active;
 }
-
-bool FrontEnd::hasValidName() {
-    auto cfg = dynamic_cast<FrontEndCfg*>(this);
-    return cfg == nullptr ? true : (cfg->checkChipIdInName() ? false : true);
-}

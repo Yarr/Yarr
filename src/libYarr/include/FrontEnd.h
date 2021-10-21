@@ -39,7 +39,7 @@ class FrontEnd {
        
         virtual void configure()=0;
         virtual int checkCom() {return 1;}
-        virtual bool hasValidName();
+        virtual bool hasValidName() { return true; }
 
 
         /// Write to a register using a string name (most likely from json)
