@@ -178,6 +178,14 @@ Jumper configuration for **direct powering**
 
 **Resolve by:** check that aurora lines are connected and running. The jumpers JP10 and JP11 on the SCC have to be closed in order to use LANE 2 and LANE 3.
 
+
+**Symptom:** There seems to be loss of data.
+
+![Data loss example 1](images/dataloss.png)![Data loss example 2](images/dataloss2.png)
+
+**Resolve by:** Check the firmware configuration, OutputActiveLanes, and the trigger frequency. Try using a firmware with higher readout frequency, e.g. 640 MHz instead of 160 MHz, more lanes in the chip (e.g. 3 or 4 lanes instead of 1 lane), or lower trigger frequency in the scan config (e.g. use 5000 Hz instead of 30 kHz).
+
+
 ### Noise/Source Scan is empty
 
 **Symptom:**
