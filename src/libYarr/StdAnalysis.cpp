@@ -1318,6 +1318,7 @@ void TotDistPlotter::processHistogram(HistogramBase *h) {
 }
 
 void NoiseAnalysis::init(ScanBase *s) {
+    noiseThr = 1e-6;
     // We assume the nosie scan only has one trigger and data loop
     occ.reset(new Histo2d("Occupancy", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
     occ->setXaxisTitle("Col");
@@ -1339,6 +1340,9 @@ void NoiseAnalysis::loadConfig(json &j){
         createMask=j["createMask"];
 		//std::cout << "createMask = " << createMask << std::endl;
     }
+    if (!j["noiseThr"].empty()){
+        noiseThr=j["noiseThr"];
+    }    
 }
 
 void NoiseAnalysis::end() {
@@ -1355,7 +1359,7 @@ void NoiseAnalysis::end() {
     noiseOcc->add(&*occ);
     noiseOcc->scale(1.0/(double)n_trigger);
     alog->info("[{}] Received {} total trigger!", channel, n_trigger);
-    double noiseThr = 1e-6; 
+ 
     for (unsigned i=0; i<noiseOcc->size(); i++) {
         if (noiseOcc->getBin(i) > noiseThr) {
             mask->setBin(i, 0);

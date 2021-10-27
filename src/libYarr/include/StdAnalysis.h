@@ -275,6 +275,7 @@ class NoiseAnalysis : public AnalysisAlgorithm {
         unsigned n_trigger;
         std::unique_ptr<Histo2d> occ;
         bool createMask;
+        double noiseThr;
 };
 
 class NoiseTuning : public AnalysisAlgorithm {
