@@ -1,0 +1,88 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "OccupancyAnalysis",
+        "config": {
+          "createMask": false
+        }
+      },
+      "1": {
+        "algorithm": "L1Analysis"
+      },
+      "n_count": 2
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "1": {
+        "algorithm": "TotMap",
+        "config": {}
+      },
+      "2": {
+        "algorithm": "Tot2Map",
+        "config": {}
+      },
+      "3": {
+        "algorithm": "L1Dist",
+        "config": {}
+      },
+      "4": {
+        "algorithm": "HitsPerEvent",
+        "config": {}
+      },
+      "n_count": 5
+    },
+    "loops": [
+      {
+        "config": {
+          "max": 64,
+          "min": 0,
+          "step": 1,
+		"maskType": 1, 
+		"maskSize": 1, 
+		"includedPixels": 0, 
+		"sensorType": 0
+        },
+        "loopAction": "Rd53aMaskLoop"
+      },
+      {
+        "config": {
+          "max": 50,
+          "min": 16,
+          "step": 1,
+          "nSteps": 1
+        },
+        "loopAction": "Rd53aCoreColLoop"
+      },
+      {
+        "config": {
+          "count": 100,
+          "delay": 48,
+          "extTrigger": false,
+          "frequency": 5000,
+          "noInject": false,
+          "time": 0
+        },
+        "loopAction": "Rd53aTriggerLoop"
+      },
+      {
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "DiscBumpScan",
+    "prescan": {
+        "InjEnDig": 0,
+        "LatencyConfig": 48,
+        "GlobalPulseRt": 0,
+        "SyncVth": 500,
+        "InjVcalDiff": 0,
+        "InjVcalHigh": 4000,
+        "InjVcalMed": 0,
+        "EnCoreColSync": 0,
+        "DiffVff": 50
+    }
+  }
+}

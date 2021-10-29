@@ -8,6 +8,8 @@
 // # Description: Histograms FrontEnd data
 // ################################
 
+#include <fstream>
+
 #include "EventData.h"
 #include "HistogramAlgorithm.h"
 #include "HistogramBase.h"
@@ -133,6 +135,25 @@ class TagDist : public HistogramAlgorithm {
         static std::string outputName() { return "TagDist"; }
     private:
         Histo1d *h;
+};
+
+class TagMap : public HistogramAlgorithm {
+    public:
+        TagMap() : HistogramAlgorithm() {
+            h = nullptr;
+            r = nullptr;
+        }
+
+        ~TagMap() {
+        }
+
+        void create(const LoopStatus &stat) override;
+
+        void processEvent(FrontEndData *data) override;
+
+        static std::string outputName() { return "TagMap"; }
+    private:
+        Histo2d *h;
 };
 
 class L1Dist : public HistogramAlgorithm {

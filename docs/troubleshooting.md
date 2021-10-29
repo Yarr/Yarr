@@ -11,7 +11,9 @@ If you encounter errors concerning permissions, e.g.
 ERROR: [Labtoolstcl 44-469] There is no current hw_target.
 ```
 try installing cable drivers:
-```cd /opt/Xilinx/Vivado/2020.1/data/xicom/cable_drivers/lin64/install_script/install_drivers/
+
+```
+cd /opt/Xilinx/Vivado/2020.1/data/xicom/cable_drivers/lin64/install_script/install_drivers/
 sudo ./install_drivers
 ```
 

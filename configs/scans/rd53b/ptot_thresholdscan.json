@@ -5,9 +5,12 @@
         "algorithm": "ScurveFitter"
       },
      "1": {
-        "algorithm": "OccupancyAnalysis"
+        "algorithm": "ParameterAnalysis"
       },
      "2": {
+        "algorithm": "OccupancyAnalysis"
+      },
+     "3": {
         "algorithm": "TotAnalysis",
         "config": {
             "tot_bins": {
@@ -23,7 +26,7 @@
             "tot_unit": "1.5625 ns"
         }
       },
-      "n_count": 1
+      "n_count": 2
     },
     "histogrammer": {
       "0": {
@@ -69,7 +72,7 @@
           "step": 5,
           "parameter":"InjVcalDiff"
         },
-        "loopAction": "Rd53bParameterLoop"
+        "loopAction": "StdParameterLoop"
       },
       {
         "config": {

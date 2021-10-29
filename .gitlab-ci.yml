@@ -7,7 +7,7 @@ job_build_and_test:
       - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
       - cd build
-      - CXXFLAGS=-Werror cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
+      - CXXFLAGS=-Werror cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
       - make install -j4
       - export USER=test
       - echo $USER
@@ -24,7 +24,30 @@ job_build_and_test:
       - if [ "$NUM100" != "26880" ]; then exit 2; fi
       - bin/scanConsole -k
       - bin/test_main
-      - bin/star_test -r 0 -t 0 configs/controller/emuCfg_star.json
+      - bin/test_star -r 0 -t 0 configs/controller/emuCfg_star.json
+
+job_build_and_test_out_of_source:
+    stage: build
+    script:
+      - yum -y install boost-devel
+      - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+      - CXXFLAGS=-Werror cmake3 -S . -B /tmp/build -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=cmake/linux-gcc
+      - cmake3 --build /tmp/build -j4
+      - cmake3 --install /tmp/build
+      - export USER=test
+      - echo $USER
+      - /bin/pwd
+      - mkdir /tmp/test
+      - ls /tmp/
+      - /tmp/build/bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p -l configs/logging/trace_all.json
+      - ls
+      - ls ./data/
+      - ls ./data/000001_std_digitalscan/
+      - cat ./data/000001_std_digitalscan/*_OccupancyMap.json
+      - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
+      - if [ "$NUM100" != "26880" ]; then exit 2; fi
+      - /tmp/build/bin/scanConsole -k
+      - /tmp/build/bin/test_main
 
 job_build_all:
     stage: build
@@ -38,7 +61,7 @@ job_build_all:
       - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
       - cd build
-      - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE
+      - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE
       - make install -j4
       - bin/scanConsole -k
 
@@ -60,10 +83,10 @@ job_test_json_parsing:
     needs: ["job_build_all"]
     script:
       # Check schema by loading configs in turn
-      - for file in $(find configs/defaults -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t FRONT_END || break; done
-      - for file in $(find configs/connectivity -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t CONNECTIVITY || break; done
-      - for file in $(find configs/controller -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t CONTROLLER || break; done
-      - for file in $(find configs/scans/* -iname "*.json"); do echo ${file}; bin/testJson -f ${file} -t SCAN_CONFIG || break; done
+      - for file in $(find configs/defaults -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t FRONT_END || break; done
+      - for file in $(find configs/connectivity -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t CONNECTIVITY || break; done
+      - for file in $(find configs/controller -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t CONTROLLER || break; done
+      - for file in $(find configs/scans/* -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t SCAN_CONFIG || break; done
 
       - cd build
       - make test
@@ -72,7 +95,7 @@ job_test_json:
     stage: build
     script:
       - npm install jsonlint -g
-      - for file in $(find ../configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
+      - for file in $(find configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
 
 job_test_code_coverage:
     stage: build
@@ -83,7 +106,7 @@ job_test_code_coverage:
       - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
       - cd build
-      - cmake3 .. -DCMAKE_BUILD_TYPE=Coverage -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
+      - cmake3 .. -DBUILD_TESTS=on -DCMAKE_BUILD_TYPE=Coverage -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
       - make install -j4
       - export USER=test
       - echo $USER
@@ -92,6 +115,18 @@ job_test_code_coverage:
       - ls /tmp/
       - cd ../
       - scripts/cc_tool.sh
+
+deploy_coverage:
+    stage: deploy
+    dependencies: ["job_test_code_coverage"]
+    only:
+        - devel@YARR/YARR
+    variables:
+        "EOS_PATH" : "/eos/user/t/theim/www/yarr/devel/coverage"
+        "CI_OUTPUT_DIR" : "cc_tests/"
+    image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
+    script:
+        - deploy-eos
 
 build_docs:
     stage: build

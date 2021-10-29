@@ -5,6 +5,7 @@
 // ################################
 
 #include "StarCfg.h"
+#include "StarPreset.h"
 
 #include <iomanip>
 
@@ -30,8 +31,9 @@ double StarCfg::toCharge(double vcal, bool sCap, bool lCap) { return toCharge(vc
 
 int StarCfg::hccChannelForABCchipID(unsigned int chipID) {
   auto itr = std::find_if(m_ABCchips.begin(), m_ABCchips.end(),
-                        [this, chipID](auto &it) { return it.getABCchipID() == chipID; });
-  return std::distance(m_ABCchips.begin(), itr);
+                        [this, chipID](auto &it) { return it.second.getABCchipID() == chipID; });
+  return itr->first;
+  //return std::distance(m_ABCchips.begin(), itr);
 }
 
 //HCC register accessor functions
@@ -52,51 +54,59 @@ void StarCfg::setABCRegister(ABCStarRegister addr, uint32_t val, int32_t chipID)
   abc.setRegisterValue(addr, val);
 }
 
-void StarCfg::setTrimDAC(unsigned col, unsigned row, int value)  {
-    ////NOTE: Each chip is divided in 2 row x 128 col. Histogram bins are adjusted based on number of activated chips. Does not have gap in between rows.
-    ////      Let's say, of the 10 ABC in one hybrid, only chip 0, 4 and 6 are activated, the histogram has 6 rows x 128 cols.
-    ////      i.e row 1&2 belong to chip_0; row 3&4 belong to chip_4;  row 5&6 belong to chip_6.
+uint8_t trimChannelFromHistogramLocation(unsigned col, unsigned row) {
+    ////NOTE: Each chip is divided in 2 row x 128 col. Histogram bins are adjusted based on number of activated chips.
+    ////      Let's say, of the 10 ABC in one hybrid, only chip 0, 4 and 6 are activated, the histogram has 2 rows x 896 (=128*7) cols.
+    ////      i.e Cols 0 to 128 belong to chip_0; Cols 512 to 640 belong to chip_4;  row Cols 768 to 896 belong to chip_6.
     ////      the trimDAC_4lsb_name for each chip is trimdac_4lsb_<nthRow[2:1]>_<nthCol[128:1]>
     ////      the trimDAC_1msb_name for each chip is trimdac_1msb_<nthRow[2:1]>_<nthCol[128:1]>
 
     ////NOTE: row and col pass from histogram starts from 1, while channel starts from 0
 
-    int nthRow = row%2 ==0 ? 2 : 1;
+    ////NOTE: numbering in trim registers is slightly different from physical strip order. In the register numbering, bits 7-2 together with bit 0 correspond to the strip location while bit 1 corresponds to the stream/row number
 
-    int channel=0;
-    int chn_tmp = floor((col-1)/2);
-    if(nthRow==1) channel = (col-1) + chn_tmp*2;
-    else if(nthRow==2) channel = (col-1) + (chn_tmp+1)*2;
+    uint8_t chn_tmp = (col-1) % 128; //Physical channel position within the row, 0 indexed
+    uint8_t channel= ((chn_tmp & ~0x1) << 1) + (chn_tmp & 0x1) + 2*(row-1); //Conversion to register ordering.
+    return channel;
+}
+
+uint8_t trimIndexFromHistogramLocation(unsigned col, unsigned row) {
+    //See NOTE in trimChannelFromHistogramLocation()
+    return 1+((col-1) >> 7);
+}
+
+void StarCfg::setTrimDAC(unsigned col, unsigned row, int value)  {
+
+    uint8_t channel= trimChannelFromHistogramLocation(col, row);
 
     SPDLOG_LOGGER_TRACE(logger,
-                        "row:{} col:{} chn_tmp:{} channel:{}",
-                        row-1, col-1, chn_tmp, channel);
+                        "row:{} col:{} channel:{}",
+                        row-1, col-1, channel);
 
-    unsigned chipIndex = ceil(row/2.0);
+    uint8_t chipIndex = trimIndexFromHistogramLocation(col, row);
 
-    auto &abc = abcFromIndex(chipIndex);
+    if(abcAtIndex(chipIndex)) {
+        auto &abc = abcFromIndex(chipIndex);
+        abc.setTrimDACRaw(channel, value);
+    }
 
-    abc.setTrimDACRaw(channel, value);
 }
 
 
 int StarCfg::getTrimDAC(unsigned col, unsigned row) const {
-    int nthRow = row%2 ==0 ? 2 : 1;
-
-    int channel=0;
-    int chn_tmp = floor((col-1)/2);
-    if(nthRow==1) channel = (col-1) + chn_tmp*2;
-    else if(nthRow==2) channel = (col-1) + (chn_tmp+1)*2;
+    uint8_t channel= trimChannelFromHistogramLocation(col, row);
 
     SPDLOG_LOGGER_TRACE(logger,
-                        " row:{} col:{} chn_tmp:{} channel:{}",
-                        row-1, col-1, chn_tmp, channel);
+                        "row:{} col:{} channel:{}",
+                        row-1, col-1, channel);
 
-    unsigned chipIndex = ceil(row/2.0);
+    uint8_t chipIndex = trimIndexFromHistogramLocation(col, row);
 
-    const auto &abc = abcFromIndex(chipIndex);
-
-    return abc.getTrimDACRaw(channel);
+    if(abcAtIndex(chipIndex)) {
+        const auto &abc = abcFromIndex(chipIndex);
+        return abc.getTrimDACRaw(channel);
+    }
+    return 0;
 }
 
 void StarCfg::toFileJson(json &j) {
@@ -127,9 +137,11 @@ void StarCfg::toFileJson(json &j) {
 
     std::map<std::string, std::string> common;
     // Store until we know which are not common
-    std::vector<std::map<std::string, std::string>> regs(numABCs());
+    std::vector<std::map<std::string, std::string>> regs(highestABC()+1);
 
-    for (int iABC = 0; iABC < numABCs(); iABC++) {
+    for (int iABC = 0; iABC <= highestABC(); iABC++) {
+        if (!abcAtIndex(iABC+1))
+            continue;
         auto &abc = abcFromIndex(iABC+1);
         j["ABCs"]["IDs"][iABC] = abc.getABCchipID();
 
@@ -165,7 +177,7 @@ void StarCfg::toFileJson(json &j) {
             std::string regValue = ss.str();
             regs[iABC][regKey] = regValue;
 
-            if(iABC == 0) {
+            if(iABC == lowestABC()) {
                 common[regKey] = regValue;
             } else {
                 auto i = common.find(regKey);
@@ -307,14 +319,20 @@ void StarCfg::fromFileJson(json &j) {
 
     auto &abcs = j["ABCs"];
 
+    unsigned abc_arr_length = 0;
+
     // Load the IDs
     if (!abcs["IDs"].empty()) {
         auto &ids = abcs["IDs"];
-
+        abc_arr_length = ids.size();
         for (int iABC = 0; iABC < ids.size(); iABC++) {
-            addABCchipID(ids[iABC]);
+            auto &id = ids[iABC];
+            if (id.is_null())
+                continue;
+            addABCchipID(id, iABC);
         }
     }
+
 
     auto abc_count = numABCs();
 
@@ -323,11 +341,12 @@ void StarCfg::fromFileJson(json &j) {
         return; //No ABCs to load
     }
 
+    //We need to null check these later. If it's empty, we already returned.
+    auto &ids = abcs["IDs"];
+
     // Initialize register maps for consistency
-    for( int iABC = 0; iABC < abc_count; ++iABC) {
-        // Make all registers and subregisters for the ABC
-        abcFromIndex(iABC+1).setDefaults();
-    }
+    // Make all registers and subregisters for the ABC
+    eachAbc( [&](auto &abc) {abc.setDefaults();});
 
     // First, commont register settings
     if(abcs.find("common") != abcs.end()) {
@@ -346,9 +365,11 @@ void StarCfg::fromFileJson(json &j) {
 
             try {
                 auto addr = ABCStarRegister::_from_string(regName.c_str());
-                for (int iABC = 0; iABC < numABCs(); iABC++) {
-                    auto &abc = abcFromIndex(iABC+1);
-                    abc.setRegisterValue(addr, regValue);
+                for (int iABC = 0; iABC <= highestABC(); iABC++) {
+                    if (abcAtIndex(iABC+1))  {
+                        auto &abc = abcFromIndex(iABC+1);
+                        abc.setRegisterValue(addr, regValue);
+                    }
                 }
                 logger->trace("All ABCs reg {} has been set to {:08x}", regName, regValue);
             } catch(std::runtime_error &e) {
@@ -361,12 +382,15 @@ void StarCfg::fromFileJson(json &j) {
     if(abcs.find("regs") != abcs.end()) {
         auto &regArray = abcs["regs"];
 
-        if(regArray.size() != numABCs()) {
+        if(regArray.size() != abc_arr_length) {
             logger->error("ABCs/regs array size does not match number of ABCs");
             return;
         }
 
-        for (int iABC = 0; iABC < numABCs(); iABC++) {
+        for (int iABC = 0; iABC < abc_arr_length; iABC++) {
+            if (ids[iABC].is_null())
+                continue;
+
             auto &chipRegs = regArray[iABC];
 
             if(chipRegs.is_null()) continue;
@@ -399,14 +423,17 @@ void StarCfg::fromFileJson(json &j) {
     if(abcs.find("subregs") != abcs.end()) {
         auto &subregArray = abcs["subregs"];
 
-        if(subregArray.size() != numABCs()) {
+        if(subregArray.size() != abc_arr_length) {
             logger->error("ABCs/subregs array size does not match number of ABCs");
             return;
         }
 
         auto abcSubRegs = AbcStarRegInfo::instance()->abcSubRegisterMap_all;
 
-        for (int iABC = 0; iABC < numABCs(); iABC++) {
+        for (int iABC = 0; iABC < abc_arr_length; iABC++) {
+            if (ids[iABC].is_null())
+                continue;
+
             auto &chipSubRegs = subregArray[iABC];
 
             if(chipSubRegs.is_null()) continue;
@@ -436,13 +463,15 @@ void StarCfg::fromFileJson(json &j) {
     if(abcs.find("masked") != abcs.end()) {
         auto &maskArray = abcs["masked"];
 
-        if(maskArray.size() != numABCs()) {
+        if(maskArray.size() != abc_arr_length) {
             logger->error("ABCs/masked array size does not match number of ABCs");
             return;
         }
 
         // Each chip has a list of strips
-        for (int iABC = 0; iABC < numABCs(); iABC++) {
+        for (int iABC = 0; iABC < abc_arr_length; iABC++) {
+            if (ids[iABC].is_null())
+                continue;
             auto &maskedStrips = maskArray[iABC];
 
             for(int strip: maskedStrips) {
@@ -455,13 +484,15 @@ void StarCfg::fromFileJson(json &j) {
     if(abcs.find("trims") != abcs.end()) {
         auto &trimArray = abcs["trims"];
 
-        if(trimArray.size() != numABCs()) {
+        if(trimArray.size() != abc_arr_length) {
             logger->error("ABCs/trims array size does not match number of ABCs");
             return;
         }
 
         // Each chip has either single integer (all the same), or array of value per strip
-        for (int iABC = 0; iABC < numABCs(); iABC++) {
+        for (int iABC = 0; iABC < abc_arr_length; iABC++) {
+            if (ids[iABC].is_null())
+                continue;
             auto &abc = abcFromIndex(iABC+1);
 
             auto &chipValue = trimArray[iABC];
@@ -474,9 +505,45 @@ void StarCfg::fromFileJson(json &j) {
                 // Not the same
                 for(int m=0; m<256; m++) {
                   int trim = chipValue[m];
-                    abc.setTrimDACRaw(m, trim);
+                  abc.setTrimDACRaw(m, trim);
                 }
             }
         }
+    }
+}
+
+StarCfg::configFuncMap StarCfg::createConfigs = {
+    {"SingleChip", &StarCfg::createConfigSingleFE},
+    {"StripLSStave", &StarCfg::createConfigLSStave},
+    {"StripPetal", &StarCfg::createConfigPetal}
+};
+
+std::tuple<json, std::vector<json>> StarCfg::createConfigSingleFE() {
+    return StarPreset::createConfigSingleStar(*this);
+}
+
+std::tuple<json, std::vector<json>> StarCfg::createConfigLSStave() {
+    return StarPreset::createConfigStarObject(*this, StarPreset::lsstave);
+}
+
+std::tuple<json, std::vector<json>> StarCfg::createConfigPetal() {
+    return StarPreset::createConfigStarObject(*this, StarPreset::petal);
+}
+
+std::tuple<json, std::vector<json>> StarCfg::getPreset(const std::string& systemType) {
+    // Return a json object for connectivity configuration and
+    // a vector of json objects for chip configurations
+    try {
+        auto preset = (this->*createConfigs.at(systemType))();
+        return preset;
+    } catch (std::out_of_range &oor) {
+        logger->error("Unknown system type: {}", systemType);
+        std::string knowntypes;
+        for (const auto& f : StarCfg::createConfigs)
+            knowntypes += f.first+" ";
+        logger->info("Known system types are: {}", knowntypes);
+        throw;
+    } catch (...) {
+        throw;
     }
 }
