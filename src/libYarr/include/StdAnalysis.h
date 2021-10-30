@@ -29,7 +29,7 @@ class OccupancyAnalysis : public AnalysisAlgorithm {
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
-        bool createMask;
+        bool createMask = true;
         unsigned n_count;
         unsigned injections;
         std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
@@ -274,8 +274,8 @@ class NoiseAnalysis : public AnalysisAlgorithm {
     private:
         unsigned n_trigger;
         std::unique_ptr<Histo2d> occ;
-        bool createMask;
-        double noiseThr;
+        bool createMask = true;
+        double noiseThr = 1e-6;
 };
 
 class NoiseTuning : public AnalysisAlgorithm {

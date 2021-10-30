@@ -74,7 +74,6 @@ namespace {
 }
 
 void OccupancyAnalysis::init(ScanBase *s) {
-    createMask=true;
     n_count = 1;
     injections = 0;
     for (unsigned n=0; n<s->size(); n++) {
@@ -1318,7 +1317,6 @@ void TotDistPlotter::processHistogram(HistogramBase *h) {
 }
 
 void NoiseAnalysis::init(ScanBase *s) {
-    noiseThr = 1e-6;
     // We assume the nosie scan only has one trigger and data loop
     occ.reset(new Histo2d("Occupancy", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
     occ->setXaxisTitle("Col");
