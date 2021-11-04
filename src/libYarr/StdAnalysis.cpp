@@ -597,6 +597,12 @@ void ScurveFitter::init(ScanBase *s) {
     thrTarget = bookie->getTargetCharge();
 }
 
+void ScurveFitter::loadConfig(json &j) {
+    if (!j["reverse"].empty()) {
+        reverse = j["reverse"];
+    }
+}
+
 // Errorfunction
 // par[0] = Mean
 // par[1] = Sigma
@@ -605,6 +611,10 @@ void ScurveFitter::init(ScanBase *s) {
 #define SQRT2 1.414213562
 double scurveFct(double x, const double *par) {
     return par[3] + 0.5*( 2-erfc( (x-par[0])/(par[1]*SQRT2) ) )*par[2];
+}
+
+double reverseScurveFct(double x, const double *par) {
+    return par[3] + 0.5*( erfc( (x-par[0])/(par[1]*SQRT2) ) )*par[2];
 }
 
 void ScurveFitter::processHistogram(HistogramBase *h) {
@@ -630,8 +640,8 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
     for(unsigned col=1; col<=nCol; col++) {
         for (unsigned row=1; row<=nRow; row++) {
             unsigned bin = hh->binNum(col, row);
-            if (hh->getBin(bin) != 0) {
-                // Select correct output containe
+            if (hh->getBin(bin) != 0 || reverse) {
+                // Select correct output container
                 unsigned ident = bin;
                 unsigned offset = nCol*nRow;
                 unsigned vcal = hh->getStat().get(vcalLoop);
@@ -675,7 +685,12 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     std::chrono::high_resolution_clock::time_point start;
                     std::chrono::high_resolution_clock::time_point end;
                     start = std::chrono::high_resolution_clock::now();
-                    lmcurve(n_par, par, vcalBins, &x[0], histos[ident]->getData(), scurveFct, &control, &status);
+                    if (reverse) {
+                        lmcurve(n_par, par, vcalBins, &x[0], histos[ident]->getData(), reverseScurveFct, &control, &status);
+                    } else {
+                        lmcurve(n_par, par, vcalBins, &x[0], histos[ident]->getData(), scurveFct, &control, &status);
+                    }
+
                     end = std::chrono::high_resolution_clock::now();
                     std::chrono::microseconds fitTime = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
                     if (thrMap[outerIdent] == NULL) {
@@ -808,7 +823,6 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 
 void ScurveFitter::end() {
 
-    alog->info("scurve end");
     if (fb != nullptr) {
         alog->info("[{}] Tuned to ==> {}", thrTarget, this->channel);
     }
