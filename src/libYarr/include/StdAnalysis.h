@@ -29,7 +29,7 @@ class OccupancyAnalysis : public AnalysisAlgorithm {
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
-        bool createMask = true;
+        bool createMask;
         unsigned n_count;
         unsigned injections;
         std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
@@ -71,15 +71,15 @@ class TotAnalysis : public AnalysisAlgorithm {
 	std::unique_ptr<Histo1d> RMSTotVsCharge;
 
         // histogram configuration for ToT distributions
-        unsigned tot_bins_n = 16;
-        float tot_bins_x_lo = 0;
-        float tot_bins_x_hi = 16;
-        std::string tot_unit = "BC";
+        unsigned tot_bins_n;
+        float tot_bins_x_lo;
+        float tot_bins_x_hi;
+        std::string tot_unit;
 
         // histogram configuration for ToT sigma distributions
-        unsigned tot_sigma_bins_n = 101;
-        float tot_sigma_bins_x_lo = -0.05;
-        float tot_sigma_bins_x_hi = 1.05;
+        unsigned tot_sigma_bins_n;
+        float tot_sigma_bins_x_lo;
+        float tot_sigma_bins_x_hi;
 };
 
 class ScurveFitter : public AnalysisAlgorithm {
@@ -178,10 +178,7 @@ class GlobalPreampTune : public AnalysisAlgorithm {
 
 class OccPixelThresholdTune : public AnalysisAlgorithm {
     public:
-        OccPixelThresholdTune() : AnalysisAlgorithm()  {
-            m_occLowCut = 0.3;
-            m_occHighCut = 0.7;
-        }
+        OccPixelThresholdTune() : AnalysisAlgorithm()  {}
         ~OccPixelThresholdTune() {}
 
         void init(ScanBase *s);
@@ -274,8 +271,8 @@ class NoiseAnalysis : public AnalysisAlgorithm {
     private:
         unsigned n_trigger;
         std::unique_ptr<Histo2d> occ;
-        bool createMask = true;
-        double noiseThr = 1e-6;
+        bool createMask;
+        double noiseThr;
 };
 
 class NoiseTuning : public AnalysisAlgorithm {
