@@ -51,7 +51,9 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
       StarCfg::setHCCChipId(15);
   }
 
-  void reset();
+  void resetHCCStars();
+  void resetABCStars();
+  void resetAll();
   void sendCmd(std::array<uint16_t, 9> cmd);
   void sendCmd(uint16_t cmd);
 
