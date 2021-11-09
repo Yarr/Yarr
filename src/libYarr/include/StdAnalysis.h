@@ -19,7 +19,7 @@ class Histo3d;
 
 class OccupancyAnalysis : public AnalysisAlgorithm {
     public:
-        OccupancyAnalysis() : AnalysisAlgorithm() {}
+        OccupancyAnalysis() : AnalysisAlgorithm() {createMask = true;}
         ~OccupancyAnalysis() {}
 
         void init(ScanBase *s);
@@ -38,7 +38,15 @@ class OccupancyAnalysis : public AnalysisAlgorithm {
 
 class TotAnalysis : public AnalysisAlgorithm {
     public:
-        TotAnalysis() : AnalysisAlgorithm() {}
+        TotAnalysis() : AnalysisAlgorithm() {
+            tot_bins_n = 16;
+            tot_bins_x_lo = 0;
+            tot_bins_x_hi = 16;
+            tot_unit = "BC";
+            tot_sigma_bins_n = 101;
+            tot_sigma_bins_x_lo = -0.05;
+            tot_sigma_bins_x_hi = 1.05;
+        }
         ~TotAnalysis() {}
 
         void init(ScanBase *s);
@@ -178,7 +186,10 @@ class GlobalPreampTune : public AnalysisAlgorithm {
 
 class OccPixelThresholdTune : public AnalysisAlgorithm {
     public:
-        OccPixelThresholdTune() : AnalysisAlgorithm()  {}
+        OccPixelThresholdTune() : AnalysisAlgorithm()  {
+            m_occLowCut = 0.3; 
+            m_occHighCut = 0.7;
+        }
         ~OccPixelThresholdTune() {}
 
         void init(ScanBase *s);
@@ -261,7 +272,10 @@ class TotDistPlotter : public AnalysisAlgorithm {
 
 class NoiseAnalysis : public AnalysisAlgorithm {
     public:
-        NoiseAnalysis() : AnalysisAlgorithm() {}
+        NoiseAnalysis() : AnalysisAlgorithm() {
+            createMask = true;
+            noiseThr = 1e-6;
+        }
         ~NoiseAnalysis() {}
 
         void init(ScanBase *s);
