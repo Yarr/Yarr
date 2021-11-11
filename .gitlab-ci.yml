@@ -24,7 +24,7 @@ job_build_and_test:
       - if [ "$NUM100" != "26880" ]; then exit 2; fi
       - bin/scanConsole -k
       - bin/test_main
-      - bin/test_star -r 0 -t 0 configs/controller/emuCfg_star.json
+      - bin/test_star configs/controller/emuCfg_star.json -r 0 -t 0
 
 job_build_and_test_out_of_source:
     stage: build

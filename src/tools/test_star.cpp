@@ -75,8 +75,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Original Spec version
-    int rxChannel = 6;
-    int txChannel = 0xFFFF;
+    std::vector<uint32_t> rxChannels = {6};
+    std::vector<uint32_t> txChannels = {0xFFFF};
     int c;
     while ((c = getopt(argc, argv, "hl:r:t:")) != -1) {
       switch(c) {
@@ -94,10 +94,18 @@ int main(int argc, char *argv[]) {
         }
         break;
       case 'r':
-        rxChannel = atoi(optarg);
+        rxChannels.clear();
+        optind -= 1;
+        for (; optind < argc && *argv[optind] != '-'; optind += 1) {
+          rxChannels.push_back( atoi(argv[optind]) );
+        }
         break;
       case 't':
-        txChannel = atoi(optarg);
+        txChannels.clear();
+        optind -= 1;
+        for (; optind < argc && *argv[optind] != '-'; optind += 1) {
+          txChannels.push_back( atoi(argv[optind]) );
+        }
         break;
       default:
         spdlog::critical("Error while parsing command line parameters!");
@@ -141,11 +149,11 @@ int main(int argc, char *argv[]) {
       s.writeSingle(0x6<<14 | 0x1, 0xF);
     }
 
-    hwCtrl->setCmdEnable(txChannel);
+    hwCtrl->setCmdEnable(txChannels);
 
     // First disable all input
     hwCtrl->disableRx();
-    hwCtrl->setRxEnable(rxChannel);
+    hwCtrl->setRxEnable(rxChannels);
 
     StarCmd star;
 
