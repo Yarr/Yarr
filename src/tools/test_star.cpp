@@ -24,8 +24,14 @@ void configureChips(StarCmd &star, HwController& hwCtrl, bool doReset);
 void runTests(StarCmd &star, HwController& hwCtrl, bool hprOff);
 void reportData(RawData &data, std::string controllerType);
 int packetFromRawData(StarChipPacket& packet, RawData& data);
-std::unique_ptr<RawData, void(*)(RawData*)> readData(HwController&, std::function<bool(RawData&)>, uint32_t);
-RawDataContainer readAllData(HwController&, std::function<bool(RawData&)>, uint32_t);
+std::unique_ptr<RawData, void(*)(RawData*)> readData(HwController&, std::function<bool(RawData&)>, uint32_t timeout=1000);
+RawDataContainer readAllData(HwController&, std::function<bool(RawData&)>, uint32_t timeout=2000);
+// Data filters
+bool isFromChannel(RawData& data, uint32_t chn);
+bool isPacketType(RawData& data, PacketType packet_type);
+//
+bool checkHPRs(HwController& hwCtrl, const std::vector<uint32_t>& rxChannels);
+bool probeHCCs(HwController& hwCtrl, const std::vector<uint32_t>& txChannels, const std::vector<uint32_t>& rxChannels);
 
 int main(int argc, char *argv[]) {
     std::string controller;
@@ -115,13 +121,39 @@ int main(int argc, char *argv[]) {
       s.writeSingle(0x6<<14 | 0x1, 0xF);
     }
 
+    // Enable Tx channels
     hwCtrl->setCmdEnable(txChannels);
 
-    // First disable all input
+    // Enable Rx channels
     hwCtrl->disableRx();
     hwCtrl->setRxEnable(rxChannels);
 
     StarCmd star;
+
+    //////////
+    // Reset
+    sendCommand( LCB::fast_command(LCB::LOGIC_RESET, 0), *hwCtrl );
+    sendCommand( LCB::fast_command(LCB::HCC_REG_RESET, 0), *hwCtrl );
+    sendCommand( LCB::fast_command(LCB::ABC_REG_RESET, 0), *hwCtrl );
+
+    //////////
+    // Read HPRs
+    if (controllerType == "emu_Star") {
+      // For the emulator, toggle the TestHPR bit
+      sendCommand(star.write_hcc_register(16, 0x2), *hwCtrl);
+    }
+
+    bool hprOK = checkHPRs(*hwCtrl, rxChannels);
+    if (not hprOK)
+      return 1;
+
+    //////////
+    // Probe HCCs
+    bool foundHCC = probeHCCs(*hwCtrl, txChannels, rxChannels);
+    if (not foundHCC)
+      return 1;
+
+    return 0;
 
     // For now
     configureChips(star, *hwCtrl, true);
@@ -444,4 +476,104 @@ bool isPacketType(RawData& data, PacketType packet_type) {
   } else {
     return packet.getType() == packet_type;
   }
+}
+
+bool checkHPRs(HwController& hwCtrl, const std::vector<uint32_t>& rxChannels) {
+  uint32_t timeout = 1000; // milliseconds
+
+  bool hprOK = false;
+
+  for (auto rx : rxChannels) {
+    logger->info("Reading HPR packets from Rx channel {}", rx);
+
+    std::function<bool(RawData&)> filter_hpr = [rx](RawData& d) {
+      return isPacketType(d, TYP_HCC_HPR) and isFromChannel(d, rx);
+    };
+
+    auto data = readData(hwCtrl, filter_hpr, timeout);
+    if (data) {
+      // print
+      StarChipPacket packet;
+      if (packetFromRawData(packet, *data)) {
+        logger->error("Packet parse failed");
+      } else {
+        std::stringstream os;
+        packet.print_more(os);
+        std::string str = os.str();
+        str.erase(str.end()-1); // strip the extra \n
+        logger->info(" Received HPR packet: {}", str);
+
+        //bool r3l1_locked = packet.value & (1<<0);
+        //bool pll_locked = packet.value & (1<<5);
+        bool lcb_locked = packet.value & (1<<1);
+        if (lcb_locked) {
+          logger->info(" LCB locked");
+          hprOK = true;
+        } else {
+          logger->error(" LCB NOT locked");
+        }
+      }
+    } else {
+      logger->warn(" No HPR packet received from Rx channel {}", rx);
+    }
+
+  } // for (auto rx : rxChannels)
+
+  return hprOK;
+}
+
+bool probeHCCs(HwController& hwCtrl, const std::vector<uint32_t>& txChannels, const std::vector<uint32_t>& rxChannels) {
+  StarCmd star;
+
+  bool foundHCC = false;
+
+  for (auto tx : txChannels) {
+    bool hasHCCTx = false;
+
+    logger->debug("Broadcast register commands to probe HCC via Tx channel {}", tx);
+    hwCtrl.disableCmd();
+    hwCtrl.setCmdEnable(tx);
+
+    // Toggle bit 2 in register 16 to load serial number into register 17
+    sendCommand(star.write_hcc_register(16, 0x4), hwCtrl);
+
+    // Read the addressing register 17
+    sendCommand(star.read_hcc_register(17), hwCtrl);
+
+    // Scan through the Rx channels and look for response
+    for (auto rx : rxChannels) {
+      auto data = readData(
+        hwCtrl,
+        [rx](RawData& d) {
+          return isPacketType(d, TYP_HCC_RR) and isFromChannel(d, rx);
+        }
+        );
+
+      if (not data) {
+        logger->debug("No response from Rx channel {}", rx);
+        continue;
+      }
+
+      StarChipPacket packet;
+      if (packetFromRawData(packet, *data)) {
+        logger->error("Packet parse failed");
+      } else {
+        uint32_t hccID = (packet.value & 0xf0000000) >> 28; // top four bits
+        uint32_t fuseID = packet.value & 0x00ffffff; // lowest 24 bits
+        logger->info("Found HCCStar @ Tx = {} Rx = {}: ID = 0x{:x} eFuse ID = 0x{:x}", tx, rx, hccID, fuseID);
+        foundHCC = true;
+        hasHCCTx = true;
+      }
+    } // end of rx channel loop
+
+    if (not hasHCCTx) {
+      logger->warn("No HCC on the command segment Tx = {}", tx);
+    }
+  } // end of tx channel loop
+
+  if (not foundHCC) {
+    logger->error("No HCCs found");
+  }
+
+  return foundHCC;
 }
