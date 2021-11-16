@@ -1,5 +1,6 @@
 #include <bitset>
 #include <iostream>
+#include <functional>
 
 #include "SpecController.h"
 #include "AllHwControllers.h"
@@ -9,6 +10,11 @@
 #include "ScanHelper.h"
 #include "StarChipPacket.h"
 #include "logging.h"
+#include "LoopStatus.h"
+
+namespace {
+  auto logger = logging::make_log("test_star");
+}
 
 static void printHelp();
 
@@ -16,50 +22,10 @@ void sendCommand(const std::array<uint16_t, 9>& cmd, HwController& hwCtrl);
 void sendCommand(uint16_t cmd, HwController& hwCtrl);
 void configureChips(StarCmd &star, HwController& hwCtrl, bool doReset);
 void runTests(StarCmd &star, HwController& hwCtrl, bool hprOff);
-
-void reportData(RawData &data, std::string controllerType) {
-  std::cout << "Raw data from RxCore:\n";
-  std::cout << data.adr << " " << data.buf << " " << data.words << "\n";
-
-  bool do_spec_specific = controllerType == "spec";
-
-  for (unsigned j=0; j<data.words;j++) {
-    auto word = data.buf[j];
-
-    if(do_spec_specific) {
-      if((j%2) && (word == 0xd3400000)) continue;
-      if(!(j%2) && ((word&0xff) == 0xff)) continue;
-
-      if((word&0xff) == 0x5f) continue;
-
-      if(word == 0x1a0d) continue; // Idle on chan 6
-      if(word == 0x19f2) continue; // Idle on chan 6
-
-      word &= 0xffffc3ff; // Strip of channel number
-    }
-
-    std::cout << "[" << j << "] = " << std::setfill('0') << std::hex << std::setw(8) << word << std::dec << " " << std::bitset<32>(word) << std::endl;
-  }
-
-  StarChipPacket packet;
-  packet.add_word(0x13C); //add SOP
-  for(unsigned iw=0; iw<data.words; iw++) {
-    for(int i=0; i<4;i++){
-      packet.add_word((data.buf[iw]>>i*8)&0xFF);
-    }
-  }
-  packet.add_word(0x1DC); //add EOP
-  if(packet.parse()) {
-    std::cout << "Parse error\n";
-  } else {
-    auto packetType = packet.getType();
-    if(packetType == TYP_LP || packetType == TYP_PR) {
-      packet.print_clusters(std::cout);
-    } else if(packetType == TYP_ABC_RR || packetType == TYP_HCC_RR || packetType == TYP_ABC_HPR || packetType == TYP_HCC_HPR) {
-      packet.print_more(std::cout);
-    }
-  }
-}
+void reportData(RawData &data, std::string controllerType);
+int packetFromRawData(StarChipPacket& packet, RawData& data);
+std::unique_ptr<RawData, void(*)(RawData*)> readData(HwController&, std::function<bool(RawData&)>, uint32_t);
+RawDataContainer readAllData(HwController&, std::function<bool(RawData&)>, uint32_t);
 
 int main(int argc, char *argv[]) {
     std::string controller;
@@ -161,60 +127,28 @@ int main(int argc, char *argv[]) {
     configureChips(star, *hwCtrl, true);
     runTests(star, *hwCtrl, true);
 
-    std::unique_ptr<uint32_t[]> tidy_up;
-    std::unique_ptr<RawData> data(hwCtrl->readData());
-    if(data) {
-      std::cout << "Use data: " << (void*)data->buf << " (init)\n";
-      tidy_up.reset(data->buf);
-    }
-
-    bool nodata = true;
-    auto start_reading = std::chrono::steady_clock::now();
-
-    while (true) {
-
-      while (data) {
-        nodata = false;
-
-        reportData(*data, controllerType);
-
-        data.reset(hwCtrl->readData());
-        if(data) {
-          std::cout << "Use data: " << (void*)data->buf << " (main)\n";
-          tidy_up.reset(data->buf);
-        }
-
-        auto run_time = std::chrono::steady_clock::now() - start_reading;
-        if(run_time > std::chrono::seconds(2))
-          break;
-      }
-
-      // wait a while if no data
-      for(int i=0; i<1000; i++) {
-        if(data) break;
-
-        static const auto SLEEP_TIME = std::chrono::milliseconds(1);
-
-        std::this_thread::sleep_for( SLEEP_TIME );
-
-        data.reset(hwCtrl->readData());
-        if(data) {
-          std::cout << "Use data: " << (void*)data->buf << " (while)\n";
-          tidy_up.reset(data->buf);
-        }
-      }
-
-      if (data == nullptr) break;
+    uint32_t timeout = 2000;
+    auto rdc = readAllData(*hwCtrl, [](RawData& d){return true;}, timeout);
+    for (unsigned c = 0; c < rdc.size(); c++) {
+      RawData d(rdc.adr[c], rdc.buf[c], rdc.words[c]);
+      reportData(d, controllerType);
     }
 
     hwCtrl->disableRx();
 
-    if(nodata) {
-      std::cout << "No data\n";
+    if (rdc.size() == 0)
       return 1;
-    }
 
     return 0;
+}
+
+void printHelp() {
+  std::cout << "Usage: [OPTIONS] ... [HW_CONFIG]\n";
+  std::cout << "   Run Star FE tests with HardwareController configuration from HW_CONFIG\n";
+  std::cout << " -h: Show this help.\n";
+  std::cout << " -r <channel> : Rx channel to enable.\n";
+  std::cout << " -t <channel> : Tx channel to enable.\n";
+  std::cout << " -l <log_config> : Configure loggers.\n";
 }
 
 void configureChips(StarCmd &star, HwController& hwCtrl, bool doReset) {
@@ -332,6 +266,58 @@ void runTests(StarCmd &star, HwController& hwCtrl, bool hprOff) {
   sendCommand(star.read_abc_register(191), hwCtrl);
 }
 
+int packetFromRawData(StarChipPacket& packet, RawData& data) {
+  packet.clear();
+
+  packet.add_word(0x13C); //add SOP
+  for(unsigned iw=0; iw<data.words; iw++) {
+    for(int i=0; i<4;i++){
+      packet.add_word((data.buf[iw]>>i*8)&0xFF);
+    }
+  }
+  packet.add_word(0x1DC); //add EOP
+
+  return packet.parse();
+}
+
+void reportData(RawData &data, std::string controllerType) {
+  std::cout << "Raw data from RxCore:\n";
+  std::cout << data.adr << " " << data.buf << " " << data.words << "\n";
+
+  bool do_spec_specific = controllerType == "spec";
+
+  for (unsigned j=0; j<data.words;j++) {
+    auto word = data.buf[j];
+
+    if(do_spec_specific) {
+      if((j%2) && (word == 0xd3400000)) continue;
+      if(!(j%2) && ((word&0xff) == 0xff)) continue;
+
+      if((word&0xff) == 0x5f) continue;
+
+      if(word == 0x1a0d) continue; // Idle on chan 6
+      if(word == 0x19f2) continue; // Idle on chan 6
+
+      word &= 0xffffc3ff; // Strip of channel number
+    }
+
+    std::cout << "[" << j << "] = " << std::setfill('0') << std::hex << std::setw(8) << word << std::dec << " " << std::bitset<32>(word) << std::endl;
+  }
+
+  StarChipPacket packet;
+
+  if ( packetFromRawData(packet, data) ) {
+    std::cout << "Parse error\n";
+  } else {
+    auto packetType = packet.getType();
+    if(packetType == TYP_LP || packetType == TYP_PR) {
+      packet.print_clusters(std::cout);
+    } else if(packetType == TYP_ABC_RR || packetType == TYP_HCC_RR || packetType == TYP_ABC_HPR || packetType == TYP_HCC_HPR) {
+      packet.print_more(std::cout);
+    }
+  }
+}
+
 void sendCommand(const std::array<uint16_t, 9>& cmd, HwController& hwCtrl) {
   hwCtrl.writeFifo((LCB::IDLE << 16) + LCB::IDLE);
   hwCtrl.writeFifo((cmd[0] << 16) + cmd[1]);
@@ -347,11 +333,115 @@ void sendCommand(uint16_t cmd, HwController& hwCtrl) {
   hwCtrl.releaseFifo();
 }
 
-void printHelp() {
-  std::cout << "Usage: [OPTIONS] ... [HW_CONFIG]\n";
-  std::cout << "   Run Star FE tests with HardwareController configuration from HW_CONFIG\n";
-  std::cout << " -h: Show this help.\n";
-  std::cout << " -r <channel> : Rx channel to enable.\n";
-  std::cout << " -t <channel> : Tx channel to enable.\n";
-  std::cout << " -l <log_config> : Configure loggers.\n";
+std::unique_ptr<RawData, void(*)(RawData*)> readData(
+  HwController& hwCtrl,
+  std::function<bool(RawData&)> filter_cb,
+  uint32_t timeout)
+{
+  bool nodata = true;
+
+  std::unique_ptr<RawData, void(*)(RawData*)> data(
+    hwCtrl.readData(),
+    [](RawData* d){delete[] d->buf; delete d;} // deleter
+    );
+
+  auto start_reading = std::chrono::steady_clock::now();
+
+  while (true) {
+    if (data) {
+      nodata = false;
+      logger->debug("Use data: {}", (void*)data->buf);
+
+      // check if it is the type of data we want
+      bool good = filter_cb(*data);
+      if (good) {
+        break;
+      } else {
+        data.reset(nullptr);
+      }
+    } else { // no data
+      // wait a bit
+      static const auto SLEEP_TIME = std::chrono::milliseconds(1);
+      std::this_thread::sleep_for( SLEEP_TIME );
+    }
+
+    auto run_time = std::chrono::steady_clock::now() - start_reading;
+    if ( run_time > std::chrono::milliseconds(timeout) ) {
+      logger->debug("readData timeout");
+      break;
+    }
+
+    data.reset(hwCtrl.readData());
+  }
+
+  if (nodata) {
+    logger->critical("No data");
+  } else if (not data) {
+    logger->debug("No data met the requirement");
+  }
+
+  return data;
+}
+
+RawDataContainer readAllData(
+  HwController& hwCtrl,
+  std::function<bool(RawData&)> filter_cb,
+  uint32_t timeout)
+{
+  bool nodata = true;
+
+  RawDataContainer rdc(LoopStatus::empty());
+
+  std::unique_ptr<RawData, void(*)(RawData*)> data(
+    hwCtrl.readData(),
+    [](RawData* d){delete[] d->buf; delete d;} // deleter
+    );
+
+  auto start_reading = std::chrono::steady_clock::now();
+
+  while (true) {
+    if (data) {
+      nodata = false;
+      logger->debug("Use data: {}", (void*)data->buf);
+
+      bool good = filter_cb(*data);
+      if (good) {
+        rdc.add(data.release());
+      }
+    } else {
+      // wait a bit if no data
+      static const auto SLEEP_TIME = std::chrono::milliseconds(1);
+      std::this_thread::sleep_for( SLEEP_TIME );
+    }
+
+    auto run_time = std::chrono::steady_clock::now() - start_reading;
+    if ( run_time > std::chrono::milliseconds(timeout) ) {
+      logger->debug("readData timeout");
+      break;
+    }
+
+    data.reset(hwCtrl.readData());
+  }
+
+  if (nodata) {
+    logger->critical("No data");
+  } else if (rdc.size() == 0) {
+    logger->debug("Data container is empty");
+  }
+
+  return rdc;
+}
+
+bool isFromChannel(RawData& data, uint32_t chn) {
+  return data.adr == chn;
+}
+
+bool isPacketType(RawData& data, PacketType packet_type) {
+  StarChipPacket packet;
+  if ( packetFromRawData(packet, data) ) {
+    // failed to parse the packet
+    return false;
+  } else {
+    return packet.getType() == packet_type;
+  }
 }
