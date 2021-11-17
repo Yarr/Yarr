@@ -31,7 +31,7 @@ bool isFromChannel(RawData& data, uint32_t chn);
 bool isPacketType(RawData& data, PacketType packet_type);
 //
 bool checkHPRs(HwController& hwCtrl, const std::vector<uint32_t>& rxChannels);
-bool probeHCCs(HwController& hwCtrl, const std::vector<uint32_t>& txChannels, const std::vector<uint32_t>& rxChannels);
+std::vector<uint32_t> probeHCCs(HwController& hwCtrl, const std::vector<uint32_t>& txChannels, const std::vector<uint32_t>& rxChannels, bool setID);
 
 int main(int argc, char *argv[]) {
     std::string controller;
@@ -49,8 +49,9 @@ int main(int argc, char *argv[]) {
     // Original Spec version
     std::vector<uint32_t> rxChannels = {6};
     std::vector<uint32_t> txChannels = {0xFFFF};
+    bool setHccId = false;
     int c;
-    while ((c = getopt(argc, argv, "hl:r:t:")) != -1) {
+    while ((c = getopt(argc, argv, "hl:r:t:d")) != -1) {
       switch(c) {
       case 'h':
         printHelp();
@@ -78,6 +79,9 @@ int main(int argc, char *argv[]) {
         for (; optind < argc && *argv[optind] != '-'; optind += 1) {
           txChannels.push_back( atoi(argv[optind]) );
         }
+        break;
+      case 'd':
+        setHccId = true;
         break;
       default:
         spdlog::critical("Error while parsing command line parameters!");
@@ -149,8 +153,8 @@ int main(int argc, char *argv[]) {
 
     //////////
     // Probe HCCs
-    bool foundHCC = probeHCCs(*hwCtrl, txChannels, rxChannels);
-    if (not foundHCC)
+    std::vector<uint32_t> hccIDs = probeHCCs(*hwCtrl, txChannels, rxChannels, setHccId);
+    if (hccIDs.empty())
       return 1;
 
     return 0;
@@ -522,10 +526,16 @@ bool checkHPRs(HwController& hwCtrl, const std::vector<uint32_t>& rxChannels) {
   return hprOK;
 }
 
-bool probeHCCs(HwController& hwCtrl, const std::vector<uint32_t>& txChannels, const std::vector<uint32_t>& rxChannels) {
-  StarCmd star;
+std::vector<uint32_t> probeHCCs(
+  HwController& hwCtrl,
+  const std::vector<uint32_t>& txChannels,
+  const std::vector<uint32_t>& rxChannels,
+  bool setID)
+{
+  std::vector<uint32_t> hccIDs;
+  uint32_t nHCC = 0;
 
-  bool foundHCC = false;
+  StarCmd star;
 
   for (auto tx : txChannels) {
     bool hasHCCTx = false;
@@ -560,9 +570,20 @@ bool probeHCCs(HwController& hwCtrl, const std::vector<uint32_t>& txChannels, co
       } else {
         uint32_t hccID = (packet.value & 0xf0000000) >> 28; // top four bits
         uint32_t fuseID = packet.value & 0x00ffffff; // lowest 24 bits
-        logger->info("Found HCCStar @ Tx = {} Rx = {}: ID = 0x{:x} eFuse ID = 0x{:x}", tx, rx, hccID, fuseID);
-        foundHCC = true;
+        logger->info("Found HCCStar @ Tx = {} Rx = {}: ID = 0x{:x} eFuse ID = 0x{:06x}", tx, rx, hccID, fuseID);
         hasHCCTx = true;
+
+        if (not setID) {
+          hccIDs.push_back(hccID);
+        } else {
+          // Set HCC ID to nHCC
+          uint32_t hccreg17 = (nHCC << 28) | (fuseID & 0x00ffffff);
+          sendCommand(star.write_hcc_register(17, hccreg17), hwCtrl);
+          logger->info(" Set its ID to 0x{:x}", nHCC);
+          hccIDs.push_back(nHCC);
+        }
+
+        nHCC++;
       }
     } // end of rx channel loop
 
@@ -571,9 +592,9 @@ bool probeHCCs(HwController& hwCtrl, const std::vector<uint32_t>& txChannels, co
     }
   } // end of tx channel loop
 
-  if (not foundHCC) {
+  if (hccIDs.empty()) {
     logger->error("No HCCs found");
   }
 
-  return foundHCC;
+  return hccIDs;
 }
