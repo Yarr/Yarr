@@ -652,11 +652,12 @@ void configureHCC(HwController& hwCtrl, bool doReset) {
 
 bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars) {
   bool hasABCStar = false;
+  StarCmd star;
 
   for (auto& hcc : hccStars) {
     logger->info("Reading HPR packets from ABCStars on HCCStar {}", hcc.hcc_id);
 
-    bool iabcUp = false;
+    unsigned activeInChannels = 0;
 
     std::function<bool(RawData&)> filter_abchpr = [&hcc](RawData& d) {
       return isPacketType(d, TYP_ABC_HPR) and isFromChannel(d, hcc.rx);
@@ -673,7 +674,6 @@ bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars) {
         logger->error("Packet parse failed");
       } else {
         logger->debug(" Received an HPR packet from ABCStar");
-        iabcUp = true;
         hasABCStar = true;
 
         // check the input channel / ABC ID
@@ -683,6 +683,7 @@ bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars) {
           // new channel
           hcc.abc_id.push_back(abc_chn);
           logger->info(" Received an HPR packet from the ABCStar on channel {}", abc_chn);
+          activeInChannels |= (1 << abc_chn);
 
           // print the HPR packet
           std::stringstream os;
@@ -695,9 +696,13 @@ bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars) {
 
     } // end of data container loop
 
-    if (not iabcUp) {
+    if (not activeInChannels) {
       logger->warn("No ABCStar data from HCCStar {}", hcc.hcc_id);
     }
+
+    // Update HCC register 40 ICenable
+    logger->info(" Set register 40 (ICenable) on HCCStar {} to 0x{:08x}", hcc.hcc_id, activeInChannels);
+    sendCommand(star.write_hcc_register(40, activeInChannels, hcc.hcc_id), hwCtrl);
   } // end of HCC loop
 
   if (not hasABCStar) {
