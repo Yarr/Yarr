@@ -38,6 +38,7 @@ bool checkHPRs(HwController& hwCtrl, const std::vector<uint32_t>& rxChannels);
 std::vector<Hybrid> probeHCCs(HwController& hwCtrl, const std::vector<uint32_t>& txChannels, const std::vector<uint32_t>& rxChannels, bool setID);
 void configureHCC(HwController& hwCtrl, bool doReset);
 bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars);
+void configureABC(HwController& hwCtrl, bool doReset);
 
 int main(int argc, char *argv[]) {
     std::string controller;
@@ -177,10 +178,14 @@ int main(int argc, char *argv[]) {
     if (not abcCommUp)
       return 1;
 
+    //////////
+    // Configure ABCs
+    configureABC(*hwCtrl, true);
+
     return 0;
 
     // For now
-    configureChips(star, *hwCtrl, true);
+    //configureChips(star, *hwCtrl, true);
     runTests(star, *hwCtrl, true);
 
     uint32_t timeout = 2000;
@@ -205,42 +210,6 @@ void printHelp() {
   std::cout << " -r <channel> : Rx channel to enable.\n";
   std::cout << " -t <channel> : Tx channel to enable.\n";
   std::cout << " -l <log_config> : Configure loggers.\n";
-}
-
-void configureChips(StarCmd &star, HwController& hwCtrl, bool doReset) {
-  // reset
-  if (doReset) {
-    sendCommand( LCB::fast_command(LCB::LOGIC_RESET, 0), hwCtrl);
-    sendCommand( LCB::fast_command(LCB::HCC_REG_RESET, 0), hwCtrl);
-  }
-
-  //////////
-  // Configure HCCStar first to establish communication with ABCStars
-  // All commands are broadcasted
-
-  // Register 32 (Delay1): delays for signals to ABCStar
-  sendCommand( star.write_hcc_register(32, 0x02400000), hwCtrl);
-
-  // Register 33, 34 (Delay2, Delay3): delays for data from ABCStar
-  sendCommand( star.write_hcc_register(33, 0x44444444), hwCtrl);
-  sendCommand( star.write_hcc_register(34, 0x00000444), hwCtrl);
-
-  // Register 38 (DRV1): enable driver and currents
-  sendCommand( star.write_hcc_register(38, 0x0fffffff), hwCtrl);
-
-  // Register 40 (ICenable): enable input channels
-  sendCommand( star.write_hcc_register(40, 0x000007ff), hwCtrl);
-
-  //////////
-  // Configure ABCStar
-  // reset ABCStar
-  if (doReset) {
-    sendCommand( LCB::fast_command(LCB::ABC_REG_RESET, 0), hwCtrl );
-    sendCommand( LCB::fast_command(LCB::ABC_SLOW_COMMAND_RESET, 0), hwCtrl);
-  }
-
-  // Register 32 (CREG0): Set RR mode to 1, enable LP and PR
-  sendCommand( star.write_abc_register(32, 0x00000700), hwCtrl);
 }
 
 void runTests(StarCmd &star, HwController& hwCtrl, bool hprOff) {
@@ -622,7 +591,6 @@ std::vector<Hybrid> probeHCCs(
 
 void configureHCC(HwController& hwCtrl, bool doReset) {
   // Configure HCCStars to enable communications with ABCStars
-
   StarCmd star;
 
   if (doReset) {
@@ -710,4 +678,19 @@ bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars) {
   }
 
   return hasABCStar;
+}
+
+void configureABC(HwController& hwCtrl, bool doReset) {
+  StarCmd star;
+
+  if (doReset) {
+    logger->debug("Sending ABCStar register reset commands");
+    sendCommand(LCB::fast_command(LCB::ABC_REG_RESET, 0), hwCtrl);
+    sendCommand(LCB::fast_command(LCB::ABC_SLOW_COMMAND_RESET, 0), hwCtrl);
+  }
+
+  logger->info("Broadcast ABCStar configurations");
+
+  // Register 32 (CREG0): set RR mode to 1, enable LP and PR
+  sendCommand(star.write_abc_register(32, 0x00000700), hwCtrl);
 }
