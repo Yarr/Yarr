@@ -14,6 +14,10 @@
 
 namespace {
   auto logger = logging::make_log("test_star");
+
+  struct Hybrid {
+     uint32_t tx; uint32_t rx; uint32_t hcc_id; std::vector<uint32_t> abc_id;
+  };
 }
 
 static void printHelp();
@@ -31,7 +35,9 @@ bool isFromChannel(RawData& data, uint32_t chn);
 bool isPacketType(RawData& data, PacketType packet_type);
 //
 bool checkHPRs(HwController& hwCtrl, const std::vector<uint32_t>& rxChannels);
-std::vector<uint32_t> probeHCCs(HwController& hwCtrl, const std::vector<uint32_t>& txChannels, const std::vector<uint32_t>& rxChannels, bool setID);
+std::vector<Hybrid> probeHCCs(HwController& hwCtrl, const std::vector<uint32_t>& txChannels, const std::vector<uint32_t>& rxChannels, bool setID);
+void configureHCC(HwController& hwCtrl, bool doReset);
+bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars);
 
 int main(int argc, char *argv[]) {
     std::string controller;
@@ -141,7 +147,7 @@ int main(int argc, char *argv[]) {
     sendCommand( LCB::fast_command(LCB::ABC_REG_RESET, 0), *hwCtrl );
 
     //////////
-    // Read HPRs
+    // Read HCCStar HPRs
     if (controllerType == "emu_Star") {
       // For the emulator, toggle the TestHPR bit
       sendCommand(star.write_hcc_register(16, 0x2), *hwCtrl);
@@ -153,8 +159,22 @@ int main(int argc, char *argv[]) {
 
     //////////
     // Probe HCCs
-    std::vector<uint32_t> hccIDs = probeHCCs(*hwCtrl, txChannels, rxChannels, setHccId);
-    if (hccIDs.empty())
+    auto hccStars = probeHCCs(*hwCtrl, txChannels, rxChannels, setHccId);
+    if (hccStars.empty())
+      return 1;
+
+    //////////
+    // Configure HCCs to enable communications with ABCs
+    configureHCC(*hwCtrl, true);
+
+    // Read HPRs from ABCStars
+    if (controllerType == "emu_Star") {
+      // For the emulator, toggle the TestHPR bit
+      sendCommand(star.write_abc_register(0, 0x8), *hwCtrl);
+    }
+
+    bool abcCommUp = probeABCs(*hwCtrl, hccStars);
+    if (not abcCommUp)
       return 1;
 
     return 0;
@@ -526,13 +546,13 @@ bool checkHPRs(HwController& hwCtrl, const std::vector<uint32_t>& rxChannels) {
   return hprOK;
 }
 
-std::vector<uint32_t> probeHCCs(
+std::vector<Hybrid> probeHCCs(
   HwController& hwCtrl,
   const std::vector<uint32_t>& txChannels,
   const std::vector<uint32_t>& rxChannels,
   bool setID)
 {
-  std::vector<uint32_t> hccIDs;
+  std::vector<Hybrid> HCCs;
   uint32_t nHCC = 0;
 
   StarCmd star;
@@ -573,28 +593,116 @@ std::vector<uint32_t> probeHCCs(
         logger->info("Found HCCStar @ Tx = {} Rx = {}: ID = 0x{:x} eFuse ID = 0x{:06x}", tx, rx, hccID, fuseID);
         hasHCCTx = true;
 
-        if (not setID) {
-          hccIDs.push_back(hccID);
-        } else {
+        if (setID) {
           // Set HCC ID to nHCC
           uint32_t hccreg17 = (nHCC << 28) | (fuseID & 0x00ffffff);
           sendCommand(star.write_hcc_register(17, hccreg17), hwCtrl);
           logger->info(" Set its ID to 0x{:x}", nHCC);
-          hccIDs.push_back(nHCC);
+          hccID = nHCC;
         }
+
+        Hybrid h{tx, rx, hccID, {}};
+        HCCs.push_back(h);
 
         nHCC++;
       }
     } // end of rx channel loop
 
     if (not hasHCCTx) {
-      logger->warn("No HCC on the command segment Tx = {}", tx);
+      logger->warn("No HCCStar on the command segment Tx = {}", tx);
     }
   } // end of tx channel loop
 
-  if (hccIDs.empty()) {
+  if (HCCs.empty()) {
     logger->error("No HCCs found");
   }
 
-  return hccIDs;
+  return HCCs;
+}
+
+void configureHCC(HwController& hwCtrl, bool doReset) {
+  // Configure HCCStars to enable communications with ABCStars
+
+  StarCmd star;
+
+  if (doReset) {
+    logger->debug("Sending HCCStar register reset command");
+    sendCommand(LCB::fast_command(LCB::HCC_REG_RESET, 0), hwCtrl);
+  }
+
+  logger->info("Broadcast HCCStar configurations");
+
+  // Register 32 (Delay1): delays for signals to ABCStars
+  sendCommand(star.write_hcc_register(32, 0x02400000), hwCtrl);
+
+  // Register 33, 34 (Delay2, Delay3): delays for data from ABCStar
+  sendCommand(star.write_hcc_register(33, 0x44444444), hwCtrl);
+  sendCommand(star.write_hcc_register(34, 0x00000444), hwCtrl);
+
+  // Register 38 (DRV1): enable driver and currents
+  sendCommand(star.write_hcc_register(38, 0x0fffffff), hwCtrl);
+
+  // Register 40 (ICenable): enable input channels
+  sendCommand(star.write_hcc_register(40, 0x000007ff), hwCtrl);
+
+  // Register 45/46: external reset for ABCStars
+  sendCommand(star.write_hcc_register(45, 0x00000001), hwCtrl);
+  sendCommand(star.write_hcc_register(46, 0x00000001), hwCtrl);
+}
+
+bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars) {
+  bool hasABCStar = false;
+
+  for (auto& hcc : hccStars) {
+    logger->info("Reading HPR packets from ABCStars on HCCStar {}", hcc.hcc_id);
+
+    bool iabcUp = false;
+
+    std::function<bool(RawData&)> filter_abchpr = [&hcc](RawData& d) {
+      return isPacketType(d, TYP_ABC_HPR) and isFromChannel(d, hcc.rx);
+    };
+    uint32_t timeout = 1000; // milliseconds
+
+    auto rdc = readAllData(hwCtrl, filter_abchpr, timeout);
+
+    for (unsigned c = 0; c < rdc.size(); c++) {
+      RawData d(rdc.adr[c], rdc.buf[c], rdc.words[c]);
+      StarChipPacket packet;
+
+      if ( packetFromRawData(packet, d) ) {
+        logger->error("Packet parse failed");
+      } else {
+        logger->debug(" Received an HPR packet from ABCStar");
+        iabcUp = true;
+        hasABCStar = true;
+
+        // check the input channel / ABC ID
+        uint32_t abc_chn = packet.channel_abc;
+
+        if ( std::find(hcc.abc_id.begin(), hcc.abc_id.end(), abc_chn) == hcc.abc_id.end() ) {
+          // new channel
+          hcc.abc_id.push_back(abc_chn);
+          logger->info(" Received an HPR packet from the ABCStar on channel {}", abc_chn);
+
+          // print the HPR packet
+          std::stringstream os;
+          packet.print_more(os);
+          std::string str = os.str();
+          str.erase(str.end()-1); // strip the extra \n
+          logger->info(" Received HPR packet: {}", str);
+        }
+      }
+
+    } // end of data container loop
+
+    if (not iabcUp) {
+      logger->warn("No ABCStar data from HCCStar {}", hcc.hcc_id);
+    }
+  } // end of HCC loop
+
+  if (not hasABCStar) {
+    logger->error("No ABCStar from any HCCStar");
+  }
+
+  return hasABCStar;
 }
