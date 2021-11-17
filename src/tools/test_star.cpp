@@ -182,14 +182,19 @@ int main(int argc, char *argv[]) {
     // Configure ABCs
     configureABC(*hwCtrl, true);
 
-    return 0;
-
     // For now
     //configureChips(star, *hwCtrl, true);
     runTests(star, *hwCtrl, true);
 
     uint32_t timeout = 2000;
-    auto rdc = readAllData(*hwCtrl, [](RawData& d){return true;}, timeout);
+    auto rdc = readAllData(
+      *hwCtrl,
+      [](RawData& d){
+        return not(isPacketType(d,TYP_HCC_HPR) or isPacketType(d,TYP_ABC_HPR));
+      },
+      timeout
+      );
+
     for (unsigned c = 0; c < rdc.size(); c++) {
       RawData d(rdc.adr[c], rdc.buf[c], rdc.words[c]);
       reportData(d, controllerType);
