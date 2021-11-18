@@ -209,12 +209,13 @@ int main(int argc, char *argv[]) {
 }
 
 void printHelp() {
-  std::cout << "Usage: [OPTIONS] ... [HW_CONFIG]\n";
+  std::cout << "Usage: test_star HW_CONFIG [OPTIONS] ... \n";
   std::cout << "   Run Star FE tests with HardwareController configuration from HW_CONFIG\n";
   std::cout << " -h: Show this help.\n";
-  std::cout << " -r <channel> : Rx channel to enable.\n";
-  std::cout << " -t <channel> : Tx channel to enable.\n";
+  std::cout << " -r <channel1> [<channel2> ...] : Rx channels to enable. Can take multiple arguments.\n";
+  std::cout << " -t <channel1> [<channel2> ...] : Tx channels to enable. Can take multiple arguments.\n";
   std::cout << " -l <log_config> : Configure loggers.\n";
+  std::cout << " -d : Modify HCCStar IDs when probing.\n";
 }
 
 void runTests(StarCmd &star, HwController& hwCtrl, bool hprOff) {
