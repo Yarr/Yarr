@@ -41,6 +41,8 @@ std::vector<Hybrid> probeHCCs(HwController& hwCtrl, const std::vector<uint32_t>&
 void configureHCC(HwController& hwCtrl, bool doReset);
 bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars);
 void configureABC(HwController& hwCtrl, bool doReset);
+bool testHCCRegisterAccess(HwController& hwCtrl, std::vector<Hybrid>& hccStars);
+bool testABCRegisterAccess(HwController& hwCtrl, std::vector<Hybrid>& hccStars);
 
 int main(int argc, char *argv[]) {
     std::string controller;
@@ -165,6 +167,12 @@ int main(int argc, char *argv[]) {
       return 1;
 
     //////////
+    // Test HCCStar register read and write
+    bool hccRegOk = testHCCRegisterAccess(*hwCtrl, hccStars);
+    if (not hccRegOk)
+      return 1;
+
+    //////////
     // Configure HCCs to enable communications with ABCs
     configureHCC(*hwCtrl, true);
 
@@ -176,6 +184,12 @@ int main(int argc, char *argv[]) {
 
     bool abcCommUp = probeABCs(*hwCtrl, hccStars);
     if (not abcCommUp)
+      return 1;
+
+    //////////
+    // Test ABCStar register read and write
+    bool abcRegOk = testABCRegisterAccess(*hwCtrl, hccStars);
+    if (not abcRegOk)
       return 1;
 
     //////////
@@ -643,12 +657,14 @@ bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars) {
         logger->trace(" Received an HPR packet from ABCStar");
         hasABCStar = true;
 
-        // check the input channel / ABC ID
+        // check the input channel
         uint32_t abc_chn = packet.channel_abc;
+        // FIXME. For now:
+        uint32_t abcid = 9 - abc_chn;
 
-        if ( std::find(hcc.abc_id.begin(), hcc.abc_id.end(), abc_chn) == hcc.abc_id.end() ) {
+        if ( std::find(hcc.abc_id.begin(), hcc.abc_id.end(), abcid) == hcc.abc_id.end() ) {
           // new channel
-          hcc.abc_id.push_back(abc_chn);
+          hcc.abc_id.push_back(abcid);
           logger->info(" Received an HPR packet from the ABCStar on channel {}", abc_chn);
           activeInChannels |= (1 << abc_chn);
 
@@ -691,4 +707,140 @@ void configureABC(HwController& hwCtrl, bool doReset) {
 
   // Register 32 (CREG0): set RR mode to 1, enable LP and PR
   sendCommand(star.write_abc_register(32, 0x00000700), hwCtrl);
+}
+
+bool testRegisterReadWrite(HwController& hwCtrl, uint32_t regAddr, uint32_t write_value, uint32_t rx, int hccId, int abcId=-1) {
+  bool isHCC = abcId < 0;
+
+  ////
+  // Test register read
+  int reg_read_value = -1;
+
+  std::string reg_str;
+  PacketType ptype;
+  if (isHCC) { // HCC register
+    reg_str = "register "+std::to_string(regAddr)+" on HCCStar "+std::to_string(hccId);
+    ptype = TYP_HCC_RR;
+
+    logger->info("Reading "+reg_str);
+
+    // Send register read command
+    sendCommand(star.read_hcc_register(regAddr, hccId), hwCtrl);
+
+  } else { // ABC register
+    reg_str = "register "+std::to_string(regAddr)+" on ABCStar @ channel "+std::to_string(abcId)+" of HCCStar "+std::to_string(hccId);
+    ptype = TYP_ABC_RR;
+
+    logger->info("Reading "+reg_str);
+
+    // Send register read command
+    sendCommand(star.read_abc_register(regAddr, hccId, abcId), hwCtrl);
+  }
+
+  // Read data
+  auto data = readData(
+    hwCtrl,
+    [&](RawData& d) {return isPacketType(d, ptype) and isFromChannel(d, rx);}
+    );
+
+  if (data) {
+    StarChipPacket packet;
+    packetFromRawData(packet, *data);
+    reg_read_value = packet.value;
+
+    if (logger->should_log(spdlog::level::debug)) {
+      // print packet
+      std::stringstream os;
+      packet.print_more(os);
+      std::string str = os.str();
+      str.erase(str.end()-1); // strip the extra \n
+      logger->debug(" Received RR packet: {}", str);
+    }
+    logger->info("Register read: OK");
+  } else {
+    logger->error("Register read: Fail");
+    return false;
+  }
+
+  ////
+  // Test register write
+  // Write a new value to the same register
+  // Read the register and check its value is updated
+  assert(write_value != reg_read_value);
+
+  logger->info("Writing value 0x{:08x} to {}", write_value, reg_str);
+  if (isHCC) {
+    sendCommand(star.write_hcc_register(regAddr, write_value, hccId), hwCtrl);
+    logger->info("Reading "+reg_str);
+    sendCommand(star.read_hcc_register(regAddr, hccId), hwCtrl);
+  } else {
+    sendCommand(star.write_abc_register(regAddr, write_value, hccId, abcId), hwCtrl);
+    logger->info("Reading "+reg_str);
+    sendCommand(star.read_abc_register(regAddr, hccId, abcId), hwCtrl);
+  }
+
+  // Read data
+  auto wdata = readData(
+    hwCtrl,
+    [&](RawData& d) {return isPacketType(d, ptype) and isFromChannel(d, rx);}
+    );
+
+  if (wdata) {
+    StarChipPacket wpacket;
+    packetFromRawData(wpacket, *wdata);
+
+    if (logger->should_log(spdlog::level::debug)) {
+      // print packet
+      std::stringstream os;
+      wpacket.print_more(os);
+      std::string str = os.str();
+      str.erase(str.end()-1); // strip the extra \n
+      logger->debug(" Received RR packet: {}", str);
+    }
+
+    // check if the value is what we wrote
+    if (wpacket.value == write_value) {
+      logger->info("Register write: OK");
+    } else {
+      logger->error("Register write: Fail");
+      logger->error("The value read back from register {} is: 0x{:08x}", regAddr, wpacket.value);
+      return false;
+    }
+  } else {
+    logger->error("Failed to read data");
+    return false;
+  }
+
+  return true;
+}
+
+bool testHCCRegisterAccess(HwController& hwCtrl, std::vector<Hybrid>& hccStars) {
+  logger->info("Test HCCStar register read & write");
+
+  bool success = true;
+
+  for (auto& hcc : hccStars) {
+    // Register 47: ErrCfg
+    success &= testRegisterReadWrite(hwCtrl, 47, 0xdeadbeef, hcc.rx, hcc.hcc_id);
+  }
+
+  return success;
+}
+
+bool testABCRegisterAccess(HwController& hwCtrl, std::vector<Hybrid>& hccStars) {
+  logger->info("Test ABCStar register read & write");
+
+  // Set RR mode to 1
+  sendCommand(star.write_abc_register(32, 0x00000400), hwCtrl);
+
+  bool success = true;
+
+  for (auto& hcc : hccStars) {
+    for (uint32_t iabc : hcc.abc_id) {
+      // Register 16: MaskInput0
+      success &= testRegisterReadWrite(hwCtrl, 16, 0xabadcafe, hcc.rx, hcc.hcc_id, iabc);
+    }
+  }
+
+  return success;
 }
