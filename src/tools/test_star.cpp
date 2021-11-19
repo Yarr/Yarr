@@ -15,6 +15,8 @@
 namespace {
   auto logger = logging::make_log("test_star");
 
+  StarCmd star;
+
   struct Hybrid {
      uint32_t tx; uint32_t rx; uint32_t hcc_id; std::vector<uint32_t> abc_id;
   };
@@ -138,8 +140,6 @@ int main(int argc, char *argv[]) {
     // Enable Rx channels
     hwCtrl->disableRx();
     hwCtrl->setRxEnable(rxChannels);
-
-    StarCmd star;
 
     //////////
     // Reset
@@ -530,8 +530,6 @@ std::vector<Hybrid> probeHCCs(
   std::vector<Hybrid> HCCs;
   uint32_t nHCC = 0;
 
-  StarCmd star;
-
   for (auto tx : txChannels) {
     bool hasHCCTx = false;
 
@@ -597,8 +595,6 @@ std::vector<Hybrid> probeHCCs(
 
 void configureHCC(HwController& hwCtrl, bool doReset) {
   // Configure HCCStars to enable communications with ABCStars
-  StarCmd star;
-
   if (doReset) {
     logger->debug("Sending HCCStar register reset command");
     sendCommand(LCB::fast_command(LCB::HCC_REG_RESET, 0), hwCtrl);
@@ -626,7 +622,6 @@ void configureHCC(HwController& hwCtrl, bool doReset) {
 
 bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars) {
   bool hasABCStar = false;
-  StarCmd star;
 
   for (auto& hcc : hccStars) {
     logger->info("Reading HPR packets from ABCStars on HCCStar {}", hcc.hcc_id);
@@ -687,7 +682,6 @@ bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars) {
 }
 
 void configureABC(HwController& hwCtrl, bool doReset) {
-  StarCmd star;
 
   if (doReset) {
     logger->debug("Sending ABCStar register reset commands");
