@@ -28,7 +28,7 @@ void sendCommand(const std::array<uint16_t, 9>& cmd, HwController& hwCtrl);
 void sendCommand(uint16_t cmd, HwController& hwCtrl);
 void configureChips(StarCmd &star, HwController& hwCtrl, bool doReset);
 void runTests(StarCmd &star, HwController& hwCtrl, bool hprOff);
-void reportData(RawData &data, std::string controllerType);
+void reportData(RawData &data, bool do_spec_specific=false);
 int packetFromRawData(StarChipPacket& packet, RawData& data);
 std::unique_ptr<RawData, void(*)(RawData*)> readData(HwController&, std::function<bool(RawData&)>, uint32_t timeout=1000);
 RawDataContainer readAllData(HwController&, std::function<bool(RawData&)>, uint32_t timeout=2000);
@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
 
     for (unsigned c = 0; c < rdc.size(); c++) {
       RawData d(rdc.adr[c], rdc.buf[c], rdc.words[c]);
-      reportData(d, controllerType);
+      reportData(d, controllerType == "spec");
     }
 
     hwCtrl->disableRx();
@@ -311,11 +311,9 @@ int packetFromRawData(StarChipPacket& packet, RawData& data) {
   return packet.parse();
 }
 
-void reportData(RawData &data, std::string controllerType) {
+void reportData(RawData &data, bool do_spec_specific) {
   std::cout << "Raw data from RxCore:\n";
   std::cout << data.adr << " " << data.buf << " " << data.words << "\n";
-
-  bool do_spec_specific = controllerType == "spec";
 
   for (unsigned j=0; j<data.words;j++) {
     auto word = data.buf[j];
@@ -381,7 +379,7 @@ std::unique_ptr<RawData, void(*)(RawData*)> readData(
   while (true) {
     if (data) {
       nodata = false;
-      logger->debug("Use data: {}", (void*)data->buf);
+      logger->trace("Use data: {}", (void*)data->buf);
 
       // check if it is the type of data we want
       bool good = filter_cb(*data);
@@ -433,7 +431,7 @@ RawDataContainer readAllData(
   while (true) {
     if (data) {
       nodata = false;
-      logger->debug("Use data: {}", (void*)data->buf);
+      logger->trace("Use data: {}", (void*)data->buf);
 
       bool good = filter_cb(*data);
       if (good) {
@@ -447,7 +445,7 @@ RawDataContainer readAllData(
 
     auto run_time = std::chrono::steady_clock::now() - start_reading;
     if ( run_time > std::chrono::milliseconds(timeout) ) {
-      logger->debug("readData timeout");
+      logger->trace("readData timeout");
       break;
     }
 
@@ -642,7 +640,7 @@ bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars) {
       if ( packetFromRawData(packet, d) ) {
         logger->error("Packet parse failed");
       } else {
-        logger->debug(" Received an HPR packet from ABCStar");
+        logger->trace(" Received an HPR packet from ABCStar");
         hasABCStar = true;
 
         // check the input channel / ABC ID
