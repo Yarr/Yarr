@@ -18,7 +18,10 @@ namespace {
   StarCmd star;
 
   struct Hybrid {
-     uint32_t tx; uint32_t rx; uint32_t hcc_id; std::vector<uint32_t> abc_id;
+    uint32_t tx;
+    uint32_t rx;
+    uint32_t hcc_id;
+    std::map<uint32_t,uint32_t> abcs; // key: channel; value: chipID
   };
 }
 
@@ -575,13 +578,13 @@ bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars) {
 
         // check the input channel
         uint32_t abc_chn = packet.channel_abc;
-        // FIXME. For now:
-        uint32_t abcid = 9 - abc_chn;
+        // get the chipID from the top four bits of the 16-bit status word
+        uint32_t abcid = (packet.abc_status >> 12) & 0xf;
 
-        if ( std::find(hcc.abc_id.begin(), hcc.abc_id.end(), abcid) == hcc.abc_id.end() ) {
+        if ( hcc.abcs.find(abc_chn) == hcc.abcs.end() ) {
           // new channel
-          hcc.abc_id.push_back(abcid);
-          logger->info(" Received an HPR packet from the ABCStar on channel {}", abc_chn);
+          hcc.abcs[abc_chn] = abcid;
+          logger->info(" Received an HPR packet from the ABCStar on channel {} with chipID {}", abc_chn, abcid);
           activeInChannels |= (1 << abc_chn);
 
           // print the HPR packet
@@ -644,7 +647,7 @@ bool testRegisterReadWrite(HwController& hwCtrl, uint32_t regAddr, uint32_t writ
     sendCommand(star.read_hcc_register(regAddr, hccId), hwCtrl);
 
   } else { // ABC register
-    reg_str = "register "+std::to_string(regAddr)+" on ABCStar @ channel "+std::to_string(abcId)+" of HCCStar "+std::to_string(hccId);
+    reg_str = "register "+std::to_string(regAddr)+" on ABCStar "+std::to_string(abcId)+" of HCCStar "+std::to_string(hccId);
     ptype = TYP_ABC_RR;
 
     logger->info("Reading "+reg_str);
@@ -752,9 +755,9 @@ bool testABCRegisterAccess(HwController& hwCtrl, std::vector<Hybrid>& hccStars) 
   bool success = true;
 
   for (auto& hcc : hccStars) {
-    for (uint32_t iabc : hcc.abc_id) {
+    for (const auto& abc : hcc.abcs) {
       // Register 16: MaskInput0
-      success &= testRegisterReadWrite(hwCtrl, 16, 0xabadcafe, hcc.rx, hcc.hcc_id, iabc);
+      success &= testRegisterReadWrite(hwCtrl, 16, 0xabadcafe, hcc.rx, hcc.hcc_id, abc.second);
     }
   }
 
