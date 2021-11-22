@@ -74,7 +74,6 @@ namespace {
 }
 
 void OccupancyAnalysis::init(ScanBase *s) {
-    createMask=true;
     n_count = 1;
     injections = 0;
     for (unsigned n=0; n<s->size(); n++) {
@@ -1351,7 +1350,9 @@ void NoiseAnalysis::processHistogram(HistogramBase *h) {
 void NoiseAnalysis::loadConfig(json &j){
     if (!j["createMask"].empty()){
         createMask=j["createMask"];
-		//std::cout << "createMask = " << createMask << std::endl;
+    }
+    if (!j["noiseThr"].empty()){
+        noiseThr=j["noiseThr"];
     }
 }
 
@@ -1369,7 +1370,7 @@ void NoiseAnalysis::end() {
     noiseOcc->add(&*occ);
     noiseOcc->scale(1.0/(double)n_trigger);
     alog->info("[{}] Received {} total trigger!", channel, n_trigger);
-    double noiseThr = 1e-6; 
+ 
     for (unsigned i=0; i<noiseOcc->size(); i++) {
         if (noiseOcc->getBin(i) > noiseThr) {
             mask->setBin(i, 0);
