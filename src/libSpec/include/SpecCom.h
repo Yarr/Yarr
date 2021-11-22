@@ -97,13 +97,20 @@ class SpecCom {
     protected:
         void flushDma();
 
+        uint32_t fw_vers;
+        uint32_t fw_ident;
+
+        std::string getSpecIdentHw   (uint32_t fw_ident);
+        std::string getSpecIdentChip (uint32_t fw_ident);
+        std::string getSpecIdentFmc  (uint32_t fw_ident);
+        std::string getSpecIdentSpeed(uint32_t fw_ident);
+        std::string getSpecIdentChCfg(uint32_t fw_ident);
+   
     private:
         unsigned int specId;
         bool is_initialized;
         SpecDevice *spec;
         void *bar0, *bar4;
-        uint32_t fw_vers;
-        uint32_t fw_ident;
 
         void init();
         void configure();
@@ -122,12 +129,5 @@ class SpecCom {
         void startDma();
         void abortDma();
         uint32_t getDmaStatus();
-
-        std::string getSpecIdentHw   (uint32_t fw_ident);
-        std::string getSpecIdentChip (uint32_t fw_ident);
-        std::string getSpecIdentFmc  (uint32_t fw_ident);
-        std::string getSpecIdentSpeed(uint32_t fw_ident);
-        std::string getSpecIdentChCfg(uint32_t fw_ident);
-
 };
 #endif

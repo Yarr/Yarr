@@ -38,8 +38,11 @@
             },
             "toa_unit": "1.5625 ns"
         }
-    },
-      "n_count": 3
+      },
+      "3": {
+        "algorithm": "TagAnalysis"
+      },
+      "n_count": 4
     },
     "histogrammer": {
       "0": {
@@ -75,14 +78,18 @@
         "config": {}
       },
       "8": {
+        "algorithm": "TagMap",
+        "config": {}
+      },      
+      "9": {
         "algorithm": "HitsPerEvent",
         "config": {}
       },
-      "9": {
+      "10": {
         "algorithm": "DataArchiver",
         "config": {}
       },	  
-      "n_count": 7
+      "n_count": 11
     },
     "loops": [
       {

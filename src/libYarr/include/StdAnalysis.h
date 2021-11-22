@@ -90,7 +90,7 @@ class ScurveFitter : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-        void loadConfig(json &config){}
+        void loadConfig(json &config);
     private:
         unsigned vcalLoop;
         unsigned vcalMin;
@@ -129,6 +129,7 @@ class ScurveFitter : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> vcalCnt;
         bool useScap;
         bool useLcap;
+        bool reverse = false;
 };
 
 class OccGlobalThresholdTune : public AnalysisAlgorithm {
@@ -236,7 +237,11 @@ class TagAnalysis : public AnalysisAlgorithm {
         unsigned n_count;
         unsigned injections;
         std::map<unsigned, std::unique_ptr<Histo1d>> tagHistos;
-        std::map<unsigned, unsigned> innerCnt;
+        std::map<unsigned, std::unique_ptr<Histo2d>> tagMaps;
+        std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
+        std::map<unsigned, unsigned> tagDistInnerCnt;
+        std::map<unsigned, unsigned> tagMapInnerCnt;
+        std::map<unsigned, unsigned> occInnerCnt;
 
 };
 

@@ -597,6 +597,12 @@ void ScurveFitter::init(ScanBase *s) {
     thrTarget = bookie->getTargetCharge();
 }
 
+void ScurveFitter::loadConfig(json &j) {
+    if (!j["reverse"].empty()) {
+        reverse = j["reverse"];
+    }
+}
+
 // Errorfunction
 // par[0] = Mean
 // par[1] = Sigma
@@ -605,6 +611,10 @@ void ScurveFitter::init(ScanBase *s) {
 #define SQRT2 1.414213562
 double scurveFct(double x, const double *par) {
     return par[3] + 0.5*( 2-erfc( (x-par[0])/(par[1]*SQRT2) ) )*par[2];
+}
+
+double reverseScurveFct(double x, const double *par) {
+    return par[3] + 0.5*( erfc( (x-par[0])/(par[1]*SQRT2) ) )*par[2];
 }
 
 void ScurveFitter::processHistogram(HistogramBase *h) {
@@ -630,8 +640,8 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
     for(unsigned col=1; col<=nCol; col++) {
         for (unsigned row=1; row<=nRow; row++) {
             unsigned bin = hh->binNum(col, row);
-            if (hh->getBin(bin) != 0) {
-                // Select correct output containe
+            if (hh->getBin(bin) != 0 || reverse) {
+                // Select correct output container
                 unsigned ident = bin;
                 unsigned offset = nCol*nRow;
                 unsigned vcal = hh->getStat().get(vcalLoop);
@@ -675,7 +685,12 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     std::chrono::high_resolution_clock::time_point start;
                     std::chrono::high_resolution_clock::time_point end;
                     start = std::chrono::high_resolution_clock::now();
-                    lmcurve(n_par, par, vcalBins, &x[0], histos[ident]->getData(), scurveFct, &control, &status);
+                    if (reverse) {
+                        lmcurve(n_par, par, vcalBins, &x[0], histos[ident]->getData(), reverseScurveFct, &control, &status);
+                    } else {
+                        lmcurve(n_par, par, vcalBins, &x[0], histos[ident]->getData(), scurveFct, &control, &status);
+                    }
+
                     end = std::chrono::high_resolution_clock::now();
                     std::chrono::microseconds fitTime = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
                     if (thrMap[outerIdent] == NULL) {
@@ -808,7 +823,6 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 
 void ScurveFitter::end() {
 
-    alog->info("scurve end");
     if (fb != nullptr) {
         alog->info("[{}] Tuned to ==> {}", thrTarget, this->channel);
     }
@@ -1187,33 +1201,69 @@ void TagAnalysis::processHistogram(HistogramBase *h) {
 
     // Determine identifier
     std::string name = "TagDist";
+    std::string name2 = "TagMap";
+    std::string name3 = "OccMap";
     for (unsigned n=0; n<loops.size(); n++) {
         ident += h->getStat().get(loops[n])+offset;
         offset += loopMax[n];
         name += "-" + std::to_string(h->getStat().get(loops[n]));
+        name2 += "-" + std::to_string(h->getStat().get(loops[n]));
+        name3 += "-" + std::to_string(h->getStat().get(loops[n]));
     }
 
     // Check if Histogram exists
     if (tagHistos[ident] == NULL) {
-        Histo1d *hh = new Histo1d(name, 257, -0.5, 256.5);
-        hh->setXaxisTitle("Tag");
-        hh->setYaxisTitle("Hits");
-        tagHistos[ident].reset(hh);
-        innerCnt[ident] = 0;
+        Histo1d *h = new Histo1d(name, 257, -0.5, 256.5);
+        h->setXaxisTitle("Tag");
+        h->setYaxisTitle("Hits");
+        tagHistos[ident].reset(h);
+        tagDistInnerCnt[ident] = 0;
+
+        Histo2d *hh = new Histo2d(name2, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
+        hh->setXaxisTitle("Column");
+        hh->setYaxisTitle("Row");
+        hh->setZaxisTitle("Tag");
+        tagMaps[ident].reset(hh);
+        tagMapInnerCnt[ident] = 0;
+
+        hh = new Histo2d(name3, nCol, 0.5, nCol + 0.5, nRow, 0.5, nRow + 0.5);
+        hh->setXaxisTitle("Column");
+        hh->setYaxisTitle("Row");
+        hh->setZaxisTitle("Hits");
+        occMaps[ident].reset(hh);
+        occInnerCnt[ident] = 0;
     }
 
     // Add up Histograms
     if (h->getName() == TagDist::outputName()) {
         tagHistos[ident]->add(*(Histo1d*)h);
-        innerCnt[ident]++;
+        tagDistInnerCnt[ident]++;
+    } else if (h->getName() == TagMap::outputName()) {
+        tagMaps[ident]->add(*(Histo2d*)h);
+        tagMapInnerCnt[ident]++;
+    } else if (h->getName() == OccupancyMap::outputName()) {
+        occMaps[ident]->add(*(Histo2d*)h);
+        occInnerCnt[ident]++;
     } else {
         return;
     }
 
     // Got all data, finish up Analysis
-    if (innerCnt[ident] == n_count) {
+    if (tagDistInnerCnt[ident] == n_count && tagMapInnerCnt[ident] == n_count && occInnerCnt[ident] == n_count) {
+        std::unique_ptr<Histo2d> meanTagMap(new Histo2d("MeanTagMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
+        meanTagMap->setXaxisTitle("Column");
+        meanTagMap->setYaxisTitle("Row");
+        meanTagMap->setZaxisTitle("Mean Tag");
+
+        meanTagMap->add(*tagMaps[ident]);
+        meanTagMap->divide(*occMaps[ident]);
+
         output->pushData(std::move(tagHistos[ident]));
-        innerCnt[ident] = 0;
+        output->pushData(std::move(meanTagMap));
+
+        tagDistInnerCnt[ident] = 0;
+        tagMapInnerCnt[ident] = 0;
+        occInnerCnt[ident] = 0;
     }
 }
 
