@@ -15,18 +15,10 @@
 
 #include "Rd53bCmd.h"
 #include "Rd53bCfg.h"
+#include "itkpix_efuse_codec.h" // EfuseData
 
 class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
     public:
-
-        union EfuseInfo {
-            uint32_t data;
-            struct {
-                unsigned int parity : 8;
-                unsigned int chipId : 20;
-                unsigned int probe_location : 4;
-            } fields;
-        };
 
         Rd53b();
         Rd53b(HwController *arg_core);
@@ -65,7 +57,7 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
 
         // perform the necessary steps to program the E-fuse circuitry and perform
         // the readback of the E-fuse data
-        EfuseInfo readEfuses();
+        itkpix_efuse_codec::EfuseData readEfuses();
 
         uint32_t readSingleRegister(Rd53bReg Rd53bGlobalCfg::*ref);
     protected:

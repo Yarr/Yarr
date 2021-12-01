@@ -322,15 +322,15 @@ bool Rd53b::hasValidName() {
 
     // if user is requested to enforce that the chip id be in the FrontEnd "name"
     // field, then readback the E-fuses to get the actual chip's ID
-    EfuseInfo info = this->readEfuses();
+    itkpix_efuse_codec::EfuseData efuse_data = this->readEfuses();
     std::stringstream id_from_efuse;
-    id_from_efuse << std::hex << info.fields.chipId;
+    id_from_efuse << std::hex << efuse_data.chip_sn();
     bool id_in_name = name.find(id_from_efuse.str()) != std::string::npos;
     if(!id_in_name) {
-        logger->error("Chip serial number from e-fuse data (0x{:x}) does not appear in Chip \"name\" field (\"{}\") in loaded configuration  for chip with ChipId = {}", info.fields.chipId, name, m_chipId);
+        logger->error("Chip serial number from e-fuse data (0x{:x}) does not appear in Chip \"name\" field (\"{}\") in loaded configuration  for chip with ChipId = {}", efuse_data.chip_sn(), name, m_chipId);
         return false;
     }
-    logger->info("Chip serial number obtained from e-fuse data: 0x{:x} (raw e-fuse data: 0x{:x})", info.fields.chipId, info.data);
+    logger->info("Chip serial number obtained from e-fuse data: 0x{:x} (raw e-fuse data: 0x{:x})", efuse_data.chip_sn(), efuse_data.raw());
     return true;
 }
 
@@ -346,7 +346,7 @@ std::pair<uint32_t, uint32_t> Rd53b::decodeSingleRegRead(uint32_t higher, uint32
     return std::make_pair(999, 666);
 }
 
-Rd53b::EfuseInfo Rd53b::readEfuses() {
+itkpix_efuse_codec::EfuseData Rd53b::readEfuses() {
 
     //
     // put E-fuse programmer circuit block into READ mode
@@ -372,10 +372,10 @@ Rd53b::EfuseInfo Rd53b::readEfuses() {
         efuse_data_1 = readSingleRegister(&Rd53b::EfuseReadData1);
     } catch (std::exception& e) {
         logger->warn("Failed to readback E-fuse data for chip with {}, exception received: {}", m_chipId, e.what());
-        return EfuseInfo{0};
+        return itkpix_efuse_codec::EfuseData{0};
     }
     uint32_t efuse_data = ((efuse_data_1 & 0xffff) << 16) | (efuse_data_0 & 0xffff);
-    return EfuseInfo{efuse_data};
+    return itkpix_efuse_codec::EfuseData{efuse_data};
 }
 
 uint32_t Rd53b::readSingleRegister(Rd53bReg Rd53bGlobalCfg::*ref) {
