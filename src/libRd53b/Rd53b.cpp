@@ -330,7 +330,7 @@ bool Rd53b::hasValidName() {
         logger->error("Chip serial number from e-fuse data (0x{:x}) does not appear in Chip \"name\" field (\"{}\") in loaded configuration  for chip with ChipId = {}", efuse_data.chip_sn(), name, m_chipId);
         return false;
     }
-    logger->info("Chip serial number obtained from e-fuse data: 0x{:x} (raw e-fuse data: 0x{:x})", efuse_data.chip_sn(), efuse_data.raw());
+    logger->info("Chip serial number obtained from e-fuse data: 0x{:x} (decoded e-fuse data: 0x{:x})", efuse_data.chip_sn(), efuse_data.raw());
     return true;
 }
 
@@ -375,7 +375,10 @@ itkpix_efuse_codec::EfuseData Rd53b::readEfuses() {
         return itkpix_efuse_codec::EfuseData{0};
     }
     uint32_t efuse_data = ((efuse_data_1 & 0xffff) << 16) | (efuse_data_0 & 0xffff);
-    return itkpix_efuse_codec::EfuseData{efuse_data};
+
+    // decode the e-fuse data (performs single-bit error-correction)
+    std::string decoded_efuse_binary_str = itkpix_efuse_codec::decode(efuse_data);
+    return itkpix_efuse_codec::EfuseData{decoded_efuse_binary_str};
 }
 
 uint32_t Rd53b::readSingleRegister(Rd53bReg Rd53bGlobalCfg::*ref) {
