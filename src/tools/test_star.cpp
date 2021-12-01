@@ -37,13 +37,13 @@ RawDataContainer readAllData(HwController&, std::function<bool(RawData&)>, uint3
 bool isFromChannel(RawData& data, uint32_t chn);
 bool isPacketType(RawData& data, PacketType packet_type);
 //
-bool checkHPRs(HwController& hwCtrl, const std::vector<uint32_t>& rxChannels);
+bool checkHPRs(HwController& hwCtrl, const std::vector<uint32_t>& rxChannels, bool reset);
 std::vector<Hybrid> probeHCCs(HwController& hwCtrl, const std::vector<uint32_t>& txChannels, const std::vector<uint32_t>& rxChannels, bool setID);
-void configureHCC(HwController& hwCtrl, bool doReset);
-bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars);
-void configureABC(HwController& hwCtrl, bool doReset);
-bool testHCCRegisterAccess(HwController& hwCtrl, std::vector<Hybrid>& hccStars);
-bool testABCRegisterAccess(HwController& hwCtrl, std::vector<Hybrid>& hccStars);
+void configureHCC(HwController& hwCtrl, bool reset);
+bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars, bool reset);
+void configureABC(HwController& hwCtrl, bool reset);
+bool testHCCRegisterAccess(HwController& hwCtrl, const std::vector<Hybrid>& hccStars);
+bool testABCRegisterAccess(HwController& hwCtrl, const std::vector<Hybrid>& hccStars);
 bool testHitCounts(HwController& hwCtrl);
 bool testDataPacketsStatic(HwController& hwCtrl, bool do_spec_specific);
 bool testDataPacketsPulse(HwController& hwCtrl, bool do_spec_specific);
@@ -65,6 +65,8 @@ int main(int argc, char *argv[]) {
     std::vector<uint32_t> rxChannels = {6};
     std::vector<uint32_t> txChannels = {0xFFFF};
     bool setHccId = false;
+    bool doResets = false;
+
     int c;
     while ((c = getopt(argc, argv, "hl:r:t:d")) != -1) {
       switch(c) {
@@ -97,6 +99,9 @@ int main(int argc, char *argv[]) {
         break;
       case 'd':
         setHccId = true;
+        break;
+      case 'R':
+        doResets = true;
         break;
       default:
         spdlog::critical("Error while parsing command line parameters!");
@@ -148,19 +153,8 @@ int main(int argc, char *argv[]) {
     hwCtrl->setRxEnable(rxChannels);
 
     //////////
-    // Reset
-    sendCommand( LCB::fast_command(LCB::LOGIC_RESET, 0), *hwCtrl );
-    sendCommand( LCB::fast_command(LCB::HCC_REG_RESET, 0), *hwCtrl );
-    sendCommand( LCB::fast_command(LCB::ABC_REG_RESET, 0), *hwCtrl );
-
-    //////////
     // Read HCCStar HPRs
-    if (controllerType == "emu_Star") {
-      // For the emulator, toggle the TestHPR bit
-      sendCommand(star.write_hcc_register(16, 0x2), *hwCtrl);
-    }
-
-    bool hprOK = checkHPRs(*hwCtrl, rxChannels);
+    bool hprOK = checkHPRs(*hwCtrl, rxChannels, doResets);
     if (not hprOK)
       return 1;
 
@@ -178,15 +172,10 @@ int main(int argc, char *argv[]) {
 
     //////////
     // Configure HCCs to enable communications with ABCs
-    configureHCC(*hwCtrl, true);
+    configureHCC(*hwCtrl, doResets);
 
     // Read HPRs from ABCStars
-    if (controllerType == "emu_Star") {
-      // For the emulator, toggle the TestHPR bit
-      sendCommand(star.write_abc_register(0, 0x8), *hwCtrl);
-    }
-
-    bool abcCommUp = probeABCs(*hwCtrl, hccStars);
+    bool abcCommUp = probeABCs(*hwCtrl, hccStars, doResets);
     if (not abcCommUp)
       return 1;
 
@@ -198,7 +187,7 @@ int main(int argc, char *argv[]) {
 
     //////////
     // Configure ABCs
-    configureABC(*hwCtrl, true);
+    configureABC(*hwCtrl, doResets);
 
     //////////
     // Read ABC hit counters
@@ -228,6 +217,7 @@ void printHelp() {
   std::cout << " -t <channel1> [<channel2> ...] : Tx channels to enable. Can take multiple arguments.\n";
   std::cout << " -l <log_config> : Configure loggers.\n";
   std::cout << " -d : Modify HCCStar IDs when probing.\n";
+  std::cout << " -R : Send reset commands.\n";
 }
 
 int packetFromRawData(StarChipPacket& packet, RawData& data) {
@@ -408,10 +398,20 @@ bool isPacketType(RawData& data, PacketType packet_type) {
   }
 }
 
-bool checkHPRs(HwController& hwCtrl, const std::vector<uint32_t>& rxChannels) {
+bool checkHPRs(HwController& hwCtrl, const std::vector<uint32_t>& rxChannels,
+               bool reset)
+{
+  if (reset) {
+    sendCommand( LCB::fast_command(LCB::HCC_REG_RESET, 0), hwCtrl );
+  }
+
   uint32_t timeout = 1000; // milliseconds
 
   bool hprOK = false;
+
+  // Should not be necessary except for the emulator, but toggle the TestHPR
+  // bit anyway in case HPR was stopped previously
+  sendCommand(star.write_hcc_register(16, 0x2), hwCtrl);
 
   for (auto rx : rxChannels) {
     logger->info("Reading HPR packets from Rx channel {}", rx);
@@ -524,9 +524,9 @@ std::vector<Hybrid> probeHCCs(
   return HCCs;
 }
 
-void configureHCC(HwController& hwCtrl, bool doReset) {
+void configureHCC(HwController& hwCtrl, bool reset) {
   // Configure HCCStars to enable communications with ABCStars
-  if (doReset) {
+  if (reset) {
     logger->debug("Sending HCCStar register reset command");
     sendCommand(LCB::fast_command(LCB::HCC_REG_RESET, 0), hwCtrl);
   }
@@ -551,8 +551,15 @@ void configureHCC(HwController& hwCtrl, bool doReset) {
   sendCommand(star.write_hcc_register(46, 0x00000001), hwCtrl);
 }
 
-bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars) {
+bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars, bool reset) {
   bool hasABCStar = false;
+
+  if (reset) {
+    sendCommand(LCB::fast_command(LCB::ABC_REG_RESET, 0), hwCtrl);
+  }
+
+  // Toggle the TestHPR bit in case of the emulator or HPR was previously stopped
+  sendCommand(star.write_abc_register(0, 0x8), hwCtrl);
 
   for (auto& hcc : hccStars) {
     logger->info("Reading HPR packets from ABCStars on HCCStar {}", hcc.hcc_id);
@@ -614,9 +621,9 @@ bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars) {
   return hasABCStar;
 }
 
-void configureABC(HwController& hwCtrl, bool doReset) {
+void configureABC(HwController& hwCtrl, bool reset) {
 
-  if (doReset) {
+  if (reset) {
     logger->debug("Sending ABCStar register reset commands");
     sendCommand(LCB::fast_command(LCB::ABC_REG_RESET, 0), hwCtrl);
     sendCommand(LCB::fast_command(LCB::ABC_SLOW_COMMAND_RESET, 0), hwCtrl);
@@ -733,12 +740,12 @@ bool testRegisterReadWrite(HwController& hwCtrl, uint32_t regAddr, uint32_t writ
   return true;
 }
 
-bool testHCCRegisterAccess(HwController& hwCtrl, std::vector<Hybrid>& hccStars) {
+bool testHCCRegisterAccess(HwController& hwCtrl, const std::vector<Hybrid>& hccStars) {
   logger->info("Test HCCStar register read & write");
 
   bool success = true;
 
-  for (auto& hcc : hccStars) {
+  for (const auto& hcc : hccStars) {
     // Register 47: ErrCfg
     success &= testRegisterReadWrite(hwCtrl, 47, 0xdeadbeef, hcc.rx, hcc.hcc_id);
   }
@@ -746,7 +753,7 @@ bool testHCCRegisterAccess(HwController& hwCtrl, std::vector<Hybrid>& hccStars) 
   return success;
 }
 
-bool testABCRegisterAccess(HwController& hwCtrl, std::vector<Hybrid>& hccStars) {
+bool testABCRegisterAccess(HwController& hwCtrl, const std::vector<Hybrid>& hccStars) {
   logger->info("Test ABCStar register read & write");
 
   // Set RR mode to 1
@@ -754,7 +761,7 @@ bool testABCRegisterAccess(HwController& hwCtrl, std::vector<Hybrid>& hccStars) 
 
   bool success = true;
 
-  for (auto& hcc : hccStars) {
+  for (const auto& hcc : hccStars) {
     for (const auto& abc : hcc.abcs) {
       // Register 16: MaskInput0
       success &= testRegisterReadWrite(hwCtrl, 16, 0xabadcafe, hcc.rx, hcc.hcc_id, abc.second);
