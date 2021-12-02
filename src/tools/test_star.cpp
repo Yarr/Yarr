@@ -38,7 +38,7 @@ bool isFromChannel(RawData& data, uint32_t chn);
 bool isPacketType(RawData& data, PacketType packet_type);
 //
 bool checkHPRs(HwController& hwCtrl, const std::vector<uint32_t>& rxChannels, bool reset);
-std::vector<Hybrid> probeHCCs(HwController& hwCtrl, const std::vector<uint32_t>& txChannels, const std::vector<uint32_t>& rxChannels, bool setID);
+bool probeHCCs(HwController& hwCtrl, std::vector<Hybrid>& HCCs, const std::vector<uint32_t>& txChannels, const std::vector<uint32_t>& rxChannels, bool setID);
 void configureHCC(HwController& hwCtrl, bool reset);
 bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars, bool reset);
 void configureABC(HwController& hwCtrl, bool reset);
@@ -66,9 +66,10 @@ int main(int argc, char *argv[]) {
     std::vector<uint32_t> txChannels = {0xFFFF};
     bool setHccId = false;
     bool doResets = false;
+    std::string testSequence("Full");
 
     int c;
-    while ((c = getopt(argc, argv, "hl:r:t:d")) != -1) {
+    while ((c = getopt(argc, argv, "hl:r:t:dRs:")) != -1) {
       switch(c) {
       case 'h':
         printHelp();
@@ -102,6 +103,9 @@ int main(int argc, char *argv[]) {
         break;
       case 'R':
         doResets = true;
+        break;
+      case 's':
+        testSequence = std::string(optarg);
         break;
       default:
         spdlog::critical("Error while parsing command line parameters!");
@@ -152,60 +156,108 @@ int main(int argc, char *argv[]) {
     hwCtrl->disableRx();
     hwCtrl->setRxEnable(rxChannels);
 
-    //////////
+    std::vector<Hybrid> hccStars;
+
+    // Tests
+
+    // Common first steps
     // Read HCCStar HPRs
-    bool hprOK = checkHPRs(*hwCtrl, rxChannels, doResets);
-    if (not hprOK)
-      return 1;
+    bool success = checkHPRs(*hwCtrl, rxChannels, doResets);
 
-    //////////
     // Probe HCCs
-    auto hccStars = probeHCCs(*hwCtrl, txChannels, rxChannels, setHccId);
-    if (hccStars.empty())
+    success &= probeHCCs(*hwCtrl, hccStars, txChannels, rxChannels, setHccId);
+
+    if (not success) {
+      // No response from any HCCs. No point to continue
+      hwCtrl->disableRx();
+
+      logger->error("Tests failed");
       return 1;
+    }
 
-    //////////
-    // Test HCCStar register read and write
-    bool hccRegOk = testHCCRegisterAccess(*hwCtrl, hccStars);
-    if (not hccRegOk)
-      return 1;
+    /*
+      Full test sequence
+    */
+    if (testSequence == "Full") {
+      // Test HCCStar register read and write
+      success &= testHCCRegisterAccess(*hwCtrl, hccStars);
 
-    //////////
-    // Configure HCCs to enable communications with ABCs
-    configureHCC(*hwCtrl, doResets);
+      // Configure HCCs to enable communications with ABCs
+      configureHCC(*hwCtrl, doResets);
 
-    // Read HPRs from ABCStars
-    bool abcCommUp = probeABCs(*hwCtrl, hccStars, doResets);
-    if (not abcCommUp)
-      return 1;
+      // Probe ABCStars via reading ABCStar HPRs
+      success &= probeABCs(*hwCtrl, hccStars, doResets);
 
-    //////////
-    // Test ABCStar register read and write
-    bool abcRegOk = testABCRegisterAccess(*hwCtrl, hccStars);
-    if (not abcRegOk)
-      return 1;
+      // Test ABCStar register read and write
+      success &= testABCRegisterAccess(*hwCtrl, hccStars);
 
-    //////////
-    // Configure ABCs
-    configureABC(*hwCtrl, doResets);
+      // Configure ABCs
+      configureABC(*hwCtrl, doResets);
 
-    //////////
-    // Read ABC hit counters
-    bool hitCountsOk = testHitCounts(*hwCtrl);
-    if (not hitCountsOk)
-      return 1;
+      // Read ABC hit counters
+      success &= testHitCounts(*hwCtrl);
 
-    // Read ABC data packets
-    bool dataStaticOk = testDataPacketsStatic(*hwCtrl, controllerType=="spec");
-    if (not dataStaticOk)
-      return 1;
+      // Read ABC data packets
+      success &= testDataPacketsStatic(*hwCtrl, controllerType=="spec");
+      success &= testDataPacketsPulse(*hwCtrl, controllerType=="spec");
+    }
 
-    bool dataPulseOk = testDataPacketsPulse(*hwCtrl, controllerType=="spec");
-    if (not dataPulseOk)
-      return 1;
+    /*
+      Test register read and write
+    */
+    else if (testSequence == "Register") {
+      // Test HCCStar register read and write
+      success &= testHCCRegisterAccess(*hwCtrl, hccStars);
+
+      // Configure HCCs to enable communications with ABCs
+      configureHCC(*hwCtrl, doResets);
+
+      // Check ABCStars
+      success &= probeABCs(*hwCtrl, hccStars, doResets);
+
+      // Test ABCStar register read and write
+      success &= testABCRegisterAccess(*hwCtrl, hccStars);
+    }
+
+    /*
+      Test reading data packets
+    */
+    else if (testSequence == "DataPacket") {
+      // Configure HCCs to enable communications with ABCs
+      configureHCC(*hwCtrl, doResets);
+
+      // Check ABCStars
+      success &= probeABCs(*hwCtrl, hccStars, doResets);
+
+      // Configure ABCs
+      configureABC(*hwCtrl, doResets);
+
+      // Read ABC data packets
+      success &= testDataPacketsStatic(*hwCtrl, controllerType=="spec");
+      success &= testDataPacketsPulse(*hwCtrl, controllerType=="spec");
+    }
+
+    /*
+      Probe the front end ASICs as is without changing any configuration
+    */
+    else if (testSequence == "Probe") {
+      // Probe ABCStars via reading ABCStar HPRs
+      success &= probeABCs(*hwCtrl, hccStars, doResets);
+    } 
+    else {
+      logger->error("Unknown test sequence: {}", testSequence);
+      logger->info("Available test presets are: Full, Register, DataPacket, Probe");
+      success = false;
+    }
 
     hwCtrl->disableRx();
 
+    if (not success) {
+      logger->error("Tests failed");
+      return 1;
+    }
+
+    logger->info("Success!");
     return 0;
 }
 
@@ -218,6 +270,7 @@ void printHelp() {
   std::cout << " -l <log_config> : Configure loggers.\n";
   std::cout << " -d : Modify HCCStar IDs when probing.\n";
   std::cout << " -R : Send reset commands.\n";
+  std::cout << " -s <test_preset> : Type of test sequence to run. Possible options are: Full, Register, DataPacket, Probe. Default: Full\n";
 }
 
 int packetFromRawData(StarChipPacket& packet, RawData& data) {
@@ -452,13 +505,14 @@ bool checkHPRs(HwController& hwCtrl, const std::vector<uint32_t>& rxChannels,
   return hprOK;
 }
 
-std::vector<Hybrid> probeHCCs(
+bool probeHCCs(
   HwController& hwCtrl,
+  std::vector<Hybrid>& HCCs,
   const std::vector<uint32_t>& txChannels,
   const std::vector<uint32_t>& rxChannels,
   bool setID)
 {
-  std::vector<Hybrid> HCCs;
+  HCCs.clear();
   uint32_t nHCC = 0;
 
   for (auto tx : txChannels) {
@@ -519,9 +573,10 @@ std::vector<Hybrid> probeHCCs(
 
   if (HCCs.empty()) {
     logger->error("No HCCs found");
+    return false;
   }
 
-  return HCCs;
+  return true;
 }
 
 void configureHCC(HwController& hwCtrl, bool reset) {
@@ -743,7 +798,7 @@ bool testRegisterReadWrite(HwController& hwCtrl, uint32_t regAddr, uint32_t writ
 bool testHCCRegisterAccess(HwController& hwCtrl, const std::vector<Hybrid>& hccStars) {
   logger->info("Test HCCStar register read & write");
 
-  bool success = true;
+  bool success = not hccStars.empty();
 
   for (const auto& hcc : hccStars) {
     // Register 47: ErrCfg
@@ -759,9 +814,12 @@ bool testABCRegisterAccess(HwController& hwCtrl, const std::vector<Hybrid>& hccS
   // Set RR mode to 1
   sendCommand(star.write_abc_register(32, 0x00000400), hwCtrl);
 
-  bool success = true;
+  bool success = not hccStars.empty();
 
   for (const auto& hcc : hccStars) {
+    if (hcc.abcs.empty())
+      success = false;
+
     for (const auto& abc : hcc.abcs) {
       // Register 16: MaskInput0
       success &= testRegisterReadWrite(hwCtrl, 16, 0xabadcafe, hcc.rx, hcc.hcc_id, abc.second);
