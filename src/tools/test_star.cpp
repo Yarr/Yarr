@@ -52,21 +52,15 @@ int main(int argc, char *argv[]) {
     std::string controller;
     std::string controllerType;
 
-    {
-      json j; // Start empty
-      std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
-      j["pattern"] = defaultLogPattern;
-      j["log_config"][0]["name"] = "all";
-      j["log_config"][0]["level"] = "info";
-      logging::setupLoggers(j);
-    }
-
     // Original Spec version
     std::vector<uint32_t> rxChannels = {6};
     std::vector<uint32_t> txChannels = {0xFFFF};
     bool setHccId = false;
     bool doResets = false;
     std::string testSequence("Full");
+
+    // logger config path
+    std::string logCfgPath = "";
 
     int c;
     while ((c = getopt(argc, argv, "hl:r:t:dRs:")) != -1) {
@@ -75,14 +69,7 @@ int main(int argc, char *argv[]) {
         printHelp();
         return 0;
       case 'l':
-        try {
-          std::string logPath = std::string(optarg);
-          auto j = ScanHelper::openJsonFile(logPath);
-          logging::setupLoggers(j);
-        } catch (std::runtime_error &e) {
-          spdlog::error("Opening logger config: {}", e.what());
-          return 1;
-        }
+        logCfgPath = std::string(optarg);
         break;
       case 'r':
         rxChannels.clear();
@@ -113,11 +100,29 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    // Configure logger
+    if (logCfgPath.empty()) {
+      json j; // Start empty
+      std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
+      j["pattern"] = defaultLogPattern;
+      j["log_config"][0]["name"] = "all";
+      j["log_config"][0]["level"] = "info";
+      logging::setupLoggers(j);
+    } else {
+      try {
+        auto j = ScanHelper::openJsonFile(logCfgPath);
+        logging::setupLoggers(j);
+      } catch (std::runtime_error &e) {
+        spdlog::error("Opening logger config: {}", e.what());
+        return 1;
+      }
+    }
+
     if (optind != argc) {
       // First positional parameter (optind is first not parsed by getopt)
       controller = argv[optind];
     }
-    std::cout << std::endl;
+
     std::unique_ptr<HwController> hwCtrl = nullptr;
     if(controller.empty()) {
 	controllerType = "spec";
@@ -125,13 +130,13 @@ int main(int argc, char *argv[]) {
         // hwCtrl->init(0);
     } else {
       try {
-        std::cout << " Using controller from " << controller << "\n";
+        logger->info("Using controller from {}", controller);
         json ctrlCfg = ScanHelper::openJsonFile(controller);
         controllerType = ctrlCfg["ctrlCfg"]["type"];
         hwCtrl = StdDict::getHwController(controllerType);
         hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
       } catch (std::runtime_error &e) {
-        spdlog::error("Opening controller config: {}", e.what());
+        logger->error("Opening controller config: {}", e.what());
         return 1;
       }
     }
@@ -156,9 +161,8 @@ int main(int argc, char *argv[]) {
     hwCtrl->disableRx();
     hwCtrl->setRxEnable(rxChannels);
 
-    std::vector<Hybrid> hccStars;
-
     // Tests
+    std::vector<Hybrid> hccStars;
 
     // Common first steps
     // Read HCCStar HPRs
@@ -288,8 +292,8 @@ int packetFromRawData(StarChipPacket& packet, RawData& data) {
 }
 
 void reportData(RawData &data, bool do_spec_specific) {
-  std::cout << "Raw data from RxCore:\n";
-  std::cout << data.adr << " " << data.buf << " " << data.words << "\n";
+  logger->debug(" Raw data from RxCore:");
+  logger->debug(" {} {:p} {}", data.adr, (void*)data.buf, data.words);
 
   for (unsigned j=0; j<data.words;j++) {
     auto word = data.buf[j];
@@ -306,20 +310,22 @@ void reportData(RawData &data, bool do_spec_specific) {
       word &= 0xffffc3ff; // Strip of channel number
     }
 
-    std::cout << "[" << j << "] = " << std::setfill('0') << std::hex << std::setw(8) << word << std::dec << " " << std::bitset<32>(word) << std::endl;
+    logger->debug(" [{}] = {:08x} {:032b}", j, word, word);
   }
 
   StarChipPacket packet;
 
   if ( packetFromRawData(packet, data) ) {
-    std::cout << "Parse error\n";
+    logger->error("Parse error");
   } else {
+    std::stringstream ss;
     auto packetType = packet.getType();
     if(packetType == TYP_LP || packetType == TYP_PR) {
-      packet.print_clusters(std::cout);
+      packet.print_clusters(ss);
     } else if(packetType == TYP_ABC_RR || packetType == TYP_HCC_RR || packetType == TYP_ABC_HPR || packetType == TYP_HCC_HPR) {
-      packet.print_more(std::cout);
+      packet.print_more(ss);
     }
+    logger->info(ss.str());
   }
 }
 
@@ -475,6 +481,7 @@ bool checkHPRs(HwController& hwCtrl, const std::vector<uint32_t>& rxChannels,
 
     auto data = readData(hwCtrl, filter_hpr, timeout);
     if (data) {
+      logger->info(" Received an HPR packet from HCCStar on Rx channel {}", rx);
       // print
       StarChipPacket packet;
       if (packetFromRawData(packet, *data)) {
@@ -484,13 +491,13 @@ bool checkHPRs(HwController& hwCtrl, const std::vector<uint32_t>& rxChannels,
         packet.print_more(os);
         std::string str = os.str();
         str.erase(str.end()-1); // strip the extra \n
-        logger->info(" Received HPR packet: {}", str);
+        logger->debug(" Received HPR packet: {}", str);
 
         //bool r3l1_locked = packet.value & (1<<0);
         //bool pll_locked = packet.value & (1<<5);
         bool lcb_locked = packet.value & (1<<1);
         if (lcb_locked) {
-          logger->info(" LCB locked");
+          logger->debug(" LCB locked");
           hprOK = true;
         } else {
           logger->error(" LCB NOT locked");
@@ -582,7 +589,7 @@ bool probeHCCs(
 void configureHCC(HwController& hwCtrl, bool reset) {
   // Configure HCCStars to enable communications with ABCStars
   if (reset) {
-    logger->debug("Sending HCCStar register reset command");
+    logger->info("Sending HCCStar register reset command");
     sendCommand(LCB::fast_command(LCB::HCC_REG_RESET, 0), hwCtrl);
   }
 
@@ -654,7 +661,7 @@ bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars, bool reset) 
           packet.print_more(os);
           std::string str = os.str();
           str.erase(str.end()-1); // strip the extra \n
-          logger->info(" Received HPR packet: {}", str);
+          logger->debug(" Received HPR packet: {}", str);
         }
       }
 
@@ -665,7 +672,7 @@ bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars, bool reset) 
     }
 
     // Update HCC register 40 ICenable
-    logger->info(" Set register 40 (ICenable) on HCCStar {} to 0x{:08x}", hcc.hcc_id, activeInChannels);
+    logger->debug("Set register 40 (ICenable) on HCCStar {} to 0x{:08x}", hcc.hcc_id, activeInChannels);
     sendCommand(star.write_hcc_register(40, activeInChannels, hcc.hcc_id), hwCtrl);
   } // end of HCC loop
 
@@ -679,7 +686,7 @@ bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars, bool reset) 
 void configureABC(HwController& hwCtrl, bool reset) {
 
   if (reset) {
-    logger->debug("Sending ABCStar register reset commands");
+    logger->info("Sending ABCStar register reset commands");
     sendCommand(LCB::fast_command(LCB::ABC_REG_RESET, 0), hwCtrl);
     sendCommand(LCB::fast_command(LCB::ABC_SLOW_COMMAND_RESET, 0), hwCtrl);
   }
@@ -703,7 +710,7 @@ bool testRegisterReadWrite(HwController& hwCtrl, uint32_t regAddr, uint32_t writ
     reg_str = "register "+std::to_string(regAddr)+" on HCCStar "+std::to_string(hccId);
     ptype = TYP_HCC_RR;
 
-    logger->info("Reading "+reg_str);
+    logger->debug(" Reading "+reg_str);
 
     // Send register read command
     sendCommand(star.read_hcc_register(regAddr, hccId), hwCtrl);
@@ -712,7 +719,7 @@ bool testRegisterReadWrite(HwController& hwCtrl, uint32_t regAddr, uint32_t writ
     reg_str = "register "+std::to_string(regAddr)+" on ABCStar "+std::to_string(abcId)+" of HCCStar "+std::to_string(hccId);
     ptype = TYP_ABC_RR;
 
-    logger->info("Reading "+reg_str);
+    logger->debug(" Reading "+reg_str);
 
     // Send register read command
     sendCommand(star.read_abc_register(regAddr, hccId, abcId), hwCtrl);
@@ -749,14 +756,14 @@ bool testRegisterReadWrite(HwController& hwCtrl, uint32_t regAddr, uint32_t writ
   // Read the register and check its value is updated
   assert(write_value != reg_read_value);
 
-  logger->info("Writing value 0x{:08x} to {}", write_value, reg_str);
+  logger->debug(" Writing value 0x{:08x} to {}", write_value, reg_str);
   if (isHCC) {
     sendCommand(star.write_hcc_register(regAddr, write_value, hccId), hwCtrl);
-    logger->info("Reading "+reg_str);
+    logger->debug(" Reading "+reg_str);
     sendCommand(star.read_hcc_register(regAddr, hccId), hwCtrl);
   } else {
     sendCommand(star.write_abc_register(regAddr, write_value, hccId, abcId), hwCtrl);
-    logger->info("Reading "+reg_str);
+    logger->debug(" Reading "+reg_str);
     sendCommand(star.read_abc_register(regAddr, hccId, abcId), hwCtrl);
   }
 
