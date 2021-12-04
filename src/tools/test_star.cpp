@@ -886,27 +886,19 @@ int main(int argc, char *argv[]) {
     hwCtrl->setRxEnable(rxChannels);
 
     // Tests
+    bool success = false;
+
     std::vector<Hybrid> hccStars;
-
-    // Common first steps
-    // Read HCCStar HPRs
-    bool success = checkHPRs(*hwCtrl, rxChannels, doResets);
-
-    // Probe HCCs
-    success &= probeHCCs(*hwCtrl, hccStars, txChannels, rxChannels, setHccId);
-
-    if (not success) {
-      // No response from any HCCs. No point to continue
-      hwCtrl->disableRx();
-
-      logger->error("Tests failed");
-      return 1;
-    }
-
     /*
       Full test sequence
     */
     if (testSequence == "Full") {
+      // Read HCCStar HPRs
+      success = checkHPRs(*hwCtrl, rxChannels, doResets);
+
+      // Probe HCCs
+      success &= probeHCCs(*hwCtrl, hccStars, txChannels, rxChannels, setHccId);
+
       // Test HCCStar register read and write
       success &= testHCCRegisterAccess(*hwCtrl, hccStars);
 
@@ -934,6 +926,9 @@ int main(int argc, char *argv[]) {
       Test register read and write
     */
     else if (testSequence == "Register") {
+      // Probe HCCs
+      success = probeHCCs(*hwCtrl, hccStars, txChannels, rxChannels, setHccId);
+
       // Test HCCStar register read and write
       success &= testHCCRegisterAccess(*hwCtrl, hccStars);
 
@@ -951,6 +946,9 @@ int main(int argc, char *argv[]) {
       Test reading data packets
     */
     else if (testSequence == "DataPacket") {
+      // Probe HCCs
+      success = probeHCCs(*hwCtrl, hccStars, txChannels, rxChannels, setHccId);
+
       // Configure HCCs to enable communications with ABCs
       configureHCC(*hwCtrl, doResets);
 
@@ -966,9 +964,20 @@ int main(int argc, char *argv[]) {
     }
 
     /*
-      Probe the front end ASICs as is without changing any configuration
+      Probe the front end ASICs
     */
     else if (testSequence == "Probe") {
+      // Read HCCStar HPRs
+      success = checkHPRs(*hwCtrl, rxChannels, doResets);
+
+      // Probe HCCs
+      success &= probeHCCs(*hwCtrl, hccStars, txChannels, rxChannels, setHccId);
+
+      if (doResets) {
+        // In case resets were sent, HCCs need to be reconfigured to talk to ABCs
+        configureHCC(*hwCtrl, doResets);
+      }
+
       // Probe ABCStars via reading ABCStar HPRs
       success &= probeABCs(*hwCtrl, hccStars, doResets);
     }
