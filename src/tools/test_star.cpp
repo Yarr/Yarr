@@ -223,7 +223,6 @@ bool isPacketType(RawData& data, PacketType packet_type, bool isPacketTransp=fal
       // Check the type of the forwarded ABCStar packet
       // First byte is TYP_ABC_TRANSP and channel number
       // Type of the ABCStar packet is the top 4 bits of the second byte
-      assert(data.size > 0);
       int raw_type_abc = (data.buf[0] & 0xf000) >> 12;
       if ( packet_type_headers.find(raw_type_abc) == packet_type_headers.end() ) {
         logger->error("Packet type was parsed as {}, which is an invalid type.", raw_type_abc);
