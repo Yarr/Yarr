@@ -34,7 +34,8 @@ static void printHelp() {
   std::cout << " -l <log_config> : Configure loggers.\n";
   std::cout << " -d : Modify HCCStar IDs when probing.\n";
   std::cout << " -R : Send reset commands.\n";
-  std::cout << " -s <test_preset> : Type of test sequence to run. Possible options are: Full, Register, DataPacket, Probe. Default: Full\n";
+  std::cout << " -s <test_preset> : Type of test sequence to run. Possible options are: Full, Register, DataPacket, Probe, PacketTransp, FullTransp. Default: Full\n";
+  std::cout << " -c <input channel> : HCC input channel. Only used if HCCs are set to full transparent mode.\n";
 }
 
 // Utilities
@@ -167,8 +168,8 @@ RawDataContainer readAllData(
 }
 
 void reportData(RawData &data, bool do_spec_specific=false) {
-  logger->debug(" Raw data from RxCore:");
-  logger->debug(" {} {:p} {}", data.adr, (void*)data.buf, data.words);
+  logger->info(" Raw data from RxCore:");
+  logger->info(" {} {:p} {}", data.adr, (void*)data.buf, data.words);
 
   for (unsigned j=0; j<data.words;j++) {
     auto word = data.buf[j];
@@ -185,7 +186,7 @@ void reportData(RawData &data, bool do_spec_specific=false) {
       word &= 0xffffc3ff; // Strip of channel number
     }
 
-    logger->debug(" [{}] = {:08x} {:032b}", j, word, word);
+    logger->info(" [{}] = {:08x} {:032b}", j, word, word);
   }
 
   StarChipPacket packet;
@@ -209,13 +210,32 @@ bool isFromChannel(RawData& data, uint32_t chn) {
   return data.adr == chn;
 }
 
-bool isPacketType(RawData& data, PacketType packet_type) {
+bool isPacketType(RawData& data, PacketType packet_type, bool isPacketTransp=false) {
   StarChipPacket packet;
   if ( packetFromRawData(packet, data) ) {
     // failed to parse the packet
     return false;
   } else {
-    return packet.getType() == packet_type;
+    // successfully parsed the packet
+
+    if (packet.getType() == TYP_ABC_TRANSP) {
+      logger->debug("Received a Packet Transparent packet");
+      // Check the type of the forwarded ABCStar packet
+      // First byte is TYP_ABC_TRANSP and channel number
+      // Type of the ABCStar packet is the top 4 bits of the second byte
+      assert(data.size > 0);
+      int raw_type_abc = (data.buf[0] & 0xf000) >> 12;
+      if ( packet_type_headers.find(raw_type_abc) == packet_type_headers.end() ) {
+        logger->error("Packet type was parsed as {}, which is an invalid type.", raw_type_abc);
+        return false;
+      }
+      // compare the forwarded ABC packet type to the expected type
+      return packet_type_headers[ raw_type_abc ] == packet_type;
+
+    } else {
+      // compare the packet type to the expected type
+      return packet.getType() == packet_type;
+    }
   }
 }
 
@@ -247,6 +267,30 @@ void configureHCC(HwController& hwCtrl, bool reset) {
     sendCommand(star.write_hcc_register(45, 0x00000001), hwCtrl);
     sendCommand(star.write_hcc_register(46, 0x00000001), hwCtrl);
   }
+}
+
+void configureHCC_PacketTransp(HwController& hwCtrl, bool reset) {
+  configureHCC(hwCtrl, reset);
+
+  // Set to packet transparent mode
+  logger->info("Set HCCs to Packet Transparent mode");
+  sendCommand(star.write_hcc_register(41, 0x00020201), hwCtrl);
+  sendCommand(star.write_hcc_register(42, 0x00020201), hwCtrl);
+}
+
+void configureHCC_FullTransp(HwController& hwCtrl, bool reset, unsigned inChn) {
+  configureHCC(hwCtrl, reset);
+
+  // Select the input channel: IC_transSelect
+  // Register 40
+  inChn = inChn & 0xf;
+  unsigned value_reg40 = (inChn << 16) + (1 << inChn);
+  sendCommand(star.write_hcc_register(40, value_reg40), hwCtrl);
+
+  // Set to full transparent mode
+  logger->info("Set HCCs to Full Transparent mode");
+  sendCommand(star.write_hcc_register(41, 0x00020301), hwCtrl);
+  sendCommand(star.write_hcc_register(42, 0x00020301), hwCtrl);
 }
 
 void configureABC(HwController& hwCtrl, bool reset) {
@@ -771,6 +815,46 @@ bool testDataPacketsPulse(HwController& hwCtrl, bool do_spec_specific) {
   return true;
 }
 
+bool readABCRegisters(HwController& hwCtrl, bool do_spec_specific=false) {
+
+  bool success = false;
+
+  hwCtrl.flushBuffer();
+
+  // Read an ABCStar HPR
+  logger->info("Reading an HPR packet from ABCStar");
+  auto data_abchpr = readData(
+    hwCtrl,
+    [](RawData& d) {return isPacketType(d, TYP_ABC_HPR);}
+    );
+  if (data_abchpr) {
+    logger->info("Received an ABCStar HPR packet.");
+    reportData(*data_abchpr, do_spec_specific);
+    success = true;
+  } else {
+    logger->error("No ABCStar HPR packet received.");
+    success = false;
+  }
+
+  // Read ABCStar register 19: MaskInput3
+  logger->info("Reading ABCStar register 19 (MaskInput3)");
+  sendCommand(star.read_abc_register(19), hwCtrl);
+  auto data_abcrr = readData(
+    hwCtrl,
+    [](RawData& d) {return isPacketType(d, TYP_ABC_RR);}
+    );
+  if (data_abcrr) {
+    logger->info("Received an ABCStar RR packet.");
+    reportData(*data_abcrr, do_spec_specific);
+    success &= true;
+  } else {
+    logger->error("No ABCStar RR packet received.");
+    success = false;
+  }
+
+  return success;
+}
+
 //////////
 int main(int argc, char *argv[]) {
     std::string controller;
@@ -782,12 +866,13 @@ int main(int argc, char *argv[]) {
     bool setHccId = false;
     bool doResets = false;
     std::string testSequence("Full");
+    unsigned inChannel = 0;
 
     // logger config path
     std::string logCfgPath = "";
 
     int c;
-    while ((c = getopt(argc, argv, "hl:r:t:dRs:")) != -1) {
+    while ((c = getopt(argc, argv, "hl:r:t:dRs:c:")) != -1) {
       switch(c) {
       case 'h':
         printHelp();
@@ -817,6 +902,13 @@ int main(int argc, char *argv[]) {
         break;
       case 's':
         testSequence = std::string(optarg);
+        break;
+      case 'c':
+        inChannel = atoi(optarg);
+        if (inChannel > 11) {
+          spdlog::error("Invalid HCC input channel: {}", inChannel);
+          return 1;
+        }
         break;
       default:
         spdlog::critical("Error while parsing command line parameters!");
@@ -981,9 +1073,55 @@ int main(int argc, char *argv[]) {
       // Probe ABCStars via reading ABCStar HPRs
       success &= probeABCs(*hwCtrl, hccStars, doResets);
     }
+
+    /*
+      Run some tests in packet transparent mode
+    */
+    else if (testSequence == "PacketTransp") {
+      // configure HCC into the Packet Transparent mode
+      configureHCC_PacketTransp(*hwCtrl, doResets);
+
+      // configure ABCs
+      configureABC(*hwCtrl, doResets);
+
+      // read and print some ABC registers
+      success = readABCRegisters(*hwCtrl, controllerType=="spec");
+
+      // read and print some data packets
+      success &= testDataPacketsStatic(*hwCtrl, controllerType=="spec");
+    }
+
+    /*
+      Run some tests in full transparent mode
+    */
+    else if (testSequence == "FullTransp") {
+      configureHCC_FullTransp(*hwCtrl, doResets, inChannel);
+      configureABC(*hwCtrl, doResets);
+
+      // read and print some ABC registers
+      success = readABCRegisters(*hwCtrl, controllerType=="spec");
+
+      // read and print some data packets
+      success &= testDataPacketsStatic(*hwCtrl, controllerType=="spec");
+
+      /*
+      // try reading everything for 1 seconds
+      auto rdc = readAllData(
+        *hwCtrl,
+        [](RawData& d) {return true;}, // no filter on data packet type
+        1000 // ms
+        );
+
+      for (unsigned c = 0; c < rdc.size(); c++) {
+        RawData d(rdc.adr[c], rdc.buf[c], rdc.words[c]);
+        reportData(d);
+      }
+      */
+    }
+
     else {
       logger->error("Unknown test sequence: {}", testSequence);
-      logger->info("Available test presets are: Full, Register, DataPacket, Probe");
+      logger->info("Available test presets are: Full, Register, DataPacket, Probe, PacketTransp, FullTransp");
       success = false;
     }
 
