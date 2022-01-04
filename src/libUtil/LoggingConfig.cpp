@@ -32,7 +32,7 @@ static std::string_view level_string(int lvl) {
 
 namespace logging {
 
-void setupLoggers(const json &j) {
+void setupLoggers(const json &j, const std::string &path) {
     spdlog::sink_ptr default_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
 
     std::map<std::string, spdlog::sink_ptr> other_sinks;
@@ -68,7 +68,7 @@ void setupLoggers(const json &j) {
         }
 
         std::string key = jl["name"];
-        std::string fname = jl["file_name"];
+        std::string fname = path + std::string(jl["file_name"]);
 
         auto new_sink = std::shared_ptr<spdlog::sinks::basic_file_sink_mt>
           (new spdlog::sinks::basic_file_sink_mt(fname));
