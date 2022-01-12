@@ -10,8 +10,8 @@ r="configs/controller/specCfg-rd53a-4x3.json"
 c="configs/connectivity/example_rd53a_setup.json"
 moduleSN=""
 
-# ./scripts/tune-rd53a-module.sh configs/controller/specCfg-rd53a-4x3.json configs/connectivity/example_rd53a.json ## no localDB
-# ./scripts/tune-rd53a-module.sh configs/controller/specCfg-rd53a-4x3.json configs/connectivity/example_rd53a.json -W ## use localDB
+# ./scripts/rd53a-module_tuning.sh configs/controller/specCfg-rd53a-4x3.json configs/connectivity/example_rd53a_quad.json ## no localDB
+# ./scripts/rd53a-module_tuning.sh configs/controller/specCfg-rd53a-4x3.json configs/connectivity/example_rd53a_quad.json -W ## use localDB
 if [ "$#" -lt 2 ]; then
     echo "Usage: $0 <controller_config.json> <connectivity_config.json> [<-W>]" >&2
     echo "E.g. $0 $r $c" >&2
