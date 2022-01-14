@@ -134,7 +134,7 @@ void Rd53bMaskLoop::writeConfig(json &j) {
     j["applyEnMask"] = m_applyEnMask;
 }
 
-void Rd53bMaskLoop::loadConfig(json &j) {
+void Rd53bMaskLoop::loadConfig(const json &j) {
     if (j.contains("min"))
         min = j["min"];
     if (j.contains("max"))

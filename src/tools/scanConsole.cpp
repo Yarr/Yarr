@@ -609,7 +609,7 @@ int main(int argc, char *argv[]) {
                 logger->info("Saving config of FE {} to {}",
                              feCfg->getName(), feCfgMap.at(fe));
                 json jTmp;
-                feCfg->toFileJson(jTmp);
+                feCfg->writeConfig(jTmp);
                 std::ofstream oFTmp(feCfgMap.at(fe));
                 oFTmp << std::setw(4) << jTmp;
                 oFTmp.close();
@@ -620,7 +620,7 @@ int main(int argc, char *argv[]) {
             // Save extra config in data folder
             std::ofstream backupCfgFile(outputDir + feCfg->getConfigFile() + ".after");
             json backupCfg;
-            feCfg->toFileJson(backupCfg);
+            feCfg->writeConfig(backupCfg);
             backupCfgFile << std::setw(4) << backupCfg;
             backupCfgFile.close();
 

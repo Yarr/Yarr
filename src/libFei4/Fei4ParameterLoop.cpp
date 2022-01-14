@@ -11,7 +11,7 @@ void Fei4ParameterLoop::writeConfig(json &config){
     config["step"] = step;
     config["parameter"] = parName;
 }
-void Fei4ParameterLoop::loadConfig(json &config){
+void Fei4ParameterLoop::loadConfig(const json &config){
     if (config.contains("min"))
       min = config["min"];
     if (config.contains("max"))

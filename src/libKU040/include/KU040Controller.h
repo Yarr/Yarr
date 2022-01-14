@@ -21,7 +21,7 @@ class KU040Controller : public HwController, public KU040TxCore, public KU040RxC
     public:
     	KU040Controller() {};
     	~KU040Controller();
-        void loadConfig(json &j);
+        void loadConfig(json const &j);
 
     private:
     	IPbus *m_com;

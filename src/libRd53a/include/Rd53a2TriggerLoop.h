@@ -38,7 +38,7 @@ class Rd53a2TriggerLoop: public LoopActionBase, public StdTriggerAction {
         uint8_t greatestDelay();
 
         void writeConfig(json &config);
-        void loadConfig(json &config);
+        void loadConfig(const json &config);
 
     private:
         //User parameters

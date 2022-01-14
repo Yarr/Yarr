@@ -70,7 +70,7 @@ class LoopActionBase {
         void setMax(unsigned v);
         void setStep(unsigned v);
 
-        virtual void loadConfig(json &config) {}
+        virtual void loadConfig(const json &config) {}
         virtual void writeConfig(json &config) {}
 		
     protected:

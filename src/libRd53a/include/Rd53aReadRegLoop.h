@@ -23,7 +23,7 @@ class Rd53aReadRegLoop : public LoopActionBase {
 
 
         void writeConfig(json &config);
-        void loadConfig(json &config);
+        void loadConfig(const json &config);
 
 
     private:

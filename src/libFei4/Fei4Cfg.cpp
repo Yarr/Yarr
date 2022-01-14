@@ -17,7 +17,7 @@ void Fei4Cfg::setChipId(unsigned arg_chipId) {
 }
 
 
-void Fei4Cfg::toFileJson(json &j) {
+void Fei4Cfg::writeConfig(json &j) {
     j["FE-I4B"]["name"] = name;
 
     j["FE-I4B"]["Parameter"]["chipId"] = chipId;
@@ -26,11 +26,11 @@ void Fei4Cfg::toFileJson(json &j) {
     j["FE-I4B"]["Parameter"]["vcalOffset"] = vcalOffset;
     j["FE-I4B"]["Parameter"]["vcalSlope"] = vcalSlope;
 
-    Fei4PixelCfg::toFileJson(j);
-    Fei4GlobalCfg::toFileJson(j);
+    Fei4PixelCfg::writeConfig(j);
+    Fei4GlobalCfg::writeConfig(j);
 }
 
-void Fei4Cfg::fromFileJson(json &j) {
+void Fei4Cfg::loadConfig(const json &j) {
     if (j.contains({"FE-I4B","name"}))
         name = j["FE-I4B"]["name"];
 
@@ -45,6 +45,6 @@ void Fei4Cfg::fromFileJson(json &j) {
     if (j.contains({"FE-I4B","Parameter","vcalSlope"}))
         vcalSlope = j["FE-I4B"]["Parameter"]["vcalSlope"];
 
-    Fei4PixelCfg::fromFileJson(j);
-    Fei4GlobalCfg::fromFileJson(j);
+    Fei4PixelCfg::loadConfig(j);
+    Fei4GlobalCfg::loadConfig(j);
 }

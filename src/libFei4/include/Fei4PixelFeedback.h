@@ -59,7 +59,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
             config["step"]=step;
             config["parameter"] = parName;
         }
-        void loadConfig(json &config) override {
+        void loadConfig(const json &config) override {
 	    if (config.contains("min"))
 	      min = config["min"];
 	    if (config.contains("max"))

@@ -137,8 +137,8 @@ class Rd53bGlobalCfg {
         static constexpr unsigned numRegs = 138;
         std::array<uint16_t, numRegs> m_cfg;
 
-        void toJson(json &j);
-        void fromJson(json &j);
+        void writeConfig(json &j);
+        void loadConfig(const json &j);
     private:
     public:
 

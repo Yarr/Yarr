@@ -130,7 +130,7 @@ void Rd53aCoreColLoop::writeConfig(json &j) {
     j["delayArray"] = m_delayArray;
 }
 
-void Rd53aCoreColLoop::loadConfig(json &j) {
+void Rd53aCoreColLoop::loadConfig(const json &j) {
     if (j.contains("min"))
         m_impl->minCore = j["min"];
     if (j.contains("max"))

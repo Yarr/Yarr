@@ -192,7 +192,7 @@ unsigned Fei4PixelCfg::getFDAC(unsigned col, unsigned row) {
 }
 
 
-void Fei4PixelCfg::toFileJson(json &j) {
+void Fei4PixelCfg::writeConfig(json &j) {
     // Layout is one array per column
     for (unsigned row=1; row<=n_Row; row++) {
         for (unsigned col=1; col<=n_Col; col++) {
@@ -218,7 +218,7 @@ void Fei4PixelCfg::toFileJson(json &j) {
     }*/
 }
 
-void Fei4PixelCfg::fromFileJson(json &j) {
+void Fei4PixelCfg::loadConfig(const json &j) {
     // Layout is one array per column
     if (!j.contains({"FE-I4B","PixelConfig"}))
         return;

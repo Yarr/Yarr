@@ -98,8 +98,8 @@ class Fe65p2GlobalCfg {
         Fe65p2GlobalReg TrigCount;
 
     protected:
-        void toFileJson(json &j);
-        void fromFileJson(json &j);
+        void writeConfig(json &j);
+        void loadConfig(const json &j);
         
         void init();
         uint16_t cfg[numRegs];

@@ -24,8 +24,8 @@ class Rd53bCfg : public FrontEndCfg, public Rd53bGlobalCfg, public Rd53bPixelCfg
         double toCharge(double vcal, bool sCap, bool lCap);
         unsigned toVcal(double charge);
 
-        void toFileJson(json &cfg);
-        void fromFileJson(json &cfg);
+        void writeConfig(json &cfg);
+        void loadConfig(const json &cfg);
 
         void setChipId(unsigned id);
         unsigned getChipId();

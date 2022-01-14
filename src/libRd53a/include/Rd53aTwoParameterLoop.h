@@ -19,7 +19,7 @@ class Rd53aTwoParameterLoop : public LoopActionBase {
         Rd53aTwoParameterLoop(Rd53aReg Rd53aGlobalCfg::*ref);
 
         void writeConfig(json &j);
-        void loadConfig(json &j);
+        void loadConfig(const json &j);
 
 
             private:

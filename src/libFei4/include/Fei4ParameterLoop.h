@@ -38,7 +38,7 @@ class Fei4ParameterLoop : public LoopActionBase{
             step = arg_step;
         }
 	void writeConfig(json &j);
-	void loadConfig(json &j);
+	void loadConfig(const json &j);
 
 
     private:

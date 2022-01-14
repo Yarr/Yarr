@@ -25,7 +25,7 @@ class Rd53aMaskLoop : public LoopActionBase {
         Rd53aMaskLoop();
 
         void writeConfig(json &j);
-        void loadConfig(json &j);
+        void loadConfig(const json &j);
     private:
         unsigned m_cur;
         int m_maskType;

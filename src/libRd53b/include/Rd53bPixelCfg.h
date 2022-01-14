@@ -53,8 +53,8 @@ class Rd53bPixelCfg {
         static uint16_t getPixelBit(PixelArray &input, unsigned col, unsigned row, unsigned bit);
 
     protected:
-        void toJson(json &j);
-        void fromJson(json &j);
+        void writeConfig(json &j);
+        void loadConfig(const json &j);
     
     private:
         inline static void setBit(uint16_t &in, uint8_t bit, uint8_t val);

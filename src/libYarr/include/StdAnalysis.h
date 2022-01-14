@@ -25,7 +25,7 @@ class OccupancyAnalysis : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end() {}
-        void loadConfig(json &config);
+        void loadConfig(const json &config);
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -52,7 +52,7 @@ class TotAnalysis : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-        void loadConfig(json &config);
+        void loadConfig(const json &config);
 
     private:
         std::vector<unsigned> loops;
@@ -98,7 +98,7 @@ class ScurveFitter : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-        void loadConfig(json &config);
+        void loadConfig(const json &config);
     private:
         unsigned vcalLoop;
         unsigned vcalMin;
@@ -148,7 +148,7 @@ class OccGlobalThresholdTune : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end() {}
-        void loadConfig(json &config){}
+        void loadConfig(const json &config){}
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -170,7 +170,7 @@ class GlobalPreampTune : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end() {}
-        void loadConfig(json &config){}
+        void loadConfig(const json &config){}
 
     private:
         std::vector<unsigned> loops;
@@ -196,7 +196,7 @@ class OccPixelThresholdTune : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end() {}
-        void loadConfig(json &config);
+        void loadConfig(const json &config);
 
     private:
         std::vector<unsigned> loops;
@@ -219,7 +219,7 @@ class L1Analysis : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-        void loadConfig(json &config){}
+        void loadConfig(const json &config){}
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -238,7 +238,7 @@ class TagAnalysis : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-        void loadConfig(json &config){}
+        void loadConfig(const json &config){}
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -261,7 +261,7 @@ class TotDistPlotter : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end() {}
-        void loadConfig(json &config){}
+        void loadConfig(const json &config){}
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -282,7 +282,7 @@ class NoiseAnalysis : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-        void loadConfig(json &config);
+        void loadConfig(const json &config);
     private:
         unsigned n_trigger;
         std::unique_ptr<Histo2d> occ;
@@ -298,7 +298,7 @@ class NoiseTuning : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-        void loadConfig(json &config){}
+        void loadConfig(const json &config){}
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -317,7 +317,7 @@ class DelayAnalysis : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-        void loadConfig(json &config){}
+        void loadConfig(const json &config){}
 
     private:
         std::vector<unsigned> loops;
@@ -346,7 +346,7 @@ class ParameterAnalysis : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-	void loadConfig(json &config) {}
+	void loadConfig(const json &config) {}
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;

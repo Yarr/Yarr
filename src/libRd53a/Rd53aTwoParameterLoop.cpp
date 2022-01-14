@@ -117,7 +117,7 @@ void Rd53aTwoParameterLoop::writeConfig(json &j) {
     }
 }
 
-void Rd53aTwoParameterLoop::loadConfig(json &j) {
+void Rd53aTwoParameterLoop::loadConfig(const json &j) {
     //Figure out if j contains dicts named 1, 2, 3, etc. each containing a min, max, step, and parname.
     //If an element named "1" is found, we assume multiple parameters to step has been given.
     //If not element named "1" is found, we assume only one parameter is to be stepped.

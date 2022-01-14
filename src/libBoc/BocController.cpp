@@ -6,7 +6,7 @@ bool boc_registered =
   StdDict::registerHwController("boc",
                                 []() { return std::unique_ptr<HwController>(new BocController); });
 
-void BocController::loadConfig(json &j) {
+void BocController::loadConfig(const json &j) {
 	m_com = new BocCom(static_cast<const std::string & >(j["bocHost"]));
 	BocTxCore::setCom(m_com);
 	BocRxCore::setCom(m_com);

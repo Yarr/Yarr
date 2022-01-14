@@ -55,7 +55,7 @@ class EmptyRxCore : public virtual RxCore {
 
 class EmptyHw : public HwController, public EmptyRxCore, public EmptyTxCore {
  public:
-  void loadConfig(json &j) override {}
+  void loadConfig(const json &j) override {}
 };
 
 #endif

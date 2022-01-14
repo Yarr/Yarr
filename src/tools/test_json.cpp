@@ -169,7 +169,7 @@ int checkJson(json &jsonConfig, ConfigType jsonFileType) {
         return 2;
       }
 
-      cfg->fromFileJson(jsonConfig);
+        cfg->loadConfig(jsonConfig);
     }
     break;
   case ConfigType::CONNECTIVITY:

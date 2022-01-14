@@ -31,7 +31,7 @@ class AnalysisAlgorithm {
             feedback = fb;
         }
         virtual void init(ScanBase *s) {}
-	virtual void loadConfig(json &config){}
+	    virtual void loadConfig(const json &config){}
         virtual void processHistogram(HistogramBase *h) {}
         virtual void end() {}
 
@@ -72,7 +72,7 @@ class AnalysisProcessor : public DataProcessor {
 
         void init();
         void run();
-	void loadConfig(json &j);
+	    void loadConfig(const json &j);
         void join();
         void process();
         void process_core();

@@ -37,7 +37,7 @@ unsigned Rd53bCfg::toVcal(double charge) {
     return vcal;
 }
 
-void Rd53bCfg::toFileJson(json &j) {
+void Rd53bCfg::writeConfig(json &j) {
     // General Paramters
     j["RD53B"]["Parameter"]["Name"] = name;
     j["RD53B"]["Parameter"]["ChipId"] = m_chipId;
@@ -48,12 +48,12 @@ void Rd53bCfg::toFileJson(json &j) {
     for(unsigned  i=0;i<m_ADCcalPar.size();i++)  
         j["RD53B"]["Parameter"]["ADCcalPar"][i]= m_ADCcalPar[i];
     for (unsigned i = 0; i < m_NTCcalPar.size(); i++)
-        j["RD53B"]["Parameter"]["SteinhartCoeffs"][i] = m_NTCcalPar[i];      
-    Rd53bGlobalCfg::toJson(j);
-    Rd53bPixelCfg::toJson(j);
+        j["RD53B"]["Parameter"]["SteinhartCoeffs"][i] = m_NTCcalPar[i];
+    Rd53bGlobalCfg::writeConfig(j);
+    Rd53bPixelCfg::writeConfig(j);
 }
 
-void Rd53bCfg::fromFileJson(json &j) {
+void Rd53bCfg::loadConfig(const json &j) {
     if (j.contains({"RD53B","Parameter","Name"}))
         name = j["RD53B"]["Parameter"]["Name"];
     if (j.contains({"RD53B","Parameter","ChipId"}))
@@ -71,8 +71,8 @@ void Rd53bCfg::fromFileJson(json &j) {
     if (j.contains({"RD53B","Parameter","SteinhartCoeffs"}))
         for (unsigned i = 0; i < m_NTCcalPar.size(); i++)
             m_NTCcalPar[i] = j["RD53B"]["Parameter"]["SteinhartCoeffs"][i];
-    Rd53bGlobalCfg::fromJson(j);
-    Rd53bPixelCfg::fromJson(j);
+    Rd53bGlobalCfg::loadConfig(j);
+    Rd53bPixelCfg::loadConfig(j);
 }
 
 void Rd53bCfg::setChipId(unsigned id) {

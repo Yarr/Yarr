@@ -97,7 +97,7 @@ void Fei4DcLoop::writeConfig(json &config) {
     config["mode"] = m_mode;
 }
 
-void Fei4DcLoop::loadConfig(json &config) {
+void Fei4DcLoop::loadConfig(const json &config) {
     if (config.contains("min"))
       min = config["min"];
     if (config.contains("max"))

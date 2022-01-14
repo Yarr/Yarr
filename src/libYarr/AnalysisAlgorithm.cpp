@@ -37,7 +37,7 @@ void AnalysisProcessor::run() {
     thread_ptr.reset( new std::thread( &AnalysisProcessor::process, this ) );
 }
 
-void AnalysisProcessor::loadConfig(json &j){
+void AnalysisProcessor::loadConfig(const json &j){
     for (unsigned i=0; i<algorithms.size(); i++) {
         if (j.contains({std::to_string(i),"config"})) {
 	    algorithms[i]->loadConfig(j[std::to_string(i)]["config"]);

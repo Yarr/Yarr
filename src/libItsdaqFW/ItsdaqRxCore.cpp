@@ -144,14 +144,14 @@ bool ItsdaqRxCore::isBridgeEmpty() {
   return (t1 - bridge_watcher) > std::chrono::microseconds(100);
 }
 
-void ItsdaqRxCore::toFileJson(json &j) {
+void ItsdaqRxCore::writeConfig(json &j) {
   if(m_streamConfig != 0) {
     j["streamConfig"] = m_streamConfig;
   }
 }
 
-void ItsdaqRxCore::fromFileJson(json &j) {
-  if(j["streamConfig"]) {
+void ItsdaqRxCore::loadConfig(const json &j) {
+  if(j.contains("streamConfig")) {
     m_streamConfig =  j["streamConfig"];
   }
 

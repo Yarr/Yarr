@@ -172,7 +172,7 @@ void Rd53aTriggerLoop::writeConfig(json &config) {
     config["sendEcr"] = m_sendEcr;
 }
 
-void Rd53aTriggerLoop::loadConfig(json &config) {
+void Rd53aTriggerLoop::loadConfig(const json &config) {
     if (config.contains("count"))
         setTrigCnt(config["count"]);
     if (config.contains("frequency"))

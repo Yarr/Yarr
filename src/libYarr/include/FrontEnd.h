@@ -74,8 +74,8 @@ class FrontEndCfg {
 
         virtual double toCharge(double)=0;
         virtual double toCharge(double, bool, bool)=0;
-        virtual void toFileJson(json&)=0;
-        virtual void fromFileJson(json&)=0;
+        virtual void writeConfig(json &) =0;
+        virtual void loadConfig(const json &)=0;
 
         virtual std::tuple<json, std::vector<json>> getPreset(const std::string& systemType="SingleChip");
 

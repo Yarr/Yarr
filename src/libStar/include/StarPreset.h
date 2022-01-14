@@ -77,7 +77,7 @@ namespace StarPreset {
       }
 
       json chipCfg;
-      feCfg.toFileJson(chipCfg);
+        feCfg.writeConfig(chipCfg);
 
       // Add chip config to list
       chips.push_back(std::move(chipCfg));
@@ -92,7 +92,7 @@ namespace StarPreset {
 
     // Config for one HCCStar + several ABCStars
     json cfg;
-    feCfg.toFileJson(cfg);
+      feCfg.writeConfig(cfg);
     chips.push_back(std::move(cfg));
 
     // Connectivity configuration

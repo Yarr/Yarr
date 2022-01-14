@@ -158,8 +158,8 @@ class Rd53aGlobalCfg {
         }
 
     protected:
-        void toFileJson(json &j);
-        void fromFileJson(json &j);
+        void writeConfig(json &j);
+        void loadConfig(const json &j);
     private:
     public:
         std::map<std::string, Rd53aReg Rd53aGlobalCfg::*> regMap;

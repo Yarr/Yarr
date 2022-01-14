@@ -261,7 +261,7 @@ void Rd53a2TriggerLoop::writeConfig(json &config) {
     config["Ntrig2"] = m_Ntrig2;
 }
 
-void Rd53a2TriggerLoop::loadConfig(json &config) {
+void Rd53a2TriggerLoop::loadConfig(const json &config) {
     if (config.contains("count"))
         setTrigCnt(config["count"]);
     if (config.contains("frequency"))

@@ -15,7 +15,7 @@ class StdParameterLoop : public LoopActionBase {
         StdParameterLoop();
 
         void writeConfig(json &j) override;
-        void loadConfig(json &j) override;
+        void loadConfig(const json &j) override;
         std::string getParName() {return parName;}
 
     private:

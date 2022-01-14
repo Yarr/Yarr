@@ -12,7 +12,7 @@
 class RogueController : public HwController, public RogueTxCore, public RogueRxCore {
     public:
         RogueController() {} 
-        void loadConfig(json &j);
+        void loadConfig(json const&j);
 	void setupMode() {
 	}
 	~RogueController();

@@ -142,7 +142,7 @@ void StarTriggerLoop::writeConfig(json &config) {
 	config["digital"] = m_digital;
 }
 
-void StarTriggerLoop::loadConfig(json &config) {
+void StarTriggerLoop::loadConfig(const json &config) {
 
 	if (config.contains("trig_count"))
 		setTrigCnt(config["trig_count"]);

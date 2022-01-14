@@ -13,7 +13,7 @@ class StdRepeater: public LoopActionBase {
         StdRepeater();
         
         void writeConfig(json &j) override final;
-        void loadConfig(json &j)  override final;
+        void loadConfig(const json &j)  override final;
     
     private:
         int m_cur;

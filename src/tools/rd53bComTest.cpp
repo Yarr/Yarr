@@ -145,14 +145,14 @@ int main (int argc, char *argv[]) {
             logger->error("Error opening chip config: {}", e.what());
             throw(std::runtime_error("loadChips failure"));
         }
-        rd53b.fromFileJson(cfg);
+        rd53b.loadConfig(cfg);
         cfgFile.close();
     } else {
         logger->warn("Config file not found, using default!");
         // Write default to file
         std::ofstream newCfgFile(cfgFilePath);
         json cfg;
-        rd53b.toFileJson(cfg);
+        rd53b.writeConfig(cfg);
         newCfgFile << std::setw(4) << cfg;
         newCfgFile.close();
     }

@@ -19,7 +19,7 @@
 class BdaqController : public HwController, public BdaqTxCore, public BdaqRxCore {
     public:
 
-        void loadConfig(json &j) override {
+        void loadConfig(const json &j) override {
             bdaqConfig c;
             // IP Address
             if (j.contains("ipAddr"))

@@ -71,7 +71,7 @@ void Rd53bCoreColLoop::writeConfig(json &j) {
     j["usePToT"] = m_usePToT;
 }
 
-void Rd53bCoreColLoop::loadConfig(json &j) {
+void Rd53bCoreColLoop::loadConfig(const json &j) {
     if (j.contains("min"))
         m_minCore = j["min"];
     if (j.contains("max"))
