@@ -65,17 +65,17 @@ void StdParameterLoop::writeConfig(json &j) {
 }
 
 void StdParameterLoop::loadConfig(json &j) {
-    if (!j["min"].empty())
+    if (j.contains("min"))
         min = j["min"];
-    if (!j["max"].empty())
+    if (j.contains("max"))
         max = j["max"];
-    if (!j["step"].empty())
+    if (j.contains("step"))
         step = j["step"];
-    if (!j["parameter"].empty()) {
+    if (j.contains("parameter")) {
         SPDLOG_LOGGER_INFO(spllog, "Linking parameter: {}", std::string(j["parameter"]));
         parName = j["parameter"];
     }
-    if (!j["waitTime"].empty()) {
+    if (j.contains("waitTime")) {
         m_waitTime = std::chrono::microseconds(j["waitTime"]);
     }
 }

@@ -220,7 +220,7 @@ void Fei4PixelCfg::toFileJson(json &j) {
 
 void Fei4PixelCfg::fromFileJson(json &j) {
     // Layout is one array per column
-    if (j["FE-I4B"]["PixelConfig"].empty())
+    if (!j.contains({"FE-I4B","PixelConfig"}))
         return;
     for (unsigned row=1; row<=n_Row; row++) {
         for (unsigned col=1; col<=n_Col; col++) {

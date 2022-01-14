@@ -212,7 +212,7 @@ bool Histo1d::fromFile(const std::string &filename) {
         return false;
     }
     // Check for type
-    if (j["Type"].empty()) {
+    if (!j.contains("Type")) {
         hlog->error("Tried loading 1d Histogram from file {}, but file has no header: {}", filename);
         return false;
     } else {

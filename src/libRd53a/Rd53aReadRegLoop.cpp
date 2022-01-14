@@ -307,11 +307,11 @@ void Rd53aReadRegLoop::writeConfig(json &config) {
 }
 
 void Rd53aReadRegLoop::loadConfig(json &config) {
-    if (!config["EnblRingOsc"].empty())
+    if (config.contains("EnblRingOsc"))
         m_EnblRingOsc = config["EnblRingOsc"];
-    if (!config["RingOscRep"].empty())
+    if (config.contains("RingOscRep"))
         m_RingOscRep = config["RingOscRep"];
-    if (!config["RingOscDur"].empty()) {
+    if (config.contains("RingOscDur")) {
         m_RingOscDur = config["RingOscDur"];
         if (m_RingOscDur > 9){
             logger->error("Global Max duration is 2^9 = 512 cycles, setting the RingOscDur to Max (9)");
@@ -319,7 +319,7 @@ void Rd53aReadRegLoop::loadConfig(json &config) {
         }
     }
 
-    if (!config["VoltMux"].empty())
+    if (config.contains("VoltMux"))
         for(auto Reg : config["VoltMux"])
         {
             if( ( int(Reg) >=3 && int(Reg)<=8) || (int(Reg)>=14 && int(Reg)<=15) )
@@ -327,11 +327,11 @@ void Rd53aReadRegLoop::loadConfig(json &config) {
             else
                 m_VoltMux.push_back(Reg);
         }
-    if (!config["CurMux"].empty())
+    if (config.contains("CurMux"))
         for(auto Reg : config["CurMux"])
             m_CurMux.push_back(Reg);
 
-    if (!config["Registers"].empty())
+    if (config.contains("Registers"))
         for (auto Reg: config["Registers"]) {
             m_STDReg.push_back(Reg);
 

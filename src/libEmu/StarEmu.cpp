@@ -339,7 +339,7 @@ void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
   //TODO make nice
   logger->info("-> Starting Emulator");
   std::string emuCfgFile;
-  if (!j["feCfg"].empty()) {
+  if (j.contains("feCfg")) {
     emuCfgFile = j["feCfg"];
     logger->info("Using config: {}", emuCfgFile);
   }
@@ -348,13 +348,13 @@ void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
   // 40000 BC (i.e. 1 ms) by default.
   // Can be set to a smaller value for testing, but need to be a multiple of 4
   unsigned hprperiod = 40000;
-  if (!j["hprPeriod"].empty()) {
+  if (j.contains("hprPeriod")) {
     hprperiod = j["hprPeriod"];
     logger->debug("HPR packet transmission period is set to {} BC", hprperiod);
   }
 
   json chipCfg;
-  if (!j["chipCfg"].empty()) {
+  if (j.contains("chipCfg")) {
     try {
       chipCfg = ScanHelper::openJsonFile(j["chipCfg"]);
     } catch (std::runtime_error &e) {
@@ -383,7 +383,7 @@ void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
     int chn_tx = chipCfg["chips"][i]["tx"];
     // 2nd Tx for R3L1 in case of multi-level trigger mode
     int chn_tx2 = -1;
-    if  (not chipCfg["chips"][i]["tx2"].empty())
+    if  (chipCfg["chips"][i].contains("tx2"))
       chn_tx2 = chipCfg["chips"][i]["tx2"];
 
     // Rx
@@ -394,7 +394,7 @@ void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
     }
 
     std::string regCfgFile;
-    if (not chipCfg["chips"][i]["config"].empty())
+    if (chipCfg["chips"][i].contains("config"))
       regCfgFile = chipCfg["chips"][i]["config"];
 
     auto txlabel = std::make_pair(chn_tx, chn_tx2);

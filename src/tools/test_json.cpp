@@ -65,7 +65,7 @@ bool testController(json controller_file) {
 
 bool testConnectivity(json config) {
   try {
-    if (config["chipType"].empty() || config["chips"].empty()) {
+    if (!config.contains("chipType") || !config.contains("chips")) {
       std::cout << "chip type or chips not specified!\n";
       return false;
     }
@@ -94,7 +94,7 @@ bool testConnectivity(json config) {
       FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(&*fe);
       feCfg->fromFileJson(cfg);
 
-      if (!chip["locked"].empty())
+      if (chip.contains("locked"))
         feCfg->setLocked(chip["locked"]);
 
       cfgFile.close();

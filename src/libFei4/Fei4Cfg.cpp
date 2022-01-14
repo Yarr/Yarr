@@ -31,18 +31,18 @@ void Fei4Cfg::toFileJson(json &j) {
 }
 
 void Fei4Cfg::fromFileJson(json &j) {
-    if (!j["FE-I4B"]["name"].empty())
+    if (j.contains({"FE-I4B","name"}))
         name = j["FE-I4B"]["name"];
 
-    if (!j["FE-I4B"]["Parameter"]["chipId"].empty())
+    if (j.contains({"FE-I4B","Parameter","chipId"}))
         chipId = j["FE-I4B"]["Parameter"]["chipId"];
-    if (!j["FE-I4B"]["Parameter"]["sCap"].empty())
+    if (j.contains({"FE-I4B","Parameter","sCap"}))
         sCap = j["FE-I4B"]["Parameter"]["sCap"];
-    if (!j["FE-I4B"]["Parameter"]["lCap"].empty())
+    if (j.contains({"FE-I4B","Parameter","lCap"}))
         lCap = j["FE-I4B"]["Parameter"]["lCap"];
-    if (!j["FE-I4B"]["Parameter"]["vcalOffset"].empty())
+    if (j.contains({"FE-I4B","Parameter","vcalOffset"}))
         vcalOffset = j["FE-I4B"]["Parameter"]["vcalOffset"];
-    if (!j["FE-I4B"]["Parameter"]["vcalSlope"].empty())
+    if (j.contains({"FE-I4B","Parameter","vcalSlope"}))
         vcalSlope = j["FE-I4B"]["Parameter"]["vcalSlope"];
 
     Fei4PixelCfg::fromFileJson(j);

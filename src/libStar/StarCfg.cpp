@@ -256,7 +256,7 @@ uint32_t valFromJson(const json &jValue) {
 void StarCfg::fromFileJson(json &j) {
     logger->debug("Read StarCfg from json");
 
-    if (!j["name"].empty()) {
+    if (j.contains("name")) {
         name = j["name"];
     }
 
@@ -267,7 +267,7 @@ void StarCfg::fromFileJson(json &j) {
 
     auto &hcc = j["HCC"];
 
-    if (!hcc["ID"].empty()) {
+    if (hcc.contains("ID")) {
         setHCCChipId(hcc["ID"]);
     } else {
         logger->error("No HCC ID found in the config file!");
@@ -276,7 +276,7 @@ void StarCfg::fromFileJson(json &j) {
 
     m_hcc.setDefaults();
 
-    if (!hcc["regs"].empty()) {
+    if (hcc.contains("regs")) {
         auto &regs = hcc["regs"];
 
         if(!regs.is_object()) {
@@ -322,7 +322,7 @@ void StarCfg::fromFileJson(json &j) {
     unsigned abc_arr_length = 0;
 
     // Load the IDs
-    if (!abcs["IDs"].empty()) {
+    if (abcs.contains("IDs")) {
         auto &ids = abcs["IDs"];
         abc_arr_length = ids.size();
         for (int iABC = 0; iABC < ids.size(); iABC++) {

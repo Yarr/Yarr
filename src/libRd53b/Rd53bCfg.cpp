@@ -54,21 +54,21 @@ void Rd53bCfg::toFileJson(json &j) {
 }
 
 void Rd53bCfg::fromFileJson(json &j) {
-    if (!j["RD53B"]["Parameter"]["Name"].empty())
+    if (j.contains({"RD53B","Parameter","Name"}))
         name = j["RD53B"]["Parameter"]["Name"];
-    if (!j["RD53B"]["Parameter"]["ChipId"].empty())
+    if (j.contains({"RD53B","Parameter","ChipId"}))
         m_chipId = j["RD53B"]["Parameter"]["ChipId"];
-    if (!j["RD53B"]["Parameter"]["InjCap"].empty())
+    if (j.contains({"RD53B","Parameter","InjCap"}))
         m_injCap = j["RD53B"]["Parameter"]["InjCap"];
-    if (!j["RD53B"]["Parameter"]["MOScalPar"].empty())
+    if (j.contains({"RD53B","Parameter","MOScalPar"}))
         m_MOScalPar = j["RD53B"]["Parameter"]["MOScalPar"];        
-    if (!j["RD53B"]["Parameter"]["VcalPar"].empty())
+    if (j.contains({"RD53B","Parameter","VcalPar"}))
         for(unsigned  i=0;i<m_vcalPar.size();i++)
             m_vcalPar[i] = j["RD53B"]["Parameter"]["VcalPar"][i];
-    if (!j["RD53B"]["Parameter"]["ADCcalPar"].empty())
+    if (j.contains({"RD53B","Parameter","ADCcalPar"}))
         for(unsigned  i=0;i<m_ADCcalPar.size();i++)
             m_ADCcalPar[i] = j["RD53B"]["Parameter"]["ADCcalPar"][i];
-    if (!j["RD53B"]["Parameter"]["SteinhartCoeffs"].empty())
+    if (j.contains({"RD53B","Parameter","SteinhartCoeffs"}))
         for (unsigned i = 0; i < m_NTCcalPar.size(); i++)
             m_NTCcalPar[i] = j["RD53B"]["Parameter"]["SteinhartCoeffs"][i];
     Rd53bGlobalCfg::fromJson(j);

@@ -54,7 +54,7 @@ void Fe65p2GlobalCfg::toFileJson(json &j) {
 void Fe65p2GlobalCfg::fromFileJson(json &j) {
     typedef std::map<std::string, Fe65p2GlobalReg*>::iterator it_type;
     for(it_type iterator = regMap.begin(); iterator != regMap.end(); iterator++) {
-        if (!j["FE65-P2"]["GlobalConfig"][iterator->first].empty()) {
+        if (j.contains({"FE65-P2","GlobalConfig",iterator->first})) {
             iterator->second->write((uint16_t) j["FE65-P2"]["GlobalConfig"][iterator->first]);
         } else {
             std::cout << "Fe65p2GlobalCfg: Could not find register \"" << iterator->first << "\" using default value!" << std::endl;
