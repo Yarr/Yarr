@@ -32,13 +32,13 @@ void StarChannelFeedback::writeConfig(json &j) {
 }
 
 void StarChannelFeedback::loadConfig(json &j) {
-    if (!j["min"].empty())
+    if (j.contains("min"))
         min = j["min"];
-    if (!j["max"].empty())
+    if (j.contains("max"))
         max = j["max"];
-    if (!j["resetTdac"].empty())
+    if (j.contains("resetTdac"))
         m_resetTdac = j["resetTdac"];
-    if (!j["steps"].empty()) {
+    if (j.contains("steps")) {
         m_steps.clear();
         for(auto i: j["steps"])
             m_steps.push_back(i);

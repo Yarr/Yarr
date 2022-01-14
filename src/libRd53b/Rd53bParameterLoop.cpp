@@ -74,13 +74,13 @@ void Rd53bParameterLoop::writeConfig(json &j) {
 }
 
 void Rd53bParameterLoop::loadConfig(json &j) {
-    if (!j["min"].empty())
+    if (j.contains("min"))
         min = j["min"];
-    if (!j["max"].empty())
+    if (j.contains("max"))
         max = j["max"];
-    if (!j["step"].empty())
+    if (j.contains("step"))
         step = j["step"];
-    if (!j["parameter"].empty()) {
+    if (j.contains("parameter")) {
         logger->info("Linking parameter: {}", std::string(j["parameter"]));
         parName = j["parameter"];
     }

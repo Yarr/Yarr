@@ -118,7 +118,7 @@ std::unique_ptr<MyTxCore> runWithConfig(json &j) {
 
   action->loadConfig(j);
 
-  if(!j["parameter"].empty() && j["parameter"]) {
+  if(j.contains("parameter") && j["parameter"]) {
     REQUIRE(action->isParameterLoop());
   } else {
     REQUIRE(action->isMaskLoop());
@@ -186,7 +186,7 @@ void checkMaskRegisters(MyTxCore &tx, json &j,
   int max = j["max"];
   int step = j["step"];
 
-  bool mask_only = j["maskOnly"].empty()
+  bool mask_only = !j.contains("maskOnly")
     ?false
     :(bool)j["maskOnly"];
 
@@ -372,7 +372,7 @@ TEST_CASE("StarMaskLoopNmask", "[star][mask_loop]") {
   int max = j["max"];
   int step = j["step"];
 
-  bool mask_only = j["maskOnly"].empty()
+  bool mask_only = !j.contains({"maskOnly"})
     ?false
     :(bool)j["maskOnly"];
 

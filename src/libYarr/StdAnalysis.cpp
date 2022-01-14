@@ -157,7 +157,7 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
     }
 }
 void OccupancyAnalysis::loadConfig(json &j){
-    if (!j["createMask"].empty()){
+    if (j.contains("createMask")){
         createMask=j["createMask"];
     }
 }
@@ -165,9 +165,9 @@ void OccupancyAnalysis::loadConfig(json &j){
 void TotAnalysis::loadConfig(json &j) {
 
     // check for valid ToT histogram bin configuration
-    if (!j["tot_bins"].empty()) {
+    if (j.contains("tot_bins")) {
         auto j_bins = j["tot_bins"];
-        if(!j_bins["n_bins"].empty() && !j_bins["x_lo"].empty() && !j_bins["x_hi"].empty()) {
+        if(j_bins.contains("n_bins") && j_bins.contains("x_lo") && j_bins.contains("x_hi")) {
             tot_bins_n = static_cast<unsigned>(j_bins["n_bins"]);
             tot_bins_x_lo = static_cast<float>(j_bins["x_lo"]);
             tot_bins_x_hi = static_cast<float>(j_bins["x_hi"]);
@@ -175,14 +175,14 @@ void TotAnalysis::loadConfig(json &j) {
     }
 
     // ToT unit
-    if (!j["tot_unit"].empty()) {
+    if (j.contains("tot_unit")) {
         tot_unit = static_cast<std::string>(j["tot_unit"]);
     }
 
     // check for valid ToT sigma histogram bin configuration
-    if (!j["tot_sigma_bins"].empty()) {
+    if (j.contains("tot_sigma_bins")) {
         auto j_bins = j["tot_sigma_bins"];
-        if(!j_bins["n_bins"].empty() && !j_bins["x_lo"].empty() && !j_bins["x_hi"].empty()) {
+        if(j_bins.contains("n_bins") && j_bins.contains("x_lo") && j_bins.contains("x_hi")) {
             tot_sigma_bins_n = static_cast<unsigned>(j_bins["n_bins"]);
             tot_sigma_bins_x_lo = static_cast<float>(j_bins["x_lo"]);
             tot_sigma_bins_x_hi = static_cast<float>(j_bins["x_hi"]);
@@ -597,7 +597,7 @@ void ScurveFitter::init(ScanBase *s) {
 }
 
 void ScurveFitter::loadConfig(json &j) {
-    if (!j["reverse"].empty()) {
+    if (j.contains("reverse")) {
         reverse = j["reverse"];
     }
 }
@@ -1004,9 +1004,9 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
 }
 
 void OccPixelThresholdTune::loadConfig(json &j){
-    if (!j["occLowCut"].empty())
+    if (j.contains("occLowCut"))
         m_occLowCut=j["occLowCut"];
-    if (!j["occHighCut"].empty())
+    if (j.contains("occHighCut"))
         m_occHighCut=j["occHighCut"];
 }
 
@@ -1348,10 +1348,10 @@ void NoiseAnalysis::processHistogram(HistogramBase *h) {
 }
 
 void NoiseAnalysis::loadConfig(json &j){
-    if (!j["createMask"].empty()){
+    if (j.contains("createMask")){
         createMask=j["createMask"];
     }
-    if (!j["noiseThr"].empty()){
+    if (j.contains("noiseThr")){
         noiseThr=j["noiseThr"];
     }
 }

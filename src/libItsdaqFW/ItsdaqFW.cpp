@@ -34,18 +34,18 @@ void ItsdaqFWController::loadConfig(json &j) {
 
   // Default if all switches off
   std::string remote = "192.168.222.16";
-  if(!j["remote"].empty()) {
+  if(j.contains("remote")) {
     remote = j["remote"];
   }
 
   int rPort = 60000;
-  if(!j["localPort"].empty()) {
+  if(j.contains("localPort")) {
     rPort = j["remotePort"];
   }
 
   int lPort;
 
-  if(j["localPort"].empty()) {
+  if(!j.contains("localPort")) {
     // Pick automatically
     lPort = 0;
   } else {

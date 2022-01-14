@@ -117,7 +117,7 @@ namespace ScanHelper {
     // Load connectivyt and load chips into bookkeeper
     std::string loadChips(json &config, Bookkeeper &bookie, HwController *hwCtrl, std::map<FrontEnd*, std::string> &feCfgMap, std::string &outputDir) {
         std::string chipType;
-        if (config["chipType"].empty() || config["chips"].empty()) {
+        if (!config.contains("chipType") || !config.contains("chips")) {
             shlog->error("Invalid config, chip type or chips not specified!");
             throw(std::runtime_error("loadChips failure"));
         } else {
@@ -148,7 +148,7 @@ namespace ScanHelper {
                             throw(std::runtime_error("loadChips failure"));
                         }
                         feCfg->fromFileJson(cfg);
-                        if (!chip["locked"].empty())
+                        if (chip.contains("locked"))
                             feCfg->setLocked((int)chip["locked"]);
                         cfgFile.close();
                     } else {

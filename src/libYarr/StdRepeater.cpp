@@ -50,8 +50,8 @@ void StdRepeater::writeConfig(json &j) {
 }
 
 void StdRepeater::loadConfig(json &j) {
-    if (!j["min"].empty())
+    if (j.contains("min"))
         min = j["min"];
-    if (!j["max"].empty())
+    if (j.contains("max"))
         max = j["max"];
 }

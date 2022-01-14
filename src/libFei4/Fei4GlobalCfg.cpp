@@ -183,7 +183,7 @@ void Fei4GlobalCfg::toFileJson(json &j) {
 void Fei4GlobalCfg::fromFileJson(json &j) {
     typedef std::map<std::string, Fei4Register Fei4GlobalCfg::*>::iterator it_type;
     for(it_type iterator = regMap.begin(); iterator != regMap.end(); iterator++) {
-        if (!j["FE-I4B"]["GlobalConfig"][iterator->first].empty())
+        if (j.contains({"FE-I4B","GlobalConfig",iterator->first}))
             (this->*iterator->second).write((uint16_t) j["FE-I4B"]["GlobalConfig"][iterator->first]);
     }
 

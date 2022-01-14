@@ -108,7 +108,7 @@ TEST_CASE("StarTriggerLoopDelay", "[star][trigger_loop]") {
   delay -= 4;
   INFO ( "Calculate delay: " << delay );
 
-  if(!j["l0_latency"].empty()) {
+  if(j.contains("l0_latency")) {
     int l0_latency = j["l0_latency"];
     REQUIRE ( delay == l0_latency );
   }

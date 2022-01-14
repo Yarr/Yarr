@@ -330,7 +330,7 @@ void Rd53aGlobalCfg::toFileJson(json &j) {
 
 void Rd53aGlobalCfg::fromFileJson(json &j) {
     for (auto it : regMap) {
-        if (!j["RD53A"]["GlobalConfig"][it.first].empty()) {
+        if (j.contains({"RD53A","GlobalConfig",it.first})) {
             (this->*it.second).write(j["RD53A"]["GlobalConfig"][it.first]);
         } else {
             logger->error("Could not find register \"{}\" using default!", it.first);

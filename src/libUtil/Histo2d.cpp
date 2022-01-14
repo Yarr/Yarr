@@ -296,7 +296,7 @@ bool Histo2d::fromFile(const std::string &filename) {
         return false;
     }
     // Check for type
-    if (j["Type"].empty()) {
+    if (!j.contains("Type")) {
         hlog->error("ERROR this does not seem to be a histogram file, could not parse.");
         return false;
     } else {

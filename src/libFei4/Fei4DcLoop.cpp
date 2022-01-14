@@ -98,12 +98,12 @@ void Fei4DcLoop::writeConfig(json &config) {
 }
 
 void Fei4DcLoop::loadConfig(json &config) {
-    if (!config["min"].empty())
+    if (config.contains("min"))
       min = config["min"];
-    if (!config["max"].empty())
+    if (config.contains("max"))
       max = config["max"];
-    if (!config["step"].empty())
+    if (config.contains("step"))
       step = config["step"];
-    if (!config["mode"].empty())
+    if (config.contains("mode"))
       m_mode = (uint32_t) config["mode"];
 }

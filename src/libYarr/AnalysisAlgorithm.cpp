@@ -39,7 +39,7 @@ void AnalysisProcessor::run() {
 
 void AnalysisProcessor::loadConfig(json &j){
     for (unsigned i=0; i<algorithms.size(); i++) {
-        if (!j[std::to_string(i)]["config"].empty()){
+        if (j.contains({std::to_string(i),"config"})) {
 	    algorithms[i]->loadConfig(j[std::to_string(i)]["config"]);
 	}
     }
