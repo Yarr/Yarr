@@ -22,16 +22,16 @@ public:
     Rd53bDataProcessor();
     ~Rd53bDataProcessor();
 
-    void connect(ClipBoard<RawDataContainer> *input, std::map<unsigned, ClipBoard<EventDataBase>> *outMap) override final
+    void connect(ClipBoard<RawDataContainer> *input, std::map<unsigned, ClipBoard<EventDataBase>> *outMap) override
     {
         m_input = input;
         m_outMap = outMap;
     }
 
-    void init() override final;
-    void run() override final;
-    void join() override final;
-    void process() override final;
+    void init() override;
+    void run() override;
+    void join() override;
+    void process() override;
 
     const uint32_t *_data; // Pointer to one data block
     int _wordIdx;          // Index of the word under processing

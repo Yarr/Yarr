@@ -116,7 +116,7 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
             this->setPulseWord(0x0);
         }
 
-        void runMode() override final {
+        void runMode() override {
             this->setPulseWord(m_pulseWord);
         }
 

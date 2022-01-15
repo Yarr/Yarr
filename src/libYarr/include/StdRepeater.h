@@ -12,8 +12,8 @@ class StdRepeater: public LoopActionBase {
     public:
         StdRepeater();
         
-        void writeConfig(json &j) override final;
-        void loadConfig(const json &j)  override final;
+        void writeConfig(json &j) override;
+        void loadConfig(const json &j) override;
     
     private:
         int m_cur;

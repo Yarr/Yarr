@@ -75,12 +75,12 @@ class BdaqController : public HwController, public BdaqTxCore, public BdaqRxCore
             initialize(c);
         }
         
-        void setupMode() override final {
+        void setupMode() override {
             BdaqTxCore::m_softwareAZ = softwareAZ;
             BdaqRxCore::setupMode();
         }
 
-        void runMode() override final {
+        void runMode() override {
             BdaqRxCore::m_waitTime = rxWaitTime;
             BdaqRxCore::runMode();
         }

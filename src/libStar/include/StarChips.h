@@ -43,11 +43,11 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
 
     //! configure
     //! brief configure the chip (virtual)
-    void configure() override final;
+    void configure() override;
 
   void setHccId(unsigned);//Set the HCC ID to the argument, uses the chip serial number set by eFuse
 
-  void makeGlobal() override final {
+  void makeGlobal() override {
       StarCfg::setHCCChipId(15);
   }
 
