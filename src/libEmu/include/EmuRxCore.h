@@ -19,7 +19,7 @@ template<class FE>
 class EmuRxCore : virtual public RxCore {
     public:
         EmuRxCore() {}
-        ~EmuRxCore();
+        ~EmuRxCore() override;
         
         void setCom(uint32_t chn, EmuCom *com);
         EmuCom* getCom(uint32_t chn);

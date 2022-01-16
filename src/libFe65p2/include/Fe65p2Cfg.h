@@ -30,17 +30,17 @@ class Fe65p2Cfg : public FrontEndCfg, public Fe65p2GlobalCfg, public Fe65p2Pixel
             vcal_offset = 0.011;
         }
         
-        ~Fe65p2Cfg() {
+        ~Fe65p2Cfg() override {
 
         }
         
-        double toCharge(double vcal) {
+        double toCharge(double vcal) override {
             // Q = C*V
             return (cap * Unit::Femto)*(((Unit::Milli*vcal_slope)*vcal)+(vcal_offset*Unit::Milli))/Physics::ElectronCharge;
         }
 
         // Only one cap
-        double toCharge(double vcal, bool scap, bool lcap) {
+        double toCharge(double vcal, bool scap, bool lcap) override {
             return this->toCharge(vcal);
         }
 
@@ -49,8 +49,8 @@ class Fe65p2Cfg : public FrontEndCfg, public Fe65p2GlobalCfg, public Fe65p2Pixel
             return floor((((charge*Physics::ElectronCharge)/(cap * Unit::Femto))-(vcal_offset*Unit::Milli))/(vcal_slope*Unit::Milli));
         }
         
-        void writeConfig(json &j);
-        void loadConfig(const json &j);
+        void writeConfig(json &j) override;
+        void loadConfig(const json &j) override;
 
     protected:
         std::string name;

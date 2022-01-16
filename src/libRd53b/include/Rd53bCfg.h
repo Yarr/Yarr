@@ -20,12 +20,12 @@ class Rd53bCfg : public FrontEndCfg, public Rd53bGlobalCfg, public Rd53bPixelCfg
     public:
         Rd53bCfg();
 
-        double toCharge(double vcal);
-        double toCharge(double vcal, bool sCap, bool lCap);
+        double toCharge(double vcal) override;
+        double toCharge(double vcal, bool sCap, bool lCap) override;
         unsigned toVcal(double charge);
 
-        void writeConfig(json &cfg);
-        void loadConfig(const json &cfg);
+        void writeConfig(json &cfg) override;
+        void loadConfig(const json &cfg) override;
 
         void setChipId(unsigned id);
         unsigned getChipId();

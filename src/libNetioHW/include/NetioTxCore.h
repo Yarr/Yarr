@@ -30,13 +30,13 @@ class NetioTxCore : virtual public TxCore {
 public:
 
   NetioTxCore(); 		// Create NetIO context and low_latency_send_socket
-  ~NetioTxCore(); 		// Delete socket and context.
+  ~NetioTxCore() override; 		// Delete socket and context.
   void writeFifo(uint32_t value) override; 	// append to fifo of all channels
   void releaseFifo() override; 		// release the fifo for all enabled channels
 
   void setCmdEnable(uint32_t) override;
   void setCmdEnable(std::vector<uint32_t> channels) override;
-  void disableCmd();
+  void disableCmd() override;
   uint32_t getCmdEnable() override;
   bool isCmdEmpty() override; 		// check if the fifo of commands is empty
   void setTrigEnable(uint32_t value) override; 	// enable the trigger

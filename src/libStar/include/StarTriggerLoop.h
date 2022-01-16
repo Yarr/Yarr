@@ -32,8 +32,8 @@ class StarTriggerLoop: public LoopActionBase, public StdTriggerAction {
         void setNoInject();
         void setTrigWord();
 
-        void writeConfig(json &config);
-        void loadConfig(const json &config);
+        void writeConfig(json &config) override;
+        void loadConfig(const json &config) override;
 
     private:
         uint32_t m_trigDelay;
@@ -48,10 +48,10 @@ class StarTriggerLoop: public LoopActionBase, public StdTriggerAction {
         bool m_noInject;
         bool m_digital;
 
-        void init();
-        void end();
-        void execPart1();
-        void execPart2();
+        void init() override;
+        void end() override;
+        void execPart1() override;
+        void execPart2() override;
 };
 
 #endif

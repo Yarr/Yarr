@@ -18,9 +18,9 @@ class Fe65p2ExtTrigger : public ScanBase {
     public:
         Fe65p2ExtTrigger(Bookkeeper *k);
         
-        void init();
-        void preScan();
-        void postScan() {}
+        void init() override;
+        void preScan() override;
+        void postScan() override {}
 
     private:
         double triggerFrequency;

@@ -23,7 +23,7 @@ template<class FE>
 class EmuTxCore : virtual public TxCore {
     public:
         EmuTxCore();
-        ~EmuTxCore();
+        ~EmuTxCore() override;
 
         void setCom(uint32_t chn, EmuCom *com);
         EmuCom* getCom(uint32_t chn);

@@ -37,13 +37,13 @@ class Fei4ParameterLoop : public LoopActionBase{
             max = arg_max;
             step = arg_step;
         }
-	void writeConfig(json &j);
-	void loadConfig(const json &j);
+	void writeConfig(json &j) override;
+	void loadConfig(const json &j) override;
 
 
     private:
 	std::string parName = "";
-        void init() {
+        void init() override {
             m_done = false;
             cur = min;
 	    if(parName!=""){
@@ -52,13 +52,13 @@ class Fei4ParameterLoop : public LoopActionBase{
             this->writePar();
         }
 
-        void end() {}
-        void execPart1() {
+        void end() override {}
+        void execPart1() override {
             logger().info("Parameter Loop at -> {}", cur);
             g_stat->set(this, cur);
         }
 
-        void execPart2() {
+        void execPart2() override {
             cur += step;
             if ((int)cur > max) m_done = true;
             this->writePar();

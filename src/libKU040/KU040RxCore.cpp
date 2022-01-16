@@ -206,7 +206,7 @@ void KU040RxCore::disableRx() {
 		m_com->Write(KU040_PIXEL_RX_CONTROL(ch), 0x0);
 	}
 
-	if((m_useUDP == false))
+	if(m_useUDP == false)
 	{
 		if(m_UDPReceiveThread != nullptr)
 		{

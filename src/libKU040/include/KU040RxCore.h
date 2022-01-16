@@ -23,18 +23,18 @@
 class KU040RxCore : virtual public RxCore {
     public:
         KU040RxCore();
-        ~KU040RxCore();
+        ~KU040RxCore() override;
 
-        void setRxEnable(uint32_t val);
-        void setRxEnable(std::vector<uint32_t> channels);
-        void disableRx();
-        void maskRxEnable(uint32_t val, uint32_t mask);
+        void setRxEnable(uint32_t val) override;
+        void setRxEnable(std::vector<uint32_t> channels) override;
+        void disableRx() override;
+        void maskRxEnable(uint32_t val, uint32_t mask) override;
 
-        RawData* readData();
+        RawData* readData() override;
         
-        uint32_t getDataRate();
-        uint32_t getCurCount();
-        bool isBridgeEmpty();
+        uint32_t getDataRate() override;
+        uint32_t getCurCount() override;
+        bool isBridgeEmpty() override;
 
         void setEmu(uint32_t mask, uint8_t hitcnt = 0);
         uint32_t getEmu();

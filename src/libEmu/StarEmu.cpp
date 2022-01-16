@@ -202,7 +202,7 @@ class EmuRxCore<StarChips> : virtual public RxCore {
         std::map<uint32_t, bool> m_channels;
     public:
         EmuRxCore();
-        ~EmuRxCore();
+        ~EmuRxCore() override;
         
         void setCom(uint32_t chn, std::unique_ptr<ClipBoard<RawData>> queue);
         ClipBoard<RawData>* getCom(uint32_t chn);

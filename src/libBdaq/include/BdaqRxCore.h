@@ -24,20 +24,20 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq {
         void setupMode();
         void runMode();
 
-        void setRxEnable(uint32_t val);
-        void setRxEnable(std::vector<uint32_t>);
-        void disableRx() {} // Future implementation.
-        void maskRxEnable(uint32_t val, uint32_t mask);
+        void setRxEnable(uint32_t val) override;
+        void setRxEnable(std::vector<uint32_t>) override;
+        void disableRx() override {} // Future implementation.
+        void maskRxEnable(uint32_t val, uint32_t mask) override;
 
-        void checkRxSync();
+        void checkRxSync() override;
         
-        RawData* readData();
-        void flushBuffer();
+        RawData* readData() override;
+        void flushBuffer() override;
         
-        uint32_t getDataRate();
-        bool isBridgeEmpty();  
+        uint32_t getDataRate() override;
+        bool isBridgeEmpty() override;
         
-        std::chrono::microseconds getWaitTime() {
+        std::chrono::microseconds getWaitTime() override {
             return m_waitTime;
         }
 

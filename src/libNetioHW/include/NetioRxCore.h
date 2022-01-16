@@ -40,11 +40,11 @@ public:
    * @brief Default destructor
    * Stop the NetioHandler. Delete the channels from the NetioHandler.
    **/
-  ~NetioRxCore();
+  ~NetioRxCore() override;
 
   void setRxEnable(uint32_t val) override;
-  void setRxEnable(std::vector<uint32_t> channels);
-  void disableRx();
+  void setRxEnable(std::vector<uint32_t> channels) override;
+  void disableRx() override;
   void maskRxEnable(uint32_t val, uint32_t mask) override;
 
   void flushBuffer() override;

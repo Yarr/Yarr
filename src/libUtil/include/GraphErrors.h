@@ -9,7 +9,7 @@ public:
   GraphErrors(const std::string &arg_name, const LoopStatus &stat, unsigned npoints=0);
   GraphErrors(const std::string &arg_name, std::vector<double> x, std::vector<double> y, std::vector<double> xerr, std::vector<double> yerr);
   GraphErrors(const std::string &arg_name, std::vector<double> x, std::vector<double> y, std::vector<double> xerr, std::vector<double> yerr, const LoopStatus &stat);
-  ~GraphErrors() {}
+  ~GraphErrors() override {}
 
   unsigned size() const;
 

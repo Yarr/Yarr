@@ -112,7 +112,7 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
             }
         }
 
-        void setupMode() override final{
+        void setupMode() final{
             this->setPulseWord(0x0);
         }
 

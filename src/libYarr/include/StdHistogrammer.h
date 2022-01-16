@@ -24,7 +24,7 @@ class DataArchiver : public HistogramAlgorithm {
         DataArchiver() : HistogramAlgorithm() {
             r = nullptr;
         }
-        ~DataArchiver() { if(fileHandle.is_open()) fileHandle.close(); }
+        ~DataArchiver() override { if(fileHandle.is_open()) fileHandle.close(); }
 
         bool open(std::string filename);
         void create(const LoopStatus &stat) override {}
@@ -40,7 +40,7 @@ class OccupancyMap : public HistogramAlgorithm {
             r = nullptr;
             h = nullptr;
         }
-        ~OccupancyMap() {
+        ~OccupancyMap() override {
         }
         
         void create(const LoopStatus &stat) override;
@@ -58,7 +58,7 @@ class TotMap : public HistogramAlgorithm {
             h = nullptr;
             r = nullptr;
         }
-        ~TotMap() {
+        ~TotMap() override {
         }
 
         void create(const LoopStatus &stat) override;
@@ -74,7 +74,7 @@ class Tot2Map : public HistogramAlgorithm {
     public:
         Tot2Map() : HistogramAlgorithm() {
         }
-        ~Tot2Map() {
+        ~Tot2Map() override {
         }
 
         void create(const LoopStatus &stat) override;
@@ -90,7 +90,7 @@ class TotDist : public HistogramAlgorithm {
     public:
         TotDist() : HistogramAlgorithm() {
         }
-        ~TotDist() {
+        ~TotDist() override {
         }
 
         void create(const LoopStatus &stat) override;
@@ -108,7 +108,7 @@ class Tot3d : public HistogramAlgorithm {
             h = NULL;
             r = NULL;
         }
-        ~Tot3d() {
+        ~Tot3d() override {
         }
 
         void create(const LoopStatus &stat) override;
@@ -125,7 +125,7 @@ class TagDist : public HistogramAlgorithm {
             r = nullptr;
         }
 
-        ~TagDist() {
+        ~TagDist() override {
         }
 
         void create(const LoopStatus &stat) override;
@@ -144,7 +144,7 @@ class TagMap : public HistogramAlgorithm {
             r = nullptr;
         }
 
-        ~TagMap() {
+        ~TagMap() override {
         }
 
         void create(const LoopStatus &stat) override;
@@ -164,7 +164,7 @@ class L1Dist : public HistogramAlgorithm {
             current_tag = 0;
         }
 
-        ~L1Dist() {
+        ~L1Dist() override {
         }
 
         void create(const LoopStatus &stat) override;
@@ -186,7 +186,7 @@ class L13d : public HistogramAlgorithm {
             r = NULL;
             current_tag = 0;
         }
-        ~L13d() {
+        ~L13d() override {
         }
 
         void create(const LoopStatus &stat) override;
@@ -208,7 +208,7 @@ class HitsPerEvent : public HistogramAlgorithm {
             r = nullptr;
         }
 
-        ~HitsPerEvent() {
+        ~HitsPerEvent() override {
         }
 
         void create(const LoopStatus &stat) override;

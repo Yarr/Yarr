@@ -19,9 +19,9 @@ class Fe65p2PixelThresholdTune : public ScanBase {
     public:
         Fe65p2PixelThresholdTune(Bookkeeper *k);
 
-        void init();
-        void preScan();
-        void postScan() {}
+        void init() override;
+        void preScan() override;
+        void postScan() override {}
     private:
 };
 

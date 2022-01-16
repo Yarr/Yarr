@@ -120,7 +120,7 @@ class FrontEndData : public EventDataBase {
 
         FrontEndData() : lStat(LoopStatus::empty()) {}
         FrontEndData(LoopStatus& l) : lStat(l) {}
-        ~FrontEndData() {};
+        ~FrontEndData() override {};
 
         void delLastEvent() {
             events.pop_back();

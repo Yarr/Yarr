@@ -18,11 +18,11 @@ class ScanFactory : public ScanBase {
     public:
         ScanFactory(Bookkeeper *k, FeedbackClipboardMap *fb);
 
-        void loadConfig(const json &scanCfg);
+        void loadConfig(const json &scanCfg) override;
 
-        void init();
-        void preScan();
-        void postScan();
+        void init() override;
+        void preScan() override;
+        void postScan() override;
     private:
         json m_config;
         // Keep around until configuration

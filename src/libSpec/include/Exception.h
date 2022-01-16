@@ -53,7 +53,7 @@ public:
 	Exception(Type t) : type(t) {}
 	inline int getType() { return type; }
 	char const *toString() { return descriptions[type]; }
-	virtual const char* what() const throw() { return descriptions[type]; }
+	const char* what() const throw() override { return descriptions[type]; }
 };
 
 }

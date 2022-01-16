@@ -26,13 +26,13 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
         /**
          * Obtain the corresponding charge [e] from the input VCal
          */
-        double toCharge(double vcal);
+        double toCharge(double vcal) override;
 	
         /**
          * Obtain the corresponding charge [e] from the input VCal, small&large capacitances(?)
          * Not fully implmented yet.
          */
-        double toCharge(double vcal, bool sCap, bool lCap);
+        double toCharge(double vcal, bool sCap, bool lCap) override;
 
         /**
          * Obtain the corresponding VCal from the input charge [e]
@@ -44,8 +44,8 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
          * These can be possibly templated:
          * template<YARR::IOFormat IN, YARR::IOFormat OUT> void convert( IN&); ?
          */
-        void writeConfig(json &j);
-        void loadConfig(const json &);
+        void writeConfig(json &j) override;
+        void loadConfig(const json &) override;
         
         float ADCtoV (uint16_t ADC);
         float VtoTemp (float V, uint16_t Sensor, bool isRadSensor);

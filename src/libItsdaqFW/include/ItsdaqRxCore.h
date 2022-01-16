@@ -24,7 +24,7 @@ public:
   /**
    * Shutdown the ItsdaqHandler. Delete the channels from the ItsdaqHandler.
    **/
-  ~ItsdaqRxCore();
+  ~ItsdaqRxCore() override;
 
   void setRxEnable(uint32_t val) override;
   void setRxEnable(std::vector<uint32_t> channels) override;

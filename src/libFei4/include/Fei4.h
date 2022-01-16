@@ -44,7 +44,7 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
 
         void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override;
 
-        ~Fei4();
+        ~Fei4() override;
 
         void configure() override;
         void configureGlobal();

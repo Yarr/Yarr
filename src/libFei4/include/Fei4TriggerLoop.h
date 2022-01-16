@@ -30,8 +30,8 @@ class Fei4TriggerLoop: public LoopActionBase, public StdTriggerAction {
         //void setIsInner(bool itis=true);
         //bool getIsInner();
 
-        void writeConfig(json &config);
-        void loadConfig(const json &config);
+        void writeConfig(json &config) override;
+        void loadConfig(const json &config) override;
     private:
         unsigned m_trigDelay;
         float m_trigFreq;
@@ -44,10 +44,10 @@ class Fei4TriggerLoop: public LoopActionBase, public StdTriggerAction {
 
         bool isInner;
 
-        void init();
-        void end();
-        void execPart1();
-        void execPart2();
+        void init() override;
+        void end() override;
+        void execPart1() override;
+        void execPart2() override;
 };
 
 #endif

@@ -26,7 +26,7 @@ class Histo3d : public HistogramBase {
                 unsigned arg_zbins, double arg_zlow, double arg_zhigh, 
                 const LoopStatus &stat);
         Histo3d(Histo3d *h);
-        ~Histo3d();
+        ~Histo3d() override;
         
         unsigned size() const;
         unsigned numOfEntries() const;

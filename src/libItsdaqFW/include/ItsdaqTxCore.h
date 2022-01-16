@@ -18,7 +18,7 @@ class ItsdaqHandler;
 class ItsdaqTxCore : virtual public TxCore {
  public:
   ItsdaqTxCore(ItsdaqHandler &h);
-  ~ItsdaqTxCore();
+  ~ItsdaqTxCore() override;
 
   void writeFifo(uint32_t value) override;
   void releaseFifo() override;

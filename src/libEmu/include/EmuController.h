@@ -31,8 +31,8 @@ class EmuController : public HwController, public EmuTxCore<FE>, public EmuRxCor
 
     public:
         EmuController() {}
-        ~EmuController();
-        void loadConfig(const json &j);
+        ~EmuController() override;
+        void loadConfig(const json &j) override;
 };
 
 template<class FE, class ChipEmu>

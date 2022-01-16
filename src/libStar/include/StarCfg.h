@@ -22,7 +22,7 @@
 class StarCfg : public FrontEndCfg {
  public:
   StarCfg();
-  ~StarCfg();
+  ~StarCfg() override;
 
   //Function to make all Registers for the ABC
   void configure_ABC_Registers(int chipID);

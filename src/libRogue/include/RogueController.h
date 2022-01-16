@@ -12,10 +12,10 @@
 class RogueController : public HwController, public RogueTxCore, public RogueRxCore {
     public:
         RogueController() {} 
-        void loadConfig(json const&j);
-	void setupMode() {
+        void loadConfig(json const&j) override;
+	void setupMode() override {
 	}
-	~RogueController();
+	~RogueController() override;
 	void GlobalMonitor(bool reset, int looptime){
 		std::shared_ptr<RogueCom> com=RogueCom::getInstance();
 		com->GlobalMonitor(reset, looptime);}

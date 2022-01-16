@@ -22,7 +22,7 @@ class Fe65p2 : public FrontEnd, public Fe65p2Cfg, public Fe65p2Cmd {
         Fe65p2(HwController *arg_core);
         Fe65p2(HwController *arg_core, unsigned arg_channel);
         Fe65p2(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel);
-        ~Fe65p2() {}
+        ~Fe65p2() override {}
 
         void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override;
 

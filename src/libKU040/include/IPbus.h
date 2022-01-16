@@ -17,9 +17,9 @@ class IPbusException : public std::exception {
             Error = ErrorMessage;
         }
 
-        ~IPbusException() throw() {};
+        ~IPbusException() throw() override {};
 
-        const char* what() const throw()
+        const char* what() const throw() override
         {
             return Error.c_str();
         }

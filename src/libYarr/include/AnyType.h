@@ -89,12 +89,12 @@ class VarHolder<T, typename std::enable_if< !std::is_class<T>::value >::type> : 
  public:
  VarHolder( const T& val ) : m_var( val ) {}
   static constexpr T invalid_value = std::numeric_limits<T>::quiet_NaN();
-  ~VarHolder(){}
-  const std::type_info& type() const { return typeid(T); }
+  ~VarHolder() override{}
+  const std::type_info& type() const override { return typeid(T); }
   T* get() { return &m_var; }
   T& operator*() { return m_var; }
     
-  VarBase* clone() { return new VarHolder<T>( m_var ); }
+  VarBase* clone() override { return new VarHolder<T>( m_var ); }
   
  private:
   T m_var;
@@ -109,13 +109,13 @@ template< typename T>
 class VarHolder<T, typename std::enable_if< is_vector<T>::value >::type> : public VarBase {
  public:
  VarHolder( const T& val ) : m_var( val ) {}
-  ~VarHolder(){}
-  const std::type_info& type() const { return typeid(T); }
+  ~VarHolder() override{}
+  const std::type_info& type() const override { return typeid(T); }
   T* get() { return &m_var; }
   T& operator*() { return m_var; }
     
   
-  VarBase* clone() { return new VarHolder<T>( m_var ); }
+  VarBase* clone() override { return new VarHolder<T>( m_var ); }
   
  private:
   T m_var;
@@ -132,13 +132,13 @@ template< typename T>
 class VarHolder<T, typename std::enable_if< std::is_class<T>::value && !is_vector<T>::value >::type> : public VarBase {
  public:
  VarHolder( const T& val ) : m_var( val ) {}
-  ~VarHolder(){}
-  const std::type_info& type() const { return typeid(T); }
+  ~VarHolder() override{}
+  const std::type_info& type() const override { return typeid(T); }
   T* get() { return &m_var; }
   T& operator*() { return m_var; }
     
   
-  VarBase* clone() { return new VarHolder<T>( m_var ); }
+  VarBase* clone() override { return new VarHolder<T>( m_var ); }
   
  private:
   T m_var;

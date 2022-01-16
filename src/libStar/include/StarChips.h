@@ -24,7 +24,7 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
   StarChips(HwController *arg_core, unsigned arg_channel);
   StarChips(HwController *arg_core, unsigned arg_txchannel, unsigned arg_rxchannel);
 
-  ~StarChips() {}
+  ~StarChips() override {}
 
     void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override;
 

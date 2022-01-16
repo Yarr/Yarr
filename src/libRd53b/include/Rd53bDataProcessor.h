@@ -20,7 +20,7 @@ class Rd53bDataProcessor : public DataProcessor
 {
 public:
     Rd53bDataProcessor();
-    ~Rd53bDataProcessor();
+    ~Rd53bDataProcessor() override;
 
     void connect(ClipBoard<RawDataContainer> *input, std::map<unsigned, ClipBoard<EventDataBase>> *outMap) override
     {

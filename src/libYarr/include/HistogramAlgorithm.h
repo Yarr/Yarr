@@ -46,9 +46,9 @@ class HistogramAlgorithm {
 class HistogrammerProcessor : public DataProcessor {
     public:
         HistogrammerProcessor();
-        ~HistogrammerProcessor();
+        ~HistogrammerProcessor() override;
 
-        void connect(ClipBoard<EventDataBase> *arg_input, ClipBoard<HistogramBase> *arg_output) {
+        void connect(ClipBoard<EventDataBase> *arg_input, ClipBoard<HistogramBase> *arg_output) override {
             input = arg_input;
             output = arg_output;
         }
@@ -65,10 +65,10 @@ class HistogrammerProcessor : public DataProcessor {
         
         void clearHistogrammers();
 
-        void init();
-        void run();
-        void join();
-        void process();
+        void init() override;
+        void run() override;
+        void join() override;
+        void process() override;
         void process_core();
         void publish();
 

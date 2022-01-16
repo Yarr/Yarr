@@ -23,7 +23,7 @@ class Histo2d : public HistogramBase {
         Histo2d(const std::string &arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh,
                 unsigned arg_ybins, double arg_ylow, double arg_yhigh, const LoopStatus &stat);
         Histo2d(Histo2d *h);
-        ~Histo2d();
+        ~Histo2d() override;
         
         unsigned size() const;
         unsigned numOfEntries() const;
