@@ -42,7 +42,7 @@ class Fe65p2Cfg : public FrontEndCfg, public Fe65p2GlobalCfg, public Fe65p2Pixel
             return this->toCharge(vcal);
         }
 
-        unsigned toVcal(double charge) {
+        unsigned toVcal(double charge) const {
             // V = Q/C
             return floor((((charge*Physics::ElectronCharge)/(cap * Unit::Femto))-(vcal_offset*Unit::Milli))/(vcal_slope*Unit::Milli));
         }

@@ -763,7 +763,7 @@ void queue_data(uint32_t data,unsigned queuenumber) {
   void setForceRelaseTxfifo(bool enable=true) {
     forceRelaseTxfifo=enable;
   }
-  bool getFirmwareTrigger() {return firmwareTrigger;}
+  bool getFirmwareTrigger() const {return firmwareTrigger;}
 
   void flushBuffer();
  protected:

@@ -38,7 +38,7 @@ class IPbus {
 		// Connect
 		void Connect(const std::string &host, const unsigned int port = 50001);
 		void Disconnect();
-		bool IsConnected();
+		bool IsConnected() const;
 
 		// read values
 		uint32_t Read(uint32_t baseaddr);

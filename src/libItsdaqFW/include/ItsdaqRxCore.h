@@ -54,7 +54,7 @@ public:
    *
    * @param j json object to store configuration
    **/
-  void writeConfig(json &j);
+  void writeConfig(json &j) const;
 
   /**
    * Read configuration from json.

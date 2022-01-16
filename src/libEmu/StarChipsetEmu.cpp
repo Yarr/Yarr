@@ -767,7 +767,7 @@ unsigned int StarChipsetEmu::countTriggers(LCB::Frame frame) {
   return count;
 }
 
-void StarChipsetEmu::countHits(AbcCfg& abc, const StripData& hits) {
+void StarChipsetEmu::countHits(AbcCfg& abc, const StripData& hits) const {
   if (not m_startHitCount) return;
 
   bool EnCount = abc.getSubRegisterValue("ENCOUNT");
@@ -1081,7 +1081,7 @@ std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_Cal
   return std::make_pair(bcid, hits);
 }
 
-unsigned StarChipsetEmu::getL0BufferAddr(const AbcCfg& abc, uint8_t cmdBC) {
+unsigned StarChipsetEmu::getL0BufferAddr(const AbcCfg& abc, uint8_t cmdBC) const {
   // L0A latency from ABCStar register CREG2
   // 9 bits
   unsigned l0_latency = abc.getSubRegisterValue("LATENCY");

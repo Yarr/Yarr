@@ -20,7 +20,7 @@ void StripModel::setValue(float vth_mean, float vth_sigma, float noise_mean,
 }
 
 /// Threshold
-inline float StripModel::calculateBVT(uint8_t BVT)
+inline float StripModel::calculateBVT(uint8_t BVT) const
 {
     // 8-bit DAC for global threshold
     // Range: 0 - -550 mV
@@ -52,7 +52,7 @@ float StripModel::calculateThreshold(uint8_t BVT, uint8_t TrimDAC,
 // Pre amp
 //
 /// Noise charge
-float StripModel::calculateNoise()
+float StripModel::calculateNoise() const
 {
     return Gauss::rand_normal(noise_occupancy_mean, noise_occupancy_sigma, true); // fC
 }

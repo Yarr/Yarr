@@ -34,8 +34,8 @@ class Rd53a2TriggerLoop: public LoopActionBase, public StdTriggerAction {
         void doubleCmdInject();
         void singleCmdInject();
         void flexibleTrigger(uint8_t offset, int injDelay, int triggers, int delay);
-        uint8_t findSmallestDelay();
-        uint8_t greatestDelay();
+        uint8_t findSmallestDelay() const;
+        uint8_t greatestDelay() const;
 
         void writeConfig(json &config) override;
         void loadConfig(const json &config) override;

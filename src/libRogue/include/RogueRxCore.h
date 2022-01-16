@@ -22,7 +22,7 @@ class RogueRxCore : virtual public RxCore {
 		uint32_t getCurCount() override {m_com->setRxChannel(m_rxChannel);return m_com->getCurSize();}
 		bool isBridgeEmpty() override {m_com->setRxChannel(m_rxChannel);return m_com->isEmpty();}
 		void setRxChannel(uint32_t rxchannel){m_rxChannel=rxchannel;} 
-		uint32_t getRxChannel(){return m_rxChannel;} 
+		uint32_t getRxChannel() const{return m_rxChannel;}
 
 		void flushBuffer() override{
 			//std::cout << __PRETTY_FUNCTION__ << std::endl;

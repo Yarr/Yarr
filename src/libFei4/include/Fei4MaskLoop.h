@@ -21,9 +21,9 @@ class Fei4MaskLoop : public LoopActionBase {
         //void setIterations(unsigned it);
         //unsigned getIterations();
         void setScap(bool v=true) {enable_sCap = v;}
-        bool getScap() {return enable_sCap;}
+        bool getScap() const {return enable_sCap;}
         void setLcap(bool v=true) {enable_lCap = v;}
-        bool getLcap() {return enable_lCap;}
+        bool getLcap() const {return enable_lCap;}
 
         void writeConfig(json &config) override;
         void loadConfig(const json &config) override;

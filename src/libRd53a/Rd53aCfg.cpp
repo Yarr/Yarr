@@ -64,7 +64,7 @@ void Rd53aCfg::setChipId(unsigned id) {
     m_chipId = id;
 }
 
-unsigned Rd53aCfg::getChipId() {
+unsigned Rd53aCfg::getChipId() const {
     return m_chipId;
 }
 

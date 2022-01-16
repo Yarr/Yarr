@@ -97,8 +97,8 @@ private:
   void writeFifo(uint32_t channel, uint32_t value);
 
   void prepareTrigger();
-  void prepareFifo(std::vector<uint8_t> *fifo);
-  void writeFifo(std::vector<uint8_t> *fifo, uint32_t value);
+  void prepareFifo(std::vector<uint8_t> *fifo) const;
+  void writeFifo(std::vector<uint8_t> *fifo, uint32_t value) const;
 
   std::string m_felixhost;
   uint16_t m_felixport;

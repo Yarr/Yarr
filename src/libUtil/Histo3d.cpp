@@ -227,7 +227,7 @@ void Histo3d::setBin(unsigned n, double v) {
 }
 
 
-int Histo3d::binNum(double x, double y, double z) {
+int Histo3d::binNum(double x, double y, double z) const {
     if (x < xlow || y < ylow || z < zlow) {
         //std::cout << "Underflow " << x << " " << y << std::endl;
         return -1;

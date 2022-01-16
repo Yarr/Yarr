@@ -340,7 +340,7 @@ bool Rd53aMaskLoop::applyMask(int col, int row){
 }
 
 
-bool Rd53aMaskLoop::ignorePixel(int col, int row){
+bool Rd53aMaskLoop::ignorePixel(int col, int row) const{
 
     //if checking bump bonding connections for rectangular sensors, only use (0,0) pixel
     if ( m_includedPixels == only00CornerForBumpBonding){

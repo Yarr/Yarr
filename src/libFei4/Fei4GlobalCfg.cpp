@@ -153,7 +153,7 @@ void Fei4GlobalCfg::init() {
 }
 
 
-void Fei4GlobalCfg::toFilePlain(std::string filename) {
+void Fei4GlobalCfg::toFilePlain(std::string filename) const {
     std::fstream file(filename, std::fstream::out | std::fstream::trunc);
     
     file << "# FEI4B-global-config" << std::endl;

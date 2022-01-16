@@ -46,7 +46,7 @@ class Rd53bReg {
             return ((*m_cfg >> m_bOffset) & mask);
         }
 
-        uint16_t applyMask(uint16_t value) {
+        uint16_t applyMask(uint16_t value) const {
             unsigned mask = (1<<m_bits)-1;
             return ((value >> m_bOffset) & mask);
         }

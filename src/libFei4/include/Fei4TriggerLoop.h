@@ -18,11 +18,11 @@ class Fei4TriggerLoop: public LoopActionBase, public StdTriggerAction {
         Fei4TriggerLoop();
         
         void setTrigDelay(unsigned int delay);
-        unsigned getTrigDelay();
+        unsigned getTrigDelay() const;
         void setTrigFreq(double freq);
-        double getTrigFreq();
+        double getTrigFreq() const;
         void setTrigTime(double time);
-        double getTrigTime();
+        double getTrigTime() const;
         void setNoInject();
         void setTrigWord(uint32_t word[4]);
         void setNoWord();

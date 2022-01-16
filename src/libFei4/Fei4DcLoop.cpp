@@ -86,7 +86,7 @@ void Fei4DcLoop::setMode(enum DC_MODE mode) {
     }
 }
 
-uint32_t Fei4DcLoop::getMode() {
+uint32_t Fei4DcLoop::getMode() const {
     return m_mode;
 }
 

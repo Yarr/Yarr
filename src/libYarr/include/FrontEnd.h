@@ -33,8 +33,8 @@ class FrontEnd {
         /// Enable (disable mask) for all pixels
         virtual void enableAll() = 0;
 
-        bool getActive();
-		bool isActive();
+        bool getActive() const;
+		bool isActive() const;
 		void setActive(bool active);
         virtual void makeGlobal(){};
        
@@ -79,9 +79,9 @@ class FrontEndCfg {
 
         virtual std::tuple<json, std::vector<json>> getPreset(const std::string& systemType="SingleChip");
 
-        unsigned getChannel() {return rxChannel;}
-		unsigned getTxChannel() {return txChannel;}
-		unsigned getRxChannel() {return rxChannel;}
+        unsigned getChannel() const {return rxChannel;}
+		unsigned getTxChannel() const {return txChannel;}
+		unsigned getRxChannel() const {return rxChannel;}
         std::string getName() {return name;}
         
         void setChannel(unsigned channel) {txChannel = channel; rxChannel = channel;}
@@ -91,7 +91,7 @@ class FrontEndCfg {
         void setConfigFile(std::string arg_configFile) {configFile = arg_configFile;}
         std::string getConfigFile() {return configFile;}
     
-        bool isLocked() {return lockCfg;}
+        bool isLocked() const {return lockCfg;}
         void setLocked(bool v) {lockCfg = v;}
     protected:
         std::string name;

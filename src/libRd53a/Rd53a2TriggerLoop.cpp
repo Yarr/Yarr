@@ -144,7 +144,7 @@ void Rd53a2TriggerLoop::flexibleTrigger(uint8_t offset, int injDelay, int trigge
     }
 }
 
-uint8_t Rd53a2TriggerLoop::findSmallestDelay(){
+uint8_t Rd53a2TriggerLoop::findSmallestDelay() const{
     //The smallest allowable doubledelay in a two-command scheme depends on several variables and is not trivial to express analytically.
     //This function emulates setFlexibleTrigger to find the smallest doubledelay that will not cause overlap between the first trigger frames and the second injection header frame.
     uint8_t empty_frames;
@@ -163,7 +163,7 @@ uint8_t Rd53a2TriggerLoop::findSmallestDelay(){
     return (k+4)*8 - injDelay;
 }
 
-uint8_t Rd53a2TriggerLoop::greatestDelay(){
+uint8_t Rd53a2TriggerLoop::greatestDelay() const{
     //Calculates greatest allowed delay between the two injections
     return (m_trigWordLength-1-m_synPulse - 5)*8-((m_trigDelay2+m_Ntrig2)/8)*8-CMDDEL+9+7;
 }

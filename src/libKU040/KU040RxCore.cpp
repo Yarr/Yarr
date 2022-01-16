@@ -331,7 +331,7 @@ void KU040RxCore::setEmu(uint32_t mask, uint8_t hitcnt)
 	m_com->Write(KU040_PIXEL_DEBUG_EMU_HITDIST, 0x050003);
 }
 
-uint32_t KU040RxCore::getEmu()
+uint32_t KU040RxCore::getEmu() const
 {
 	return m_emuMask;
 }

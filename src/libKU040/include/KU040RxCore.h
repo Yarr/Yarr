@@ -37,7 +37,7 @@ class KU040RxCore : virtual public RxCore {
         bool isBridgeEmpty() override;
 
         void setEmu(uint32_t mask, uint8_t hitcnt = 0);
-        uint32_t getEmu();
+        uint32_t getEmu() const;
 
 		void setLinkSpeed(uint32_t speed)
 		{
@@ -50,7 +50,7 @@ class KU040RxCore : virtual public RxCore {
 			m_linkSpeed = speed;
 		}
 
-		uint32_t getLinkSpeed()
+		uint32_t getLinkSpeed() const
 		{
 			return m_linkSpeed;
 		}
@@ -68,7 +68,7 @@ class KU040RxCore : virtual public RxCore {
 			m_skipRecsWithErrors = value;
 		}
 
-		bool getSkipRecsWithErrors()
+		bool getSkipRecsWithErrors() const
 		{
 			return m_skipRecsWithErrors;
 		}
@@ -85,7 +85,7 @@ class KU040RxCore : virtual public RxCore {
             m_useUDP = enable;
         }
 
-        bool getUDP() {
+        bool getUDP() const {
             return m_useUDP;
         }
 

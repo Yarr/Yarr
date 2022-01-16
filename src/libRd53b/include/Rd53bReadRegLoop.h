@@ -47,7 +47,7 @@ public:
 
     void writeConfig(json &config) override;
     void loadConfig(const json &config) override;
-    double convertRingOscCntToMHz(double counter) { return counter / (m_RingOscDur << 1) * 40; }
+    double convertRingOscCntToMHz(double counter) const { return counter / (m_RingOscDur << 1) * 40; }
 
 private:
     std::vector<unsigned short> m_VoltMux;

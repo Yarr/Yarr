@@ -19,9 +19,9 @@ class Fe65p2TriggerLoop : public LoopActionBase, public StdTriggerAction {
         void setTrigCnt(uint32_t cnt);
 
         void setTrigFreq(double freq);
-        double getTrigFreq();
+        double getTrigFreq() const;
         void setTrigTime(double time);
-        double getTrigTime();
+        double getTrigTime() const;
 
         void setNoInject();
         void setExtTrigger();

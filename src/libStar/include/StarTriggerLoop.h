@@ -18,16 +18,16 @@ class StarTriggerLoop: public LoopActionBase, public StdTriggerAction {
         StarTriggerLoop();
 
         void setTrigDelay(uint32_t delay) {m_trigDelay = delay;}
-        uint32_t getTrigDelay() {return m_trigDelay;}
+        uint32_t getTrigDelay() const {return m_trigDelay;}
 
         void setTrigFreq(double freq) {m_trigFreq = freq;}
-        double getTrigFreq() {return m_trigFreq;}
+        double getTrigFreq() const {return m_trigFreq;}
 
         void setTrigTime(double time){m_trigTime = time;}
-        double getTrigTime(){return m_trigTime;}
+        double getTrigTime() const{return m_trigTime;}
 
         void setDigital(bool digital){m_digital = digital;}
-        bool getDigital(){return m_digital;}
+        bool getDigital() const{return m_digital;}
 
         void setNoInject();
         void setTrigWord();

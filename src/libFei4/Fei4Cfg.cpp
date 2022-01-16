@@ -8,7 +8,7 @@
 
 #include "Fei4Cfg.h"
 
-unsigned Fei4Cfg::getChipId() {
+unsigned Fei4Cfg::getChipId() const {
 	return chipId;
 }
 

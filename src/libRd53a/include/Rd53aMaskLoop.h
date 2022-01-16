@@ -47,7 +47,7 @@ class Rd53aMaskLoop : public LoopActionBase {
 
         bool getNeighboursMap(int col, int row, int sensorType, int maskSize, std::vector<std::pair<int, int>> &neighbours);
         bool applyMask(int col, int row);
-        bool ignorePixel(int col, int row);
+        bool ignorePixel(int col, int row) const;
 
         //int IdentifyCorner(int col, int row);
         //int IdentifyPixel(int col, int row);

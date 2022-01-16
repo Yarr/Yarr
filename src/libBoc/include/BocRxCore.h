@@ -34,7 +34,7 @@ class BocRxCore : virtual public RxCore {
         bool isBridgeEmpty() override;
 
         void setEmu(uint32_t mask, uint8_t hitcnt = 0);
-        uint32_t getEmu();
+        uint32_t getEmu() const;
 
         void setCom(BocCom *com) {
             m_com = com;
