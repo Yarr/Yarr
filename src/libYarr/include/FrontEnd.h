@@ -21,8 +21,8 @@
 
 class FrontEnd {
     public:
-        FrontEnd() {}
-        virtual ~FrontEnd() {}
+        FrontEnd() = default;
+        virtual ~FrontEnd() = default;
         
         virtual void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel)=0;
 
@@ -69,7 +69,7 @@ class FrontEndCfg {
             rxChannel = 99;
             lockCfg = false;
         }
-        virtual ~FrontEndCfg(){}
+        virtual ~FrontEndCfg()= default;
         
 
         virtual double toCharge(double)=0;

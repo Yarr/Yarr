@@ -8,7 +8,7 @@ StripModel::StripModel()
     , noise_occupancy_sigma(0)
 {}
 
-StripModel::~StripModel(){}
+StripModel::~StripModel()= default;
 
 void StripModel::setValue(float vth_mean, float vth_sigma, float noise_mean,
                           float noise_sigma)

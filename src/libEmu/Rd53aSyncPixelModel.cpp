@@ -31,9 +31,7 @@ Rd53aSyncPixelModel::Rd53aSyncPixelModel(float _VthresholdSync_mean, float _Vthr
 	noise_sigma_sigma = _noise_sigma_sigma;
 	noise_sigma_gauss = _noise_sigma_gauss;
 }
-Rd53aSyncPixelModel::~Rd53aSyncPixelModel()
-{
-}
+Rd53aSyncPixelModel::~Rd53aSyncPixelModel()= default;
 
 // functions for modeling pixel responses
 float Rd53aSyncPixelModel::calculateThreshold(uint32_t VthresholdSync)

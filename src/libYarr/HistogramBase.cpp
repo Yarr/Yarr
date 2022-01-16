@@ -23,9 +23,7 @@ HistogramBase::HistogramBase(const std::string &arg_name)
     zAxisTitle = "z";
 }
 
-HistogramBase::~HistogramBase() {
-
-}
+HistogramBase::~HistogramBase() = default;
 
 const std::string & HistogramBase::getName() const{
     return name;

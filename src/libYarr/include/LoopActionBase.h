@@ -25,7 +25,7 @@ using std::shared_ptr;
 class LoopActionBase {
     public:
         explicit LoopActionBase(LoopStyle s);
-        virtual ~LoopActionBase() {}
+        virtual ~LoopActionBase() = default;
 
         void setup(LoopStatusMaster *stat, Bookkeeper *k);
         void setNext(shared_ptr<LoopActionBase>& ptr);

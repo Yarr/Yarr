@@ -14,16 +14,14 @@ namespace {
     auto alog = logging::make_log("AnalysisAlgorithm");
 }
 
-AnalysisProcessor::AnalysisProcessor() {
-}
+AnalysisProcessor::AnalysisProcessor() = default;
 
 AnalysisProcessor::AnalysisProcessor(Bookkeeper *b, unsigned ch)
   : bookie(b), channel(ch)
 {
 }
 
-AnalysisProcessor::~AnalysisProcessor() {
-}
+AnalysisProcessor::~AnalysisProcessor() = default;
 
 void AnalysisProcessor::init() {
     for (unsigned i=0; i<algorithms.size(); i++) {

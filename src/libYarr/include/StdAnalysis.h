@@ -20,7 +20,7 @@ class Histo3d;
 class OccupancyAnalysis : public AnalysisAlgorithm {
     public:
         OccupancyAnalysis() : AnalysisAlgorithm() {createMask = true;}
-        ~OccupancyAnalysis() override {}
+        ~OccupancyAnalysis() override = default;
 
         void init(ScanBase *s) override;
         void processHistogram(HistogramBase *h) override;
@@ -47,7 +47,7 @@ class TotAnalysis : public AnalysisAlgorithm {
             tot_sigma_bins_x_lo = -0.05;
             tot_sigma_bins_x_hi = 1.05;
         }
-        ~TotAnalysis() override {}
+        ~TotAnalysis() override = default;
 
         void init(ScanBase *s) override;
         void processHistogram(HistogramBase *h) override;
@@ -93,7 +93,7 @@ class TotAnalysis : public AnalysisAlgorithm {
 class ScurveFitter : public AnalysisAlgorithm {
     public:
         ScurveFitter() : AnalysisAlgorithm() {}
-        ~ScurveFitter() override {}
+        ~ScurveFitter() override = default;
 
         void init(ScanBase *s) override;
         void processHistogram(HistogramBase *h) override;
@@ -143,7 +143,7 @@ class ScurveFitter : public AnalysisAlgorithm {
 class OccGlobalThresholdTune : public AnalysisAlgorithm {
     public:
         OccGlobalThresholdTune() : AnalysisAlgorithm()  {}
-        ~OccGlobalThresholdTune() override {}
+        ~OccGlobalThresholdTune() override = default;
 
         void init(ScanBase *s) override;
         void processHistogram(HistogramBase *h) override;
@@ -165,7 +165,7 @@ class OccGlobalThresholdTune : public AnalysisAlgorithm {
 class GlobalPreampTune : public AnalysisAlgorithm {
     public:
         GlobalPreampTune() : AnalysisAlgorithm()  {}
-        ~GlobalPreampTune() override {}
+        ~GlobalPreampTune() override = default;
 
         void init(ScanBase *s) override;
         void processHistogram(HistogramBase *h) override;
@@ -191,7 +191,7 @@ class OccPixelThresholdTune : public AnalysisAlgorithm {
             m_occLowCut = 0.3; 
             m_occHighCut = 0.7;
         }
-        ~OccPixelThresholdTune() override {}
+        ~OccPixelThresholdTune() override = default;
 
         void init(ScanBase *s) override;
         void processHistogram(HistogramBase *h) override;
@@ -214,7 +214,7 @@ class OccPixelThresholdTune : public AnalysisAlgorithm {
 class L1Analysis : public AnalysisAlgorithm {
     public:
         L1Analysis() : AnalysisAlgorithm() {}
-        ~L1Analysis() override {}
+        ~L1Analysis() override = default;
 
         void init(ScanBase *s) override;
         void processHistogram(HistogramBase *h) override;
@@ -233,7 +233,7 @@ class L1Analysis : public AnalysisAlgorithm {
 class TagAnalysis : public AnalysisAlgorithm {
     public:
         TagAnalysis() : AnalysisAlgorithm() {}
-        ~TagAnalysis() override {}
+        ~TagAnalysis() override = default;
 
         void init(ScanBase *s) override;
         void processHistogram(HistogramBase *h) override;
@@ -256,7 +256,7 @@ class TagAnalysis : public AnalysisAlgorithm {
 class TotDistPlotter : public AnalysisAlgorithm {
     public:
         TotDistPlotter() : AnalysisAlgorithm() {}
-        ~TotDistPlotter() override {}
+        ~TotDistPlotter() override = default;
 
         void init(ScanBase *s) override;
         void processHistogram(HistogramBase *h) override;
@@ -277,7 +277,7 @@ class NoiseAnalysis : public AnalysisAlgorithm {
             createMask = true;
             noiseThr = 1e-6;
         }
-        ~NoiseAnalysis() override {}
+        ~NoiseAnalysis() override = default;
 
         void init(ScanBase *s) override;
         void processHistogram(HistogramBase *h) override;
@@ -293,7 +293,7 @@ class NoiseAnalysis : public AnalysisAlgorithm {
 class NoiseTuning : public AnalysisAlgorithm {
     public:
         NoiseTuning() : AnalysisAlgorithm() {}
-        ~NoiseTuning() override {}
+        ~NoiseTuning() override = default;
 
         void init(ScanBase *s) override;
         void processHistogram(HistogramBase *h) override;
@@ -312,7 +312,7 @@ class NoiseTuning : public AnalysisAlgorithm {
 class DelayAnalysis : public AnalysisAlgorithm {
     public:
         DelayAnalysis() : AnalysisAlgorithm() {}
-        ~DelayAnalysis() override {}
+        ~DelayAnalysis() override = default;
 
         void init(ScanBase *s) override;
         void processHistogram(HistogramBase *h) override;
@@ -341,7 +341,7 @@ class DelayAnalysis : public AnalysisAlgorithm {
 class ParameterAnalysis : public AnalysisAlgorithm {
     public:
         ParameterAnalysis() : AnalysisAlgorithm() {};
-        ~ParameterAnalysis() override {};
+        ~ParameterAnalysis() override = default;;
 
         void init(ScanBase *s) override;
         void processHistogram(HistogramBase *h) override;

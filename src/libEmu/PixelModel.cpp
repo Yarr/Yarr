@@ -39,9 +39,7 @@ PixelModel::PixelModel(float _Vthin_mean, float _Vthin_sigma, float _Vthin_gauss
 	noise_sigma_sigma = _noise_sigma_sigma;
 	noise_sigma_gauss = _noise_sigma_gauss;
 }
-PixelModel::~PixelModel()
-{
-}
+PixelModel::~PixelModel()= default;
 
 // functions for modeling pixel responses
 float PixelModel::calculateThreshold(uint32_t Vthin_Fine, uint32_t Vthin_Coarse, uint32_t TDAC)

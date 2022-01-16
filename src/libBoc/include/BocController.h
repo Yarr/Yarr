@@ -19,7 +19,7 @@
 
 class BocController : public HwController, public BocTxCore, public BocRxCore {
     public:
-    	BocController() {};
+        BocController() = default;;
         ~BocController() override;
         void loadConfig(json const &j) override;
 

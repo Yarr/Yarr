@@ -30,9 +30,7 @@ class Fe65p2Cfg : public FrontEndCfg, public Fe65p2GlobalCfg, public Fe65p2Pixel
             vcal_offset = 0.011;
         }
         
-        ~Fe65p2Cfg() override {
-
-        }
+        ~Fe65p2Cfg() override = default;
         
         double toCharge(double vcal) override {
             // Q = C*V

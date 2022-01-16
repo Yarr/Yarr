@@ -30,7 +30,7 @@ class EmuController : public HwController, public EmuTxCore<FE>, public EmuRxCor
     std::vector<std::unique_ptr<RingBuffer>> tx_coms;
 
     public:
-        EmuController() {}
+        EmuController() = default;
         ~EmuController() override;
         void loadConfig(const json &j) override;
 };

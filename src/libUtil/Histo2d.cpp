@@ -88,8 +88,7 @@ Histo2d::Histo2d(Histo2d *h) : HistogramBase(h->getName()) {
     lStat = h->getStat();
 }
 
-Histo2d::~Histo2d() {
-}
+Histo2d::~Histo2d() = default;
 
 unsigned Histo2d::size() const {
     return xbins*ybins;

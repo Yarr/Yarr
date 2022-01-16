@@ -19,7 +19,7 @@ class ToaMap : public HistogramAlgorithm {
             h = nullptr;
             r = nullptr;
         }
-        ~ToaMap() override {}
+        ~ToaMap() override = default;
 
         void create(const LoopStatus& stat) override {
             h = new Histo2d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, stat);
@@ -41,7 +41,7 @@ class Toa2Map : public HistogramAlgorithm {
             h = nullptr;
             r = nullptr;
         }
-        ~Toa2Map() override {}
+        ~Toa2Map() override = default;
 
         void create(const LoopStatus& stat) override {
             h = new Histo2d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, stat);
@@ -63,7 +63,7 @@ class PToTDist : public HistogramAlgorithm {
             h = nullptr;
             r = nullptr;
         }
-        ~PToTDist() override {}
+        ~PToTDist() override = default;
 
         void create(const LoopStatus& stat) override {
             h = new Histo1d(outputName(), 2049, -0.5, 2048+0.5, stat);
@@ -84,7 +84,7 @@ class PToADist : public HistogramAlgorithm {
             h = nullptr;
             r = nullptr;
         }
-        ~PToADist() override {}
+        ~PToADist() override = default;
 
         void create(const LoopStatus& stat) override {
             h = new Histo1d(outputName(), 513, -0.5, (32*16)+0.5, stat);

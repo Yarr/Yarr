@@ -1,7 +1,5 @@
 #include "TxCore.h"
 
-TxCore::TxCore() {
-}
+TxCore::TxCore() = default;
 
-TxCore::~TxCore() {
-}
+TxCore::~TxCore() = default;

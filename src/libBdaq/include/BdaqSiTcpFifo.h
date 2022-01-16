@@ -14,7 +14,7 @@
 class BdaqSiTcpFifo {
 	public:
 		BdaqSiTcpFifo(BdaqTCP& _tcp) : tcp(_tcp) {}
-		~BdaqSiTcpFifo() {}
+		~BdaqSiTcpFifo() = default;
 
 		//Returns the number of available 32-bit words for readout
 		std::size_t getAvailableWords();

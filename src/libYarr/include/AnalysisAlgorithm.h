@@ -21,7 +21,7 @@ class AnalysisAlgorithm {
             nRow = 336;
             make_mask = true;
         }
-        virtual ~AnalysisAlgorithm() {}
+        virtual ~AnalysisAlgorithm() = default;
         
         void setBookkeeper (Bookkeeper *b) {bookie = b;}
         void setChannel (unsigned ch) {channel = ch;}

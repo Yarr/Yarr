@@ -11,7 +11,7 @@
 
 class RogueController : public HwController, public RogueTxCore, public RogueRxCore {
     public:
-        RogueController() {} 
+        RogueController() = default;
         void loadConfig(json const&j) override;
 	void setupMode() override {
 	}

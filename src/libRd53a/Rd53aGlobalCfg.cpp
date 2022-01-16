@@ -20,9 +20,7 @@ Rd53aGlobalCfg::Rd53aGlobalCfg() {
     this->init();
 }
 
-Rd53aGlobalCfg::~Rd53aGlobalCfg() {
-
-}
+Rd53aGlobalCfg::~Rd53aGlobalCfg() = default;
 
 void Rd53aGlobalCfg::init() {
     for (unsigned int i=0; i<numRegs; i++)

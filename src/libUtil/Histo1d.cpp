@@ -52,9 +52,7 @@ Histo1d::Histo1d(const std::string &arg_name, unsigned arg_bins, double arg_xlow
     sum = 0;
 }
 
-Histo1d::~Histo1d() {
-
-}
+Histo1d::~Histo1d() = default;
 
 unsigned Histo1d::size() const {
     return bins;

@@ -29,7 +29,7 @@
 class ScanBase {
     public:
         ScanBase(Bookkeeper *k);
-        virtual ~ScanBase() {}
+        virtual ~ScanBase() = default;
 
         virtual void init() {}
         virtual void preScan() {}

@@ -4,9 +4,7 @@ Fe65p2GlobalCfg::Fe65p2GlobalCfg() {
     this->init();
 }
 
-Fe65p2GlobalCfg::~Fe65p2GlobalCfg() {
-
-}
+Fe65p2GlobalCfg::~Fe65p2GlobalCfg() = default;
 
 void Fe65p2GlobalCfg::init() {
         for(unsigned i=0; i<numRegs; i++)

@@ -31,9 +31,7 @@ Rd53aDiffPixelModel::Rd53aDiffPixelModel(float _VthDiff_mean, float _VthDiff_sig
 	noise_sigma_sigma = _noise_sigma_sigma;
 	noise_sigma_gauss = _noise_sigma_gauss;
 }
-Rd53aDiffPixelModel::~Rd53aDiffPixelModel()
-{
-}
+Rd53aDiffPixelModel::~Rd53aDiffPixelModel() = default;
 
 // functions for modeling pixel responses
 float Rd53aDiffPixelModel::calculateThreshold(uint32_t Vth1Diff, uint32_t Vth2Diff, int TDAC)

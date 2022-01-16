@@ -105,9 +105,7 @@ Histo3d::Histo3d(Histo3d *h) : HistogramBase(h->getName()) {
     lStat = h->getStat();
 }
 
-Histo3d::~Histo3d() {
-
-}
+Histo3d::~Histo3d() = default;
 
 unsigned Histo3d::size() const {
     return xbins*ybins*zbins;

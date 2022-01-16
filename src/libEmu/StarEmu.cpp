@@ -56,7 +56,7 @@ StarEmu::StarEmu(std::vector<ClipBoard<RawData>*> &rx, EmuCom * tx, EmuCom * tx2
     }
 }
 
-StarEmu::~StarEmu() {}
+StarEmu::~StarEmu() = default;
 
 //
 // Decode LCB
@@ -246,7 +246,7 @@ std::unique_ptr<HwController> makeEmu() {
     return ctrl;
 }
 
-EmuRxCore<StarChips>::EmuRxCore() {}
+EmuRxCore<StarChips>::EmuRxCore() = default;
 
 EmuRxCore<StarChips>::~EmuRxCore() {
     // detele data that are not read out

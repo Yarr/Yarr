@@ -31,9 +31,7 @@ Rd53aLinPixelModel::Rd53aLinPixelModel(float _VthresholdLin_mean, float _Vthresh
 	noise_sigma_sigma = _noise_sigma_sigma;
 	noise_sigma_gauss = _noise_sigma_gauss;
 }
-Rd53aLinPixelModel::~Rd53aLinPixelModel()
-{
-}
+Rd53aLinPixelModel::~Rd53aLinPixelModel()= default;
 
 // functions for modeling pixel responses
 float Rd53aLinPixelModel::calculateThreshold(uint32_t VthresholdLin, int TDAC)

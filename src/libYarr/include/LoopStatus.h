@@ -55,7 +55,7 @@ class LoopStatus {
 /// Where we are in the scan engine (this one gets updated)
 class LoopStatusMaster {
     public:
-        LoopStatusMaster() {}
+        LoopStatusMaster() = default;
 
         LoopStatusMaster(const LoopStatusMaster &l) = delete;
         LoopStatus& operator=(const LoopStatus &l) = delete;

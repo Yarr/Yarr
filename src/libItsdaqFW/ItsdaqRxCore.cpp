@@ -17,8 +17,7 @@ ItsdaqRxCore::ItsdaqRxCore(ItsdaqHandler&h)
 {
 }
 
-ItsdaqRxCore::~ItsdaqRxCore(){
-}
+ItsdaqRxCore::~ItsdaqRxCore()= default;
 
 void ItsdaqRxCore::init() {
   logger->debug("init");

@@ -18,7 +18,7 @@
 
 class DoubleColumnBitOps {
 	public:
-		virtual ~DoubleColumnBitOps() {}
+		virtual ~DoubleColumnBitOps() = default;
 		virtual void set(const uint32_t *bitstream) = 0;
 		virtual void setAll(const uint32_t val) = 0;
 		virtual void setPixel(const unsigned n, uint32_t val) = 0;

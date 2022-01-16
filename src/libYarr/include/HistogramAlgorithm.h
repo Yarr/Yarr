@@ -21,7 +21,7 @@ class HistogramAlgorithm {
             nRow = 336;
         
         }
-        virtual ~HistogramAlgorithm() {}
+        virtual ~HistogramAlgorithm() = default;
 
         virtual void create(const LoopStatus &stat) {}
         

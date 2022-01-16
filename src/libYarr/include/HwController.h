@@ -22,7 +22,7 @@ class HwController : virtual public TxCore, virtual public RxCore {
         virtual void runMode() {}
         virtual const json getStatus() { return json{}; };
 
-        ~HwController() override {}
+        ~HwController() override = default;
 };
 
 #endif

@@ -16,7 +16,7 @@ class FrontEndScopeAnalysis : public AnalysisAlgorithm {
 
     public :
         FrontEndScopeAnalysis() : AnalysisAlgorithm() {};
-        ~FrontEndScopeAnalysis() override {}
+        ~FrontEndScopeAnalysis() override = default;
 
         void loadConfig(const json &config) override;
         void init(ScanBase* s) override;
@@ -61,7 +61,7 @@ class ToaAnalysis : public AnalysisAlgorithm {
 
     public :
         ToaAnalysis() : AnalysisAlgorithm() {};
-        ~ToaAnalysis() override {};
+        ~ToaAnalysis() override = default;;
 
         void init(ScanBase *s) override;
         void processHistogram(HistogramBase* h) override;

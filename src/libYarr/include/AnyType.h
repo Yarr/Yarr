@@ -69,7 +69,7 @@ inline std::string print_type(const T& t) {
 // Base class
 class VarBase {
  public:
-  virtual ~VarBase() {}
+  virtual ~VarBase() = default;
   virtual const std::type_info& type() const = 0;
   virtual VarBase* clone() = 0;
 };
@@ -89,7 +89,7 @@ class VarHolder<T, typename std::enable_if< !std::is_class<T>::value >::type> : 
  public:
  VarHolder( const T& val ) : m_var( val ) {}
   static constexpr T invalid_value = std::numeric_limits<T>::quiet_NaN();
-  ~VarHolder() override{}
+  ~VarHolder() override= default;
   const std::type_info& type() const override { return typeid(T); }
   T* get() { return &m_var; }
   T& operator*() { return m_var; }
@@ -109,7 +109,7 @@ template< typename T>
 class VarHolder<T, typename std::enable_if< is_vector<T>::value >::type> : public VarBase {
  public:
  VarHolder( const T& val ) : m_var( val ) {}
-  ~VarHolder() override{}
+  ~VarHolder() override= default;
   const std::type_info& type() const override { return typeid(T); }
   T* get() { return &m_var; }
   T& operator*() { return m_var; }
@@ -132,7 +132,7 @@ template< typename T>
 class VarHolder<T, typename std::enable_if< std::is_class<T>::value && !is_vector<T>::value >::type> : public VarBase {
  public:
  VarHolder( const T& val ) : m_var( val ) {}
-  ~VarHolder() override{}
+  ~VarHolder() override= default;
   const std::type_info& type() const override { return typeid(T); }
   T* get() { return &m_var; }
   T& operator*() { return m_var; }
@@ -179,7 +179,7 @@ class anytype {
     return *this;
   }
   
-  ~anytype() {}
+  ~anytype() = default;
   const std::type_info& type() const { return m_var->type(); }
   VarBase& get() const { return *m_var; }
   template<typename T> void set( T&& val ) { *( dynamic_cast<VarHolder<T> &>( *m_var ).get() ) = val; }
