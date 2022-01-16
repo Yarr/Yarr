@@ -44,8 +44,8 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
          * These can be possibly templated:
          * template<YARR::IOFormat IN, YARR::IOFormat OUT> void convert( IN&); ?
          */
-        void toFileJson(json&);
-        void fromFileJson(json&);
+        void writeConfig(json &j);
+        void loadConfig(const json &);
         
         float ADCtoV (uint16_t ADC);
         float VtoTemp (float V, uint16_t Sensor, bool isRadSensor);

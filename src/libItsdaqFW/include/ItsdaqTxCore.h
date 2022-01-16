@@ -44,8 +44,8 @@ class ItsdaqTxCore : virtual public TxCore {
   void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) override;
   void resetTriggerLogic() override;
   uint32_t getTrigInCount() override;
-  void fromFileJson(json& j);
-  void toFileJson(json& j);
+  void loadConfig(const json &j);
+  void writeConfig(json& j);
 
 private:
   // Run n triggers in the background

@@ -12,7 +12,7 @@ void Fei4GlobalFeedback::writeConfig(json &config){
     config["step"] = step;
     config["parameter"] = parName;
 }
-void Fei4GlobalFeedback::loadConfig(json &config){
+void Fei4GlobalFeedback::loadConfig(const json &config){
     if (config.contains("min"))
       min = config["min"];
     if (config.contains("max"))

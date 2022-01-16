@@ -109,7 +109,7 @@ int StarCfg::getTrimDAC(unsigned col, unsigned row) const {
     return 0;
 }
 
-void StarCfg::toFileJson(json &j) {
+void StarCfg::writeConfig(json &j) {
     logger->debug("Send StarCfg to json");
 
     j["name"] = name;
@@ -253,7 +253,7 @@ uint32_t valFromJson(const json &jValue) {
     }
 }
  
-void StarCfg::fromFileJson(json &j) {
+void StarCfg::loadConfig(const json &j) {
     logger->debug("Read StarCfg from json");
 
     if (j.contains("name")) {

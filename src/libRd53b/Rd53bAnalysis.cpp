@@ -31,7 +31,7 @@ namespace {
 // FrontEndScopeAnalysis
 //
 //////////////////////////////////////////////////////////////////////////////
-void FrontEndScopeAnalysis::loadConfig(json& j) {
+void FrontEndScopeAnalysis::loadConfig(const json &j) {
 
     if(j.contains("doPulseShapeMap")) {
         m_doPulseShapeMap = static_cast<bool>(j["doPulseShapeMap"]);;
@@ -287,7 +287,7 @@ void FrontEndScopeAnalysis::end() {
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-void ToaAnalysis::loadConfig(json &j) {
+void ToaAnalysis::loadConfig(const json &j) {
 
     // check for valid ToA histogram bin configuration
     if (j.contains("toa_bins")) {

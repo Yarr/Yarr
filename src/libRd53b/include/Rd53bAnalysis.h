@@ -18,7 +18,7 @@ class FrontEndScopeAnalysis : public AnalysisAlgorithm {
         FrontEndScopeAnalysis() : AnalysisAlgorithm() {};
         ~FrontEndScopeAnalysis() {}
 
-        void loadConfig(json& config);
+        void loadConfig(const json &config);
         void init(ScanBase* s);
         void processHistogram(HistogramBase* h);
         void end();
@@ -66,7 +66,7 @@ class ToaAnalysis : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase* h);
         void end();
-        void loadConfig(json& config);
+        void loadConfig(const json &config);
 
     private :
 

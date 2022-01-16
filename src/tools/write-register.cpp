@@ -57,7 +57,7 @@ std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, std::string
         return fe;
     }
     auto chip_register_json = ScanHelper::openJsonFile(chip_register_file_path);
-    cfg->fromFileJson(chip_register_json);
+    cfg->loadConfig(chip_register_json);
     return fe;
 }
 

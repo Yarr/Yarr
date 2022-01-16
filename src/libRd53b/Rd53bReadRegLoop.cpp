@@ -425,7 +425,7 @@ void Rd53bReadRegLoop::writeConfig(json &config)
     config["VoltMux"] = m_VoltMux; 
 }
 
-void Rd53bReadRegLoop::loadConfig(json &config)
+void Rd53bReadRegLoop::loadConfig(const json &config)
 {
     if (config.contains("EnblRingOscA"))
         m_EnblRingOscA = config["EnblRingOscA"];

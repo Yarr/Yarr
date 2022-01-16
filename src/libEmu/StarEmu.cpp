@@ -45,7 +45,7 @@ StarEmu::StarEmu(std::vector<ClipBoard<RawData>*> &rx, EmuCom * tx, EmuCom * tx2
                 logger->error("Error opening chip config: {}", e.what());
                 throw(std::runtime_error("StarEmu::StarEmu"));
             }
-            regCfg->fromFileJson(jChips);
+            regCfg->loadConfig(jChips);
         } else {
             // No chip configuration provided. Default: one HCCStar + one ABCStar
             regCfg->setHCCChipId(i);
@@ -334,7 +334,7 @@ bool emu_registered_Emu =
                                 makeEmu<StarChips, StarEmu>);
 
 template<>
-void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
+void EmuController<StarChips, StarEmu>::loadConfig(const json &j) {
 
   //TODO make nice
   logger->info("-> Starting Emulator");

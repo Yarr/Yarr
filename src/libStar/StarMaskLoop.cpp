@@ -227,7 +227,7 @@ void StarMaskLoop::writeConfig(json &config) {
     config["doNmask"] = m_doNmask;
 }
 
-void StarMaskLoop::loadConfig(json &config) {
+void StarMaskLoop::loadConfig(const json &config) {
     min = config["min"];
     max = config["max"];
     step = config["step"];

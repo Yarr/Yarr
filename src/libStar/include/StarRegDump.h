@@ -16,7 +16,7 @@ class StarRegDump: public LoopActionBase {
     public:
         StarRegDump();
         void writeConfig(json &config);
-        void loadConfig(json &config);
+        void loadConfig(const json &config);
 
     private:
         int    m_addr;

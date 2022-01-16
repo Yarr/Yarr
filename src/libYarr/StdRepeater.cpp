@@ -49,7 +49,7 @@ void StdRepeater::writeConfig(json &j) {
     j["max"] = max;
 }
 
-void StdRepeater::loadConfig(json &j) {
+void StdRepeater::loadConfig(const json &j) {
     if (j.contains("min"))
         min = j["min"];
     if (j.contains("max"))

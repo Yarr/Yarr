@@ -156,7 +156,7 @@ void Fei4TriggerLoop::writeConfig(json &config) {
     config["extTrigger"] = m_extTrigger;
 }
 
-void Fei4TriggerLoop::loadConfig(json &config) {
+void Fei4TriggerLoop::loadConfig(const json &config) {
     if (config.contains("count"))
       setTrigCnt(config["count"]);
     if (config.contains("frequency"))

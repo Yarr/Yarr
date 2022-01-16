@@ -18,7 +18,7 @@ class Rd53aCoreColLoop : public LoopActionBase {
         Rd53aCoreColLoop();
         
         void writeConfig(json &j) override final;
-        void loadConfig(json &j)  override final;
+        void loadConfig(const json &j)  override final;
     
     private:
         /**

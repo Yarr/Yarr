@@ -26,7 +26,7 @@ class Fei4MaskLoop : public LoopActionBase {
         bool getLcap() {return enable_lCap;}
 
         void writeConfig(json &config);
-        void loadConfig(json &config);
+        void loadConfig(const json &config);
         
     private:
         uint32_t m_mask;

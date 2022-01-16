@@ -18,7 +18,7 @@ class Rd53bParameterLoop : public LoopActionBase {
         Rd53bParameterLoop(Rd53bReg Rd53bGlobalCfg::*ref);
 
         void writeConfig(json &j);
-        void loadConfig(json &j);
+        void loadConfig(const json &j);
 
     private:
         Rd53bReg Rd53bGlobalCfg::*parPtr;

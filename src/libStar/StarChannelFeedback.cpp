@@ -31,7 +31,7 @@ void StarChannelFeedback::writeConfig(json &j) {
     j["resetTdac"] = m_resetTdac;
 }
 
-void StarChannelFeedback::loadConfig(json &j) {
+void StarChannelFeedback::loadConfig(const json &j) {
     if (j.contains("min"))
         min = j["min"];
     if (j.contains("max"))

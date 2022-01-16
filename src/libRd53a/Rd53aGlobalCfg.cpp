@@ -322,13 +322,13 @@ void Rd53aGlobalCfg::init() {
     InjVcalDiff.init(&InjVcalMed, &InjVcalHigh, true); regMap["InjVcalDiff"] = (Rd53aReg Rd53aGlobalCfg::*)&Rd53aGlobalCfg::InjVcalDiff;
 }
 
-void Rd53aGlobalCfg::toFileJson(json &j) {
+void Rd53aGlobalCfg::writeConfig(json &j) {
     for(auto it : regMap) {
         j["RD53A"]["GlobalConfig"][it.first] = (this->*it.second).read();
     }    
 }
 
-void Rd53aGlobalCfg::fromFileJson(json &j) {
+void Rd53aGlobalCfg::loadConfig(const json &j) {
     for (auto it : regMap) {
         if (j.contains({"RD53A","GlobalConfig",it.first})) {
             (this->*it.second).write(j["RD53A"]["GlobalConfig"][it.first]);

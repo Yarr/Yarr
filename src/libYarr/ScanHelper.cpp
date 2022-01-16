@@ -147,7 +147,7 @@ namespace ScanHelper {
                             shlog->error("Error opening chip config: {}", e.what());
                             throw(std::runtime_error("loadChips failure"));
                         }
-                        feCfg->fromFileJson(cfg);
+                        feCfg->loadConfig(cfg);
                         if (chip.contains("locked"))
                             feCfg->setLocked((int)chip["locked"]);
                         cfgFile.close();
@@ -157,7 +157,7 @@ namespace ScanHelper {
                         feCfg->setName(feCfg->getName() + "_" + std::to_string((int)chip["rx"]));
                         shlog->warn("Creating new config of FE {} at {}", feCfg->getName(),chipConfigPath);
                         json jTmp;
-                        feCfg->toFileJson(jTmp);
+                        feCfg->writeConfig(jTmp);
                         std::ofstream oFTmp(chipConfigPath);
                         oFTmp << std::setw(4) << jTmp;
                         oFTmp.close();
@@ -171,7 +171,7 @@ namespace ScanHelper {
                     // TODO fix folder
                     std::ofstream backupCfgFile(outputDir + feCfg->getConfigFile() + ".before");
                     json backupCfg;
-                    feCfg->toFileJson(backupCfg);
+                    feCfg->writeConfig(backupCfg);
                     backupCfgFile << std::setw(4) << backupCfg;
                     backupCfgFile.close();
                 }

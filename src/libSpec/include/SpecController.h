@@ -24,7 +24,7 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
             return this->SpecCom::getStatus();
         }
 
-        void loadConfig(json &j) override {
+        void loadConfig(const json &j) override {
             if (j.contains("specNum"))
                 this->SpecCom::init(j["specNum"]);
             

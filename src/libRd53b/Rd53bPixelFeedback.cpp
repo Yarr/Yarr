@@ -33,7 +33,7 @@ void Rd53bPixelFeedback::writeConfig(json &j) {
     j["rstPixelReg"] = m_rstPixelReg;
 }
 
-void Rd53bPixelFeedback::loadConfig(json &j) {
+void Rd53bPixelFeedback::loadConfig(const json &j) {
     if (j.contains("min"))
         min = j["min"];
     if (j.contains("max"))

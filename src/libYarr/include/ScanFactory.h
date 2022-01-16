@@ -18,7 +18,7 @@ class ScanFactory : public ScanBase {
     public:
         ScanFactory(Bookkeeper *k, FeedbackClipboardMap *fb);
 
-        void loadConfig(json &scanCfg);
+        void loadConfig(const json &scanCfg);
 
         void init();
         void preScan();

@@ -70,7 +70,7 @@ void ScanFactory::postScan() {
 
 }
 
-void ScanFactory::loadConfig(json &scanCfg) {
+void ScanFactory::loadConfig(const json &scanCfg) {
     m_config = scanCfg;
     sflog->info("Loading Scan:");
     

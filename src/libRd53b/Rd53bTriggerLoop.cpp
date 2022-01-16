@@ -203,7 +203,7 @@ void Rd53bTriggerLoop::writeConfig(json &config) {
     config["zeroTot"] = m_zeroTot;
 }
 
-void Rd53bTriggerLoop::loadConfig(json &config) {
+void Rd53bTriggerLoop::loadConfig(const json &config) {
     if (config.contains("count"))
         setTrigCnt(config["count"]);
     if (config.contains("frequency"))

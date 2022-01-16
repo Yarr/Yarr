@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
   // json input;
   //std::cout << input["FE-I4B"]["GlobalConfig"].dump(4) << std::endl;
   input=json::parse(cfgFile);
-  fe.fromFileJson(input);
+    fe.loadConfig(input);
 
   std::cout << "------------------------------------------" << std::endl;
   std::cout << std::endl << "check registers" << std::endl;
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
       while(!mySpec.isCmdEmpty()) {}
     }
   }
-  dummy.toFileJson(replica);
+    dummy.writeConfig(replica);
 
   if(verbose)
     replica["FE-I4B"]["GlobalConfig"].dump(4) ;
@@ -226,7 +226,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  dummy.toFileJson(replica);
+    dummy.writeConfig(replica);
 
 
   //----------------------------------------------------------------

@@ -64,7 +64,7 @@ void StdParameterLoop::writeConfig(json &j) {
     j["waitTime"] = m_waitTime.count();
 }
 
-void StdParameterLoop::loadConfig(json &j) {
+void StdParameterLoop::loadConfig(const json &j) {
     if (j.contains("min"))
         min = j["min"];
     if (j.contains("max"))

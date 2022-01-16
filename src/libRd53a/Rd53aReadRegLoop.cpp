@@ -306,7 +306,7 @@ void Rd53aReadRegLoop::writeConfig(json &config) {
     config["VoltMux"] = SendBack;
 }
 
-void Rd53aReadRegLoop::loadConfig(json &config) {
+void Rd53aReadRegLoop::loadConfig(const json &config) {
     if (config.contains("EnblRingOsc"))
         m_EnblRingOsc = config["EnblRingOsc"];
     if (config.contains("RingOscRep"))

@@ -46,7 +46,7 @@ public:
     Rd53bReadRegLoop();
 
     void writeConfig(json &config);
-    void loadConfig(json &config);
+    void loadConfig(const json &config);
     double convertRingOscCntToMHz(double counter) { return counter / (m_RingOscDur << 1) * 40; }
 
 private:

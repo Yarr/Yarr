@@ -72,8 +72,8 @@ class Fei4GlobalCfg {
     private:
         void init();
     protected:
-        void toFileJson(json &j);
-        void fromFileJson(json &j);
+        void writeConfig(json &j);
+        void loadConfig(const json &j);
     public:
         static const unsigned numRegs = 36;
         uint16_t cfg[numRegs];

@@ -54,14 +54,14 @@ public:
    *
    * @param j json object to store configuration
    **/
-  void toFileJson(json &j);
+  void writeConfig(json &j);
 
   /**
    * Read configuration from json.
    *
    * @param j json object to read configuration from
    **/
-  void fromFileJson(json &j);
+  void loadConfig(const json &j);
 
  protected:
   /// Do some initialisation after ItsdaqHandler is constructed

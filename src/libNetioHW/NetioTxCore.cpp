@@ -417,7 +417,7 @@ void NetioTxCore::printFifo(uint32_t elink){
   std:cout << dec << endl;
 }
 
-void NetioTxCore::toFileJson(json &j)  {
+void NetioTxCore::writeConfig(json &j)  {
   j["NetIO"]["host"] = m_felixhost;
   j["NetIO"]["txport"] = m_felixport;
   j["NetIO"]["manchester"] = m_manchester;
@@ -425,7 +425,7 @@ void NetioTxCore::toFileJson(json &j)  {
   j["NetIO"]["extend"] = (m_extend == 4);
 }
 
-void NetioTxCore::fromFileJson(json &j){
+void NetioTxCore::loadConfig(const json &j){
    m_felixhost  = j["NetIO"]["host"];
    m_felixport  = j["NetIO"]["txport"];
    m_manchester = j["NetIO"]["manchester"];

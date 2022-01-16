@@ -177,7 +177,7 @@ void StarCounterLoop::writeConfig(json &config) {
 	config["noInject"] = m_noInject;
 }
 
-void StarCounterLoop::loadConfig(json &config) {
+void StarCounterLoop::loadConfig(const json &config) {
 
 	if (config.contains("trig_count"))
 		setTrigCnt(config["trig_count"]);

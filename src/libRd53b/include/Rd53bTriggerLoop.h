@@ -25,7 +25,7 @@ class Rd53bTriggerLoop : public LoopActionBase, public StdTriggerAction {
         void setNoInject();
 
         void writeConfig(json &config);
-        void loadConfig(json &config);
+        void loadConfig(const json &config);
 
     private:
         uint32_t m_trigDelay;

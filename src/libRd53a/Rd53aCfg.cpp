@@ -68,7 +68,7 @@ unsigned Rd53aCfg::getChipId() {
     return m_chipId;
 }
 
-void Rd53aCfg::toFileJson(json &j) {
+void Rd53aCfg::writeConfig(json &j) {
     j["RD53A"]["Parameter"]["Name"] = name;
     j["RD53A"]["Parameter"]["ChipId"] = m_chipId;
     j["RD53A"]["Parameter"]["InjCap"] = m_injCap;
@@ -80,11 +80,11 @@ void Rd53aCfg::toFileJson(json &j) {
         for(unsigned  i=0;i<2;i++)  j["RD53A"]["Parameter"]["RadSen"+std::to_string(sens)+"Par"][i] = m_RadSenPar[sens][i];
     }
 
-    Rd53aGlobalCfg::toFileJson(j);
-    Rd53aPixelCfg::toFileJson(j);
+    Rd53aGlobalCfg::writeConfig(j);
+    Rd53aPixelCfg::writeConfig(j);
 }
 
-void Rd53aCfg::fromFileJson(json &j) {
+void Rd53aCfg::loadConfig(const json &j) {
     if (j.contains({"RD53A","Parameter","Name"}))
         name = j["RD53A"]["Parameter"]["Name"];
     if (j.contains({"RD53A","Parameter","ChipId"}))
@@ -104,6 +104,6 @@ void Rd53aCfg::fromFileJson(json &j) {
             for(unsigned  i=0;i<2;i++)  m_RadSenPar[sens][i] = j["RD53A"]["Parameter"]["RadSen"+std::to_string(sens)+"Par"][i];
     }
 
-    Rd53aGlobalCfg::fromFileJson(j);
-    Rd53aPixelCfg::fromFileJson(j);
+    Rd53aGlobalCfg::loadConfig(j);
+    Rd53aPixelCfg::loadConfig(j);
 }

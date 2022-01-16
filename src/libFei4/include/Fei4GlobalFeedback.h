@@ -67,7 +67,7 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
         }
     }
     void writeConfig(json &config) override;
-    void loadConfig(json &config) override;
+    void loadConfig(const json &config) override;
     private:
     std::string parName = "";
     void init() override {

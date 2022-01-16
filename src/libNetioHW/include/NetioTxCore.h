@@ -55,8 +55,8 @@ public:
   void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) override; 	// set the trigger logic mode
   void resetTriggerLogic() override; 	// reset the trigger logic
   uint32_t getTrigInCount() override; 	// get the number of triggers in
-  void fromFileJson(json& j); 		// read configuration from json
-  void toFileJson(json& j); 		// write configuration to json
+  void loadConfig(const json &j); 		// read configuration from json
+  void writeConfig(json& j); 		// write configuration to json
 
 private:
   std::string m_feType; // flag used to keep rd53a and strips specific stuff seperate

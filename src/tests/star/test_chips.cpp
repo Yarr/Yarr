@@ -118,7 +118,7 @@ public:
   MyHwController() {}
   ~MyHwController() {}
 
-  void loadConfig(json &j) override {}
+  void loadConfig(json const&j) override {}
 };
 
 TEST_CASE("StarBasicConfig", "[star][chips]") {

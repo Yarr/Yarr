@@ -24,12 +24,12 @@ public:
     // NB initialisation is only done in loadConfig
   }
 
-  void loadConfig(json &j) override;
+  void loadConfig(const json &j) override;
 
   const json getStatus() override;
 };
 
-void ItsdaqFWController::loadConfig(json &j) {
+void ItsdaqFWController::loadConfig(const json &j) {
   logger->debug("Load config from json");
 
   // Default if all switches off
@@ -72,8 +72,8 @@ void ItsdaqFWController::loadConfig(json &j) {
 
   h.reconfigure(remoteIp, lPort, rPort);
 
-  ItsdaqTxCore::fromFileJson(j);
-  ItsdaqRxCore::fromFileJson(j);
+  ItsdaqTxCore::loadConfig(j);
+    ItsdaqRxCore::loadConfig(j);
 }
 
 const json ItsdaqFWController::getStatus() {

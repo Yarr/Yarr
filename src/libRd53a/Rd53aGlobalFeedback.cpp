@@ -45,7 +45,7 @@ void Rd53aGlobalFeedback::writeConfig(json &j) {
     j["pixelRegs"] = m_pixelReg;
 }
 
-void Rd53aGlobalFeedback::loadConfig(json &j) {
+void Rd53aGlobalFeedback::loadConfig(const json &j) {
     if (j.contains("min"))
         min = j["min"];
     if (j.contains("max"))

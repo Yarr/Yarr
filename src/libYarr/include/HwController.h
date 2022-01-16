@@ -16,7 +16,7 @@
 
 class HwController : virtual public TxCore, virtual public RxCore {
     public:
-        virtual void loadConfig(json &j) = 0 ;
+        virtual void loadConfig(const json &j) = 0 ;
         
         virtual void setupMode() {}
         virtual void runMode() {}

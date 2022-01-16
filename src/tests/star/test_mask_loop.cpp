@@ -101,7 +101,7 @@ public:
   MyHwController() {}
   virtual ~MyHwController() {}
 
-  void loadConfig(json &j) override {}
+  void loadConfig(const json &j) override {}
 
   void setupMode() override {}
   void runMode() override {}

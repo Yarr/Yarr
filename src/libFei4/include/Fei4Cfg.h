@@ -60,8 +60,8 @@ class Fei4Cfg : public FrontEndCfg, public Fei4GlobalCfg, public Fei4PixelCfg {
         unsigned getChipId();
         void setChipId(unsigned chipId);
 
-        void toFileJson(json &j) override;
-        void fromFileJson(json &j) override;
+        void writeConfig(json &j) override;
+        void loadConfig(const json &j) override;
 
     protected:
         unsigned chipId;

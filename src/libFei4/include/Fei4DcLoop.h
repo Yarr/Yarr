@@ -16,7 +16,7 @@ class Fei4DcLoop: public LoopActionBase {
         void setMode(enum DC_MODE mode);
         uint32_t getMode();
         
-        void loadConfig(json &config);
+        void loadConfig(const json &config);
         void writeConfig(json &config);
 
     private:

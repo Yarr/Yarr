@@ -132,8 +132,8 @@ class StarCfg : public FrontEndCfg {
   int getTrimDAC(unsigned col, unsigned row) const;
 
 
-  void toFileJson(json &j) override;
-  void fromFileJson(json &j) override;
+  void writeConfig(json &j) override;
+  void loadConfig(const json &j) override;
 
   using configFuncMap = std::unordered_map<std::string, std::tuple<json, std::vector<json>>(StarCfg::*)(void)>;
   static configFuncMap createConfigs;

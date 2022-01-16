@@ -262,7 +262,7 @@ void Rd53aMaskLoop::writeConfig(json &j) {
 
 }
 
-void Rd53aMaskLoop::loadConfig(json &j) {
+void Rd53aMaskLoop::loadConfig(const json &j) {
     if (j.contains("min"))
         min = j["min"];
     if (j.contains("max"))

@@ -16,7 +16,7 @@ class Rd53bCoreColLoop : public LoopActionBase {
         Rd53bCoreColLoop();
 
         void writeConfig(json &j);
-        void loadConfig(json &j);
+        void loadConfig(const json &j);
 
     private:
         unsigned m_cur;

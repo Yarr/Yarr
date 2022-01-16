@@ -17,19 +17,19 @@ public:
   NetioController()
   {}
 
-  void loadConfig(json &j) override;
+  void loadConfig(json const &j) override;
 };
 
-void NetioController::loadConfig(json &j) {
+void NetioController::loadConfig(const json &j) {
   try {
-    NetioTxCore::fromFileJson(j);
+      NetioTxCore::loadConfig(j);
   } catch(std::runtime_error &je) {
     nlog->error("Failed reading NetioTxCore config");
     throw je;
   }
 
   try {
-    NetioRxCore::fromFileJson(j);
+      NetioRxCore::loadConfig(j);
   } catch(std::runtime_error &je) {
     nlog->error("Failed reading NetioRxCore config");
     throw je;

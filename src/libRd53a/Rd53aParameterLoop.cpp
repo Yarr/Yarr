@@ -73,7 +73,7 @@ void Rd53aParameterLoop::writeConfig(json &j) {
     j["parameter"] = parName;
 }
 
-void Rd53aParameterLoop::loadConfig(json &j) {
+void Rd53aParameterLoop::loadConfig(const json &j) {
     if (j.contains("min"))
         min = j["min"];
     if (j.contains("max"))

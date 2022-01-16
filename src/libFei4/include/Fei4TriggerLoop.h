@@ -31,7 +31,7 @@ class Fei4TriggerLoop: public LoopActionBase, public StdTriggerAction {
         //bool getIsInner();
 
         void writeConfig(json &config);
-        void loadConfig(json &config);
+        void loadConfig(const json &config);
     private:
         unsigned m_trigDelay;
         float m_trigFreq;
