@@ -17,8 +17,7 @@ ItsdaqRxCore::ItsdaqRxCore(ItsdaqHandler&h)
 {
 }
 
-ItsdaqRxCore::~ItsdaqRxCore(){
-}
+ItsdaqRxCore::~ItsdaqRxCore()= default;
 
 void ItsdaqRxCore::init() {
   logger->debug("init");
@@ -144,7 +143,7 @@ bool ItsdaqRxCore::isBridgeEmpty() {
   return (t1 - bridge_watcher) > std::chrono::microseconds(100);
 }
 
-void ItsdaqRxCore::writeConfig(json &j) {
+void ItsdaqRxCore::writeConfig(json &j) const {
   if(m_streamConfig != 0) {
     j["streamConfig"] = m_streamConfig;
   }

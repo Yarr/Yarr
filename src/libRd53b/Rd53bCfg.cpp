@@ -79,7 +79,7 @@ void Rd53bCfg::setChipId(unsigned id) {
     m_chipId = id;
 }
 
-unsigned Rd53bCfg::getChipId() {
+unsigned Rd53bCfg::getChipId() const {
     return m_chipId;
 }
 
@@ -118,7 +118,7 @@ float Rd53bCfg::readNTCTemp(float R, bool in_kelvin)
     return tK - 273.15;
 }
 
-float Rd53bCfg::readMOSTemp(float deltaV, bool in_kelvin)
+float Rd53bCfg::readMOSTemp(float deltaV, bool in_kelvin) const
 {
     // Convert voltage difference into temperature from https://indico.cern.ch/event/1011941/contributions/4278988/attachments/2210633/3741190/RD53B_calibatrion_sensor_temperature.pdf
     float Nf = m_MOScalPar;

@@ -56,7 +56,7 @@ StarEmu::StarEmu(std::vector<ClipBoard<RawData>*> &rx, EmuCom * tx, EmuCom * tx2
     }
 }
 
-StarEmu::~StarEmu() {}
+StarEmu::~StarEmu() = default;
 
 //
 // Decode LCB
@@ -202,7 +202,7 @@ class EmuRxCore<StarChips> : virtual public RxCore {
         std::map<uint32_t, bool> m_channels;
     public:
         EmuRxCore();
-        ~EmuRxCore();
+        ~EmuRxCore() override;
         
         void setCom(uint32_t chn, std::unique_ptr<ClipBoard<RawData>> queue);
         ClipBoard<RawData>* getCom(uint32_t chn);
@@ -246,7 +246,7 @@ std::unique_ptr<HwController> makeEmu() {
     return ctrl;
 }
 
-EmuRxCore<StarChips>::EmuRxCore() {}
+EmuRxCore<StarChips>::EmuRxCore() = default;
 
 EmuRxCore<StarChips>::~EmuRxCore() {
     // detele data that are not read out

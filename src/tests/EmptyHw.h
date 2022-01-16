@@ -5,8 +5,8 @@
 
 class EmptyTxCore : public virtual TxCore {
 public:
-  EmptyTxCore() {}
-  ~EmptyTxCore() {}
+  EmptyTxCore() = default;
+  ~EmptyTxCore() override = default;
 
   void writeFifo(uint32_t) override {}
   void releaseFifo() override {}
@@ -37,8 +37,8 @@ public:
 
 class EmptyRxCore : public virtual RxCore {
  public:
-  EmptyRxCore() {}
-  ~EmptyRxCore() {}
+  EmptyRxCore() = default;
+  ~EmptyRxCore() override = default;
 
   void setRxEnable(uint32_t val) override {}
   void setRxEnable(std::vector<uint32_t>) override {}

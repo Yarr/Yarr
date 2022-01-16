@@ -58,11 +58,11 @@ SpecCom::~SpecCom() {
     delete spec;
 }
 
-bool SpecCom::isInitialized() {
+bool SpecCom::isInitialized() const {
     return is_initialized;
 }
 
-int SpecCom::getId() {
+int SpecCom::getId() const {
     return specId;
 }
 

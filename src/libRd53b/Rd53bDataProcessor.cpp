@@ -61,9 +61,7 @@ Rd53bDataProcessor::Rd53bDataProcessor()
     _status = INIT;
 }
 
-Rd53bDataProcessor::~Rd53bDataProcessor()
-{
-}
+Rd53bDataProcessor::~Rd53bDataProcessor()= default;
 
 void Rd53bDataProcessor::init()
 {

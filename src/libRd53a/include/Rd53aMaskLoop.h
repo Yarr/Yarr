@@ -24,8 +24,8 @@ class Rd53aMaskLoop : public LoopActionBase {
     public:
         Rd53aMaskLoop();
 
-        void writeConfig(json &j);
-        void loadConfig(const json &j);
+        void writeConfig(json &j) override;
+        void loadConfig(const json &j) override;
     private:
         unsigned m_cur;
         int m_maskType;
@@ -33,10 +33,10 @@ class Rd53aMaskLoop : public LoopActionBase {
         int m_sensorType;
         int m_includedPixels;
 
-        void init();
-        void end();
-        void execPart1();
-        void execPart2();
+        void init() override;
+        void end() override;
+        void execPart1() override;
+        void execPart2() override;
         
         std::map<FrontEnd*, std::array<uint16_t, Rd53a::n_DC*Rd53a::n_Row>> m_pixRegs;
 
@@ -47,7 +47,7 @@ class Rd53aMaskLoop : public LoopActionBase {
 
         bool getNeighboursMap(int col, int row, int sensorType, int maskSize, std::vector<std::pair<int, int>> &neighbours);
         bool applyMask(int col, int row);
-        bool ignorePixel(int col, int row);
+        bool ignorePixel(int col, int row) const;
 
         //int IdentifyCorner(int col, int row);
         //int IdentifyPixel(int col, int row);

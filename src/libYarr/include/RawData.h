@@ -38,7 +38,7 @@ class RawDataContainer {
             delete d;
         }
 
-        unsigned size() {
+        unsigned size() const {
             return adr.size();
         }
 

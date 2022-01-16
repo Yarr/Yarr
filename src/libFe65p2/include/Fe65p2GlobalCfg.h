@@ -23,7 +23,7 @@ class Fe65p2GlobalReg {
         uint16_t *m_cfg;
         unsigned m_offset;
     public:
-        Fe65p2GlobalReg(){}
+        Fe65p2GlobalReg()= default;
         
         void initReg(uint16_t *cfg, const unsigned offset, const uint16_t cfgBits) {
             m_cfg = cfg;

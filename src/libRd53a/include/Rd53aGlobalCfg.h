@@ -22,7 +22,7 @@ class Rd53aReg {
             m_addr = 999;
         }
 
-        virtual ~Rd53aReg() {}
+        virtual ~Rd53aReg() = default;
 
         void init(unsigned addr, uint16_t *cfg, const unsigned bOffset, const unsigned bits, const uint16_t value) {
             m_addr = addr;
@@ -42,7 +42,7 @@ class Rd53aReg {
             return ((*m_cfg >> m_bOffset) & mask);
         }
 
-        uint16_t applyMask(uint16_t value) {
+        uint16_t applyMask(uint16_t value) const {
             unsigned mask = (1<<m_bits)-1;
             return ((value >> m_bOffset) & mask);
         }

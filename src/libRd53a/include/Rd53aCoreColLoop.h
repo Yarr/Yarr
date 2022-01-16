@@ -17,8 +17,8 @@ class Rd53aCoreColLoop : public LoopActionBase {
     public:
         Rd53aCoreColLoop();
         
-        void writeConfig(json &j) override final;
-        void loadConfig(const json &j)  override final;
+        void writeConfig(json &j) override;
+        void loadConfig(const json &j)  override;
     
     private:
         /**
@@ -30,10 +30,10 @@ class Rd53aCoreColLoop : public LoopActionBase {
         std::unique_ptr<Impl> m_impl;
         std::vector<unsigned> m_delayArray;
         
-        void init()      override final;
-        void end()       override final;
-        void execPart1() override final;
-        void execPart2() override final;
+        void init()      override;
+        void end()       override;
+        void execPart1() override;
+        void execPart2() override;
 };
 
 

@@ -19,9 +19,7 @@ Rd53bGlobalCfg::Rd53bGlobalCfg() {
     this->init();
 }
 
-Rd53bGlobalCfg::~Rd53bGlobalCfg() {
-
-}
+Rd53bGlobalCfg::~Rd53bGlobalCfg() = default;
 
 uint16_t Rd53bGlobalCfg::getValue(Rd53bReg Rd53bGlobalCfg::*ref) const {
     return (this->*ref).read();

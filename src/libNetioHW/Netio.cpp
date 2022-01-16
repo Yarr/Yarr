@@ -14,8 +14,7 @@ class NetioController
   : public HwController, public NetioTxCore, public NetioRxCore
 {
 public:
-  NetioController()
-  {}
+  NetioController() = default;
 
   void loadConfig(json const &j) override;
 };

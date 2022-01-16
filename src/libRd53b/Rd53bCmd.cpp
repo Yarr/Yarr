@@ -18,7 +18,7 @@ Rd53bCmd::Rd53bCmd() : core( nullptr ) {}
 
 Rd53bCmd::Rd53bCmd(TxCore *arg_core) : core(arg_core) {}
 
-Rd53bCmd::~Rd53bCmd() {}
+Rd53bCmd::~Rd53bCmd() = default;
 
 constexpr uint16_t Rd53bCmd::enc5to8[];
 constexpr uint16_t Rd53bCmd::encTrigger[];

@@ -25,9 +25,7 @@ Fei4DataProcessor::Fei4DataProcessor(unsigned arg_hitDiscCfg) : DataProcessor(){
 
 }
 
-Fei4DataProcessor::~Fei4DataProcessor() {
-
-}
+Fei4DataProcessor::~Fei4DataProcessor() = default;
 
 void Fei4DataProcessor::init() {
     SPDLOG_LOGGER_TRACE(flog, "");

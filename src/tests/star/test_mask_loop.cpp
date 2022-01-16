@@ -98,8 +98,8 @@ public:
 class MyHwController
   : public HwController, public MyTxCore, public EmptyRxCore {
 public:
-  MyHwController() {}
-  virtual ~MyHwController() {}
+  MyHwController() = default;
+  ~MyHwController() override = default;
 
   void loadConfig(const json &j) override {}
 

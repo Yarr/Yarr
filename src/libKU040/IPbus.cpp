@@ -79,7 +79,7 @@ void IPbus::Disconnect()
 	memset(&m_server, 0, sizeof(m_server));
 }
 
-bool IPbus::IsConnected()
+bool IPbus::IsConnected() const
 {
 	return (m_socketfd >= 0);
 }

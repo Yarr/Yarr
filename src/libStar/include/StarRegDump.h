@@ -15,15 +15,15 @@
 class StarRegDump: public LoopActionBase {
     public:
         StarRegDump();
-        void writeConfig(json &config);
-        void loadConfig(const json &config);
+        void writeConfig(json &config) override;
+        void loadConfig(const json &config) override;
 
     private:
         int    m_addr;
-        void init();
-        void end();
-        void execPart1();
-        void execPart2();
+        void init() override;
+        void end() override;
+        void execPart1() override;
+        void execPart2() override;
 };
 
 #endif

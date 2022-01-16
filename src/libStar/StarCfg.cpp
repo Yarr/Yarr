@@ -15,9 +15,9 @@ namespace {
   auto logger = logging::make_log("StarCfg");
 }
 
-StarCfg::StarCfg() {}
+StarCfg::StarCfg() = default;
 
-StarCfg::~StarCfg() {}
+StarCfg::~StarCfg() = default;
 
 double StarCfg::toCharge(double vcal) {
     // Q = C*V

@@ -18,7 +18,7 @@
 
 class DoubleColumnBitOps {
 	public:
-		virtual ~DoubleColumnBitOps() {}
+		virtual ~DoubleColumnBitOps() = default;
 		virtual void set(const uint32_t *bitstream) = 0;
 		virtual void setAll(const uint32_t val) = 0;
 		virtual void setPixel(const unsigned n, uint32_t val) = 0;
@@ -34,14 +34,14 @@ class DoubleColumnBit: public DoubleColumnBitOps {
         std::array<uint32_t, n_Words> storage;
     public:    
 
-        void set(const uint32_t *bitstream);
-        void setAll(const uint32_t val);
-        void setPixel(const unsigned n, uint32_t val);
+        void set(const uint32_t *bitstream) override;
+        void setAll(const uint32_t val) override;
+        void setPixel(const unsigned n, uint32_t val) override;
 
-        uint32_t* getStream();
+        uint32_t* getStream() override;
         std::array<uint32_t, n_Words> getArray() {return storage;}
-        uint32_t getPixel(const unsigned n);
-        uint32_t getWord(const unsigned n);
+        uint32_t getPixel(const unsigned n) override;
+        uint32_t getWord(const unsigned n) override;
 };
 
 template <unsigned N, bool msbRight>

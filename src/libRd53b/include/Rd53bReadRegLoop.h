@@ -45,9 +45,9 @@ public:
 public:
     Rd53bReadRegLoop();
 
-    void writeConfig(json &config);
-    void loadConfig(const json &config);
-    double convertRingOscCntToMHz(double counter) { return counter / (m_RingOscDur << 1) * 40; }
+    void writeConfig(json &config) override;
+    void loadConfig(const json &config) override;
+    double convertRingOscCntToMHz(double counter) const { return counter / (m_RingOscDur << 1) * 40; }
 
 private:
     std::vector<unsigned short> m_VoltMux;
@@ -64,10 +64,10 @@ private:
 
     uint16_t m_EnblRingOscA, m_EnblRingOscB, m_RingOscDur, m_RingOscRep;
 
-    void init();
-    void execPart1();
-    void execPart2();
-    void end();
+    void init() override;
+    void execPart1() override;
+    void execPart2() override;
+    void end() override;
 
     Rd53bReg Rd53bGlobalCfg::*RingOscBEn[5] = {&Rd53b::RingOscBEnBl, &Rd53b::RingOscBEnBr, &Rd53b::RingOscBEnFf, &Rd53b::RingOscBEnLvt, &Rd53b::RingOscBEnCapA};
 };

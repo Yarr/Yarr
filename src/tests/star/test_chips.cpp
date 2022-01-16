@@ -115,8 +115,8 @@ public:
 class MyHwController
   : public HwController, public MyTxCore, public EmptyRxCore {
 public:
-  MyHwController() {}
-  ~MyHwController() {}
+  MyHwController() = default;
+  ~MyHwController() override = default;
 
   void loadConfig(json const&j) override {}
 };

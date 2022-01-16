@@ -3,5 +3,4 @@
 RxCore::RxCore() : m_waitTime(500) {
 }
 
-RxCore::~RxCore() {
-}
+RxCore::~RxCore() = default;

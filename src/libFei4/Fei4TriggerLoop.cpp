@@ -117,7 +117,7 @@ void Fei4TriggerLoop::setNoWord() {
     m_trigWord[3] = 0;
 }
 
-unsigned int Fei4TriggerLoop::getTrigDelay() {
+unsigned int Fei4TriggerLoop::getTrigDelay() const {
     return m_trigDelay;
 }
 
@@ -125,7 +125,7 @@ void Fei4TriggerLoop::setTrigFreq(double freq) {
     m_trigFreq = freq;
 }
 
-double Fei4TriggerLoop::getTrigFreq() {
+double Fei4TriggerLoop::getTrigFreq() const {
     return m_trigFreq;
 }
 
@@ -133,7 +133,7 @@ void Fei4TriggerLoop::setTrigTime(double time) {
     m_trigTime = time;
 }
 
-double Fei4TriggerLoop::getTrigTime() {
+double Fei4TriggerLoop::getTrigTime() const {
     return m_trigTime;
 }
 

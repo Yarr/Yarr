@@ -24,9 +24,7 @@ ResultBase::ResultBase(std::string arg_name)
     zAxisTitle = "z";
 }
 
-ResultBase::~ResultBase() {
-
-}
+ResultBase::~ResultBase() = default;
 
 std::string ResultBase::getName() {
     return name;

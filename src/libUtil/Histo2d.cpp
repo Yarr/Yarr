@@ -88,8 +88,7 @@ Histo2d::Histo2d(Histo2d *h) : HistogramBase(h->getName()) {
     lStat = h->getStat();
 }
 
-Histo2d::~Histo2d() {
-}
+Histo2d::~Histo2d() = default;
 
 unsigned Histo2d::size() const {
     return xbins*ybins;
@@ -209,7 +208,7 @@ void Histo2d::setBin(unsigned n, double v) {
 }
 
 
-int Histo2d::binNum(double x, double y) {
+int Histo2d::binNum(double x, double y) const {
     if (x < xlow || y < ylow) {
         //std::cout << "Underflow " << x << " " << y << std::endl;
         return -1;

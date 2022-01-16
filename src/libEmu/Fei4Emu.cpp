@@ -361,7 +361,7 @@ void Fei4Emu::handleTrigger() {
     }
 }
 
-void Fei4Emu::pushOutput(uint32_t value) {
+void Fei4Emu::pushOutput(uint32_t value) const {
     if (m_rxRingBuffer) {
         m_rxRingBuffer->write32(value);
     }

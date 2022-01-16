@@ -23,7 +23,7 @@ class Histo2d : public HistogramBase {
         Histo2d(const std::string &arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh,
                 unsigned arg_ybins, double arg_ylow, double arg_yhigh, const LoopStatus &stat);
         Histo2d(Histo2d *h);
-        ~Histo2d();
+        ~Histo2d() override;
         
         unsigned size() const;
         unsigned numOfEntries() const;
@@ -42,21 +42,21 @@ class Histo2d : public HistogramBase {
         double getStdDev();
         
         double getBin(unsigned n) const;
-        int binNum(double x, double y);
+        int binNum(double x, double y) const;
         
-        double getUnderflow() {return underflow;}
-        double getOverflow() {return overflow;}
-        unsigned getXbins() {return xbins;}
-        double getXlow() {return xlow;}
-        double getXhigh() {return xhigh;}
-        double getXbinWidth() {return xbinWidth;}
-        unsigned getYbins() {return ybins;}
-        double getYlow() {return ylow;}
-        double getYhigh() {return yhigh;}
-        double getYbinWidth() {return ybinWidth;}
-        double getMax() {return max;}
-        double getMin() {return min;}
-        double getNumOfEntries() {return entries;}
+        double getUnderflow() const {return underflow;}
+        double getOverflow() const {return overflow;}
+        unsigned getXbins() const {return xbins;}
+        double getXlow() const {return xlow;}
+        double getXhigh() const {return xhigh;}
+        double getXbinWidth() const {return xbinWidth;}
+        unsigned getYbins() const {return ybins;}
+        double getYlow() const {return ylow;}
+        double getYhigh() const {return yhigh;}
+        double getYbinWidth() const {return ybinWidth;}
+        double getMax() const {return max;}
+        double getMin() const {return min;}
+        double getNumOfEntries() const {return entries;}
 
         
         void toFile(const std::string &filename, const std::string &dir = "", bool header= true) const override;
