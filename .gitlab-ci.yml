@@ -70,7 +70,7 @@ job_build_clang:
     script:
       - yum -y install boost-devel
       - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-      - source scl_source enable llvm-toolset-6.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+      - source scl_source enable llvm-toolset-7.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir -p build
       - cd build 
       - CXXFLAGS=-Werror cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang
@@ -94,6 +94,7 @@ job_test_json_parsing:
 job_test_json:
     stage: build
     script:
+      - source scl_source enable rh-nodejs6
       - npm install jsonlint -g
       - for file in $(find configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
 
