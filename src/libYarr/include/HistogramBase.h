@@ -11,8 +11,8 @@
 
 #include <string>
 #include <utility>
-
 #include "LoopStatus.h"
+
 #include "storage.hpp"
 
 class HistogramBase {
