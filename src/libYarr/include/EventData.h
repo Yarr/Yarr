@@ -118,7 +118,7 @@ class FrontEndData : public EventDataBase {
 
     public:
 
-        FrontEndData() : lStat(LoopStatus::empty()) {}
+        FrontEndData()=default;
         FrontEndData(LoopStatus& l) : lStat(l) {}
         ~FrontEndData() override = default;;
 
