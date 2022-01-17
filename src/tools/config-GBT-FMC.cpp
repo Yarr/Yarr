@@ -1,9 +1,5 @@
-#include <iomanip>
 #include <iostream>
-#include <stdint.h>
 #include <unistd.h>
-#include <string>
-#include <time.h>
 #include <SpecCom.h>
 #include <SimpleI2C.h>
 #include <Si534x.h>

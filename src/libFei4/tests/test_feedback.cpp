@@ -1,3 +1,4 @@
+#define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
 #include <thread>
@@ -10,7 +11,7 @@
 #include "logging.h"
 auto logger = logging::make_log("test_feedback");
 
-#include "../EmptyHw.h"
+#include "EmptyHw.h"
 
 class MyHardware : public EmptyHw {
   uint32_t trigEnable;

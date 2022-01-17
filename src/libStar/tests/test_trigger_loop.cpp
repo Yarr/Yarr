@@ -5,7 +5,7 @@
 #include "LCBUtils.h"
 #include "Utils.h"
 
-#include "../EmptyHw.h"
+#include "EmptyHw.h"
 
 /**
    Override TxCore to record what trigger word is set to.
