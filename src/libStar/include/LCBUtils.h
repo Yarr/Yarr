@@ -1,6 +1,7 @@
 #ifndef STAR_LCB_HEADER
 #define STAR_LCB_HEADER
 
+#include <cstdint>
 #include <tuple>
 
 namespace SixEight {

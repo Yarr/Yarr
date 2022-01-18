@@ -1,5 +1,6 @@
 #include "LoggingConfig.h"
 
+#include <optional>
 #include <iostream>
 
 #include "spdlog/spdlog.h"
