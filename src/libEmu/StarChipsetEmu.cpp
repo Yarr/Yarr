@@ -820,6 +820,19 @@ void StarChipsetEmu::clearFEData() {
   }
 }
 
+void StarChipsetEmu::fillL0Buffer() {
+  // Fill m_l0buffer_lite with no pulse bits and bcid for each LCB frame (4 BCs)
+  for (unsigned ibc = 0; ibc < 4; ++ibc) {
+    // 8-bit BCID
+    auto bcid = L0BufData( (m_bccnt + ibc)%256 );
+
+    // Address of L0 buffer to write
+    unsigned addr = (m_bccnt + ibc) % L0BufDepth;
+
+    m_l0buffer_lite[addr] = bcid;
+  }
+}
+
 StarChipsetEmu::StripData StarChipsetEmu::getMasks(const AbcCfg& abc) {
   // mask registers
   unsigned maskinput0 = abc.getRegisterValue(ABCStarRegister::MaskInput0);
