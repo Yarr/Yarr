@@ -24,7 +24,7 @@ public:
   /**
    * Shutdown the ItsdaqHandler. Delete the channels from the ItsdaqHandler.
    **/
-  ~ItsdaqRxCore();
+  ~ItsdaqRxCore() override;
 
   void setRxEnable(uint32_t val) override;
   void setRxEnable(std::vector<uint32_t> channels) override;
@@ -54,14 +54,14 @@ public:
    *
    * @param j json object to store configuration
    **/
-  void toFileJson(json &j);
+  void writeConfig(json &j) const;
 
   /**
    * Read configuration from json.
    *
    * @param j json object to read configuration from
    **/
-  void fromFileJson(json &j);
+  void loadConfig(const json &j);
 
  protected:
   /// Do some initialisation after ItsdaqHandler is constructed

@@ -11,7 +11,7 @@ RogueController::~RogueController() {
   com->printStats();
 }
 
-void RogueController::loadConfig(json &j) {
+void RogueController::loadConfig(const json &j) {
   std::shared_ptr<RogueCom> com=RogueCom::getInstance();
   std::string conn=j["connection"];
   unsigned  enableMask=j["enableMask"];

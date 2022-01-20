@@ -32,7 +32,7 @@ TEST_CASE("Rd53bDataProcessor", "[rd53b][data_processor]") {
 
   RawData *rd = new RawData(chan, buffer, nWords);
 
-  std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(LoopStatus::empty()));
+  std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(LoopStatus()));
   rdc->add(rd);
   rd_cp.pushData(std::move(rdc));
 

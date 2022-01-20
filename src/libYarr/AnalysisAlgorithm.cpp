@@ -14,16 +14,14 @@ namespace {
     auto alog = logging::make_log("AnalysisAlgorithm");
 }
 
-AnalysisProcessor::AnalysisProcessor() {
-}
+AnalysisProcessor::AnalysisProcessor() = default;
 
 AnalysisProcessor::AnalysisProcessor(Bookkeeper *b, unsigned ch)
   : bookie(b), channel(ch)
 {
 }
 
-AnalysisProcessor::~AnalysisProcessor() {
-}
+AnalysisProcessor::~AnalysisProcessor() = default;
 
 void AnalysisProcessor::init() {
     for (unsigned i=0; i<algorithms.size(); i++) {
@@ -37,9 +35,9 @@ void AnalysisProcessor::run() {
     thread_ptr.reset( new std::thread( &AnalysisProcessor::process, this ) );
 }
 
-void AnalysisProcessor::loadConfig(json &j){
+void AnalysisProcessor::loadConfig(const json &j){
     for (unsigned i=0; i<algorithms.size(); i++) {
-        if (!j[std::to_string(i)]["config"].empty()){
+        if (j.contains({std::to_string(i),"config"})) {
 	    algorithms[i]->loadConfig(j[std::to_string(i)]["config"]);
 	}
     }

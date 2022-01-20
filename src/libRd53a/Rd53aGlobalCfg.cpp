@@ -20,9 +20,7 @@ Rd53aGlobalCfg::Rd53aGlobalCfg() {
     this->init();
 }
 
-Rd53aGlobalCfg::~Rd53aGlobalCfg() {
-
-}
+Rd53aGlobalCfg::~Rd53aGlobalCfg() = default;
 
 void Rd53aGlobalCfg::init() {
     for (unsigned int i=0; i<numRegs; i++)
@@ -322,15 +320,15 @@ void Rd53aGlobalCfg::init() {
     InjVcalDiff.init(&InjVcalMed, &InjVcalHigh, true); regMap["InjVcalDiff"] = (Rd53aReg Rd53aGlobalCfg::*)&Rd53aGlobalCfg::InjVcalDiff;
 }
 
-void Rd53aGlobalCfg::toFileJson(json &j) {
+void Rd53aGlobalCfg::writeConfig(json &j) {
     for(auto it : regMap) {
         j["RD53A"]["GlobalConfig"][it.first] = (this->*it.second).read();
     }    
 }
 
-void Rd53aGlobalCfg::fromFileJson(json &j) {
+void Rd53aGlobalCfg::loadConfig(const json &j) {
     for (auto it : regMap) {
-        if (!j["RD53A"]["GlobalConfig"][it.first].empty()) {
+        if (j.contains({"RD53A","GlobalConfig",it.first})) {
             (this->*it.second).write(j["RD53A"]["GlobalConfig"][it.first]);
         } else {
             logger->error("Could not find register \"{}\" using default!", it.first);

@@ -21,7 +21,7 @@ class StarChannelFeedback : public LoopActionBase, public PixelFeedbackReceiver 
         StarChannelFeedback();
 
         void writeConfig(json &j) override;
-        void loadConfig(json &j) override;
+        void loadConfig(const json &j) override;
 
         void feedback(unsigned channel, std::unique_ptr<Histo2d> h) override;
 

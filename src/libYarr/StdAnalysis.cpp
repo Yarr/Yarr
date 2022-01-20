@@ -156,18 +156,18 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
         //occMaps[ident] = NULL;
     }
 }
-void OccupancyAnalysis::loadConfig(json &j){
-    if (!j["createMask"].empty()){
+void OccupancyAnalysis::loadConfig(const json &j){
+    if (j.contains("createMask")){
         createMask=j["createMask"];
     }
 }
 
-void TotAnalysis::loadConfig(json &j) {
+void TotAnalysis::loadConfig(const json &config) {
 
     // check for valid ToT histogram bin configuration
-    if (!j["tot_bins"].empty()) {
-        auto j_bins = j["tot_bins"];
-        if(!j_bins["n_bins"].empty() && !j_bins["x_lo"].empty() && !j_bins["x_hi"].empty()) {
+    if (config.contains("tot_bins")) {
+        auto j_bins = config["tot_bins"];
+        if(j_bins.contains("n_bins") && j_bins.contains("x_lo") && j_bins.contains("x_hi")) {
             tot_bins_n = static_cast<unsigned>(j_bins["n_bins"]);
             tot_bins_x_lo = static_cast<float>(j_bins["x_lo"]);
             tot_bins_x_hi = static_cast<float>(j_bins["x_hi"]);
@@ -175,14 +175,14 @@ void TotAnalysis::loadConfig(json &j) {
     }
 
     // ToT unit
-    if (!j["tot_unit"].empty()) {
-        tot_unit = static_cast<std::string>(j["tot_unit"]);
+    if (config.contains("tot_unit")) {
+        tot_unit = static_cast<std::string>(config["tot_unit"]);
     }
 
     // check for valid ToT sigma histogram bin configuration
-    if (!j["tot_sigma_bins"].empty()) {
-        auto j_bins = j["tot_sigma_bins"];
-        if(!j_bins["n_bins"].empty() && !j_bins["x_lo"].empty() && !j_bins["x_hi"].empty()) {
+    if (config.contains("tot_sigma_bins")) {
+        auto j_bins = config["tot_sigma_bins"];
+        if(j_bins.contains("n_bins") && j_bins.contains("x_lo") && j_bins.contains("x_hi")) {
             tot_sigma_bins_n = static_cast<unsigned>(j_bins["n_bins"]);
             tot_sigma_bins_x_lo = static_cast<float>(j_bins["x_lo"]);
             tot_sigma_bins_x_hi = static_cast<float>(j_bins["x_hi"]);
@@ -596,8 +596,8 @@ void ScurveFitter::init(ScanBase *s) {
     thrTarget = bookie->getTargetCharge();
 }
 
-void ScurveFitter::loadConfig(json &j) {
-    if (!j["reverse"].empty()) {
+void ScurveFitter::loadConfig(const json &j) {
+    if (j.contains("reverse")) {
         reverse = j["reverse"];
     }
 }
@@ -1003,10 +1003,10 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
 
 }
 
-void OccPixelThresholdTune::loadConfig(json &j){
-    if (!j["occLowCut"].empty())
+void OccPixelThresholdTune::loadConfig(const json &j){
+    if (j.contains("occLowCut"))
         m_occLowCut=j["occLowCut"];
-    if (!j["occHighCut"].empty())
+    if (j.contains("occHighCut"))
         m_occHighCut=j["occHighCut"];
 }
 
@@ -1347,11 +1347,11 @@ void NoiseAnalysis::processHistogram(HistogramBase *h) {
     }
 }
 
-void NoiseAnalysis::loadConfig(json &j){
-    if (!j["createMask"].empty()){
+void NoiseAnalysis::loadConfig(const json &j){
+    if (j.contains("createMask")){
         createMask=j["createMask"];
     }
-    if (!j["noiseThr"].empty()){
+    if (j.contains("noiseThr")){
         noiseThr=j["noiseThr"];
     }
 }

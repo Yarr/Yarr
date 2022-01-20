@@ -59,7 +59,7 @@ class BdaqDriver : public BdaqRegister<BdaqRBCP> {
 		uint16_t getAzVetoCycles();
 		void setChipType(uint8_t value);
 		void setData (std::vector<uint8_t>& data, uint8_t addr=0);
-		void getData(std::vector<uint8_t>& data, uint8_t size, uint8_t addr=0);
+		void getData(std::vector<uint8_t>& data, uint8_t size, uint8_t addr=0) const;
 
 	protected:
 		const uint8_t memOffset = 16;

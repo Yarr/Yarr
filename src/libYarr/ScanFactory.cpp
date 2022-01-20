@@ -70,7 +70,7 @@ void ScanFactory::postScan() {
 
 }
 
-void ScanFactory::loadConfig(json &scanCfg) {
+void ScanFactory::loadConfig(const json &scanCfg) {
     m_config = scanCfg;
     sflog->info("Loading Scan:");
     
@@ -96,7 +96,7 @@ void ScanFactory::loadConfig(json &scanCfg) {
             continue;
         }
 
-        if (!scanCfg["scan"]["loops"][i]["config"].empty()) {
+        if (scanCfg["scan"]["loops"][i].contains("config")) {
             sflog->info("   Loading loop config ... ");
             action->loadConfig(scanCfg["scan"]["loops"][i]["config"]);
         }

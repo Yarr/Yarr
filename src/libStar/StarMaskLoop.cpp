@@ -227,7 +227,7 @@ void StarMaskLoop::writeConfig(json &config) {
     config["doNmask"] = m_doNmask;
 }
 
-void StarMaskLoop::loadConfig(json &config) {
+void StarMaskLoop::loadConfig(const json &config) {
     min = config["min"];
     max = config["max"];
     step = config["step"];
@@ -243,15 +243,15 @@ void StarMaskLoop::loadConfig(json &config) {
       m_EnabledMaskedShift = 0;
     }
 
-    if((!config["parameter"].empty()) && config["parameter"]) {
+    if(config.contains("parameter") && config["parameter"]) {
       m_style = LOOP_STYLE_PARAMETER;
     }
 
-    if(!config["maskOnly"].empty()) {
+    if(config.contains("maskOnly")) {
       m_onlyMask = config["maskOnly"];
     }
 
-    if(!config["doNmask"].empty()) {
+    if(config.contains("doNmask")) {
       m_doNmask = config["doNmask"];
     }
 

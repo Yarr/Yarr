@@ -117,7 +117,7 @@ void Fei4TriggerLoop::setNoWord() {
     m_trigWord[3] = 0;
 }
 
-unsigned int Fei4TriggerLoop::getTrigDelay() {
+unsigned int Fei4TriggerLoop::getTrigDelay() const {
     return m_trigDelay;
 }
 
@@ -125,7 +125,7 @@ void Fei4TriggerLoop::setTrigFreq(double freq) {
     m_trigFreq = freq;
 }
 
-double Fei4TriggerLoop::getTrigFreq() {
+double Fei4TriggerLoop::getTrigFreq() const {
     return m_trigFreq;
 }
 
@@ -133,7 +133,7 @@ void Fei4TriggerLoop::setTrigTime(double time) {
     m_trigTime = time;
 }
 
-double Fei4TriggerLoop::getTrigTime() {
+double Fei4TriggerLoop::getTrigTime() const {
     return m_trigTime;
 }
 
@@ -156,19 +156,19 @@ void Fei4TriggerLoop::writeConfig(json &config) {
     config["extTrigger"] = m_extTrigger;
 }
 
-void Fei4TriggerLoop::loadConfig(json &config) {
-    if (!config["count"].empty())
+void Fei4TriggerLoop::loadConfig(const json &config) {
+    if (config.contains("count"))
       setTrigCnt(config["count"]);
-    if (!config["frequency"].empty())
+    if (config.contains("frequency"))
       m_trigFreq = config["frequency"];
-    if (!config["time"].empty())
+    if (config.contains("time"))
       m_trigTime = config["time"];
-    if (!config["delay"].empty())
+    if (config.contains("delay"))
       m_trigDelay = config["delay"];
     // TODO these two don't do anything yet
-    if (!config["noInject"].empty())
+    if (config.contains("noInject"))
       m_noInject = config["noInject"];
-    if (!config["extTrigger"].empty())
+    if (config.contains("extTrigger"))
       m_extTrigger = config["extTrigger"];
 }
 

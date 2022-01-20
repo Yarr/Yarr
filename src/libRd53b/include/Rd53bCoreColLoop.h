@@ -15,8 +15,8 @@ class Rd53bCoreColLoop : public LoopActionBase {
     public:
         Rd53bCoreColLoop();
 
-        void writeConfig(json &j);
-        void loadConfig(json &j);
+        void writeConfig(json &j) override;
+        void loadConfig(const json &j) override;
 
     private:
         unsigned m_cur;
@@ -27,10 +27,10 @@ class Rd53bCoreColLoop : public LoopActionBase {
 
         std::array<uint16_t, 4> m_coreCols;
 
-        void init();
-        void end();
-        void execPart1();
-        void execPart2();
+        void init() override;
+        void end() override;
+        void execPart1() override;
+        void execPart2() override;
 
         void setCores();
 };

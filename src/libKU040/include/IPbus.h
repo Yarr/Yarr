@@ -17,9 +17,9 @@ class IPbusException : public std::exception {
             Error = ErrorMessage;
         }
 
-        ~IPbusException() throw() {};
+        ~IPbusException() throw() override = default;;
 
-        const char* what() const throw()
+        const char* what() const throw() override
         {
             return Error.c_str();
         }
@@ -38,7 +38,7 @@ class IPbus {
 		// Connect
 		void Connect(const std::string &host, const unsigned int port = 50001);
 		void Disconnect();
-		bool IsConnected();
+		bool IsConnected() const;
 
 		// read values
 		uint32_t Read(uint32_t baseaddr);

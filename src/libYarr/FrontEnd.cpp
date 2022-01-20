@@ -8,11 +8,11 @@
 
 #include "FrontEnd.h"
 
-bool FrontEnd::isActive() {
+bool FrontEnd::isActive() const {
 	return active;
 }
 
-bool FrontEnd::getActive() {
+bool FrontEnd::getActive() const {
 	return this->active;
 }
 

@@ -151,7 +151,7 @@ bool GraphErrors::fromFile(const std::string &filename) {
   }
 
   // Check for type
-  if (j["Type"].empty()) {
+  if (!j.contains("Type")) {
     gelog->error("Tried loading GraphErrors from file {}, but file has no header", filename);
     return false;
   } else {
@@ -173,17 +173,17 @@ bool GraphErrors::fromFile(const std::string &filename) {
     data_yerr.clear();
     data_x.reserve(data_npoints);
     data_y.reserve(data_npoints);
-    if (not j["Data"]["xerr"].empty())
+    if (j.contains({"Data","xerr"}))
       data_xerr.reserve(data_npoints);
-    if (not j["Data"]["yerr"].empty())
+    if (j.contains({"Data","yerr"}))
       data_yerr.reserve(data_npoints);
 
     for (unsigned i=0; i<data_npoints; i++) {
       data_x.push_back(j["Data"]["x"][i]);
       data_y.push_back(j["Data"]["y"][i]);
-      if (not j["Data"]["xerr"].empty())
+      if (j.contains({"Data","xerr"}))
         data_xerr.push_back(j["Data"]["xerr"][i]);
-      if (not j["Data"]["yerr"].empty())
+      if (j.contains({"Data","yerr"}))
         data_yerr.push_back(j["Data"]["yerr"][i]);
     }
   }

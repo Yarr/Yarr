@@ -18,9 +18,9 @@ class Fei4GlobalPreampRetune : public ScanBase {
     public:
         Fei4GlobalPreampRetune(Bookkeeper *b);
         
-        void init();
-        void preScan();
-        void postScan() {}
+        void init() override;
+        void preScan() override;
+        void postScan() override {}
 
     private:
         enum MASK_STAGE mask;

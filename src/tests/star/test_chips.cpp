@@ -115,10 +115,10 @@ public:
 class MyHwController
   : public HwController, public MyTxCore, public EmptyRxCore {
 public:
-  MyHwController() {}
-  ~MyHwController() {}
+  MyHwController() = default;
+  ~MyHwController() override = default;
 
-  void loadConfig(json &j) override {}
+  void loadConfig(json const&j) override {}
 };
 
 TEST_CASE("StarBasicConfig", "[star][chips]") {

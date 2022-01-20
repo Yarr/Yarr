@@ -13,7 +13,7 @@ RogueRxCore::RogueRxCore():m_com(0), m_rxChannel(0) {
   m_com=RogueCom::getInstance();
 }
 
-RogueRxCore::~RogueRxCore() {  }
+RogueRxCore::~RogueRxCore() = default;
 
 
 

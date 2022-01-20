@@ -18,7 +18,7 @@ void bounce_check(json &j) {
   std::stringstream jj_pre;
   jj_pre << j;
 
-  fecfg->fromFileJson(j);
+  fecfg->loadConfig(j);
 
   std::stringstream jj;
   jj << j;
@@ -27,7 +27,7 @@ void bounce_check(json &j) {
   REQUIRE(jj_pre.str() == jj.str());
 
   json bounced;
-  fecfg->toFileJson(bounced);
+    fecfg->writeConfig(bounced);
 
   std::stringstream outj;
   outj << bounced;
@@ -64,10 +64,10 @@ TEST_CASE("StarJsonDefault", "[star][json]") {
   auto fe = StdDict::getFrontEnd("Star");
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
   REQUIRE(fecfg);
-  fecfg->fromFileJson(cfg);
+  fecfg->loadConfig(cfg);
 
   json output;
-  fecfg->toFileJson(output);
+    fecfg->writeConfig(output);
 
   // debugging
   // output.dump(4);
@@ -89,10 +89,10 @@ TEST_CASE("StarJsonMinimal", "[star][json]") {
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
   REQUIRE(fecfg);
 
-  fecfg->fromFileJson(cfg);
+  fecfg->loadConfig(cfg);
 
   json output;
-  fecfg->toFileJson(output);
+    fecfg->writeConfig(output);
 
   REQUIRE(output["name"] == cfg["name"]);
 
@@ -119,10 +119,10 @@ TEST_CASE("StarJsonMinimalABC", "[star][json]") {
   auto fe = StdDict::getFrontEnd("Star");
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
   REQUIRE(fecfg);
-  fecfg->fromFileJson(cfg);
+  fecfg->loadConfig(cfg);
 
   json output;
-  fecfg->toFileJson(output);
+    fecfg->writeConfig(output);
 
   REQUIRE(output["name"] == cfg["name"]);
 
@@ -163,10 +163,10 @@ TEST_CASE("StarJsonHccRegs", "[star][json]") {
   auto fe = StdDict::getFrontEnd("Star");
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
   REQUIRE(fecfg);
-  fecfg->fromFileJson(cfg);
+  fecfg->loadConfig(cfg);
 
   json output;
-  fecfg->toFileJson(output);
+    fecfg->writeConfig(output);
 
   // debugging
   // output.dump(4);
@@ -198,10 +198,10 @@ TEST_CASE("StarJsonAbcRegs", "[star][json]") {
   auto fe = StdDict::getFrontEnd("Star");
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
   REQUIRE(fecfg);
-  fecfg->fromFileJson(cfg);
+  fecfg->loadConfig(cfg);
 
   json output;
-  fecfg->toFileJson(output);
+    fecfg->writeConfig(output);
 
   // debugging
   // output.dump(4);
@@ -242,10 +242,10 @@ TEST_CASE("StarJsonAbcMasks", "[star][json]") {
   auto fe = StdDict::getFrontEnd("Star");
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
   REQUIRE(fecfg);
-  fecfg->fromFileJson(cfg);
+  fecfg->loadConfig(cfg);
 
   json output;
-  fecfg->toFileJson(output);
+    fecfg->writeConfig(output);
 
   // debugging
   // output.dump(4);
@@ -274,10 +274,10 @@ TEST_CASE("StarJsonAbcSubRegs", "[star][json]") {
   auto fe = StdDict::getFrontEnd("Star");
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
   REQUIRE(fecfg);
-  fecfg->fromFileJson(cfg);
+  fecfg->loadConfig(cfg);
 
   json output;
-  fecfg->toFileJson(output);
+    fecfg->writeConfig(output);
 
   // debugging
   // output.dump(4);
@@ -313,10 +313,10 @@ TEST_CASE("StarJsonAbcTrim", "[star][json]") {
   auto fe = StdDict::getFrontEnd("Star");
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
   REQUIRE(fecfg);
-  fecfg->fromFileJson(cfg);
+  fecfg->loadConfig(cfg);
 
   json output;
-  fecfg->toFileJson(output);
+    fecfg->writeConfig(output);
 
   // debugging
   // output.dump(4);
@@ -349,10 +349,10 @@ TEST_CASE("StarJsonAbcCommon", "[star][json]") {
   auto fe = StdDict::getFrontEnd("Star");
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
   REQUIRE(fecfg);
-  fecfg->fromFileJson(cfg);
+  fecfg->loadConfig(cfg);
 
   json output;
-  fecfg->toFileJson(output);
+    fecfg->writeConfig(output);
 
   // debugging
   //output.dump(4);
@@ -395,9 +395,9 @@ TEST_CASE("StarJsonNullChan", "[star][json]") {
   auto fe = StdDict::getFrontEnd("Star");
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
   REQUIRE(fecfg);
-  fecfg->fromFileJson(cfg);
+  fecfg->loadConfig(cfg);
   json output;
-  fecfg->toFileJson(output);
+    fecfg->writeConfig(output);
 
   // debugging
   //output.dump(4);

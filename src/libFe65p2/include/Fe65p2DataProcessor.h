@@ -19,17 +19,17 @@
 class Fe65p2DataProcessor : public DataProcessor {
     public:
         Fe65p2DataProcessor();
-        ~Fe65p2DataProcessor();
+        ~Fe65p2DataProcessor() override;
 
-        void connect(ClipBoard<RawDataContainer> *arg_input, std::map<unsigned, ClipBoard<EventDataBase> > *arg_outMap) {
+        void connect(ClipBoard<RawDataContainer> *arg_input, std::map<unsigned, ClipBoard<EventDataBase> > *arg_outMap) override {
             input = arg_input;
             outMap = arg_outMap;
         }
 
-        void init();
-        void run();
-        void join();
-        void process();
+        void init() override;
+        void run() override;
+        void join() override;
+        void process() override;
         void process_core();
 
     private:

@@ -26,8 +26,8 @@ class PixelModel {
 		float noise_sigma_gauss;
 
 		// functions for modeling pixel responses
-		float calculateThreshold(uint32_t Vthin_fine, uint32_t Vthin_coarse, uint32_t TDAC);
-		float calculateNoise();
+		float calculateThreshold(uint32_t Vthin_fine, uint32_t Vthin_coarse, uint32_t TDAC) const;
+		float calculateNoise() const;
 		uint32_t calculateToT(float charge);
 
 	private:

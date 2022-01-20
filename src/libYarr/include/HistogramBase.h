@@ -10,39 +10,64 @@
 // ################################
 
 #include <string>
+#include <utility>
 
 #include "LoopStatus.h"
 #include "storage.hpp"
 
 class HistogramBase {
-    public:
-        HistogramBase(const std::string &arg_name);
-        HistogramBase(const std::string &arg_name, const LoopStatus &stat);
-        virtual ~HistogramBase();
+public:
+    HistogramBase(std::string arg_name, LoopStatus stat)
+            : name(std::move(arg_name)), lStat(std::move(stat)) {}
 
-        const std::string & getName() const;
+    explicit HistogramBase(std::string arg_name)
+            : name(std::move(arg_name)) {}
 
-        const LoopStatus & getStat() const {return lStat;}
-        virtual void toStream(std::ostream &out) const=0;
-        virtual void toJson(json &j) const=0;
-        virtual void toFile(const std::string &basename, const std::string &dir = "", bool header= true) const=0;
-        virtual void plot(const std::string &basename, const std::string &dir = "") const=0;
-        
-        void setAxisTitle(std::string x, std::string y="y", std::string z="z");
-        void setXaxisTitle(std::string);
-        void setYaxisTitle(std::string);
-        void setZaxisTitle(std::string);
+   virtual  ~HistogramBase() = default;
 
-        const std::string & getXaxisTitle() const;
-        const std::string & getYaxisTitle() const;
-        const std::string & getZaxisTitle() const;
+    const std::string &getName() const {
+        return name;
+    }
+    const LoopStatus & getStat() const {return lStat;}
+    virtual void toStream(std::ostream &out) const=0;
+    virtual void toJson(json &j) const=0;
+    virtual void toFile(const std::string &basename, const std::string &dir = "", bool header= true) const=0;
+    virtual void plot(const std::string &basename, const std::string &dir = "") const=0;
 
-    protected:
-        std::string name;
-        std::string xAxisTitle;
-        std::string yAxisTitle;
-        std::string zAxisTitle;
-            
-        LoopStatus lStat;
+    void setAxisTitle(std::string x, std::string y, std::string z) {
+        xAxisTitle = std::move(x);
+        yAxisTitle = std::move(y);
+        zAxisTitle = std::move(z);
+    }
+
+    std::string getXaxisTitle() const {
+        return xAxisTitle;
+    }
+
+    std::string getYaxisTitle() const {
+        return yAxisTitle;
+    }
+
+    std::string getZaxisTitle() const {
+        return zAxisTitle;
+    }
+
+    void setXaxisTitle(const std::string &arg_name) {
+        xAxisTitle = arg_name;
+    }
+
+    void setYaxisTitle(const std::string &arg_name) {
+        yAxisTitle = arg_name;
+    }
+
+    void setZaxisTitle(const std::string &arg_name) {
+        zAxisTitle = arg_name;
+    }
+protected:
+    std::string name;
+    LoopStatus  lStat;
+    std::string xAxisTitle {"x"};
+    std::string yAxisTitle {"y"};
+    std::string zAxisTitle {"z"};
 };
 #endif

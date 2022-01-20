@@ -5,8 +5,7 @@ RogueTxCore::RogueTxCore():m_com(0), m_txChannel(0) {
 }
 
 
-RogueTxCore::~RogueTxCore() {
-}
+RogueTxCore::~RogueTxCore() = default;
 
 void RogueTxCore::writeFifo(uint32_t value) {
 	m_com->setTxChannel(m_txChannel);

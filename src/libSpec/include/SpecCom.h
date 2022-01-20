@@ -70,8 +70,8 @@ class SpecCom {
         SpecCom(unsigned int id);
         ~SpecCom();
 
-        bool isInitialized();
-        int getId();
+        bool isInitialized() const;
+        int getId() const;
         int getBarSize(unsigned int bar);
 
         void init(unsigned int id);

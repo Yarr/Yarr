@@ -187,7 +187,7 @@ void saveCfgFile(Rd53b rd53b, std::string cfgFilePath, json globSEU)
 {
     std::ofstream newCfgFile(cfgFilePath.c_str());
     json cfg;
-    rd53b.toFileJson(cfg);
+    rd53b.writeConfig(cfg);
     cfg["GlobalSEU"] = globSEU;
     newCfgFile << std::setw(4) << cfg;
     newCfgFile.close();
@@ -301,7 +301,7 @@ int main(int argc, char *argv[])
             logger->error("Error opening chip config: {}", e.what());
             throw(std::runtime_error("loadChips failure"));
         }
-        rd53b.fromFileJson(cfg);
+        rd53b.loadConfig(cfg);
         cfgFile.close();
     }
     else
@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
         // Write default to file
         std::ofstream newCfgFile(cfgFilePath.c_str());
         json cfg;
-        rd53b.toFileJson(cfg);
+        rd53b.writeConfig(cfg);
         newCfgFile << std::setw(4) << cfg;
         newCfgFile.close();
     }

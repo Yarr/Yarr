@@ -114,7 +114,7 @@ int Rd53aPixelCfg::getTDAC(unsigned col, unsigned row) {
     return tdac;
 }
 
-void Rd53aPixelCfg::toFileJson(json &j) {
+void Rd53aPixelCfg::writeConfig(json &j) {
     for (unsigned col=0; col<n_Col; col++) {
         for (unsigned row=0; row<n_Row; row++) {
             j["RD53A"]["PixelConfig"][col]["Col"] = col;
@@ -127,7 +127,7 @@ void Rd53aPixelCfg::toFileJson(json &j) {
 }
 
 // TODO add failsaife
-void Rd53aPixelCfg::fromFileJson(json &j) {
+void Rd53aPixelCfg::loadConfig(const json &j) {
     for (unsigned col=0; col<n_Col; col++) {
         for (unsigned row=0; row<n_Row; row++) {
             this->setEn(col, row, j["RD53A"]["PixelConfig"][col]["Enable"][row]);

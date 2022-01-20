@@ -71,16 +71,16 @@ void Rd53bCoreColLoop::writeConfig(json &j) {
     j["usePToT"] = m_usePToT;
 }
 
-void Rd53bCoreColLoop::loadConfig(json &j) {
-    if (!j["min"].empty())
+void Rd53bCoreColLoop::loadConfig(const json &j) {
+    if (j.contains("min"))
         m_minCore = j["min"];
-    if (!j["max"].empty())
+    if (j.contains("max"))
         m_maxCore = j["max"];
-    if (!j["step"].empty())
+    if (j.contains("step"))
         step = j["step"];
-    if (!j["nSteps"].empty())
+    if (j.contains("nSteps"))
         m_nSteps = j["nSteps"];
-    if (!j["usePToT"].empty())
+    if (j.contains("usePToT"))
         m_usePToT = j["usePToT"];		
     min = 0;
     max = m_nSteps;

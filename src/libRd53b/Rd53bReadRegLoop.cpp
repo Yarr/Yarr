@@ -425,26 +425,26 @@ void Rd53bReadRegLoop::writeConfig(json &config)
     config["VoltMux"] = m_VoltMux; 
 }
 
-void Rd53bReadRegLoop::loadConfig(json &config)
+void Rd53bReadRegLoop::loadConfig(const json &config)
 {
-    if (!config["EnblRingOscA"].empty())
+    if (config.contains("EnblRingOscA"))
         m_EnblRingOscA = config["EnblRingOscA"];
-    if (!config["EnblRingOscB"].empty())
+    if (config.contains("EnblRingOscB"))
         m_EnblRingOscB = config["EnblRingOscB"];        
-    if (!config["RingOscRep"].empty())
+    if (config.contains("RingOscRep"))
         m_RingOscRep = config["RingOscRep"];
-    if (!config["RingOscDur"].empty())
+    if (config.contains("RingOscDur"))
         m_RingOscDur = config["RingOscDur"];
 
-    if (!config["VoltMux"].empty())
+    if (config.contains("VoltMux"))
         for (auto Reg : config["VoltMux"])
             m_VoltMux.push_back(Reg);
 
-    if (!config["CurMux"].empty())
+    if (config.contains("CurMux"))
         for (auto Reg : config["CurMux"])
             m_CurMux.push_back(Reg);
 
-    if (!config["Registers"].empty())
+    if (config.contains("Registers"))
         for (auto Reg : config["Registers"])
         {
             m_STDReg.push_back(Reg);
@@ -463,11 +463,11 @@ void Rd53bReadRegLoop::loadConfig(json &config)
             }
         }
     
-    if (!config["TempSensors"].empty())
+    if (config.contains("TempSensors"))
         for (auto Reg : config["TempSensors"])
             m_TempSensors.push_back(Reg);
 
-    if (!config["RadSensors"].empty())
+    if (config.contains("RadSensors"))
         for (auto Reg : config["RadSensors"])
             m_RadSensors.push_back(Reg);                
 }
