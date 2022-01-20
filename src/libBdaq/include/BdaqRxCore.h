@@ -37,9 +37,6 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq {
         uint32_t getDataRate() override;
         bool isBridgeEmpty() override;
         
-        std::chrono::microseconds getWaitTime() override {
-            return m_waitTime;
-        }
 
         void printSortStatus();
     

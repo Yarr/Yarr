@@ -380,7 +380,7 @@ int main(int argc, char** argv){
   txcore->setTrigEnable(1);
 
   cout << "Read-out" << endl;
-  RawDataContainer datav{LoopStatus::empty()};
+  RawDataContainer datav{LoopStatus()};
   do{
 	RawData * data = rxcore->readData();
 	if(data==NULL){std::this_thread::sleep_for(std::chrono::milliseconds(100));cout<<"."<<flush;continue;}

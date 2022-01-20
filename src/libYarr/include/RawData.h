@@ -9,18 +9,17 @@
 // # Comment: Not really fancy
 // ################################
 
-#include <stdint.h>
+#include <cstdint>
 
 #include "LoopStatus.h"
 
-class RawData {
-    public:
-        RawData(uint32_t arg_adr, uint32_t *arg_buf, unsigned arg_words);
-        ~RawData();
-        
-        uint32_t adr;
-        uint32_t *buf;
-        unsigned words;
+struct RawData {
+    RawData(uint32_t arg_adr, uint32_t *arg_buf, unsigned arg_words) :
+            adr(arg_adr),  buf(arg_buf), words(arg_words) {}
+    ~RawData()=default;
+    uint32_t adr;
+    uint32_t *buf;
+    unsigned words;
 };
 
 class RawDataContainer {
