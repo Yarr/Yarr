@@ -119,18 +119,18 @@ function main {
     ${base_cmd} -s ${scan_dir}/std_analogscan.json
 
     # before-tuning threshold distribution
-    ${base_cmd} -s ${scan_dir}/ptot_thresholdscan.json -p
+    ${base_cmd} -s ${scan_dir}/std_thresholdscan.json -p
 
     # initial pass tuning
-    ${base_cmd} -s ${scan_dir}/ptot_tune_globalthreshold.json -t ${first_threshold} -p
-    ${base_cmd} -s ${scan_dir}/ptot_tune_pixelthreshold.json -t ${first_threshold} -p
+    ${base_cmd} -s ${scan_dir}/std_tune_globalthreshold.json -t ${first_threshold} -p
+    ${base_cmd} -s ${scan_dir}/std_tune_pixelthreshold.json -t ${first_threshold} -p
 
     # second pass tuning
-    ${base_cmd} -s ${scan_dir}/ptot_retune_globalthreshold.json -t ${second_threshold} -p
-    ${base_cmd} -s ${scan_dir}/ptot_retune_pixelthreshold.json -t ${second_threshold} -p
+    ${base_cmd} -s ${scan_dir}/std_retune_globalthreshold.json -t ${second_threshold} -p
+    ${base_cmd} -s ${scan_dir}/std_retune_pixelthreshold.json -t ${second_threshold} -p
 
     # after-tuning threshold distribution
-    ${base_cmd} -s ${scan_dir}/ptot_thresholdscan.json -p
+    ${base_cmd} -s ${scan_dir}/std_thresholdscan.json -p
 }
 
 #______________________________________
