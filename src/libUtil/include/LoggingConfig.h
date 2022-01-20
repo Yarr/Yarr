@@ -1,7 +1,7 @@
 #ifndef YARR_LOGGING_CONFIG_H
 #define YARR_LOGGING_CONFIG_H
 
-#include "string"
+#include <string>
 #include "storage.hpp"
 
 namespace logging {
