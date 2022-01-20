@@ -9,6 +9,7 @@ job_build_and_test:
       - cd build
       - CXXFLAGS=-Werror cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
       - make install -j4
+      - make test
       - export USER=test
       - echo $USER
       - /bin/pwd
@@ -23,7 +24,6 @@ job_build_and_test:
       - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
       - if [ "$NUM100" != "26880" ]; then exit 2; fi
       - bin/scanConsole -k
-      - bin/test_main
       - bin/test_star -r 0 configs/controller/emuCfg_star.json
 
 job_build_and_test_out_of_source:
@@ -34,6 +34,7 @@ job_build_and_test_out_of_source:
       - CXXFLAGS=-Werror cmake3 -S . -B /tmp/build -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=cmake/linux-gcc
       - cmake3 --build /tmp/build -j4
       - cmake3 --install /tmp/build
+      - cmake3 --build /tmp/build --target test
       - export USER=test
       - echo $USER
       - /bin/pwd
@@ -47,7 +48,6 @@ job_build_and_test_out_of_source:
       - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
       - if [ "$NUM100" != "26880" ]; then exit 2; fi
       - /tmp/build/bin/scanConsole -k
-      - /tmp/build/bin/test_main
 
 job_build_all:
     stage: build

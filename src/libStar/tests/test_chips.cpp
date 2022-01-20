@@ -7,7 +7,7 @@
 
 #include "logging.h"
 
-#include "../EmptyHw.h"
+#include "EmptyHw.h"
 
 /**
    Override TxCore to record what is written to FIFO.

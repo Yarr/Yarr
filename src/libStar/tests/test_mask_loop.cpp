@@ -9,7 +9,7 @@
 
 #include "logging.h"
 
-#include "../EmptyHw.h"
+#include "EmptyHw.h"
 
 // Keep in a namespace to avoid collisions (eg test_trigger_loop)
 namespace MaskTesting {

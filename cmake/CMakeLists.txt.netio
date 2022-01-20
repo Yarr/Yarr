@@ -27,13 +27,15 @@ configure_file(src/config.h.in config.h NEWLINE_STYLE UNIX)
 ## SOURCES AND TARGETS ##
 include_directories(${PROJECT_BINARY_DIR}/../netio4)
 include_directories(${PROJECT_BINARY_DIR}/../../../include)
-link_directories(${PROJECT_BINARY_DIR}/../../../lib)
+link_directories(${PROJECT_BINARY_DIR}/../../../../lib)
 include_directories(${CMAKE_BINARY_DIR})
+include_directories(${CMAKE_BINARY_DIR}/../../../../external/src//tbb_2020/include/)
 
 set(NETIO_SOURCES src/netio.cpp src/serialization.cpp src/posix.cpp  src/sockcfg.cpp src/endpoint.cpp
 	src/message.cpp src/eventloop.cpp src/backend.cpp src/sockets.cpp src/context.cpp src/buffer.cpp)
 
 add_library(netio STATIC ${NETIO_SOURCES})
+
 target_link_libraries(netio rt tbb)
 
 set(NETIO_TEST_SOURCES test/test_main.cpp test/test_backend.cpp  test/test_buffer.cpp
