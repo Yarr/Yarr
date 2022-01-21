@@ -59,7 +59,7 @@ namespace {
       n_count = 1;
       for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ( not( l->getStyle()==LOOP_STYLE_NOP or (l->isParameterLoop() and isPOILoop(l.get())) ) ) {
+        if ( not( l->getStyle()==LOOP_STYLE_NOP or (l->isParameterLoop() and isPOILoop(dynamic_cast<StdParameterLoop*>(l.get()))) ) ) {
           // outer loops
           loops.push_back(n);
           loopMax.push_back((unsigned)l->getMax());
@@ -71,6 +71,12 @@ namespace {
           if (cnt == 0) cnt = 1;
           n_count = n_count*cnt;
         }
+      }
+    }
+
+    void loadConfig(const json &j) {
+      for (unsigned i=0; i<j["parametersOfInterest"].size(); i++) {
+        m_parametersOfInterest.push_back(j["parametersOfInterest"][i]);
       }
     }
 
@@ -130,7 +136,7 @@ namespace {
     void init(ScanBase *s) {
       for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ( l->isParameterLoop() and isPOILoop(l.get()) ) {
+        if ( l->isParameterLoop() and isPOILoop(dynamic_cast<StdParameterLoop*>(l.get())) ) {
           pois_min.push_back(l->getMin());
           pois_max.push_back(l->getMax());
           pois_step.push_back(l->getStep());
@@ -150,6 +156,12 @@ namespace {
       double ymin = pois_min[1] - pois_step[1]/2.;
       double ymax = pois_max[1] + pois_step[1]/2.;
       hxy.reset(new Histo2d("houtput", nbins_x, xmin, xmax, nbins_y, ymin, ymax));
+    }
+
+    void loadConfig(const json &j) {
+      for (unsigned i=0; i<j["parametersOfInterest"].size(); i++) {
+        m_parametersOfInterest.push_back(j["parametersOfInterest"][i]);
+      }
     }
 
     void processHistogram(HistogramBase *h) {
