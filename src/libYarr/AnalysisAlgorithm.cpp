@@ -7,20 +7,11 @@
 // ################################
 
 #include "AnalysisAlgorithm.h"
-#include "AllStdActions.h"
 
 #include "logging.h"
 
 namespace {
     auto alog = logging::make_log("AnalysisAlgorithm");
-}
-
-void AnalysisAlgorithm::loadConfig(json &j) {
-    if (!j["parametersOfInterest"].empty()) {
-        for (unsigned i=0; i<j["parametersOfInterest"].size(); i++) {
-            m_parametersOfInterest.push_back(j["parametersOfInterest"][i]);
-        }
-    }
 }
 
 bool AnalysisAlgorithm::isPOILoop(LoopActionBase *l) {
@@ -39,16 +30,14 @@ bool AnalysisAlgorithm::isPOILoop(LoopActionBase *l) {
     return false;
 }
 
-AnalysisProcessor::AnalysisProcessor() {
-}
+AnalysisProcessor::AnalysisProcessor() = default;
 
 AnalysisProcessor::AnalysisProcessor(Bookkeeper *b, unsigned ch)
   : bookie(b), channel(ch)
 {
 }
 
-AnalysisProcessor::~AnalysisProcessor() {
-}
+AnalysisProcessor::~AnalysisProcessor() = default;
 
 void AnalysisProcessor::init() {
     for (unsigned i=0; i<algorithms.size(); i++) {
@@ -62,9 +51,9 @@ void AnalysisProcessor::run() {
     thread_ptr.reset( new std::thread( &AnalysisProcessor::process, this ) );
 }
 
-void AnalysisProcessor::loadConfig(json &j){
+void AnalysisProcessor::loadConfig(const json &j){
     for (unsigned i=0; i<algorithms.size(); i++) {
-        if (!j[std::to_string(i)]["config"].empty()){
+        if (j.contains({std::to_string(i),"config"})) {
 	    algorithms[i]->loadConfig(j[std::to_string(i)]["config"]);
 	}
     }

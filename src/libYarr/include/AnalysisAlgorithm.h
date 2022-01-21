@@ -21,7 +21,7 @@ class AnalysisAlgorithm {
             nRow = 336;
             make_mask = true;
         }
-        virtual ~AnalysisAlgorithm() {}
+        virtual ~AnalysisAlgorithm() = default;
         
         void setBookkeeper (Bookkeeper *b) {bookie = b;}
         void setChannel (unsigned ch) {channel = ch;}
@@ -31,7 +31,7 @@ class AnalysisAlgorithm {
             feedback = fb;
         }
         virtual void init(ScanBase *s) {}
-        virtual void loadConfig(json &config);
+        virtual void loadConfig(const json &config){}
         virtual void processHistogram(HistogramBase *h) {}
         virtual void end() {}
 
@@ -64,7 +64,7 @@ class AnalysisProcessor : public DataProcessor {
     public:
         AnalysisProcessor();
         AnalysisProcessor(Bookkeeper *b, unsigned ch);
-        ~AnalysisProcessor();
+        ~AnalysisProcessor() override;
 
         void connect(ScanBase *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output, FeedbackClipboard *arg_fb, bool storeInput=false) {
             scan = arg_s;
@@ -74,11 +74,11 @@ class AnalysisProcessor : public DataProcessor {
             storeInputHisto = storeInput;
         }
 
-        void init();
-        void run();
-	void loadConfig(json &j);
-        void join();
-        void process();
+        void init() override;
+        void run() override;
+	    void loadConfig(const json &j);
+        void join() override;
+        void process() override;
         void process_core();
         void end();
 

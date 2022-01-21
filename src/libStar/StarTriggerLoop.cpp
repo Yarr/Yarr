@@ -19,6 +19,7 @@ StarTriggerLoop::StarTriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) {
 	m_trigFreq = 1e3; // 1kHz
 	m_trigTime = 10; // 10s
 	m_noInject = false;
+        m_digital = false;
 	min = 0;
 	max = 0;
 	step = 1;
@@ -42,11 +43,15 @@ void StarTriggerLoop::init() {
 
 	g_tx->setTrigFreq(m_trigFreq);
 	g_tx->setTrigCnt(getTrigCnt());
-    g_tx->setTrigWord(&m_trigWord[0], m_trigWordLength);
-    g_tx->setTrigWordLength(m_trigWordLength);
+        g_tx->setTrigWord(&m_trigWord[0], m_trigWordLength);
+        g_tx->setTrigWordLength(m_trigWordLength);
 	g_tx->setTrigTime(m_trigTime);
 
-    g_tx->setCmdEnable(keeper->getTxMask());
+	if (m_noInject) {
+		setNoInject();
+	}
+
+        g_tx->setCmdEnable(keeper->getTxMask());
 
 	logger->trace("Built trigger words {}:", m_trigWordLength);
         if(logger->should_log(spdlog::level::trace)) {
@@ -102,7 +107,10 @@ void StarTriggerLoop::setTrigWord() {
 
 	// Final word in buffer goes first
 	auto cmd_word = LCB::fast_command(LCB::ABC_CAL_PULSE, 3-(remainder%4));
-	//   Or LCB::ABC_DIGITAL_PULSE
+        if (m_digital) {
+                cmd_word = LCB::fast_command(LCB::ABC_DIGITAL_PULSE, 3-(remainder%4));
+        }
+
 	if(remainder < 4) {
 		// Send idle then cmd_word (then everything else)
 		m_trigWord[full_words + 1] = (LCB::IDLE << 16) + cmd_word;
@@ -131,24 +139,28 @@ void StarTriggerLoop::writeConfig(json &config) {
 	config["trig_time"] = m_trigTime;
 	config["l0_latency"] = m_trigDelay;
 	config["noInject"] = m_noInject;
+	config["digital"] = m_digital;
 }
 
-void StarTriggerLoop::loadConfig(json &config) {
+void StarTriggerLoop::loadConfig(const json &config) {
 
-	if (!config["trig_count"].empty())
+	if (config.contains("trig_count"))
 		setTrigCnt(config["trig_count"]);
 
-	if (!config["trig_frequency"].empty())
+	if (config.contains("trig_frequency"))
 		m_trigFreq = config["trig_frequency"];
 
-	if (!config["trig_time"].empty())
+	if (config.contains("trig_time"))
 		m_trigTime = config["trig_time"];
 
-	if (!config["l0_latency"].empty())
+	if (config.contains("l0_latency"))
 		m_trigDelay = config["l0_latency"];
 
-	if (!config["noInject"].empty())
+	if (config.contains("noInject"))
 		m_noInject = config["noInject"];
+
+	if (config.contains("digital"))
+		m_digital = config["digital"];
 
 	logger->info("Configured trigger loop: trig_count: {} trig_frequency: {} l0_delay: {}",
                       getTrigCnt(), m_trigFreq, m_trigDelay);

@@ -60,9 +60,7 @@ Fei4::Fei4(HwController *core, unsigned arg_txChannel, unsigned arg_rxChannel) :
     geo.nCol = 80;
 }
 
-Fei4::~Fei4() {	
-
-}
+Fei4::~Fei4() = default;
 
 void Fei4::init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
     this->setCore(arg_core);

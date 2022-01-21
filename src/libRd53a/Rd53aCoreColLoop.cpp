@@ -130,18 +130,18 @@ void Rd53aCoreColLoop::writeConfig(json &j) {
     j["delayArray"] = m_delayArray;
 }
 
-void Rd53aCoreColLoop::loadConfig(json &j) {
-    if (!j["min"].empty())
+void Rd53aCoreColLoop::loadConfig(const json &j) {
+    if (j.contains("min"))
         m_impl->minCore = j["min"];
-    if (!j["max"].empty())
+    if (j.contains("max"))
         m_impl->maxCore = j["max"];
-    if (!j["step"].empty())
+    if (j.contains("step"))
         step = j["step"];
-    if (!j["nSteps"].empty())
+    if (j.contains("nSteps"))
         m_impl->nSteps = j["nSteps"];
     min = 0;
     max = m_impl->nSteps;
-    if (!j["delayArray"].empty()) {
+    if (j.contains("delayArray")) {
         m_delayArray.clear();
         for(auto i: j["delayArray"])
             m_delayArray.push_back(i);

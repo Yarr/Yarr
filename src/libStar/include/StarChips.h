@@ -24,7 +24,7 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
   StarChips(HwController *arg_core, unsigned arg_channel);
   StarChips(HwController *arg_core, unsigned arg_txchannel, unsigned arg_rxchannel);
 
-  ~StarChips() {}
+  ~StarChips() override = default;
 
     void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override;
 
@@ -35,15 +35,19 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
   void setInjCharge(double, bool, bool) override {}
   void maskPixel(unsigned col, unsigned row) override {}
 
+  unsigned getPixelEn(unsigned col, unsigned row) override {
+    return 1; // getPixelEn() was desgined for Pixels, further modification is needed for StarChip
+  }
+
   void enableAll() override;
 
     //! configure
     //! brief configure the chip (virtual)
-    void configure() override final;
+    void configure() override;
 
   void setHccId(unsigned);//Set the HCC ID to the argument, uses the chip serial number set by eFuse
 
-  void makeGlobal() override final {
+  void makeGlobal() override {
       StarCfg::setHCCChipId(15);
   }
 
@@ -52,6 +56,7 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
   void sendCmd(uint16_t cmd);
 
   bool writeRegisters();
+  bool writeTrims();
   void readRegisters();
 
   void writeHCCRegister(int addr);
@@ -79,8 +84,14 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
  public:
   //Uses chip ID to set value on subregister called subRegName
   void setAndWriteABCSubRegister(std::string subRegName, uint32_t value, int32_t chipID){
+                if (chipID != 15) { //User specified a chipID, no broadcast
     setAndWriteABCSubRegister(subRegName,
                               abcFromChipID(chipID), value);
+                }
+                else {  //User wants to broadcast, but we want to set the cfg. Iterate through ABCs.
+                        eachAbc([&] (auto &abc)->void{
+                                        setAndWriteABCSubRegister(subRegName, abc, value); });
+                }
   }
 
   //Reads value of subregister subRegName for chip with ID chipID

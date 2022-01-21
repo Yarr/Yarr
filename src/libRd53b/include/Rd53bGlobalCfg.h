@@ -26,7 +26,7 @@ class Rd53bReg {
             m_addr = 999;
         }
 
-        virtual ~Rd53bReg() {}
+        virtual ~Rd53bReg() = default;
         
         void init(unsigned addr, uint16_t *cfg, const unsigned bOffset, const unsigned bits, const uint16_t value) {
             m_addr = addr;
@@ -46,7 +46,7 @@ class Rd53bReg {
             return ((*m_cfg >> m_bOffset) & mask);
         }
 
-        uint16_t applyMask(uint16_t value) {
+        uint16_t applyMask(uint16_t value) const {
             unsigned mask = (1<<m_bits)-1;
             return ((value >> m_bOffset) & mask);
         }
@@ -137,8 +137,8 @@ class Rd53bGlobalCfg {
         static constexpr unsigned numRegs = 138;
         std::array<uint16_t, numRegs> m_cfg;
 
-        void toJson(json &j);
-        void fromJson(json &j);
+        void writeConfig(json &j);
+        void loadConfig(const json &j);
     private:
     public:
 

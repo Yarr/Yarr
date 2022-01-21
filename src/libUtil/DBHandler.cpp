@@ -94,12 +94,12 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path) {
     std::string dcs_log_path = log_path+"/dbDcsLog.json";
     json dcs_log_json;
 
-    if (!log_json["id"].empty())        dcs_log_json["id"]        = std::string(log_json["id"]);
-    if (!log_json["startTime"].empty()) dcs_log_json["startTime"] = (int)log_json["startTime"];
-    if (!log_json["timestamp"].empty()) dcs_log_json["timestamp"] = std::string(log_json["timestamp"]);
-    if (!log_json["userCfg"].empty())   dcs_log_json["userCfg"]   = log_json["userCfg"];
-    if (!log_json["siteCfg"].empty())   dcs_log_json["siteCfg"]   = log_json["siteCfg"];
-    if (!log_json["dbCfg"].empty())     dcs_log_json["dbCfg"]     = log_json["dbCfg"];
+    if (log_json.contains("id"))        dcs_log_json["id"]        = std::string(log_json["id"]);
+    if (log_json.contains("startTime")) dcs_log_json["startTime"] = (int)log_json["startTime"];
+    if (log_json.contains("timestamp")) dcs_log_json["timestamp"] = std::string(log_json["timestamp"]);
+    if (log_json.contains("userCfg"))   dcs_log_json["userCfg"]   = log_json["userCfg"];
+    if (log_json.contains("siteCfg"))   dcs_log_json["siteCfg"]   = log_json["siteCfg"];
+    if (log_json.contains("dbCfg"))     dcs_log_json["dbCfg"]     = log_json["dbCfg"];
 
     json dcs_json = this->toJson(i_dcs_path);
     if (dcs_json["environments"].empty()) {
@@ -382,7 +382,7 @@ void DBHandler::checkDCSCfg(std::string i_dcs_path, std::string i_num, json i_js
     this->checkEmpty(i_json["description"].empty(), "environments."+i_num+".description", i_dcs_path);
     this->checkEmpty(i_json["num"].empty(), "environments."+i_num+".num", i_dcs_path);
     this->checkNumber(i_json["num"].is_number(), "environments."+i_num+".num", i_dcs_path);
-    if (!i_json["margin"].empty()) this->checkNumber(i_json["margin"].is_number(), "environments."+i_num+".margin", i_dcs_path);
+    if (i_json.contains("margin")) this->checkNumber(i_json["margin"].is_number(), "environments."+i_num+".margin", i_dcs_path);
     return;
 }
 

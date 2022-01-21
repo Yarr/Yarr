@@ -62,7 +62,7 @@
           "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 18000,
+          "frequency": 5000,
           "noInject": false,
           "time": 0
         },
@@ -72,14 +72,15 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "AnalogScan",
+    "name": "DiscBumpScan",
     "prescan": {
         "InjEnDig": 0,
         "LatencyConfig": 48,
         "GlobalPulseRt": 16384,
         "InjVcalDiff": 0,
         "InjVcalHigh": 4000,
-        "InjVcalMed": 0
+        "InjVcalMed": 0,
+        "DiffVff": 50
     }
   }
 }

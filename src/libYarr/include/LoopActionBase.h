@@ -25,7 +25,7 @@ using std::shared_ptr;
 class LoopActionBase {
     public:
         explicit LoopActionBase(LoopStyle s);
-        virtual ~LoopActionBase() {}
+        virtual ~LoopActionBase() = default;
 
         void setup(LoopStatusMaster *stat, Bookkeeper *k);
         void setNext(shared_ptr<LoopActionBase>& ptr);
@@ -63,16 +63,16 @@ class LoopActionBase {
             return m_style;
         }
 
-        unsigned getMin();
-        unsigned getMax();
-        unsigned getStep();
+        unsigned getMin() const;
+        unsigned getMax() const;
+        unsigned getStep() const;
         void setMin(unsigned v);
         void setMax(unsigned v);
         void setStep(unsigned v);
 
         virtual std::string getLabel() {return {};}
 
-        virtual void loadConfig(json &config) {}
+        virtual void loadConfig(const json &config) {}
         virtual void writeConfig(json &config) {}
 		
     protected:

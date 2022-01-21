@@ -17,8 +17,7 @@ ItsdaqRxCore::ItsdaqRxCore(ItsdaqHandler&h)
 {
 }
 
-ItsdaqRxCore::~ItsdaqRxCore(){
-}
+ItsdaqRxCore::~ItsdaqRxCore()= default;
 
 void ItsdaqRxCore::init() {
   logger->debug("init");
@@ -86,6 +85,8 @@ void ItsdaqRxCore::setRxEnable(uint32_t stream) {
 }
 
 void ItsdaqRxCore::disableRx() {
+  logger->debug("Disable Rx (all streams)");
+
   // Disable all streams
   // Mask, (stream, value)*
   static const size_t length = 1 + max_stream *2;
@@ -142,14 +143,14 @@ bool ItsdaqRxCore::isBridgeEmpty() {
   return (t1 - bridge_watcher) > std::chrono::microseconds(100);
 }
 
-void ItsdaqRxCore::toFileJson(json &j) {
+void ItsdaqRxCore::writeConfig(json &j) const {
   if(m_streamConfig != 0) {
     j["streamConfig"] = m_streamConfig;
   }
 }
 
-void ItsdaqRxCore::fromFileJson(json &j) {
-  if(j["streamConfig"]) {
+void ItsdaqRxCore::loadConfig(const json &j) {
+  if(j.contains("streamConfig")) {
     m_streamConfig =  j["streamConfig"];
   }
 

@@ -42,11 +42,11 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
         Fei4(HwController *arg_core, unsigned arg_channel);
         Fei4(HwController *arg_core, unsigned arg_txchannel, unsigned arg_rxchannel);
 
-        void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override final;
+        void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override;
 
-        ~Fei4();
+        ~Fei4() override;
 
-        void configure() override final;
+        void configure() override;
         void configureGlobal();
         void configurePixels(unsigned lsb=0, unsigned msb=Fei4PixelCfg::n_Bits);
 
@@ -54,7 +54,7 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
             runMode(chipId, mode);
         }
 
-        void makeGlobal() override final {
+        void makeGlobal() override {
             chipId = 8;
         }
 
@@ -64,13 +64,17 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
         void loadIntoShiftReg(unsigned pixel_latch);
         void loadIntoPixel(unsigned pixel_latch);
         void shiftByOne();
-        void writeNamedRegister(std::string name, uint16_t value) override final;
+        void writeNamedRegister(std::string name, uint16_t value) override;
         void readPixelRegister(unsigned colpr_addr, unsigned latch);
         void dummyCmd();
 
         void maskPixel(unsigned col, unsigned row) override {
             this->setEn(col+1, row+1, 0);
             this->setHitbus(col+1, row+1, 1);
+        }
+
+        unsigned getPixelEn(unsigned col, unsigned row) override {
+	    return this->getEn(col, row);
         }
 
         void enableAll() override;
@@ -92,7 +96,7 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
             this->rdRegister(chipId, addr);
         }
         
-        void setInjCharge(double charge, bool use_sCap=true, bool use_lCap=true) override final {
+        void setInjCharge(double charge, bool use_sCap=true, bool use_lCap=true) override {
             this->writeRegister(&Fei4GlobalCfg::PlsrDAC, this->toVcal(charge, use_sCap, use_lCap));
         }
 

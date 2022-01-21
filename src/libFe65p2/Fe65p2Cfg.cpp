@@ -1,6 +1,6 @@
 #include "Fe65p2Cfg.h"
 
-void Fe65p2Cfg::toFileJson(json &j) {
+void Fe65p2Cfg::writeConfig(json &j) {
     j["FE65-P2"]["name"] = name;
     j["FE65-P2"]["txChannel"] = txChannel;
     j["FE65-P2"]["rxChannel"] = rxChannel;
@@ -9,25 +9,25 @@ void Fe65p2Cfg::toFileJson(json &j) {
     j["FE65-P2"]["Parameter"]["vcalSlope"] = vcal_slope;
     j["FE65-P2"]["Parameter"]["vcalOffset"] = vcal_offset;
 
-    Fe65p2GlobalCfg::toFileJson(j);
-    Fe65p2PixelCfg::toFileJson(j);
+    Fe65p2GlobalCfg::writeConfig(j);
+    Fe65p2PixelCfg::writeConfig(j);
 }
 
-void Fe65p2Cfg::fromFileJson(json &j) {
-    if (!j["FE65-P2"]["name"].empty())
+void Fe65p2Cfg::loadConfig(const json &j) {
+    if (j.contains({"FE65-P2","name"}))
         name = j["FE65-P2"]["name"];
-    if (!j["FE65-P2"]["txChannel"].empty())
+    if (j.contains({"FE65-P2","txChannel"}))
         txChannel = j["FE65-P2"]["txChannel"];
-    if (!j["FE65-P2"]["rxChannel"].empty())
+    if (j.contains({"FE65-P2","rxChannel"}))
         rxChannel = j["FE65-P2"]["rxChannel"];
 
-    if (!j["FE65-P2"]["Parameter"]["cap"].empty())
+    if (j.contains({"FE65-P2","Parameter","cap"}))
         cap = j["FE65-P2"]["Parameter"]["cap"];
-    if (!j["FE65-P2"]["Parameter"]["vcalSlope"].empty())
+    if (j.contains({"FE65-P2","Parameter","vcalSlope"}))
         vcal_slope = j["FE65-P2"]["Parameter"]["vcalSlope"];
-    if (!j["FE65-P2"]["Parameter"]["vcalOffset"].empty())
+    if (j.contains({"FE65-P2","Parameter","vcalOffset"}))
         vcal_offset = j["FE65-P2"]["Parameter"]["vcalOffset"];
 
-    Fe65p2GlobalCfg::fromFileJson(j);
-    Fe65p2PixelCfg::fromFileJson(j);
+    Fe65p2GlobalCfg::loadConfig(j);
+    Fe65p2PixelCfg::loadConfig(j);
 }

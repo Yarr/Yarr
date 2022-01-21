@@ -36,9 +36,9 @@ public:
 	void open();
 	void close();
 
-	int getHandle();
-	unsigned short getBus();
-	unsigned short getSlot();
+	int getHandle() const;
+	unsigned short getBus() const;
+	unsigned short getSlot() const;
 
 	KernelMemory& allocKernelMemory( unsigned int size );
 	UserMemory& mapUserMemory( void *mem, unsigned int size, bool merged );
@@ -48,20 +48,20 @@ public:
 	inline void mmap_lock() { pthread_mutex_lock( &mmap_mutex ); }
 	inline void mmap_unlock() { pthread_mutex_unlock( &mmap_mutex ); }
 
-    int waitForInterrupt(unsigned int int_id);
-	void clearInterruptQueue(unsigned int int_id);
+    int waitForInterrupt(unsigned int int_id) const;
+	void clearInterruptQueue(unsigned int int_id) const;
 	
-	unsigned int getBARsize(unsigned int bar);
+	unsigned int getBARsize(unsigned int bar) const;
 	void *mapBAR(unsigned int bar);
-	void unmapBAR(unsigned int bar, void *ptr);
+	void unmapBAR(unsigned int bar, void *ptr) const;
 	
-	unsigned char readConfigByte(unsigned int addr);
-	unsigned short readConfigWord(unsigned int addr);
-	unsigned int readConfigDWord(unsigned int addr);
+	unsigned char readConfigByte(unsigned int addr) const;
+	unsigned short readConfigWord(unsigned int addr) const;
+	unsigned int readConfigDWord(unsigned int addr) const;
 	
-	void writeConfigByte(unsigned int addr, unsigned char val);
-	void writeConfigWord(unsigned int addr, unsigned short val);
-	void writeConfigDWord(unsigned int addr, unsigned int val);
+	void writeConfigByte(unsigned int addr, unsigned char val) const;
+	void writeConfigWord(unsigned int addr, unsigned short val) const;
+	void writeConfigDWord(unsigned int addr, unsigned int val) const;
 };
 	
 }

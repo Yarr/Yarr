@@ -8,7 +8,7 @@ For details please refer to the documentation covering installation and usage, w
 
 This README only includes quick install guide.
 
-(If you are working with the devel branch refer to http://cern.ch/yarr/devel/ )
+(If you are working with the devel branch refer to http://cern.ch/yarr/devel/ and see the current coverage report at https://yarr.web.cern.ch/yarr/devel/coverage/)
 
 ## Mailing list
 
@@ -32,23 +32,20 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
 ## Quick minimal Install Guide:
 
 - Builds spec and emu controller for mininmal dependencies
-- Clone from git 
+- Clone from git
 	- ``$ git clone https://gitlab.cern.ch/YARR/YARR.git Yarr``
 - Compilation:
-    - ``$ cd Yarr``
-    - ``$ mkdir build``
-    - ``$ cd build``
     - ``$ source scl_source enable devtoolset-7``
-    - ``$ cmake3 ..``
-    - ``$ make install -j4``
-    - ``$ cd ..``
+    - ``$ cmake3 -S Yarr -B build`` or ``$ cmake3 -S Yarr -B build -DYARR_CONTROLLERS_TO_BUILD=all ..``
+    - ``$ cmake3 --build build -j4``
+    - ``$ cmake3 --install build -j4``
 - Running
     - execute programs from the repository top folder
 
 ### Building additional controllers
 
 - In order to build with more controllers execute cmake with extra options
-    - For all controllers: 
+    - For all controllers:
         - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=all ..``
     - For NetIO:
         - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;NetioHW"``

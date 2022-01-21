@@ -94,6 +94,16 @@ After ``std_digitalscan``:
 
 #### Current
 
+Expected current draw at start-up:
+
+- Digital: 200-250mA
+- Analog: 80-100mA
+
+After ``std_digitalscan`` (depends on exact config):
+
+- Digital: around 600m
+- Analog: around 750mA
+
 ## Tuning Routine
 
 We recommend the following tuning routine:
@@ -103,4 +113,27 @@ We recommend the following tuning routine:
 3. Retune (not changing TDACs) global threshold to 1000e
 4. Retune pixel threshold to 1000e
 
+## Active Lanes
 
+ITkPix can be configured to be read out via 1 and up to 4 lanes. Typically for a chip mounted onto a SCC you would want to use 4 lane read out, while a chip inside a quad module might only use 1 lane.
+
+Three registers are involved in configuring how many lanes should be used for the read out:
+
+- ``AuroraActiveLanes``: determines how many lanes are used to transmit data (does not disable the physical link), possible values 1,3,7,15 to select 1, 2, 3, and 4 lane readout.
+- ``DataMergeOutMux0/1/2/3``: selects which physical lane a logical lane will be transmitted on (allows us to re-reoute data in case the hardware wiring does not match the nominal lane order). Possible values 0, 1, 2, 3.
+- ``SerLaneEn``: eneables/disables the serializer in a physical lane (0 to enable, 1 to disable)
+
+When using the YARR-PCIe cards and SCC, possible values are:
+
+| Number of Lanes | ``AuroraActiveLanes`` | ``SerLaneEn`` | ``DataMergeOutMux0/1/2/3`` |
+| ----- | --------- | ----------- | --------------- |
+| 4 | 15 | 15 | 3, 2, 1, 0 |
+| 3 | 7 | 14 | 3, 2, 1, 0 |
+| 2 | 3 | 12 | 3, 2, 1, 0 |
+| 1 | 1 | 8 | 3, 2, 1, 0 |
+
+Please note that the number of active lanes might also need to be specified in the controller config to inform the firmware about how many lanes are used for the readout.
+
+## Link sharing
+
+TODO

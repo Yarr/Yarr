@@ -27,8 +27,8 @@ void Rd53bPixelCfg::setReg(unsigned col, unsigned row, unsigned en, unsigned inj
     pixRegs[col/2][row] |= ((0xFF & reg.u8) << ((col&0x1)*8));
 }
 
-uint16_t Rd53bPixelCfg::setBit(uint16_t in, uint8_t bit, uint8_t val) {
-    return (in & ~(1U << bit)) | (val << bit);
+void Rd53bPixelCfg::setBit(uint16_t &in, uint8_t bit, uint8_t val) {
+    in = (in & ~(1U << bit)) | (val << bit);
 }
 
 uint16_t Rd53bPixelCfg::getBit(uint16_t in, uint8_t bit) {
@@ -36,15 +36,15 @@ uint16_t Rd53bPixelCfg::getBit(uint16_t in, uint8_t bit) {
 }
 
 void Rd53bPixelCfg::setEn(unsigned col, unsigned row, unsigned v) {
-    pixRegs[col/2][row] = setBit(pixRegs[col/2][row], (col&0x1)*8 + 0, v);
+    setBit(pixRegs[col / 2][row], (col & 0x1) * 8 + 0, v);
 }
 
 void Rd53bPixelCfg::setInjEn(unsigned col, unsigned row, unsigned v) {
-    pixRegs[col/2][row] = setBit(pixRegs[col/2][row], (col&0x1)*8 + 1, v);
+    setBit(pixRegs[col/2][row], (col&0x1)*8 + 1, v);
 }
 
 void Rd53bPixelCfg::setHitbus(unsigned col, unsigned row, unsigned v) {
-    pixRegs[col/2][row] = setBit(pixRegs[col/2][row], (col&0x1)*8 + 2, v);
+    setBit(pixRegs[col/2][row], (col&0x1)*8 + 2, v);
 }
 
 void Rd53bPixelCfg::setTDAC(unsigned col, unsigned row, int v) {
@@ -57,15 +57,15 @@ void Rd53bPixelCfg::setTDAC(unsigned col, unsigned row, int v) {
 }   
 
 unsigned Rd53bPixelCfg::getEn(unsigned col, unsigned row) {
-   return getBit(pixRegs[col/2][row], (col&0x1)*8 + 0);
+   return getPixelBit(pixRegs, col, row, 0);
 }
 
 unsigned Rd53bPixelCfg::getInjEn(unsigned col, unsigned row) {
-   return getBit(pixRegs[col/2][row], (col&0x1)*8 + 1);
+   return getPixelBit(pixRegs, col, row, 1);
 }
 
 unsigned Rd53bPixelCfg::getHitbus(unsigned col, unsigned row) {
-   return getBit(pixRegs[col/2][row], (col&0x1)*8 + 2);
+   return getPixelBit(pixRegs, col, row, 2);
 }
 
 int Rd53bPixelCfg::getTDAC(unsigned col, unsigned row) {
@@ -74,7 +74,7 @@ int Rd53bPixelCfg::getTDAC(unsigned col, unsigned row) {
     return ((int)reg.s.tdac * (reg.s.sign == 0 ? +1 : -1));
 }
 
-void Rd53bPixelCfg::toJson(json &j) {
+void Rd53bPixelCfg::writeConfig(json &j) {
     for (unsigned col=0; col<n_Col; col++) {
         for (unsigned row=0; row<n_Row; row++) {
             j["RD53B"]["PixelConfig"][col]["Col"] = col;
@@ -87,7 +87,7 @@ void Rd53bPixelCfg::toJson(json &j) {
 }
 
 // TODO add failsaife
-void Rd53bPixelCfg::fromJson(json &j) {
+void Rd53bPixelCfg::loadConfig(const json &j) {
     for (unsigned col=0; col<n_Col; col++) {
         for (unsigned row=0; row<n_Row; row++) {
             this->setEn(col, row, j["RD53B"]["PixelConfig"][col]["Enable"][row]);
@@ -96,4 +96,8 @@ void Rd53bPixelCfg::fromJson(json &j) {
             this->setTDAC(col, row, j["RD53B"]["PixelConfig"][col]["TDAC"][row]);
         }
     }
+}
+
+uint16_t Rd53bPixelCfg::getPixelBit(PixelArray &input, unsigned col, unsigned row, unsigned bit){
+    return getBit(input[col/2][row], (col&0x1)*8 + bit);
 }

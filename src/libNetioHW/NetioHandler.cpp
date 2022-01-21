@@ -151,7 +151,7 @@ void NetioHandler::setFlushBuffer(bool status){
 	doFlushBuffer = status;
 }
 
-int NetioHandler::getDataCount() {
+int NetioHandler::getDataCount() const {
         return handlerDataCount;
 }
 

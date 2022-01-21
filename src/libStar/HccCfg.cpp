@@ -109,6 +109,16 @@ HccStarRegInfo::HccStarRegInfo() {
     hccregisterMap[addr] = std::make_shared<RegisterInfo>(addr);
   }
 
+  for (HCCStarRegister reg: {
+      //HCCStarRegister::Addressing,  // TODO: need to reconcile this with StarChips::setHccId
+      HCCStarRegister::Delay1, HCCStarRegister::Delay2, HCCStarRegister::Delay3,
+      HCCStarRegister::PLL1, HCCStarRegister::PLL2, HCCStarRegister::PLL3, HCCStarRegister::DRV1, HCCStarRegister::DRV2,
+      HCCStarRegister::ICenable, HCCStarRegister::OPmode, HCCStarRegister::OPmodeC, HCCStarRegister::Cfg1, HCCStarRegister::Cfg2,
+      HCCStarRegister::ExtRst, HCCStarRegister::ExtRstC, HCCStarRegister::ErrCfg, HCCStarRegister::ADCcfg}) {
+    int addr = reg;
+    hccWriteMap[addr] = hccregisterMap[addr];
+  }
+
   for (auto def : s_hccsubregdefs) {
     auto reg_id = std::get<0>(def);
     std::string subregname = std::string(reg_id._to_string());

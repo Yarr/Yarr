@@ -19,7 +19,7 @@ Rd53aCmd::Rd53aCmd() : core( nullptr ) {}
 
 Rd53aCmd::Rd53aCmd(TxCore *arg_core) : core( arg_core ) {}
 
-Rd53aCmd::~Rd53aCmd() {}
+Rd53aCmd::~Rd53aCmd() = default;
 
 // These definitions are needed for constexpr
 constexpr uint16_t Rd53aCmd::enc5to8[];
@@ -142,8 +142,7 @@ void Rd53aCmd::wrRegisterBlock(uint32_t chipId, uint32_t address, uint16_t value
     tmp = (this->encode5to8(value[5]>>5) << 24);
     tmp += (this->encode5to8(value[5]) << 16);
     tmp += 0x6969;
-
-
+    core->writeFifo(tmp);
     core->releaseFifo();
 
 }

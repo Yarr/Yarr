@@ -1,46 +1,59 @@
 {
   "scan": {
-    "analysis": [
-      {
+    "analysis": {
+      "0": {
         "algorithm": "OccupancyAnalysis",
-        "config": {
-          "createMask": true
-        }
-      }
-    ],
-    "histogrammer": [
-        {
-            "algorithm": "OccupancyMap",
-            "config": {}
-        },
-        {
-            "algorithm": "L1Dist",
-            "config": {}
-        },
-        {
-            "algorithm": "HitsPerEvent",
-            "config": {}
-        }
-    ],
-    "loops": [
-      {
-        "config": {
-          "min": 0,
-          "max": 4,
-          "step": 1,
-          "name": "None"
-        },
-        "loopAction": "StdParameterLoop"
+        "config": {}
       },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "n_count": 1
+    },
+    "loops": [       
       {
+        "config": {
+          "nMaskedStripsPerGroup": 7,
+          "nEnabledStripsPerGroup": 1,
+	  "EnabledMaskedShift":1,
+          "doNmask": false,
+          "maskOnly": true,
+          "parameter": false,
+          "min": 0,
+          "max": 8,
+          "step": 1
+        },
+        "loopAction": "StarMaskLoop"
+      },
+
+      {
+        "config": {
+          "trig_count": 2,
+          "trig_frequency": 100,
+          "trig_time": 0,
+          "l0_latency": 5,
+          "noInject": false,
+          "digital": true
+        },
         "loopAction": "StarTriggerLoop"
       },
       {
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "StarDigitalScan",
+    "name": "MaskTestScan",
     "prescan": {
+        "ABCs_TEST_PULSE_ENABLE": 1,
+        "ABCs_LP_ENABLE": 1,
+        "ABCs_PR_ENABLE": 1,
+        "ABCs_TM": 2,
+        "ABCs_DETMODE": 1,
+        "ABCs_RRMODE": 1,
+        "ABCs_LATENCY": 6
     }
   }
 }

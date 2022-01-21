@@ -24,7 +24,7 @@ class Rd53aPixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
         Rd53aPixelFeedback();
 
         void writeConfig(json &j) override;
-        void loadConfig(json &j) override;
+        void loadConfig(const json &j) override;
 
         void feedback(unsigned channel, std::unique_ptr<Histo2d> h) override;
 

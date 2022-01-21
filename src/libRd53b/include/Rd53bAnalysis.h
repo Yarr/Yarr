@@ -16,12 +16,12 @@ class FrontEndScopeAnalysis : public AnalysisAlgorithm {
 
     public :
         FrontEndScopeAnalysis() : AnalysisAlgorithm() {};
-        ~FrontEndScopeAnalysis() {}
+        ~FrontEndScopeAnalysis() override = default;
 
-        void loadConfig(json& config);
-        void init(ScanBase* s);
-        void processHistogram(HistogramBase* h);
-        void end();
+        void loadConfig(const json &config) override;
+        void init(ScanBase* s) override;
+        void processHistogram(HistogramBase* h) override;
+        void end() override;
 
     private:
 
@@ -61,12 +61,12 @@ class ToaAnalysis : public AnalysisAlgorithm {
 
     public :
         ToaAnalysis() : AnalysisAlgorithm() {};
-        ~ToaAnalysis() {};
+        ~ToaAnalysis() override = default;;
 
-        void init(ScanBase *s);
-        void processHistogram(HistogramBase* h);
-        void end();
-        void loadConfig(json& config);
+        void init(ScanBase *s) override;
+        void processHistogram(HistogramBase* h) override;
+        void end() override;
+        void loadConfig(const json &config) override;
 
     private :
 

@@ -105,9 +105,7 @@ Histo3d::Histo3d(Histo3d *h) : HistogramBase(h->getName()) {
     lStat = h->getStat();
 }
 
-Histo3d::~Histo3d() {
-
-}
+Histo3d::~Histo3d() = default;
 
 unsigned Histo3d::size() const {
     return xbins*ybins*zbins;
@@ -229,7 +227,7 @@ void Histo3d::setBin(unsigned n, double v) {
 }
 
 
-int Histo3d::binNum(double x, double y, double z) {
+int Histo3d::binNum(double x, double y, double z) const {
     if (x < xlow || y < ylow || z < zlow) {
         //std::cout << "Underflow " << x << " " << y << std::endl;
         return -1;

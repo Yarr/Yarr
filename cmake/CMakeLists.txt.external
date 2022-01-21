@@ -1,12 +1,13 @@
 # Plotting tools
+include(ExternalProject)
 function(YARR_ADD_PLOTTING)
     ExternalProject_Add (
         plotting_tools
         GIT_REPOSITORY https://gitlab.cern.ch/YARR/utilities/plotting-tools.git
         GIT_TAG master
         CMAKE_ARGS 
-            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-        PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
+            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DCMAKE_CXX_FLAGS=-std=c++17
+        PREFIX "${CMAKE_CURRENT_BINARY_DIR}/../src/external"
         )
 endfunction()
 
@@ -103,7 +104,7 @@ function(YARR_ADD_ROGUE)
         UPDATE_COMMAND ""
         INSTALL_COMMAND make install
         PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
-        CMAKE_ARGS "-DNO_PYTHON=1" "-DNO_ZMQ=1" "-DNO_BZIP=1" "-DSTATIC_LIB=1" "${TOOLCHAIN}"
+        CMAKE_ARGS "-DNO_PYTHON=1" "-DNO_ZMQ=1" "-DNO_BZIP=1" "-DSTATIC_LIB=1" "${TOOLCHAIN}"  "-DCMAKE_POSITION_INDEPENDENT_CODE=ON"
         DEPENDS tbb_2020
         )
 
@@ -119,8 +120,8 @@ function(YARR_ADD_VARIANT)
     # Variant
     ExternalProject_Add (
         variant
-        GIT_REPOSITORY  https://gitlab.cern.ch/wittgen/variant.git
-        GIT_TAG v1.5.1
+        GIT_REPOSITORY  https://gitlab.cern.ch/atlas-sw-misc/variant.git
+        GIT_TAG v1.5.5
         UPDATE_COMMAND ""
         INSTALL_COMMAND ""
         BUILD_COMMAND ""
@@ -130,3 +131,15 @@ function(YARR_ADD_VARIANT)
     link_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/variant)
     include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/variant/include)
 endfunction()
+
+# Plotting Tools
+set(CMAKE_MESSAGE_LOG_LEVEL "ERROR")
+find_package(ROOT COMPONENTS Hist Graf)
+set(CMAKE_MESSAGE_LOG_LEVEL "STATUS")
+if (${ROOT_FOUND})
+    YARR_ADD_PLOTTING()
+    MESSAGE(STATUS "Compiling plotting tools!")
+    INSTALL(DIRECTORY ${CMAKE_BINARY_DIR}/external/src/plotting_tools/bin/ DESTINATION ${TARGET_INSTALL_AREA} FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ WORLD_EXECUTE WORLD_READ GROUP_EXECUTE GROUP_READ)
+else (${ROOT_FOUND})
+    MESSAGE(STATUS "Could not locate ROOT. Will not compile plotting tools!")
+endif (${ROOT_FOUND})

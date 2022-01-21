@@ -31,12 +31,10 @@ Rd53aSyncPixelModel::Rd53aSyncPixelModel(float _VthresholdSync_mean, float _Vthr
 	noise_sigma_sigma = _noise_sigma_sigma;
 	noise_sigma_gauss = _noise_sigma_gauss;
 }
-Rd53aSyncPixelModel::~Rd53aSyncPixelModel()
-{
-}
+Rd53aSyncPixelModel::~Rd53aSyncPixelModel()= default;
 
 // functions for modeling pixel responses
-float Rd53aSyncPixelModel::calculateThreshold(uint32_t VthresholdSync)
+float Rd53aSyncPixelModel::calculateThreshold(uint32_t VthresholdSync) const
 {
 	float threshold = VthresholdSync_gauss/100. * VthresholdSync;
 
@@ -45,7 +43,7 @@ float Rd53aSyncPixelModel::calculateThreshold(uint32_t VthresholdSync)
 	return threshold;
 }
 
-float Rd53aSyncPixelModel::calculateNoise()
+float Rd53aSyncPixelModel::calculateNoise() const
 {
 	return rand_normal(0, noise_sigma_gauss, 1);
 }

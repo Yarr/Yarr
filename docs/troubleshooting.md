@@ -11,7 +11,9 @@ If you encounter errors concerning permissions, e.g.
 ERROR: [Labtoolstcl 44-469] There is no current hw_target.
 ```
 try installing cable drivers:
-```cd /opt/Xilinx/Vivado/2020.1/data/xicom/cable_drivers/lin64/install_script/install_drivers/
+
+```
+cd /opt/Xilinx/Vivado/2020.1/data/xicom/cable_drivers/lin64/install_script/install_drivers/
 sudo ./install_drivers
 ```
 
@@ -175,6 +177,14 @@ Jumper configuration for **direct powering**
 ![Digital scan example](images/rd53a_proto_digital_Occupancy.png)
 
 **Resolve by:** check that aurora lines are connected and running. The jumpers JP10 and JP11 on the SCC have to be closed in order to use LANE 2 and LANE 3.
+
+
+**Symptom:** There seems to be loss of data.
+
+![Data loss example 1](images/dataloss.png)![Data loss example 2](images/dataloss2.png)
+
+**Resolve by:** Check the firmware configuration, OutputActiveLanes, and the trigger frequency. Try using a firmware with higher readout frequency, e.g. 640 MHz instead of 160 MHz, more lanes in the chip (e.g. 3 or 4 lanes instead of 1 lane), or lower trigger frequency in the scan config (e.g. use 5000 Hz instead of 30 kHz).
+
 
 ### Noise/Source Scan is empty
 

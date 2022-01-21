@@ -1,4 +1,4 @@
 #include "EmuCom.h"
 
-EmuCom::EmuCom() {}
-EmuCom::~EmuCom() {}
+EmuCom::EmuCom() = default;
+EmuCom::~EmuCom() = default;

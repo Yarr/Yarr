@@ -94,24 +94,27 @@ bool ItsdaqTxCore::isCmdEmpty() {
 }
 
 void ItsdaqTxCore::setTrigEnable(uint32_t value){
+  if(m_trigProc.joinable()) {
+    m_trigProc.join();
+  }
   if(value == 0) {
-    if(m_trigProc.joinable()) 
-      m_trigProc.join();
     m_trigEnabled = false;
   } else {
     m_trigEnabled = true;
     switch (m_trigCfg) {
     case INT_TIME:
     case EXT_TRIGGER:
-      logger->debug("Starting trigger by time");
+      logger->debug("Starting trigger by time ({} seconds)", m_trigTime);
       m_trigProc = std::thread(&ItsdaqTxCore::doTriggerTime, this);
       break;
     case INT_COUNT:
-      logger->debug("Starting trigger by count");
+      logger->debug("Starting trigger by count ({} triggers)", m_trigCnt);
       m_trigProc = std::thread(&ItsdaqTxCore::doTriggerCnt, this);
       break;
     default:
       // Should not occur, else stuck
+      logger->error("No config for trigger, aborting loop");
+      m_trigEnabled = false;
       break;
     }
   }
@@ -158,8 +161,9 @@ void ItsdaqTxCore::buildTriggerSequence() {
   auto words32 = std::min(trigLen, m_trigWords.size());
 
   m_trigBuffer.clear();
-  for(int i=0; i<words32; i++) {
-    buildSequenceWord(m_trigBuffer, m_trigWords[i], 0x78557855);
+
+  for(int i=words32-1; i >= 0; i--) { //Need to send last word first
+          buildSequenceWord(m_trigBuffer, m_trigWords[i], 0x78557855);
   }
 }
 
@@ -202,7 +206,7 @@ void ItsdaqTxCore::doTriggerCnt() {
     std::this_thread::sleep_for(std::chrono::microseconds((int)(1e6/m_trigFreq))); // Frequency in Hz
   }
   m_trigEnabled = false;
-  logger->debug("Finished trigger count {}", trigs);
+  logger->debug("Finished trigger count {}/{}", trigs, m_trigCnt);
 }
 
 void ItsdaqTxCore::doTriggerTime() {
@@ -217,13 +221,14 @@ void ItsdaqTxCore::doTriggerTime() {
     cur = std::chrono::steady_clock::now();
   }
   m_trigEnabled = false;
-  logger->debug("Finished trigger counts {}", trigs);
+  logger->debug("Finished trigger time {} with {} triggers",
+                m_trigTime, trigs);
 }
 
-void ItsdaqTxCore::toFileJson(json &j)  {
+void ItsdaqTxCore::writeConfig(json &j)  {
 }
 
-void ItsdaqTxCore::fromFileJson(json &j){
+void ItsdaqTxCore::loadConfig(const json &j){
   logger->debug("ItsdaqTxCore: No json config to load");
 
   // Does anything need changing if UDP socket updated?

@@ -309,7 +309,7 @@ void BocRxCore::setEmu(uint32_t mask, uint8_t hitcnt)
 	}
 }
 
-uint32_t BocRxCore::getEmu()
+uint32_t BocRxCore::getEmu() const
 {
 	return m_emuMask;
 }

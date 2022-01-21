@@ -25,7 +25,7 @@ class Rd53aGlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver
         Rd53aGlobalFeedback(Rd53aReg Rd53aGlobalCfg::*ref);
 
         void writeConfig(json &j) override;
-        void loadConfig(json &j) override;
+        void loadConfig(const json &j) override;
 
         // TODO should probably register a single function
         void feedback(unsigned channel, double sign, bool last = false) override;
