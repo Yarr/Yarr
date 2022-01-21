@@ -319,7 +319,7 @@ void buildAnalyses( std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcesso
 void buildAnalysisHierarchy(std::vector<std::vector<int>>& indexTiers, json& anaCfg) {
     std::map<std::string, int> tierMap; // key: algorithm name; value: tier
 
-    if (anaCfg["n_count"].empty())
+    if (!anaCfg.contains("n_count"))
         throw std::runtime_error("No \"n_count\" field in analysis config");
 
     int nAnas = anaCfg["n_count"];
@@ -342,7 +342,7 @@ void buildAnalysisHierarchy(std::vector<std::vector<int>>& indexTiers, json& ana
         indices.pop_front();
 
         std::string algo_name = anaCfg[std::to_string(j)]["algorithm"];
-        if (anaCfg[std::to_string(j)]["dependOn"].empty()) {
+        if (!anaCfg[std::to_string(j)].contains("dependOn")) {
             // This algorithm does not depend on the results of others
             // It can be placed at the first tier
             tierMap[algo_name] = 0;
