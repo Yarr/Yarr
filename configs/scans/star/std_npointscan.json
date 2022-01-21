@@ -4,6 +4,7 @@
       "0": {
         "algorithm": "ScurveFitter",
         "config": {
+          "reverse": true,
           "parametersOfInterest": ["ABCs_BVT"]
         }
       },
