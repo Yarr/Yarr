@@ -4,7 +4,7 @@
 #include "AllChips.h"
 #include "ScanFactory.h"
 
-#include "../EmptyHw.h"
+#include "EmptyHw.h"
 
 TEST_CASE("AnalysisHierarchy", "[Analysis]") {
 
