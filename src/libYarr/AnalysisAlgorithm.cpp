@@ -14,20 +14,28 @@ namespace {
     auto alog = logging::make_log("AnalysisAlgorithm");
 }
 
-bool AnalysisAlgorithm::isPOILoop(LoopActionBase *l) {
+bool AnalysisAlgorithm::isPOILoop(StdParameterLoop *l) {
     // Determine if a given loop l is iterating a parameter that is in the m_parametersOfInterest
     // m_parametersOfInterest is set in AnalysisAlgorithm::loadConfig
 
-    // If m_parametersOfInterest is not set, treat all parameter loops as POI loops
-    if ( m_parametersOfInterest.empty() and l->isParameterLoop() )
-        return true;
-
-    for (const auto& poi : m_parametersOfInterest) {
-        if (l->getLabel() == poi)
+    if (l) {
+        if ( m_parametersOfInterest.empty() ) {
+            // m_parametersOfInterest is not set, treat any parameter loop as POI loop
             return true;
-    }
+        } else {
+            for (const auto& poi : m_parametersOfInterest) {
+                if (l->getParName() == poi)
+                    return true;
+            }
 
-    return false;
+            // The parameter is this loop is not a parameter of interest
+            return false;
+        }
+    }
+    else {
+        // Not a parameter loop
+        return false;
+    }
 }
 
 AnalysisProcessor::AnalysisProcessor() = default;
