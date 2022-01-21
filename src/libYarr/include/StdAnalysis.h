@@ -93,12 +93,12 @@ class TotAnalysis : public AnalysisAlgorithm {
 class NPointGain : public AnalysisAlgorithm {
     public:
         NPointGain() : AnalysisAlgorithm() {}
-        ~NPointGain() {}
+        ~NPointGain() override = default;
 
-        void init(ScanBase *s);
-        void processHistogram(HistogramBase *h);
-        void end();
-        void loadConfig(json& config);
+        void init(ScanBase *s) override;
+        void processHistogram(HistogramBase *h) override;
+        void end() override;
+        void loadConfig(const json& config) override;
     private:
         std::unique_ptr<Histo1d> respCurve;
 
