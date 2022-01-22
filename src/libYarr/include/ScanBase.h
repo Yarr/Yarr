@@ -29,7 +29,7 @@
 class ScanBase {
     public:
         ScanBase(Bookkeeper *k);
-        virtual ~ScanBase() {}
+        virtual ~ScanBase() = default;
 
         virtual void init() {}
         virtual void preScan() {}
@@ -40,7 +40,7 @@ class ScanBase {
         std::shared_ptr<LoopActionBase> operator[](unsigned n);
         unsigned size();
         
-        virtual void loadConfig(json &cfg) {}
+        virtual void loadConfig(const json &cfg) {}
 
     protected:
         LoopEngine engine;

@@ -159,7 +159,7 @@ unsigned Fe65p2PixelCfg::getPixConf(unsigned col, unsigned row) {
     return m_PixConf[to_qc(col)].getPixel(to_bit(col, row));
 }
 
-void Fe65p2PixelCfg::toFileJson(json &j) {
+void Fe65p2PixelCfg::writeConfig(json &j) {
     for (unsigned col=1; col<=n_Col; col++) {
         for (unsigned row=1; row<=n_Row; row++) {
             j["FE65-P2"]["PixelConfig"][col-1]["Col"] = col;
@@ -171,7 +171,7 @@ void Fe65p2PixelCfg::toFileJson(json &j) {
     }
 }
 
-void Fe65p2PixelCfg::fromFileJson(json &j) {
+void Fe65p2PixelCfg::loadConfig(const json &j) {
     for (unsigned col=1; col<=n_Col; col++) {
         for (unsigned row=1; row<=n_Row; row++) {
             setSign(col, row, j["FE65-P2"]["PixelConfig"][col-1]["Sign"][row-1]);

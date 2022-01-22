@@ -10,38 +10,38 @@
 class BdaqTxCore : virtual public TxCore, virtual public Bdaq {
     public:
         BdaqTxCore();
-        ~BdaqTxCore();
+        ~BdaqTxCore() override;
 
         void init();
         
         // Write to FE interface
-        void writeFifo(uint32_t);
-        void releaseFifo() {} // Not used. Commands are released with isCmdEmpty().
-        void setCmdEnable(uint32_t); 
-        void setCmdEnable(std::vector<uint32_t>);
-        void disableCmd() {} // Future implementation.
-        uint32_t getCmdEnable(); 
-        bool isCmdEmpty();
+        void writeFifo(uint32_t) override;
+        void releaseFifo() override {} // Not used. Commands are released with isCmdEmpty().
+        void setCmdEnable(uint32_t) override;
+        void setCmdEnable(std::vector<uint32_t>) override;
+        void disableCmd() override {} // Future implementation.
+        uint32_t getCmdEnable() override;
+        bool isCmdEmpty() override;
 
         // Word repeater TODO: move to seperate class?
-        void setTrigEnable(uint32_t value); 
-        uint32_t getTrigEnable();
-        void maskTrigEnable(uint32_t value, uint32_t mask);
-        bool isTrigDone();
-        void setTrigConfig(enum TRIG_CONF_VALUE cfg); 
-        void setTrigFreq(double freq); // in Hz
-        void setTrigCnt(uint32_t count);
-        void setTrigTime(double time); // in s
-        void setTrigWordLength(uint32_t length); // From Msb
-        void setTrigWord(uint32_t *word, uint32_t length); // 4 words, start at Msb
-        void toggleTrigAbort();
-        bool getSoftwareAZ() { return m_softwareAZ; }
+        void setTrigEnable(uint32_t value) override;
+        uint32_t getTrigEnable() override;
+        void maskTrigEnable(uint32_t value, uint32_t mask) override;
+        bool isTrigDone() override;
+        void setTrigConfig(enum TRIG_CONF_VALUE cfg) override;
+        void setTrigFreq(double freq) override; // in Hz
+        void setTrigCnt(uint32_t count) override;
+        void setTrigTime(double time) override; // in s
+        void setTrigWordLength(uint32_t length) override; // From Msb
+        void setTrigWord(uint32_t *word, uint32_t length) override; // 4 words, start at Msb
+        void toggleTrigAbort() override;
+        bool getSoftwareAZ() override { return m_softwareAZ; }
 
         // Trigger interface (This is the TLU stuff)
-        void setTriggerLogicMask(uint32_t mask) {}
-        void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) {}
-        void resetTriggerLogic() {}
-        uint32_t getTrigInCount() { return 0; }
+        void setTriggerLogicMask(uint32_t mask) override {}
+        void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) override {}
+        void resetTriggerLogic() override {}
+        uint32_t getTrigInCount() override { return 0; }
     protected:
         bool m_softwareAZ;
 

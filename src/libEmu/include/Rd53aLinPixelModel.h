@@ -23,8 +23,8 @@ class Rd53aLinPixelModel {
 		float noise_sigma_gauss;
 
 		// functions for modeling pixel responses
-  float calculateThreshold(uint32_t VthresholdLin, int TDAC);
-		float calculateNoise();
+  float calculateThreshold(uint32_t VthresholdLin, int TDAC) const;
+		float calculateNoise() const;
 		uint32_t calculateToT(float charge);
 
 	private:

@@ -17,9 +17,9 @@
 class Fei4GlobalThresholdTune : public ScanBase {
     public:
 		Fei4GlobalThresholdTune(Bookkeeper *k);
-        void init();
-        void preScan();
-        void postScan() {}
+        void init() override;
+        void preScan() override;
+        void postScan() override {}
     private:
         enum MASK_STAGE mask;
         enum DC_MODE dcMode;

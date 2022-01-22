@@ -117,7 +117,7 @@ namespace ScanHelper {
     // Load connectivyt and load chips into bookkeeper
     std::string loadChips(json &config, Bookkeeper &bookie, HwController *hwCtrl, std::map<FrontEnd*, std::string> &feCfgMap, std::string &outputDir) {
         std::string chipType;
-        if (config["chipType"].empty() || config["chips"].empty()) {
+        if (!config.contains("chipType") || !config.contains("chips")) {
             shlog->error("Invalid config, chip type or chips not specified!");
             throw(std::runtime_error("loadChips failure"));
         } else {
@@ -147,8 +147,8 @@ namespace ScanHelper {
                             shlog->error("Error opening chip config: {}", e.what());
                             throw(std::runtime_error("loadChips failure"));
                         }
-                        feCfg->fromFileJson(cfg);
-                        if (!chip["locked"].empty())
+                        feCfg->loadConfig(cfg);
+                        if (chip.contains("locked"))
                             feCfg->setLocked((int)chip["locked"]);
                         cfgFile.close();
                     } else {
@@ -157,7 +157,7 @@ namespace ScanHelper {
                         feCfg->setName(feCfg->getName() + "_" + std::to_string((int)chip["rx"]));
                         shlog->warn("Creating new config of FE {} at {}", feCfg->getName(),chipConfigPath);
                         json jTmp;
-                        feCfg->toFileJson(jTmp);
+                        feCfg->writeConfig(jTmp);
                         std::ofstream oFTmp(chipConfigPath);
                         oFTmp << std::setw(4) << jTmp;
                         oFTmp.close();
@@ -171,7 +171,7 @@ namespace ScanHelper {
                     // TODO fix folder
                     std::ofstream backupCfgFile(outputDir + feCfg->getConfigFile() + ".before");
                     json backupCfg;
-                    feCfg->toFileJson(backupCfg);
+                    feCfg->writeConfig(backupCfg);
                     backupCfgFile << std::setw(4) << backupCfg;
                     backupCfgFile.close();
                 }

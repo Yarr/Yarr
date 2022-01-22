@@ -42,7 +42,7 @@ class Fei4Cfg : public FrontEndCfg, public Fei4GlobalCfg, public Fei4PixelCfg {
             return C*V;
         }
 
-        unsigned toVcal(double charge, bool sCapOn=true, bool lCapOn=true) {
+        unsigned toVcal(double charge, bool sCapOn=true, bool lCapOn=true) const {
             // V = Q/C
             double C = 0;
             if (sCapOn) C += sCap*Unit::Femto;
@@ -57,11 +57,11 @@ class Fei4Cfg : public FrontEndCfg, public Fei4GlobalCfg, public Fei4PixelCfg {
         void setVcalSlope(double s) {vcalSlope = s;}
         void setVcalOffset(double o) {vcalOffset = o;}
 
-        unsigned getChipId();
+        unsigned getChipId() const;
         void setChipId(unsigned chipId);
 
-        void toFileJson(json &j) override;
-        void fromFileJson(json &j) override;
+        void writeConfig(json &j) override;
+        void loadConfig(const json &j) override;
 
     protected:
         unsigned chipId;

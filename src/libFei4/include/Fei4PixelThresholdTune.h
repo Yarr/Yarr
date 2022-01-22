@@ -17,9 +17,9 @@
 class Fei4PixelThresholdTune : public ScanBase {
     public:
         Fei4PixelThresholdTune(Bookkeeper *k);
-        void init();
-        void preScan();
-        void postScan() {}
+        void init() override;
+        void preScan() override;
+        void postScan() override {}
 
 		Bookkeeper *keeper;
 

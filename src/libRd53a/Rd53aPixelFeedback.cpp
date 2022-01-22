@@ -36,18 +36,18 @@ void Rd53aPixelFeedback::writeConfig(json &j) {
     j["resetTdac"] = m_resetTdac;
 }
 
-void Rd53aPixelFeedback::loadConfig(json &j) {
-    if (!j["min"].empty())
+void Rd53aPixelFeedback::loadConfig(const json &j) {
+    if (j.contains("min"))
         min = j["min"];
-    if (!j["max"].empty())
+    if (j.contains("max"))
         max = j["max"];
-    if (!j["tuneDiff"].empty())
+    if (j.contains("tuneDiff"))
         tuneDiff = j["tuneDiff"];
-    if (!j["tuneLin"].empty())
+    if (j.contains("tuneLin"))
         tuneLin = j["tuneLin"];
-    if (!j["resetTdac"].empty())
+    if (j.contains("resetTdac"))
         m_resetTdac = j["resetTdac"];
-    if (!j["steps"].empty()) {
+    if (j.contains("steps")) {
         m_steps.clear();
         for(auto i: j["steps"])
             m_steps.push_back(i);

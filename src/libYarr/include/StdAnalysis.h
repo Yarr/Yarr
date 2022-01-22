@@ -19,13 +19,13 @@ class Histo3d;
 
 class OccupancyAnalysis : public AnalysisAlgorithm {
     public:
-        OccupancyAnalysis() : AnalysisAlgorithm() {}
-        ~OccupancyAnalysis() {}
+        OccupancyAnalysis() : AnalysisAlgorithm() {createMask = true;}
+        ~OccupancyAnalysis() override = default;
 
-        void init(ScanBase *s);
-        void processHistogram(HistogramBase *h);
-        void end() {}
-        void loadConfig(json &config);
+        void init(ScanBase *s) override;
+        void processHistogram(HistogramBase *h) override;
+        void end() override {}
+        void loadConfig(const json &config) override;
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -38,13 +38,21 @@ class OccupancyAnalysis : public AnalysisAlgorithm {
 
 class TotAnalysis : public AnalysisAlgorithm {
     public:
-        TotAnalysis() : AnalysisAlgorithm() {}
-        ~TotAnalysis() {}
+        TotAnalysis() : AnalysisAlgorithm() {
+            tot_bins_n = 16;
+            tot_bins_x_lo = 0;
+            tot_bins_x_hi = 16;
+            tot_unit = "BC";
+            tot_sigma_bins_n = 101;
+            tot_sigma_bins_x_lo = -0.05;
+            tot_sigma_bins_x_hi = 1.05;
+        }
+        ~TotAnalysis() override = default;
 
-        void init(ScanBase *s);
-        void processHistogram(HistogramBase *h);
-        void end();
-        void loadConfig(json &config);
+        void init(ScanBase *s) override;
+        void processHistogram(HistogramBase *h) override;
+        void end() override;
+        void loadConfig(const json &config) override;
 
     private:
         std::vector<unsigned> loops;
@@ -71,26 +79,26 @@ class TotAnalysis : public AnalysisAlgorithm {
 	std::unique_ptr<Histo1d> RMSTotVsCharge;
 
         // histogram configuration for ToT distributions
-        unsigned tot_bins_n = 16;
-        float tot_bins_x_lo = 0;
-        float tot_bins_x_hi = 16;
-        std::string tot_unit = "BC";
+        unsigned tot_bins_n;
+        float tot_bins_x_lo;
+        float tot_bins_x_hi;
+        std::string tot_unit;
 
         // histogram configuration for ToT sigma distributions
-        unsigned tot_sigma_bins_n = 101;
-        float tot_sigma_bins_x_lo = -0.05;
-        float tot_sigma_bins_x_hi = 1.05;
+        unsigned tot_sigma_bins_n;
+        float tot_sigma_bins_x_lo;
+        float tot_sigma_bins_x_hi;
 };
 
 class ScurveFitter : public AnalysisAlgorithm {
     public:
         ScurveFitter() : AnalysisAlgorithm() {}
-        ~ScurveFitter() {}
+        ~ScurveFitter() override = default;
 
-        void init(ScanBase *s);
-        void processHistogram(HistogramBase *h);
-        void end();
-        void loadConfig(json &config){}
+        void init(ScanBase *s) override;
+        void processHistogram(HistogramBase *h) override;
+        void end() override;
+        void loadConfig(const json &config) override;
     private:
         unsigned vcalLoop;
         unsigned vcalMin;
@@ -129,17 +137,18 @@ class ScurveFitter : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> vcalCnt;
         bool useScap;
         bool useLcap;
+        bool reverse = false;
 };
 
 class OccGlobalThresholdTune : public AnalysisAlgorithm {
     public:
         OccGlobalThresholdTune() : AnalysisAlgorithm()  {}
-        ~OccGlobalThresholdTune() {}
+        ~OccGlobalThresholdTune() override = default;
 
-        void init(ScanBase *s);
-        void processHistogram(HistogramBase *h);
-        void end() {}
-        void loadConfig(json &config){}
+        void init(ScanBase *s) override;
+        void processHistogram(HistogramBase *h) override;
+        void end() override {}
+        void loadConfig(const json &config) override{}
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -156,12 +165,12 @@ class OccGlobalThresholdTune : public AnalysisAlgorithm {
 class GlobalPreampTune : public AnalysisAlgorithm {
     public:
         GlobalPreampTune() : AnalysisAlgorithm()  {}
-        ~GlobalPreampTune() {}
+        ~GlobalPreampTune() override = default;
 
-        void init(ScanBase *s);
-        void processHistogram(HistogramBase *h);
-        void end() {}
-        void loadConfig(json &config){}
+        void init(ScanBase *s) override;
+        void processHistogram(HistogramBase *h) override;
+        void end() override {}
+        void loadConfig(const json &config) override{}
 
     private:
         std::vector<unsigned> loops;
@@ -179,15 +188,15 @@ class GlobalPreampTune : public AnalysisAlgorithm {
 class OccPixelThresholdTune : public AnalysisAlgorithm {
     public:
         OccPixelThresholdTune() : AnalysisAlgorithm()  {
-            m_occLowCut = 0.3;
+            m_occLowCut = 0.3; 
             m_occHighCut = 0.7;
         }
-        ~OccPixelThresholdTune() {}
+        ~OccPixelThresholdTune() override = default;
 
-        void init(ScanBase *s);
-        void processHistogram(HistogramBase *h);
-        void end() {}
-        void loadConfig(json &config);
+        void init(ScanBase *s) override;
+        void processHistogram(HistogramBase *h) override;
+        void end() override {}
+        void loadConfig(const json &config) override;
 
     private:
         std::vector<unsigned> loops;
@@ -205,12 +214,12 @@ class OccPixelThresholdTune : public AnalysisAlgorithm {
 class L1Analysis : public AnalysisAlgorithm {
     public:
         L1Analysis() : AnalysisAlgorithm() {}
-        ~L1Analysis() {}
+        ~L1Analysis() override = default;
 
-        void init(ScanBase *s);
-        void processHistogram(HistogramBase *h);
-        void end();
-        void loadConfig(json &config){}
+        void init(ScanBase *s) override;
+        void processHistogram(HistogramBase *h) override;
+        void end() override;
+        void loadConfig(const json &config) override{}
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -224,12 +233,12 @@ class L1Analysis : public AnalysisAlgorithm {
 class TagAnalysis : public AnalysisAlgorithm {
     public:
         TagAnalysis() : AnalysisAlgorithm() {}
-        ~TagAnalysis() {}
+        ~TagAnalysis() override = default;
 
-        void init(ScanBase *s);
-        void processHistogram(HistogramBase *h);
-        void end();
-        void loadConfig(json &config){}
+        void init(ScanBase *s) override;
+        void processHistogram(HistogramBase *h) override;
+        void end() override;
+        void loadConfig(const json &config) override{}
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -247,12 +256,12 @@ class TagAnalysis : public AnalysisAlgorithm {
 class TotDistPlotter : public AnalysisAlgorithm {
     public:
         TotDistPlotter() : AnalysisAlgorithm() {}
-        ~TotDistPlotter() {}
+        ~TotDistPlotter() override = default;
 
-        void init(ScanBase *s);
-        void processHistogram(HistogramBase *h);
-        void end() {}
-        void loadConfig(json &config){}
+        void init(ScanBase *s) override;
+        void processHistogram(HistogramBase *h) override;
+        void end() override {}
+        void loadConfig(const json &config) override{}
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -264,28 +273,32 @@ class TotDistPlotter : public AnalysisAlgorithm {
 
 class NoiseAnalysis : public AnalysisAlgorithm {
     public:
-        NoiseAnalysis() : AnalysisAlgorithm() {}
-        ~NoiseAnalysis() {}
+        NoiseAnalysis() : AnalysisAlgorithm() {
+            createMask = true;
+            noiseThr = 1e-6;
+        }
+        ~NoiseAnalysis() override = default;
 
-        void init(ScanBase *s);
-        void processHistogram(HistogramBase *h);
-        void end();
-        void loadConfig(json &config);
+        void init(ScanBase *s) override;
+        void processHistogram(HistogramBase *h) override;
+        void end() override;
+        void loadConfig(const json &config) override;
     private:
         unsigned n_trigger;
         std::unique_ptr<Histo2d> occ;
         bool createMask;
+        double noiseThr;
 };
 
 class NoiseTuning : public AnalysisAlgorithm {
     public:
         NoiseTuning() : AnalysisAlgorithm() {}
-        ~NoiseTuning() {}
+        ~NoiseTuning() override = default;
 
-        void init(ScanBase *s);
-        void processHistogram(HistogramBase *h);
-        void end();
-        void loadConfig(json &config){}
+        void init(ScanBase *s) override;
+        void processHistogram(HistogramBase *h) override;
+        void end() override;
+        void loadConfig(const json &config) override{}
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
@@ -299,12 +312,12 @@ class NoiseTuning : public AnalysisAlgorithm {
 class DelayAnalysis : public AnalysisAlgorithm {
     public:
         DelayAnalysis() : AnalysisAlgorithm() {}
-        ~DelayAnalysis() {}
+        ~DelayAnalysis() override = default;
 
-        void init(ScanBase *s);
-        void processHistogram(HistogramBase *h);
-        void end();
-        void loadConfig(json &config){}
+        void init(ScanBase *s) override;
+        void processHistogram(HistogramBase *h) override;
+        void end() override;
+        void loadConfig(const json &config) override{}
 
     private:
         std::vector<unsigned> loops;
@@ -328,12 +341,12 @@ class DelayAnalysis : public AnalysisAlgorithm {
 class ParameterAnalysis : public AnalysisAlgorithm {
     public:
         ParameterAnalysis() : AnalysisAlgorithm() {};
-        ~ParameterAnalysis() {};
+        ~ParameterAnalysis() override = default;;
 
-        void init(ScanBase *s);
-        void processHistogram(HistogramBase *h);
-        void end();
-	void loadConfig(json &config) {}
+        void init(ScanBase *s) override;
+        void processHistogram(HistogramBase *h) override;
+        void end() override;
+	void loadConfig(const json &config) override {}
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;

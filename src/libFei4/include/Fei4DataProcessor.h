@@ -22,17 +22,17 @@ class Fei4DataProcessor : public DataProcessor {
     public:
         // TODO processor should receive whole chip config seperatly
         Fei4DataProcessor(unsigned arg_hitDiscCfg=0);
-        ~Fei4DataProcessor();
+        ~Fei4DataProcessor() override;
         
-        void connect(ClipBoard<RawDataContainer> *arg_input, std::map<unsigned, ClipBoard<EventDataBase> > *arg_outMap) {
+        void connect(ClipBoard<RawDataContainer> *arg_input, std::map<unsigned, ClipBoard<EventDataBase> > *arg_outMap) override {
             input = arg_input;
             outMap = arg_outMap;
         }
     
-        void init();
-        void run();
-        void join();
-        void process();
+        void init() override;
+        void run() override;
+        void join() override;
+        void process() override;
         void process_core();
 
     private:

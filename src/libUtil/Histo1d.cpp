@@ -52,9 +52,7 @@ Histo1d::Histo1d(const std::string &arg_name, unsigned arg_bins, double arg_xlow
     sum = 0;
 }
 
-Histo1d::~Histo1d() {
-
-}
+Histo1d::~Histo1d() = default;
 
 unsigned Histo1d::size() const {
     return bins;
@@ -212,7 +210,7 @@ bool Histo1d::fromFile(const std::string &filename) {
         return false;
     }
     // Check for type
-    if (j["Type"].empty()) {
+    if (!j.contains("Type")) {
         hlog->error("Tried loading 1d Histogram from file {}, but file has no header: {}", filename);
         return false;
     } else {

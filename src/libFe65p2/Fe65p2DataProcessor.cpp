@@ -20,8 +20,7 @@ Fe65p2DataProcessor::Fe65p2DataProcessor() : DataProcessor() {
     input = NULL;
 }
 
-Fe65p2DataProcessor::~Fe65p2DataProcessor() {
-}
+Fe65p2DataProcessor::~Fe65p2DataProcessor() = default;
 
 void Fe65p2DataProcessor::init() {
     for(std::map<unsigned, ClipBoard<EventDataBase> >::iterator it = outMap->begin(); it != outMap->end(); ++it) {

@@ -18,7 +18,7 @@
 class RingBuffer : public EmuCom {
 	public:
 		RingBuffer(uint32_t size);
-		virtual ~RingBuffer();
+		~RingBuffer() override;
 
 		uint32_t * buffer;
 
@@ -38,13 +38,13 @@ class RingBuffer : public EmuCom {
                 sem_t write_sem;
 
 		// the main functionality of the class - write to and read from the ring buffer
-		virtual void write32(uint32_t word);
-		virtual uint32_t read32();
-		virtual uint32_t readBlock32(uint32_t *buf, uint32_t length);
+		void write32(uint32_t word) override;
+		uint32_t read32() override;
+		uint32_t readBlock32(uint32_t *buf, uint32_t length) override;
 
 		// useful utility functions
-		virtual bool isEmpty();
-		virtual uint32_t getCurSize();
+		bool isEmpty() override;
+		uint32_t getCurSize() override;
 		virtual void dump();
 	private:
 };

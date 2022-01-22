@@ -9,6 +9,7 @@ job_build_and_test:
       - cd build
       - CXXFLAGS=-Werror cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
       - make install -j4
+      - make test
       - export USER=test
       - echo $USER
       - /bin/pwd
@@ -23,7 +24,6 @@ job_build_and_test:
       - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
       - if [ "$NUM100" != "26880" ]; then exit 2; fi
       - bin/scanConsole -k
-      - bin/test_main
       - bin/test_star configs/controller/emuCfg_star.json -r 0 -t 0
 
 job_build_and_test_out_of_source:
@@ -34,6 +34,7 @@ job_build_and_test_out_of_source:
       - CXXFLAGS=-Werror cmake3 -S . -B /tmp/build -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=cmake/linux-gcc
       - cmake3 --build /tmp/build -j4
       - cmake3 --install /tmp/build
+      - cmake3 --build /tmp/build --target test
       - export USER=test
       - echo $USER
       - /bin/pwd
@@ -47,7 +48,6 @@ job_build_and_test_out_of_source:
       - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
       - if [ "$NUM100" != "26880" ]; then exit 2; fi
       - /tmp/build/bin/scanConsole -k
-      - /tmp/build/bin/test_main
 
 job_build_all:
     stage: build
@@ -70,7 +70,7 @@ job_build_clang:
     script:
       - yum -y install boost-devel
       - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-      - source scl_source enable llvm-toolset-6.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+      - source scl_source enable llvm-toolset-7.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir -p build
       - cd build 
       - CXXFLAGS=-Werror cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang
@@ -94,6 +94,7 @@ job_test_json_parsing:
 job_test_json:
     stage: build
     script:
+      - source scl_source enable rh-nodejs6 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - npm install jsonlint -g
       - for file in $(find configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
 
