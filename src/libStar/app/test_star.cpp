@@ -125,7 +125,7 @@ RawDataContainer readAllData(
 {
   bool nodata = true;
 
-  RawDataContainer rdc(LoopStatus::empty());
+  RawDataContainer rdc(LoopStatus({},{}));
 
   std::unique_ptr<RawData, void(*)(RawData*)> data(
     hwCtrl.readData(),
