@@ -241,6 +241,9 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
     bhlog->info("... done!");
 }
 
+// A 2D vector of int to store algorithm indices for all tiers of analyses
+using AlgoTieredIndex = std::vector<std::vector<int>>;
+
 void buildAnalyses( std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcessor>> >& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, FeedbackClipboardMap *fbData, int mask_opt) {
     if (scanType.find("json") != std::string::npos) {
         balog->info("Loading analyses ...");
@@ -255,7 +258,7 @@ void buildAnalyses( std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcesso
 
         // Parse scan config and build analysis hierarchy
         // Use a 2D vector to hold algorithm indices for all tiers of analysis processors
-        std::vector<std::vector<int>> algoIndexTiers;
+        AlgoTieredIndex algoIndexTiers;
         try {
             buildAnalysisHierarchy(algoIndexTiers, anaCfg);
         } catch (std::runtime_error &e) {
@@ -316,7 +319,7 @@ void buildAnalyses( std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcesso
     }
 }
 
-void buildAnalysisHierarchy(std::vector<std::vector<int>>& indexTiers, json& anaCfg) {
+void buildAnalysisHierarchy(AlgoTieredIndex& indexTiers, json& anaCfg) {
     std::map<std::string, int> tierMap; // key: algorithm name; value: tier
 
     if (!anaCfg.contains("n_count"))
