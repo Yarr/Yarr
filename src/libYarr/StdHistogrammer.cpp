@@ -27,6 +27,10 @@ namespace {
       StdDict::registerHistogrammer("OccupancyMap",
                                 []() { return std::unique_ptr<HistogramAlgorithm>(new OccupancyMap());});
 
+    std::function<std::unique_ptr<HistogramAlgorithm>(json*)> fHFD( [](json* cfg) { return std::unique_ptr<HistogramAlgorithm>(new HistoFromDisk(cfg));} );
+    bool hfd_registered =
+      StdDict::registerHistogrammer("HistoFromDisk", fHFD);
+
     bool tot_registered =
       StdDict::registerHistogrammer("TotMap",
                                 []() { return std::unique_ptr<HistogramAlgorithm>(new TotMap());});
@@ -94,6 +98,58 @@ void OccupancyMap::processEvent(FrontEndData *data) {
             }
         }
     }
+}
+
+void HistoFromDisk::create(const LoopStatus &stat) {
+    //Let's open the input file from HistoFromDisk
+    std::ifstream file(m_config["inputFileName"], std::fstream::in);
+    json inputFile(json::parse(file));
+    file.close();
+
+    //Let's deal with the loopStatus in order to use this input histogram in the right place of the scan hierarchy
+    std::string strLoopStatus = " styles=";
+    for (unsigned int i=0; i<stat.styleSize();i++)
+	    strLoopStatus += stat.getStyle(i) + ", ";
+    strLoopStatus += ", stats=";
+    for (unsigned int i=0; i<stat.size();i++)
+            strLoopStatus += stat.get(i) + ", ";
+    bool matches=true;
+    for (unsigned int i=0; matches && i<stat.size();i++)
+            if (inputFile["loopStatus"][i] != stat.get(i)) 
+		matches = false;
+    if (!matches) {
+	alog->debug("HistoFromDisk skipping file {} that does not correspond to LoopStatus {}", std::string(m_config["inputFileName"]), strLoopStatus.c_str());
+	h = NULL;
+   } else { //If we have the right HistoFromDisk at hand...
+    	alog->info("HistoFromDisk opening file {} that corresponds to LoopStatus {}", std::string(m_config["inputFileName"]), strLoopStatus.c_str());
+	std::vector<LoopStyle> styleVec;
+    	for (unsigned int i=0; i<stat.styleSize();i++) 
+	    styleVec.push_back((LoopStyle)stat.getStyle(i));
+    	std::vector<unsigned> statVec;
+    	for (unsigned int i=0; i<stat.size();i++) 
+	    statVec.push_back(inputFile["loopStatus"][i]);
+    	const LoopStatus newLoopStatus(std::move(statVec), styleVec);
+
+    	if (inputFile["Type"]=="Histo1d") {
+      		h = new Histo1d(inputFile["Name"], 
+		  		inputFile["x"]["Bins"], inputFile["x"]["Low"], inputFile["x"]["High"], newLoopStatus); 
+      		((Histo1d*)h)->fromFile(m_config["inputFileName"]);
+    	} else if (inputFile["Type"]=="Histo2d") {
+      		h = new Histo2d(inputFile["Name"], 
+		 		inputFile["x"]["Bins"], inputFile["x"]["Low"], inputFile["x"]["High"],
+		  		inputFile["y"]["Bins"], inputFile["y"]["Low"], inputFile["y"]["High"], newLoopStatus);
+      		((Histo2d*)h)->fromFile(m_config["inputFileName"]);
+    	} else if (inputFile["Type"]=="Histo3d") {
+      		h = new Histo3d(inputFile["Name"], 
+		  		inputFile["x"]["Bins"], inputFile["x"]["Low"], inputFile["x"]["High"],
+		  		inputFile["y"]["Bins"], inputFile["y"]["Low"], inputFile["y"]["High"],
+		  		inputFile["z"]["Bins"], inputFile["z"]["Low"], inputFile["z"]["High"], newLoopStatus);
+      	((Histo3d*)h)->fromFile(m_config["inputFileName"]);
+    	}
+    } 
+   
+    //Don't forget this line
+    r.reset(h);
 }
 
 void TotMap::create(const LoopStatus &stat) {

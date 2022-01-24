@@ -51,6 +51,41 @@ class OccupancyMap : public HistogramAlgorithm {
         Histo2d *h;
 };
 
+class HistoFromDisk : public HistogramAlgorithm {
+    public:
+        HistoFromDisk(pointerJson config) : HistogramAlgorithm() {
+            r = nullptr;
+            h = nullptr;
+	    m_config = *config;
+
+	    //Deal with config, in particular check that the input file is readable
+	    std::ifstream file(m_config["inputFileName"], std::fstream::in);
+	    try {
+	      if (!file) {
+		throw std::runtime_error("could not open file");
+	      }
+	      try {
+		json inputFile(json::parse(file));
+		file.close();
+	      } catch (json::parse_error &e) {
+		throw std::runtime_error(e.what());
+	      }
+	    } catch (std::runtime_error &e) {
+	      std::cout << "HistoFromDisk: Error opening histogram: " << e.what() << std::endl;;
+	    }
+        }
+        ~HistoFromDisk() {        }
+        
+        void create(const LoopStatus &stat) override;
+
+        void processEvent(FrontEndData *data) override {};
+
+        static const std::string outputName()  { return "HistoFromDisk"; }
+    private:
+        HistogramBase *h;
+        json m_config;
+};
+
 class TotMap : public HistogramAlgorithm {
     public:
         TotMap() : HistogramAlgorithm() {
