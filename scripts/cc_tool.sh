@@ -96,25 +96,29 @@ if ( ( [ -d $output_folder ] ) && ( [ `ls -a $output_folder | wc -l` -gt 2 ] ) )
    fi
 fi
 
-lcov -z -d $binary_folder
+fastcov -z -d $binary_folder
 ec=$?
 if [ $ec -ne 0 ]; then
   exit $ec
 fi
 
+echo Running test script: ${test_script_params}
 ${test_script_params}
 ec=$?
 if [ $ec -ne 0 ]; then
   exit $ec
 fi
+echo Coverage test script done
 
-lcov -q -c -d $binary_folder -b . -o $output_folder.info --no-external
+echo Running fastcov on $binary_folder writing to $output_folder.info
+fastcov  -d $binary_folder -b --lcov -o $output_folder.info
 ec=$?
 if [ $ec -ne 0 ]; then
   exit $ec
 fi
 
-lcov -q -r $output_folder.info "*src/external/src/*"  \
+echo Running fastcov on  $output_folder.info writing to ${output_folder}n.info
+lcov -r $output_folder.info "*src/external/src/*"  \
         -r $output_folder.info "*libUtil/include/spdlog*" \
         -r $output_folder.info "*libUtil/include/json.hpp" \
         -r $output_folder.info "*libUtil/include/catch.hpp" \
@@ -128,6 +132,8 @@ ec=$?
 if [ $ec -ne 0 ]; then
   exit $ec
 fi
+echo Moving  ${output_folder}n.info to $output_folder.info
 mv ${output_folder}n.info $output_folder.info
 
+echo Running genhtml on $output_folder.info writing to $output_folder
 genhtml $output_folder.info -o $output_folder

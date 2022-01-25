@@ -5,9 +5,9 @@ function(YARR_ADD_PLOTTING)
         plotting_tools
         GIT_REPOSITORY https://gitlab.cern.ch/YARR/utilities/plotting-tools.git
         GIT_TAG master
-        CMAKE_ARGS 
-            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DCMAKE_CXX_FLAGS=-std=c++17
-        PREFIX "${CMAKE_CURRENT_BINARY_DIR}/../src/external"
+        CMAKE_ARGS "-DCMAKE_CXX_FLAGS=${ROOT_CXX_FLAGS}" "-DTARGET_INSTALL_AREA=${TARGET_INSTALL_AREA}"
+        PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
+	INSTALL_COMMAND make install
         )
 endfunction()
 
@@ -133,13 +133,15 @@ function(YARR_ADD_VARIANT)
 endfunction()
 
 # Plotting Tools
+if (NOT DISABLE_PLOTTING_TOOLS)
 set(CMAKE_MESSAGE_LOG_LEVEL "ERROR")
 find_package(ROOT COMPONENTS Hist Graf)
 set(CMAKE_MESSAGE_LOG_LEVEL "STATUS")
 if (${ROOT_FOUND})
     YARR_ADD_PLOTTING()
     MESSAGE(STATUS "Compiling plotting tools!")
-    INSTALL(DIRECTORY ${CMAKE_BINARY_DIR}/external/src/plotting_tools/bin/ DESTINATION ${TARGET_INSTALL_AREA} FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ WORLD_EXECUTE WORLD_READ GROUP_EXECUTE GROUP_READ)
+    MESSAGE(STATUS "ROOT requires CXXFLAGS: ${ROOT_CXX_FLAGS}" )
 else (${ROOT_FOUND})
     MESSAGE(STATUS "Could not locate ROOT. Will not compile plotting tools!")
 endif (${ROOT_FOUND})
+endif ()

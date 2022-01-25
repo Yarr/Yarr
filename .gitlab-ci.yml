@@ -4,7 +4,7 @@ job_build_and_test:
     stage: build
     script:
       - yum -y install boost-devel
-      - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+      - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
       - cd build
       - CXXFLAGS=-Werror cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
@@ -30,7 +30,7 @@ job_build_and_test_out_of_source:
     stage: build
     script:
       - yum -y install boost-devel
-      - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+      - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - CXXFLAGS=-Werror cmake3 -S . -B /tmp/build -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=cmake/linux-gcc
       - cmake3 --build /tmp/build -j4
       - cmake3 --install /tmp/build
@@ -58,7 +58,7 @@ job_build_all:
           - lib
     script:
       - yum -y install boost-devel
-      - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+      - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
       - cd build
       - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE
@@ -69,8 +69,8 @@ job_build_clang:
     stage: build
     script:
       - yum -y install boost-devel
-      - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-      - source scl_source enable llvm-toolset-7.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+      - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+      - source scl_source enable llvm-toolset-11.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir -p build
       - cd build 
       - CXXFLAGS=-Werror cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang
@@ -104,7 +104,7 @@ job_test_code_coverage:
         paths:
           - cc_tests
     script:
-      - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+      - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
       - cd build
       - cmake3 .. -DBUILD_TESTS=on -DCMAKE_BUILD_TYPE=Coverage -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
