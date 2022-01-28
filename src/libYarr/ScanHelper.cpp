@@ -13,6 +13,7 @@
 #include "AnalysisAlgorithm.h"
 #include "HistogramAlgorithm.h"
 #include "StdHistogrammer.h" // needed for special handling of DataArchiver
+#include "StdAnalysis.h" // needed for special handling of HistogramArchiver
 
 #include "logging.h"
 
@@ -240,7 +241,7 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
     bhlog->info("... done!");
 }
 
-void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, FeedbackClipboardMap *fbData, int mask_opt) {
+void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, FeedbackClipboardMap *fbData, int mask_opt, std::string outputDir) {
     if (scanType.find("json") != std::string::npos) {
         balog->info("Loading analyses ...");
         json scanCfg;
@@ -264,6 +265,12 @@ void buildAnalyses( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& analyse
 
                 auto add_analysis = [&](std::string algo_name) {
                     auto analysis = StdDict::getAnalysis(algo_name);
+
+                    if(algo_name == "HistogramArchiver") {
+                        auto archiver = dynamic_cast<HistogramArchiver*>(analysis.get());
+                        archiver->setOutputDirectory(outputDir);
+                    }
+
                     if(analysis) {
                         balog->debug("  ... adding {}", algo_name);
                         balog->debug(" connecting feedback (if required)");

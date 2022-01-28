@@ -482,7 +482,7 @@ int main(int argc, char *argv[]) {
     // TODO not to use the raw pointer!
     ScanHelper::buildHistogrammers( histogrammers, scanType, bookie.feList, s.get(), outputDir);
     ScanHelper::buildAnalyses( analyses, scanType, bookie, s.get(),
-                               &fbData, mask_opt);
+                               &fbData, mask_opt, outputDir);
 
     logger->info("Running pre scan!");
     s->init();
