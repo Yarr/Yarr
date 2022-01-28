@@ -48,12 +48,12 @@ set(YARR_CONTROLLERS_TO_BUILD  "Spec;Emu"
 set(YARR_ACTIVE_LOGGER_LEVEL "DEBUG"
     CACHE STRING "This sets SPDLOG_ACTIVE_LEVEL, below which logger macros are disabled at build time. One of TRACE, DEBUG, INFO, WARN, ERROR, CRITICAL, OFF")
 
-# always build all frontends
-set(FRONT_ENDS "Fei4;Rd53a;Star;Fe65p2;Rd53b")
+# the variables FRONT_ENDS and CONTROLLERS will be used to steer the actual
+# building of libraries downstream
+set(FRONT_ENDS "")
+set(CONTROLLERS "")
 
-# build always these controllers
-set(CONTROLLERS "Spec;Emu")
-
+# only build those controllers specified in YARR_CONTROLLERS_TO_BUILD
 if(YARR_CONTROLLERS_TO_BUILD STREQUAL "all")
    set(CONTROLLERS "Spec;Emu;Bdaq;Rogue;NetioHW;Boc;ItsdaqFW;KU040")
 else()
@@ -62,6 +62,17 @@ else()
        LIST(APPEND CONTROLLERS ${ctrl})
     endif()
   endforeach()
+endif()
+
+# only build those front-ends specified in YARR_FRONT_ENDS_TO_BUILD
+if(YARR_FRONT_ENDS_TO_BUILD STREQUAL "all")
+    set(FRONT_ENDS "Fei4;Rd53a;Star;Fe65p2;Rd53b")
+else()
+    foreach(fe IN LISTS YARR_FRONT_ENDS_TO_BUILD)
+        if(NOT ${fe} IN_LIST FRONT_ENDS)
+            LIST(APPEND FRONT_ENDS ${fe})
+        endif()
+    endforeach()
 endif()
 
 if(BUILD_TESTS)
