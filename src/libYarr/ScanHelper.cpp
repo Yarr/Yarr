@@ -320,13 +320,17 @@ void buildAnalyses( std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcesso
 }
 
 void buildAnalysisHierarchy(AlgoTieredIndex& indexTiers, json& anaCfg) {
-    std::map<std::string, int> tierMap; // key: algorithm name; value: tier
-
     if (!anaCfg.contains("n_count"))
         throw std::runtime_error("No \"n_count\" field in analysis config");
 
     int nAnas = anaCfg["n_count"];
     balog->debug("Found {} analysis!", nAnas);
+
+    std::map<std::string, int> tierMap; // key: algorithm name; value: tier
+    // Pre-fill the map with all algorithms in the configuration
+    for (unsigned ialgo = 0; ialgo < nAnas; ++ialgo) {
+        tierMap[ anaCfg[std::to_string(ialgo)]["algorithm"] ] = -1;
+    }
 
     auto fillIndexVector = [&indexTiers](unsigned tier, unsigned index) {
         while (indexTiers.size() <= tier) {
@@ -356,7 +360,15 @@ void buildAnalysisHierarchy(AlgoTieredIndex& indexTiers, json& anaCfg) {
             // Check all algorithms on which this one depends
             for (unsigned k=0; k<anaCfg[std::to_string(j)]["dependOn"].size(); k++) {
                 std::string upstream = anaCfg[std::to_string(j)]["dependOn"][k];
-                if (tierMap.find(upstream) != tierMap.end()) {
+
+                // First check if the upstream algorithm is in the configuration
+                if ( tierMap.find(upstream) == tierMap.end() ) {
+                    // Algorithm is not defined in the configuration
+                    balog->error("Fail to build analysis hierarchy due to unknown algorithm: {}", upstream);
+                    throw std::runtime_error("buildAnalysisHierarchy failure");
+                }
+
+                if (tierMap[upstream] >= 0) {
                     // Get the tier of the upstream algorithm from tierMap
                     // and compare to the current max tier
                     if (tierMap[upstream] > maxuptier)
@@ -384,7 +396,6 @@ void buildAnalysisHierarchy(AlgoTieredIndex& indexTiers, json& anaCfg) {
         if (loopcnt > ((nAnas+1)*nAnas/2) ) {
             balog->error("Fail to build analysis hierarchy. This is likely due to circular dependency of analysis algorithms in the scan configuration.");
             throw std::runtime_error("buildAnalysisHierarchy failure");
-            break;
         }
     } // while (not indices.empty())
 }
