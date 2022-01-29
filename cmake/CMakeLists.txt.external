@@ -5,7 +5,7 @@ function(YARR_ADD_PLOTTING)
         plotting_tools
         GIT_REPOSITORY https://gitlab.cern.ch/YARR/utilities/plotting-tools.git
         GIT_TAG master
-        CMAKE_ARGS "-DCMAKE_CXX_FLAGS=${ROOT_CXX_FLAGS}" "-DTARGET_INSTALL_AREA=${TARGET_INSTALL_AREA}"
+        CMAKE_ARGS "-DTARGET_INSTALL_AREA=${TARGET_INSTALL_AREA}"
         PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
 	INSTALL_COMMAND make install
         )
