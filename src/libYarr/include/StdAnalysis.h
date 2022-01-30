@@ -99,6 +99,9 @@ class NPointGain : public AnalysisAlgorithm {
         void processHistogram(HistogramBase *h) override;
         void end() override;
         void loadConfig(const json& config) override;
+
+        bool requireDependency() override {return true;}
+
     private:
         std::unique_ptr<Histo1d> respCurve;
 

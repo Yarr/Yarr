@@ -273,6 +273,13 @@ void buildAnalyses( std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcesso
                 auto channel = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
 
                 for (unsigned t=0; t<algoIndexTiers.size(); t++) {
+                    // Before adding new analyses
+                    bool hasUpstreamAnalyses = false;
+                    if (t > 0) { // ie. not analyses[fe].empty()
+                        auto& ana_prev = static_cast<AnalysisProcessor&>( *(analyses[fe].back()) );
+                        hasUpstreamAnalyses = not ana_prev.empty();
+                    }
+
                     // Add analysis processors
                     analyses[fe].emplace_back( new AnalysisProcessor(&bookie, channel) );
                     auto& ana = static_cast<AnalysisProcessor&>( *(analyses[fe].back()) );
@@ -290,6 +297,12 @@ void buildAnalyses( std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcesso
                     auto add_analysis = [&](std::string algo_name, json& j) {
                         auto analysis = StdDict::getAnalysis(algo_name);
                         if(analysis) {
+                            // If it requires dependency
+                            if (analysis->requireDependency() and not hasUpstreamAnalyses) {
+                                balog->error("Analysis {} requires outputs from other analyses", algo_name);
+                                throw("buildAnalyses failure");
+                            }
+
                             balog->debug("  ... adding {}", algo_name);
                             balog->debug(" connecting feedback (if required)");
                             // analysis->connectFeedback(&(*fbData)[channel]);

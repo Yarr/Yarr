@@ -36,6 +36,8 @@ class AnalysisAlgorithm {
         virtual void processHistogram(HistogramBase *h) {}
         virtual void end() {}
 
+        virtual bool requireDependency() {return false;}
+
         void setMapSize(unsigned col,unsigned row) {
             nCol = col;
             nRow = row;
@@ -56,6 +58,7 @@ class AnalysisAlgorithm {
 
         std::vector<std::string> m_parametersOfInterest;
         bool isPOILoop(StdParameterLoop *l);
+
 };
 
 /**
@@ -84,6 +87,8 @@ class AnalysisProcessor : public DataProcessor {
         void end();
 
         void addAlgorithm(std::unique_ptr<AnalysisAlgorithm> a);
+
+        bool empty() {return algorithms.empty();}
 
         void setMapSize(unsigned col, unsigned row) {
             for (unsigned i=0; i<algorithms.size(); i++) {
