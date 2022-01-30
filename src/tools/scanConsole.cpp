@@ -480,9 +480,20 @@ int main(int argc, char *argv[]) {
     std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcessor>> > analyses;
 
     // TODO not to use the raw pointer!
-    ScanHelper::buildHistogrammers( histogrammers, scanType, bookie.feList, s.get(), outputDir);
-    ScanHelper::buildAnalyses( analyses, scanType, bookie, s.get(),
-                               &fbData, mask_opt);
+    try {
+        ScanHelper::buildHistogrammers( histogrammers, scanType, bookie.feList, s.get(), outputDir);
+    } catch (const char *msg) {
+        logger->error("{}", msg);
+        return -1;
+    }
+
+    try {
+        ScanHelper::buildAnalyses( analyses, scanType, bookie, s.get(),
+                                   &fbData, mask_opt);
+    } catch (const char *msg) {
+        logger->error("{}", msg);
+        return -1;
+    }
 
     logger->info("Running pre scan!");
     s->init();
