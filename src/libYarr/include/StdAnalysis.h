@@ -90,6 +90,32 @@ class TotAnalysis : public AnalysisAlgorithm {
         float tot_sigma_bins_x_hi;
 };
 
+class NPointGain : public AnalysisAlgorithm {
+    public:
+        NPointGain() : AnalysisAlgorithm() {}
+        ~NPointGain() override = default;
+
+        void init(ScanBase *s) override;
+        void processHistogram(HistogramBase *h) override;
+        void end() override;
+        void loadConfig(const json& config) override;
+
+        bool requireDependency() override {return true;}
+
+    private:
+        std::unique_ptr<Histo1d> respCurve;
+
+        std::vector<double> inj;
+        std::vector<double> inj_err;
+        std::vector<double> thr;
+        std::vector<double> thr_err;
+
+        unsigned par_loopindex;
+        unsigned par_min;
+        unsigned par_max;
+        unsigned par_step;
+};
+
 class ScurveFitter : public AnalysisAlgorithm {
     public:
         ScurveFitter() : AnalysisAlgorithm() {}

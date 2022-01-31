@@ -14,6 +14,30 @@ namespace {
     auto alog = logging::make_log("AnalysisAlgorithm");
 }
 
+bool AnalysisAlgorithm::isPOILoop(StdParameterLoop *l) {
+    // Determine if a given loop l is iterating a parameter that is in the m_parametersOfInterest
+    // m_parametersOfInterest is set in AnalysisAlgorithm::loadConfig
+
+    if (l) {
+        if ( m_parametersOfInterest.empty() ) {
+            // m_parametersOfInterest is not set, treat any parameter loop as POI loop
+            return true;
+        } else {
+            for (const auto& poi : m_parametersOfInterest) {
+                if (l->getParName() == poi)
+                    return true;
+            }
+
+            // The parameter is this loop is not a parameter of interest
+            return false;
+        }
+    }
+    else {
+        // Not a parameter loop
+        return false;
+    }
+}
+
 AnalysisProcessor::AnalysisProcessor() = default;
 
 AnalysisProcessor::AnalysisProcessor(Bookkeeper *b, unsigned ch)
@@ -77,6 +101,8 @@ void AnalysisProcessor::process_core() {
                 algorithms[i]->processHistogram(&*h);
             }
         }
+        // Pass input histogram to output if needed
+        if (storeInputHisto) output->pushData(std::move(h));
     }
 }
 

@@ -49,7 +49,7 @@ class FrontEnd {
         // Set of events
         ClipBoard<EventDataBase> *clipData;
         ClipBoard<HistogramBase> *clipHisto;
-        ClipBoard<HistogramBase> *clipResult;
+        std::vector<std::unique_ptr<ClipBoard<HistogramBase>> > *clipResult;
 
         //Fei4Analysis *ana;
         //Fei4Histogrammer *histogrammer;

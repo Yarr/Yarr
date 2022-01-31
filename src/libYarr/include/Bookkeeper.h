@@ -67,7 +67,7 @@ class Bookkeeper {
         // per rx link
 	    std::map<unsigned, ClipBoard<EventDataBase> > eventMap;
 	    std::map<unsigned, ClipBoard<HistogramBase> > histoMap;
-	    std::map<unsigned, ClipBoard<HistogramBase> > resultMap;
+	    std::map<unsigned, std::vector<std::unique_ptr<ClipBoard<HistogramBase>>> > resultMap;
         
 		std::vector<FrontEnd*> activeFeList;
 

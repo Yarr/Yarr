@@ -6,6 +6,8 @@ add_executable(testYarr
         test_occupancy.cpp
         test_tot3d.cpp
         test_tot_dist.cpp
+        test_analysis_chain.cpp
+        test_analysis_poiloop.cpp
 )
 
 target_link_libraries(testYarr Yarr)

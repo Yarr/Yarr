@@ -67,10 +67,14 @@ namespace {
     bool del_registered =
       StdDict::registerAnalysis("DelayAnalysis",
                                 []() { return std::unique_ptr<AnalysisAlgorithm>(new DelayAnalysis());});
+
+    bool np_registered =
+      StdDict::registerAnalysis("NPointGain",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new NPointGain());});
+
     bool param_registered = 
       StdDict::registerAnalysis("ParameterAnalysis",
 				[]() { return std::unique_ptr<AnalysisAlgorithm>(new ParameterAnalysis());});
-
 }
 
 void OccupancyAnalysis::init(ScanBase *s) {
@@ -548,7 +552,7 @@ void ScurveFitter::init(ScanBase *s) {
     useLcap = true;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || l->isParameterLoop())) {
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || (l->isParameterLoop() && isPOILoop(dynamic_cast<StdParameterLoop*>(l.get()))) )) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -561,7 +565,7 @@ void ScurveFitter::init(ScanBase *s) {
             n_count = n_count*cnt;
         }
         // Vcal Loop
-        if (l->isParameterLoop()) {
+        if (l->isParameterLoop() && isPOILoop(dynamic_cast<StdParameterLoop*>(l.get())) ) {
             vcalLoop = n;
             vcalMax = l->getMax();
             vcalMin = l->getMin();
@@ -599,6 +603,11 @@ void ScurveFitter::init(ScanBase *s) {
 void ScurveFitter::loadConfig(const json &j) {
     if (j.contains("reverse")) {
         reverse = j["reverse"];
+    }
+    if (j.contains("parametersOfInterest")) {
+        for (unsigned i=0; i<j["parametersOfInterest"].size(); i++) {
+            m_parametersOfInterest.push_back(j["parametersOfInterest"][i]);
+        }
     }
 }
 
@@ -693,7 +702,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     end = std::chrono::high_resolution_clock::now();
                     std::chrono::microseconds fitTime = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
                     if (thrMap[outerIdent] == NULL) {
-                        Histo2d *hh2 = new Histo2d("ThresholdMap-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
+                        Histo2d *hh2 = new Histo2d("ThresholdMap-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, hh->getStat());
                         hh2->setXaxisTitle("Column");
                         hh2->setYaxisTitle("Row");
                         hh2->setZaxisTitle("Threshold [e]");
@@ -892,6 +901,71 @@ void ScurveFitter::end() {
         output->pushData(std::move(sigMap[i]));
         output->pushData(std::move(chiDist[i]));
         output->pushData(std::move(timeDist[i]));
+    }
+}
+
+void NPointGain::init(ScanBase *s) {
+    for (unsigned n=0; n<s->size(); n++) {
+        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        if ( l->isParameterLoop() && isPOILoop(dynamic_cast<StdParameterLoop*>(l.get())) ) {
+            par_loopindex = n;
+            par_min = l->getMin();
+            par_max = l->getMax();
+            par_step = l->getStep();
+            break;
+        }
+    }
+}
+
+void NPointGain::processHistogram(HistogramBase *h) {
+    // Pick the threshold map based on histogram names
+    // Target string: "ThresholdMap-<parameter>"
+    std::string hname = h->getName();
+    if (hname.substr(0, hname.find("-")) != "ThresholdMap")
+        return;
+    auto h2d = dynamic_cast<Histo2d*>(h);
+    if (h2d == nullptr)
+        return;
+
+    // Get the scan parameter value (BCAL)
+    //std::string par_str = hname.substr(hname.find("-")+1);
+    //int par = std::stoi(par_str);
+    int par = h->getStat().get(par_loopindex);
+
+    inj.push_back(par);
+    inj_err.push_back(0);
+    thr.push_back(h2d->getMean());
+    thr_err.push_back(h2d->getStdDev());
+}
+
+void NPointGain::end() {
+    unsigned npoints = inj.size();
+
+    // Response curve
+    double inj_min = *std::min_element(inj.begin(), inj.end());
+    double inj_max = *std::max_element(inj.begin(), inj.end());
+    double bwidth = (inj_max - inj_min) / (npoints - 1);
+    double xlow = inj_min - bwidth/2;
+    double xhigh = inj_max + bwidth/2;
+
+    respCurve.reset(new Histo1d("responseCurve", npoints, xlow, xhigh));
+    for (unsigned p=0; p<npoints; p++) {
+        respCurve->fill(inj[p], thr[p]);
+    }
+    respCurve->setXaxisTitle("Injected Charge");
+    respCurve->setYaxisTitle("Threshold");
+
+    // Do fit here
+
+    // Output
+    output->pushData(std::move(respCurve));
+}
+
+void NPointGain::loadConfig(const json &j) {
+    if (j.contains("parametersOfInterest")) {
+        for (unsigned i=0; i<j["parametersOfInterest"].size(); i++) {
+            m_parametersOfInterest.push_back(j["parametersOfInterest"][i]);
+        }
     }
 }
 

@@ -477,12 +477,23 @@ int main(int argc, char *argv[]) {
 
     // Use the abstract class instead of concrete -- in the future, this will be useful...
     std::map<FrontEnd*, std::unique_ptr<DataProcessor> > histogrammers;
-    std::map<FrontEnd*, std::unique_ptr<DataProcessor> > analyses;
+    std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcessor>> > analyses;
 
     // TODO not to use the raw pointer!
-    ScanHelper::buildHistogrammers( histogrammers, scanType, bookie.feList, s.get(), outputDir);
-    ScanHelper::buildAnalyses( analyses, scanType, bookie, s.get(),
-                               &fbData, mask_opt);
+    try {
+        ScanHelper::buildHistogrammers( histogrammers, scanType, bookie.feList, s.get(), outputDir);
+    } catch (const char *msg) {
+        logger->error("{}", msg);
+        return -1;
+    }
+
+    try {
+        ScanHelper::buildAnalyses( analyses, scanType, bookie, s.get(),
+                                   &fbData, mask_opt);
+    } catch (const char *msg) {
+        logger->error("{}", msg);
+        return -1;
+    }
 
     logger->info("Running pre scan!");
     s->init();
@@ -492,8 +503,10 @@ int main(int argc, char *argv[]) {
     logger->info("Starting histogrammer and analysis threads:");
     for ( FrontEnd* fe : bookie.feList ) {
         if (fe->isActive()) {
-          analyses[fe]->init();
-          analyses[fe]->run();
+          for (auto& ana : analyses[fe]) {
+            ana->init();
+            ana->run();
+          }
 
           histogrammers[fe]->init();
           histogrammers[fe]->run();
@@ -555,7 +568,12 @@ int main(int argc, char *argv[]) {
 
     // Join analyses
     for( auto& ana : analyses ) {
-      ana.second->join();
+      FrontEnd *fe = ana.first;
+      for (unsigned i=0; i<ana.second.size(); i++) {
+        ana.second[i]->join();
+        // Also declare done for its output ClipBoard
+        fe->clipResult->at(i)->finish();
+      }
     }
 
     std::chrono::steady_clock::time_point all_done = std::chrono::steady_clock::now();
@@ -630,7 +648,7 @@ int main(int argc, char *argv[]) {
             // store output results (if any)
             if(analyses.size()) {
                 logger->info("-> Storing output results of FE {}", feCfg->getRxChannel());
-                auto& output = *fe->clipResult;
+                auto &output = *(fe->clipResult->back());
                 std::string name = feCfg->getName();
                 if (output.empty()) {
                     logger->warn("There were no results for chip {}, this usually means that the chip did not send any data at all.", name);
