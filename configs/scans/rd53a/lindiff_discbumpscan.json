@@ -81,7 +81,7 @@
         "InjVcalDiff": 0,
         "InjVcalHigh": 4000,
         "InjVcalMed": 0,
-        "EnCoreColSync": 0,
+        "EnCoreColSync": 32768,
         "DiffVff": 50
     }
   }
