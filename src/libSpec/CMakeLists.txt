@@ -20,6 +20,7 @@ target_include_directories(Spec PRIVATE ../libUtil/include)
 target_include_directories(Spec PUBLIC ./include)
 
 LIST(APPEND apps
+        config-GBT-FMC
         specBenchmarkDma
         specBenchmarkSingle
         specComTest

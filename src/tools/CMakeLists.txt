@@ -1,6 +1,5 @@
 list(APPEND tools
         analyseRawData
-        config-GBT-FMC
         createConfig
         dbAccessor
         makeFei4PixelModelCfg
