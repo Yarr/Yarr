@@ -15,5 +15,6 @@ list(APPEND tools
 foreach (target IN LISTS tools)
     add_executable(${target} ${target}.cpp)
     target_link_libraries(${target} Yarr)
+    target_link_libraries(${target} Scan)
 endforeach ()
   
