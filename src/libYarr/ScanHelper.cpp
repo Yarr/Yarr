@@ -622,7 +622,7 @@ int parseOptions(int argc, char *argv[], ScanOpts &scanOpts) {
         switch (c) {
             case 'h':
                 printHelp();
-                return false;
+                return 0;
                 break;
             case 'n':
                 scanOpts.nThreads = atoi(optarg);
