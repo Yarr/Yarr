@@ -39,9 +39,9 @@ int main(int argc, char *argv[]) {
 
     spdlog::info("-> Parsing command line parameters ...");
 
-    bool ok=ScanHelper::parseOptions(argc,argv,scanOpts);
-    if(!ok) exit(-1);
-    
+    int res=ScanHelper::parseOptions(argc,argv,scanOpts);
+    if(res<=0) exit(res);
+
     unsigned runCounter=0;
     std::string strippedScan;
     std::string dataDir;

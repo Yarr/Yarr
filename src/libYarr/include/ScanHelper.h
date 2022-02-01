@@ -60,7 +60,7 @@ namespace ScanHelper {
        void listKnown();
        bool lsdir(const std::string &dataDir);
        void printHelp();
-       bool parseOptions(int argc, char *argv[], ScanOpts &scanOpts);
+       int parseOptions(int argc, char *argv[], ScanOpts &scanOpts);
 }
 
 #endif

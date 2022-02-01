@@ -610,7 +610,7 @@ void printHelp() {
     std::cout << " -Q: Set QC scan mode." << std::endl;
     std::cout << " -I: Set interactive mode." << std::endl;
 }
-bool parseOptions(int argc, char *argv[], ScanOpts &scanOpts) {
+int parseOptions(int argc, char *argv[], ScanOpts &scanOpts) {
     scanOpts.dbCfgPath = defaultDbCfgPath();
     scanOpts.dbSiteCfgPath = defaultDbSiteCfgPath();
     scanOpts.dbUserCfgPath = defaultDbUserCfgPath();
@@ -700,16 +700,16 @@ bool parseOptions(int argc, char *argv[], ScanOpts &scanOpts) {
                     spdlog::error("Option {} requires a parameter! (Proceeding with default)", (char) optopt);
                 } else if (optopt == 'g' || optopt == 'c') {
                     spdlog::error("Option {} requires a parameter! Aborting... ", (char) optopt);
-                    return false;
+                    return -1;
                 } else {
                     spdlog::error("Unknown parameter: {}", (char) optopt);
                 }
                 break;
             default:
                 spdlog::critical("Error while parsing command line parameters!");
-                return false;
+                return -1;
         }
     }
-    return true;
+    return 1;
 }
 } // Close namespace}
