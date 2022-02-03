@@ -1,4 +1,4 @@
-Image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_build@v1.3
+image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_build:v1.3
 
 job_build_and_test:
     stage: build
