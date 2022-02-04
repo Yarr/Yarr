@@ -73,10 +73,11 @@ void StdDataGatherer::execPart2() {
                 newData = NULL;
             }
             std::this_thread::sleep_for(std::chrono::microseconds(100));
-        } while (newData != NULL && signaled == 0 && !killswitch );
-        if (newData != NULL)
-            delete newData;
+        } while ((newData != NULL || count > 256)  && signaled == 0 && !killswitch );
+        
         storage->pushData(std::move(rdc));
+        count = 0;
+
         if (signaled == 1 || killswitch) {
             SPDLOG_LOGGER_WARN(sdglog, "Caught interrupt, stopping data taking!");
             SPDLOG_LOGGER_WARN(sdglog, "Abort might leave data in buffers!");
