@@ -49,8 +49,7 @@ sig_atomic_t signaled = 0;
 void StdDataGatherer::execPart2() {
     SPDLOG_LOGGER_TRACE(sdglog, "");
     unsigned count = 0;
-    uint32_t done = 0;
-    uint32_t rate = 0;
+    bool done = 0;
 
     signaled = 0;
     signal(SIGINT, [](int signum){signaled = 1;});
@@ -60,7 +59,7 @@ void StdDataGatherer::execPart2() {
 
     std::vector<RawData*> tmp_storage;
     RawData *newData = NULL;
-    while (done == 0) {
+    while (!done) {
         std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(g_stat->record()));
         done = g_tx->isTrigDone();
         newData =  g_rx->readData();
