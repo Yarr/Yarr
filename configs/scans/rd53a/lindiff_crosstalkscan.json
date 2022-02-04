@@ -79,7 +79,9 @@
             "LatencyConfig": 50, 
             "GlobalPulseRt": 0, 
             "SyncVth": 500, 
-            "InjVcalMed": 0
+            "InjVcalMed": 0,
+            "EnCoreColSync": 32768,
+            "DiffVff": 50
         }
     }
 }

@@ -19,7 +19,7 @@ class Histo3d;
 
 class OccupancyAnalysis : public AnalysisAlgorithm {
     public:
-        OccupancyAnalysis() : AnalysisAlgorithm() {}
+        OccupancyAnalysis() : AnalysisAlgorithm() {createMask = true;}
         ~OccupancyAnalysis() {}
 
         void init(ScanBase *s);
@@ -38,7 +38,15 @@ class OccupancyAnalysis : public AnalysisAlgorithm {
 
 class TotAnalysis : public AnalysisAlgorithm {
     public:
-        TotAnalysis() : AnalysisAlgorithm() {}
+        TotAnalysis() : AnalysisAlgorithm() {
+            tot_bins_n = 16;
+            tot_bins_x_lo = 0;
+            tot_bins_x_hi = 16;
+            tot_unit = "BC";
+            tot_sigma_bins_n = 101;
+            tot_sigma_bins_x_lo = -0.05;
+            tot_sigma_bins_x_hi = 1.05;
+        }
         ~TotAnalysis() {}
 
         void init(ScanBase *s);
@@ -71,15 +79,15 @@ class TotAnalysis : public AnalysisAlgorithm {
 	std::unique_ptr<Histo1d> RMSTotVsCharge;
 
         // histogram configuration for ToT distributions
-        unsigned tot_bins_n = 16;
-        float tot_bins_x_lo = 0;
-        float tot_bins_x_hi = 16;
-        std::string tot_unit = "BC";
+        unsigned tot_bins_n;
+        float tot_bins_x_lo;
+        float tot_bins_x_hi;
+        std::string tot_unit;
 
         // histogram configuration for ToT sigma distributions
-        unsigned tot_sigma_bins_n = 101;
-        float tot_sigma_bins_x_lo = -0.05;
-        float tot_sigma_bins_x_hi = 1.05;
+        unsigned tot_sigma_bins_n;
+        float tot_sigma_bins_x_lo;
+        float tot_sigma_bins_x_hi;
 };
 
 class ScurveFitter : public AnalysisAlgorithm {
@@ -90,7 +98,7 @@ class ScurveFitter : public AnalysisAlgorithm {
         void init(ScanBase *s);
         void processHistogram(HistogramBase *h);
         void end();
-        void loadConfig(json &config){}
+        void loadConfig(json &config);
     private:
         unsigned vcalLoop;
         unsigned vcalMin;
@@ -129,6 +137,7 @@ class ScurveFitter : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> vcalCnt;
         bool useScap;
         bool useLcap;
+        bool reverse = false;
 };
 
 class OccGlobalThresholdTune : public AnalysisAlgorithm {
@@ -179,7 +188,7 @@ class GlobalPreampTune : public AnalysisAlgorithm {
 class OccPixelThresholdTune : public AnalysisAlgorithm {
     public:
         OccPixelThresholdTune() : AnalysisAlgorithm()  {
-            m_occLowCut = 0.3;
+            m_occLowCut = 0.3; 
             m_occHighCut = 0.7;
         }
         ~OccPixelThresholdTune() {}
@@ -236,7 +245,11 @@ class TagAnalysis : public AnalysisAlgorithm {
         unsigned n_count;
         unsigned injections;
         std::map<unsigned, std::unique_ptr<Histo1d>> tagHistos;
-        std::map<unsigned, unsigned> innerCnt;
+        std::map<unsigned, std::unique_ptr<Histo2d>> tagMaps;
+        std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
+        std::map<unsigned, unsigned> tagDistInnerCnt;
+        std::map<unsigned, unsigned> tagMapInnerCnt;
+        std::map<unsigned, unsigned> occInnerCnt;
 
 };
 
@@ -260,7 +273,10 @@ class TotDistPlotter : public AnalysisAlgorithm {
 
 class NoiseAnalysis : public AnalysisAlgorithm {
     public:
-        NoiseAnalysis() : AnalysisAlgorithm() {}
+        NoiseAnalysis() : AnalysisAlgorithm() {
+            createMask = true;
+            noiseThr = 1e-6;
+        }
         ~NoiseAnalysis() {}
 
         void init(ScanBase *s);
@@ -271,6 +287,7 @@ class NoiseAnalysis : public AnalysisAlgorithm {
         unsigned n_trigger;
         std::unique_ptr<Histo2d> occ;
         bool createMask;
+        double noiseThr;
 };
 
 class NoiseTuning : public AnalysisAlgorithm {

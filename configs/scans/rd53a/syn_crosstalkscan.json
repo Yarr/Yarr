@@ -81,7 +81,11 @@
             "GlobalPulseRt": 16384, 
             "DiffVth1": 500, 
             "LinVth": 500, 
-            "InjVcalMed": 0
+            "InjVcalMed": 0,
+            "EnCoreColDiff1": 0,
+            "EnCoreColDiff2": 0,
+            "EnCoreColLin1": 1,
+            "EnCoreColLin2": 0
         }
     }
 }

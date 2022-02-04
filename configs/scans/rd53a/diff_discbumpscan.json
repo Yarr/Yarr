@@ -81,7 +81,11 @@
         "SyncVth": 500,
         "InjVcalDiff": 0,
         "InjVcalHigh": 4000,
-        "InjVcalMed": 0
+        "InjVcalMed": 0,
+        "EnCoreColLin1": 0,
+        "EnCoreColLin2": 1,
+        "EnCoreColSync": 0,
+        "DiffVff": 50
     }
   }
 }

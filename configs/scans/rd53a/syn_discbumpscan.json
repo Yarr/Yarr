@@ -82,7 +82,11 @@
         "LinVth": 500,
         "InjVcalDiff": 0,
         "InjVcalHigh": 4000,
-        "InjVcalMed": 0
+        "InjVcalMed": 0,
+        "EnCoreColDiff1": 0,
+        "EnCoreColDiff2": 0,
+        "EnCoreColLin1": 1,
+        "EnCoreColLin2": 0
     }
   }
 }

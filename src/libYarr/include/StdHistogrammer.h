@@ -137,6 +137,25 @@ class TagDist : public HistogramAlgorithm {
         Histo1d *h;
 };
 
+class TagMap : public HistogramAlgorithm {
+    public:
+        TagMap() : HistogramAlgorithm() {
+            h = nullptr;
+            r = nullptr;
+        }
+
+        ~TagMap() {
+        }
+
+        void create(const LoopStatus &stat) override;
+
+        void processEvent(FrontEndData *data) override;
+
+        static std::string outputName() { return "TagMap"; }
+    private:
+        Histo2d *h;
+};
+
 class L1Dist : public HistogramAlgorithm {
     public:
         L1Dist() : HistogramAlgorithm() {
