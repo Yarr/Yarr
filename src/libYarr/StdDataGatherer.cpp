@@ -62,18 +62,19 @@ void StdDataGatherer::execPart2() {
     RawData *newData = NULL;
     while (done == 0) {
         std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(g_stat->record()));
-        rate = g_rx->getDataRate();
-        SPDLOG_LOGGER_DEBUG(sdglog, " --> Data Rate: {} MB/s", rate/256.0/1024.0);
         done = g_tx->isTrigDone();
-        do {
-            newData =  g_rx->readData();
+        newData =  g_rx->readData();
+        // Read all data until buffer is empty
+        while ((newData != NULL || count > 256) && signaled == 0 && !killswitch) {
             if (newData != NULL) {
                 count += newData->words;
                 rdc->add(newData);
                 newData = NULL;
             }
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
-        } while ((newData != NULL || count > 256)  && signaled == 0 && !killswitch );
+            // Wait a little bit to increase chance of new data having arrived
+            std::this_thread::sleep_for(std::chrono::microseconds(1));
+            newData =  g_rx->readData();
+        }
         
         storage->pushData(std::move(rdc));
         count = 0;
