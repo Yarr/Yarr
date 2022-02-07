@@ -111,7 +111,7 @@ job_test_code_coverage:
       - mkdir /tmp/test
       - ls /tmp/
       - cd ../
-      - scripts/cc_tool.sh
+      - scripts/cc_tool.sh || exit 1
 
 deploy_coverage:
     stage: deploy
