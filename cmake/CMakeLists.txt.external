@@ -55,7 +55,7 @@ function(YARR_ADD_NETIO)
     # NetIO
     ExternalProject_Add (
         netio4
-        GIT_REPOSITORY ../YARR/netio.git
+        GIT_REPOSITORY ../netio.git
         GIT_TAG felix-4.0.x
         UPDATE_COMMAND ""
         PATCH_COMMAND cp ${PROJECT_SOURCE_DIR}/cmake/CMakeLists.txt.netio ${CMAKE_CURRENT_BINARY_DIR}/external/src/netio4/CMakeLists.txt
