@@ -1,5 +1,5 @@
 add_executable(testYarr
-        main.cpp
+        ../../libUtil/tests/main.cpp
         test_hits_per_event.cpp
         test_l1dist.cpp
         test_l13d.cpp

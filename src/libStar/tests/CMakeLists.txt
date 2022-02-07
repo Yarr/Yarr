@@ -1,5 +1,5 @@
 add_executable(testStar
-        main.cpp
+        ../../libUtil/tests/main.cpp
         test_chips.cpp
         test_config.cpp
         test_data_processor.cpp
