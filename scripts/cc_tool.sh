@@ -103,7 +103,7 @@ if [ $ec -ne 0 ]; then
 fi
 
 echo Running test script: ${test_script_params}
-${test_script_params}
+${test_script_params} || exit 1
 ec=$?
 if [ $ec -ne 0 ]; then
   exit $ec
