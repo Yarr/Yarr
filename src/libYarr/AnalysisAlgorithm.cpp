@@ -33,8 +33,11 @@ bool AnalysisAlgorithm::isPOILoop(StdParameterLoop *l) {
         }
     }
     else {
-        // Not a parameter loop
-        return false;
+        // FIXME
+        // Not a StdParameterLoop loop
+        // Could be other parameter loops that do not derive from StdParameterLoop
+        // For now, just return true and let the decision be made elsewhere
+        return true;
     }
 }
 
