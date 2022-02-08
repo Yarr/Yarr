@@ -104,6 +104,12 @@ fi
 
 echo Running test script: ${test_script_params}
 ${test_script_params}
+if [ $? -eq 0 ]; then
+   echo ${test_script_params} OK
+else
+   echo ${test_script_params} FAILED
+   exit 1
+fi
 ec=$?
 if [ $ec -ne 0 ]; then
   exit $ec
