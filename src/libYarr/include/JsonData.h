@@ -32,7 +32,7 @@ public:
     }; 
     void toFile(const std::string &basename, const std::string &dir = "", bool header= true) const override; //!< Writes the json data to file
     void plot(const std::string &basename, const std::string &dir = "") const override {}; //!< Could be used to create a plot from json data
-    virtual void loadJsonData(const std::string &filename) = 0; //Loads the json data from the pointed input file
+    void loadJsonData(const std::string &filename); //Loads the json data from the pointed input file
     void setJson(json j) //!< Replaces the object's data with the json object passed as argument
     {
         m_jsondata=j;

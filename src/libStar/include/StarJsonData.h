@@ -55,7 +55,6 @@ public:
        StarJsonData(const std::string &arg_name, const LoopStatus &stat) : JsonData(arg_name, stat) {}; //!< Constructor with object name and LoopStatus
        ~StarJsonData() {};
 
-       void loadJsonData(const std::string &filename) override; //!<Loads the json data from the pointed input file, returns false if that fails
        void setJsonDataType(const std::string & type) //!<Gives a type to the set of data containing in the Json object
        {
               m_jsondata["Type"] = type;

@@ -50,6 +50,34 @@ JsonData::~JsonData()
 
 }
 
+//! Loads the json data from the pointed input file
+/*!
+  \param filename Input json filename
+*/
+void JsonData::loadJsonData(const std::string &filename)
+{
+       std::ifstream file(filename, std::fstream::in);
+       try
+       {
+              if (!file)
+              {
+                     throw std::runtime_error("could not open file");
+              }
+              try
+              {
+                     m_jsondata = json::parse(file);
+              }
+              catch (json::parse_error &e)
+              {
+                     throw std::runtime_error(e.what());
+              }
+       }
+       catch (std::runtime_error &e)
+       {
+              hlog->error("Error opening json file: {}", e.what());
+       }
+}
+
 //! Function writing json data to the mentioned output location
 /*!
   \param prefix Prefix to be added to the object name
