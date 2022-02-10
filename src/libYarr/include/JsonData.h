@@ -22,7 +22,7 @@ class JsonData : public HistogramBase
 {
 public:
     JsonData(const std::string &arg_name); //!< Constructor with object name
-    JsonData(const std::string &arg_name, const LoopStatus &stat); //!< Constructor with object name nad LoopStatus
+    JsonData(const std::string &arg_name, const LoopStatus &stat); //!< Constructor with object name and LoopStatus
     ~JsonData();
 
     void toStream(std::ostream &out) const override {};
