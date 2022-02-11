@@ -967,6 +967,8 @@ void NPointGain::loadConfig(const json &j) {
             m_parametersOfInterest.push_back(j["parametersOfInterest"][i]);
         }
     }
+    if (j.contains("skipDependencyCheck"))
+       m_skipDependencyCheck = j["skipDependencyCheck"];
 }
 
 void OccGlobalThresholdTune::init(ScanBase *s) {
