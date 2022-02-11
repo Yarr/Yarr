@@ -113,6 +113,29 @@ job_test_code_coverage:
       - cd ../
       - scripts/cc_tool.sh
 
+job_run_codechecker:
+    stage: build
+    timeout: 3 hours
+    when: manual
+    artifacts:
+        paths:
+          - checks
+    script:
+    - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+    - source scl_source enable llvm-toolset-11.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+    - scripts/run_codechecker.sh -j 4
+
+deploy_codechecker:
+    stage: deploy
+    dependencies: ['job_run_codechecker']
+    variables:
+        "EOS_PATH" : "/eos/user/t/theim/www/yarr/cc/${CI_COMMIT_REF_NAME}/"
+        "CI_OUTPUT_DIR" : "checks/html"
+    image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
+    script:
+        - mkdir -p /eos/user/t/theim/www/yarr/cc/${CI_COMMIT_REF_NAME}/
+        - deploy-eos
+
 deploy_coverage:
     stage: deploy
     dependencies: ["job_test_code_coverage"]
