@@ -297,16 +297,16 @@ void buildAnalyses( std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcesso
                     auto add_analysis = [&](std::string algo_name, json& j) {
                         auto analysis = StdDict::getAnalysis(algo_name);
                         if(analysis) {
+                            balog->debug("  ... adding {}", algo_name);
+                            analysis->loadConfig(j);
                             // If it requires dependency
                             if (analysis->requireDependency() and not hasUpstreamAnalyses) {
                                 balog->error("Analysis {} requires outputs from other analyses", algo_name);
                                 throw("buildAnalyses failure");
                             }
 
-                            balog->debug("  ... adding {}", algo_name);
                             balog->debug(" connecting feedback (if required)");
                             // analysis->connectFeedback(&(*fbData)[channel]);
-                            analysis->loadConfig(j);
                             ana.addAlgorithm(std::move(analysis));
                         } else {
                             balog->error("Error, Analysis Algorithm \"{} unknown, skipping!", algo_name);
