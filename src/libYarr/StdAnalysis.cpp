@@ -679,7 +679,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 
                 // Got all data, finish up Analysis
                 // TODO This requires the loop to run from low to high and a hit in the last bin
-                if (vcal == vcalMax) {
+                if (vcal >= vcalMax) {
                     // Scale histos
                     //histos[ident]->scale(1.0/(double)injections);
                     lm_status_struct status;
