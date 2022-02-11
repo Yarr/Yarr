@@ -628,7 +628,7 @@ double reverseScurveFct(double x, const double *par) {
 void ScurveFitter::processHistogram(HistogramBase *h) {
     cnt++;
     // Check if right Histogram
-    if (h->getName() != OccupancyMap::outputName())
+    if (h->getName().find(OccupancyMap::outputName()) != 0)
         return;
 
     Histo2d *hh = (Histo2d*) h;
