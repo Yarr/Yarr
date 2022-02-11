@@ -742,7 +742,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         timeDist[outerIdent].reset(hh1);
                     }
 
-                    double chi2= status.fnorm/(double)status.nfev;
+                    double chi2= status.fnorm/(double)(vcalBins - n_par);
 
                     if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0 
                             && chi2 < 2.5 && chi2 > 1e-6
