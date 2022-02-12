@@ -57,15 +57,15 @@ void LoopActionBase::run() {
     this->end();
 }
 
-unsigned LoopActionBase::getMin() {
+unsigned LoopActionBase::getMin() const {
     return min;
 }
 
-unsigned LoopActionBase::getMax() {
+unsigned LoopActionBase::getMax() const {
     return max;
 }
 
-unsigned LoopActionBase::getStep() {
+unsigned LoopActionBase::getStep() const {
     return step;
 }
 

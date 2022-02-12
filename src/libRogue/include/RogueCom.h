@@ -48,7 +48,7 @@ class RogueReceiver :  public rogue::interfaces::stream::Slave {
   rx_bytes(0),rx_max_pkt(0),
     rx_pkts(0),rx_min_pkt(0xffffffff), _type(type),
     _port(port),  _com(com) {}  
-  void acceptFrame ( std::shared_ptr<rogue::interfaces::stream::Frame> frame);  
+  void acceptFrame ( std::shared_ptr<rogue::interfaces::stream::Frame> frame) override;
   void resetCnt(){ rx_bytes=0; rx_pkts=0; rx_max_pkt=0; rx_min_pkt=0xffffffff; }
   uint32_t rx_bytes;
   uint32_t rx_max_pkt;
@@ -763,7 +763,7 @@ void queue_data(uint32_t data,unsigned queuenumber) {
   void setForceRelaseTxfifo(bool enable=true) {
     forceRelaseTxfifo=enable;
   }
-  bool getFirmwareTrigger() {return firmwareTrigger;}
+  bool getFirmwareTrigger() const {return firmwareTrigger;}
 
   void flushBuffer();
  protected:

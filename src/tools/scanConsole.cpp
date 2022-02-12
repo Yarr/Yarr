@@ -214,27 +214,10 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    spdlog::info("Configuring logger ...");
-    if(!logCfgPath.empty()) {
-        auto j = ScanHelper::openJsonFile(logCfgPath);
-        logging::setupLoggers(j);
-    } else {
-        // default log setting
-        json j; // empty
-        j["pattern"] = defaultLogPattern;
-        j["log_config"][0]["name"] = "all";
-        j["log_config"][0]["level"] = "info";
-        logging::setupLoggers(j);
-    }
-    // Can use actual logger now
-
+    // Get new run number
     unsigned runCounter = ScanHelper::newRunCounter();
-
-    if (cConfigPaths.size() == 0) {
-        logger->error("Error: no config files given, please specify config file name under -c option, even if file does not exist!");
-        return -1;
-    }
-
+    
+    // Generate output directory path
     std::size_t pathPos = scanType.find_last_of('/');
     std::size_t suffixPos = scanType.find_last_of('.');
     std::string strippedScan;
@@ -246,22 +229,7 @@ int main(int argc, char *argv[]) {
 
     std::string dataDir = outputDir;
     outputDir += (toString(runCounter, 6) + "_" + strippedScan + "/");
-
-    if(scan_config_provided) {
-        logger->info("Scan Type/Config {}", scanType);
-    } else {
-        logger->info("No scan configuration provided, will only configure front-ends");
-    }
-
-    logger->info("Connectivity:");
-    for(std::string const& sTmp : cConfigPaths){
-        logger->info("    {}", sTmp);
-    }
-    logger->info("Target ToT: {}", target_tot);
-    logger->info("Target Charge: {}", target_charge);
-    logger->info("Output Plots: {}", doPlots);
-    logger->info("Output Directory: {}", outputDir);
-
+    
     // Create folder
     //for some reason, 'make' issues that mkdir is an undefined reference
     //a test program on another machine has worked fine
@@ -278,6 +246,40 @@ int main(int argc, char *argv[]) {
     //read errno variable and catch some errors, if necessary
     //errno=1 is permission denied, errno = 17 is dir already exists, ...
     //see /usr/include/asm-generic/errno-base.h and [...]/errno.h for all codes
+
+    spdlog::info("Configuring logger ...");
+    if(!logCfgPath.empty()) {
+        auto j = ScanHelper::openJsonFile(logCfgPath);
+        logging::setupLoggers(j, outputDir);
+    } else {
+        // default log setting
+        json j; // empty
+        j["pattern"] = defaultLogPattern;
+        j["log_config"][0]["name"] = "all";
+        j["log_config"][0]["level"] = "info";
+        logging::setupLoggers(j);
+    }
+    // Can use actual logger now
+
+    if (cConfigPaths.size() == 0) {
+        logger->error("Error: no config files given, please specify config file name under -c option, even if file does not exist!");
+        return -1;
+    }
+
+    if(scan_config_provided) {
+        logger->info("Scan Type/Config {}", scanType);
+    } else {
+        logger->info("No scan configuration provided, will only configure front-ends");
+    }
+
+    logger->info("Connectivity:");
+    for(std::string const& sTmp : cConfigPaths){
+        logger->info("    {}", sTmp);
+    }
+    logger->info("Target ToT: {}", target_tot);
+    logger->info("Target Charge: {}", target_charge);
+    logger->info("Output Plots: {}", doPlots);
+    logger->info("Output Directory: {}", outputDir);
 
     // Make symlink
     cmdStr = "rm -f " + dataDir + "last_scan && ln -s " + toString(runCounter, 6) + "_" + strippedScan + " " + dataDir + "last_scan";
@@ -482,12 +484,23 @@ int main(int argc, char *argv[]) {
 
     // Use the abstract class instead of concrete -- in the future, this will be useful...
     std::map<FrontEnd*, std::unique_ptr<DataProcessor> > histogrammers;
-    std::map<FrontEnd*, std::unique_ptr<DataProcessor> > analyses;
+    std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcessor>> > analyses;
 
     // TODO not to use the raw pointer!
-    ScanHelper::buildHistogrammers( histogrammers, scanType, bookie.feList, s.get(), outputDir);
-    ScanHelper::buildAnalyses( analyses, scanType, bookie, s.get(),
-                               &fbData, mask_opt);
+    try {
+        ScanHelper::buildHistogrammers( histogrammers, scanType, bookie.feList, s.get(), outputDir);
+    } catch (const char *msg) {
+        logger->error("{}", msg);
+        return -1;
+    }
+
+    try {
+        ScanHelper::buildAnalyses( analyses, scanType, bookie, s.get(),
+                                   &fbData, mask_opt);
+    } catch (const char *msg) {
+        logger->error("{}", msg);
+        return -1;
+    }
 
     logger->info("Running pre scan!");
     s->init();
@@ -497,8 +510,10 @@ int main(int argc, char *argv[]) {
     logger->info("Starting histogrammer and analysis threads:");
     for ( FrontEnd* fe : bookie.feList ) {
         if (fe->isActive()) {
-          analyses[fe]->init();
-          analyses[fe]->run();
+          for (auto& ana : analyses[fe]) {
+            ana->init();
+            ana->run();
+          }
 
           histogrammers[fe]->init();
           histogrammers[fe]->run();
@@ -560,7 +575,12 @@ int main(int argc, char *argv[]) {
 
     // Join analyses
     for( auto& ana : analyses ) {
-      ana.second->join();
+      FrontEnd *fe = ana.first;
+      for (unsigned i=0; i<ana.second.size(); i++) {
+        ana.second[i]->join();
+        // Also declare done for its output ClipBoard
+        fe->clipResult->at(i)->finish();
+      }
     }
 
     std::chrono::steady_clock::time_point all_done = std::chrono::steady_clock::now();
@@ -616,7 +636,7 @@ int main(int argc, char *argv[]) {
                 logger->info("Saving config of FE {} to {}",
                              feCfg->getName(), feCfgMap.at(fe));
                 json jTmp;
-                feCfg->toFileJson(jTmp);
+                feCfg->writeConfig(jTmp);
                 std::ofstream oFTmp(feCfgMap.at(fe));
                 oFTmp << std::setw(4) << jTmp;
                 oFTmp.close();
@@ -627,7 +647,7 @@ int main(int argc, char *argv[]) {
             // Save extra config in data folder
             std::ofstream backupCfgFile(outputDir + feCfg->getConfigFile() + ".after");
             json backupCfg;
-            feCfg->toFileJson(backupCfg);
+            feCfg->writeConfig(backupCfg);
             backupCfgFile << std::setw(4) << backupCfg;
             backupCfgFile.close();
 
@@ -635,7 +655,7 @@ int main(int argc, char *argv[]) {
             // store output results (if any)
             if(analyses.size()) {
                 logger->info("-> Storing output results of FE {}", feCfg->getRxChannel());
-                auto& output = *fe->clipResult;
+                auto &output = *(fe->clipResult->back());
                 std::string name = feCfg->getName();
                 if (output.empty()) {
                     logger->warn("There were no results for chip {}, this usually means that the chip did not send any data at all.", name);

@@ -26,9 +26,7 @@ Fei4Cmd::Fei4Cmd(TxCore *arg_core) {
     core = arg_core;
 }
 
-Fei4Cmd::~Fei4Cmd() {
-
-}
+Fei4Cmd::~Fei4Cmd() = default;
 
 void Fei4Cmd::trigger() {
     SPDLOG_LOGGER_TRACE(flog, "");

@@ -66,7 +66,7 @@ void Fe65p2TriggerLoop::setTrigFreq(double freq) {
     m_trigFreq = freq;
 }
 
-double Fe65p2TriggerLoop::getTrigFreq() {
+double Fe65p2TriggerLoop::getTrigFreq() const {
     return m_trigFreq;
 }
 
@@ -74,7 +74,7 @@ void Fe65p2TriggerLoop::setTrigTime(double time) {
     m_trigTime = time;
 }
 
-double Fe65p2TriggerLoop::getTrigTime() {
+double Fe65p2TriggerLoop::getTrigTime() const {
     return m_trigTime;
 }
 

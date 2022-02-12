@@ -121,7 +121,7 @@ void BdaqDriver::setData (std::vector<uint8_t>& data, uint8_t addr) {
 	intf.write(base + memOffset + addr, data);
 }
 
-void BdaqDriver::getData(std::vector<uint8_t>& data, uint8_t size, uint8_t addr) {
+void BdaqDriver::getData(std::vector<uint8_t>& data, uint8_t size, uint8_t addr) const {
 	if (memSize < size) {
 		std::string error = "Bdaq_i2c::getData(): Size of data (" + 
 		std::to_string(data.size()) + " bytes) is bigger than memory (" + 

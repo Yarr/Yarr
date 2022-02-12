@@ -130,17 +130,17 @@ void Fei4MaskLoop::writeConfig(json &config) {
     config["enable_scap"] = enable_sCap;
 }
 
-void Fei4MaskLoop::loadConfig(json &config) {
-  if (!config["min"].empty())
+void Fei4MaskLoop::loadConfig(const json &config) {
+  if (config.contains("min"))
     min = config["min"];
-  if (!config["max"].empty())
+  if (config.contains("max"))
     max = config["max"];
-  if (!config["step"].empty())
+  if (config.contains("step"))
     step = config["step"];
-  if (!config["mask"].empty())
+  if (config.contains("mask"))
     m_mask = (uint32_t) config["mask"];
-  if (!config["enable_lcap"].empty())
+  if (config.contains("enable_lcap"))
     enable_lCap = config["enable_lcap"];
-  if (!config["enable_scap"].empty())
+  if (config.contains("enable_scap"))
     enable_sCap = config["enable_scap"];
 }

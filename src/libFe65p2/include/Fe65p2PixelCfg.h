@@ -115,8 +115,8 @@ class Fe65p2PixelCfg {
         static unsigned to_qc(unsigned col);
         static unsigned to_bit(unsigned col, unsigned row);
     protected:
-        void toFileJson(json &j);
-        void fromFileJson(json &j);
+        void writeConfig(json &j);
+        void loadConfig(const json &j);
 
 };
 

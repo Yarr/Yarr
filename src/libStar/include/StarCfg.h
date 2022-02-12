@@ -22,7 +22,7 @@
 class StarCfg : public FrontEndCfg {
  public:
   StarCfg();
-  ~StarCfg();
+  ~StarCfg() override;
 
   //Function to make all Registers for the ABC
   void configure_ABC_Registers(int chipID);
@@ -132,8 +132,8 @@ class StarCfg : public FrontEndCfg {
   int getTrimDAC(unsigned col, unsigned row) const;
 
 
-  void toFileJson(json &j) override;
-  void fromFileJson(json &j) override;
+  void writeConfig(json &j) override;
+  void loadConfig(const json &j) override;
 
   using configFuncMap = std::unordered_map<std::string, std::tuple<json, std::vector<json>>(StarCfg::*)(void)>;
   static configFuncMap createConfigs;

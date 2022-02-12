@@ -19,9 +19,9 @@ class Fe65p2TriggerLoop : public LoopActionBase, public StdTriggerAction {
         void setTrigCnt(uint32_t cnt);
 
         void setTrigFreq(double freq);
-        double getTrigFreq();
+        double getTrigFreq() const;
         void setTrigTime(double time);
-        double getTrigTime();
+        double getTrigTime() const;
 
         void setNoInject();
         void setExtTrigger();
@@ -34,10 +34,10 @@ class Fe65p2TriggerLoop : public LoopActionBase, public StdTriggerAction {
         uint32_t m_trigWordLength;
         enum TRIG_CONF_VALUE m_trigMode;
 
-        void init();
-        void end();
-        void execPart1();
-        void execPart2();
+        void init() override;
+        void end() override;
+        void execPart1() override;
+        void execPart2() override;
 
 };
 

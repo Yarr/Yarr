@@ -13,10 +13,10 @@ class SerialCom {
         void init(std::string deviceName);
         void config();
         
-        int write(char *buf, size_t length);
-        int write(std::string buf);
-        int read(char *buf, size_t length);
-        int read(std::string &buf);
+        int write(char *buf, size_t length) const;
+        int write(std::string buf) const;
+        int read(char *buf, size_t length) const;
+        int read(std::string &buf) const;
     
     private:
 

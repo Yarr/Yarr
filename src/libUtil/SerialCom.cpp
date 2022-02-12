@@ -56,20 +56,20 @@ void SerialCom::config() {
         std::cerr << "[ERROR] " << __PRETTY_FUNCTION__ << " : Could not set tty attributes!" << std::endl;
 }
 
-int SerialCom::write(char *buf, size_t length) {
+int SerialCom::write(char *buf, size_t length) const {
     return ::write(dev, buf, length);
 }
 
-int SerialCom::read(char *buf, size_t length) {
+int SerialCom::read(char *buf, size_t length) const {
     return ::read(dev, buf, length);
 }
 
-int SerialCom::write(std::string buf) {
+int SerialCom::write(std::string buf) const {
     //std::cout << __PRETTY_FUNCTION__ << " : " << buf << std::endl;
     return ::write(dev, buf.c_str(), buf.size());
 }
 
-int SerialCom::read(std::string &buf) {
+int SerialCom::read(std::string &buf) const {
     char *tmp = new char[MAX_READ];
     unsigned n_read = ::read(dev, tmp, MAX_READ);
     buf = std::string(tmp, n_read);

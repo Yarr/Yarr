@@ -38,7 +38,7 @@ class Bookkeeper {
 		FrontEnd* getFeByChannel(unsigned channel);
 		FrontEnd* getFe(unsigned rxChannel);
         FrontEnd* getLastFe();
-        FrontEnd* getGlobalFe() {
+        FrontEnd* getGlobalFe() const {
             return g_fe;
         }
 
@@ -53,10 +53,10 @@ class Bookkeeper {
         std::vector<uint32_t> getRxMaskUnique();
 
         void setTargetTot(int v) {target_tot = v;}
-        int getTargetTot() {return target_tot;}
+        int getTargetTot() const {return target_tot;}
         
         void setTargetCharge(int v) {target_charge = v;}
-        int getTargetCharge() {return target_charge;}
+        int getTargetCharge() const {return target_charge;}
 
         template<typename T> T* globalFe() {return dynamic_cast<T*>(g_fe);}
         // TODO make private, not nice like that
@@ -71,7 +71,7 @@ class Bookkeeper {
         // per rx link
 	    std::map<unsigned, ClipBoard<EventDataBase> > eventMap;
 	    std::map<unsigned, ClipBoard<HistogramBase> > histoMap;
-	    std::map<unsigned, ClipBoard<HistogramBase> > resultMap;
+	    std::map<unsigned, std::vector<std::unique_ptr<ClipBoard<HistogramBase>>> > resultMap;
         
 		std::vector<FrontEnd*> activeFeList;
 

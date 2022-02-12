@@ -36,7 +36,7 @@ class Bdaq_i2c : public BdaqRegister<BdaqRBCP> {
 		bool isDone();
 		bool isReady();
 		void setData(std::vector<uint8_t>& data, uint8_t addr=0);
-		void getData(std::vector<uint8_t>& data, uint8_t size, uint8_t addr=0);
+		void getData(std::vector<uint8_t>& data, uint8_t size, uint8_t addr=0) const;
 		void write(uint8_t addr, std::vector<uint8_t>& data);
 		void read(uint8_t addr, std::vector<uint8_t>& data, uint8_t size);
 

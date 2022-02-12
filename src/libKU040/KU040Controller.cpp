@@ -6,7 +6,7 @@ bool ku040_registered =
   StdDict::registerHwController("ku040",
                                 []() { return std::unique_ptr<HwController>(new KU040Controller); });
 
-void KU040Controller::loadConfig(json &j) {
+void KU040Controller::loadConfig(const json &j) {
 	m_com = new IPbus(static_cast<const std::string & >(j["ku040Host"]));
 	KU040TxCore::setCom(m_com);
 	KU040RxCore::setCom(m_com);

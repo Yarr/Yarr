@@ -36,7 +36,7 @@ bool emu_registered_Rd53a =
                                 makeEmu<Rd53a, Rd53aEmu>);
 
 template<>
-void EmuController<Fei4, Fei4Emu>::loadConfig(json &j) {
+void EmuController<Fei4, Fei4Emu>::loadConfig(const json &j) {
 //    EmuTxCore::setCom(new EmuShm(j["tx"]["id"], j["tx"]["size"], true));
 //    EmuRxCore::setCom(new EmuShm(j["rx"]["id"], j["rx"]["size"], true));
 
@@ -60,7 +60,7 @@ void EmuController<Fei4, Fei4Emu>::loadConfig(json &j) {
 
 
 template<>
-void EmuController<Rd53a, Rd53aEmu>::loadConfig(json &j) {
+void EmuController<Rd53a, Rd53aEmu>::loadConfig(const json &j) {
 //    EmuTxCore::setCom(new EmuShm(j["tx"]["id"], j["tx"]["size"], true));
 //    EmuRxCore::setCom(new EmuShm(j["rx"]["id"], j["rx"]["size"], true));
 

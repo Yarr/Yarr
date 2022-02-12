@@ -45,18 +45,18 @@ void Rd53aGlobalFeedback::writeConfig(json &j) {
     j["pixelRegs"] = m_pixelReg;
 }
 
-void Rd53aGlobalFeedback::loadConfig(json &j) {
-    if (!j["min"].empty())
+void Rd53aGlobalFeedback::loadConfig(const json &j) {
+    if (j.contains("min"))
         min = j["min"];
-    if (!j["max"].empty())
+    if (j.contains("max"))
         max = j["max"];
-    if (!j["step"].empty())
+    if (j.contains("step"))
         step = j["step"];
-    if (!j["parameter"].empty()) {
+    if (j.contains("parameter")) {
         logger->info("Linking parameter: {}", std::string(j["parameter"]));
         parName = j["parameter"];
     }
-    if (!j["pixelRegs"].empty()) {
+    if (j.contains("pixelRegs")) {
         m_pixelReg.clear();
         for(auto i: j["pixelRegs"])
             m_pixelReg.push_back(i);

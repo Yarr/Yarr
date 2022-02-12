@@ -88,8 +88,7 @@ Histo2d::Histo2d(Histo2d *h) : HistogramBase(h->getName()) {
     lStat = h->getStat();
 }
 
-Histo2d::~Histo2d() {
-}
+Histo2d::~Histo2d() = default;
 
 unsigned Histo2d::size() const {
     return xbins*ybins;
@@ -209,7 +208,7 @@ void Histo2d::setBin(unsigned n, double v) {
 }
 
 
-int Histo2d::binNum(double x, double y) {
+int Histo2d::binNum(double x, double y) const {
     if (x < xlow || y < ylow) {
         //std::cout << "Underflow " << x << " " << y << std::endl;
         return -1;
@@ -252,6 +251,9 @@ void Histo2d::toJson(json &j) const{
     j["Underflow"] = underflow;
     j["Overflow"] = overflow;
 
+    for (unsigned i=0; i<lStat.size(); i++)
+        j["loopStatus"][i] = (lStat.get(i));
+
     for (unsigned int y=0; y<ybins; y++) {
         for (unsigned int x=0; x<xbins; x++) {
             j["Data"][x][y] = data[y+(x*ybins)] ;
@@ -262,6 +264,8 @@ void Histo2d::toJson(json &j) const{
 void Histo2d::toFile(const std::string &prefix, const std::string &dir, bool jsonType) const{
     std::string filename = dir + prefix + "_" + HistogramBase::name;
     json j;
+    for (unsigned i=0; i<lStat.size(); i++)
+        filename += "_" + std::to_string(lStat.get(i));
 
     if (jsonType) {
         filename += ".json";
@@ -296,7 +300,7 @@ bool Histo2d::fromFile(const std::string &filename) {
         return false;
     }
     // Check for type
-    if (j["Type"].empty()) {
+    if (!j.contains("Type")) {
         hlog->error("ERROR this does not seem to be a histogram file, could not parse.");
         return false;
     } else {
@@ -315,16 +319,16 @@ bool Histo2d::fromFile(const std::string &filename) {
         xhigh = j["x"]["High"];
 
         ybins = j["y"]["Bins"];
-        xlow = j["y"]["Low"];
-        xhigh = j["y"]["High"];
+        ylow = j["y"]["Low"];
+        yhigh = j["y"]["High"];
         
-        underflow = j["underflow"];
-        overflow = j["overflow"];
+        underflow = j["Underflow"];
+        overflow = j["Overflow"];
 
         data = std::vector<double>(xbins*ybins);
-        for (unsigned int x=0; x<ybins; x++) {
-            for (unsigned int y=0; y<xbins; y++) {
-                data[x+(y*ybins)] = j["Data"][x][y];
+        for (unsigned int y=0; y<ybins; y++) {
+            for (unsigned int x=0; x<xbins; x++) {
+                data[y+(x*ybins)] = j["Data"][x][y];
             }
         }
     }

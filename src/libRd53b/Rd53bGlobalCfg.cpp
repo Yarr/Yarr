@@ -19,9 +19,7 @@ Rd53bGlobalCfg::Rd53bGlobalCfg() {
     this->init();
 }
 
-Rd53bGlobalCfg::~Rd53bGlobalCfg() {
-
-}
+Rd53bGlobalCfg::~Rd53bGlobalCfg() = default;
 
 uint16_t Rd53bGlobalCfg::getValue(Rd53bReg Rd53bGlobalCfg::*ref) const {
     return (this->*ref).read();
@@ -412,16 +410,16 @@ void Rd53bGlobalCfg::init() {
     InjVcalDiff.init(&InjVcalMed, &InjVcalHigh, true); virtRegMap["InjVcalDiff"] = (Rd53bReg Rd53bGlobalCfg::*)&Rd53bGlobalCfg::InjVcalDiff;
 }
 
-void Rd53bGlobalCfg::toJson(json &j) {
+void Rd53bGlobalCfg::writeConfig(json &j) {
     for(auto it : regMap) {
         logger->debug("Writing reg: {}", it.first);
         j["RD53B"]["GlobalConfig"][it.first] = (this->*it.second).read();
     }    
 }
 
-void Rd53bGlobalCfg::fromJson(json &j) {
+void Rd53bGlobalCfg::loadConfig(json const &j) {
     for (auto it : regMap) {
-        if (!j["RD53B"]["GlobalConfig"][it.first].empty()) {
+        if (j.contains({"RD53B","GlobalConfig",it.first})) {
             (this->*it.second).write(j["RD53B"]["GlobalConfig"][it.first]);
         } else {
             logger->error("Could not find register \"{}\" using default!", it.first);

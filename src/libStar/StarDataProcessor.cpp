@@ -26,8 +26,7 @@ StarDataProcessor::StarDataProcessor()
   : DataProcessor()
 {}
 
-StarDataProcessor::~StarDataProcessor() {
-}
+StarDataProcessor::~StarDataProcessor() = default;
 
 void StarDataProcessor::init() {
     //std::cout << __PRETTY_FUNCTION__ << std::endl;

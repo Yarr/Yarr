@@ -225,10 +225,10 @@ void ItsdaqTxCore::doTriggerTime() {
                 m_trigTime, trigs);
 }
 
-void ItsdaqTxCore::toFileJson(json &j)  {
+void ItsdaqTxCore::writeConfig(json &j)  {
 }
 
-void ItsdaqTxCore::fromFileJson(json &j){
+void ItsdaqTxCore::loadConfig(const json &j){
   logger->debug("ItsdaqTxCore: No json config to load");
 
   // Does anything need changing if UDP socket updated?

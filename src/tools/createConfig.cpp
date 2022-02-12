@@ -101,7 +101,7 @@ int main (int argc, char *argv[]) {
         std::tie(connectivity, chipCfgs) = feCfg->getPreset(systemType);
 
         // Check a few things first
-        if (connectivity["chipType"].empty() or connectivity["chips"].empty()) {
+        if (!connectivity.contains("chipType") or !connectivity.contains("chips")) {
             logger->error("Invalid connectivity config.");
             return -1;
         }

@@ -33,16 +33,16 @@ void Rd53bPixelFeedback::writeConfig(json &j) {
     j["rstPixelReg"] = m_rstPixelReg;
 }
 
-void Rd53bPixelFeedback::loadConfig(json &j) {
-    if (!j["min"].empty())
+void Rd53bPixelFeedback::loadConfig(const json &j) {
+    if (j.contains("min"))
         min = j["min"];
-    if (!j["max"].empty())
+    if (j.contains("max"))
         max = j["max"];
-    if (!j["pixelReg"].empty()) 
+    if (j.contains("pixelReg"))
         m_pixelReg = j["pixelReg"];
-    if (!j["rstPixelReg"].empty())
+    if (j.contains("rstPixelReg"))
         m_rstPixelReg = j["rstPixelReg"];
-    if (!j["steps"].empty()) {
+    if (j.contains("steps")) {
         m_steps.clear();
         for(auto i: j["steps"])
             m_steps.push_back(i);
