@@ -49,7 +49,7 @@ sig_atomic_t signaled = 0;
 void StdDataGatherer::execPart2() {
     SPDLOG_LOGGER_TRACE(sdglog, "");
     unsigned count = 0;
-    bool done = 0;
+    bool done = false;
 
     signaled = 0;
     signal(SIGINT, [](int signum){signaled = 1;});
