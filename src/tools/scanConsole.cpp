@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
     std::unique_ptr<HwController> hwCtrl;
     json ctrlCfg;
     std::unique_ptr<Bookkeeper> bookie;
-    std::map<FrontEnd*, std::string> feCfgMap;
+    std::map<FrontEnd*, std::array<std::string, 2>> feCfgMap;
     std::unique_ptr<ScanBase> scanBase;
     std::map<FrontEnd*, std::unique_ptr<DataProcessor> > histogrammers;
     std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcessor>> > analyses;
@@ -60,27 +60,101 @@ int main(int argc, char *argv[]) {
 
     // Get new run number
     runCounter = ScanHelper::newRunCounter();
-    
+
+    // parsing all json files
+    json loggerConfig;
+    json ctrlConfig;
+    json chipConfig=json::array();
+    json dbCfg;
+    json userCfg;
+    json siteCfg;
+    json scanCfg;
+
+    if(!scanOpts.logCfgPath.empty()) {
+        loggerConfig = ScanHelper::openJsonFile(scanOpts.logCfgPath);
+        loggerConfig["outputDir"]=scanOpts.outputDir;
+    } else {
+        // default log setting
+        loggerConfig["pattern"] = scanOpts.defaultLogPattern;
+        loggerConfig["log_config"][0]["name"] = "all";
+        loggerConfig["log_config"][0]["level"] = "info";
+        loggerConfig["outputDir"]="";
+    }
+    ctrlCfg = ScanHelper::openJsonFile(scanOpts.ctrlCfgPath);
+
+    for (std::string const &sTmp: scanOpts.cConfigPaths) {
+        logger->info("Opening global config: {}", sTmp);
+        json config;
+        try {
+            config = ScanHelper::openJsonFile(sTmp);
+            chipConfig.push_back(config);
+        } catch (std::runtime_error &e) {
+            logger->critical("#ERROR# opening connectivity or chip configs: {}", e.what());
+            return -1;
+        }
+        if (!config.contains("chipType") || !config.contains("chips")) {
+            logger->error("Invalid config, chip type or chips not specified!");
+            throw (std::runtime_error("loadChips failure"));
+        }
+        const std::string &chipType = config["chipType"];
+        logger->info("Chip type: {}", chipType);
+        logger->info("Chip count {}", config["chips"].size());
+        for (unsigned i = 0; i < config["chips"].size(); i++) {
+            logger->info("Loading chip #{}", i);
+            const json &chip = config["chips"][i];
+            if (chip["enable"] == 0) {
+                logger->warn(" ... chip not enabled, skipping!");
+            } else {
+                // TODO should be a shared pointer
+                auto fe = StdDict::getFrontEnd(chipType);
+                auto *feCfg = dynamic_cast<FrontEndCfg *>(fe.get());
+                if (chip.contains("locked")) {
+                    feCfg->setLocked((int) chip["locked"]);
+                } else {
+                    logger->warn("Config file not found, using default!");
+                    // Rename in case of multiple default configs
+                    std::string chipConfigPath;
+                    feCfg->setName(feCfg->getName() + "_" + std::to_string((int) chip["rx"]));
+                    logger->warn("Creating new config of FE {} at {}", feCfg->getName(), chipConfigPath);
+                    json jTmp;
+                    feCfg->writeConfig(jTmp);
+                    std::ofstream oFTmp(chipConfigPath);
+                    oFTmp << std::setw(4) << jTmp;
+                    oFTmp.close();
+                }
+            }
+        }
+    }
+
+    if(scanOpts.dbUse) {
+        try {
+            dbCfg = ScanHelper::openJsonFile(scanOpts.dbCfgPath);
+            userCfg = ScanHelper::openJsonFile(scanOpts.dbUserCfgPath);
+            siteCfg = ScanHelper::openJsonFile(scanOpts.dbSiteCfgPath);
+        }catch (std::runtime_error &e) {
+            logger->critical("#ERROR# failed to load database config: {}", e.what());
+            return -1;
+        }
+    }
+    try {
+        scanCfg = ScanHelper::openJsonFile(scanOpts.scanType);
+    } catch (std::runtime_error &e) {
+        logger->error("Opening scan config: {}", e.what());
+        return -1;
+    }
+
+    // end of configuration section
+
     // create outdir directory
     dataDir=scanOpts.outputDir;
     strippedScan=ScanHelper::createOutputDir(scanOpts.scanType,runCounter,scanOpts.outputDir);
 
 
     spdlog::info("Configuring logger ...");
-    if(!scanOpts.logCfgPath.empty()) {
-        auto j = ScanHelper::openJsonFile(scanOpts.logCfgPath);
-        logging::setupLoggers(j, scanOpts.outputDir);
-    } else {
-        // default log setting
-        json j; // empty
-        j["pattern"] = scanOpts.defaultLogPattern;
-        j["log_config"][0]["name"] = "all";
-        j["log_config"][0]["level"] = "info";
-        logging::setupLoggers(j);
-    }
+    logging::setupLoggers(loggerConfig);
     // Can use actual logger now
 
-    if (scanOpts.cConfigPaths.size() == 0) {
+    if (scanOpts.cConfigPaths.empty()) {
         logger->error("Error: no config files given, please specify config file name under -c option, even if file does not exist!");
         return -1;
     }
@@ -104,12 +178,10 @@ int main(int argc, char *argv[]) {
     ScanHelper::createSymlink(dataDir,strippedScan,runCounter);
 
     // Timestamp
-    now = std::time(NULL);
+    now = std::time(nullptr);
     timestampStr = ScanHelper::timestamp(now);
     logger->info("Timestamp: {}", timestampStr);
     logger->info("Run Number: {}", runCounter);
-
-    for (int i=1;i<argc;i++)scanOpts. commandLineStr.append(std::string(argv[i]).append(" "));
 
     // Add to scan log
     scanLog["exec"] = scanOpts.commandLineStr;
@@ -125,7 +197,6 @@ int main(int argc, char *argv[]) {
     logger->info("-> Opening controller config: {}", scanOpts.ctrlCfgPath);
 
     try {
-        ctrlCfg = ScanHelper::openJsonFile(scanOpts.ctrlCfgPath);
         hwCtrl = ScanHelper::loadController(ctrlCfg);
     } catch (std::runtime_error &e) {
         logger->critical("Error opening or loading controller config: {}", e.what());
@@ -149,15 +220,12 @@ int main(int argc, char *argv[]) {
     ScanHelper::banner(logger,"Loading Configs");
 
 
-    // Loop over setup files
-    for(std::string const& sTmp : scanOpts.cConfigPaths){
-        logger->info("Opening global config: {}", sTmp);
-        json config;
+    // Loop chip configs
+    for(json const& config : chipConfig){
         try {
-            config = ScanHelper::openJsonFile(sTmp);
             chipType = ScanHelper::loadChips(config, *bookie, &*hwCtrl, feCfgMap, scanOpts.outputDir);
         } catch (std::runtime_error &e) {
-            logger->critical("#ERROR# opening connectivity or chip configs: {}", e.what());
+            logger->critical("#ERROR# loading chip config: {}", e.what());
             return -1;
         }
         scanLog["connectivity"].push_back(config);
@@ -170,11 +238,8 @@ int main(int argc, char *argv[]) {
         database->initialize(scanOpts.dbCfgPath, scanOpts.progName, scanOpts.setQCMode, scanOpts.setInteractiveMode);
         if (database->checkConfigs(scanOpts.dbUserCfgPath, scanOpts.dbSiteCfgPath, scanOpts.cConfigPaths)==1)
             return -1;
-        json dbCfg = ScanHelper::openJsonFile(scanOpts.dbCfgPath);
         scanLog["dbCfg"] = dbCfg;
-        json userCfg = ScanHelper::openJsonFile(scanOpts.dbUserCfgPath);
         scanLog["userCfg"] = userCfg;
-        json siteCfg = ScanHelper::openJsonFile(scanOpts.dbSiteCfgPath);
         scanLog["siteCfg"] = siteCfg;
     }
 
@@ -271,21 +336,21 @@ int main(int argc, char *argv[]) {
 
     // TODO Make this nice
     try {
-        scanBase = ScanHelper::buildScan(scanOpts.scanType, *bookie, &fbData);
+        scanBase = ScanHelper::buildScan(scanCfg, *bookie, &fbData);
     } catch (const char *msg) {
         logger->warn("No scan to run, exiting with msg: {}", msg);
         return 0;
     }
     // TODO not to use the raw pointer!
     try {
-        ScanHelper::buildHistogrammers(histogrammers, scanOpts.scanType, bookie->feList, scanBase.get(), scanOpts.outputDir);
+        ScanHelper::buildHistogrammers(histogrammers, scanCfg, bookie->feList, scanBase.get(), scanOpts.outputDir);
     } catch (const char *msg) {
         logger->error("{}", msg);
         return -1;
     }
 
     try {
-        ScanHelper::buildAnalyses(analyses, scanOpts.scanType, *bookie, scanBase.get(),
+        ScanHelper::buildAnalyses(analyses, scanCfg, *bookie, scanBase.get(),
                                   &fbData, scanOpts.mask_opt);
     } catch (const char *msg) {
         logger->error("{}", msg);
@@ -340,8 +405,7 @@ int main(int argc, char *argv[]) {
     std::chrono::steady_clock::time_point processor_done = std::chrono::steady_clock::now();
     logger->info("Processor done, waiting for histogrammer ...");
 
-    for (unsigned i=0; i<bookie->feList.size(); i++) {
-        FrontEnd *fe = bookie->feList[i];
+    for (auto fe : bookie->feList) {
         if (fe->isActive()) {
           fe->clipData->finish();
         }
@@ -354,8 +418,7 @@ int main(int argc, char *argv[]) {
 
     logger->info("Processor done, waiting for analysis ...");
 
-    for (unsigned i=0; i<bookie->feList.size(); i++) {
-        FrontEnd *fe = bookie->feList[i];
+    for (auto fe : bookie->feList) {
         if (fe->isActive()) {
           fe->clipHisto->finish();
         }
@@ -397,7 +460,7 @@ int main(int argc, char *argv[]) {
     hwCtrl.reset();
 
     // Save scan log
-    scanLog["finishTime"] = (int)std::time(NULL);
+    scanLog["finishTime"] = (int)std::time(nullptr);
     std::ofstream scanLogFile(scanOpts.outputDir + "scanLog.json");
     scanLogFile << std::setw(4) << scanLog;
     scanLogFile.close();
@@ -405,18 +468,17 @@ int main(int argc, char *argv[]) {
 
     // Cleanup
     //delete scanBase;
-    for (unsigned i=0; i<bookie->feList.size(); i++) {
-        FrontEnd *fe = bookie->feList[i];
+    for (auto fe : bookie->feList) {
         if (fe->isActive()) {
             auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
 
             // Save config
             if (!feCfg->isLocked()) {
                 logger->info("Saving config of FE {} to {}",
-                             feCfg->getName(), feCfgMap.at(fe));
+                             feCfg->getName(), feCfgMap.at(fe)[0]);
                 json jTmp;
                 feCfg->writeConfig(jTmp);
-                std::ofstream oFTmp(feCfgMap.at(fe));
+                std::ofstream oFTmp(feCfgMap.at(fe)[0]);
                 oFTmp << std::setw(4) << jTmp;
                 oFTmp.close();
             } else {
@@ -424,7 +486,7 @@ int main(int argc, char *argv[]) {
             }
 
             // Save extra config in data folder
-            std::ofstream backupCfgFile(scanOpts.outputDir + feCfg->getConfigFile() + ".after");
+            std::ofstream backupCfgFile(scanOpts.outputDir + feCfgMap.at(fe)[1] + ".after");
             json backupCfg;
             feCfg->writeConfig(backupCfg);
             backupCfgFile << std::setw(4) << backupCfg;
@@ -432,7 +494,7 @@ int main(int argc, char *argv[]) {
 
             // Plot
             // store output results (if any)
-            if(analyses.size()) {
+            if(!analyses.empty()) {
                 logger->info("-> Storing output results of FE {}", feCfg->getRxChannel());
                 auto &output = *(fe->clipResult->back());
                 std::string name = feCfg->getName();

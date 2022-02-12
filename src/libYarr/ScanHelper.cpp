@@ -3,7 +3,9 @@
 #include <iostream>
 #include <exception>
 #include <iomanip>
+#include <memory>
 #include <numeric>
+#include <filesystem>
 
 #include "AllAnalyses.h"
 #include "AllChips.h"
@@ -69,7 +71,8 @@ namespace ScanHelper {
     }
 
     // Open file and parse into json object
-    json openJsonFile(std::string filepath) {
+    // Open file and parse into json object
+    json openJsonFile(const std::string& filepath) {
         std::ifstream file(filepath);
         if (!file) {
             throw std::runtime_error("could not open file");
@@ -119,103 +122,137 @@ namespace ScanHelper {
         return hwCtrl;
     }
 
-
-    void buildConfig(json &j) {
-
+std::string loadChipConfigs(json &config) {
+    std::string chipType;
+    if (!config.contains("chipType") || !config.contains("chips")) {
+        shlog->error("Invalid config, chip type or chips not specified!");
+        throw (std::runtime_error("loadChips failure"));
     }
+    chipType = config["chipType"];
+    shlog->info("Chip type: {}", chipType);
+    shlog->info("Chip count {}", config["chips"].size());
+    // Loop over chips
+    for (unsigned i = 0; i < config["chips"].size(); i++) {
+        shlog->info("Loading chip #{}", i);
+        json &chip = config["chips"][i];
+        std::string chipConfigPath = chip["config"];
+        // TODO should be a shared pointer
+        auto *feCfg = dynamic_cast<FrontEndCfg *>(StdDict::getFrontEnd(chipType).get());
+        if (std::filesystem::exists(chipConfigPath)) {
+            // Load config
+            shlog->info("Loading config file: {}", chipConfigPath);
+            json cfg;
+            try {
+                cfg = ScanHelper::openJsonFile(chipConfigPath);
+            } catch (std::runtime_error &e) {
+                shlog->error("Error opening chip config: {}", e.what());
+                throw (std::runtime_error("loadChips failure"));
+            }
+            chip["__data__"] = cfg;
+            chip["__file__"]  = "chipConfigPath";
+        } else {
+            auto n = StdDict::getFrontEnd(chipType);
+            auto *newCfg = dynamic_cast<FrontEndCfg *>(n.get());
+            shlog->warn("Config file not found, using default!");
+            // Rename in case of multiple default configs
+            newCfg->setName(feCfg->getName() + "_" + std::to_string((int) chip["rx"]));
+            shlog->warn("Creating new config of FE {} at {}", feCfg->getName(), chipConfigPath);
+            json jTmp;
+            newCfg->writeConfig(jTmp);
+            std::ofstream oFTmp(chipConfigPath);
+            oFTmp << std::setw(4) << jTmp;
+            oFTmp.close();
+            chip["__data__"] = jTmp;
+            chip["__file__"]  = "chipConfigPath";
+        }
+    }
+    return chipType;
+}
 
-    // Load connectivyt and load chips into bookkeeper
-    std::string loadChips(const json &config, Bookkeeper &bookie, HwController *hwCtrl, std::map<FrontEnd*, std::string> &feCfgMap, std::string &outputDir) {
+// Load connectivyt and load chips into bookkeeper
+std::string loadChips(const json &config, Bookkeeper &bookie, HwController *hwCtrl, std::map<FrontEnd*, std::array<std::string,2>> &feCfgMap, std::string &outputDir) {
         std::string chipType;
         if (!config.contains("chipType") || !config.contains("chips")) {
             shlog->error("Invalid config, chip type or chips not specified!");
-            throw(std::runtime_error("loadChips failure"));
-        } else {
-            chipType = config["chipType"];
-            shlog->info("Chip type: {}", chipType);
-            shlog->info("Chip count {}", config["chips"].size());
-            // Loop over chips
-            for (unsigned i=0; i<config["chips"].size(); i++) {
-                shlog->info("Loading chip #{}", i);
-                json chip = config["chips"][i];
-                std::string chipConfigPath = chip["config"];
-                if (chip["enable"] == 0) {
-                    shlog->warn(" ... chip not enabled, skipping!");
-                } else {
-                    // TODO should be a shared pointer
-                    bookie.addFe(StdDict::getFrontEnd(chipType).release(), chip["tx"], chip["rx"]);
-                    bookie.getLastFe()->init(hwCtrl, chip["tx"], chip["rx"]);
-                    FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie.getLastFe());
-                    std::ifstream cfgFile(chipConfigPath);
-                    if (cfgFile) {
-                        // Load config
-                        shlog->info("Loading config file: {}", chipConfigPath);
-                        json cfg;
-                        try {
-                            cfg = ScanHelper::openJsonFile(chipConfigPath);
-                        } catch (std::runtime_error &e) {
-                            shlog->error("Error opening chip config: {}", e.what());
-                            throw(std::runtime_error("loadChips failure"));
-                        }
-                        feCfg->loadConfig(cfg);
-                        if (chip.contains("locked"))
-                            feCfg->setLocked((int)chip["locked"]);
-                        cfgFile.close();
-                    } else {
-                        shlog->warn("Config file not found, using default!");
-                        // Rename in case of multiple default configs
-                        feCfg->setName(feCfg->getName() + "_" + std::to_string((int)chip["rx"]));
-                        shlog->warn("Creating new config of FE {} at {}", feCfg->getName(),chipConfigPath);
-                        json jTmp;
-                        feCfg->writeConfig(jTmp);
-                        std::ofstream oFTmp(chipConfigPath);
-                        oFTmp << std::setw(4) << jTmp;
-                        oFTmp.close();
-                    }
-                    // Save path to config
-                    std::size_t botDirPos = chipConfigPath.find_last_of("/");
-                    feCfgMap[bookie.getLastFe()] = chipConfigPath;
-                    feCfg->setConfigFile(chipConfigPath.substr(botDirPos, chipConfigPath.length()));
-
-                    // Create backup of current config
-                    // TODO fix folder
-                    std::ofstream backupCfgFile(outputDir + feCfg->getConfigFile() + ".before");
-                    json backupCfg;
-                    feCfg->writeConfig(backupCfg);
-                    backupCfgFile << std::setw(4) << backupCfg;
-                    backupCfgFile.close();
-                }
-            }
+            throw (std::runtime_error("loadChips failure"));
         }
-        return chipType;        
-    }
+        chipType = config["chipType"];
+        shlog->info("Chip type: {}", chipType);
+        shlog->info("Chip count {}", config["chips"].size());
+        // Loop over chips
+        for (unsigned i=0; i<config["chips"].size(); i++) {
+            shlog->info("Loading chip #{}", i);
+            json chip = config["chips"][i];
+            std::string chipConfigPath = chip["config"];
+            if (chip["enable"] == 0) {
+                shlog->warn(" ... chip not enabled, skipping!");
+                continue;
+            }
+            // TODO should be a shared pointer
+            bookie.addFe(StdDict::getFrontEnd(chipType).release(), chip["tx"], chip["rx"]);
+            bookie.getLastFe()->init(hwCtrl, chip["tx"], chip["rx"]);
+            auto *feCfg = dynamic_cast<FrontEndCfg*>(bookie.getLastFe());
+            if (std::filesystem::exists(chipConfigPath)) {
+                // Load config
+                shlog->info("Loading config file: {}", chipConfigPath);
+                json cfg;
+                try {
+                    cfg = ScanHelper::openJsonFile(chipConfigPath);
+                } catch (std::runtime_error &e) {
+                    shlog->error("Error opening chip config: {}", e.what());
+                    throw(std::runtime_error("loadChips failure"));
+                }
+                feCfg->loadConfig(cfg);
+                if (chip.contains("locked"))
+                    feCfg->setLocked((int)chip["locked"]);
+            } else {
+                auto n = StdDict::getFrontEnd(chipType);
+                auto *newCfg = dynamic_cast<FrontEndCfg*>(n.get());
+                shlog->warn("Config file not found, using default!");
+                // Rename in case of multiple default configs
+                newCfg->setName(feCfg->getName() + "_" + std::to_string((int)chip["rx"]));
+                shlog->warn("Creating new config of FE {} at {}", feCfg->getName(),chipConfigPath);
+                json jTmp;
+                newCfg->writeConfig(jTmp);
+                std::ofstream oFTmp(chipConfigPath);
+                oFTmp << std::setw(4) << jTmp;
+                oFTmp.close();
+            }
+            // Save path to config
+            std::size_t botDirPos = chipConfigPath.find_last_of('/');
+            std::string  cfgFile=chipConfigPath.substr(botDirPos, chipConfigPath.length());
+            feCfgMap[bookie.getLastFe()] = {chipConfigPath, cfgFile};
+            // Create backup of current config
+            // TODO fix folder
+            std::ofstream backupCfgFile(outputDir + cfgFile + ".before");
+            json backupCfg;
+            feCfg->writeConfig(backupCfg);
+            backupCfgFile << std::setw(4) << backupCfg;
+            backupCfgFile.close();
+        }
+    return chipType;
+}
 
 void buildHistogrammers( std::map<FrontEnd*,
                          std::unique_ptr<DataProcessor>>& histogrammers,
-                         const std::string& scanType,
+                         const json& scanCfg,
                          std::vector<FrontEnd*>& feList,
                          ScanBase* s, std::string outputDir) {
     bhlog->info("Loading histogrammer ...");
-    json scanCfg;
-    try {
-        scanCfg = ScanHelper::openJsonFile(scanType);
-    } catch (std::runtime_error &e) {
-        bhlog->error("Opening scan config: {}", e.what());
-        throw("buildHistogrammer failure");
-    }
-    json histoCfg = scanCfg["scan"]["histogrammer"];
-    json anaCfg = scanCfg["scan"]["analysis"];
+
+    const json &histoCfg = scanCfg["scan"]["histogrammer"];
+    const json &anaCfg = scanCfg["scan"]["analysis"];
 
     for (FrontEnd *fe : feList ) {
         if (fe->isActive()) {
             // TODO this loads only FE-i4 specific stuff, bad
             // Load histogrammer
-            histogrammers[fe].reset( new HistogrammerProcessor );
-            auto& histogrammer = static_cast<HistogrammerProcessor&>( *(histogrammers[fe]) );
+            histogrammers[fe] = std::make_unique<HistogrammerProcessor>( );
+            auto& histogrammer = dynamic_cast<HistogrammerProcessor&>( *(histogrammers[fe]) );
 
             histogrammer.connect(fe->clipData, fe->clipHisto);
 
-            auto add_histo = [&](std::string algo_name) {
+            auto add_histo = [&](const std::string& algo_name) {
                 auto histo = StdDict::getHistogrammer(algo_name);
                 if(algo_name == "DataArchiver") {
                     auto archiver = dynamic_cast<DataArchiver*>(histo.get());
@@ -242,7 +279,7 @@ void buildHistogrammers( std::map<FrontEnd*,
                     add_histo(algo_name);
                 }
             } catch(/* json::type_error &te*/ ... ) { //FIXME
-                int nHistos = histoCfg.size();
+                std::size_t nHistos = histoCfg.size();
                 for (int j=0; j<nHistos; j++) {
                     std::string algo_name = histoCfg[j]["algorithm"];
                     add_histo(algo_name);
@@ -259,56 +296,49 @@ using AlgoTieredIndex = std::vector<std::vector<int>>;
 
 void buildAnalyses( std::map<FrontEnd*,
                     std::vector<std::unique_ptr<DataProcessor>> >& analyses,
-                    const std::string& scanType, Bookkeeper& bookie,
+                    const json& scanCfg, Bookkeeper& bookie,
                     ScanBase* s, FeedbackClipboardMap *fbData, int mask_opt) {
-    if (scanType.find("json") != std::string::npos) {
-        balog->info("Loading analyses ...");
-        json scanCfg;
-        try {
-            scanCfg = ScanHelper::openJsonFile(scanType);
-        } catch (std::runtime_error &e) {
-            balog->error("Opening scan config: {}", e.what());
-            throw("buildAnalyses failure");
-        }
-        json anaCfg = scanCfg["scan"]["analysis"];
+    balog->info("Loading analyses ...");
 
-        // Parse scan config and build analysis hierarchy
-        // Use a 2D vector to hold algorithm indices for all tiers of analysis processors
-        AlgoTieredIndex algoIndexTiers;
-        try {
-            buildAnalysisHierarchy(algoIndexTiers, anaCfg);
-        } catch (std::runtime_error &e) {
-            balog->error("Building analysis hierarchy: {}", e.what());
-            throw("buildAnalyses failure");
-        }
+    const json &anaCfg = scanCfg["scan"]["analysis"];
 
-        for (FrontEnd *fe : bookie.feList ) {
-            if (fe->isActive()) {
-                // TODO this loads only FE-i4 specific stuff, bad
-                // TODO hardcoded
-                auto channel = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
+    // Parse scan config and build analysis hierarchy
+    // Use a 2D vector to hold algorithm indices for all tiers of analysis processors
+    AlgoTieredIndex algoIndexTiers;
+    try {
+        buildAnalysisHierarchy(algoIndexTiers, anaCfg);
+    } catch (std::runtime_error &e) {
+        balog->error("Building analysis hierarchy: {}", e.what());
+        throw(std::runtime_error("buildAnalyses failure"));
+    }
 
-                for (unsigned t=0; t<algoIndexTiers.size(); t++) {
-                    // Before adding new analyses
-                    bool hasUpstreamAnalyses = false;
-                    if (t > 0) { // ie. not analyses[fe].empty()
-                        auto& ana_prev = static_cast<AnalysisProcessor&>( *(analyses[fe].back()) );
-                        hasUpstreamAnalyses = not ana_prev.empty();
-                    }
+    for (FrontEnd *fe : bookie.feList ) {
+        if (fe->isActive()) {
+            // TODO this loads only FE-i4 specific stuff, bad
+            // TODO hardcoded
+            auto channel = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
 
-                    // Add analysis processors
-                    analyses[fe].emplace_back( new AnalysisProcessor(&bookie, channel) );
-                    auto& ana = static_cast<AnalysisProcessor&>( *(analyses[fe].back()) );
+            for (unsigned t=0; t<algoIndexTiers.size(); t++) {
+                // Before adding new analyses
+                bool hasUpstreamAnalyses = false;
+                if (t > 0) { // ie. not analyses[fe].empty()
+                    auto& ana_prev = dynamic_cast<AnalysisProcessor&>( *(analyses[fe].back()) );
+                    hasUpstreamAnalyses = not ana_prev.empty();
+                }
 
-                    // Create the ClipBoard to store its output and establish connection
-                    fe->clipResult->emplace_back(new ClipBoard<HistogramBase>());
-                    if (t==0) {
-                        ana.connect(s, fe->clipHisto, (fe->clipResult->back()).get(), &((*fbData)[channel]) );
-                    } else {
-                        ana.connect(s, (*(fe->clipResult->rbegin()+1)).get(),
-                                    (*(fe->clipResult->rbegin())).get(),
-                                    &((*fbData)[channel]), true);
-                    }
+                // Add analysis processors
+                analyses[fe].emplace_back( new AnalysisProcessor(&bookie, channel) );
+                auto& ana = dynamic_cast<AnalysisProcessor&>( *(analyses[fe].back()) );
+
+                // Create the ClipBoard to store its output and establish connection
+                fe->clipResult->emplace_back(new ClipBoard<HistogramBase>());
+                if (t==0) {
+                    ana.connect(s, fe->clipHisto, (fe->clipResult->back()).get(), &((*fbData)[channel]) );
+                } else {
+                    ana.connect(s, (*(fe->clipResult->rbegin()+1)).get(),
+                                (*(fe->clipResult->rbegin())).get(),
+                                &((*fbData)[channel]), true);
+                }
 
                     auto add_analysis = [&](std::string algo_name, json& j) {
                         auto analysis = StdDict::getAnalysis(algo_name);
@@ -329,23 +359,23 @@ void buildAnalyses( std::map<FrontEnd*,
                         }
                     };
 
-                    // Add all AnalysisAlgorithms of the t-th tier
-                    for (int aIndex : algoIndexTiers[t]) {
-                        std::string algo_name = anaCfg[std::to_string(aIndex)]["algorithm"];
-                        json algo_config = anaCfg[std::to_string(aIndex)]["config"];
-                        add_analysis(algo_name, algo_config);
-                    }
 
-                    // Disable masking of pixels
-                    if(mask_opt == 0) {
-                        balog->info("Disabling masking for this scan!");
-                        ana.setMasking(false);
-                    }
-                    ana.setMapSize(fe->geo.nCol, fe->geo.nRow);
-                } // for (unsigned t=0; t<algoIndexTiers.size(); t++)
-            } // if (fe->isActive())
-        } // for (FrontEnd *fe : bookie.feList )
-    }
+                // Add all AnalysisAlgorithms of the t-th tier
+                for (int aIndex : algoIndexTiers[t]) {
+                    std::string algo_name = anaCfg[std::to_string(aIndex)]["algorithm"];
+                    json algo_config = anaCfg[std::to_string(aIndex)]["config"];
+                    add_analysis(algo_name, algo_config);
+                }
+
+                // Disable masking of pixels
+                if(mask_opt == 0) {
+                    balog->info("Disabling masking for this scan!");
+                    ana.setMasking(false);
+                }
+                ana.setMapSize(fe->geo.nCol, fe->geo.nRow);
+            } // for (unsigned t=0; t<algoIndexTiers.size(); t++)
+        } // if (fe->isActive())
+    } // for (FrontEnd *fe : bookie.feList )
 }
 
 void buildAnalysisHierarchy(AlgoTieredIndex &indexTiers, const json &anaCfg) {
@@ -361,7 +391,7 @@ void buildAnalysisHierarchy(AlgoTieredIndex &indexTiers, const json &anaCfg) {
         tierMap[ anaCfg[std::to_string(ialgo)]["algorithm"] ] = -1;
     }
 
-    auto fillIndexVector = [&indexTiers](unsigned tier, unsigned index) {
+    auto fillIndexVector = [&indexTiers](unsigned tier, int index) {
         while (indexTiers.size() <= tier) {
             indexTiers.emplace_back();
         }
@@ -369,7 +399,7 @@ void buildAnalysisHierarchy(AlgoTieredIndex &indexTiers, const json &anaCfg) {
     };
 
     // Algorithm indices
-    std::deque<unsigned> indices(nAnas);
+    std::deque<int> indices(nAnas);
     std::iota(std::begin(indices), std::end(indices), 0);
     int loopcnt = 0;
 
@@ -429,7 +459,8 @@ void buildAnalysisHierarchy(AlgoTieredIndex &indexTiers, const json &anaCfg) {
     } // while (not indices.empty())
 }
 
-std::string toString(int value,int digitsCount)
+template<typename T>
+std::string toString(T value,int digitsCount)
 {
     std::ostringstream os;
     os<<std::setfill('0')<<std::setw(digitsCount)<<value;
@@ -470,24 +501,16 @@ std::string defaultDbUserCfgPath() {
   return defaultDbDirPath()+"/user.json";
 }
 
-std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie,  FeedbackClipboardMap *fbData) {
+std::unique_ptr<ScanBase> buildScan(const json &scanCfg, Bookkeeper& bookie,  FeedbackClipboardMap *fbData) {
 
     shlog->info("Found Scan config, constructing scan ...");
     std::unique_ptr<ScanFactory> s ( new ScanFactory(&bookie, fbData) );
-    json scanCfg;
-    try {
-        scanCfg = ScanHelper::openJsonFile(scanType);
-    } catch (std::runtime_error &e) {
-        shlog->error("Opening scan config: {}", e.what());
-        throw("buildScan failure");
-    }
-
     s->loadConfig(scanCfg);
 
     return s;
 }
 
-std::string  createOutputDir(const std::string &scanType, int runCounter, std::string &outputDir) {
+std::string  createOutputDir(const std::string &scanType, unsigned int runCounter, std::string &outputDir) {
     // Generate output directory path
     std::size_t pathPos = scanType.find_last_of('/');
     std::size_t suffixPos = scanType.find_last_of('.');
@@ -508,7 +531,7 @@ std::string  createOutputDir(const std::string &scanType, int runCounter, std::s
     return strippedScan;
 }
 
-void createSymlink(const std::string &dataDir,const std::string &strippedScan, int runCounter) {
+void createSymlink(const std::string &dataDir, const std::string &strippedScan, unsigned int runCounter) {
     std::string cmdStr = "rm -f " + dataDir + "last_scan && ln -s " + ScanHelper::toString(runCounter, 6) + "_" + strippedScan + " " + dataDir + "last_scan";
     int sysExSt = system(cmdStr.c_str());
     if(sysExSt != 0){
@@ -623,10 +646,8 @@ int parseOptions(int argc, char *argv[], ScanOpts &scanOpts) {
             case 'h':
                 printHelp();
                 return 0;
-                break;
             case 'n':
                 scanOpts.nThreads = atoi(optarg);
-                break;
                 break;
             case 'k':
                 ScanHelper::listKnown();
@@ -642,7 +663,7 @@ int parseOptions(int argc, char *argv[], ScanOpts &scanOpts) {
                 optind -= 1; //this is a bit hacky, but getopt doesn't support multiple
                 //values for one option, so it can't be helped
                 for (; optind < argc && *argv[optind] != '-'; optind += 1) {
-                    scanOpts.cConfigPaths.push_back(std::string(argv[optind]));
+                    scanOpts.cConfigPaths.emplace_back(argv[optind]);
                 }
                 break;
             case 'r':

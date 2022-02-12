@@ -23,6 +23,6 @@ inline std::shared_ptr<spdlog::logger> make_log(std::string name) {
   return log;
 }
 
-} // End logging namespace
+}; // End logging namespace
 
 #endif
