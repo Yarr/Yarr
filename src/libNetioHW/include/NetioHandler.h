@@ -40,7 +40,7 @@ public:
   void setFlushBuffer(bool);
 
   // return data received
-  int getDataCount();
+  int getDataCount() const;
 
   // Functionalities
   void addChannel(uint64_t chn); // Enable an elink (prepare a queue, socket-pairs and sub to elink.
@@ -52,7 +52,7 @@ public:
   void send(uint64_t chn, netio::message& msg){ m_send_sockets[chn]->send(msg); } // Sends the msg
   std::vector<uint32_t> pushOut(uint64_t chn); // Push out every records from channel queue.
   SharedQueue& getQueue(uint64_t chn){ return m_pcqs[chn]; } // Access for elink's queue.
-  size_t getNumOfChannels() { return m_activeChannels; } // Get the number of active channels.
+  size_t getNumOfChannels() const { return m_activeChannels; } // Get the number of active channels.
   bool isStable(size_t monitorID); // Returns the stability of elink's queue.
   bool isAllStable(); // Returns the aggregated stability of the queues.
   void setFelixHost(std::string felixHost){m_felixHost=felixHost;}

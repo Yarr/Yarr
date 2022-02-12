@@ -35,17 +35,17 @@ class SpecRxCore : virtual public RxCore, virtual public SpecCom{
     public:
         SpecRxCore();
 
-        void setRxEnable(uint32_t val);
-        void setRxEnable(std::vector<uint32_t> channels);
-        void disableRx();
-        void maskRxEnable(uint32_t val, uint32_t mask);
+        void setRxEnable(uint32_t val) override;
+        void setRxEnable(std::vector<uint32_t> channels) override;
+        void disableRx() override;
+        void maskRxEnable(uint32_t val, uint32_t mask) override;
 
-        RawData* readData();
-        void flushBuffer();
+        RawData* readData() override;
+        void flushBuffer() override;
         
-        uint32_t getDataRate();
-        uint32_t getCurCount();
-        bool isBridgeEmpty();
+        uint32_t getDataRate() override;
+        uint32_t getCurCount() override;
+        bool isBridgeEmpty() override;
         
         uint32_t getLinkStatus();
         
@@ -55,7 +55,7 @@ class SpecRxCore : virtual public RxCore, virtual public SpecCom{
         void setRxActiveLanes(uint32_t val);
         uint32_t getRxActiveLanes();
 
-        void checkRxSync();
+        void checkRxSync() override;
 
     protected:
         uint32_t m_rxActiveLanes;

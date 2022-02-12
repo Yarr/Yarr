@@ -72,9 +72,9 @@ void StarRegDump::writeConfig(json &config) {
         config["addr"] = m_addr;
 }
 
-void StarRegDump::loadConfig(json &config) {
+void StarRegDump::loadConfig(const json &config) {
 
-        if (!config["addr"].empty())
+        if (config.contains("addr"))
                 m_addr = config["addr"];
 }
 

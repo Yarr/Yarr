@@ -134,15 +134,15 @@ void Rd53bMaskLoop::writeConfig(json &j) {
     j["applyEnMask"] = m_applyEnMask;
 }
 
-void Rd53bMaskLoop::loadConfig(json &j) {
-    if (!j["min"].empty())
+void Rd53bMaskLoop::loadConfig(const json &j) {
+    if (j.contains("min"))
         min = j["min"];
-    if (!j["max"].empty())
+    if (j.contains("max"))
         max = j["max"];
-    if (!j["step"].empty())
+    if (j.contains("step"))
         step = j["step"];
-    if (!j["maskType"].empty())
+    if (j.contains("maskType"))
         m_maskType = j["maskType"];
-    if (!j["applyEnMask"].empty())
+    if (j.contains("applyEnMask"))
         m_applyEnMask = j["applyEnMask"];        
 }

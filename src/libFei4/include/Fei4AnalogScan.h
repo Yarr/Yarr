@@ -18,9 +18,9 @@ class Fei4AnalogScan : public ScanBase {
     public:
 		Fei4AnalogScan(Bookkeeper *k);
 
-        void init();
-        void preScan();
-        void postScan() {}
+        void init() override;
+        void preScan() override;
+        void postScan() override {}
 
     private:
         enum MASK_STAGE mask;

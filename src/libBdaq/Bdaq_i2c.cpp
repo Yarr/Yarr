@@ -64,7 +64,7 @@ void Bdaq_i2c::setData(std::vector<uint8_t>& data, uint8_t addr) {
 	intf.write(base + memOffset + addr, data);
 }
 
-void Bdaq_i2c::getData(std::vector<uint8_t>& data, uint8_t size, uint8_t addr) {
+void Bdaq_i2c::getData(std::vector<uint8_t>& data, uint8_t size, uint8_t addr) const {
 	if (memSize < size) {
 		std::string error = "getData(): Size of data (" + 
 		std::to_string(data.size()) + " bytes) is bigger than memory (" + 

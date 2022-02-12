@@ -22,8 +22,8 @@ class Rd53aReadRegLoop : public LoopActionBase {
         Rd53aReadRegLoop();
 
 
-        void writeConfig(json &config);
-        void loadConfig(json &config);
+        void writeConfig(json &config) override;
+        void loadConfig(const json &config) override;
 
 
     private:
@@ -40,10 +40,10 @@ class Rd53aReadRegLoop : public LoopActionBase {
         uint16_t m_EnblRingOsc,m_RingOscDur;
         uint32_t m_RingOscRep;
 
-        void init();
-        void execPart1();
-        void execPart2();
-        void end();
+        void init() override;
+        void execPart1() override;
+        void execPart2() override;
+        void end() override;
 
         Rd53aReg Rd53aGlobalCfg::* OscRegisters[8] = {&Rd53a::RingOsc0,&Rd53a::RingOsc1,&Rd53a::RingOsc2,&Rd53a::RingOsc3,&Rd53a::RingOsc4,&Rd53a::RingOsc5,&Rd53a::RingOsc6,&Rd53a::RingOsc7};
 

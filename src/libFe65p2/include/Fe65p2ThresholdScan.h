@@ -19,9 +19,9 @@ class Fe65p2ThresholdScan : public ScanBase {
     public:
         Fe65p2ThresholdScan(Bookkeeper *k);
 
-        void init();
-        void preScan();
-        void postScan();
+        void init() override;
+        void preScan() override;
+        void postScan() override;
 };
 
 #endif

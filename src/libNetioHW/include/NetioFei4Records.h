@@ -18,7 +18,7 @@ union YARR_RECORD {
     uint8_t type     : 1;
     uint8_t channel  : 7;
   } inner;
-  void print(){
+  void print() const{
     std::cout << "YARR_RECORD: "
               << " channel: " << std::hex << inner.channel << std::dec
               << " type: " << std::hex << inner.type << std::dec << std::endl;
@@ -33,7 +33,7 @@ union FEI4_RECORD { // FEI4 24bit Record Word
     uint8_t field2 : 8;
     uint16_t rest  : 16;
   } inner;
-  void print(){
+  void print() const{
     std::cout << "FEI4_RECORD: "
               << " field1: " << std::hex << inner.field1 << std::dec
               << " field2: " << std::hex << inner.field2 << std::dec
@@ -51,13 +51,13 @@ union FEI4_DH { // FEI4 Data Header word.
     uint8_t lv1id  : 5;
     uint16_t bcid  : 10;
   } inner;
-  void print(){
+  void print() const{
     std::cout << " -> field1: " << unsigned(inner.field1);
     std::cout << " flag: " << bool(inner.flag);
     std::cout << " lv1id: " << unsigned(inner.lv1id);
     std::cout << " bcid: " << unsigned(inner.bcid) << std::endl;
   }
-  void printHex(){
+  void printHex() const{
     std::cout << " -> field1: " << std::hex << static_cast<uint32_t>(inner.field1) << std::dec;
     std::cout << " flag: " << std::hex << static_cast<uint32_t>(inner.flag) << std::dec;
     std::cout << " lv1id: " << std::hex << static_cast<uint32_t>(inner.lv1id) << std::dec;
@@ -73,11 +73,11 @@ union FEI4_DR_CR{ // FEI4 Data Record's Row and Column field.
     uint8_t column : 7;
     uint16_t row   : 9;
   } inner;
-  void print(){
+  void print() const{
     std::cout << " -> column: " << unsigned(inner.column);
     std::cout << " row: " << unsigned(inner.row) << std::endl;
   }
-  void printHex(){
+  void printHex() const{
     std::bitset<16> bscr(allfields);
     std::cout << " -> as bitset: " << bscr << std::endl;
     std::bitset<16> bsCOL = bscr >> 9; // Shift right ROW[8:0], to cut ROW from LSB.
@@ -85,7 +85,7 @@ union FEI4_DR_CR{ // FEI4 Data Record's Row and Column field.
     std::bitset<16> bsROW = bscr << 7 >> 7; // Shift left COL[6:0], then again to the right to cut COL from MSB.
     std::cout << " -> as bitrow: " << bsROW << " ROWval: " << (unsigned short)bsROW.to_ulong() << std::endl;
   }
-  std::pair<unsigned, unsigned> getColAndRow(){
+  std::pair<unsigned, unsigned> getColAndRow() const{
     std::bitset<16> bscr(allfields);
     std::bitset<16> bsCOL = bscr >> 9; // Shift right ROW[8:0], to cut ROW from LSB.
     std::bitset<16> bsROW = bscr << 7 >> 7; // Shift left COL[6:0], then again to the right to cut COL from MSB.
@@ -108,20 +108,20 @@ union FEI4_DR { // FEI4 Data Record
     inner.colAndRow = swappedCR;
     return inner.colAndRow;
   }
-  uint16_t getColAndRow(){
+  uint16_t getColAndRow() const{
     return inner.colAndRow;
   }
-  void print(){
+  void print() const{
     std::cout << " -> column and row on a uint16_t: " << unsigned(inner.colAndRow);
     std::cout << " tot1: " << unsigned(inner.tot1);
     std::cout << " tot2: " << unsigned(inner.tot2) << std::endl;
   }
-  void printHex(){
+  void printHex() const{
     std::cout << " -> column and row on a uint16_t: " << std::hex << static_cast<uint32_t>(inner.colAndRow) << std::dec;
     std::cout << " tot1: " << std::hex << static_cast<uint32_t>(inner.tot1) << std::dec;
     std::cout << " tot2: " << std::hex << static_cast<uint32_t>(inner.tot2) << std::dec << std::endl;
   }
-  std::pair<unsigned, unsigned> getTots(){
+  std::pair<unsigned, unsigned> getTots() const{
     return std::make_pair<unsigned, unsigned>(unsigned(inner.tot1), unsigned(inner.tot2));
   }
   uint32_t allfields;
@@ -135,12 +135,12 @@ union FEI4_AR { // FEI4 Address Record
     uint8_t type     : 1;
     uint16_t address : 16;
   } inner;
-  void print(){
+  void print() const{
     std::cout << " -> field1: " << unsigned(inner.field1);
     std::cout << " typeFlag: " << unsigned(inner.type);
     std::cout << " address: " << unsigned(inner.address) << std::endl;
   }
-  void printHex(){
+  void printHex() const{
     std::cout << " -> field1: " << std::hex << static_cast<uint32_t>(inner.field1) << std::dec;
     std::cout << " typeFlag: " << std::hex << static_cast<uint32_t>(inner.type) << std::dec;
     std::cout << " address: " << std::hex << static_cast<uint32_t>(inner.address) << std::dec << std::endl;
@@ -155,11 +155,11 @@ union FEI4_VR { // FEI4 Value Record
     uint8_t field1 : 8;
     uint32_t value : 16;
   } inner;
-  void print(){
+  void print() const{
     std::cout << " -> field1: " << unsigned(inner.field1);
     std::cout << " value: " << unsigned(inner.value) << std::endl;
   }
-  void printHex(){
+  void printHex() const{
     std::cout << " -> field1: " << std::hex << static_cast<uint32_t>(inner.field1) << std::dec;
     std::cout << " value: " << std::hex << static_cast<uint32_t>(inner.value) << std::dec << std::endl;
   }
@@ -173,7 +173,7 @@ union FEI4_SR_CN{
     uint8_t code : 8;
     uint16_t num : 10;
   } inner;
-  void printBits(){
+  void printBits() const{
     std::cout << " -> as hex: " << std::hex << static_cast<uint32_t>(allfields) << std::dec << std::endl;
     std::bitset<16> bscn(allfields);
     std::cout << " -> as bitset: " << bscn << std::endl;
@@ -196,14 +196,14 @@ union FEI4_SR {
     inner.codeNum = swappedCN;
     return inner.codeNum;
   }
-  uint16_t getCodeNum(){
+  uint16_t getCodeNum() const{
     return inner.codeNum;
   }
-  void print(){
+  void print() const{
     std::cout << " -> field1: " << unsigned(inner.field1)
               << " code: " << unsigned(inner.codeNum) << std::endl;
   }
-  void printHex() {
+  void printHex() const {
     std::cout << " -> : field1: " << std::hex << static_cast<uint32_t>(inner.field1) << std::dec
               << " codeNum: " << std::hex << static_cast<uint32_t>(inner.codeNum) << std::dec << std::endl;
   }

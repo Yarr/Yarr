@@ -22,7 +22,7 @@
 class DataProcessor {
     public:
         DataProcessor();
-        virtual ~DataProcessor() {};
+        virtual ~DataProcessor() = default;;
 
         // TODO there must be a nicer way for this
         virtual void connect(ClipBoard<RawDataContainer> *arg_input, std::map<unsigned, ClipBoard<EventDataBase> > *arg_outMap) {}

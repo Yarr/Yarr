@@ -68,8 +68,8 @@ void StdDataGatherer::execPart2() {
         do {
             newData =  g_rx->readData();
             if (newData != NULL) {
-                rdc->add(newData);
                 count += newData->words;
+                rdc->add(newData);
                 newData = NULL;
             }
             std::this_thread::sleep_for(std::chrono::microseconds(100));

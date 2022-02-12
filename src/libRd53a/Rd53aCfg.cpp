@@ -64,11 +64,11 @@ void Rd53aCfg::setChipId(unsigned id) {
     m_chipId = id;
 }
 
-unsigned Rd53aCfg::getChipId() {
+unsigned Rd53aCfg::getChipId() const {
     return m_chipId;
 }
 
-void Rd53aCfg::toFileJson(json &j) {
+void Rd53aCfg::writeConfig(json &j) {
     j["RD53A"]["Parameter"]["Name"] = name;
     j["RD53A"]["Parameter"]["ChipId"] = m_chipId;
     j["RD53A"]["Parameter"]["InjCap"] = m_injCap;
@@ -80,30 +80,30 @@ void Rd53aCfg::toFileJson(json &j) {
         for(unsigned  i=0;i<2;i++)  j["RD53A"]["Parameter"]["RadSen"+std::to_string(sens)+"Par"][i] = m_RadSenPar[sens][i];
     }
 
-    Rd53aGlobalCfg::toFileJson(j);
-    Rd53aPixelCfg::toFileJson(j);
+    Rd53aGlobalCfg::writeConfig(j);
+    Rd53aPixelCfg::writeConfig(j);
 }
 
-void Rd53aCfg::fromFileJson(json &j) {
-    if (!j["RD53A"]["Parameter"]["Name"].empty())
+void Rd53aCfg::loadConfig(const json &j) {
+    if (j.contains({"RD53A","Parameter","Name"}))
         name = j["RD53A"]["Parameter"]["Name"];
-    if (!j["RD53A"]["Parameter"]["ChipId"].empty())
+    if (j.contains({"RD53A","Parameter","ChipId"}))
         m_chipId = j["RD53A"]["Parameter"]["ChipId"];
-    if (!j["RD53A"]["Parameter"]["InjCap"].empty())
+    if (j.contains({"RD53A","Parameter","InjCap"}))
         m_injCap = j["RD53A"]["Parameter"]["InjCap"];
-    if (!j["RD53A"]["Parameter"]["VcalPar"].empty())
+    if (j.contains({"RD53A","Parameter","VcalPar"}))
         for(unsigned  i=0;i<4;i++)  m_vcalPar[i] = j["RD53A"]["Parameter"]["VcalPar"][i];
 
-    if (!j["RD53A"]["Parameter"]["ADCcalPar"].empty())
+    if (j.contains({"RD53A","Parameter","ADCcalPar"}))
         for(unsigned  i=0;i<2;i++)  m_ADCcalPar[i] = j["RD53A"]["Parameter"]["ADCcalPar"][i];
 
     for(unsigned  sens=0;sens<4;sens++) {
-        if (!j["RD53A"]["Parameter"]["TempSen"+std::to_string(sens)+"Par"].empty())
+        if (j.contains({"RD53A","Parameter","TempSen"+std::to_string(sens)+"Par"}))
             for(unsigned  i=0;i<2;i++)  m_TempSenPar[sens][i] = j["RD53A"]["Parameter"]["TempSen"+std::to_string(sens)+"Par"][i];
-        if (!j["RD53A"]["Parameter"]["RadSen"+std::to_string(sens)+"Par"].empty())
+        if (j.contains({"RD53A","Parameter","RadSen"+std::to_string(sens)+"Par"}))
             for(unsigned  i=0;i<2;i++)  m_RadSenPar[sens][i] = j["RD53A"]["Parameter"]["RadSen"+std::to_string(sens)+"Par"][i];
     }
 
-    Rd53aGlobalCfg::fromFileJson(j);
-    Rd53aPixelCfg::fromFileJson(j);
+    Rd53aGlobalCfg::loadConfig(j);
+    Rd53aPixelCfg::loadConfig(j);
 }

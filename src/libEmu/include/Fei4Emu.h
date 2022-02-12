@@ -38,7 +38,7 @@ class Fei4Emu {
         void handleGlobalPulse(uint32_t chipid);
 
         // functions for dealing with sending data to yarr
-        void pushOutput(uint32_t value);
+        void pushOutput(uint32_t value) const;
 
         // Call getFeStream() to see response from FE
         void decodeCommand(uint8_t* cmdStream, std::size_t size);

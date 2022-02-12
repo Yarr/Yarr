@@ -23,7 +23,7 @@ class Fe65p2GlobalReg {
         uint16_t *m_cfg;
         unsigned m_offset;
     public:
-        Fe65p2GlobalReg(){}
+        Fe65p2GlobalReg()= default;
         
         void initReg(uint16_t *cfg, const unsigned offset, const uint16_t cfgBits) {
             m_cfg = cfg;
@@ -98,8 +98,8 @@ class Fe65p2GlobalCfg {
         Fe65p2GlobalReg TrigCount;
 
     protected:
-        void toFileJson(json &j);
-        void fromFileJson(json &j);
+        void writeConfig(json &j);
+        void loadConfig(const json &j);
         
         void init();
         uint16_t cfg[numRegs];

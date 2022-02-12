@@ -67,7 +67,7 @@ class Bdaq {
         };
         
         Bdaq();
-		~Bdaq() {}
+		~Bdaq() = default;
         
         void initialize(bdaqConfig c);
 		daqVersion getDaqVersion();

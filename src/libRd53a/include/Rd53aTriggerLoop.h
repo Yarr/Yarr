@@ -27,8 +27,8 @@ class Rd53aTriggerLoop: public LoopActionBase, public StdTriggerAction {
         void setEdgeMode(uint32_t duration);
         void setNoInject();
         
-        void writeConfig(json &config);
-        void loadConfig(json &config);
+        void writeConfig(json &config) override;
+        void loadConfig(const json &config) override;
 
     private:
         uint32_t m_trigDelay;
@@ -45,10 +45,10 @@ class Rd53aTriggerLoop: public LoopActionBase, public StdTriggerAction {
         bool m_sendEcr;
 
         bool isInner;
-        void init();
-        void execPart1();
-        void execPart2();
-        void end();
+        void init() override;
+        void execPart1() override;
+        void execPart2() override;
+        void end() override;
 };
 
 #endif

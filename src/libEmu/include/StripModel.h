@@ -11,10 +11,10 @@ class StripModel {
     void setValue(float, float, float, float);
     
     float calculateThreshold(uint8_t BVT, uint8_t TrimDAC, uint8_t TrimRange);
-    float calculateBVT(uint8_t BVT);
+    float calculateBVT(uint8_t BVT) const;
     float calculateTrimDAC(uint8_t TrimDAC, uint8_t TrimRange);
     
-    float calculateNoise();
+    float calculateNoise() const;
     static float calculateInjection(uint16_t BCAL);
 
     bool calculateHit(uint16_t BCAL, uint8_t BVT, uint8_t TrimDAC, uint8_t TrimRange);

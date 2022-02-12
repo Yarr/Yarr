@@ -14,16 +14,41 @@ namespace {
     auto alog = logging::make_log("AnalysisAlgorithm");
 }
 
-AnalysisProcessor::AnalysisProcessor() {
+bool AnalysisAlgorithm::isPOILoop(StdParameterLoop *l) {
+    // Determine if a given loop l is iterating a parameter that is in the m_parametersOfInterest
+    // m_parametersOfInterest is set in AnalysisAlgorithm::loadConfig
+
+    if (l) {
+        if ( m_parametersOfInterest.empty() ) {
+            // m_parametersOfInterest is not set, treat any parameter loop as POI loop
+            return true;
+        } else {
+            for (const auto& poi : m_parametersOfInterest) {
+                if (l->getParName() == poi)
+                    return true;
+            }
+
+            // The parameter is this loop is not a parameter of interest
+            return false;
+        }
+    }
+    else {
+        // FIXME
+        // Not a StdParameterLoop loop
+        // Could be other parameter loops that do not derive from StdParameterLoop
+        // For now, just return true and let the decision be made elsewhere
+        return true;
+    }
 }
+
+AnalysisProcessor::AnalysisProcessor() = default;
 
 AnalysisProcessor::AnalysisProcessor(Bookkeeper *b, unsigned ch)
   : bookie(b), channel(ch)
 {
 }
 
-AnalysisProcessor::~AnalysisProcessor() {
-}
+AnalysisProcessor::~AnalysisProcessor() = default;
 
 void AnalysisProcessor::init() {
     for (unsigned i=0; i<algorithms.size(); i++) {
@@ -37,9 +62,9 @@ void AnalysisProcessor::run() {
     thread_ptr.reset( new std::thread( &AnalysisProcessor::process, this ) );
 }
 
-void AnalysisProcessor::loadConfig(json &j){
+void AnalysisProcessor::loadConfig(const json &j){
     for (unsigned i=0; i<algorithms.size(); i++) {
-        if (!j[std::to_string(i)]["config"].empty()){
+        if (j.contains({std::to_string(i),"config"})) {
 	    algorithms[i]->loadConfig(j[std::to_string(i)]["config"]);
 	}
     }
@@ -79,6 +104,8 @@ void AnalysisProcessor::process_core() {
                 algorithms[i]->processHistogram(&*h);
             }
         }
+        // Pass input histogram to output if needed
+        if (storeInputHisto) output->pushData(std::move(h));
     }
 }
 

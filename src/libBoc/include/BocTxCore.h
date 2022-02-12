@@ -14,37 +14,37 @@ class BocTxCore : virtual public TxCore {
 	public:
 		// constructor/destructor
 		BocTxCore();
-		~BocTxCore();
+		~BocTxCore() override;
 
         // Write to FE interface
-        void writeFifo(uint32_t);
-        void setCmdEnable(uint32_t);
-        void setCmdEnable(std::vector<uint32_t> channels);
-        void disableCmd();
-        uint32_t getCmdEnable();
-        bool isCmdEmpty();
-        void releaseFifo();
+        void writeFifo(uint32_t) override;
+        void setCmdEnable(uint32_t) override;
+        void setCmdEnable(std::vector<uint32_t> channels) override;
+        void disableCmd() override;
+        uint32_t getCmdEnable() override;
+        bool isCmdEmpty() override;
+        void releaseFifo() override;
 
         // Word repeater TODO: move to seperate class?
-        void setTrigEnable(uint32_t value);
-        uint32_t getTrigEnable();
-        void maskTrigEnable(uint32_t value, uint32_t mask);
-        bool isTrigDone();
+        void setTrigEnable(uint32_t value) override;
+        uint32_t getTrigEnable() override;
+        void maskTrigEnable(uint32_t value, uint32_t mask) override;
+        bool isTrigDone() override;
 
 
-        void setTrigConfig(enum TRIG_CONF_VALUE cfg);
-        void setTrigFreq(double freq); // in Hz
-        void setTrigCnt(uint32_t count);
-        void setTrigTime(double time); // in s
-        void setTrigWordLength(uint32_t length); // From Msb
-        void setTrigWord(uint32_t *word, uint32_t length); // 4 words, start at Msb
-        void toggleTrigAbort();
+        void setTrigConfig(enum TRIG_CONF_VALUE cfg) override;
+        void setTrigFreq(double freq) override; // in Hz
+        void setTrigCnt(uint32_t count) override;
+        void setTrigTime(double time) override; // in s
+        void setTrigWordLength(uint32_t length) override; // From Msb
+        void setTrigWord(uint32_t *word, uint32_t length) override; // 4 words, start at Msb
+        void toggleTrigAbort() override;
 
         // Trigger interface
-        void setTriggerLogicMask(uint32_t mask);
-        void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode);
-        void resetTriggerLogic();
-        uint32_t getTrigInCount();
+        void setTriggerLogicMask(uint32_t mask) override;
+        void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) override;
+        void resetTriggerLogic() override;
+        uint32_t getTrigInCount() override;
 
         void setCom(BocCom *com) {
             m_com = com;

@@ -33,12 +33,12 @@ enum LoopStyle {
 
 /// Store of position within the scan hierarchy
 class LoopStatus {
+   private:
         std::vector<unsigned> statVec;
         std::vector<LoopStyle> styleVec;
 
     public:
-        /// Use to explicitly mark no location
-        static LoopStatus empty() { return LoopStatus({}, {}); }
+        LoopStatus()=default;
 
         LoopStatus(const std::vector<unsigned> &&vec, const std::vector<LoopStyle> &vec2) : statVec(vec), styleVec(vec2) {}
         size_t size() const { return statVec.size(); }
@@ -55,7 +55,7 @@ class LoopStatus {
 /// Where we are in the scan engine (this one gets updated)
 class LoopStatusMaster {
     public:
-        LoopStatusMaster() {}
+        LoopStatusMaster() = default;
 
         LoopStatusMaster(const LoopStatusMaster &l) = delete;
         LoopStatus& operator=(const LoopStatus &l) = delete;

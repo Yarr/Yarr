@@ -43,8 +43,8 @@ class Rd53aPixelCfg {
         }
 
     protected:
-        void toFileJson(json &j);
-        void fromFileJson(json &j);
+        void writeConfig(json &j);
+        void loadConfig(const json &j);
 
         struct pixelFields {
             unsigned en : 1;

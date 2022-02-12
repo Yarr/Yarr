@@ -23,7 +23,7 @@ template<class FE>
 class EmuTxCore : virtual public TxCore {
     public:
         EmuTxCore();
-        ~EmuTxCore();
+        ~EmuTxCore() override;
 
         void setCom(uint32_t chn, EmuCom *com);
         EmuCom* getCom(uint32_t chn);
@@ -93,7 +93,7 @@ EmuTxCore<FE>::EmuTxCore() {
 }
 
 template<class FE>
-EmuTxCore<FE>::~EmuTxCore() {}
+EmuTxCore<FE>::~EmuTxCore() = default;
 
 template<class FE>
 void EmuTxCore<FE>::setCom(uint32_t chn, EmuCom *com) {

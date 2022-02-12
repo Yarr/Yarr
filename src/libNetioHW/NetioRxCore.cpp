@@ -173,12 +173,12 @@ bool NetioRxCore::isBridgeEmpty(){ // True, if queues are stable.
   return m_nioh.isAllStable();
 }
 
-void NetioRxCore::toFileJson(json &j) {
+void NetioRxCore::writeConfig(json &j) {
   j["NetIO"]["host"] = m_felixhost;
   j["NetIO"]["rxport"] = m_felixport;
 }
 
-void NetioRxCore::fromFileJson(json &j) {
+void NetioRxCore::loadConfig(const json &j) {
   m_felixhost = j["NetIO"]["host"];
   m_felixport = j["NetIO"]["rxport"];
   m_fetype = j["NetIO"]["fetype"];

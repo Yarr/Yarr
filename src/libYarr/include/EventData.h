@@ -33,7 +33,7 @@ struct FrontEndHit {
 class FrontEndCluster {
     public :
         FrontEndCluster() { nHits = 0; }
-        ~FrontEndCluster() {}
+        ~FrontEndCluster() = default;
 
         void addHit(FrontEndHit* hit) {
             hits.push_back(hit);
@@ -85,7 +85,7 @@ class FrontEndEvent {
             nHits = 0;
             nClusters = 0;
         }
-        ~FrontEndEvent() {};
+        ~FrontEndEvent() = default;;
         void addEvent(const FrontEndEvent& event) {
             hits.insert(hits.end(), event.hits.begin(), event.hits.end());
             nHits += event.nHits;
@@ -118,9 +118,9 @@ class FrontEndData : public EventDataBase {
 
     public:
 
-        FrontEndData() : lStat(LoopStatus::empty()) {}
+        FrontEndData()=default;
         FrontEndData(LoopStatus& l) : lStat(l) {}
-        ~FrontEndData() {};
+        ~FrontEndData() override = default;;
 
         void delLastEvent() {
             events.pop_back();

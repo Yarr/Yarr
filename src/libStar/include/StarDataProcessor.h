@@ -22,7 +22,7 @@ class StarDataProcessor : public DataProcessor {
     public:
         // TODO processor should receive whole chip config seperatly
         StarDataProcessor();
-        ~StarDataProcessor();
+        ~StarDataProcessor() override;
         
         void connect(ClipBoard<RawDataContainer> *arg_input, std::map<unsigned, ClipBoard<EventDataBase> > *arg_outMap) override {
             input = arg_input;

@@ -122,7 +122,7 @@ void NetioTxCore::writeFifo(uint32_t elink, uint32_t value){
   writeFifo(&m_fifo[elink],value);
 }
 
-void NetioTxCore::writeFifo(vector<uint8_t> *fifo, uint32_t value){
+void NetioTxCore::writeFifo(vector<uint8_t> *fifo, uint32_t value) const{
   if(m_extend==4){
     for(int32_t b=3;b>=0;b--){
       for(int32_t i=0;i<4;i++){
@@ -140,7 +140,7 @@ void NetioTxCore::writeFifo(vector<uint8_t> *fifo, uint32_t value){
   }
 }
 
-void NetioTxCore::prepareFifo(vector<uint8_t> *fifo){
+void NetioTxCore::prepareFifo(vector<uint8_t> *fifo) const{
 
   if(m_padding==true){
     nlog->trace("Padding");
@@ -417,7 +417,7 @@ void NetioTxCore::printFifo(uint32_t elink){
   std:cout << dec << endl;
 }
 
-void NetioTxCore::toFileJson(json &j)  {
+void NetioTxCore::writeConfig(json &j)  {
   j["NetIO"]["host"] = m_felixhost;
   j["NetIO"]["txport"] = m_felixport;
   j["NetIO"]["manchester"] = m_manchester;
@@ -425,7 +425,7 @@ void NetioTxCore::toFileJson(json &j)  {
   j["NetIO"]["extend"] = (m_extend == 4);
 }
 
-void NetioTxCore::fromFileJson(json &j){
+void NetioTxCore::loadConfig(const json &j){
    m_felixhost  = j["NetIO"]["host"];
    m_felixport  = j["NetIO"]["txport"];
    m_manchester = j["NetIO"]["manchester"];
