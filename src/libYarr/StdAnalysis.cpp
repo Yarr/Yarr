@@ -628,7 +628,7 @@ double reverseScurveFct(double x, const double *par) {
 void ScurveFitter::processHistogram(HistogramBase *h) {
     cnt++;
     // Check if right Histogram
-    if (h->getName() != OccupancyMap::outputName())
+    if (h->getName().find(OccupancyMap::outputName()) != 0)
         return;
 
     Histo2d *hh = (Histo2d*) h;
@@ -679,7 +679,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 
                 // Got all data, finish up Analysis
                 // TODO This requires the loop to run from low to high and a hit in the last bin
-                if (vcal == vcalMax) {
+                if (vcal >= vcalMax) {
                     // Scale histos
                     //histos[ident]->scale(1.0/(double)injections);
                     lm_status_struct status;
@@ -742,7 +742,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         timeDist[outerIdent].reset(hh1);
                     }
 
-                    double chi2= status.fnorm/(double)status.nfev;
+                    double chi2= status.fnorm/(double)(vcalBins - n_par);
 
                     if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0 
                             && chi2 < 2.5 && chi2 > 1e-6
