@@ -164,6 +164,8 @@ class ScurveFitter : public AnalysisAlgorithm {
         bool useScap;
         bool useLcap;
         bool reverse = false;
+
+        bool m_dumpDebugScurvePlots=false;
 };
 
 class OccGlobalThresholdTune : public AnalysisAlgorithm {
