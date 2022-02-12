@@ -87,8 +87,11 @@ void Rd53a::enableAll() {
     }
 }
 
-void Rd53a::configure() {
+void Rd53a::resetAll() {
     this->configureInit();
+}
+
+void Rd53a::configure() {
     // Turn off clock to matrix
     uint16_t tmp_enCoreColSync = EnCoreColSync.read();
     uint16_t tmp_enCoreColLin1 = EnCoreColLin1.read();
