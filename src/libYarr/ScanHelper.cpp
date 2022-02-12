@@ -1,7 +1,6 @@
 #include "ScanHelper.h"
 
 #include <iostream>
-#include <fstream>
 #include <exception>
 #include <iomanip>
 #include <numeric>
@@ -10,12 +9,18 @@
 #include "AllChips.h"
 #include "AllHistogrammers.h"
 #include "AllHwControllers.h"
+#include "AllProcessors.h"
+#include "AllStdActions.h"
 
 #include "AnalysisAlgorithm.h"
 #include "HistogramAlgorithm.h"
 #include "StdHistogrammer.h" // needed for special handling of DataArchiver
+#include "ScanFactory.h"
 
 #include "logging.h"
+#include "LoggingConfig.h"
+
+#include "ScanOpts.h"
 
 namespace {
     auto shlog = logging::make_log("ScanHelper");
@@ -82,9 +87,8 @@ namespace ScanHelper {
         }
         return j;
     }
-
     // Load controller config and return fully loaded object
-    std::unique_ptr<HwController> loadController(json &ctrlCfg) {
+    std::unique_ptr<HwController> loadController(const json &ctrlCfg) {
         std::unique_ptr<HwController> hwCtrl = nullptr;
 
         shlog->info("Loading controller ...");
@@ -115,8 +119,13 @@ namespace ScanHelper {
         return hwCtrl;
     }
 
+
+    void buildConfig(json &j) {
+
+    }
+
     // Load connectivyt and load chips into bookkeeper
-    std::string loadChips(json &config, Bookkeeper &bookie, HwController *hwCtrl, std::map<FrontEnd*, std::string> &feCfgMap, std::string &outputDir) {
+    std::string loadChips(const json &config, Bookkeeper &bookie, HwController *hwCtrl, std::map<FrontEnd*, std::string> &feCfgMap, std::string &outputDir) {
         std::string chipType;
         if (!config.contains("chipType") || !config.contains("chips")) {
             shlog->error("Invalid config, chip type or chips not specified!");
@@ -181,7 +190,11 @@ namespace ScanHelper {
         return chipType;        
     }
 
-void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& histogrammers, const std::string& scanType, std::vector<FrontEnd*>& feList, ScanBase* s, std::string outputDir) {
+void buildHistogrammers( std::map<FrontEnd*,
+                         std::unique_ptr<DataProcessor>>& histogrammers,
+                         const std::string& scanType,
+                         std::vector<FrontEnd*>& feList,
+                         ScanBase* s, std::string outputDir) {
     bhlog->info("Loading histogrammer ...");
     json scanCfg;
     try {
@@ -244,7 +257,10 @@ void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& hi
 // A 2D vector of int to store algorithm indices for all tiers of analyses
 using AlgoTieredIndex = std::vector<std::vector<int>>;
 
-void buildAnalyses( std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcessor>> >& analyses, const std::string& scanType, Bookkeeper& bookie, ScanBase* s, FeedbackClipboardMap *fbData, int mask_opt) {
+void buildAnalyses( std::map<FrontEnd*,
+                    std::vector<std::unique_ptr<DataProcessor>> >& analyses,
+                    const std::string& scanType, Bookkeeper& bookie,
+                    ScanBase* s, FeedbackClipboardMap *fbData, int mask_opt) {
     if (scanType.find("json") != std::string::npos) {
         balog->info("Loading analyses ...");
         json scanCfg;
@@ -332,7 +348,7 @@ void buildAnalyses( std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcesso
     }
 }
 
-void buildAnalysisHierarchy(AlgoTieredIndex& indexTiers, json& anaCfg) {
+void buildAnalysisHierarchy(AlgoTieredIndex &indexTiers, const json &anaCfg) {
     if (!anaCfg.contains("n_count"))
         throw std::runtime_error("No \"n_count\" field in analysis config");
 
@@ -413,4 +429,287 @@ void buildAnalysisHierarchy(AlgoTieredIndex& indexTiers, json& anaCfg) {
     } // while (not indices.empty())
 }
 
+std::string toString(int value,int digitsCount)
+{
+    std::ostringstream os;
+    os<<std::setfill('0')<<std::setw(digitsCount)<<value;
+    return os.str();
+}
+
+
+std::string getHostname() {
+  std::string hostname = "default_host";
+  if (getenv("HOSTNAME")) {
+    hostname = getenv("HOSTNAME");
+  } else {
+    spdlog::error("HOSTNAME environmental variable not found ... using default: {}", hostname);
+  }
+  return hostname;
+}
+
+std::string defaultDbDirPath() {
+  std::string home;
+  if(getenv("HOME")) {
+    home = getenv("HOME");
+  } else {
+    home = ".";
+    spdlog::error("HOME not set, using local directory for configuration");
+  }
+  return home+"/.yarr/localdb";
+}
+
+std::string defaultDbCfgPath() {
+  return defaultDbDirPath()+"/"+getHostname()+"_database.json";
+}
+
+std::string defaultDbSiteCfgPath() {
+  return defaultDbDirPath()+"/"+getHostname()+"_site.json";
+}
+
+std::string defaultDbUserCfgPath() {
+  return defaultDbDirPath()+"/user.json";
+}
+
+std::unique_ptr<ScanBase> buildScan( const std::string& scanType, Bookkeeper& bookie,  FeedbackClipboardMap *fbData) {
+
+    shlog->info("Found Scan config, constructing scan ...");
+    std::unique_ptr<ScanFactory> s ( new ScanFactory(&bookie, fbData) );
+    json scanCfg;
+    try {
+        scanCfg = ScanHelper::openJsonFile(scanType);
+    } catch (std::runtime_error &e) {
+        shlog->error("Opening scan config: {}", e.what());
+        throw("buildScan failure");
+    }
+
+    s->loadConfig(scanCfg);
+
+    return s;
+}
+
+std::string  createOutputDir(const std::string &scanType, int runCounter, std::string &outputDir) {
+    // Generate output directory path
+    std::size_t pathPos = scanType.find_last_of('/');
+    std::size_t suffixPos = scanType.find_last_of('.');
+    std::string strippedScan;
+    if (pathPos != std::string::npos && suffixPos != std::string::npos) {
+        strippedScan = scanType.substr(pathPos + 1, suffixPos - pathPos - 1);
+    } else {
+        strippedScan = scanType;
+    }
+
+    outputDir += (ScanHelper::toString(runCounter, 6) + "_" + strippedScan + "/");
+    std::string cmdStr = "mkdir -p "; //I am not proud of this ):
+    cmdStr += outputDir;
+    int sysExSt = system(cmdStr.c_str());
+    if (sysExSt != 0) {
+        shlog->error("Error creating output directory - plots might not be saved!");
+    }
+    return strippedScan;
+}
+
+void createSymlink(const std::string &dataDir,const std::string &strippedScan, int runCounter) {
+    std::string cmdStr = "rm -f " + dataDir + "last_scan && ln -s " + ScanHelper::toString(runCounter, 6) + "_" + strippedScan + " " + dataDir + "last_scan";
+    int sysExSt = system(cmdStr.c_str());
+    if(sysExSt != 0){
+        shlog->error("Error creating symlink to output directory!");
+    }
+}
+std::string timestamp(std::time_t now) {
+    struct tm *lt = std::localtime(&now);
+    char timestamp[20];
+    strftime(timestamp, 20, "%F_%H:%M:%S", lt);
+    return timestamp;
+}
+void banner(std::shared_ptr<spdlog::logger> &logger, const std::string &msg) {
+    unsigned len=msg.length()+8;
+    std::string frame = "\033[1;31m" + std::string(len,'#') + "\033[0m";
+    std::string body  = "\033[1;31m##  " + msg + "  ##\033[0m";
+    logger->info(frame);
+    logger->info(body);
+    logger->info(frame);
+}
+
+void listChips() {
+    for(std::string &chip_type: StdDict::listFrontEnds()) {
+        std::cout << "  " << chip_type << "\n";
+    }
+}
+
+void listProcessors() {
+    for(std::string &proc_type: StdDict::listDataProcessors()) {
+        std::cout << "  " << proc_type << "\n";
+    }
+}
+
+void listScans() {
+    for(std::string &scan_name: StdDict::listScans()) {
+        std::cout << "  " << scan_name << "\n";
+    }
+}
+
+void listControllers() {
+    for(auto &h: StdDict::listHwControllers()) {
+        std::cout << "  " << h << std::endl;
+    }
+}
+
+void listScanLoopActions() {
+    for(auto &la: StdDict::listLoopActions()) {
+        std::cout << "  " << la << std::endl;
+    }
+}
+
+void listKnown() {
+    std::cout << " Known HW controllers:\n";
+    listControllers();
+
+    std::cout << " Known Chips:\n";
+    listChips();
+
+    std::cout << " Known Processors:\n";
+    listProcessors();
+
+    std::cout << " Known Scans:\n";
+    listScans();
+
+    std::cout << " Known ScanLoop actions:\n";
+    listScanLoopActions();
+
+    std::cout << " Known loggers:\n";
+    logging::listLoggers();
+}
+
+bool lsdir(const std::string &dataDir) {
+     std::string lsCmd = "ls -1 " + dataDir;
+     int result = system(lsCmd.c_str());
+     return result>=0;
+}
+
+void printHelp() {
+    std::string dbCfgPath = defaultDbCfgPath();
+    std::string dbSiteCfgPath = defaultDbSiteCfgPath();
+    std::string dbUserCfgPath = defaultDbDirPath();
+
+    std::cout << "Help:" << std::endl;
+    std::cout << " -h: Shows this." << std::endl;
+    std::cout << " -n <threads> : Set number of processing threads." << std::endl;
+    std::cout << " -s <scan_type> : Scan config" << std::endl;
+    std::cout << " -c <connectivity.json> [<cfg2.json> ...]: Provide connectivity configuration, can take multiple arguments." << std::endl;
+    std::cout << " -r <ctrl.json> Provide controller configuration." << std::endl;
+    std::cout << " -t <target_charge> [<tot_target>] : Set target values for threshold/charge (and tot)." << std::endl;
+    std::cout << " -p: Enable plotting of results." << std::endl;
+    std::cout << " -o <dir> : Output directory. (Default ./data/)" << std::endl;
+    std::cout << " -m <int> : 0 = pixel masking disabled, 1 = start with fresh pixel mask, default = pixel masking enabled" << std::endl;
+    std::cout << " -k: Report known items (Scans, Hardware etc.)\n";
+    std::cout << " -W: Enable using Local DB." << std::endl;
+    std::cout << " -d <database.json> : Provide database configuration. (Default " << dbCfgPath << ")" << std::endl;
+    std::cout << " -i <site.json> : Provide site configuration. (Default " << dbSiteCfgPath << ")" << std::endl;
+    std::cout << " -u <user.json> : Provide user configuration. (Default " << dbUserCfgPath << ")" << std::endl;
+    std::cout << " -l <log_cfg.json> : Provide logger configuration." << std::endl;
+    std::cout << " -Q: Set QC scan mode." << std::endl;
+    std::cout << " -I: Set interactive mode." << std::endl;
+}
+int parseOptions(int argc, char *argv[], ScanOpts &scanOpts) {
+    scanOpts.dbCfgPath = defaultDbCfgPath();
+    scanOpts.dbSiteCfgPath = defaultDbSiteCfgPath();
+    scanOpts.dbUserCfgPath = defaultDbUserCfgPath();
+    for (int i=1;i<argc;i++)scanOpts. commandLineStr.append(std::string(argv[i]).append(" "));
+    scanOpts.progName=argv[0];
+    int c;
+    while ((c = getopt(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:l:QI")) != -1) {
+        int count = 0;
+        switch (c) {
+            case 'h':
+                printHelp();
+                return 0;
+                break;
+            case 'n':
+                scanOpts.nThreads = atoi(optarg);
+                break;
+                break;
+            case 'k':
+                ScanHelper::listKnown();
+                return 0;
+            case 's':
+                scanOpts.scan_config_provided = true;
+                scanOpts.scanType = std::string(optarg);
+                break;
+            case 'm':
+                scanOpts.mask_opt = atoi(optarg);
+                break;
+            case 'c':
+                optind -= 1; //this is a bit hacky, but getopt doesn't support multiple
+                //values for one option, so it can't be helped
+                for (; optind < argc && *argv[optind] != '-'; optind += 1) {
+                    scanOpts.cConfigPaths.push_back(std::string(argv[optind]));
+                }
+                break;
+            case 'r':
+                scanOpts.ctrlCfgPath = std::string(optarg);
+                break;
+            case 'p':
+                scanOpts.doPlots = true;
+                break;
+            case 'o':
+                scanOpts.outputDir = std::string(optarg);
+                if (scanOpts.outputDir.back() != '/')
+                    scanOpts.outputDir = scanOpts.outputDir + "/";
+                break;
+            case 't':
+                optind -= 1; //this is a bit hacky, but getopt doesn't support multiple
+                //values for one option, so it can't be helped
+                for (; optind < argc && *argv[optind] != '-'; optind += 1) {
+                    switch (count) {
+                        case 0:
+                            scanOpts.target_charge = atoi(argv[optind]);
+                            break;
+                        case 1:
+                            scanOpts.target_tot = atoi(argv[optind]);
+                            break;
+                        default:
+                            spdlog::error("Can only receive max. 2 parameters with -t!!");
+                            break;
+                    }
+                    count++;
+                }
+                break;
+            case 'W': // Write to DB
+                scanOpts.dbUse = true;
+                break;
+            case 'd': // Database config file
+                scanOpts.dbCfgPath = std::string(optarg);
+                break;
+            case 'l': // Logger config file
+                scanOpts.logCfgPath = std::string(optarg);
+                break;
+            case 'i': // Database config file
+                scanOpts.dbSiteCfgPath = std::string(optarg);
+                break;
+            case 'u': // Database config file
+                scanOpts.dbUserCfgPath = std::string(optarg);
+                break;
+            case 'Q':
+                scanOpts.setQCMode = true;
+                break;
+            case 'I':
+                scanOpts.setInteractiveMode = true;
+                break;
+            case '?':
+                if (optopt == 's' || optopt == 'n') {
+                    spdlog::error("Option {} requires a parameter! (Proceeding with default)", (char) optopt);
+                } else if (optopt == 'g' || optopt == 'c') {
+                    spdlog::error("Option {} requires a parameter! Aborting... ", (char) optopt);
+                    return -1;
+                } else {
+                    spdlog::error("Unknown parameter: {}", (char) optopt);
+                }
+                break;
+            default:
+                spdlog::critical("Error while parsing command line parameters!");
+                return -1;
+        }
+    }
+    return 1;
+}
 } // Close namespace}
