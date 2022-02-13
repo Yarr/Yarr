@@ -116,19 +116,20 @@ job_test_code_coverage:
 job_run_codechecker:
     stage: build
     timeout: 3 hours
-    when: manual
-    artifacts:
-        paths:
-          - checks
+    only:
+        - merge_requests
     script:
         - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
         - source scl_source enable llvm-toolset-11.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
         - scripts/run_codechecker.sh -j 4
+    after_script:
+        - cat gl-code-quality-report.json
     artifacts:
-        paths: 
-            - checks
-
-
+        paths:
+          - checks
+        reports:
+            codequality: gl-code-quality-report.json
+            paths: [gl-code-quality-report.json]
 
 deploy_codechecker:
     stage: deploy

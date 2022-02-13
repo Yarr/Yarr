@@ -40,4 +40,5 @@ CodeChecker analyze checks/compilation_cmds_filtered.json -j ${jobs} -o checks/r
   --tidy-config scripts/tidy.config
 
 CodeChecker parse --trim-path-prefix $(pwd) -e html checks/results -o checks/html
+CodeChecker parse --trim-path-prefix $(pwd) -e codeclimate ./reports > gl-code-quality-report.json
 exit 0
