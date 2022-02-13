@@ -121,16 +121,21 @@ job_run_codechecker:
         paths:
           - checks
     script:
-    - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-    - source scl_source enable llvm-toolset-11.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-    - scripts/run_codechecker.sh -j 4
+        - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+        - source scl_source enable llvm-toolset-11.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+        - scripts/run_codechecker.sh -j 4
+    artifacts:
+        paths: 
+            - checks
+
+
 
 deploy_codechecker:
     stage: deploy
     dependencies: ['job_run_codechecker']
     variables:
         "EOS_PATH" : "/eos/user/t/theim/www/yarr/cc/new_folder"
-        "CI_OUTPUT_DIR" : "site/"
+        "CI_OUTPUT_DIR" : "checks/html"
     image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
     script:
         - deploy-eos
