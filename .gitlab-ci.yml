@@ -127,9 +127,9 @@ job_run_codechecker:
     artifacts:
         paths:
           - checks
+          - gl-code-quality-report.json
         reports:
             codequality: gl-code-quality-report.json
-            paths: [gl-code-quality-report.json]
 
 deploy_codechecker:
     stage: deploy
