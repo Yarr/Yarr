@@ -131,16 +131,6 @@ job_run_codechecker:
         reports:
             codequality: gl-code-quality-report.json
 
-deploy_codechecker:
-    stage: deploy
-    dependencies: ['job_run_codechecker']
-    variables:
-        "EOS_PATH" : "/eos/user/t/theim/www/yarr/cc/new_folder"
-        "CI_OUTPUT_DIR" : "checks/html"
-    image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
-    script:
-        - deploy-eos
-
 deploy_coverage:
     stage: deploy
     dependencies: ["job_test_code_coverage"]
