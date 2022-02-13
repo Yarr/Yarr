@@ -49,7 +49,7 @@ bool SimpleI2C::busyWait()
 
 uint8_t SimpleI2C::read(uint8_t dev)
 {
-	uint8_t ret;
+	uint8_t ret = 0;
 
 	read(dev, &ret, 1);
 
