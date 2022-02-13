@@ -129,11 +129,10 @@ deploy_codechecker:
     stage: deploy
     dependencies: ['job_run_codechecker']
     variables:
-        "EOS_PATH" : "/eos/user/t/theim/www/yarr/cc/${CI_COMMIT_REF_NAME}/"
-        "CI_OUTPUT_DIR" : "checks/html"
+        "EOS_PATH" : "/eos/user/t/theim/www/yarr/cc/new_folder"
+        "CI_OUTPUT_DIR" : "site/"
     image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
     script:
-        - mkdir -p /eos/user/t/theim/www/yarr/cc/${CI_COMMIT_REF_NAME}/
         - deploy-eos
 
 deploy_coverage:
@@ -159,7 +158,6 @@ build_docs:
     artifacts:
         paths:
             - site
-          
 
 deploy_master:
     stage: deploy
