@@ -116,8 +116,8 @@ job_test_code_coverage:
 job_run_codechecker:
     stage: build
     timeout: 3 hours
-    only:
-        - merge_requests
+    rules:
+        - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     script:
         - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
         - source scl_source enable llvm-toolset-11.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
