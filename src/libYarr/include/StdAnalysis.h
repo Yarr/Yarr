@@ -100,7 +100,7 @@ class NPointGain : public AnalysisAlgorithm {
         void end() override;
         void loadConfig(const json& config) override;
 
-        bool requireDependency() override {return true;}
+        bool requireDependency() override {return !m_skipDependencyCheck;}
 
     private:
         std::unique_ptr<Histo1d> respCurve;
@@ -114,6 +114,8 @@ class NPointGain : public AnalysisAlgorithm {
         unsigned par_min;
         unsigned par_max;
         unsigned par_step;
+
+	bool m_skipDependencyCheck=false;
 };
 
 class ScurveFitter : public AnalysisAlgorithm {
