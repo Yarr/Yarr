@@ -1,0 +1,19 @@
+{
+  "ctrlCfg": {
+    "type": "FelixClient",
+    "cfg": {
+      "FelixClient": {
+        "local_ip_or_interface": "lo",
+        "log_level": "info",
+        "bus_interface": "<local_interface>",
+        "bus_dir": "./bus",
+        "bus_group_name": "FELIX",
+        "verbose_bus": false,
+        "verbose_zyre": false,
+        "timeout": 0,
+        "netio_pages": 256,
+        "netio_pagesize": 65536
+      }
+    }
+  }
+}
