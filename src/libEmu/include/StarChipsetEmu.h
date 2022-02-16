@@ -35,6 +35,8 @@ public:
   uint16_t getBC() const {return m_bccnt;}
   void setBC(uint16_t bc) {m_bccnt = bc;}
 
+  void fillL0Buffer();
+
 private:
 
   // FE data format

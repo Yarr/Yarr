@@ -74,6 +74,10 @@ void StarEmu::decodeLCB(LCB::Frame frame) {
         return;
     }
 
+    // Overwrite data that are older than L0 buffer depth
+    // Fill L0 buffer with zeros and BCID for this LCB frame (4 BCs)
+    this->fillL0Buffer();
+
     // {code0, code1}
     uint8_t code0 = (frame >> 8) & 0xff;
     uint8_t code1 = frame & 0xff;

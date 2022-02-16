@@ -69,6 +69,11 @@ private:
         for (auto& emu : chipEmus) emu->setBC(m_bccnt);
     }
 
+    // L0 buffer
+    void fillL0Buffer() {
+        for (auto& emu : chipEmus) emu->fillL0Buffer();
+    }
+
     ////////////////////////////////////////
     /** These are ring buffers owned by EmuController */
     EmuCom * m_txRingBuffer;  // for LCB
