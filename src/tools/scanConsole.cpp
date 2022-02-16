@@ -192,6 +192,13 @@ int main(int argc, char *argv[]) {
     ScanHelper::banner(logger,"Configure FEs");
 
     std::chrono::steady_clock::time_point cfg_start = std::chrono::steady_clock::now();
+
+    // Before configuring each FE, broadcast reset to all tx channels
+    // Enable all tx channels
+    hwCtrl->setCmdEnable(bookie->getTxMaskUnique());
+    // Use global FE
+    bookie->getGlobalFe()->resetAll();
+
     for ( FrontEnd* fe : bookie->feList ) {
         auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
         logger->info("Configuring {}", feCfg->getName());

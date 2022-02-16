@@ -40,6 +40,7 @@ class FrontEnd {
        
         virtual void configure()=0;
         virtual int checkCom() {return 1;}
+        virtual void resetAll() {}
 
         /// Write to a register using a string name (most likely from json)
         virtual void writeNamedRegister(std::string name, uint16_t value) = 0;

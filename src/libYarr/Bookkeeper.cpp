@@ -6,6 +6,8 @@
 // # Comment: Global container for data
 // ################################
 
+#include <set>
+
 #include "Bookkeeper.h"
 
 #include "logging.h"
@@ -125,4 +127,28 @@ std::vector<uint32_t> Bookkeeper::getRxMask() {
         }
     }
     return activeChannels;
+}
+
+std::vector<uint32_t> Bookkeeper::getTxMaskUnique() {
+    std::set<uint32_t> uniqueChannels;
+    for (FrontEnd* fe : feList) {
+        if (fe->isActive()) {
+            uniqueChannels.insert(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+        }
+    }
+
+    std::vector<uint32_t> vecChannels(uniqueChannels.begin(), uniqueChannels.end());
+    return vecChannels;
+}
+
+std::vector<uint32_t> Bookkeeper::getRxMaskUnique() {
+    std::set<uint32_t> uniqueChannels;
+    for (FrontEnd* fe : feList) {
+        if (fe->isActive()) {
+            uniqueChannels.insert(dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
+        }
+    }
+
+    std::vector<uint32_t> vecChannels(uniqueChannels.begin(), uniqueChannels.end());
+    return vecChannels;
 }

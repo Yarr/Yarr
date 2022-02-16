@@ -33,6 +33,7 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
             m_chipId = 8;
         }
 
+        void resetAll() override;
         void configure() override;
         void configureInit();
         void configureGlobal();

@@ -48,6 +48,10 @@ class Bookkeeper {
         std::vector<uint32_t> getTxMask();
         std::vector<uint32_t> getRxMask();
 
+        // mask of unique active channels
+        std::vector<uint32_t> getTxMaskUnique();
+        std::vector<uint32_t> getRxMaskUnique();
+
         void setTargetTot(int v) {target_tot = v;}
         int getTargetTot() const {return target_tot;}
         
