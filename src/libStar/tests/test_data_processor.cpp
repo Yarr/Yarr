@@ -52,9 +52,9 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
   // Could copy uint32, but then the extra bytes are undefined 
   std::copy(packet_bytes, packet_bytes+len_bytes, (uint8_t*)buffer);
 
-  RawData *rd = new RawData(chan, buffer, len);
+  std::shared_ptr<RawData> rd = std::make_shared<RawData>(chan, buffer, len);
   std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(LoopStatus()));
-  rdc->add(rd);
+  rdc->add(std::move(rd));
   rd_cp.pushData(std::move(rdc));
 
   rd_cp.finish();
