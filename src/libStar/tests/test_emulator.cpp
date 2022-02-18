@@ -912,7 +912,6 @@ void checkData(HwController* emu, std::deque<PacketT>& expected, const PacketT *
         compareOutputs(data.get(), expected_packet);
       }
 
-      delete [] data->buf;
     }
 
     data = emu->readData();
