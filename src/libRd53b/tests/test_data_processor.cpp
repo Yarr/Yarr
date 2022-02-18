@@ -31,10 +31,10 @@ TEST_CASE("Rd53bDataProcessor", "[rd53b][data_processor]") {
 
   std::copy(words, words+nWords, buffer);
 
-  RawData *rd = new RawData(chan, buffer, nWords);
+  std::shared_ptr<RawData> rd = std::make_shared<RawData>(chan, buffer, nWords);
 
   std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(LoopStatus()));
-  rdc->add(rd);
+  rdc->add(std::move(rd));
   rd_cp.pushData(std::move(rdc));
 
   rd_cp.finish();
