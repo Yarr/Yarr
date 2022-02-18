@@ -83,7 +83,7 @@ void BdaqRxCore::checkRxSync() {
 	}
 }
 
-RawData* BdaqRxCore::readData() {
+std::shared_ptr<RawData> BdaqRxCore::readData() {
     uint size = fifo.getAvailableWords();
     if (size > 0) {
         std::vector<uint32_t> inBuf;
@@ -92,11 +92,11 @@ RawData* BdaqRxCore::readData() {
         uint32_t* outBuf = new uint32_t[size*activeChannels.size()];
         size = buildStream(outBuf, size);
         if (size > 0) {
-            return new RawData(0x0, outBuf, size);
+            return std::make_shared<RawData>(0x0, outBuf, size);
         } 
-        return NULL;
+        return std::shared_ptr<RawData>(NULL);
     }
-    return NULL;
+    return std::shared_ptr<RawData>(NULL);
 }
 
 void BdaqRxCore::flushBuffer() {

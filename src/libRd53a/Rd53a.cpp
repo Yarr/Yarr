@@ -279,7 +279,7 @@ int Rd53a::checkCom() {
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     // TODO not happy about this, rx knowledge should not be here
-    RawData *data = m_rxcore->readData();
+    std::shared_ptr<RawData> data = m_rxcore->readData();
 
     if (data != NULL) {
         if (!(data->words == 2 || data->words == 4 || data->words == 8 || data->words == 12 || data->words == 6)) {

@@ -59,7 +59,7 @@ void StdDataGatherer::execPart2() {
     SPDLOG_LOGGER_WARN(sdglog, "IMPORTANT! Going into endless loop unless timelimit is set, interrupt with ^c (SIGINT)!");
 
     std::vector<RawData*> tmp_storage;
-    RawData *newData = NULL;
+    std::shared_ptr<RawData> newData;
     while (done == 0) {
         std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(g_stat->record()));
         rate = g_rx->getDataRate();
@@ -69,13 +69,12 @@ void StdDataGatherer::execPart2() {
             newData =  g_rx->readData();
             if (newData != NULL) {
                 count += newData->words;
-                rdc->add(newData);
+                rdc->add(std::move(newData));
                 newData = NULL;
             }
             std::this_thread::sleep_for(std::chrono::microseconds(100));
         } while (newData != NULL && signaled == 0 && !killswitch );
-        if (newData != NULL)
-            delete newData;
+        
         storage->pushData(std::move(rdc));
         if (signaled == 1 || killswitch) {
             SPDLOG_LOGGER_WARN(sdglog, "Caught interrupt, stopping data taking!");

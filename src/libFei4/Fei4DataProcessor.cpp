@@ -95,7 +95,7 @@ void Fei4DataProcessor::process_core() {
         //if (size == 0)
         //std::cout << "Empty!" << std::endl;
         for(unsigned c=0; c<size; c++) {
-            RawData *curIn = new RawData(curInV->adr[c], curInV->buf[c], curInV->words[c]);
+            std::shared_ptr<RawData> curIn = curInV->data[c];
             // Process
             unsigned words = curIn->words;
             for (unsigned i=0; i<words; i++) {
@@ -160,7 +160,6 @@ void Fei4DataProcessor::process_core() {
                 if (badCnt > 10)
                     break;
             }
-            delete curIn;
         }
         for (unsigned i=0; i<activeChannels.size(); i++) {
             outMap->at(activeChannels[i]).pushData(std::move(curOut[activeChannels[i]]));

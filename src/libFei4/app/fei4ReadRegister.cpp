@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
     usleep(1000);
     while(!mySpec.isCmdEmpty()) {}
     dummy.cfg[i] = 0xDEAD;
-    RawData *data = mySpec.readData();
+    std::shared_ptr<RawData> data = mySpec.readData();
     while(!mySpec.isCmdEmpty()) {}
     while (data != NULL) {
       if (data != NULL) {
@@ -111,7 +111,6 @@ int main(int argc, char *argv[]) {
 	  dummy.cfg[greg] = value;
 	}
       }
-      delete data;
       data = mySpec.readData();
       while(!mySpec.isCmdEmpty()) {}
     }
@@ -151,7 +150,7 @@ int main(int argc, char *argv[]) {
       int row = -1;
       int r = -1;
 
-      RawData *data = mySpec.readData();
+      std::shared_ptr<RawData> data = mySpec.readData();
       while(!mySpec.isCmdEmpty()) {}
       while (data != NULL) {
 	if (data != NULL) {
@@ -197,7 +196,6 @@ int main(int argc, char *argv[]) {
 	    //   std::cout << "[" << j << "] = 0x" << std::hex << data->buf[j] << std::dec << std::endl;
 	  }
 	}
-	delete data;
 	data = mySpec.readData();
 	while(!mySpec.isCmdEmpty()) {}
       }

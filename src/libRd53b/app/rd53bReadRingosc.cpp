@@ -177,7 +177,7 @@ int main (int argc, char *argv[]) {
 	}
 
     // Read back registers and save to file
-    RawData *data = hwCtrl->readData();
+    std::shared_ptr<RawData> data = hwCtrl->readData();
     unsigned int m=1;	
     double RingValuesSum = 0;
     double RingValuesSumSquared = 0;
@@ -209,7 +209,6 @@ int main (int argc, char *argv[]) {
                         RingValuesSumSquared += pow(frequency, 2);
 		}		
 		m++;
-            delete data;
         }
 
         data = hwCtrl->readData();

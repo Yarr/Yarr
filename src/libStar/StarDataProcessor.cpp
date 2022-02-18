@@ -81,8 +81,8 @@ void StarDataProcessor::process_core() {
         unsigned size = curInV->size();
 
         for(unsigned c=0; c<size; c++) {
-            RawData r(curInV->adr[c], curInV->buf[c], curInV->words[c]);
-            unsigned channel = curInV->adr[c]; //elink number
+            std::shared_ptr<RawData> r = curInV->data[c];
+            unsigned channel = r->adr; //elink number
             if(!curOut[channel]) {
               logger->warn("Channel {} not found", channel);
               for (unsigned i=0; i<activeChannels.size(); i++) {
@@ -90,7 +90,7 @@ void StarDataProcessor::process_core() {
               }
               continue;
             }
-            process_data(r, *curOut[channel]);
+            process_data(*r, *curOut[channel]);
         }
 
         for (unsigned i=0; i<activeChannels.size(); i++) {

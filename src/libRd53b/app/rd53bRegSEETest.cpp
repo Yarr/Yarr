@@ -27,12 +27,10 @@ std::vector<RawData> processDataPackets(HwController *hwCtrl)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     std::vector<RawData> dataList;
-    RawData *data = NULL;
+    std::shared_ptr<RawData> data;
     do
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        if (data != NULL)
-            delete data;
         data = hwCtrl->readData();
         if (data != NULL)
         {

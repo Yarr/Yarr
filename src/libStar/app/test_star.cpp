@@ -68,17 +68,14 @@ int packetFromRawData(StarChipPacket& packet, RawData& data) {
   return packet.parse();
 }
 
-std::unique_ptr<RawData, void(*)(RawData*)> readData(
+std::shared_ptr<RawData> readData(
   HwController& hwCtrl,
   std::function<bool(RawData&)> filter_cb,
   uint32_t timeout=1000)
 {
   bool nodata = true;
 
-  std::unique_ptr<RawData, void(*)(RawData*)> data(
-    hwCtrl.readData(),
-    [](RawData* d){delete[] d->buf; delete d;} // deleter
-    );
+  std::shared_ptr<RawData> data = hwCtrl.readData();
 
   auto start_reading = std::chrono::steady_clock::now();
 
@@ -91,8 +88,6 @@ std::unique_ptr<RawData, void(*)(RawData*)> readData(
       bool good = filter_cb(*data);
       if (good) {
         break;
-      } else {
-        data.reset(nullptr);
       }
     } else { // no data
       // wait a bit
@@ -106,7 +101,7 @@ std::unique_ptr<RawData, void(*)(RawData*)> readData(
       break;
     }
 
-    data.reset(hwCtrl.readData());
+    data = hwCtrl.readData();
   }
 
   if (nodata) {
@@ -115,7 +110,7 @@ std::unique_ptr<RawData, void(*)(RawData*)> readData(
     logger->debug("No data met the requirement");
   }
 
-  return data;
+  return std::move(data);
 }
 
 RawDataContainer readAllData(
@@ -127,10 +122,7 @@ RawDataContainer readAllData(
 
   RawDataContainer rdc(LoopStatus{});
 
-  std::unique_ptr<RawData, void(*)(RawData*)> data(
-    hwCtrl.readData(),
-    [](RawData* d){delete[] d->buf; delete d;} // deleter
-    );
+  std::shared_ptr<RawData> data = hwCtrl.readData();
 
   auto start_reading = std::chrono::steady_clock::now();
 
@@ -141,7 +133,7 @@ RawDataContainer readAllData(
 
       bool good = filter_cb(*data);
       if (good) {
-        rdc.add(data.release());
+        rdc.add(std::move(data));
       }
     } else {
       // wait a bit if no data
@@ -155,7 +147,7 @@ RawDataContainer readAllData(
       break;
     }
 
-    data.reset(hwCtrl.readData());
+    data = hwCtrl.readData();
   }
 
   if (nodata) {
@@ -465,10 +457,10 @@ bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars, bool reset) 
     auto rdc = readAllData(hwCtrl, filter_abchpr, timeout);
 
     for (unsigned c = 0; c < rdc.size(); c++) {
-      RawData d(rdc.adr[c], rdc.buf[c], rdc.words[c]);
+        std::shared_ptr<RawData> d = rdc.data[c];
       StarChipPacket packet;
 
-      if ( packetFromRawData(packet, d) ) {
+      if ( packetFromRawData(packet, *d) ) {
         logger->error("Packet parse failed");
       } else {
         logger->trace(" Received an HPR packet from ABCStar");
@@ -748,8 +740,8 @@ bool testDataPacketsStatic(HwController& hwCtrl, bool do_spec_specific) {
   hwCtrl.flushBuffer();
 
   for (unsigned c = 0; c < rdc.size(); c++) {
-    RawData d(rdc.adr[c], rdc.buf[c], rdc.words[c]);
-    reportData(d, do_spec_specific);
+    std::shared_ptr<RawData> d = rdc.data[c];
+    reportData(*d, do_spec_specific);
   }
 
   if (rdc.size() > 0) {
@@ -800,8 +792,8 @@ bool testDataPacketsPulse(HwController& hwCtrl, bool do_spec_specific) {
   hwCtrl.flushBuffer();
 
   for (unsigned c = 0; c < rdc.size(); c++) {
-    RawData d(rdc.adr[c], rdc.buf[c], rdc.words[c]);
-    reportData(d, do_spec_specific);
+    std::shared_ptr<RawData> d = rdc.data[c];
+    reportData(*d, do_spec_specific);
   }
 
   if (rdc.size() > 0) {

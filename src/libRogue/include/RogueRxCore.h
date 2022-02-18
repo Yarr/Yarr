@@ -16,7 +16,7 @@ class RogueRxCore : virtual public RxCore {
         void disableRx() override {}
 		void maskRxEnable(uint32_t val, uint32_t mask) override {}
 
-		RawData* readData() override;
+        std::shared_ptr<RawData> readData() override;
 
 		uint32_t getDataRate() override {return 0;}
 		uint32_t getCurCount() override {m_com->setRxChannel(m_rxChannel);return m_com->getCurSize();}
