@@ -253,7 +253,6 @@ EmuRxCore<StarChips>::~EmuRxCore() {
     for (auto& q : m_queues) {
         while(not q.second->empty()) {
             std::unique_ptr<RawData> tmp = q.second->popData();
-            delete [] tmp->buf;
         }
     }
 }
