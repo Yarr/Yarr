@@ -295,7 +295,7 @@ int Rd53b::checkCom() {
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     // TODO not happy about this, rx knowledge should not be here
-    RawData *data = m_rxcore->readData();
+    std::shared_ptr<RawData> data = m_rxcore->readData();
 
     if (data != NULL) {
         

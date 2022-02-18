@@ -10,13 +10,16 @@
 // ################################
 
 #include <cstdint>
+#include <memory>
 
 #include "LoopStatus.h"
 
 struct RawData {
     RawData(uint32_t arg_adr, uint32_t *arg_buf, unsigned arg_words) :
             adr(arg_adr),  buf(arg_buf), words(arg_words) {}
-    ~RawData()=default;
+    ~RawData() {
+        delete[] buf;
+    }
     uint32_t adr;
     uint32_t *buf;
     unsigned words;
@@ -26,24 +29,17 @@ class RawDataContainer {
     public:
         RawDataContainer(LoopStatus &&s) : stat(s) {}
         ~RawDataContainer() {
-            for(unsigned int i=0; i<adr.size(); i++)
-                delete[] buf[i];
         }
 
-        void add(RawData *d) {
-            adr.push_back(d->adr);
-            buf.push_back(d->buf);
-            words.push_back(d->words);
-            delete d;
+        void add(std::shared_ptr<RawData> arg_data) {
+            data.emplace_back(arg_data);
         }
 
         unsigned size() const {
-            return adr.size();
+            return data.size();
         }
 
-        std::vector<uint32_t> adr;
-        std::vector<uint32_t*> buf;
-        std::vector<unsigned> words;
+        std::vector<std::shared_ptr<RawData>> data;
         LoopStatus stat;
 };
 

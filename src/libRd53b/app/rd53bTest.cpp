@@ -151,7 +151,7 @@ int main (int argc, char *argv[]) {
 
     
 
-    RawData *data = hwCtrl->readData();
+    std::shared_ptr<RawData> data = hwCtrl->readData();
     while (data) {
         if  (data) {
             for (unsigned i=0; i<data->words;i++)
@@ -164,7 +164,6 @@ int main (int argc, char *argv[]) {
                 answer = rd53bTest::decodeSingleRegRead(data->buf[2], data->buf[3]);
                 logger->info("Answer: {} {}", answer.first, answer.second);
             }
-            delete data;
         }
         data = hwCtrl->readData();
     }

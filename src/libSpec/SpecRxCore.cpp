@@ -42,7 +42,7 @@ void SpecRxCore::maskRxEnable(uint32_t value, uint32_t mask) {
     SpecCom::writeSingle(RX_ADDR | RX_ENABLE, value);
 }
 
-RawData* SpecRxCore::readData() {
+std::shared_ptr<RawData> SpecRxCore::readData() {
     uint32_t dma_addr = getStartAddr();
     uint32_t dma_count = getDataCount();
     uint32_t real_dma_count = dma_count;
@@ -58,10 +58,9 @@ RawData* SpecRxCore::readData() {
             SPDLOG_LOGGER_CRITICAL(srxlog, "Critical error while readin data ... aborting!!");
             exit(1);
         }
-        return new RawData(dma_addr, buf, real_dma_count);
-    } else {
-        return NULL;
+        return std::make_shared<RawData>(dma_addr, buf, real_dma_count);
     }
+    return std::shared_ptr<RawData>(nullptr);
 }
 
 void SpecRxCore::flushBuffer() {

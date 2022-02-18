@@ -25,7 +25,7 @@ uint32_t readConfig(TxCore *txcore, RxCore *rxcore, uint32_t addr) {
         txcore->releaseFifo();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         while (1) {
-            RawData *data = rxcore->readData();
+            std::shared_ptr<RawData> data = rxcore->readData();
             if (data == nullptr) {
                 cout << "Timeout." << endl;
                 continue;
@@ -401,20 +401,20 @@ int main(int argc, char **argv) {
     cout << "Read-out" << endl;
     RawDataContainer datav{LoopStatus()};
     do {
-        RawData *data = rxcore->readData();
+        std::shared_ptr<RawData> data = rxcore->readData();
         if (data == NULL) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             cout << "." << flush;
             continue;
         }
-        datav.add(data);
+        datav.add(std::move(data));
         cout << "Event " << datav.size() << endl;
     } while (datav.size() < ntriggers * 16);
 
     cout << "List of L1A received" << endl;
     for (uint32_t i = 0; i < datav.size(); i++) {
-        cout << "L1A: " << ((datav.buf[i][0] >> 10) & 0x1F) << " "
-             << "BCID: " << (datav.buf[i][0] & 0x3FF) << endl;
+        cout << "L1A: " << ((datav.data[i]->buf[0] >> 10) & 0x1F) << " "
+             << "BCID: " << (datav.data[i]->buf[0] & 0x3FF) << endl;
     }
 
     cout << "Clean the house" << endl;

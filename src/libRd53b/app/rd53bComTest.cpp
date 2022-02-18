@@ -41,12 +41,11 @@ namespace rd53bTest {
     }
 
     std::pair<uint32_t, uint32_t> singleRegRead(HwController *hwCtrl) {
-        RawData *data = hwCtrl->readData();
+        std::shared_ptr<RawData> data = hwCtrl->readData();
         std::pair<uint32_t, uint32_t> answer(999, 666);
         int timeout = 0;
         if  (data) {
             answer = Rd53b::decodeSingleRegRead(data->buf[0], data->buf[1]);
-            delete data;
         }
         return answer;
     }
@@ -202,7 +201,7 @@ int main (int argc, char *argv[]) {
         
         std::pair<uint32_t, uint32_t> answer(0, 0), answer2(0, 0);
 
-        RawData *data = hwCtrl->readData();
+        std::shared_ptr<RawData> data = hwCtrl->readData();
         int timeout = 0;
         if  (data) {
             answer = Rd53b::decodeSingleRegRead(data->buf[0], data->buf[1]);
@@ -210,7 +209,6 @@ int main (int argc, char *argv[]) {
                 answer2 = Rd53b::decodeSingleRegRead(data->buf[2], data->buf[3]);
             }
             binOut.write((char*) data->buf, data->words*4);
-            delete data;
         }
 
         if (answer.first == addr || answer2.first == addr) {
@@ -273,7 +271,7 @@ int main (int argc, char *argv[]) {
         while(!hwCtrl->isCmdEmpty());
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-        RawData *data = hwCtrl->readData();
+        std::shared_ptr<RawData> data = hwCtrl->readData();
         if  (data) {
             logger->debug("Received {} words", data->words);
             for (unsigned i=0; i<data->words;i+=2) {
@@ -286,7 +284,6 @@ int main (int argc, char *argv[]) {
                 words_received+=data->words;
             }
             trigOut.write((char*) data->buf, data->words*4);
-            delete data;
         }
 
     }
