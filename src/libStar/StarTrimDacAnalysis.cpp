@@ -334,7 +334,7 @@ unsigned int StarTrimDacAnalysis::getChannelMultReachingTarget(const std::map<un
                                   }
                                 }
                                 else {
-                                  if ( abs(prevThr-target) < abs(target-curThr) ) {
+                                  if ( std::fabs(prevThr-target) < std::fabs(target-curThr) ) {
                                     bestTrimDacForChannel = -prevTrimDac;
                                     alog->info("Keeping previous (negative)");
                                   }
