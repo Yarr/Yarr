@@ -295,23 +295,23 @@ void Rd53bMaskLoop::writeConfig(json &j) {
     j["includedPixels"] = m_includedPixels;
 }
 
-void Rd53bMaskLoop::loadConfig(json &j) {
-    if (!j["min"].empty())
-        min = j["min"];
-    if (!j["max"].empty())
-        max = j["max"];
-    if (!j["step"].empty())
-        step = j["step"];
-    if (!j["maskType"].empty())
-        m_maskType = j["maskType"];
-    if (!j["applyEnMask"].empty())
-        m_applyEnMask = j["applyEnMask"];        
-    if (!j["maskSize"].empty())
-        m_maskSize = j["maskSize"];
-    if (!j["sensorType"].empty())
-      m_sensorType = j["sensorType"];
-    if (!j["includedPixels"].empty())
-        m_includedPixels = j["includedPixels"];
+void Rd53bMaskLoop::loadConfig(const json &j) {
+  if (j.contains("min"))
+    min = j["min"];
+  if (j.contains("max"))
+    max = j["max"];
+  if (j.contains("step"))
+    step = j["step"];
+  if (j.contains("maskType"))
+    m_maskType = j["maskType"];
+  if (j.contains("applyEnMask"))
+    m_applyEnMask = j["applyEnMask"];    
+  if (j.contains("maskSize"))
+    m_maskSize = j["maskSize"];
+  if (j.contains("sensorType"))
+    m_sensorType = j["sensorType"];
+  if (j.contains("includedPixels"))
+    m_includedPixels = j["includedPixels"];
 }
 
 
