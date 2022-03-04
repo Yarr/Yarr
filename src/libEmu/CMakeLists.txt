@@ -16,6 +16,7 @@ add_library(Emu SHARED
         StripModel.cpp)
 
 add_dependencies(Emu variant)
+post_build_debug_library(Emu)
 target_include_directories(Emu PRIVATE ../libYarr/include)
 target_include_directories(Emu PRIVATE ../libUtil/include)
 target_include_directories(Emu PUBLIC ./include)
