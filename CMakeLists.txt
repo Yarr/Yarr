@@ -23,11 +23,13 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+add_compile_options(-g)
+
 if(CMAKE_BUILD_TYPE MATCHES Asan)
-    add_compile_options(-g -fsanitize=address -fsanitize=undefined)
+    add_compile_options(-fsanitize=address -fsanitize=undefined)
     add_link_options(-fsanitize=address -fsanitize=undefined)
 elseif(CMAKE_BUILD_TYPE MATCHES Debug)
-    add_compile_options(-g)
+    # Don't optimize
 elseif(CMAKE_BUILD_TYPE MATCHES Coverage)
 #  Be sure not to use optimization for proper codecoverage results
     add_compile_options(--coverage)
