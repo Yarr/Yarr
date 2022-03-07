@@ -9,12 +9,12 @@ int main(int argc, char **argv) {
 
   json j;
   j["FelixClient"]["local_ip_or_interface"] = "lo";
-  j["FelixClient"]["log_level"] = "info";
+  j["FelixClient"]["log_level"] = "trace";
   j["FelixClient"]["bus_interface"] = "<local_interface>";
   j["FelixClient"]["bus_dir"] = "./bus";
   j["FelixClient"]["bus_group_name"] = "FELIX";
-  j["FelixClient"]["verbose_bus"] = false;
-  j["FelixClient"]["verbose_zyre"] = false;
+  j["FelixClient"]["verbose_bus"] = true;
+  j["FelixClient"]["verbose_zyre"] = true;
   j["FelixClient"]["timeout"] = 0;
   j["FelixClient"]["netio_pages"] = 256;
   j["FelixClient"]["netio_pagesize"] = 64*1024;

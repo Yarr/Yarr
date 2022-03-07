@@ -6,6 +6,10 @@ namespace {
   auto frlog = logging::make_log("FelixRxCore");
 }
 
+void FelixRxCore::setClient(FelixClientThread* client) {
+  fclient = client;
+}
+
 // WIP
 
 FelixRxCore::FelixRxCore()

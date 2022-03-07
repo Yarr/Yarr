@@ -43,6 +43,7 @@ void FelixController::loadConfig(const json &j) {
 
   try {
     FelixTxCore::loadConfig(j);
+    FelixTxCore::setClient(client.get());
   } catch (std::runtime_error &je) {
     fclog->error("Failed to load FelixTxCore config");
     throw je;
@@ -50,6 +51,7 @@ void FelixController::loadConfig(const json &j) {
 
   try {
     FelixRxCore::loadConfig(j);
+    FelixRxCore::setClient(client.get());
   } catch (std::runtime_error &je) {
     fclog->error("Failed to load FelixRxCore config");
     throw je;

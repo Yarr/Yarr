@@ -25,15 +25,16 @@ public:
   uint32_t getCurCount() override;
   bool isBridgeEmpty() override;
 
+protected:
+
   void writeConfig(json &j);
   void loadConfig(const json &j);
-
-protected:
+  void setClient(FelixClientThread* client); // set Felix client
 
 private:
 
   // Owned by FelixController
-  FelixClientThread* fclient;
+  FelixClientThread* fclient {nullptr};
 };
 
 #endif

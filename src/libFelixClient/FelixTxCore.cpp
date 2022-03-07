@@ -6,41 +6,288 @@ namespace {
   auto ftlog = logging::make_log("FelixTxCore");
 }
 
-// WIP
-
-FelixTxCore::FelixTxCore()
-{
-
-}
+FelixTxCore::FelixTxCore() = default;
 
 FelixTxCore::~FelixTxCore()
 {
+  if (m_trigProc.joinable()) m_trigProc.join();
+}
+
+// Channel control
+void FelixTxCore::enableChannel(FelixID_t fid) {
+  ftlog->debug("Enable Tx link: 0x{:x}", fid);
+  m_enables[fid] = true;
+  m_fifo[fid];
+}
+
+void FelixTxCore::disableChannel(FelixID_t fid) {
+  ftlog->debug("Disable Tx link: 0x{:x}", fid);
+  m_enables[fid] = false;
+}
+
+void FelixTxCore::setCmdEnable(uint32_t chn) {
+  // Switch off all channels first
+  disableCmd();
+
+  // TODO: FelixID need be computed from did, cid, elink #, streamId, vid
+  FelixID_t fid = chn;
+  enableChannel(fid);
+}
+
+void FelixTxCore::setCmdEnable(std::vector<uint32_t> chns) {
+  // Switch off all channels first
+  disableCmd();
+
+  for (auto& c : chns) {
+    // TODO: FelixID need be computed from did, cid, elink #, streamId, vid
+    FelixID_t fid = c;
+    enableChannel(fid);
+  }
+}
+
+void FelixTxCore::disableCmd() {
+  for (auto& e : m_enables) {
+    disableChannel(e.first);
+  }
+}
+
+uint32_t FelixTxCore::getCmdEnable() { // unused
+  return 0;
+}
+
+bool FelixTxCore::isCmdEmpty() {
+  for (const auto& [chn, buffer] : m_fifo) {
+    // consider only enabled channels
+    if (not m_enables[chn])
+      continue;
+
+    if (not buffer.empty())
+      return false;
+  }
+
+  return true;
+  // Is there a way to check this from FelixClient?
+}
+
+void FelixTxCore::writeFifo(uint32_t value) {
+  // write value to all enabled channels
+  for (auto& [chn, buffer] : m_fifo) {
+    if (m_enables[chn]) {
+      ftlog->trace("FelixTxCore::writeFifo link=0x{:x} val=0x{:08x}", chn, value);
+      fillFifo(buffer, value);
+    }
+  }
+}
+
+void FelixTxCore::fillFifo(std::vector<uint8_t>& fifo, uint32_t value) {
+  // Break an unsigned int into four bytes
+  // MSB first
+  fifo.push_back( (value>>24) & 0xff );
+  fifo.push_back( (value>>16) & 0xff );
+  fifo.push_back( (value>>8) & 0xff );
+  fifo.push_back( value & 0xff );
+}
+
+void FelixTxCore::prepareFifo(std::vector<uint8_t>& fifo) {
+
+  if (m_flip) {
+    ftlog->trace("Swap the top and botton four bits for every byte");
+    for (uint8_t &word : fifo) {
+      word = ((word & 0x0f) << 4) + ((word & 0xf0) >> 4);
+    }
+  }
+
+  // padding, manchester still needed?
+}
+
+void FelixTxCore::releaseFifo() {
+  ftlog->trace("NetioTxCore::releaseFifo");
+
+  for (auto& [chn, buffer] : m_fifo) {
+    // skip disabled channels
+    if (not m_enables[chn])
+      continue;
+
+    prepareFifo(buffer);
+
+    ftlog->trace("FIFO[{}][{}]: ", chn, buffer.size());
+    for (const auto& word : buffer) {
+      ftlog->trace(" {:02x}", word&0xff);
+    }
+
+    bool flush = false;
+    //fclient->init_send_data(chn);
+    fclient->send_data(chn, &buffer[0], buffer.size(), flush);
+  }
+
+  // clear buffers
+  for (auto& [chn, buffer] : m_fifo) {
+    if (not m_enables[chn]) continue;
+    buffer.clear();
+  }
 
 }
 
-void FelixTxCore::writeFifo(uint32_t value) {}
-void FelixTxCore::releaseFifo() {}
-void FelixTxCore::setCmdEnable(uint32_t) {}
-void FelixTxCore::setCmdEnable(std::vector<uint32_t> channels) {}
-void FelixTxCore::disableCmd() {}
-uint32_t FelixTxCore::getCmdEnable() {return 0;}
-bool FelixTxCore::isCmdEmpty() {return false;}
-void FelixTxCore::setTrigEnable(uint32_t value) {}
-uint32_t FelixTxCore::getTrigEnable() {return 0;}
+void FelixTxCore::setTrigEnable(uint32_t value) {
+  if (m_trigProc.joinable()) {
+    m_trigProc.join();
+  }
 
-void FelixTxCore::maskTrigEnable(uint32_t value, uint32_t mask) {}
-bool FelixTxCore::isTrigDone() {return false;}
-void FelixTxCore::setTrigConfig(enum TRIG_CONF_VALUE cfg) {}
-void FelixTxCore::setTrigFreq(double freq) {}
-void FelixTxCore::setTrigCnt(uint32_t count) {}
-void FelixTxCore::setTrigTime(double time) {}
-void FelixTxCore::setTrigWordLength(uint32_t length) {}
-void FelixTxCore::setTrigWord(uint32_t *words, uint32_t size) {}
-void FelixTxCore::toggleTrigAbort() {}
-void FelixTxCore::setTriggerLogicMask(uint32_t mask) {}
-void FelixTxCore::setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) {}
-void FelixTxCore::resetTriggerLogic() {}
-uint32_t FelixTxCore::getTrigInCount() {return 0;}
+  if (value == 0) {
+    m_trigEnabled = false;
+  } else {
+    m_trigEnabled = true;
+    switch (m_trigCfg) {
+    case INT_TIME:
+    case EXT_TRIGGER:
+      ftlog->debug("Starting trigger by time ({} seconds)", m_trigTime);
+      m_trigProc = std::thread(&FelixTxCore::doTriggerTime, this);
+      break;
+    case INT_COUNT:
+      ftlog->debug("Starting trigger by count ({} triggers)", m_trigCnt);
+      m_trigProc = std::thread(&FelixTxCore::doTriggerCnt, this);
+      break;
+    default:
+      ftlog->error("No config for trigger, aborting loop");
+      m_trigEnabled = false;
+      break;
+    }
+  }
+}
 
-void FelixTxCore::loadConfig(const json &j) {}
+uint32_t FelixTxCore::getTrigEnable() {
+  return m_trigEnabled;
+}
+
+void FelixTxCore::maskTrigEnable(uint32_t value, uint32_t mask) { // never used
+  return;
+}
+
+void FelixTxCore::toggleTrigAbort() {
+  m_trigEnabled = false;
+}
+
+bool FelixTxCore::isTrigDone() {
+  if (not m_trigEnabled and isCmdEmpty()) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+void FelixTxCore::setTrigConfig(enum TRIG_CONF_VALUE cfg) {
+  m_trigCfg = cfg;
+}
+
+void FelixTxCore::setTrigFreq(double freq) {
+  m_trigFreq = freq;
+}
+
+void FelixTxCore::setTrigCnt(uint32_t count) {
+  m_trigCnt = count;
+}
+
+void FelixTxCore::setTrigTime(double time) {
+  m_trigTime = time;
+}
+
+void FelixTxCore::setTrigWordLength(uint32_t length) {
+  m_trigWordLength = length;
+}
+
+void FelixTxCore::setTrigWord(uint32_t *words, uint32_t size) {
+  m_trigWords.clear();
+
+  for (uint32_t i=0; i<size; i++) {
+    m_trigWords.push_back(words[i]);
+  }
+}
+
+void FelixTxCore::setTriggerLogicMask(uint32_t mask) {
+  //Nothing to do yet
+}
+
+void FelixTxCore::setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) {
+  //Nothing to do yet
+}
+
+void FelixTxCore::resetTriggerLogic() {
+  //Nothing to do yet
+}
+
+uint32_t FelixTxCore::getTrigInCount() {
+  return 0;
+}
+
+void FelixTxCore::prepareTrigger() {
+  for (const auto& [chn, enable] : m_enables) {
+    if (not enable) continue;
+
+    m_trigFifo[chn].clear();
+
+    // Need to send the last word in m_trigWords first
+    // (Because of the way TriggerLoop sets up the trigger words)
+    for (unsigned j=m_trigWords.size()-1; j>=0; j--) {
+      fillFifo(m_trigFifo[chn], m_trigWords[j]);
+    }
+
+    prepareFifo(m_trigFifo[chn]);
+  }
+}
+
+void FelixTxCore::doTriggerCnt() {
+  prepareTrigger();
+
+  uint32_t trigs = 0;
+  for (uint32_t i=0; i<m_trigCnt; i++) {
+    if (not m_trigEnabled) break;
+    trigs++;
+    trigger();
+    std::this_thread::sleep_for(std::chrono::microseconds((int)(1e6/m_trigFreq))); // Frequency in Hz
+  }
+  m_trigEnabled = false;
+  ftlog->debug("Finished trigger count {}/{}", trigs, m_trigCnt);
+}
+
+void FelixTxCore::doTriggerTime() {
+  prepareTrigger();
+
+  std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+  std::chrono::steady_clock::time_point cur = start;
+  uint32_t trigs=0;
+  while (std::chrono::duration_cast<std::chrono::seconds>(cur-start).count() < m_trigTime) {
+    if (not m_trigEnabled) break;
+    trigs++;
+    trigger();
+    std::this_thread::sleep_for(std::chrono::microseconds((int)(1000/m_trigFreq))); // Frequency in kHz
+    cur = std::chrono::steady_clock::now();
+  }
+  m_trigEnabled = false;
+  ftlog->debug("Finished trigger time {} with {} triggers", m_trigTime, trigs);
+}
+
+void FelixTxCore::trigger() {
+  ftlog->trace("FelixTxCore::trigger");
+
+  for (auto& [chn, buffer] : m_trigFifo) {
+    if (not m_enables[chn]) continue;
+
+    bool flush = false;
+    fclient->send_data(chn, &buffer[0], buffer.size(), flush);
+  }
+}
+
+void FelixTxCore::loadConfig(const json &j) {
+  ftlog->info("FelixTxCore:");
+
+  if (j["FelixClient"].contains("flip")) {
+    m_flip = j["FelixClient"]["flip"];
+    ftlog->info(" flip = {}", m_flip);
+  }
+}
+
 void FelixTxCore::writeConfig(json& j) {}
+
+void FelixTxCore::setClient(FelixClientThread* client) {
+  fclient = client;
+}

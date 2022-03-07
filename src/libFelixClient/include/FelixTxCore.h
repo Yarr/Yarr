@@ -6,6 +6,11 @@
 #include "felix/felix_client_thread.hpp"
 #include "storage.hpp"
 
+#include <cstdint>
+#include <vector>
+#include <thread>
+#include <atomic>
+
 class FelixTxCore : virtual public TxCore {
 
 public:
@@ -38,15 +43,46 @@ public:
   void resetTriggerLogic() override; 	// reset the trigger logic
   uint32_t getTrigInCount() override; 	// get the number of triggers in
 
-  void loadConfig(const json &j); 		// read configuration from json
-  void writeConfig(json& j); 		// write configuration to json
-
 protected:
+
+  void loadConfig(const json &j); 		     // read configuration from json
+  void writeConfig(json& j); 		         // write configuration to json
+  void setClient(FelixClientThread* client); // set Felix client
 
 private:
 
+  using FelixID_t = uint64_t;
+
+  // Channel control
+  void enableChannel(FelixID_t fid);
+  void disableChannel(FelixID_t fid);
+
+  void fillFifo(std::vector<uint8_t>& fifo, uint32_t value);
+  void prepareFifo(std::vector<uint8_t>& fifo);
+
+  // Triggers
+  void trigger();
+  void doTriggerCnt(); // send a defined number of triggers
+  void doTriggerTime(); // send triggers for a period of time
+  void prepareTrigger();
+
+  std::map<FelixID_t, bool> m_enables; // enable flag for each elink
+  std::map<FelixID_t, std::vector<uint8_t> > m_fifo;     // data buffer
+  std::map<FelixID_t, std::vector<uint8_t> > m_trigFifo; // buffers for trigger
+
+  std::thread m_trigProc;                  // trigger thread
+  enum TRIG_CONF_VALUE m_trigCfg;          // trigger config
+  std::vector<uint32_t> m_trigWords;       // the trigger words
+  std::atomic<bool> m_trigEnabled {false}; // trigger is enabled
+  uint32_t m_trigCnt {0};                  // number of triggers
+  uint32_t m_trigTime {0};                 // trigger time
+  uint32_t m_trigFreq {1};                 // trigger frequency
+  uint32_t m_trigWordLength {4};           // number of trigger words
+
+  bool m_flip {false};
+
   // Owned by FelixController
-  FelixClientThread* fclient;
+  FelixClientThread* fclient {nullptr};
 };
 
 #endif
