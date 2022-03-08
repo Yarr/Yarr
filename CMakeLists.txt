@@ -5,9 +5,14 @@ set (YARR_VERSION_MAJOR 1)
 set (YARR_VERSION_MINOR 0)
 set (CMAKE_CXX_STANDARD 17)
 
+# minimum required gcc version
+if(NOT MIN_GCC_VERSION)
+  set(MIN_GCC_VERSION 9)
+endif()
+
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9)
-        message(FATAL_ERROR "GCC version must be at least 9!")
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS ${MIN_GCC_VERSION})
+        message(FATAL_ERROR "GCC version must be at least ${MIN_GCC_VERSION}!")
     endif()
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 11.0)
