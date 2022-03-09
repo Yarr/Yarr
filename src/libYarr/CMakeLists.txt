@@ -8,6 +8,8 @@ target_link_libraries(Yarr ${CONTROLLERS})
 target_link_libraries(Yarr ${FRONT_ENDS})
 target_link_options(Yarr PUBLIC -Wl,--no-as-needed)
 
+post_build_debug_library(Yarr)
+
 add_library(Scan SHARED
         AllAnalyses.cpp
         AllChips.cpp
@@ -39,6 +41,8 @@ add_library(Scan SHARED
 target_include_directories(Scan PRIVATE ../libUtil/include)
 target_include_directories(Scan PUBLIC ./include)
 target_link_libraries(Scan Util pthread)
+
+post_build_debug_library(Scan)
 
 if (BUILD_TESTS)
     add_subdirectory(tests)

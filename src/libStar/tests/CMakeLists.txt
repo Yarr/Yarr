@@ -12,3 +12,4 @@ add_executable(testStar
         )
 target_link_libraries(testStar Yarr)
 add_test(testStar ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/testStar)
+post_build_debug_executable(testStar)

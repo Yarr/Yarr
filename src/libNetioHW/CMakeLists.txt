@@ -9,6 +9,7 @@ add_library(NetioHW SHARED
         )
 
 add_dependencies(NetioHW felixbase4 netio4 variant tbb_2020)
+post_build_debug_library(NetioHW)
 target_include_directories(NetioHW PRIVATE ../libYarr/include)
 target_include_directories(NetioHW PRIVATE ../libUtil/include)
 target_include_directories(NetioHW PUBLIC ./include)
@@ -18,4 +19,5 @@ LIST(APPEND apps testNetioHw)
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)
     target_link_libraries(${target} Yarr)
+    post_build_debug_executable(${target})
 endforeach ()

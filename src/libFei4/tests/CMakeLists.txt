@@ -3,3 +3,4 @@ test_feedback.cpp
         )
 target_link_libraries(testFei4 Yarr)
 add_test(testFei4 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/testFei4)
+post_build_debug_executable(testFei4)
