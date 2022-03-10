@@ -95,7 +95,6 @@ private:
   // NETIO
   netio::context * m_context; // context
   std::string m_felixHost;    // hostname
-  uint16_t m_felixTXPort;     // TX port (ususally 12340)
   uint16_t m_felixRXPort;     // RX port (ususally 12345)
   std::thread m_netio_bg_thread;
   std::map<uint64_t, netio::low_latency_subscribe_socket*> m_sub_sockets; // subscribe sockets.
