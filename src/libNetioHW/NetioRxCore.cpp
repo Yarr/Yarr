@@ -13,11 +13,9 @@ NetioRxCore::NetioRxCore()
   : m_nioh("posix", "localhost", 12345)
 {
   m_t0 = std::chrono::steady_clock::now();
-  string cntx = "posix";
   m_felixhost = "localhost";
   m_felixport = 12345;
   m_bytesReceived = 0;
-  m_context = new context(cntx);
   m_cont = true;
   rxDataCount = 0; // initialize to zero data received 
 

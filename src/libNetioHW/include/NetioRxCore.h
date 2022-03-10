@@ -98,8 +98,6 @@ private:
   std::string m_felixhost;          //! felix hostname
   uint16_t m_felixport;             //! felix port for reading
 
-  netio::context * m_context;       //! the netio context
-
   std::map<uint64_t,bool> m_elinks; //! elinks map
 
   bool m_cont;                      //! bool variable to stop statistics thread
