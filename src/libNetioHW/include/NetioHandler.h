@@ -51,7 +51,6 @@ public:
   void configureMonitors(size_t sensitivity, size_t delay); // Configures monitors -> new dynamic way
   void startChecking(); // Starts the monitoring threads.
   void stopChecking();  // Stops the monitoring threads.
-  void send(uint64_t chn, netio::message& msg){ m_send_sockets[chn]->send(msg); } // Sends the msg
   std::vector<uint32_t> pushOut(uint64_t chn); // Push out every records from channel queue.
   SharedQueue& getQueue(uint64_t chn){ return m_pcqs[chn]; } // Access for elink's queue.
   size_t getNumOfChannels() const { return m_activeChannels; } // Get the number of active channels.
@@ -106,7 +105,6 @@ private:
   uint16_t m_felixRXPort;     // RX port (ususally 12345)
   std::thread m_netio_bg_thread;
   std::map<uint64_t, netio::low_latency_subscribe_socket*> m_sub_sockets; // subscribe sockets.
-  std::map<uint64_t, netio::low_latency_send_socket*> m_send_sockets;     // send sockets.
 
   size_t m_activeChannels;
 

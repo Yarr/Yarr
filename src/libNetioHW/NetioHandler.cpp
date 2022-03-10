@@ -30,11 +30,7 @@ NetioHandler::~NetioHandler() {
   nlog->debug("###  Stopping communication with FELIX:");
   nlog->debug("###   -> Closing send sockets...");
 
-  for (auto socketIt : m_send_sockets ) {
-    if (socketIt.second->is_open()) socketIt.second->disconnect();
-  }
-  nlog->debug("###   -> Clearing send and sub sockets...");
-  m_send_sockets.clear();
+  nlog->debug("###   -> Clearing sub sockets...");
   m_sub_sockets.clear();
   nlog->debug("###   -> Stopping event loop...");
   m_context->event_loop()->stop();
@@ -259,9 +255,7 @@ void NetioHandler::delChannel(uint64_t chn){
     m_channels.erase(it);
     //SHIT: please do not unsubscribe: because felixcore/netio doesn't like it
     m_sub_sockets[chn]->unsubscribe(chn, netio::endpoint(m_felixHost, m_felixRXPort));
-    delete m_send_sockets[chn];
     delete m_sub_sockets[chn];
-    m_send_sockets.erase(chn);
     m_sub_sockets.erase(chn);
   }
 }
