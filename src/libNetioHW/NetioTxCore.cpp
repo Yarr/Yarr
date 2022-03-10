@@ -5,8 +5,6 @@
 #include <iomanip>
 #include <chrono>
 
-#include "felixbase/client.hpp"
-
 #include "logging.h"
 
 using namespace std;
