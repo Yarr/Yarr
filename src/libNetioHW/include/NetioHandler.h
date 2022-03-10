@@ -10,8 +10,6 @@
  * Date: November 2017
  *********************************/
 
-#include "QueueMonitor.h"
-
 #include "netio/netio.hpp"
 
 #include "RawData.h"
@@ -69,9 +67,6 @@ private:
 
   // used to keep strips and rd53a specific things seperate
   std::string fetype; // rd53a or fei4
-
-  // Queues and the stability check threads
-  std::vector<QueueMonitor> m_monitors;   // Queue monitoring threads.
 
   // Other statistics for channels:
   std::map<uint64_t, uint32_t> m_msgErrors;

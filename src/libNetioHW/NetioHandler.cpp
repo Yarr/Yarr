@@ -34,9 +34,6 @@ NetioHandler::~NetioHandler() {
   m_context->event_loop()->stop();
   nlog->debug("###   -> Background thread joining...");
   m_netio_bg_thread.join();
-  nlog->debug("###  Cleaning up buffers and utilities:");
-  nlog->debug("###   -> Clearing monitors...");
-  m_monitors.clear();
 
   nlog->debug("###  Summary of NETIO Message errors (netio msg too small):");
   for(auto it = m_msgErrors.cbegin(); it != m_msgErrors.cend(); ++it) {
@@ -48,17 +45,10 @@ NetioHandler::~NetioHandler() {
 }
 
 bool NetioHandler::isStable(size_t monitorID) {
-  const std::map<uint64_t, bool>& stab = m_monitors[monitorID].getStability();
-  for (auto it=stab.begin(); it!=stab.end(); ++it){
-    if (!it->second) return false;
-  }
   return true;
 }
 
 bool NetioHandler::isAllStable() {
-  for (uint32_t i=0; i<m_monitors.size(); ++i){
-    if ( !isStable(i) ) return false;
-  }
   return true;
 }
 

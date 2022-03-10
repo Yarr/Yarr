@@ -1,5 +1,7 @@
 #include "NetioRxCore.h"
 
+#include "logging.h"
+
 #include <iomanip>
 
 using namespace std;
