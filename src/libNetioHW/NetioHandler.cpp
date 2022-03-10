@@ -1,8 +1,6 @@
 #include "NetioHandler.h"
 #include <memory>
 
-#include "NetioFei4Records.h"
-
 #include "logging.h"
 
 namespace {
