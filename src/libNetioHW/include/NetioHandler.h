@@ -34,10 +34,6 @@ public:
   NetioHandler& operator=(NetioHandler const&) = delete;  // Copy assign
   NetioHandler& operator=(NetioHandler &&) = delete;      // Move assign
 
-  // Custom types
-  typedef folly::ProducerConsumerQueue<uint32_t> FollyQueue;
-  typedef std::shared_ptr<FollyQueue> SharedQueue;
-
   ClipBoard<RawData> rawData;
   void setFlushBuffer(bool);
 
@@ -47,23 +43,15 @@ public:
   // Functionalities
   void addChannel(uint64_t chn); // Enable an elink (prepare a queue, socket-pairs and sub to elink.
   void delChannel(uint64_t chn); // Enable an elink (prepare a queue, socket-pairs and sub to elink.
-  void monitorSetup(size_t sensitivity, size_t delay, size_t numOf=0); // Configures monitoring threads.
-  void configureMonitors(size_t sensitivity, size_t delay); // Configures monitors -> new dynamic way
   void startChecking(); // Starts the monitoring threads.
   void stopChecking();  // Stops the monitoring threads.
-  std::vector<uint32_t> pushOut(uint64_t chn); // Push out every records from channel queue.
-  SharedQueue& getQueue(uint64_t chn){ return m_pcqs[chn]; } // Access for elink's queue.
-  size_t getNumOfChannels() const { return m_activeChannels; } // Get the number of active channels.
-  bool isStable(size_t monitorID); // Returns the stability of elink's queue.
   bool isAllStable(); // Returns the aggregated stability of the queues.
   void setFelixHost(std::string felixHost){m_felixHost=felixHost;}
   void setFelixRXPort(uint16_t felixRXPort){m_felixRXPort=felixRXPort;}
-  void setFelixTXPort(uint16_t felixTXPort){m_felixTXPort=felixTXPort;}
 
   // set flag to keep rd53a and strips specific things seperate
   void setFeType(std::string fetype){m_feType=fetype;}
 
-public:
   NetioHandler(std::string contextStr="posix", std::string felixHost="localhost",
                uint16_t felixTXPort=12340, uint16_t felixRXPort=12345,
                size_t queueSize=10000000);
@@ -71,6 +59,12 @@ public:
   ~NetioHandler();
 
 private:
+  // Custom types
+  typedef folly::ProducerConsumerQueue<uint32_t> FollyQueue;
+  typedef std::shared_ptr<FollyQueue> SharedQueue;
+
+  bool isStable(size_t monitorID); // Returns the stability of elink's queue.
+
   int handlerDataCount;
 
   // used as a flag to keep rd53a and strips specific things seperate

@@ -51,61 +51,6 @@ NetioHandler::~NetioHandler() {
   nlog->debug("### NetioHandler::~NetioHandler() -> Clean shutdown.");
 }
 
-void NetioHandler::monitorSetup(size_t sensitivity, size_t delay, size_t numOf){
-  m_sensitivity=sensitivity;
-  m_delay=delay;
-  if (numOf==0) {
-    for (uint32_t i=0; i<m_activeChannels; ++i){
-      m_monitors.push_back( QueueMonitor(i, std::ref(m_monitor_config_basic[i]), m_pcqs, m_sensitivity, m_delay) );
-    }
-  } else {
-    for (uint32_t i=0; i<numOf; ++i){
-      m_monitors.push_back( QueueMonitor(i, std::ref(m_monitor_config[i]), m_pcqs, m_sensitivity, m_delay) );
-    }
-  }
-}
-
-void NetioHandler::configureMonitors(size_t sensitivity, size_t delay) {
-  m_sensitivity=sensitivity;
-  m_delay=delay;
-  nlog->debug("### NetioHandler::configureMonitors(sensitivity={}, delay={})",
-              sensitivity, delay);
-  nlog->debug("###   -> Making monitor mapping for active channels: {}",
-              m_activeChannels);
-  switch(m_monitor_mode)
-  {
-    case single:
-      {
-        nlog->debug("###  -> 1 Monitor per single elink mode.");
-        for (uint32_t i=0; i<m_activeChannels; ++i) {
-          m_monitor_config_dynamic.insert( std::pair<uint32_t, std::vector<uint64_t>>(i, {m_channels[i]}) );
-          m_monitors.emplace_back( QueueMonitor(i, std::ref(m_monitor_config_dynamic[i]), m_pcqs, m_sensitivity, m_delay) );
-        }
-      }
-      break;
-    case dual:
-      {
-        //if (m_activeChannels/2 != 0) { std::cout << "### ERROR -> Active channels number are not the "}
-        nlog->debug("###  -> 1 Monitor per 2 elink mode.");
-        for (uint32_t i=0; i<m_activeChannels; i=i+2) {
-          m_monitor_config_dynamic.insert( std::pair<uint32_t, std::vector<uint64_t>>(i/2, {m_channels[i], m_channels[i+1]}) );
-          m_monitors.emplace_back( QueueMonitor(i/2, std::ref(m_monitor_config_dynamic[i/2]), m_pcqs, m_sensitivity, m_delay) );
-        }
-      }
-      break;
-    case quad:
-      {
-        //if (m_activeChannels/2 != 0) { std::cout << "### ERROR -> Active channels number are not the "}
-        nlog->debug("###  -> 1 Monitor per 4 elink mode.");
-        for (uint32_t i=0; i<m_activeChannels; i=i+4) {
-          m_monitor_config_dynamic.insert( std::pair<uint32_t, std::vector<uint64_t>>(i/4, {m_channels[i], m_channels[i+1], m_channels[i+2], m_channels[i+3]}) );
-          m_monitors.emplace_back( QueueMonitor(i/4, std::ref(m_monitor_config_dynamic[i/4]), m_pcqs, m_sensitivity, m_delay) );
-        }
-      }
-      break;
-  }
-}
-
 void NetioHandler::startChecking(){
   for (uint32_t i=0; i<m_monitors.size(); ++i) {
     m_monitors[i].startMonitor();
@@ -129,16 +74,6 @@ bool NetioHandler::isAllStable() {
     if ( !isStable(i) ) return false;
   }
   return true;
-}
-
-std::vector<uint32_t> NetioHandler::pushOut(uint64_t chn) {
-  std::vector<uint32_t> dataVec;
-  while ( !m_pcqs[chn]->isEmpty() ) {
-    uint32_t record;
-    m_pcqs[chn]->read(std::ref(record));
-    dataVec.push_back(record);
-  }
-  return dataVec;
 }
 
 void NetioHandler::setFlushBuffer(bool status){
