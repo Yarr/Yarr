@@ -60,7 +60,6 @@ private:
   // used as a flag to keep rd53a and strips specific things seperate
   std::string m_feType;
 
-  bool m_isConfigured = false;
   std::vector<uint64_t> m_channels;
 
   // NETIO

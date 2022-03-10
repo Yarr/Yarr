@@ -154,7 +154,7 @@ void NetioHandler::addChannel(uint64_t chn){
           ++handlerDataCount;
         } else  { 
         	nlog->warn("WARNING: NetIO message is shorter than {} bytes. It is {} bytes.", my_headersize, data.size());
-          	//m_msgErrors[cid]++;
+          	m_msgErrors[chn]++;
 		return;
         }
 
