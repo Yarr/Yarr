@@ -15,8 +15,7 @@ bool doFlushBuffer = false;
 NetioHandler::NetioHandler(std::string contextStr, std::string felixHost,
                uint16_t felixTXPort, uint16_t felixRXPort,
                size_t queueSize) :
-    m_felixHost(felixHost), m_felixRXPort(felixRXPort),
-    m_queueSize(queueSize)
+    m_felixHost(felixHost), m_felixRXPort(felixRXPort)
 {
   nlog->debug("### NetioHandler::NetioHandler() -> Setting up context");
   m_activeChannels=0;

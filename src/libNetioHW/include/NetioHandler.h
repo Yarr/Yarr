@@ -67,25 +67,6 @@ private:
 
   bool m_isConfigured = false;
   std::vector<uint64_t> m_channels;
-  enum E_MONITOR_MODE { single=1, dual=2, quad=4 };
-  E_MONITOR_MODE m_monitor_mode = E_MONITOR_MODE::single; // R.S. FIXME hardcode
-  std::map<uint32_t, std::vector<uint64_t>> m_monitor_config_dynamic{ };
-
-  // Configuration -> HARDCODE... should come from configuration.
-  std::map<uint32_t, std::vector<uint64_t>> m_monitor_config_basic {
-    { 0, { 0 } },
-    { 1, { 1 } },
-    { 2, { 2 } },
-    { 3, { 3 } }
-  };
-  std::map<uint32_t, std::vector<uint64_t>> m_monitor_config {
-    { 0, { 0 , 1 , 2 , 3  } }, // monitor 0 - egroup 0
-    { 1, { 4 , 5 , 6 , 7  } }, // monitor 1 - egroup 1
-    { 2, { 8 , 9 , 10, 11 } }, // monitor 2 - egroup 2
-    { 3, { 12, 13, 14, 15 } }  // monitor 3 - egroup 3
-  };
-  const uint32_t m_datasize = 3;
-  const uint32_t m_headersize = sizeof(felix::base::FromFELIXHeader);
 
   // NETIO
   netio::context * m_context; // context
@@ -98,12 +79,6 @@ private:
 
   // used to keep strips and rd53a specific things seperate
   std::string fetype; // rd53a or fei4
-
-
-  // Statistic thread options
-  size_t m_sensitivity;
-  size_t m_delay;
-  size_t m_queueSize;
 
   // Queues and the stability check threads
   std::vector<QueueMonitor> m_monitors;   // Queue monitoring threads.
