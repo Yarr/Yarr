@@ -35,7 +35,7 @@ NetioRxCore::NetioRxCore()
 }
 
 NetioRxCore::~NetioRxCore(){
-  m_nioh.stopChecking();
+  // m_nioh.stopChecking();
   m_cont=false;
   map<uint64_t,bool>::iterator it;
   for(it=m_elinks.begin();it!=m_elinks.end();it++){

@@ -47,16 +47,6 @@ NetioHandler::~NetioHandler() {
   nlog->debug("### NetioHandler::~NetioHandler() -> Clean shutdown.");
 }
 
-void NetioHandler::startChecking(){
-  for (uint32_t i=0; i<m_monitors.size(); ++i) {
-    m_monitors[i].startMonitor();
-  }
-}
-
-void NetioHandler::stopChecking(){
-  nlog->warn("### NetioHandler -> DON'T CALL stopChecking() for monitors!");
-}
-
 bool NetioHandler::isStable(size_t monitorID) {
   const std::map<uint64_t, bool>& stab = m_monitors[monitorID].getStability();
   for (auto it=stab.begin(); it!=stab.end(); ++it){
