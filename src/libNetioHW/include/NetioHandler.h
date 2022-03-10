@@ -12,7 +12,6 @@
 
 #include "QueueMonitor.h"
 
-#include "felixbase/client.hpp"
 #include "netio/netio.hpp"
 
 #include "RawData.h"

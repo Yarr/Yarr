@@ -1,6 +1,7 @@
 #include "NetioHandler.h"
 #include <memory>
 
+#include "felixbase/client.hpp"
 #include "logging.h"
 
 namespace {
