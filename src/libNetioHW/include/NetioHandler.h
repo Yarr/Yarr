@@ -21,8 +21,6 @@
 #include <map>
 #include <memory>
 #include <thread>
-#include <mutex>
-#include <algorithm>
 
 class NetioHandler
 {
