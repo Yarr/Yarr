@@ -10,7 +10,7 @@ auto nlog = logging::make_log("NetioHW::RxCore");
 }
 
 NetioRxCore::NetioRxCore()
-  : m_nioh("posix", "localhost", 12340, 12345, 50000000)
+  : m_nioh("posix", "localhost", 12345)
 {
   m_t0 = std::chrono::steady_clock::now();
   string cntx = "posix";

@@ -48,9 +48,7 @@ public:
   // set flag to keep rd53a and strips specific things seperate
   void setFeType(std::string fetype){m_feType=fetype;}
 
-  NetioHandler(std::string contextStr="posix", std::string felixHost="localhost",
-               uint16_t felixTXPort=12340, uint16_t felixRXPort=12345,
-               size_t queueSize=10000000);
+  NetioHandler(std::string contextStr, std::string felixHost, uint16_t felixRXPort);
   //MW: FIX CLANG COMPILATION
   ~NetioHandler();
 
