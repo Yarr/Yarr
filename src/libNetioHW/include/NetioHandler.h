@@ -85,8 +85,6 @@ private:
 
   // Other statistics for channels:
   std::map<uint64_t, uint32_t> m_msgErrors;
-
-  std::mutex m_mutex;
 };
 
 #endif
