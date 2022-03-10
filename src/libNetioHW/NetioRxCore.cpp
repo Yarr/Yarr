@@ -45,7 +45,6 @@ NetioRxCore::~NetioRxCore(){
     m_nioh.delChannel(it->first);
     //FIXME: //m_socket->unsubscribe(it->first, endpoint(m_felixhost,m_felixport));
     //m_sockets[it->first]->unsubscribe(it->first, endpoint(m_felixhost,m_felixport));
-    //m_queues[it->first]->~MonitoredQueue();
     //delete m_sockets[it->first];
   }
   m_statistics.join();

@@ -13,7 +13,7 @@
 #include "RawData.h"
 #include "NetioHandler.h"
 #include "netio/netio.hpp"
-#include <queue>
+
 #include <cstdint>
 #include <chrono>
 #include <vector>

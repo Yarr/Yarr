@@ -15,7 +15,6 @@
 #include "felixbase/client.hpp"
 
 #include <cstdint>
-#include <queue>
 #include <vector>
 
 #include "storage.hpp"
