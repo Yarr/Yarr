@@ -46,8 +46,6 @@ NetioHandler::~NetioHandler() {
                 it->first, it->second);
   }
 
-  nlog->debug("###   -> Clearing queues...");
-  m_pcqs.clear();
   nlog->debug("### NetioHandler::~NetioHandler() -> Clean shutdown.");
 }
 
@@ -89,7 +87,6 @@ void NetioHandler::addChannel(uint64_t chn){
 
   m_channels.push_back(chn);
   nlog->info("### NetioHandler -> Adding channel: {}");
-  m_pcqs[chn] = std::make_shared<FollyQueue>(m_queueSize);
 
   m_msgErrors[chn] = 0;
 

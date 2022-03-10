@@ -10,7 +10,6 @@
  * Date: November 2017
  *********************************/
 
-#include "ProducerConsumerQueue.h"
 #include "QueueMonitor.h"
 
 #include "felixbase/client.hpp"
@@ -59,10 +58,6 @@ public:
   ~NetioHandler();
 
 private:
-  // Custom types
-  typedef folly::ProducerConsumerQueue<uint32_t> FollyQueue;
-  typedef std::shared_ptr<FollyQueue> SharedQueue;
-
   bool isStable(size_t monitorID); // Returns the stability of elink's queue.
 
   int handlerDataCount;
@@ -111,7 +106,6 @@ private:
   size_t m_queueSize;
 
   // Queues and the stability check threads
-  std::map<uint64_t, SharedQueue> m_pcqs; // Queues for elink RX.
   std::vector<QueueMonitor> m_monitors;   // Queue monitoring threads.
 
   // Other statistics for channels:
