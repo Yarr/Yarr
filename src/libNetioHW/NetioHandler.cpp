@@ -18,7 +18,6 @@ NetioHandler::NetioHandler(std::string contextStr, std::string felixHost,
     m_felixHost(felixHost), m_felixRXPort(felixRXPort)
 {
   nlog->debug("### NetioHandler::NetioHandler() -> Setting up context");
-  m_activeChannels=0;
   m_context = new netio::context(contextStr);
   m_netio_bg_thread = std::thread( [&](){m_context->event_loop()->run_forever();} );
   handlerDataCount = 0;
@@ -169,7 +168,6 @@ void NetioHandler::addChannel(uint64_t chn){
     return;
   }
   nlog->debug("### NetioHandler::addChannel({}) -> Success. Queue and socket-pair created, subscribed.", chn);
-  m_activeChannels++;
 
   //std::this_thread::sleep_for(std::chrono::milliseconds(10));
 

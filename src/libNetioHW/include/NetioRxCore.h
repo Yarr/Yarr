@@ -64,7 +64,7 @@ public:
 
   /**
    * @brief check if the NetioHandler is not receiving data still
-   * @return true if the NetioHanlder is not receiving data
+   * @return true if the NetioHandler is not receiving data
    **/
   bool isBridgeEmpty() override;
 
