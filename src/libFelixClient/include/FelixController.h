@@ -25,7 +25,10 @@ private:
   void on_init() {}
   void on_connect(uint64_t fid) {}
   void on_disconnect(uint64_t fid) {}
-  void on_data(uint64_t fid, const uint8_t* data, size_t size, uint8_t status) {}
+
+  void on_data(uint64_t fid, const uint8_t* data, size_t size, uint8_t status) {
+    FelixRxCore::on_data(fid, data, size, status);
+  }
 };
 
 #endif

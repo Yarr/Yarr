@@ -1,10 +1,12 @@
 #ifndef FELIXRXCORE_H
 #define FELIXRXCORE_H
 
-#include "RxCore.h"
-
 #include "felix/felix_client_thread.hpp"
 #include "storage.hpp"
+
+#include "RxCore.h"
+#include "RawData.h"
+#include "ClipBoard.h"
 
 class FelixRxCore : virtual public RxCore {
 
@@ -25,16 +27,44 @@ public:
   uint32_t getCurCount() override;
   bool isBridgeEmpty() override;
 
+  void checkDataRate();
+
 protected:
 
   void writeConfig(json &j);
   void loadConfig(const json &j);
   void setClient(FelixClientThread* client); // set Felix client
 
+  // on data callback
+  void on_data(uint64_t fid, const uint8_t* data, size_t size, uint8_t status);
+
 private:
+
+  using FelixID_t = uint64_t;
+
+  // Channel control
+  void enableChannel(FelixID_t fid);
+  void enableChannel(std::vector<FelixID_t> fids);
+  void disableChannel(FelixID_t fid);
+
+  std::map<FelixID_t, bool> m_enables; // enable flag for each elink
+
+  std::atomic<bool> m_doFlushBuffer {false};
+  unsigned m_flushTime {50}; // in milliseconds
+
+  // Data container
+  ClipBoard<RawData> rawData;
 
   // Owned by FelixController
   FelixClientThread* fclient {nullptr};
-};
 
+  // Receiver queue status
+  std::atomic<uint64_t> messages_received {0}; // total number of messages received
+  std::atomic<uint64_t> bytes_received {0}; // total number of bytes received
+
+  double msg_rate {-1}; // message rate
+  double byte_rate {-1}; // total data rate
+  std::chrono::steady_clock::time_point m_t0; // clock used for time measurement
+
+};
 #endif
