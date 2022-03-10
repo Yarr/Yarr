@@ -168,7 +168,7 @@ uint32_t NetioRxCore::getCurCount(){
 }
 
 bool NetioRxCore::isBridgeEmpty(){ // True, if queues are stable.
-  return m_nioh.isAllStable();
+  return true;
 }
 
 void NetioRxCore::writeConfig(json &j) {

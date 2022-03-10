@@ -37,7 +37,6 @@ public:
   // Functionalities
   void addChannel(uint64_t chn); // Enable an elink (prepare a queue, socket-pairs and sub to elink.
   void delChannel(uint64_t chn); // Enable an elink (prepare a queue, socket-pairs and sub to elink.
-  bool isAllStable(); // Returns the aggregated stability of the queues.
   void setFelixHost(std::string felixHost){m_felixHost=felixHost;}
   void setFelixRXPort(uint16_t felixRXPort){m_felixRXPort=felixRXPort;}
 
@@ -49,8 +48,6 @@ public:
   ~NetioHandler();
 
 private:
-  bool isStable(size_t monitorID); // Returns the stability of elink's queue.
-
   int handlerDataCount;
 
   // used as a flag to keep rd53a and strips specific things seperate

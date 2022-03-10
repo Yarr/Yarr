@@ -44,14 +44,6 @@ NetioHandler::~NetioHandler() {
   nlog->debug("### NetioHandler::~NetioHandler() -> Clean shutdown.");
 }
 
-bool NetioHandler::isStable(size_t monitorID) {
-  return true;
-}
-
-bool NetioHandler::isAllStable() {
-  return true;
-}
-
 void NetioHandler::setFlushBuffer(bool status){
 	doFlushBuffer = status;
 }
