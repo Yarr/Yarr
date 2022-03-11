@@ -14,15 +14,38 @@
 
 #include "LoopStatus.h"
 
-struct RawData {
-    RawData(uint32_t arg_adr, uint32_t *arg_buf, unsigned arg_words) :
-            adr(arg_adr),  buf(arg_buf), words(arg_words) {}
-    ~RawData() {
-        delete[] buf;
-    }
-    uint32_t adr;
-    uint32_t *buf;
-    unsigned words;
+class RawData {
+    public:
+        RawData(uint32_t arg_adr, unsigned arg_words) {
+            buf.reserve(arg_words);   
+        }
+
+        ~RawData() {
+        }
+
+        inline uint32_t& getAdr() {
+            return adr;
+        }
+
+        inline uint32_t* getBuf() {
+            return &buf[0];
+        }
+
+        inline size_t getSize() {
+            return buf.size();
+        }
+
+        inline uint32_t& operator [](size_t i) {
+            return buf[i];
+        }
+
+        inline uint32_t& at(size_t i) {
+            return buf[i];
+        }
+        
+    private:
+        std::vector<uint32_t> buf;
+        uint32_t adr;
 };
 
 class RawDataContainer {

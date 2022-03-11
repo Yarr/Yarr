@@ -89,9 +89,9 @@ void Fe65p2DataProcessor::process_core() {
         for(unsigned c=0; c<size; c++) {
             std::shared_ptr<RawData> curIn = curInV->data[c];
             // Process
-            unsigned words = curIn->words;
+            unsigned words = curIn->getSize();
             for (unsigned i=0; i<words; i++) {
-                uint32_t value = curIn->buf[i];
+                uint32_t value = curIn->at(i);
                 unsigned channel = ((value & 0xFC000000) >> 26);
                 unsigned type = ((value &0x03000000) >> 24);
                 if (type == 0x1) {
@@ -99,7 +99,7 @@ void Fe65p2DataProcessor::process_core() {
                 } else {
                     wordCount[channel]++;
                     if (__builtin_expect((value == 0xDEADBEEF), 0)) {
-                        std::cout << "# ERROR # " << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << curIn->words << " " << std::hex << value << " " << std::dec << std::endl;
+                        std::cout << "# ERROR # " << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << words << " " << std::hex << value << " " << std::dec << std::endl;
                     } else if (__builtin_expect((curOut[channel] == nullptr), 0)) {
                         std::cout << "# ERROR # " << __PRETTY_FUNCTION__ << " : Received data for channel " << channel << " but storage not initiliazed!" << std::endl;
                     } else if ((value & 0x00800000) == 0x00800000) {
@@ -143,7 +143,7 @@ void Fe65p2DataProcessor::process_core() {
                             }
                             if (__builtin_expect((real_col == 0 || real_row0 == 0 || real_col > 64 || real_row0 > 64), 0)) {
                                 badCnt++;
-                                std::cout << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << curIn->words << " " << std::hex << value << " " << std::dec << std::endl;
+                                std::cout << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << words << " " << std::hex << value << " " << std::dec << std::endl;
                             } else {
                                 if (tot0 != 15) {
                                     curOut[channel]->curEvent->addHit(real_row0, real_col, tot0);

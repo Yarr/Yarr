@@ -132,7 +132,7 @@ void Rd53bDecodeHelper::remain(const std::string input)
 void startNewStream(Rd53bDecodeHelper *h, unsigned &nEvents)
 {
     /* Start a new stream */
-    _data = &_curIn->buf[2 * _blockIdx];
+    _data = &_curIn->at(2 * _blockIdx);
 
     uint8_t tag = (_data[0] >> 23) & 0xFF;
     _blockIdx++; // Increase block index
@@ -199,7 +199,7 @@ void rollBack(const unsigned length)
     else
     { // Across block, roll back by length
         _bitIdx += (63 & ~length);
-        _data = &_curIn->buf[2 * (--_blockIdx - 1)];
+        _data = &_curIn->at(2 * (--_blockIdx - 1));
     }
 }
 
@@ -280,7 +280,9 @@ int readInData(std::string inputStreamFileName, int nStream = -1)
     _buffer.push_back(0);
     _buffer.push_back(0);
 
-    _curIn.reset(new RawData(address, &_buffer[0], words));
+    std::unique_ptr<RawData> data(new RawData(address, words));
+    std::copy(&_buffer[0], &_buffer[words-1], data->getBuf());
+    _curIn = std::move(data);
     std::cout << "Done." << std::endl;
     return words;
 }
@@ -332,7 +334,7 @@ int main(int argc, char **argv)
     Rd53bDecodeHelper *h = new Rd53bDecodeHelper();
 
     readInData(inputFileName);
-    const unsigned blocks = _curIn->words / 2;
+    const unsigned blocks = _curIn->getSize() / 2;
     uint8_t qrow = 0, ccol = 0;
     uint8_t islast = 0, isneighbor = 0;
 

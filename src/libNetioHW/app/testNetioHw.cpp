@@ -31,9 +31,9 @@ uint32_t readConfig(TxCore *txcore, RxCore *rxcore, uint32_t addr) {
                 continue;
             }
 
-            for (uint32_t i = 0; i < data->words; i++) {
-                uint32_t hdr = (data->buf[i] >> 16) & 0xFF;
-                uint32_t val = (data->buf[i] & 0xFFFF);
+            for (uint32_t i = 0; i < data->getSize(); i++) {
+                uint32_t hdr = (data->at(i) >> 16) & 0xFF;
+                uint32_t val = (data->at(i) & 0xFFFF);
                 if (hdr == 0xEA && val != addr) {
                     cout << "Something went wrong1: " << hex
                          << " hdr=" << hdr
@@ -413,8 +413,8 @@ int main(int argc, char **argv) {
 
     cout << "List of L1A received" << endl;
     for (uint32_t i = 0; i < datav.size(); i++) {
-        cout << "L1A: " << ((datav.data[i]->buf[0] >> 10) & 0x1F) << " "
-             << "BCID: " << (datav.data[i]->buf[0] & 0x3FF) << endl;
+        cout << "L1A: " << ((datav.data[i]->at(0) >> 10) & 0x1F) << " "
+             << "BCID: " << (datav.data[i]->at(0) & 0x3FF) << endl;
     }
 
     cout << "Clean the house" << endl;

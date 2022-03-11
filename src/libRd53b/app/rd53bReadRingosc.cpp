@@ -191,7 +191,7 @@ int main (int argc, char *argv[]) {
 
     while (data) {
         if  (data) {
-		auto answer = rd53b.decodeSingleRegRead(data->buf[0], data->buf[1]);
+		auto answer = rd53b.decodeSingleRegRead(data->at(0), data->at(1));
 		frequency=(answer.second & 0xFFF)/(2*(globalPulseWidth)*0.025);
 		min_freq=std::min(min_freq,frequency);
 		max_freq=std::max(max_freq,frequency);

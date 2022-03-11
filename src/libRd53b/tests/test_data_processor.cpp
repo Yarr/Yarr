@@ -26,12 +26,12 @@ TEST_CASE("Rd53bDataProcessor", "[rd53b][data_processor]") {
   proc->init();
   proc->run();
 
-  uint32_t *buffer = new uint32_t[nWords];
+  std::shared_ptr<RawData> rd = std::make_shared<RawData>(chan, nWords);
+  uint32_t *buffer = rd->getBuf();
   buffer[nWords-1] = 0;
 
   std::copy(words, words+nWords, buffer);
 
-  std::shared_ptr<RawData> rd = std::make_shared<RawData>(chan, buffer, nWords);
 
   std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(LoopStatus()));
   rdc->add(std::move(rd));

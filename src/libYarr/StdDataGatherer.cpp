@@ -66,7 +66,7 @@ void StdDataGatherer::execPart2() {
         // Read all data until buffer is empty
         while ((newData != NULL || count < 4096) && signaled == 0 && !killswitch) {
             if (newData != NULL) {
-                count += newData->words;
+                count += newData->getSize();
                 rdc->add(std::move(newData));
                 newData = NULL;
             }

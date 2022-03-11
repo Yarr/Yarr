@@ -36,13 +36,13 @@ uint16_t Rd53bReadRegLoop::ReadRegister(Rd53bReg Rd53bGlobalCfg::*ref, Rd53b *tm
         return 0xffff;
     }
 
-    unsigned size = data->words;
+    unsigned size = data->getSize();
     logger->debug("Word size is: {}", size);
     for (unsigned c = 0; c < size / 2; c++)
     {
         if (c * 2 + 1 < size)
         {
-            std::pair<uint32_t, uint32_t> readReg = Rd53b::decodeSingleRegRead(data->buf[c * 2], data->buf[c * 2 + 1]);
+            std::pair<uint32_t, uint32_t> readReg = Rd53b::decodeSingleRegRead(data->at(c * 2), data->at(c * 2 + 1));
             if (readReg.first == (tmpFE->*ref).addr())
             {
                 return readReg.second;
@@ -50,7 +50,7 @@ uint16_t Rd53bReadRegLoop::ReadRegister(Rd53bReg Rd53bGlobalCfg::*ref, Rd53b *tm
         }
         else
         {
-            logger->warn("Warning!!! Halfword recieved in ADC Register Read {}", data->buf[c * 2]);
+            logger->warn("Warning!!! Halfword recieved in ADC Register Read {}", data->at(c * 2));
             return 0xffff;
         }
     }

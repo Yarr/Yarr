@@ -62,7 +62,7 @@ void StdDataLoop::execPart2() {
             newData =  g_rx->readData();
             iterations++;
             if (newData != NULL) {
-                count += newData->words;
+                count += newData->getSize();
                 rdc->add(std::move(newData));
             }
         } while (newData != NULL);
@@ -75,7 +75,7 @@ void StdDataLoop::execPart2() {
         newData = g_rx->readData();
         iterations++;
         if (newData != NULL) {
-            count += newData->words;
+            count += newData->getSize();
             rdc->add(newData);
         }
     } while (newData != NULL || g_rx->getCurCount() != 0);

@@ -58,9 +58,9 @@ int packetFromRawData(StarChipPacket& packet, RawData& data) {
   packet.clear();
 
   packet.add_word(0x13C); //add SOP
-  for(unsigned iw=0; iw<data.words; iw++) {
+  for(unsigned iw=0; iw<data.getSize(); iw++) {
     for(int i=0; i<4;i++){
-      packet.add_word((data.buf[iw]>>i*8)&0xFF);
+      packet.add_word((data[iw]>>i*8)&0xFF);
     }
   }
   packet.add_word(0x1DC); //add EOP
@@ -82,7 +82,7 @@ std::shared_ptr<RawData> readData(
   while (true) {
     if (data) {
       nodata = false;
-      logger->trace("Use data: {}", (void*)data->buf);
+      logger->trace("Use data: {}", (void*)data->getBuf());
 
       // check if it is the type of data we want
       bool good = filter_cb(*data);
@@ -129,7 +129,7 @@ RawDataContainer readAllData(
   while (true) {
     if (data) {
       nodata = false;
-      logger->trace("Use data: {}", (void*)data->buf);
+      logger->trace("Use data: {}", (void*)data->getBuf());
 
       bool good = filter_cb(*data);
       if (good) {
@@ -161,10 +161,10 @@ RawDataContainer readAllData(
 
 void reportData(RawData &data, bool do_spec_specific=false) {
   logger->info(" Raw data from RxCore:");
-  logger->info(" {} {:p} {}", data.adr, (void*)data.buf, data.words);
+  logger->info(" {} {:p} {}", data.getAdr(), (void*)data.getBuf(), data.getSize());
 
-  for (unsigned j=0; j<data.words;j++) {
-    auto word = data.buf[j];
+  for (unsigned j=0; j<data.getSize();j++) {
+    auto word = data[j];
 
     if(do_spec_specific) {
       if((j%2) && (word == 0xd3400000)) continue;
@@ -199,7 +199,7 @@ void reportData(RawData &data, bool do_spec_specific=false) {
 
 // Data filters
 bool isFromChannel(RawData& data, uint32_t chn) {
-  return data.adr == chn;
+  return data.getAdr() == chn;
 }
 
 bool isPacketType(RawData& data, PacketType packet_type, bool isPacketTransp=false) {
@@ -215,7 +215,7 @@ bool isPacketType(RawData& data, PacketType packet_type, bool isPacketTransp=fal
       // Check the type of the forwarded ABCStar packet
       // First byte is TYP_ABC_TRANSP and channel number
       // Type of the ABCStar packet is the top 4 bits of the second byte
-      int raw_type_abc = (data.buf[0] & 0xf000) >> 12;
+      int raw_type_abc = (data[0] & 0xf000) >> 12;
       if ( packet_type_headers.find(raw_type_abc) == packet_type_headers.end() ) {
         logger->error("Packet type was parsed as {}, which is an invalid type.", raw_type_abc);
         return false;

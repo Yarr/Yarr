@@ -97,9 +97,9 @@ void Fei4DataProcessor::process_core() {
         for(unsigned c=0; c<size; c++) {
             std::shared_ptr<RawData> curIn = curInV->data[c];
             // Process
-            unsigned words = curIn->words;
+            unsigned words = curIn->getSize();
             for (unsigned i=0; i<words; i++) {
-                uint32_t value = curIn->buf[i];
+                uint32_t value = curIn->at(i);
                 uint32_t header = ((value & 0x00FF0000) >> 16);
                 unsigned channel = ((value & 0xFC000000) >> 26);
                 unsigned type = ((value &0x03000000) >> 24);

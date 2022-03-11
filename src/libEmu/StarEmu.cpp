@@ -280,7 +280,7 @@ std::shared_ptr<RawData> EmuRxCore<StarChips>::readData(uint32_t chn) {
 
     std::unique_ptr<RawData> rd = m_queues[chn]->popData();
     // set rx channel number
-    rd->adr = chn;
+    rd->getAdr() = chn;
 
     return std::move(rd);
 }

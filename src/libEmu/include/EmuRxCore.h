@@ -81,11 +81,12 @@ std::shared_ptr<RawData> EmuRxCore<FE>::readData(uint32_t chn) {
     //std::this_thread::sleep_for(std::chrono::microseconds(1));
     uint32_t words = this->getCurCount(chn)/sizeof(uint32_t);
     if (words > 0) {
-        uint32_t *buf = new uint32_t[words];
+        std::shared_ptr<RawData> data= std::make_shared<RawData>(chn, words);
+        uint32_t *buf = data->getBuf();
         //for(unsigned i=0; i<words; i++)
         //    buf[i] = m_com->read32();
         if (m_coms[chn]->readBlock32(buf, words)) {
-            return std::make_shared<RawData>(chn, buf, words);
+            return std::move(data);
         } else {
             delete[] buf;
         }

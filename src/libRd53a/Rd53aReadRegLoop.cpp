@@ -40,18 +40,18 @@ uint16_t Rd53aReadRegLoop::ReadRegister(Rd53aReg Rd53aGlobalCfg::*ref,  Rd53a *t
         return 65535;
     }
 
-    unsigned size =  data->words;
+    unsigned size =  data->getSize();
     logger->debug("Word size is: {}", size);
     for(unsigned c=0; c<size/2; c++)
     {
         if (c*2+1<size) {
-            std::pair<uint32_t, uint32_t> readReg = Rd53a::decodeSingleRegRead(data->buf[c*2],data->buf[c*2+1]);	    
+            std::pair<uint32_t, uint32_t> readReg = Rd53a::decodeSingleRegRead(data->at(c*2),data->at(c*2+1));	    
             if ( readReg.first==(tmpFE->*ref).addr()) {
                 return readReg.second;
             }
         }
         else {
-            logger->warn("Warning!!! Halfword recieved in ADC Register Read {}", data->buf[c*2]);
+            logger->warn("Warning!!! Halfword recieved in ADC Register Read {}", data->at(c*2));
             return 65535;
         }
     }

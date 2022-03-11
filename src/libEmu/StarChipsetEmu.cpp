@@ -73,7 +73,8 @@ void StarChipsetEmu::sendPacket(uint8_t *byte_s, uint8_t *byte_e) {
 
     int word_length = (byte_length + 3) / 4;
 
-    uint32_t *buf = new uint32_t[word_length];
+    std::unique_ptr<RawData> data(new RawData(0, word_length));
+    uint32_t *buf = data->getBuf();
 
     for(unsigned i=0; i<byte_length/4; i++) {
         buf[i] = *(uint32_t*)&byte_s[i*4];
@@ -87,8 +88,6 @@ void StarChipsetEmu::sendPacket(uint8_t *byte_s, uint8_t *byte_e) {
         }
         buf[word_length-1] = final;
     }
-
-    std::unique_ptr<RawData> data(new RawData(0, buf, word_length));
 
     m_rxbuffer->pushData(std::move(data));
 }

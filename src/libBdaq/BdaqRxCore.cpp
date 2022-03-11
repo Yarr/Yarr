@@ -89,10 +89,11 @@ std::shared_ptr<RawData> BdaqRxCore::readData() {
         std::vector<uint32_t> inBuf;
         fifo.readData(inBuf, size);
         size = sortChannels(inBuf);
-        uint32_t* outBuf = new uint32_t[size*activeChannels.size()];
-        size = buildStream(outBuf, size);
         if (size > 0) {
-            return std::make_shared<RawData>(0x0, outBuf, size);
+            std::shared_ptr<RawData> data = std::make_shared<RawData>(0x0, size*activeChannels.size());
+            uint32_t* outBuf = data->getBuf();
+            size = buildStream(outBuf, size);
+            return std::move(data);
         } 
         return std::shared_ptr<RawData>(NULL);
     }

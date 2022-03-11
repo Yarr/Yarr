@@ -54,11 +54,11 @@ std::vector<uint16_t> readData(RawData *data)
     unsigned addr2 = 0;
     unsigned val2 = 0;
 
-    for (unsigned i = 0; i < data->words; i++)
+    for (unsigned i = 0; i < data->getSize(); i++)
     {
-        if (data->buf[i] != 0xFFFFFFFF)
+        if (data->at(i) != 0xFFFFFFFF)
         {
-            *rawdata << data->buf[i] << std::endl;
+            *rawdata << data->at(i) << std::endl;
             if (frameNum % 2 == 0)
             {
                 zz = 0;
@@ -70,7 +70,7 @@ std::vector<uint16_t> readData(RawData *data)
                 addr2 = 0;
                 val2 = 0;
 
-                zz = 0xFF & (data->buf[i] >> 24);
+                zz = 0xFF & (data->at(i) >> 24);
 
                 if (!(zz == 0x55 || zz == 0x99))
                 {
@@ -80,15 +80,15 @@ std::vector<uint16_t> readData(RawData *data)
                     continue;
                 }
 
-                val1_1 = (0x3FF & (data->buf[i] >> 0)) << 6;
+                val1_1 = (0x3FF & (data->at(i) >> 0)) << 6;
             }
             else
             {
 
-                val1_2 = 0x3F & (data->buf[i] >> 26);
+                val1_2 = 0x3F & (data->at(i) >> 26);
                 val1 = val1_1 + val1_2;
 
-                val2 = 0xFFFF & (data->buf[i] >> 0);
+                val2 = 0xFFFF & (data->at(i) >> 0);
 
                 const uint16_t val = (zz == 0x99) ? val1 : val2;
                 result.push_back(val);

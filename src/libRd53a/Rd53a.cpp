@@ -282,11 +282,11 @@ int Rd53a::checkCom() {
     std::shared_ptr<RawData> data = m_rxcore->readData();
 
     if (data != NULL) {
-        if (!(data->words == 2 || data->words == 4 || data->words == 8 || data->words == 12 || data->words == 6)) {
-            logger->error("Received wrong number of words ({}) for {}", data->words, this->name);
+        if (!(data->getSize() == 2 || data->getSize() == 4 || data->getSize() == 8 || data->getSize() == 12 || data->getSize() == 6)) {
+            logger->error("Received wrong number of words ({}) for {}", data->getSize(), this->name);
             return 0;
         }
-        std::pair<uint32_t, uint32_t> answer = decodeSingleRegRead(data->buf[0], data->buf[1]);
+        std::pair<uint32_t, uint32_t> answer = decodeSingleRegRead(data->at(0), data->at(1));
         logger->debug("Addr ({}) Value({})", answer.first, answer.second);
 
         if (answer.first != regAddr || answer.second != regValue) {

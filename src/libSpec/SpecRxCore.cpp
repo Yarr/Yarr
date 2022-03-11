@@ -52,13 +52,12 @@ std::shared_ptr<RawData> SpecRxCore::readData() {
             dma_count += 32-(dma_count%32);
 
         SPDLOG_LOGGER_DEBUG(srxlog, "Read data to Addr 0x{:x}, Count {}", dma_addr, dma_count);
-        uint32_t *buf = new uint32_t[dma_count];
-        std::memset(buf, 0x0, sizeof(uint32_t)*dma_count);
-        if (SpecCom::readDma(dma_addr, buf, dma_count)) {
+        std::shared_ptr<RawData> data = std::make_shared<RawData>(dma_addr, dma_count);
+        if (SpecCom::readDma(dma_addr, data->getBuf(), dma_count)) {
             SPDLOG_LOGGER_CRITICAL(srxlog, "Critical error while readin data ... aborting!!");
             exit(1);
         }
-        return std::make_shared<RawData>(dma_addr, buf, real_dma_count);
+        return std::move(data);
     }
     return std::shared_ptr<RawData>(nullptr);
 }
