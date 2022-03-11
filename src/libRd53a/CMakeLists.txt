@@ -17,6 +17,7 @@ add_library(Rd53a SHARED
         Rd53aTwoParameterLoop.cpp)
 
 add_dependencies(Rd53a variant)
+post_build_debug_library(Rd53a)
 target_include_directories(Rd53a PRIVATE ../libYarr/include)
 target_include_directories(Rd53a PRIVATE ../libUtil/include)
 target_include_directories(Rd53a PUBLIC ./include)

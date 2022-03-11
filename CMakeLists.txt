@@ -5,9 +5,14 @@ set (YARR_VERSION_MAJOR 1)
 set (YARR_VERSION_MINOR 0)
 set (CMAKE_CXX_STANDARD 17)
 
+# minimum required gcc version
+if(NOT MIN_GCC_VERSION)
+  set(MIN_GCC_VERSION 9)
+endif()
+
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9)
-        message(FATAL_ERROR "GCC version must be at least 9!")
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS ${MIN_GCC_VERSION})
+        message(FATAL_ERROR "GCC version must be at least ${MIN_GCC_VERSION}!")
     endif()
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 11.0)
@@ -23,11 +28,13 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+add_compile_options(-g)
+
 if(CMAKE_BUILD_TYPE MATCHES Asan)
-    add_compile_options(-g -fsanitize=address -fsanitize=undefined)
+    add_compile_options(-fsanitize=address -fsanitize=undefined)
     add_link_options(-fsanitize=address -fsanitize=undefined)
 elseif(CMAKE_BUILD_TYPE MATCHES Debug)
-    add_compile_options(-g)
+    # Don't optimize
 elseif(CMAKE_BUILD_TYPE MATCHES Coverage)
 #  Be sure not to use optimization for proper codecoverage results
     add_compile_options(--coverage)
@@ -81,6 +88,33 @@ if(BUILD_TESTS)
 endif()
 set(TARGET_INSTALL_AREA ${PROJECT_SOURCE_DIR})
 set(SHARED_INSTALL_AREA ${PROJECT_SOURCE_DIR}/installed/)
+
+function(post_build_debug_library name)
+  add_custom_command(TARGET ${name}
+    POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:${name}> ${CMAKE_CURRENT_BINARY_DIR}/lib${name}.so.debug
+    COMMAND ${CMAKE_STRIP} --strip-debug --strip-unneeded $<TARGET_FILE:${name}>
+    COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=lib${name}.so.debug $<TARGET_FILE:${name}>
+  )
+
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lib${name}.so.debug
+    DESTINATION ${TARGET_INSTALL_AREA}/lib
+    )
+endfunction(post_build_debug_library)
+
+function(post_build_debug_executable name)
+  add_custom_command(TARGET ${name}
+    POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:${name}> ${CMAKE_CURRENT_BINARY_DIR}/${name}.debug
+    COMMAND ${CMAKE_STRIP} --strip-debug --strip-unneeded $<TARGET_FILE:${name}>
+    COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=${name}.debug $<TARGET_FILE:${name}>
+  )
+
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${name}.debug
+    DESTINATION ${TARGET_INSTALL_AREA}/bin
+    )
+endfunction(post_build_debug_executable)
+
 include(cmake/CMakeLists.txt.external)
 add_subdirectory(src)
 

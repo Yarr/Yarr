@@ -8,6 +8,7 @@ add_library(Rogue SHARED
 
 
 add_dependencies(Rogue tbb_2020 rogue variant)
+post_build_debug_library(Rogue)
 target_include_directories(Rogue PRIVATE ../libYarr/include)
 target_include_directories(Rogue PRIVATE ../libUtil/include)
 target_include_directories(Rogue PUBLIC ./include)

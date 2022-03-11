@@ -9,11 +9,14 @@ list(APPEND tools
         scanConsole
         scurve_test
         test_json
-        write-register
         )
 
+if (NOT ${TARGET_ARCH} MATCHES "arm*")
+    list(APPEND tools write-register)
+endif()
+ 
 foreach (target IN LISTS tools)
     add_executable(${target} ${target}.cpp)
+    post_build_debug_executable(${target})
     target_link_libraries(${target} Yarr)
 endforeach ()
-  
