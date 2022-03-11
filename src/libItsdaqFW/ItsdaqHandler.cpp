@@ -119,7 +119,6 @@ ItsdaqPrivate::~ItsdaqPrivate() {
   while(!rawData.empty()) {
     auto data = rawData.popData();
     count ++;
-    delete [] data->buf;
   }
   if(count) {
     logger->debug(" ...done ({} stray data blocks)", count);
