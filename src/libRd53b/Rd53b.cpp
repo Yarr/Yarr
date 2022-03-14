@@ -301,8 +301,8 @@ int Rd53b::checkCom() {
     std::shared_ptr<RawData> data = m_rxcore->readData();
 
     if (data != NULL) {
-        
-        if (!(data->getSize() == 2 || data->getSize() == 4 || data->getSize() == 8 || data->getSize() == 12 || data->getSize() == 6)) {
+        unsigned size = data->getSize();       
+        if (!(size == 2 || size == 4 || size == 8 || size == 12 || size == 6)) {
             logger->error("Received wrong number of words ({}) for {}", data->getSize(), this->name);
             return 0;
         }
