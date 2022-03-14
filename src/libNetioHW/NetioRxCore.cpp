@@ -134,9 +134,9 @@ std::shared_ptr<RawData> NetioRxCore::readData(){
     if(rdp != NULL){
 
     std::shared_ptr<RawData> new_rdp = std::move(rdp);
-	auto buffer = new_rdp.get()->getBuf();
-	auto address = new_rdp.get()->getAdr();
-	auto words = new_rdp.get()->getSize();
+	auto buffer = new_rdp->getBuf();
+	auto address = new_rdp->getAdr();
+	auto words = new_rdp->getSize();
 
         if(m_fetype == "rd53a"){
             //TODO:fix this in firmware; the header needs to be in buffer[0]
