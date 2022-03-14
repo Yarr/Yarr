@@ -48,6 +48,7 @@ std::shared_ptr<RawData> SpecRxCore::readData() {
     uint32_t real_dma_count = dma_count;
     if (dma_count > 0 && dma_count < (251*256)) {
         real_dma_count = dma_count;
+        // DMA mapped memory needs to be aligned
         if (dma_count%32 != 0)
             dma_count += 32-(dma_count%32);
 
@@ -57,6 +58,8 @@ std::shared_ptr<RawData> SpecRxCore::readData() {
             SPDLOG_LOGGER_CRITICAL(srxlog, "Critical error while readin data ... aborting!!");
             exit(1);
         }
+        // Resize to real amount
+        data->resize(real_dma_count);
         return std::move(data);
     }
     return std::shared_ptr<RawData>(nullptr);
