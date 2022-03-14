@@ -17,18 +17,18 @@
 class RawData {
     public:
         RawData(uint32_t arg_adr, unsigned arg_words) {
+            adr = arg_adr;
             buf.reserve(arg_words);   
         }
 
-        ~RawData() {
-        }
+        ~RawData()=default;
 
         inline uint32_t& getAdr() {
             return adr;
         }
 
         inline uint32_t* getBuf() {
-            return &buf[0];
+            return buf.data();
         }
 
         inline size_t getSize() {
