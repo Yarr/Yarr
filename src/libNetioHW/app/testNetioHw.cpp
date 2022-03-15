@@ -24,7 +24,7 @@ uint32_t readConfig(TxCore *txcore, RxCore *rxcore, uint32_t addr) {
         txcore->writeFifo(rdreg);
         txcore->releaseFifo();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        while (1) {
+        while (true) {
             std::shared_ptr<RawData> data = rxcore->readData();
             if (data == nullptr) {
                 cout << "Timeout." << endl;
