@@ -2,6 +2,7 @@
 #define FELIXTXCORE_H
 
 #include "TxCore.h"
+#include "FelixTools.h"
 
 #include "felix/felix_client_thread.hpp"
 #include "storage.hpp"
@@ -51,7 +52,7 @@ protected:
 
 private:
 
-  using FelixID_t = uint64_t;
+  using FelixID_t = FelixTools::FelixID_t;
 
   // Channel control
   void enableChannel(FelixID_t fid);
@@ -80,6 +81,12 @@ private:
   uint32_t m_trigWordLength {4};           // number of trigger words
 
   bool m_flip {false};
+
+  // For Felix ID
+  FelixID_t fid_from_channel(uint32_t chn);
+  uint8_t m_did {0};  // detector ID; 0x00 reserved for local IDs
+  uint16_t m_cid {0}; // connector ID; 0x0000 reserved for local IDs
+  uint8_t m_protocol {0}; // protocol ID
 
   // Owned by FelixController
   FelixClientThread* fclient {nullptr};

@@ -25,12 +25,27 @@ void FelixTxCore::disableChannel(FelixID_t fid) {
   m_enables[fid] = false;
 }
 
+FelixTxCore::FelixID_t FelixTxCore::fid_from_channel(uint32_t chn) {
+  // Compute FelixID from did, cid, link id elink #, streamId
+
+  // TODO: get link/GBT id and elink # from chn?
+  uint16_t link_id = 0; // FIXME
+  uint8_t elink = chn;
+
+  // Hard code is_virtual to false, and streamID to 0 for now
+  bool is_virtual = false;
+  uint8_t sid = 0;
+
+  return FelixTools::get_fid(
+    m_did, m_cid, is_virtual, link_id, elink, false, m_protocol, sid
+    );
+}
+
 void FelixTxCore::setCmdEnable(uint32_t chn) {
   // Switch off all channels first
   disableCmd();
 
-  // TODO: FelixID need be computed from did, cid, elink #, streamId, vid
-  FelixID_t fid = chn;
+  auto fid = fid_from_channel(chn);
   enableChannel(fid);
 }
 
@@ -39,8 +54,7 @@ void FelixTxCore::setCmdEnable(std::vector<uint32_t> chns) {
   disableCmd();
 
   for (auto& c : chns) {
-    // TODO: FelixID need be computed from did, cid, elink #, streamId, vid
-    FelixID_t fid = c;
+    auto fid = fid_from_channel(c);
     enableChannel(fid);
   }
 }
@@ -280,9 +294,22 @@ void FelixTxCore::trigger() {
 void FelixTxCore::loadConfig(const json &j) {
   ftlog->info("FelixTxCore:");
 
-  if (j["FelixClient"].contains("flip")) {
-    m_flip = j["FelixClient"]["flip"];
+  if (j.contains("flip")) {
+    m_flip = j["flip"];
     ftlog->info(" flip = {}", m_flip);
+  }
+
+  if (j.contains("detector_id")) {
+    m_did = j["detector_id"];
+    ftlog->info(" did = {}", m_did);
+  }
+  if (j.contains("connector_id")) {
+    m_cid = j["connector_id"];
+    ftlog->info(" cid = {}", m_cid);
+  }
+  if (j.contains("protocol")) {
+    m_protocol = j["protocol"];
+    ftlog->info(" protocol = {}", m_protocol);
   }
 }
 

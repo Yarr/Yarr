@@ -30,21 +30,36 @@ void FelixRxCore::disableChannel(FelixID_t fid) {
   fclient->unsubscribe(fid);
 }
 
+FelixRxCore::FelixID_t FelixRxCore::fid_from_channel(uint32_t chn) {
+  // Compute FelixID from did, cid, link id elink #, streamId
+
+  // TODO: get link/GBT id and elink # from chn?
+  uint16_t link_id = 0; // FIXME
+  uint8_t elink = chn;
+
+  // Hard code is_virtual to false, and streamID to 0 for now
+  bool is_virtual = false;
+  uint8_t sid = 0;
+
+  return FelixTools::get_fid(
+    m_did, m_cid, is_virtual, link_id, elink, true, m_protocol, sid
+    );
+}
+
 void FelixRxCore::setRxEnable(uint32_t val) {
   disableRx();
 
-  // TODO: FelixID need be computed from did, cid, elink #, streamId, vid
-  FelixID_t fid = val;
+  auto fid = fid_from_channel(val);
   enableChannel(fid);
 }
 
 void FelixRxCore::setRxEnable(std::vector<uint32_t> channels) {
   disableRx();
 
-  // TODO: FelixID need be computed from did, cid, elink #, streamId, vid
   std::vector<FelixID_t> fids;
   for (auto chn : channels) {
-    fids.push_back(chn);
+    auto fid = fid_from_channel(chn);
+    fids.push_back(fid);
   }
 
   enableChannel(fids);
@@ -56,18 +71,9 @@ void FelixRxCore::disableRx() {
   }
 }
 
+// still needed?
 void FelixRxCore::maskRxEnable(uint32_t val, uint32_t mask) {
-  for(int chan=0; chan<32; chan++) {
-    if(!((1<<chan) & mask)) {
-      continue;
-    }
-
-    if((1<<chan) & val) {
-      enableChannel(chan);
-    } else {
-      disableChannel(chan);
-    }
-  }
+  frlog->warn("FelixRxCore::maskRxEnable is not implemented");
 }
 
 void FelixRxCore::flushBuffer() {
@@ -182,8 +188,21 @@ void FelixRxCore::writeConfig(json &j) {}
 void FelixRxCore::loadConfig(const json &j) {
   frlog->info("FelixRxCore:");
 
-  if (j["FelixClient"].contains("flushTime")) {
-    m_flushTime = j["FelixClient"]["flushTime"];
+  if (j.contains("flushTime")) {
+    m_flushTime = j["flushTime"];
     frlog->info(" flush time = {} ms", m_flushTime);
+  }
+
+  if (j.contains("detector_id")) {
+    m_did = j["detector_id"];
+    frlog->info(" did = {}", m_did);
+  }
+  if (j.contains("connector_id")) {
+    m_cid = j["connector_id"];
+    frlog->info(" cid = {}", m_cid);
+  }
+  if (j.contains("protocol")) {
+    m_protocol = j["protocol"];
+    frlog->info(" protocol = {}", m_protocol);
   }
 }

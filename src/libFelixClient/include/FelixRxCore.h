@@ -7,6 +7,7 @@
 #include "RxCore.h"
 #include "RawData.h"
 #include "ClipBoard.h"
+#include "FelixTools.h"
 
 class FelixRxCore : virtual public RxCore {
 
@@ -40,7 +41,7 @@ protected:
 
 private:
 
-  using FelixID_t = uint64_t;
+  using FelixID_t = FelixTools::FelixID_t;
 
   // Channel control
   void enableChannel(FelixID_t fid);
@@ -51,6 +52,12 @@ private:
 
   std::atomic<bool> m_doFlushBuffer {false};
   unsigned m_flushTime {50}; // in milliseconds
+
+  // For Felix ID
+  FelixID_t fid_from_channel(uint32_t chn);
+  uint8_t m_did {0};  // detector ID; 0x00 reserved for local IDs
+  uint16_t m_cid {0}; // connector ID; 0x0000 reserved for local IDs
+  uint8_t m_protocol {0}; // protocol ID
 
   // Data container
   ClipBoard<RawData> rawData;
