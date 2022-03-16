@@ -1,6 +1,5 @@
 list(APPEND tools
         analyseRawData
-        config-GBT-FMC
         createConfig
         dbAccessor
         makeFei4PixelModelCfg
@@ -19,4 +18,5 @@ foreach (target IN LISTS tools)
     add_executable(${target} ${target}.cpp)
     post_build_debug_executable(${target})
     target_link_libraries(${target} Yarr)
+    target_link_libraries(${target} Scan)
 endforeach ()

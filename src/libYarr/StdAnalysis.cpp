@@ -604,6 +604,9 @@ void ScurveFitter::loadConfig(const json &j) {
     if (j.contains("reverse")) {
         reverse = j["reverse"];
     }
+    if (j.contains("dumpDebugScurvePlots")) {
+        m_dumpDebugScurvePlots = j["dumpDebugScurvePlots"];
+    }
     if (j.contains("parametersOfInterest")) {
         for (unsigned i=0; i<j["parametersOfInterest"].size(); i++) {
             m_parametersOfInterest.push_back(j["parametersOfInterest"][i]);
@@ -761,10 +764,9 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         n_failedfit++;
                         alog->debug("Failed fit Col({}) Row({}) Threshold({}) Chi2({}) Status({}) Entries({}) Mean({})", col, row, thrMap[outerIdent]->getBin(bin), chi2, status.outcome, histos[ident]->getEntries(), histos[ident]->getMean());
                     }
-                    // TODO make this selectable via config
-                    //if (row == nRow/2 && col%10 == 0) {
-                    //    output->pushData(std::move(histos[ident]));
-                    //}
+                    if (m_dumpDebugScurvePlots && row == nRow/2 && col%10 == 0) {
+                        output->pushData(std::move(histos[ident]));
+                    }
                     histos[ident].reset(nullptr);
                 }
             }

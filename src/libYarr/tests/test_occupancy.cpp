@@ -4,8 +4,7 @@
 #include "EventData.h"
 #include "Histo2d.h"
 
-// Strictly, it's in libFei4, but not specifically
-TEST_CASE("HistogramOccupancyMap", "[Histogrammer][Fei4][notFei4][OccupancyMap]") {
+TEST_CASE("HistogramOccupancyMap", "[Histogrammer][OccupancyMap]") {
     // This is for one FE
     std::unique_ptr<DataProcessor> histo(new HistogrammerProcessor);
     auto& histogrammer = static_cast<HistogrammerProcessor&>(*histo);

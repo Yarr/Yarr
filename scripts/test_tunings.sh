@@ -5,7 +5,7 @@ do
    if [ $? -eq 0 ]; then
    echo ${scan} OK
 else
-   echo ${scan} FAILED
+   echo ${scan} "FAILED (return code $?)"
    exit 1
 fi
 done
