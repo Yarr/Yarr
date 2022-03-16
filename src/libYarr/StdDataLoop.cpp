@@ -83,7 +83,11 @@ void StdDataLoop::execPart2() {
     
     storage->pushData(std::move(rdc));
         
-    SPDLOG_LOGGER_DEBUG(sdllog, "--> Received {} words in {} iterations!", count ,iterations);
+    if (count == 0) {
+      SPDLOG_LOGGER_DEBUG(sdllog, "\033[1m\033[31m--> Received {} words in {} iterations!\033[0m", count ,iterations);
+    } else {
+      SPDLOG_LOGGER_DEBUG(sdllog, "--> Received {} words in {} iterations!", count ,iterations);
+    }
     m_done = true;
     counter++;
 }

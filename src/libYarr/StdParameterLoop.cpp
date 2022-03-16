@@ -29,7 +29,7 @@ void StdParameterLoop::init() {
 }
 
 void StdParameterLoop::execPart1() {
-    SPDLOG_LOGGER_DEBUG(spllog, "ParameterLoop at -> {}", m_cur);
+    SPDLOG_LOGGER_DEBUG(spllog, "ParameterLoop for {} at -> {}", parName, m_cur);
     g_stat->set(this, m_cur);
 }
 
