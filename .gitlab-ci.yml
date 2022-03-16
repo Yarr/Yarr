@@ -19,7 +19,7 @@ job_build_and_test:
       - cd build
       - CXXFLAGS=-Werror cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
       - make install -j4
-      - make test
+      - CTEST_OUTPUT_ON_FAILURE=1 make test
       - export USER=test
       - echo $USER
       - /bin/pwd
@@ -43,7 +43,7 @@ job_build_and_test_out_of_source:
       - CXXFLAGS=-Werror cmake3 -S . -B /tmp/build -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=cmake/linux-gcc
       - cmake3 --build /tmp/build -j4
       - cmake3 --install /tmp/build
-      - cmake3 --build /tmp/build --target test
+      - CTEST_OUTPUT_ON_FAILURE=1 cmake3 --build /tmp/build --target test
       - export USER=test
       - echo $USER
       - /bin/pwd
@@ -96,7 +96,7 @@ job_test_json_parsing:
       - for file in $(find configs/scans/* -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t SCAN_CONFIG || break; done
 
       - cd build
-      - make test
+      - CTEST_OUTPUT_ON_FAILURE=1 make test
 
 job_test_json:
     stage: build
