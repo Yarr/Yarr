@@ -132,7 +132,7 @@ void Rd53bDecodeHelper::remain(const std::string input)
 void startNewStream(Rd53bDecodeHelper *h, unsigned &nEvents)
 {
     /* Start a new stream */
-    _data = &_curIn->at(2 * _blockIdx);
+    _data = &_curIn->get(2 * _blockIdx);
 
     uint8_t tag = (_data[0] >> 23) & 0xFF;
     _blockIdx++; // Increase block index
@@ -199,7 +199,7 @@ void rollBack(const unsigned length)
     else
     { // Across block, roll back by length
         _bitIdx += (63 & ~length);
-        _data = &_curIn->at(2 * (--_blockIdx - 1));
+        _data = &_curIn->get(2 * (--_blockIdx - 1));
     }
 }
 

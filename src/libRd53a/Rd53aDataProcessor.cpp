@@ -101,7 +101,7 @@ void Rd53aDataProcessor::process_core() {
             for (unsigned i=0; i<words; i++) {
                 // Decode content
                 // TODO this needs review, can't deal with user-k data
-                uint32_t data = curIn->at(i);
+                uint32_t data = curIn->get(i);
 
                 unsigned channel = activeChannels[(i/2)%activeChannels.size()];
                 logger->debug("[{}]\t\t[{}] = 0x{:x}", i, channel, data);

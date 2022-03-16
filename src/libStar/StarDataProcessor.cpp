@@ -107,7 +107,7 @@ void process_data(RawData &curIn,
     packet.add_word(0x13C); //add SOP, only to make decoder happy
     for(unsigned iw=0; iw<curIn.getSize(); iw++) {
         for(int i=0; i<4;i++){
-            packet.add_word((curIn.at(iw)>>i*8)&0xFF);
+            packet.add_word((curIn[iw]>>i*8)&0xFF);
         }
     }
     packet.add_word(0x1DC); //add EOP, only to make decoder happy

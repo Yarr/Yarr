@@ -45,7 +45,7 @@ namespace rd53bTest {
         std::pair<uint32_t, uint32_t> answer(999, 666);
         int timeout = 0;
         if  (data) {
-            answer = Rd53b::decodeSingleRegRead(data->at(0), data->at(1));
+            answer = Rd53b::decodeSingleRegRead(data->get(0), data->get(1));
         }
         return answer;
     }
@@ -204,9 +204,9 @@ int main (int argc, char *argv[]) {
         std::shared_ptr<RawData> data = hwCtrl->readData();
         int timeout = 0;
         if  (data) {
-            answer = Rd53b::decodeSingleRegRead(data->at(0), data->at(1));
+            answer = Rd53b::decodeSingleRegRead(data->get(0), data->get(1));
             if (data->getSize()>2) {
-                answer2 = Rd53b::decodeSingleRegRead(data->at(2), data->at(3));
+                answer2 = Rd53b::decodeSingleRegRead(data->get(2), data->get(3));
             }
             binOut.write((char*) data->getBuf(), data->getSize()*4);
         }
@@ -275,8 +275,8 @@ int main (int argc, char *argv[]) {
         if  (data) {
             logger->debug("Received {} words", data->getSize());
             for (unsigned i=0; i<data->getSize();i+=2) {
-                logger->debug("[{}] = {:x} {:x}", i, data->at(i), data->at(i+1));
-                uint32_t tag = (data->at(i) & 0x7F800000) >> 23;
+                logger->debug("[{}] = {:x} {:x}", i, data->get(i), data->get(i+1));
+                uint32_t tag = (data->get(i) & 0x7F800000) >> 23;
                 logger->debug("Tag: {} should be {}", tag, (((2*n%50)*4)+i/2));
                 if (tag == (((2*n%50)*4)+i/2)) {
                     ok++;

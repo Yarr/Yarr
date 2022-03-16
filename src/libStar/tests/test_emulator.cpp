@@ -927,7 +927,7 @@ void compareOutputs<std::string>(RawData* data, const std::string& expected_pack
   packet.add_word(0x13c); //add SOP
   for(unsigned iw=0; iw<data->getSize(); iw++) {
     for (int i=0; i<4;i++){
-      packet.add_word((data->at(iw)>>i*8)&0xff);
+      packet.add_word((data->get(iw)>>i*8)&0xff);
     }
   }
   packet.add_word(0x1dc); //add EOP
@@ -950,7 +950,7 @@ void compareOutputs<std::vector<uint8_t>>(RawData* data, const std::vector<uint8
   CAPTURE (expected_packet);
   for(size_t w=0; w<data->getSize(); w++) {
     for(int i=0; i<4;i++){
-      uint8_t byte = (data->at(w)>>(i*8))&0xff;
+      uint8_t byte = (data->get(w)>>(i*8))&0xff;
       int index = w*4+i;
       CAPTURE (w, i, index, (int)byte);
       //CHECK (expected_packet.size() > index);

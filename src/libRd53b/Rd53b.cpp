@@ -306,7 +306,7 @@ int Rd53b::checkCom() {
             logger->error("Received wrong number of words ({}) for {}", data->getSize(), this->name);
             return 0;
         }
-        std::pair<uint32_t, uint32_t> answer = decodeSingleRegRead(data->at(0), data->at(1));
+        std::pair<uint32_t, uint32_t> answer = decodeSingleRegRead(data->get(0), data->get(1));
         logger->debug("Addr ({}) Value({})", answer.first, answer.second);
 
         if (answer.first != regAddr || answer.second != regValue) {

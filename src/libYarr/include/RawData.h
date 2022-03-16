@@ -18,14 +18,15 @@ class RawData {
     public:
         RawData(uint32_t arg_adr, unsigned arg_words) {
             adr = arg_adr;
-            buf.reserve(arg_words);   
             buf.resize(arg_words, 0);    
+            buf.reserve(arg_words);   
         }
 
         ~RawData()=default;
 
         inline void resize(unsigned arg_words) {
             buf.resize(arg_words);
+            buf.reserve(arg_words);   
         }
 
         inline uint32_t& getAdr() {
@@ -44,7 +45,7 @@ class RawData {
             return buf[i];
         }
 
-        inline uint32_t& at(size_t i) {
+        inline uint32_t& get(size_t i) {
             return buf[i];
         }
         
@@ -56,8 +57,8 @@ class RawData {
 class RawDataContainer {
     public:
         RawDataContainer(LoopStatus &&s) : stat(s) {}
-        ~RawDataContainer() {
-        }
+        
+        ~RawDataContainer()=default;
 
         inline void add(std::shared_ptr<RawData> arg_data) {
             data.push_back(arg_data);

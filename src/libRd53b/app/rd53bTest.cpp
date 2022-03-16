@@ -155,13 +155,13 @@ int main (int argc, char *argv[]) {
     while (data) {
         if  (data) {
             for (unsigned i=0; i<data->getSize();i++)
-                logger->info("[{}] = {:X}", i, data->at(i));
+                logger->info("[{}] = {:X}", i, data->get(i));
 
             logger->info("Read {} words", data->getSize());
-            std::pair<uint32_t, uint32_t> answer = rd53bTest::decodeSingleRegRead(data->at(0), data->at(1));
+            std::pair<uint32_t, uint32_t> answer = rd53bTest::decodeSingleRegRead(data->get(0), data->get(1));
             logger->info("Answer: {} {}", answer.first, answer.second);
             if (data->getSize()>2) {
-                answer = rd53bTest::decodeSingleRegRead(data->at(2), data->at(3));
+                answer = rd53bTest::decodeSingleRegRead(data->get(2), data->get(3));
                 logger->info("Answer: {} {}", answer.first, answer.second);
             }
         }

@@ -91,7 +91,7 @@ void Fe65p2DataProcessor::process_core() {
             // Process
             unsigned words = curIn->getSize();
             for (unsigned i=0; i<words; i++) {
-                uint32_t value = curIn->at(i);
+                uint32_t value = curIn->get(i);
                 unsigned channel = ((value & 0xFC000000) >> 26);
                 unsigned type = ((value &0x03000000) >> 24);
                 if (type == 0x1) {
