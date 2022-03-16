@@ -23,8 +23,6 @@ job_build_and_test:
       - export USER=test
       - echo $USER
       - /bin/pwd
-      - mkdir /tmp/test
-      - ls /tmp/
       - cd ../
       - bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p -l configs/logging/trace_all.json
       - ls
@@ -47,8 +45,6 @@ job_build_and_test_out_of_source:
       - export USER=test
       - echo $USER
       - /bin/pwd
-      - mkdir /tmp/test
-      - ls /tmp/
       - /tmp/build/bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p -l configs/logging/trace_all.json
       - ls
       - ls ./data/
@@ -116,11 +112,7 @@ job_test_code_coverage:
       - cd build
       - cmake3 .. -DBUILD_TESTS=on -DCMAKE_BUILD_TYPE=Coverage -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
       - make install -j4
-      - export USER=test
-      - echo $USER
       - /bin/pwd
-      - mkdir /tmp/test
-      - ls /tmp/
       - cd ../
       - scripts/cc_tool.sh
 

@@ -17,6 +17,6 @@ post_build_debug_library(Util)
 target_include_directories(Util PRIVATE ../libYarr/include)
 target_include_directories(Util PUBLIC ./include)
 
-if(BUILD_TEST)
+if(BUILD_TESTS)
     add_subdirectory(tests)
 endif()
