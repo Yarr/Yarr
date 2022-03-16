@@ -13,6 +13,18 @@
         "timeout": 0,
         "netio_pages": 256,
         "netio_pagesize": 65536
+      },
+      "ToFLX": {
+        "detector_id": 0,
+        "connector_id": 0,
+        "protocol": 0,
+        "flip": false
+      },
+      "ToHost": {
+        "detector_id": 0,
+        "connector_id": 0,
+        "protocol": 0,
+        "flushTime": 50
       }
     }
   }
