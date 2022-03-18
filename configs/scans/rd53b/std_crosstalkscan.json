@@ -2,19 +2,12 @@
   "scan": {
     "analysis": {
       "0": {
-        "algorithm": "OccupancyAnalysis",
-        "config": {
-          "createMask": false
-        }
+        "algorithm": "ScurveFitter"
       },
-      "1": {
-        "algorithm": "TagAnalysis"
+     "1": {
+        "algorithm": "ParameterAnalysis"
       },
-      "2": {
-        "algorithm": "TotAnalysis",
-        "config": {}
-      },
-      "n_count": 3
+      "n_count": 2
     },
     "histogrammer": {
       "0": {
@@ -22,22 +15,14 @@
         "config": {}
       },
       "1": {
-        "algorithm": "TotMap",
-        "config": {}
-      },
-      "2": {
-        "algorithm": "Tot2Map",
-        "config": {}
-      },
-      "3": {
         "algorithm": "TagDist",
         "config": {}
       },
-      "4": {
+      "2": {
         "algorithm": "HitsPerEvent",
         "config": {}
       },
-      "5": {
+      "3": {
         "algorithm": "DataArchiver",
         "config": {}
       },
@@ -50,10 +35,19 @@
           "min": 0,
           "step": 192,
 	  "maskType" : 1,
-	  "maskSize" : 0,
+	  "maskSize" : 1,
 	  "sensorType" : 0
         },
         "loopAction": "Rd53bMaskLoop"
+      },
+      {
+        "config": {
+            "max": 3850,
+            "min": 1000,
+            "step": 50,
+            "parameter":"InjVcalDiff"
+        },
+            "loopAction": "StdParameterLoop"
       },
       {
         "config": {
@@ -81,10 +75,8 @@
         "loopAction": "StdDataLoop"
       }
     ],
-  "name": "CrossTalk",
+  "name": "CrossTalkThresholdScan",
     "prescan": {
-        "InjVcalMed": 100,
-        "InjVcalHigh": 4000,
         "InjDigEn": 0,
         "Latency": 60
     }

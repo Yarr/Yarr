@@ -151,17 +151,6 @@ void Rd53bMaskLoop::execPart1() {
 	      // If the pixel is disabled, skip it
 		if(m_applyEnMask && !Rd53b::getPixelBit(m_pixRegs[fe], col, row, 0)) continue;
 		
-		    //------------------------------------------------------------------------
-		    //standard map, inj and read out the same pixel
-		    //------------------------------------------------------------------------
-		    if (m_maskType == StandardMask){	       
-		      //logger->info("Enabling {};{}", col, row);
-		      rd53b->setEn(col, row, (m_maskType == PToTMask) ? 0 : 1); // TODO Make configurable
-		      rd53b->setInjEn(col, row, 1);
-		      rd53b->setHitbus(col, row, 1);
-		      modPixels.push_back(std::make_pair(col, row));
-		      counter++;
-		    }
 		    //---------------------------------------------------------------------------------
 		    // std cross-talk scan, inj in surrounding pixels and read out the central one
 		    //---------------------------------------------------------------------------------		    		  
@@ -204,7 +193,18 @@ void Rd53bMaskLoop::execPart1() {
 			modPixels.push_back(std::make_pair(n.first, n.second));
 		      }
 		    }
-		}
+		    else{
+		      //------------------------------------------------------------------------
+		      //standard map, inj and read out the same pixel
+		      //------------------------------------------------------------------------
+		      //logger->info("Enabling {};{}", col, row);
+		      rd53b->setEn(col, row, (m_maskType == PToTMask) ? 0 : 1); // TODO Make configurable
+		      rd53b->setInjEn(col, row, 1);
+		      rd53b->setHitbus(col, row, 1);
+		      modPixels.push_back(std::make_pair(col, row));
+		      counter++;		    
+		    }
+	    }
 	  }
         }
 	//logger->info(" ---> Active pixels ");
