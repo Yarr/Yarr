@@ -4,6 +4,9 @@
 #include <exception>
 #include <iomanip>
 #include <numeric>
+#include <getopt.h>
+#include <filesystem>
+namespace fs = std::filesystem;
 
 #include "AllAnalyses.h"
 #include "AllChips.h"
@@ -173,9 +176,8 @@ namespace ScanHelper {
                         oFTmp.close();
                     }
                     // Save path to config
-                    std::size_t botDirPos = chipConfigPath.find_last_of("/");
                     feCfgMap[bookie.getLastFe()] = chipConfigPath;
-                    feCfg->setConfigFile(chipConfigPath.substr(botDirPos, chipConfigPath.length()));
+                    feCfg->setConfigFile(fs::path(chipConfigPath).filename());
 
                     // Create backup of current config
                     // TODO fix folder
@@ -609,6 +611,7 @@ void printHelp() {
     std::cout << " -l <log_cfg.json> : Provide logger configuration." << std::endl;
     std::cout << " -Q: Set QC scan mode." << std::endl;
     std::cout << " -I: Set interactive mode." << std::endl;
+    std::cout << " --skip-reset: Disable sending global front-end reset command prior to running the scan." << std::endl;
 }
 int parseOptions(int argc, char *argv[], ScanOpts &scanOpts) {
     scanOpts.dbCfgPath = defaultDbCfgPath();
@@ -616,8 +619,11 @@ int parseOptions(int argc, char *argv[], ScanOpts &scanOpts) {
     scanOpts.dbUserCfgPath = defaultDbUserCfgPath();
     for (int i=1;i<argc;i++)scanOpts. commandLineStr.append(std::string(argv[i]).append(" "));
     scanOpts.progName=argv[0];
+    static struct option long_options[] = {{"skip-reset", no_argument, 0, 'z'},
+                                           {0, 0, 0, 0}};
+    int opt_index=0;
     int c;
-    while ((c = getopt(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:l:QI")) != -1) {
+    while ((c = getopt_long(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:l:QIz", long_options, &opt_index)) != -1) {
         int count = 0;
         switch (c) {
             case 'h':
@@ -694,6 +700,9 @@ int parseOptions(int argc, char *argv[], ScanOpts &scanOpts) {
                 break;
             case 'I':
                 scanOpts.setInteractiveMode = true;
+                break;
+            case 'z':
+                scanOpts.doResetBeforeScan = false;
                 break;
             case '?':
                 if (optopt == 's' || optopt == 'n') {
