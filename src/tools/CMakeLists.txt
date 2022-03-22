@@ -8,7 +8,6 @@ list(APPEND tools
         scanConsole
         scurve_test
         test_json
-        reset-all
         )
 
 if (NOT ${TARGET_ARCH} MATCHES "arm*")
