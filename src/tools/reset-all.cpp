@@ -58,14 +58,12 @@ int main(int argc, char* argv[]) {
         } // switch
     } // while
 
-    fs::path hw_controller_path{hw_controller_filename};
-    if(!fs::exists(hw_controller_path)) {
+    if(auto p = fs::path(hw_controller_filename); !fs::exists(p)) {
         std::cerr << "ERROR: Provided hw controller file (=" << hw_controller_filename << ") does not exist" << std::endl;
         return 1;
     }
 
-    fs::path connectivity_path{connectivity_filename};
-    if(!fs::exists(connectivity_path)) {
+    if(auto p = fs::path(connectivity_filename); !fs::exists(p)) {
         std::cerr << "ERROR: Provided connectivity file (=" << connectivity_filename << ") does not exist" << std::endl;
         return 1;
     }
@@ -80,15 +78,16 @@ int main(int argc, char* argv[]) {
         std::cerr << "ERROR: Unable to load controller from provided config, exception caught: " << e.what() << std::endl;
         return 1;
     }
+
     json jconnectivity;
     try {
         jconnectivity = ScanHelper::openJsonFile(connectivity_filename);
+        if(!jconnectivity.contains("chipType")) {
+            std::cerr << "ERROR: Connectivity file is missing expected \"chipType\" field" << std::endl;
+            return 1;
+        }
     } catch (std::exception& e) {
         std::cerr << "ERROR: Unable to load connectivity from provided config, exception caught: " << e.what() << std::endl;
-        return 1;
-    }
-    if(!jconnectivity.contains("chipType")) {
-        std::cerr << "ERROR: Connectivity file is missing expected \"chipType\" field" << std::endl;
         return 1;
     }
     std::string chipType = jconnectivity["chipType"];
