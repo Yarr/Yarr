@@ -7,7 +7,7 @@ uint64_t FelixTools::get_fid( // Version [63:60] always 0x1
   bool is_virtual,      // [35]
   uint16_t linkID,      // [34:22], 13 bits
   uint8_t elink,        // [21:16]
-  bool from_felix,      // [15]
+  bool to_felix,        // [15]
   uint8_t protocol,     // [14:8]
   uint8_t streamID      // [7:0]
   )
@@ -38,8 +38,8 @@ uint64_t FelixTools::get_fid( // Version [63:60] always 0x1
   id = elink & 0x3f;
   fid |= (id << 16);
 
-  // Link direction: is from FELIX [15], 1 bit
-  fid[15] = from_felix;
+  // Link direction [15] (0 = to host; 1 = to FELIX), 1 bit
+  fid[15] = to_felix;
 
   // Protocol [14:8], 7 bits
   // cf. https://atlas-project-felix.web.cern.ch/atlas-project-felix/user/docs/LinkMappingSpecification.pdf, Table 2

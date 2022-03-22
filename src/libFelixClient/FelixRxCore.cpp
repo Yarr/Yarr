@@ -42,7 +42,7 @@ FelixRxCore::FelixID_t FelixRxCore::fid_from_channel(uint32_t chn) {
   uint8_t sid = 0;
 
   return FelixTools::get_fid(
-    m_did, m_cid, is_virtual, link_id, elink, true, m_protocol, sid
+    m_did, m_cid, is_virtual, link_id, elink, false, m_protocol, sid
     );
 }
 
