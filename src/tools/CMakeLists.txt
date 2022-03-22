@@ -8,10 +8,11 @@ list(APPEND tools
         scanConsole
         scurve_test
         test_json
+        reset-all
         )
 
 if (NOT ${TARGET_ARCH} MATCHES "arm*")
-    list(APPEND tools write-register)
+    list(APPEND tools write-register reset-all)
 endif()
  
 foreach (target IN LISTS tools)
