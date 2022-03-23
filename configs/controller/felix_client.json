@@ -10,7 +10,7 @@
         "bus_group_name": "FELIX",
         "verbose_bus": false,
         "verbose_zyre": false,
-        "timeout": 0,
+        "timeout": 1000,
         "netio_pages": 256,
         "netio_pagesize": 65536
       },
