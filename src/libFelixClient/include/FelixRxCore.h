@@ -34,7 +34,7 @@ protected:
 
   void writeConfig(json &j);
   void loadConfig(const json &j);
-  void setClient(FelixClientThread* client); // set Felix client
+  void setClient(std::shared_ptr<FelixClientThread> client); // set Felix client
 
   // on data callback
   void on_data(uint64_t fid, const uint8_t* data, size_t size, uint8_t status);
@@ -62,9 +62,6 @@ private:
   // Data container
   ClipBoard<RawData> rawData;
 
-  // Owned by FelixController
-  FelixClientThread* fclient {nullptr};
-
   // Receiver queue status
   std::atomic<uint64_t> total_data_in {0}; // total number of data received
   std::atomic<uint64_t> total_data_out {0}; // total number of data read out
@@ -77,5 +74,6 @@ private:
   double byte_rate {-1}; // total data rate
   std::chrono::steady_clock::time_point m_t0; // clock used for time measurement
 
+  std::shared_ptr<FelixClientThread> fclient;
 };
 #endif

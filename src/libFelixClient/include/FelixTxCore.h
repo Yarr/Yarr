@@ -48,7 +48,7 @@ protected:
 
   void loadConfig(const json &j); 		     // read configuration from json
   void writeConfig(json& j); 		         // write configuration to json
-  void setClient(FelixClientThread* client); // set Felix client
+  void setClient(std::shared_ptr<FelixClientThread> client); // set Felix client
 
 private:
 
@@ -88,8 +88,7 @@ private:
   uint16_t m_cid {0}; // connector ID; 0x0000 reserved for local IDs
   uint8_t m_protocol {0}; // protocol ID
 
-  // Owned by FelixController
-  FelixClientThread* fclient {nullptr};
+  std::shared_ptr<FelixClientThread> fclient;
 };
 
 #endif

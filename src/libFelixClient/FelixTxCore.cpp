@@ -317,6 +317,6 @@ void FelixTxCore::loadConfig(const json &j) {
 
 void FelixTxCore::writeConfig(json& j) {}
 
-void FelixTxCore::setClient(FelixClientThread* client) {
+void FelixTxCore::setClient(std::shared_ptr<FelixClientThread> client) {
   fclient = client;
 }

@@ -84,7 +84,7 @@ void FelixRxCore::flushBuffer() {
 }
 
 RawData* FelixRxCore::readData() {
-  frlog->debug("FelixRxCore::readData");
+  frlog->trace("FelixRxCore::readData");
   std::unique_ptr<RawData> rdp = rawData.popData();
 
   if (rdp)
@@ -94,7 +94,7 @@ RawData* FelixRxCore::readData() {
 }
 
 void FelixRxCore::on_data(uint64_t fid, const uint8_t* data, size_t size, uint8_t status) {
-  frlog->debug("Received message from 0x{:x}", fid);
+  frlog->trace("Received message from 0x{:x}", fid);
 
   frlog->trace(" message size: {}", size);
   for (size_t b=0; b < size; b++) {
@@ -126,7 +126,7 @@ void FelixRxCore::on_data(uint64_t fid, const uint8_t* data, size_t size, uint8_
   ++total_data_in;
 }
 
-void FelixRxCore::setClient(FelixClientThread* client) {
+void FelixRxCore::setClient(std::shared_ptr<FelixClientThread> client) {
   fclient = client;
 }
 

@@ -19,7 +19,7 @@ public:
 
 private:
 
-  std::unique_ptr<FelixClientThread> client;
+  std::shared_ptr<FelixClientThread> client;
 
   // Felix client callbacks
   void on_init() {}

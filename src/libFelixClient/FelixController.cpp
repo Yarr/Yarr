@@ -36,7 +36,7 @@ void FelixController::loadConfig(const json &j) {
     fcConfig.property[FELIX_CLIENT_VERBOSE_ZYRE] = clientCfg["verbose_zyre"] ? "True" : "False";
 
     // Construct felix client
-    client = std::make_unique<FelixClientThread>(fcConfig);
+    client = std::make_shared<FelixClientThread>(fcConfig);
 
   } catch (std::runtime_error &fce) {
     fclog->error("Failed to construct Felix client");
@@ -46,7 +46,7 @@ void FelixController::loadConfig(const json &j) {
   try {
     auto txCfg = j["ToFLX"];
     FelixTxCore::loadConfig(txCfg);
-    FelixTxCore::setClient(client.get());
+    FelixTxCore::setClient(client);
   } catch (std::runtime_error &je) {
     fclog->error("Failed to load FelixTxCore config");
     throw je;
@@ -55,7 +55,7 @@ void FelixController::loadConfig(const json &j) {
   try {
     auto rxCfg = j["ToHost"];
     FelixRxCore::loadConfig(rxCfg);
-    FelixRxCore::setClient(client.get());
+    FelixRxCore::setClient(client);
   } catch (std::runtime_error &je) {
     fclog->error("Failed to load FelixRxCore config");
     throw je;
