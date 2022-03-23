@@ -243,7 +243,7 @@ void FelixTxCore::prepareTrigger() {
 
     // Need to send the last word in m_trigWords first
     // (Because of the way TriggerLoop sets up the trigger words)
-    for (unsigned j=m_trigWords.size()-1; j>=0; j--) {
+    for (int j=m_trigWords.size()-1; j>=0; j--) {
       fillFifo(m_trigFifo[chn], m_trigWords[j]);
     }
 
