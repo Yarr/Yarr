@@ -15,7 +15,6 @@ add_library(Bdaq SHARED
         BdaqTCP.cpp
         BdaqTxCore.cpp)
 
-add_dependencies(Bdaq variant)
 post_build_debug_library(Bdaq)
 target_include_directories(Bdaq PRIVATE ../libYarr/include)
 target_include_directories(Bdaq PRIVATE ../libUtil/include)

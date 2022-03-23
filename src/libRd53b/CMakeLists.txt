@@ -16,7 +16,6 @@ add_library(Rd53b SHARED
         Rd53bReadRegLoop.cpp
         Rd53bTriggerLoop.cpp)
 
-add_dependencies(Rd53b variant)
 post_build_debug_library(Rd53b)
 target_include_directories(Rd53b PRIVATE ../libYarr/include)
 target_include_directories(Rd53b PRIVATE ../libUtil/include)
