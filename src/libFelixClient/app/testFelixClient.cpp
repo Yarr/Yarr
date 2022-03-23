@@ -103,9 +103,17 @@ int main(int argc, char **argv) {
       hwCtrl->writeFifo(0xdeadbeef);
       hwCtrl->releaseFifo();
 
-      hwCtrl->writeFifo(0x01234567);
-      hwCtrl->writeFifo(0x89abcdef);
-      hwCtrl->releaseFifo();
+      // triggers
+      uint32_t trigWords[2] = {0x01234567, 0x89abcdef};
+      hwCtrl->setTrigWord(trigWords, 2);
+      hwCtrl->setTrigFreq(1);
+      hwCtrl->setTrigCnt(5);
+      hwCtrl->setTrigConfig(INT_COUNT);
+
+      hwCtrl->setTrigEnable(1);
+      while (not hwCtrl->isTrigDone());
+      hwCtrl->setTrigEnable(0);
+
     } catch (std::runtime_error& e) {
       logger->error("Failed to send: {}", e.what());
     }
