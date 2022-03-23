@@ -66,8 +66,12 @@ private:
   FelixClientThread* fclient {nullptr};
 
   // Receiver queue status
-  std::atomic<uint64_t> messages_received {0}; // total number of messages received
-  std::atomic<uint64_t> bytes_received {0}; // total number of bytes received
+  std::atomic<uint64_t> total_data_in {0}; // total number of data received
+  std::atomic<uint64_t> total_data_out {0}; // total number of data read out
+
+  // The following two counters may be reset by FelixRxCore::checkDataRate
+  std::atomic<uint64_t> messages_received {0}; // number of messages received
+  std::atomic<uint64_t> bytes_received {0}; // number of bytes received
 
   double msg_rate {-1}; // message rate
   double byte_rate {-1}; // total data rate

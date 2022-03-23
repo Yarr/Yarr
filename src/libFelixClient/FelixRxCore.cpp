@@ -86,6 +86,10 @@ void FelixRxCore::flushBuffer() {
 RawData* FelixRxCore::readData() {
   frlog->debug("FelixRxCore::readData");
   std::unique_ptr<RawData> rdp = rawData.popData();
+
+  if (rdp)
+    ++total_data_out;
+
   return rdp.release();
 }
 
@@ -99,7 +103,7 @@ void FelixRxCore::on_data(uint64_t fid, const uint8_t* data, size_t size, uint8_
   frlog->trace(" status: 0x{:x}", status);
 
   // stats
-  messages_received++;
+  ++messages_received;
   bytes_received += size;
 
   if (m_doFlushBuffer)
@@ -118,6 +122,8 @@ void FelixRxCore::on_data(uint64_t fid, const uint8_t* data, size_t size, uint8_
   uint32_t mychn = fid & 0xffffffff;
 
   rawData.pushData(std::make_unique<RawData>(mychn, buffer.release(), numWords));
+
+  ++total_data_in;
 }
 
 void FelixRxCore::setClient(FelixClientThread* client) {
@@ -153,6 +159,14 @@ uint32_t FelixRxCore::getDataRate() {
   }
 }
 
+uint32_t FelixRxCore::getCurCount() {
+  uint64_t cur_cnt = total_data_in - total_data_out;
+  if (cur_cnt > 0xffffffff) {
+    frlog->warn("FelixRxCore: counter overflow");
+  }
+  return cur_cnt;
+}
+
 // WIP
 FelixRxCore::FelixRxCore()
 {
@@ -180,7 +194,6 @@ FelixRxCore::~FelixRxCore()
   }
 }
 
-uint32_t FelixRxCore::getCurCount() {return 0;}
 bool FelixRxCore::isBridgeEmpty() {return false;}
 
 void FelixRxCore::writeConfig(json &j) {}
