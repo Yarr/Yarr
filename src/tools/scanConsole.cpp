@@ -47,7 +47,6 @@ int main(int argc, char *argv[]) {
     std::string dataDir;
     json scanLog;
     std::unique_ptr<HwController> hwCtrl;
-    json ctrlCfg;
     std::unique_ptr<Bookkeeper> bookie;
     std::map<FrontEnd*, std::array<std::string, 2>> feCfgMap;
     std::unique_ptr<ScanBase> scanBase;
@@ -63,12 +62,14 @@ int main(int argc, char *argv[]) {
 
     // parsing all json files
     json loggerConfig;
-    json ctrlConfig;
-    json chipConfig=json::array();
+    json chipConfig;
     json dbCfg;
+    json ctrlCfg;
     json userCfg;
     json siteCfg;
     json scanCfg;
+
+    json scanConsoleConfig;
 
     if(!scanOpts.logCfgPath.empty()) {
         loggerConfig = ScanHelper::openJsonFile(scanOpts.logCfgPath);
@@ -80,51 +81,20 @@ int main(int argc, char *argv[]) {
         loggerConfig["log_config"][0]["level"] = "info";
         loggerConfig["outputDir"]="";
     }
-    ctrlCfg = ScanHelper::openJsonFile(scanOpts.ctrlCfgPath);
+    spdlog::info("Configuring logger ...");
+    logging::setupLoggers(loggerConfig);
 
-    for (std::string const &sTmp: scanOpts.cConfigPaths) {
-        logger->info("Opening global config: {}", sTmp);
-        json config;
-        try {
-            config = ScanHelper::openJsonFile(sTmp);
-            chipConfig.push_back(config);
-        } catch (std::runtime_error &e) {
-            logger->critical("#ERROR# opening connectivity or chip configs: {}", e.what());
-            return -1;
-        }
-        if (!config.contains("chipType") || !config.contains("chips")) {
-            logger->error("Invalid config, chip type or chips not specified!");
-            throw (std::runtime_error("loadChips failure"));
-        }
-        const std::string &chipType = config["chipType"];
-        logger->info("Chip type: {}", chipType);
-        logger->info("Chip count {}", config["chips"].size());
-        for (unsigned i = 0; i < config["chips"].size(); i++) {
-            logger->info("Loading chip #{}", i);
-            const json &chip = config["chips"][i];
-            if (chip["enable"] == 0) {
-                logger->warn(" ... chip not enabled, skipping!");
-            } else {
-                // TODO should be a shared pointer
-                auto fe = StdDict::getFrontEnd(chipType);
-                auto *feCfg = dynamic_cast<FrontEndCfg *>(fe.get());
-                if (chip.contains("locked")) {
-                    feCfg->setLocked((int) chip["locked"]);
-                } else {
-                    logger->warn("Config file not found, using default!");
-                    // Rename in case of multiple default configs
-                    std::string chipConfigPath;
-                    feCfg->setName(feCfg->getName() + "_" + std::to_string((int) chip["rx"]));
-                    logger->warn("Creating new config of FE {} at {}", feCfg->getName(), chipConfigPath);
-                    json jTmp;
-                    feCfg->writeConfig(jTmp);
-                    std::ofstream oFTmp(chipConfigPath);
-                    oFTmp << std::setw(4) << jTmp;
-                    oFTmp.close();
-                }
-            }
-        }
+
+    int result = ScanHelper::loadConfigs(scanOpts, true, scanConsoleConfig);
+    if(result<0) {
+        spdlog::error("Failed to read configs");
+        exit(-1);
     }
+
+    ctrlCfg=scanConsoleConfig["ctrlConfig"];
+    chipConfig=scanConsoleConfig["chipConfig"];
+    scanCfg=scanConsoleConfig["scanCfg"];
+
 
     if(scanOpts.dbUse) {
         try {
@@ -136,23 +106,12 @@ int main(int argc, char *argv[]) {
             return -1;
         }
     }
-    try {
-        scanCfg = ScanHelper::openJsonFile(scanOpts.scanType);
-    } catch (std::runtime_error &e) {
-        logger->error("Opening scan config: {}", e.what());
-        return -1;
-    }
 
     // end of configuration section
 
     // create outdir directory
     dataDir=scanOpts.outputDir;
     strippedScan=ScanHelper::createOutputDir(scanOpts.scanType,runCounter,scanOpts.outputDir);
-
-
-    spdlog::info("Configuring logger ...");
-    logging::setupLoggers(loggerConfig);
-    // Can use actual logger now
 
     if (scanOpts.cConfigPaths.empty()) {
         logger->error("Error: no config files given, please specify config file name under -c option, even if file does not exist!");

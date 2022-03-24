@@ -103,12 +103,6 @@ namespace ScanHelper {
 
         if(hwCtrl) {
             shlog->info("Found controller of type: {}", controller);
-            shlog->info("... loading controler config:");
-            std::stringstream ss;
-            ss << ctrlCfg["ctrlCfg"]["cfg"];
-            std::string line;
-            while (std::getline(ss, line)) shlog->info("~~~ {}", line); //yes overkill, i know ..
-
             hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
         } else {
             shlog->critical("Unknown config type: {}",  std::string(ctrlCfg["ctrlCfg"]["type"]));
@@ -122,7 +116,7 @@ namespace ScanHelper {
         return hwCtrl;
     }
 
-std::string loadChipConfigs(json &config) {
+std::string loadChipConfigs(json &config, bool createConfig) {
     std::string chipType;
     if (!config.contains("chipType") || !config.contains("chips")) {
         shlog->error("Invalid config, chip type or chips not specified!");
@@ -149,8 +143,8 @@ std::string loadChipConfigs(json &config) {
                 throw (std::runtime_error("loadChips failure"));
             }
             chip["__data__"] = cfg;
-            chip["__file__"]  = "chipConfigPath";
-        } else {
+            chip["__file__"]  = chipConfigPath;
+        } else if(createConfig){
             auto n = StdDict::getFrontEnd(chipType);
             auto *newCfg = dynamic_cast<FrontEndCfg *>(n.get());
             shlog->warn("Config file not found, using default!");
@@ -163,26 +157,26 @@ std::string loadChipConfigs(json &config) {
             oFTmp << std::setw(4) << jTmp;
             oFTmp.close();
             chip["__data__"] = jTmp;
-            chip["__file__"]  = "chipConfigPath";
+            chip["__file__"]  = chipConfigPath;
         }
     }
     return chipType;
 }
 
-// Load connectivyt and load chips into bookkeeper
-std::string loadChips(const json &config, Bookkeeper &bookie, HwController *hwCtrl, std::map<FrontEnd*, std::array<std::string,2>> &feCfgMap, std::string &outputDir) {
-        std::string chipType;
+// Load connectivity and load chips into bookkeeper
+std::string loadChips(const json &config, Bookkeeper &bookie, HwController *hwCtrl,
+                      std::map<FrontEnd*, std::array<std::string,2>> &feCfgMap, const std::string &outputDir) {
         if (!config.contains("chipType") || !config.contains("chips")) {
             shlog->error("Invalid config, chip type or chips not specified!");
             throw (std::runtime_error("loadChips failure"));
         }
-        chipType = config["chipType"];
+        const std::string &chipType = config["chipType"];
         shlog->info("Chip type: {}", chipType);
         shlog->info("Chip count {}", config["chips"].size());
         // Loop over chips
         for (unsigned i=0; i<config["chips"].size(); i++) {
             shlog->info("Loading chip #{}", i);
-            json chip = config["chips"][i];
+            const json &chip = config["chips"][i];
             std::string chipConfigPath = chip["config"];
             if (chip["enable"] == 0) {
                 shlog->warn(" ... chip not enabled, skipping!");
@@ -231,6 +225,100 @@ std::string loadChips(const json &config, Bookkeeper &bookie, HwController *hwCt
             backupCfgFile.close();
         }
     return chipType;
+}
+std::string loadChips(const json &config, Bookkeeper &bookie, HwController *hwCtrl,
+                      std::map<FrontEnd*, std::array<std::string,2>> &feCfgMap) {
+        const std::string &chipType = config["chipType"];
+        shlog->info("Chip type: {}", chipType);
+        shlog->info("Chip count {}", config["chips"].size());
+        // Loop over chips
+        for (unsigned i=0; i<config["chips"].size(); i++) {
+            shlog->info("Loading chip #{}", i);
+            const json &chip = config["chips"][i];
+            std::string chipConfigPath = chip["config"];
+            if (chip["enable"] == 0) {
+                shlog->warn(" ... chip not enabled, skipping!");
+                continue;
+            }
+            bookie.addFe(StdDict::getFrontEnd(chipType).release(), chip["tx"], chip["rx"]);
+            bookie.getLastFe()->init(hwCtrl, chip["tx"], chip["rx"]);
+            auto *feCfg = dynamic_cast<FrontEndCfg*>(bookie.getLastFe());
+            const json &cfg=chip["__data__"];
+            feCfg->loadConfig(cfg);
+            if (chip.contains("locked"))
+                feCfg->setLocked((int)chip["locked"]);
+        }
+    return chipType;
+}
+
+void writeConfigFiles(const json &config, const std::string &outputDir) {
+    const std::string &chipType = config["chipType"];
+    for (unsigned i=0; i<config["chips"].size(); i++) {
+        const json &chip = config["chips"][i];
+        auto n = StdDict::getFrontEnd(chipType);
+        auto *feCfg = dynamic_cast<FrontEndCfg *>(n.get());
+        const std::string &chipConfigPath=chip["__file__"];
+        std::size_t botDirPos = chipConfigPath.find_last_of('/');
+        std::string cfgFile = chipConfigPath.substr(botDirPos, chipConfigPath.length());
+        // Create backup of current config
+        // TODO fix folder
+        std::ofstream backupCfgFile(outputDir + cfgFile + ".before");
+        json backupCfg;
+        feCfg->writeConfig(backupCfg);
+        backupCfgFile << std::setw(4) << backupCfg;
+        backupCfgFile.close();
+    }
+}
+
+int loadConfigs(const ScanOpts &scanOpts, bool writeConfig, json &config) {
+    // load controller configs
+    json ctrlCfg;
+    ctrlCfg = ScanHelper::openJsonFile(scanOpts.ctrlCfgPath);
+    if(!ctrlCfg.contains({"ctrlCfg", "cfg"})) {
+        shlog->critical("#ERROR# invalid controller config");
+        return -1;
+    }
+    json &cfg=ctrlCfg["ctrlCfg"]["cfg"];
+    if(cfg.contains("feCfg")) {
+        try {
+            cfg["__feCfg_data__"]=ScanHelper::openJsonFile(cfg["feCfg"]);
+         } catch (std::runtime_error &e) {
+            shlog->critical("#ERROR# opening controller FE chip config: {}", e.what());
+            return -1;
+        }
+    }
+    if(cfg.contains("chipCfg")) {
+        try {
+            cfg["__chipCfg_data__"]=ScanHelper::openJsonFile(cfg["chipCfg"]);
+        } catch (std::runtime_error &e) {
+            shlog->critical("#ERROR# opening controller chip config: {}", e.what());
+            return -1;
+        }
+    }
+    // load FE configs
+    json chipConfig=json::array();
+    for (std::string const &sTmp: scanOpts.cConfigPaths) {
+        json feconfig;
+        try {
+            feconfig = ScanHelper::openJsonFile(sTmp);
+        } catch (std::runtime_error &e) {
+            shlog->critical("#ERROR# opening connectivity or chip configs: {}", e.what());
+            return -1;
+        }
+        loadChipConfigs(feconfig,writeConfig);
+        chipConfig.push_back(feconfig);
+    }
+    json scan;
+    try {
+        scan = openJsonFile(scanOpts.scanType);
+    } catch (std::runtime_error &e) {
+        shlog->critical("#ERROR# opening scan config: {}", e.what());
+        return -1;
+    }
+    config["scanCfg"]=scan;
+    config["chipConfig"]=chipConfig;
+    config["ctrlConfig"]=ctrlCfg;
+    return 0;
 }
 
 void buildHistogrammers( std::map<FrontEnd*,
