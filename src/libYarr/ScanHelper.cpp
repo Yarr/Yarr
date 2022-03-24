@@ -133,6 +133,7 @@ std::string loadChipConfigs(json &config, bool createConfig) {
         // TODO should be a shared pointer
         auto fe=StdDict::getFrontEnd(chipType);
         auto *feCfg = dynamic_cast<FrontEndCfg *>(fe.get());
+        std::cout << "------" << chipConfigPath << " " << createConfig << std::endl;
         if (std::filesystem::exists(chipConfigPath)) {
             // Load config
             shlog->info("Loading config file: {}", chipConfigPath);
@@ -144,7 +145,7 @@ std::string loadChipConfigs(json &config, bool createConfig) {
                 throw (std::runtime_error("loadChips failure"));
             }
             chip["__config_data__"] = cfg;
-        } else if(createConfig && chip["enable"]){
+        } else if(createConfig){
             auto n = StdDict::getFrontEnd(chipType);
             auto *newCfg = dynamic_cast<FrontEndCfg *>(n.get());
             shlog->warn("Config file not found, using default!");
@@ -153,9 +154,11 @@ std::string loadChipConfigs(json &config, bool createConfig) {
             shlog->warn("Creating new config of FE {} at {}", feCfg->getName(), chipConfigPath);
             json jTmp;
             newCfg->writeConfig(jTmp);
-            std::ofstream oFTmp(chipConfigPath);
-            oFTmp << std::setw(4) << jTmp;
-            oFTmp.close();
+            if(!chip.contains("enable") || (chip.contains("enable") && chip["enable"] == 1)) {
+                std::ofstream oFTmp(chipConfigPath);
+                oFTmp << std::setw(4) << jTmp;
+                oFTmp.close();
+            }
             chip["__config_data__"] = jTmp;
         }
     }
