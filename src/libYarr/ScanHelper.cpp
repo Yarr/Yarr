@@ -131,7 +131,8 @@ std::string loadChipConfigs(json &config, bool createConfig) {
         json &chip = config["chips"][i];
         std::string chipConfigPath = chip["config"];
         // TODO should be a shared pointer
-        auto *feCfg = dynamic_cast<FrontEndCfg *>(StdDict::getFrontEnd(chipType).get());
+        auto fe=StdDict::getFrontEnd(chipType);
+        auto *feCfg = dynamic_cast<FrontEndCfg *>(fe.get());
         if (std::filesystem::exists(chipConfigPath)) {
             // Load config
             shlog->info("Loading config file: {}", chipConfigPath);
