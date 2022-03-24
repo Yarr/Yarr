@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
     logging::setupLoggers(loggerConfig);
 
 
-    int result = ScanHelper::loadConfigs(scanOpts, true, scanConsoleConfig);
+    int result = ScanHelper::loadConfigFile(scanOpts, true, scanConsoleConfig);
     if(result<0) {
         spdlog::error("Failed to read configs");
         exit(-1);
@@ -182,13 +182,15 @@ int main(int argc, char *argv[]) {
     // Loop chip configs
     for(json const& config : chipConfig){
         try {
-            chipType = ScanHelper::loadChips(config, *bookie, &*hwCtrl, feCfgMap, scanOpts.outputDir);
+            chipType = ScanHelper::loadChips(config, *bookie, &*hwCtrl, feCfgMap);
         } catch (std::runtime_error &e) {
             logger->critical("#ERROR# loading chip config: {}", e.what());
             return -1;
         }
+        ScanHelper::writeConfigFiles(config, scanOpts.outputDir);
         scanLog["connectivity"].push_back(config);
     }
+
 
     // Initial setting local DBHandler
     std::unique_ptr<DBHandler> database = std::make_unique<DBHandler>();

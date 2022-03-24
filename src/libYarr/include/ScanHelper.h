@@ -34,7 +34,7 @@ namespace ScanHelper {
                               std::array<std::string, 2>> &feCfgMap);
         std::string loadChipConfigs(json &j, bool createConfig=false);
         void writeConfigFiles(const json &config, const std::string &outputDir);
-        int loadConfigs(const ScanOpts &scanOpts, bool writeConfig, json &config);
+        int loadConfigFile(const ScanOpts &scanOpts, bool writeConfig, json &config);
 // TODO Do not want to use the raw pointer ScanBase*
         void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& histogrammers, const json &scanConfig, std::vector<FrontEnd*>& feList, ScanBase* s, std::string outputDir);
 

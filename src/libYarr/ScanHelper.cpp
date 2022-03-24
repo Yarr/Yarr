@@ -142,8 +142,7 @@ std::string loadChipConfigs(json &config, bool createConfig) {
                 shlog->error("Error opening chip config: {}", e.what());
                 throw (std::runtime_error("loadChips failure"));
             }
-            chip["__data__"] = cfg;
-            chip["__file__"]  = chipConfigPath;
+            chip["__config_data__"] = cfg;
         } else if(createConfig){
             auto n = StdDict::getFrontEnd(chipType);
             auto *newCfg = dynamic_cast<FrontEndCfg *>(n.get());
@@ -156,14 +155,14 @@ std::string loadChipConfigs(json &config, bool createConfig) {
             std::ofstream oFTmp(chipConfigPath);
             oFTmp << std::setw(4) << jTmp;
             oFTmp.close();
-            chip["__data__"] = jTmp;
-            chip["__file__"]  = chipConfigPath;
+            chip["__config_data__"] = jTmp;
         }
     }
     return chipType;
 }
 
 // Load connectivity and load chips into bookkeeper
+// old style loadChips
 std::string loadChips(const json &config, Bookkeeper &bookie, HwController *hwCtrl,
                       std::map<FrontEnd*, std::array<std::string,2>> &feCfgMap, const std::string &outputDir) {
         if (!config.contains("chipType") || !config.contains("chips")) {
@@ -243,10 +242,13 @@ std::string loadChips(const json &config, Bookkeeper &bookie, HwController *hwCt
             bookie.addFe(StdDict::getFrontEnd(chipType).release(), chip["tx"], chip["rx"]);
             bookie.getLastFe()->init(hwCtrl, chip["tx"], chip["rx"]);
             auto *feCfg = dynamic_cast<FrontEndCfg*>(bookie.getLastFe());
-            const json &cfg=chip["__data__"];
+            const json &cfg=chip["__config_data__"];
             feCfg->loadConfig(cfg);
             if (chip.contains("locked"))
                 feCfg->setLocked((int)chip["locked"]);
+            std::size_t botDirPos = chipConfigPath.find_last_of('/');
+            std::string  cfgFile=chipConfigPath.substr(botDirPos, chipConfigPath.length());
+            feCfgMap[bookie.getLastFe()] = {chipConfigPath, cfgFile};
         }
     return chipType;
 }
@@ -257,7 +259,7 @@ void writeConfigFiles(const json &config, const std::string &outputDir) {
         const json &chip = config["chips"][i];
         auto n = StdDict::getFrontEnd(chipType);
         auto *feCfg = dynamic_cast<FrontEndCfg *>(n.get());
-        const std::string &chipConfigPath=chip["__file__"];
+        const std::string &chipConfigPath=chip["config"];
         std::size_t botDirPos = chipConfigPath.find_last_of('/');
         std::string cfgFile = chipConfigPath.substr(botDirPos, chipConfigPath.length());
         // Create backup of current config
@@ -270,7 +272,7 @@ void writeConfigFiles(const json &config, const std::string &outputDir) {
     }
 }
 
-int loadConfigs(const ScanOpts &scanOpts, bool writeConfig, json &config) {
+int loadConfigFile(const ScanOpts &scanOpts, bool writeConfig, json &config) {
     // load controller configs
     json ctrlCfg;
     ctrlCfg = ScanHelper::openJsonFile(scanOpts.ctrlCfgPath);
