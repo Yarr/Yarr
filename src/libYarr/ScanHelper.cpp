@@ -144,7 +144,7 @@ std::string loadChipConfigs(json &config, bool createConfig) {
                 throw (std::runtime_error("loadChips failure"));
             }
             chip["__config_data__"] = cfg;
-        } else if(createConfig){
+        } else if(createConfig && chip["enable"]){
             auto n = StdDict::getFrontEnd(chipType);
             auto *newCfg = dynamic_cast<FrontEndCfg *>(n.get());
             shlog->warn("Config file not found, using default!");
