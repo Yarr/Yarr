@@ -113,13 +113,8 @@ function(YARR_ADD_ROGUE)
     include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/rogue/include)
 endfunction()
 
-function(YARR_ADD_VARIANT)
-    if (TARGET variant)
-        return()
-    endif()
-
+function(YARR_ADD_EXTERNAL_DEPS)
     # Variant
-
     FetchContent_Declare(
         variant
         GIT_REPOSITORY  https://gitlab.cern.ch/atlas-sw-misc/variant.git
@@ -128,6 +123,17 @@ function(YARR_ADD_VARIANT)
     )
     FetchContent_MakeAvailable(variant)
     include_directories(${CMAKE_CURRENT_BINARY_DIR}/../_deps/variant-src/include)
+
+    # spdlog
+    FetchContent_Declare(
+        spdlog
+        GIT_REPOSITORY  https://gitlab.cern.ch/atlas-sw-misc/spdlog.git
+        GIT_TAG v1.9.2
+        SOURCE_SUBDIR  spdlog
+    )
+    FetchContent_MakeAvailable(spdlog)
+    include_directories(${CMAKE_CURRENT_BINARY_DIR}/../_deps/spdlog-src/include)
+
 endfunction()
 
 # Plotting Tools
