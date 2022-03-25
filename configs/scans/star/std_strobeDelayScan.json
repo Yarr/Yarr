@@ -1,0 +1,70 @@
+{
+  "scan": {
+    "analysis": {
+        "0": {
+                "algorithm": "OccupancyAnalysis",
+	        "config": {}
+            },
+	"1": {
+        	"algorithm": "StarStrobeDelayFitter",
+        	"config": {
+          		"parametersOfInterest": ["ABCs_STR_DEL"],
+	 		"dumpDebugSDPlots": true
+        	}
+         },
+	"n_count": 2
+    },
+    "histogrammer": {
+        "0": {
+		"algorithm": "OccupancyMap",
+		"config": {}
+	    },
+	"n_count": 1
+    },
+    "loops": [
+      {
+        "config": {
+            "max": 63,
+            "min": 0,
+            "step": 1,
+            "parameter":"ABCs_STR_DEL"
+        },
+        "loopAction": "StdParameterLoop"
+      },
+      {
+        "config": {
+            "trig_count": 100,
+            "trig_frequency": 50,
+            "trig_time": 0,
+            "l0_latency": 7,
+            "verbose": false,
+            "extTrigger": false,
+            "noInject": false
+        },
+        "loopAction": "StarTriggerLoop"
+      },
+      {
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "strobeDelayScan",
+    "prescan": {
+	"ABCs_MASKHPR": 1,
+        "ABCs_STOPHPR": 1,
+        "HCC_MASKHPR": 1,
+        "HCC_STOPHPR": 1,
+        "ABCs_BCAL": 200,
+        "ABCs_BVT":  75,
+	"ABCs_PR_ENABLE":      1,
+	"ABCs_LP_ENABLE":      1,
+        "ABCs_DETMODE": 1,
+        "ABCs_CALPULSE_ENABLE":    1,
+        "ABCs_CALPULSE_POLARITY":  0,
+        "ABCs_CURRDRIV": 4,
+        "ABCs_STR_DEL_R": 3,
+        "ABCs_LATENCY": 3,
+        "ABCs_BCFLAG_ENABLE": 0,
+        "ABCs_BCOFFSET": 65
+    }
+  }
+}
