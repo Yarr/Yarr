@@ -28,12 +28,9 @@ namespace ScanHelper {
 
         json openJsonFile(const std::string& filepath);
         std::unique_ptr<HwController> loadController(const json &ctrlCfg);
-        std::string loadChips(const json &j, Bookkeeper &bookie, HwController *hwCtrl, std::map<FrontEnd*,
-                              std::array<std::string, 2>> &feCfgMap,const std::string &outputDir);
-        std::string loadChips(const json &j, Bookkeeper &bookie, HwController *hwCtrl, std::map<FrontEnd*,
+        std::string buildChips(const json &j, Bookkeeper &bookie, HwController *hwCtrl, std::map<FrontEnd*,
                               std::array<std::string, 2>> &feCfgMap);
         std::string loadChipConfigs(json &j, bool createConfig=false);
-        void writeConfigFiles(const json &config, const std::string &outputDir);
         int loadConfigFile(const ScanOpts &scanOpts, bool writeConfig, json &config);
 // TODO Do not want to use the raw pointer ScanBase*
         void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& histogrammers, const json &scanConfig, std::vector<FrontEnd*>& feList, ScanBase* s, std::string outputDir);

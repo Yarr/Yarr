@@ -182,12 +182,11 @@ int main(int argc, char *argv[]) {
     // Loop chip configs
     for(json const& config : chipConfig){
         try {
-            chipType = ScanHelper::loadChips(config, *bookie, &*hwCtrl, feCfgMap);
+            chipType = ScanHelper::buildChips(config, *bookie, &*hwCtrl, feCfgMap);
         } catch (std::runtime_error &e) {
             logger->critical("#ERROR# loading chip config: {}", e.what());
             return -1;
         }
-        ScanHelper::writeConfigFiles(config, scanOpts.outputDir);
         scanLog["connectivity"].push_back(config);
     }
 
