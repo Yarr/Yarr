@@ -34,7 +34,7 @@ class Rd53aGlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver
 
     protected:
     private:
-        Rd53aReg Rd53aGlobalCfg::*parPtr;
+        Rd53aReg Rd53aGlobalCfg::*parPtr{};
         std::string parName;
         int m_cur;
 

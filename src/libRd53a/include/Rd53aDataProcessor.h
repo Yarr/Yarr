@@ -36,7 +36,7 @@ class Rd53aDataProcessor : public DataProcessor {
     private:
         std::vector<std::unique_ptr<std::thread>> thread_ptrs;
         ClipBoard<RawDataContainer> *m_input;
-        std::map<unsigned, ClipBoard<EventDataBase>> *m_outMap;
+        std::map<unsigned, ClipBoard<EventDataBase>> *m_outMap{};
         std::vector<unsigned> activeChannels;
         
         std::map<unsigned, unsigned> tag;
