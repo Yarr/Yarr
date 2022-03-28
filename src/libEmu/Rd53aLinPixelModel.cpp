@@ -31,12 +31,10 @@ Rd53aLinPixelModel::Rd53aLinPixelModel(float _VthresholdLin_mean, float _Vthresh
 	noise_sigma_sigma = _noise_sigma_sigma;
 	noise_sigma_gauss = _noise_sigma_gauss;
 }
-Rd53aLinPixelModel::~Rd53aLinPixelModel()
-{
-}
+Rd53aLinPixelModel::~Rd53aLinPixelModel()= default;
 
 // functions for modeling pixel responses
-float Rd53aLinPixelModel::calculateThreshold(uint32_t VthresholdLin, int TDAC)
+float Rd53aLinPixelModel::calculateThreshold(uint32_t VthresholdLin, int TDAC) const
 {
   float modelVth = VthresholdLin_gauss/100. * VthresholdLin;
   float modelTDAC = (TDAC - 8) * 3;
@@ -47,7 +45,7 @@ float Rd53aLinPixelModel::calculateThreshold(uint32_t VthresholdLin, int TDAC)
   return threshold;
 }
 
-float Rd53aLinPixelModel::calculateNoise()
+float Rd53aLinPixelModel::calculateNoise() const
 {
 	return rand_normal(0, noise_sigma_gauss, 1);
 }

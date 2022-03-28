@@ -203,26 +203,26 @@ void Rd53bTriggerLoop::writeConfig(json &config) {
     config["zeroTot"] = m_zeroTot;
 }
 
-void Rd53bTriggerLoop::loadConfig(json &config) {
-    if (!config["count"].empty())
+void Rd53bTriggerLoop::loadConfig(const json &config) {
+    if (config.contains("count"))
         setTrigCnt(config["count"]);
-    if (!config["frequency"].empty())
+    if (config.contains("frequency"))
         m_trigFreq = config["frequency"];
-    if (!config["time"].empty())
+    if (config.contains("time"))
         m_trigTime = config["time"];
-    if (!config["delay"].empty())
+    if (config.contains("delay"))
         m_trigDelay = config["delay"];
-    if (!config["noInject"].empty())
+    if (config.contains("noInject"))
         m_noInject = config["noInject"];
-    if (!config["edgeMode"].empty())
+    if (config.contains("edgeMode"))
         m_edgeMode = config["edgeMode"];
-    if (!config["edgeDuration"].empty())
+    if (config.contains("edgeDuration"))
         m_edgeDuration = config["edgeDuration"];
-    if (!config["extTrig"].empty())
+    if (config.contains("extTrig"))
         m_extTrig = config["extTrig"];
-    if (!config["trigMultiplier"].empty())
+    if (config.contains("trigMultiplier"))
         m_trigMultiplier = config["trigMultiplier"];
-    if (!config["zeroTot"].empty())
+    if (config.contains("zeroTot"))
         m_zeroTot = config["zeroTot"];
     this->setTrigDelay(m_trigDelay);
 }

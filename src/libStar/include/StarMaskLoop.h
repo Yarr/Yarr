@@ -26,7 +26,7 @@ typedef std::array<uint32_t, 8> MaskType;
 class ChannelRing {
  public:
   ChannelRing() : pos(0), bits(0) {}
-  ~ChannelRing() {}
+  ~ChannelRing() = default;
 
   void reset() {
     pos = 0; bits = 0;
@@ -87,7 +87,7 @@ class StarMaskLoop : public LoopActionBase {
   StarMaskLoop();
 
   void writeConfig(json &config) override;
-  void loadConfig(json &config) override;
+  void loadConfig(const json &config) override;
 
  protected:
   void applyMask(StarChips* fe, MaskType masks, MaskType enables);

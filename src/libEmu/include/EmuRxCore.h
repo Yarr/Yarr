@@ -18,8 +18,8 @@
 template<class FE>
 class EmuRxCore : virtual public RxCore {
     public:
-        EmuRxCore() {}
-        ~EmuRxCore();
+        EmuRxCore() = default;
+        ~EmuRxCore() override;
         
         void setCom(uint32_t chn, EmuCom *com);
         EmuCom* getCom(uint32_t chn);
@@ -59,7 +59,7 @@ class EmuRxCore : virtual public RxCore {
 };
 
 template<class FE>
-EmuRxCore<FE>::~EmuRxCore() {}
+EmuRxCore<FE>::~EmuRxCore() = default;
 
 template<class FE>
 void EmuRxCore<FE>::setCom(uint32_t chn, EmuCom *com) {

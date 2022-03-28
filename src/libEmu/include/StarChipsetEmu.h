@@ -32,8 +32,10 @@ public:
   void doRegReadWrite(LCB::Frame);
   void doHPR(LCB::Frame);
 
-  uint16_t getBC() {return m_bccnt;}
+  uint16_t getBC() const {return m_bccnt;}
   void setBC(uint16_t bc) {m_bccnt = bc;}
+
+  void fillL0Buffer();
 
 private:
 
@@ -89,9 +91,9 @@ private:
   void clearFEData();
 
   /// per ABC
-  void countHits(AbcCfg& abc, const StripData& hits);
+  void countHits(AbcCfg& abc, const StripData& hits) const;
   std::vector<uint16_t> getClusters(const AbcCfg&, const StripData&);
-  unsigned getL0BufferAddr(const AbcCfg& abc, uint8_t cmdBC);
+  unsigned getL0BufferAddr(const AbcCfg& abc, uint8_t cmdBC) const;
 
   std::pair<uint8_t,StripData> getFEData(const AbcCfg& abc, unsigned l0addr);
   std::pair<uint8_t,StripData> generateFEData_StaticTest(const AbcCfg&, unsigned);

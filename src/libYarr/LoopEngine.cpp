@@ -10,8 +10,7 @@ LoopEngine::LoopEngine(Bookkeeper *k) {
     g_bk = k;
 }
 
-LoopEngine::~LoopEngine() {
-}
+LoopEngine::~LoopEngine() = default;
 
 // Add an item/loop to the engine
 void LoopEngine::addAction(Engine::element_value_type el){

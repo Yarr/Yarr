@@ -24,8 +24,8 @@ class Rd53aDiffPixelModel {
 		float noise_sigma_gauss;
 
 		// functions for modeDiffg pixel responses
-  float calculateThreshold(uint32_t Vth1Diff, uint32_t Vth2Diff, int TDAC);
-		float calculateNoise();
+  float calculateThreshold(uint32_t Vth1Diff, uint32_t Vth2Diff, int TDAC) const;
+		float calculateNoise() const;
 		uint32_t calculateToT(float charge);
 
 	private:

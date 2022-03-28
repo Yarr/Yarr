@@ -58,28 +58,9 @@ void Rd53b::init(HwController *core, unsigned arg_txChannel, unsigned arg_rxChan
     core->setClkPeriod(6.25e-9);
 }
 
-void Rd53b::configure() {
-    this->configureInit();
-    this->configureGlobal();
-    this->configurePixels();
-}
-
-void Rd53b::enableAll() {
-    logger->info("Resetting enable/hitbus pixel mask to all enabled!");
-    for (unsigned int col = 0; col < n_Col; col++) {
-        for (unsigned row = 0; row < n_Row; row ++) {
-            setEn(col, row, 1);
-            setHitbus(col, row, 1);
-        }
-    }
-}
-
-void Rd53b::configureInit() {
-    logger->debug("Initiliasing chip ...");
-    
-    // TODO this should only be done once per TX!
+void Rd53b::resetAll() {
+    logger->debug("Performing hard reset ...");
     // Send low number of transitions for at least 10us to put chip in reset state 
-    
     logger->debug(" ... asserting CMD reset via low activity");
     for (unsigned int i=0; i<400; i++) {
         // Pattern corresponds to approx. 0.83MHz
@@ -104,6 +85,27 @@ void Rd53b::configureInit() {
     core->releaseFifo();
     while(!core->isCmdEmpty()){;}
 
+}
+
+void Rd53b::configure() {
+    this->configureInit();
+    this->configureGlobal();
+    this->configurePixels();
+}
+
+void Rd53b::enableAll() {
+    logger->info("Resetting enable/hitbus pixel mask to all enabled!");
+    for (unsigned int col = 0; col < n_Col; col++) {
+        for (unsigned row = 0; row < n_Row; row ++) {
+            setEn(col, row, 1);
+            setHitbus(col, row, 1);
+        }
+    }
+}
+
+void Rd53b::configureInit() {
+    logger->debug("Initiliasing chip ...");
+    
     // Enable register writing to do more resetting
     logger->debug(" ... set global register in writeable mode");
     this->writeRegister(&Rd53b::GcrDefaultConfig, 0xAC75);
@@ -133,7 +135,8 @@ void Rd53b::configureInit() {
     uint16_t tmpEnCoreCol1 = this->EnCoreCol1.read();
     uint16_t tmpEnCoreCol2 = this->EnCoreCol2.read();
     uint16_t tmpEnCoreCol3 = this->EnCoreCol3.read();
-
+    
+    // TODO this could be problematic for low power config
     for (unsigned i=0; i<16; i++) {
         this->writeRegister(&Rd53b::RstCoreCol0, 1<<i);
         this->writeRegister(&Rd53b::RstCoreCol1, 1<<i);

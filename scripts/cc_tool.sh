@@ -15,7 +15,7 @@ if [ $# -eq 1 ]; then
 fi
 
 #  First 2 default parameters:
-binary_folder=build/src/CMakeFiles
+binary_folder=build/src
 test_script_params="scripts/cc_tests.sh"
 
 args=("$@")
@@ -73,8 +73,9 @@ if ( ( [ -d $binary_folder ] ) && ( [ `find $binary_folder -name "*.gcda" -print
    echo
    if [ "$YN" != "Y" ]; then
      echo
-     echo Nothing done!
+     echo Deleting .gcda files
      echo
+     rm -f $(find $binary_folder -name "*.gcda")
      exit 103
    fi
 fi
@@ -95,25 +96,35 @@ if ( ( [ -d $output_folder ] ) && ( [ `ls -a $output_folder | wc -l` -gt 2 ] ) )
    fi
 fi
 
-lcov -z -d $binary_folder
+fastcov -z -d $binary_folder
 ec=$?
 if [ $ec -ne 0 ]; then
   exit $ec
 fi
 
-$test_script_params
+echo Running test script: ${test_script_params}
+${test_script_params}
+if [ $? -eq 0 ]; then
+   echo ${test_script_params} OK
+else
+   echo ${test_script_params} FAILED
+   exit 1
+fi
+ec=$?
+if [ $ec -ne 0 ]; then
+  exit $ec
+fi
+echo Coverage test script done
+
+echo Running fastcov on $binary_folder writing to $output_folder.info
+fastcov  -d $binary_folder -b --lcov -o $output_folder.info
 ec=$?
 if [ $ec -ne 0 ]; then
   exit $ec
 fi
 
-lcov -q -c -d $binary_folder -b . -o $output_folder.info --no-external
-ec=$?
-if [ $ec -ne 0 ]; then
-  exit $ec
-fi
-
-lcov -q -r $output_folder.info "*src/external/src/*"  \
+echo Running fastcov on  $output_folder.info writing to ${output_folder}n.info
+lcov -r $output_folder.info "*src/external/src/*"  \
         -r $output_folder.info "*libUtil/include/spdlog*" \
         -r $output_folder.info "*libUtil/include/json.hpp" \
         -r $output_folder.info "*libUtil/include/catch.hpp" \
@@ -127,6 +138,8 @@ ec=$?
 if [ $ec -ne 0 ]; then
   exit $ec
 fi
+echo Moving  ${output_folder}n.info to $output_folder.info
 mv ${output_folder}n.info $output_folder.info
 
+echo Running genhtml on $output_folder.info writing to $output_folder
 genhtml $output_folder.info -o $output_folder

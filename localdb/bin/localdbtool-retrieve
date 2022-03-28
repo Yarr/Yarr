@@ -302,12 +302,8 @@ def main():
         if dir_path=='localdb': __error_exit('directory')
         if os.path.isdir(dir_path):
             logger.warning('Already exist directory: {}.'.format(dir_path))
-            answer = input('\nOverride it? [y/n] (Exit without doing anything if "n")\n> ')
-            print('')
-            if answer.lower()=='y':
-                shutil.rmtree(dir_path)
-            else:
-                sys.exit(1)
+            logger.warning('Please specify the new directory.')
+            sys.exit(1)
         os.makedirs(dir_path)
         console_data = function.__pull(dir_path, args)
         logger.info('\033[1;33m{0} data ID: {1} \033[0m'.format(console_data['col'], console_data['_id']))

@@ -45,18 +45,18 @@ void Rd53bGlobalFeedback::writeConfig(json &j) {
     j["rstPixelReg"] = m_rstPixelReg;
 }
 
-void Rd53bGlobalFeedback::loadConfig(json &j) {
-    if (!j["min"].empty())
+void Rd53bGlobalFeedback::loadConfig(const json &j) {
+    if (j.contains("min"))
         min = j["min"];
-    if (!j["max"].empty())
+    if (j.contains("max"))
         max = j["max"];
-    if (!j["step"].empty())
+    if (j.contains("step"))
         step = j["step"];
-    if (!j["pixelReg"].empty()) 
+    if (j.contains("pixelReg"))
         m_pixelReg = j["pixelReg"];
-    if (!j["rstPixelReg"].empty())
+    if (j.contains("rstPixelReg"))
         m_rstPixelReg = j["rstPixelReg"];
-    if (!j["parameter"].empty()) {
+    if (j.contains("parameter")) {
         logger->info("Linking parameter: {}", std::string(j["parameter"]));
         parName = j["parameter"];
     }

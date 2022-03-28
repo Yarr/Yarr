@@ -13,9 +13,10 @@
 #include <string>
 #include <sstream>
 #include <getopt.h>
-#include <experimental/filesystem>
+
+#include <filesystem>
+namespace fs = std::filesystem;
 #include <memory> // unique_ptr
-namespace fs = std::experimental::filesystem;
 
 // YARR
 #include "HwController.h"
@@ -57,7 +58,7 @@ std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, std::string
         return fe;
     }
     auto chip_register_json = ScanHelper::openJsonFile(chip_register_file_path);
-    cfg->fromFileJson(chip_register_json);
+    cfg->loadConfig(chip_register_json);
     return fe;
 }
 

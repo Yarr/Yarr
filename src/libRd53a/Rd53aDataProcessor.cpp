@@ -24,9 +24,7 @@ Rd53aDataProcessor::Rd53aDataProcessor()  {
     m_numThreads = std::thread::hardware_concurrency();
 }
 
-Rd53aDataProcessor::~Rd53aDataProcessor() {
-
-}
+Rd53aDataProcessor::~Rd53aDataProcessor() = default;
 
 void Rd53aDataProcessor::init() {
     SPDLOG_LOGGER_TRACE(logger, "");

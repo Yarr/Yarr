@@ -177,21 +177,21 @@ void StarCounterLoop::writeConfig(json &config) {
 	config["noInject"] = m_noInject;
 }
 
-void StarCounterLoop::loadConfig(json &config) {
+void StarCounterLoop::loadConfig(const json &config) {
 
-	if (!config["trig_count"].empty())
+	if (config.contains("trig_count"))
 		setTrigCnt(config["trig_count"]);
 
-	if (!config["trig_frequency"].empty())
+	if (config.contains("trig_frequency"))
 		m_trigFreq = config["trig_frequency"];
 
-	if (!config["trig_time"].empty())
+	if (config.contains("trig_time"))
 		m_trigTime = config["trig_time"];
 
-	if (!config["l0_latency"].empty())
+	if (config.contains("l0_latency"))
 		m_trigDelay = config["l0_latency"];
 
-	if (!config["noInject"].empty())
+	if (config.contains("noInject"))
 		m_noInject = config["noInject"];
 
 	logger->info("Configured trigger loop: trig_count: {} trig_frequency: {} l0_delay: {}",

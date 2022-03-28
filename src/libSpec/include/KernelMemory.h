@@ -34,13 +34,13 @@ public:
 	 * @returns the physical address of the kernel memory.
 	 *
 	 */
-	inline unsigned long getPhysicalAddress() { return pa; }
+	inline unsigned long getPhysicalAddress() const { return pa; }
 	/**
 	 *
 	 * @returns the size of the kernel memory.
 	 *
 	 */
-	inline unsigned long getSize() { return size; }
+	inline unsigned long getSize() const { return size; }
 	/**
 	 *
 	 * @returns the pointer to the memory.

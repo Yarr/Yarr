@@ -19,7 +19,7 @@ class Histo1d : public HistogramBase {
     public:
         Histo1d(const std::string &arg_name, unsigned arg_bins, double arg_xlow, double arg_xhigh);
         Histo1d(const std::string &arg_name, unsigned arg_bins, double arg_xlow, double arg_xhigh, const LoopStatus &stat);
-        ~Histo1d();
+        ~Histo1d() override;
         
         unsigned size() const;
         unsigned getEntries() const;

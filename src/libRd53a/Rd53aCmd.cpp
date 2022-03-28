@@ -19,7 +19,7 @@ Rd53aCmd::Rd53aCmd() : core( nullptr ) {}
 
 Rd53aCmd::Rd53aCmd(TxCore *arg_core) : core( arg_core ) {}
 
-Rd53aCmd::~Rd53aCmd() {}
+Rd53aCmd::~Rd53aCmd() = default;
 
 // These definitions are needed for constexpr
 constexpr uint16_t Rd53aCmd::enc5to8[];

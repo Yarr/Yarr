@@ -67,10 +67,14 @@ namespace {
     bool del_registered =
       StdDict::registerAnalysis("DelayAnalysis",
                                 []() { return std::unique_ptr<AnalysisAlgorithm>(new DelayAnalysis());});
+
+    bool np_registered =
+      StdDict::registerAnalysis("NPointGain",
+                                []() { return std::unique_ptr<AnalysisAlgorithm>(new NPointGain());});
+
     bool param_registered = 
       StdDict::registerAnalysis("ParameterAnalysis",
 				[]() { return std::unique_ptr<AnalysisAlgorithm>(new ParameterAnalysis());});
-
 }
 
 void OccupancyAnalysis::init(ScanBase *s) {
@@ -156,18 +160,18 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
         //occMaps[ident] = NULL;
     }
 }
-void OccupancyAnalysis::loadConfig(json &j){
-    if (!j["createMask"].empty()){
+void OccupancyAnalysis::loadConfig(const json &j){
+    if (j.contains("createMask")){
         createMask=j["createMask"];
     }
 }
 
-void TotAnalysis::loadConfig(json &j) {
+void TotAnalysis::loadConfig(const json &config) {
 
     // check for valid ToT histogram bin configuration
-    if (!j["tot_bins"].empty()) {
-        auto j_bins = j["tot_bins"];
-        if(!j_bins["n_bins"].empty() && !j_bins["x_lo"].empty() && !j_bins["x_hi"].empty()) {
+    if (config.contains("tot_bins")) {
+        auto j_bins = config["tot_bins"];
+        if(j_bins.contains("n_bins") && j_bins.contains("x_lo") && j_bins.contains("x_hi")) {
             tot_bins_n = static_cast<unsigned>(j_bins["n_bins"]);
             tot_bins_x_lo = static_cast<float>(j_bins["x_lo"]);
             tot_bins_x_hi = static_cast<float>(j_bins["x_hi"]);
@@ -175,14 +179,14 @@ void TotAnalysis::loadConfig(json &j) {
     }
 
     // ToT unit
-    if (!j["tot_unit"].empty()) {
-        tot_unit = static_cast<std::string>(j["tot_unit"]);
+    if (config.contains("tot_unit")) {
+        tot_unit = static_cast<std::string>(config["tot_unit"]);
     }
 
     // check for valid ToT sigma histogram bin configuration
-    if (!j["tot_sigma_bins"].empty()) {
-        auto j_bins = j["tot_sigma_bins"];
-        if(!j_bins["n_bins"].empty() && !j_bins["x_lo"].empty() && !j_bins["x_hi"].empty()) {
+    if (config.contains("tot_sigma_bins")) {
+        auto j_bins = config["tot_sigma_bins"];
+        if(j_bins.contains("n_bins") && j_bins.contains("x_lo") && j_bins.contains("x_hi")) {
             tot_sigma_bins_n = static_cast<unsigned>(j_bins["n_bins"]);
             tot_sigma_bins_x_lo = static_cast<float>(j_bins["x_lo"]);
             tot_sigma_bins_x_hi = static_cast<float>(j_bins["x_hi"]);
@@ -548,7 +552,7 @@ void ScurveFitter::init(ScanBase *s) {
     useLcap = true;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || l->isParameterLoop())) {
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || (l->isParameterLoop() && isPOILoop(dynamic_cast<StdParameterLoop*>(l.get()))) )) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -561,7 +565,7 @@ void ScurveFitter::init(ScanBase *s) {
             n_count = n_count*cnt;
         }
         // Vcal Loop
-        if (l->isParameterLoop()) {
+        if (l->isParameterLoop() && isPOILoop(dynamic_cast<StdParameterLoop*>(l.get())) ) {
             vcalLoop = n;
             vcalMax = l->getMax();
             vcalMin = l->getMin();
@@ -596,9 +600,17 @@ void ScurveFitter::init(ScanBase *s) {
     thrTarget = bookie->getTargetCharge();
 }
 
-void ScurveFitter::loadConfig(json &j) {
-    if (!j["reverse"].empty()) {
+void ScurveFitter::loadConfig(const json &j) {
+    if (j.contains("reverse")) {
         reverse = j["reverse"];
+    }
+    if (j.contains("dumpDebugScurvePlots")) {
+        m_dumpDebugScurvePlots = j["dumpDebugScurvePlots"];
+    }
+    if (j.contains("parametersOfInterest")) {
+        for (unsigned i=0; i<j["parametersOfInterest"].size(); i++) {
+            m_parametersOfInterest.push_back(j["parametersOfInterest"][i]);
+        }
     }
 }
 
@@ -619,7 +631,7 @@ double reverseScurveFct(double x, const double *par) {
 void ScurveFitter::processHistogram(HistogramBase *h) {
     cnt++;
     // Check if right Histogram
-    if (h->getName() != OccupancyMap::outputName())
+    if (h->getName().find(OccupancyMap::outputName()) != 0)
         return;
 
     Histo2d *hh = (Histo2d*) h;
@@ -670,7 +682,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 
                 // Got all data, finish up Analysis
                 // TODO This requires the loop to run from low to high and a hit in the last bin
-                if (vcal == vcalMax) {
+                if (vcal >= vcalMax) {
                     // Scale histos
                     //histos[ident]->scale(1.0/(double)injections);
                     lm_status_struct status;
@@ -693,7 +705,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     end = std::chrono::high_resolution_clock::now();
                     std::chrono::microseconds fitTime = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
                     if (thrMap[outerIdent] == NULL) {
-                        Histo2d *hh2 = new Histo2d("ThresholdMap-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
+                        Histo2d *hh2 = new Histo2d("ThresholdMap-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, hh->getStat());
                         hh2->setXaxisTitle("Column");
                         hh2->setYaxisTitle("Row");
                         hh2->setZaxisTitle("Threshold [e]");
@@ -733,7 +745,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         timeDist[outerIdent].reset(hh1);
                     }
 
-                    double chi2= status.fnorm/(double)status.nfev;
+                    double chi2= status.fnorm/(double)(vcalBins - n_par);
 
                     if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0 
                             && chi2 < 2.5 && chi2 > 1e-6
@@ -752,10 +764,9 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         n_failedfit++;
                         alog->debug("Failed fit Col({}) Row({}) Threshold({}) Chi2({}) Status({}) Entries({}) Mean({})", col, row, thrMap[outerIdent]->getBin(bin), chi2, status.outcome, histos[ident]->getEntries(), histos[ident]->getMean());
                     }
-                    // TODO make this selectable via config
-                    //if (row == nRow/2 && col%10 == 0) {
-                    //    output->pushData(std::move(histos[ident]));
-                    //}
+                    if (m_dumpDebugScurvePlots && row == nRow/2 && col%10 == 0) {
+                        output->pushData(std::move(histos[ident]));
+                    }
                     histos[ident].reset(nullptr);
                 }
             }
@@ -895,6 +906,73 @@ void ScurveFitter::end() {
     }
 }
 
+void NPointGain::init(ScanBase *s) {
+    for (unsigned n=0; n<s->size(); n++) {
+        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        if ( l->isParameterLoop() && isPOILoop(dynamic_cast<StdParameterLoop*>(l.get())) ) {
+            par_loopindex = n;
+            par_min = l->getMin();
+            par_max = l->getMax();
+            par_step = l->getStep();
+            break;
+        }
+    }
+}
+
+void NPointGain::processHistogram(HistogramBase *h) {
+    // Pick the threshold map based on histogram names
+    // Target string: "ThresholdMap-<parameter>"
+    std::string hname = h->getName();
+    if (hname.substr(0, hname.find("-")) != "ThresholdMap")
+        return;
+    auto h2d = dynamic_cast<Histo2d*>(h);
+    if (h2d == nullptr)
+        return;
+
+    // Get the scan parameter value (BCAL)
+    //std::string par_str = hname.substr(hname.find("-")+1);
+    //int par = std::stoi(par_str);
+    int par = h->getStat().get(par_loopindex);
+
+    inj.push_back(par);
+    inj_err.push_back(0);
+    thr.push_back(h2d->getMean());
+    thr_err.push_back(h2d->getStdDev());
+}
+
+void NPointGain::end() {
+    unsigned npoints = inj.size();
+
+    // Response curve
+    double inj_min = *std::min_element(inj.begin(), inj.end());
+    double inj_max = *std::max_element(inj.begin(), inj.end());
+    double bwidth = (inj_max - inj_min) / (npoints - 1);
+    double xlow = inj_min - bwidth/2;
+    double xhigh = inj_max + bwidth/2;
+
+    respCurve.reset(new Histo1d("responseCurve", npoints, xlow, xhigh));
+    for (unsigned p=0; p<npoints; p++) {
+        respCurve->fill(inj[p], thr[p]);
+    }
+    respCurve->setXaxisTitle("Injected Charge");
+    respCurve->setYaxisTitle("Threshold");
+
+    // Do fit here
+
+    // Output
+    output->pushData(std::move(respCurve));
+}
+
+void NPointGain::loadConfig(const json &j) {
+    if (j.contains("parametersOfInterest")) {
+        for (unsigned i=0; i<j["parametersOfInterest"].size(); i++) {
+            m_parametersOfInterest.push_back(j["parametersOfInterest"][i]);
+        }
+    }
+    if (j.contains("skipDependencyCheck"))
+       m_skipDependencyCheck = j["skipDependencyCheck"];
+}
+
 void OccGlobalThresholdTune::init(ScanBase *s) {
     n_count = 1;
     for (unsigned n=0; n<s->size(); n++) {
@@ -1003,10 +1081,10 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
 
 }
 
-void OccPixelThresholdTune::loadConfig(json &j){
-    if (!j["occLowCut"].empty())
+void OccPixelThresholdTune::loadConfig(const json &j){
+    if (j.contains("occLowCut"))
         m_occLowCut=j["occLowCut"];
-    if (!j["occHighCut"].empty())
+    if (j.contains("occHighCut"))
         m_occHighCut=j["occHighCut"];
 }
 
@@ -1347,11 +1425,11 @@ void NoiseAnalysis::processHistogram(HistogramBase *h) {
     }
 }
 
-void NoiseAnalysis::loadConfig(json &j){
-    if (!j["createMask"].empty()){
+void NoiseAnalysis::loadConfig(const json &j){
+    if (j.contains("createMask")){
         createMask=j["createMask"];
     }
-    if (!j["noiseThr"].empty()){
+    if (j.contains("noiseThr")){
         noiseThr=j["noiseThr"];
     }
 }

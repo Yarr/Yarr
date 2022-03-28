@@ -1,0 +1,88 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "OccGlobalThresholdTune"
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "1": {
+        "algorithm": "TotMap",
+        "config": {}
+      },
+      "2": {
+        "algorithm": "Tot2Map",
+        "config": {}
+      },
+      "3": {
+        "algorithm": "TagDist",
+        "config": {}
+      },
+      "4": {
+        "algorithm": "HitsPerEvent",
+        "config": {}
+      },
+      "n_count": 5
+    },
+    "loops": [
+      { "config": {
+          "max": 350,
+          "min": 0,
+          "step": 16,
+          "parameter": "DiffTh1M",
+          "rstPixelReg": false
+
+        },
+        "loopAction": "Rd53bGlobalFeedback"
+      },
+      {
+        "config": {
+          "max": 768,
+          "min": 0,
+          "step": 4,
+          "maskType": 3
+        },
+        "loopAction": "Rd53bMaskLoop"
+      },
+      {
+        "config": {
+          "max": 50,
+          "min": 0,
+          "step": 1,
+          "nSteps": 2,
+          "usePToT": true
+        },
+        "loopAction": "Rd53bCoreColLoop"
+      },
+      {
+        "config": {
+          "count": 50,
+          "delay": 56,
+          "extTrigger": false,
+          "frequency": 5000,
+          "noInject": false,
+          "time": 0,
+          "edgeMode": false
+        },
+        "loopAction": "Rd53bTriggerLoop"
+      },
+      {
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "PtotTuneGlobalThreshold",
+    "prescan": {
+        "InjVcalRange": 1,
+        "InjDigEn": 0,
+        "Latency": 60,
+        "TotEnPtot": 1,
+        "TotEnPtoa": 1,
+        "TotPtotLatency": 0
+    }
+  }
+}

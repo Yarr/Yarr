@@ -59,38 +59,38 @@ class SpecTxCore : virtual public TxCore, virtual public SpecCom{
     public:
         SpecTxCore();
 
-        void writeFifo(uint32_t value);
-        void releaseFifo() {};
+        void writeFifo(uint32_t value) override;
+        void releaseFifo() override {};
         
-        void setCmdEnable(uint32_t value);
-        void setCmdEnable(std::vector<uint32_t> channels);
-        void disableCmd();
-        uint32_t getCmdEnable();
+        void setCmdEnable(uint32_t value) override;
+        void setCmdEnable(std::vector<uint32_t> channels) override;
+        void disableCmd() override;
+        uint32_t getCmdEnable() override;
         void maskCmdEnable(uint32_t value, uint32_t mask);
 
-        void setTrigEnable(uint32_t value);
-        uint32_t getTrigEnable();
-        void maskTrigEnable(uint32_t value, uint32_t mask);
+        void setTrigEnable(uint32_t value) override;
+        uint32_t getTrigEnable() override;
+        void maskTrigEnable(uint32_t value, uint32_t mask) override;
 
-        void setTrigConfig(enum TRIG_CONF_VALUE cfg);
-        void setTrigFreq(double freq); // in Hz
-        void setTrigCnt(uint32_t count);
-        void setTrigTime(double time); // in s
-        void setTrigWordLength(uint32_t length); // From Msb
-        void setTrigWord(uint32_t *word, uint32_t length); // 4 words, start at Msb
+        void setTrigConfig(enum TRIG_CONF_VALUE cfg) override;
+        void setTrigFreq(double freq) override; // in Hz
+        void setTrigCnt(uint32_t count) override;
+        void setTrigTime(double time) override; // in s
+        void setTrigWordLength(uint32_t length) override; // From Msb
+        void setTrigWord(uint32_t *word, uint32_t length) override; // 4 words, start at Msb
 
-        void toggleTrigAbort();
+        void toggleTrigAbort() override;
 
-        bool isCmdEmpty();
-        bool isTrigDone();
+        bool isCmdEmpty() override;
+        bool isTrigDone() override;
 
-        uint32_t getTrigInCount();
+        uint32_t getTrigInCount() override;
         
         // TODO move to own class
-        void setTriggerLogicMask(uint32_t mask) {
+        void setTriggerLogicMask(uint32_t mask) override {
             SpecCom::writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_MASK, mask);
         };
-        void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) {
+        void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) override {
             SpecCom::writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_MODE, (uint32_t) mode);
         }
         void setTriggerLogicConfig(uint32_t config) {
@@ -127,7 +127,7 @@ class SpecTxCore : virtual public TxCore, virtual public SpecCom{
             SpecCom::writeSingle(TX_ADDR | TX_IDLE_WORD, word);
         }
         
-        void resetTriggerLogic() {
+        void resetTriggerLogic() override {
             SpecCom::writeSingle(TRIG_LOGIC_ADR | 0xFF, 0x1);
         }
 
