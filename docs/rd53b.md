@@ -142,7 +142,7 @@ TODO
 
 The design files for the quad PCB [Common Quad v2.4](https://gitlab.cern.ch/itk-pixel-hybrid/itkpixv1_quad/-/tree/RD53B_ITKPixV1_QuadHybrid_Rev2.4)
 
-Due to an issue in the SW you can only read out only ONE chip at a time.
+Due to an issue in the SW you can only read out ONE chip at a time.
 
 ## Testing with ITkPixV1.0
 
