@@ -158,7 +158,7 @@ Tunning routine should use precision ToT scans:
 - ptot_retune_pixelthreshold (target 1000e)
 - ptot_thresholdscan
 
-## Testing with ITkPixV1.0
+## Testing with ITkPixV1.1
 
 Since one can read only ONE chip at the time, at the begining of each scan the reset should be avoided, MR is here https://gitlab.cern.ch/YARR/YARR/-/merge_requests/482 
 
