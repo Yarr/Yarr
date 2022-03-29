@@ -118,7 +118,7 @@ function(YARR_ADD_EXTERNAL_DEPS)
     FetchContent_Declare(
         variant
         GIT_REPOSITORY  https://gitlab.cern.ch/atlas-sw-misc/variant.git
-        GIT_TAG v1.5.5
+        GIT_TAG v1.5.6
         SOURCE_SUBDIR variant
     )
     FetchContent_MakeAvailable(variant)

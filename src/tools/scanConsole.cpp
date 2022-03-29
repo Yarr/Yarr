@@ -209,7 +209,14 @@ int main(int argc, char *argv[]) {
             fe->enableAll();
         }
     }
-
+    for ( FrontEnd* fe : bookie->feList ) {
+       auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
+       std::ofstream backupCfgFile(scanOpts.outputDir + feCfgMap.at(fe)[1] + ".before");
+       json backupCfg;
+       feCfg->writeConfig(backupCfg);
+       backupCfgFile << std::setw(4) << backupCfg;
+       backupCfgFile.close();
+    }
     bookie->initGlobalFe(StdDict::getFrontEnd(chipType).release());
     bookie->getGlobalFe()->makeGlobal();
     bookie->getGlobalFe()->init(&*hwCtrl, 0, 0);
@@ -418,7 +425,17 @@ int main(int argc, char *argv[]) {
 
     // Call constructor (eg shutdown Emu threads)
     hwCtrl.reset();
+    // clean up scanlog
+    if(scanLog.contains({"ctrlCfg", "ctrlCfg", "cfg", "__feCfg_data__"})) 
+        scanLog["ctrlCfg"]["ctrlCfg"]["cfg"].erase("__feCfg_data__");
+    for(std::size_t i=0;i<scanLog["connectivity"].size();i++) {
+       json &cfg=scanLog["connectivity"][i];
+       for(std::size_t j=0;j<cfg["chips"].size();j++) {
+       if(cfg["chips"][j].contains("__config_data__"))
+          cfg["chips"][j].erase("__config_data__");
+    }
 
+    }
     // Save scan log
     scanLog["finishTime"] = (int)std::time(nullptr);
     std::ofstream scanLogFile(scanOpts.outputDir + "scanLog.json");
