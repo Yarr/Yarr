@@ -70,6 +70,7 @@ int main(int argc, char *argv[]) {
     json scanCfg;
 
     json scanConsoleConfig;
+    std::unique_ptr<DBHandler> database;
 
     if(!scanOpts.logCfgPath.empty()) {
         loggerConfig = ScanHelper::openJsonFile(scanOpts.logCfgPath);
@@ -192,8 +193,8 @@ int main(int argc, char *argv[]) {
 
 
     // Initial setting local DBHandler
-    std::unique_ptr<DBHandler> database = std::make_unique<DBHandler>();
     if (scanOpts.dbUse) {
+        database = std::make_unique<DBHandler>();
         ScanHelper::banner(logger,"Set Database");
         database->initialize(scanOpts.dbCfgPath, scanOpts.progName, scanOpts.setQCMode, scanOpts.setInteractiveMode);
         if (database->checkConfigs(scanOpts.dbUserCfgPath, scanOpts.dbSiteCfgPath, scanOpts.cConfigPaths)==1)
@@ -211,11 +212,7 @@ int main(int argc, char *argv[]) {
     }
     for ( FrontEnd* fe : bookie->feList ) {
        auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
-       std::ofstream backupCfgFile(scanOpts.outputDir + feCfgMap.at(fe)[1] + ".before");
-       json backupCfg;
-       feCfg->writeConfig(backupCfg);
-       backupCfgFile << std::setw(4) << backupCfg;
-       backupCfgFile.close();
+       ScanHelper::writeFeConfig(feCfg, scanOpts.outputDir + feCfgMap.at(fe)[1] + ".before");
     }
     bookie->initGlobalFe(StdDict::getFrontEnd(chipType).release());
     bookie->getGlobalFe()->makeGlobal();
@@ -331,17 +328,14 @@ int main(int argc, char *argv[]) {
     // Run from downstream to upstream
     logger->info("Starting histogrammer and analysis threads:");
     for ( FrontEnd* fe : bookie->feList ) {
-        if (fe->isActive()) {
-          for (auto& ana : analyses[fe]) {
-            ana->init();
-            ana->run();
-          }
-
-          histogrammers[fe]->init();
-          histogrammers[fe]->run();
-
-          logger->info(" .. started threads of Fe {}", dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
-        }
+        if (!fe->isActive()) continue;
+      for (auto& ana : analyses[fe]) {
+        ana->init();
+        ana->run();
+      }
+      histogrammers[fe]->init();
+      histogrammers[fe]->run();
+      logger->info(" .. started threads of Fe {}", dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
     }
 
     proc = StdDict::getDataProcessor(chipType);
@@ -425,71 +419,49 @@ int main(int argc, char *argv[]) {
 
     // Call constructor (eg shutdown Emu threads)
     hwCtrl.reset();
-    // clean up scanlog
-    if(scanLog.contains({"ctrlCfg", "ctrlCfg", "cfg", "__feCfg_data__"})) 
-        scanLog["ctrlCfg"]["ctrlCfg"]["cfg"].erase("__feCfg_data__");
-    for(std::size_t i=0;i<scanLog["connectivity"].size();i++) {
-       json &cfg=scanLog["connectivity"][i];
-       for(std::size_t j=0;j<cfg["chips"].size();j++) {
-       if(cfg["chips"][j].contains("__config_data__"))
-          cfg["chips"][j].erase("__config_data__");
-    }
-
-    }
-    // Save scan log
     scanLog["finishTime"] = (int)std::time(nullptr);
-    std::ofstream scanLogFile(scanOpts.outputDir + "scanLog.json");
-    scanLogFile << std::setw(4) << scanLog;
-    scanLogFile.close();
-
+    ScanHelper::writeScanLog(scanLog, scanOpts.outputDir + "scanLog.json");
 
     // Cleanup
     //delete scanBase;
     for (auto fe : bookie->feList) {
-        if (fe->isActive()) {
-            auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
+        if(!fe->isActive()) continue;
+        auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
 
-            // Save config
-            if (!feCfg->isLocked()) {
-                logger->info("Saving config of FE {} to {}",
-                             feCfg->getName(), feCfgMap.at(fe)[0]);
-                json jTmp;
-                feCfg->writeConfig(jTmp);
-                std::ofstream oFTmp(feCfgMap.at(fe)[0]);
-                oFTmp << std::setw(4) << jTmp;
-                oFTmp.close();
-            } else {
-                logger->warn("Not saving config for FE {} as it is protected!", feCfg->getName());
+        // Save config
+        if (!feCfg->isLocked()) {
+            const std::string &filename=feCfgMap.at(fe)[0];
+            logger->info("Saving config of FE {} to {}",
+                         feCfg->getName(), filename);
+            ScanHelper::writeFeConfig(feCfg, filename);
+        } else {
+            logger->warn("Not saving config for FE {} as it is protected!", feCfg->getName());
+        }
+
+        // Save extra config in data folder
+        ScanHelper::writeFeConfig(feCfg, scanOpts.outputDir + feCfgMap.at(fe)[1] + ".after");
+
+        // Plot
+        // store output results (if any)
+        if(analyses.empty()) continue;
+        logger->info("-> Storing output results of FE {}", feCfg->getRxChannel());
+        auto &output = *(fe->clipResult->back());
+        std::string name = feCfg->getName();
+        if (output.empty()) {
+            logger->warn(
+                    "There were no results for chip {}, this usually means that the chip did not send any data at all.",
+                    name);
+            continue;
+        }
+        while(!output.empty()) {
+            auto histo = output.popData();
+            // only create the image files if asked to
+            if(scanOpts.doPlots) {
+                histo->plot(name, scanOpts.outputDir);
             }
-
-            // Save extra config in data folder
-            std::ofstream backupCfgFile(scanOpts.outputDir + feCfgMap.at(fe)[1] + ".after");
-            json backupCfg;
-            feCfg->writeConfig(backupCfg);
-            backupCfgFile << std::setw(4) << backupCfg;
-            backupCfgFile.close();
-
-            // Plot
-            // store output results (if any)
-            if(!analyses.empty()) {
-                logger->info("-> Storing output results of FE {}", feCfg->getRxChannel());
-                auto &output = *(fe->clipResult->back());
-                std::string name = feCfg->getName();
-                if (output.empty()) {
-                    logger->warn("There were no results for chip {}, this usually means that the chip did not send any data at all.", name);
-                } else {
-                    while(!output.empty()) {
-                        auto histo = output.popData();
-                        // only create the image files if asked to
-                        if(scanOpts.doPlots) {
-                            histo->plot(name, scanOpts.outputDir);
-                        }
-                        // always dump the data
-                        histo->toFile(name, scanOpts.outputDir);
-                    } // while
-                }
-            }
-        } // fe active
+            // always dump the data
+            histo->toFile(name, scanOpts.outputDir);
+        } // while
     } // i
     logger->info("Finishing run: {}", runCounter);
     if(scanOpts.doPlots) {

@@ -51,6 +51,8 @@ namespace ScanHelper {
        std::string defaultDbCfgPath();
        std::string getHostname();
        std::string defaultDbDirPath();
+       void writeScanLog(json scanLog, const std::string &filename);
+       void writeFeConfig(FrontEndCfg *feCfg, const std::string &filename);
        std::string createOutputDir(const std::string &scanType, unsigned int runCounter, std::string &outputDir);
        void createSymlink(const std::string &dataDir, const std::string &strippedScan, unsigned int runCounter);
        std::string timestamp(std::time_t);

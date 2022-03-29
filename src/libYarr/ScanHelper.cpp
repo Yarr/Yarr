@@ -526,6 +526,30 @@ std::unique_ptr<ScanBase> buildScan(const json &scanCfg, Bookkeeper& bookie,  Fe
     return s;
 }
 
+void writeFeConfig(FrontEndCfg *feCfg, const std::string &filename) {
+    std::ofstream backupCfgFile(filename);
+    json backupCfg;
+    feCfg->writeConfig(backupCfg);
+    backupCfgFile << std::setw(4) << backupCfg;
+    backupCfgFile.close();
+}
+
+void writeScanLog(json scanLog, const std::string &filename) {
+    if (scanLog.contains({"ctrlCfg", "ctrlCfg", "cfg", "__feCfg_data__"}))
+        scanLog["ctrlCfg"]["ctrlCfg"]["cfg"].erase("__feCfg_data__");
+    for (std::size_t i = 0; i < scanLog["connectivity"].size(); i++) {
+        json &cfg = scanLog["connectivity"][i];
+        for (std::size_t j = 0; j < cfg["chips"].size(); j++) {
+            if (cfg["chips"][j].contains("__config_data__"))
+                cfg["chips"][j].erase("__config_data__");
+        }
+    }
+    // Save scan log
+    std::ofstream scanLogFile(filename);
+    scanLogFile << std::setw(4) << scanLog;
+    scanLogFile.close();
+}
+
 std::string  createOutputDir(const std::string &scanType, unsigned int runCounter, std::string &outputDir) {
     // Generate output directory path
     std::size_t pathPos = scanType.find_last_of('/');
