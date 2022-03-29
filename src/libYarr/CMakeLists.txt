@@ -30,6 +30,8 @@ add_library(Scan SHARED
         LoopEngine.cpp
         ResultBase.cpp
         ScanBase.cpp
+        ScanConsole.cpp
+        ScanConsoleImpl.cpp
         ScanFactory.cpp
         ScanHelper.cpp
         StdAnalysis.cpp
