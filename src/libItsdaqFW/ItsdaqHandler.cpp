@@ -163,7 +163,6 @@ void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
 
     if(((thisWord>>60) & 0xf) == 0xf) {
       // Timestamp
-      // if(startOffset == i-1) {
       if(startOffset == i-1) {
         startOffset = i;
         continue;
