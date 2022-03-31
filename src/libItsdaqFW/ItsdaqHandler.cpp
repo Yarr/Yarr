@@ -148,7 +148,6 @@ void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
     return word;
   };
 
-
   uint64_t first = get64(0);
   uint16_t stream = ntohs(start[0]);
 
@@ -174,7 +173,6 @@ void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
 	// store good data into partial_buffer
 	partial_buffer.push_back(thisWord);
 	continue;
-	//  }
     }
 
 
