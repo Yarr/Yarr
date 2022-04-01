@@ -1,4 +1,4 @@
-YARR_ADD_VARIANT()
+YARR_ADD_EXTERNAL_DEPS()
 YARR_ADD_TBB()
 
 # Level below which logger macros are not enabled
