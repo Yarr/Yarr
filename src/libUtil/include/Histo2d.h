@@ -43,6 +43,8 @@ class Histo2d : public HistogramBase {
         
         double getBin(unsigned n) const;
         int binNum(double x, double y) const;
+
+	bool isFilled(unsigned n) const;
         
         double getUnderflow() const {return underflow;}
         double getOverflow() const {return overflow;}
@@ -71,7 +73,7 @@ class Histo2d : public HistogramBase {
 
 private:
         std::vector<float> data;
-        std::vector<bool> isFilled;
+        std::vector<bool> m_isFilled;
 
         double underflow;
         double overflow;
@@ -89,8 +91,6 @@ private:
         double max;
         double min;
         unsigned entries;
-
-        //std::map<unsigned, bool> isFilled;
 };
 
 #endif

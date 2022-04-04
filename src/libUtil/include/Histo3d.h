@@ -46,6 +46,8 @@ class Histo3d : public HistogramBase {
         
         double getBin(unsigned n) const;
         int binNum(double x, double y, double z) const;
+
+	bool isFilled(unsigned n) const;
         
         double getUnderflow() const {return underflow;}
         double getOverflow() const {return overflow;}
@@ -100,7 +102,7 @@ private:
         double min;
         unsigned entries;
 
-        std::map<unsigned, bool> isFilled;
+        std::map<unsigned, bool> m_isFilled;
 };
 
 #endif

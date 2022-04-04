@@ -38,7 +38,7 @@ Histo2d::Histo2d(const std::string &arg_name, unsigned arg_xbins, double arg_xlo
     underflow = 0;
     overflow = 0;
     data = std::vector<float>(xbins*ybins,0);
-    isFilled = std::vector<bool>(xbins*ybins,false);
+    m_isFilled = std::vector<bool>(xbins*ybins,false);
     entries = 0;
 
 }
@@ -60,7 +60,7 @@ Histo2d::Histo2d(const std::string &arg_name, unsigned arg_xbins, double arg_xlo
     underflow = 0;
     overflow = 0;
     data = std::vector<float>(xbins*ybins,0);
-    isFilled =  std::vector<bool>(xbins*ybins,false);
+    m_isFilled =  std::vector<bool>(xbins*ybins,false);
     entries = 0;
 }
 
@@ -81,7 +81,7 @@ Histo2d::Histo2d(Histo2d *h) : HistogramBase(h->getName()) {
     overflow = h->getOverflow();
 
     data = std::vector<float>(xbins*ybins,0);
-    isFilled = std::vector<bool>(xbins*ybins,false);
+    m_isFilled = std::vector<bool>(xbins*ybins,false);
     for(unsigned i=0; i<xbins*ybins; i++)
         data[i] = h->getBin(i);
     entries = h->getNumOfEntries();
@@ -113,7 +113,7 @@ void Histo2d::fill(double x, double y, double v) {
             max = v;
         if (v < min)
             min = v;
-        isFilled[xbin+(ybin*xbins)] = true;
+        m_isFilled[xbin+(ybin*xbins)] = true;
     }
     entries++;
 }
@@ -132,6 +132,8 @@ void Histo2d::add(const Histo2d &h) {
         return;
     for (unsigned int i=0; i<(xbins*ybins); i++) {
         data[i] += h.getBin(i);
+	if (h.isFilled(i))
+		m_isFilled[i] = true;
     }
     entries += h.numOfEntries();
 }
@@ -168,7 +170,7 @@ double Histo2d::getMean() {
     double sum = 0;
     double entries = 0;
     for (unsigned int i=0; i<(xbins*ybins); i++) {
-        if (isFilled[i]) {
+        if (m_isFilled[i]) {
             sum += data[i];
             entries++;
         }
@@ -182,7 +184,7 @@ double Histo2d::getStdDev() {
     double mu = 0;
     double entries = 0;
     for (unsigned int i=0; i<(xbins*ybins); i++) {
-        if (isFilled[i]) {
+        if (m_isFilled[i]) {
              mu += pow(data[i]-mean, 2);
              entries++;
         }
@@ -191,6 +193,10 @@ double Histo2d::getStdDev() {
     return sqrt(mu/(double)(entries-1));
 }
 
+
+bool Histo2d::isFilled(unsigned n) const {
+    return (m_isFilled.size()>=n && m_isFilled.at(n));
+}
 
 double Histo2d::getBin(unsigned n) const {
     if (n < this->size()) {
@@ -203,7 +209,7 @@ double Histo2d::getBin(unsigned n) const {
 void Histo2d::setBin(unsigned n, double v) {
     if (n < this->size()) {
         data[n] = v;
-        isFilled[n] = true;
+        m_isFilled[n] = true;
     }
 }
 
