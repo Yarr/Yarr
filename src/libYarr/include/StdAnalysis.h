@@ -315,7 +315,8 @@ class NoiseAnalysis : public AnalysisAlgorithm {
         void loadConfig(const json &config) override;
     private:
         unsigned n_trigger;
-        std::unique_ptr<Histo2d> occ;
+        std::unique_ptr<Histo2d> occ, tot;
+        std::unique_ptr<Histo1d> tag;      
         bool createMask;
         double noiseThr;
 };

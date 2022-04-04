@@ -31,7 +31,7 @@
         "algorithm": "DataArchiver",
         "config": {}
       },
-      "n_count": 5 
+      "n_count": 6
     },
     "loops": [
       {
@@ -51,7 +51,7 @@
         "loopAction": "StdDataGatherer"
       }
     ],
-    "name": "DigitalScan",
+    "name": "NoiseScan",
     "prescan": {
         "InjVcalDiff": 0,
         "InjDigEn": 0,
