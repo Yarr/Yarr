@@ -316,7 +316,12 @@ void FelixTxCore::loadConfig(const json &j) {
   }
 }
 
-void FelixTxCore::writeConfig(json& j) {}
+void FelixTxCore::writeConfig(json& j) {
+  j["detector_id"] = m_did;
+  j["connector_id"] = m_cid;
+  j["protocol"] = m_protocol;
+  j["flip"] = m_flip;
+}
 
 void FelixTxCore::setClient(std::shared_ptr<FelixClientThread> client) {
   fclient = client;

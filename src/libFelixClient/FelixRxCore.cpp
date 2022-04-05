@@ -8,6 +8,29 @@ namespace {
   auto frlog = logging::make_log("FelixRxCore");
 }
 
+FelixRxCore::FelixRxCore() = default;
+
+FelixRxCore::~FelixRxCore()
+{
+  // Unsubscribe from all links
+  disableRx();
+
+  // Clean up
+  // delete data that are not read from rawData
+  frlog->debug("Flush receiver queue...");
+  int count = 0;
+  while (!rawData.empty()) {
+    auto data = rawData.popData();
+    count++;
+    delete [] data->buf;
+  }
+  if (count) {
+    frlog->debug(" ...done ({} stray data blocks)", count);
+  } else {
+    frlog->debug(" ...done");
+  }
+}
+
 void FelixRxCore::enableChannel(FelixID_t fid) {
   frlog->debug("Subscribe to Rx link: 0x{:x}", fid);
   m_enables[fid] = true;
@@ -171,36 +194,7 @@ uint32_t FelixRxCore::getCurCount() {
   return cur_cnt;
 }
 
-// WIP
-FelixRxCore::FelixRxCore()
-{
-
-}
-
-FelixRxCore::~FelixRxCore()
-{
-  // Unsubscribe from all links
-  disableRx();
-
-  // Clean up
-  // delete data that are not read from rawData
-  frlog->debug("Flush receiver queue...");
-  int count = 0;
-  while (!rawData.empty()) {
-    auto data = rawData.popData();
-    count++;
-    delete [] data->buf;
-  }
-  if (count) {
-    frlog->debug(" ...done ({} stray data blocks)", count);
-  } else {
-    frlog->debug(" ...done");
-  }
-}
-
 bool FelixRxCore::isBridgeEmpty() {return false;}
-
-void FelixRxCore::writeConfig(json &j) {}
 
 void FelixRxCore::loadConfig(const json &j) {
   frlog->info("FelixRxCore:");
@@ -222,4 +216,11 @@ void FelixRxCore::loadConfig(const json &j) {
     m_protocol = j["protocol"];
     frlog->info(" protocol = {}", m_protocol);
   }
+}
+
+void FelixRxCore::writeConfig(json &j) {
+  j["detector_id"] = m_did;
+  j["connector_id"] = m_cid;
+  j["protocol"] = m_protocol;
+  j["flushTime"] = m_flushTime;
 }
