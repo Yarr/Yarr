@@ -33,9 +33,10 @@ void FelixRxCore::disableChannel(FelixID_t fid) {
 FelixRxCore::FelixID_t FelixRxCore::fid_from_channel(uint32_t chn) {
   // Compute FelixID from did, cid, link id elink #, streamId
 
-  // TODO: get link/GBT id and elink # from chn?
-  uint16_t link_id = 0; // FIXME
-  uint8_t elink = chn;
+  // Get link/GBT id and elink # from channel number
+  // chn[18:6] is the link ID; chn[5:0] is the e-link number
+  uint8_t elink = chn & 0x3f;
+  uint16_t link_id = (chn >> 6) & 0x1fff;
 
   // Hard code is_virtual to false, and streamID to 0 for now
   bool is_virtual = false;
@@ -118,8 +119,11 @@ void FelixRxCore::on_data(uint64_t fid, const uint8_t* data, size_t size, uint8_
   std::unique_ptr<uint32_t[]> buffer(new uint32_t[numWords]);
   std::memcpy(buffer.get(), data, size);
 
-  // for now
-  uint32_t mychn = fid & 0xffffffff;
+  // for now:
+  // channel number consists of 6-bit elink, 13-bit link ID, 1-bit is_virtual
+  // and also the lowest 12 bits of ConnectorID to fill up the 32 bits
+  // fid[47:16]
+  uint32_t mychn = (fid >> 16) & 0xffffffff;
 
   rawData.pushData(std::make_unique<RawData>(mychn, buffer.release(), numWords));
 
