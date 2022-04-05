@@ -277,7 +277,7 @@ void L13d::processEvent(FrontEndData *data) {
 }
 
 void HitsPerEvent::create(const LoopStatus &stat) {
-    h = new Histo1d(outputName(), 16, -0.5, 15.5, stat);
+    h = new Histo1d(outputName(), 1000, -0.5, 999.5, stat);
     h->setXaxisTitle("Number of Hits");
     h->setYaxisTitle("Events");
     r.reset(h);
