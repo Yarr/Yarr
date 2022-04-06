@@ -9,6 +9,8 @@
 #include "ClipBoard.h"
 #include "FelixTools.h"
 
+#include <thread>
+
 class FelixRxCore : virtual public RxCore {
 
 public:
@@ -28,20 +30,22 @@ public:
   uint32_t getCurCount() override;
   bool isBridgeEmpty() override;
 
-  void checkDataRate();
+  void runMonitor(bool print_info=false);
+  void stopMonitor();
 
 protected:
+
+  using FelixID_t = FelixTools::FelixID_t;
 
   void writeConfig(json &j);
   void loadConfig(const json &j);
   void setClient(std::shared_ptr<FelixClientThread> client); // set Felix client
 
   // on data callback
-  void on_data(uint64_t fid, const uint8_t* data, size_t size, uint8_t status);
-
-private:
-
-  using FelixID_t = FelixTools::FelixID_t;
+  void on_data(FelixID_t fid, const uint8_t* data, size_t size, uint8_t status);
+  // on connect/disconnect callbacks
+  void on_connect(FelixID_t fid);
+  void on_disconnect(FelixID_t fid);
 
   // Channel control
   void enableChannel(FelixID_t fid);
@@ -60,15 +64,21 @@ private:
   uint8_t m_protocol {0}; // protocol ID
 
   // Data container
-  ClipBoard<RawData> rawData;
+  ClipBoard<RawData> m_rawData;
 
   // Receiver queue status
-  std::atomic<uint64_t> total_data_in {0}; // total number of data received
-  std::atomic<uint64_t> total_data_out {0}; // total number of data read out
+  std::atomic<uint64_t> m_total_data_in {0}; // total number of data received
+  std::atomic<uint64_t> m_total_data_out {0}; // total number of data read out
+  std::atomic<uint64_t> m_total_bytes_in {0};
+  std::atomic<uint64_t> m_total_bytes_out {0};
 
-  // The following two counters may be reset by FelixRxCore::checkDataRate
-  std::atomic<uint64_t> messages_received {0}; // number of messages received
-  std::atomic<uint64_t> bytes_received {0}; // number of bytes received
+  // Per channel statistics
+  std::map<FelixID_t, FelixTools::QueueStatistics> m_qStats;
+
+  std::thread m_monitor_thread;
+  std::atomic<bool> m_runMonitor {false};
+  uint32_t m_interval_ms {1000}; // monitoring interval in ms
+  uint64_t m_queue_limit {4000}; // MB
 
   double msg_rate {-1}; // message rate
   double byte_rate {-1}; // total data rate

@@ -124,11 +124,14 @@ int main(int argc, char **argv) {
     try {
       hwCtrl->setRxEnable(elink_rx);
 
+      // start monitoring
+      dynamic_cast<FelixController*>(hwCtrl.get())->runMonitor(true);
+
       // wait for data
       logger->info("Waiting for data...");
-      //std::this_thread::sleep_for(std::chrono::seconds(1));
+      std::this_thread::sleep_for(std::chrono::seconds(5));
 
-      dynamic_cast<FelixController*>(hwCtrl.get())->checkDataRate();
+      dynamic_cast<FelixController*>(hwCtrl.get())->stopMonitor();
 
       hwCtrl->disableRx();
 

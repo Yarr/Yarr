@@ -1,6 +1,7 @@
 #include "FelixRxCore.h"
-
 #include "logging.h"
+
+#include "felix/felix_client_status.h"
 
 #include <cstring> // needed for std::memcpy
 
@@ -12,6 +13,11 @@ FelixRxCore::FelixRxCore() = default;
 
 FelixRxCore::~FelixRxCore()
 {
+  // Stop monitoring if needed
+  stopMonitor();
+  if (m_monitor_thread.joinable())
+    m_monitor_thread.join();
+
   // Unsubscribe from all links
   disableRx();
 
@@ -19,8 +25,8 @@ FelixRxCore::~FelixRxCore()
   // delete data that are not read from rawData
   frlog->debug("Flush receiver queue...");
   int count = 0;
-  while (!rawData.empty()) {
-    auto data = rawData.popData();
+  while (!m_rawData.empty()) {
+    auto data = m_rawData.popData();
     count++;
     delete [] data->buf;
   }
@@ -34,6 +40,7 @@ FelixRxCore::~FelixRxCore()
 void FelixRxCore::enableChannel(FelixID_t fid) {
   frlog->debug("Subscribe to Rx link: 0x{:x}", fid);
   m_enables[fid] = true;
+  m_qStats[fid];
   fclient->subscribe(fid);
   m_t0 = std::chrono::steady_clock::now();
 }
@@ -109,15 +116,17 @@ void FelixRxCore::flushBuffer() {
 
 RawData* FelixRxCore::readData() {
   frlog->trace("FelixRxCore::readData");
-  std::unique_ptr<RawData> rdp = rawData.popData();
+  std::unique_ptr<RawData> rdp = m_rawData.popData();
 
-  if (rdp)
-    ++total_data_out;
+  if (rdp) {
+    m_total_data_out += 1;
+    m_total_bytes_out += (rdp->words)*4;
+  }
 
   return rdp.release();
 }
 
-void FelixRxCore::on_data(uint64_t fid, const uint8_t* data, size_t size, uint8_t status) {
+void FelixRxCore::on_data(FelixID_t fid, const uint8_t* data, size_t size, uint8_t status) {
   frlog->trace("Received message from 0x{:x}", fid);
 
   frlog->trace(" message size: {}", size);
@@ -127,8 +136,18 @@ void FelixRxCore::on_data(uint64_t fid, const uint8_t* data, size_t size, uint8_
   frlog->trace(" status: 0x{:x}", status);
 
   // stats
-  ++messages_received;
-  bytes_received += size;
+  m_qStats[fid].messages_received += 1;
+  m_qStats[fid].bytes_received += size;
+
+  if (status == FELIX_STATUS_FW_MALF or status == FELIX_STATUS_SW_MALF) {
+    m_qStats[fid].error += 1;
+  }
+  if (status == FELIX_STATUS_FW_CRC) {
+    m_qStats[fid].crc += 1;
+  }
+  if (status == FELIX_STATUS_FW_TRUNC or status == FELIX_STATUS_SW_TRUNC) {
+    m_qStats[fid].truncated += 1;
+  }
 
   if (m_doFlushBuffer)
     return;
@@ -148,46 +167,41 @@ void FelixRxCore::on_data(uint64_t fid, const uint8_t* data, size_t size, uint8_
   // fid[47:16]
   uint32_t mychn = (fid >> 16) & 0xffffffff;
 
-  rawData.pushData(std::make_unique<RawData>(mychn, buffer.release(), numWords));
+  m_rawData.pushData(std::make_unique<RawData>(mychn, buffer.release(), numWords));
 
-  ++total_data_in;
+  m_total_data_in += 1;
+  m_total_bytes_in += numWords*4;
+}
+
+void FelixRxCore::on_connect(FelixID_t fid) {
+  m_qStats[fid].connected = true;
+}
+
+void FelixRxCore::on_disconnect(FelixID_t fid) {
+  m_qStats[fid].connected = false;
 }
 
 void FelixRxCore::setClient(std::shared_ptr<FelixClientThread> client) {
   fclient = client;
 }
 
-void FelixRxCore::checkDataRate() {
-  // reset counters and start time
-  messages_received = 0;
-  bytes_received = 0;
-  m_t0 = std::chrono::steady_clock::now();
-
-  // wait for one second
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
-  std::chrono::duration<double> time = std::chrono::steady_clock::now() - m_t0;
-
-  byte_rate = bytes_received / time.count(); // Byte/s
-  msg_rate = messages_received / time.count(); // Hz
-
-  frlog->info("Data rate: {:.2f} Mb/s  message rate: {:.2f} kHz", byte_rate*8e-6, msg_rate/1000.);
-}
-
 uint32_t FelixRxCore::getDataRate() {
-  if (byte_rate < 0) {
-    // byte_rate has never been calculated
-    // estimate it here
-    std::chrono::duration<double> seconds = std::chrono::steady_clock::now() - m_t0;
-    return bytes_received / seconds.count();
-  } else {
-    // byte_rate has been computed in checkDataRate()
-    return byte_rate;
+  double total_byte_rate{0};
+  for (const auto& [fid, stats] : m_qStats) {
+    total_byte_rate += stats.byte_rate;
   }
+
+  if (total_byte_rate < 0) {
+    // Monitor is not run
+    frlog->warn("Data rates have not been calculated. Call FelixRxCore::runMonitor to check the Rx queue.");
+    return 0;
+  }
+
+  return total_byte_rate;
 }
 
 uint32_t FelixRxCore::getCurCount() {
-  uint64_t cur_cnt = total_data_in - total_data_out;
+  uint64_t cur_cnt = m_total_data_in - m_total_data_out;
   if (cur_cnt > 0xffffffff) {
     frlog->warn("FelixRxCore: counter overflow");
   }
@@ -199,8 +213,8 @@ bool FelixRxCore::isBridgeEmpty() {return false;}
 void FelixRxCore::loadConfig(const json &j) {
   frlog->info("FelixRxCore:");
 
-  if (j.contains("flushTime")) {
-    m_flushTime = j["flushTime"];
+  if (j.contains("flushTime_ms")) {
+    m_flushTime = j["flushTime_ms"];
     frlog->info(" flush time = {} ms", m_flushTime);
   }
 
@@ -216,11 +230,96 @@ void FelixRxCore::loadConfig(const json &j) {
     m_protocol = j["protocol"];
     frlog->info(" protocol = {}", m_protocol);
   }
+
+  if (j.contains("enable_monitor")) {
+    m_runMonitor = j["enable_monitor"];
+    frlog->info(" run monitor = {}", m_runMonitor);
+  }
+  if (j.contains("monitor_interval_ms")) {
+    m_interval_ms = j["monitor_interval_ms"];
+    frlog->info(" monitor interval = {} ms", m_interval_ms);
+  }
+  if (j.contains("queue_limit_MB")) {
+    m_queue_limit = j["queue_limit_MB"];
+    frlog->info(" queue limit = {} MB", m_queue_limit);
+  }
+
+  if (m_runMonitor) {
+    runMonitor();
+  }
 }
 
 void FelixRxCore::writeConfig(json &j) {
   j["detector_id"] = m_did;
   j["connector_id"] = m_cid;
   j["protocol"] = m_protocol;
-  j["flushTime"] = m_flushTime;
+  j["flushTime_ms"] = m_flushTime;
+  j["enable_monitor"] = m_runMonitor.load();
+  j["monitor_interval_ms"] = m_interval_ms;
+  j["queue_limit_MB"] = m_queue_limit;
+}
+
+void FelixRxCore::runMonitor(bool print_info) {
+
+  // stop the monitoring loop in case it has been running
+  stopMonitor();
+  if (m_monitor_thread.joinable()) m_monitor_thread.join();
+
+  frlog->debug("Starting monitor thread");
+  m_runMonitor = true;
+
+  m_monitor_thread = std::thread([this, print_info]{
+      if (frlog->should_log(spdlog::level::trace)) {
+        std::stringstream ss;
+        ss << std::this_thread::get_id();
+        frlog->trace("Monitor thread id {}", ss.str());
+      }
+
+      while (m_runMonitor) {
+        // Check data size in the Rx queue
+        uint64_t bytes_in_queue = m_total_bytes_in - m_total_bytes_out;
+        if (bytes_in_queue > m_queue_limit*1e6) {
+          // Too much data to handle. Stop adding data before OOM
+          frlog->critical("Data are not consumed quickly enough!! Stop taking data into Rx queue ...");
+          flushBuffer();
+          continue;
+        }
+
+        // Data rate
+        for (auto& [fid, stats] : m_qStats) {
+          stats.reset_counters();
+        }
+
+        m_t0 = std::chrono::steady_clock::now();
+
+        // wait
+        std::this_thread::sleep_for(std::chrono::milliseconds(m_interval_ms));
+
+        for (auto& [fid, stats] : m_qStats) {
+          std::chrono::duration<double> time = std::chrono::steady_clock::now() - m_t0;
+          stats.msg_rate = stats.messages_received / time.count(); // Hz
+          stats.byte_rate =  stats.bytes_received / time.count(); // B/s
+        }
+
+        if (print_info) {
+          frlog->info("--------------------------------");
+          for (const auto& [fid, stats] : m_qStats) {
+            frlog->info("Rx fid 0x{:x}: data rate = {:.2f} Mb/s  message rate = {:.2f} kHz", fid, stats.byte_rate*8e-6, stats.msg_rate/1000);
+
+            if (stats.error or stats.crc or stats.truncated) {
+              frlog->warn("FELIX errors on fid 0x{:x}: fw/sw errors = {}  crc errors = {}  fw/sw truncations = {}", fid, stats.error, stats.crc, stats.truncated);
+            }
+          }
+
+          frlog->debug("Data size in rx queue: {} MB (in: {} MB, out: {} MB)", (m_total_bytes_in - m_total_bytes_out)/1e6, m_total_bytes_in/1e6, m_total_bytes_out/1e6);
+        }
+
+      } // end of while (m_runMonitor)
+
+      frlog->debug("Rx monitor finished");
+    });
+}
+
+void FelixRxCore::stopMonitor() {
+  m_runMonitor = false;
 }

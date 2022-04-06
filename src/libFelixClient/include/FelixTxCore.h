@@ -50,8 +50,6 @@ protected:
   void writeConfig(json& j); 		         // write configuration to json
   void setClient(std::shared_ptr<FelixClientThread> client); // set Felix client
 
-private:
-
   using FelixID_t = FelixTools::FelixID_t;
 
   // Channel control
