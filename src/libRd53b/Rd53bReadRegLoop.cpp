@@ -29,7 +29,12 @@ uint16_t Rd53bReadRegLoop::ReadRegister(Rd53bReg Rd53bGlobalCfg::*ref, Rd53b *tm
     std::this_thread::sleep_for(std::chrono::microseconds(500));
     g_tx->setCmdEnable(keeper->getTxMask());
 
-    std::shared_ptr<RawData> data(g_rx->readData());
+    std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> dataVec = g_rx->readData();
+    std::shared_ptr<RawData> data;
+    if (dataVec.size() > 0) {
+        data = dataVec[0].second;
+    }
+    
     if (!data)
     {
         logger->warn("Warning!!! No Word Recieved in ReadRegister");

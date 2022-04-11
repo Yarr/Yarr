@@ -87,35 +87,44 @@ int main(int argc, char *argv[]) {
   //----------------------------------------------------------------
   // check Global registers
   for (unsigned i=0; i< fe.numRegs; i++) {
-    if(verbose)
-      std::cout << "Reading reg: " << i << std::endl;
-    fe.readRegister(i);
-    usleep(1000);
-    while(!mySpec.isCmdEmpty()) {}
-    dummy.cfg[i] = 0xDEAD;
-    std::shared_ptr<RawData> data = mySpec.readData();
-    while(!mySpec.isCmdEmpty()) {}
-    while (data != NULL) {
-      if (data != NULL) {
-	uint32_t greg = 99;
-	uint32_t value = 0;
-	for (unsigned j=0; j<data->getSize();j++) {
-	  if(verbose)
-	    std::cout << "[" << j << "] = 0x" << std::hex << data->get(j) << std::dec << std::endl;
-	  if ((data->get(j) & 0x00FF0000) == 0x00ea0000) {
-	    greg = (data->get(j) & 0x0000FFFF);
-	  }
-	  if ((data->get(j) & 0x00FF0000) == 0x00ec0000) {
-	    value = (data->get(j) & 0x0000FFFF);
-	  }
-	  dummy.cfg[greg] = value;
-	}
-      }
-      data = mySpec.readData();
+      if(verbose)
+          std::cout << "Reading reg: " << i << std::endl;
+      fe.readRegister(i);
+      usleep(1000);
       while(!mySpec.isCmdEmpty()) {}
-    }
+      dummy.cfg[i] = 0xDEAD;
+      std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> dataVec = mySpec.readData();
+      std::shared_ptr<RawData> data;
+      if (dataVec.size() > 0)
+          data = dataVec[0].second;
+      while(!mySpec.isCmdEmpty()) {}
+      while (data != NULL) {
+          if (data != NULL) {
+              uint32_t greg = 99;
+              uint32_t value = 0;
+              for (unsigned j=0; j<data->getSize();j++) {
+                  if(verbose)
+                      std::cout << "[" << j << "] = 0x" << std::hex << data->get(j) << std::dec << std::endl;
+                  if ((data->get(j) & 0x00FF0000) == 0x00ea0000) {
+                      greg = (data->get(j) & 0x0000FFFF);
+                  }
+                  if ((data->get(j) & 0x00FF0000) == 0x00ec0000) {
+                      value = (data->get(j) & 0x0000FFFF);
+                  }
+                  dummy.cfg[greg] = value;
+              }
+          }
+          dataVec = mySpec.readData();
+          if (dataVec.size() > 0) {
+              data = dataVec[0].second;
+          } else {
+              data = nullptr;
+          }
+
+          while(!mySpec.isCmdEmpty()) {}
+      }
   }
-    dummy.writeConfig(replica);
+  dummy.writeConfig(replica);
 
   if(verbose)
     replica["FE-I4B"]["GlobalConfig"].dump(4) ;
@@ -150,7 +159,10 @@ int main(int argc, char *argv[]) {
       int row = -1;
       int r = -1;
 
-      std::shared_ptr<RawData> data = mySpec.readData();
+      std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> dataVec = mySpec.readData();
+      std::shared_ptr<RawData> data;
+      if (dataVec.size() > 0)
+          data = dataVec[0].second;
       while(!mySpec.isCmdEmpty()) {}
       while (data != NULL) {
 	if (data != NULL) {
@@ -196,7 +208,12 @@ int main(int argc, char *argv[]) {
 	    //   std::cout << "[" << j << "] = 0x" << std::hex << data->buf[j] << std::dec << std::endl;
 	  }
 	}
-	data = mySpec.readData();
+      dataVec = mySpec.readData();
+      if (dataVec.size() > 0) {
+          data = dataVec[0].second;
+      } else {
+          data = nullptr;
+      }
 	while(!mySpec.isCmdEmpty()) {}
       }
 

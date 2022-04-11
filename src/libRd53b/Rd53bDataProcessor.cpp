@@ -46,7 +46,6 @@ Rd53bDataProcessor::Rd53bDataProcessor()
     _isCompressedHitmap = true; // Whether the hit map is compressed (binary tree + Huffman coding) or not (raw 16-bit hit map)
     _dropToT = false;           // Whether ToT values are kept in the data stream
 
-    _channel = 0;               // Channel number
     // Data stream components
     _ccol = 0;
     // Core column index starts from 1. So _qrow[0] will never be used
@@ -67,44 +66,24 @@ void Rd53bDataProcessor::init()
 {
     SPDLOG_LOGGER_TRACE(logger, "");
 
-    for (auto &it : *m_outMap)
-    {
-        _activeChannels.push_back(it.first);
-    }
+    _tag = 666;
+    _l1id = 666;
+    _bcid = 666;
+    _wordCount = 0;
+    _hits = 0;
 
-    for (auto &i : _activeChannels)
-    {
-        _tag[i] = 666;
-        _l1id[i] = 666;
-        _bcid[i] = 666;
-        _wordCount[i] = 0;
-        _hits[i] = 0;
-    }
-
-    /* For now use only the first active channel */
-    /* Support for multi-channel will be added later */
-    _channel = _activeChannels[0];
 }
 
 void Rd53bDataProcessor::run()
 {
     SPDLOG_LOGGER_TRACE(logger, "");
 
-    unsigned int numThreads = m_numThreads;
-    for (unsigned i = 0; i < numThreads; i++)
-    {
-        thread_ptrs.emplace_back(new std::thread(&Rd53bDataProcessor::process, this));
-        logger->info("  -> Processor thread #{} started!", i);
-    }
+    thread_ptr.reset(new std::thread(&Rd53bDataProcessor::process, this));
 }
 
 void Rd53bDataProcessor::join()
 {
-    for (auto &thread : thread_ptrs)
-    {
-        if (thread->joinable())
-            thread->join();
-    }
+    thread_ptr->join();
 }
 
 void Rd53bDataProcessor::process()
@@ -242,14 +221,14 @@ void Rd53bDataProcessor::process_core()
             logger->error("Expect new stream while NS = 0: {}{}. Skipping block...", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
             return;
         }
-        _tag[_channel] = (_data[0] >> 23) & 0xFF;
+        _tag = (_data[0] >> 23) & 0xFF;
         _bitIdx = 9; // Reset bit index = NS + tag
 
         // Create a new event
         // RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
-        _curOut[_channel]->newEvent(_tag[_channel], _l1id[_channel], _bcid[_channel]);
+        _curOut->newEvent(_tag, _l1id, _bcid);
         //logger->info("New Stream, New Event: {} ", tag[_channel]);
-        _events[_channel]++;
+        _events++;
     }
 
     // Start looping over data words in the current packet
@@ -281,14 +260,14 @@ void Rd53bDataProcessor::process_core()
                     logger->error("Expect new stream while NS = 0: {}{}. Skipping block...", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
                     continue;
                 }
-                _tag[_channel] = (_data[0] >> 23) & 0xFF;
+                _tag = (_data[0] >> 23) & 0xFF;
                 _bitIdx = 9; // Reset bit index = NS + tag
 
                 // Create a new event
                 // RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
-                _curOut[_channel]->newEvent(_tag[_channel], _l1id[_channel], _bcid[_channel]);
+                _curOut->newEvent(_tag, _l1id, _bcid);
                 //logger->info("New Stream, New Event: {} ", tag[_channel]);
-                _events[_channel]++;
+                _events++;
                 _status = CCOL;
                 continue;
             }
@@ -299,13 +278,13 @@ void Rd53bDataProcessor::process_core()
                 if (!retrieve(temp, 5))
                     return;
 
-                _tag[_channel] = (_ccol << 5) | temp;
+                _tag = (_ccol << 5) | temp;
 
                 // Create a new event
                 // There is no L1ID and BCID in RD53B data stream. Currently put dummy values
-                _curOut[_channel]->newEvent(_tag[_channel], _l1id[_channel], _bcid[_channel]);
+                _curOut->newEvent(_tag, _l1id, _bcid);
                 //logger->info("Same Stream, New Event: {} ", tag[_channel]);
-                _events[_channel]++;
+                _events++;
                 _status = CCOL;
                 continue;
             }
@@ -415,12 +394,12 @@ void Rd53bDataProcessor::process_core()
                             uint16_t PToT = ptot_ptoa_buf & 0x7FF;
                             uint16_t PToA = ptot_ptoa_buf >> 11;
 
-                            if (_events[_channel] == 0)
+                            if (_events == 0)
                             {
                                 // This is now possible if the event is so long that it spreads over raw data containers
                                 // logger->warn("[{}] No header in data fragment!", _channel);
-                                _curOut[_channel]->newEvent(_tag[_channel], _l1id[_channel], _bcid[_channel]);
-                                _events[_channel]++;
+                                _curOut->newEvent(_tag, _l1id, _bcid);
+                                _events++;
                             }
 
                             // Reverse enginner the pixel address using mask staging
@@ -428,9 +407,9 @@ void Rd53bDataProcessor::process_core()
                             static bool check_loop_index = true;
                             if (check_loop_index)
                             {
-                                for (unsigned loop = 0; loop < _curOut[_channel]->lStat.size(); loop++)
+                                for (unsigned loop = 0; loop < _curOut->lStat.size(); loop++)
                                 {
-                                    if (_curOut[_channel]->lStat.getStyle(loop) == LOOP_STYLE_MASK)
+                                    if (_curOut->lStat.getStyle(loop) == LOOP_STYLE_MASK)
                                     {
                                         maskLoopIndex = loop;
                                         check_loop_index = false;
@@ -438,13 +417,13 @@ void Rd53bDataProcessor::process_core()
                                     }
                                 }
                             }
-                            const unsigned step = _curOut[_channel]->lStat.get(maskLoopIndex);
+                            const unsigned step = _curOut->lStat.get(maskLoopIndex);
                             const uint16_t pix_col = (_ccol - 1) * 8 + PToT_maskStaging[step % 4][ibus] + 1;
                             const uint16_t pix_row = step / 2 + 1;
                             // logger->info("Hit: row({}) col({}) tot({}) ", pix_row, pix_col, PToT);
                             // _curOut[_channel]->curEvent->addHit(pix_row, pix_col, (PToT >> 4) - 1);
 
-                            _curOut[_channel]->curEvent->addHit({pix_col, pix_row, static_cast<uint16_t>(PToT | (PToA << 11))});
+                            _curOut->curEvent->addHit({pix_col, pix_row, static_cast<uint16_t>(PToT | (PToA << 11))});
                         }
                     }
                 }
@@ -470,17 +449,17 @@ void Rd53bDataProcessor::process_core()
 
                         // logger->info("Ccol: {} Qrow: {} col: {} row: {} ToT: {}", _ccol, _qrow, pix_col, pix_row, pix_tot);
                         // For now fill in _events without checking whether the addresses are valid
-                        if (_events[_channel] == 0)
+                        if (_events == 0)
                         {
                             // This is now possible if an event is so long that it spread over raw data containers
                             // logger->warn("[{}] No header in data fragment!", _channel);
-                            _curOut[_channel]->newEvent(_tag[_channel], _l1id[_channel], _bcid[_channel]);
-                            _events[_channel]++;
+                            _curOut->newEvent(_tag, _l1id, _bcid);
+                            _events++;
                         }
 
-                        _curOut[_channel]->curEvent->addHit({pix_col, pix_row, pix_tot});
+                        _curOut->curEvent->addHit({pix_col, pix_row, pix_tot});
                         // logger->info("Hit: row({}) col({}) tot({}) {}", pix_row, pix_col, pix_tot, _events[_channel]);
-                        _hits[_channel]++;
+                        _hits++;
                     }
                 }
             default:
@@ -523,26 +502,22 @@ bool Rd53bDataProcessor::getNextDataBlock()
         // Keep track of last block
         if (_curInV != nullptr && _curInV->size() > 0)
         {
-            // Save the last 64-bit data            
-            _data_pre[0] = _curInV->data[_curInV->size() - 1]->get(_curInV->data[_curInV->size() - 1]->getSize() - 2);
-            _data_pre[1] = _curInV->data[_curInV->size() - 1]->get(_curInV->data[_curInV->size() - 1]->getSize() - 1);
+            _data_pre[0] = _data[0];
+            _data_pre[1] = _data[1];
 
             // Push out data accumulated so far
-            for (unsigned i = 0; i < _activeChannels.size(); i++)
+            if (_events > 0)
             {
-                if (_events[_activeChannels[i]] > 0)
-                {
-                    // logger->error("Pushing out data {} events", _events[_activeChannels[i]]);
-                    _events[_activeChannels[i]] = 0;
-                    m_outMap->at(_activeChannels[i]).pushData(std::move(_curOut[_activeChannels[i]]));
-                }
-                else
-                {
-                    // Maybe wait for end of method instead of deleting here?
-                    _curOut[_activeChannels[i]].reset();
-                }
-                //Cleanup
+                // logger->error("Pushing out data {} events", _events[_activeChannels[i]]);
+                _events = 0;
+                m_out->pushData(std::move(_curOut));
             }
+            else
+            {
+                // Maybe wait for end of method instead of deleting here?
+                _curOut.reset();
+            }
+            //Cleanup
         }
 
         // Try to get data
@@ -550,23 +525,20 @@ bool Rd53bDataProcessor::getNextDataBlock()
         if (_curInV == nullptr || _curInV->size() == 0)
             return false;
 
-        for (unsigned i = 0; i < _activeChannels.size(); i++)
-        {
-            _curOut[_activeChannels[i]].reset(new FrontEndData(_curInV->stat));
-            _events[_activeChannels[i]] = 0;
-        }
+        _curOut.reset(new FrontEndData(_curInV->stat));
+        _events = 0;
 
         // Increase word count
         for (unsigned c = 0; c < _curInV->size(); c++)
-            _wordCount[_channel] += _curInV->data[c]->getSize();
+            _wordCount += _curInV->data[c]->getSize();
     }
 
     // Upate the data pointer. Note the meaning of block index is the first block that is *unprocessed*
     _data = &_curInV->data[_rawDataIdx]->get(_wordIdx);
 
     // Return success code
-    // if (_data[0] == 0 && _data[1] == 0)
-    //     return getNextDataBlock();
+    if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
+         return getNextDataBlock();
     return true;
 }
 
@@ -585,4 +557,7 @@ void Rd53bDataProcessor::getPreviousDataBlock()
         _wordIdx = _curInV->data[_rawDataIdx]->getSize() - 2;
     }
     _data = &_curInV->data[_rawDataIdx]->get(_wordIdx); // Also roll back the block index and data word pointer
+
+    if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
+        getPreviousDataBlock();
 }

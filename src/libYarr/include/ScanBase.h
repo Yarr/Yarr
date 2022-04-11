@@ -48,7 +48,7 @@ class ScanBase {
         TxCore *g_tx;
         RxCore *g_rx;
         Bookkeeper *g_bk;
-        ClipBoard<RawDataContainer> *g_data;
+        std::map<unsigned, ClipBoard<RawDataContainer> > *g_data;
 
     private:
         std::vector<std::shared_ptr<LoopActionBase> > loops;

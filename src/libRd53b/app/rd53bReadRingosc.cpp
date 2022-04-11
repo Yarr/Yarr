@@ -177,7 +177,9 @@ int main (int argc, char *argv[]) {
 	}
 
     // Read back registers and save to file
-    std::shared_ptr<RawData> data = hwCtrl->readData();
+    std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> dataVec = hwCtrl->readData();
+    std::shared_ptr<RawData> data;
+
     unsigned int m=1;	
     double RingValuesSum = 0;
     double RingValuesSumSquared = 0;
@@ -189,12 +191,13 @@ int main (int argc, char *argv[]) {
     std::ofstream file;
     file.open("rosc_"+std::to_string(std::time(nullptr))+".txt");
 
-    while (data) {
-        if  (data) {
-		auto answer = rd53b.decodeSingleRegRead(data->get(0), data->get(1));
-		frequency=(answer.second & 0xFFF)/(2*(globalPulseWidth)*0.025);
-		min_freq=std::min(min_freq,frequency);
-		max_freq=std::max(max_freq,frequency);
+    while (dataVec.size() > 0) {
+        if  (dataVec.size() > 0) {
+            data = dataVec[0].second;
+            auto answer = rd53b.decodeSingleRegRead(data->get(0), data->get(1));
+            frequency=(answer.second & 0xFFF)/(2*(globalPulseWidth)*0.025);
+            min_freq=std::min(min_freq,frequency);
+            max_freq=std::max(max_freq,frequency);
 	        if (!(m%nPulse)){
 			frequency=RingValuesSum/(nPulse-1);
 			error=(max_freq-min_freq)/2;
@@ -211,7 +214,7 @@ int main (int argc, char *argv[]) {
 		m++;
         }
 
-        data = hwCtrl->readData();
+        dataVec = hwCtrl->readData();
     }
     file.close();
 

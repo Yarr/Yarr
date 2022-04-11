@@ -75,7 +75,10 @@ std::shared_ptr<RawData> readData(
 {
   bool nodata = true;
 
-  std::shared_ptr<RawData> data = hwCtrl.readData();
+  std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> dataVec = hwCtrl.readData();
+  std::shared_ptr<RawData> data;
+  if (dataVec.size() > 0)
+      data = dataVec[0].second;
 
   auto start_reading = std::chrono::steady_clock::now();
 
@@ -101,7 +104,12 @@ std::shared_ptr<RawData> readData(
       break;
     }
 
-    data = hwCtrl.readData();
+    dataVec = hwCtrl.readData();
+    if (dataVec.size() > 0) {
+      data = dataVec[0].second;
+    } else {
+      data = nullptr;
+    }
   }
 
   if (nodata) {
@@ -122,7 +130,10 @@ RawDataContainer readAllData(
 
   RawDataContainer rdc(LoopStatus{});
 
-  std::shared_ptr<RawData> data = hwCtrl.readData();
+  std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> dataVec = hwCtrl.readData();
+  std::shared_ptr<RawData> data;
+  if (dataVec.size() > 0)
+      data = dataVec[0].second;
 
   auto start_reading = std::chrono::steady_clock::now();
 
@@ -147,7 +158,11 @@ RawDataContainer readAllData(
       break;
     }
 
-    data = hwCtrl.readData();
+      if (nodata) {
+        logger->critical("No data");
+      } else if (not data) {
+        logger->debug("No data met the requirement");
+      }
   }
 
   if (nodata) {

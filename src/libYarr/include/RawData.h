@@ -22,34 +22,38 @@ class RawData {
             buf.reserve(arg_words);   
         }
 
-        ~RawData()=default;
+        RawData(uint32_t arg_adr, std::vector<uint32_t> &arg_buf) {
+            buf = std::move(arg_buf);
+        }
 
-        inline void resize(unsigned arg_words) {
+        virtual ~RawData()=default;
+
+        virtual inline void resize(unsigned arg_words) {
             buf.resize(arg_words);
             buf.reserve(arg_words);   
         }
 
-        inline uint32_t& getAdr() {
+        virtual inline uint32_t& getAdr() {
             return adr;
         }
 
-        inline uint32_t* getBuf() {
+        virtual inline uint32_t* getBuf() {
             return buf.data();
         }
 
-        inline unsigned getSize() const {
+        virtual inline unsigned getSize() const {
             return buf.size();
         }
 
-        inline uint32_t& operator [](size_t i) {
+        virtual inline uint32_t& operator [](size_t i) {
             return buf[i];
         }
 
-        inline uint32_t& get(size_t i) {
+        virtual inline uint32_t& get(size_t i) {
             return buf[i];
         }
         
-    private:
+    protected:
         std::vector<uint32_t> buf;
         uint32_t adr;
 };

@@ -190,6 +190,18 @@ namespace ScanHelper {
         return chipType;        
     }
 
+    void buildRawDataProcs( std::map<FrontEnd*, std::unique_ptr<DataProcessor> > &procs,
+                           std::vector<FrontEnd*> &feList,
+                           const std::string &chipType) {
+        bhlog->info("Loading RawData processors ..");
+        for (FrontEnd *fe : feList) {
+            procs[fe] = StdDict::getDataProcessor(chipType);
+            procs[fe]->connect(fe->clipRawData, fe->clipData);
+            // TODO load global processor config
+            // TODO load chip specific config
+        }
+    }
+
 void buildHistogrammers( std::map<FrontEnd*,
                          std::unique_ptr<DataProcessor>>& histogrammers,
                          const std::string& scanType,

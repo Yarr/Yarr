@@ -1,5 +1,7 @@
-#include "SpecRxCore.h"
 #include <cstring>
+#include <algorithm>
+
+#include "SpecRxCore.h"
 
 #include "logging.h"
 
@@ -12,6 +14,8 @@ SpecRxCore::SpecRxCore() {
 }
 
 void SpecRxCore::setRxEnable(uint32_t value) {
+    m_rxEnable.clear();
+    m_rxEnable.push_back(value);
     uint32_t mask = (1 << value);
     SPDLOG_LOGGER_TRACE(srxlog, "Value {0:x}", mask);
     SpecCom::writeSingle(RX_ADDR | RX_ENABLE, mask);
@@ -19,6 +23,9 @@ void SpecRxCore::setRxEnable(uint32_t value) {
 
 void SpecRxCore::setRxEnable(std::vector<uint32_t> channels) {
     uint32_t mask = 0;
+    m_rxEnable = channels;
+    std::sort(m_rxEnable.begin(), m_rxEnable.end()); 
+    m_rxEnable.erase(std::unique(m_rxEnable.begin(), m_rxEnable.end()), m_rxEnable.end()); 
     for (uint32_t channel : channels) {
         mask |= (1 << channel);
 
@@ -29,23 +36,29 @@ void SpecRxCore::setRxEnable(std::vector<uint32_t> channels) {
 }
 
 void SpecRxCore::disableRx() {
+    m_rxEnable.clear();
     SPDLOG_LOGGER_TRACE(srxlog, "");
     SpecCom::writeSingle(RX_ADDR | RX_ENABLE, 0x0);
 }
 
-
 void SpecRxCore::maskRxEnable(uint32_t value, uint32_t mask) {
-    uint32_t tmp = SpecCom::readSingle(RX_ADDR | RX_ENABLE);
-    tmp &= ~mask;
-    value |= tmp;
-    SPDLOG_LOGGER_TRACE(srxlog, "Value {0:x}", value);
-    SpecCom::writeSingle(RX_ADDR | RX_ENABLE, value);
+    std::vector<uint32_t> tmpVec;
+    for (uint32_t rx : m_rxEnable) {
+        if (((1<<rx) & (mask & value)) > 0) {
+            tmpVec.push_back(rx);
+        }
+        if (((1<<rx) & mask) == 0) {
+            tmpVec.push_back(rx);
+        }
+    }
+    this->setRxEnable(tmpVec);
 }
 
-std::shared_ptr<RawData> SpecRxCore::readData() {
+std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> SpecRxCore::readData() {
     uint32_t dma_addr = getStartAddr();
     uint32_t dma_count = getDataCount();
     uint32_t real_dma_count = dma_count;
+    std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> dataVec;
     if (dma_count > 0 && dma_count < (251*256)) {
         real_dma_count = dma_count;
         // DMA mapped memory needs to be aligned
@@ -60,9 +73,15 @@ std::shared_ptr<RawData> SpecRxCore::readData() {
         }
         // Resize to real amount
         data->resize(real_dma_count);
-        return std::move(data);
+        unsigned channelCount = 0;
+        for (uint32_t rx : m_rxEnable) {
+            std::shared_ptr<SpecRawData> specData = std::make_shared<SpecRawData>(data);
+            specData->setItAndOffset(m_rxEnable.size(), channelCount);
+            dataVec.push_back(std::make_pair(rx, std::dynamic_pointer_cast<RawData>(specData)));
+            channelCount++;
+        }
     }
-    return std::shared_ptr<RawData>(nullptr);
+    return std::move(dataVec);
 }
 
 void SpecRxCore::flushBuffer() {

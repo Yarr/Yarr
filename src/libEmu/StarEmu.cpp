@@ -218,7 +218,7 @@ class EmuRxCore<StarChips> : virtual public RxCore {
         void enableRx();
         std::vector<uint32_t> listRx();
 
-        std::shared_ptr<RawData> readData() override;
+        std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> readData() override;
         std::shared_ptr<RawData> readData(uint32_t chn);
         
         uint32_t getDataRate() override {return 0;}
@@ -285,13 +285,14 @@ std::shared_ptr<RawData> EmuRxCore<StarChips>::readData(uint32_t chn) {
     return std::move(rd);
 }
 
-std::shared_ptr<RawData> EmuRxCore<StarChips>::readData() {
-    for (auto& q : m_queues) {
+std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> EmuRxCore<StarChips>::readData() {
+    std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> dataVec;
+   for (auto& q : m_queues) {
         if (not m_channels[q.first]) continue;
         if (q.second->empty()) continue;
-        return EmuRxCore<StarChips>::readData(q.first);
+        dataVec.push_back(std::make_pair(q.first, EmuRxCore<StarChips>::readData(q.first)));
     }
-    return nullptr;
+    return dataVec;
 }
 
 void EmuRxCore<StarChips>::setRxEnable(uint32_t channel) {

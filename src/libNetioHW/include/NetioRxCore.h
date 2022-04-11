@@ -48,7 +48,7 @@ public:
   void maskRxEnable(uint32_t val, uint32_t mask) override;
 
   void flushBuffer() override;
-  std::shared_ptr<RawData> readData() override;
+  std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> readData() override;
 
   /**
    * @brief get rate of events
