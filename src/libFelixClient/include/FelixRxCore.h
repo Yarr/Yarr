@@ -49,7 +49,6 @@ protected:
 
   // Channel control
   void enableChannel(FelixID_t fid);
-  void enableChannel(std::vector<FelixID_t> fids);
   void disableChannel(FelixID_t fid);
 
   std::map<FelixID_t, bool> m_enables; // enable flag for each elink

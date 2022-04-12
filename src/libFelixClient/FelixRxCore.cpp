@@ -39,25 +39,23 @@ FelixRxCore::~FelixRxCore()
 
 void FelixRxCore::enableChannel(FelixID_t fid) {
   frlog->debug("Subscribe to Rx link: 0x{:x}", fid);
-  m_enables[fid] = true;
-  m_qStats[fid];
-  fclient->subscribe(fid);
-  m_t0 = std::chrono::steady_clock::now();
-}
-
-void FelixRxCore::enableChannel(std::vector<FelixID_t> fids) {
-  for (const auto& fid : fids) {
-    frlog->debug("Subscribe to Rx link: 0x{:x}", fid);
+  try {
+    fclient->subscribe(fid);
     m_enables[fid] = true;
+    m_qStats[fid];
+  } catch (std::runtime_error& e) {
+    frlog->warn("Fail to subscribe to Rx link 0x{:x}: {}", fid, e.what());
   }
-  fclient->subscribe(fids);
-  m_t0 = std::chrono::steady_clock::now();
 }
 
 void FelixRxCore::disableChannel(FelixID_t fid) {
   frlog->debug("Unsubscribe from Rx link: 0x{:x}", fid);
-  m_enables[fid] = false;
-  fclient->unsubscribe(fid);
+  if (m_enables.find(fid) != m_enables.end()) {
+    m_enables[fid] = false;
+    fclient->unsubscribe(fid);
+  } else {
+    frlog->warn("Rx link 0x{:x} was never subscribed", fid);
+  }
 }
 
 FelixRxCore::FelixID_t FelixRxCore::fid_from_channel(uint32_t chn) {
@@ -87,13 +85,10 @@ void FelixRxCore::setRxEnable(uint32_t val) {
 void FelixRxCore::setRxEnable(std::vector<uint32_t> channels) {
   disableRx();
 
-  std::vector<FelixID_t> fids;
   for (auto chn : channels) {
     auto fid = fid_from_channel(chn);
-    fids.push_back(fid);
+    enableChannel(fid);
   }
-
-  enableChannel(fids);
 }
 
 void FelixRxCore::disableRx() {

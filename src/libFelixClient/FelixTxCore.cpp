@@ -16,8 +16,10 @@ FelixTxCore::~FelixTxCore()
 // Channel control
 void FelixTxCore::enableChannel(FelixID_t fid) {
   ftlog->debug("Enable Tx link: 0x{:x}", fid);
-  m_enables[fid] = true;
-  m_fifo[fid];
+  if (checkChannel(fid)) {
+    m_enables[fid] = true;
+    m_fifo[fid];
+  }
 }
 
 void FelixTxCore::disableChannel(FelixID_t fid) {
@@ -40,6 +42,18 @@ FelixTxCore::FelixID_t FelixTxCore::fid_from_channel(uint32_t chn) {
   return FelixTools::get_fid(
     m_did, m_cid, is_virtual, link_id, elink, true, m_protocol, sid
     );
+}
+
+bool FelixTxCore::checkChannel(FelixID_t fid) {
+  ftlog->debug("Try sending data to Tx link: 0x{:x}",fid);
+  try {
+    fclient->send_data(fid, (const uint8_t*)nullptr, 0, true);
+  } catch (std::runtime_error& e) {
+    ftlog->warn("Fail to send to Tx link 0x{:x}: {}", fid, e.what());
+    return false;
+  }
+
+  return true;
 }
 
 void FelixTxCore::setCmdEnable(uint32_t chn) {

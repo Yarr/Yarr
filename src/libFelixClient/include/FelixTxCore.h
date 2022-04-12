@@ -55,6 +55,7 @@ protected:
   // Channel control
   void enableChannel(FelixID_t fid);
   void disableChannel(FelixID_t fid);
+  bool checkChannel(FelixID_t fid);
 
   void fillFifo(std::vector<uint8_t>& fifo, uint32_t value);
   void prepareFifo(std::vector<uint8_t>& fifo);
