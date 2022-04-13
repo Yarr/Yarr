@@ -23,7 +23,7 @@ class Rd53aTwoParameterLoop : public LoopActionBase {
 
 
             private:
-                Rd53aReg Rd53aGlobalCfg::*parPtr;
+                Rd53aReg Rd53aGlobalCfg::*parPtr{};
                 std::string parName;
                 std::string parCompare;
                 std::vector<std::string> parNameMultiple;

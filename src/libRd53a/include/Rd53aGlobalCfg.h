@@ -114,7 +114,7 @@ class Rd53aDiffReg : public Rd53aReg {
 class Rd53aGlobalCfg {
     public:
         static constexpr unsigned numRegs = 138;
-        std::array<uint16_t, numRegs> m_cfg;
+        std::array<uint16_t, numRegs> m_cfg{};
 
         Rd53aGlobalCfg();
         ~Rd53aGlobalCfg();

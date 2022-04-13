@@ -20,7 +20,6 @@ add_library(Fe65p2 SHARED
         Fe65p2TotScan.cpp
         Fe65p2TriggerLoop.cpp)
 
-add_dependencies(Fe65p2 variant)
 post_build_debug_library(Fe65p2)
 target_include_directories(Fe65p2 PRIVATE ../libYarr/include)
 target_include_directories(Fe65p2 PRIVATE ../libUtil/include)

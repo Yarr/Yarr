@@ -65,7 +65,7 @@ void StdDataGatherer::execPart2() {
         newData =  g_rx->readData();
         
         // Read all data until buffer is empty
-        while ((newData.size() > 0 || count < 4096) && signaled == 0 && !killswitch) {
+        while (newData.size() > 0 && count < 4096 && signaled == 0 && !killswitch) {
             if (newData.size() > 0) {
                 for (auto &[id, dataChunk] : newData) {
                     count += dataChunk->getSize();

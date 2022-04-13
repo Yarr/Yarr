@@ -12,7 +12,6 @@ add_library(Star SHARED
         StarRegDump.cpp
         StarTriggerLoop.cpp)
 
-add_dependencies(Star variant)
 post_build_debug_library(Star)
 target_include_directories(Star PRIVATE ../libYarr/include)
 target_include_directories(Star PUBLIC ./include)
