@@ -99,3 +99,70 @@ Some of the more commonly used ones:
 
 A special virtual register is ABCs_MASKs. If this is set to 1, all masks are
 enabled (resulting in 0 outpu), otherwise all masks are disabled.
+
+## Scan Console
+
+The general structure of the Scan Console commands is:
+
+```bash
+bin/scanConsole -r configs/controller/itsdaq.json -c configs/connectivity/daqload_setup.json -s configs/scans/star/<type of scan>.json -p
+```
+which specifies the controller (`-r`), the chip list and chip type (`-c`), and the scan (`-s`). The option `-p` selects plotting so plots are produced after the scans.
+
+### Scans from electrical QC
+
+A description of the electrical QC procedure can be found [here](https://docs.google.com/document/d/13OeSVeLvmdswC8ipPiWd7VqQg61dtnMN6De9_zk1-YU/edit#heading=h.1sa1dkhjrwds).
+
+Examples of the results and how to run different scans is shown below.
+
+### Pedestal Trim
+
+To run a pedestal trim tuning execute the following command:
+```bash
+bin/scanConsole -r configs/controller/itsdaq.json -c configs/connectivity/daqload_setup.json -s configs/scans/star/std_tune_trim_at_pedestal.json -p 
+```
+An example of occupancy map after a successful trim tuning for a hybrid module is given below.
+![Occupancy map Trim Tuning](images/MGF_star_trim_OccupancyMap-14.png)
+
+### Strobe Delay 
+
+To run a strobe delay scan execute the following command:
+```bash
+bin/scanConsole -r configs/controller/itsdaq.json -c configs/connectivity/daqload_setup.json -s configs/scans/star/std_strobe_delay.json -p 
+```
+An example of the occupancy map after a successful strobe delay scan for a hybrid module for which the optimal strobe delay value is 21 is given below.
+![Occupancy map Strobe Delay](images/MGF_star_strobedelay_OccupancyMap-21.png)
+
+### Three/N Point Gain / Response curve
+
+To run a three point gain scan execute the following command:
+```bash
+bin/scanConsole -r configs/controller/itsdaq.json -c configs/connectivity/daqload_setup.json -s configs/scans/star/std_npointscan.json -p
+```
+
+Config parameters for ``ABCs_BCAL``:  
+- max <int>: maximum value of ABCs_BCAL
+- min <int>: minimum value of ABCs_BCAL
+- step <int>: step size of ABCs_BCAL
+The value of ``ABCs_STR_DEL`` has to be set to the correct value from the Strobe Delay scan. In case an N-point gain scan (i.e. Response Curve) is needed, the step size can be decreased to sample more finely on parameter ``ABCs_BCAL``. 
+The threshold and noise mean and dispersion value (for everything scanned) will be given in the output of the code, for example:
+```text
+[0] Threashold Mean = 67.5668 +- 0.579076
+[0] Noise Mean = 1.65438 +- 0.422169
+```
+Example of the threshold and noise map, as well as the response curve for a hybrid module are given below:
+![Threshold map NPointGain](images/MGF_star_3PG_ThresholdMap-140.png)
+![Noise map NPointGain](images/MGF_star_3PG_NoiseMap-140.png)
+![Response curve NPoint Gain](images/MGF_star_3PG_responseCurve.png)
+
+### Noise Occupancy
+To run a noise occupancy scan execute the following command:
+```bash
+bin/scanConsole -r configs/controller/itsdaq.json -c configs/connectivity/daqload_setup.json -s configs/scans/star/std_noiseOccCountScan.json -p
+```
+Also in this case the value of ``ABCs_STR_DEL`` has to be set to the correct value from the Strobe Delay scan.
+
+An example of the occupancy map after a successful noise occupancy scan for a hybrid module is given below.
+![Occupancy map Noise Occupancy](images/MGF_star_noiseoccupancy_OccupancyMap-14.png)
+
+**Plots to be updated**
