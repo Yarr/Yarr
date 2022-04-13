@@ -22,10 +22,10 @@ class Rd53aParameterLoop : public LoopActionBase {
         void loadConfig(const json &j) override;
 
     private:
-        Rd53aReg Rd53aGlobalCfg::*parPtr;
+        Rd53aReg Rd53aGlobalCfg::*parPtr{};
         std::string parName;
         void writePar();
-        unsigned m_cur;
+        unsigned m_cur{};
 
         void init() override;
         void end() override;

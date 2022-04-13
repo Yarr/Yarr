@@ -47,7 +47,7 @@ TEST_CASE("HistogramHitsPerEvent", "[Histogrammer][HitsPerEvent]") {
     REQUIRE (histo_as_1d->getEntries() == 1);
     REQUIRE (histo_as_1d->getMean() == 1);
 
-    const unsigned int max = 16; // Fei4?
+    const unsigned int max = 1000; // Fei4?
     REQUIRE (histo_as_1d->size() == max);
 
     auto lowX = -0.5;

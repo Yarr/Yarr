@@ -8,7 +8,7 @@ add_library(NetioHW SHARED
         NetioTxCore.cpp
         )
 
-add_dependencies(NetioHW felixbase4 netio4 variant tbb_2020)
+add_dependencies(NetioHW felixbase4 netio4 tbb_2020)
 post_build_debug_library(NetioHW)
 target_include_directories(NetioHW PRIVATE ../libYarr/include)
 target_include_directories(NetioHW PRIVATE ../libUtil/include)

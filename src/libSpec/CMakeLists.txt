@@ -14,7 +14,6 @@ add_library(Spec SHARED
         SpecTxCore.cpp
         UserMemory.cpp)
 
-add_dependencies(Spec variant)
 post_build_debug_library(Spec)
 target_include_directories(Spec PRIVATE ../libYarr/include)
 target_include_directories(Spec PRIVATE ../libUtil/include)

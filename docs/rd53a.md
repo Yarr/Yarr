@@ -364,8 +364,17 @@ There are 3 different possibilities for a source scan:
  
 #### Random Trigger
 
-Run `std_digitalscan`, `std_analogscan` and at least 3 `std_noisescan` (with the default duration of 5 minutes) before a source scan with random trigger to mask digital/analog bad pixels and noisy pixels.
-Modify in `std_noisescan.json`: ``"createMask": false`` and to prevent changing the enable mask and ``"time": 300`` in seconds to set the scan duration.
+For a random trigger source scan one has to mask digital and analog bad pixels and noisy pixels by running digital, analog and noise scans: run `std_digitalscan` with the `-m 1` option to reset the pixel enable mask (see [commandline arguments](#command-line-arguments)), followed by `std_analogscan` and `std_noisescan` before a source scan with random trigger.
+
+When taking data with a radioactive source, modify in `std_noisescan.json`: `"createMask": false` to prevent changing the enable mask, and adjust `"time": 600` in seconds to set the scan duration.
+
+For RD53A module QC, use frontend-specific scans for the masking. There are automated scripts in `scripts` which can be used, e.g.
+```
+./scripts/rd53a-module_syn_masking.sh configs/controller/specCfg-rd53a-4x3.json configs/connectivity/example_rd53a.json
+```
+This combines the scans above for the synchronous frontend and prepares it for the source scan. Then run the frontend-specific source scan `syn_noisescan.json` with `"createMask": false` and adjusted scan duration.
+
+Repeat the same step for `lindiff`.
 
 ##### Known Problem (to be verified)
 
