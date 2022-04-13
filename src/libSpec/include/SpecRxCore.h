@@ -39,11 +39,11 @@ class SpecRawData : public RawData {
 
         ~SpecRawData()=default;
 
-        inline void resize(unsigned arg_words) {
+        inline void resize(unsigned arg_words) override {
             data->resize(arg_words);
         }
 
-        inline uint32_t& getAdr() {
+        inline uint32_t& getAdr() override {
             return data->getAdr();
         }
         
