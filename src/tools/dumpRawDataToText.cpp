@@ -31,10 +31,14 @@ int main(int argc, char *argv[]) {
 
         int prev_tag = 31;
         unsigned localEventCnt = 0;
+        unsigned tagZeroCnt = 0;
         while(inputFile) {
             FrontEndEvent event;
             event.fromFileBinary(inputFile);
             
+            if (event.tag == 0)
+                tagZeroCnt++;
+
             if ((event.tag+32-prev_tag)%32 != 1) {
                 std::cout << " ~~~~ Unfinished event ~~~~ " << std::endl;
                 if (event.tag != 0) {
@@ -44,7 +48,7 @@ int main(int argc, char *argv[]) {
             prev_tag = event.tag;
 
             std::cout << 
-                std::setw(8) << globalEventCnt << "|" <<
+                std::setw(8) << tagZeroCnt << "|" <<
                 std::setw(8) << localEventCnt << "|" <<
                 std::setw(8) << event.l1id << "|" <<
                 std::setw(8) << event.bcid << "|" <<
