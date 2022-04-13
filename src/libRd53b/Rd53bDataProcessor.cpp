@@ -482,6 +482,8 @@ bool Rd53bDataProcessor::getNextDataBlock()
             _rawDataIdx = 0;
             _wordIdx = 0;
             _data = &_curInV->data[0]->get(0);
+            if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
+                 return getNextDataBlock();
             return true;
         }
         _wordIdx += 2; // Increase block index
