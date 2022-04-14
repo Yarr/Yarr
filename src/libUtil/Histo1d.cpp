@@ -209,6 +209,7 @@ bool Histo1d::fromFile(const std::string &filename) {
         }
         try {
             j = json::parse(file);
+            file.close();
         } catch (json::parse_error &e) {
             throw std::runtime_error(e.what());
         }
@@ -216,33 +217,50 @@ bool Histo1d::fromFile(const std::string &filename) {
         hlog->error("Error opening histogram: {}", e.what());
         return false;
     }
+
+    try {
+        auto isOk = fromJson(j);
+        if(!isOk) {
+          hlog->error("Reading file: {}", filename);
+        }
+        return isOk;
+    } catch (std::runtime_error &e) {
+        hlog->error("Exception while loading {}", filename);
+        throw;
+    }
+
+    return true;
+}
+
+bool Histo1d::fromJson(const json &j) {
     // Check for type
     if (!j.contains("Type")) {
-        hlog->error("Tried loading 1d Histogram from file {}, but file has no header: {}", filename);
+        hlog->error("Tried loading 1D Histogram from json, but missing Type");
         return false;
-    } else {
-        if (j["Type"] != "Histo1d") {
-            hlog->error("Tried loading 1d Histogram from file {}, but file has incorrect header: {}", filename, std::string(j["Type"]));
-            return false;
-        }
-
-        name = j["Name"];
-        xAxisTitle = j["x"]["AxisTitle"];
-        yAxisTitle = j["y"]["AxisTitle"];
-        zAxisTitle = j["z"]["AxisTitle"];
-
-        bins = j["x"]["Bins"];
-        xlow = j["x"]["Low"];
-        xhigh = j["x"]["High"];
-
-        underflow = j["Underflow"];
-        overflow = j["Overflow"];
-
-        data.resize(bins);
-        for (unsigned i=0; i<bins; i++)
-            data[i] = j["Data"][i];
     }
-    file.close();
+
+    if (j["Type"] != "Histo1d") {
+        hlog->error("Tried loading 1d Histogram from json, but file has incorrect Type: {}", std::string(j["Type"]));
+        return false;
+    }
+
+    name = j["Name"];
+    xAxisTitle = j["x"]["AxisTitle"];
+    yAxisTitle = j["y"]["AxisTitle"];
+    zAxisTitle = j["z"]["AxisTitle"];
+
+    bins = j["x"]["Bins"];
+    xlow = j["x"]["Low"];
+    xhigh = j["x"]["High"];
+
+    underflow = j["Underflow"];
+    overflow = j["Overflow"];
+
+    data.resize(bins);
+    for (unsigned i=0; i<bins; i++) {
+        data[i] = j["Data"][i];
+    }
+
     return true;
 }
 
