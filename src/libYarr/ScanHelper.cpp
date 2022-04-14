@@ -90,6 +90,7 @@ namespace ScanHelper {
         }
         return j;
     }
+
     // Load controller config and return fully loaded object
     std::unique_ptr<HwController> loadController(const json &ctrlCfg) {
         std::unique_ptr<HwController> hwCtrl = nullptr;
@@ -97,13 +98,22 @@ namespace ScanHelper {
         shlog->info("Loading controller ...");
 
         // Open controller config file
+        if (!ctrlCfg.contains({"ctrlCfg", "type"})) {
+            shlog->critical("Controller type not specified!");
+            throw (std::runtime_error("loadController failure"));
+        }
+
         std::string controller = ctrlCfg["ctrlCfg"]["type"];
 
         hwCtrl = StdDict::getHwController(controller);
 
         if(hwCtrl) {
             shlog->info("Found controller of type: {}", controller);
-            hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
+            if (!ctrlCfg.contains({"ctrlCfg", "cfg"})) {
+                shlog->error("Could not find cfg for controller, skipping!");
+            } else {
+                hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
+            }
         } else {
             shlog->critical("Unknown config type: {}",  std::string(ctrlCfg["ctrlCfg"]["type"]));
             shlog->warn("Known HW controllers:");
@@ -129,6 +139,11 @@ namespace ScanHelper {
         for (unsigned i = 0; i < config["chips"].size(); i++) {
             shlog->info("Loading chip #{}", i);
             json &chip = config["chips"][i];
+            if (!chip.contains("enable") || !chip.contains("config")) {
+                    shlog->error("Connectivity config for chip #{} malformed, skipping!", i);
+                    continue;
+            }
+
             if (chip["enable"] == 0) {
                 shlog->warn(" ... chip not enabled, skipping!");
                 continue;
@@ -149,7 +164,7 @@ namespace ScanHelper {
                 }
                 chip["__config_data__"] = cfg;
             } else {
-                shlog->warn("Config file not found, using default!");
+                shlog->warn("Config file not found, creating new file from defaults!");
                 // Rename in case of multiple default configs
                 feCfg->setName(feCfg->getName() + "_" + std::to_string((int) chip["rx"]));
                 shlog->warn("Creating new config of FE {} at {}", feCfg->getName(), chipConfigPath);
@@ -157,7 +172,7 @@ namespace ScanHelper {
                 feCfg->writeConfig(jTmp);
                 chip["__config_data__"] = jTmp;
                 if(createConfig) {
-                    if(!chip.contains("enable") || (chip.contains("enable") && chip["enable"] == 1)) {
+                    if(chip["enable"] == 1) {
                         std::ofstream oFTmp(chipConfigPath);
                         oFTmp << std::setw(4) << jTmp;
                         oFTmp.close();
@@ -202,27 +217,33 @@ namespace ScanHelper {
         // load controller configs
         json ctrlCfg;
         ctrlCfg = ScanHelper::openJsonFile(scanOpts.ctrlCfgPath);
+        
         if(!ctrlCfg.contains({"ctrlCfg", "cfg"})) {
             shlog->critical("#ERROR# invalid controller config");
             return -1;
         }
         json &cfg=ctrlCfg["ctrlCfg"]["cfg"];
+        
+        // Emulator specific case
         if(cfg.contains("feCfg")) {
             try {
                 cfg["__feCfg_data__"]=ScanHelper::openJsonFile(cfg["feCfg"]);
             } catch (std::runtime_error &e) {
-                shlog->critical("#ERROR# opening controller FE chip config: {}", e.what());
+                shlog->critical("#ERROR# opening emulator FE model config: {}", e.what());
                 return -1;
             }
         }
+
+        // Emulator specific case
         if(cfg.contains("chipCfg")) {
             try {
                 cfg["__chipCfg_data__"]=ScanHelper::openJsonFile(cfg["chipCfg"]);
             } catch (std::runtime_error &e) {
-                shlog->critical("#ERROR# opening controller chip config: {}", e.what());
+                shlog->critical("#ERROR# opening emulator chip model config: {}", e.what());
                 return -1;
             }
         }
+
         // load FE configs
         json chipConfig=json::array();
         for (std::string const &sTmp: scanOpts.cConfigPaths) {
@@ -236,6 +257,8 @@ namespace ScanHelper {
             loadChipConfigs(feconfig,writeConfig);
             chipConfig.push_back(feconfig);
         }
+        
+        // Load scans
         json scan;
         try {
             scan = openJsonFile(scanOpts.scanType);
@@ -243,6 +266,7 @@ namespace ScanHelper {
             shlog->critical("#ERROR# opening scan config: {}", e.what());
             return -1;
         }
+
         config["scanCfg"]=scan;
         config["chipConfig"]=chipConfig;
         config["ctrlConfig"]=ctrlCfg;
@@ -261,7 +285,6 @@ namespace ScanHelper {
 
         for (FrontEnd *fe : feList ) {
             if (fe->isActive()) {
-                // TODO this loads only FE-i4 specific stuff, bad
                 // Load histogrammer
                 histogrammers[fe] = std::make_unique<HistogrammerProcessor>( );
                 auto& histogrammer = dynamic_cast<HistogrammerProcessor&>( *(histogrammers[fe]) );
@@ -330,8 +353,6 @@ namespace ScanHelper {
 
         for (FrontEnd *fe : bookie.feList ) {
             if (fe->isActive()) {
-                // TODO this loads only FE-i4 specific stuff, bad
-                // TODO hardcoded
                 auto channel = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
 
                 for (unsigned t=0; t<algoIndexTiers.size(); t++) {
@@ -673,6 +694,7 @@ namespace ScanHelper {
         std::cout << " -Q: Set QC scan mode." << std::endl;
         std::cout << " -I: Set interactive mode." << std::endl;
     }
+
     int parseOptions(int argc, char *argv[], ScanOpts &scanOpts) {
         scanOpts.dbCfgPath = defaultDbCfgPath();
         scanOpts.dbSiteCfgPath = defaultDbSiteCfgPath();
