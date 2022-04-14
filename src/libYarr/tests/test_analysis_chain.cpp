@@ -73,16 +73,10 @@ TEST_CASE("AnalysisChainIO", "[Analysis]") {
 
   scanCfg["scan"]["analysis"]["n_count"] = 3;
 
-  std::string fname_cfg("test_analysis_chain.json");
-  std::ofstream tmpScanCfgFile(fname_cfg);
-  tmpScanCfgFile << scanCfg;
-  tmpScanCfgFile.close();
 
   // Build analyses
   std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcessor>> > analyses;
-  ScanHelper::buildAnalyses(analyses, fname_cfg, bookie, &scan, &fbData, -1);
-
-  std::remove(fname_cfg.c_str());
+  ScanHelper::buildAnalyses(analyses, scanCfg, bookie, &scan, &fbData, -1);
 
   auto& AnalysisProcessors = analyses[bookie.getLastFe()];
   // Check there are three analysis tiers
