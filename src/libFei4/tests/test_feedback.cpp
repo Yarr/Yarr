@@ -89,8 +89,8 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
     std::thread t([&]() {
         int loop_count = 0;
         while(1) {
-          bookie.rawDataMap[0].waitNotEmptyOrDone();
-          auto data = bookie.rawDataMap[0].popData();
+          bookie.rawDataMap[rxChannel].waitNotEmptyOrDone();
+          auto data = bookie.rawDataMap[rxChannel].popData();
           if(!data) {
             // Return due to finish call
             thread_failure = false;
@@ -126,7 +126,7 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
     // Skip pre/post scan
     scan.run();
 
-    bookie.rawDataMap[0].finish();
+    bookie.rawDataMap[rx_channel].finish();
 
     t.join();
 
@@ -177,8 +177,8 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
     std::thread t([&]() {
         int loop_count = 0;
         while(1) {
-          bookie.rawDataMap[0].waitNotEmptyOrDone();
-          auto data = bookie.rawDataMap[0].popData();
+          bookie.rawDataMap[rx_channel].waitNotEmptyOrDone();
+          auto data = bookie.rawDataMap[rx_channel].popData();
           if(!data) {
             // Return due to finish call
             thread_failure = false;
@@ -215,7 +215,7 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
     // Skip pre/post scan
     scan.run();
 
-    bookie.rawDataMap[0].finish();
+    bookie.rawDataMap[rx_channel].finish();
 
     t.join();
 
