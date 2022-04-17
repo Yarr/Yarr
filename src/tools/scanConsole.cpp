@@ -30,6 +30,8 @@
 
 #include "storage.hpp"
 
+#include "yarr.h"
+
 auto logger = logging::make_log("scanConsole");
 
 int main(int argc, char *argv[]) {
@@ -144,6 +146,7 @@ int main(int argc, char *argv[]) {
     logger->info("Run Number: {}", runCounter);
 
     // Add to scan log
+    scanLog["yarr_version"] = yarr::version::get();
     scanLog["exec"] = scanOpts.commandLineStr;
     scanLog["timestamp"] = timestampStr;
     scanLog["startTime"] = (int)now;
