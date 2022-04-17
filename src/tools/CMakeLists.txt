@@ -5,6 +5,7 @@ list(APPEND tools
         makeFei4PixelModelCfg
         makeRd53aPixelModelCfg
         replot
+        scan_cli
         scanConsole
         scurve_test
         test_json

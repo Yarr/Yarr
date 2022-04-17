@@ -5,7 +5,7 @@
 #define YARR_SCANOPTS_H
 #include <vector>
 #include <string>
-#include <ScanHelper.h>
+
 struct ScanOpts {
     std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
     bool scan_config_provided = false;
@@ -18,6 +18,7 @@ struct ScanOpts {
     int target_tot{-1};
     int mask_opt{-1};
     bool dbUse = false;
+    bool doOutput = true;
     std::string logCfgPath;
     std::string dbCfgPath ;
     std::string dbSiteCfgPath;
