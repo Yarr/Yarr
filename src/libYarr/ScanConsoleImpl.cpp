@@ -27,7 +27,29 @@
 auto logger = logging::make_log("ScanConsole");
 
 ScanConsoleImpl::ScanConsoleImpl() = default;
-void ScanConsoleImpl::init(ScanOpts options) {
+int ScanConsoleImpl::init(int argc, char *argv[]) {
+    ScanOpts options;
+    int res=ScanHelper::parseOptions(argc,argv,options);
+    if(res<=0) return res;
+    return init(options);
+}
+
+int ScanConsoleImpl::init(const std::vector<std::string> &args) {
+    int argc =  args.size();
+    char *argv[argc];
+    for(int i = 0;i<argc; i++) {
+        argv[i] = (char *) args[i].c_str();
+    }
+    ScanOpts options;
+    for(int i = 0;i<argc; i++) {
+       std::cout<< argv[0] << std::endl;
+    }
+    int res=ScanHelper::parseOptions(argc,argv,options);
+    if(res<=0) return res;
+    return init(options);
+}
+
+int ScanConsoleImpl::init(ScanOpts options) {
     scanOpts=std::move(options);
     runCounter = ScanHelper::newRunCounter();
     if(!scanOpts.logCfgPath.empty()) {
@@ -42,6 +64,7 @@ void ScanConsoleImpl::init(ScanOpts options) {
     }
     spdlog::info("Configuring logger ...");
     logging::setupLoggers(loggerConfig);
+    return 1;
 }
 
 

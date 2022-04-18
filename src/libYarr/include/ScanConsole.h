@@ -14,7 +14,9 @@ class ScanConsoleImpl;
 class ScanConsole {
 public:
     ScanConsole();
-    void init(const ScanOpts options);
+    int init(const ScanOpts options);
+    int init(int argc, char *argv[]);
+    int init(const std::vector<std::string> &args);
     std::vector<std::string> getLog(unsigned n = 0);
     int loadConfig();
     int loadConfig(const json &config);

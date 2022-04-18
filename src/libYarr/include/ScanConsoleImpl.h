@@ -6,6 +6,7 @@
 #define YARR_SCANCONSOLEIMPL_H
 
 #include <string>
+#include <vector>
 #include <map>
 
 #include "ScanOpts.h"
@@ -21,7 +22,9 @@
 class ScanConsoleImpl {
 public:
     ScanConsoleImpl();
-    void init(ScanOpts options);
+    int init(ScanOpts options);
+    int init(int argc, char *argv[]);
+    int init(const std::vector<std::string> &args);
     static std::vector<std::string> getLog(unsigned n = 0) {return std::vector<std::string>();};
     int loadConfig();
     static int loadConfig(const json &config) {return 0;};

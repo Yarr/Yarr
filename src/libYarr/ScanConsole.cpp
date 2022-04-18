@@ -7,9 +7,18 @@
 ScanConsole::ScanConsole() : pimpl(std::make_unique<ScanConsoleImpl>()) {}
 
 ScanConsole::~ScanConsole() = default;
-void ScanConsole::init(const ScanOpts options) {
-    pimpl->init(options);
+int ScanConsole::init(const ScanOpts options) {
+    return pimpl->init(options);
 }
+
+int ScanConsole::init(int argc, char *argv[]) {
+    return pimpl->init(argc, argv);
+}
+
+int ScanConsole::init(const std::vector<std::string> &args) {
+    return pimpl->init(args);
+}
+
 std::vector<std::string> ScanConsole::getLog(unsigned n) {
     return pimpl->getLog(n);
 }
