@@ -40,7 +40,7 @@ class SpecRxCore : virtual public RxCore, virtual public SpecCom{
         void disableRx() override;
         void maskRxEnable(uint32_t val, uint32_t mask) override;
 
-        RawData* readData() override;
+        std::shared_ptr<RawData> readData() override;
         void flushBuffer() override;
         
         uint32_t getDataRate() override;

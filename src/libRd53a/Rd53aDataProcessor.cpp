@@ -94,14 +94,14 @@ void Rd53aDataProcessor::process_core() {
 
         unsigned size = curInV->size();
         for(unsigned c=0; c<size; c++) {
-            RawData curIn(curInV->adr[c], curInV->buf[c], curInV->words[c]);
+            std::shared_ptr<RawData> curIn = curInV->data[c];
             // Process
-            unsigned words = curIn.words;
+            unsigned words = curIn->getSize();
             dataCnt += words;
             for (unsigned i=0; i<words; i++) {
                 // Decode content
                 // TODO this needs review, can't deal with user-k data
-                uint32_t data = curIn.buf[i];
+                uint32_t data = curIn->get(i);
 
                 unsigned channel = activeChannels[(i/2)%activeChannels.size()];
                 logger->debug("[{}]\t\t[{}] = 0x{:x}", i, channel, data);
@@ -154,7 +154,7 @@ void Rd53aDataProcessor::process_core() {
                                 hits[channel]++;
                             }
                         } else {
-                            logger->error("[{}] Received data not valid: 0x{:x}", channel, curIn.words);
+                            logger->error("[{}] Received data not valid: 0x{:x}", channel, curIn->getSize());
                         }
 
                     }

@@ -119,7 +119,7 @@ void NetioRxCore::flushBuffer(){
 
 }
 
-RawData* NetioRxCore::readData(){
+std::shared_ptr<RawData> NetioRxCore::readData(){
   // Loop over all links looking for data
   // Return the first one we find (slow?)
 
@@ -132,11 +132,11 @@ RawData* NetioRxCore::readData(){
 
     std::unique_ptr<RawData> rdp = m_nioh.rawData.popData();
     if(rdp != NULL){
-	auto buffer = rdp.get()->buf;
-	auto address = rdp.get()->adr;
-	auto words = rdp.get()->words;
 
-	RawData* new_rdp = new RawData(address, buffer, words);
+    std::shared_ptr<RawData> new_rdp = std::move(rdp);
+	auto buffer = new_rdp->getBuf();
+	auto address = new_rdp->getAdr();
+	auto words = new_rdp->getSize();
 
         if(m_fetype == "rd53a"){
             //TODO:fix this in firmware; the header needs to be in buffer[0]
@@ -157,7 +157,7 @@ RawData* NetioRxCore::readData(){
 	return new_rdp;
 
   }
-  return NULL;
+  return std::shared_ptr<RawData>();
 }
 
 uint32_t NetioRxCore::getDataRate(){

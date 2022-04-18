@@ -10,40 +10,65 @@
 // ################################
 
 #include <cstdint>
+#include <memory>
 
 #include "LoopStatus.h"
 
-struct RawData {
-    RawData(uint32_t arg_adr, uint32_t *arg_buf, unsigned arg_words) :
-            adr(arg_adr),  buf(arg_buf), words(arg_words) {}
-    ~RawData()=default;
-    uint32_t adr;
-    uint32_t *buf;
-    unsigned words;
+class RawData {
+    public:
+        RawData(uint32_t arg_adr, unsigned arg_words) {
+            adr = arg_adr;
+            buf.resize(arg_words, 0);    
+            buf.reserve(arg_words);   
+        }
+
+        ~RawData()=default;
+
+        inline void resize(unsigned arg_words) {
+            buf.resize(arg_words);
+            buf.reserve(arg_words);   
+        }
+
+        inline uint32_t& getAdr() {
+            return adr;
+        }
+
+        inline uint32_t* getBuf() {
+            return buf.data();
+        }
+
+        inline unsigned getSize() const {
+            return buf.size();
+        }
+
+        inline uint32_t& operator [](size_t i) {
+            return buf[i];
+        }
+
+        inline uint32_t& get(size_t i) {
+            return buf[i];
+        }
+        
+    private:
+        std::vector<uint32_t> buf;
+        uint32_t adr;
 };
 
 class RawDataContainer {
     public:
         RawDataContainer(LoopStatus &&s) : stat(s) {}
-        ~RawDataContainer() {
-            for(unsigned int i=0; i<adr.size(); i++)
-                delete[] buf[i];
+        
+        ~RawDataContainer()=default;
+
+        inline void add(std::shared_ptr<RawData> arg_data) {
+            data.push_back(arg_data);
         }
 
-        void add(RawData *d) {
-            adr.push_back(d->adr);
-            buf.push_back(d->buf);
-            words.push_back(d->words);
-            delete d;
+        inline unsigned size() const {
+            return data.size();
         }
 
-        unsigned size() const {
-            return adr.size();
-        }
-
-        std::vector<uint32_t> adr;
-        std::vector<uint32_t*> buf;
-        std::vector<unsigned> words;
+        std::vector<std::shared_ptr<RawData>> data;
         LoopStatus stat;
 };
 

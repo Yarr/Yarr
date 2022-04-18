@@ -151,20 +151,19 @@ int main (int argc, char *argv[]) {
 
     
 
-    RawData *data = hwCtrl->readData();
+    std::shared_ptr<RawData> data = hwCtrl->readData();
     while (data) {
         if  (data) {
-            for (unsigned i=0; i<data->words;i++)
-                logger->info("[{}] = {:X}", i, data->buf[i]);
+            for (unsigned i=0; i<data->getSize();i++)
+                logger->info("[{}] = {:X}", i, data->get(i));
 
-            logger->info("Read {} words", data->words);
-            std::pair<uint32_t, uint32_t> answer = rd53bTest::decodeSingleRegRead(data->buf[0], data->buf[1]);
+            logger->info("Read {} words", data->getSize());
+            std::pair<uint32_t, uint32_t> answer = rd53bTest::decodeSingleRegRead(data->get(0), data->get(1));
             logger->info("Answer: {} {}", answer.first, answer.second);
-            if (data->words>2) {
-                answer = rd53bTest::decodeSingleRegRead(data->buf[2], data->buf[3]);
+            if (data->getSize()>2) {
+                answer = rd53bTest::decodeSingleRegRead(data->get(2), data->get(3));
                 logger->info("Answer: {} {}", answer.first, answer.second);
             }
-            delete data;
         }
         data = hwCtrl->readData();
     }
@@ -172,5 +171,5 @@ int main (int argc, char *argv[]) {
 
     logger->info("... done! bye!");
     hwCtrl->disableRx();
-    return 0;
+    return 0;       
 }

@@ -890,7 +890,7 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
 template<typename PacketT>
 void checkData(HwController* emu, std::deque<PacketT>& expected, const PacketT *const mask_pattern)
 {
-  std::unique_ptr<RawData> data(emu->readData());
+  std::shared_ptr<RawData> data(emu->readData());
 
   for(int reads=0; reads<10; reads++) {
     CAPTURE (reads);
@@ -903,7 +903,7 @@ void checkData(HwController* emu, std::deque<PacketT>& expected, const PacketT *
         expected.pop_front();
       }
 
-      CAPTURE (data->words);
+      CAPTURE (data->getSize());
 
       // Do comparison
       if (not mask_pattern) {
@@ -912,10 +912,9 @@ void checkData(HwController* emu, std::deque<PacketT>& expected, const PacketT *
         compareOutputs(data.get(), expected_packet);
       }
 
-      delete [] data->buf;
     }
 
-    data.reset(emu->readData());
+    data = emu->readData();
   }
 
   CHECK(expected.empty());
@@ -926,9 +925,9 @@ void compareOutputs<std::string>(RawData* data, const std::string& expected_pack
 {
   StarChipPacket packet;
   packet.add_word(0x13c); //add SOP
-  for(unsigned iw=0; iw<data->words; iw++) {
+  for(unsigned iw=0; iw<data->getSize(); iw++) {
     for (int i=0; i<4;i++){
-      packet.add_word((data->buf[iw]>>i*8)&0xff);
+      packet.add_word((data->get(iw)>>i*8)&0xff);
     }
   }
   packet.add_word(0x1dc); //add EOP
@@ -949,9 +948,9 @@ template<>
 void compareOutputs<std::vector<uint8_t>>(RawData* data, const std::vector<uint8_t>& expected_packet)
 {
   CAPTURE (expected_packet);
-  for(size_t w=0; w<data->words; w++) {
+  for(size_t w=0; w<data->getSize(); w++) {
     for(int i=0; i<4;i++){
-      uint8_t byte = (data->buf[w]>>(i*8))&0xff;
+      uint8_t byte = (data->get(w)>>(i*8))&0xff;
       int index = w*4+i;
       CAPTURE (w, i, index, (int)byte);
       //CHECK (expected_packet.size() > index);
@@ -970,7 +969,7 @@ void compareOutputs<std::pair<uint32_t, std::vector<uint8_t>>>(RawData* data, co
   // Compare channel numbers
   uint32_t rx_exp = expected.first;
   CAPTURE (rx_exp);
-  uint32_t rx_data = data->adr;
+  uint32_t rx_data = data->getAdr();
   CAPTURE (rx_data);
 
   CHECK (rx_exp == rx_data);

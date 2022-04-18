@@ -18,20 +18,21 @@ RogueRxCore::~RogueRxCore() = default;
 
 
 
-RawData* RogueRxCore::readData() {
+std::shared_ptr<RawData> RogueRxCore::readData() {
 	m_com->setRxChannel(m_rxChannel);
     std::this_thread::sleep_for(std::chrono::microseconds(10));
     uint32_t words = this->getCurCount();
 
 
     if (words > 0) {
-        uint32_t *buf = new uint32_t[words];
+        std::shared_ptr<RawData> data = std::make_shared<RawData>(0x0, words);
+        uint32_t *buf = data->getBuf();
         if (m_com->readBlock32(buf, words)) {
-            return new RawData(0x0, buf, words);
+            return std::move(data);
         } else {
             delete[] buf;
         }
     }
-    return NULL;
+    return std::shared_ptr<RawData>(nullptr);
 }
 std::shared_ptr<RogueCom> RogueCom::instance;

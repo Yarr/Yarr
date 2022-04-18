@@ -52,7 +52,7 @@ void StdDataLoop::execPart2() {
 
 
     std::vector<RawData*> tmp_storage;
-    RawData *newData = NULL;
+    std::shared_ptr<RawData> newData;
     std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(g_stat->record()));
     while (done == 0) {
         //rate = g_rx->getDataRate();
@@ -62,8 +62,8 @@ void StdDataLoop::execPart2() {
             newData =  g_rx->readData();
             iterations++;
             if (newData != NULL) {
-                count += newData->words;
-                rdc->add(newData);
+                count += newData->getSize();
+                rdc->add(std::move(newData));
             }
         } while (newData != NULL);
         //delete newData;
@@ -75,11 +75,10 @@ void StdDataLoop::execPart2() {
         newData = g_rx->readData();
         iterations++;
         if (newData != NULL) {
-            count += newData->words;
+            count += newData->getSize();
             rdc->add(newData);
         }
     } while (newData != NULL || g_rx->getCurCount() != 0);
-    delete newData;
     
     storage->pushData(std::move(rdc));
         

@@ -58,9 +58,9 @@ int packetFromRawData(StarChipPacket& packet, RawData& data) {
   packet.clear();
 
   packet.add_word(0x13C); //add SOP
-  for(unsigned iw=0; iw<data.words; iw++) {
+  for(unsigned iw=0; iw<data.getSize(); iw++) {
     for(int i=0; i<4;i++){
-      packet.add_word((data.buf[iw]>>i*8)&0xFF);
+      packet.add_word((data[iw]>>i*8)&0xFF);
     }
   }
   packet.add_word(0x1DC); //add EOP
@@ -68,31 +68,26 @@ int packetFromRawData(StarChipPacket& packet, RawData& data) {
   return packet.parse();
 }
 
-std::unique_ptr<RawData, void(*)(RawData*)> readData(
+std::shared_ptr<RawData> readData(
   HwController& hwCtrl,
   std::function<bool(RawData&)> filter_cb,
   uint32_t timeout=1000)
 {
   bool nodata = true;
 
-  std::unique_ptr<RawData, void(*)(RawData*)> data(
-    hwCtrl.readData(),
-    [](RawData* d){delete[] d->buf; delete d;} // deleter
-    );
+  std::shared_ptr<RawData> data = hwCtrl.readData();
 
   auto start_reading = std::chrono::steady_clock::now();
 
   while (true) {
     if (data) {
       nodata = false;
-      logger->trace("Use data: {}", (void*)data->buf);
+      logger->trace("Use data: {}", (void*)data->getBuf());
 
       // check if it is the type of data we want
       bool good = filter_cb(*data);
       if (good) {
         break;
-      } else {
-        data.reset(nullptr);
       }
     } else { // no data
       // wait a bit
@@ -106,7 +101,7 @@ std::unique_ptr<RawData, void(*)(RawData*)> readData(
       break;
     }
 
-    data.reset(hwCtrl.readData());
+    data = hwCtrl.readData();
   }
 
   if (nodata) {
@@ -115,7 +110,7 @@ std::unique_ptr<RawData, void(*)(RawData*)> readData(
     logger->debug("No data met the requirement");
   }
 
-  return data;
+  return std::move(data);
 }
 
 RawDataContainer readAllData(
@@ -127,21 +122,18 @@ RawDataContainer readAllData(
 
   RawDataContainer rdc(LoopStatus{});
 
-  std::unique_ptr<RawData, void(*)(RawData*)> data(
-    hwCtrl.readData(),
-    [](RawData* d){delete[] d->buf; delete d;} // deleter
-    );
+  std::shared_ptr<RawData> data = hwCtrl.readData();
 
   auto start_reading = std::chrono::steady_clock::now();
 
   while (true) {
     if (data) {
       nodata = false;
-      logger->trace("Use data: {}", (void*)data->buf);
+      logger->trace("Use data: {}", (void*)data->getBuf());
 
       bool good = filter_cb(*data);
       if (good) {
-        rdc.add(data.release());
+        rdc.add(std::move(data));
       }
     } else {
       // wait a bit if no data
@@ -155,7 +147,7 @@ RawDataContainer readAllData(
       break;
     }
 
-    data.reset(hwCtrl.readData());
+    data = hwCtrl.readData();
   }
 
   if (nodata) {
@@ -169,10 +161,10 @@ RawDataContainer readAllData(
 
 void reportData(RawData &data, bool do_spec_specific=false) {
   logger->info(" Raw data from RxCore:");
-  logger->info(" {} {:p} {}", data.adr, (void*)data.buf, data.words);
+  logger->info(" {} {:p} {}", data.getAdr(), (void*)data.getBuf(), data.getSize());
 
-  for (unsigned j=0; j<data.words;j++) {
-    auto word = data.buf[j];
+  for (unsigned j=0; j<data.getSize();j++) {
+    auto word = data[j];
 
     if(do_spec_specific) {
       if((j%2) && (word == 0xd3400000)) continue;
@@ -207,7 +199,7 @@ void reportData(RawData &data, bool do_spec_specific=false) {
 
 // Data filters
 bool isFromChannel(RawData& data, uint32_t chn) {
-  return data.adr == chn;
+  return data.getAdr() == chn;
 }
 
 bool isPacketType(RawData& data, PacketType packet_type, bool isPacketTransp=false) {
@@ -223,7 +215,7 @@ bool isPacketType(RawData& data, PacketType packet_type, bool isPacketTransp=fal
       // Check the type of the forwarded ABCStar packet
       // First byte is TYP_ABC_TRANSP and channel number
       // Type of the ABCStar packet is the top 4 bits of the second byte
-      int raw_type_abc = (data.buf[0] & 0xf000) >> 12;
+      int raw_type_abc = (data[0] & 0xf000) >> 12;
       if ( packet_type_headers.find(raw_type_abc) == packet_type_headers.end() ) {
         logger->error("Packet type was parsed as {}, which is an invalid type.", raw_type_abc);
         return false;
@@ -465,10 +457,10 @@ bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars, bool reset) 
     auto rdc = readAllData(hwCtrl, filter_abchpr, timeout);
 
     for (unsigned c = 0; c < rdc.size(); c++) {
-      RawData d(rdc.adr[c], rdc.buf[c], rdc.words[c]);
+        std::shared_ptr<RawData> d = rdc.data[c];
       StarChipPacket packet;
 
-      if ( packetFromRawData(packet, d) ) {
+      if ( packetFromRawData(packet, *d) ) {
         logger->error("Packet parse failed");
       } else {
         logger->trace(" Received an HPR packet from ABCStar");
@@ -748,8 +740,8 @@ bool testDataPacketsStatic(HwController& hwCtrl, bool do_spec_specific) {
   hwCtrl.flushBuffer();
 
   for (unsigned c = 0; c < rdc.size(); c++) {
-    RawData d(rdc.adr[c], rdc.buf[c], rdc.words[c]);
-    reportData(d, do_spec_specific);
+    std::shared_ptr<RawData> d = rdc.data[c];
+    reportData(*d, do_spec_specific);
   }
 
   if (rdc.size() > 0) {
@@ -800,8 +792,8 @@ bool testDataPacketsPulse(HwController& hwCtrl, bool do_spec_specific) {
   hwCtrl.flushBuffer();
 
   for (unsigned c = 0; c < rdc.size(); c++) {
-    RawData d(rdc.adr[c], rdc.buf[c], rdc.words[c]);
-    reportData(d, do_spec_specific);
+    std::shared_ptr<RawData> d = rdc.data[c];
+    reportData(*d, do_spec_specific);
   }
 
   if (rdc.size() > 0) {

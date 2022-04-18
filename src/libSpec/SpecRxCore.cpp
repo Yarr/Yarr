@@ -42,26 +42,27 @@ void SpecRxCore::maskRxEnable(uint32_t value, uint32_t mask) {
     SpecCom::writeSingle(RX_ADDR | RX_ENABLE, value);
 }
 
-RawData* SpecRxCore::readData() {
+std::shared_ptr<RawData> SpecRxCore::readData() {
     uint32_t dma_addr = getStartAddr();
     uint32_t dma_count = getDataCount();
     uint32_t real_dma_count = dma_count;
     if (dma_count > 0 && dma_count < (251*256)) {
         real_dma_count = dma_count;
+        // DMA mapped memory needs to be aligned
         if (dma_count%32 != 0)
             dma_count += 32-(dma_count%32);
 
         SPDLOG_LOGGER_DEBUG(srxlog, "Read data to Addr 0x{:x}, Count {}", dma_addr, dma_count);
-        uint32_t *buf = new uint32_t[dma_count];
-        std::memset(buf, 0x0, sizeof(uint32_t)*dma_count);
-        if (SpecCom::readDma(dma_addr, buf, dma_count)) {
+        std::shared_ptr<RawData> data = std::make_shared<RawData>(dma_addr, dma_count);
+        if (SpecCom::readDma(dma_addr, data->getBuf(), dma_count)) {
             SPDLOG_LOGGER_CRITICAL(srxlog, "Critical error while readin data ... aborting!!");
             exit(1);
         }
-        return new RawData(dma_addr, buf, real_dma_count);
-    } else {
-        return NULL;
+        // Resize to real amount
+        data->resize(real_dma_count);
+        return std::move(data);
     }
+    return std::shared_ptr<RawData>(nullptr);
 }
 
 void SpecRxCore::flushBuffer() {

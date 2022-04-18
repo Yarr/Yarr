@@ -58,7 +58,7 @@ void StdDataGatherer::execPart2() {
     SPDLOG_LOGGER_WARN(sdglog, "IMPORTANT! Going into endless loop unless timelimit is set, interrupt with ^c (SIGINT)!");
 
     std::vector<RawData*> tmp_storage;
-    RawData *newData = NULL;
+    std::shared_ptr<RawData> newData;
     while (!done) {
         std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(g_stat->record()));
         done = g_tx->isTrigDone();
@@ -66,8 +66,8 @@ void StdDataGatherer::execPart2() {
         // Read all data until buffer is empty
         while (newData != NULL && count < 4096 && signaled == 0 && !killswitch) {
             if (newData != NULL) {
-                count += newData->words;
-                rdc->add(newData);
+                count += newData->getSize();
+                rdc->add(std::move(newData));
                 newData = NULL;
             }
             // Wait a little bit to increase chance of new data having arrived

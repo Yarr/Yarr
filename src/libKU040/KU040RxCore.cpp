@@ -226,7 +226,7 @@ void KU040RxCore::maskRxEnable(uint32_t val, uint32_t mask)
     setRxEnable(val);
 }
 
-RawData* KU040RxCore::readData()
+std::shared_ptr<RawData> KU040RxCore::readData()
 {
 	std::vector<uint32_t> formatted_data;
 
@@ -279,14 +279,15 @@ RawData* KU040RxCore::readData()
 	// return the data to caller
 	if(formatted_data.size() == 0)
 	{
-		return NULL;
+		return std::shared_ptr<RawData>();
 	}
 	else
 	{
-		uint32_t *buf = new uint32_t[formatted_data.size()];
+        std::shared_ptr<RawData> data = std::make_shared<RawData>(0x0, formatted_data.size());
+		uint32_t *buf = data->getBuf();
 		std::copy(formatted_data.begin(), formatted_data.end(), buf);
 		//std::cout << "returning " << formatted_data.size() << " records." << std::endl;
-		return new RawData(0x0, buf, formatted_data.size());
+		return std::move(data);
 	}
 }
 

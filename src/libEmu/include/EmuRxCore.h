@@ -31,8 +31,8 @@ class EmuRxCore : virtual public RxCore {
         void enableRx();
         std::vector<uint32_t> listRx();
 
-        RawData* readData() override;
-        RawData* readData(uint32_t chn);
+        std::shared_ptr<RawData> readData() override;
+        std::shared_ptr<RawData> readData(uint32_t chn);
         
         uint32_t getDataRate() override {return 0;}
 
@@ -77,15 +77,16 @@ EmuCom* EmuRxCore<FE>::getCom(uint32_t chn) {
 }
 
 template<class FE>
-RawData* EmuRxCore<FE>::readData(uint32_t chn) {
+std::shared_ptr<RawData> EmuRxCore<FE>::readData(uint32_t chn) {
     //std::this_thread::sleep_for(std::chrono::microseconds(1));
     uint32_t words = this->getCurCount(chn)/sizeof(uint32_t);
     if (words > 0) {
-        uint32_t *buf = new uint32_t[words];
+        std::shared_ptr<RawData> data= std::make_shared<RawData>(chn, words);
+        uint32_t *buf = data->getBuf();
         //for(unsigned i=0; i<words; i++)
         //    buf[i] = m_com->read32();
         if (m_coms[chn]->readBlock32(buf, words)) {
-            return new RawData(chn, buf, words);
+            return std::move(data);
         } else {
             delete[] buf;
         }
@@ -94,7 +95,7 @@ RawData* EmuRxCore<FE>::readData(uint32_t chn) {
 }
 
 template<class FE>
-RawData* EmuRxCore<FE>::readData() {
+std::shared_ptr<RawData> EmuRxCore<FE>::readData() {
     for (auto& com : m_coms) {
         if (not m_channels[com.first]) continue;
         if (com.second->isEmpty()) continue;

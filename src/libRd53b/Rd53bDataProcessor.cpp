@@ -502,11 +502,11 @@ bool Rd53bDataProcessor::getNextDataBlock()
         {
             _rawDataIdx = 0;
             _wordIdx = 0;
-            _data = &_curInV->buf[0][0];
+            _data = &_curInV->data[0]->get(0);
             return true;
         }
         _wordIdx += 2; // Increase block index
-        if (_wordIdx >= _curInV->words[_rawDataIdx])
+        if (_wordIdx >= _curInV->data[_rawDataIdx]->getSize())
         {
             _rawDataIdx++;
             _wordIdx = 0;
@@ -524,8 +524,8 @@ bool Rd53bDataProcessor::getNextDataBlock()
         if (_curInV != nullptr && _curInV->size() > 0)
         {
             // Save the last 64-bit data            
-            _data_pre[0] = _curInV->buf[_curInV->size() - 1][_curInV->words[_curInV->size() - 1] - 2];
-            _data_pre[1] = _curInV->buf[_curInV->size() - 1][_curInV->words[_curInV->size() - 1] - 1];
+            _data_pre[0] = _curInV->data[_curInV->size() - 1]->get(_curInV->data[_curInV->size() - 1]->getSize() - 2);
+            _data_pre[1] = _curInV->data[_curInV->size() - 1]->get(_curInV->data[_curInV->size() - 1]->getSize() - 1);
 
             // Push out data accumulated so far
             for (unsigned i = 0; i < _activeChannels.size(); i++)
@@ -558,11 +558,11 @@ bool Rd53bDataProcessor::getNextDataBlock()
 
         // Increase word count
         for (unsigned c = 0; c < _curInV->size(); c++)
-            _wordCount[_channel] += _curInV->words[c];
+            _wordCount[_channel] += _curInV->data[c]->getSize();
     }
 
     // Upate the data pointer. Note the meaning of block index is the first block that is *unprocessed*
-    _data = &_curInV->buf[_rawDataIdx][_wordIdx];
+    _data = &_curInV->data[_rawDataIdx]->get(_wordIdx);
 
     // Return success code
     // if (_data[0] == 0 && _data[1] == 0)
@@ -582,7 +582,7 @@ void Rd53bDataProcessor::getPreviousDataBlock()
             _data = _data_pre;
             return;
         }
-        _wordIdx = _curInV->words[_rawDataIdx] - 2;
+        _wordIdx = _curInV->data[_rawDataIdx]->getSize() - 2;
     }
-    _data = &_curInV->buf[_rawDataIdx][_wordIdx]; // Also roll back the block index and data word pointer
+    _data = &_curInV->data[_rawDataIdx]->get(_wordIdx); // Also roll back the block index and data word pointer
 }
