@@ -23,6 +23,7 @@
 #include "storage.hpp"
 #include "ScanConsoleImpl.h"
 
+#include "yarr.h"
 
 auto logger = logging::make_log("ScanConsole");
 
@@ -41,9 +42,6 @@ int ScanConsoleImpl::init(const std::vector<std::string> &args) {
         argv[i] = (char *) args[i].c_str();
     }
     ScanOpts options;
-    for(int i = 0;i<argc; i++) {
-       std::cout<< argv[0] << std::endl;
-    }
     int res=ScanHelper::parseOptions(argc,argv,options);
     if(res<=0) return res;
     return init(options);
@@ -89,7 +87,10 @@ int ScanConsoleImpl::loadConfig() {
         }
     }
     dataDir=scanOpts.outputDir;
-    strippedScan=ScanHelper::createOutputDir(scanOpts.scanType,runCounter,scanOpts.outputDir);
+    if(scanOpts.doOutput) {
+        strippedScan = ScanHelper::createOutputDir(scanOpts.scanType, runCounter, scanOpts.outputDir);
+        ScanHelper::createSymlink(dataDir,strippedScan,runCounter);
+    }
 
     if (scanOpts.cConfigPaths.empty()) {
         logger->error("Error: no config files given, please specify config file name under -c option, even if file does not exist!");
@@ -304,6 +305,7 @@ int ScanConsoleImpl::initHardware() {
     logger->info("Run Number: {}", runCounter);
 
     // Add to scan log
+    scanLog["yarr_version"] = yarr::version::get();
     scanLog["exec"] = scanOpts.commandLineStr;
     scanLog["timestamp"] = timestampStr;
     scanLog["startTime"] = (int)now;
@@ -382,22 +384,7 @@ int ScanConsoleImpl::initHardware() {
 }
 
 void ScanConsoleImpl::cleanup() {
-ScanHelper::banner(logger,"Timing");
-    logger->info("-> Configuration: {} ms", std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count());
-    logger->info("-> Scan:          {} ms", std::chrono::duration_cast<std::chrono::milliseconds>(scan_done-scan_start).count());
-    logger->info("-> Processing:    {} ms", std::chrono::duration_cast<std::chrono::milliseconds>(processor_done-scan_done).count());
-    logger->info("-> Analysis:      {} ms", std::chrono::duration_cast<std::chrono::milliseconds>(all_done-processor_done).count());
-
-    scanLog["stopwatch"]["config"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count();
-    scanLog["stopwatch"]["scan"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(scan_done-scan_start).count();
-    scanLog["stopwatch"]["processing"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(processor_done-scan_done).count();
-    scanLog["stopwatch"]["analysis"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(all_done-processor_done).count();
-
     ScanHelper::banner(logger,"Cleanup");
-
-    // Call constructor (eg shutdown Emu threads)
-    hwCtrl.reset();
-    scanLog["finishTime"] = (int)std::time(nullptr);
     if(scanOpts.doOutput)
         ScanHelper::writeScanLog(scanLog, scanOpts.outputDir + "scanLog.json");
 
@@ -451,11 +438,36 @@ ScanHelper::banner(logger,"Timing");
 }
 
 std::string ScanConsoleImpl::getResults() {
-    return std::string();
+    std::string str;
+    json result;
+    getResults(result);
+    result.dump(str);
+    return str;
 }
 
 void ScanConsoleImpl::getResults(json &result) {
-    result=json();
+    json frontends;
+    for (unsigned i = 0; i < bookie->feList.size(); i++) {
+        FrontEnd *fe = bookie->feList[i];
+        if (fe->isActive()) {
+            auto feCfg = dynamic_cast<FrontEndCfg *>(fe);
+            std::string name = feCfg->getName();
+            json jTmp;
+            feCfg->writeConfig(jTmp);
+            frontends[name]["configs"] = jTmp;
+            auto &output = *(fe->clipResult->back());
+            json histos;
+            while (!output.empty()) {
+                json h;
+                auto histo = output.popData();
+                histo->toJson(h);
+                histos[h["Name"]]=h;
+            }
+            frontends[name]["histos"] = histos;
+        }
+    }
+    result["frontends"] = frontends;
+    result["scanLog"] = scanLog;
 }
 
 void ScanConsoleImpl::run() {
@@ -507,17 +519,30 @@ void ScanConsoleImpl::run() {
       }
     }
 
-   all_done = std::chrono::steady_clock::now();
+    all_done = std::chrono::steady_clock::now();
     logger->info("All done!");
 
     // Joining is done.
 
     hwCtrl->disableCmd();
     hwCtrl->disableRx();
+    ScanHelper::banner(logger,"Timing");
+    logger->info("-> Configuration: {} ms", std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count());
+    logger->info("-> Scan:          {} ms", std::chrono::duration_cast<std::chrono::milliseconds>(scan_done-scan_start).count());
+    logger->info("-> Processing:    {} ms", std::chrono::duration_cast<std::chrono::milliseconds>(processor_done-scan_done).count());
+    logger->info("-> Analysis:      {} ms", std::chrono::duration_cast<std::chrono::milliseconds>(all_done-processor_done).count());
+
+    scanLog["stopwatch"]["config"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count();
+    scanLog["stopwatch"]["scan"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(scan_done-scan_start).count();
+    scanLog["stopwatch"]["processing"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(processor_done-scan_done).count();
+    scanLog["stopwatch"]["analysis"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(all_done-processor_done).count();
+    hwCtrl.reset();
+    scanLog["finishTime"] = (int)std::time(nullptr);
 
 }
 
 void ScanConsoleImpl::dump() {
-
+    scanConsoleConfig.dump();
+    scanLog.dump();
 }
 

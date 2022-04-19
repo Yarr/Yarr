@@ -127,7 +127,7 @@ function(YARR_ADD_EXTERNAL_DEPS)
     FetchContent_Declare(
         spdlog
         GIT_REPOSITORY  https://gitlab.cern.ch/atlas-sw-misc/spdlog.git
-        GIT_TAG v1.9.2
+        GIT_TAG v1.9.2.x
         SOURCE_SUBDIR  spdlog
     )
     FetchContent_MakeAvailable(spdlog)
