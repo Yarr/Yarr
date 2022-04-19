@@ -48,6 +48,7 @@ std::string ScanConsoleImpl::parseConfig(const std::vector<std::string> &args) {
     }
     std::string str;
     result["config"] = scanConsoleConfig;
+    result["runCounter"] = ScanHelper::newRunCounter();
     result.dump(str);
     return str;
 }
@@ -136,7 +137,23 @@ int ScanConsoleImpl::loadConfig() {
     return 0;
 }
 
+// load scan config from a JSON string
 int ScanConsoleImpl::loadConfig(const char *config){
+    loggerConfig["pattern"] = scanOpts.defaultLogPattern;
+    loggerConfig["log_config"][0]["name"] = "all";
+    loggerConfig["log_config"][0]["level"] = "info";
+    loggerConfig["outputDir"]="";
+    spdlog::info("Configuring logger ...");
+    logging::setupLoggers(loggerConfig);
+    json j;
+    json::parse(config,j);
+    json scanConsoleConfig = j["config"];
+    runCounter=j["runCounter"];
+    ctrlCfg=scanConsoleConfig["ctrlConfig"];
+    chipConfig=scanConsoleConfig["chipConfig"];
+    scanCfg=scanConsoleConfig["scanCfg"];
+    scanOpts.doOutput=false;
+    scanOpts.scan_config_provided=true;
     return 0;
 }
 
