@@ -89,8 +89,8 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
     std::thread t([&]() {
         int loop_count = 0;
         while(1) {
-          bookie.rawDataMap[rxChannel].waitNotEmptyOrDone();
-          auto data = bookie.rawDataMap[rxChannel].popData();
+          bookie.rawDataMap[rx_channel].waitNotEmptyOrDone();
+          auto data = bookie.rawDataMap[rx_channel].popData();
           if(!data) {
             // Return due to finish call
             thread_failure = false;
