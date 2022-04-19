@@ -24,6 +24,7 @@ public:
       running(true)
   {
     receiver = std::thread( [&] () { ReceiverMain(); });
+    partial_buffer.clear();
   }
 
   ~ItsdaqPrivate();
@@ -44,6 +45,7 @@ private:
   std::atomic<bool> running;
 
   ClipBoard<RawData> rawData;
+  std::vector<uint64_t> partial_buffer;
 
   void QueueData(uint16_t *start, size_t len);
   void ReceiverMain();
@@ -160,20 +162,22 @@ void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
 
     if(((thisWord>>60) & 0xf) == 0xf) {
       // Timestamp
-
       if(startOffset == i-1) {
         startOffset = i;
         continue;
       }
     } else {
-      // Good data, wait for end
-      continue;
+	// Good data, wait for end and
+	// store good data into partial_buffer
+	partial_buffer.push_back(thisWord);
+	continue;
     }
+
 
     // This word should be first TS after data
     // Copy data to queue (startOffset is last TS before data)
     startOffset ++;
-    size_t len64 = i-startOffset;
+    size_t len64 = partial_buffer.size();
     size_t len32 = len64 * 2;
     std::unique_ptr<RawData> data(new RawData(stream, len32));
     uint32_t *buf = data->getBuf();
@@ -181,7 +185,7 @@ void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
     size_t buf_off = 0;
     bool seen_sop = false;
     for(int o=0; o<len64; o++) {
-      auto word = get64(o+startOffset);
+      auto word = partial_buffer.at(o);
       // 0-6 bits indicate cntrl (3c, dc, 0 are SOP, EOP, IDLE)
       uint8_t map = word >> 56;
       // logger->trace("QueueData {}: {:016x} {:07b}", o, word, map);
@@ -227,6 +231,7 @@ void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
     }
 
     startOffset = i;
+    partial_buffer.clear();
   }
 }
 

@@ -4,6 +4,8 @@
 *.swo
 
 bin/
+lib/
 build/
 data/
 offline/
+yarr_version.h

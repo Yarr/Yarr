@@ -10,6 +10,7 @@
 // ################################
 
 #include <string>
+#include <utility>
 
 #include "ClipBoard.h"
 #include "HistogramBase.h"
@@ -88,10 +89,7 @@ class FrontEndCfg {
         
         void setChannel(unsigned channel) {txChannel = channel; rxChannel = channel;}
 		void setChannel(unsigned arg_txChannel, unsigned arg_rxChannel) {txChannel = arg_txChannel; rxChannel = arg_rxChannel;}
-        void setName(std::string arg_name) {name = arg_name;}
-
-        void setConfigFile(std::string arg_configFile) {configFile = arg_configFile;}
-        std::string getConfigFile() {return configFile;}
+        void setName(std::string arg_name) {name = std::move(arg_name);}
     
         bool isLocked() const {return lockCfg;}
         void setLocked(bool v) {lockCfg = v;}
@@ -99,7 +97,6 @@ class FrontEndCfg {
         std::string name;
         unsigned txChannel;
         unsigned rxChannel;
-        std::string configFile;
         bool lockCfg;
 };
 
