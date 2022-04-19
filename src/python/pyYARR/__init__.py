@@ -1,3 +1,3 @@
-from _pyyarr import ScanConsole
+from _pyyarr import ScanConsole, parseConfig
 
-__all__ = ["ScanConsole"]
+__all__ = ["ScanConsole", "parseConfig"]

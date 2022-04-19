@@ -33,5 +33,5 @@ PYBIND11_MODULE(_pyyarr, m) {
          py::call_guard<py::gil_scoped_release>())
     .def("getResults", py::overload_cast<>(&ScanConsole::getResults),
          py::call_guard<py::gil_scoped_release>());
-    //m.def("getLog", &ScanConsole::getLog, py::arg("n")=0, py::call_guard<py::gil_scoped_release>());
+    m.def("parseConfig", &ScanConsole::parseConfig, py::call_guard<py::gil_scoped_release>());
 }

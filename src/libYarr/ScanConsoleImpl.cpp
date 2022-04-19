@@ -28,6 +28,30 @@
 auto logger = logging::make_log("ScanConsole");
 
 ScanConsoleImpl::ScanConsoleImpl() = default;
+
+std::string ScanConsoleImpl::parseConfig(const std::vector<std::string> &args) {
+    json result;
+    result["status"] = "failed";
+    int argc = args.size();
+    char *argv[argc];
+    for (int i = 0; i < argc; i++) {
+        argv[i] = (char *) args[i].c_str();
+    }
+    ScanOpts options;
+    json scanConsoleConfig;
+    int res = ScanHelper::parseOptions(argc, argv, options);
+    if (res==1) {
+        res = ScanHelper::loadConfigFile(options, false, scanConsoleConfig);
+        if (res>=0) {
+            result["status"] = "ok";
+        }
+    }
+    std::string str;
+    result["config"] = scanConsoleConfig;
+    result.dump(str);
+    return str;
+}
+
 int ScanConsoleImpl::init(int argc, char *argv[]) {
     ScanOpts options;
     int res=ScanHelper::parseOptions(argc,argv,options);
