@@ -48,9 +48,9 @@ private:
     std::unique_ptr<Bookkeeper> bookie{};
     std::map<FrontEnd*, std::array<std::string, 2>> feCfgMap;
     std::unique_ptr<ScanBase> scanBase{};
+    std::map<FrontEnd*, std::unique_ptr<DataProcessor> > procs{};
     std::map<FrontEnd*, std::unique_ptr<DataProcessor> > histogrammers{};
     std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcessor>> > analyses{};
-    std::shared_ptr<DataProcessor> proc{};
     FeedbackClipboardMap fbData;
     std::string chipType{};
     std::string timestampStr{};
