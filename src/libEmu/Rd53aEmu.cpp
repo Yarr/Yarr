@@ -271,8 +271,9 @@ void Rd53aEmu::outputLoop() {
         //
         // push the data out
         //
-        
-        uint32_t header = (0x7f << 25 ) | ( (l1id & 0x1f)<<20 ) | ( (tag & 0x1f) << 15 ) | (bcid & 0x7fff);
+        // the MSB in the header or not set, only bit 26, discrepancy  between actual chip and manual
+        // used to be (0x7f << 25 )
+        uint32_t header = (0x1 << 25 ) | ( (l1id & 0x1f)<<20 ) | ( (tag & 0x1f) << 15 ) | (bcid & 0x7fff);
         pushOutput( header );
         
         //std::cout << "header = " << HEXF(8, header) << ", outWords size = " << outWords.size() << std::endl;
