@@ -88,15 +88,8 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
 
     std::thread t([&]() {
         int loop_count = 0;
-        while(1) {
-          bookie.rawDataMap[rx_channel].waitNotEmptyOrDone();
-          auto data = bookie.rawDataMap[rx_channel].popData();
-          if(!data) {
-            // Return due to finish call
-            thread_failure = false;
-            return;
-          }
-
+        while(feedback_count < 2) {
+          std::shared_ptr<RawDataContainer> data = std::make_shared<RawDataContainer>(LoopStatus({{1}, {1}, {2}}, {{LOOP_STYLE_DATA}, {LOOP_STYLE_TRIGGER}, {LOOP_STYLE_GLOBAL_FEEDBACK}}));
           logger->debug("Received data");
 
           const LoopStatus &stat = data->stat;
@@ -112,15 +105,10 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
           logger->debug("Sent feedback at iteration {}", loop_count);
           loop_count ++;
 
-          if(loop_count > max_loops) {
-            logger->warn("Finish unlocking thread after {} loop", max_loops);
-            thread_failure = true;
-            return;
-          }
         }
+        logger->warn("Finish unlocking thread after {} loop", max_loops);
+        thread_failure = false;
 
-        logger->warn("Somehow finished loop in thread {}", loop_count);
-        thread_failure = true;
       });
 
     // Skip pre/post scan
@@ -176,14 +164,8 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
 
     std::thread t([&]() {
         int loop_count = 0;
-        while(1) {
-          bookie.rawDataMap[rx_channel].waitNotEmptyOrDone();
-          auto data = bookie.rawDataMap[rx_channel].popData();
-          if(!data) {
-            // Return due to finish call
-            thread_failure = false;
-            return;
-          }
+        while(feedback_count<4) {
+          std::shared_ptr<RawDataContainer> data = std::make_shared<RawDataContainer>(LoopStatus({{1}, {1}, {4}}, {{LOOP_STYLE_DATA}, {LOOP_STYLE_TRIGGER}, {LOOP_STYLE_PIXEL_FEEDBACK}}));
 
           logger->debug("Received data");
 
@@ -201,15 +183,10 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
           logger->debug("Sent feedback at iteration {}", loop_count);
           loop_count ++;
 
-          if(loop_count > max_loops) {
-            logger->warn("Finish unlocking thread after {} loop", max_loops);
-            thread_failure = true;
-            return;
-          }
         }
-
-        logger->warn("Somehow finished loop in thread {}", loop_count);
-        thread_failure = true;
+        logger->warn("Finish unlocking thread after {} loop", max_loops);
+        thread_failure = false;
+        return;
       });
 
     // Skip pre/post scan
