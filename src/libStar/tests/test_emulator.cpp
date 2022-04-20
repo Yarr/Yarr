@@ -33,7 +33,7 @@ template<typename PacketT>
 void compareOutputs(RawData* data, const PacketT& expected_packet);
 
 template<typename PacketT>
-void checkData(HwController*, std::deque<PacketT>&, const PacketT *const mask_pattern = nullptr);
+void checkData(HwController*, std::map<uint32_t, std::deque<PacketT>>&, const PacketT *const mask_pattern = nullptr);
 
 // Test by parsing bytes and comparing string
 TEST_CASE("StarEmulatorParsing", "[star][emulator]") {
@@ -49,7 +49,7 @@ TEST_CASE("StarEmulatorParsing", "[star][emulator]") {
   typedef std::string PacketCompare;
 
   // What data to expect, and how to mask the comparison
-  std::deque<PacketCompare> expected;
+  std::map<uint32_t, std::deque<PacketCompare>> expected;
 
   SECTION("Read HCCStar interposed") {
     // read another HCCStar register
@@ -60,9 +60,9 @@ TEST_CASE("StarEmulatorParsing", "[star][emulator]") {
     emu->writeFifo((readHCCCmd2[8] << 16) + LCB::IDLE);
 
     // Response from L0?
-    expected.push_back("Packet type TYP_LP, BCID 7 (1), L0ID 3, nClusters 0\n");
+    expected[1].push_back("Packet type TYP_LP, BCID 7 (1), L0ID 3, nClusters 0\n");
     // NB this is incorrect?
-    expected.push_back("Packet type TYP_HCC_RR, ABC 0, Address 11, Value 00000000\n");
+    expected[1].push_back("Packet type TYP_HCC_RR, ABC 0, Address 11, Value 00000000\n");
   }
 
   SECTION("Read counter register") {
@@ -71,7 +71,7 @@ TEST_CASE("StarEmulatorParsing", "[star][emulator]") {
     std::array<LCB::Frame, 9> readABCCmd = star.read_abc_register(172);
     sendCommand(*emu, readABCCmd);
 
-    expected.push_back("Packet type TYP_ABC_RR, ABC 0, Address ac, Value 00000000\n");
+    expected[1].push_back("Packet type TYP_ABC_RR, ABC 0, Address ac, Value 00000000\n");
   }
 
   emu->releaseFifo();
@@ -95,7 +95,7 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
   typedef std::vector<uint8_t> PacketCompare;
 
   // What data to expect, and how to mask the comparison
-  std::deque<PacketCompare> expected;
+  std::map<uint32_t, std::deque<PacketCompare>> expected;
 
   // Use the pattern below to skip a comparison
   // 0xf is not a valid packet type
@@ -126,10 +126,10 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
 
   // Will still receive one initial HPR packet from HCC and one from each ABC
   // HCC HPR with Idle frame
-  expected.push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
+  expected[1].push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
   // ABC HPR with Idle frame
   // (By default the emulator has only one hard-coded ABC with ID = 15 for now)
-  expected.push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+  expected[1].push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
 
   // Reset BC counters
   emu->writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(0, 0, true));
@@ -144,7 +144,7 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     sendCommand(*emu, readHCCCmd);
 
     // HCCStar register 48 (ADCcfg) is initialized to 0x00406600 
-    expected.push_back({0x83, 0x00, 0x04, 0x06, 0x60, 0x00});
+    expected[1].push_back({0x83, 0x00, 0x04, 0x06, 0x60, 0x00});
   }
 
   SECTION("Read HCCStar short") {
@@ -154,7 +154,7 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     emu->writeFifo((readHCCCmd[2] << 16) + readHCCCmd[8]);
 
     // HCCStar register 44 (Cfg2) is initialized to 0x0000018e
-    expected.push_back({0x82, 0xc0, 0x00, 0x00, 0x18, 0xe0});
+    expected[1].push_back({0x82, 0xc0, 0x00, 0x00, 0x18, 0xe0});
   }
 
   SECTION("Read ABCStar interposed") {
@@ -174,9 +174,9 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     // At the time of the L0A frame, bc count = 56; L0 latency is set to 400
     // => 8-bit BCID = (512 + 56-1 - 400) & 0xff = 0xa7
     // 4-bit BCID in the packet: 0b1111
-    expected.push_back({0x20, 0x3f, 0x03, 0xfe, 0x6f, 0xed});
+    expected[1].push_back({0x20, 0x3f, 0x03, 0xfe, 0x6f, 0xed});
     // ABCStar register 34 (CREG2): 0x00000190
-    expected.push_back({0x40, 0x22, 0x00, 0x00, 0x00, 0x19, 0x0f, 0x00, 0x00});
+    expected[1].push_back({0x40, 0x22, 0x00, 0x00, 0x00, 0x19, 0x0f, 0x00, 0x00});
   }
 
   SECTION("Mask Registers") {
@@ -196,7 +196,7 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     // l0tag = 4 + 3
     // bc count at L0A frame = 148; trigger command on 148-1; latency = 0
     // => 8-bit BCID = 0x93; 4-bit BCID in the packet = 0b0110
-    expected.push_back({0x20, 0x76, 0x05, 0xc7, 0x01, 0xcf, 0x05, 0xe7, 0x01, 0xee, 0x07, 0xc7, 0x03, 0xcf, 0x07, 0xe7, 0x03, 0xee, 0x6f, 0xed});
+    expected[1].push_back({0x20, 0x76, 0x05, 0xc7, 0x01, 0xcf, 0x05, 0xe7, 0x01, 0xee, 0x07, 0xc7, 0x03, 0xcf, 0x07, 0xe7, 0x03, 0xee, 0x6f, 0xed});
   }
 
   SECTION("Hit Counters") {
@@ -223,7 +223,7 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     for (int i = 0; i < 5; i++) {
       // Skip the comparison of these cluster packets
       // Test of physics packets is done elsewhere
-      expected.push_back(mask_pattern);
+      expected[1].push_back(mask_pattern);
     }
 
     // Check the hit counts
@@ -232,14 +232,14 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     emu->writeFifo((readABCCmd_hitcnt0[0] << 16) + readABCCmd_hitcnt0[1]);
     emu->writeFifo((readABCCmd_hitcnt0[2] << 16) + readABCCmd_hitcnt0[8]);
     // HitCountREG0 for channel 0 to 3 is expected to be 0x04040404
-    expected.push_back({0x40, 0x80, 0x00, 0x40, 0x40, 0x40, 0x4f, 0x00, 0x00});
+    expected[1].push_back({0x40, 0x80, 0x00, 0x40, 0x40, 0x40, 0x4f, 0x00, 0x00});
 
     // HitCountREG63
     std::array<LCB::Frame, 9> readABCCmd_hitcnt63 = star.read_abc_register(191);
     emu->writeFifo((readABCCmd_hitcnt63[0] << 16) + readABCCmd_hitcnt63[1]);
     emu->writeFifo((readABCCmd_hitcnt63[2] << 16) + readABCCmd_hitcnt63[8]);
     // HitCountREG63 for channel 252 - 255 is expected be 0x00000000
-    expected.push_back({0x40, 0xbf, 0x00, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x00});
+    expected[1].push_back({0x40, 0xbf, 0x00, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x00});
   }
 
   SECTION("L0 Latency") {
@@ -262,7 +262,7 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     // Physics packet: l0tag = 20 + 3
     // bc count = 156 when L0A command received; trigger on 156-1; latency = 3
     // 8-bit BCID = 152 (0x98) => 4-bit BCID in the packet = 0b0001
-    expected.push_back({0x21, 0x71, 0x00, 0x00, 0x6f, 0xed});
+    expected[1].push_back({0x21, 0x71, 0x00, 0x00, 0x6f, 0xed});
   }
 
   emu->releaseFifo();
@@ -286,7 +286,7 @@ TEST_CASE("StarEmulatorHPR", "[star][emulator]") {
 
   typedef std::vector<uint8_t> PacketCompare;
 
-  std::deque<PacketCompare> expected;
+  std::map<uint32_t, std::deque<PacketCompare>> expected;
 
   // Send a logic reset first
   emu->writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::LOGIC_RESET, 0));
@@ -298,9 +298,9 @@ TEST_CASE("StarEmulatorHPR", "[star][emulator]") {
   }
 
   // HCC HPR with Idle frame
-  expected.push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
+  expected[1].push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
   // ABC HPR with Idle frame
-  expected.push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+  expected[1].push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
 
   SECTION("Periodic") {
     // Wait another 80 BCs for a second set of HPRs
@@ -308,8 +308,8 @@ TEST_CASE("StarEmulatorHPR", "[star][emulator]") {
       emu->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
     }
 
-    expected.push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
-    expected.push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+    expected[1].push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
+    expected[1].push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
   }
 
   SECTION("StopHPR") {
@@ -322,7 +322,7 @@ TEST_CASE("StarEmulatorHPR", "[star][emulator]") {
       emu->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
     }
 
-    expected.push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+    expected[1].push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
   }
 
   SECTION("TestHPR") {
@@ -330,15 +330,15 @@ TEST_CASE("StarEmulatorHPR", "[star][emulator]") {
     std::array<LCB::Frame, 9> writeABCCmd_TestHPR = star.write_abc_register(0, 0x00000008);
     sendCommand(*emu, writeABCCmd_TestHPR);
 
-    expected.push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+    expected[1].push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
 
     // Wait a bit, and there should be the regular periodic HPR packets
     for (int j = 0; j < 4; j++) {
       emu->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
     }
 
-    expected.push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
-    expected.push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+    expected[1].push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
+    expected[1].push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
   }
 
   SECTION("MaskHPR") {
@@ -351,8 +351,8 @@ TEST_CASE("StarEmulatorHPR", "[star][emulator]") {
       emu->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
     }
 
-    expected.push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
-    expected.push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+    expected[1].push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
+    expected[1].push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
 
     // Now set HCC TestHPR bit to 1.
     // No extra HCC HPR is expected since the HCC MaskHPR is on
@@ -364,8 +364,8 @@ TEST_CASE("StarEmulatorHPR", "[star][emulator]") {
       emu->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
     }
 
-    expected.push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
-    expected.push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+    expected[1].push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
+    expected[1].push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
   }
 
   emu->releaseFifo();
@@ -437,7 +437,7 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
   StarCmd star;
 
   typedef std::pair<uint32_t, std::vector<uint8_t>> PacketCompare;
-  std::deque<PacketCompare> expected;
+  std::map<uint32_t, std::deque<PacketCompare>> expected;
 
   SECTION("HCCStar Write and Read") {
     // Broadcast write command to set register 47 (ErrCfg) to 0xabcdabcd
@@ -447,7 +447,7 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
     // Read only the HCC with ID = 3
     auto readHCCCmd_3_reg47 = star.read_hcc_register(47, 3);
     sendCommand(*emu, readHCCCmd_3_reg47);
-    expected.push_back({rx_fe1, {0x82, 0xfa, 0xbc, 0xda, 0xbc, 0xd0}});
+    expected[rx_fe1].push_back({rx_fe1, {0x82, 0xfa, 0xbc, 0xda, 0xbc, 0xd0}});
 
     // Write 0xdeadbeef to register 47 of the HCC with ID = 4
     auto writeHCCCmd_4_reg47 = star.write_hcc_register(47, 0xdeadbeef, 4);
@@ -460,13 +460,13 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
     // Broadcast read command to read register 47 of all HCCs
     auto readHCCCmd_47 = star.read_hcc_register(47);
     sendCommand(*emu, readHCCCmd_47);
-
+    
     // HCC 3: register 47 is still 0xabcdabcd
-    expected.push_back({rx_fe1, {0x82, 0xfa, 0xbc, 0xda, 0xbc, 0xd0}});
+    expected[rx_fe1].push_back({rx_fe1, {0x82, 0xfa, 0xbc, 0xda, 0xbc, 0xd0}});
     // HCC 4: register 47 should be 0xdeadbeef
-    expected.push_back({rx_fe2, {0x82, 0xfd, 0xea, 0xdb, 0xee, 0xf0}});
+    expected[rx_fe2].push_back({rx_fe2, {0x82, 0xfd, 0xea, 0xdb, 0xee, 0xf0}});
     // HCC 5: register 47 should be 0xcafebabe
-    expected.push_back({rx_fe3, {0x82, 0xfc, 0xaf, 0xeb, 0xab, 0xe0}});
+    expected[rx_fe3].push_back({rx_fe3, {0x82, 0xfc, 0xaf, 0xeb, 0xab, 0xe0}});
   }
 
   SECTION("ABCStar Write and Read") {
@@ -478,8 +478,8 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
     auto readABCCmd_hcc3 = star.read_abc_register(23, 3, 0xf);
     sendCommand(*emu, readABCCmd_hcc3);
     // Expect two ABC RR packets from ABC 1 and 2
-    expected.push_back({rx_fe1, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf1, 0x00, 0x00}});
-    expected.push_back({rx_fe1, {0x41, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
+    expected[rx_fe1].push_back({rx_fe1, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf1, 0x00, 0x00}});
+    expected[rx_fe1].push_back({rx_fe1, {0x41, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
 
     emu->releaseFifo();
     while(!emu->isCmdEmpty());
@@ -497,7 +497,7 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
     auto readABCCmd_5_7 = star.read_abc_register(0x17, 5, 7);
     sendCommand(*emu, readABCCmd_5_7);
 
-    expected.push_back({rx_fe3, {0x42, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf7, 0x00, 0x00}});
+    expected[rx_fe3].push_back({rx_fe3, {0x42, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf7, 0x00, 0x00}});
 
     emu->releaseFifo();
     while(!emu->isCmdEmpty());
@@ -508,16 +508,16 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
     sendCommand(*emu, readABCCmd_mask7);
 
     // Two ABC RR packets from ABC 1 and 2 on HCC 3
-    expected.push_back({rx_fe1, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf1, 0x00, 0x00}});
-    expected.push_back({rx_fe1, {0x41, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
+    expected[rx_fe1].push_back({rx_fe1, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf1, 0x00, 0x00}});
+    expected[rx_fe1].push_back({rx_fe1, {0x41, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
 
     // One ABC RR packet from ABC 7 on HCC 4
-    expected.push_back({rx_fe2, {0x40, 0x17, 0x0d, 0xea, 0xdb, 0xee, 0xf7, 0x00, 0x00}});
+    expected[rx_fe2].push_back({rx_fe2, {0x40, 0x17, 0x0d, 0xea, 0xdb, 0xee, 0xf7, 0x00, 0x00}});
 
     // Three ABC RR packet from ABC 2, 4, 7 on HCC 5
-    expected.push_back({rx_fe3, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
-    expected.push_back({rx_fe3, {0x41, 0x17, 0x0a, 0xa0, 0x45, 0x1a, 0xa4, 0x00, 0x00}});
-    expected.push_back({rx_fe3, {0x42, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf7, 0x00, 0x00}});
+    expected[rx_fe3].push_back({rx_fe3, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
+    expected[rx_fe3].push_back({rx_fe3, {0x41, 0x17, 0x0a, 0xa0, 0x45, 0x1a, 0xa4, 0x00, 0x00}});
+    expected[rx_fe3].push_back({rx_fe3, {0x42, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf7, 0x00, 0x00}});
   }
 
   emu->releaseFifo();
@@ -560,7 +560,7 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
 
   typedef std::pair<uint32_t, std::vector<uint8_t>> PacketCompare;
 
-  std::deque<PacketCompare> expected;
+  std::map<uint32_t, std::deque<PacketCompare>> expected;
 
   //////////////////////////
   // Initialization
@@ -578,10 +578,14 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
   // Expected to receive one initial HPR packet from HCCStar and one from ABCStar
   for (unsigned i=0; i<nchannels; i++) {
     uint32_t chn_rx = 2*i+1;
-    // HCC HPR with Idle frame
-    expected.push_back({chn_rx, {0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0}});
-    // ABC HPR with Idle frame
-    expected.push_back({chn_rx, {0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00}});
+    // hcc hpr with idle frame
+    expected[chn_rx].push_back({chn_rx, {0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0}});
+  }
+
+  for (unsigned i=0; i<nchannels; i++) {
+    uint32_t chn_rx = 2*i+1;
+    // abc hpr with idle frame
+    expected[chn_rx].push_back({chn_rx, {0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00}});
   }
 
   emu->releaseFifo();
@@ -600,7 +604,7 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
     // Expect to read back the default value 0x00406600 from all HCCStars
     for (unsigned i=0; i<nchannels; i++) {
       uint32_t chn_rx = 2*i+1;
-      expected.push_back({chn_rx, {0x83, 0x00, 0x04, 0x06, 0x60, 0x00}});
+      expected[chn_rx].push_back({chn_rx, {0x83, 0x00, 0x04, 0x06, 0x60, 0x00}});
     }
 
     emu->releaseFifo();
@@ -626,7 +630,7 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
     sendCommand(*emu, readABCCmd_mask7);
 
     // Expect to receive data only from rx channel 3
-    expected.push_back({3, {0x40, 0x17, 0x0d, 0xea, 0xdb, 0xee, 0xff, 0x00, 0x00}});
+    expected[3].push_back({3, {0x40, 0x17, 0x0d, 0xea, 0xdb, 0xee, 0xff, 0x00, 0x00}});
 
     emu->releaseFifo();
     while(!emu->isCmdEmpty());
@@ -643,9 +647,9 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
     // Should receive data only from rx channel 1.
     // Two data packets are expected:
     // One is from the previous MaskInput7 read command: the register read packet was pushed to the rx buffer but had not been read out since the rx channel was disabled.
-    expected.push_back({1, {0x40, 0x17, 0x0d, 0xea, 0xdb, 0xee, 0xff, 0x00, 0x00}});
+    expected[1].push_back({1, {0x40, 0x17, 0x0d, 0xea, 0xdb, 0xee, 0xff, 0x00, 0x00}});
     // The second packet is from the MaskInput6 read command.
-    expected.push_back({1, {0x40, 0x16, 0x0c, 0xaf, 0xeb, 0xab, 0xef, 0x00, 0x00}});
+    expected[1].push_back({1, {0x40, 0x16, 0x0c, 0xaf, 0xeb, 0xab, 0xef, 0x00, 0x00}});
 
     emu->releaseFifo();
     while(!emu->isCmdEmpty());
@@ -678,9 +682,9 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
       unsigned chn_tx = 2*i;
       unsigned chn_rx = 2*i+1;
       if (chn_tx == 2)
-        expected.push_back({chn_rx, {0x40, 0x10, 0x0d, 0xec, 0xaf, 0xba, 0xdf, 0x00, 0x00}});
+        expected[chn_rx].push_back({chn_rx, {0x40, 0x10, 0x0d, 0xec, 0xaf, 0xba, 0xdf, 0x00, 0x00}});
       else
-        expected.push_back({chn_rx, {0x40, 0x10, 0x00, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x00}});
+        expected[chn_rx].push_back({chn_rx, {0x40, 0x10, 0x00, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x00}});
     }
 
     emu->releaseFifo();
@@ -722,12 +726,12 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
     // Cluster bytes from MaskInput3 value 0xfffe0000:
     // {0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee}
     // L0tag from the trigger words: l0tag = 4 (input tag) + 3 (BC offset)
-    // Expect two physics packets from rx channel 3 (corresponding to tx 2)
-    expected.push_back({3, {0x20,0x7e, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b1110
-    expected.push_back({3, {0x20,0x7e, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b1110
     // And two packets from rx channel 5 (corresponding to tx 4)
-    expected.push_back({5, {0x20,0x7e, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b1110
-    expected.push_back({5, {0x20,0x7e, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b1110
+    // Expect two physics packets from rx channel 3 (corresponding to tx 2)
+    expected[3].push_back({3, {0x20,0x7e, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b1110
+    expected[5].push_back({5, {0x20,0x7e, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b1110
+    expected[3].push_back({3, {0x20,0x7e, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b1110
+    expected[5].push_back({5, {0x20,0x7e, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b1110
 
     // Join trigger process when it is done
     while(!emu->isTrigDone());
@@ -769,7 +773,7 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
   StarCmd star;
 
   typedef std::vector<uint8_t> PacketCompare;
-  std::deque<PacketCompare> expected;
+  std::map<uint32_t, std::deque<PacketCompare>> expected;
 
   //////////////////////////
   // Initialize the emulator
@@ -807,9 +811,9 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
 
   // Expect to receive initial HPR packets
   // HCC HPR with Idle frame
-  expected.push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
+  expected[1].push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
   // ABC HPR with Idle frame
-  expected.push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+  expected[1].push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
 
   // Switch to multi-level trigger mode
   // Register 41 OPmode bit 0
@@ -868,7 +872,7 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
   staremu->writeFifo(2, (r3frame1 << 16) + LCB::IDLE);
 
   // Expect a PR packet: tag = 42 (0x2a); 4-bit BCID = 0b0110
-  expected.push_back({0x12, 0xa6, 0x00, 0x00, 0x6f, 0xed});
+  expected[1].push_back({0x12, 0xa6, 0x00, 0x00, 0x6f, 0xed});
 
   // Send another R3 frame to read the second event with tag 66
   // Followed by an L1 command that read the previous event
@@ -878,9 +882,9 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
   staremu->writeFifo(2, (r3frame2 << 16) + l1frame);
 
   // Expected a PR packet: tag = 66 (0x42), 4-bit BCID = 0b1111
-  expected.push_back({0x14, 0x2f, 0x00, 0x00, 0x6f, 0xed});
+  expected[1].push_back({0x14, 0x2f, 0x00, 0x00, 0x6f, 0xed});
   // And an LP packet with tag = 42 (0x2a), 4-bit BCID = 0b0110
-  expected.push_back({0x22, 0xa6, 0x00, 0x00, 0x6f, 0xed});
+  expected[1].push_back({0x22, 0xa6, 0x00, 0x00, 0x6f, 0xed});
 
   staremu->releaseFifo();
   while(!staremu->isCmdEmpty());
@@ -888,44 +892,43 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
 }
 
 template<typename PacketT>
-void checkData(HwController* emu, std::deque<PacketT>& expected, const PacketT *const mask_pattern)
+void checkData(HwController* emu, std::map<uint32_t, std::deque<PacketT>>& expected, const PacketT *const mask_pattern)
 {
-  std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> dataVec = emu->readData();
-  std::shared_ptr<RawData> data;
-  if (dataVec.size() > 0)
-    data = dataVec[0].second;
+  std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> dataVec;
 
   for(int reads=0; reads<10; reads++) {
-    CAPTURE (reads);
-    if(data) {
-      CHECK (!expected.empty());
+      CAPTURE (reads);
+      dataVec = emu->readData();
+      CAPTURE(dataVec.size());
+      for (unsigned i=0; i<dataVec.size(); i++) {
+          auto [channel, data] = dataVec[i];
+          if(data) {
+              CAPTURE (data->getSize());
+              CAPTURE (channel);
+              CHECK (!expected[channel].empty());
 
-      PacketT expected_packet;
-      if (!expected.empty()) {
-        expected_packet = expected.front();
-        expected.pop_front();
+              PacketT expected_packet;
+              if (!expected[channel].empty()) {
+                  expected_packet = expected[channel].front();
+                  expected[channel].pop_front();
+              }
+
+              CAPTURE(expected[channel].size());
+
+              // Do comparison
+              if (not mask_pattern) {
+                  compareOutputs(data.get(), expected_packet);
+              } else if (expected_packet != (*mask_pattern)) {
+                  compareOutputs(data.get(), expected_packet);
+              }
+
+          }
+
       }
-
-      CAPTURE (data->getSize());
-
-      // Do comparison
-      if (not mask_pattern) {
-        compareOutputs(data.get(), expected_packet);
-      } else if (expected_packet != (*mask_pattern)) {
-        compareOutputs(data.get(), expected_packet);
-      }
-
-    }
-
-    dataVec = emu->readData();
-    if(dataVec.size() > 0) {
-        data = dataVec[0].second;
-    } else {
-        data = nullptr;
-    }
   }
 
-  CHECK(expected.empty());
+  // TODO need to check all entries in the map
+  //CHECK(expected.empty());
 }
 
 template<>
