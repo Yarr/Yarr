@@ -53,7 +53,8 @@
           "max": 300,
           "min": 0,
           "step": 5,
-          "parameter":"InjVcalDiff"
+          "parameter":"InjVcalDiff",
+          "waitTime": 100
         },
         "loopAction": "StdParameterLoop"
       },
