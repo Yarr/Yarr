@@ -336,7 +336,7 @@ std::pair<uint32_t, uint32_t> Rd53b::decodeSingleRegRead(uint32_t higher, uint32
     return std::make_pair(999, 666);
 }
 
-void Rd53b::confADC(uint16_t MONMUX, bool doCur)
+void Rd53b::confAdc(uint16_t MONMUX, bool doCur)
 {
     //This only works for voltage MUX values.
     uint16_t OriginalGlobalRT = this->GlobalPulseConf.read();

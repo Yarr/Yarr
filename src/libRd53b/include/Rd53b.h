@@ -57,7 +57,7 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         
         static std::pair<uint32_t, uint32_t> decodeSingleRegRead(uint32_t higher, uint32_t lower);
         void runRingOsc(uint16_t duration, bool isBankB);
-        void confADC(uint16_t MONMUX, bool doCur = false);
+        void confAdc(uint16_t MONMUX, bool doCur = false);
     protected:
     private:
 };
