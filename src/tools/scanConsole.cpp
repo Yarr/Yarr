@@ -312,7 +312,7 @@ int main(int argc, char *argv[]) {
     // TODO not to use the raw pointer!
     try {
         ScanHelper::buildRawDataProcs(procs, bookie->feList, chipType);
-        ScanHelper::buildHistogrammers(histogrammers, scanOpts.scanType, bookie->feList, scanBase.get(), scanOpts.outputDir);
+        ScanHelper::buildHistogrammers(histogrammers, scanCfg, bookie->feList, scanBase.get(), scanOpts.outputDir);
         ScanHelper::buildAnalyses(analyses, scanCfg, *bookie, scanBase.get(),
                                   &fbData, scanOpts.mask_opt);
     } catch (const char *msg) {
