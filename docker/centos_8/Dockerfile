@@ -14,7 +14,7 @@ RUN yum -y install \
     root \
     python36-devel
 
-ARG branch=devel_pyyarr
+ARG branch=devel
 ENV PATH=/opt/rh/gcc-toolset-9/root/usr/bin:$PATH
 RUN git clone --depth 1 --branch ${branch}  https://:@gitlab.cern.ch:8443/YARR/YARR.git
 RUN gcc --version

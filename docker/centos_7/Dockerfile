@@ -14,7 +14,7 @@ RUN yum -y install \
     python3-devel
 			
 ENV PATH=/opt/rh/devtoolset-9/root/usr/bin:$PATH
-ARG branch=devel_pyyarr
+ARG branch=devel
 RUN gcc --version
 RUN git clone   --depth 1 --branch ${branch}  https://:@gitlab.cern.ch:8443/YARR/YARR.git
 RUN cmake3 -S YARR -B build  -DBUILD_TESTS=on -DYARR_CONTROLLERS_TO_BUILD=all -DENABLE_PYTHON=1
