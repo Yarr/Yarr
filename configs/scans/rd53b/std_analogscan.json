@@ -77,9 +77,11 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "DigitalScan",
+    "name": "AnalogScan",
     "prescan": {
         "InjVcalRange": 1,
+        "InjVcalMed": 200,
+        "InjVcalHigh": 3000,
         "InjDigEn": 0,
         "Latency": 60
     }
