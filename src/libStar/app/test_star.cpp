@@ -129,46 +129,33 @@ RawDataContainer readAllData(
   bool nodata = true;
 
   RawDataContainer rdc(LoopStatus{});
-
-  std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> dataVec = hwCtrl.readData();
-  std::shared_ptr<RawData> data;
-  if (dataVec.size() > 0)
-      data = dataVec[0].second;
-
+  
   auto start_reading = std::chrono::steady_clock::now();
 
+  std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> dataVec;
   while (true) {
-    if (data) {
-      nodata = false;
-      logger->trace("Use data: {}", (void*)data->getBuf());
-
-      bool good = filter_cb(*data);
-      if (good) {
-        rdc.add(std::move(data));
+      dataVec = hwCtrl.readData();
+      for(auto data : dataVec) {
+          bool good = filter_cb(*data.second);
+          if (good) {
+              rdc.add(std::move(data.second));
+          }
       }
-    } else {
       // wait a bit if no data
       static const auto SLEEP_TIME = std::chrono::milliseconds(1);
       std::this_thread::sleep_for( SLEEP_TIME );
-    }
-
-    auto run_time = std::chrono::steady_clock::now() - start_reading;
-    if ( run_time > std::chrono::milliseconds(timeout) ) {
-      logger->trace("readData timeout");
-      break;
-    }
-
-      if (nodata) {
-        logger->critical("No data");
-      } else if (not data) {
-        logger->debug("No data met the requirement");
+      
+      // Timeout
+      auto run_time = std::chrono::steady_clock::now() - start_reading;
+      if ( run_time > std::chrono::milliseconds(timeout) ) {
+          logger->trace("readData timeout");
+          break;
       }
+
   }
 
-  if (nodata) {
-    logger->critical("No data");
-  } else if (rdc.size() == 0) {
-    logger->debug("Data container is empty");
+  if (rdc.size() == 0) {
+      logger->critical("Data container empty");
   }
 
   return rdc;
