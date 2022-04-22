@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
     logger->info("Output Directory: {}", scanOpts.outputDir);
 
     // Make symlink
-    ScanHelper::createSymlink(dataDir,strippedScan,runCounter);
+    if(scanOpts.doOutput) ScanHelper::createSymlink(dataDir,strippedScan,runCounter);
 
     // Timestamp
     now = std::time(nullptr);
