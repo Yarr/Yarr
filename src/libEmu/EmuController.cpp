@@ -52,9 +52,8 @@ void EmuController<Fei4, Fei4Emu>::loadConfig(const json &j) {
 
   //TODO make nice
   logger->info("Starting FEI4 Emulator");
-  std::string emuCfgFile = j["feCfg"];
-  logger->info(" read {}", emuCfgFile);
-  emus.emplace_back(new Fei4Emu(emuCfgFile, emuCfgFile, rx, tx));
+  const json &emuCfg = j["__feCfg_data__"];
+  emus.emplace_back(new Fei4Emu(emuCfg, rx, tx));
   emuThreads.push_back(std::thread(&Fei4Emu::executeLoop, emus.back().get()));
 }
 
@@ -83,8 +82,7 @@ void EmuController<Rd53a, Rd53aEmu>::loadConfig(const json &j) {
 
   //TODO make nice
   logger->info("Starting RD53a Emulator" + infotoken);
-  std::string emuCfgFile = j["feCfg"];
-  logger->info(" read {}", emuCfgFile);
-  emus.emplace_back(new Rd53aEmu( rx, tx, emuCfgFile, srand_seed ));
+  const json &emuCfg = j["__feCfg_data__"];
+  emus.emplace_back(new Rd53aEmu( rx, tx, emuCfg, srand_seed ));
   emuThreads.push_back(std::thread(&Rd53aEmu::executeLoop, emus.back().get()));
 }
