@@ -236,18 +236,6 @@ void ScanConsoleImpl::plot() {
 }
 
 int ScanConsoleImpl::configure() {
- // Loop chip configs
-    for(json const& config : chipConfig){
-        try {
-            chipType = ScanHelper::buildChips(config, *bookie, &*hwCtrl, feCfgMap);
-        } catch (std::runtime_error &e) {
-            logger->critical("#ERROR# loading chip config: {}", e.what());
-            return -1;
-        }
-        scanLog["connectivity"].push_back(config);
-    }
-
-
     // Initial setting local DBHandler
     if (scanOpts.dbUse) {
         database = std::make_unique<DBHandler>();
