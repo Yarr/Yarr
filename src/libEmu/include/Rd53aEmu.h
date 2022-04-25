@@ -72,7 +72,7 @@ public:
     };
 
     /** These are ring buffers are owned by EmuController */
-    Rd53aEmu(EmuCom * rx, EmuCom * tx, std::string json_file_path, int srand_seed);
+    Rd53aEmu(EmuCom * rx, EmuCom * tx, const json &cfg, int srand_seed);
     ~Rd53aEmu();
     
     // the main loop which recieves commands from yarr

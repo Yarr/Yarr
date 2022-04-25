@@ -21,3 +21,7 @@ foreach(frontend IN LISTS FRONT_ENDS)
 endforeach()
 
 add_subdirectory(tools)
+
+if(ENABLE_PYTHON)
+   add_subdirectory(python)
+endif()
