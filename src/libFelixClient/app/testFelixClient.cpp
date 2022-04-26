@@ -60,6 +60,10 @@ int main(int argc, char **argv) {
     jlog["pattern"] = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
     jlog["log_config"][0]["name"] = "testFelixClient";
     jlog["log_config"][0]["level"] = "info";
+    jlog["log_config"][1]["name"] = "FelixTxCore";
+    jlog["log_config"][1]["level"] = "info";
+    jlog["log_config"][2]["name"] = "FelixRxCore";
+    jlog["log_config"][2]["level"] = "info";
     logging::setupLoggers(jlog);
   } else {
     try {
