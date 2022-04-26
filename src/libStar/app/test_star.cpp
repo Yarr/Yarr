@@ -75,10 +75,10 @@ std::shared_ptr<RawData> readData(
 {
   bool nodata = true;
 
-  std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> dataVec = hwCtrl.readData();
+  std::vector<std::shared_ptr<RawData>> dataVec = hwCtrl.readData();
   std::shared_ptr<RawData> data;
   if (dataVec.size() > 0)
-      data = dataVec[0].second;
+      data = dataVec[0];
 
   auto start_reading = std::chrono::steady_clock::now();
 
@@ -106,7 +106,7 @@ std::shared_ptr<RawData> readData(
 
     dataVec = hwCtrl.readData();
     if (dataVec.size() > 0) {
-      data = dataVec[0].second;
+      data = dataVec[0];
     } else {
       data = nullptr;
     }
@@ -132,13 +132,13 @@ RawDataContainer readAllData(
   
   auto start_reading = std::chrono::steady_clock::now();
 
-  std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> dataVec;
+  std::vector<std::shared_ptr<RawData>> dataVec;
   while (true) {
       dataVec = hwCtrl.readData();
       for(auto data : dataVec) {
-          bool good = filter_cb(*data.second);
+          bool good = filter_cb(*data);
           if (good) {
-              rdc.add(std::move(data.second));
+              rdc.add(std::move(data));
           }
       }
       // wait a bit if no data

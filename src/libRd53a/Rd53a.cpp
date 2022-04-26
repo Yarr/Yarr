@@ -279,10 +279,10 @@ int Rd53a::checkCom() {
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     // TODO not happy about this, rx knowledge should not be here
-    std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> dataVec = m_rxcore->readData();
+    std::vector<std::shared_ptr<RawData>> dataVec = m_rxcore->readData();
     std::shared_ptr<RawData> data;
     if (dataVec.size() > 0) {
-        data = dataVec[0].second;
+        data = dataVec[0];
     }
 
     if (data != NULL) {

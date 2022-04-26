@@ -57,7 +57,7 @@ void StdDataGatherer::execPart2() {
 
     SPDLOG_LOGGER_WARN(sdglog, "IMPORTANT! Going into endless loop unless timelimit is set, interrupt with ^c (SIGINT)!");
 
-    std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> newData;
+    std::vector<std::shared_ptr<RawData>> newData;
     while (!done) {
         std::map<uint32_t, std::unique_ptr<RawDataContainer>> rdcMap;
         
@@ -67,13 +67,13 @@ void StdDataGatherer::execPart2() {
         // Read all data until buffer is empty
         while (newData.size() > 0 && count < 4096 && signaled == 0 && !killswitch) {
             if (newData.size() > 0) {
-                for (auto &[id, dataChunk] : newData) {
+                for (auto &dataChunk : newData) {
                     count += dataChunk->getSize();
-                    if (rdcMap[id] == nullptr) {
-                        rdcMap[id] = std::make_unique<RawDataContainer>(g_stat->record());
+                    if (rdcMap[dataChunk->getAdr()] == nullptr) {
+                        rdcMap[dataChunk->getAdr()] = std::make_unique<RawDataContainer>(g_stat->record());
                     }
 
-                    rdcMap[id]->add(std::move(dataChunk));
+                    rdcMap[dataChunk->getAdr()]->add(std::move(dataChunk));
                 }
             }
             // Wait a little bit to increase chance of new data having arrived

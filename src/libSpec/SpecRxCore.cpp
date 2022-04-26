@@ -54,11 +54,11 @@ void SpecRxCore::maskRxEnable(uint32_t value, uint32_t mask) {
     this->setRxEnable(tmpVec);
 }
 
-std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> SpecRxCore::readData() {
+std::vector<std::shared_ptr<RawData>> SpecRxCore::readData() {
     uint32_t dma_addr = getStartAddr();
     uint32_t dma_count = getDataCount();
     uint32_t real_dma_count = dma_count;
-    std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> dataVec;
+    std::vector<std::shared_ptr<RawData>> dataVec;
     if (dma_count > 0 && dma_count < (251*256)) {
         real_dma_count = dma_count;
         // DMA mapped memory needs to be aligned
@@ -75,9 +75,9 @@ std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> SpecRxCore::readData(
         data->resize(real_dma_count);
         unsigned channelCount = 0;
         for (uint32_t rx : m_rxEnable) {
-            std::shared_ptr<SpecRawData> specData = std::make_shared<SpecRawData>(data);
+            std::shared_ptr<SpecRawData> specData = std::make_shared<SpecRawData>(rx, data);
             specData->setItAndOffset(m_rxEnable.size(), channelCount);
-            dataVec.push_back(std::make_pair(rx, std::dynamic_pointer_cast<RawData>(specData)));
+            dataVec.push_back(std::dynamic_pointer_cast<RawData>(specData));
             channelCount++;
         }
     }

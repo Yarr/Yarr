@@ -177,7 +177,7 @@ int main (int argc, char *argv[]) {
 	}
 
     // Read back registers and save to file
-    std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> dataVec = hwCtrl->readData();
+    std::vector<std::shared_ptr<RawData>> dataVec = hwCtrl->readData();
     std::shared_ptr<RawData> data;
 
     unsigned int m=1;	
@@ -193,7 +193,7 @@ int main (int argc, char *argv[]) {
 
     while (dataVec.size() > 0) {
         if  (dataVec.size() > 0) {
-            data = dataVec[0].second;
+            data = dataVec[0];
             auto answer = rd53b.decodeSingleRegRead(data->get(0), data->get(1));
             frequency=(answer.second & 0xFFF)/(2*(globalPulseWidth)*0.025);
             min_freq=std::min(min_freq,frequency);

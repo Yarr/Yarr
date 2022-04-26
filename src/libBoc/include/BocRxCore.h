@@ -27,7 +27,7 @@ class BocRxCore : virtual public RxCore {
         void disableRx() override;
         void maskRxEnable(uint32_t val, uint32_t mask) override;
 
-        std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> readData() override;
+        std::vector<std::shared_ptr<RawData>> readData() override;
         
         uint32_t getDataRate() override;
         uint32_t getCurCount() override;

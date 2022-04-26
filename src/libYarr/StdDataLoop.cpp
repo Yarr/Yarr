@@ -48,7 +48,7 @@ void StdDataLoop::execPart2() {
     unsigned iterations = 0;
 
 
-    std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> newData;
+    std::vector<std::shared_ptr<RawData>> newData;
     std::map<uint32_t, std::unique_ptr<RawDataContainer>> rdcMap;
     (new RawDataContainer(g_stat->record()));
     
@@ -60,13 +60,13 @@ void StdDataLoop::execPart2() {
             newData =  g_rx->readData();
             iterations++;
             if (newData.size() > 0) {
-                for (auto &[id, dataChunk] : newData) {
+                for (auto &dataChunk : newData) {
                     count += dataChunk->getSize();
-                    if (rdcMap[id] == nullptr) {
-                        rdcMap[id] = std::make_unique<RawDataContainer>(g_stat->record());
+                    if (rdcMap[dataChunk->getAdr()] == nullptr) {
+                        rdcMap[dataChunk->getAdr()] = std::make_unique<RawDataContainer>(g_stat->record());
                     }
 
-                    rdcMap[id]->add(std::move(dataChunk));
+                    rdcMap[dataChunk->getAdr()]->add(std::move(dataChunk));
                 }
             }
         } while (newData.size() > 0);
@@ -79,13 +79,13 @@ void StdDataLoop::execPart2() {
         newData = g_rx->readData();
         iterations++;
         if (newData.size() > 0) {
-            for (auto &[id, dataChunk] : newData) {
+            for (auto &dataChunk : newData) {
                 count += dataChunk->getSize();
-                if (rdcMap[id] == nullptr) {
-                    rdcMap[id] = std::make_unique<RawDataContainer>(g_stat->record());
+                if (rdcMap[dataChunk->getAdr()] == nullptr) {
+                    rdcMap[dataChunk->getAdr()] = std::make_unique<RawDataContainer>(g_stat->record());
                 }
 
-                rdcMap[id]->add(std::move(dataChunk));
+                rdcMap[dataChunk->getAdr()]->add(std::move(dataChunk));
             }
         }
     } while (newData.size() > 0 || g_rx->getCurCount() != 0);

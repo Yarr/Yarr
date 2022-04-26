@@ -18,18 +18,19 @@ RogueRxCore::~RogueRxCore() = default;
 
 
 // TODO this does not work, it just compiles
-std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> RogueRxCore::readData() {
+std::vector<std::shared_ptr<RawData>> RogueRxCore::readData() {
 	m_com->setRxChannel(m_rxChannel);
     std::this_thread::sleep_for(std::chrono::microseconds(10));
     uint32_t words = this->getCurCount();
 
-    std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> dataVec;
+    std::vector<std::shared_ptr<RawData>> dataVec;
 
     if (words > 0) {
+        // TODO need to assign channel
         std::shared_ptr<RawData> data = std::make_shared<RawData>(0x0, words);
         uint32_t *buf = data->getBuf();
         if (m_com->readBlock32(buf, words)) {
-            dataVec.push_back(std::make_pair(m_rxChannel, data));
+            dataVec.push_back(data);
         }
     }
     return dataVec;

@@ -894,17 +894,18 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
 template<typename PacketT>
 void checkData(HwController* emu, std::map<uint32_t, std::deque<PacketT>>& expected, const PacketT *const mask_pattern)
 {
-  std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> dataVec;
+  std::vector<std::shared_ptr<RawData>> dataVec;
 
   for(int reads=0; reads<10; reads++) {
       CAPTURE (reads);
       dataVec = emu->readData();
       CAPTURE(dataVec.size());
       for (unsigned i=0; i<dataVec.size(); i++) {
-          auto [channel, data] = dataVec[i];
+          auto data = dataVec[i];
           if(data) {
               CAPTURE (data->getSize());
-              CAPTURE (channel);
+              CAPTURE (data->getAdr());
+              unsigned channel = data->getAdr();
               CHECK (!expected[channel].empty());
 
               PacketT expected_packet;

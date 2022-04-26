@@ -27,7 +27,7 @@ std::vector<RawData> processDataPackets(HwController *hwCtrl)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     std::vector<RawData> dataList;
-    std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> dataVec;
+    std::vector<std::shared_ptr<RawData>> dataVec;
     std::shared_ptr<RawData> data;
     do
     {
@@ -35,7 +35,7 @@ std::vector<RawData> processDataPackets(HwController *hwCtrl)
         dataVec = hwCtrl->readData();
         if (dataVec.size() > 0)
         {
-            dataList.push_back(*dataVec[0].second);
+            dataList.push_back(*dataVec[0]);
         }
     } while (dataVec.size() > 0);
 

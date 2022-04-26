@@ -119,7 +119,7 @@ void NetioRxCore::flushBuffer(){
 
 }
 
-std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> NetioRxCore::readData(){
+std::vector<std::shared_ptr<RawData>> NetioRxCore::readData(){
   // Loop over all links looking for data
   // Return the first one we find (slow?)
 
@@ -127,7 +127,7 @@ std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> NetioRxCore::readData
   //for(it=m_elinks.begin();it!=m_elinks.end();it++){    // For every channel's queue:
     //if(!it->second) continue;
     //uint64_t elink=it->first;
-    std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> dataVec;
+    std::vector<std::shared_ptr<RawData>> dataVec;
 
     nlog->debug("NetioRxCore::readData()");
 
@@ -155,7 +155,7 @@ std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> NetioRxCore::readData
                 buffer[words-1] = 0xFFFF;
         }
         ++rxDataCount;
-        dataVec.push_back(std::make_pair(new_rdp->getAdr(), new_rdp));
+        dataVec.push_back(new_rdp);
 
   }
   return dataVec;

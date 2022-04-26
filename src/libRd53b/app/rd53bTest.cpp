@@ -150,11 +150,11 @@ int main (int argc, char *argv[]) {
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
     
-    std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> dataVec = hwCtrl->readData();
+    std::vector<std::shared_ptr<RawData>> dataVec = hwCtrl->readData();
     std::shared_ptr<RawData> data;
     while (dataVec.size() > 0 ) {
         if  (dataVec.size() > 0) {
-            data = dataVec[0].second;
+            data = dataVec[0];
             for (unsigned i=0; i<data->getSize();i++)
                 logger->info("[{}] = {:X}", i, data->get(i));
 

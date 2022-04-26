@@ -84,9 +84,9 @@ void BdaqRxCore::checkRxSync() {
 }
 
 // TODO this does not work, it will compile but does not do the necessary processing of the data
-std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> BdaqRxCore::readData() {
+std::vector<std::shared_ptr<RawData>> BdaqRxCore::readData() {
     uint size = fifo.getAvailableWords();
-    std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> dataVec;
+    std::vector<std::shared_ptr<RawData>> dataVec;
     std::map<uint32_t, std::vector<uint32_t>> dataMap;
     if (size > 0) {
         std::vector<uint32_t> inBuf;
@@ -111,7 +111,7 @@ std::vector<std::pair<uint32_t, std::shared_ptr<RawData>>> BdaqRxCore::readData(
         }  
         // TODO need to decode the data (sortChannels, buildStream)
         for (const uint32_t channelId : activeChannels) {
-            dataVec.push_back(std::make_pair(channelId, std::make_shared<RawData>(channelId, dataMap[channelId])));
+            dataVec.push_back(std::make_shared<RawData>(channelId, dataMap[channelId]));
         }
     }
     return dataVec;
