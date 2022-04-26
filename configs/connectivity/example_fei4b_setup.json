@@ -3,6 +3,7 @@
     "chips" : [
         {
             "config" : "configs/fei4b_test.json",
+            "enable": true,
             "tx" : 0,
             "rx" : 0
         }
