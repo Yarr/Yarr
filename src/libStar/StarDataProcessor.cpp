@@ -75,7 +75,7 @@ void StarDataProcessor::process_core() {
         unsigned size = curInV->size();
 
         for(unsigned c=0; c<size; c++) {
-            std::shared_ptr<RawData> r = curInV->data[c];
+            RawDataPtr r = curInV->data[c];
             unsigned channel = r->getAdr(); //elink number
             process_data(*r, *curOut);
         }

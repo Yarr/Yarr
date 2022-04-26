@@ -29,8 +29,8 @@ uint16_t Rd53bReadRegLoop::ReadRegister(Rd53bReg Rd53bGlobalCfg::*ref, Rd53b *tm
     std::this_thread::sleep_for(std::chrono::microseconds(500));
     g_tx->setCmdEnable(keeper->getTxMask());
 
-    std::vector<std::shared_ptr<RawData>> dataVec = g_rx->readData();
-    std::shared_ptr<RawData> data;
+    std::vector<RawDataPtr> dataVec = g_rx->readData();
+    RawDataPtr data;
     if (dataVec.size() > 0) {
         data = dataVec[0];
     }

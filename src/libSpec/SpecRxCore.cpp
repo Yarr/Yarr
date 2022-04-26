@@ -54,11 +54,11 @@ void SpecRxCore::maskRxEnable(uint32_t value, uint32_t mask) {
     this->setRxEnable(tmpVec);
 }
 
-std::vector<std::shared_ptr<RawData>> SpecRxCore::readData() {
+std::vector<RawDataPtr> SpecRxCore::readData() {
     uint32_t dma_addr = getStartAddr();
     uint32_t dma_count = getDataCount();
     uint32_t real_dma_count = dma_count;
-    std::vector<std::shared_ptr<RawData>> dataVec;
+    std::vector<RawDataPtr> dataVec;
     if (dma_count > 0 && dma_count < (251*256)) {
         real_dma_count = dma_count;
         // DMA mapped memory needs to be aligned
@@ -66,7 +66,7 @@ std::vector<std::shared_ptr<RawData>> SpecRxCore::readData() {
             dma_count += 32-(dma_count%32);
 
         SPDLOG_LOGGER_DEBUG(srxlog, "Read data to Addr 0x{:x}, Count {}", dma_addr, dma_count);
-        std::shared_ptr<RawData> data = std::make_shared<RawData>(dma_addr, dma_count);
+        RawDataPtr data = std::make_shared<RawData>(dma_addr, dma_count);
         if (SpecCom::readDma(dma_addr, data->getBuf(), dma_count)) {
             SPDLOG_LOGGER_CRITICAL(srxlog, "Critical error while readin data ... aborting!!");
             exit(1);

@@ -93,8 +93,8 @@ int main(int argc, char *argv[]) {
       usleep(1000);
       while(!mySpec.isCmdEmpty()) {}
       dummy.cfg[i] = 0xDEAD;
-      std::vector<std::shared_ptr<RawData>> dataVec = mySpec.readData();
-      std::shared_ptr<RawData> data;
+      std::vector<RawDataPtr> dataVec = mySpec.readData();
+      RawDataPtr data;
       if (dataVec.size() > 0)
           data = dataVec[0];
       while(!mySpec.isCmdEmpty()) {}
@@ -159,8 +159,8 @@ int main(int argc, char *argv[]) {
       int row = -1;
       int r = -1;
 
-      std::vector<std::shared_ptr<RawData>> dataVec = mySpec.readData();
-      std::shared_ptr<RawData> data;
+      std::vector<RawDataPtr> dataVec = mySpec.readData();
+      RawDataPtr data;
       if (dataVec.size() > 0)
           data = dataVec[0];
       while(!mySpec.isCmdEmpty()) {}

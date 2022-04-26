@@ -177,8 +177,8 @@ int main (int argc, char *argv[]) {
 	}
 
     // Read back registers and save to file
-    std::vector<std::shared_ptr<RawData>> dataVec = hwCtrl->readData();
-    std::shared_ptr<RawData> data;
+    std::vector<RawDataPtr> dataVec = hwCtrl->readData();
+    RawDataPtr data;
 
     unsigned int m=1;	
     double RingValuesSum = 0;

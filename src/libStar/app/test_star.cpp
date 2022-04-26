@@ -68,15 +68,15 @@ int packetFromRawData(StarChipPacket& packet, RawData& data) {
   return packet.parse();
 }
 
-std::shared_ptr<RawData> readData(
+RawDataPtr readData(
   HwController& hwCtrl,
   std::function<bool(RawData&)> filter_cb,
   uint32_t timeout=1000)
 {
   bool nodata = true;
 
-  std::vector<std::shared_ptr<RawData>> dataVec = hwCtrl.readData();
-  std::shared_ptr<RawData> data;
+  std::vector<RawDataPtr> dataVec = hwCtrl.readData();
+  RawDataPtr data;
   if (dataVec.size() > 0)
       data = dataVec[0];
 
@@ -132,7 +132,7 @@ RawDataContainer readAllData(
   
   auto start_reading = std::chrono::steady_clock::now();
 
-  std::vector<std::shared_ptr<RawData>> dataVec;
+  std::vector<RawDataPtr> dataVec;
   while (true) {
       dataVec = hwCtrl.readData();
       for(auto data : dataVec) {
@@ -459,7 +459,7 @@ bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars, bool reset) 
     auto rdc = readAllData(hwCtrl, filter_abchpr, timeout);
 
     for (unsigned c = 0; c < rdc.size(); c++) {
-        std::shared_ptr<RawData> d = rdc.data[c];
+        RawDataPtr d = rdc.data[c];
       StarChipPacket packet;
 
       if ( packetFromRawData(packet, *d) ) {
@@ -742,7 +742,7 @@ bool testDataPacketsStatic(HwController& hwCtrl, bool do_spec_specific) {
   hwCtrl.flushBuffer();
 
   for (unsigned c = 0; c < rdc.size(); c++) {
-    std::shared_ptr<RawData> d = rdc.data[c];
+    RawDataPtr d = rdc.data[c];
     reportData(*d, do_spec_specific);
   }
 
@@ -794,7 +794,7 @@ bool testDataPacketsPulse(HwController& hwCtrl, bool do_spec_specific) {
   hwCtrl.flushBuffer();
 
   for (unsigned c = 0; c < rdc.size(); c++) {
-    std::shared_ptr<RawData> d = rdc.data[c];
+    RawDataPtr d = rdc.data[c];
     reportData(*d, do_spec_specific);
   }
 

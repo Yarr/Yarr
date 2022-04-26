@@ -33,7 +33,7 @@
 
 class SpecRawData : public RawData {
     public:
-        SpecRawData(uint32_t arg_adr, std::shared_ptr<RawData> arg_data) : RawData(0, 0) {
+        SpecRawData(uint32_t arg_adr, RawDataPtr arg_data) : RawData(0, 0) {
             adr = arg_adr;
             data = arg_data;
         }
@@ -67,7 +67,7 @@ class SpecRawData : public RawData {
     private:
         uint32_t m_activeChannels{1};
         uint32_t m_channel{0};
-        std::shared_ptr<RawData> data;
+        RawDataPtr data;
 };
 
 class SpecRxCore : virtual public RxCore, virtual public SpecCom{
@@ -79,7 +79,7 @@ class SpecRxCore : virtual public RxCore, virtual public SpecCom{
         void disableRx() override;
         void maskRxEnable(uint32_t val, uint32_t mask) override;
 
-        std::vector<std::shared_ptr<RawData> > readData() override;
+        std::vector<RawDataPtr > readData() override;
         void flushBuffer() override;
         
         uint32_t getDataRate() override;

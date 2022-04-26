@@ -84,9 +84,9 @@ void BdaqRxCore::checkRxSync() {
 }
 
 // TODO this does not work, it will compile but does not do the necessary processing of the data
-std::vector<std::shared_ptr<RawData>> BdaqRxCore::readData() {
+std::vector<RawDataPtr> BdaqRxCore::readData() {
     uint size = fifo.getAvailableWords();
-    std::vector<std::shared_ptr<RawData>> dataVec;
+    std::vector<RawDataPtr> dataVec;
     std::map<uint32_t, std::vector<uint32_t>> dataMap;
     if (size > 0) {
         std::vector<uint32_t> inBuf;

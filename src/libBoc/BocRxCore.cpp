@@ -96,10 +96,10 @@ void BocRxCore::maskRxEnable(uint32_t val, uint32_t mask)
     setRxEnable(val);
 }
 
-std::vector<std::shared_ptr<RawData>> BocRxCore::readData()
+std::vector<RawDataPtr> BocRxCore::readData()
 {
     std::map<uint32_t, std::vector<uint32_t>> formatted_data;
-    std::vector<std::shared_ptr<RawData>> dataVec;
+    std::vector<RawDataPtr> dataVec;
 	// loop through all enabled channels and fetch the FIFO data
 	for(int ch = 0; ch < 32; ch++)
 	{

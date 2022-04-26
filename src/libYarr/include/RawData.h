@@ -14,6 +14,7 @@
 
 #include "LoopStatus.h"
 
+
 class RawData {
     public:
         RawData(uint32_t arg_adr, unsigned arg_words) {
@@ -57,6 +58,8 @@ class RawData {
         std::vector<uint32_t> buf;
         uint32_t adr;
 };
+
+using RawDataPtr = std::shared_ptr<RawData>;
 
 class RawDataContainer {
     public:

@@ -22,7 +22,7 @@ TEST_CASE("Rd53bDataProcessor", "[rd53b][data_processor]") {
   proc->init();
   proc->run();
 
-  std::shared_ptr<RawData> rd = std::make_shared<RawData>(0, nWords);
+  RawDataPtr rd = std::make_shared<RawData>(0, nWords);
   uint32_t *buffer = rd->getBuf();
   buffer[nWords-1] = 0;
 

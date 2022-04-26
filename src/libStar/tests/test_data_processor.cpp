@@ -44,7 +44,7 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
   size_t len_bytes = sizeof(packet_bytes);
   size_t len = (len_bytes+3)/sizeof(uint32_t);
 
-  std::shared_ptr<RawData> rd = std::make_shared<RawData>(0, len);
+  RawDataPtr rd = std::make_shared<RawData>(0, len);
   uint32_t *buffer = rd->getBuf();
   buffer[len-1] = 0;
   // Could copy uint32, but then the extra bytes are undefined 

@@ -78,7 +78,7 @@ void Rd53aDataProcessor::process_core() {
 
         unsigned size = curInV->size();
         for(unsigned c=0; c<size; c++) {
-            std::shared_ptr<RawData> curIn = curInV->data[c];
+            RawDataPtr curIn = curInV->data[c];
             // Process
             unsigned words = curIn->getSize();
             dataCnt += words;

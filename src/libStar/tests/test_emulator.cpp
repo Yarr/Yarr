@@ -894,7 +894,7 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
 template<typename PacketT>
 void checkData(HwController* emu, std::map<uint32_t, std::deque<PacketT>>& expected, const PacketT *const mask_pattern)
 {
-  std::vector<std::shared_ptr<RawData>> dataVec;
+  std::vector<RawDataPtr> dataVec;
 
   for(int reads=0; reads<10; reads++) {
       CAPTURE (reads);

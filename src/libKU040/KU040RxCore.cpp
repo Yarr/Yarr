@@ -226,10 +226,10 @@ void KU040RxCore::maskRxEnable(uint32_t val, uint32_t mask)
     setRxEnable(val);
 }
 
-std::vector<std::shared_ptr<RawData>> KU040RxCore::readData()
+std::vector<RawDataPtr> KU040RxCore::readData()
 {
     std::vector<uint32_t> formatted_data;
-    std::vector<std::shared_ptr<RawData>> dataVec;
+    std::vector<RawDataPtr> dataVec;
 
 	if(m_useUDP) {
 		m_queuemutex.lock();
@@ -280,7 +280,7 @@ std::vector<std::shared_ptr<RawData>> KU040RxCore::readData()
 	// return the data to caller
 	if(formatted_data.size() > 0)
 	{
-        std::shared_ptr<RawData> data = std::make_shared<RawData>(0x0, formatted_data.size());
+        RawDataPtr data = std::make_shared<RawData>(0x0, formatted_data.size());
 		uint32_t *buf = data->getBuf();
 		std::copy(formatted_data.begin(), formatted_data.end(), buf);
         dataVec.push_back(data);

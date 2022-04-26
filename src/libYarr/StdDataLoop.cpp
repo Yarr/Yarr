@@ -48,7 +48,7 @@ void StdDataLoop::execPart2() {
     unsigned iterations = 0;
 
 
-    std::vector<std::shared_ptr<RawData>> newData;
+    std::vector<RawDataPtr> newData;
     std::map<uint32_t, std::unique_ptr<RawDataContainer>> rdcMap;
     (new RawDataContainer(g_stat->record()));
     

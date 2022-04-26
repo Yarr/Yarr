@@ -25,8 +25,8 @@ uint32_t readConfig(TxCore *txcore, RxCore *rxcore, uint32_t addr) {
         txcore->releaseFifo();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         while (true) {
-            std::vector<std::shared_ptr<RawData>> dataVec = rxcore->readData();
-            std::shared_ptr<RawData> data;
+            std::vector<RawDataPtr> dataVec = rxcore->readData();
+            RawDataPtr data;
             if (dataVec.size() == 0) {
                 cout << "Timeout." << endl;
                 continue;
@@ -403,8 +403,8 @@ int main(int argc, char **argv) {
     cout << "Read-out" << endl;
     RawDataContainer datav{LoopStatus()};
     do {
-        std::vector<std::shared_ptr<RawData>> dataVec = rxcore->readData();
-        std::shared_ptr<RawData> data;
+        std::vector<RawDataPtr> dataVec = rxcore->readData();
+        RawDataPtr data;
         if (dataVec.size() == 0) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             cout << "." << flush;

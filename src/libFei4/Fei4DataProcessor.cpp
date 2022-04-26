@@ -79,7 +79,7 @@ void Fei4DataProcessor::process_core() {
         //if (size == 0)
         //std::cout << "Empty!" << std::endl;
         for(unsigned c=0; c<size; c++) {
-            std::shared_ptr<RawData> curIn = curInV->data[c];
+            RawDataPtr curIn = curInV->data[c];
             // Process
             unsigned words = curIn->getSize();
             for (unsigned i=0; i<words; i++) {

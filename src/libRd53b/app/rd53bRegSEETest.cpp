@@ -27,8 +27,8 @@ std::vector<RawData> processDataPackets(HwController *hwCtrl)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     std::vector<RawData> dataList;
-    std::vector<std::shared_ptr<RawData>> dataVec;
-    std::shared_ptr<RawData> data;
+    std::vector<RawDataPtr> dataVec;
+    RawDataPtr data;
     do
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));

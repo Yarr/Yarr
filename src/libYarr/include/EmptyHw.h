@@ -45,7 +45,7 @@ class EmptyRxCore : public virtual RxCore {
   void maskRxEnable(uint32_t val, uint32_t mask) override {}
   void disableRx() override {}
 
-  std::vector<std::shared_ptr<RawData>> readData() override { return std::vector<std::shared_ptr<RawData>>(); }
+  std::vector<RawDataPtr> readData() override { return std::vector<RawDataPtr>(); }
   void flushBuffer() override {}
 
   uint32_t getDataRate() override { return 40; }

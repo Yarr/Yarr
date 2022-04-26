@@ -150,8 +150,8 @@ int main (int argc, char *argv[]) {
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
     
-    std::vector<std::shared_ptr<RawData>> dataVec = hwCtrl->readData();
-    std::shared_ptr<RawData> data;
+    std::vector<RawDataPtr> dataVec = hwCtrl->readData();
+    RawDataPtr data;
     while (dataVec.size() > 0 ) {
         if  (dataVec.size() > 0) {
             data = dataVec[0];

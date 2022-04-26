@@ -57,7 +57,7 @@ void StdDataGatherer::execPart2() {
 
     SPDLOG_LOGGER_WARN(sdglog, "IMPORTANT! Going into endless loop unless timelimit is set, interrupt with ^c (SIGINT)!");
 
-    std::vector<std::shared_ptr<RawData>> newData;
+    std::vector<RawDataPtr> newData;
     while (!done) {
         std::map<uint32_t, std::unique_ptr<RawDataContainer>> rdcMap;
         
