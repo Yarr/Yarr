@@ -124,6 +124,19 @@ job_test_code_coverage:
       - cd ../
       - scripts/cc_tool.sh
 
+job_test_netio:
+    stage: test
+    needs: ["job_build_all"]
+    script:
+      # Launch netio_bridge to connect an emulator to NetIO
+      - bin/netio_bridge -p 12340 -q 12350 -f configs/controller/emuCfg_star.json & pid_bridge=($!)
+      - sleep 1
+      # Run scans with the NetIO controller
+      - bin/scanConsole -r configs/controller/felix_strips.json -c configs/connectivity/example_star_setup.json -s configs/scans/star/std_regDump.json
+      - bin/scanConsole -r configs/controller/felix_strips.json -c configs/connectivity/example_star_setup.json -s configs/scans/star/std_latencyScan.json -p
+      # Terminate netio_bridge
+      - kill ${pid_bridge}
+
 job_run_codechecker:
     stage: build
     timeout: 3 hours
