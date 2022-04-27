@@ -50,7 +50,6 @@ void StdDataLoop::execPart2() {
 
     std::vector<RawDataPtr> newData;
     std::map<uint32_t, std::unique_ptr<RawDataContainer>> rdcMap;
-    (new RawDataContainer(g_stat->record()));
     
     while (done == 0) {
         // Check if trigger is done
