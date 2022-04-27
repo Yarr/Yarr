@@ -47,7 +47,8 @@ FelixTxCore::FelixID_t FelixTxCore::fid_from_channel(uint32_t chn) {
 bool FelixTxCore::checkChannel(FelixID_t fid) {
   ftlog->debug("Try sending data to Tx link: 0x{:x}",fid);
   try {
-    fclient->send_data(fid, (const uint8_t*)nullptr, 0, true);
+    std::string empty;
+    fclient->send_data(fid, (const uint8_t*)empty.c_str(), 1, true);
   } catch (std::runtime_error& e) {
     ftlog->warn("Fail to send to Tx link 0x{:x}: {}", fid, e.what());
     return false;

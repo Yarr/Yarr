@@ -19,7 +19,11 @@ FelixRxCore::~FelixRxCore()
     m_monitor_thread.join();
 
   // Unsubscribe from all links
-  disableRx();
+  for (const auto& [fid, stats] : m_qStats) {
+    if (stats.connected) {
+      fclient->unsubscribe(fid);
+    }
+  }
 
   // Clean up
   // delete data that are not read from rawData
@@ -52,9 +56,8 @@ void FelixRxCore::disableChannel(FelixID_t fid) {
   frlog->debug("Unsubscribe from Rx link: 0x{:x}", fid);
   if (m_enables.find(fid) != m_enables.end()) {
     m_enables[fid] = false;
-    fclient->unsubscribe(fid);
   } else {
-    frlog->warn("Rx link 0x{:x} was never subscribed", fid);
+    frlog->warn("Rx link 0x{:x} was never enabled", fid);
   }
 }
 
@@ -122,6 +125,10 @@ RawData* FelixRxCore::readData() {
 }
 
 void FelixRxCore::on_data(FelixID_t fid, const uint8_t* data, size_t size, uint8_t status) {
+  // skip if the channel is disabled
+  if (not m_enables[fid])
+    return;
+
   frlog->trace("Received message from 0x{:x}", fid);
 
   frlog->trace(" message size: {}", size);
