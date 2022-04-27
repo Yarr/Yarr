@@ -45,6 +45,7 @@ void Rd53bCfg::writeConfig(json &j) {
     j["RD53B"]["Parameter"]["MosCalPar"] = m_mosCalPar;
     for(unsigned  i=0;i<m_vcalPar.size();i++)  
         j["RD53B"]["Parameter"]["VcalPar"][i]= m_vcalPar[i];
+    j["RD53B"]["Parameter"]["EnforceNameIdCheck"] = enforceChipIdInName;
     for(unsigned  i=0;i<m_adcCalPar.size();i++)  
         j["RD53B"]["Parameter"]["ADCcalPar"][i]= m_adcCalPar[i];
     for (unsigned i = 0; i < m_ntcCalPar.size(); i++)
@@ -62,6 +63,9 @@ void Rd53bCfg::loadConfig(const json &j) {
     
     if (j.contains({"RD53B","Parameter","InjCap"}))
         m_injCap = j["RD53B"]["Parameter"]["InjCap"];
+   
+    if (j.contains({"RD53B", "Parameter","EnforceNameIdCheck"}))
+        enforceChipIdInName = j["RD53B"]["Parameter"]["EnforceNameIdCheck"];
     
     if (j.contains({"RD53B","Parameter","MosCalPar"}))
         m_mosCalPar = j["RD53B"]["Parameter"]["MosCalPar"];        
