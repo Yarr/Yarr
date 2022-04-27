@@ -21,29 +21,28 @@
 class Rd53aDataProcessor : public DataProcessor {
     public:
         Rd53aDataProcessor();
-        ~Rd53aDataProcessor();
+        ~Rd53aDataProcessor() override;
 
-        void connect(ClipBoard<RawDataContainer> *input, std::map<unsigned, ClipBoard<EventDataBase> > *outMap) override final {
+        void connect(ClipBoard<RawDataContainer> *input, ClipBoard<EventDataBase> *output) override {
             m_input = input;
-            m_outMap = outMap;
+            m_output = output;
         }
 
-        void init()    override final;
-        void run()     override final;
-        void join()    override final; 
-        void process() override final;
+        void init()    override;
+        void run()     override;
+        void join()    override;
+        void process() override;
 
     private:
-        std::vector<std::unique_ptr<std::thread>> thread_ptrs;
+        std::unique_ptr<std::thread> thread_ptr;
         ClipBoard<RawDataContainer> *m_input;
-        std::map<unsigned, ClipBoard<EventDataBase>> *m_outMap;
-        std::vector<unsigned> activeChannels;
+        ClipBoard<EventDataBase> *m_output;
         
-        std::map<unsigned, unsigned> tag;
-        std::map<unsigned, unsigned> l1id;
-        std::map<unsigned, unsigned> bcid;
-        std::map<unsigned, unsigned> wordCount;
-        std::map<unsigned, int> hits;
+        unsigned tag;
+        unsigned l1id;
+        unsigned bcid;
+        unsigned wordCount;
+        unsigned hits;
 
         void process_core();
     

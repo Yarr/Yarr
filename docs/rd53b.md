@@ -40,8 +40,10 @@ Preferred mode for testing should be LDO mode.
 
 - SLDO mode:
     - Power jumpers the same as for LDO mode
-    - ``SHUNT_EN`` should be closed
+    - ``SHUNT_EN`` jumper should be closed
+    - ``VOFS`` jumper should be closed
     - Crosscheck value of ``R_EXTA``, ``R_EXTD``, ``R_IOFS``, and ``R_IOFS_LB`` to be according to your operational needs (read manual for further info).
+    - Supply current fitting your offset and slope choice, optimal voltage across the module is around 1.6V
 
 ## DAQ specifics for RD53B
 
@@ -58,23 +60,22 @@ Recommended is 640Mbps.
 
 ### Number Data Lanes
 
-At the current point in time it is necessary to only one lane (default). This can be chosen via the ``AuroraActiveLanes`` register where each bit represents one lane.
+Choose the number of active data lanes according to your setup and firmware. This can be chosen via the ``AuroraActiveLanes`` register where each bit represents one lane.
+Typically 16x1 firmware uses one lane ``AuroraActiveLanes = 1`` and 4x4 firmware uses ``AuroraActiveLanes = 15``.
 
 ## Scan Console for RD53B
 
 The general structure of the scanConsole command is:
 ```bash
-bin/scanConsole -r configs/controller/specCfg-rd53b.json -c configs/connectivity/example_rd53b_setup.json -s configs/scans/rd53b/<type of scan>.json -p -n 1
+bin/scanConsole -r configs/controller/specCfg-rd53b.json -c configs/connectivity/example_rd53b_setup.json -s configs/scans/rd53b/<type of scan>.json -p
 ```
 
 which specifies the controller (`-r`), the chip list and chip type (`-c`), and the scan (`-s`). The option `-p` selects plotting so plots are produced after the scans.
 If you run a scan for the first time, it will create a default configuration for the chip along with running the scan.
 
-Note currently the decoder needs to be limited to one thread ``-n 1``.
-
 ## Start-up
 
-### ITkPixV1
+### ITkPixV1.0
 
 ITkPixV1 contains a bug which leads to large current on the digital rail caused by wrongly designed ToT latch. It is not desireable to leave the chip in this high current state for too long without at least passive cooling of some sort. The current can be reduced either by running a ``std_digitalscan`` or the ``clear_tot_mem`` routine (``clear_tot_mem`` might need to be run two times``). Once the current has been reduced it should stay in this mode until fully power cycled.
 
@@ -94,13 +95,46 @@ After ``std_digitalscan``:
 
 #### Current
 
+Expected current draw at start-up:
+
+- Digital: 200-250mA
+- Analog: 80-100mA
+
+After ``std_digitalscan`` (depends on exact config):
+
+- Digital: around 600m
+- Analog: around 750mA
+
 ## Tuning Routine
 
 We recommend the following tuning routine:
 
-1. Tune global threshold to 1500e (Note: edge columns need to be adjusted by hand)
+1. Tune global threshold to 1500e (Note: edge columns need to be adjusted by hand via ``DiffTh1L/R``)
 2. Tune pixel threshold to 1500e
 3. Retune (not changing TDACs) global threshold to 1000e
 4. Retune pixel threshold to 1000e
 
+## Active Lanes
 
+ITkPix can be configured to be read out via 1 and up to 4 lanes. Typically for a chip mounted onto a SCC you would want to use 4 lane read out, while a chip inside a quad module might only use 1 lane.
+
+Three registers are involved in configuring how many lanes should be used for the read out:
+
+- ``AuroraActiveLanes``: determines how many lanes are used to transmit data (does not disable the physical link), possible values 1,3,7,15 to select 1, 2, 3, and 4 lane readout.
+- ``DataMergeOutMux0/1/2/3``: selects which physical lane a logical lane will be transmitted on (allows us to re-reoute data in case the hardware wiring does not match the nominal lane order). Possible values 0, 1, 2, 3.
+- ``SerLaneEn``: eneables/disables the serializer in a physical lane (0 to enable, 1 to disable)
+
+When using the YARR-PCIe cards and SCC, possible values are:
+
+| Number of Lanes | ``AuroraActiveLanes`` | ``SerLaneEn`` | ``DataMergeOutMux0/1/2/3`` |
+| ----- | --------- | ----------- | --------------- |
+| 4 | 15 | 15 | 3, 2, 1, 0 |
+| 3 | 7 | 14 | 3, 2, 1, 0 |
+| 2 | 3 | 12 | 3, 2, 1, 0 |
+| 1 | 1 | 8 | 3, 2, 1, 0 |
+
+Please note that the number of active lanes might also need to be specified in the controller config to inform the firmware about how many lanes are used for the readout.
+
+## Link sharing
+
+TODO

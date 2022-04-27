@@ -20,28 +20,18 @@ Fe65p2DataProcessor::Fe65p2DataProcessor() : DataProcessor() {
     input = NULL;
 }
 
-Fe65p2DataProcessor::~Fe65p2DataProcessor() {
-}
+Fe65p2DataProcessor::~Fe65p2DataProcessor() = default;
 
 void Fe65p2DataProcessor::init() {
-    for(std::map<unsigned, ClipBoard<EventDataBase> >::iterator it = outMap->begin(); it != outMap->end(); ++it) {
-        activeChannels.push_back(it->first);
-    }
 }
 
 void Fe65p2DataProcessor::run() {
   std::cout << __PRETTY_FUNCTION__ << std::endl;
-  const unsigned int numThreads = std::thread::hardware_concurrency();
-  for (unsigned i=0; i<numThreads; i++) {
-    thread_ptrs.emplace_back( new std::thread(&Fe65p2DataProcessor::process, this) );
-    std::cout << "  -> Processor thread #" << i << " started!" << std::endl;
-  }
+  thread_ptr.reset( new std::thread(&Fe65p2DataProcessor::process, this) );
 }
 
 void Fe65p2DataProcessor::join() {
-  for( auto& thread : thread_ptrs ) {
-    if( thread->joinable() ) thread->join();
-  }
+  thread_ptr->join();
 }
 
 
@@ -61,13 +51,11 @@ void Fe65p2DataProcessor::process() {
 
 void Fe65p2DataProcessor::process_core() {
     unsigned badCnt = 0;
-    for (unsigned i=0; i<activeChannels.size(); i++) {
-        tag[activeChannels[i]] = 0;
-        l1id[activeChannels[i]] = 0;
-        bcid[activeChannels[i]] = 0;
-        wordCount[activeChannels[i]] = 0;
-        hits[activeChannels[i]] = 0;
-    }
+    tag = 0;
+    l1id = 0;
+    bcid = 0;
+    wordCount = 0;
+    hits = 0;
 
     unsigned dataCnt = 0;
     while(!input->empty()) {
@@ -77,40 +65,37 @@ void Fe65p2DataProcessor::process_core() {
             continue;
 
         // Create Output Container
-        std::map<unsigned, std::unique_ptr<FrontEndData>> curOut;
-        std::map<unsigned, int> events;
-        for (unsigned i=0; i<activeChannels.size(); i++) {
-            curOut[activeChannels[i]].reset(new FrontEndData(curInV->stat));
-            events[activeChannels[i]] = 0;
-        }
+        std::unique_ptr<FrontEndData> curOut;
+        curOut.reset(new FrontEndData(curInV->stat));
+        int events = 0;
 
         unsigned size = curInV->size();
         //if (size == 0)
         //std::cout << "Empty!" << std::endl;
         for(unsigned c=0; c<size; c++) {
-            RawData *curIn = new RawData(curInV->adr[c], curInV->buf[c], curInV->words[c]);
+            RawDataPtr curIn = curInV->data[c];
             // Process
-            unsigned words = curIn->words;
+            unsigned words = curIn->getSize();
             for (unsigned i=0; i<words; i++) {
-                uint32_t value = curIn->buf[i];
+                uint32_t value = curIn->get(i);
                 unsigned channel = ((value & 0xFC000000) >> 26);
                 unsigned type = ((value &0x03000000) >> 24);
                 if (type == 0x1) {
-                    tag[channel] = unsigned(value & 0x00FFFFFF);
+                    tag = unsigned(value & 0x00FFFFFF);
                 } else {
-                    wordCount[channel]++;
+                    wordCount++;
                     if (__builtin_expect((value == 0xDEADBEEF), 0)) {
-                        std::cout << "# ERROR # " << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << curIn->words << " " << std::hex << value << " " << std::dec << std::endl;
-                    } else if (__builtin_expect((curOut[channel] == nullptr), 0)) {
+                        std::cout << "# ERROR # " << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << words << " " << std::hex << value << " " << std::dec << std::endl;
+                    } else if (__builtin_expect((curOut == nullptr), 0)) {
                         std::cout << "# ERROR # " << __PRETTY_FUNCTION__ << " : Received data for channel " << channel << " but storage not initiliazed!" << std::endl;
                     } else if ((value & 0x00800000) == 0x00800000) {
                         // BCID
-                        if ((int)(value & 0x007FFFFF) - (int)(bcid[channel]) > 1) {
-                            l1id[channel]++; // Iterate L1id when not consecutive bcid
+                        if ((int)(value & 0x007FFFFF) - (int)(bcid) > 1) {
+                            l1id++; // Iterate L1id when not consecutive bcid
                         }
-                        bcid[channel] = (value & 0x007FFFFF);
-                        curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
-                        events[channel]++;
+                        bcid = (value & 0x007FFFFF);
+                        curOut->newEvent(tag, l1id, bcid);
+                        events++;
                     } else {
                         unsigned col  = (value & 0x1e0000) >> 17;
                         unsigned row  = (value & 0x01F800) >> 11;
@@ -136,24 +121,24 @@ void Fe65p2DataProcessor::process_core() {
                                 real_row0 = 64 - (row-32)*2 - 1;
                             }
 
-                            if (events[channel] == 0 ) {
+                            if (events == 0 ) {
                                 std::cout << "# ERROR # " << channel << " no header in data fragment!" << std::endl;
-                                curOut[channel]->newEvent(0xDEADBEEF, l1id[channel], bcid[channel]);
-                                events[channel]++;
-                                //hits[channel] = 0;
+                                curOut->newEvent(0xDEADBEEF, l1id, bcid);
+                                events++;
+                                //hits = 0;
                             }
                             if (__builtin_expect((real_col == 0 || real_row0 == 0 || real_col > 64 || real_row0 > 64), 0)) {
                                 badCnt++;
-                                std::cout << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << curIn->words << " " << std::hex << value << " " << std::dec << std::endl;
+                                std::cout << dataCnt << " [" << channel << "] Someting wrong: " << i << " " << words << " " << std::hex << value << " " << std::dec << std::endl;
                             } else {
                                 if (tot0 != 15) {
-                                    curOut[channel]->curEvent->addHit(real_row0, real_col, tot0);
+                                    curOut->curEvent->addHit(real_row0, real_col, tot0);
                                     //std::cout << " hit!" << std::endl;
-                                    hits[channel]++;
+                                    hits++;
                                 }
                                 if (tot1 != 15) {
-                                    curOut[channel]->curEvent->addHit(real_row1, real_col, tot1);
-                                    hits[channel]++;
+                                    curOut->curEvent->addHit(real_row1, real_col, tot1);
+                                    hits++;
                                 }
                             }
                         }
@@ -162,11 +147,8 @@ void Fe65p2DataProcessor::process_core() {
                 if (badCnt > 10)
                     break;
             }
-            delete curIn;
         }
-        for (unsigned i=0; i<activeChannels.size(); i++) {
-            outMap->at(activeChannels[i]).pushData(std::move(curOut[activeChannels[i]]));
-        }
+        output->pushData(std::move(curOut));
         //Cleanup
         dataCnt++;
     }

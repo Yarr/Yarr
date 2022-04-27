@@ -24,6 +24,7 @@ Rd53bMaskLoop::Rd53bMaskLoop() : LoopActionBase(LOOP_STYLE_MASK) {
     loopType = typeid(this);
     m_done = false;
     m_maskType = StandardMask;
+    m_applyEnMask = false;
 }
 
 void Rd53bMaskLoop::init() {
@@ -39,7 +40,7 @@ void Rd53bMaskLoop::init() {
         // Turn off all pixels to start with
         for (unsigned col=0; col<Rd53b::n_Col; col++) {
             for (unsigned row=0; row<Rd53b::n_Row; row++) {
-                rd53b->setEn(col, row, 0); // TODO make configurable
+                rd53b->setEn(col, row, 1); // TODO make configurable
                 rd53b->setInjEn(col, row, 0);
                 rd53b->setHitbus(col, row, 0);
             }
@@ -65,13 +66,16 @@ void Rd53bMaskLoop::execPart1() {
                 // Disable pixels of last mask stage
                 if (rd53b->getInjEn(col, row) == 1) {
                     //logger->info("Disabling {};{}", col, row);
-                    rd53b->setEn(col, row, 0); // TODO make configurable
+                    rd53b->setEn(col, row, 1); // TODO make configurable
                     rd53b->setInjEn(col, row, 0);
                     rd53b->setHitbus(col, row, 0);
                     modPixels.push_back(std::make_pair(col, row));
                 }		
                 // Enable pixels of current mask stage
                 if (applyMask(col,row)){
+                    // If the pixel is disabled, skip it
+                    if(m_applyEnMask && !Rd53b::getPixelBit(m_pixRegs[fe], col, row, 0)) continue;
+
                     //logger->info("Enabling {};{}", col, row);
                     rd53b->setEn(col, row, (m_maskType == PToTMask) ? 0 : 1); // TODO Make configurable
                     rd53b->setInjEn(col, row, 1);
@@ -127,15 +131,18 @@ void Rd53bMaskLoop::writeConfig(json &j) {
     j["max"] = max;
     j["step"] = step;
     j["maskType"] = m_maskType;
+    j["applyEnMask"] = m_applyEnMask;
 }
 
-void Rd53bMaskLoop::loadConfig(json &j) {
-    if (!j["min"].empty())
+void Rd53bMaskLoop::loadConfig(const json &j) {
+    if (j.contains("min"))
         min = j["min"];
-    if (!j["max"].empty())
+    if (j.contains("max"))
         max = j["max"];
-    if (!j["step"].empty())
+    if (j.contains("step"))
         step = j["step"];
-    if (!j["maskType"].empty())
+    if (j.contains("maskType"))
         m_maskType = j["maskType"];
+    if (j.contains("applyEnMask"))
+        m_applyEnMask = j["applyEnMask"];        
 }

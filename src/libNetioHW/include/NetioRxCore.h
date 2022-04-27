@@ -40,15 +40,15 @@ public:
    * @brief Default destructor
    * Stop the NetioHandler. Delete the channels from the NetioHandler.
    **/
-  ~NetioRxCore();
+  ~NetioRxCore() override;
 
   void setRxEnable(uint32_t val) override;
-  void setRxEnable(std::vector<uint32_t> channels);
-  void disableRx();
+  void setRxEnable(std::vector<uint32_t> channels) override;
+  void disableRx() override;
   void maskRxEnable(uint32_t val, uint32_t mask) override;
 
   void flushBuffer() override;
-  RawData* readData() override;
+  std::vector<RawDataPtr> readData() override;
 
   /**
    * @brief get rate of events
@@ -73,14 +73,14 @@ public:
    * @param j reference to json where to write the configuration to
    * Not implemented
    **/
-  void toFileJson(json &j);
+  void writeConfig(json &j);
 
   /**
    * @brief read configuration from json
    * @param j reference to string where to write the configuration from
    * Json structure should be {"NetIO":{"host":"hostname","rxport":port}}
    **/
-  void fromFileJson(json &j);
+  void loadConfig(const json &j);
 
 private:
   // to keep track of amount of data received at rxcore

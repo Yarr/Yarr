@@ -19,9 +19,7 @@ Rd53bGlobalCfg::Rd53bGlobalCfg() {
     this->init();
 }
 
-Rd53bGlobalCfg::~Rd53bGlobalCfg() {
-
-}
+Rd53bGlobalCfg::~Rd53bGlobalCfg() = default;
 
 uint16_t Rd53bGlobalCfg::getValue(Rd53bReg Rd53bGlobalCfg::*ref) const {
     return (this->*ref).read();
@@ -219,7 +217,7 @@ void Rd53bGlobalCfg::init() {
     //61
     GlobalPulseWidth.init   ( 61, &m_cfg[ 61], 0,  8, 0); regMap["GlobalPulseWidth"] = &Rd53bGlobalCfg::GlobalPulseWidth;
     //62
-    ServiceBlockEn.init     ( 62, &m_cfg[ 62], 8,  1, 0); regMap["ServiceBlockEn"] = &Rd53bGlobalCfg::ServiceBlockEn;
+    ServiceBlockEn.init     ( 62, &m_cfg[ 62], 8,  1, 1); regMap["ServiceBlockEn"] = &Rd53bGlobalCfg::ServiceBlockEn;
     ServiceBlockPeriod.init ( 62, &m_cfg[ 62], 0,  8, 50); regMap["ServiceBlockPeriod"] = &Rd53bGlobalCfg::ServiceBlockPeriod;
     //63
     TotEnPtot.init          ( 63, &m_cfg[ 63], 12,  1, 0); regMap["TotEnPtot"] = &Rd53bGlobalCfg::TotEnPtot;
@@ -247,10 +245,10 @@ void Rd53bGlobalCfg::init() {
     DataMergeInMux2.init    ( 69, &m_cfg[ 69], 12,  2, 2); regMap["DataMergeInMux2"] = &Rd53bGlobalCfg::DataMergeInMux2;
     DataMergeInMux1.init    ( 69, &m_cfg[ 69], 10,  2, 1); regMap["DataMergeInMux1"] = &Rd53bGlobalCfg::DataMergeInMux1;
     DataMergeInMux0.init    ( 69, &m_cfg[ 69], 8,  2, 0); regMap["DataMergeInMux0"] = &Rd53bGlobalCfg::DataMergeInMux0;
-    DataMergeOutMux3.init   ( 69, &m_cfg[ 69], 6,  2, 3); regMap["DataMergeOutMux3"] = &Rd53bGlobalCfg::DataMergeOutMux3;
-    DataMergeOutMux2.init   ( 69, &m_cfg[ 69], 4,  2, 2); regMap["DataMergeOutMux2"] = &Rd53bGlobalCfg::DataMergeOutMux2;
-    DataMergeOutMux1.init   ( 69, &m_cfg[ 69], 2,  2, 1); regMap["DataMergeOutMux1"] = &Rd53bGlobalCfg::DataMergeOutMux1;
-    DataMergeOutMux0.init   ( 69, &m_cfg[ 69], 0,  2, 0); regMap["DataMergeOutMux0"] = &Rd53bGlobalCfg::DataMergeOutMux0;
+    DataMergeOutMux3.init   ( 69, &m_cfg[ 69], 6,  2, 0); regMap["DataMergeOutMux3"] = &Rd53bGlobalCfg::DataMergeOutMux3;
+    DataMergeOutMux2.init   ( 69, &m_cfg[ 69], 4,  2, 1); regMap["DataMergeOutMux2"] = &Rd53bGlobalCfg::DataMergeOutMux2;
+    DataMergeOutMux1.init   ( 69, &m_cfg[ 69], 2,  2, 2); regMap["DataMergeOutMux1"] = &Rd53bGlobalCfg::DataMergeOutMux1;
+    DataMergeOutMux0.init   ( 69, &m_cfg[ 69], 0,  2, 3); regMap["DataMergeOutMux0"] = &Rd53bGlobalCfg::DataMergeOutMux0;
     //70-73
     EnCoreColCal3.init      ( 70, &m_cfg[ 70], 0,  6, 0); regMap["EnCoreColCal3"] = &Rd53bGlobalCfg::EnCoreColCal3;
     EnCoreColCal2.init      ( 71, &m_cfg[ 71], 0, 16, 0); regMap["EnCoreColCal2"] = &Rd53bGlobalCfg::EnCoreColCal2;
@@ -280,11 +278,11 @@ void Rd53bGlobalCfg::init() {
     EfuseWriteData0.init    ( 80, &m_cfg[ 80], 0, 16, 0); regMap["EfuseWriteData0"] = &Rd53bGlobalCfg::EfuseWriteData0;
     //81
     AuroraEnPrbs.init       ( 81, &m_cfg[ 81], 12,  1, 0); regMap["AuroraEnPrbs"] = &Rd53bGlobalCfg::AuroraEnPrbs;
-    AuroraActiveLanes.init  ( 81, &m_cfg[ 81], 8,  4, 1); regMap["AuroraActiveLanes"] = &Rd53bGlobalCfg::AuroraActiveLanes;
+    AuroraActiveLanes.init  ( 81, &m_cfg[ 81], 8,  4, 15); regMap["AuroraActiveLanes"] = &Rd53bGlobalCfg::AuroraActiveLanes;
     AuroraCCWait.init       ( 81, &m_cfg[ 81], 2,  6, 25); regMap["AuroraCCWait"] = &Rd53bGlobalCfg::AuroraCCWait;
     AuroraCCSend.init       ( 81, &m_cfg[ 81], 0,  2, 3); regMap["AuroraCCSend"] = &Rd53bGlobalCfg::AuroraCCSend;
     //82
-    AuroraCBWait1.init      ( 82, &m_cfg[ 82], 0,  8, 255); regMap["AuroraCBWait1"] = &Rd53bGlobalCfg::AuroraCBWait1;
+    AuroraCBWait1.init      ( 82, &m_cfg[ 82], 0,  8, 0); regMap["AuroraCBWait1"] = &Rd53bGlobalCfg::AuroraCBWait1;
     //83
     AuroraCBWait0.init      ( 83, &m_cfg[ 83], 4, 12, 4095); regMap["AuroraCBWait0"] = &Rd53bGlobalCfg::AuroraCBWait0;
     AuroraCBSend.init       ( 83, &m_cfg[ 83], 0,  4, 0); regMap["AuroraCBSend"] = &Rd53bGlobalCfg::AuroraCBSend;
@@ -322,7 +320,7 @@ void Rd53bGlobalCfg::init() {
     //95
     SerInvTap.init          ( 95, &m_cfg[ 95], 6,  2, 0); regMap["SerInvTap"] = &Rd53bGlobalCfg::SerInvTap;
     SerEnTap.init           ( 95, &m_cfg[ 95], 4,  2, 0); regMap["SerEnTap"] = &Rd53bGlobalCfg::SerEnTap;
-    SerEnLane.init          ( 95, &m_cfg[ 95], 0,  4, 1); regMap["SerEnLane"] = &Rd53bGlobalCfg::SerEnLane;
+    SerEnLane.init          ( 95, &m_cfg[ 95], 0,  4, 15); regMap["SerEnLane"] = &Rd53bGlobalCfg::SerEnLane;
     //96
     CmlBias2.init           ( 96, &m_cfg[ 96], 0, 10, 0); regMap["CmlBias2"] = &Rd53bGlobalCfg::CmlBias2;
     //97
@@ -412,16 +410,16 @@ void Rd53bGlobalCfg::init() {
     InjVcalDiff.init(&InjVcalMed, &InjVcalHigh, true); virtRegMap["InjVcalDiff"] = (Rd53bReg Rd53bGlobalCfg::*)&Rd53bGlobalCfg::InjVcalDiff;
 }
 
-void Rd53bGlobalCfg::toJson(json &j) {
+void Rd53bGlobalCfg::writeConfig(json &j) {
     for(auto it : regMap) {
         logger->debug("Writing reg: {}", it.first);
         j["RD53B"]["GlobalConfig"][it.first] = (this->*it.second).read();
     }    
 }
 
-void Rd53bGlobalCfg::fromJson(json &j) {
+void Rd53bGlobalCfg::loadConfig(json const &j) {
     for (auto it : regMap) {
-        if (!j["RD53B"]["GlobalConfig"][it.first].empty()) {
+        if (j.contains({"RD53B","GlobalConfig",it.first})) {
             (this->*it.second).write(j["RD53B"]["GlobalConfig"][it.first]);
         } else {
             logger->error("Could not find register \"{}\" using default!", it.first);

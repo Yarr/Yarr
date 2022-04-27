@@ -16,17 +16,14 @@ ResultBase::ResultBase(std::string arg_name, LoopStatus &stat)
     zAxisTitle = "z";
 }
 
-ResultBase::ResultBase(std::string arg_name)
-  : lStat(LoopStatus::empty()) {
+ResultBase::ResultBase(std::string arg_name) {
     name = arg_name;
     xAxisTitle = "x";
     yAxisTitle = "y";
     zAxisTitle = "z";
 }
 
-ResultBase::~ResultBase() {
-
-}
+ResultBase::~ResultBase() = default;
 
 std::string ResultBase::getName() {
     return name;

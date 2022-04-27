@@ -18,9 +18,9 @@ class Fei4Selftrigger : public ScanBase {
     public:
         Fei4Selftrigger(Bookkeeper *k);
         
-        void init();
-        void preScan();
-        void postScan() {}
+        void init() override;
+        void preScan() override;
+        void postScan() override {}
 
     private:
         double triggerFrequency;

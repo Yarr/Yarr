@@ -49,8 +49,7 @@ sig_atomic_t signaled = 0;
 void StdDataGatherer::execPart2() {
     SPDLOG_LOGGER_TRACE(sdglog, "");
     unsigned count = 0;
-    uint32_t done = 0;
-    uint32_t rate = 0;
+    bool done = false;
 
     signaled = 0;
     signal(SIGINT, [](int signum){signaled = 1;});
@@ -58,25 +57,36 @@ void StdDataGatherer::execPart2() {
 
     SPDLOG_LOGGER_WARN(sdglog, "IMPORTANT! Going into endless loop unless timelimit is set, interrupt with ^c (SIGINT)!");
 
-    std::vector<RawData*> tmp_storage;
-    RawData *newData = NULL;
-    while (done == 0) {
-        std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(g_stat->record()));
-        rate = g_rx->getDataRate();
-        SPDLOG_LOGGER_DEBUG(sdglog, " --> Data Rate: {} MB/s", rate/256.0/1024.0);
+    std::vector<RawDataPtr> newData;
+    while (!done) {
+        std::map<uint32_t, std::unique_ptr<RawDataContainer>> rdcMap;
+        
         done = g_tx->isTrigDone();
-        do {
-            newData =  g_rx->readData();
-            if (newData != NULL) {
-                rdc->add(newData);
-                count += newData->words;
-                newData = NULL;
+        newData =  g_rx->readData();
+        
+        // Read all data until buffer is empty
+        while (newData.size() > 0 && count < 4096 && signaled == 0 && !killswitch) {
+            if (newData.size() > 0) {
+                for (auto &dataChunk : newData) {
+                    count += dataChunk->getSize();
+                    if (rdcMap[dataChunk->getAdr()] == nullptr) {
+                        rdcMap[dataChunk->getAdr()] = std::make_unique<RawDataContainer>(g_stat->record());
+                    }
+
+                    rdcMap[dataChunk->getAdr()]->add(std::move(dataChunk));
+                }
             }
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
-        } while (newData != NULL && signaled == 0 && !killswitch );
-        if (newData != NULL)
-            delete newData;
-        storage->pushData(std::move(rdc));
+            // Wait a little bit to increase chance of new data having arrived
+            std::this_thread::sleep_for(std::chrono::microseconds(1));
+            newData =  g_rx->readData();
+        }
+
+        for (auto &[id, rdc] : rdcMap) {
+            storage->at(id).pushData(std::move(rdc));
+        }
+        
+        count = 0;
+
         if (signaled == 1 || killswitch) {
             SPDLOG_LOGGER_WARN(sdglog, "Caught interrupt, stopping data taking!");
             SPDLOG_LOGGER_WARN(sdglog, "Abort might leave data in buffers!");

@@ -1,40 +1,55 @@
-{ 
+{
     "influxdb_cfg":
-    {
-        "username": "",
-        "database": "dbName",
+    {   
+        "username": "<change_to_your_username>",
+        "database": "<change_to_your_database>",
         "host": "127.0.0.1",
-        "port": 8086
-    },
+        "port": 8086,
+        "influx-path": "influxdb",
+        "use-ssl": false
+    },  
+
     "environments" : [
-	{ 
-	    "measurement" : "measurment_name",
-	    "dcsList" : [
-		{
-		    "key"        : "temperature",
-		    "data_name"  : "1_temperature",
-		    "data_unit"  : "1_temperature_unit",
-		    "description": "Room Temperature [C]",
-		    "setting"    : 28
-		},{
-		    "key"        : "temperature",
-		    "data_name"  : "2_temperature",
-		    "data_unit"  : "2_temperature_unit",
-		    "description": "Board Temperature [C]",
-		    "setting"    : 28
-		}
-	    ]
-	},{
-	    "measurement" : "measurement2_name",
-	    "dcsList" : [
-		{
-		    "key"        : "vddd_voltage",
-		    "data_name"  : "1_LV_V",
-		    "data_unit"  : "1_LV_V_unit",
-		    "description": "VDDD Voltage [V]",
-		    "setting"    : 28
-		}
-	    ]
-	}
+        {
+            "measurement" : "Temperature",
+            "dcsList" : [
+                {
+                    "key"        : "temperature",
+                    "data_name"  : "temp1",
+                    "data_unit"  : "temp1_unit",
+                    "description": "Room Temperature [C]",
+                    "setting"    : 28,
+                    "tags"       : 
+                    {
+                        "make"       :    "NTC",
+                        "other_tag"  :    "other_value"
+                    }
+                },{
+                    "key"        : "temperature",
+                    "data_name"  : "temp2",
+                    "data_unit"  : "temp2_unit",
+                    "description": "Board Temperature [C]",
+                    "setting"    : 28
+                }
+            ]
+        },{
+            "measurement" : "LV",
+            "dcsList" : [
+                {
+                    "key"        : "vddd_voltage",
+                    "data_name"  : "LV_Voltage",
+                    "data_unit"  : "LV_Voltage_unit",
+                    "description": "VDDD Voltage [V]",
+                    "setting"    : 1.75
+                },
+                {
+                    "key"        : "vddd_current",
+                    "data_name"  : "LV_Current",
+                    "data_unit"  : "LV_Current_unit",
+                    "description": "VDDD Current [A]",
+                    "setting"    : 1.1
+                }
+            ]
+        }
     ]
 }

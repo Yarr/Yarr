@@ -23,8 +23,7 @@
 
 class Fei4Emu {
     public:
-        Fei4Emu(std::string output_model_cfg, std::string input_model_cfg,
-                EmuCom * rx, EmuCom * tx);
+        Fei4Emu(const json &model_cfg, EmuCom *rx, EmuCom *tx);
         ~Fei4Emu();
 
         // the main loop which recieves commands from yarr
@@ -38,7 +37,7 @@ class Fei4Emu {
         void handleGlobalPulse(uint32_t chipid);
 
         // functions for dealing with sending data to yarr
-        void pushOutput(uint32_t value);
+        void pushOutput(uint32_t value) const;
 
         // Call getFeStream() to see response from FE
         void decodeCommand(uint8_t* cmdStream, std::size_t size);
@@ -84,7 +83,7 @@ class Fei4Emu {
         uint32_t m_bcIdCnt;
 
 	PixelModel* m_pixelModelObjects[80][336];
-	void initializePixelModelsFromFile(std::string json_file_path);
+	void initializePixelModelsFromFile(const json &cfg);
 
         // this is the file path to output the pixel model configuration
         std::string m_output_model_cfg;

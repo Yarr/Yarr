@@ -12,9 +12,7 @@ void Fe65p2Cmd::setCore(TxCore *arg_core) {
     core = arg_core;
 }
 
-Fe65p2Cmd::~Fe65p2Cmd() {
-
-}
+Fe65p2Cmd::~Fe65p2Cmd() = default;
 
 void Fe65p2Cmd::writeGlobal(uint16_t *cfg) {
     for (unsigned i=0; i<Fe65p2GlobalCfg::numRegs; i++) {

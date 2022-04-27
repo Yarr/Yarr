@@ -24,28 +24,28 @@ public:
     // NB initialisation is only done in loadConfig
   }
 
-  void loadConfig(json &j) override;
+  void loadConfig(const json &j) override;
 
   const json getStatus() override;
 };
 
-void ItsdaqFWController::loadConfig(json &j) {
+void ItsdaqFWController::loadConfig(const json &j) {
   logger->debug("Load config from json");
 
   // Default if all switches off
   std::string remote = "192.168.222.16";
-  if(!j["remote"].empty()) {
+  if(j.contains("remote")) {
     remote = j["remote"];
   }
 
   int rPort = 60000;
-  if(!j["localPort"].empty()) {
+  if(j.contains("localPort")) {
     rPort = j["remotePort"];
   }
 
   int lPort;
 
-  if(j["localPort"].empty()) {
+  if(!j.contains("localPort")) {
     // Pick automatically
     lPort = 0;
   } else {
@@ -72,8 +72,8 @@ void ItsdaqFWController::loadConfig(json &j) {
 
   h.reconfigure(remoteIp, lPort, rPort);
 
-  ItsdaqTxCore::fromFileJson(j);
-  ItsdaqRxCore::fromFileJson(j);
+  ItsdaqTxCore::loadConfig(j);
+    ItsdaqRxCore::loadConfig(j);
 }
 
 const json ItsdaqFWController::getStatus() {

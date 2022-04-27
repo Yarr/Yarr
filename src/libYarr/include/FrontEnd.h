@@ -10,6 +10,7 @@
 // ################################
 
 #include <string>
+#include <utility>
 
 #include "ClipBoard.h"
 #include "HistogramBase.h"
@@ -21,19 +22,20 @@
 
 class FrontEnd {
     public:
-        FrontEnd() {}
-        virtual ~FrontEnd() {}
+        FrontEnd() = default;
+        virtual ~FrontEnd() = default;
         
         virtual void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel)=0;
 
         // col/row starting at 0,0
         virtual void maskPixel(unsigned col, unsigned row) = 0;
 
+	virtual unsigned getPixelEn(unsigned col, unsigned row) = 0;
         /// Enable (disable mask) for all pixels
         virtual void enableAll() = 0;
 
-        bool getActive();
-		bool isActive();
+        bool getActive() const;
+		bool isActive() const;
 		void setActive(bool active);
         virtual void makeGlobal(){};
        
@@ -41,6 +43,7 @@ class FrontEnd {
         virtual int checkCom() {return 1;}
         virtual bool hasValidName() { return true; }
 
+        virtual void resetAll() {}
 
         /// Write to a register using a string name (most likely from json)
         virtual void writeNamedRegister(std::string name, uint16_t value) = 0;
@@ -48,9 +51,10 @@ class FrontEnd {
         virtual void setInjCharge(double, bool, bool) = 0;
 
         // Set of events
+        ClipBoard<RawDataContainer> *clipRawData;
         ClipBoard<EventDataBase> *clipData;
         ClipBoard<HistogramBase> *clipHisto;
-        ClipBoard<HistogramBase> *clipResult;
+        std::vector<std::unique_ptr<ClipBoard<HistogramBase>> > *clipResult;
 
         //Fei4Analysis *ana;
         //Fei4Histogrammer *histogrammer;
@@ -71,36 +75,33 @@ class FrontEndCfg {
             lockCfg = false;
             enforceChipIdInName = false;
         }
-        virtual ~FrontEndCfg(){}
+        virtual ~FrontEndCfg()= default;
         
 
         virtual double toCharge(double)=0;
         virtual double toCharge(double, bool, bool)=0;
-        virtual void toFileJson(json&)=0;
-        virtual void fromFileJson(json&)=0;
+        virtual void writeConfig(json &) =0;
+        virtual void loadConfig(const json &)=0;
 
-		
-        unsigned getChannel() {return rxChannel;}
-		unsigned getTxChannel() {return txChannel;}
-		unsigned getRxChannel() {return rxChannel;}
+        virtual std::tuple<json, std::vector<json>> getPreset(const std::string& systemType="SingleChip");
+
+        unsigned getChannel() const {return rxChannel;}
+		unsigned getTxChannel() const {return txChannel;}
+		unsigned getRxChannel() const {return rxChannel;}
         std::string getName() {return name;}
         bool checkChipIdInName() { return enforceChipIdInName; }
 
         
         void setChannel(unsigned channel) {txChannel = channel; rxChannel = channel;}
 		void setChannel(unsigned arg_txChannel, unsigned arg_rxChannel) {txChannel = arg_txChannel; rxChannel = arg_rxChannel;}
-        void setName(std::string arg_name) {name = arg_name;}
-
-        void setConfigFile(std::string arg_configFile) {configFile = arg_configFile;}
-        std::string getConfigFile() {return configFile;}
+        void setName(std::string arg_name) {name = std::move(arg_name);}
     
-        bool isLocked() {return lockCfg;}
+        bool isLocked() const {return lockCfg;}
         void setLocked(bool v) {lockCfg = v;}
     protected:
         std::string name;
         unsigned txChannel;
         unsigned rxChannel;
-        std::string configFile;
         bool lockCfg;
         bool enforceChipIdInName;
 };

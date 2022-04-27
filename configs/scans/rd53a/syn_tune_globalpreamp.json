@@ -49,9 +49,9 @@
       },
       {
         "config": {
-          "max": 64,
+          "max": 256,
           "min": 0,
-          "step": 1
+          "step": 4
         },
         "loopAction": "Rd53aMaskLoop"
       },
@@ -60,7 +60,7 @@
           "max": 16,
           "min": 0,
           "step": 1,
-          "nSteps": 2
+          "nSteps": 1
         },
         "loopAction": "Rd53aCoreColLoop"
       },
@@ -69,7 +69,7 @@
           "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 10000,
+          "frequency": 20000,
           "noInject": false,
           "time": 0,
           "sendEcr": true

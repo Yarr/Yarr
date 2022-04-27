@@ -45,45 +45,60 @@ void StdDataLoop::execPart2() {
     SPDLOG_LOGGER_TRACE(sdllog, "");
     unsigned count = 0;
     uint32_t done = 0;
-    //uint32_t rate = 0;
-    //uint32_t curCnt = 0;
     unsigned iterations = 0;
-    //uint32_t startAddr = 0;
 
 
-    std::vector<RawData*> tmp_storage;
-    RawData *newData = NULL;
-    std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(g_stat->record()));
+    std::vector<RawDataPtr> newData;
+    std::map<uint32_t, std::unique_ptr<RawDataContainer>> rdcMap;
+    (new RawDataContainer(g_stat->record()));
+    
     while (done == 0) {
-        //rate = g_rx->getDataRate();
-        //curCnt = g_rx->getCurCount();
+        // Check if trigger is done
         done = g_tx->isTrigDone();
+        // Read all data there is
         do {
             newData =  g_rx->readData();
             iterations++;
-            if (newData != NULL) {
-                count += newData->words;
-                rdc->add(newData);
+            if (newData.size() > 0) {
+                for (auto &dataChunk : newData) {
+                    count += dataChunk->getSize();
+                    if (rdcMap[dataChunk->getAdr()] == nullptr) {
+                        rdcMap[dataChunk->getAdr()] = std::make_unique<RawDataContainer>(g_stat->record());
+                    }
+
+                    rdcMap[dataChunk->getAdr()]->add(std::move(dataChunk));
+                }
             }
-        } while (newData != NULL);
-        //delete newData;
+        } while (newData.size() > 0);
     }
+
     // Gather rest of data after timeout (defined by controller)
     std::this_thread::sleep_for(g_rx->getWaitTime());
     do {
         //curCnt = g_rx->getCurCount();
         newData = g_rx->readData();
         iterations++;
-        if (newData != NULL) {
-            count += newData->words;
-            rdc->add(newData);
+        if (newData.size() > 0) {
+            for (auto &dataChunk : newData) {
+                count += dataChunk->getSize();
+                if (rdcMap[dataChunk->getAdr()] == nullptr) {
+                    rdcMap[dataChunk->getAdr()] = std::make_unique<RawDataContainer>(g_stat->record());
+                }
+
+                rdcMap[dataChunk->getAdr()]->add(std::move(dataChunk));
+            }
         }
-    } while (newData != NULL || g_rx->getCurCount() != 0);
-    delete newData;
+    } while (newData.size() > 0 || g_rx->getCurCount() != 0);
     
-    storage->pushData(std::move(rdc));
+    for (auto &[id, rdc] : rdcMap) {
+        storage->at(id).pushData(std::move(rdc));
+    }
         
-    SPDLOG_LOGGER_DEBUG(sdllog, "--> Received {} words in {} iterations!", count ,iterations);
+    if (count == 0) {
+      SPDLOG_LOGGER_DEBUG(sdllog, "\033[1m\033[31m--> Received {} words in {} iterations!\033[0m", count ,iterations);
+    } else {
+      SPDLOG_LOGGER_DEBUG(sdllog, "--> Received {} words in {} iterations!", count ,iterations);
+    }
     m_done = true;
     counter++;
 }

@@ -45,7 +45,7 @@ StarEmu::StarEmu(std::vector<ClipBoard<RawData>*> &rx, EmuCom * tx, EmuCom * tx2
                 logger->error("Error opening chip config: {}", e.what());
                 throw(std::runtime_error("StarEmu::StarEmu"));
             }
-            regCfg->fromFileJson(jChips);
+            regCfg->loadConfig(jChips);
         } else {
             // No chip configuration provided. Default: one HCCStar + one ABCStar
             regCfg->setHCCChipId(i);
@@ -56,7 +56,7 @@ StarEmu::StarEmu(std::vector<ClipBoard<RawData>*> &rx, EmuCom * tx, EmuCom * tx2
     }
 }
 
-StarEmu::~StarEmu() {}
+StarEmu::~StarEmu() = default;
 
 //
 // Decode LCB
@@ -73,6 +73,10 @@ void StarEmu::decodeLCB(LCB::Frame frame) {
         logger->debug("Skip decoding");
         return;
     }
+
+    // Overwrite data that are older than L0 buffer depth
+    // Fill L0 buffer with zeros and BCID for this LCB frame (4 BCs)
+    this->fillL0Buffer();
 
     // {code0, code1}
     uint8_t code0 = (frame >> 8) & 0xff;
@@ -202,7 +206,7 @@ class EmuRxCore<StarChips> : virtual public RxCore {
         std::map<uint32_t, bool> m_channels;
     public:
         EmuRxCore();
-        ~EmuRxCore();
+        ~EmuRxCore() override;
         
         void setCom(uint32_t chn, std::unique_ptr<ClipBoard<RawData>> queue);
         ClipBoard<RawData>* getCom(uint32_t chn);
@@ -214,8 +218,8 @@ class EmuRxCore<StarChips> : virtual public RxCore {
         void enableRx();
         std::vector<uint32_t> listRx();
 
-        RawData* readData() override;
-        RawData* readData(uint32_t chn);
+        std::vector<RawDataPtr> readData() override;
+        RawDataPtr readData(uint32_t chn);
         
         uint32_t getDataRate() override {return 0;}
         uint32_t getCurCount(uint32_t chn) {return m_queues[chn]->empty()?0:1;}
@@ -246,14 +250,13 @@ std::unique_ptr<HwController> makeEmu() {
     return ctrl;
 }
 
-EmuRxCore<StarChips>::EmuRxCore() {}
+EmuRxCore<StarChips>::EmuRxCore() = default;
 
 EmuRxCore<StarChips>::~EmuRxCore() {
     // detele data that are not read out
     for (auto& q : m_queues) {
         while(not q.second->empty()) {
             std::unique_ptr<RawData> tmp = q.second->popData();
-            delete [] tmp->buf;
         }
     }
 }
@@ -271,24 +274,25 @@ ClipBoard<RawData>* EmuRxCore<StarChips>::getCom(uint32_t chn) {
     }
 }
 
-RawData* EmuRxCore<StarChips>::readData(uint32_t chn) {
+RawDataPtr EmuRxCore<StarChips>::readData(uint32_t chn) {
     // //std::this_thread::sleep_for(std::chrono::microseconds(1));
     if(m_queues[chn]->empty()) return nullptr;
 
     std::unique_ptr<RawData> rd = m_queues[chn]->popData();
     // set rx channel number
-    rd->adr = chn;
+    rd->getAdr() = chn;
 
-    return rd.release();
+    return std::move(rd);
 }
 
-RawData* EmuRxCore<StarChips>::readData() {
-    for (auto& q : m_queues) {
+std::vector<RawDataPtr> EmuRxCore<StarChips>::readData() {
+    std::vector<RawDataPtr> dataVec;
+   for (auto& q : m_queues) {
         if (not m_channels[q.first]) continue;
         if (q.second->empty()) continue;
-        return EmuRxCore<StarChips>::readData(q.first);
+        dataVec.push_back(EmuRxCore<StarChips>::readData(q.first));
     }
-    return nullptr;
+    return dataVec;
 }
 
 void EmuRxCore<StarChips>::setRxEnable(uint32_t channel) {
@@ -334,12 +338,12 @@ bool emu_registered_Emu =
                                 makeEmu<StarChips, StarEmu>);
 
 template<>
-void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
+void EmuController<StarChips, StarEmu>::loadConfig(const json &j) {
 
   //TODO make nice
   logger->info("-> Starting Emulator");
   std::string emuCfgFile;
-  if (!j["feCfg"].empty()) {
+  if (j.contains("feCfg")) {
     emuCfgFile = j["feCfg"];
     logger->info("Using config: {}", emuCfgFile);
   }
@@ -348,13 +352,13 @@ void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
   // 40000 BC (i.e. 1 ms) by default.
   // Can be set to a smaller value for testing, but need to be a multiple of 4
   unsigned hprperiod = 40000;
-  if (!j["hprPeriod"].empty()) {
+  if (j.contains("hprPeriod")) {
     hprperiod = j["hprPeriod"];
     logger->debug("HPR packet transmission period is set to {} BC", hprperiod);
   }
 
   json chipCfg;
-  if (!j["chipCfg"].empty()) {
+  if (j.contains("chipCfg")) {
     try {
       chipCfg = ScanHelper::openJsonFile(j["chipCfg"]);
     } catch (std::runtime_error &e) {
@@ -383,7 +387,7 @@ void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
     int chn_tx = chipCfg["chips"][i]["tx"];
     // 2nd Tx for R3L1 in case of multi-level trigger mode
     int chn_tx2 = -1;
-    if  (not chipCfg["chips"][i]["tx2"].empty())
+    if  (chipCfg["chips"][i].contains("tx2"))
       chn_tx2 = chipCfg["chips"][i]["tx2"];
 
     // Rx
@@ -394,7 +398,7 @@ void EmuController<StarChips, StarEmu>::loadConfig(json &j) {
     }
 
     std::string regCfgFile;
-    if (not chipCfg["chips"][i]["config"].empty())
+    if (chipCfg["chips"][i].contains("config"))
       regCfgFile = chipCfg["chips"][i]["config"];
 
     auto txlabel = std::make_pair(chn_tx, chn_tx2);

@@ -5,11 +5,9 @@ namespace {
   auto logger = logging::make_log("BdaqTxCore");
 }
 
-BdaqTxCore::BdaqTxCore() {
-}
+BdaqTxCore::BdaqTxCore() = default;
 
-BdaqTxCore::~BdaqTxCore() {
-}
+BdaqTxCore::~BdaqTxCore() = default;
 
 void BdaqTxCore::writeFifo(uint32_t value) {
     std::stringstream d; 

@@ -72,15 +72,26 @@ The scans will be run on all chips that are enabled. If an error occurs, it will
 In the above example, chip with tx/rx 1 did not receive valid data.
 
 ### Additional configuration changes for quad modules
-To run quad modules, you need to set up the chips such that all 4 chips share one command line. This is further described in [ScanConsole](scanconsole).
 
-If you have a 4-display port adaptor card, you only need to share the command line but can use different display ports for the return data.
+To run quad modules, you need to set up the chips such that all 4 chips share one command line. This is further described in [ScanConsole](scanconsole). In order to distinguish different chips, communication is done via chip IDs which are set via wirebonds on a quad module. The corresponding values have to be set in the chip configurations as well:
 
-Additional changes for the quad module's chip configurations:
+- `ChipId`: the ChipId for each chip should be set according to wirebonding map and the silk screen on the module PCB (Chip1: `1`, Chip2: `2`, Chip3: `3`, Chip4: `4`)
 
-- `ChipId`: the ChipId for each chip should be set according to wirebonding map (Chip1-1, Chip2-2,Chip3-3,Chip4-4)
+Depending on how many lanes per chip you read out, the correct [firmware](fw_guide/#channel-configuration) is needed too. On an RD53A quad module PCB only 3 out of 4 lanes per chip are connected.
+
+If you have a 4-display port adaptor card, the correct controller configuration file shall be used to read out all connected lanes:
+``specCfg-rd53a-4x3.json``
+
+Additionally, changes for the quad module's chip configurations apply:
+
 - `OutputActiveLanes`: 7 instead of 15 because only 3 data lanes are connected, not 4
-- `CmlEn`: 7 instead of 15
+(- `CmlEn`: 7 instead of 15)
+
+If you have a 1-display port adaptor card, the correct controller configuration file is ``specCfg-rd53a-16x1.json`` and the changes in the chip configurations are:
+
+- `OutputActiveLanes`: 1 instead of 15 because now only lane0 is connected on the readout adapter card
+(- `CmlEn`: 1 instead of 15)
+
 
 ## Readout Speed
 
@@ -353,8 +364,17 @@ There are 3 different possibilities for a source scan:
  
 #### Random Trigger
 
-Run `std_digitalscan`, `std_analogscan` and at least 3 `std_noisescan` (with the default duration of 5 minutes) before a source scan with random trigger to mask digital/analog bad pixels and noisy pixels.
-Modify in `std_noisescan.json`: ``"createMask": false`` and to prevent changing the enable mask and ``"time": 300`` in seconds to set the scan duration.
+For a random trigger source scan one has to mask digital and analog bad pixels and noisy pixels by running digital, analog and noise scans: run `std_digitalscan` with the `-m 1` option to reset the pixel enable mask (see [commandline arguments](#command-line-arguments)), followed by `std_analogscan` and `std_noisescan` before a source scan with random trigger.
+
+When taking data with a radioactive source, modify in `std_noisescan.json`: `"createMask": false` to prevent changing the enable mask, and adjust `"time": 600` in seconds to set the scan duration.
+
+For RD53A module QC, use frontend-specific scans for the masking. There are automated scripts in `scripts` which can be used, e.g.
+```
+./scripts/rd53a-module_syn_masking.sh configs/controller/specCfg-rd53a-4x3.json configs/connectivity/example_rd53a.json
+```
+This combines the scans above for the synchronous frontend and prepares it for the source scan. Then run the frontend-specific source scan `syn_noisescan.json` with `"createMask": false` and adjusted scan duration.
+
+Repeat the same step for `lindiff`.
 
 ##### Known Problem (to be verified)
 

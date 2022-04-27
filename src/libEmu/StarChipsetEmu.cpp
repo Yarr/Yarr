@@ -66,14 +66,15 @@ StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
   std::fill(hpr_sent.begin(), hpr_sent.end(), false);
 }
 
-StarChipsetEmu::~StarChipsetEmu() {}
+StarChipsetEmu::~StarChipsetEmu() = default;
 
 void StarChipsetEmu::sendPacket(uint8_t *byte_s, uint8_t *byte_e) {
     int byte_length = byte_e - byte_s;
 
     int word_length = (byte_length + 3) / 4;
 
-    uint32_t *buf = new uint32_t[word_length];
+    std::unique_ptr<RawData> data(new RawData(0, word_length));
+    uint32_t *buf = data->getBuf();
 
     for(unsigned i=0; i<byte_length/4; i++) {
         buf[i] = *(uint32_t*)&byte_s[i*4];
@@ -87,8 +88,6 @@ void StarChipsetEmu::sendPacket(uint8_t *byte_s, uint8_t *byte_e) {
         }
         buf[word_length-1] = final;
     }
-
-    std::unique_ptr<RawData> data(new RawData(0, buf, word_length));
 
     m_rxbuffer->pushData(std::move(data));
 }
@@ -521,7 +520,7 @@ void StarChipsetEmu::doHPR_HCC(LCB::Frame frame) {
   // Assume for now in the software emulation LCB is always locked and only
   // testHPR bit can trigger the one-time pulse to send an HPR packet
   // The one-time pulse is ignored if maskHPR is one.
-  bool lcb_lock_changed = testHPR & (~maskHPR);
+  bool lcb_lock_changed = testHPR & (!maskHPR);
 
   // An HPR packet is also sent periodically:
   // 500 us (20000 BCs) after reset and then every 1 ms (40000 BCs)
@@ -565,7 +564,7 @@ void StarChipsetEmu::doHPR_ABC(LCB::Frame frame, unsigned ichip) {
   bool stopHPR = m_starCfg->getSubRegisterValue(ichip, "STOPHPR");
   bool maskHPR = m_starCfg->getSubRegisterValue(ichip, "MASKHPR");
 
-  bool lcb_lock_changed = testHPR & (~maskHPR);
+  bool lcb_lock_changed = testHPR & (!maskHPR);
   bool hpr_periodic = not (hpr_clkcnt%HPRPERIOD) and not stopHPR;
   bool hpr_initial = not hpr_sent[ichip] and stopHPR;
 
@@ -767,7 +766,7 @@ unsigned int StarChipsetEmu::countTriggers(LCB::Frame frame) {
   return count;
 }
 
-void StarChipsetEmu::countHits(AbcCfg& abc, const StripData& hits) {
+void StarChipsetEmu::countHits(AbcCfg& abc, const StripData& hits) const {
   if (not m_startHitCount) return;
 
   bool EnCount = abc.getSubRegisterValue("ENCOUNT");
@@ -817,6 +816,19 @@ void StarChipsetEmu::clearFEData() {
 
   for (auto& evtbuffer : m_evtbuffers_lite) {
     evtbuffer.second.fill(EvtBufData(0));
+  }
+}
+
+void StarChipsetEmu::fillL0Buffer() {
+  // Fill m_l0buffer_lite with no pulse bits and bcid for each LCB frame (4 BCs)
+  for (unsigned ibc = 0; ibc < 4; ++ibc) {
+    // 8-bit BCID
+    auto bcid = L0BufData( (m_bccnt + ibc)%256 );
+
+    // Address of L0 buffer to write
+    unsigned addr = (m_bccnt + ibc) % L0BufDepth;
+
+    m_l0buffer_lite[addr] = bcid;
   }
 }
 
@@ -1081,7 +1093,7 @@ std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_Cal
   return std::make_pair(bcid, hits);
 }
 
-unsigned StarChipsetEmu::getL0BufferAddr(const AbcCfg& abc, uint8_t cmdBC) {
+unsigned StarChipsetEmu::getL0BufferAddr(const AbcCfg& abc, uint8_t cmdBC) const {
   // L0A latency from ABCStar register CREG2
   // 9 bits
   unsigned l0_latency = abc.getSubRegisterValue("LATENCY");

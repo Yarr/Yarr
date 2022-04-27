@@ -20,44 +20,42 @@ class Rd53bDataProcessor : public DataProcessor
 {
 public:
     Rd53bDataProcessor();
-    ~Rd53bDataProcessor();
+    ~Rd53bDataProcessor() override;
 
-    void connect(ClipBoard<RawDataContainer> *input, std::map<unsigned, ClipBoard<EventDataBase>> *outMap) override final
+    void connect(ClipBoard<RawDataContainer> *input, ClipBoard<EventDataBase> *out) override
     {
         m_input = input;
-        m_outMap = outMap;
+        m_out = out;
     }
 
-    void init() override final;
-    void run() override final;
-    void join() override final;
-    void process() override final;
+    void init() override;
+    void run() override;
+    void join() override;
+    void process() override;
 
     const uint32_t *_data; // Pointer to one data block
     int _wordIdx;          // Index of the word under processing
     unsigned _bitIdx;	   // Index of the first bit in datablock which is not processed yet. It starts from 0. The first half thus ends at 31, and the 2nd starts at 32
     int _rawDataIdx;       // Index of the raw data within each raw data container. Note it can be negative (means going back to previous container)
 
-    unsigned _channel;              // Channel ID
     std::unique_ptr<RawDataContainer> _curInV; // Current raw data container
     uint32_t _data_pre[2];                    // Last 64 bit of data from previous raw data container
-    std::map<unsigned, std::unique_ptr<FrontEndData>> _curOut; // Output data container
-    std::map<unsigned, int> _events;                           // Output number of events    
+    std::unique_ptr<FrontEndData> _curOut; // Output data container
+    int _events;                           // Output number of events    
 
     void setCompressedHitmap(bool flag) { _isCompressedHitmap = flag; }
     void setDropToT(bool flag){_dropToT = flag;}
 
 private:
-    std::vector<std::unique_ptr<std::thread>> thread_ptrs;
+    std::unique_ptr<std::thread> thread_ptr;
     ClipBoard<RawDataContainer> *m_input;
-    std::map<unsigned, ClipBoard<EventDataBase>> *m_outMap;
-    std::vector<unsigned> _activeChannels;
+    ClipBoard<EventDataBase> *m_out;
 
-    std::map<unsigned, unsigned> _tag;
-    std::map<unsigned, unsigned> _l1id;
-    std::map<unsigned, unsigned> _bcid;
-    std::map<unsigned, unsigned> _wordCount;
-    std::map<unsigned, int> _hits;
+    unsigned _tag;
+    unsigned _l1id;
+    unsigned _bcid;
+    unsigned _wordCount;
+    unsigned _hits;
 
     bool _isCompressedHitmap; // Flag for toggle hitmap type, true for compressed, false for raw
     bool _dropToT;
@@ -72,7 +70,7 @@ private:
 
     // Data stream components
     uint64_t _ccol;
-    uint64_t _qrow;
+    uint64_t _qrow[55]; // One counter for each core column. Use 54 as total number of core columns to be compatible with CMS chip geometry. Note core column index starts from 1.
     uint64_t _islast_isneighbor;
     uint64_t _hitmap;
     uint64_t _ToT;

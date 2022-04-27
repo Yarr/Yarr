@@ -35,7 +35,7 @@
     "loops": [
       {
         "config": {
-         "max": 64,
+         "max": 256,
           "min": 0,
           "step": 1
         },
@@ -43,8 +43,8 @@
       },
       {
         "config": {
-          "max": 200,
-          "min": 0,
+          "max": 350,
+          "min": 50,
           "step": 5,
           "parameter":"InjVcalDiff"
         },
@@ -55,7 +55,7 @@
           "max": 16,
           "min": 0,
           "step": 1,
-          "nSteps": 2,
+          "nSteps": 1,
 	  "delayArray": [0]
         },
         "loopAction": "Rd53aCoreColLoop"
@@ -65,7 +65,7 @@
           "count": 100,
           "delay": 48,
           "extTrigger": false,
-          "frequency": 10000,
+          "frequency": 20000,
           "noInject": false,
           "time": 0,
           "sendEcr": true

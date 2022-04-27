@@ -39,6 +39,9 @@ void ScanFactory::init() {
 
 void ScanFactory::preScan() {
     sflog->info("Entering pre scan phase ...");
+    for (auto & [id, clip] : *g_data) {
+        clip.reset();
+    }
 
     g_tx->setCmdEnable(g_bk->getTxMask());
     // Load scan specific registers from config
@@ -69,7 +72,7 @@ void ScanFactory::postScan() {
 
 }
 
-void ScanFactory::loadConfig(json &scanCfg) {
+void ScanFactory::loadConfig(const json &scanCfg) {
     m_config = scanCfg;
     sflog->info("Loading Scan:");
     
@@ -95,7 +98,7 @@ void ScanFactory::loadConfig(json &scanCfg) {
             continue;
         }
 
-        if (!scanCfg["scan"]["loops"][i]["config"].empty()) {
+        if (scanCfg["scan"]["loops"][i].contains("config")) {
             sflog->info("   Loading loop config ... ");
             action->loadConfig(scanCfg["scan"]["loops"][i]["config"]);
         }

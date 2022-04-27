@@ -30,11 +30,11 @@
         "loops": [
             {
                 "config": {
-                    "max": 1536, 
+                    "max": 64,
                     "min": 0, 
-                    "step": 32, 
+                    "step": 1,
                     "maskType": 1, 
-                    "maskSize": 2, 
+                    "maskSize": 1,
                     "includedPixels": 0, 
                     "sensorType": 0
                 }, 
@@ -73,12 +73,13 @@
                 "loopAction": "StdDataLoop"
             }
         ], 
-        "name": "AnalogScan", 
+        "name": "CrosstalkScan",
         "prescan": {
             "InjEnDig": 0, 
             "LatencyConfig": 50, 
             "GlobalPulseRt": 16384, 
-            "InjVcalMed": 0
+            "InjVcalMed": 0,
+            "DiffVff": 50
         }
     }
 }

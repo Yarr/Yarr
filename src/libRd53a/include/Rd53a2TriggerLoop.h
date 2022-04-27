@@ -26,7 +26,7 @@ class Rd53a2TriggerLoop: public LoopActionBase, public StdTriggerAction {
         void setTrigTime(double time) {m_trigTime = time;}
         void setTrigFreq(double freq) {m_trigFreq = freq;}
         void setTrigDelay(uint32_t delay);
-        uint32_t getTrigCnt() {return m_trigCnt*2;}
+        uint32_t getTrigCnt() override {return m_trigCnt*2;}
         void verifyParameters();
 
         void setAutozeroPulse();
@@ -34,11 +34,11 @@ class Rd53a2TriggerLoop: public LoopActionBase, public StdTriggerAction {
         void doubleCmdInject();
         void singleCmdInject();
         void flexibleTrigger(uint8_t offset, int injDelay, int triggers, int delay);
-        uint8_t findSmallestDelay();
-        uint8_t greatestDelay();
+        uint8_t findSmallestDelay() const;
+        uint8_t greatestDelay() const;
 
-        void writeConfig(json &config);
-        void loadConfig(json &config);
+        void writeConfig(json &config) override;
+        void loadConfig(const json &config) override;
 
     private:
         //User parameters
@@ -56,20 +56,20 @@ class Rd53a2TriggerLoop: public LoopActionBase, public StdTriggerAction {
         uint32_t m_Ntrig2; //Number of triggers after injection 2
 
         uint8_t CMDDEL = 5; //Constant injection delay for edge mode 1. Time in bunch crossings it takes from cal command to be received to it being executed.
-        std::array<uint32_t, 32> m_trigWord;
-        std::array<uint8_t, 32> m_trigPulses;
+        std::array<uint32_t, 32> m_trigWord{};
+        std::array<uint8_t, 32> m_trigPulses{};
         uint32_t m_trigWordLength;
-        uint32_t m_edgeDuration;
-        uint32_t m_edgeDelay;
-        uint32_t m_auxDelay;
-        uint32_t m_debugParamAdder;
+        uint32_t m_edgeDuration{};
+        uint32_t m_edgeDelay{};
+        uint32_t m_auxDelay{};
+        uint32_t m_debugParamAdder{};
         bool m_sendEcr; 
 
         bool isInner;
-        void init();
-        void execPart1();
-        void execPart2();
-        void end();
+        void init() override;
+        void execPart1() override;
+        void execPart2() override;
+        void end() override;
 };
 
 #endif

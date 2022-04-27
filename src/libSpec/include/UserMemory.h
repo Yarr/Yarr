@@ -52,7 +52,7 @@ public:
 	
 	void sync(sync_dir dir);
 
-	inline unsigned int getSGcount() { return nents; }	
+	inline unsigned int getSGcount() const { return nents; }
 	inline unsigned long getSGentryAddress(unsigned int entry ) { return sg[entry].addr; }
 	inline unsigned long getSGentrySize(unsigned int entry ) { return sg[entry].size; }
 	

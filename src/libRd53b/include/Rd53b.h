@@ -28,6 +28,7 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override;
         void makeGlobal() override {m_chipId = 16;}
 
+        void resetAll() override;
         void configure() override;
         void configureInit();
         void configureGlobal();
@@ -41,6 +42,10 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
             this->setEn(col, row, 0);
             this->setHitbus(col, row, 0);
         }
+	unsigned getPixelEn(unsigned col, unsigned row) override {
+	    return this->getEn(col, row);
+	}
+
 
         void enableAll() override;
 
@@ -54,12 +59,14 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         }
         
         static std::pair<uint32_t, uint32_t> decodeSingleRegRead(uint32_t higher, uint32_t lower);
-
+        uint32_t readSingleRegister(Rd53bReg Rd53bGlobalCfg::*ref);
+        
         // perform the necessary steps to program the E-fuse circuitry and perform
         // the readback of the E-fuse data
         itkpix_efuse_codec::EfuseData readEfuses();
 
-        uint32_t readSingleRegister(Rd53bReg Rd53bGlobalCfg::*ref);
+        void runRingOsc(uint16_t duration, bool isBankB);
+        void confAdc(uint16_t MONMUX, bool doCur = false);
     protected:
     private:
 };

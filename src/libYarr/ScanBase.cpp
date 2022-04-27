@@ -9,7 +9,7 @@
 #include "ScanBase.h"
 
 ScanBase::ScanBase(Bookkeeper *k) : engine(k) {
-    g_data = &k->rawData;
+    g_data = &k->rawDataMap;
     g_bk = k;
     g_tx = k->tx;
     g_rx = k->rx;

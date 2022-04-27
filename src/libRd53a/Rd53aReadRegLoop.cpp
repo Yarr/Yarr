@@ -33,34 +33,35 @@ uint16_t Rd53aReadRegLoop::ReadRegister(Rd53aReg Rd53aGlobalCfg::*ref,  Rd53a *t
     std::this_thread::sleep_for(std::chrono::microseconds(500));
     g_tx->setCmdEnable(keeper->getTxMask());
 
-    RawData *data = g_rx->readData();
-    if(!data)
+    std::vector<RawDataPtr> dataVec = g_rx->readData();
+    RawDataPtr data;
+    if (dataVec.size() > 0) {
+        data = dataVec[0];
+    }
+    
+    if(data != nullptr)
     {
         logger->warn("Warning!!!, No Word Recieved in ReadRegister");
-        delete data;
         return 65535;
     }
 
-    unsigned size =  data->words;
+    unsigned size =  data->getSize();
     logger->debug("Word size is: {}", size);
     for(unsigned c=0; c<size/2; c++)
     {
         if (c*2+1<size) {
-            std::pair<uint32_t, uint32_t> readReg = Rd53a::decodeSingleRegRead(data->buf[c*2],data->buf[c*2+1]);	    
+            std::pair<uint32_t, uint32_t> readReg = Rd53a::decodeSingleRegRead(data->get(c*2),data->get(c*2+1));	    
             if ( readReg.first==(tmpFE->*ref).addr()) {
-                delete data;
                 return readReg.second;
             }
         }
         else {
-            logger->warn("Warning!!! Halfword recieved in ADC Register Read {}", data->buf[c*2]);
-            delete data;
+            logger->warn("Warning!!! Halfword recieved in ADC Register Read {}", data->get(c*2));
             return 65535;
         }
     }
 
     logger->warn("Warning!!! Requested Register {} not found in received words", (tmpFE->*ref).addr()); 
-    delete data;
     return 65535;
 }
 
@@ -306,12 +307,12 @@ void Rd53aReadRegLoop::writeConfig(json &config) {
     config["VoltMux"] = SendBack;
 }
 
-void Rd53aReadRegLoop::loadConfig(json &config) {
-    if (!config["EnblRingOsc"].empty())
+void Rd53aReadRegLoop::loadConfig(const json &config) {
+    if (config.contains("EnblRingOsc"))
         m_EnblRingOsc = config["EnblRingOsc"];
-    if (!config["RingOscRep"].empty())
+    if (config.contains("RingOscRep"))
         m_RingOscRep = config["RingOscRep"];
-    if (!config["RingOscDur"].empty()) {
+    if (config.contains("RingOscDur")) {
         m_RingOscDur = config["RingOscDur"];
         if (m_RingOscDur > 9){
             logger->error("Global Max duration is 2^9 = 512 cycles, setting the RingOscDur to Max (9)");
@@ -319,7 +320,7 @@ void Rd53aReadRegLoop::loadConfig(json &config) {
         }
     }
 
-    if (!config["VoltMux"].empty())
+    if (config.contains("VoltMux"))
         for(auto Reg : config["VoltMux"])
         {
             if( ( int(Reg) >=3 && int(Reg)<=8) || (int(Reg)>=14 && int(Reg)<=15) )
@@ -327,11 +328,11 @@ void Rd53aReadRegLoop::loadConfig(json &config) {
             else
                 m_VoltMux.push_back(Reg);
         }
-    if (!config["CurMux"].empty())
+    if (config.contains("CurMux"))
         for(auto Reg : config["CurMux"])
             m_CurMux.push_back(Reg);
 
-    if (!config["Registers"].empty())
+    if (config.contains("Registers"))
         for (auto Reg: config["Registers"]) {
             m_STDReg.push_back(Reg);
 

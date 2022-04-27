@@ -1,0 +1,31 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "OccupancyAnalysis",
+        "config": {}
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "n_count": 1
+    },
+    "loops": [       
+      {
+        "config": {
+        },
+        "loopAction": "StarRegDump"
+      },
+      {
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "RegDumpScan",
+    "prescan": {
+    }
+  }
+}

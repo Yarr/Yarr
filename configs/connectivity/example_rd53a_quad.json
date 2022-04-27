@@ -1,0 +1,33 @@
+{
+    "chipType" : "RD53A",
+    "chips" : [
+        {
+            "config" : "configs/chip1.json",
+            "tx" : 0,
+            "rx" : 0,
+            "enable" : 1,
+            "locked" : 0
+        },
+        {
+            "config" : "configs/chip2.json",
+            "tx" : 0,
+            "rx" : 1,
+            "enable" : 0,
+            "locked" : 0
+        },
+        {
+            "config" : "configs/chip3.json",
+            "tx" : 0,
+            "rx" : 2,
+            "enable" : 0,
+            "locked" : 0
+        },
+        {
+            "config" : "configs/chip4.json",
+            "tx" : 0,
+            "rx" : 3,
+            "enable" : 0,
+            "locked" : 0
+        }
+    ]
+}

@@ -18,12 +18,12 @@ class Rd53aTwoParameterLoop : public LoopActionBase {
         Rd53aTwoParameterLoop();
         Rd53aTwoParameterLoop(Rd53aReg Rd53aGlobalCfg::*ref);
 
-        void writeConfig(json &j);
-        void loadConfig(json &j);
+        void writeConfig(json &j) override;
+        void loadConfig(const json &j) override;
 
 
             private:
-                Rd53aReg Rd53aGlobalCfg::*parPtr;
+                Rd53aReg Rd53aGlobalCfg::*parPtr{};
                 std::string parName;
                 std::string parCompare;
                 std::vector<std::string> parNameMultiple;
@@ -36,10 +36,10 @@ class Rd53aTwoParameterLoop : public LoopActionBase {
                 std::vector<int> minMultiple; // Multiple vectors can take multiple parameter values for concurrent stepping.
                 std::vector<int> maxMultiple; // 
                 std::vector<int> stepMultiple;            
-                void init();
-                void end();
-                void execPart1();
-                void execPart2();
+                void init() override;
+                void end() override;
+                void execPart1() override;
+                void execPart2() override;
         };
 
         #endif

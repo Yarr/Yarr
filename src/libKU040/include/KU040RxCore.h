@@ -23,21 +23,21 @@
 class KU040RxCore : virtual public RxCore {
     public:
         KU040RxCore();
-        ~KU040RxCore();
+        ~KU040RxCore() override;
 
-        void setRxEnable(uint32_t val);
-        void setRxEnable(std::vector<uint32_t> channels);
-        void disableRx();
-        void maskRxEnable(uint32_t val, uint32_t mask);
+        void setRxEnable(uint32_t val) override;
+        void setRxEnable(std::vector<uint32_t> channels) override;
+        void disableRx() override;
+        void maskRxEnable(uint32_t val, uint32_t mask) override;
 
-        RawData* readData();
+        std::vector<RawDataPtr> readData() override;
         
-        uint32_t getDataRate();
-        uint32_t getCurCount();
-        bool isBridgeEmpty();
+        uint32_t getDataRate() override;
+        uint32_t getCurCount() override;
+        bool isBridgeEmpty() override;
 
         void setEmu(uint32_t mask, uint8_t hitcnt = 0);
-        uint32_t getEmu();
+        uint32_t getEmu() const;
 
 		void setLinkSpeed(uint32_t speed)
 		{
@@ -50,7 +50,7 @@ class KU040RxCore : virtual public RxCore {
 			m_linkSpeed = speed;
 		}
 
-		uint32_t getLinkSpeed()
+		uint32_t getLinkSpeed() const
 		{
 			return m_linkSpeed;
 		}
@@ -68,7 +68,7 @@ class KU040RxCore : virtual public RxCore {
 			m_skipRecsWithErrors = value;
 		}
 
-		bool getSkipRecsWithErrors()
+		bool getSkipRecsWithErrors() const
 		{
 			return m_skipRecsWithErrors;
 		}
@@ -85,7 +85,7 @@ class KU040RxCore : virtual public RxCore {
             m_useUDP = enable;
         }
 
-        bool getUDP() {
+        bool getUDP() const {
             return m_useUDP;
         }
 

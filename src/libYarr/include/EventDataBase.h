@@ -3,7 +3,7 @@
 
 class EventDataBase {
  public:
-  virtual ~EventDataBase() {}
+  virtual ~EventDataBase() = default;
 };
 
 #endif

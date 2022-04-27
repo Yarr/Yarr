@@ -151,7 +151,7 @@ void NetioHandler::setFlushBuffer(bool status){
 	doFlushBuffer = status;
 }
 
-int NetioHandler::getDataCount() {
+int NetioHandler::getDataCount() const {
         return handlerDataCount;
 }
 
@@ -209,7 +209,8 @@ void NetioHandler::addChannel(uint64_t chn){
 	  if(numWords==0)
 		return;
 
-	  uint32_t *buffer = new uint32_t[numWords]; 
+      std::unique_ptr<RawData> rd(new RawData(my_chn, numWords));
+	  uint32_t *buffer = rd->getBuf();
           // Copy number of bytes to avoid dereferencing a bad word on the end
           memcpy(buffer, &data[offset], msg_size-offset);
 
@@ -223,9 +224,7 @@ void NetioHandler::addChannel(uint64_t chn){
 	  //printf(" .... \n");
 	  //event_number++;
           
-	  RawData* rd = new RawData(my_chn, buffer, numWords);
-	  std::unique_ptr<RawData> rdp =  std::unique_ptr<RawData>(rd);
-	  rawData.pushData(std::move(rdp));
+	  rawData.pushData(std::move(rd));
 
           ++handlerDataCount;
         } else  { 

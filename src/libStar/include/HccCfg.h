@@ -83,7 +83,7 @@ class HccCfg {
 
         void setDefaults();
 
-        const unsigned int getHCCchipID(){return m_hccID;}
+        const unsigned int getHCCchipID() const{return m_hccID;}
         void setHCCChipId(unsigned hccID){
             m_hccID = hccID;
         }

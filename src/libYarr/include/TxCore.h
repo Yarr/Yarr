@@ -63,10 +63,10 @@ class TxCore {
             m_clk_period = period;
         }
     protected:
-        TxCore();
-        virtual ~TxCore();
-        uint32_t enMask;
-        double m_clk_period;
+        TxCore()=default;
+        virtual ~TxCore()=default;
+        uint32_t enMask {0};
+        double m_clk_period {0.};
 };
 
 #endif

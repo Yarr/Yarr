@@ -24,22 +24,21 @@ class RxCore {
         virtual void disableRx() = 0;
         virtual void checkRxSync() {}
 
-        virtual RawData* readData() = 0;
+        virtual std::vector<RawDataPtr > readData() = 0;
         virtual void flushBuffer() {}
         
         virtual uint32_t getDataRate() = 0;
         virtual uint32_t getCurCount() {return 0;};
         virtual bool isBridgeEmpty() = 0;
-
-        virtual std::chrono::microseconds getWaitTime() {
+        std::chrono::microseconds getWaitTime() {
             return m_waitTime;
         }
         
     protected:
-        RxCore();
-        virtual ~RxCore();
+        RxCore()=default;
+        virtual ~RxCore()=default;
 
-        std::chrono::microseconds m_waitTime; 
+        std::chrono::microseconds m_waitTime{500};
 };
 
 #endif

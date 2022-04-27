@@ -26,14 +26,10 @@ StarDataProcessor::StarDataProcessor()
   : DataProcessor()
 {}
 
-StarDataProcessor::~StarDataProcessor() {
-}
+StarDataProcessor::~StarDataProcessor() = default;
 
 void StarDataProcessor::init() {
-    //std::cout << __PRETTY_FUNCTION__ << std::endl;
-    for(std::map<unsigned, ClipBoard<EventDataBase> >::iterator it = outMap->begin(); it != outMap->end(); ++it) {
-        activeChannels.push_back(it->first);
-    }
+
 }
 
 void StarDataProcessor::run() {
@@ -74,29 +70,17 @@ void StarDataProcessor::process_core() {
             continue;
 
         // Create Output Container
-        std::map<unsigned, std::unique_ptr<FrontEndData>> curOut;
-        for (unsigned i=0; i<activeChannels.size(); i++) {
-            curOut[activeChannels[i]].reset(new FrontEndData(curInV->stat));
-        }
+        std::unique_ptr<FrontEndData> curOut(new FrontEndData(curInV->stat));
 
         unsigned size = curInV->size();
 
         for(unsigned c=0; c<size; c++) {
-            RawData r(curInV->adr[c], curInV->buf[c], curInV->words[c]);
-            unsigned channel = curInV->adr[c]; //elink number
-            if(!curOut[channel]) {
-              logger->warn("Channel {} not found", channel);
-              for (unsigned i=0; i<activeChannels.size(); i++) {
-                logger->warn(" Active channel {} is {}", i, activeChannels[i]);
-              }
-              continue;
-            }
-            process_data(r, *curOut[channel]);
+            RawDataPtr r = curInV->data[c];
+            unsigned channel = r->getAdr(); //elink number
+            process_data(*r, *curOut);
         }
 
-        for (unsigned i=0; i<activeChannels.size(); i++) {
-            outMap->at(activeChannels[i]).pushData(std::move(curOut[activeChannels[i]]));
-        }
+        output->pushData(std::move(curOut));
         // dataCnt++;
     }
 }
@@ -106,9 +90,9 @@ void process_data(RawData &curIn,
     StarChipPacket packet;
 
     packet.add_word(0x13C); //add SOP, only to make decoder happy
-    for(unsigned iw=0; iw<curIn.words; iw++) {
+    for(unsigned iw=0; iw<curIn.getSize(); iw++) {
         for(int i=0; i<4;i++){
-            packet.add_word((curIn.buf[iw]>>i*8)&0xFF);
+            packet.add_word((curIn[iw]>>i*8)&0xFF);
         }
     }
     packet.add_word(0x1DC); //add EOP, only to make decoder happy
@@ -158,8 +142,33 @@ void process_data(RawData &curIn,
                 }
             }
         }
-    } else if(packetType == TYP_ABC_RR || packetType == TYP_HCC_RR || packetType == TYP_ABC_HPR || packetType == TYP_HCC_HPR) {
-        packet.print_more(std::cout);
+    } else if(packetType == TYP_ABC_RR || packetType == TYP_HCC_RR) {
+        //Assume we don't want to see hit counter reads but want to see other RR's
+        if(logger->should_log(spdlog::level::debug) || packet.address < 0x80 || packet.address > 0xbf) {
+            packet.print_more(std::cout);
+        }
+        if(packet.address >= 0x80 && packet.address <= 0xbf) {
+            //Hit Counter Register Read
+            if (packet.value == 0) return; //No Hits
+            logger->trace("Adding hits from HitCounter",packet.address);
+              
+            curOut.newEvent(0,0,0); //No l0id or bcid
+            int start_channel = (packet.address - 0x80)*4;
+            for (int i=0; i < 4; i++) {
+                int channel = start_channel+i;
+                int row = (channel&1)+1;
+                int hits = (packet.value>>(8*i)) & 0xff;
+                for(int j=0; j<hits; j++)
+                    curOut.curEvent->addHit( row,
+                                             packet.channel_abc*128+( ((channel>>1)&0x7f)+1), 1);
+            }
+        }
+    } else if (packetType == TYP_ABC_HPR || packetType == TYP_HCC_HPR) {
+        if(logger->should_log(spdlog::level::trace)) {
+            std::stringstream os;
+            packet.print_clusters(os);
+            logger->trace("{}", os.str());
+        }
     }
 }
 

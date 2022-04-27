@@ -31,12 +31,10 @@ Rd53aDiffPixelModel::Rd53aDiffPixelModel(float _VthDiff_mean, float _VthDiff_sig
 	noise_sigma_sigma = _noise_sigma_sigma;
 	noise_sigma_gauss = _noise_sigma_gauss;
 }
-Rd53aDiffPixelModel::~Rd53aDiffPixelModel()
-{
-}
+Rd53aDiffPixelModel::~Rd53aDiffPixelModel() = default;
 
 // functions for modeling pixel responses
-float Rd53aDiffPixelModel::calculateThreshold(uint32_t Vth1Diff, uint32_t Vth2Diff, int TDAC)
+float Rd53aDiffPixelModel::calculateThreshold(uint32_t Vth1Diff, uint32_t Vth2Diff, int TDAC) const
 {
   float modelVth = VthDiff_gauss/100. * (Vth1Diff - Vth2Diff);
   float modelTDAC = TDAC * 15;
@@ -47,7 +45,7 @@ float Rd53aDiffPixelModel::calculateThreshold(uint32_t Vth1Diff, uint32_t Vth2Di
   return threshold;
 }
 
-float Rd53aDiffPixelModel::calculateNoise()
+float Rd53aDiffPixelModel::calculateNoise() const
 {
 	return rand_normal(0, noise_sigma_gauss, 1);
 }

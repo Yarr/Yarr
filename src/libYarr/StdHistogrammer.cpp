@@ -47,6 +47,10 @@ namespace {
       StdDict::registerHistogrammer("L1Dist",
                                 []() { return std::unique_ptr<HistogramAlgorithm>(new L1Dist());});
     
+    bool tag_registered =
+      StdDict::registerHistogrammer("TagMap",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new TagMap());});
+
     bool tagdist_registered =
       StdDict::registerHistogrammer("TagDist",
                                 []() { return std::unique_ptr<HistogramAlgorithm>(new TagDist());});
@@ -181,6 +185,25 @@ void TagDist::processEvent(FrontEndData *data) {
     }
 }
 
+void TagMap::create(const LoopStatus &stat) {
+    h = new Histo2d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, stat);
+    h->setXaxisTitle("Column");
+    h->setYaxisTitle("Row");
+    h->setZaxisTitle("Tag");
+    r.reset(h);
+}
+
+void TagMap::processEvent(FrontEndData *data) {
+    for (const FrontEndEvent &curEvent: data->events) {
+        if (curEvent.nHits > 0) {
+            for (const FrontEndHit &curHit: curEvent.hits) {   
+                if(curHit.tot > 0)
+                    h->fill(curHit.col, curHit.row, curEvent.tag);
+            }
+        }
+    }
+}
+
 void L1Dist::create(const LoopStatus &stat) {
     h = new Histo1d(outputName(), 16, -0.5, 15.5, stat);
     h->setXaxisTitle("L1A");
@@ -254,7 +277,7 @@ void L13d::processEvent(FrontEndData *data) {
 }
 
 void HitsPerEvent::create(const LoopStatus &stat) {
-    h = new Histo1d(outputName(), 16, -0.5, 15.5, stat);
+    h = new Histo1d(outputName(), 1000, -0.5, 999.5, stat);
     h->setXaxisTitle("Number of Hits");
     h->setYaxisTitle("Events");
     r.reset(h);

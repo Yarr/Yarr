@@ -16,11 +16,9 @@ namespace {
     auto alog = logging::make_log("HistogramAlgorithm");
 }
 
-HistogrammerProcessor::HistogrammerProcessor() {
-}
+HistogrammerProcessor::HistogrammerProcessor() = default;
 
-HistogrammerProcessor::~HistogrammerProcessor() {
-}
+HistogrammerProcessor::~HistogrammerProcessor() = default;
 
 void HistogrammerProcessor::init() {
 }

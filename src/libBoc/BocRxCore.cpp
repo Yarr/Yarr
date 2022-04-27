@@ -96,10 +96,10 @@ void BocRxCore::maskRxEnable(uint32_t val, uint32_t mask)
     setRxEnable(val);
 }
 
-RawData* BocRxCore::readData()
+std::vector<RawDataPtr> BocRxCore::readData()
 {
-	std::vector<uint32_t> formatted_data;
-
+    std::map<uint32_t, std::vector<uint32_t>> formatted_data;
+    std::vector<RawDataPtr> dataVec;
 	// loop through all enabled channels and fetch the FIFO data
 	for(int ch = 0; ch < 32; ch++)
 	{
@@ -206,26 +206,17 @@ RawData* BocRxCore::readData()
 					case 3:
 						m_formRecord[ch] |= (uint32_t)(data & 0xFF) << 0;
 						m_formState[ch] = 1;
-						formatted_data.push_back((ch << 26) | (0x0 << 24) | m_formRecord[ch]);
+						formatted_data[ch].push_back((ch << 26) | (0x0 << 24) | m_formRecord[ch]);
 						break;
 
 				}
 			}
 		}
+        if (formatted_data.size() > 0) {
+            dataVec.push_back(std::make_shared<RawData>(ch, formatted_data[ch]));
+        }
 	}
-
-	// return the data to caller
-	if(formatted_data.size() == 0)
-	{
-		return NULL;
-	}
-	else
-	{
-		uint32_t *buf = new uint32_t[formatted_data.size()];
-		std::copy(formatted_data.begin(), formatted_data.end(), buf);
-		std::cout << "returning " << formatted_data.size() << " records." << std::endl;
-		return new RawData(0x0, buf, formatted_data.size());
-	}
+    return dataVec;
 }
 
 uint32_t BocRxCore::getDataRate()
@@ -309,7 +300,7 @@ void BocRxCore::setEmu(uint32_t mask, uint8_t hitcnt)
 	}
 }
 
-uint32_t BocRxCore::getEmu()
+uint32_t BocRxCore::getEmu() const
 {
 	return m_emuMask;
 }

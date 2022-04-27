@@ -10,11 +10,11 @@
 
 class StdDataAction {
     public:
-        void connect(ClipBoard<RawDataContainer> *clipboard) {
-            storage = clipboard;
+        void connect(std::map<unsigned, ClipBoard<RawDataContainer> > *clipboards) {
+            storage = clipboards;
         }
     protected:
-        ClipBoard<RawDataContainer> *storage;
+        std::map<unsigned, ClipBoard<RawDataContainer> > *storage;
 };
 
 #endif

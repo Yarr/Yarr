@@ -52,9 +52,7 @@ Histo1d::Histo1d(const std::string &arg_name, unsigned arg_bins, double arg_xlow
     sum = 0;
 }
 
-Histo1d::~Histo1d() {
-
-}
+Histo1d::~Histo1d() = default;
 
 unsigned Histo1d::size() const {
     return bins;
@@ -172,12 +170,17 @@ void Histo1d::toJson(json &j) const {
     j["Underflow"] = underflow;
     j["Overflow"] = overflow;
 
+    for (unsigned i=0; i<lStat.size(); i++)
+        j["loopStatus"][i] = (lStat.get(i));
+
     for (unsigned int i=0; i<bins; i++)
         j["Data"][i] = data[i];
 }
 
 void Histo1d::toFile(const std::string &prefix, const std::string &dir, bool jsonType) const{
     std::string filename = dir + prefix + "_" + HistogramBase::name;
+    for (unsigned i=0; i<lStat.size(); i++)
+        filename += "_" + std::to_string(lStat.get(i));
     if (jsonType) {
         filename += ".json";
     } else {
@@ -212,7 +215,7 @@ bool Histo1d::fromFile(const std::string &filename) {
         return false;
     }
     // Check for type
-    if (j["Type"].empty()) {
+    if (!j.contains("Type")) {
         hlog->error("Tried loading 1d Histogram from file {}, but file has no header: {}", filename);
         return false;
     } else {
@@ -230,12 +233,12 @@ bool Histo1d::fromFile(const std::string &filename) {
         xlow = j["x"]["Low"];
         xhigh = j["x"]["High"];
 
-        underflow = j["underflow"];
-        overflow = j["overflow"];
+        underflow = j["Underflow"];
+        overflow = j["Overflow"];
 
         data.resize(bins);
         for (unsigned i=0; i<bins; i++)
-            data[i] = j["data"][i];
+            data[i] = j["Data"][i];
     }
     file.close();
     return true;

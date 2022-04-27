@@ -15,7 +15,8 @@ class StdParameterLoop : public LoopActionBase {
         StdParameterLoop();
 
         void writeConfig(json &j) override;
-        void loadConfig(json &j) override;
+        void loadConfig(const json &j) override;
+        std::string getParName() {return parName;}
 
     private:
         std::string parName;
@@ -27,6 +28,7 @@ class StdParameterLoop : public LoopActionBase {
         void execPart2() override;
 
         unsigned m_cur;
+        std::chrono::microseconds m_waitTime;
 };
 
 #endif

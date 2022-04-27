@@ -22,7 +22,7 @@ class Fe65p2 : public FrontEnd, public Fe65p2Cfg, public Fe65p2Cmd {
         Fe65p2(HwController *arg_core);
         Fe65p2(HwController *arg_core, unsigned arg_channel);
         Fe65p2(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel);
-        ~Fe65p2() {}
+        ~Fe65p2() override = default;
 
         void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override;
 
@@ -36,11 +36,15 @@ class Fe65p2 : public FrontEnd, public Fe65p2Cfg, public Fe65p2Cmd {
             this->setPixConf(col+1, row+1, 0x0);
         }
 
+	unsigned getPixelEn(unsigned col, unsigned row) override {
+	  return 1; // getPixelEn() made for Rd53a chips which have getEn(), needs further modification for Fe65p2
+        }
+
         void enableAll() override;
 
         void writeNamedRegister(std::string name, uint16_t value) override;
         
-        void setInjCharge(double charge, bool sCap=true, bool lCap=true) override final {
+        void setInjCharge(double charge, bool sCap=true, bool lCap=true) override {
             this->setValue(&Fe65p2GlobalCfg::PlsrDac, this->toVcal(charge));
             this->configDac();
         }

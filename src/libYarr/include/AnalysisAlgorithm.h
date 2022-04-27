@@ -8,6 +8,7 @@
 #include "FeedbackBase.h"
 #include "HistogramBase.h"
 #include "ScanBase.h"
+#include "StdParameterLoop.h"
 
 /**
  * Process sequence of histograms.
@@ -21,7 +22,7 @@ class AnalysisAlgorithm {
             nRow = 336;
             make_mask = true;
         }
-        virtual ~AnalysisAlgorithm() {}
+        virtual ~AnalysisAlgorithm() = default;
         
         void setBookkeeper (Bookkeeper *b) {bookie = b;}
         void setChannel (unsigned ch) {channel = ch;}
@@ -31,9 +32,11 @@ class AnalysisAlgorithm {
             feedback = fb;
         }
         virtual void init(ScanBase *s) {}
-	virtual void loadConfig(json &config){}
+        virtual void loadConfig(const json &config){}
         virtual void processHistogram(HistogramBase *h) {}
         virtual void end() {}
+
+        virtual bool requireDependency() {return false;}
 
         void setMapSize(unsigned col,unsigned row) {
             nCol = col;
@@ -52,6 +55,10 @@ class AnalysisAlgorithm {
         FeedbackClipboard *feedback;
         bool make_mask;
         unsigned nCol, nRow;
+
+        std::vector<std::string> m_parametersOfInterest;
+        bool isPOILoop(StdParameterLoop *l);
+
 };
 
 /**
@@ -61,24 +68,27 @@ class AnalysisProcessor : public DataProcessor {
     public:
         AnalysisProcessor();
         AnalysisProcessor(Bookkeeper *b, unsigned ch);
-        ~AnalysisProcessor();
+        ~AnalysisProcessor() override;
 
-        void connect(ScanBase *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output, FeedbackClipboard *arg_fb) {
+        void connect(ScanBase *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output, FeedbackClipboard *arg_fb, bool storeInput=false) {
             scan = arg_s;
             input = arg_input;
             output = arg_output;
             feedback = arg_fb;
+            storeInputHisto = storeInput;
         }
 
-        void init();
-        void run();
-	void loadConfig(json &j);
-        void join();
-        void process();
+        void init() override;
+        void run() override;
+	    void loadConfig(const json &j);
+        void join() override;
+        void process() override;
         void process_core();
         void end();
 
         void addAlgorithm(std::unique_ptr<AnalysisAlgorithm> a);
+
+        bool empty() {return algorithms.empty();}
 
         void setMapSize(unsigned col, unsigned row) {
             for (unsigned i=0; i<algorithms.size(); i++) {
@@ -100,6 +110,7 @@ class AnalysisProcessor : public DataProcessor {
         FeedbackClipboard *feedback;
         ScanBase *scan;
         std::unique_ptr<std::thread> thread_ptr;
+        bool storeInputHisto;
         
         std::vector<std::unique_ptr<AnalysisAlgorithm>> algorithms;
 };

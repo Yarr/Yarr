@@ -135,7 +135,7 @@ void Rd53bTriggerLoop::execPart1() {
     g_tx->setCmdEnable(keeper->getTxMask());
     auto rd53b = dynamic_cast<Rd53b*>(g_fe);
     dynamic_cast<HwController*>(g_tx)->runMode();
-    rd53b->sendClear(16);
+    //rd53b->sendClear(16);
     while(!g_tx->isCmdEmpty());
     std::this_thread::sleep_for(std::chrono::microseconds(200));
     //std::this_thread::sleep_for(std::chrono::microseconds(10));
@@ -203,26 +203,26 @@ void Rd53bTriggerLoop::writeConfig(json &config) {
     config["zeroTot"] = m_zeroTot;
 }
 
-void Rd53bTriggerLoop::loadConfig(json &config) {
-    if (!config["count"].empty())
+void Rd53bTriggerLoop::loadConfig(const json &config) {
+    if (config.contains("count"))
         setTrigCnt(config["count"]);
-    if (!config["frequency"].empty())
+    if (config.contains("frequency"))
         m_trigFreq = config["frequency"];
-    if (!config["time"].empty())
+    if (config.contains("time"))
         m_trigTime = config["time"];
-    if (!config["delay"].empty())
+    if (config.contains("delay"))
         m_trigDelay = config["delay"];
-    if (!config["noInject"].empty())
+    if (config.contains("noInject"))
         m_noInject = config["noInject"];
-    if (!config["edgeMode"].empty())
+    if (config.contains("edgeMode"))
         m_edgeMode = config["edgeMode"];
-    if (!config["edgeDuration"].empty())
+    if (config.contains("edgeDuration"))
         m_edgeDuration = config["edgeDuration"];
-    if (!config["extTrig"].empty())
+    if (config.contains("extTrig"))
         m_extTrig = config["extTrig"];
-    if (!config["trigMultiplier"].empty())
+    if (config.contains("trigMultiplier"))
         m_trigMultiplier = config["trigMultiplier"];
-    if (!config["zeroTot"].empty())
+    if (config.contains("zeroTot"))
         m_zeroTot = config["zeroTot"];
     this->setTrigDelay(m_trigDelay);
 }

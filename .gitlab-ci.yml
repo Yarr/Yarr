@@ -1,19 +1,28 @@
+# If the pipeline is triggered by:
+#    A merge request, run a merge request pipeline. For example, a merge request pipeline can be triggered by a push to a branch with an associated open merge request.
+#    A change to a branch, but a merge request is open for that branch, do not run a branch pipeline.
+#    A change to a branch, but without any open merge requests, run a branch pipeline.
+workflow:
+    rules:
+        - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+        - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
+          when: never
+        - if: '$CI_COMMIT_BRANCH'
+
 image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_build
 
 job_build_and_test:
     stage: build
     script:
-      - yum -y install boost-devel
-      - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+      - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
       - cd build
       - CXXFLAGS=-Werror cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
       - make install -j4
+      - CTEST_OUTPUT_ON_FAILURE=1 make test
       - export USER=test
       - echo $USER
       - /bin/pwd
-      - mkdir /tmp/test
-      - ls /tmp/
       - cd ../
       - bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p -l configs/logging/trace_all.json
       - ls
@@ -23,8 +32,27 @@ job_build_and_test:
       - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
       - if [ "$NUM100" != "26880" ]; then exit 2; fi
       - bin/scanConsole -k
-      - bin/test_main
-      - bin/test_star -r 0 configs/controller/emuCfg_star.json
+      - bin/test_star configs/controller/emuCfg_star.json -r 0 -t 0
+
+job_build_and_test_out_of_source:
+    stage: build
+    script:
+      - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+      - CXXFLAGS=-Werror cmake3 -S . -B /tmp/build -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=cmake/linux-gcc
+      - cmake3 --build /tmp/build -j4
+      - cmake3 --install /tmp/build
+      - CTEST_OUTPUT_ON_FAILURE=1 cmake3 --build /tmp/build --target test
+      - export USER=test
+      - echo $USER
+      - /bin/pwd
+      - /tmp/build/bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p -l configs/logging/trace_all.json
+      - ls
+      - ls ./data/
+      - ls ./data/000001_std_digitalscan/
+      - cat ./data/000001_std_digitalscan/*_OccupancyMap.json
+      - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
+      - if [ "$NUM100" != "26880" ]; then exit 2; fi
+      - /tmp/build/bin/scanConsole -k
 
 job_build_all:
     stage: build
@@ -34,8 +62,7 @@ job_build_all:
           - build
           - lib
     script:
-      - yum -y install boost-devel
-      - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+      - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
       - cd build
       - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE
@@ -45,14 +72,24 @@ job_build_all:
 job_build_clang:
     stage: build
     script:
-      - yum -y install boost-devel
-      - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-      - source scl_source enable llvm-toolset-6.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+      - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+      - source scl_source enable llvm-toolset-11.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir -p build
       - cd build 
       - CXXFLAGS=-Werror cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang
       - make install -j4
       - cd ..
+      - bin/scanConsole -k
+
+job_build_none:
+    stage: build
+    script:
+      - scl enable devtoolset-9 bash
+      - source /opt/rh/devtoolset-9/enable
+      - mkdir build
+      - cd build
+      - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD= -DYARR_FRONT_ENDS_TO_BUILD= -DYARR_ACTIVE_LOGGER_LEVEL=OFF
+      - make install -j4
       - bin/scanConsole -k
 
 job_test_json_parsing:
@@ -66,13 +103,14 @@ job_test_json_parsing:
       - for file in $(find configs/scans/* -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t SCAN_CONFIG || break; done
 
       - cd build
-      - make test
+      - CTEST_OUTPUT_ON_FAILURE=1 make test
 
 job_test_json:
     stage: build
     script:
+      - source scl_source enable rh-nodejs6 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - npm install jsonlint -g
-      - for file in $(find ../configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
+      - for file in $(find configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
 
 job_test_code_coverage:
     stage: build
@@ -80,18 +118,57 @@ job_test_code_coverage:
         paths:
           - cc_tests
     script:
-      - source scl_source enable devtoolset-7 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+      - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
       - cd build
       - cmake3 .. -DBUILD_TESTS=on -DCMAKE_BUILD_TYPE=Coverage -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
       - make install -j4
-      - export USER=test
-      - echo $USER
       - /bin/pwd
-      - mkdir /tmp/test
-      - ls /tmp/
       - cd ../
       - scripts/cc_tool.sh
+
+job_test_netio:
+    stage: test
+    needs: ["job_build_all"]
+    script:
+      # Launch netio_bridge to connect an emulator to NetIO
+      - bin/netio_bridge -p 12340 -q 12350 -f configs/controller/emuCfg_star.json & pid_bridge=($!)
+      - sleep 1
+      # Run scans with the NetIO controller
+      - bin/scanConsole -r configs/controller/felix_strips.json -c configs/connectivity/example_star_setup.json -s configs/scans/star/std_regDump.json
+      - bin/scanConsole -r configs/controller/felix_strips.json -c configs/connectivity/example_star_setup.json -s configs/scans/star/std_latencyScan.json -p
+      # Terminate netio_bridge
+      - kill ${pid_bridge}
+
+job_run_codechecker:
+    stage: build
+    timeout: 3 hours
+    only:
+        - merge_requests
+    script:
+        - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+        - source scl_source enable llvm-toolset-11.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+        - scripts/run_codechecker.sh -j 4
+    after_script:
+        - cat gl-code-quality-report.json
+    artifacts:
+        paths:
+          - checks
+          - gl-code-quality-report.json
+        reports:
+            codequality: gl-code-quality-report.json
+
+deploy_coverage:
+    stage: deploy
+    dependencies: ["job_test_code_coverage"]
+    only:
+        - devel@YARR/YARR
+    variables:
+        "EOS_PATH" : "/eos/user/t/theim/www/yarr/devel/coverage"
+        "CI_OUTPUT_DIR" : "cc_tests/"
+    image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
+    script:
+        - deploy-eos
 
 build_docs:
     stage: build
@@ -104,7 +181,6 @@ build_docs:
     artifacts:
         paths:
             - site
-          
 
 deploy_master:
     stage: deploy

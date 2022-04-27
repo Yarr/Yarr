@@ -8,14 +8,18 @@
 
 #include "FrontEnd.h"
 
-bool FrontEnd::isActive() {
+bool FrontEnd::isActive() const {
 	return active;
 }
 
-bool FrontEnd::getActive() {
+bool FrontEnd::getActive() const {
 	return this->active;
 }
 
 void FrontEnd::setActive(bool arg_active) {
 	active = arg_active;
+}
+
+std::tuple<json, std::vector<json>> FrontEndCfg::getPreset(const std::string& systemType) {
+	throw std::runtime_error("No presets defined");
 }

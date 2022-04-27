@@ -1,0 +1,55 @@
+{
+    "scan": {
+	"analysis": {
+	    "0": {
+		"algorithm": "OccupancyAnalysis",
+		"config": {}
+	    },
+	    "n_count": 1
+	},
+	"histogrammer": {
+	    "0": {
+		"algorithm": "OccupancyMap",
+		"config": {}
+	    },
+	    "n_count": 1
+	},
+	"loops": [
+	    
+	    {
+		"config": {
+		    "max": 40,
+		    "min": 24,
+		    "step": 1,
+		    "parameter":"ABCs_LATENCY"
+		},
+		"loopAction": "StdParameterLoop"
+	    },
+	    {
+		"config": {
+		    "trig_count": 50,
+		    "trig_frequency": 1000,
+		    "trig_time": 1,
+		    "l0_latency": 30,
+		    "extTrigger": false,
+		    "noInject": false,
+                    "digital": true
+		},
+		"loopAction": "StarTriggerLoop"
+	    },
+	    {
+		"loopAction": "StdDataLoop"
+	    }
+	],
+	"name": "StarDigitalScan",
+        "prescan": {
+            "ABCs_TEST_PULSE_ENABLE": 1,
+            "ABCs_LP_ENABLE": 1,
+            "ABCs_PR_ENABLE": 1,
+            "ABCs_TM": 2,
+            "ABCs_DETMODE": 1,
+            "ABCs_RRMODE": 1,
+            "ABCs_MASKs": 1
+        }
+    }
+}

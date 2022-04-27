@@ -51,9 +51,9 @@ public:
 	static const char* descriptions[];
 
 	Exception(Type t) : type(t) {}
-	inline int getType() { return type; }
-	char const *toString() { return descriptions[type]; }
-	virtual const char* what() const throw() { return descriptions[type]; }
+	inline int getType() const { return type; }
+	char const *toString() const { return descriptions[type]; }
+	const char* what() const throw() override { return descriptions[type]; }
 };
 
 }
