@@ -72,7 +72,7 @@ void StdParameterLoop::loadConfig(const json &j) {
     if (j.contains("step"))
         step = j["step"];
     if (j.contains("parameter")) {
-        SPDLOG_LOGGER_INFO(spllog, "Linking parameter: {}", std::string(j["parameter"]));
+        SPDLOG_LOGGER_DEBUG(spllog, "Linking parameter: {}", std::string(j["parameter"]));
         parName = j["parameter"];
     }
     if (j.contains("waitTime")) {

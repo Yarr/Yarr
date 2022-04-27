@@ -44,7 +44,7 @@
         "config": {
           "max": 64,
           "min": 0,
-          "step": 16
+          "step": 1
         },
         "loopAction": "Rd53bMaskLoop"
       },
@@ -53,7 +53,8 @@
           "max": 300,
           "min": 0,
           "step": 5,
-          "parameter":"InjVcalDiff"
+          "parameter":"InjVcalDiff",
+          "waitTime": 100
         },
         "loopAction": "StdParameterLoop"
       },
