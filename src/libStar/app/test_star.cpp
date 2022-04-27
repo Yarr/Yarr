@@ -68,14 +68,17 @@ int packetFromRawData(StarChipPacket& packet, RawData& data) {
   return packet.parse();
 }
 
-std::shared_ptr<RawData> readData(
+RawDataPtr readData(
   HwController& hwCtrl,
   std::function<bool(RawData&)> filter_cb,
   uint32_t timeout=1000)
 {
   bool nodata = true;
 
-  std::shared_ptr<RawData> data = hwCtrl.readData();
+  std::vector<RawDataPtr> dataVec = hwCtrl.readData();
+  RawDataPtr data;
+  if (dataVec.size() > 0)
+      data = dataVec[0];
 
   auto start_reading = std::chrono::steady_clock::now();
 
@@ -101,7 +104,12 @@ std::shared_ptr<RawData> readData(
       break;
     }
 
-    data = hwCtrl.readData();
+    dataVec = hwCtrl.readData();
+    if (dataVec.size() > 0) {
+      data = dataVec[0];
+    } else {
+      data = nullptr;
+    }
   }
 
   if (nodata) {
@@ -121,39 +129,33 @@ RawDataContainer readAllData(
   bool nodata = true;
 
   RawDataContainer rdc(LoopStatus{});
-
-  std::shared_ptr<RawData> data = hwCtrl.readData();
-
+  
   auto start_reading = std::chrono::steady_clock::now();
 
+  std::vector<RawDataPtr> dataVec;
   while (true) {
-    if (data) {
-      nodata = false;
-      logger->trace("Use data: {}", (void*)data->getBuf());
-
-      bool good = filter_cb(*data);
-      if (good) {
-        rdc.add(std::move(data));
+      dataVec = hwCtrl.readData();
+      for(auto data : dataVec) {
+          bool good = filter_cb(*data);
+          if (good) {
+              rdc.add(std::move(data));
+          }
       }
-    } else {
       // wait a bit if no data
       static const auto SLEEP_TIME = std::chrono::milliseconds(1);
       std::this_thread::sleep_for( SLEEP_TIME );
-    }
+      
+      // Timeout
+      auto run_time = std::chrono::steady_clock::now() - start_reading;
+      if ( run_time > std::chrono::milliseconds(timeout) ) {
+          logger->trace("readData timeout");
+          break;
+      }
 
-    auto run_time = std::chrono::steady_clock::now() - start_reading;
-    if ( run_time > std::chrono::milliseconds(timeout) ) {
-      logger->trace("readData timeout");
-      break;
-    }
-
-    data = hwCtrl.readData();
   }
 
-  if (nodata) {
-    logger->critical("No data");
-  } else if (rdc.size() == 0) {
-    logger->debug("Data container is empty");
+  if (rdc.size() == 0) {
+      logger->critical("Data container empty");
   }
 
   return rdc;
@@ -457,7 +459,7 @@ bool probeABCs(HwController& hwCtrl, std::vector<Hybrid>& hccStars, bool reset) 
     auto rdc = readAllData(hwCtrl, filter_abchpr, timeout);
 
     for (unsigned c = 0; c < rdc.size(); c++) {
-        std::shared_ptr<RawData> d = rdc.data[c];
+        RawDataPtr d = rdc.data[c];
       StarChipPacket packet;
 
       if ( packetFromRawData(packet, *d) ) {
@@ -740,7 +742,7 @@ bool testDataPacketsStatic(HwController& hwCtrl, bool do_spec_specific) {
   hwCtrl.flushBuffer();
 
   for (unsigned c = 0; c < rdc.size(); c++) {
-    std::shared_ptr<RawData> d = rdc.data[c];
+    RawDataPtr d = rdc.data[c];
     reportData(*d, do_spec_specific);
   }
 
@@ -792,7 +794,7 @@ bool testDataPacketsPulse(HwController& hwCtrl, bool do_spec_specific) {
   hwCtrl.flushBuffer();
 
   for (unsigned c = 0; c < rdc.size(); c++) {
-    std::shared_ptr<RawData> d = rdc.data[c];
+    RawDataPtr d = rdc.data[c];
     reportData(*d, do_spec_specific);
   }
 

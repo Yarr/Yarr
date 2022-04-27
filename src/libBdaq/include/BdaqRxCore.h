@@ -31,7 +31,7 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq {
 
         void checkRxSync() override;
         
-        std::shared_ptr<RawData> readData() override;
+        std::vector<RawDataPtr> readData() override;
         void flushBuffer() override;
         
         uint32_t getDataRate() override;

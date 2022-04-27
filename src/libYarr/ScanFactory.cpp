@@ -39,7 +39,9 @@ void ScanFactory::init() {
 
 void ScanFactory::preScan() {
     sflog->info("Entering pre scan phase ...");
-    g_data->reset();
+    for (auto & [id, clip] : *g_data) {
+        clip.reset();
+    }
 
     g_tx->setCmdEnable(g_bk->getTxMask());
     // Load scan specific registers from config

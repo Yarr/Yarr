@@ -187,13 +187,8 @@ int ScanConsoleImpl::setupScan() {
     }
     // TODO not to use the raw pointer!
     try {
-        ScanHelper::buildHistogrammers(histogrammers, scanCfg, bookie->feList, scanBase.get(), scanOpts.outputDir);
-    } catch (const char *msg) {
-        logger->error("{}", msg);
-        return -1;
-    }
-
-    try {
+        ScanHelper::buildRawDataProcs(procs, bookie->feList, chipType);
+        ScanHelper::buildHistogrammers(histogrammers, scanOpts.scanType, bookie->feList, scanBase.get(), scanOpts.outputDir);
         ScanHelper::buildAnalyses(analyses, scanCfg, *bookie, scanBase.get(),
                                   &fbData, scanOpts.mask_opt);
     } catch (const char *msg) {
@@ -215,14 +210,13 @@ int ScanConsoleImpl::setupScan() {
         }
         histogrammers[fe]->init();
         histogrammers[fe]->run();
+        
+        procs[fe]->init();
+        procs[fe]->run();
+     
         logger->info(" .. started threads of Fe {}", dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
     }
 
-    proc = StdDict::getDataProcessor(chipType);
-    //Fei4DataProcessor proc(bookie.globalFe<Fei4>()->getValue(&Fei4::HitDiscCnfg));
-    proc->connect( &bookie->rawData, &bookie->eventMap );
-    if(scanOpts.nThreads>0) proc->setThreads(scanOpts.nThreads); // override number of used threads
-    proc->init();
     return 0;
 }
 
@@ -501,7 +495,6 @@ void ScanConsoleImpl::getResults(json &result) {
 
 void ScanConsoleImpl::run() {
     ScanHelper::banner(logger,"Run Scan");
-    proc->run();
 
     scan_start = std::chrono::steady_clock::now();
     scanBase->run();
@@ -509,13 +502,19 @@ void ScanConsoleImpl::run() {
     logger->info("Scan done!");
 
     // Join from upstream to downstream.
-
-    bookie->rawData.finish();
+    for (unsigned i=0; i<bookie->feList.size(); i++) {
+        FrontEnd *fe = bookie->feList[i];
+        if (fe->isActive()) {
+          fe->clipRawData->finish();
+        }
+    }
 
     scan_done = std::chrono::steady_clock::now();
     logger->info("Waiting for processors to finish ...");
     // Join Fei4DataProcessor
-    proc->join();
+    for( auto& proc : procs ) {
+      proc.second->join();
+    }
     processor_done = std::chrono::steady_clock::now();
     logger->info("Processor done, waiting for histogrammer ...");
 

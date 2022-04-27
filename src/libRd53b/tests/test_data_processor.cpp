@@ -15,17 +15,14 @@ TEST_CASE("Rd53bDataProcessor", "[rd53b][data_processor]") {
   REQUIRE (proc);
 
   ClipBoard<RawDataContainer> rd_cp;
-  std::map<unsigned, ClipBoard<EventDataBase> > em_cp;
-
-  int chan = 0;
-  em_cp[chan];
+  ClipBoard<EventDataBase> em_cp;
 
   proc->connect( &rd_cp, &em_cp );
 
   proc->init();
   proc->run();
 
-  std::shared_ptr<RawData> rd = std::make_shared<RawData>(chan, nWords);
+  RawDataPtr rd = std::make_shared<RawData>(0, nWords);
   uint32_t *buffer = rd->getBuf();
   buffer[nWords-1] = 0;
 
@@ -40,11 +37,9 @@ TEST_CASE("Rd53bDataProcessor", "[rd53b][data_processor]") {
 
   proc->join();
 
-  // No other channels added
-  REQUIRE (em_cp.size() == 1);
-  REQUIRE (!em_cp[chan].empty());
+  REQUIRE (!em_cp.empty());
 
-  auto data = em_cp[chan].popData();
+  auto data = em_cp.popData();
   FrontEndData &rawData = *(FrontEndData*)data.get();
 
   REQUIRE (rawData.events.size() == truth_nEvents);
@@ -62,5 +57,5 @@ TEST_CASE("Rd53bDataProcessor", "[rd53b][data_processor]") {
   REQUIRE (ihit == truth_nHits);
 
   // Only one thing
-  REQUIRE (em_cp[chan].empty());
+  REQUIRE (em_cp.empty());
 }

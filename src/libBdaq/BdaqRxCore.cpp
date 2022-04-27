@@ -83,21 +83,38 @@ void BdaqRxCore::checkRxSync() {
 	}
 }
 
-std::shared_ptr<RawData> BdaqRxCore::readData() {
+// TODO this does not work, it will compile but does not do the necessary processing of the data
+std::vector<RawDataPtr> BdaqRxCore::readData() {
     uint size = fifo.getAvailableWords();
+    std::vector<RawDataPtr> dataVec;
+    std::map<uint32_t, std::vector<uint32_t>> dataMap;
     if (size > 0) {
         std::vector<uint32_t> inBuf;
         fifo.readData(inBuf, size);
-        size = sortChannels(inBuf);
-        if (size > 0) {
-            std::shared_ptr<RawData> data = std::make_shared<RawData>(0x0, size*activeChannels.size());
-            uint32_t* outBuf = data->getBuf();
-            size = buildStream(outBuf, size);
-            return std::move(data);
-        } 
-        return std::shared_ptr<RawData>(NULL);
+        for (const auto& word : inBuf) {
+            if ((word & TLU_MASK) == TLU_ID) {
+                logger->critical("TLU data is not supported.");
+                exit(-1);
+            } 
+            if (checkTDC(word)) {
+                logger->critical("TDC data is not supported.");
+                exit(-1);
+            } 
+            uint channel = 0;
+            for (const auto& channelId : activeChannels) {
+                // Testing Aurora RX Identifier 
+                if (((word >> 20) & 0xF) == channelId) {
+                    dataMap[channelId].push_back(word);
+                }
+                ++channel;
+            }
+        }  
+        // TODO need to decode the data (sortChannels, buildStream)
+        for (const uint32_t channelId : activeChannels) {
+            dataVec.push_back(std::make_shared<RawData>(channelId, dataMap[channelId]));
+        }
     }
-    return std::shared_ptr<RawData>(NULL);
+    return dataVec;
 }
 
 void BdaqRxCore::flushBuffer() {

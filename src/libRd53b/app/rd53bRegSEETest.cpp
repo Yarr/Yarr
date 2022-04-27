@@ -27,16 +27,17 @@ std::vector<RawData> processDataPackets(HwController *hwCtrl)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     std::vector<RawData> dataList;
-    std::shared_ptr<RawData> data;
+    std::vector<RawDataPtr> dataVec;
+    RawDataPtr data;
     do
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        data = hwCtrl->readData();
-        if (data != NULL)
+        dataVec = hwCtrl->readData();
+        if (dataVec.size() > 0)
         {
-            dataList.push_back(*data);
+            dataList.push_back(*dataVec[0]);
         }
-    } while (data != NULL);
+    } while (dataVec.size() > 0);
 
     return dataList;
 }

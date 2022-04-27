@@ -24,7 +24,7 @@ class RxCore {
         virtual void disableRx() = 0;
         virtual void checkRxSync() {}
 
-        virtual std::shared_ptr<RawData> readData() = 0;
+        virtual std::vector<RawDataPtr > readData() = 0;
         virtual void flushBuffer() {}
         
         virtual uint32_t getDataRate() = 0;

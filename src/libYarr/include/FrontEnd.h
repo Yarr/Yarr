@@ -49,6 +49,7 @@ class FrontEnd {
         virtual void setInjCharge(double, bool, bool) = 0;
 
         // Set of events
+        ClipBoard<RawDataContainer> *clipRawData;
         ClipBoard<EventDataBase> *clipData;
         ClipBoard<HistogramBase> *clipHisto;
         std::vector<std::unique_ptr<ClipBoard<HistogramBase>> > *clipResult;

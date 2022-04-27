@@ -122,8 +122,13 @@ void ItsdaqRxCore::flushBuffer(){
   logger->debug("Skip flushBuffer");
 }
 
-std::shared_ptr<RawData> ItsdaqRxCore::readData(){
-  return std::move(m_h.GetData());
+std::vector<RawDataPtr> ItsdaqRxCore::readData(){
+  std::vector<RawDataPtr> dataVec;
+  RawDataPtr data = m_h.GetData();
+  if (data != nullptr) {
+      dataVec.push_back(data);
+  }
+  return dataVec;
 }
 
 uint32_t ItsdaqRxCore::getDataRate(){

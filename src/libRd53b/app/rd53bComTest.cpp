@@ -41,10 +41,12 @@ namespace rd53bTest {
     }
 
     std::pair<uint32_t, uint32_t> singleRegRead(HwController *hwCtrl) {
-        std::shared_ptr<RawData> data = hwCtrl->readData();
+        std::vector<RawDataPtr> dataVec = hwCtrl->readData();
+        RawDataPtr data;
         std::pair<uint32_t, uint32_t> answer(999, 666);
         int timeout = 0;
-        if  (data) {
+        if  (dataVec.size() > 0) {
+            data = dataVec[0];
             answer = Rd53b::decodeSingleRegRead(data->get(0), data->get(1));
         }
         return answer;
@@ -201,9 +203,11 @@ int main (int argc, char *argv[]) {
         
         std::pair<uint32_t, uint32_t> answer(0, 0), answer2(0, 0);
 
-        std::shared_ptr<RawData> data = hwCtrl->readData();
+        std::vector<RawDataPtr> dataVec = hwCtrl->readData();
+        RawDataPtr data;
         int timeout = 0;
-        if  (data) {
+        if  (dataVec.size() > 0) {
+            data = dataVec[0];
             answer = Rd53b::decodeSingleRegRead(data->get(0), data->get(1));
             if (data->getSize()>2) {
                 answer2 = Rd53b::decodeSingleRegRead(data->get(2), data->get(3));
@@ -271,8 +275,10 @@ int main (int argc, char *argv[]) {
         while(!hwCtrl->isCmdEmpty());
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-        std::shared_ptr<RawData> data = hwCtrl->readData();
-        if  (data) {
+        std::vector<RawDataPtr> dataVec = hwCtrl->readData();
+        RawDataPtr data;
+        if  (dataVec.size() > 0) {
+            data = dataVec[0];
             logger->debug("Received {} words", data->getSize());
             for (unsigned i=0; i<data->getSize();i+=2) {
                 logger->debug("[{}] = {:x} {:x}", i, data->get(i), data->get(i+1));

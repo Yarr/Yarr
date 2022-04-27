@@ -29,24 +29,14 @@ Fei4DataProcessor::~Fei4DataProcessor() = default;
 
 void Fei4DataProcessor::init() {
     SPDLOG_LOGGER_TRACE(flog, "");
-    for(std::map<unsigned, ClipBoard<EventDataBase> >::iterator it = outMap->begin(); it != outMap->end(); ++it) {
-        activeChannels.push_back(it->first);
-    }
 }
 
 void Fei4DataProcessor::run() {
-    SPDLOG_LOGGER_TRACE(flog, "");
-    const unsigned int numThreads = std::thread::hardware_concurrency();
-    for (unsigned i=0; i<numThreads; i++) {
-        thread_ptrs.emplace_back( new std::thread(&Fei4DataProcessor::process, this) );
-        flog->info("  -> Processor thread #{} started!", i);
-    }
+    thread_ptr.reset( new std::thread(&Fei4DataProcessor::process, this) );
 }
 
 void Fei4DataProcessor::join() {
-    for( auto& thread : thread_ptrs ) {
-        if( thread->joinable() ) thread->join();
-    }
+    thread_ptr->join();
 }
 
 
@@ -68,13 +58,11 @@ void Fei4DataProcessor::process() {
 void Fei4DataProcessor::process_core() {
     // TODO put data from channels back into input, so other processors can use it
     unsigned badCnt = 0;
-    for (unsigned i=0; i<activeChannels.size(); i++) {
-        tag[activeChannels[i]] = 0;
-        l1id[activeChannels[i]] = 0;
-        bcid[activeChannels[i]] = 0;
-        wordCount[activeChannels[i]] = 0;
-        hits[activeChannels[i]] = 0;
-    }
+    tag = 0;
+    l1id = 0;
+    bcid = 0;
+    wordCount = 0;
+    hits = 0;
 
     unsigned dataCnt = 0;
     while(!input->empty()) {
@@ -84,47 +72,44 @@ void Fei4DataProcessor::process_core() {
             continue;
 
         // Create Output Container
-        std::map<unsigned, std::unique_ptr<FrontEndData>> curOut;
-        std::map<unsigned, int> events;
-        for (unsigned i=0; i<activeChannels.size(); i++) {
-            curOut[activeChannels[i]].reset(new FrontEndData(curInV->stat));
-            events[activeChannels[i]] = 0;
-        }
+        std::unique_ptr<FrontEndData> curOut(new FrontEndData(curInV->stat));;
+        int events = 0;
 
         unsigned size = curInV->size();
         //if (size == 0)
         //std::cout << "Empty!" << std::endl;
         for(unsigned c=0; c<size; c++) {
-            std::shared_ptr<RawData> curIn = curInV->data[c];
+            RawDataPtr curIn = curInV->data[c];
             // Process
             unsigned words = curIn->getSize();
             for (unsigned i=0; i<words; i++) {
                 uint32_t value = curIn->get(i);
                 uint32_t header = ((value & 0x00FF0000) >> 16);
+                // TODO channel should come from inheritance not data
                 unsigned channel = ((value & 0xFC000000) >> 26);
                 unsigned type = ((value &0x03000000) >> 24);
                 if (type == 0x1) {
-                    tag[channel] = unsigned(value & 0x00FFFFFF);
+                    tag = unsigned(value & 0x00FFFFFF);
                 } else if (type == 0x3) {
                     // skip
                 } else if (type == 0x0) {
-                    wordCount[channel]++;
+                    wordCount++;
                     if (__builtin_expect((value == 0xDEADBEEF), 0)) {
                         flog->error("[{}] Noticed readout error: 0x{:x}", channel, value);
-                    } else if (__builtin_expect((curOut[channel] == NULL), 0)) {
+                    } else if (__builtin_expect((curOut == NULL), 0)) {
                         flog->error("Received data for channel {} but storage not initiliazed!", channel);
                     } else if (header == 0xe9) {
                         // Pixel Header
-                        l1id[channel] = (value & 0x7c00) >> 10;
-                        bcid[channel] = (value & 0x03FF);
-                        curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
+                        l1id = (value & 0x7c00) >> 10;
+                        bcid = (value & 0x03FF);
+                        curOut->newEvent(tag, l1id, bcid);
 
-                        events[channel]++;
+                        events++;
                     } else if (header == 0xef) {
                         // Service Record
                         unsigned code = (value & 0xFC00) >> 10;
                         unsigned number = value & 0x03FF;
-                        curOut[channel]->serviceRecords[code]+=number;
+                        curOut->serviceRecords[code]+=number;
                         //} else if (header == 0xea) {
                         // Address Record
                         //} else if (header == 0xec) {
@@ -134,10 +119,10 @@ void Fei4DataProcessor::process_core() {
                     uint16_t row = (value & 0x01FF00) >> 8;
                     uint8_t tot1 = (value & 0xF0) >> 4;
                     uint8_t tot2 = (value & 0xF);
-                    if (events[channel] == 0 ) {
+                    if (events == 0 ) {
                         flog->warn("[{}] No header in data fragment!", channel);
-                        curOut[channel]->newEvent(0xDEADBEEF, l1id[channel], bcid[channel]);
-                        events[channel]++;
+                        curOut->newEvent(0xDEADBEEF, l1id, bcid);
+                        events++;
                         //hits[channel] = 0;
                     }
                     if (__builtin_expect((col == 0 || row == 0 || col > 80 || row > 336), 0)) {
@@ -147,12 +132,12 @@ void Fei4DataProcessor::process_core() {
                         unsigned dec_tot1 = totCode[hitDiscCfg][tot1];
                         unsigned dec_tot2 = totCode[hitDiscCfg][tot2];
                         if (dec_tot1 > 0) {
-                            curOut[channel]->curEvent->addHit(row, col, dec_tot1);
-                            hits[channel]++;
+                            curOut->curEvent->addHit(row, col, dec_tot1);
+                            hits++;
                         }
                         if (dec_tot2 > 0) {
-                            curOut[channel]->curEvent->addHit(row+1, col, dec_tot2);
-                            hits[channel]++;
+                            curOut->curEvent->addHit(row+1, col, dec_tot2);
+                            hits++;
                         }
                     }
                 }
@@ -161,9 +146,7 @@ void Fei4DataProcessor::process_core() {
                     break;
             }
         }
-        for (unsigned i=0; i<activeChannels.size(); i++) {
-            outMap->at(activeChannels[i]).pushData(std::move(curOut[activeChannels[i]]));
-        }
+        output->pushData(std::move(curOut));
         //Cleanup
         dataCnt++;
     }

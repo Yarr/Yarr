@@ -218,8 +218,8 @@ class EmuRxCore<StarChips> : virtual public RxCore {
         void enableRx();
         std::vector<uint32_t> listRx();
 
-        std::shared_ptr<RawData> readData() override;
-        std::shared_ptr<RawData> readData(uint32_t chn);
+        std::vector<RawDataPtr> readData() override;
+        RawDataPtr readData(uint32_t chn);
         
         uint32_t getDataRate() override {return 0;}
         uint32_t getCurCount(uint32_t chn) {return m_queues[chn]->empty()?0:1;}
@@ -274,7 +274,7 @@ ClipBoard<RawData>* EmuRxCore<StarChips>::getCom(uint32_t chn) {
     }
 }
 
-std::shared_ptr<RawData> EmuRxCore<StarChips>::readData(uint32_t chn) {
+RawDataPtr EmuRxCore<StarChips>::readData(uint32_t chn) {
     // //std::this_thread::sleep_for(std::chrono::microseconds(1));
     if(m_queues[chn]->empty()) return nullptr;
 
@@ -285,13 +285,14 @@ std::shared_ptr<RawData> EmuRxCore<StarChips>::readData(uint32_t chn) {
     return std::move(rd);
 }
 
-std::shared_ptr<RawData> EmuRxCore<StarChips>::readData() {
-    for (auto& q : m_queues) {
+std::vector<RawDataPtr> EmuRxCore<StarChips>::readData() {
+    std::vector<RawDataPtr> dataVec;
+   for (auto& q : m_queues) {
         if (not m_channels[q.first]) continue;
         if (q.second->empty()) continue;
-        return EmuRxCore<StarChips>::readData(q.first);
+        dataVec.push_back(EmuRxCore<StarChips>::readData(q.first));
     }
-    return nullptr;
+    return dataVec;
 }
 
 void EmuRxCore<StarChips>::setRxEnable(uint32_t channel) {

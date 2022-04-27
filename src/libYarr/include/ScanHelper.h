@@ -37,6 +37,9 @@ namespace ScanHelper {
 
 // TODO would prefer not to need bookie --> deep dependency!
 // TODO Do not want to use the raw pointer ScanBase*
+        void buildRawDataProcs( std::map<FrontEnd*, std::unique_ptr<DataProcessor> > &procs,
+                           std::vector<FrontEnd*> &feList,
+                           const std::string &chipType);
         void buildAnalyses( std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcessor>> >& analyses,
                             const json& scanType, Bookkeeper& bookie, ScanBase* s, FeedbackClipboardMap *fbMap, int mask_opt);
         void buildAnalysisHierarchy(std::vector<std::vector<int>>& indexTiers,

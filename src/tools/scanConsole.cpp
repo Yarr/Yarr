@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
     std::unique_ptr<ScanBase> scanBase;
     std::map<FrontEnd*, std::unique_ptr<DataProcessor> > histogrammers;
     std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcessor>> > analyses;
-    std::shared_ptr<DataProcessor> proc;
+    std::map<FrontEnd*, std::unique_ptr<DataProcessor> > procs;
     std::string chipType;
     std::string timestampStr;
     std::time_t now;
@@ -308,21 +308,18 @@ int main(int argc, char *argv[]) {
         logger->warn("No scan to run, exiting with msg: {}", msg);
         return 0;
     }
+
     // TODO not to use the raw pointer!
     try {
+        ScanHelper::buildRawDataProcs(procs, bookie->feList, chipType);
         ScanHelper::buildHistogrammers(histogrammers, scanCfg, bookie->feList, scanBase.get(), scanOpts.outputDir);
-    } catch (const char *msg) {
-        logger->error("{}", msg);
-        return -1;
-    }
-
-    try {
         ScanHelper::buildAnalyses(analyses, scanCfg, *bookie, scanBase.get(),
                                   &fbData, scanOpts.mask_opt);
     } catch (const char *msg) {
         logger->error("{}", msg);
         return -1;
     }
+    
 
     logger->info("Running pre scan!");
     scanBase->init();
@@ -331,23 +328,22 @@ int main(int argc, char *argv[]) {
     // Run from downstream to upstream
     logger->info("Starting histogrammer and analysis threads:");
     for ( FrontEnd* fe : bookie->feList ) {
-        if (!fe->isActive()) continue;
-      for (auto& ana : analyses[fe]) {
-        ana->init();
-        ana->run();
-      }
-      histogrammers[fe]->init();
-      histogrammers[fe]->run();
-      logger->info(" .. started threads of Fe {}", dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
+        if (fe->isActive()) {
+          for (auto& ana : analyses[fe]) {
+            ana->init();
+            ana->run();
+          }
+
+          histogrammers[fe]->init();
+          histogrammers[fe]->run();
+          
+          procs[fe]->init();
+          procs[fe]->run();
+
+          logger->info(" .. started threads of Fe {}", dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
+        }
     }
-
-    proc = StdDict::getDataProcessor(chipType);
-    //Fei4DataProcessor proc(bookie.globalFe<Fei4>()->getValue(&Fei4::HitDiscCnfg));
-    proc->connect( &bookie->rawData, &bookie->eventMap );
-    if(scanOpts.nThreads>0) proc->setThreads(scanOpts.nThreads); // override number of used threads
-    proc->init();
-    proc->run();
-
+    
     // Now the all downstream processors are ready --> Run scan
 
     ScanHelper::banner(logger,"Scan");
@@ -359,13 +355,21 @@ int main(int argc, char *argv[]) {
     logger->info("Scan done!");
 
     // Join from upstream to downstream.
-
-    bookie->rawData.finish();
+    for (unsigned i=0; i<bookie->feList.size(); i++) {
+        FrontEnd *fe = bookie->feList[i];
+        if (fe->isActive()) {
+          fe->clipRawData->finish();
+        }
+    }
 
     std::chrono::steady_clock::time_point scan_done = std::chrono::steady_clock::now();
     logger->info("Waiting for processors to finish ...");
-    // Join Fei4DataProcessor
-    proc->join();
+    // Join DataProcessor
+    // Join histogrammers
+    for( auto& proc : procs ) {
+      proc.second->join();
+    }
+    
     std::chrono::steady_clock::time_point processor_done = std::chrono::steady_clock::now();
     logger->info("Processor done, waiting for histogrammer ...");
 

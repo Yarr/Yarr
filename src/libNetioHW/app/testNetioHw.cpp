@@ -25,11 +25,13 @@ uint32_t readConfig(TxCore *txcore, RxCore *rxcore, uint32_t addr) {
         txcore->releaseFifo();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         while (true) {
-            std::shared_ptr<RawData> data = rxcore->readData();
-            if (data == nullptr) {
+            std::vector<RawDataPtr> dataVec = rxcore->readData();
+            RawDataPtr data;
+            if (dataVec.size() == 0) {
                 cout << "Timeout." << endl;
                 continue;
             }
+            data = dataVec[0];
 
             for (uint32_t i = 0; i < data->getSize(); i++) {
                 uint32_t hdr = (data->get(i) >> 16) & 0xFF;
@@ -401,12 +403,14 @@ int main(int argc, char **argv) {
     cout << "Read-out" << endl;
     RawDataContainer datav{LoopStatus()};
     do {
-        std::shared_ptr<RawData> data = rxcore->readData();
-        if (data == nullptr) {
+        std::vector<RawDataPtr> dataVec = rxcore->readData();
+        RawDataPtr data;
+        if (dataVec.size() == 0) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             cout << "." << flush;
             continue;
         }
+        data = dataVec[0];
         datav.add(std::move(data));
         cout << "Event " << datav.size() << endl;
     } while (datav.size() < ntriggers * 16);
