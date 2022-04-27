@@ -251,6 +251,8 @@ void Histo2d::toJson(json &j) const{
     j["Underflow"] = underflow;
     j["Overflow"] = overflow;
 
+    j["Entries"] = entries;
+
     for (unsigned i=0; i<lStat.size(); i++)
         j["loopStatus"][i] = (lStat.get(i));
 
