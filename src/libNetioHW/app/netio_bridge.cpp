@@ -38,51 +38,46 @@ public:
 
   void next_message(netio::message& msg, netio::tag& tag)
   {
-    RawData* data = rx_core.readData();
-    if(data == nullptr) {
-      return;
+    std::vector<RawDataPtr> dataVec = rx_core.readData();
+    for (auto data : dataVec) {
+        logger->debug("Received data from RxCore: (buf adr words) {} {} {}", (void*)(data->getBuf()), data->getAdr(), data->getSize());
+        for (int iw = 0; iw < data->getSize(); iw++) {
+            logger->debug(" 0x{:08x}", data->get(iw));
+        }
+
+        // Based on the reverse of a combination of
+        //   NetioRxCore::readData
+        //   NetioHandler::addChannel
+        std::array<uint8_t*, 2> data_array;
+        std::array<size_t, 2> size_array;
+
+        // Add felix::base::FromFELIXHeader
+        int channel = data->getAdr();
+        m_header.length = m_fifo.size() + sizeof(m_header);
+        m_header.status = 0;
+        m_header.elinkid = channel%64;
+        m_header.gbtid = channel/64;
+
+        tag = m_header.elinkid;
+
+        data_array[0] = (uint8_t*)&m_header;
+        size_array[0] = sizeof(m_header);
+
+        // Add data
+        m_fifo.clear();
+        for(size_t i=0; i<data->getSize(); i++) {
+            uint32_t val = data->get(i);
+            for (size_t b=0; b<4; b++) {
+                m_fifo.push_back((val >> (b*8)) & 0xff);
+            }
+        }
+
+        data_array[1] = m_fifo.data();
+        size_array[1] = m_fifo.size();
+
+        // netio::message, array of data arrays, array of sizes and size of list
+        msg = netio::message(data_array.data(), size_array.data(), 2);
     }
-
-    logger->debug("Received data from RxCore: (buf adr words) {} {} {}", (void*)(data->buf), data->adr, data->words);
-    for (int iw = 0; iw < data->words; iw++) {
-      logger->debug(" 0x{:08x}", data->buf[iw]);
-    }
-
-    // Based on the reverse of a combination of
-    //   NetioRxCore::readData
-    //   NetioHandler::addChannel
-    std::array<uint8_t*, 2> data_array;
-    std::array<size_t, 2> size_array;
-
-    // Add felix::base::FromFELIXHeader
-    int channel = data->adr;
-    m_header.length = m_fifo.size() + sizeof(m_header);
-    m_header.status = 0;
-    m_header.elinkid = channel%64;
-    m_header.gbtid = channel/64;
-
-    tag = m_header.elinkid;
-
-    data_array[0] = (uint8_t*)&m_header;
-    size_array[0] = sizeof(m_header);
-
-    // Add data
-    m_fifo.clear();
-    for(size_t i=0; i<data->words; i++) {
-      uint32_t val = data->buf[i];
-      for (size_t b=0; b<4; b++) {
-        m_fifo.push_back((val >> (b*8)) & 0xff);
-      }
-    }
-
-    data_array[1] = m_fifo.data();
-    size_array[1] = m_fifo.size();
-
-    // netio::message, array of data arrays, array of sizes and size of list
-    msg = netio::message(data_array.data(), size_array.data(), 2);
-
-    // clean up RawData
-    delete [] data->buf;
   }
 
   bool data_available()
