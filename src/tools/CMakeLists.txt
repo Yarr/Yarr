@@ -12,7 +12,7 @@ list(APPEND tools
         )
 
 if (NOT ${TARGET_ARCH} MATCHES "arm*")
-    list(APPEND tools write-register)
+    list(APPEND tools write-register reset-all)
 endif()
  
 foreach (target IN LISTS tools)
