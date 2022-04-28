@@ -5,13 +5,14 @@ list(APPEND tools
         makeFei4PixelModelCfg
         makeRd53aPixelModelCfg
         replot
+        scan_cli
         scanConsole
         scurve_test
         test_json
         )
 
 if (NOT ${TARGET_ARCH} MATCHES "arm*")
-    list(APPEND tools write-register)
+    list(APPEND tools write-register reset-all)
 endif()
  
 foreach (target IN LISTS tools)

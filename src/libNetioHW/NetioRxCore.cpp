@@ -119,7 +119,7 @@ void NetioRxCore::flushBuffer(){
 
 }
 
-RawData* NetioRxCore::readData(){
+std::vector<RawDataPtr> NetioRxCore::readData(){
   // Loop over all links looking for data
   // Return the first one we find (slow?)
 
@@ -127,16 +127,17 @@ RawData* NetioRxCore::readData(){
   //for(it=m_elinks.begin();it!=m_elinks.end();it++){    // For every channel's queue:
     //if(!it->second) continue;
     //uint64_t elink=it->first;
+    std::vector<RawDataPtr> dataVec;
 
     nlog->debug("NetioRxCore::readData()");
 
     std::unique_ptr<RawData> rdp = m_nioh.rawData.popData();
     if(rdp != NULL){
-	auto buffer = rdp.get()->buf;
-	auto address = rdp.get()->adr;
-	auto words = rdp.get()->words;
 
-	RawData* new_rdp = new RawData(address, buffer, words);
+    RawDataPtr new_rdp = std::move(rdp);
+	auto buffer = new_rdp->getBuf();
+	auto address = new_rdp->getAdr();
+	auto words = new_rdp->getSize();
 
         if(m_fetype == "rd53a"){
             //TODO:fix this in firmware; the header needs to be in buffer[0]
@@ -154,10 +155,10 @@ RawData* NetioRxCore::readData(){
                 buffer[words-1] = 0xFFFF;
         }
         ++rxDataCount;
-	return new_rdp;
+        dataVec.push_back(new_rdp);
 
   }
-  return NULL;
+  return dataVec;
 }
 
 uint32_t NetioRxCore::getDataRate(){

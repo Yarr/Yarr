@@ -66,9 +66,8 @@ class Bookkeeper {
         
         std::vector<FrontEnd*> feList;
 
-        ClipBoard<RawDataContainer> rawData;
-
         // per rx link
+        std::map<unsigned, ClipBoard<RawDataContainer> > rawDataMap;
 	    std::map<unsigned, ClipBoard<EventDataBase> > eventMap;
 	    std::map<unsigned, ClipBoard<HistogramBase> > histoMap;
 	    std::map<unsigned, std::vector<std::unique_ptr<ClipBoard<HistogramBase>>> > resultMap;

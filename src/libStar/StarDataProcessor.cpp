@@ -29,10 +29,7 @@ StarDataProcessor::StarDataProcessor()
 StarDataProcessor::~StarDataProcessor() = default;
 
 void StarDataProcessor::init() {
-    //std::cout << __PRETTY_FUNCTION__ << std::endl;
-    for(std::map<unsigned, ClipBoard<EventDataBase> >::iterator it = outMap->begin(); it != outMap->end(); ++it) {
-        activeChannels.push_back(it->first);
-    }
+
 }
 
 void StarDataProcessor::run() {
@@ -73,29 +70,17 @@ void StarDataProcessor::process_core() {
             continue;
 
         // Create Output Container
-        std::map<unsigned, std::unique_ptr<FrontEndData>> curOut;
-        for (unsigned i=0; i<activeChannels.size(); i++) {
-            curOut[activeChannels[i]].reset(new FrontEndData(curInV->stat));
-        }
+        std::unique_ptr<FrontEndData> curOut(new FrontEndData(curInV->stat));
 
         unsigned size = curInV->size();
 
         for(unsigned c=0; c<size; c++) {
-            RawData r(curInV->adr[c], curInV->buf[c], curInV->words[c]);
-            unsigned channel = curInV->adr[c]; //elink number
-            if(!curOut[channel]) {
-              logger->warn("Channel {} not found", channel);
-              for (unsigned i=0; i<activeChannels.size(); i++) {
-                logger->warn(" Active channel {} is {}", i, activeChannels[i]);
-              }
-              continue;
-            }
-            process_data(r, *curOut[channel]);
+            RawDataPtr r = curInV->data[c];
+            unsigned channel = r->getAdr(); //elink number
+            process_data(*r, *curOut);
         }
 
-        for (unsigned i=0; i<activeChannels.size(); i++) {
-            outMap->at(activeChannels[i]).pushData(std::move(curOut[activeChannels[i]]));
-        }
+        output->pushData(std::move(curOut));
         // dataCnt++;
     }
 }
@@ -105,9 +90,9 @@ void process_data(RawData &curIn,
     StarChipPacket packet;
 
     packet.add_word(0x13C); //add SOP, only to make decoder happy
-    for(unsigned iw=0; iw<curIn.words; iw++) {
+    for(unsigned iw=0; iw<curIn.getSize(); iw++) {
         for(int i=0; i<4;i++){
-            packet.add_word((curIn.buf[iw]>>i*8)&0xFF);
+            packet.add_word((curIn[iw]>>i*8)&0xFF);
         }
     }
     packet.add_word(0x1DC); //add EOP, only to make decoder happy

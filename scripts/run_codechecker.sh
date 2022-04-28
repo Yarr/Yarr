@@ -20,6 +20,7 @@ CodeChecker version
 CodeChecker log -b  "cmake3 --build build -- -j ${jobs}" -o  checks/compilation_cmds.json
 scripts/fix_cdb.py > checks/compilation_cmds_filtered.json 
 CodeChecker analyze checks/compilation_cmds_filtered.json -j ${jobs} -o checks/results \
+  --analyzers clang-tidy \
   --enable=modernize-use-nullptr \
   --enable=modernize-use-using \
   --enable=modernize-deprecated-headers \

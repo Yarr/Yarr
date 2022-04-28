@@ -279,14 +279,18 @@ int Rd53a::checkCom() {
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     // TODO not happy about this, rx knowledge should not be here
-    RawData *data = m_rxcore->readData();
+    std::vector<RawDataPtr> dataVec = m_rxcore->readData();
+    RawDataPtr data;
+    if (dataVec.size() > 0) {
+        data = dataVec[0];
+    }
 
     if (data != NULL) {
-        if (!(data->words == 2 || data->words == 4 || data->words == 8 || data->words == 12 || data->words == 6)) {
-            logger->error("Received wrong number of words ({}) for {}", data->words, this->name);
+        if (!(data->getSize() == 2 || data->getSize() == 4 || data->getSize() == 8 || data->getSize() == 12 || data->getSize() == 6)) {
+            logger->error("Received wrong number of words ({}) for {}", data->getSize(), this->name);
             return 0;
         }
-        std::pair<uint32_t, uint32_t> answer = decodeSingleRegRead(data->buf[0], data->buf[1]);
+        std::pair<uint32_t, uint32_t> answer = decodeSingleRegRead(data->get(0), data->get(1));
         logger->debug("Addr ({}) Value({})", answer.first, answer.second);
 
         if (answer.first != regAddr || answer.second != regValue) {

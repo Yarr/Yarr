@@ -56,13 +56,13 @@ class Rd53a2TriggerLoop: public LoopActionBase, public StdTriggerAction {
         uint32_t m_Ntrig2; //Number of triggers after injection 2
 
         uint8_t CMDDEL = 5; //Constant injection delay for edge mode 1. Time in bunch crossings it takes from cal command to be received to it being executed.
-        std::array<uint32_t, 32> m_trigWord;
-        std::array<uint8_t, 32> m_trigPulses;
+        std::array<uint32_t, 32> m_trigWord{};
+        std::array<uint8_t, 32> m_trigPulses{};
         uint32_t m_trigWordLength;
-        uint32_t m_edgeDuration;
-        uint32_t m_edgeDelay;
-        uint32_t m_auxDelay;
-        uint32_t m_debugParamAdder;
+        uint32_t m_edgeDuration{};
+        uint32_t m_edgeDelay{};
+        uint32_t m_auxDelay{};
+        uint32_t m_debugParamAdder{};
         bool m_sendEcr; 
 
         bool isInner;

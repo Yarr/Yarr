@@ -45,6 +45,8 @@ void Bookkeeper::addFe(FrontEnd *fe, unsigned txChannel, unsigned rxChannel) {
         eventMap[rxChannel];
         histoMap[rxChannel];
         resultMap[rxChannel];
+        rawDataMap[rxChannel];
+        feList.back()->clipRawData = &rawDataMap[rxChannel];
         feList.back()->clipData = &eventMap[rxChannel];
         feList.back()->clipHisto = &histoMap[rxChannel];
         feList.back()->clipResult = &resultMap[rxChannel];

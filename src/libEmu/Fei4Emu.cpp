@@ -18,8 +18,7 @@ namespace {
     auto flog = logging::make_log("emu_fei4");
 }
 
-Fei4Emu::Fei4Emu(std::string output_model_cfg, std::string input_model_cfg,
-                 EmuCom * rx, EmuCom * tx) {
+Fei4Emu::Fei4Emu(const json &model_cfg, EmuCom *rx, EmuCom *tx) {
     srand(time(NULL));
 
     m_feId = 0x00;
@@ -34,7 +33,7 @@ Fei4Emu::Fei4Emu(std::string output_model_cfg, std::string input_model_cfg,
     m_txRingBuffer = tx;
     m_rxRingBuffer = rx;
 
-    this->initializePixelModelsFromFile(input_model_cfg);
+    this->initializePixelModelsFromFile(model_cfg);
     run = true;
 }
 
@@ -46,11 +45,8 @@ Fei4Emu::~Fei4Emu() {
     }
 }
 
-void Fei4Emu::initializePixelModelsFromFile(std::string json_file_path) {
-    std::ifstream file(json_file_path);
-    json j;
-    j= json::parse(file);
-
+void Fei4Emu::initializePixelModelsFromFile(const json &cfg) {
+    const json &j = cfg;
     for (unsigned col = 1; col <= m_feCfg->n_Col; col++) {
         for (unsigned row = 1; row <= m_feCfg->n_Row; row++) {
             size_t index = (col - 1) * m_feCfg->n_Row + (row - 1);
@@ -66,8 +62,6 @@ void Fei4Emu::initializePixelModelsFromFile(std::string json_file_path) {
                j["noise_sigma_gauss_vector"][index]);
         }
     }
-
-    file.close();
 }
 
 void Fei4Emu::executeLoop() {

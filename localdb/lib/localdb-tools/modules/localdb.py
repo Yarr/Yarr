@@ -61,8 +61,10 @@ class LocalDb(object):
     def checkConnection(self):
         if self.service=='mongodb':
             url = 'mongodb://{0}:{1}'.format(self.ip, self.port)
-            if self.tls or self.ssl:
-                url+='/?ssl=true&ssl_ca_certs={0}&ssl_certfile={1}&ssl_match_hostname=false'.format(self.ca, self.cert)
+            if (self.tls or self.ssl):
+                url +='/?ssl=true'
+                if (self.ca and self.cert):
+                    url+='&ssl_ca_certs={0}&ssl_certfile={1}&ssl_match_hostname=false'.format(self.ca, self.cert)
             if self.auth=='x509':
                 url+='&authMechanism=MONGODB-X509'
                 self.authSource = "$external"
@@ -102,11 +104,14 @@ class LocalDb(object):
         max_server_delay = 1
         username = None
         password = None
-        client = MongoClient(
+        try:
+            client = MongoClient(
             self.url,
             serverSelectionTimeoutMS=max_server_delay,
             authSource=self.authSource
-        )
+            )
+        except Exception as e:
+            print("failed with {0}".format(e))
         localdb = client[self.name]
         try:
             localdb.list_collection_names()

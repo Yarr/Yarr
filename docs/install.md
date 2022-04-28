@@ -13,31 +13,39 @@ for instance [NetIO](netio.md).
 
 ### Dependencies for Centos 7
 
-- Make sure you have GCC version 7.0 or higher installed:
+- Make sure you have GCC version 9.0 or higher installed:
+
 ```bash
 $ g++ --version
-g++ (GCC) 7.2.1 20170829 (Red Hat 7.2.1-1)
+g++ (GCC) 9.3.1 20200408 (Red Hat 9.3.1-2)
 ```
+
 - By default an older version of GCC is installed on CentOs7, you can install newer GCC versions via:
+
 ```bash
 # 1. Install a package with repository for your system:
+
 # On CentOS, install package centos-release-scl available in CentOS repository:
 $ sudo yum install centos-release-scl
 
 # On RHEL, enable RHSCL repository for you system:
-$ sudo yum-config-manager --enable rhel-server-rhscl-7-rpms
+$ sudo yum-config-manager --enable rhel-server-rhscl-9-rpms
 
 # 2. Install the collection:
-$ sudo yum install devtoolset-7
+$ sudo yum install devtoolset-9
 ```
--- In order to use this newer version instead of your default one execute:
+
+- In order to use this newer version instead of your default one execute:
+
 ```bash
 # Source the setup script
-$ source /opt/rh/devtoolset-7/enable
+$ source /opt/rh/devtoolset-9/enable
 # Add it to your bash_profile to enable it by default
-$ echo "source /opt/rh/devtoolset-7/enable" >> ~/.bash_profile 
+$ echo "source /opt/rh/devtoolset-9/enable" >> ~/.bash_profile
 ```
+
 - If not installed before, you need some standard packages:
+
 ```bash
 $ sudo yum install gnuplot texlive-epstopdf cmake3 zeromq zeromq-devel 
 ```
@@ -45,6 +53,7 @@ $ sudo yum install gnuplot texlive-epstopdf cmake3 zeromq zeromq-devel
 ### Dependencies for Centos 8
 
 - If not installed before, you need some standard packages:
+
 ```bash
 $ sudo yum install gnuplot texlive-epstopdf cmake3 elfutils-libelf-devel
 ```

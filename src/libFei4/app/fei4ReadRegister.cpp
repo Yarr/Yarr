@@ -87,36 +87,44 @@ int main(int argc, char *argv[]) {
   //----------------------------------------------------------------
   // check Global registers
   for (unsigned i=0; i< fe.numRegs; i++) {
-    if(verbose)
-      std::cout << "Reading reg: " << i << std::endl;
-    fe.readRegister(i);
-    usleep(1000);
-    while(!mySpec.isCmdEmpty()) {}
-    dummy.cfg[i] = 0xDEAD;
-    RawData *data = mySpec.readData();
-    while(!mySpec.isCmdEmpty()) {}
-    while (data != NULL) {
-      if (data != NULL) {
-	uint32_t greg = 99;
-	uint32_t value = 0;
-	for (unsigned j=0; j<data->words;j++) {
-	  if(verbose)
-	    std::cout << "[" << j << "] = 0x" << std::hex << data->buf[j] << std::dec << std::endl;
-	  if ((data->buf[j] & 0x00FF0000) == 0x00ea0000) {
-	    greg = (data->buf[j] & 0x0000FFFF);
-	  }
-	  if ((data->buf[j] & 0x00FF0000) == 0x00ec0000) {
-	    value = (data->buf[j] & 0x0000FFFF);
-	  }
-	  dummy.cfg[greg] = value;
-	}
-      }
-      delete data;
-      data = mySpec.readData();
+      if(verbose)
+          std::cout << "Reading reg: " << i << std::endl;
+      fe.readRegister(i);
+      usleep(1000);
       while(!mySpec.isCmdEmpty()) {}
-    }
+      dummy.cfg[i] = 0xDEAD;
+      std::vector<RawDataPtr> dataVec = mySpec.readData();
+      RawDataPtr data;
+      if (dataVec.size() > 0)
+          data = dataVec[0];
+      while(!mySpec.isCmdEmpty()) {}
+      while (data != NULL) {
+          if (data != NULL) {
+              uint32_t greg = 99;
+              uint32_t value = 0;
+              for (unsigned j=0; j<data->getSize();j++) {
+                  if(verbose)
+                      std::cout << "[" << j << "] = 0x" << std::hex << data->get(j) << std::dec << std::endl;
+                  if ((data->get(j) & 0x00FF0000) == 0x00ea0000) {
+                      greg = (data->get(j) & 0x0000FFFF);
+                  }
+                  if ((data->get(j) & 0x00FF0000) == 0x00ec0000) {
+                      value = (data->get(j) & 0x0000FFFF);
+                  }
+                  dummy.cfg[greg] = value;
+              }
+          }
+          dataVec = mySpec.readData();
+          if (dataVec.size() > 0) {
+              data = dataVec[0];
+          } else {
+              data = nullptr;
+          }
+
+          while(!mySpec.isCmdEmpty()) {}
+      }
   }
-    dummy.writeConfig(replica);
+  dummy.writeConfig(replica);
 
   if(verbose)
     replica["FE-I4B"]["GlobalConfig"].dump(4) ;
@@ -151,22 +159,25 @@ int main(int argc, char *argv[]) {
       int row = -1;
       int r = -1;
 
-      RawData *data = mySpec.readData();
+      std::vector<RawDataPtr> dataVec = mySpec.readData();
+      RawDataPtr data;
+      if (dataVec.size() > 0)
+          data = dataVec[0];
       while(!mySpec.isCmdEmpty()) {}
       while (data != NULL) {
 	if (data != NULL) {
-	  for (unsigned j=0; j<data->words;j++) {
+	  for (unsigned j=0; j<data->getSize();j++) {
 
-	    if ((data->buf[j] & 0x00FF0000) == 0x00ef0000) {
-	      j = data->words-1;
+	    if ((data->get(j) & 0x00FF0000) == 0x00ef0000) {
+	      j = data->getSize()-1;
 	    }
 
 	    uint32_t value = 0;
 	    uint32_t addr = 0;
 
 	    // addr
-	    if ((data->buf[j] & 0x00FF0000) == 0x00ea0000) {
-	      addr = (data->buf[j] & 0x0000FFFF);
+	    if ((data->get(j) & 0x00FF0000) == 0x00ea0000) {
+	      addr = (data->get(j) & 0x0000FFFF);
 	      if(verbose)
 		std::cout << "addr: " << std::hex << addr << std::dec << std::endl;
 	      r = ((addr & 0xFF0) >> 0x4);
@@ -175,8 +186,8 @@ int main(int argc, char *argv[]) {
 	    }
 
 	    // value
-	    if ((data->buf[j] & 0x00FF0000) == 0x00ec0000) {
-	      value = (data->buf[j] & 0x0000FFFF);
+	    if ((data->get(j) & 0x00FF0000) == 0x00ec0000) {
+	      value = (data->get(j) & 0x0000FFFF);
 	      // returned bit is inverted
 	      value ^= 0xFFFF;
 	      if(verbose)
@@ -197,8 +208,12 @@ int main(int argc, char *argv[]) {
 	    //   std::cout << "[" << j << "] = 0x" << std::hex << data->buf[j] << std::dec << std::endl;
 	  }
 	}
-	delete data;
-	data = mySpec.readData();
+      dataVec = mySpec.readData();
+      if (dataVec.size() > 0) {
+          data = dataVec[0];
+      } else {
+          data = nullptr;
+      }
 	while(!mySpec.isCmdEmpty()) {}
       }
 

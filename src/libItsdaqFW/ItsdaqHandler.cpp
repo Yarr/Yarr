@@ -24,6 +24,7 @@ public:
       running(true)
   {
     receiver = std::thread( [&] () { ReceiverMain(); });
+    partial_buffer.clear();
   }
 
   ~ItsdaqPrivate();
@@ -44,6 +45,7 @@ private:
   std::atomic<bool> running;
 
   ClipBoard<RawData> rawData;
+  std::vector<uint64_t> partial_buffer;
 
   void QueueData(uint16_t *start, size_t len);
   void ReceiverMain();
@@ -119,7 +121,6 @@ ItsdaqPrivate::~ItsdaqPrivate() {
   while(!rawData.empty()) {
     auto data = rawData.popData();
     count ++;
-    delete [] data->buf;
   }
   if(count) {
     logger->debug(" ...done ({} stray data blocks)", count);
@@ -161,27 +162,30 @@ void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
 
     if(((thisWord>>60) & 0xf) == 0xf) {
       // Timestamp
-
       if(startOffset == i-1) {
         startOffset = i;
         continue;
       }
     } else {
-      // Good data, wait for end
-      continue;
+	// Good data, wait for end and
+	// store good data into partial_buffer
+	partial_buffer.push_back(thisWord);
+	continue;
     }
+
 
     // This word should be first TS after data
     // Copy data to queue (startOffset is last TS before data)
     startOffset ++;
-    size_t len64 = i-startOffset;
+    size_t len64 = partial_buffer.size();
     size_t len32 = len64 * 2;
-    std::unique_ptr<uint32_t[]> buf(new uint32_t[len32]);
+    std::unique_ptr<RawData> data(new RawData(stream, len32));
+    uint32_t *buf = data->getBuf();
     buf[0] = 0;
     size_t buf_off = 0;
     bool seen_sop = false;
     for(int o=0; o<len64; o++) {
-      auto word = get64(o+startOffset);
+      auto word = partial_buffer.at(o);
       // 0-6 bits indicate cntrl (3c, dc, 0 are SOP, EOP, IDLE)
       uint8_t map = word >> 56;
       // logger->trace("QueueData {}: {:016x} {:07b}", o, word, map);
@@ -191,12 +195,12 @@ void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
           // Control byte
           if(byte == 0xdc) {
             size_t n_words = (buf_off+3)/4;
-            rawData.pushData(std::make_unique<RawData>(stream,
-                                                       buf.release(), n_words));
+            rawData.pushData(std::move(data));
             logger->trace("QueueData: {} words (to {}) {}", n_words, i,
-                          (void*)(buf.get()));
+                          (void*)(buf));
             buf_off = 0;
-            buf.reset(new uint32_t[len32]);
+            data = std::make_unique<RawData>(stream, len32);
+            buf = data->getBuf();
             buf[0] = 0;
           } else if(byte == 0x3c) {
             seen_sop = true;
@@ -222,11 +226,12 @@ void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
     }
     if(buf_off > 0) {
       size_t n_words = (buf_off+3)/4;
-      logger->warn("QueueData: Extra (no EOP) {} words ({} from {} to {}) (ptr {})", n_words, buf_off, startOffset, i, (void*)(buf.get()));
-      rawData.pushData(std::make_unique<RawData>(stream, buf.release(), n_words));
+      logger->warn("QueueData: Extra (no EOP) {} words ({} from {} to {}) (ptr {})", n_words, buf_off, startOffset, i, (void*)(buf));
+      rawData.pushData(std::move(data));
     }
 
     startOffset = i;
+    partial_buffer.clear();
   }
 }
 

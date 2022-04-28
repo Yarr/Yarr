@@ -57,25 +57,34 @@ void StdDataGatherer::execPart2() {
 
     SPDLOG_LOGGER_WARN(sdglog, "IMPORTANT! Going into endless loop unless timelimit is set, interrupt with ^c (SIGINT)!");
 
-    std::vector<RawData*> tmp_storage;
-    RawData *newData = NULL;
+    std::vector<RawDataPtr> newData;
     while (!done) {
-        std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(g_stat->record()));
+        std::map<uint32_t, std::unique_ptr<RawDataContainer>> rdcMap;
+        
         done = g_tx->isTrigDone();
         newData =  g_rx->readData();
+        
         // Read all data until buffer is empty
-        while ((newData != NULL || count < 4096) && signaled == 0 && !killswitch) {
-            if (newData != NULL) {
-                count += newData->words;
-                rdc->add(newData);
-                newData = NULL;
+        while (newData.size() > 0 && count < 4096 && signaled == 0 && !killswitch) {
+            if (newData.size() > 0) {
+                for (auto &dataChunk : newData) {
+                    count += dataChunk->getSize();
+                    if (rdcMap[dataChunk->getAdr()] == nullptr) {
+                        rdcMap[dataChunk->getAdr()] = std::make_unique<RawDataContainer>(g_stat->record());
+                    }
+
+                    rdcMap[dataChunk->getAdr()]->add(std::move(dataChunk));
+                }
             }
             // Wait a little bit to increase chance of new data having arrived
             std::this_thread::sleep_for(std::chrono::microseconds(1));
             newData =  g_rx->readData();
         }
+
+        for (auto &[id, rdc] : rdcMap) {
+            storage->at(id).pushData(std::move(rdc));
+        }
         
-        storage->pushData(std::move(rdc));
         count = 0;
 
         if (signaled == 1 || killswitch) {

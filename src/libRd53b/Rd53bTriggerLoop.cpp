@@ -135,7 +135,7 @@ void Rd53bTriggerLoop::execPart1() {
     g_tx->setCmdEnable(keeper->getTxMask());
     auto rd53b = dynamic_cast<Rd53b*>(g_fe);
     dynamic_cast<HwController*>(g_tx)->runMode();
-    rd53b->sendClear(16);
+    //rd53b->sendClear(16);
     while(!g_tx->isCmdEmpty());
     std::this_thread::sleep_for(std::chrono::microseconds(200));
     //std::this_thread::sleep_for(std::chrono::microseconds(10));

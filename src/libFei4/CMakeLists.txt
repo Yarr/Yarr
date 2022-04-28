@@ -23,7 +23,6 @@ add_library(Fei4 SHARED
         Fei4TotScan.cpp
         Fei4TriggerLoop.cpp)
 
-add_dependencies(Fei4 variant)
 post_build_debug_library(Fei4)
 target_include_directories(Fei4 PRIVATE ../libYarr/include)
 target_include_directories(Fei4 PRIVATE ../libUtil/include)

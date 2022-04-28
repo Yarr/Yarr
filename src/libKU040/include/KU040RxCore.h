@@ -30,7 +30,7 @@ class KU040RxCore : virtual public RxCore {
         void disableRx() override;
         void maskRxEnable(uint32_t val, uint32_t mask) override;
 
-        RawData* readData() override;
+        std::vector<RawDataPtr> readData() override;
         
         uint32_t getDataRate() override;
         uint32_t getCurCount() override;

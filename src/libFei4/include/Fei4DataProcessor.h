@@ -24,9 +24,9 @@ class Fei4DataProcessor : public DataProcessor {
         Fei4DataProcessor(unsigned arg_hitDiscCfg=0);
         ~Fei4DataProcessor() override;
         
-        void connect(ClipBoard<RawDataContainer> *arg_input, std::map<unsigned, ClipBoard<EventDataBase> > *arg_outMap) override {
+        void connect(ClipBoard<RawDataContainer> *arg_input, ClipBoard<EventDataBase> *arg_output) override {
             input = arg_input;
-            outMap = arg_outMap;
+            output = arg_output;
         }
     
         void init() override;
@@ -36,17 +36,16 @@ class Fei4DataProcessor : public DataProcessor {
         void process_core();
 
     private:
-        std::vector<std::unique_ptr<std::thread>> thread_ptrs;
+        std::unique_ptr<std::thread> thread_ptr;
         ClipBoard<RawDataContainer> *input;
-        std::map<unsigned, ClipBoard<EventDataBase> > *outMap;
-        std::vector<unsigned> activeChannels;
+        ClipBoard<EventDataBase> *output;
         unsigned hitDiscCfg;
         std::array<std::array<unsigned, 16>, 3> totCode;
-        std::map<unsigned, unsigned> tag;
-        std::map<unsigned, unsigned> l1id;
-        std::map<unsigned, unsigned> bcid;
-        std::map<unsigned, unsigned> wordCount;
-        std::map<unsigned, int> hits;        
+        unsigned tag;
+        unsigned l1id;
+        unsigned bcid;
+        unsigned wordCount;
+        unsigned hits;        
 };
 
 #endif

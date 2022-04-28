@@ -41,12 +41,13 @@ namespace rd53bTest {
     }
 
     std::pair<uint32_t, uint32_t> singleRegRead(HwController *hwCtrl) {
-        RawData *data = hwCtrl->readData();
+        std::vector<RawDataPtr> dataVec = hwCtrl->readData();
+        RawDataPtr data;
         std::pair<uint32_t, uint32_t> answer(999, 666);
         int timeout = 0;
-        if  (data) {
-            answer = Rd53b::decodeSingleRegRead(data->buf[0], data->buf[1]);
-            delete data;
+        if  (dataVec.size() > 0) {
+            data = dataVec[0];
+            answer = Rd53b::decodeSingleRegRead(data->get(0), data->get(1));
         }
         return answer;
     }
@@ -202,15 +203,16 @@ int main (int argc, char *argv[]) {
         
         std::pair<uint32_t, uint32_t> answer(0, 0), answer2(0, 0);
 
-        RawData *data = hwCtrl->readData();
+        std::vector<RawDataPtr> dataVec = hwCtrl->readData();
+        RawDataPtr data;
         int timeout = 0;
-        if  (data) {
-            answer = Rd53b::decodeSingleRegRead(data->buf[0], data->buf[1]);
-            if (data->words>2) {
-                answer2 = Rd53b::decodeSingleRegRead(data->buf[2], data->buf[3]);
+        if  (dataVec.size() > 0) {
+            data = dataVec[0];
+            answer = Rd53b::decodeSingleRegRead(data->get(0), data->get(1));
+            if (data->getSize()>2) {
+                answer2 = Rd53b::decodeSingleRegRead(data->get(2), data->get(3));
             }
-            binOut.write((char*) data->buf, data->words*4);
-            delete data;
+            binOut.write((char*) data->getBuf(), data->getSize()*4);
         }
 
         if (answer.first == addr || answer2.first == addr) {
@@ -273,20 +275,21 @@ int main (int argc, char *argv[]) {
         while(!hwCtrl->isCmdEmpty());
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-        RawData *data = hwCtrl->readData();
-        if  (data) {
-            logger->debug("Received {} words", data->words);
-            for (unsigned i=0; i<data->words;i+=2) {
-                logger->debug("[{}] = {:x} {:x}", i, data->buf[i], data->buf[i+1]);
-                uint32_t tag = (data->buf[i] & 0x7F800000) >> 23;
+        std::vector<RawDataPtr> dataVec = hwCtrl->readData();
+        RawDataPtr data;
+        if  (dataVec.size() > 0) {
+            data = dataVec[0];
+            logger->debug("Received {} words", data->getSize());
+            for (unsigned i=0; i<data->getSize();i+=2) {
+                logger->debug("[{}] = {:x} {:x}", i, data->get(i), data->get(i+1));
+                uint32_t tag = (data->get(i) & 0x7F800000) >> 23;
                 logger->debug("Tag: {} should be {}", tag, (((2*n%50)*4)+i/2));
                 if (tag == (((2*n%50)*4)+i/2)) {
                     ok++;
                 }
-                words_received+=data->words;
+                words_received+=data->getSize();
             }
-            trigOut.write((char*) data->buf, data->words*4);
-            delete data;
+            trigOut.write((char*) data->getBuf(), data->getSize()*4);
         }
 
     }

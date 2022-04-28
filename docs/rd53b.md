@@ -40,8 +40,10 @@ Preferred mode for testing should be LDO mode.
 
 - SLDO mode:
     - Power jumpers the same as for LDO mode
-    - ``SHUNT_EN`` should be closed
+    - ``SHUNT_EN`` jumper should be closed
+    - ``VOFS`` jumper should be closed
     - Crosscheck value of ``R_EXTA``, ``R_EXTD``, ``R_IOFS``, and ``R_IOFS_LB`` to be according to your operational needs (read manual for further info).
+    - Supply current fitting your offset and slope choice, optimal voltage across the module is around 1.6V
 
 ## DAQ specifics for RD53B
 
@@ -58,23 +60,22 @@ Recommended is 640Mbps.
 
 ### Number Data Lanes
 
-At the current point in time it is necessary to only one lane (default). This can be chosen via the ``AuroraActiveLanes`` register where each bit represents one lane.
+Choose the number of active data lanes according to your setup and firmware. This can be chosen via the ``AuroraActiveLanes`` register where each bit represents one lane.
+Typically 16x1 firmware uses one lane ``AuroraActiveLanes = 1`` and 4x4 firmware uses ``AuroraActiveLanes = 15``.
 
 ## Scan Console for RD53B
 
 The general structure of the scanConsole command is:
 ```bash
-bin/scanConsole -r configs/controller/specCfg-rd53b.json -c configs/connectivity/example_rd53b_setup.json -s configs/scans/rd53b/<type of scan>.json -p -n 1
+bin/scanConsole -r configs/controller/specCfg-rd53b.json -c configs/connectivity/example_rd53b_setup.json -s configs/scans/rd53b/<type of scan>.json -p
 ```
 
 which specifies the controller (`-r`), the chip list and chip type (`-c`), and the scan (`-s`). The option `-p` selects plotting so plots are produced after the scans.
 If you run a scan for the first time, it will create a default configuration for the chip along with running the scan.
 
-Note currently the decoder needs to be limited to one thread ``-n 1``.
-
 ## Start-up
 
-### ITkPixV1
+### ITkPixV1.0
 
 ITkPixV1 contains a bug which leads to large current on the digital rail caused by wrongly designed ToT latch. It is not desireable to leave the chip in this high current state for too long without at least passive cooling of some sort. The current can be reduced either by running a ``std_digitalscan`` or the ``clear_tot_mem`` routine (``clear_tot_mem`` might need to be run two times``). Once the current has been reduced it should stay in this mode until fully power cycled.
 
@@ -108,7 +109,7 @@ After ``std_digitalscan`` (depends on exact config):
 
 We recommend the following tuning routine:
 
-1. Tune global threshold to 1500e (Note: edge columns need to be adjusted by hand)
+1. Tune global threshold to 1500e (Note: edge columns need to be adjusted by hand via ``DiffTh1L/R``)
 2. Tune pixel threshold to 1500e
 3. Retune (not changing TDACs) global threshold to 1000e
 4. Retune pixel threshold to 1000e
