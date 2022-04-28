@@ -5,7 +5,9 @@
 #include <iomanip>
 #include <memory>
 #include <numeric>
+#include <getopt.h>
 #include <filesystem>
+namespace fs = std::filesystem;
 
 #include "AllAnalyses.h"
 #include "AllChips.h"
@@ -17,6 +19,7 @@
 #include "AnalysisAlgorithm.h"
 #include "HistogramAlgorithm.h"
 #include "StdHistogrammer.h" // needed for special handling of DataArchiver
+#include "StdAnalysis.h" // needed for special handling of HistogramArchiver
 #include "ScanFactory.h"
 
 #include "logging.h"
@@ -349,7 +352,7 @@ namespace ScanHelper {
     void buildAnalyses( std::map<FrontEnd*,
             std::vector<std::unique_ptr<DataProcessor>> >& analyses,
             const json& scanCfg, Bookkeeper& bookie,
-            ScanBase* s, FeedbackClipboardMap *fbData, int mask_opt) {
+            ScanBase* s, FeedbackClipboardMap *fbData, int mask_opt, std::string outputDir) {
         balog->info("Loading analyses ...");
 
         const json &anaCfg = scanCfg["scan"]["analysis"];
@@ -403,6 +406,11 @@ namespace ScanHelper {
 
                             balog->debug(" connecting feedback (if required)");
                             // analysis->connectFeedback(&(*fbData)[channel]);
+                            if(algo_name == "HistogramArchiver") {
+                                auto archiver = dynamic_cast<HistogramArchiver*>(analysis.get());
+                                archiver->setOutputDirectory(outputDir);
+                            }
+                            
                             ana.addAlgorithm(std::move(analysis));
                         } else {
                             balog->error("Error, Analysis Algorithm \"{} unknown, skipping!", algo_name);
@@ -706,6 +714,7 @@ namespace ScanHelper {
         std::cout << " -l <log_cfg.json> : Provide logger configuration." << std::endl;
         std::cout << " -Q: Set QC scan mode." << std::endl;
         std::cout << " -I: Set interactive mode." << std::endl;
+        std::cout << " --skip-reset: Disable sending global front-end reset command prior to running the scan." << std::endl;
     }
 
     int parseOptions(int argc, char *argv[], ScanOpts &scanOpts) {
@@ -714,15 +723,20 @@ namespace ScanHelper {
         scanOpts.dbUserCfgPath = defaultDbUserCfgPath();
         for (int i=1;i<argc;i++)scanOpts. commandLineStr.append(std::string(argv[i]).append(" "));
         scanOpts.progName=argv[0];
+        static struct option long_options[] = {{"skip-reset", no_argument, 0, 'z'},
+            {0, 0, 0, 0}};
+        int opt_index=0;
         int c;
-        while ((c = getopt(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:l:QI")) != -1) {
+        while ((c = getopt_long(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:l:QIz", long_options, &opt_index)) != -1) {
             int count = 0;
             switch (c) {
                 case 'h':
                     printHelp();
                     return 0;
+                    break;
                 case 'n':
                     scanOpts.nThreads = atoi(optarg);
+                    break;
                     break;
                 case 'k':
                     ScanHelper::listKnown();
@@ -738,7 +752,7 @@ namespace ScanHelper {
                     optind -= 1; //this is a bit hacky, but getopt doesn't support multiple
                     //values for one option, so it can't be helped
                     for (; optind < argc && *argv[optind] != '-'; optind += 1) {
-                        scanOpts.cConfigPaths.emplace_back(argv[optind]);
+                        scanOpts.cConfigPaths.push_back(std::string(argv[optind]));
                     }
                     break;
                 case 'r':
@@ -791,6 +805,9 @@ namespace ScanHelper {
                 case 'I':
                     scanOpts.setInteractiveMode = true;
                     break;
+                case 'z':
+                    scanOpts.doResetBeforeScan = false;
+                    break;
                 case '?':
                     if (optopt == 's' || optopt == 'n') {
                         spdlog::error("Option {} requires a parameter! (Proceeding with default)", (char) optopt);
@@ -808,4 +825,4 @@ namespace ScanHelper {
         }
         return 1;
     }
-} // Close namespace}
+} // Close namespace

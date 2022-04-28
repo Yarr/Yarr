@@ -76,7 +76,7 @@ TEST_CASE("AnalysisChainIO", "[Analysis]") {
 
   // Build analyses
   std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcessor>> > analyses;
-  ScanHelper::buildAnalyses(analyses, scanCfg, bookie, &scan, &fbData, -1);
+  ScanHelper::buildAnalyses(analyses, scanCfg, bookie, &scan, &fbData, -1, "./");
 
   auto& AnalysisProcessors = analyses[bookie.getLastFe()];
   // Check there are three analysis tiers

@@ -228,8 +228,11 @@ int main(int argc, char *argv[]) {
     // Before configuring each FE, broadcast reset to all tx channels
     // Enable all tx channels
     hwCtrl->setCmdEnable(bookie->getTxMaskUnique());
-    // Use global FE
-    bookie->getGlobalFe()->resetAll();
+
+    // send global/broadcast reset command to all frontends
+    if(scanOpts.doResetBeforeScan) {
+        bookie->getGlobalFe()->resetAll();
+    }
 
     for ( FrontEnd* fe : bookie->feList ) {
         auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
@@ -321,7 +324,7 @@ int main(int argc, char *argv[]) {
         ScanHelper::buildRawDataProcs(procs, bookie->feList, chipType);
         ScanHelper::buildHistogrammers(histogrammers, scanCfg, bookie->feList, scanBase.get(), scanOpts.outputDir);
         ScanHelper::buildAnalyses(analyses, scanCfg, *bookie, scanBase.get(),
-                                  &fbData, scanOpts.mask_opt);
+                                  &fbData, scanOpts.mask_opt, scanOpts.outputDir);
     } catch (const char *msg) {
         logger->error("{}", msg);
         return -1;

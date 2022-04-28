@@ -41,7 +41,7 @@ namespace ScanHelper {
                            std::vector<FrontEnd*> &feList,
                            const std::string &chipType);
         void buildAnalyses( std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcessor>> >& analyses,
-                            const json& scanType, Bookkeeper& bookie, ScanBase* s, FeedbackClipboardMap *fbMap, int mask_opt);
+                            const json& scanType, Bookkeeper& bookie, ScanBase* s, FeedbackClipboardMap *fbMap, int mask_opt, std::string outputDir);
         void buildAnalysisHierarchy(std::vector<std::vector<int>>& indexTiers,
                                     const json &anaCfg);
         template <typename T>

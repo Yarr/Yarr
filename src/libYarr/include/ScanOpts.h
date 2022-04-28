@@ -28,5 +28,6 @@ struct ScanOpts {
     std::string commandLineStr;
     std::string progName;
     int nThreads{4};
+    bool doResetBeforeScan = true;
 };
 #endif //YARR_SCANOPTS_H
