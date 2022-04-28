@@ -807,7 +807,13 @@ namespace ScanHelper {
                     } else if (optopt == 'g' || optopt == 'c') {
                         spdlog::error("Option {} requires a parameter! Aborting... ", (char) optopt);
                         return -1;
+                    } else {
+                        spdlog::error("Unknown parameter: {}", (char) optopt);
                     }
+                    break;
+                default:
+                    spdlog::critical("Error while parsing command line parameters!");
+                    return -1;
             }
         }
         return 1;
