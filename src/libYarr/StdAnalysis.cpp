@@ -75,6 +75,29 @@ namespace {
     bool param_registered = 
       StdDict::registerAnalysis("ParameterAnalysis",
 				[]() { return std::unique_ptr<AnalysisAlgorithm>(new ParameterAnalysis());});
+
+    bool archiver_registered = 
+      StdDict::registerAnalysis("HistogramArchiver",
+				[]() { return std::unique_ptr<AnalysisAlgorithm>(new HistogramArchiver());});
+
+}
+
+void HistogramArchiver::init(ScanBase *s) {
+}
+
+void HistogramArchiver::processHistogram(HistogramBase *histo) {
+  FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
+
+  std::string name = feCfg->getName();
+
+  histo->toFile(name, output_dir);
+}
+
+void HistogramArchiver::loadConfig(const json &j){
+}
+
+void HistogramArchiver::setOutputDirectory(std::string dir) {
+  output_dir = dir;
 }
 
 void OccupancyAnalysis::init(ScanBase *s) {

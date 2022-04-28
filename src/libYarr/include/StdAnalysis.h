@@ -12,10 +12,10 @@
 
 #include "AnalysisAlgorithm.h"
 
-class HistogramBase;
-class Histo1d;
-class Histo2d;
-class Histo3d;
+// Need size to make unique_ptr destructors
+#include "Histo1d.h"
+#include "Histo2d.h"
+#include "Histo3d.h"
 
 class OccupancyAnalysis : public AnalysisAlgorithm {
     public:
@@ -34,6 +34,21 @@ class OccupancyAnalysis : public AnalysisAlgorithm {
         unsigned injections;
         std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
         std::map<unsigned, unsigned> innerCnt;
+};
+
+class HistogramArchiver : public AnalysisAlgorithm {
+    public:
+        HistogramArchiver() = default;
+        ~HistogramArchiver() override = default;
+
+        void init(ScanBase *s) override;
+        void processHistogram(HistogramBase *h) override;
+        void end() override {}
+        void loadConfig(const json &config) override;
+
+        void setOutputDirectory(std::string dir);
+    private:
+        std::string output_dir;
 };
 
 class TotAnalysis : public AnalysisAlgorithm {

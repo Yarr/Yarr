@@ -19,6 +19,7 @@ namespace fs = std::filesystem;
 #include "AnalysisAlgorithm.h"
 #include "HistogramAlgorithm.h"
 #include "StdHistogrammer.h" // needed for special handling of DataArchiver
+#include "StdAnalysis.h" // needed for special handling of HistogramArchiver
 #include "ScanFactory.h"
 
 #include "logging.h"
@@ -350,7 +351,7 @@ namespace ScanHelper {
     void buildAnalyses( std::map<FrontEnd*,
             std::vector<std::unique_ptr<DataProcessor>> >& analyses,
             const json& scanCfg, Bookkeeper& bookie,
-            ScanBase* s, FeedbackClipboardMap *fbData, int mask_opt) {
+            ScanBase* s, FeedbackClipboardMap *fbData, int mask_opt, std::string outputDir) {
         balog->info("Loading analyses ...");
 
         const json &anaCfg = scanCfg["scan"]["analysis"];
@@ -404,6 +405,11 @@ namespace ScanHelper {
 
                             balog->debug(" connecting feedback (if required)");
                             // analysis->connectFeedback(&(*fbData)[channel]);
+                            if(algo_name == "HistogramArchiver") {
+                                auto archiver = dynamic_cast<HistogramArchiver*>(analysis.get());
+                                archiver->setOutputDirectory(outputDir);
+                            }
+                            
                             ana.addAlgorithm(std::move(analysis));
                         } else {
                             balog->error("Error, Analysis Algorithm \"{} unknown, skipping!", algo_name);
