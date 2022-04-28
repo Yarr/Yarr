@@ -17,11 +17,8 @@
 #include "AnalysisAlgorithm.h"
 #include "HistogramAlgorithm.h"
 #include "StdHistogrammer.h" // needed for special handling of DataArchiver
-<<<<<<< HEAD
 #include "StdAnalysis.h" // needed for special handling of HistogramArchiver
-=======
 #include "ScanFactory.h"
->>>>>>> devel
 
 #include "logging.h"
 #include "LoggingConfig.h"

@@ -190,7 +190,7 @@ int ScanConsoleImpl::setupScan() {
         ScanHelper::buildRawDataProcs(procs, bookie->feList, chipType);
         ScanHelper::buildHistogrammers(histogrammers, scanOpts.scanType, bookie->feList, scanBase.get(), scanOpts.outputDir);
         ScanHelper::buildAnalyses(analyses, scanCfg, *bookie, scanBase.get(),
-                                  &fbData, scanOpts.mask_opt);
+                                  &fbData, scanOpts.mask_opt, scanOpts.outputDir);
     } catch (const char *msg) {
         logger->error("{}", msg);
         return -1;
