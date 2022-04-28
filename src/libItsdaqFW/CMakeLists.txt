@@ -6,7 +6,7 @@ add_library(ItsdaqFW SHARED
         ItsdaqTxCore.cpp
         UdpSocket.cpp
         )
-add_dependencies(ItsdaqFW variant)
+post_build_debug_library(ItsdaqFW)
 target_include_directories(ItsdaqFW PRIVATE ../libYarr/include)
 target_include_directories(ItsdaqFW PRIVATE ../libUtil/include)
 target_include_directories(ItsdaqFW PUBLIC ./include)

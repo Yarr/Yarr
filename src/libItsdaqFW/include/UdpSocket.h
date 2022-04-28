@@ -2,6 +2,8 @@
 #define HSIO_UDP_SOCKET_H
 
 #include <array>
+#include <cstddef>
+#include <cstdint>
 #include <vector>
 
 /// Wrap UDP socket to send recieve ITSDAQ format packets

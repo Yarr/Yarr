@@ -21,9 +21,9 @@ class Fe65p2DataProcessor : public DataProcessor {
         Fe65p2DataProcessor();
         ~Fe65p2DataProcessor() override;
 
-        void connect(ClipBoard<RawDataContainer> *arg_input, std::map<unsigned, ClipBoard<EventDataBase> > *arg_outMap) override {
+        void connect(ClipBoard<RawDataContainer> *arg_input, ClipBoard<EventDataBase> *arg_output) override {
             input = arg_input;
-            outMap = arg_outMap;
+            output = arg_output;
         }
 
         void init() override;
@@ -33,15 +33,14 @@ class Fe65p2DataProcessor : public DataProcessor {
         void process_core();
 
     private:
-        std::vector<std::unique_ptr<std::thread>> thread_ptrs;
+        std::unique_ptr<std::thread> thread_ptr;
         ClipBoard<RawDataContainer> *input;
-        std::map<unsigned, ClipBoard<EventDataBase> > *outMap;
-        std::vector<unsigned> activeChannels;
-        std::map<unsigned, unsigned> tag;
-        std::map<unsigned, unsigned> l1id;
-        std::map<unsigned, unsigned> bcid;
-        std::map<unsigned, unsigned> wordCount;
-        std::map<unsigned, int> hits;        
+        ClipBoard<EventDataBase>  *output;
+        unsigned tag;
+        unsigned l1id;
+        unsigned bcid;
+        unsigned wordCount;
+        unsigned hits;        
 
 };
 

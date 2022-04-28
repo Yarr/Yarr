@@ -34,8 +34,8 @@ uint16_t Rd53aPixelCfg::maskBits(uint16_t val, unsigned mask) {
 
 // TODO optimise this
 void Rd53aPixelCfg::setEn(unsigned col, unsigned row, unsigned v) {
-    Rd53aPixelCfg::pixelBits tmp;
-    Rd53aPixelCfg::pixelBits mask;
+    Rd53aPixelCfg::pixelBits tmp{};
+    Rd53aPixelCfg::pixelBits mask{};
     mask.u8 = 0x0;
     mask.s.en = 0x1;
     // Set bit
@@ -47,8 +47,8 @@ void Rd53aPixelCfg::setEn(unsigned col, unsigned row, unsigned v) {
 }
 
 void Rd53aPixelCfg::setHitbus(unsigned col, unsigned row, unsigned v) {
-    Rd53aPixelCfg::pixelBits tmp;
-    Rd53aPixelCfg::pixelBits mask;
+    Rd53aPixelCfg::pixelBits tmp{};
+    Rd53aPixelCfg::pixelBits mask{};
     mask.u8 = 0x0;
     mask.s.hitbus = 0x1;
     tmp.s.hitbus = v;
@@ -57,8 +57,8 @@ void Rd53aPixelCfg::setHitbus(unsigned col, unsigned row, unsigned v) {
 }
 
 void Rd53aPixelCfg::setInjEn(unsigned col, unsigned row, unsigned v) {
-    Rd53aPixelCfg::pixelBits tmp;
-    Rd53aPixelCfg::pixelBits mask;
+    Rd53aPixelCfg::pixelBits tmp{};
+    Rd53aPixelCfg::pixelBits mask{};
     mask.u8 = 0x0;
     mask.s.injen = 0x1;
     tmp.s.injen = v;
@@ -67,8 +67,8 @@ void Rd53aPixelCfg::setInjEn(unsigned col, unsigned row, unsigned v) {
 }
 
 void Rd53aPixelCfg::setTDAC(unsigned col, unsigned row, int v) {
-    Rd53aPixelCfg::pixelBits tmp;
-    Rd53aPixelCfg::pixelBits mask;
+    Rd53aPixelCfg::pixelBits tmp{};
+    Rd53aPixelCfg::pixelBits mask{};
     mask.u8 = 0x0;
     mask.s.tdac = 0xF;
     mask.s.sign = 0x1;
@@ -87,25 +87,25 @@ void Rd53aPixelCfg::setTDAC(unsigned col, unsigned row, int v) {
 }
 
 unsigned Rd53aPixelCfg::getEn(unsigned col, unsigned row) {
-    Rd53aPixelCfg::pixelBits tmp;
+    Rd53aPixelCfg::pixelBits tmp{};
     tmp.u8 = (pixRegs[this->toIndex(col, row)] >> ((col%2)*8)) & 0xFF;
     return tmp.s.en;
 }
 
 unsigned Rd53aPixelCfg::getHitbus(unsigned col, unsigned row) {
-    Rd53aPixelCfg::pixelBits tmp;
+    Rd53aPixelCfg::pixelBits tmp{};
     tmp.u8 = (pixRegs[this->toIndex(col, row)] >> ((col%2)*8)) & 0xFF;
     return tmp.s.hitbus;
 }
 
 unsigned Rd53aPixelCfg::getInjEn(unsigned col, unsigned row) {
-    Rd53aPixelCfg::pixelBits tmp;
+    Rd53aPixelCfg::pixelBits tmp{};
     tmp.u8 = (pixRegs[this->toIndex(col, row)] >> ((col%2)*8)) & 0xFF;
     return tmp.s.injen;
 }
 
 int Rd53aPixelCfg::getTDAC(unsigned col, unsigned row) {
-    Rd53aPixelCfg::pixelBits tmp;
+    Rd53aPixelCfg::pixelBits tmp{};
     tmp.u8 = (pixRegs[this->toIndex(col, row)] >> ((col%2)*8)) & 0xFF;
     int tdac = tmp.s.tdac;
     if (tmp.s.sign == 0x1 && col >= 264) {

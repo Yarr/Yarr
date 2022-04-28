@@ -170,12 +170,19 @@ void Histo1d::toJson(json &j) const {
     j["Underflow"] = underflow;
     j["Overflow"] = overflow;
 
+    j["Entries"] = entries;
+
+    for (unsigned i=0; i<lStat.size(); i++)
+        j["loopStatus"][i] = (lStat.get(i));
+
     for (unsigned int i=0; i<bins; i++)
         j["Data"][i] = data[i];
 }
 
 void Histo1d::toFile(const std::string &prefix, const std::string &dir, bool jsonType) const{
     std::string filename = dir + prefix + "_" + HistogramBase::name;
+    for (unsigned i=0; i<lStat.size(); i++)
+        filename += "_" + std::to_string(lStat.get(i));
     if (jsonType) {
         filename += ".json";
     } else {
@@ -228,12 +235,12 @@ bool Histo1d::fromFile(const std::string &filename) {
         xlow = j["x"]["Low"];
         xhigh = j["x"]["High"];
 
-        underflow = j["underflow"];
-        overflow = j["overflow"];
+        underflow = j["Underflow"];
+        overflow = j["Overflow"];
 
         data.resize(bins);
         for (unsigned i=0; i<bins; i++)
-            data[i] = j["data"][i];
+            data[i] = j["Data"][i];
     }
     file.close();
     return true;

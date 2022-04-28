@@ -29,7 +29,7 @@ void StdParameterLoop::init() {
 }
 
 void StdParameterLoop::execPart1() {
-    SPDLOG_LOGGER_DEBUG(spllog, "ParameterLoop at -> {}", m_cur);
+    SPDLOG_LOGGER_DEBUG(spllog, "ParameterLoop for {} at -> {}", parName, m_cur);
     g_stat->set(this, m_cur);
 }
 
@@ -72,7 +72,7 @@ void StdParameterLoop::loadConfig(const json &j) {
     if (j.contains("step"))
         step = j["step"];
     if (j.contains("parameter")) {
-        SPDLOG_LOGGER_INFO(spllog, "Linking parameter: {}", std::string(j["parameter"]));
+        SPDLOG_LOGGER_DEBUG(spllog, "Linking parameter: {}", std::string(j["parameter"]));
         parName = j["parameter"];
     }
     if (j.contains("waitTime")) {

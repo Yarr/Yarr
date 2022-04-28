@@ -10,6 +10,7 @@
 // ################################
 
 #include <string>
+#include <utility>
 
 #include "ClipBoard.h"
 #include "HistogramBase.h"
@@ -40,6 +41,9 @@ class FrontEnd {
        
         virtual void configure()=0;
         virtual int checkCom() {return 1;}
+        virtual bool hasValidName() { return true; }
+
+        virtual void resetAll() {}
 
         /// Write to a register using a string name (most likely from json)
         virtual void writeNamedRegister(std::string name, uint16_t value) = 0;
@@ -47,9 +51,10 @@ class FrontEnd {
         virtual void setInjCharge(double, bool, bool) = 0;
 
         // Set of events
+        ClipBoard<RawDataContainer> *clipRawData;
         ClipBoard<EventDataBase> *clipData;
         ClipBoard<HistogramBase> *clipHisto;
-        ClipBoard<HistogramBase> *clipResult;
+        std::vector<std::unique_ptr<ClipBoard<HistogramBase>> > *clipResult;
 
         //Fei4Analysis *ana;
         //Fei4Histogrammer *histogrammer;
@@ -68,6 +73,7 @@ class FrontEndCfg {
             txChannel = 99;
             rxChannel = 99;
             lockCfg = false;
+            enforceChipIdInName = false;
         }
         virtual ~FrontEndCfg()= default;
         
@@ -83,13 +89,12 @@ class FrontEndCfg {
 		unsigned getTxChannel() const {return txChannel;}
 		unsigned getRxChannel() const {return rxChannel;}
         std::string getName() {return name;}
+        bool checkChipIdInName() { return enforceChipIdInName; }
+
         
         void setChannel(unsigned channel) {txChannel = channel; rxChannel = channel;}
 		void setChannel(unsigned arg_txChannel, unsigned arg_rxChannel) {txChannel = arg_txChannel; rxChannel = arg_rxChannel;}
-        void setName(std::string arg_name) {name = arg_name;}
-
-        void setConfigFile(std::string arg_configFile) {configFile = arg_configFile;}
-        std::string getConfigFile() {return configFile;}
+        void setName(std::string arg_name) {name = std::move(arg_name);}
     
         bool isLocked() const {return lockCfg;}
         void setLocked(bool v) {lockCfg = v;}
@@ -97,8 +102,8 @@ class FrontEndCfg {
         std::string name;
         unsigned txChannel;
         unsigned rxChannel;
-        std::string configFile;
         bool lockCfg;
+        bool enforceChipIdInName;
 };
 
 #endif

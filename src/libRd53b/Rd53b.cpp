@@ -23,6 +23,7 @@ bool rd53b_registred =
 Rd53b::Rd53b() : FrontEnd(), Rd53bCfg(), Rd53bCmd(){
     txChannel = 99;
     rxChannel = 99;
+    enforceChipIdInName = true;
     active = true;
     geo.nRow = 384;
     geo.nCol = 400;
@@ -32,6 +33,7 @@ Rd53b::Rd53b(HwController *core) : FrontEnd(), Rd53bCfg(), Rd53bCmd(core) {
     m_rxcore = core;
     txChannel = 99;
     rxChannel = 99;
+    enforceChipIdInName = true;
     active = true;
     geo.nRow = 384;
     geo.nCol = 400;
@@ -42,6 +44,7 @@ Rd53b::Rd53b(HwController *core, unsigned arg_channel) : FrontEnd(), Rd53bCfg(),
     m_rxcore = core;
     txChannel = arg_channel;
     rxChannel = arg_channel;
+    enforceChipIdInName = true;
     active = true;
     geo.nRow = 384;
     geo.nCol = 400;
@@ -53,33 +56,15 @@ void Rd53b::init(HwController *core, unsigned arg_txChannel, unsigned arg_rxChan
     m_rxcore = core;
     txChannel = arg_txChannel;
     rxChannel = arg_rxChannel;
+    enforceChipIdInName = true;
     geo.nRow = 384;
     geo.nCol = 400;
     core->setClkPeriod(6.25e-9);
 }
 
-void Rd53b::configure() {
-    this->configureInit();
-    this->configureGlobal();
-    this->configurePixels();
-}
-
-void Rd53b::enableAll() {
-    logger->info("Resetting enable/hitbus pixel mask to all enabled!");
-    for (unsigned int col = 0; col < n_Col; col++) {
-        for (unsigned row = 0; row < n_Row; row ++) {
-            setEn(col, row, 1);
-            setHitbus(col, row, 1);
-        }
-    }
-}
-
-void Rd53b::configureInit() {
-    logger->debug("Initiliasing chip ...");
-    
-    // TODO this should only be done once per TX!
+void Rd53b::resetAll() {
+    logger->debug("Performing hard reset ...");
     // Send low number of transitions for at least 10us to put chip in reset state 
-    
     logger->debug(" ... asserting CMD reset via low activity");
     for (unsigned int i=0; i<400; i++) {
         // Pattern corresponds to approx. 0.83MHz
@@ -104,6 +89,27 @@ void Rd53b::configureInit() {
     core->releaseFifo();
     while(!core->isCmdEmpty()){;}
 
+}
+
+void Rd53b::configure() {
+    this->configureInit();
+    this->configureGlobal();
+    this->configurePixels();
+}
+
+void Rd53b::enableAll() {
+    logger->info("Resetting enable/hitbus pixel mask to all enabled!");
+    for (unsigned int col = 0; col < n_Col; col++) {
+        for (unsigned row = 0; row < n_Row; row ++) {
+            setEn(col, row, 1);
+            setHitbus(col, row, 1);
+        }
+    }
+}
+
+void Rd53b::configureInit() {
+    logger->debug("Initiliasing chip ...");
+    
     // Enable register writing to do more resetting
     logger->debug(" ... set global register in writeable mode");
     this->writeRegister(&Rd53b::GcrDefaultConfig, 0xAC75);
@@ -133,7 +139,8 @@ void Rd53b::configureInit() {
     uint16_t tmpEnCoreCol1 = this->EnCoreCol1.read();
     uint16_t tmpEnCoreCol2 = this->EnCoreCol2.read();
     uint16_t tmpEnCoreCol3 = this->EnCoreCol3.read();
-
+    
+    // TODO this could be problematic for low power config
     for (unsigned i=0; i<16; i++) {
         this->writeRegister(&Rd53b::RstCoreCol0, 1<<i);
         this->writeRegister(&Rd53b::RstCoreCol1, 1<<i);
@@ -295,15 +302,19 @@ int Rd53b::checkCom() {
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     // TODO not happy about this, rx knowledge should not be here
-    RawData *data = m_rxcore->readData();
+    std::vector<RawDataPtr> dataVec = m_rxcore->readData();
+    RawDataPtr data;
+    if (dataVec.size() > 0) {
+        data = dataVec[0];
+    }
 
     if (data != NULL) {
-        
-        if (!(data->words == 2 || data->words == 4 || data->words == 8 || data->words == 12 || data->words == 6)) {
-            logger->error("Received wrong number of words ({}) for {}", data->words, this->name);
+        unsigned size = data->getSize();       
+        if (!(size == 2 || size == 4 || size == 8 || size == 12 || size == 6)) {
+            logger->error("Received wrong number of words ({}) for {}", data->getSize(), this->name);
             return 0;
         }
-        std::pair<uint32_t, uint32_t> answer = decodeSingleRegRead(data->buf[0], data->buf[1]);
+        std::pair<uint32_t, uint32_t> answer = decodeSingleRegRead(data->get(0), data->get(1));
         logger->debug("Addr ({}) Value({})", answer.first, answer.second);
 
         if (answer.first != regAddr || answer.second != regValue) {
@@ -321,6 +332,34 @@ int Rd53b::checkCom() {
     }
 }
 
+bool Rd53b::hasValidName() {
+
+    // return true if no check is requested
+    if(auto cfg = dynamic_cast<Rd53bCfg*>(this); !cfg->checkChipIdInName()) {
+        return true;
+    }
+
+    // Rd53b stores serial numbers in on-chip registers, so service blocks be
+    // enabled in order to query them
+    if (this->ServiceBlockEn.read() == 0) {
+        logger->error("Register messages not enabled, can't check chip id (set \"ServiceBlockEn\" to 1 in chip config");
+        return false;
+    }
+
+    // if user is requested to enforce that the chip id be in the FrontEnd "name"
+    // field, then readback the E-fuses to get the actual chip's ID
+    itkpix_efuse_codec::EfuseData efuse_data = this->readEfuses();
+    std::stringstream id_from_efuse;
+    id_from_efuse << std::hex << efuse_data.chip_sn();
+    bool id_in_name = name.find(id_from_efuse.str()) != std::string::npos;
+    if(!id_in_name) {
+        logger->error("Chip serial number from e-fuse data (0x{:x}) does not appear in Chip \"name\" field (\"{}\") in loaded configuration  for chip with ChipId = {}", efuse_data.chip_sn(), name, m_chipId);
+        return false;
+    }
+    logger->info("Chip serial number obtained from e-fuse data: 0x{:x} (decoded e-fuse data: 0x{:x})", efuse_data.chip_sn(), efuse_data.raw());
+    return true;
+}
+
 std::pair<uint32_t, uint32_t> Rd53b::decodeSingleRegRead(uint32_t higher, uint32_t lower) {
     if ((higher & 0x55000000) == 0x55000000) {
         return std::make_pair((lower>>16)&0x3FF, lower&0xFFFF);
@@ -333,8 +372,74 @@ std::pair<uint32_t, uint32_t> Rd53b::decodeSingleRegRead(uint32_t higher, uint32
     return std::make_pair(999, 666);
 }
 
-void Rd53b::confADC(uint16_t MONMUX, bool doCur)
-{
+itkpix_efuse_codec::EfuseData Rd53b::readEfuses() {
+
+    //
+    // put E-fuse programmer circuit block into READ mode
+    //
+    this->writeRegister(&Rd53b::EfuseConfig, 0x0f0f);
+    while(!core->isCmdEmpty()) {}
+
+    //
+    // send E-fuse circuit the reset signal to halt any other state (reset E-fuse block FSM)
+    //
+    //this->writeRegister(&Rd53b::GlobalPulseConf, 0x100);
+    //this->writeRegister(&Rd53b::GlobalPulseWidth, 200);
+    //while(!core->isCmdEmpty()) {}
+    //this->sendGlobalPulse(m_chipId);
+
+    //
+    // read back the E-fuse registers
+    //
+    uint32_t efuse_data_0 = 0;
+    uint32_t efuse_data_1 = 0;
+    try {
+        efuse_data_0 = readSingleRegister(&Rd53b::EfuseReadData0);
+        efuse_data_1 = readSingleRegister(&Rd53b::EfuseReadData1);
+    } catch (std::exception& e) {
+        logger->warn("Failed to readback E-fuse data for chip with {}, exception received: {}", m_chipId, e.what());
+        return itkpix_efuse_codec::EfuseData{0};
+    }
+    uint32_t efuse_data = ((efuse_data_1 & 0xffff) << 16) | (efuse_data_0 & 0xffff);
+
+    // decode the e-fuse data (performs single-bit error-correction)
+    std::string decoded_efuse_binary_str = itkpix_efuse_codec::decode(efuse_data);
+    return itkpix_efuse_codec::EfuseData{decoded_efuse_binary_str};
+}
+
+uint32_t Rd53b::readSingleRegister(Rd53bReg Rd53bGlobalCfg::*ref) {
+    // send a read register command to the chip so that it
+    // sends back the current value of the register
+    this->sendRdReg(m_chipId, (this->*ref).addr());
+    while(!core->isCmdEmpty()) {}
+    std::this_thread::sleep_for(std::chrono::milliseconds(1)) ;
+
+    // go through the incoming data stream and get the register read data
+    std::vector<RawDataPtr> dataVec = m_rxcore->readData();
+    RawDataPtr data;
+    if (dataVec.size() > 0) {
+        data = dataVec[0];
+    }
+    
+    if(data != NULL) {
+        if(!(data->getSize() >= 2)) {
+            logger->warn("readSingleRegister failed, received wrong number of words ({}) for FE with chipId {}", data->getSize(), m_chipId);
+            return 0;
+        }
+
+        auto [received_address, register_value] = Rd53b::decodeSingleRegRead(data->get(0), data->get(1));
+        if(received_address != (this->*ref).addr()) {
+            logger->warn("readSingleRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
+            return 0;
+        }
+        return register_value;
+    }
+
+    logger->warn("readSingleRegister failed, did not received register readback data from chip with chipId {}", m_chipId);
+    return 0;
+}
+    
+void Rd53b::confAdc(uint16_t MONMUX, bool doCur) {
     //This only works for voltage MUX values.
     uint16_t OriginalGlobalRT = this->GlobalPulseConf.read();
     uint16_t OriginalMonitorEnable = this->MonitorEnable.read(); //Enabling monitoring
@@ -379,8 +484,7 @@ void Rd53b::confADC(uint16_t MONMUX, bool doCur)
     std::this_thread::sleep_for(std::chrono::microseconds(100));
 }
 
-void Rd53b::runRingOsc(uint16_t duration, bool isBankB)
-{
+void Rd53b::runRingOsc(uint16_t duration, bool isBankB) {
     uint16_t OriginalGlobalRT = this->GlobalPulseConf.read();
 
     this->writeRegister(&Rd53b::GlobalPulseConf, isBankB ? 0x4000 : 0x2000); //Ring Osc Enable Rout

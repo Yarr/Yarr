@@ -74,6 +74,10 @@ void StarEmu::decodeLCB(LCB::Frame frame) {
         return;
     }
 
+    // Overwrite data that are older than L0 buffer depth
+    // Fill L0 buffer with zeros and BCID for this LCB frame (4 BCs)
+    this->fillL0Buffer();
+
     // {code0, code1}
     uint8_t code0 = (frame >> 8) & 0xff;
     uint8_t code1 = frame & 0xff;
@@ -214,8 +218,8 @@ class EmuRxCore<StarChips> : virtual public RxCore {
         void enableRx();
         std::vector<uint32_t> listRx();
 
-        RawData* readData() override;
-        RawData* readData(uint32_t chn);
+        std::vector<RawDataPtr> readData() override;
+        RawDataPtr readData(uint32_t chn);
         
         uint32_t getDataRate() override {return 0;}
         uint32_t getCurCount(uint32_t chn) {return m_queues[chn]->empty()?0:1;}
@@ -253,7 +257,6 @@ EmuRxCore<StarChips>::~EmuRxCore() {
     for (auto& q : m_queues) {
         while(not q.second->empty()) {
             std::unique_ptr<RawData> tmp = q.second->popData();
-            delete [] tmp->buf;
         }
     }
 }
@@ -271,24 +274,25 @@ ClipBoard<RawData>* EmuRxCore<StarChips>::getCom(uint32_t chn) {
     }
 }
 
-RawData* EmuRxCore<StarChips>::readData(uint32_t chn) {
+RawDataPtr EmuRxCore<StarChips>::readData(uint32_t chn) {
     // //std::this_thread::sleep_for(std::chrono::microseconds(1));
     if(m_queues[chn]->empty()) return nullptr;
 
     std::unique_ptr<RawData> rd = m_queues[chn]->popData();
     // set rx channel number
-    rd->adr = chn;
+    rd->getAdr() = chn;
 
-    return rd.release();
+    return std::move(rd);
 }
 
-RawData* EmuRxCore<StarChips>::readData() {
-    for (auto& q : m_queues) {
+std::vector<RawDataPtr> EmuRxCore<StarChips>::readData() {
+    std::vector<RawDataPtr> dataVec;
+   for (auto& q : m_queues) {
         if (not m_channels[q.first]) continue;
         if (q.second->empty()) continue;
-        return EmuRxCore<StarChips>::readData(q.first);
+        dataVec.push_back(EmuRxCore<StarChips>::readData(q.first));
     }
-    return nullptr;
+    return dataVec;
 }
 
 void EmuRxCore<StarChips>::setRxEnable(uint32_t channel) {

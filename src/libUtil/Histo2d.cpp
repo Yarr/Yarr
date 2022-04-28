@@ -251,6 +251,11 @@ void Histo2d::toJson(json &j) const{
     j["Underflow"] = underflow;
     j["Overflow"] = overflow;
 
+    j["Entries"] = entries;
+
+    for (unsigned i=0; i<lStat.size(); i++)
+        j["loopStatus"][i] = (lStat.get(i));
+
     for (unsigned int y=0; y<ybins; y++) {
         for (unsigned int x=0; x<xbins; x++) {
             j["Data"][x][y] = data[y+(x*ybins)] ;
@@ -261,6 +266,8 @@ void Histo2d::toJson(json &j) const{
 void Histo2d::toFile(const std::string &prefix, const std::string &dir, bool jsonType) const{
     std::string filename = dir + prefix + "_" + HistogramBase::name;
     json j;
+    for (unsigned i=0; i<lStat.size(); i++)
+        filename += "_" + std::to_string(lStat.get(i));
 
     if (jsonType) {
         filename += ".json";
@@ -314,16 +321,16 @@ bool Histo2d::fromFile(const std::string &filename) {
         xhigh = j["x"]["High"];
 
         ybins = j["y"]["Bins"];
-        xlow = j["y"]["Low"];
-        xhigh = j["y"]["High"];
+        ylow = j["y"]["Low"];
+        yhigh = j["y"]["High"];
         
-        underflow = j["underflow"];
-        overflow = j["overflow"];
+        underflow = j["Underflow"];
+        overflow = j["Overflow"];
 
         data = std::vector<double>(xbins*ybins);
-        for (unsigned int x=0; x<ybins; x++) {
-            for (unsigned int y=0; y<xbins; y++) {
-                data[x+(y*ybins)] = j["Data"][x][y];
+        for (unsigned int y=0; y<ybins; y++) {
+            for (unsigned int x=0; x<xbins; x++) {
+                data[y+(x*ybins)] = j["Data"][x][y];
             }
         }
     }

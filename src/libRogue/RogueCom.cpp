@@ -53,10 +53,10 @@ void RogueSender::send(uint8_t *data,uint32_t size) {
 void RogueReceiver::acceptFrame ( std::shared_ptr<rogue::interfaces::stream::Frame> frame) {
 	uint32_t nbytes = frame->getPayload();
 	// Iterators to start and end of frame
-	rogue::interfaces::stream::Frame::iterator iter;
+        rogue::interfaces::stream::FrameIterator iter;
 	std::shared_ptr<rogue::interfaces::stream::FrameLock> lock = frame->lock();
 	iter = frame->beginRead();
-	rogue::interfaces::stream::Frame::iterator  end = frame->endRead();
+	auto  end = frame->endRead();
 
 	//Iterate through contigous buffers
 	while ( iter != end ) {
@@ -215,8 +215,8 @@ void RogueCom::connect(const std::string &conn) {
       axidata[3] =  rogue::hardware::axi::AxiStreamDma::create(devname,3+4,true); 
 	}
     srp = rogue::protocols::srp::SrpV3::create();
-    axisrp->setSlave(srp);
-    srp->setSlave(axisrp);
+    axisrp->addSlave(srp);
+    srp->addSlave(axisrp);
     mast = rogue::interfaces::memory::Master::create();
     mast->setSlave(srp);
 	if(_type==0){//old FEB
@@ -230,10 +230,10 @@ void RogueCom::connect(const std::string &conn) {
     configStream[2] = std::make_shared<RogueSender>(2+0, _type);
     configStream[3] = std::make_shared<RogueSender>(3+0, _type);
 	}
-    configStream[0]->setSlave(axicfg[0]);
-    configStream[1]->setSlave(axicfg[1]);
-    configStream[2]->setSlave(axicfg[2]);
-    configStream[3]->setSlave(axicfg[3]);
+    configStream[0]->addSlave(axicfg[0]);
+    configStream[1]->addSlave(axicfg[1]);
+    configStream[2]->addSlave(axicfg[2]);
+    configStream[3]->addSlave(axicfg[3]);
 	if(_type==0){//old FEB
       debugStream[0]=std::make_shared<RogueReceiver>(0+1, _type, this->getInstance());
       debugStream[1]=std::make_shared<RogueReceiver>(1+1, _type, this->getInstance());
@@ -253,14 +253,14 @@ void RogueCom::connect(const std::string &conn) {
       dataStream[2] = std::make_shared<RogueReceiver>(2+4, _type,this->getInstance());
       dataStream[3] = std::make_shared<RogueReceiver>(3+4, _type,this->getInstance());
 	}
-    axidata[0]->setSlave(dataStream[0]);
-    axidata[1]->setSlave(dataStream[1]);
-    axidata[2]->setSlave(dataStream[2]);
-    axidata[3]->setSlave(dataStream[3]);
-    axicfg[0]->setSlave(debugStream[0]);
-    axicfg[1]->setSlave(debugStream[1]);
-    axicfg[2]->setSlave(debugStream[2]);
-    axicfg[3]->setSlave(debugStream[3]);
+    axidata[0]->addSlave(dataStream[0]);
+    axidata[1]->addSlave(dataStream[1]);
+    axidata[2]->addSlave(dataStream[2]);
+    axidata[3]->addSlave(dataStream[3]);
+    axicfg[0]->addSlave(debugStream[0]);
+    axicfg[1]->addSlave(debugStream[1]);
+    axicfg[2]->addSlave(debugStream[2]);
+    axicfg[3]->addSlave(debugStream[3]);
   }
   else if (conn.find("ip://")== 0 ) {
     std::string ip=conn;
@@ -270,18 +270,18 @@ void RogueCom::connect(const std::string &conn) {
       udp = rogue::protocols::udp::Client::create(ip,8192,true);
       udp->setRxBufferCount(128); 
       rssi = rogue::protocols::rssi::Client::create(udp->maxPayload());
-      udp->setSlave(rssi->transport());
-      rssi->transport()->setSlave(udp);
+      udp->addSlave(rssi->transport());
+      rssi->transport()->addSlave(udp);
 
       // Packetizer, ibCrc = false, obCrc = true
       pack = rogue::protocols::packetizer::CoreV2::create(false,true,true);
-      rssi->application()->setSlave(pack->transport());
-      pack->transport()->setSlave(rssi->application());
+      rssi->application()->addSlave(pack->transport());
+      pack->transport()->addSlave(rssi->application());
 
       // Create an SRP master and connect it to the packetizer
       srp = rogue::protocols::srp::SrpV3::create();
-      pack->application(0)->setSlave(srp);
-      srp->setSlave(pack->application(0));
+      pack->application(0)->addSlave(srp);
+      srp->addSlave(pack->application(0));
 
       // Create a memory master and connect it to the srp
       mast = rogue::interfaces::memory::Master::create();
@@ -290,10 +290,10 @@ void RogueCom::connect(const std::string &conn) {
       configStream[1] = std::make_shared<RogueSender>(1+1, _type);
       configStream[2] = std::make_shared<RogueSender>(2+1, _type);
       configStream[3] = std::make_shared<RogueSender>(3+1, _type);
-      configStream[0]->setSlave(pack->application(0+1));
-      configStream[1]->setSlave(pack->application(1+1));
-      configStream[2]->setSlave(pack->application(2+1));
-      configStream[3]->setSlave(pack->application(3+1));
+      configStream[0]->addSlave(pack->application(0+1));
+      configStream[1]->addSlave(pack->application(1+1));
+      configStream[2]->addSlave(pack->application(2+1));
+      configStream[3]->addSlave(pack->application(3+1));
       dataStream[0]= std::make_shared<RogueReceiver>(0+5, _type,this->getInstance());
       dataStream[1]= std::make_shared<RogueReceiver>(1+5, _type,this->getInstance());
       dataStream[2]= std::make_shared<RogueReceiver>(2+5, _type,this->getInstance());
@@ -302,14 +302,14 @@ void RogueCom::connect(const std::string &conn) {
       debugStream[1]=std::make_shared<RogueReceiver>(1+1, _type,this->getInstance());
       debugStream[2]=std::make_shared<RogueReceiver>(2+1, _type,this->getInstance());
       debugStream[3]=std::make_shared<RogueReceiver>(3+1, _type,this->getInstance());
-      pack->application(0+5)->setSlave(dataStream[0]);
-      pack->application(1+5)->setSlave(dataStream[1]);
-      pack->application(2+5)->setSlave(dataStream[2]);
-      pack->application(3+5)->setSlave(dataStream[3]);
-      pack->application(0+1)->setSlave(debugStream[0]);   
-      pack->application(1+1)->setSlave(debugStream[1]);   
-      pack->application(2+1)->setSlave(debugStream[2]);   
-      pack->application(3+1)->setSlave(debugStream[3]);   
+      pack->application(0+5)->addSlave(dataStream[0]);
+      pack->application(1+5)->addSlave(dataStream[1]);
+      pack->application(2+5)->addSlave(dataStream[2]);
+      pack->application(3+5)->addSlave(dataStream[3]);
+      pack->application(0+1)->addSlave(debugStream[0]);   
+      pack->application(1+1)->addSlave(debugStream[1]);   
+      pack->application(2+1)->addSlave(debugStream[2]);   
+      pack->application(3+1)->addSlave(debugStream[3]);   
       rssi->start();    
       while ( ! rssi->getOpen() ) {
         sleep(1);
@@ -323,39 +323,39 @@ void RogueCom::connect(const std::string &conn) {
       udpSrp->setRxBufferCount(128); 
       rssi = rogue::protocols::rssi::Client::create(udp->maxPayload());
       rssiSrp = rogue::protocols::rssi::Client::create(udpSrp->maxPayload());
-      udp->setSlave(rssi->transport());
-      udpSrp->setSlave(rssiSrp->transport());
-      rssi->transport()->setSlave(udp);
-      rssiSrp->transport()->setSlave(udpSrp);
+      udp->addSlave(rssi->transport());
+      udpSrp->addSlave(rssiSrp->transport());
+      rssi->transport()->addSlave(udp);
+      rssiSrp->transport()->addSlave(udpSrp);
 
       // Packetizer, ibCrc = false, obCrc = true
       pack = rogue::protocols::packetizer::CoreV2::create(false,true, true);
       packSrp = rogue::protocols::packetizer::CoreV2::create(false,true, true);
-      rssi->application()->setSlave(pack->transport());
-      rssiSrp->application()->setSlave(packSrp->transport());
-      pack->transport()->setSlave(rssi->application());
-      packSrp->transport()->setSlave(rssiSrp->application());
+      rssi->application()->addSlave(pack->transport());
+      rssiSrp->application()->addSlave(packSrp->transport());
+      pack->transport()->addSlave(rssi->application());
+      packSrp->transport()->addSlave(rssiSrp->application());
 
       // Create an SRP master and connect it to the packetizer
       srp = rogue::protocols::srp::SrpV3::create();
       srpSrp = rogue::protocols::srp::SrpV3::create();
-      pack->application(0)->setSlave(srp);
-      packSrp->application(0)->setSlave(srpSrp);
-      srp->setSlave(pack->application(0));
-      srpSrp->setSlave(packSrp->application(0));
+      pack->application(0)->addSlave(srp);
+      packSrp->application(0)->addSlave(srpSrp);
+      srp->addSlave(pack->application(0));
+      srpSrp->addSlave(packSrp->application(0));
 
       // Create a memory master and connect it to the srp
       mast = rogue::interfaces::memory::Master::create();
-      //mast->setSlave(srp);
+      //mast->addSlave(srp);
       mast->setSlave(srpSrp);
       configStream[0] = std::make_shared<RogueSender>(0, _type);
       configStream[1] = std::make_shared<RogueSender>(1, _type);
       configStream[2] = std::make_shared<RogueSender>(2, _type);
       configStream[3] = std::make_shared<RogueSender>(3, _type);
-      configStream[0]->setSlave(pack->application(0));
-      configStream[1]->setSlave(pack->application(1));
-      configStream[2]->setSlave(pack->application(2));
-      configStream[3]->setSlave(pack->application(3));
+      configStream[0]->addSlave(pack->application(0));
+      configStream[1]->addSlave(pack->application(1));
+      configStream[2]->addSlave(pack->application(2));
+      configStream[3]->addSlave(pack->application(3));
       dataStream[0]= std::make_shared<RogueReceiver>(0+4, _type,this->getInstance());
       dataStream[1]= std::make_shared<RogueReceiver>(1+4, _type,this->getInstance());
       dataStream[2]= std::make_shared<RogueReceiver>(2+4, _type,this->getInstance());
@@ -364,14 +364,14 @@ void RogueCom::connect(const std::string &conn) {
       debugStream[1]=std::make_shared<RogueReceiver>(1+0, _type,this->getInstance());
       debugStream[2]=std::make_shared<RogueReceiver>(2+0, _type,this->getInstance());
       debugStream[3]=std::make_shared<RogueReceiver>(3+0, _type,this->getInstance());
-      pack->application(0+4)->setSlave(dataStream[0]);
-      pack->application(1+4)->setSlave(dataStream[1]);
-      pack->application(2+4)->setSlave(dataStream[2]);
-      pack->application(3+4)->setSlave(dataStream[3]);
-      pack->application(0+0)->setSlave(debugStream[0]);   
-      pack->application(1+0)->setSlave(debugStream[1]);   
-      pack->application(2+0)->setSlave(debugStream[2]);   
-      pack->application(3+0)->setSlave(debugStream[3]);   
+      pack->application(0+4)->addSlave(dataStream[0]);
+      pack->application(1+4)->addSlave(dataStream[1]);
+      pack->application(2+4)->addSlave(dataStream[2]);
+      pack->application(3+4)->addSlave(dataStream[3]);
+      pack->application(0+0)->addSlave(debugStream[0]);   
+      pack->application(1+0)->addSlave(debugStream[1]);   
+      pack->application(2+0)->addSlave(debugStream[2]);   
+      pack->application(3+0)->addSlave(debugStream[3]);   
       rssi->start();    
       rssiSrp->start();    
       while ( ! rssi->getOpen() || ! rssiSrp->getOpen() ) {
@@ -533,7 +533,7 @@ void RogueCom::configPLL(const std::string PLLfile, bool forceConfig){
 }
 
 uint32_t  RogueCom::getCurSize(){  
-  uint32_t size=rxfifo[4+_rxchannel].unsafe_size(); //rx_data
+  uint32_t size=rxfifo[4+_rxchannel].size(); //rx_data
 
   return size;
 }
@@ -550,16 +550,16 @@ bool  RogueCom::isEmpty() {
 }
 uint32_t  RogueCom::read32(){
   uint32_t val=0;
-  bool res=rxfifo[4+_rxchannel].try_pop(val);
-  if(!res) throw("program error: tried to read empty rogue RX queue");
-//  std::cout<<"RogueCom::read32: "<<std::hex<<val<<std::dec<<std::endl;
+  val=rxfifo[4+_rxchannel].front();
+  rxfifo[4+_rxchannel].pop();
   return val;
 }
 uint32_t  RogueCom::readBlock32(uint32_t *buf, uint32_t length){
-  unsigned l=rxfifo[4+_rxchannel].unsafe_size();
+  unsigned l=rxfifo[4+_rxchannel].size();
   if(l>length) l=length;
   for(unsigned i=0;i<l;i++) {
-    rxfifo[4+_rxchannel].try_pop(buf[i]);
+    buf[i]=rxfifo[4+_rxchannel].front();
+    rxfifo[4+_rxchannel].pop();
 //  std::cout<<"RogueCom::read32: "<<std::hex<<buf[i]<<std::dec<<std::endl;
   } 
   return l;
@@ -620,8 +620,9 @@ void RogueCom::enableDebugStream(bool enable){
 
 void RogueCom::flushBuffer(){
 	for(unsigned i=0;i<4;i++) {
-		rxfifo[0+i].clear();
-		rxfifo[4+i].clear();
+                 std::queue<int> empty;
+		rxfifo[0+i]=std::queue<uint32_t>();
+		rxfifo[4+i]=std::queue<uint32_t>();
 	} 
 	std::cout<<"zixu in RogueCom::flushBuffer"<<std::endl;
 }

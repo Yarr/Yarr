@@ -14,12 +14,13 @@ add_library(Spec SHARED
         SpecTxCore.cpp
         UserMemory.cpp)
 
-add_dependencies(Spec variant)
+post_build_debug_library(Spec)
 target_include_directories(Spec PRIVATE ../libYarr/include)
 target_include_directories(Spec PRIVATE ../libUtil/include)
 target_include_directories(Spec PUBLIC ./include)
 
 LIST(APPEND apps
+        config-GBT-FMC
         specBenchmarkDma
         specBenchmarkSingle
         specComTest
@@ -30,4 +31,5 @@ LIST(APPEND apps
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)
     target_link_libraries(${target} Yarr)
+    post_build_debug_executable(${target})
 endforeach ()

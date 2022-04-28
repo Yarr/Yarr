@@ -100,7 +100,7 @@ public:
 
 
 //____________________________________________________________________________________________________
-Rd53aEmu::Rd53aEmu(EmuCom * rx, EmuCom * tx, std::string json_file_path, int srand_seed)
+Rd53aEmu::Rd53aEmu(EmuCom * rx, EmuCom * tx, const json &cfg, int srand_seed)
     : m_txRingBuffer ( tx )
     , m_rxRingBuffer ( rx )
     , m_feCfg        ( new Rd53aCfg )
@@ -113,8 +113,7 @@ Rd53aEmu::Rd53aEmu(EmuCom * rx, EmuCom * tx, std::string json_file_path, int sra
     
     run = true;
 
-    std::ifstream file(json_file_path);
-    json j = json::parse(file);
+    const json &j = cfg;
     
     // Initialization of the pixel geometry
     for( size_t icoreCol = 0; icoreCol < m_coreArray.size(); ++icoreCol ) {
@@ -145,7 +144,6 @@ Rd53aEmu::Rd53aEmu(EmuCom * rx, EmuCom * tx, std::string json_file_path, int sra
 	}
       }
     }
-    file.close();
     // Initializing trigger counters
     {
         triggerCounters[Triggers::Trg01] = 0;
@@ -271,8 +269,9 @@ void Rd53aEmu::outputLoop() {
         //
         // push the data out
         //
-        
-        uint32_t header = (0x7f << 25 ) | ( (l1id & 0x1f)<<20 ) | ( (tag & 0x1f) << 15 ) | (bcid & 0x7fff);
+        // the MSB in the header or not set, only bit 26, discrepancy  between actual chip and manual
+        // used to be (0x7f << 25 )
+        uint32_t header = (0x1 << 25 ) | ( (l1id & 0x1f)<<20 ) | ( (tag & 0x1f) << 15 ) | (bcid & 0x7fff);
         pushOutput( header );
         
         //std::cout << "header = " << HEXF(8, header) << ", outWords size = " << outWords.size() << std::endl;

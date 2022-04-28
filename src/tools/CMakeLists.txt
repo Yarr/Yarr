@@ -1,24 +1,23 @@
 list(APPEND tools
         analyseRawData
-        config-GBT-FMC
         createConfig
         dbAccessor
         makeFei4PixelModelCfg
         makeRd53aPixelModelCfg
         replot
+        scan_cli
         scanConsole
         scurve_test
         test_json
         )
 
+if (NOT ${TARGET_ARCH} MATCHES "arm*")
+    list(APPEND tools write-register reset-all)
+endif()
+ 
 foreach (target IN LISTS tools)
     add_executable(${target} ${target}.cpp)
+    post_build_debug_executable(${target})
     target_link_libraries(${target} Yarr)
+    target_link_libraries(${target} Scan)
 endforeach ()
-
-# write-register needs special link libraries
-add_executable(write-register write-register.cpp)
-target_link_libraries(write-register Yarr)
-if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
-    target_link_libraries(write-register stdc++fs)
-endif ()

@@ -1,5 +1,4 @@
-YARR_ADD_VARIANT()
-YARR_ADD_TBB()
+YARR_ADD_EXTERNAL_DEPS()
 
 # Level below which logger macros are not enabled
 add_definitions(-DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_${YARR_ACTIVE_LOGGER_LEVEL})
@@ -8,6 +7,9 @@ add_subdirectory(libUtil)
 add_subdirectory(libYarr)
 # controllers
 foreach(controller IN LISTS CONTROLLERS)
+   if(controller MATCHES "NetioHW")
+      YARR_ADD_TBB()
+   endif()
    message(STATUS "Building controller ${controller}" )
    add_subdirectory(lib${controller})
 endforeach()
@@ -19,3 +21,7 @@ foreach(frontend IN LISTS FRONT_ENDS)
 endforeach()
 
 add_subdirectory(tools)
+
+if(ENABLE_PYTHON)
+   add_subdirectory(python)
+endif()

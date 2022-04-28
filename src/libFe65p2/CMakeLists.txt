@@ -20,7 +20,7 @@ add_library(Fe65p2 SHARED
         Fe65p2TotScan.cpp
         Fe65p2TriggerLoop.cpp)
 
-add_dependencies(Fe65p2 variant)
+post_build_debug_library(Fe65p2)
 target_include_directories(Fe65p2 PRIVATE ../libYarr/include)
 target_include_directories(Fe65p2 PRIVATE ../libUtil/include)
 target_include_directories(Fe65p2 PUBLIC ./include)
@@ -30,4 +30,5 @@ LIST(APPEND apps fe65p2ApplyMask fe65p2PulserDelayTest)
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)
     target_link_libraries(${target} Yarr)
+    post_build_debug_executable(${target})
 endforeach ()

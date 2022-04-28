@@ -1,5 +1,5 @@
 add_executable(testStar
-        main.cpp
+        ../../libUtil/tests/main.cpp
         test_chips.cpp
         test_config.cpp
         test_data_processor.cpp
@@ -12,3 +12,4 @@ add_executable(testStar
         )
 target_link_libraries(testStar Yarr)
 add_test(testStar ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/testStar)
+post_build_debug_executable(testStar)

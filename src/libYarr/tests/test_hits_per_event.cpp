@@ -4,8 +4,7 @@
 #include "EventData.h"
 #include "Histo1d.h"
 
-// Strictly, it's in libFei4, but not specifically
-TEST_CASE("HistogramHitsPerEvent", "[Histogrammer][Fei4][notFei4][HitsPerEvent]") {
+TEST_CASE("HistogramHitsPerEvent", "[Histogrammer][HitsPerEvent]") {
     // This is for one FE
     std::unique_ptr<DataProcessor> histo(new HistogrammerProcessor);
     auto& histogrammer = static_cast<HistogrammerProcessor&>(*histo);
@@ -48,7 +47,7 @@ TEST_CASE("HistogramHitsPerEvent", "[Histogrammer][Fei4][notFei4][HitsPerEvent]"
     REQUIRE (histo_as_1d->getEntries() == 1);
     REQUIRE (histo_as_1d->getMean() == 1);
 
-    const unsigned int max = 16; // Fei4?
+    const unsigned int max = 1000; // Fei4?
     REQUIRE (histo_as_1d->size() == max);
 
     auto lowX = -0.5;

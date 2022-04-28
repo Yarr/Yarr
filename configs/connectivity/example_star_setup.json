@@ -4,6 +4,7 @@
         {
             "config": "configs/defaults/default_star.json",
             "locked": true,
+            "enable": true,
             "tx" : 0,
             "rx" : 0
         }

@@ -24,16 +24,18 @@ uint32_t readConfig(TxCore *txcore, RxCore *rxcore, uint32_t addr) {
         txcore->writeFifo(rdreg);
         txcore->releaseFifo();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        while (1) {
-            RawData *data = rxcore->readData();
-            if (data == nullptr) {
+        while (true) {
+            std::vector<RawDataPtr> dataVec = rxcore->readData();
+            RawDataPtr data;
+            if (dataVec.size() == 0) {
                 cout << "Timeout." << endl;
                 continue;
             }
+            data = dataVec[0];
 
-            for (uint32_t i = 0; i < data->words; i++) {
-                uint32_t hdr = (data->buf[i] >> 16) & 0xFF;
-                uint32_t val = (data->buf[i] & 0xFFFF);
+            for (uint32_t i = 0; i < data->getSize(); i++) {
+                uint32_t hdr = (data->get(i) >> 16) & 0xFF;
+                uint32_t val = (data->get(i) & 0xFFFF);
                 if (hdr == 0xEA && val != addr) {
                     cout << "Something went wrong1: " << hex
                          << " hdr=" << hdr
@@ -401,20 +403,22 @@ int main(int argc, char **argv) {
     cout << "Read-out" << endl;
     RawDataContainer datav{LoopStatus()};
     do {
-        RawData *data = rxcore->readData();
-        if (data == NULL) {
+        std::vector<RawDataPtr> dataVec = rxcore->readData();
+        RawDataPtr data;
+        if (dataVec.size() == 0) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             cout << "." << flush;
             continue;
         }
-        datav.add(data);
+        data = dataVec[0];
+        datav.add(std::move(data));
         cout << "Event " << datav.size() << endl;
     } while (datav.size() < ntriggers * 16);
 
     cout << "List of L1A received" << endl;
     for (uint32_t i = 0; i < datav.size(); i++) {
-        cout << "L1A: " << ((datav.buf[i][0] >> 10) & 0x1F) << " "
-             << "BCID: " << (datav.buf[i][0] & 0x3FF) << endl;
+        cout << "L1A: " << ((datav.data[i]->get(0) >> 10) & 0x1F) << " "
+             << "BCID: " << (datav.data[i]->get(0) & 0x3FF) << endl;
     }
 
     cout << "Clean the house" << endl;

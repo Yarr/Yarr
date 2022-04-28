@@ -32,7 +32,7 @@ public:
   void maskRxEnable(uint32_t val, uint32_t mask) override;
 
   void flushBuffer() override;
-  RawData* readData() override;
+  std::vector<RawDataPtr> readData() override;
 
   /**
    * Get data rate (Mhz)

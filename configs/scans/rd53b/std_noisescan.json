@@ -1,0 +1,61 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "NoiseAnalysis"
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "1": {
+        "algorithm": "TotMap",
+        "config": {}
+      },
+      "2": {
+        "algorithm": "Tot2Map",
+        "config": {}
+      },
+      "3": {
+        "algorithm": "TagDist",
+        "config": {}
+      },
+      "4": {
+        "algorithm": "HitsPerEvent",
+        "config": {}
+      },
+      "5": {
+        "algorithm": "DataArchiver",
+        "config": {}
+      },
+      "n_count": 5 
+    },
+    "loops": [
+      {
+        "config": {
+          "count": 0,
+          "delay": 58,
+          "extTrigger": false,
+          "frequency": 500,
+          "noInject": true,
+          "time": 30,
+          "edgeMode": false,
+          "trigMultiplier": 32
+        },
+        "loopAction": "Rd53bTriggerLoop"
+      },
+      {
+        "loopAction": "StdDataGatherer"
+      }
+    ],
+    "name": "DigitalScan",
+    "prescan": {
+        "InjVcalDiff": 0,
+        "InjDigEn": 0,
+        "Latency": 56
+    }
+  }
+}

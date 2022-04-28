@@ -1,17 +1,19 @@
 {
     "scan": {
-	"analysis": [
-	    {
+	"analysis": {
+	    "0": {
 		"algorithm": "OccupancyAnalysis",
 		"config": {}
-	    }
-	],
-	"histogrammer": [
-	    {
+	    },
+	    "n_count": 1
+	},
+	"histogrammer": {
+	    "0": {
 		"algorithm": "OccupancyMap",
 		"config": {}
-	    }
-	],
+	    },
+	    "n_count": 1
+	},
 	"loops": [
 	    
 	    {

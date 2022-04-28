@@ -17,21 +17,22 @@ RogueRxCore::~RogueRxCore() = default;
 
 
 
-
-RawData* RogueRxCore::readData() {
+// TODO this does not work, it just compiles
+std::vector<RawDataPtr> RogueRxCore::readData() {
 	m_com->setRxChannel(m_rxChannel);
     std::this_thread::sleep_for(std::chrono::microseconds(10));
     uint32_t words = this->getCurCount();
 
+    std::vector<RawDataPtr> dataVec;
 
     if (words > 0) {
-        uint32_t *buf = new uint32_t[words];
+        // TODO need to assign channel
+        RawDataPtr data = std::make_shared<RawData>(0x0, words);
+        uint32_t *buf = data->getBuf();
         if (m_com->readBlock32(buf, words)) {
-            return new RawData(0x0, buf, words);
-        } else {
-            delete[] buf;
+            dataVec.push_back(data);
         }
     }
-    return NULL;
+    return dataVec;
 }
 std::shared_ptr<RogueCom> RogueCom::instance;

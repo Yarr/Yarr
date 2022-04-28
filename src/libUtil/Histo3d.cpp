@@ -9,6 +9,7 @@
 #include "Histo3d.h"
 
 #include <iostream>
+#include <iomanip>
 #include <cmath>
 #include <fstream>
 #include <sstream>
@@ -247,15 +248,58 @@ void Histo3d::toStream(std::ostream &out) const{
 }
 
 void Histo3d::toJson(json &j) const {
+    j["Type"] = "Histo2d";
+    j["Name"] = name;
 
+    j["x"]["AxisTitle"] = xAxisTitle;
+    j["x"]["Bins"] = xbins;
+    j["x"]["Low"] = xlow;
+    j["x"]["High"] = xhigh;
+
+    j["y"]["AxisTitle"] = yAxisTitle;
+    j["y"]["Bins"] = ybins;
+    j["y"]["Low"] = ylow;
+    j["y"]["High"] = yhigh;
+
+    j["z"]["AxisTitle"] = zAxisTitle;
+    j["z"]["Bins"] = zbins;
+    j["z"]["Low"] = zlow;
+    j["z"]["High"] = zhigh;
+
+    j["Underflow"] = underflow;
+    j["Overflow"] = overflow;
+
+    j["Entries"] = entries;
+
+    for (unsigned i=0; i<lStat.size(); i++)
+        j["loopStatus"][i] = (lStat.get(i));
+
+    for (unsigned int z=0; z<zbins; z++) {
+	for (unsigned int y=0; y<ybins; y++) {
+        	for (unsigned int x=0; x<xbins; x++) {
+            		j["Data"][x][y][z] = data[ (y+(x*ybins))*zbins + z ] ;
+        	}
+	}
+    }
 }
 
-void Histo3d::toFile(const std::string &prefix, const std::string &dir, bool header) const {
+void Histo3d::toFile(const std::string &prefix, const std::string &dir, bool jsonType) const {
     std::string filename = dir + prefix + "_" + name + ".dat";
     std::fstream file(filename, std::fstream::out | std::fstream::trunc);
-    // Header
-    if (header) {
-        file << "Histo3d " <<  std::endl;
+
+    if (jsonType) {
+        filename += ".json";
+    } else {
+        filename += ".dat";
+    }
+    json j;
+    // jsonType
+    if (jsonType) {
+             toJson(j);
+             file << std::setw(4) << j;
+    } else {
+	// Header
+	file << "Histo3d " <<  std::endl;
         file << name << std::endl;
         file << xAxisTitle << std::endl;
         file << yAxisTitle << std::endl; 
@@ -264,14 +308,14 @@ void Histo3d::toFile(const std::string &prefix, const std::string &dir, bool hea
         file << ybins << " " << ylow << " " << yhigh << std::endl;
         file << zbins << " " << zlow << " " << zhigh << std::endl;
         file << underflow << " " << overflow << std::endl;
-    }
-    // Data
-    for (unsigned int i=0; i<ybins; i++) {
-        for (unsigned int j=0; j<xbins; j++) {
-            for (unsigned int k=0; k<zbins; k++) {
-                file << data[(i+(j*ybins))*zbins+k] << " ";
-            }
-        }
+    	// Data
+	for (unsigned int i=0; i<ybins; i++) {
+        	for (unsigned int j=0; j<xbins; j++) {
+        	    for (unsigned int k=0; k<zbins; k++) {
+                	file << data[(i+(j*ybins))*zbins+k] << " ";
+        	    }
+        	}
+	}
         file << std::endl;
     }
     file.close();

@@ -48,6 +48,10 @@ class Bookkeeper {
         std::vector<uint32_t> getTxMask();
         std::vector<uint32_t> getRxMask();
 
+        // mask of unique active channels
+        std::vector<uint32_t> getTxMaskUnique();
+        std::vector<uint32_t> getRxMaskUnique();
+
         void setTargetTot(int v) {target_tot = v;}
         int getTargetTot() const {return target_tot;}
         
@@ -62,12 +66,11 @@ class Bookkeeper {
         
         std::vector<FrontEnd*> feList;
 
-        ClipBoard<RawDataContainer> rawData;
-
         // per rx link
+        std::map<unsigned, ClipBoard<RawDataContainer> > rawDataMap;
 	    std::map<unsigned, ClipBoard<EventDataBase> > eventMap;
 	    std::map<unsigned, ClipBoard<HistogramBase> > histoMap;
-	    std::map<unsigned, ClipBoard<HistogramBase> > resultMap;
+	    std::map<unsigned, std::vector<std::unique_ptr<ClipBoard<HistogramBase>>> > resultMap;
         
 		std::vector<FrontEnd*> activeFeList;
 
