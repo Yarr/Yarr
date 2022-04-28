@@ -228,8 +228,11 @@ int main(int argc, char *argv[]) {
     // Before configuring each FE, broadcast reset to all tx channels
     // Enable all tx channels
     hwCtrl->setCmdEnable(bookie->getTxMaskUnique());
-    // Use global FE
-    bookie->getGlobalFe()->resetAll();
+
+    // send global/broadcast reset command to all frontends
+    if(scanOpts.doResetBeforeScan) {
+        bookie->getGlobalFe()->resetAll();
+    }
 
     for ( FrontEnd* fe : bookie->feList ) {
         auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
