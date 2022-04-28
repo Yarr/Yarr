@@ -273,7 +273,8 @@ namespace ScanHelper {
         // Load scans
         json scan;
         try {
-            scan = openJsonFile(scanOpts.scanType);
+            if (!scanOpts.scanType.empty())
+                scan = openJsonFile(scanOpts.scanType);
         } catch (std::runtime_error &e) {
             shlog->critical("#ERROR# opening scan config: {}", e.what());
             return -1;
