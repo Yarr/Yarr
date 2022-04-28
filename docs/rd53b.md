@@ -138,3 +138,92 @@ Please note that the number of active lanes might also need to be specified in t
 ## Link sharing
 
 TODO
+
+# Testing with ITkPixV1.0 and ITkPixV1.1 Quad Modules
+
+The design files for the quad PCB [Common Quad v2.4](https://gitlab.cern.ch/itk-pixel-hybrid/itkpixv1_quad/-/tree/RD53B_ITKPixV1_QuadHybrid_Rev2.4)
+
+Due to an issue in the SW you can only read out ONE chip at a time.
+
+## Testing with ITkPixV1.0
+
+Since one can read only ONE chip at the time, at the begining of each scan the reset should be avoided, MR is here https://gitlab.cern.ch/YARR/YARR/-/merge_requests/482 
+
+Tunning routine should use precision ToT scans:
+- ptot_digitalscan
+- ptot_analogscan
+- ptot_thresholdscan
+- ptot_tune_globalthreshold (target 1500e)
+- ptot_tune_pixelthreshold (target 1500e)
+- ptot_retune_globalthreshold (target 1000e)
+- ptot_retune_pixelthreshold (target 1000e)
+- ptot_thresholdscan
+
+## Testing with ITkPixV1.1
+
+Since one can read only ONE chip at the time, at the begining of each scan the reset should be avoided, MR is here https://gitlab.cern.ch/YARR/YARR/-/merge_requests/482 
+
+Tunning routine:
+- std_digitalscan
+- std_analogscan
+- std_thresholdscan
+- std_tune_globalthreshold (target 1500e)
+- std_tune_pixelthreshold (target 1500e)
+- std_retune_globalthreshold (target 1000e)
+- std_retune_pixelthreshold (target 1000e)
+- std_thresholdscan
+
+
+## Configuration files with 1-DisplayPort Data Adapter Card
+
+The DisplayPort is connected to Port A of the Ohio cars. Note that DisplayPort pins are connected to:
+- pins 1,3 correspond to channel 0
+- pins 4,6 to channel 1
+- pins 7,9 to channel 2
+- pins 10,12 to channel 3
+
+Connectifvity file when DisplayPort cable is connected to Port A of the Ohio card
+
+```bash
+"chipType" : "RD53B",
+"chips" : [
+    {
+        "config" : "configs/rd53b_1DPQuad04_Chip1.json",
+        "tx" : 0,
+        "rx" : 2,
+        "enable" : 1,
+        "locked" : 0
+    },
+    {
+        "config" : "configs/rd53b_1DPQuad04_Chip2.json",
+        "tx" : 0,
+        "rx" : 1,
+        "enable" : 0,
+        "locked" : 0
+    },
+    {
+        "config" : "configs/rd53b_1DPQuad04_Chip3.json",
+        "tx" : 0,
+        "rx" : 0,
+        "enable" : 0,
+        "locked" : 0
+    },
+    {
+        "config" : "configs/rd53b_1DPQuad04_Chip4.json",
+        "tx" : 0,
+        "rx" : 3,
+        "enable" : 0,
+        "locked" : 0
+    }
+]
+}
+```
+
+Summary table of Chip configs:
+
+| #Chip | `ChipID` | `DataMergeOutMux0/1/2/3` | `SerEnLane` | 
+| :---: | :---: | :---: | :---: |
+| Chip1 | 12 | 2/3/0/1 | 4 |
+| Chip2 | 13 | 0/1/2/3 | 1 |
+| Chip3 | 14 | 1/2/3/0 | 8 |
+| Chip4 | 15 | 0/1/2/3 | 1 |
