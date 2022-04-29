@@ -4,6 +4,7 @@
 #include "felix/felix_client_status.h"
 
 #include <cstring> // needed for std::memcpy
+#include <limits>
 
 namespace {
   auto frlog = logging::make_log("FelixRxCore");
@@ -172,7 +173,7 @@ void FelixRxCore::on_data(FelixID_t fid, const uint8_t* data, size_t size, uint8
   m_rawData.pushData(std::make_unique<RawData>(mychn, buffer.release(), numWords));
 
   m_total_data_in += 1;
-  m_total_bytes_in += numWords*4;
+  m_total_bytes_in += numWords * sizeof(uint32_t);
 }
 
 void FelixRxCore::on_connect(FelixID_t fid) {
@@ -204,7 +205,7 @@ uint32_t FelixRxCore::getDataRate() {
 
 uint32_t FelixRxCore::getCurCount() {
   uint64_t cur_cnt = m_total_data_in - m_total_data_out;
-  if (cur_cnt > 0xffffffff) {
+  if (cur_cnt > std::numeric_limits<uint32_t>::max()) {
     frlog->warn("FelixRxCore: counter overflow");
   }
   return cur_cnt;

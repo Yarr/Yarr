@@ -200,11 +200,7 @@ void FelixTxCore::toggleTrigAbort() {
 }
 
 bool FelixTxCore::isTrigDone() {
-  if (not m_trigEnabled and isCmdEmpty()) {
-    return true;
-  } else {
-    return false;
-  }
+  return (not m_trigEnabled and isCmdEmpty());
 }
 
 void FelixTxCore::setTrigConfig(enum TRIG_CONF_VALUE cfg) {
