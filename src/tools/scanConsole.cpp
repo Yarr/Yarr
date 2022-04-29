@@ -37,7 +37,6 @@ auto logger = logging::make_log("scanConsole");
 int main(int argc, char *argv[]) {
     ScanOpts scanOpts;
     spdlog::set_pattern(scanOpts.defaultLogPattern);
-    ScanHelper::banner(logger,"Welcome to the YARR Scan Console!");
 
     spdlog::info("-> Parsing command line parameters ...");
 
@@ -87,6 +86,7 @@ int main(int argc, char *argv[]) {
     spdlog::info("Configuring logger ...");
     logging::setupLoggers(loggerConfig);
 
+    ScanHelper::banner(logger,"Welcome to the YARR Scan Console!");
 
     int result = ScanHelper::loadConfigFile(scanOpts, true, scanConsoleConfig);
     if(result<0) {
