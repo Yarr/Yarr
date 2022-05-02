@@ -31,9 +31,8 @@ FelixRxCore::~FelixRxCore()
   frlog->debug("Flush receiver queue...");
   int count = 0;
   while (!m_rawData.empty()) {
-    auto data = m_rawData.popData();
+    m_rawData.popData();
     count++;
-    delete [] data->buf;
   }
   if (count) {
     frlog->debug(" ...done ({} stray data blocks)", count);
@@ -113,16 +112,20 @@ void FelixRxCore::flushBuffer() {
   m_doFlushBuffer = false;
 }
 
-RawData* FelixRxCore::readData() {
+std::vector<RawDataPtr> FelixRxCore::readData() {
   frlog->trace("FelixRxCore::readData");
+  std::vector<RawDataPtr> dataVec;
+
   std::unique_ptr<RawData> rdp = m_rawData.popData();
 
   if (rdp) {
     m_total_data_out += 1;
-    m_total_bytes_out += (rdp->words)*4;
+    m_total_bytes_out += (rdp->getSize()) * sizeof(uint32_t);
+
+    dataVec.push_back(std::move(rdp));
   }
 
-  return rdp.release();
+  return dataVec;
 }
 
 void FelixRxCore::on_data(FelixID_t fid, const uint8_t* data, size_t size, uint8_t status) {
@@ -161,16 +164,18 @@ void FelixRxCore::on_data(FelixID_t fid, const uint8_t* data, size_t size, uint8
   if (numWords == 0)
     return;
 
-  std::unique_ptr<uint32_t[]> buffer(new uint32_t[numWords]);
-  std::memcpy(buffer.get(), data, size);
-
   // for now:
   // channel number consists of 6-bit elink, 13-bit link ID, 1-bit is_virtual
   // and also the lowest 12 bits of ConnectorID to fill up the 32 bits
   // fid[47:16]
   uint32_t mychn = (fid >> 16) & 0xffffffff;
 
-  m_rawData.pushData(std::make_unique<RawData>(mychn, buffer.release(), numWords));
+  auto rd = std::make_unique<RawData>(mychn, numWords);
+
+  // copy data to RawData's buffer
+  std::memcpy(rd->getBuf(), data, size);
+
+  m_rawData.pushData(std::move(rd));
 
   m_total_data_in += 1;
   m_total_bytes_in += numWords * sizeof(uint32_t);

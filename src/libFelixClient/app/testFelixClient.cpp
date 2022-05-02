@@ -142,21 +142,22 @@ int main(int argc, char **argv) {
       // Collect and report data
       RawDataContainer rdc({});
       while (hwCtrl->getCurCount()) {
-        auto rd = hwCtrl->readData();
-        if (rd) {
-          rdc.add(rd);
+        auto dataVec = hwCtrl->readData();
+        for(auto data : dataVec) {
+          rdc.add(data);
         }
       }
 
       logger->info("Received {} data", rdc.size());
       logger->info("Rate: {} B/s", hwCtrl->getDataRate());
 
-      for (unsigned i=0; i<rdc.size(); i++) {
+      for (auto rdp : rdc.data) {
         std::stringstream ss;
-        ss << " " << rdc.adr[i] << " " << rdc.buf[i] << " " << rdc.words[i];
-        ss << " : " << std::hex;
-        for (unsigned j=0; j<rdc.words[i]; j++) {
-          ss << "0x" << rdc.buf[i][j] << " ";
+        ss << " " << rdp->getAdr() << " " << rdp->getBuf();
+        ss << " " << rdp->getSize() << " : " << std::hex;
+
+        for (unsigned j=0; j<rdp->getSize(); ++j) {
+          ss << "0x" << rdp->get(j) << " ";
         }
         logger->debug(" {}", ss.str());
       }
