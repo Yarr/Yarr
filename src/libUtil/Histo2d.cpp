@@ -7,6 +7,7 @@
 // ################################
 
 #include "Histo2d.h"
+#include "Histo1d.h"
 
 #include <cmath>
 #include <fstream>
@@ -407,3 +408,28 @@ void Histo2d::plot(const std::string &prefix, const std::string &dir) const{
     pclose(gnu);
 }
 
+
+Histo1d* Histo2d::profileY() {
+  // Create the profile histogram
+  Histo1d * outH = new Histo1d(getName() + "_pfy", getYbins(), getYlow(), getYhigh());
+  outH->setXaxisTitle(getYaxisTitle());
+ 
+  // Fill the profile histogram
+  // outbin is bin number of outAxis (the projected axis). Loop is done on all bin of TH2 histograms
+  // inbin is the axis being integrated. Loop is done only on the selected bins
+  for (double outbin = getYlow(); outbin <= getYhigh();  outbin+=getYbinWidth()) {
+    for (double inbin = getXlow() ; inbin <= getXhigh() ; inbin+=getXbinWidth()) {
+      double binx, biny;
+      binx = inbin;  biny=outbin;
+      int bin = binNum(binx, biny);
+      double cxy = getBin(bin);
+      if (cxy)
+	outH->fill( biny, cxy );
+    }
+    //Let's divide by the number of bins we profiled
+    unsigned binOnOutH = outH->binNum(outbin);
+    outH->setBin(binOnOutH, outH->getBin(binOnOutH)/(double)getXbins());
+  }
+ 
+  return outH;
+}

@@ -33,6 +33,7 @@ class Histo1d : public HistogramBase {
         
         void setBin(unsigned n, double v);
         double getBin(unsigned n) const;
+        int binNum(double x) const;
         double const * getData() const { return data.data();};
         double getUnderflow() const {return underflow;};
         double getOverflow() const {return overflow;};

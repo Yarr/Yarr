@@ -16,6 +16,8 @@
 #include "HistogramBase.h"
 #include "ResultBase.h"
 
+class Histo1d;
+
 class Histo2d : public HistogramBase {
     public:
         Histo2d(const std::string &arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh,
@@ -60,7 +62,8 @@ class Histo2d : public HistogramBase {
         double getMin() const {return min;}
         double getNumOfEntries() const {return entries;}
 
-        
+        Histo1d * profileY();
+
         void toFile(const std::string &filename, const std::string &dir = "", bool header= true) const override;
         bool fromFile(const std::string &filename);
         bool fromJson(const json &jfile);

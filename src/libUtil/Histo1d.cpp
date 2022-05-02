@@ -295,3 +295,14 @@ void Histo1d::plot(const std::string &prefix, const std::string &dir) const {
     fprintf(gnu,"%s",ss.str().c_str());
     pclose(gnu);
 }
+
+int Histo1d::binNum(double x) const {
+    if (x < xlow) {
+        return -1;
+    } else if (x > xhigh) {
+        return -1;
+    } else {
+        unsigned xbin = (x-xlow)/binWidth;
+        return xbin;
+    }
+}
