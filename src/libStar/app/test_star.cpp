@@ -135,23 +135,25 @@ RawDataContainer readAllData(
   std::vector<RawDataPtr> dataVec;
   while (true) {
       dataVec = hwCtrl.readData();
-      for(auto data : dataVec) {
-          bool good = filter_cb(*data);
-          if (good) {
-              rdc.add(std::move(data));
+      if (not dataVec.empty()) {
+          for(auto data : dataVec) {
+              bool good = filter_cb(*data);
+              if (good) {
+                  rdc.add(std::move(data));
+              }
           }
+      } else {
+          // wait a bit if no data
+          static const auto SLEEP_TIME = std::chrono::milliseconds(1);
+          std::this_thread::sleep_for( SLEEP_TIME );
       }
-      // wait a bit if no data
-      static const auto SLEEP_TIME = std::chrono::milliseconds(1);
-      std::this_thread::sleep_for( SLEEP_TIME );
-      
+
       // Timeout
       auto run_time = std::chrono::steady_clock::now() - start_reading;
       if ( run_time > std::chrono::milliseconds(timeout) ) {
           logger->trace("readData timeout");
           break;
       }
-
   }
 
   if (rdc.size() == 0) {
