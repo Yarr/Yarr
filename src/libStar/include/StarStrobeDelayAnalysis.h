@@ -24,8 +24,8 @@ class StarStrobeDelayFitter : public AnalysisAlgorithm {
         ~StarStrobeDelayFitter() override = default;      //!< Default constructor
 
         void init(ScanBase *s) override;                  //!< Initializes the analysis ; mostly consists of getting the loop parameter over which data will be aggregated
-        void processHistogram(HistogramBase *h) override; //!< Fits the rising and falling edge for each channel and stores them for further analysis
-        void end() override;                              //!< Once all scans inputs have been collected, find max rising edge and min falling edge to define optimal strobe delay as 57% between the two. also dump results in StarJsonData file and plots.
+        void processHistogram(HistogramBase *h) override; //!< Fits the left and right edge of strobe delay pulse for each channel and stores them for further analysis
+        void end() override;                              //!< Once all scans inputs have been collected, find highest left edge and lowest right edge to define optimal strobe delay as 57% between the two. Also dump results in StarJsonData file and plots.
         void loadConfig(const json &config) override;     //!< Loads the analysis configuration from a json object
 
     protected:
@@ -33,27 +33,30 @@ class StarStrobeDelayFitter : public AnalysisAlgorithm {
         unsigned strobeDelayLoop{};                       //!< Index of loop corresponding to strobe delay parameter
 
     private:
-        unsigned strobeDelayMin{};                        //!< Minimum SD
-        unsigned strobeDelayMax{};                        //!< Maximum SD
-        unsigned strobeDelayStep{};                       //!< SD step
-        unsigned strobeDelayBins{};                       //!< Number of SD bins
-        unsigned injections{};                            //!< Number of injections
-        unsigned n_failedfit_rising{};                    //!< Number of failed rising edge fits
-	unsigned n_failedfit_falling{};                   //!< Number of failed falling edge fits
+        unsigned m_strobeDelayMin{};                        //!< Minimum SD
+        unsigned m_strobeDelayMax{};                        //!< Maximum SD
+        unsigned m_strobeDelayStep{};                       //!< SD step
+        unsigned m_strobeDelayBins{};                       //!< Number of SD bins
+        unsigned m_injections{};                            //!< Number of injections
+        unsigned m_nFailedfit_left{};                    //!< Number of failed left edge fits
+	unsigned m_nFailedfit_right{};                   //!< Number of failed right edge fits
 
-        std::vector<double> x;                            //!< Vector of all SD values                
+        std::vector<double> m_strobeDelayVec;                            //!< Vector of all SD values                
 
-        std::map<unsigned, std::unique_ptr<Histo1d>> histos; //!< Map of histograms of occupancy vs strobe delay. Identifier corresponds to the channel number (0-1279 in first row, 1280-2559 in second row). 
-        std::map<unsigned, double> risingEdgeMap;            //!< Map of result of rising edge fit. Identifier is the same as for histos (above).
-	std::map<unsigned, double> fallingEdgeMap;           //!< Map of result of falling edge fit. Identifier is the same as for histos (above).
+        std::map<unsigned, std::unique_ptr<Histo1d>> m_strobeDelayHistos; //!< Map of histograms of occupancy vs strobe delay. Identifier corresponds to the channel number (0-1279 in first row, 1280-2559 in second row). 
+        std::map<unsigned, double> m_leftEdgeMap;            //!< Map of result of right edge fit. Identifier is the same as for histos (above).
+	std::map<unsigned, double> m_rightEdgeMap;           //!< Map of result of falling edge fit. Identifier is the same as for histos (above).
 
-        unsigned strobeDelayCnt{};                        //!< Counter when incrementing strobe delay
+        unsigned m_strobeDelayCnt{};                        //!< Counter when incrementing strobe delay
 
         bool m_dumpDebugSDPlots=false;                    //!< Boolean to dump histograms of occupancy vs strobe delay per channel (every 10 channels for first row only).
 
 	unsigned findBinPassingThreshold(const Histo1d *h_in, const float & fraction, const bool & goesAbove, const bool & goesBelow); //!< Function to find first x-axis value for which y-value goes above/below a certain fraction of the maximum
+        std::vector<double> fitScurveForSD(const Histo1d *h_in, const bool & leftEdge, const unsigned & n_par, const unsigned & nBins, const double & plateauCenter, std::vector<double> strobeDelayVec, std::vector<double> occVec); //!< Fit a single s-curve (left ot right edge) on a given range of strobe delay pulse
+        void splitStrobeDelayRange(const Histo1d *h_in, double & plateauCenter, std::vector<double> & strobeDelayVecLeft, std::vector<double> & strobeDelayVecRight, std::vector<double> & occVecLeft, std::vector<double> & occVecRight); //!< Split up strobe delay range into left and right parts to do the two s-curve fits
+  std::vector<std::vector<double>> fitDoubleScurve(const Histo1d *h_in); //!< Do the double s-curve fit to obtain rising and falling edge.
 	
-	std::map<unsigned, std::unique_ptr<Histo2d>> hOccVsStrobeDelayVsChannelPerRow; //!< 2D Histogram of occupancy vs strobe delay vs channel number, split per row and per chip. The map identifier is the chip number + 10*row number
+	std::map<unsigned, std::unique_ptr<Histo2d>> m_hOccVsStrobeDelayVsChannelPerRow; //!< 2D Histogram of occupancy vs strobe delay vs channel number, split per row and per chip. The map identifier is the chip number*2 + row number (both starting at 0)
 };
 
 
