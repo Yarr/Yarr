@@ -37,7 +37,7 @@ Histo2d::Histo2d(const std::string &arg_name, unsigned arg_xbins, double arg_xlo
     max = 0;
     underflow = 0;
     overflow = 0;
-    data = std::vector<double>(xbins*ybins,0);
+    data = std::vector<float>(xbins*ybins,0);
     isFilled = std::vector<bool>(xbins*ybins,false);
     entries = 0;
 
@@ -59,7 +59,7 @@ Histo2d::Histo2d(const std::string &arg_name, unsigned arg_xbins, double arg_xlo
     max = 0;
     underflow = 0;
     overflow = 0;
-    data = std::vector<double>(xbins*ybins,0);
+    data = std::vector<float>(xbins*ybins,0);
     isFilled =  std::vector<bool>(xbins*ybins,false);
     entries = 0;
 }
@@ -80,7 +80,7 @@ Histo2d::Histo2d(Histo2d *h) : HistogramBase(h->getName()) {
     underflow = h->getUnderflow();
     overflow = h->getOverflow();
 
-    data = std::vector<double>(xbins*ybins,0);
+    data = std::vector<float>(xbins*ybins,0);
     isFilled = std::vector<bool>(xbins*ybins,false);
     for(unsigned i=0; i<xbins*ybins; i++)
         data[i] = h->getBin(i);
@@ -108,7 +108,7 @@ void Histo2d::fill(double x, double y, double v) {
     } else {
         unsigned xbin = (x-xlow)/xbinWidth;
         unsigned ybin = (y-ylow)/ybinWidth;
-        data[ybin+(xbin*ybins)]+=v;
+        data[xbin+(ybin*xbins)]+=v;
         if (v > max)
             max = v;
         if (v < min)
@@ -121,7 +121,7 @@ void Histo2d::fill(double x, double y, double v) {
 void Histo2d::setAll(double v) {
     for (unsigned int i=0; i<ybins; i++) {
         for (unsigned int j=0; j<xbins; j++) {
-            data[i+(j*ybins)] = v;
+            data[j+(i*xbins)] = v;
             entries++;
         }
     }
@@ -218,7 +218,7 @@ int Histo2d::binNum(double x, double y) const {
     } else {
         unsigned xbin = (x-xlow)/xbinWidth;
         unsigned ybin = (y-ylow)/ybinWidth;
-        return (ybin+(xbin*ybins));
+        return (xbin+(ybin*xbins));
     }
 }
 
@@ -226,7 +226,7 @@ void Histo2d::toStream(std::ostream &out) const{
     // Raw Data
     for (unsigned int i=0; i<ybins; i++) {
         for (unsigned int j=0; j<xbins; j++) {
-            out << data[i+(j*ybins)] << " ";
+            out << data[j+(i*xbins)] << " ";
         }
         out << std::endl;
     }
@@ -258,7 +258,7 @@ void Histo2d::toJson(json &j) const{
 
     for (unsigned int y=0; y<ybins; y++) {
         for (unsigned int x=0; x<xbins; x++) {
-            j["Data"][x][y] = data[y+(x*ybins)] ;
+            j["Data"][x][y] = data[x+(y*xbins)] ;
         }
     }
 }
@@ -327,10 +327,10 @@ bool Histo2d::fromFile(const std::string &filename) {
         underflow = j["Underflow"];
         overflow = j["Overflow"];
 
-        data = std::vector<double>(xbins*ybins);
+        data = std::vector<float>(xbins*ybins);
         for (unsigned int y=0; y<ybins; y++) {
             for (unsigned int x=0; x<xbins; x++) {
-                data[y+(x*ybins)] = j["Data"][x][y];
+                data[x+(y*xbins)] = j["Data"][x][y];
             }
         }
     }
@@ -347,7 +347,6 @@ void Histo2d::plot(const std::string &prefix, const std::string &dir) const{
     output += ".png";
 
     // Open gnuplot as file and pipe commands
-
     std::string input;
 
     input+="$'set terminal png size 1280, 1024;";
@@ -355,22 +354,20 @@ void Histo2d::plot(const std::string &prefix, const std::string &dir) const{
     input+="unset key;";
     input+="set title \""  +HistogramBase::name+"\";";
     input+="set xlabel \""  +HistogramBase::xAxisTitle+"\";";
+    input+="set xlabel \""  +HistogramBase::xAxisTitle+"\";";
     input+="set ylabel \""  +HistogramBase::yAxisTitle+"\";";
     input+="set cblabel \""  +HistogramBase::zAxisTitle+"\";";
     input+="set xrange["+ std::to_string(xlow)+ ":"+std::to_string(xhigh)+ "];";
     input+="set yrange["+ std::to_string(ylow)+ ":"+std::to_string(yhigh)+ "];";
-    input+="plot \\'-\\' matrix u (($1)*(("+std::to_string(xhigh);
-    input+="-"+std::to_string(xlow)+")/";
-    input+=std::to_string(xbins)+".0)+"+std::to_string(xlow +(xhigh-xlow)/(xbins*2.0));
-    input+= "):(($2)*(("+std::to_string(yhigh);
-    input+="-"+std::to_string(ylow)+")/";
-    input+=std::to_string(ybins)+".0)+"+std::to_string(ylow +(yhigh-ylow)/(ybins*2.0));
-    input+="):3 with image'";
+    input+="plot \\'-\\' binary array=(" + std::to_string(xbins) + "," + std::to_string(ybins) + ") ";// format=\"\%float\" ";
+    input+="dx=" +std::to_string((xhigh-xlow)/((double)xbins)) + " ";
+    input+="dy=" +std::to_string((yhigh-ylow)/((double)ybins)) + " ";
+    input+="origin=(" + std::to_string(xlow+(xhigh-xlow)/(xbins*2.0)) + "," + std::to_string(ylow+(yhigh-ylow)/(ybins*2.0)) + ") ";
+    input+="with image'";
+
     std::string cmd="gnuplot  -e "+input+" > "+output+"\n";
     FILE *gnu = popen(cmd.c_str(), "w");
-    std::stringstream ss;
-    toStream(ss);
-    fprintf(gnu,"%s",ss.str().c_str());
+    fwrite(&data[0], sizeof(float), data.size(), gnu); 
     pclose(gnu);
 }
 
