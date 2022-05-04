@@ -131,7 +131,7 @@ float Rd53bReadRegLoop::ReadResistTemp(Rd53b *tmpFE, bool in_kelvin)
     return tK - 273.15;
 }
 
-float Rd53bReadRegLoop::ReadTransSensor(Rd53b *tmpFE, TransSensorLocation loc, TransSensorType type, bool in_kelvin)
+float Rd53bReadRegLoop::ReadTransSensor(Rd53b *tmpFE, TransSensorLocation loc, TransSensorType type, Rd53bCfg::TransSensor sensor, bool in_kelvin)
 {
     //Sensor Config
     if (tmpFE == NULL)
@@ -179,7 +179,7 @@ float Rd53bReadRegLoop::ReadTransSensor(Rd53b *tmpFE, TransSensorLocation loc, T
     float deltaV = (VDR - VD) / 16.;
 
     if (type == MOS)
-        return tmpFE->readMosTemp(deltaV, in_kelvin);
+        return tmpFE->readMosTemp(deltaV, sensor, in_kelvin);
     else{
         // TODO: implement radiation sensor calibration
         return deltaV;
@@ -258,9 +258,9 @@ void Rd53bReadRegLoop::execPart1()
                 }
                 else if (Reg == "MOS")
                 {
-                    float TempValDSLDO = ReadTransSensor(feRd53b, DSLDO, MOS);
-                    float TempValASLDO = ReadTransSensor(feRd53b, ASLDO, MOS);
-                    float TempValACB = ReadTransSensor(feRd53b, ACB, MOS);
+                    float TempValDSLDO = ReadTransSensor(feRd53b, DSLDO, MOS, Rd53bCfg::DSLDO);
+                    float TempValASLDO = ReadTransSensor(feRd53b, ASLDO, MOS, Rd53bCfg::ASLDO);
+                    float TempValACB = ReadTransSensor(feRd53b, ACB, MOS, Rd53bCfg::ACB);
                     logger->info("[{}][{}] MON MOS temperature sensors digital SLDO: {} C, analog SLDO: {} C, ACB: {} C", feChannel, feName, TempValDSLDO, TempValASLDO, TempValACB);
                 }
             }
@@ -269,9 +269,9 @@ void Rd53bReadRegLoop::execPart1()
             {
                 if (Reg == "BJT")
                 {
-                    float RadValDSLDO = ReadTransSensor(feRd53b, DSLDO, BJT);
-                    float RadValASLDO = ReadTransSensor(feRd53b, ASLDO, BJT);
-                    float RadValACB = ReadTransSensor(feRd53b, ACB, BJT);
+                    float RadValDSLDO = ReadTransSensor(feRd53b, DSLDO, BJT, Rd53bCfg::Other);
+                    float RadValASLDO = ReadTransSensor(feRd53b, ASLDO, BJT, Rd53bCfg::Other);
+                    float RadValACB = ReadTransSensor(feRd53b, ACB, BJT, Rd53bCfg::Other);
                     logger->info("[{}][{}] MON BJT radiation sensors digital SLDO: {}, analog SLDO: {}, ACB: {}", feChannel, feName, RadValDSLDO, RadValASLDO, RadValACB);
                 }
             }

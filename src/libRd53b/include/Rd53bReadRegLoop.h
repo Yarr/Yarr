@@ -59,7 +59,7 @@ private:
     uint16_t ReadRegister(Rd53bReg Rd53bGlobalCfg::*ref, Rd53b *tmpFE);
     uint16_t ReadADC(unsigned short Reg, bool doCur = false, Rd53b *tmpFE = NULL);
     float ReadNTCTemp(Rd53b *tmpFE, bool in_kelvin = false);
-    float ReadTransSensor(Rd53b *tmpFE, TransSensorLocation loc, TransSensorType type, bool in_kelvin = false);
+    float ReadTransSensor(Rd53b *tmpFE, TransSensorLocation loc, TransSensorType type, Rd53bCfg::TransSensor sensor, bool in_kelvin = false);
     float ReadResistTemp(Rd53b *tmpFE = NULL, bool in_kelvin = false); // Broken for RD53B. Need to be fixed
 
     uint16_t m_EnblRingOscA, m_EnblRingOscB, m_RingOscDur, m_RingOscRep;
