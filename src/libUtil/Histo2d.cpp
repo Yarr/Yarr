@@ -113,7 +113,7 @@ void Histo2d::fill(double x, double y, double v) {
             max = v;
         if (v < min)
             min = v;
-        isFilled[ybin+(xbin*ybins)] = true;
+        isFilled[xbin+(ybin*xbins)] = true;
     }
     entries++;
 }
