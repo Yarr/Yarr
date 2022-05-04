@@ -231,11 +231,10 @@ bool StarChips::writeTrims(){
     int hccId = getHCCchipID();
 
     // Then each ABC
-    const auto &abc_regs = AbcStarRegInfo::instance()->abcregisterMap;
     eachAbc([&](auto &abc) {
             int this_chipID = abc.getABCchipID();
 
-            logger->info("Starting on ABC {} with {} registers", this_chipID, abc_regs.size());
+            logger->info("Write ABC {} trim registers", this_chipID);
             for(unsigned int addr = ABCStarRegister::TrimDAC0; addr <= ABCStarRegister::TrimDAC39; addr++) {
                 logger->debug("Writing Register {} for chipID {}", addr, this_chipID);
                 writeABCRegister(addr, abc);
