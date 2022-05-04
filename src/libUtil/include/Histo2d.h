@@ -69,7 +69,7 @@ class Histo2d : public HistogramBase {
 
 
 private:
-        std::vector<double> data;
+        std::vector<float> data;
         std::vector<bool> isFilled;
 
         double underflow;
