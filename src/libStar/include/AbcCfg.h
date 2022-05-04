@@ -246,7 +246,7 @@ class AbcCfg {
             return m_registerSet[index];
         }
 
-        void setupMaps();
+        void setupMaps(int version);
 };
 
 #endif

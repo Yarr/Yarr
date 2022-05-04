@@ -245,12 +245,16 @@ AbcStarRegInfo::AbcStarRegInfo(int version) {
 AbcCfg::AbcCfg(int version)
   : m_info(AbcStarRegInfo::instance(version))
 {
-    setupMaps();
+    setupMaps(version);
     setDefaults();
 }
 
-void AbcCfg::setupMaps() {
+void AbcCfg::setupMaps(int version) {
     auto len = ABCStarRegister::_size();
+    if(version == 1) {
+        len -= 8;
+    }
+
     // In case it's not already empty
     m_registerSet.clear();
     m_registerSet.reserve( len );
@@ -261,6 +265,13 @@ void AbcCfg::setupMaps() {
     //DD    //Add the location in memory of this Register to the register maps
     for (ABCStarRegister reg : ABCStarRegister::_values()) {
         int addr = reg;
+
+        if(version == 1 &&
+           ((addr > ABCStarRegs::ADCS3 && addr <= ABCStarRegs::ADCS7)
+            || (addr > ABCStarRegs::CREG1 && addr <= ABCStarRegs::CREG6))) {
+          continue;
+        }
+
         Register tmp_Reg(m_info->abcregisterMap.at(addr), 0);
         m_registerSet.push_back( std::move(tmp_Reg) ); //Save it to the list
         int lastReg = m_registerSet.size()-1;
