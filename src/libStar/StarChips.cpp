@@ -37,6 +37,7 @@ StarChips::StarChips()
 	addABCchipID(0xf, 0);
 }
 
+#if 0
 StarChips::StarChips(HwController *arg_core)
 : StarCmd(), FrontEnd()
 {
@@ -75,6 +76,7 @@ StarChips::StarChips(HwController *arg_core, unsigned arg_txChannel, unsigned ar
 	geo.nRow = 2;
 	geo.nCol = 128;
 }
+#endif
 
 void StarChips::enableAll() {
     eachAbc([&](auto &abc) {

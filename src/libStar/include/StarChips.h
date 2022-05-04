@@ -20,9 +20,11 @@ class RxCore;
 class StarChips : public StarCfg, public StarCmd, public FrontEnd {
  public:
   StarChips();
+#if 0
   StarChips(HwController *arg_core);
   StarChips(HwController *arg_core, unsigned arg_channel);
   StarChips(HwController *arg_core, unsigned arg_txchannel, unsigned arg_rxchannel);
+#endif
 
   ~StarChips() override = default;
 
