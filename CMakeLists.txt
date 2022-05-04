@@ -54,7 +54,7 @@ add_compile_options(-Wnon-virtual-dtor)
 
 option(BUILD_TESTS "Build the YARR test suite" OFF)
 option(DISABLE_PLOTTING_TOOLS "Disable build of plotting tools" OFF)
-set(YARR_FRONT_ENDS_TO_BUILD "Fei4;Rd53a;Star;Fe65p2;Rd53b"
+set(YARR_FRONT_ENDS_TO_BUILD "Fei4;Rd53a;Star;Rd53b"
     CACHE STRING "Semicolon-separated list of controllers to build, or \"all\"")
 set(YARR_CONTROLLERS_TO_BUILD  "Spec;Emu"
     CACHE STRING "Semicolon-separated list of controllers to build, or \"all\".")
@@ -68,7 +68,7 @@ set(CONTROLLERS "")
 
 # only build those controllers specified in YARR_CONTROLLERS_TO_BUILD
 if(YARR_CONTROLLERS_TO_BUILD STREQUAL "all")
-   set(CONTROLLERS "Spec;Emu;Bdaq;Rogue;NetioHW;Boc;ItsdaqFW;KU040")
+   set(CONTROLLERS "Spec;Emu;Bdaq;Rogue;NetioHW;ItsdaqFW")
 else()
   foreach(ctrl IN LISTS YARR_CONTROLLERS_TO_BUILD )
     if(NOT ${ctrl} IN_LIST CONTROLLERS)
@@ -79,7 +79,7 @@ endif()
 
 # only build those front-ends specified in YARR_FRONT_ENDS_TO_BUILD
 if(YARR_FRONT_ENDS_TO_BUILD STREQUAL "all")
-    set(FRONT_ENDS "Fei4;Rd53a;Star;Fe65p2;Rd53b")
+    set(FRONT_ENDS "Fei4;Rd53a;Star;Rd53b")
 else()
     foreach(fe IN LISTS YARR_FRONT_ENDS_TO_BUILD)
         if(NOT ${fe} IN_LIST FRONT_ENDS)
