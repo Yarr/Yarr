@@ -6,11 +6,22 @@ namespace {
   auto logger = logging::make_log("StarCfgABC");
 }
 
-std::shared_ptr<const AbcStarRegInfo> AbcStarRegInfo::m_instance;
+std::shared_ptr<const AbcStarRegInfo> AbcStarRegInfo::instance(int version) {
+  static std::array<std::shared_ptr<AbcStarRegInfo>, 2> instance_var{nullptr, nullptr};
+
+  if(version > 0) version = 1;
+  else version = 0;
+
+  if(!instance_var[version]) {
+    instance_var[version].reset(new AbcStarRegInfo(version));
+  }
+
+  return instance_var[version];
+}
 
 //Register enums definitions
 typedef std::tuple<ABCStarSubRegister, unsigned int, unsigned int, unsigned int> abcsubregdef;
-const std::vector<abcsubregdef> s_abcsubregdefs = {
+const std::vector<abcsubregdef> s_abcsubregdefs_v0 = {
   {ABCStarSubRegister::RRFORCE			,0	,0	,1}	,
   {ABCStarSubRegister::WRITEDISABLE		,0	,1	,1}	,
   {ABCStarSubRegister::STOPHPR			,0	,2	,1}	,
@@ -76,12 +87,93 @@ const std::vector<abcsubregdef> s_abcsubregdefs = {
   {ABCStarSubRegister::LCB_ERRCOUNT_THR	        ,38	,0	,16}
 };
 
-AbcStarRegInfo::AbcStarRegInfo() {
+const std::vector<abcsubregdef> s_abcsubregdefs_v1 = {
+  // SCREG
+  {ABCStarSubRegister::RRFORCE,      0, 0, 1},
+  {ABCStarSubRegister::WRITEDISABLE, 0, 1, 1},
+  {ABCStarSubRegister::STOPHPR,      0, 2, 1},
+  {ABCStarSubRegister::TESTHPR,      0, 3, 1},
+  {ABCStarSubRegister::EFUSEL,       0, 4, 1},
+  {ABCStarSubRegister::LCBERRCNTCLR, 0, 5, 1},
+  {ABCStarSubRegister::ADCRESET,     0, 6, 1},
+
+  // DCS1
+  {ABCStarSubRegister::BVREF,                1, 0,  5},
+  {ABCStarSubRegister::BIREF,                1, 5,  5},
+  {ABCStarSubRegister::B8BREF,               1, 10, 5},
+  {ABCStarSubRegister::BTRANGE,              1, 15, 5},
+  {ABCStarSubRegister::BVT,                  1, 20, 8},
+  {ABCStarSubRegister::DIS_CLK,              1, 28, 3},
+  {ABCStarSubRegister::LCB_SELF_TEST_ENABLE, 1, 31, 1},
+
+  // DCS2
+  {ABCStarSubRegister::STR_DEL_R,     2, 0,  2},
+  {ABCStarSubRegister::STR_DEL,       2, 2,  6},
+  {ABCStarSubRegister::COMBIAS,       2, 8,  5},
+  {ABCStarSubRegister::BCAL,          2, 13, 9},
+  {ABCStarSubRegister::DATA_IDLE,     2, 22, 4},
+  {ABCStarSubRegister::EN_GLITCH_A,   2, 26, 1},
+  {ABCStarSubRegister::EN_GLITCH_B,   2, 27, 1},
+  {ABCStarSubRegister::EN_GLITCH_C,   2, 28, 1},
+  {ABCStarSubRegister::EN_GLITCH_V,   2, 29, 1},
+  {ABCStarSubRegister::EN_GLITCH_ADC, 2, 30, 1},
+  {ABCStarSubRegister::RING_OSC_EN,   2, 31, 1},
+
+  // DCS3
+  {ABCStarSubRegister::ADC_BIAS,       3, 0,  4},
+  {ABCStarSubRegister::ADC_CH,         3, 4,  4},
+  {ABCStarSubRegister::ADC_ENABLE,     3, 8,  1},
+  {ABCStarSubRegister::BTMUX_DEC,      3, 9,  4},
+  {ABCStarSubRegister::BTMUXD,         3, 13, 1},
+  {ABCStarSubRegister::A_S_DEC,        3, 14, 5},
+  {ABCStarSubRegister::A_LOW,          3, 19, 1},
+  {ABCStarSubRegister::A_EN_CTRL,      3, 20, 1},
+  {ABCStarSubRegister::D_S_DEC,        3, 21, 5},
+  {ABCStarSubRegister::D_LOW,          3, 26, 1},
+  {ABCStarSubRegister::D_EN_CTRL,      3, 27, 1},
+  {ABCStarSubRegister::EN_OUT_DECODER, 3, 28, 4},
+
+  // CFG0
+  {ABCStarSubRegister::TEST_PULSE_ENABLE, 32, 0,  1},
+  {ABCStarSubRegister::ENCOUNT,           32, 1,  1},
+  {ABCStarSubRegister::MASKHPR,           32, 2,  1},
+  {ABCStarSubRegister::PR_ENABLE,         32, 3,  1},
+  {ABCStarSubRegister::LP_ENABLE,         32, 4,  1},
+  {ABCStarSubRegister::RRMODE,            32, 5,  2},
+  {ABCStarSubRegister::TM,                32, 7,  2},
+  {ABCStarSubRegister::TESTPATT_ENABLE,   32, 9,  1},
+  {ABCStarSubRegister::TESTPATT1,         32, 10, 4},
+  {ABCStarSubRegister::TESTPATT2,         32, 14, 4},
+  {ABCStarSubRegister::CURRDRIV,          32, 18, 3},
+  {ABCStarSubRegister::CALPULSE_ENABLE,   32, 21, 1},
+  {ABCStarSubRegister::CALPULSE_POLARITY, 32, 22, 1},
+  {ABCStarSubRegister::LATENCY,           32, 23, 9},
+
+  // CFG1
+  {ABCStarSubRegister::DTESTOUTSEL,            33, 0,  7},
+  {ABCStarSubRegister::DETMODE,                33, 7,  2},
+  {ABCStarSubRegister::MAX_CLUSTER,            33, 9,  6},
+  {ABCStarSubRegister::MAX_CLUSTER_ENABLE,     33, 15, 1},
+  // {ABCStarSubRegister::DOFUSEADDR,             33, 16,  5},
+  {ABCStarSubRegister::V0_READOUT_MODE,        33, 21, 1},
+  {ABCStarSubRegister::DIS_CLKS_EN,            33, 22, 1},
+  {ABCStarSubRegister::LCB_ERRCOUNT_THR,       33, 23, 8},
+  {ABCStarSubRegister::READOUT_TIMEOUT_ENABLE, 33, 31, 1},
+};
+
+AbcStarRegInfo::AbcStarRegInfo(int version) {
     // Build using writeable map
     std::map<unsigned, std::shared_ptr<RegisterInfo>> regMap;
 
     for (ABCStarRegister reg : ABCStarRegister::_values()) {
         int addr = reg;
+
+        if(version == 1 &&
+           ((addr > ABCStarRegs::ADCS3 && addr <= ABCStarRegs::ADCS7)
+            || (addr > ABCStarRegs::CREG1 && addr <= ABCStarRegs::CREG6))) {
+          continue;
+        }
+
         regMap[addr] = std::make_shared<RegisterInfo>(addr);
     }
 
@@ -93,10 +185,19 @@ AbcStarRegInfo::AbcStarRegInfo() {
           continue;
         }
 
+        if(version == 1 &&
+           ((addr > ABCStarRegs::ADCS3 && addr <= ABCStarRegs::ADCS7)
+            || (addr > ABCStarRegs::CREG1 && addr <= ABCStarRegs::CREG6))) {
+          continue;
+        }
+
         abcWriteMap[addr] = regMap[addr];
     }
 
-    for (auto def : s_abcsubregdefs) {
+    auto &subregdefs = (version == 0)?
+      s_abcsubregdefs_v0 : s_abcsubregdefs_v1;
+
+    for (auto def : subregdefs) {
         auto reg_id = std::get<0>(def);
         std::string subregname = std::string(reg_id._to_string());
         auto addr = std::get<1>(def);

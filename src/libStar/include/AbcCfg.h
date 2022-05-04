@@ -15,6 +15,7 @@
 #include "StarRegister.h"
 
 // Name different ABC registers that can be used
+//  NB some are not used in V1
 BETTER_ENUM(ABCStarRegs, int,
             SCReg=0, ADCS1=1, ADCS2=2, ADCS3=3, ADCS4=4, ADCS5=5, ADCS6=6, ADCS7=7,
             MaskInput0=16, MaskInput1=17, MaskInput2=18, MaskInput3=19, MaskInput4=20, MaskInput5=21, MaskInput6=22, MaskInput7=23,
@@ -26,7 +27,7 @@ BETTER_ENUM(ABCStarRegs, int,
             CalREG0=104, CalREG1=105, CalREG2=106, CalREG3=107, CalREG4=108, CalREG5=109, CalREG6=110, CalREG7=111,
             HitCountREG0=128, HitCountREG1=129, HitCountREG2=130, HitCountREG3=131, HitCountREG4=132, HitCountREG5=133, HitCountREG6=134, HitCountREG7=135, HitCountREG8=136, HitCountREG9=137, HitCountREG10=138, HitCountREG11=139, HitCountREG12=140, HitCountREG13=141, HitCountREG14=142, HitCountREG15=143, HitCountREG16=144, HitCountREG17=145, HitCountREG18=146, HitCountREG19=147, HitCountREG20=148, HitCountREG21=149, HitCountREG22=150, HitCountREG23=151, HitCountREG24=152, HitCountREG25=153, HitCountREG26=154, HitCountREG27=155, HitCountREG28=156, HitCountREG29=157, HitCountREG30=158, HitCountREG31=159, HitCountREG32=160, HitCountREG33=161, HitCountREG34=162, HitCountREG35=163, HitCountREG36=164, HitCountREG37=165, HitCountREG38=166, HitCountREG39=167, HitCountREG40=168, HitCountREG41=169, HitCountREG42=170, HitCountREG43=171, HitCountREG44=172, HitCountREG45=173, HitCountREG46=174, HitCountREG47=175, HitCountREG48=176, HitCountREG49=177, HitCountREG50=178, HitCountREG51=179, HitCountREG52=180, HitCountREG53=181, HitCountREG54=182, HitCountREG55=183, HitCountREG56=184, HitCountREG57=185, HitCountREG58=186, HitCountREG59=187, HitCountREG60=188, HitCountREG61=189, HitCountREG62=190, HitCountREG63=191)
 
-//Name different ABC subregisters that can be used for configuration, scans, etc.
+//Name different ABCv0 subregisters that can be used for configuration, scans, etc.
 
 BETTER_ENUM(ABCStarSubRegister, int,
             RRFORCE=1, WRITEDISABLE, STOPHPR, TESTHPR, EFUSEL, LCBERRCNTCLR,
@@ -42,7 +43,27 @@ BETTER_ENUM(ABCStarSubRegister, int,
             DETMODE, MAX_CLUSTER, MAX_CLUSTER_ENABLE,
             EN_CLUSTER_EMPTY, EN_CLUSTER_FULL, EN_CLUSTER_OVFL, EN_REGFIFO_EMPTY, EN_REGFIFO_FULL, EN_REGFIFO_OVFL, EN_LPFIFO_EMPTY, EN_LPFIFO_FULL, EN_PRFIFO_EMPTY, EN_PRFIFO_FULL, EN_LCB_LOCKED, EN_LCB_DECODE_ERR, EN_LCB_ERRCNT_OVFL, EN_LCB_SCMD_ERR,
             // DOFUSE, // Not needed
-            LCB_ERRCOUNT_THR)
+            LCB_ERRCOUNT_THR,
+
+            // New for ABCStarV1
+            // SCREG
+            ADCRESET,
+
+            // DCS1
+            DIS_CLK, LCB_SELF_TEST_ENABLE,
+
+            // DCS2
+            DATA_IDLE, EN_GLITCH_A, EN_GLITCH_B, EN_GLITCH_C, EN_GLITCH_V, EN_GLITCH_ADC, RING_OSC_EN,
+
+            // DCS3
+            BTMUX_DEC, A_S_DEC, A_LOW, D_S_DEC, EN_OUT_DECODER,
+
+            // CFG1
+            DTESTOUTSEL,
+            // DOFUSEADDR
+            V0_READOUT_MODE, DIS_CLKS_EN,
+            READOUT_TIMEOUT_ENABLE
+)
 
 class ABCStarRegister : public ABCStarRegs {
   public:
@@ -64,7 +85,7 @@ class AbcStarRegInfo {
 
   public:
   /// Fills the maps appropriately
-  AbcStarRegInfo();
+  AbcStarRegInfo(int version = 0);
 
   //This is a map from each register address to the register info.  Thus abcregisterMap[addr]
   std::map<unsigned, InfoPtr> abcregisterMap;
@@ -78,10 +99,7 @@ class AbcStarRegInfo {
   //This is a 2D map of each trimDac_32b register to the chip index and trimDAC_1MSB register name.  For example trimDAC1LSB_RegisterMap_all[chip index][NAME]
   std::map<int, SubInfoPtr> trimDAC_1MSB_RegisterMap_all;
 
-  static std::shared_ptr<const AbcStarRegInfo> instance() {
-    if(!m_instance) m_instance.reset(new AbcStarRegInfo);
-    return m_instance;
-  }
+  static std::shared_ptr<const AbcStarRegInfo> instance(int version = 0);
 
   /// Return sub register info for name, throws std::runtime_error
   SubInfoPtr subRegByName(const std::string &subRegName) const {
@@ -112,8 +130,6 @@ class AbcStarRegInfo {
   /// This is a map from each subregister to the ABC subregister name
   /// For example abcSubRegisterMap_all[NAME]
   std::map<ABCStarSubRegister, SubInfoPtr> abcSubRegisterMap_all;
-
-  static std::shared_ptr<const AbcStarRegInfo> m_instance;
 };
 
 /// Configuration for an individual ABCStar

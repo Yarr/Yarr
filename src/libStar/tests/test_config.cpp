@@ -134,9 +134,21 @@ TEST_CASE("StarCfgTrims", "[star][config]") {
 }
 
 TEST_CASE("Star_AbcRegInfo", "[star][config]") {
-  int write_size = 69;
+  int version;
+  int write_size;
 
-  const auto info = AbcStarRegInfo::instance();
+  SECTION ("With ABCv0") {
+    version = 0;
+    write_size = 69;
+  }
+  SECTION ("With ABCv1") {
+    version = 1;
+    write_size = 61;
+  }
+
+  CAPTURE (version);
+
+  const auto info = AbcStarRegInfo::instance(version);
 
   CHECK (info->abcWriteMap.size() == write_size);
 
