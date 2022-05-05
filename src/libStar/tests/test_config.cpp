@@ -16,8 +16,8 @@ TEST_CASE("StarCfg", "[star][config]") {
   SECTION("With ABCv1") {
     abc_version = 1;
     creg0_response = 0x87669721;
-    bad_name = "A_S";
     good_name = "READOUT_TIMEOUT_ENABLE";
+    bad_name = "A_S";
   }
 
   CAPTURE (abc_version);
@@ -63,7 +63,6 @@ TEST_CASE("StarCfg", "[star][config]") {
       // Config specific good/bad
       CHECK_THROWS (abc.getSubRegisterValue(bad_name));
       CHECK_NOTHROW (abc.getSubRegisterValue(good_name));
-
     });
 
   // Internal index for referring to the ABC
@@ -77,12 +76,53 @@ TEST_CASE("StarCfg", "[star][config]") {
   test_config.setSubRegisterValue(abc_index, "TESTPATT2", 0xa);
   REQUIRE (test_config.getSubRegisterValue(abc_index, "TESTPATT1") == 0x5);
 
-  REQUIRE (test_config.getABCRegister(ABCStarRegister::CREG0, abc_id) == 0x8a554321);
-  REQUIRE (test_config.getSubRegisterParentValue(abc_index, "TESTPATT1") == 0x8a554321);
+  REQUIRE (test_config.getABCRegister(ABCStarRegister::CREG0, abc_id) == creg0_response);
+  REQUIRE (test_config.getSubRegisterParentValue(abc_index, "TESTPATT1") == creg0_response);
+}
+
+// Some ABC v1 specific registers
+TEST_CASE("StarCfg_ABCv1", "[star][config]") {
+  int abc_version = 1;
+
+  StarCfg test_config(abc_version);
+  test_config.setHCCChipId(4);
+
+  const int abc_id = 13;
+  test_config.addABCchipID(abc_id);
+
+  test_config.setABCRegister(ABCStarRegister::CREG0, 0x87654321, abc_id);
+  REQUIRE (test_config.getABCRegister(ABCStarRegister::CREG0, abc_id) == 0x87654321);
+
+  test_config.setABCRegister(ABCStarRegister::ADCS1, 0x87654321, abc_id);
+  REQUIRE (test_config.getABCRegister(ABCStarRegister::ADCS1, abc_id) == 0x87654321);
+
+  test_config.setABCRegister(ABCStarRegister::ADCS2, 0x87654321, abc_id);
+  REQUIRE (test_config.getABCRegister(ABCStarRegister::ADCS2, abc_id) == 0x87654321);
+
+  test_config.eachAbc([&](AbcCfg &abc) {
+      REQUIRE (abc.getABCchipID() == abc_id);
+
+      REQUIRE (abc.getSubRegisterParentAddr("BVREF") == ABCStarRegister::ADCS1);
+
+      abc.setSubRegisterValue("BVREF", 0x1f);
+      abc.setSubRegisterValue("BIREF", 0x1f);
+      abc.setSubRegisterValue("B8BREF", 0x1f);
+      abc.setSubRegisterValue("BTRANGE", 0x1f);
+      abc.setSubRegisterValue("BVT", 0xff);
+      abc.setSubRegisterValue("DIS_CLK", 7);
+      abc.setSubRegisterValue("LCB_SELF_TEST_ENABLE", 1);
+
+      REQUIRE (test_config.getABCRegister(ABCStarRegister::ADCS1, abc_id) == 0xffffffff);
+      REQUIRE (abc.getSubRegisterParentValue("LCB_SELF_TEST_ENABLE") == 0xffffffff);
+
+      // Others unchanged
+      REQUIRE (test_config.getABCRegister(ABCStarRegister::ADCS2, abc_id) == 0x87654321);
+      REQUIRE (test_config.getABCRegister(ABCStarRegister::CREG0, abc_id) == 0x87654321);
+    });
 }
 
 TEST_CASE("StarCfgTrims", "[star][config]") {
-  StarCfg test_config;
+  StarCfg test_config(0);
   test_config.setHCCChipId(2);
   const int abc_id = 3;
   test_config.addABCchipID(abc_id);
