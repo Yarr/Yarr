@@ -450,7 +450,8 @@ void StarChipsetEmu::logicReset() {
 }
 
 void StarChipsetEmu::resetABCRegisters() {
-  m_starCfg->eachAbc([&](auto &abc){abc.setDefaults();});
+  int abc_version = 0;
+  m_starCfg->eachAbc([&](auto &abc){abc.setDefaults(abc_version);});
   resetABCHitCounts();
 }
 

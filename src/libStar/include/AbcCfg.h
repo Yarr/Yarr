@@ -85,7 +85,7 @@ class AbcStarRegInfo {
 
   public:
   /// Fills the maps appropriately
-  AbcStarRegInfo(int version = 0);
+  AbcStarRegInfo(int version);
 
   //This is a map from each register address to the register info.  Thus abcregisterMap[addr]
   std::map<unsigned, InfoPtr> abcregisterMap;
@@ -99,7 +99,7 @@ class AbcStarRegInfo {
   //This is a 2D map of each trimDac_32b register to the chip index and trimDAC_1MSB register name.  For example trimDAC1LSB_RegisterMap_all[chip index][NAME]
   std::map<int, SubInfoPtr> trimDAC_1MSB_RegisterMap_all;
 
-  static std::shared_ptr<const AbcStarRegInfo> instance(int version = 0);
+  static std::shared_ptr<const AbcStarRegInfo> instance(int version);
 
   /// Return sub register info for name, throws std::runtime_error
   SubInfoPtr subRegByName(const std::string &subRegName) const {
@@ -153,7 +153,7 @@ class AbcCfg {
         // Default move works (no pointers)
         AbcCfg(AbcCfg &&other) = default;
 
-        void setDefaults(int version = 0);
+        void setDefaults(int version);
 
         unsigned int getABCchipID() const { return m_abcID;}
         void setABCChipId(unsigned abcID){
