@@ -16,12 +16,15 @@ namespace {
 
 #include "AllChips.h"
 
-bool star_chips_registered =
+bool star_chips_v0_registered =
 StdDict::registerFrontEnd
-  ("Star", []() { return std::unique_ptr<FrontEnd>(new StarChips); });
+  ("Star", []() { return std::unique_ptr<FrontEnd>(new StarChips(0)); });
+bool star_chips_v1_registered =
+StdDict::registerFrontEnd
+  ("Star_PPA", []() { return std::unique_ptr<FrontEnd>(new StarChips(1)); });
 
-StarChips::StarChips()
-: StarCmd(), FrontEnd()
+StarChips::StarChips(int abc_version)
+  : StarCfg(abc_version), StarCmd(), FrontEnd()
 {
 	m_txcore  = nullptr;
 
