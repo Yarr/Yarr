@@ -21,7 +21,7 @@
 /// Represents configuration for one particular Star front-end (HCC + ABCs)
 class StarCfg : public FrontEndCfg {
  public:
-  StarCfg();
+  StarCfg(int abc_version = 0);
   ~StarCfg() override;
 
   //Function to make all Registers for the ABC

@@ -3,8 +3,27 @@
 #include "StarCfg.h"
 
 TEST_CASE("StarCfg", "[star][config]") {
+  int abc_version = 2;
+  uint32_t creg0_response;
+  std::string bad_name;
+  std::string good_name;
+  SECTION("With ABCv0") {
+    abc_version = 0;
+    creg0_response = 0x8a554321;
+    bad_name = "READOUT_TIMEOUT_ENABLE";
+    good_name = "A_S";
+  }
+  SECTION("With ABCv1") {
+    abc_version = 1;
+    creg0_response = 0x87669721;
+    bad_name = "A_S";
+    good_name = "READOUT_TIMEOUT_ENABLE";
+  }
+
+  CAPTURE (abc_version);
+
   // Side-effect of checking it's not abstract is intentional
-  StarCfg test_config;
+  StarCfg test_config(abc_version);
   test_config.setHCCChipId(4);
   const int abc_id = 14;
   test_config.addABCchipID(abc_id);
@@ -32,9 +51,19 @@ TEST_CASE("StarCfg", "[star][config]") {
       abc.setSubRegisterValue("TESTPATT2", 0xa);
       REQUIRE (abc.getSubRegisterValue("TESTPATT1") == 0x5);
 
+      CHECK_THROWS (abc.getSubRegisterValue("RANDOM_NAME"));
+
+      // Common name
+      CHECK_NOTHROW (abc.getSubRegisterValue("BVT"));
+
       // Use abc_id here for some reason
-      REQUIRE (test_config.getABCRegister(ABCStarRegister::CREG0, abc_id) == 0x8a554321);
-      REQUIRE (abc.getSubRegisterParentValue("TESTPATT1") == 0x8a554321);
+      CHECK (test_config.getABCRegister(ABCStarRegister::CREG0, abc_id) == creg0_response);
+      CHECK (abc.getSubRegisterParentValue("TESTPATT1") == creg0_response);
+
+      // Config specific good/bad
+      CHECK_THROWS (abc.getSubRegisterValue(bad_name));
+      CHECK_NOTHROW (abc.getSubRegisterValue(good_name));
+
     });
 
   // Internal index for referring to the ABC

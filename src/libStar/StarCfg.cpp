@@ -15,8 +15,8 @@ namespace {
   auto logger = logging::make_log("StarCfg");
 }
 
-StarCfg::StarCfg()
-  : m_abc_info(AbcStarRegInfo::instance())
+StarCfg::StarCfg(int abc_version)
+  : m_abc_info(AbcStarRegInfo::instance(abc_version))
 {}
 
 StarCfg::~StarCfg() = default;
