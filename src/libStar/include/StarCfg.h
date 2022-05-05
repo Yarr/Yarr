@@ -60,7 +60,7 @@ class StarCfg : public FrontEndCfg {
   }
 
   void addABCchipID(unsigned int chipID, unsigned int hccIn) {
-      m_ABCchips.emplace(hccIn,AbcCfg{});
+      m_ABCchips.emplace(hccIn, m_abc_version);
       m_ABCchips[hccIn].setABCChipId(chipID);
   }
 
@@ -175,6 +175,8 @@ class StarCfg : public FrontEndCfg {
   std::shared_ptr<const AbcStarRegInfo> m_abc_info; 
 
   uint32_t m_sn=0;//serial number set by eFuse bits
+
+  int m_abc_version; 
 
   HccCfg m_hcc;
 

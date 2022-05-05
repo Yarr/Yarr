@@ -16,7 +16,8 @@ namespace {
 }
 
 StarCfg::StarCfg(int abc_version)
-  : m_abc_info(AbcStarRegInfo::instance(abc_version))
+  : m_abc_info(AbcStarRegInfo::instance(abc_version)),
+    m_abc_version(abc_version)
 {}
 
 StarCfg::~StarCfg() = default;
