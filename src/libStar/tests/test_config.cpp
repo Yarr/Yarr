@@ -182,6 +182,9 @@ TEST_CASE("Star_AbcRegInfo", "[star][config]") {
   }
 
   CHECK (info->abcWriteMap.size() == write_size);
+
+  AbcCfg a(version);
+  CHECK (a.isMasked(0) == false);
 }
 
 TEST_CASE("Star_HccRegInfo", "[star][config]") {
