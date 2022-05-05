@@ -242,8 +242,8 @@ AbcStarRegInfo::AbcStarRegInfo(int version) {
     }
 }
 
-AbcCfg::AbcCfg()
-  : m_info(AbcStarRegInfo::instance())
+AbcCfg::AbcCfg(int version)
+  : m_info(AbcStarRegInfo::instance(version))
 {
     setupMaps();
     setDefaults();

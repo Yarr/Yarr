@@ -145,7 +145,8 @@ class AbcCfg {
         std::shared_ptr<const AbcStarRegInfo > m_info;
 
     public:
-        AbcCfg();
+        AbcCfg() : AbcCfg(0) {}
+        AbcCfg(int version);
         AbcCfg(const AbcCfg &) = delete;
         AbcCfg &operator =(const AbcCfg &) = delete;
         AbcCfg &operator =(AbcCfg &&) = delete;
