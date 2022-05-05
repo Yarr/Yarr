@@ -260,7 +260,7 @@ bool StarChips::writeRegisters(){
         }
 
         // Then each ABC
-        const auto &abc_regs = AbcStarRegInfo::instance()->abcWriteMap;
+        const auto &abc_regs = m_abc_info->abcWriteMap;
 	eachAbc([&](auto &abc) {
                 int this_chipID = abc.getABCchipID();
 
@@ -330,7 +330,7 @@ void StarChips::readRegisters(){
                 readHCCRegister(addr);
         }
 
-        auto &abc_regs = AbcStarRegInfo::instance()->abcregisterMap;
+        const auto &abc_regs = m_abc_info->abcregisterMap;
 
         eachAbc([&](const auto &abc) {
                 int this_chipID = abc.getABCchipID();

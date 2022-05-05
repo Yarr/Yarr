@@ -94,7 +94,7 @@ class StarCfg : public FrontEndCfg {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
       return m_hcc.getSubRegisterParentAddr(subRegName);
     } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
-      return AbcStarRegInfo::instance()->getSubRegisterParentAddr(subRegName);
+      return m_abc_info->getSubRegisterParentAddr(subRegName);
     }else {
       std::cerr << " --> Error: Could not find register \""<< subRegName << "\"" << std::endl;
     }
@@ -171,6 +171,8 @@ class StarCfg : public FrontEndCfg {
       }
       return (*m_ABCchips.end()).second;
   }
+
+  std::shared_ptr<const AbcStarRegInfo> m_abc_info; 
 
   uint32_t m_sn=0;//serial number set by eFuse bits
 

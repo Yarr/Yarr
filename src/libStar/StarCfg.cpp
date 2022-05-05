@@ -15,7 +15,9 @@ namespace {
   auto logger = logging::make_log("StarCfg");
 }
 
-StarCfg::StarCfg() = default;
+StarCfg::StarCfg()
+  : m_abc_info(AbcStarRegInfo::instance())
+{}
 
 StarCfg::~StarCfg() = default;
 
@@ -133,7 +135,7 @@ void StarCfg::writeConfig(json &j) {
         }
     }
 
-    auto &abcRegs = AbcStarRegInfo::instance()->abcregisterMap;
+    auto &abcRegs = m_abc_info->abcregisterMap;
 
     std::map<std::string, std::string> common;
     // Store until we know which are not common
