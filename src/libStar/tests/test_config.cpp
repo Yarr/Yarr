@@ -132,3 +132,42 @@ TEST_CASE("StarCfgTrims", "[star][config]") {
   // void setTrimDAC(unsigned col, unsigned row, int value);
   // int getTrimDAC(unsigned col, unsigned row);
 }
+
+TEST_CASE("Star_AbcRegInfo", "[star][config]") {
+  int write_size = 69;
+
+  const auto info = AbcStarRegInfo::instance();
+
+  CHECK (info->abcWriteMap.size() == write_size);
+
+  // Check shared_ptrs refer to something
+  for(auto &rm: info->abcregisterMap) {
+    CAPTURE (rm.first);
+    CHECK (rm.second != nullptr);
+  }
+
+  for(auto &rm: info->abcWriteMap) {
+    CAPTURE (rm.first);
+    CHECK (rm.second != nullptr);
+
+    // All writeable registers should be in register list
+    CHECK (info->abcregisterMap.find(rm.first) != info->abcregisterMap.end());
+  }
+
+  for(auto &rm: info->abcSubRegisterMap_all) {
+    CAPTURE (rm.first);
+    CHECK (rm.second != nullptr);
+  }
+
+  for(auto &rm: info->trimDAC_4LSB_RegisterMap_all) {
+    CAPTURE (rm.first);
+    CHECK (rm.second != nullptr);
+  }
+
+  for(auto &rm: info->trimDAC_1MSB_RegisterMap_all) {
+    CAPTURE (rm.first);
+    CHECK (rm.second != nullptr);
+  }
+
+  CHECK (info->abcWriteMap.size() == write_size);
+}
