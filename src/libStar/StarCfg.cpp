@@ -377,6 +377,8 @@ void StarCfg::loadConfig(const json &j) {
                 logger->trace("All ABCs reg {} has been set to {:08x}", regName, regValue);
             } catch(std::runtime_error &e) {
                 logger->warn("Reg {} in JSON file does not exist as an ABC register.  It will be ignored!", regName);
+            } catch(std::out_of_range &e) {
+                logger->warn("Reg {} in JSON file is not valid ABC register (version {}).  It will be ignored!", regName, m_abc_version);
             }
         }
     }
