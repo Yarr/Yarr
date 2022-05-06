@@ -19,7 +19,7 @@ class RxCore;
 
 class StarChips : public StarCfg, public StarCmd, public FrontEnd {
  public:
-  StarChips(int abc_version);
+  StarChips(int abc_version, int hcc_version);
 #if 0
   StarChips(HwController *arg_core);
   StarChips(HwController *arg_core, unsigned arg_channel);

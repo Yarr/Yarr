@@ -21,7 +21,7 @@
 /// Represents configuration for one particular Star front-end (HCC + ABCs)
 class StarCfg : public FrontEndCfg {
  public:
-  StarCfg(int abc_version);
+  StarCfg(int abc_version, int hcc_version);
   ~StarCfg() override;
 
   //Function to make all Registers for the ABC
@@ -173,10 +173,12 @@ class StarCfg : public FrontEndCfg {
   }
 
   std::shared_ptr<const AbcStarRegInfo> m_abc_info; 
+  std::shared_ptr<const HccStarRegInfo> m_hcc_info; 
 
   uint32_t m_sn=0;//serial number set by eFuse bits
 
   int m_abc_version; 
+  int m_hcc_version; 
 
   HccCfg m_hcc;
 

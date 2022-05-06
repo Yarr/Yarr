@@ -257,6 +257,6 @@ TEST_CASE("StarChipsNamedConfig", "[star][chips]") {
 
 TEST_CASE("StarChips", "[star][chips]") {
   // Side-effect of checking it's not abstract is intentional
-  StarChips test_config(0);
+  StarChips test_config(0, 0);
   //  test_config.setHCCChipId(4);
 }

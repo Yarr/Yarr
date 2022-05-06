@@ -480,7 +480,8 @@ void StarChipsetEmu::resetSlowCommand() {
 }
 
 void StarChipsetEmu::resetHCCRegisters() {
-  (m_starCfg->hcc()).setDefaults();
+  int hcc_version = 0;
+  (m_starCfg->hcc()).setDefaults(hcc_version);
 }
 
 void StarChipsetEmu::resetHCCSEU() {

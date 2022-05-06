@@ -6,10 +6,21 @@ namespace {
   auto logger = logging::make_log("StarCfgHCC");
 }
 
-std::shared_ptr<const HccStarRegInfo> HccStarRegInfo::m_instance;
+std::shared_ptr<const HccStarRegInfo> HccStarRegInfo::instance(int version) {
+  static std::array<std::shared_ptr<HccStarRegInfo>, 2> instance_var{nullptr, nullptr};
+
+  if(version > 0) version = 1;
+  else version = 0;
+
+  if(!instance_var[version]) {
+    instance_var[version].reset(new HccStarRegInfo(version));
+  }
+
+  return instance_var[version];
+}
 
 typedef std::tuple<HCCStarSubRegister, unsigned int, unsigned int, unsigned int> hccsubregdef;
-const std::vector<hccsubregdef> s_hccsubregdefs = {
+const std::vector<hccsubregdef> s_hccsubregdefs_common = {
   {HCCStarSubRegister::STOPHPR			,16	,0	,1}	,
   {HCCStarSubRegister::TESTHPR			,16	,1	,1}	,
   {HCCStarSubRegister::CFD_BC_FINEDELAY		,32	,0	,4}	,
@@ -35,12 +46,6 @@ const std::vector<hccsubregdef> s_hccsubregdefs = {
   {HCCStarSubRegister::EPLLRES                  ,35	,8	,4}	,
   {HCCStarSubRegister::EPLLREFFREQ              ,35	,12	,2}	,
   {HCCStarSubRegister::EPLLENABLEPHASE          ,35	,16	,8}	,
-  {HCCStarSubRegister::EPLLPHASE320A            ,36	,0	,4}	,
-  {HCCStarSubRegister::EPLLPHASE320B            ,36	,4	,4}	,
-  {HCCStarSubRegister::EPLLPHASE320C            ,36	,8	,4}	,
-  {HCCStarSubRegister::EPLLPHASE160A            ,37	,0	,4}	,
-  {HCCStarSubRegister::EPLLPHASE160B            ,37	,8	,4}	,
-  {HCCStarSubRegister::EPLLPHASE160C            ,37	,16	,4}	,
   {HCCStarSubRegister::STVCLKOUTCUR             ,38	,0	,3}	,
   {HCCStarSubRegister::STVCLKOUTEN              ,38	,3	,1}	,
   {HCCStarSubRegister::LCBOUTCUR                ,38	,4	,3}	,
@@ -93,17 +98,49 @@ const std::vector<hccsubregdef> s_hccsubregdefs = {
   {HCCStarSubRegister::R3L1ERRCOUNTTHR          ,47	,16	,16}	,
   {HCCStarSubRegister::AMENABLE                 ,48	,0	,1}	,
   {HCCStarSubRegister::AMCALIB                  ,48	,4	,1}	,
+  {HCCStarSubRegister::ANASET                   ,48	,16	,3}	,
+  {HCCStarSubRegister::THERMOFFSET              ,48	,20	,4}	
+};
+
+const std::vector<hccsubregdef> s_hccsubregdefs_v0 = {
+  {HCCStarSubRegister::EPLLPHASE320A            ,36	,0	,4}	,
+  {HCCStarSubRegister::EPLLPHASE320B            ,36	,4	,4}	,
+  {HCCStarSubRegister::EPLLPHASE320C            ,36	,8	,4}	,
+  {HCCStarSubRegister::EPLLPHASE160A            ,37	,0	,4}	,
+  {HCCStarSubRegister::EPLLPHASE160B            ,37	,8	,4}	,
+  {HCCStarSubRegister::EPLLPHASE160C            ,37	,16	,4}	,
   {HCCStarSubRegister::AMSW0                    ,48	,8	,1}	,
   {HCCStarSubRegister::AMSW1                    ,48	,9	,1}	,
   {HCCStarSubRegister::AMSW2                    ,48	,10	,1}	,
   {HCCStarSubRegister::AMSW60                   ,48	,12	,1}	,
   {HCCStarSubRegister::AMSW80                   ,48	,13	,1}	,
   {HCCStarSubRegister::AMSW100                  ,48	,14	,1}	,
-  {HCCStarSubRegister::ANASET                   ,48	,16	,3}	,
-  {HCCStarSubRegister::THERMOFFSET              ,48	,20	,4}	
 };
 
-HccStarRegInfo::HccStarRegInfo() {
+const std::vector<hccsubregdef> s_hccsubregdefs_v1 = {
+  {HCCStarSubRegister::EPLLPHASE160,  35, 29, 3},
+  {HCCStarSubRegister::CLK_DIS_EN,    41, 20, 1},
+  {HCCStarSubRegister::CLK_DIS_ENC,   42, 20, 1},
+  {HCCStarSubRegister::BG_RANGE_LOW,  43,  5, 1},
+  {HCCStarSubRegister::BGVDD_CNT_EN,  43,  7, 1},
+  {HCCStarSubRegister::CLK_DIS_PHASE, 43, 24, 2},
+  {HCCStarSubRegister::CLK_DIS_SEL,   43, 28, 2},
+  {HCCStarSubRegister::AM_INT_SLOPE,  48,  8, 4},
+  {HCCStarSubRegister::AM_RANGE,      48, 12, 1},
+};
+
+const std::vector<hccsubregdef> hccSubRegDefs(int version) {
+  std::vector<hccsubregdef> result = s_hccsubregdefs_common;
+
+  auto &to_append = (version == 0)?
+    s_hccsubregdefs_v0:s_hccsubregdefs_v1;
+
+  result.insert(std::end(result), std::begin(to_append), std::end(to_append));
+
+  return result;
+}
+
+HccStarRegInfo::HccStarRegInfo(int version) {
   // Temporarily writeable
   std::map<unsigned, std::shared_ptr<RegisterInfo>> regMap;
 
@@ -118,11 +155,18 @@ HccStarRegInfo::HccStarRegInfo() {
       HCCStarRegister::PLL1, HCCStarRegister::PLL2, HCCStarRegister::PLL3, HCCStarRegister::DRV1, HCCStarRegister::DRV2,
       HCCStarRegister::ICenable, HCCStarRegister::OPmode, HCCStarRegister::OPmodeC, HCCStarRegister::Cfg1, HCCStarRegister::Cfg2,
       HCCStarRegister::ExtRst, HCCStarRegister::ExtRstC, HCCStarRegister::ErrCfg, HCCStarRegister::ADCcfg}) {
+
+    if(version == 1
+       && (reg == HCCStarRegister(HCCStarRegister::PLL2)
+           || reg == HCCStarRegister(HCCStarRegister::PLL3))) {
+      continue;
+    }
+
     int addr = reg;
     hccWriteMap[addr] = regMap[addr];
   }
 
-  for (auto def : s_hccsubregdefs) {
+  for (auto def : hccSubRegDefs(version)) {
     auto reg_id = std::get<0>(def);
     std::string subregname = std::string(reg_id._to_string());
     auto addr = std::get<1>(def);
@@ -136,15 +180,22 @@ HccStarRegInfo::HccStarRegInfo() {
   }
 }
 
-HccCfg::HccCfg()
-  : m_info(HccStarRegInfo::instance())
+HccCfg::HccCfg(int hcc_version)
+  : m_registerMap{},
+    m_registerSet{},
+    m_info(HccStarRegInfo::instance(hcc_version))
 {
-  setupMaps();
-  setDefaults();
+  setupMaps(hcc_version);
+  setDefaults(hcc_version);
 }
 
-void HccCfg::setupMaps() {
+void HccCfg::setupMaps(int version) {
   auto len = HCCStarRegister::_size();
+
+  if(version == 1) {
+    len -= 2;
+  }
+
   // In case it's not already empty
   m_registerSet.clear();
   // Prevent realloc so that pointers (in m_regiterMap) are stable
@@ -153,6 +204,12 @@ void HccCfg::setupMaps() {
   //all HCC Register addresses we will create
   for (HCCStarRegister reg : HCCStarRegister::_values()) {
     int addr = reg;
+
+    if(version == 1 &&
+       ((addr == HCCStarRegister::PLL2 || addr == HCCStarRegister::PLL3))) {
+      continue;
+    }
+
     Register tmp_Reg(m_info->hccregisterMap.at(addr), 0);
 
     m_registerSet.push_back( std::move(tmp_Reg) ); //Save it to the list
@@ -169,15 +226,19 @@ void HccCfg::setupMaps() {
   }
 }
 
-void HccCfg::setDefaults() {
+void HccCfg::setDefaults(int version) {
+  // NB version 1 only adds status registers
+
   ////  Register* this_Reg = registerMap[0][addr];
   m_registerMap[HCCStarRegister::Pulse]->setValue(0x00000000);
   m_registerMap[HCCStarRegister::Delay1]->setValue(0x00000000);
   m_registerMap[HCCStarRegister::Delay2]->setValue(0x00000000);
   m_registerMap[HCCStarRegister::Delay3]->setValue(0x00000000);
   m_registerMap[HCCStarRegister::PLL1]->setValue(0x00ff3b05);
-  m_registerMap[HCCStarRegister::PLL2]->setValue(0x00000000);
-  m_registerMap[HCCStarRegister::PLL3]->setValue(0x00000004);
+  if(version == 0) {
+    m_registerMap[HCCStarRegister::PLL2]->setValue(0x00000000);
+    m_registerMap[HCCStarRegister::PLL3]->setValue(0x00000004);
+  }
   m_registerMap[HCCStarRegister::DRV1]->setValue(0x00000000);
   m_registerMap[HCCStarRegister::DRV2]->setValue(0x00000014);
   m_registerMap[HCCStarRegister::ICenable]->setValue(0x00000000);

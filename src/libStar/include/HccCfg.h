@@ -15,7 +15,12 @@ BETTER_ENUM(HCCStarRegister, int,
             Delay1=32, Delay2=33, Delay3=34,
             PLL1=35, PLL2=36, PLL3=37, DRV1=38, DRV2=39,
             ICenable=40, OPmode=41, OPmodeC=42, Cfg1=43, Cfg2=44,
-            ExtRst=45, ExtRstC=46, ErrCfg=47, ADCcfg=48)
+            ExtRst=45, ExtRstC=46, ErrCfg=47, ADCcfg=48,
+
+            // HCCV1: skip SEU3, PLL2, PLL3, adds:
+            ABC_FLOW_1=7, ABC_FLOW_2=8, ABC_FLOW_3=9, READOUT_QUEUE=10
+)
+
 //Different HCC subregisters that can be used for configuration, scans, etc.
 ////NOTE: If the name is changed here, make sure the corresponding subregister name is also changed in the config json file.
 BETTER_ENUM(HCCStarSubRegister, int,
@@ -34,7 +39,22 @@ BETTER_ENUM(HCCStarSubRegister, int,
             BCIDRSTDELAY, BCMMSQUELCH,
             ABCRESETB, AMACSSSH, ABCRESETBC, AMACSSSHC,
             LCBERRCOUNTTHR, R3L1ERRCOUNTTHR,
-            AMENABLE, AMCALIB, AMSW0, AMSW1, AMSW2, AMSW60, AMSW80, AMSW100, ANASET, THERMOFFSET)
+            AMENABLE, AMCALIB, AMSW0, AMSW1, AMSW2, AMSW60, AMSW80, AMSW100, ANASET, THERMOFFSET,
+
+            // HCCv1 drops:
+            //  EPLLPHASE320A, EPLLPHASE320B, EPLLPHASE320C, EPLLPHASE160A, EPLLPHASE160B, EPLLPHASE160C,
+            // AMSW0, AMSW1, AMSW2, AMSW60, AMSW80, AMSW100
+            // Reg 35
+            EPLLPHASE160,
+            // Reg 41
+            CLK_DIS_EN,
+            // Reg 41
+            CLK_DIS_ENC,
+            // Reg 43
+            BG_RANGE_LOW, BGVDD_CNT_EN, CLK_DIS_PHASE, CLK_DIS_SEL,
+            // Reg 48
+            AM_INT_SLOPE, AM_RANGE
+)
 
 /// Lookup information on HCCStar register map
 class HccStarRegInfo {
@@ -43,7 +63,7 @@ class HccStarRegInfo {
 
     public:
         /// Fills the maps appropriately
-        HccStarRegInfo();
+        HccStarRegInfo(int version);
 
         //This is a map from each register address to the register info.  Thus hccregisterMap[addr]
         std::map<unsigned, InfoPtr> hccregisterMap;
@@ -72,10 +92,7 @@ class HccStarRegInfo {
             return hccSubRegisterMap_all;
         }
 
-        static std::shared_ptr<const HccStarRegInfo> instance() {
-            if(!m_instance) m_instance.reset(new HccStarRegInfo);
-            return m_instance;
-        }
+        static std::shared_ptr<const HccStarRegInfo> instance(int version);
 
    private:
         /// Map of each subregister (enum) to the HCC subregister info
@@ -97,7 +114,7 @@ class HccCfg {
         std::shared_ptr<const HccStarRegInfo > m_info;
 
     public:
-        HccCfg();
+        HccCfg(int version);
 
         HccCfg(const HccCfg &) = delete;
         HccCfg &operator =(const HccCfg &) = delete;
@@ -105,7 +122,7 @@ class HccCfg {
         // Default doesn't work as won't change pointers!
         HccCfg(HccCfg &&other) = delete;
 
-        void setDefaults();
+        void setDefaults(int version);
 
         const unsigned int getHCCchipID() const{return m_hccID;}
         void setHCCChipId(unsigned hccID){
@@ -150,7 +167,7 @@ class HccCfg {
             return *m_registerMap.at((unsigned int)addr);
         }
 
-        void setupMaps();
+        void setupMaps(int version);
 };
 
 

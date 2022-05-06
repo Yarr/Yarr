@@ -15,9 +15,13 @@ namespace {
   auto logger = logging::make_log("StarCfg");
 }
 
-StarCfg::StarCfg(int abc_version)
+StarCfg::StarCfg(int abc_version, int hcc_version)
   : m_abc_info(AbcStarRegInfo::instance(abc_version)),
-    m_abc_version(abc_version)
+    m_hcc_info(HccStarRegInfo::instance(hcc_version)),
+    m_abc_version(abc_version),
+    m_hcc_version(hcc_version),
+    m_hcc(hcc_version),
+    m_ABCchips{}
 {}
 
 StarCfg::~StarCfg() = default;
@@ -119,7 +123,7 @@ void StarCfg::writeConfig(json &j) {
 
     j["HCC"]["ID"] = getHCCchipID();
 
-    auto &hccRegs = HccStarRegInfo::instance()->hccregisterMap;
+    auto &hccRegs = m_hcc_info->hccregisterMap;
 
     for(auto &reg: hccRegs) {
         auto &info = reg.second;
@@ -277,7 +281,7 @@ void StarCfg::loadConfig(const json &j) {
         throw std::runtime_error("Missing ID in config file");
     }
 
-    m_hcc.setDefaults();
+    m_hcc.setDefaults(m_hcc_version);
 
     if (hcc.contains("regs")) {
         auto &regs = hcc["regs"];

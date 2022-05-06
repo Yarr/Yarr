@@ -36,8 +36,8 @@ StarEmu::StarEmu(std::vector<ClipBoard<RawData>*> &rx, EmuCom * tx, EmuCom * tx2
         // Set up the chip configuration and load it to the emulator
         const std::string& regCfgFile = json_chip_file_paths[i];
 
-        // Default to abc v0
-        auto regCfg = std::make_unique<StarCfg>(0);
+        // Default to abc v0, hcc v0
+        auto regCfg = std::make_unique<StarCfg>(0, 0);
         if (not regCfgFile.empty()) {
             json jChips;
             try {

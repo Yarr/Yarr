@@ -4,6 +4,7 @@
 
 TEST_CASE("StarCfg", "[star][config]") {
   int abc_version = 2;
+  int hcc_version = 0;
   uint32_t creg0_response;
   std::string bad_name;
   std::string good_name;
@@ -23,7 +24,7 @@ TEST_CASE("StarCfg", "[star][config]") {
   CAPTURE (abc_version);
 
   // Side-effect of checking it's not abstract is intentional
-  StarCfg test_config(abc_version);
+  StarCfg test_config(abc_version, hcc_version);
   test_config.setHCCChipId(4);
   const int abc_id = 14;
   test_config.addABCchipID(abc_id);
@@ -83,8 +84,9 @@ TEST_CASE("StarCfg", "[star][config]") {
 // Some ABC v1 specific registers
 TEST_CASE("StarCfg_ABCv1", "[star][config]") {
   int abc_version = 1;
+  int hcc_version = 0;
 
-  StarCfg test_config(abc_version);
+  StarCfg test_config(abc_version, hcc_version);
   test_config.setHCCChipId(4);
 
   const int abc_id = 13;
@@ -122,7 +124,9 @@ TEST_CASE("StarCfg_ABCv1", "[star][config]") {
 }
 
 TEST_CASE("StarCfgTrims", "[star][config]") {
-  StarCfg test_config(0);
+  int abc_version = 0;
+  int hcc_version = 0;
+  StarCfg test_config(abc_version, hcc_version);
   test_config.setHCCChipId(2);
   const int abc_id = 3;
   test_config.addABCchipID(abc_id);
@@ -257,9 +261,21 @@ TEST_CASE("Star_AbcRegInfo", "[star][config]") {
 }
 
 TEST_CASE("Star_HccRegInfo", "[star][config]") {
-  int write_size = 17;
+  int version;
+  int write_size;
 
-  const auto info = HccStarRegInfo::instance();
+  SECTION ("With HCCv0") {
+    version = 0;
+    write_size = 17;
+  }
+  SECTION ("With HCCv1") {
+    version = 1;
+    write_size = 15;
+  }
+
+  CAPTURE (version);
+
+  const auto info = HccStarRegInfo::instance(version);
 
   CHECK (info->hccWriteMap.size() == write_size);
 

@@ -18,13 +18,16 @@ namespace {
 
 bool star_chips_v0_registered =
 StdDict::registerFrontEnd
-  ("Star", []() { return std::unique_ptr<FrontEnd>(new StarChips(0)); });
+  ("Star", []() { return std::unique_ptr<FrontEnd>(new StarChips(0, 0)); });
 bool star_chips_v1_registered =
 StdDict::registerFrontEnd
-  ("Star_PPA", []() { return std::unique_ptr<FrontEnd>(new StarChips(1)); });
+  ("Star_PPA", []() { return std::unique_ptr<FrontEnd>(new StarChips(1, 0)); });
+bool star_chips_v1_both_registered =
+StdDict::registerFrontEnd
+  ("Star_PPB", []() { return std::unique_ptr<FrontEnd>(new StarChips(1, 1)); });
 
-StarChips::StarChips(int abc_version)
-  : StarCfg(abc_version), StarCmd(), FrontEnd()
+StarChips::StarChips(int abc_version, int hcc_version)
+  : StarCfg(abc_version, hcc_version), StarCmd(), FrontEnd()
 {
 	m_txcore  = nullptr;
 
@@ -254,7 +257,7 @@ bool StarChips::writeRegisters(){
         // First write HCC
         int hccId = getHCCchipID();
 
-        const auto &hcc_regs = HccStarRegInfo::instance()->hccWriteMap;
+        const auto &hcc_regs = m_hcc_info->hccWriteMap;
 	logger->info("Starting on HCC {} with {} registers", hccId, hcc_regs.size());
 
         for(auto &map_iter: hcc_regs) {
@@ -323,7 +326,7 @@ void StarChips::readRegisters(){
 	//Read all known registers, both for HCC & all ABCs
         logger->debug("Looping over all chips in readRegisters, where m_nABC is {}", numABCs());
 
-        auto &hcc_regs = HccStarRegInfo::instance()->hccregisterMap;
+        auto &hcc_regs = m_hcc_info->hccregisterMap;
 
         for(auto &map_iter: hcc_regs) {
                 auto addr = map_iter.first;
