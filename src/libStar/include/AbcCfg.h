@@ -59,36 +59,61 @@ class ABCStarRegister : public ABCStarRegs {
 
 /// Lookup information on ABC Star register map
 class AbcStarRegInfo {
+  typedef std::shared_ptr<const RegisterInfo> InfoPtr;
+  typedef std::shared_ptr<const SubRegisterInfo> SubInfoPtr;
+
   public:
   /// Fills the maps appropriately
   AbcStarRegInfo();
 
   //This is a map from each register address to the register info.  Thus abcregisterMap[addr]
-  std::map<unsigned, std::shared_ptr<RegisterInfo>> abcregisterMap;
+  std::map<unsigned, InfoPtr> abcregisterMap;
 
   /// Registers to write in normal operation
-  std::map<unsigned, std::shared_ptr<RegisterInfo>> abcWriteMap;
-
-  //This is a 2D map of each subregister to the ABC subregister name.  For example abcSubRegisterMap_all[NAME]
-  std::map<ABCStarSubRegister, std::shared_ptr<SubRegisterInfo>> abcSubRegisterMap_all;
+  std::map<unsigned, InfoPtr> abcWriteMap;
 
   //This is a 2D map of each trimDac_32b register to the chip index and trimDAC_4LSB register name.  For example trimDAC4LSB_RegisterMap_all[chip index][NAME]
-  std::map<int, std::shared_ptr<SubRegisterInfo>> trimDAC_4LSB_RegisterMap_all;
+  std::map<int, SubInfoPtr> trimDAC_4LSB_RegisterMap_all;
 
   //This is a 2D map of each trimDac_32b register to the chip index and trimDAC_1MSB register name.  For example trimDAC1LSB_RegisterMap_all[chip index][NAME]
-  std::map<int, std::shared_ptr<SubRegisterInfo>> trimDAC_1MSB_RegisterMap_all;
+  std::map<int, SubInfoPtr> trimDAC_1MSB_RegisterMap_all;
 
-  static std::shared_ptr<AbcStarRegInfo> instance() {
+  static std::shared_ptr<const AbcStarRegInfo> instance() {
     if(!m_instance) m_instance.reset(new AbcStarRegInfo);
     return m_instance;
   }
 
-  int getSubRegisterParentAddr(std::string subRegName) const {
-    auto info = abcSubRegisterMap_all.at(ABCStarSubRegister::_from_string(subRegName.c_str()));
-    return info->getRegAddress();
+  /// Return sub register info for name, throws std::runtime_error
+  SubInfoPtr subRegByName(const std::string &subRegName) const {
+    // This already throws runtime_error if bad string
+    auto reg_enum = ABCStarSubRegister::_from_string(subRegName.c_str());
+    return subRegFromEnum(reg_enum);
   }
+
+  /// Return sub register info from enum, throws std::runtime_error
+  SubInfoPtr subRegFromEnum(ABCStarSubRegister subReg) const {
+    try {
+      return abcSubRegisterMap_all.at(subReg);
+    } catch(std::out_of_range &e) {
+      throw std::runtime_error("Attempt to get info for bad sub register");
+    }
+  }
+
+  int getSubRegisterParentAddr(std::string subRegName) const {
+    return subRegByName(subRegName)->getRegAddress();
+  }
+
+  /// The sub-reg map is accessible, but is const so can't be updated
+  const std::map<ABCStarSubRegister, SubInfoPtr> subRegMap() const {
+    return abcSubRegisterMap_all;
+  }
+
  private:
-  static std::shared_ptr<AbcStarRegInfo> m_instance;
+  /// This is a map from each subregister to the ABC subregister name
+  /// For example abcSubRegisterMap_all[NAME]
+  std::map<ABCStarSubRegister, SubInfoPtr> abcSubRegisterMap_all;
+
+  static std::shared_ptr<const AbcStarRegInfo> m_instance;
 };
 
 /// Configuration for an individual ABCStar
@@ -101,7 +126,7 @@ class AbcCfg {
         // Store of registers in arbitrary order
         std::vector< Register > m_registerSet;
 
-        std::shared_ptr< AbcStarRegInfo > m_info;
+        std::shared_ptr<const AbcStarRegInfo > m_info;
 
     public:
         AbcCfg();
@@ -119,13 +144,13 @@ class AbcCfg {
         }
 
         void setSubRegisterValue(std::string subRegName, uint32_t value) {
-            auto info = m_info->abcSubRegisterMap_all[ABCStarSubRegister::_from_string(subRegName.c_str())];
+            auto info = m_info->subRegByName(subRegName);
             auto &reg = getRegister(info->m_regAddress);
             reg.getSubRegister(info).updateValue(value);
         }
 
         uint32_t getSubRegisterValue(std::string subRegName) const {
-            auto info = m_info->abcSubRegisterMap_all[ABCStarSubRegister::_from_string(subRegName.c_str())];
+            auto info = m_info->subRegByName(subRegName);
             auto &reg = getRegister(info->m_regAddress);
             return reg.getSubRegister(info).getValue();
         }
@@ -135,7 +160,7 @@ class AbcCfg {
         }
 
         uint32_t getSubRegisterParentValue(std::string subRegName) const {
-            auto info = m_info->abcSubRegisterMap_all[ABCStarSubRegister::_from_string(subRegName.c_str())];
+            auto info = m_info->subRegByName(subRegName);
             return getRegister(info->m_regAddress).getValue();
         }
 
@@ -175,12 +200,12 @@ class AbcCfg {
 
     private:
         SubRegister getSubRegister(ABCStarSubRegister r) {
-            auto info = m_info->abcSubRegisterMap_all[r];
+            auto info = m_info->subRegFromEnum(r);
             return getRegister(info->m_regAddress).getSubRegister(info);
         }
 
         ConstSubRegister getSubRegister(ABCStarSubRegister r) const {
-            auto info = m_info->abcSubRegisterMap_all[r];
+            auto info = m_info->subRegFromEnum(r);
             return getRegister(info->m_regAddress).getSubRegister(info);
         }
 

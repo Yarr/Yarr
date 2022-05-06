@@ -154,7 +154,7 @@ TEST_CASE("Star_AbcRegInfo", "[star][config]") {
     CHECK (info->abcregisterMap.find(rm.first) != info->abcregisterMap.end());
   }
 
-  for(auto &rm: info->abcSubRegisterMap_all) {
+  for(auto &rm: info->subRegMap()) {
     CAPTURE (rm.first);
     CHECK (rm.second != nullptr);
   }

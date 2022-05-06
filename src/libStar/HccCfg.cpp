@@ -6,7 +6,7 @@ namespace {
   auto logger = logging::make_log("StarCfgHCC");
 }
 
-std::shared_ptr<HccStarRegInfo> HccStarRegInfo::m_instance;
+std::shared_ptr<const HccStarRegInfo> HccStarRegInfo::m_instance;
 
 typedef std::tuple<HCCStarSubRegister, unsigned int, unsigned int, unsigned int> hccsubregdef;
 const std::vector<hccsubregdef> s_hccsubregdefs = {
@@ -104,9 +104,12 @@ const std::vector<hccsubregdef> s_hccsubregdefs = {
 };
 
 HccStarRegInfo::HccStarRegInfo() {
+  // Temporarily writeable
+  std::map<unsigned, std::shared_ptr<RegisterInfo>> regMap;
+
   for (HCCStarRegister reg : HCCStarRegister::_values()) {
     int addr = reg;
-    hccregisterMap[addr] = std::make_shared<RegisterInfo>(addr);
+    regMap[addr] = std::make_shared<RegisterInfo>(addr);
   }
 
   for (HCCStarRegister reg: {
@@ -116,7 +119,7 @@ HccStarRegInfo::HccStarRegInfo() {
       HCCStarRegister::ICenable, HCCStarRegister::OPmode, HCCStarRegister::OPmodeC, HCCStarRegister::Cfg1, HCCStarRegister::Cfg2,
       HCCStarRegister::ExtRst, HCCStarRegister::ExtRstC, HCCStarRegister::ErrCfg, HCCStarRegister::ADCcfg}) {
     int addr = reg;
-    hccWriteMap[addr] = hccregisterMap[addr];
+    hccWriteMap[addr] = regMap[addr];
   }
 
   for (auto def : s_hccsubregdefs) {
@@ -125,7 +128,11 @@ HccStarRegInfo::HccStarRegInfo() {
     auto addr = std::get<1>(def);
     auto offset = std::get<2>(def);
     auto width = std::get<3>(def);
-    hccSubRegisterMap_all[reg_id] = hccregisterMap[addr]->addSubRegister(subregname, offset, width);
+    hccSubRegisterMap_all[reg_id] = regMap[addr]->addSubRegister(subregname, offset, width);
+  }
+
+  for(auto &i: regMap) {
+    hccregisterMap[i.first] = i.second;
   }
 }
 
@@ -145,7 +152,7 @@ void HccCfg::setupMaps() {
   //all HCC Register addresses we will create
   for (HCCStarRegister reg : HCCStarRegister::_values()) {
     int addr = reg;
-    Register tmp_Reg(m_info->hccregisterMap[addr], 0);
+    Register tmp_Reg(m_info->hccregisterMap.at(addr), 0);
 
     m_registerSet.push_back( std::move(tmp_Reg) ); //Save it to the list
     int lastReg = m_registerSet.size()-1;

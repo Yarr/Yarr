@@ -428,8 +428,6 @@ void StarCfg::loadConfig(const json &j) {
             return;
         }
 
-        auto abcSubRegs = AbcStarRegInfo::instance()->abcSubRegisterMap_all;
-
         for (int iABC = 0; iABC < abc_arr_length; iABC++) {
             if (ids[iABC].is_null())
                 continue;

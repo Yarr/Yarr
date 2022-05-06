@@ -6,7 +6,7 @@ namespace {
   auto logger = logging::make_log("StarCfgABC");
 }
 
-std::shared_ptr<AbcStarRegInfo> AbcStarRegInfo::m_instance;
+std::shared_ptr<const AbcStarRegInfo> AbcStarRegInfo::m_instance;
 
 //Register enums definitions
 typedef std::tuple<ABCStarSubRegister, unsigned int, unsigned int, unsigned int> abcsubregdef;
@@ -77,9 +77,12 @@ const std::vector<abcsubregdef> s_abcsubregdefs = {
 };
 
 AbcStarRegInfo::AbcStarRegInfo() {
+    // Build using writeable map
+    std::map<unsigned, std::shared_ptr<RegisterInfo>> regMap;
+
     for (ABCStarRegister reg : ABCStarRegister::_values()) {
         int addr = reg;
-        abcregisterMap[addr] = std::make_shared<RegisterInfo>(addr);
+        regMap[addr] = std::make_shared<RegisterInfo>(addr);
     }
 
     for (ABCStarRegister reg : ABCStarRegister::_values()) {
@@ -90,7 +93,7 @@ AbcStarRegInfo::AbcStarRegInfo() {
           continue;
         }
 
-        abcWriteMap[addr] = abcregisterMap[addr];
+        abcWriteMap[addr] = regMap[addr];
     }
 
     for (auto def : s_abcsubregdefs) {
@@ -99,7 +102,8 @@ AbcStarRegInfo::AbcStarRegInfo() {
         auto addr = std::get<1>(def);
         auto offset = std::get<2>(def);
         auto width = std::get<3>(def);
-        abcSubRegisterMap_all[reg_id] = abcregisterMap[addr]->addSubRegister(subregname, offset, width);
+        auto reg_info = regMap.at(addr);
+        abcSubRegisterMap_all[reg_id] = reg_info->addSubRegister(subregname, offset, width);
     }
 
     ////# 256 TrimDac regs 4-bit lsb
@@ -111,7 +115,8 @@ AbcStarRegInfo::AbcStarRegInfo() {
             std::string trimDAC_name = "trimdac_4lsb_"+std::to_string(channel);
             ////std::to_string(((channel>>7)&1)+1)+"_"+std::to_string((channel&0x7f)+1); //trimdac_4lsb_<nthRow>_<nthCol>; row(1-2); col(1-256); match to histogram
             //  		std::cout << " reg[" << i <<"] for channel[" << channel  << "]----->" << trimDAC_name <<  "     @ nthStartBit: "<< nthStartBit<< std::endl;
-            trimDAC_4LSB_RegisterMap_all[channel] = abcregisterMap[i]->addSubRegister(trimDAC_name, nthStartBit, 4);
+            auto reg_info = regMap.at(i);
+            trimDAC_4LSB_RegisterMap_all[channel] = reg_info->addSubRegister(trimDAC_name, nthStartBit, 4);
             channel++;
             nthStartBit+=4;
         }
@@ -124,9 +129,15 @@ AbcStarRegInfo::AbcStarRegInfo() {
             std::string trimDAC_name = "trimdac_1msb_"+std::to_string(channel);
             ////std::to_string(((channel>>7)&1)+1)+"_"+std::to_string((channel&0x7f)+1); //trimdac_1msb_<nthRow>_<nthCol>; row(1-2); col(1-256); match to histogram
             //   		std::cout << " reg[" << i <<"] for channel[" << channel  << "]----->" << trimDAC_name << std::endl;;
-            trimDAC_1MSB_RegisterMap_all[channel] = abcregisterMap[i]->addSubRegister(trimDAC_name, j, 1);
+            auto reg_info = regMap.at(i);
+            trimDAC_1MSB_RegisterMap_all[channel] = reg_info->addSubRegister(trimDAC_name, j, 1);
             channel++;
         }
+    }
+
+    // Copy to const for remainder of life
+    for(auto &i: regMap) {
+      abcregisterMap[i.first] = i.second;
     }
 }
 
@@ -149,7 +160,7 @@ void AbcCfg::setupMaps() {
     //DD    //Add the location in memory of this Register to the register maps
     for (ABCStarRegister reg : ABCStarRegister::_values()) {
         int addr = reg;
-        Register tmp_Reg(m_info->abcregisterMap[addr], 0);
+        Register tmp_Reg(m_info->abcregisterMap.at(addr), 0);
         m_registerSet.push_back( std::move(tmp_Reg) ); //Save it to the list
         int lastReg = m_registerSet.size()-1;
         m_registerMap[addr] = lastReg; //Save it's position in memory to the registerMap
@@ -204,7 +215,7 @@ void AbcCfg::setTrimDACRaw(unsigned channel, int value) {
     std::string trimDAC_1msb_name = "trimdac_1msb_"+std::to_string(channel);
 
     if (m_info->trimDAC_4LSB_RegisterMap_all.find(channel) != m_info->trimDAC_4LSB_RegisterMap_all.end()) {
-        auto info = m_info->trimDAC_4LSB_RegisterMap_all[channel];
+        auto info = m_info->trimDAC_4LSB_RegisterMap_all.at(channel);
         getRegister(info->m_regAddress).getSubRegister(info).updateValue(value&0xf);
     } else {
         logger->error("Could not find sub register for 4LSB for channel {} for chip[ID {}]",
@@ -213,7 +224,7 @@ void AbcCfg::setTrimDACRaw(unsigned channel, int value) {
 
     if (m_info->trimDAC_1MSB_RegisterMap_all.find(channel) != m_info->trimDAC_1MSB_RegisterMap_all.end()) {
         //		std::cout << " value: " << value << "  " << ((value>>4)&0x1) << std::endl;
-        auto info = m_info->trimDAC_1MSB_RegisterMap_all[channel];
+        auto info = m_info->trimDAC_1MSB_RegisterMap_all.at(channel);
         getRegister(info->m_regAddress).getSubRegister(info).updateValue((value>>4)&0x1);
     } else {
         logger->error("Could not find sub register for 1MSB for channel {} for chip[ID {}]", channel, getABCchipID());
@@ -231,14 +242,14 @@ int AbcCfg::getTrimDACRaw(unsigned channel) const {
         return 0;
     }
 
-    auto info4 = m_info->trimDAC_4LSB_RegisterMap_all[channel];
+    auto info4 = m_info->trimDAC_4LSB_RegisterMap_all.at(channel);
 
     if (m_info->trimDAC_1MSB_RegisterMap_all.find(channel) == m_info->trimDAC_1MSB_RegisterMap_all.end()) {
         logger->error("Could not find sub register for 1MSB for channel {} for chip[ID {}]", channel, getABCchipID());
         return 0;
     }
 
-    auto info1 = m_info->trimDAC_1MSB_RegisterMap_all[channel];
+    auto info1 = m_info->trimDAC_1MSB_RegisterMap_all.at(channel);
 
     unsigned trimDAC_4LSB = getRegister(info4->m_regAddress).getSubRegister(info4).getValue();
     unsigned trimDAC_1MSB = getRegister(info1->m_regAddress).getSubRegister(info1).getValue();

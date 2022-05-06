@@ -38,26 +38,50 @@ BETTER_ENUM(HCCStarSubRegister, int,
 
 /// Lookup information on HCCStar register map
 class HccStarRegInfo {
+        typedef std::shared_ptr<const RegisterInfo> InfoPtr;
+        typedef std::shared_ptr<const SubRegisterInfo> SubInfoPtr;
+
     public:
         /// Fills the maps appropriately
         HccStarRegInfo();
 
         //This is a map from each register address to the register info.  Thus hccregisterMap[addr]
-        std::map<unsigned, std::shared_ptr<RegisterInfo>> hccregisterMap;
+        std::map<unsigned, InfoPtr> hccregisterMap;
 
         /// The list of registers to write to
-        std::map<unsigned, std::shared_ptr<RegisterInfo>> hccWriteMap;
+        std::map<unsigned, InfoPtr> hccWriteMap;
 
-        //This is a 2D map of each subregister to the HCC subregister name.  For example hccSubRegisterMap_all[NAME]
-        // SubRegister is owned by the Registers
-        std::map<HCCStarSubRegister, std::shared_ptr<SubRegisterInfo>> hccSubRegisterMap_all;   //register record
+        /// Return sub register info for name, throws std::runtime_error
+        SubInfoPtr subRegByName(const std::string &subRegName) const {
+          // This already throws runtime_error if bad string
+          auto reg_enum = HCCStarSubRegister::_from_string(subRegName.c_str());
+          return subRegFromEnum(reg_enum);
+        }
 
-        static std::shared_ptr<HccStarRegInfo> instance() {
+        /// Return sub register info from enum, throws std::runtime_error
+        SubInfoPtr subRegFromEnum(HCCStarSubRegister subReg) const {
+          try {
+            return hccSubRegisterMap_all.at(subReg);
+          } catch(std::out_of_range &e) {
+            throw std::runtime_error("Attempt to get info for bad (HCC) sub-register");
+          }
+        }
+
+        /// The sub-reg map is accessible, but is const so can't be updated
+        const std::map<HCCStarSubRegister, SubInfoPtr> subRegMap() const {
+            return hccSubRegisterMap_all;
+        }
+
+        static std::shared_ptr<const HccStarRegInfo> instance() {
             if(!m_instance) m_instance.reset(new HccStarRegInfo);
             return m_instance;
         }
+
    private:
-        static std::shared_ptr<HccStarRegInfo> m_instance;
+        /// Map of each subregister (enum) to the HCC subregister info
+        std::map<HCCStarSubRegister, SubInfoPtr> hccSubRegisterMap_all;
+
+        static std::shared_ptr<const HccStarRegInfo> m_instance;
 };
 
 /// Configuration for an individual HCCStar
@@ -70,7 +94,7 @@ class HccCfg {
         // Store of registers in arbitrary order
         std::vector< Register > m_registerSet;
 
-        std::shared_ptr< HccStarRegInfo > m_info;
+        std::shared_ptr<const HccStarRegInfo > m_info;
 
     public:
         HccCfg();
@@ -89,22 +113,22 @@ class HccCfg {
         }
 
         void setSubRegisterValue(std::string subRegName, uint32_t value) {
-            auto info = m_info->hccSubRegisterMap_all[HCCStarSubRegister::_from_string(subRegName.c_str())];
+            auto info = m_info->subRegByName(subRegName);
             m_registerMap.at(info->m_regAddress)->getSubRegister(info).updateValue(value);
         }
 
         uint32_t getSubRegisterValue(std::string subRegName) {
-            auto info = m_info->hccSubRegisterMap_all[HCCStarSubRegister::_from_string(subRegName.c_str())];
+            auto info = m_info->subRegByName(subRegName);
             return m_registerMap.at(info->m_regAddress)->getSubRegister(info).getValue();
         }
 
         int getSubRegisterParentAddr(std::string subRegName) const {
-            auto info = m_info->hccSubRegisterMap_all[HCCStarSubRegister::_from_string(subRegName.c_str())];
+            auto info = m_info->subRegByName(subRegName);
             return info->getRegAddress();
         }
 
         uint32_t getSubRegisterParentValue(std::string subRegName) const {
-            auto info = m_info->hccSubRegisterMap_all[HCCStarSubRegister::_from_string(subRegName.c_str())];
+            auto info = m_info->subRegByName(subRegName);
             return m_registerMap.at(info->m_regAddress)->getValue();
         }
 
@@ -114,7 +138,7 @@ class HccCfg {
 
     private:
         SubRegister getSubRegister(HCCStarSubRegister r) const {
-            auto info = m_info->hccSubRegisterMap_all[r];
+            auto info = m_info->subRegFromEnum(r);
             return m_registerMap.at(info->m_regAddress)->getSubRegister(info);
         }
 
