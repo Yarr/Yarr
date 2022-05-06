@@ -171,3 +171,30 @@ TEST_CASE("Star_AbcRegInfo", "[star][config]") {
 
   CHECK (info->abcWriteMap.size() == write_size);
 }
+
+TEST_CASE("Star_HccRegInfo", "[star][config]") {
+  int write_size = 17;
+
+  const auto info = HccStarRegInfo::instance();
+
+  CHECK (info->hccWriteMap.size() == write_size);
+
+  // Check shared_ptrs refer to something
+  for(auto &rm: info->hccregisterMap) {
+    CAPTURE (rm.first);
+    CHECK (rm.second != nullptr);
+  }
+
+  for(auto &rm: info->hccWriteMap) {
+    CAPTURE (rm.first);
+    CHECK (rm.second != nullptr);
+
+    // All writeable registers should be in register list
+    CHECK (info->hccregisterMap.find(rm.first) != info->hccregisterMap.end());
+  }
+
+  for(auto &rm: info->subRegMap()) {
+    CAPTURE (rm.first);
+    CHECK (rm.second != nullptr);
+  }
+}
