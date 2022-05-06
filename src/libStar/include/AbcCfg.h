@@ -153,7 +153,7 @@ class AbcCfg {
         // Default move works (no pointers)
         AbcCfg(AbcCfg &&other) = default;
 
-        void setDefaults();
+        void setDefaults(int version = 0);
 
         unsigned int getABCchipID() const { return m_abcID;}
         void setABCChipId(unsigned abcID){

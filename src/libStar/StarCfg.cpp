@@ -349,7 +349,7 @@ void StarCfg::loadConfig(const json &j) {
 
     // Initialize register maps for consistency
     // Make all registers and subregisters for the ABC
-    eachAbc( [&](auto &abc) {abc.setDefaults();});
+    eachAbc( [&](auto &abc) {abc.setDefaults(m_abc_version);});
 
     // First, commont register settings
     if(abcs.find("common") != abcs.end()) {

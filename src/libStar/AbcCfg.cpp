@@ -246,7 +246,7 @@ AbcCfg::AbcCfg(int version)
   : m_info(AbcStarRegInfo::instance(version))
 {
     setupMaps(version);
-    setDefaults();
+    setDefaults(version);
 }
 
 void AbcCfg::setupMaps(int version) {
@@ -283,20 +283,30 @@ void AbcCfg::setupMaps(int version) {
     }
 }
 
-void AbcCfg::setDefaults() {
+void AbcCfg::setDefaults(int version) {
     //// Initialize 32-bit register with default values
     ////#special reg
     getRegister(ABCStarRegister::SCReg).setValue(0x00000000);
 
     ////#Analog and DCS regs
-    for (unsigned int iReg=ABCStarRegister::ADCS1; iReg<=ABCStarRegister::ADCS7; iReg++)
+    for (unsigned int iReg=ABCStarRegister::ADCS1; iReg<=ABCStarRegister::ADCS7; iReg++) {
+        if(version == 1 &&
+           (iReg > ABCStarRegs::ADCS3 && iReg <= ABCStarRegs::ADCS7)) {
+          continue;
+        }
         getRegister(iReg).setValue(0x00000000);
+    }
 
     ////#Congfiguration regs
     for (unsigned int iReg=ABCStarRegister::CREG0; iReg<=ABCStarRegister::CREG6; iReg++) {
         if(iReg == ABCStarRegister::CREG0 + 5) {
             // Skip CREG5 as it's fuse register
             continue;
+        }
+        if(version == 1 &&
+           (iReg > ABCStarRegs::CREG1 && iReg <= ABCStarRegs::CREG6)) {
+          // Skip v0 only registers
+          continue;
         }
         getRegister(iReg).setValue(0x00000000);
     }
