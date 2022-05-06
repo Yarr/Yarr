@@ -243,7 +243,9 @@ AbcStarRegInfo::AbcStarRegInfo(int version) {
 }
 
 AbcCfg::AbcCfg(int version)
-  : m_info(AbcStarRegInfo::instance(version))
+  : m_registerMap{},
+    m_registerSet{},
+    m_info(AbcStarRegInfo::instance(version))
 {
     setupMaps(version);
     setDefaults(version);
