@@ -260,6 +260,37 @@ TEST_CASE("Star_AbcRegInfo", "[star][config]") {
   CHECK (a.isMasked(0) == false);
 }
 
+// Some HCC v1 specific registers
+TEST_CASE("StarCfg_HCCv1", "[star][config]") {
+  int abc_version = 1;
+  int hcc_version = 1;
+
+  StarCfg test_config(abc_version, hcc_version);
+  test_config.setHCCChipId(4);
+
+  const int abc_id = 13;
+  test_config.addABCchipID(abc_id);
+
+  test_config.setHCCRegister(HCCStarRegister::PLL1, 0);
+  REQUIRE (test_config.getHCCRegister(HCCStarRegister::PLL1) == 0);
+
+  HccCfg &hcc = test_config.hcc();
+
+  REQUIRE (hcc.getSubRegisterParentAddr("EPLLPHASE160") == HCCStarRegister::PLL1);
+
+  hcc.setSubRegisterValue("EPLLICP", 0xf);
+  hcc.setSubRegisterValue("EPLLCAP", 0x3);
+  hcc.setSubRegisterValue("EPLLRES", 0xf);
+  hcc.setSubRegisterValue("EPLLREFFREQ", 0x3);
+  hcc.setSubRegisterValue("EPLLENABLEPHASE", 0x3);
+  hcc.setSubRegisterValue("EPLLPHASE160", 0x7);
+
+  uint32_t pll1 = 0xe0033f3f;
+
+  REQUIRE (test_config.getHCCRegister(HCCStarRegister::PLL1) == pll1);
+  REQUIRE (hcc.getSubRegisterParentValue("EPLLPHASE160") == pll1);
+}
+
 TEST_CASE("Star_HccRegInfo", "[star][config]") {
   int version;
   int write_size;
