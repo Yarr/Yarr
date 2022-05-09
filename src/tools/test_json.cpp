@@ -146,9 +146,13 @@ int checkJson(json &jsonConfig, ConfigType jsonFileType) {
     {
       int count = 0;
       std::string name;
-      for(auto &el: jsonConfig) {
-        name = el;
-        count ++;
+      {
+        auto b = std::begin(jsonConfig);
+        auto e = std::end(jsonConfig);
+        for(auto i=b; i!=e; i++) {
+          name = i.key();
+          count ++;
+        }
       }
       if(count != 1) {
         std::cout << "Expect one top-level entry in FrontEnd config\n";
@@ -190,8 +194,12 @@ int checkJson(json &jsonConfig, ConfigType jsonFileType) {
   default:
     std::cout << "Unspecified file type, top-level names are:\n";
 
-    for (auto& el : jsonConfig) {
-        std::cout << "  " << el << '\n';
+    {
+      auto b = std::begin(jsonConfig);
+      auto e = std::end(jsonConfig);
+      for(auto i=b; i!=e; i++) {
+        std::cout << "  " << i.key() << '\n';
+      }
     }
     break;
   }
