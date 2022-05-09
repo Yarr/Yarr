@@ -219,8 +219,8 @@ void HccCfg::setupMaps(int version) {
 
   if(m_registerSet.size() != len) {
     // If not the same, m_registerSet might be realloc'ed and therefore pointers break
-    logger->critical("Mismatch between size {} and values {}",
-                     len, m_registerSet.size());
+    logger->critical("Mismatch between size {} and values {} (version {})",
+                     len, m_registerSet.size(), version);
 
     abort();
   }
