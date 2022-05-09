@@ -18,7 +18,12 @@ Rd53bCfg::Rd53bCfg() :
     m_NfDSLDO(1.264),
     m_NfASLDO(1.264),
     m_NfACB(1.264),
-    m_injCap(7.5)
+    m_injCap(7.5),
+    m_IrefTrim(15),
+    m_MFIinA(21000),
+    m_MFIinD(21000),
+    m_MFIshuntA(26000),
+    m_MFIshuntD(26000)
 {}
 
 double Rd53bCfg::toCharge(double vcal) {
@@ -47,6 +52,11 @@ void Rd53bCfg::writeConfig(json &j) {
     j["RD53B"]["Parameter"]["NfDSLDO"] = m_NfDSLDO;
     j["RD53B"]["Parameter"]["NfASLDO"] = m_NfASLDO;
     j["RD53B"]["Parameter"]["NfACB"] = m_NfACB;
+    j["RD53B"]["Parameter"]["IrefTrim"] = m_IrefTrim;
+    j["RD53B"]["Parameter"]["MFIinA"] = m_MFIinA;
+    j["RD53B"]["Parameter"]["MFIinD"] = m_MFIinD;
+    j["RD53B"]["Parameter"]["MFIshuntA"] = m_MFIshuntA;
+    j["RD53B"]["Parameter"]["MFIshuntD"] = m_MFIshuntD;
     for(unsigned  i=0;i<m_vcalPar.size();i++)  
         j["RD53B"]["Parameter"]["VcalPar"][i]= m_vcalPar[i];
     j["RD53B"]["Parameter"]["EnforceNameIdCheck"] = enforceChipIdInName;
@@ -71,10 +81,29 @@ void Rd53bCfg::loadConfig(const json &j) {
     if (j.contains({"RD53B", "Parameter","EnforceNameIdCheck"}))
         enforceChipIdInName = j["RD53B"]["Parameter"]["EnforceNameIdCheck"];
     
-    if (j.contains({"RD53B","Parameter","MosCalPar"}))
+    if (j.contains({"RD53B","Parameter","NfDSLDO"}))
         m_NfDSLDO = j["RD53B"]["Parameter"]["NfDSLDO"];
+
+    if (j.contains({"RD53B","Parameter","NfASLDO"}))
         m_NfASLDO = j["RD53B"]["Parameter"]["NfASLDO"];
-        m_NfACB = j["RD53B"]["Parameter"]["NfACB"];  
+
+    if (j.contains({"RD53B","Parameter","NfACB"}))
+        m_NfACB = j["RD53B"]["Parameter"]["NfACB"];
+
+    if (j.contains({"RD53B","Parameter","IrefTrim"}))
+        m_IrefTrim = j["RD53B"]["Parameter"]["IrefTrim"];
+
+    if (j.contains({"RD53B","Parameter","MFIinA"}))
+        m_MFIinA = j["RD53B"]["Parameter"]["MFIinA"];
+
+    if (j.contains({"RD53B","Parameter","MFIinD"}))
+        m_MFIinD = j["RD53B"]["Parameter"]["MFIinD"];
+
+    if (j.contains({"RD53B","Parameter","MFIshuntA"}))
+        m_MFIshuntA = j["RD53B"]["Parameter"]["MFIshuntA"];
+
+    if (j.contains({"RD53B","Parameter","MFIshuntD"}))
+        m_MFIshuntD = j["RD53B"]["Parameter"]["MFIshuntD"];
     
     if (j.contains({"RD53B","Parameter","VcalPar"}))
         if (j["RD53B"]["Parameter"]["VcalPar"].size() == m_vcalPar.size()) {
