@@ -54,14 +54,14 @@ class Rd53bCfg : public FrontEndCfg, public Rd53bGlobalCfg, public Rd53bPixelCfg
         std::array<float, 3> m_adcCalPar; //mV, [0] + [1]*x, R_IMUX = [2]
         std::array<std::array<float, 2>, 3> m_radSenPar;  // Not used yet
         std::array<std::array<float, 2>, 3> m_tempSenPar; // Not used yet
-        float m_NfDSLDO;                                // MOS temperature sensor digital SLDO
-        float m_NfASLDO;                                // MOS temperature sensor analog SLDO
-        float m_NfACB;                                  // MOS temperature sensor center
-        int m_IrefTrim;                                 // Iref trim bit
-        float m_MFIinA;                                 // Multiplicator of IinA
-        float m_MFIinD;                                 // Multiplicator of IinD
-        float m_MFIshuntA;                              // Multiplicator of IshuntA
-        float m_MFIshuntD;                              // Multiplicator of IshuntD
+        float m_nfDSLDO;                                // MOS temperature sensor digital SLDO
+        float m_nfASLDO;                                // MOS temperature sensor analog SLDO
+        float m_nfACB;                                  // MOS temperature sensor center
+        int m_irefTrim;                                 // Iref trim bit
+        float m_kSenseInA;                                 // Multiplicator of IinA
+        float m_kSenseInD;                                 // Multiplicator of IinD
+        float m_kSenseShuntA;                              // Multiplicator of IshuntA
+        float m_kSenseShuntD;                              // Multiplicator of IshuntD
         std::array<float, 3> m_ntcCalPar;                 // Steinhart coefficients
 };
 

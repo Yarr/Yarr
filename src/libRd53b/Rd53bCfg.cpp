@@ -15,15 +15,15 @@ Rd53bCfg::Rd53bCfg() :
     m_vcalPar({{0.46, 0.2007}}),
     m_adcCalPar ( {{ 5.89435, 0.192043, 4.99e3 }} ),
     m_ntcCalPar({{7.489e-4, 2.769e-4, 7.0595e-8}}),
-    m_NfDSLDO(1.264),
-    m_NfASLDO(1.264),
-    m_NfACB(1.264),
+    m_nfDSLDO(1.264),
+    m_nfASLDO(1.264),
+    m_nfACB(1.264),
     m_injCap(7.5),
-    m_IrefTrim(15),
-    m_MFIinA(21000),
-    m_MFIinD(21000),
-    m_MFIshuntA(26000),
-    m_MFIshuntD(26000)
+    m_irefTrim(15),
+    m_kSenseInA(21000),
+    m_kSenseInD(21000),
+    m_kSenseShuntA(26000),
+    m_kSenseShuntD(26000)
 {}
 
 double Rd53bCfg::toCharge(double vcal) {
@@ -49,14 +49,14 @@ void Rd53bCfg::writeConfig(json &j) {
     j["RD53B"]["Parameter"]["Name"] = name;
     j["RD53B"]["Parameter"]["ChipId"] = m_chipId;
     j["RD53B"]["Parameter"]["InjCap"] = m_injCap;
-    j["RD53B"]["Parameter"]["NfDSLDO"] = m_NfDSLDO;
-    j["RD53B"]["Parameter"]["NfASLDO"] = m_NfASLDO;
-    j["RD53B"]["Parameter"]["NfACB"] = m_NfACB;
-    j["RD53B"]["Parameter"]["IrefTrim"] = m_IrefTrim;
-    j["RD53B"]["Parameter"]["MFIinA"] = m_MFIinA;
-    j["RD53B"]["Parameter"]["MFIinD"] = m_MFIinD;
-    j["RD53B"]["Parameter"]["MFIshuntA"] = m_MFIshuntA;
-    j["RD53B"]["Parameter"]["MFIshuntD"] = m_MFIshuntD;
+    j["RD53B"]["Parameter"]["NfDSLDO"] = m_nfDSLDO;
+    j["RD53B"]["Parameter"]["NfASLDO"] = m_nfASLDO;
+    j["RD53B"]["Parameter"]["NfACB"] = m_nfACB;
+    j["RD53B"]["Parameter"]["IrefTrim"] = m_irefTrim;
+    j["RD53B"]["Parameter"]["KSenseInA"] = m_kSenseInA;
+    j["RD53B"]["Parameter"]["KSenseInD"] = m_kSenseInD;
+    j["RD53B"]["Parameter"]["KSenseShuntA"] = m_kSenseShuntA;
+    j["RD53B"]["Parameter"]["KSenseShuntD"] = m_kSenseShuntD;
     for(unsigned  i=0;i<m_vcalPar.size();i++)  
         j["RD53B"]["Parameter"]["VcalPar"][i]= m_vcalPar[i];
     j["RD53B"]["Parameter"]["EnforceNameIdCheck"] = enforceChipIdInName;
@@ -82,28 +82,28 @@ void Rd53bCfg::loadConfig(const json &j) {
         enforceChipIdInName = j["RD53B"]["Parameter"]["EnforceNameIdCheck"];
     
     if (j.contains({"RD53B","Parameter","NfDSLDO"}))
-        m_NfDSLDO = j["RD53B"]["Parameter"]["NfDSLDO"];
+        m_nfDSLDO = j["RD53B"]["Parameter"]["NfDSLDO"];
 
     if (j.contains({"RD53B","Parameter","NfASLDO"}))
-        m_NfASLDO = j["RD53B"]["Parameter"]["NfASLDO"];
+        m_nfASLDO = j["RD53B"]["Parameter"]["NfASLDO"];
 
     if (j.contains({"RD53B","Parameter","NfACB"}))
-        m_NfACB = j["RD53B"]["Parameter"]["NfACB"];
+        m_nfACB = j["RD53B"]["Parameter"]["NfACB"];
 
     if (j.contains({"RD53B","Parameter","IrefTrim"}))
-        m_IrefTrim = j["RD53B"]["Parameter"]["IrefTrim"];
+        m_irefTrim = j["RD53B"]["Parameter"]["IrefTrim"];
 
-    if (j.contains({"RD53B","Parameter","MFIinA"}))
-        m_MFIinA = j["RD53B"]["Parameter"]["MFIinA"];
+    if (j.contains({"RD53B","Parameter","KSenseInA"}))
+        m_kSenseInA = j["RD53B"]["Parameter"]["KSenseInA"];
 
-    if (j.contains({"RD53B","Parameter","MFIinD"}))
-        m_MFIinD = j["RD53B"]["Parameter"]["MFIinD"];
+    if (j.contains({"RD53B","Parameter","KSenseInD"}))
+        m_kSenseInD = j["RD53B"]["Parameter"]["KSenseInD"];
 
-    if (j.contains({"RD53B","Parameter","MFIshuntA"}))
-        m_MFIshuntA = j["RD53B"]["Parameter"]["MFIshuntA"];
+    if (j.contains({"RD53B","Parameter","KSenseShuntA"}))
+        m_kSenseShuntA = j["RD53B"]["Parameter"]["KSenseShuntA"];
 
-    if (j.contains({"RD53B","Parameter","MFIshuntD"}))
-        m_MFIshuntD = j["RD53B"]["Parameter"]["MFIshuntD"];
+    if (j.contains({"RD53B","Parameter","KSenseShuntD"}))
+        m_kSenseShuntD = j["RD53B"]["Parameter"]["KSenseShuntD"];
     
     if (j.contains({"RD53B","Parameter","VcalPar"}))
         if (j["RD53B"]["Parameter"]["VcalPar"].size() == m_vcalPar.size()) {
@@ -175,13 +175,13 @@ float Rd53bCfg::readMosTemp(float deltaV, TransSensor sensor, bool in_kelvin) co
     // Convert voltage difference into temperature from https://indico.cern.ch/event/1011941/contributions/4278988/attachments/2210633/3741190/RD53B_calibatrion_sensor_temperature.pdf
     float Nf;
     if (sensor == DSLDO) {
-        Nf = m_NfDSLDO;
+        Nf = m_nfDSLDO;
     }
     else if (sensor == ASLDO) {
-        Nf = m_NfASLDO;
+        Nf = m_nfASLDO;
     }
     else if (sensor == ACB) {
-        Nf = m_NfACB;
+        Nf = m_nfACB;
     }
     const float kB = 1.38064852e-23, e = 1.602e-19; // Boltzmann constant and electron charge
     float tK = deltaV * e / (Nf * kB * log(15.));
