@@ -147,6 +147,7 @@ void HccCfg::setupMaps() {
   auto len = HCCStarRegister::_size();
   // In case it's not already empty
   m_registerSet.clear();
+  // Prevent realloc so that pointers (in m_regiterMap) are stable
   m_registerSet.reserve( len );
 
   //all HCC Register addresses we will create
@@ -160,7 +161,11 @@ void HccCfg::setupMaps() {
   }
 
   if(m_registerSet.size() != len) {
-    logger->info("Mismatch between size {} and values {}", len, m_registerSet.size());
+    // If not the same, m_registerSet might be realloc'ed and therefore pointers break
+    logger->critical("Mismatch between size {} and values {}",
+                     len, m_registerSet.size());
+
+    abort();
   }
 }
 

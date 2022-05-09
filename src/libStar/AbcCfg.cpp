@@ -252,15 +252,6 @@ AbcCfg::AbcCfg(int version)
 }
 
 void AbcCfg::setupMaps(int version) {
-    auto len = ABCStarRegister::_size();
-    if(version == 1) {
-        len -= 8;
-    }
-
-    // In case it's not already empty
-    m_registerSet.clear();
-    m_registerSet.reserve( len );
-
     /// TODO Still not sure if this is a good implementation; to-be-optimized.
 
     //DD    //Loop over each ABC register in the default list, and create the Register object
@@ -278,10 +269,6 @@ void AbcCfg::setupMaps(int version) {
         m_registerSet.push_back( std::move(tmp_Reg) ); //Save it to the list
         int lastReg = m_registerSet.size()-1;
         m_registerMap[addr] = lastReg; //Save it's position in memory to the registerMap
-    }
-
-    if(m_registerSet.size() != len) {
-      logger->info("Mismatch between size {} and values {}", len, m_registerSet.size());
     }
 }
 
