@@ -116,10 +116,12 @@ class HccCfg {
     public:
         HccCfg(int version);
 
+        HccCfg() = delete;
+        ~HccCfg() = default;
+        // Remove these as difficult to update pointers in m_registerMap!
         HccCfg(const HccCfg &) = delete;
         HccCfg &operator =(const HccCfg &) = delete;
         HccCfg &operator =(HccCfg &&) = delete;
-        // Default doesn't work as won't change pointers!
         HccCfg(HccCfg &&other) = delete;
 
         void setDefaults(int version);

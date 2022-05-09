@@ -61,7 +61,7 @@ class StarCfg : public FrontEndCfg {
 
   void addABCchipID(unsigned int chipID, unsigned int hccIn) {
       m_ABCchips.emplace(hccIn, m_abc_version);
-      m_ABCchips[hccIn].setABCChipId(chipID);
+      m_ABCchips.at(hccIn).setABCChipId(chipID);
   }
 
   void clearABCchipIDs() { m_ABCchips.clear();}
@@ -191,7 +191,7 @@ class StarCfg : public FrontEndCfg {
 
   AbcCfg &abcFromIndex(int chipIndex) {
     assert(abcAtIndex(chipIndex));
-    return m_ABCchips[chipIndex-1];
+    return m_ABCchips.at(chipIndex-1);
   }
 
   const AbcCfg &abcFromIndex(int chipIndex) const {
