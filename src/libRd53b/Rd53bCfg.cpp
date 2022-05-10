@@ -7,17 +7,21 @@
 // ################################
 
 #include "Rd53bCfg.h"
+#include "logging.h"
 
 #include <cmath>
+
+// Create logger
+namespace {
+  auto logger = logging::make_log("Rd53bCfg");
+}
 
 Rd53bCfg::Rd53bCfg() :
     m_chipId(15),
     m_vcalPar({{0.46, 0.2007}}),
     m_adcCalPar ( {{ 5.89435, 0.192043, 4.99e3 }} ),
     m_ntcCalPar({{7.489e-4, 2.769e-4, 7.0595e-8}}),
-    m_nfDSLDO(1.264),
-    m_nfASLDO(1.264),
-    m_nfACB(1.264),
+    m_nf({{1.264, 1.264, 1.264}}),
     m_injCap(7.5),
     m_irefTrim(15),
     m_kSenseInA(21000),
@@ -49,9 +53,9 @@ void Rd53bCfg::writeConfig(json &j) {
     j["RD53B"]["Parameter"]["Name"] = name;
     j["RD53B"]["Parameter"]["ChipId"] = m_chipId;
     j["RD53B"]["Parameter"]["InjCap"] = m_injCap;
-    j["RD53B"]["Parameter"]["NfDSLDO"] = m_nfDSLDO;
-    j["RD53B"]["Parameter"]["NfASLDO"] = m_nfASLDO;
-    j["RD53B"]["Parameter"]["NfACB"] = m_nfACB;
+    j["RD53B"]["Parameter"]["NfDSLDO"] = m_nf[0];
+    j["RD53B"]["Parameter"]["NfASLDO"] = m_nf[1];
+    j["RD53B"]["Parameter"]["NfACB"] = m_nf[2];
     j["RD53B"]["Parameter"]["IrefTrim"] = m_irefTrim;
     j["RD53B"]["Parameter"]["KSenseInA"] = m_kSenseInA;
     j["RD53B"]["Parameter"]["KSenseInD"] = m_kSenseInD;
@@ -82,13 +86,13 @@ void Rd53bCfg::loadConfig(const json &j) {
         enforceChipIdInName = j["RD53B"]["Parameter"]["EnforceNameIdCheck"];
     
     if (j.contains({"RD53B","Parameter","NfDSLDO"}))
-        m_nfDSLDO = j["RD53B"]["Parameter"]["NfDSLDO"];
+        m_nf[0] = j["RD53B"]["Parameter"]["NfDSLDO"];
 
     if (j.contains({"RD53B","Parameter","NfASLDO"}))
-        m_nfASLDO = j["RD53B"]["Parameter"]["NfASLDO"];
+        m_nf[1] = j["RD53B"]["Parameter"]["NfASLDO"];
 
     if (j.contains({"RD53B","Parameter","NfACB"}))
-        m_nfACB = j["RD53B"]["Parameter"]["NfACB"];
+        m_nf[2] = j["RD53B"]["Parameter"]["NfACB"];
 
     if (j.contains({"RD53B","Parameter","IrefTrim"}))
         m_irefTrim = j["RD53B"]["Parameter"]["IrefTrim"];
@@ -173,16 +177,11 @@ float Rd53bCfg::readNtcTemp(float R, bool in_kelvin)
 float Rd53bCfg::readMosTemp(float deltaV, TransSensor sensor, bool in_kelvin) const
 {
     // Convert voltage difference into temperature from https://indico.cern.ch/event/1011941/contributions/4278988/attachments/2210633/3741190/RD53B_calibatrion_sensor_temperature.pdf
-    float Nf;
-    if (sensor == DSLDO) {
-        Nf = m_nfDSLDO;
+    if (sensor == Other) {
+        logger->error("Not a transistor sensor");
     }
-    else if (sensor == ASLDO) {
-        Nf = m_nfASLDO;
-    }
-    else if (sensor == ACB) {
-        Nf = m_nfACB;
-    }
+    float Nf = 0;
+    Nf = m_nf[static_cast<int>(sensor)];
     const float kB = 1.38064852e-23, e = 1.602e-19; // Boltzmann constant and electron charge
     float tK = deltaV * e / (Nf * kB * log(15.));
     if (in_kelvin)
