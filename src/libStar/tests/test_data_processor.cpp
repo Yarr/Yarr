@@ -15,7 +15,7 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
   ClipBoard<RawDataContainer> rd_cp;
   ClipBoard<EventDataBase> em_cp;
 
-  proc->connect( &rd_cp, &em_cp );
+  proc->connect(nullptr, &rd_cp, &em_cp );
 
   proc->init();
   proc->run();
