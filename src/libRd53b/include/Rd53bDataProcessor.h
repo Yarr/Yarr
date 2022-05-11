@@ -62,6 +62,9 @@ private:
     bool _isCompressedHitmap; // Flag for toggle hitmap type, true for compressed, false for raw
     bool _dropToT;
     bool _enChipId;
+    unsigned _chipIdShift;
+    unsigned _chipId;
+    unsigned long _streamMask;
 
     // Inline functions frequently used
     inline bool retrieve(uint64_t &variable, const unsigned length, const bool checkEOS = false, const bool skipNSCheck = false);	// Retrieve bit string with length
