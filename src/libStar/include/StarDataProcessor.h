@@ -24,7 +24,7 @@ class StarDataProcessor : public DataProcessor {
         StarDataProcessor();
         ~StarDataProcessor() override;
         
-        void connect(ClipBoard<RawDataContainer> *arg_input, ClipBoard<EventDataBase> *arg_output) override {
+        void connect(FrontEndCfg *feCfg, ClipBoard<RawDataContainer> *arg_input, ClipBoard<EventDataBase> *arg_output) override {
             input = arg_input;
             output = arg_output;
         }

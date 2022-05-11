@@ -192,7 +192,7 @@ namespace ScanHelper {
         bhlog->info("Loading RawData processors ..");
         for (FrontEnd *fe : feList) {
             procs[fe] = StdDict::getDataProcessor(chipType);
-            procs[fe]->connect(fe->clipRawData, fe->clipData);
+            procs[fe]->connect(dynamic_cast<FrontEndCfg*>(fe), fe->clipRawData, fe->clipData);
             // TODO load global processor config
             // TODO load chip specific config
         }

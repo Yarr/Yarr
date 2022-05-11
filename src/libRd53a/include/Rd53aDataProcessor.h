@@ -23,7 +23,7 @@ class Rd53aDataProcessor : public DataProcessor {
         Rd53aDataProcessor();
         ~Rd53aDataProcessor() override;
 
-        void connect(ClipBoard<RawDataContainer> *input, ClipBoard<EventDataBase> *output) override {
+        void connect(FrontEndCfg *feCfg, ClipBoard<RawDataContainer> *input, ClipBoard<EventDataBase> *output) override {
             m_input = input;
             m_output = output;
         }

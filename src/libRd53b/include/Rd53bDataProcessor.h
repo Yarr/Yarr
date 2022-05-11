@@ -22,8 +22,9 @@ public:
     Rd53bDataProcessor();
     ~Rd53bDataProcessor() override;
 
-    void connect(ClipBoard<RawDataContainer> *input, ClipBoard<EventDataBase> *out) override
+    void connect(FrontEndCfg *feCfg, ClipBoard<RawDataContainer> *input, ClipBoard<EventDataBase> *out) override
     {
+        m_feCfg = dynamic_cast<Rd53bCfg*>(feCfg);
         m_input = input;
         m_out = out;
     }
@@ -50,6 +51,7 @@ private:
     std::unique_ptr<std::thread> thread_ptr;
     ClipBoard<RawDataContainer> *m_input;
     ClipBoard<EventDataBase> *m_out;
+    Rd53bCfg *m_feCfg;
 
     unsigned _tag;
     unsigned _l1id;
@@ -59,6 +61,7 @@ private:
 
     bool _isCompressedHitmap; // Flag for toggle hitmap type, true for compressed, false for raw
     bool _dropToT;
+    bool _enChipId;
 
     // Inline functions frequently used
     inline bool retrieve(uint64_t &variable, const unsigned length, const bool checkEOS = false, const bool skipNSCheck = false);	// Retrieve bit string with length

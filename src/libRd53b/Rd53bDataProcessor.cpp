@@ -45,6 +45,7 @@ Rd53bDataProcessor::Rd53bDataProcessor()
 
     _isCompressedHitmap = true; // Whether the hit map is compressed (binary tree + Huffman coding) or not (raw 16-bit hit map)
     _dropToT = false;           // Whether ToT values are kept in the data stream
+    _enChipId = false;
 
     // Data stream components
     _ccol = 0;
@@ -71,6 +72,11 @@ void Rd53bDataProcessor::init()
     _bcid = 666;
     _wordCount = 0;
     _hits = 0;
+
+    // Load decoder specific bits
+    _isCompressedHitmap = (m_feCfg->DataEnRaw.read() == 0 ? true : false);
+    _dropToT = (m_feCfg->DataEnBinaryRo.read() == 1 ? true : false);
+    _enChipId = (m_feCfg->EnChipId.read() == 1 ? true : false);
 
 }
 
