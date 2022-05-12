@@ -499,7 +499,7 @@ bool Rd53bDataProcessor::getNextDataBlock()
             _data = &_curInV->data[0]->get(0);
             if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
                  return getNextDataBlock();
-            if ((_data[0] >> 29) & 0x3 != _chipId && _enChipId)
+            if (((_data[0] >> 29) & 0x3) != _chipId && _enChipId)
                  return getNextDataBlock();
             return true;
         }
@@ -558,7 +558,7 @@ bool Rd53bDataProcessor::getNextDataBlock()
     // Return success code
     if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
          return getNextDataBlock();
-    if ((_data[0] >> 29) & 0x3 != _chipId && _enChipId)
+    if (((_data[0] >> 29) & 0x3) != _chipId && _enChipId)
          return getNextDataBlock();
     return true;
 }
@@ -581,6 +581,6 @@ void Rd53bDataProcessor::getPreviousDataBlock()
 
     if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
         getPreviousDataBlock();
-    if ((_data[0] >> 29) & 0x3 != _chipId && _enChipId)
+    if (((_data[0] >> 29) & 0x3) != _chipId && _enChipId)
         getPreviousDataBlock();
 }
