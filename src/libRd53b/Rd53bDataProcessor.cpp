@@ -275,7 +275,7 @@ void Rd53bDataProcessor::process_core()
                     logger->error("Expect new stream while NS = 0: {}{}. Skipping block...", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
                     continue;
                 }
-                _tag = (_data[0] >> 23-_chipIdShift) & 0xFF;
+                _tag = (_data[0] >> (23-_chipIdShift)) & 0xFF;
                 _bitIdx = 9 + _chipIdShift; // Reset bit index = NS + tag
 
                 // Create a new event
