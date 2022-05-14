@@ -186,20 +186,20 @@ namespace ScanHelper {
         return chipType;
     }
 
-    void buildRawDataProcs( std::map<FrontEnd*, std::unique_ptr<DataProcessor> > &procs,
-                           std::vector<FrontEnd*> &feList,
+    void buildRawDataProcs( std::map<unsigned, std::unique_ptr<DataProcessor> > &procs,
+                           Bookkeeper &bookie,
                            const std::string &chipType) {
         bhlog->info("Loading RawData processors ..");
-        for (FrontEnd *fe : feList) {
-            procs[fe] = StdDict::getDataProcessor(chipType);
-            procs[fe]->connect(dynamic_cast<FrontEndCfg*>(fe), fe->clipRawData, fe->clipData);
+        for (unsigned id = 0; id<bookie.getNumOfEntries(); id++) {
+            procs[id] = StdDict::getDataProcessor(chipType);
+            procs[id]->connect(dynamic_cast<FrontEndCfg*>(fe)&bookie.getEntry(id).fe->clipRawData, &bookie.getEntry(id).fe->clipData);
             // TODO load global processor config
             // TODO load chip specific config
         }
     }
 
     std::string buildChips(const json &config, Bookkeeper &bookie, HwController *hwCtrl,
-            std::map<FrontEnd*, std::array<std::string,2>> &feCfgMap) {
+            std::map<unsigned, std::array<std::string,2>> &feCfgMap) {
         const std::string &chipType = config["chipType"];
         shlog->info("Chip type: {}", chipType);
         shlog->info("Chip count {}", config["chips"].size());
@@ -222,7 +222,7 @@ namespace ScanHelper {
                 feCfg->setLocked((int)chip["locked"]);
             std::size_t botDirPos = chipConfigPath.find_last_of('/');
             std::string  cfgFile=chipConfigPath.substr(botDirPos, chipConfigPath.length());
-            feCfgMap[bookie.getLastFe()] = {chipConfigPath, cfgFile};
+            feCfgMap[bookie.getId(bookie.getLastFe())] = {chipConfigPath, cfgFile};
         }
         return chipType;
     }
@@ -289,23 +289,24 @@ namespace ScanHelper {
         return 0;
     }
 
-    void buildHistogrammers( std::map<FrontEnd*,
+    void buildHistogrammers( std::map<unsigned,
             std::unique_ptr<DataProcessor>>& histogrammers,
             const json& scanCfg,
-            std::vector<FrontEnd*>& feList,
+            Bookkeeper &bookie,
             ScanBase* s, std::string outputDir) {
         bhlog->info("Loading histogrammer ...");
 
         const json &histoCfg = scanCfg["scan"]["histogrammer"];
         const json &anaCfg = scanCfg["scan"]["analysis"];
 
-        for (FrontEnd *fe : feList ) {
+        for (unsigned id=0; id<bookie.getNumOfEntries(); id++) {
+            FrontEnd *fe = bookie.getEntry(id).fe;
             if (fe->isActive()) {
                 // Load histogrammer
-                histogrammers[fe] = std::make_unique<HistogrammerProcessor>( );
-                auto& histogrammer = dynamic_cast<HistogrammerProcessor&>( *(histogrammers[fe]) );
+                histogrammers[id] = std::make_unique<HistogrammerProcessor>( );
+                auto& histogrammer = dynamic_cast<HistogrammerProcessor&>( *(histogrammers[id]) );
 
-                histogrammer.connect(fe->clipData, fe->clipHisto);
+                histogrammer.connect(&fe->clipData, &fe->clipHisto);
 
                 auto add_histo = [&](const std::string& algo_name) {
                     auto histo = StdDict::getHistogrammer(algo_name);
@@ -349,7 +350,7 @@ namespace ScanHelper {
     // A 2D vector of int to store algorithm indices for all tiers of analyses
     using AlgoTieredIndex = std::vector<std::vector<int>>;
 
-    void buildAnalyses( std::map<FrontEnd*,
+    void buildAnalyses( std::map<unsigned,
             std::vector<std::unique_ptr<DataProcessor>> >& analyses,
             const json& scanCfg, Bookkeeper& bookie,
             ScanBase* s, FeedbackClipboardMap *fbData, int mask_opt, std::string outputDir) {
@@ -367,30 +368,29 @@ namespace ScanHelper {
             throw(std::runtime_error("buildAnalyses failure"));
         }
 
-        for (FrontEnd *fe : bookie.feList ) {
+        for (unsigned id=0; id<bookie.getNumOfEntries(); id++ ) {
+            FrontEnd *fe = bookie.getEntry(id).fe;
             if (fe->isActive()) {
-                auto channel = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-
                 for (unsigned t=0; t<algoIndexTiers.size(); t++) {
                     // Before adding new analyses
                     bool hasUpstreamAnalyses = false;
                     if (t > 0) { // ie. not analyses[fe].empty()
-                        auto& ana_prev = dynamic_cast<AnalysisProcessor&>( *(analyses[fe].back()) );
+                        auto& ana_prev = dynamic_cast<AnalysisProcessor&>( *(analyses[id].back()) );
                         hasUpstreamAnalyses = not ana_prev.empty();
                     }
 
                     // Add analysis processors
-                    analyses[fe].emplace_back( new AnalysisProcessor(&bookie, channel) );
-                    auto& ana = dynamic_cast<AnalysisProcessor&>( *(analyses[fe].back()) );
+                    analyses[id].emplace_back( new AnalysisProcessor(&bookie, id) );
+                    auto& ana = dynamic_cast<AnalysisProcessor&>( *(analyses[id].back()) );
 
                     // Create the ClipBoard to store its output and establish connection
-                    fe->clipResult->emplace_back(new ClipBoard<HistogramBase>());
+                    fe->clipResult.emplace_back(new ClipBoard<HistogramBase>());
                     if (t==0) {
-                        ana.connect(s, fe->clipHisto, (fe->clipResult->back()).get(), &((*fbData)[channel]) );
+                        ana.connect(s, &fe->clipHisto, (fe->clipResult.back()).get(), &((*fbData)[id]) );
                     } else {
-                        ana.connect(s, (*(fe->clipResult->rbegin()+1)).get(),
-                                (*(fe->clipResult->rbegin())).get(),
-                                &((*fbData)[channel]), true);
+                        ana.connect(s, (*(fe->clipResult.rbegin()+1)).get(),
+                                (*(fe->clipResult.rbegin())).get(),
+                                &((*fbData)[id]), true);
                     }
 
                     auto add_analysis = [&](std::string algo_name, json& j) {
@@ -405,7 +405,6 @@ namespace ScanHelper {
                             }
 
                             balog->debug(" connecting feedback (if required)");
-                            // analysis->connectFeedback(&(*fbData)[channel]);
                             if(algo_name == "HistogramArchiver") {
                                 auto archiver = dynamic_cast<HistogramArchiver*>(analysis.get());
                                 archiver->setOutputDirectory(outputDir);
@@ -433,7 +432,7 @@ namespace ScanHelper {
                     ana.setMapSize(fe->geo.nCol, fe->geo.nRow);
                 } // for (unsigned t=0; t<algoIndexTiers.size(); t++)
             } // if (fe->isActive())
-        } // for (FrontEnd *fe : bookie.feList )
+        } // for
     }
 
     void buildAnalysisHierarchy(AlgoTieredIndex &indexTiers, const json &anaCfg) {

@@ -50,11 +50,11 @@ private:
     json scanLog;
     std::unique_ptr<HwController> hwCtrl{};
     std::unique_ptr<Bookkeeper> bookie{};
-    std::map<FrontEnd*, std::array<std::string, 2>> feCfgMap;
+    std::map<unsigned, std::array<std::string, 2>> feCfgMap;
     std::unique_ptr<ScanBase> scanBase{};
-    std::map<FrontEnd*, std::unique_ptr<DataProcessor> > procs{};
-    std::map<FrontEnd*, std::unique_ptr<DataProcessor> > histogrammers{};
-    std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcessor>> > analyses{};
+    std::map<unsigned, std::unique_ptr<DataProcessor> > procs{};
+    std::map<unsigned, std::unique_ptr<DataProcessor> > histogrammers{};
+    std::map<unsigned, std::vector<std::unique_ptr<DataProcessor>> > analyses{};
     FeedbackClipboardMap fbData;
     std::string chipType{};
     std::string timestampStr{};

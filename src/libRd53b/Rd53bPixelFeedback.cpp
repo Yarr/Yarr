@@ -50,13 +50,13 @@ void Rd53bPixelFeedback::loadConfig(const json &j) {
     }
 }
 
-void Rd53bPixelFeedback::feedback(unsigned channel, std::unique_ptr<Histo2d> h) {
+void Rd53bPixelFeedback::feedback(unsigned id, std::unique_ptr<Histo2d> h) {
     // TODO Check on NULL pointer
     if (h->size() != Rd53b::n_Row*Rd53b::n_Col) {
-        logger->error("Wrong type of feedback histogram on channel {}", channel);
-        doneMap[channel] = true;
+        logger->error("Wrong type of feedback histogram on ID {}", id);
+        doneMap[id] = true;
     } else {
-        auto rd53b = dynamic_cast<Rd53b*>(keeper->getFe(channel));
+        auto rd53b = dynamic_cast<Rd53b*>(keeper->getFe(id));
         for (unsigned row=1; row<=Rd53b::n_Row; row++) {
             for (unsigned col=1; col<=Rd53b::n_Col; col++) {
                 int sign = h->getBin(h->binNum(col, row));
@@ -69,7 +69,7 @@ void Rd53bPixelFeedback::feedback(unsigned channel, std::unique_ptr<Histo2d> h) 
                 rd53b->setTDAC(col-1, row-1, v);
             }
         }
-        m_fb[channel] = std::move(h);
+        m_fb[id] = std::move(h);
     }
 }
 
@@ -86,11 +86,11 @@ void Rd53bPixelFeedback::init() {
     m_cur = 0;
     // Init maps
     if (m_rstPixelReg) {
-        for (auto *fe : keeper->feList) {
+        for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+            FrontEnd *fe = keeper->getEntry(id).fe;
             if (fe->getActive()) {
-                unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-                auto rd53b = dynamic_cast<Rd53b*>(keeper->getFe(ch));
-                m_fb[ch] = NULL;
+                auto rd53b = dynamic_cast<Rd53b*>(fe);
+                m_fb[id] = NULL;
                 for (unsigned col=1; col<=Rd53b::n_Col; col++) {
                     for (unsigned row=1; row<=Rd53b::n_Row; row++) {
                         //Initial TDAC in mid of the range
@@ -105,7 +105,8 @@ void Rd53bPixelFeedback::init() {
 void Rd53bPixelFeedback::execPart1() {
     g_stat->set(this, m_cur);
     // Lock all mutexes
-    for (auto fe : keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if (fe->getActive()) {
             this->writePixelCfg(dynamic_cast<Rd53b*>(fe));
         }
@@ -115,10 +116,10 @@ void Rd53bPixelFeedback::execPart1() {
 
 void Rd53bPixelFeedback::execPart2() {
     // Wait for mutexes to be unlocked by feedback
-    for (auto fe: keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if (fe->getActive()) {
-            unsigned rx = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-            waitForFeedback(rx);
+            waitForFeedback(id);
         }
     }
     m_cur++;

@@ -25,7 +25,7 @@ class AnalysisAlgorithm {
         virtual ~AnalysisAlgorithm() = default;
         
         void setBookkeeper (Bookkeeper *b) {bookie = b;}
-        void setChannel (unsigned ch) {channel = ch;}
+        void setId (unsigned uid) {id = uid;}
 
         void connect(ClipBoard<HistogramBase> *out, FeedbackClipboard *fb) {
             output = out;
@@ -49,7 +49,7 @@ class AnalysisAlgorithm {
 
     protected:
         Bookkeeper *bookie;
-        unsigned channel;
+        unsigned id;
         ScanBase *scan;
         ClipBoard<HistogramBase> *output;
         FeedbackClipboard *feedback;
@@ -104,7 +104,7 @@ class AnalysisProcessor : public DataProcessor {
 
     private:
         Bookkeeper *bookie;
-        unsigned channel;
+        unsigned id;
         ClipBoard<HistogramBase> *input;
         ClipBoard<HistogramBase> *output;
         FeedbackClipboard *feedback;

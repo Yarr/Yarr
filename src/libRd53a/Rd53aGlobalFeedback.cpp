@@ -109,9 +109,10 @@ void Rd53aGlobalFeedback::feedbackStep(unsigned channel, double sign, bool last)
 
 
 bool Rd53aGlobalFeedback::allDone() {
-    for (auto *fe : keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if (fe->getActive()) {
-            if (!m_doneMap[dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()])
+            if (!m_doneMap[id])
                 return false;
         }
     }
@@ -119,7 +120,8 @@ bool Rd53aGlobalFeedback::allDone() {
 }
 
 void Rd53aGlobalFeedback::writePar() {
-    for (auto *fe : keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if(fe->getActive()) {
             auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
             // Enable single channel
@@ -139,18 +141,19 @@ void Rd53aGlobalFeedback::init() {
     m_cur = 0;
     parPtr = keeper->globalFe<Rd53a>()->regMap[parName];
     // Init maps
-    for (auto *fe : keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if (fe->getActive()) {
-            unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-            m_localStep[ch] = step;
-            m_values[ch] = max;
-            m_oldSign[ch] = -1;
-            m_doneMap[ch] = false;
+            m_localStep[id] = step;
+            m_values[id] = max;
+            m_oldSign[id] = -1;
+            m_doneMap[id] = false;
         }
     }
     this->writePar();
 
-    for (auto *fe : keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if (fe->getActive()) {
             Rd53a *rd53a = dynamic_cast<Rd53a*>(fe);
             g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
@@ -220,12 +223,11 @@ void Rd53aGlobalFeedback::execPart1() {
 
 void Rd53aGlobalFeedback::execPart2() {
     // Wait for mutexes to be unlocked by feedback
-    for (auto fe: keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if (fe->getActive()) {
-            unsigned rx = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-
-            waitForFeedback(rx);
-            logger->info(" --> Received Feedback on Channel {} with value: {}", rx, m_values[rx]);
+            waitForFeedback(id);
+            logger->info(" --> Received Feedback on ID {} with value: {}", id, m_values[id]);
         }
     }
     m_cur++;
@@ -234,10 +236,10 @@ void Rd53aGlobalFeedback::execPart2() {
 }
 
 void Rd53aGlobalFeedback::end() {
-    for (auto fe: keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if (fe->getActive()) {
-            unsigned rx = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-            logger->info(" --> Final parameter for Channel {} is {}", rx, m_values[rx]);
+            logger->info(" --> Final parameter for Id {} is {}", id, m_values[id]);
         }
     }
     this->writePar();

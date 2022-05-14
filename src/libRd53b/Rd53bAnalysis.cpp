@@ -415,7 +415,7 @@ void ToaAnalysis::processHistogram(HistogramBase *h) {
 
     // ToA vs charge
     if(m_hasVcalLoop && h_chargeVsToaMap == NULL) {
-        auto cfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
+        auto cfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
         double chargeMin = cfg->toCharge(m_vcalMin);
         double chargeMax = cfg->toCharge(m_vcalMax);
         double chargeStep = cfg->toCharge(m_vcalStep);
@@ -511,11 +511,11 @@ void ToaAnalysis::processHistogram(HistogramBase *h) {
             fineMeanPToADist->fill(meanPToAMap->getBin(ii));
         } // ii
 
-        logger->info("\033[1;33mChannel:{} ScanID:{} ToA Mean = {} +- {}\033[0m", channel, ident, meanPToADist->getMean(), meanPToADist->getStdDev());
+        logger->info("\033[1;33mId:{} ScanID:{} ToA Mean = {} +- {}\033[0m", id, ident, meanPToADist->getMean(), meanPToADist->getStdDev());
 
         // ToA vs charge
         if (m_hasVcalLoop) {
-            auto cfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
+            auto cfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
             double chargeAtCurrentStep = cfg->toCharge(ident);
             double bin_width = ((toa_bins_x_hi+0.5) - (toa_bins_x_lo+0.5)) / (toa_bins_n);
             for (unsigned ii = 0; ii < fineMeanPToADist->size(); ii++) {
