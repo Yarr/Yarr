@@ -191,6 +191,7 @@ namespace ScanHelper {
                            const std::string &chipType) {
         bhlog->info("Loading RawData processors ..");
         for (unsigned id = 0; id<bookie.getNumOfEntries(); id++) {
+            FrontEnd *fe = bookie.getEntry(id);
             procs[id] = StdDict::getDataProcessor(chipType);
             procs[id]->connect(dynamic_cast<FrontEndCfg*>(fe)&bookie.getEntry(id).fe->clipRawData, &bookie.getEntry(id).fe->clipData);
             // TODO load global processor config
