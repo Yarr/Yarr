@@ -182,7 +182,7 @@ uint16_t decodeGlob(std::vector<RawData> dataList, int address)
     return result[0];
 }
 
-void saveCfgFile(Rd53b rd53b, std::string cfgFilePath, json globSEU)
+void saveCfgFile(Rd53b &rd53b, std::string cfgFilePath, json globSEU)
 {
     std::ofstream newCfgFile(cfgFilePath.c_str());
     json cfg;

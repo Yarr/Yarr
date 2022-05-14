@@ -212,7 +212,8 @@ TEST_CASE("AnalysisPOILoops", "[Analysis]") {
   auto fe = StdDict::getFrontEnd("Star");
   fe->setActive(true);
   unsigned channel = 42;
-  bookie.addFe(fe.release(), channel);
+  bookie.addFe(fe.get(), channel);
+  unsigned uid = bookie.getId(fe.release());
 
   // Global FE for scan
   auto g_fe = StdDict::getFrontEnd("Star");
@@ -245,14 +246,14 @@ TEST_CASE("AnalysisPOILoops", "[Analysis]") {
   scanCfg["scan"]["loops"][2]["config"]["max"] = 9;
   scanCfg["scan"]["loops"][2]["config"]["step"] = 1;
 
-  //scanCfg["scan"]["loops"][3]["loopAction"] = "MyHistoGenerator";
+//scanCfg["scan"]["loops"][3]["loopAction"] = "MyHistoGenerator";
 
   scan.loadConfig(scanCfg);
 
   // The last loop "MyHistoGenerator" is not in the registry. Add it by hand.
   std::unique_ptr<LoopActionBase> hgen = std::make_unique<MyHistoGenerator>();
   // Connect histo clipboard
-  static_cast<MyHistoGenerator*>(hgen.get())->connect(&(bookie.histoMap[channel]));
+  static_cast<MyHistoGenerator*>(hgen.get())->connect(&(bookie.getEntry(uid).fe->clipHisto));
   // This loop directly writes to the input ClipBoard of the analysis chain
   // It bypasses DataProcessors and Histogrammers, which are not the test targets here.
   scan.addLoop(std::move(hgen));
@@ -273,11 +274,11 @@ TEST_CASE("AnalysisPOILoops", "[Analysis]") {
   std::vector<std::unique_ptr<AnalysisProcessor>> analyses;
 
   // First tier: MyAnalyzer
-  analyses.emplace_back(new AnalysisProcessor(&bookie, channel));
+  analyses.emplace_back(new AnalysisProcessor(&bookie, uid));
 
   // Create ClipBoard for its output and make connections
-  bookie.resultMap[channel].emplace_back(new ClipBoard<HistogramBase>());
-  analyses[0]->connect(&scan, &(bookie.histoMap[channel]), bookie.resultMap[channel].back().get(), nullptr);
+  bookie.getEntry(uid).fe->clipResult.emplace_back(new ClipBoard<HistogramBase>());
+  analyses[0]->connect(&scan, &(bookie.getEntry(uid).fe->clipHisto), bookie.getEntry(uid).fe->clipResult.back().get(), nullptr);
 
   // Add algorithm MyAnalyzer
   auto algo1 = std::make_unique<MyAnalyzer>();
@@ -285,11 +286,11 @@ TEST_CASE("AnalysisPOILoops", "[Analysis]") {
   analyses[0]->addAlgorithm(std::move(algo1));
 
   // Second tier: MyOtherAnalyzer
-  analyses.emplace_back(new AnalysisProcessor(&bookie, channel));
+  analyses.emplace_back(new AnalysisProcessor(&bookie, uid));
 
   // Create and connect result ClipBoard
-  bookie.resultMap[channel].emplace_back(new ClipBoard<HistogramBase>());
-  analyses[1]->connect(&scan, bookie.resultMap[channel][0].get(), bookie.resultMap[channel][1].get(), nullptr, true);
+  bookie.getEntry(uid).fe->clipResult.emplace_back(new ClipBoard<HistogramBase>());
+  analyses[1]->connect(&scan, bookie.getEntry(uid).fe->clipResult[0].get(), bookie.getEntry(uid).fe->clipResult[1].get(), nullptr, true);
 
   // Add algorithm MyOtherAnalyzer
   auto algo2 = std::make_unique<MyOtherAnalyzer>();
@@ -311,15 +312,15 @@ TEST_CASE("AnalysisPOILoops", "[Analysis]") {
 
   ////
   // Join threads
-  bookie.histoMap[channel].finish();
+  bookie.getEntry(uid).fe->clipHisto.finish();
 
   for (unsigned i=0; i<analyses.size(); ++i) {
     analyses[i]->join();
-    bookie.resultMap[channel][i]->finish();
+    bookie.getEntry(uid).fe->clipResult[i]->finish();
   }
 
   // Check the final output
-  auto &output = *(bookie.resultMap[channel].back());
+  auto &output = *(bookie.getEntry(uid).fe->clipResult.back());
 
   REQUIRE (!output.empty());
 

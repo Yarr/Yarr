@@ -32,7 +32,8 @@ void Rd53bMaskLoop::init() {
     m_done = false;
     m_cur = min;
     
-    for (FrontEnd *fe : keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         Rd53b *rd53b = dynamic_cast<Rd53b*>(fe);
         g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         // Save current version of the pix regs to transferred back into the config at the end
@@ -55,7 +56,8 @@ void Rd53bMaskLoop::execPart1() {
     SPDLOG_LOGGER_TRACE(logger, "");
 
     unsigned counter = 0;
-    for(FrontEnd *fe : keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         std::vector<std::pair<unsigned, unsigned>> modPixels;
 
@@ -102,7 +104,8 @@ void Rd53bMaskLoop::execPart2() {
 }
 
 void Rd53bMaskLoop::end() {
-    for(FrontEnd *fe : keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         // Copy original registers back
         // TODO need to make sure analysis modifies the right config
         // TODO not thread safe, in case analysis modifies them to early

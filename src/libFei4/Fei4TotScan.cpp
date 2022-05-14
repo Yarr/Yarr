@@ -52,7 +52,6 @@ void Fei4TotScan::init() {
 
     // Loop 4: Data gatherer
     std::shared_ptr<StdDataLoop> dataLoop(new StdDataLoop);
-    dataLoop->connect(g_data);
 
     this->addLoop(maskStaging);
     this->addLoop(dcLoop);
@@ -71,15 +70,15 @@ void Fei4TotScan::preScan() {
     while(!g_tx->isCmdEmpty())
       ;
     
-    for(unsigned int k=0; k<g_bk->feList.size(); k++) {
-      Fei4 *fe = dynamic_cast<Fei4*>(g_bk->feList[k]);
-      if (fe->isActive()) {
-        // Set to single channel tx
-        g_tx->setCmdEnable(fe->getTxChannel());
-        // Set specific pulser DAC
-        fe->writeRegister(&Fei4::PlsrDAC, fe->toVcal(target, useScap, useLcap));
-        while(!g_tx->isCmdEmpty());
-      }
+    for(unsigned id=0; id<g_bk->getNumOfEntries(); id++) {
+        Fei4 *fe = dynamic_cast<Fei4*>(g_bk->getEntry(id).fe);
+        if (fe->isActive()) {
+            // Set to single channel tx
+            g_tx->setCmdEnable(fe->getTxChannel());
+            // Set specific pulser DAC
+            fe->writeRegister(&Fei4::PlsrDAC, fe->toVcal(target, useScap, useLcap));
+            while(!g_tx->isCmdEmpty());
+        }
     }
     g_tx->setCmdEnable(g_bk->getTxMask());
 }

@@ -137,37 +137,38 @@ void Rd53aReadRegLoop::execPart1() {
     dynamic_cast<HwController*>(g_rx)->setupMode(); //This is need to make sure the global pulse doesn't refresh the ADCRegister
 
     //Currently for RD53A, each board needs to be configured alone due to a bug with the read out of the rd53a. This can be changed in rd53b. 
-    for (auto *fe : keeper->feList) {
+    
+    for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if(fe->getActive()) {
             std::string feName = dynamic_cast<FrontEndCfg*>(fe)->getName();
-            int feChannel = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
             Rd53a *feRd53a = dynamic_cast<Rd53a*>(fe);
 
-            logger->info("Measuring for FE {} on Rx {}", feName, feChannel);
+            logger->info("Measuring for FE {} on Id {}", feName, id);
 
             // Reading Standard Registers
             for (auto Reg : m_STDReg) {
                 if (keeper->globalFe<Rd53a>()->regMap.find(Reg) != keeper->globalFe<Rd53a>()->regMap.end()) {
                     uint16_t RegisterVal =  (feRd53a->*(feRd53a->regMap[Reg])).applyMask( ReadRegister( keeper->globalFe<Rd53a>()->regMap[Reg] , feRd53a));
-                    logger->info("[{}][{}] REG: {}, Value: {}", feChannel, feName, Reg, RegisterVal);
+                    logger->info("[{}][{}] REG: {}, Value: {}", id, feName, Reg, RegisterVal);
 
                     uint16_t StoredVal = (feRd53a->*(feRd53a->regMap[Reg])).read();
 
                     // Compare the Register with the stored value, it's a safety mechanism. 
                     if ( StoredVal!=RegisterVal) {
-                       logger->warn("[{}][{}] For Reg: {}, the stored register value ({}) doesn't match the one on the chip ({}).", feChannel, feName, Reg, StoredVal, RegisterVal);
+                       logger->warn("[{}][{}] For Reg: {}, the stored register value ({}) doesn't match the one on the chip ({}).", id, feName, Reg, StoredVal, RegisterVal);
                     }
                     
                 }
                 else
-                    logger->warn("[{}][{}] Requested Register {} not found, please check your runcard", feChannel, feName, Reg);
+                    logger->warn("[{}][{}] Requested Register {} not found, please check your runcard", id, feName, Reg);
 
             }
 
             // Reading Voltage  ADC 
             for( auto Reg : m_VoltMux) {
                 uint16_t ADCVal = ReadADC(Reg, false, dynamic_cast<Rd53a*>(fe));
-                logger->info("[{}][{}] MON MUX_V: {}, Value: {} => {} V", feChannel, feName, Reg, ADCVal,dynamic_cast<Rd53a*>(fe)->ADCtoV(ADCVal));
+                logger->info("[{}][{}] MON MUX_V: {}, Value: {} => {} V", id, feName, Reg, ADCVal,dynamic_cast<Rd53a*>(fe)->ADCtoV(ADCVal));
             }
 
             // Reading Temp or Rad sensors from the ADC
@@ -218,13 +219,13 @@ void Rd53aReadRegLoop::execPart1() {
                 float Volt1 = dynamic_cast<Rd53a*>(fe)->ADCtoV(TempVal.first);
                 float Volt2 = dynamic_cast<Rd53a*>(fe)->ADCtoV(TempVal.second);
 
-                logger->info("[{}][{}] MON MUX_V: {} Bias 0 {} -> {} V Bias 1 {} -> {} V, Temperature {} -> {} C", feChannel, feName, Reg, TempVal.first, Volt1, TempVal.second, Volt2, Volt2-Volt1, (feRd53a->VtoTemp(Volt2-Volt1, Sensor, isRadSensor)));      
+                logger->info("[{}][{}] MON MUX_V: {} Bias 0 {} -> {} V Bias 1 {} -> {} V, Temperature {} -> {} C", id, feName, Reg, TempVal.first, Volt1, TempVal.second, Volt2, Volt2-Volt1, (feRd53a->VtoTemp(Volt2-Volt1, Sensor, isRadSensor)));      
             }
 
             // Reading Current ADC
             for( auto Reg : m_CurMux)	{
                 uint16_t ADCVal = ReadADC(Reg, true, dynamic_cast<Rd53a*>(fe));
-                logger->info("[{}][{}] MON MUX_C: {} Value: {}", feChannel, feName, Reg, ADCVal);
+                logger->info("[{}][{}] MON MUX_C: {} Value: {}", id, feName, Reg, ADCVal);
             }
 
             // Running the Ring Oscillators
@@ -273,9 +274,9 @@ void Rd53aReadRegLoop::execPart1() {
                         RingValuesSumSquared[tmpCount] = 0;
                     }
 
-                    logger->info("[{}][{}] Ring Buffer: {} Values: {} +- {}", feChannel, feName, tmpCount, 
+                    logger->info("[{}][{}] Ring Buffer: {} Values: {} +- {}", id, feName, tmpCount, 
                             RingValuesSum[tmpCount], RingValuesSumSquared[tmpCount]);  
-                    logger->info("[{}][{}] Frequency: {} +- {} MHz", feChannel, feName, 
+                    logger->info("[{}][{}] Frequency: {} +- {} MHz", id, feName, 
                             RingValuesSum[tmpCount]/(1<<m_RingOscDur)/6.25e-3, RingValuesSumSquared[tmpCount]/(1<<m_RingOscDur)/6.25e-3);
                 }
             }

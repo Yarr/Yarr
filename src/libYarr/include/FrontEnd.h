@@ -50,11 +50,11 @@ class FrontEnd {
         
         virtual void setInjCharge(double, bool, bool) = 0;
 
-        // Set of events
-        ClipBoard<RawDataContainer> *clipRawData;
-        ClipBoard<EventDataBase> *clipData;
-        ClipBoard<HistogramBase> *clipHisto;
-        std::vector<std::unique_ptr<ClipBoard<HistogramBase>> > *clipResult;
+        // Clipboards to buffer data
+        ClipBoard<RawDataContainer> clipRawData;
+        ClipBoard<EventDataBase> clipData;
+        ClipBoard<HistogramBase> clipHisto;
+        std::vector<std::unique_ptr<ClipBoard<HistogramBase>> > clipResult;
 
         //Fei4Analysis *ana;
         //Fei4Histogrammer *histogrammer;

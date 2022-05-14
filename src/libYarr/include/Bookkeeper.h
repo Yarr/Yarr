@@ -21,6 +21,15 @@
 #include "TxCore.h"
 #include "RxCore.h"
 
+struct BookEntry {
+    FrontEnd *fe = nullptr;
+
+    bool active = false;
+    
+    uint32_t txChannel = 666;
+    uint32_t rxChannel = 666;
+};
+
 class Bookkeeper {
     public:
         Bookkeeper(TxCore *arg_tx, RxCore *arg_rx);
@@ -32,18 +41,15 @@ class Bookkeeper {
         void addFe(FrontEnd *fe, unsigned txChannel, unsigned rxChannel);
         void addFe(FrontEnd *fe, unsigned channel);
 		
-        void delFe(unsigned rxChannel);
+        void delFe(unsigned id);
 		void delFe(FrontEnd *fe);
 
-		FrontEnd* getFeByChannel(unsigned channel);
-		FrontEnd* getFe(unsigned rxChannel);
+		FrontEnd* getFe(unsigned id);
         FrontEnd* getLastFe();
         FrontEnd* getGlobalFe() const {
             return g_fe;
         }
 
-		bool isChannelUsed(unsigned arg_channel);
-        
         // Construct mask of active channels
         std::vector<uint32_t> getTxMask();
         std::vector<uint32_t> getRxMask();
@@ -63,23 +69,20 @@ class Bookkeeper {
         FrontEnd *g_fe;
         TxCore *tx;
         RxCore *rx;
-        
-        std::vector<FrontEnd*> feList;
 
-        // per rx link
-        std::map<unsigned, ClipBoard<RawDataContainer> > rawDataMap;
-	    std::map<unsigned, ClipBoard<EventDataBase> > eventMap;
-	    std::map<unsigned, ClipBoard<HistogramBase> > histoMap;
-	    std::map<unsigned, std::vector<std::unique_ptr<ClipBoard<HistogramBase>>> > resultMap;
-        
-		std::vector<FrontEnd*> activeFeList;
+        unsigned getId(FrontEnd *fe);
+        BookEntry &getEntry(unsigned id);
+        unsigned getNumOfEntries() {return bookEntries.size();};
+
+        std::vector<unsigned> &getRxToId(unsigned rx);
 
     private:
-        //uint32_t activeTxMask;
-        //uint32_t activeRxMask;
+        
+        // Index of vector is UID 
+        std::vector<BookEntry> bookEntries;
+        std::map<FrontEnd* , unsigned> idMap;
+        std::map<unsigned, std::vector<unsigned>> rxToIdMap;
 
-		//uint32_t activeMask;
-		//uint32_t usedChannels;
 
         int target_tot;
         int target_threshold;
