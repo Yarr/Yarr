@@ -108,7 +108,8 @@ void Rd53aCoreColLoop::end() {
     
     // TODO should restore original config here
     /*
-    for(FrontEnd *fe : keeper->feList) {
+    for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         // Loop over cores, i.e. activate in pairs of 4 DC
         for (unsigned dc=0; dc<Rd53a::n_DC; dc+=4) {
             dynamic_cast<Rd53a*>(fe)->enableCalCol(dc);

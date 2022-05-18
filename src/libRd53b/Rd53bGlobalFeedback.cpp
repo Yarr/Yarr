@@ -108,7 +108,8 @@ void Rd53bGlobalFeedback::feedbackStep(unsigned channel, double sign, bool last)
 
 
 bool Rd53bGlobalFeedback::allDone() {
-    for (auto *fe : keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if (fe->getActive()) {
             if (!m_doneMap[dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()])
                 return false;
@@ -118,7 +119,8 @@ bool Rd53bGlobalFeedback::allDone() {
 }
 
 void Rd53bGlobalFeedback::writePar() {
-    for (auto *fe : keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if(fe->getActive()) {
             auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
             // Enable single channel
@@ -138,7 +140,8 @@ void Rd53bGlobalFeedback::init() {
     m_cur = 0;
     parPtr = keeper->globalFe<Rd53b>()->regMap[parName];
     // Init maps
-    for (auto *fe : keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if (fe->getActive()) {
             unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
             m_localStep[ch] = step;
@@ -150,7 +153,8 @@ void Rd53bGlobalFeedback::init() {
     this->writePar();
 
     if (m_rstPixelReg) {
-        for (auto *fe : keeper->feList) {
+        for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+            FrontEnd *fe = keeper->getEntry(id).fe;
             if (fe->getActive()) {
                 Rd53b *rd53b = dynamic_cast<Rd53b*>(fe);
                 g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
@@ -172,7 +176,8 @@ void Rd53bGlobalFeedback::execPart1() {
 
 void Rd53bGlobalFeedback::execPart2() {
     // Wait for mutexes to be unlocked by feedback
-    for (auto fe: keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if (fe->getActive()) {
             unsigned rx = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
 
@@ -186,7 +191,8 @@ void Rd53bGlobalFeedback::execPart2() {
 }
 
 void Rd53bGlobalFeedback::end() {
-    for (auto fe: keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if (fe->getActive()) {
             unsigned rx = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
             logger->info(" --> Final parameter for Channel {} is {}", rx, m_values[rx]);

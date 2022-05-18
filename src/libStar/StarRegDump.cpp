@@ -31,7 +31,8 @@ void StarRegDump::execPart1() {
     SPDLOG_LOGGER_DEBUG(logger, "");
     logger->trace("Executing Register Dump");
 
-    for ( FrontEnd* fe : keeper->feList ) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if (!fe->isActive()) {continue;}
 
         if (m_addr == -1) { //Default to looping over all regs

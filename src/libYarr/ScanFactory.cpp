@@ -25,22 +25,14 @@ ScanFactory::ScanFactory(Bookkeeper *k, FeedbackClipboardMap *fb)
 }
 
 void ScanFactory::init() {
-    for(size_t il=0; il<size(); il++) {
-        auto loop = getLoop(il);
-        if(!loop->isDataLoop()) {
-            continue;
-        }
-
-        std::dynamic_pointer_cast<StdDataAction>(loop)->connect(g_data);
-    }
-
     engine.init();
 }
 
 void ScanFactory::preScan() {
     sflog->info("Entering pre scan phase ...");
-    for (auto & [id, clip] : *g_data) {
-        clip.reset();
+    for (unsigned id=0; id<g_bk->getNumOfEntries(); id ++) {
+        FrontEnd *fe = g_bk->getEntry(id).fe;
+        fe->clipRawData.reset();
     }
 
     g_tx->setCmdEnable(g_bk->getTxMask());
@@ -53,7 +45,8 @@ void ScanFactory::preScan() {
     while(!g_tx->isCmdEmpty()){}
 
     if (g_bk->getTargetCharge() > 0) {
-        for (auto *fe : g_bk->feList) {
+        for (unsigned id=0; id<g_bk->getNumOfEntries(); id ++) {
+            FrontEnd *fe = g_bk->getEntry(id).fe;
             if(fe->getActive()) {
                 // Enable single channel
                 g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());

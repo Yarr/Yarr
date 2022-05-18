@@ -28,19 +28,20 @@ namespace ScanHelper {
 
         json openJsonFile(const std::string& filepath);
         std::unique_ptr<HwController> loadController(const json &ctrlCfg);
-        std::string buildChips(const json &j, Bookkeeper &bookie, HwController *hwCtrl, std::map<FrontEnd*,
+        std::string buildChips(const json &j, Bookkeeper &bookie, HwController *hwCtrl, std::map<unsigned,
                               std::array<std::string, 2>> &feCfgMap);
         std::string loadChipConfigs(json &j, bool createConfig=false);
         int loadConfigFile(const ScanOpts &scanOpts, bool writeConfig, json &config);
 // TODO Do not want to use the raw pointer ScanBase*
-        void buildHistogrammers( std::map<FrontEnd*, std::unique_ptr<DataProcessor>>& histogrammers, const json &scanConfig, std::vector<FrontEnd*>& feList, ScanBase* s, std::string outputDir);
+        void buildHistogrammers( std::map<unsigned, std::unique_ptr<DataProcessor>>& histogrammers, const json &scanConfig,
+                Bookkeeper &bookie, ScanBase* s, std::string outputDir);
 
 // TODO would prefer not to need bookie --> deep dependency!
 // TODO Do not want to use the raw pointer ScanBase*
-        void buildRawDataProcs( std::map<FrontEnd*, std::unique_ptr<DataProcessor> > &procs,
-                           std::vector<FrontEnd*> &feList,
+        void buildRawDataProcs( std::map<unsigned, std::unique_ptr<DataProcessor> > &procs,
+                           Bookkeeper &bookie,
                            const std::string &chipType);
-        void buildAnalyses( std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcessor>> >& analyses,
+        void buildAnalyses( std::map<unsigned, std::vector<std::unique_ptr<DataProcessor>> >& analyses,
                             const json& scanType, Bookkeeper& bookie, ScanBase* s, FeedbackClipboardMap *fbMap, int mask_opt, std::string outputDir);
         void buildAnalysisHierarchy(std::vector<std::vector<int>>& indexTiers,
                                     const json &anaCfg);

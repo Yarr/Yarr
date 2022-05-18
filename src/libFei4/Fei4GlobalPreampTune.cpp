@@ -63,7 +63,6 @@ void Fei4GlobalPreampTune::init() {
 
     // Loop 4: Data gatherer
     std::shared_ptr<StdDataLoop> dataLoop(new StdDataLoop);
-    dataLoop->connect(g_data);
 
     this->addLoop(fbLoop);
     this->addLoop(maskStaging);
@@ -84,8 +83,8 @@ void Fei4GlobalPreampTune::preScan() {
     while(!g_tx->isCmdEmpty())
         ;
 
-    for(unsigned int k=0; k<g_bk->feList.size(); k++) {
-        Fei4 *fe = dynamic_cast<Fei4*>(g_bk->feList[k]);
+    for(unsigned id=0; id<g_bk->getNumOfEntries(); id++) {
+        Fei4 *fe = dynamic_cast<Fei4*>(g_bk->getEntry(id).fe);
         // Set to single channel tx
         g_tx->setCmdEnable(fe->getTxChannel());
         // Set specific pulser DAC

@@ -68,8 +68,9 @@ void StarCounterLoop::execPart1() {
     // mask for each front-end, but that requires a more complex
     // configuration architecture.
 
-    for ( FrontEnd* fe : keeper->feList ) {
-      SPDLOG_LOGGER_DEBUG(logger, fe->isActive());
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
+        SPDLOG_LOGGER_DEBUG(logger, fe->isActive());
         if (!fe->isActive()) {continue;}
         ((StarChips*) fe)->setAndWriteABCSubRegister("ENCOUNT", 1, 0xf);
         SPDLOG_LOGGER_DEBUG(logger, "Did ENCOUNT");
@@ -103,7 +104,8 @@ void StarCounterLoop::execPart2() {
         g_tx->releaseFifo();
     };
 
-    for ( FrontEnd* fe : keeper->feList ) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if (!fe->isActive()) {continue;}
 
         ((StarChips*) fe)->sendCmd(LCB::fast_command(LCB::FastCmdType::ABC_HIT_COUNT_STOP,4));

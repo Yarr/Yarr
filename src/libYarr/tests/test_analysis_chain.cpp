@@ -75,10 +75,11 @@ TEST_CASE("AnalysisChainIO", "[Analysis]") {
 
 
   // Build analyses
-  std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcessor>> > analyses;
+  std::map<unsigned, std::vector<std::unique_ptr<DataProcessor>> > analyses;
   ScanHelper::buildAnalyses(analyses, scanCfg, bookie, &scan, &fbData, -1, "./");
 
-  auto& AnalysisProcessors = analyses[bookie.getLastFe()];
+  auto& AnalysisProcessors = analyses[bookie.getId(bookie.getLastFe())];
+  
   // Check there are three analysis tiers
   REQUIRE (AnalysisProcessors.size() == 3);
 
@@ -95,21 +96,21 @@ TEST_CASE("AnalysisChainIO", "[Analysis]") {
   occmap->setBin(1, 43);
 
   std::unique_ptr<HistogramBase> h(occmap);
-  bookie.getLastFe()->clipHisto->pushData(std::move(h));
+  bookie.getLastFe()->clipHisto.pushData(std::move(h));
 
   // The input histogram should be processed by the OccupancyAnalysis
   // The other two algorithms should do nothing but only pass the output of OccupancyAnalysis to the downstream
 
   // Join threads
-  bookie.getLastFe()->clipHisto->finish();
+  bookie.getLastFe()->clipHisto.finish();
 
   for (unsigned i=0; i<AnalysisProcessors.size(); ++i) {
     AnalysisProcessors[i]->join();
-    bookie.getLastFe()->clipResult->at(i)->finish();
+    bookie.getLastFe()->clipResult.at(i)->finish();
   }
 
   // Check the final output
-  auto &output = *(bookie.getLastFe()->clipResult->back());
+  auto &output = *(bookie.getLastFe()->clipResult.back());
 
   REQUIRE (!output.empty());
 
