@@ -12,8 +12,8 @@ namespace fs = std::filesystem;
 #include "AllChips.h"
 #include "ScanHelper.h"
 
-void bounce_check(json &j) {
-  auto fe = StdDict::getFrontEnd("Star");
+void bounce_check(json &j, std::string fe_name) {
+  auto fe = StdDict::getFrontEnd(fe_name);
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
   std::stringstream jj_pre;
   jj_pre << j;
@@ -32,6 +32,7 @@ void bounce_check(json &j) {
   std::stringstream outj;
   outj << bounced;
 
+  CAPTURE (fe_name);
   REQUIRE(jj.str() == outj.str());
 }
 
@@ -60,8 +61,12 @@ TEST_CASE("StarJsonDefault", "[star][json]") {
 
   // std::cout << "Loading json from " << fileName << "\n";
 
+  std::string fe_name = "Star";
+
+  CAPTURE (fe_name);
+
   json cfg = ScanHelper::openJsonFile(fileName);
-  auto fe = StdDict::getFrontEnd("Star");
+  auto fe = StdDict::getFrontEnd(fe_name);
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
   REQUIRE(fecfg);
   fecfg->loadConfig(cfg);
@@ -73,19 +78,29 @@ TEST_CASE("StarJsonDefault", "[star][json]") {
   // output.dump(4);
 
   // Should be the same if read and write again
-  bounce_check(output);
+  bounce_check(output, fe_name);
 }
 
 #endif
 
 // Minimal configuration (no ABCs)
 TEST_CASE("StarJsonMinimal", "[star][json]") {
+  std::string fe_name;
+  SECTION("With ABCv0") {
+    fe_name = "Star";
+  }
+  SECTION("With ABCv1") {
+    fe_name = "Star_PPA";
+  }
+
+  CAPTURE (fe_name);
+
   json cfg;
 
   cfg["name"] = "testname";
   cfg["HCC"]["ID"] = 12;
 
-  auto fe = StdDict::getFrontEnd("Star");
+  auto fe = StdDict::getFrontEnd(fe_name);
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
   REQUIRE(fecfg);
 
@@ -102,11 +117,26 @@ TEST_CASE("StarJsonMinimal", "[star][json]") {
   // output.dump(4);
 
   // Should be the same if read and write again
-  bounce_check(output);
+  bounce_check(output, fe_name);
 }
 
 // Minimal configuration (with some ABCs)
 TEST_CASE("StarJsonMinimalABC", "[star][json]") {
+  std::string fe_name;
+  // Number of registers that get put in "common" section
+  int common_size;
+
+  SECTION("With ABCv0") {
+    fe_name = "Star";
+    common_size = 13;
+  }
+  SECTION("With ABCv1") {
+    fe_name = "Star_PPA";
+    common_size = 5;
+  }
+
+  CAPTURE (fe_name);
+
   json cfg;
 
   cfg["name"] = "testname";
@@ -116,7 +146,7 @@ TEST_CASE("StarJsonMinimalABC", "[star][json]") {
     cfg["ABCs"]["IDs"][i] = i+3;
   }
 
-  auto fe = StdDict::getFrontEnd("Star");
+  auto fe = StdDict::getFrontEnd(fe_name);
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
   REQUIRE(fecfg);
   fecfg->loadConfig(cfg);
@@ -136,7 +166,7 @@ TEST_CASE("StarJsonMinimalABC", "[star][json]") {
   // Check all registers are the same for each ABC
   auto common_present = output["ABCs"].find("common") != output["ABCs"].end();
   REQUIRE(common_present);
-  REQUIRE(output["ABCs"]["common"].size() > 5);
+  REQUIRE(output["ABCs"]["common"].size() == common_size);
   // No exceptions
   auto regs_not_present = output["ABCs"].find("regs") == output["ABCs"].end();
   REQUIRE(regs_not_present);
@@ -144,11 +174,15 @@ TEST_CASE("StarJsonMinimalABC", "[star][json]") {
   // debugging
   // output.dump(4);
 
-  bounce_check(output);
+  bounce_check(output, fe_name);
 }
 
 // Configure some HCC registers
 TEST_CASE("StarJsonHccRegs", "[star][json]") {
+  std::string fe_name = "Star";
+
+  CAPTURE (fe_name);
+
   json cfg;
 
   cfg["name"] = "testname";
@@ -160,7 +194,7 @@ TEST_CASE("StarJsonHccRegs", "[star][json]") {
 
   // No ABC
 
-  auto fe = StdDict::getFrontEnd("Star");
+  auto fe = StdDict::getFrontEnd(fe_name);
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
   REQUIRE(fecfg);
   fecfg->loadConfig(cfg);
@@ -178,11 +212,21 @@ TEST_CASE("StarJsonHccRegs", "[star][json]") {
   REQUIRE(output["HCC"]["ID"] == cfg["HCC"]["ID"]);
   REQUIRE(output["HCC"]["regs"]["Delay1"] == "12345678");
 
-  bounce_check(output);
+  bounce_check(output, fe_name);
 }
 
 // Configure some ABC registers
 TEST_CASE("StarJsonAbcRegs", "[star][json]") {
+  std::string fe_name;
+  SECTION("With ABCv0") {
+    fe_name = "Star";
+  }
+  SECTION("With ABCv1") {
+    fe_name = "Star_PPA";
+  }
+
+  CAPTURE (fe_name);
+
   json cfg;
 
   cfg["name"] = "testname";
@@ -195,7 +239,7 @@ TEST_CASE("StarJsonAbcRegs", "[star][json]") {
   cfg["ABCs"]["regs"][0]["ADCS1"] = 0x02040810;
   cfg["ABCs"]["regs"][1]["CREG0"] = "0ff00100";
 
-  auto fe = StdDict::getFrontEnd("Star");
+  auto fe = StdDict::getFrontEnd(fe_name);
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
   REQUIRE(fecfg);
   fecfg->loadConfig(cfg);
@@ -215,11 +259,21 @@ TEST_CASE("StarJsonAbcRegs", "[star][json]") {
   outVal = output["ABCs"]["regs"][1]["CREG0"];
   REQUIRE(outVal == "0ff00100");
 
-  bounce_check(output);
+  bounce_check(output, fe_name);
 }
 
 // Configure ABC mask registers
 TEST_CASE("StarJsonAbcMasks", "[star][json]") {
+  std::string fe_name;
+  SECTION("With ABCv0") {
+    fe_name = "Star";
+  }
+  SECTION("With ABCv1") {
+    fe_name = "Star_PPA";
+  }
+
+  CAPTURE (fe_name);
+
   json cfg;
 
   cfg["name"] = "testname";
@@ -239,7 +293,7 @@ TEST_CASE("StarJsonAbcMasks", "[star][json]") {
   cfg["ABCs"]["masked"][1].push_back(3);
   cfg["ABCs"]["masked"][1].push_back(4);
 
-  auto fe = StdDict::getFrontEnd("Star");
+  auto fe = StdDict::getFrontEnd(fe_name);
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
   REQUIRE(fecfg);
   fecfg->loadConfig(cfg);
@@ -254,11 +308,31 @@ TEST_CASE("StarJsonAbcMasks", "[star][json]") {
 
   REQUIRE(output["ABCs"]["masked"] == cfg["ABCs"]["masked"]);
 
-  bounce_check(output);
+  bounce_check(output, fe_name);
 }
 
 // Configure some ABC registers using subregs
 TEST_CASE("StarJsonAbcSubRegs", "[star][json]") {
+  std::string fe_name;
+  std::string lcb_thr_reg;
+  int lcb_thr_offset;
+  int lcb_thr_width;
+  
+  SECTION("With ABCv0") {
+    fe_name = "Star";
+    lcb_thr_reg = "CREG6";
+    lcb_thr_offset = 0;
+    lcb_thr_width = 16;
+  }
+  SECTION("With ABCv1") {
+    fe_name = "Star_PPA";
+    lcb_thr_reg = "CREG1";
+    lcb_thr_offset = 23;
+    lcb_thr_width = 8;
+  }
+
+  CAPTURE (fe_name);
+
   json cfg;
 
   cfg["name"] = "testname";
@@ -271,7 +345,7 @@ TEST_CASE("StarJsonAbcSubRegs", "[star][json]") {
   cfg["ABCs"]["subregs"][0]["LCB_ERRCOUNT_THR"] = 123;
   cfg["ABCs"]["subregs"][1] = nullptr;
 
-  auto fe = StdDict::getFrontEnd("Star");
+  auto fe = StdDict::getFrontEnd(fe_name);
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
   REQUIRE(fecfg);
   fecfg->loadConfig(cfg);
@@ -285,15 +359,28 @@ TEST_CASE("StarJsonAbcSubRegs", "[star][json]") {
   REQUIRE(output["name"] == cfg["name"]);
 
   // Output is simply all registers in hex
-  std::string outVal = output["ABCs"]["regs"][0]["CREG6"];
+  std::string outVal = output["ABCs"]["regs"][0][lcb_thr_reg];
   uint32_t regValue = std::stol(outVal, nullptr, 16);
-  REQUIRE((regValue & 0xffff) == 123);
 
-  bounce_check(output);
+  uint32_t saved_lcb_thr_val = (regValue >> lcb_thr_offset) & ((1<<lcb_thr_width)-1);
+
+  REQUIRE(saved_lcb_thr_val == 123);
+
+  bounce_check(output, fe_name);
 }
 
 // Configure ABC trim registers
 TEST_CASE("StarJsonAbcTrim", "[star][json]") {
+  std::string fe_name;
+  SECTION("With ABCv0") {
+    fe_name = "Star";
+  }
+  SECTION("With ABCv1") {
+    fe_name = "Star_PPA";
+  }
+
+  CAPTURE (fe_name);
+
   json cfg;
 
   cfg["name"] = "testname";
@@ -310,7 +397,7 @@ TEST_CASE("StarJsonAbcTrim", "[star][json]") {
 
   // cfg.dump(4);
 
-  auto fe = StdDict::getFrontEnd("Star");
+  auto fe = StdDict::getFrontEnd(fe_name);
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
   REQUIRE(fecfg);
   fecfg->loadConfig(cfg);
@@ -325,11 +412,21 @@ TEST_CASE("StarJsonAbcTrim", "[star][json]") {
 
   REQUIRE(output["ABCs"]["trims"] == cfg["ABCs"]["trims"]);
 
-  bounce_check(output);
+  bounce_check(output, fe_name);
 }
 
 // Configure ABC trim registers
 TEST_CASE("StarJsonAbcCommon", "[star][json]") {
+  std::string fe_name;
+  SECTION("With ABCv0") {
+    fe_name = "Star";
+  }
+  SECTION("With ABCv1") {
+    fe_name = "Star_PPA";
+  }
+
+  CAPTURE (fe_name);
+
   json cfg;
 
   cfg["name"] = "testname";
@@ -346,7 +443,7 @@ TEST_CASE("StarJsonAbcCommon", "[star][json]") {
 
   //cfg.dump(4);
 
-  auto fe = StdDict::getFrontEnd("Star");
+  auto fe = StdDict::getFrontEnd(fe_name);
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
   REQUIRE(fecfg);
   fecfg->loadConfig(cfg);
@@ -369,11 +466,21 @@ TEST_CASE("StarJsonAbcCommon", "[star][json]") {
   check(1, "87654321");
   check(2, "12345678");
 
-  bounce_check(output);
+  bounce_check(output, fe_name);
 }
 
 // Check case of missing ABCs
 TEST_CASE("StarJsonNullChan", "[star][json]") {
+  std::string fe_name;
+  SECTION("With ABCv0") {
+    fe_name = "Star";
+  }
+  SECTION("With ABCv1") {
+    fe_name = "Star_PPA";
+  }
+
+  CAPTURE (fe_name);
+
   json cfg;
 
   cfg["name"] = "testname";
@@ -392,7 +499,7 @@ TEST_CASE("StarJsonNullChan", "[star][json]") {
 
   //cfg.dump(4);
 
-  auto fe = StdDict::getFrontEnd("Star");
+  auto fe = StdDict::getFrontEnd(fe_name);
   auto fecfg = dynamic_cast<FrontEndCfg*>(&*fe);
   REQUIRE(fecfg);
   fecfg->loadConfig(cfg);
@@ -428,5 +535,5 @@ TEST_CASE("StarJsonNullChan", "[star][json]") {
   check(2, "none", -1, true);
   check(3, "33333333", 10, false);
 
-  bounce_check(output);
+  bounce_check(output, fe_name);
 }

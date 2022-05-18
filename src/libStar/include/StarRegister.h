@@ -29,7 +29,7 @@ struct SubRegisterInfo {
 /// A sub register of register, const implies the value can't be changed
 class ConstSubRegister {
     public:
-        ConstSubRegister(const uint32_t *reg, std::shared_ptr<SubRegisterInfo> info)
+        ConstSubRegister(const uint32_t *reg, std::shared_ptr<const SubRegisterInfo> info)
           : m_info(info), m_parentReg(reg) {}
 
         // Get value of field
@@ -43,14 +43,14 @@ class ConstSubRegister {
         uint32_t getParentRegValue() const{ return *m_parentReg; }
 
    private:
-        std::shared_ptr<SubRegisterInfo> m_info;
+        std::shared_ptr<const SubRegisterInfo> m_info;
         const uint32_t *m_parentReg;
 };
 
 /// A sub register of register, this one can update the value
 class SubRegister {
     public:
-        SubRegister(uint32_t *reg, std::shared_ptr<SubRegisterInfo> info)
+        SubRegister(uint32_t *reg, std::shared_ptr<const SubRegisterInfo> info)
           : m_info(info),
             m_parentReg(reg)
         {
@@ -77,7 +77,7 @@ class SubRegister {
         uint32_t getParentRegValue() const{ return *m_parentReg; }
 
    private:
-        std::shared_ptr<SubRegisterInfo> m_info;
+        std::shared_ptr<const SubRegisterInfo> m_info;
         uint32_t *m_parentReg;
 };
 
@@ -87,19 +87,28 @@ struct RegisterInfo {
         {}
 
         int m_regAddress;
-        std::map<std::string, std::shared_ptr<SubRegisterInfo>> subRegisterMap;
 
         int addr() const{ return m_regAddress;}
 
-        std::shared_ptr<SubRegisterInfo> addSubRegister(std::string subRegName, unsigned bOffset, unsigned mask) {
+        std::shared_ptr<const SubRegisterInfo> addSubRegister(std::string subRegName, unsigned bOffset, unsigned mask) {
             subRegisterMap[subRegName].reset(new SubRegisterInfo(m_regAddress, subRegName, bOffset, mask));
             return subRegisterMap[subRegName];
         }
+
+        std::shared_ptr<const SubRegisterInfo> getSubRegister(std::string subRegName) const {
+            try {
+                return subRegisterMap.at(subRegName);
+            } catch(std::out_of_range &e) {
+                throw std::runtime_error("RegisterInfo: Bad sub-register lookup"); 
+            }
+        }
+private:
+        std::map<std::string, std::shared_ptr<const SubRegisterInfo>> subRegisterMap;
 };
 
 class Register {
     public:
-        Register(std::shared_ptr<RegisterInfo> info, uint32_t value)
+        Register(std::shared_ptr<const RegisterInfo> info, uint32_t value)
           : m_info(info),
             m_regValue(value)
         {}
@@ -116,25 +125,25 @@ class Register {
         const uint32_t getValue() const { return m_regValue;}
         void setValue(uint32_t value) {m_regValue = value;}
         void setMySubRegisterValue(std::string subRegName, uint32_t value){
-            auto &info = m_info->subRegisterMap[subRegName];
+            auto info = m_info->getSubRegister(subRegName);
             SubRegister(&m_regValue, info).updateValue(value);
         }
 
         const unsigned getMySubRegisterValue(std::string subRegName){
-            auto &info = m_info->subRegisterMap[subRegName];
+            auto info = m_info->getSubRegister(subRegName);
             return SubRegister(&m_regValue, info).getValue();
         }
 
-        ConstSubRegister getSubRegister(std::shared_ptr<SubRegisterInfo> info) const {
+        ConstSubRegister getSubRegister(std::shared_ptr<const SubRegisterInfo> info) const {
             return ConstSubRegister(&m_regValue, info);
         }
 
-        SubRegister getSubRegister(std::shared_ptr<SubRegisterInfo> info) {
+        SubRegister getSubRegister(std::shared_ptr<const SubRegisterInfo> info) {
           return SubRegister(&m_regValue, info);
         }
 
    private:
-        std::shared_ptr<RegisterInfo> m_info;
+        std::shared_ptr<const RegisterInfo> m_info;
         uint32_t m_regValue;
 };
 

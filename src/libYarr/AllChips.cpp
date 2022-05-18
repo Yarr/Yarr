@@ -24,7 +24,11 @@ namespace StdDict {
     std::unique_ptr<FrontEnd> getFrontEnd(std::string name) {
         auto result = registry().makeClass(name);
         if(result == nullptr) {
-            SPDLOG_LOGGER_ERROR(aclog, "No FrontEnd matching '{}' found!");
+            aclog->error("List available:");
+            for(auto &s: listFrontEnds()) {
+                aclog->error(" {}", s);
+            }
+            SPDLOG_LOGGER_ERROR(aclog, "No FrontEnd matching '{}' found!", name);
         }
         return result;
     }
