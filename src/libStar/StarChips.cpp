@@ -16,12 +16,18 @@ namespace {
 
 #include "AllChips.h"
 
-bool star_chips_registered =
+bool star_chips_v0_registered =
 StdDict::registerFrontEnd
-  ("Star", []() { return std::unique_ptr<FrontEnd>(new StarChips); });
+  ("Star", []() { return std::unique_ptr<FrontEnd>(new StarChips(0, 0)); });
+bool star_chips_v1_registered =
+StdDict::registerFrontEnd
+  ("Star_PPA", []() { return std::unique_ptr<FrontEnd>(new StarChips(1, 0)); });
+bool star_chips_v1_both_registered =
+StdDict::registerFrontEnd
+  ("Star_PPB", []() { return std::unique_ptr<FrontEnd>(new StarChips(1, 1)); });
 
-StarChips::StarChips()
-: StarCmd(), FrontEnd()
+StarChips::StarChips(int abc_version, int hcc_version)
+  : StarCfg(abc_version, hcc_version), StarCmd(), FrontEnd()
 {
 	m_txcore  = nullptr;
 
@@ -37,6 +43,7 @@ StarChips::StarChips()
 	addABCchipID(0xf, 0);
 }
 
+#if 0
 StarChips::StarChips(HwController *arg_core)
 : StarCmd(), FrontEnd()
 {
@@ -75,6 +82,7 @@ StarChips::StarChips(HwController *arg_core, unsigned arg_txChannel, unsigned ar
 	geo.nRow = 2;
 	geo.nCol = 128;
 }
+#endif
 
 void StarChips::enableAll() {
     eachAbc([&](auto &abc) {
@@ -226,11 +234,10 @@ bool StarChips::writeTrims(){
     int hccId = getHCCchipID();
 
     // Then each ABC
-    const auto &abc_regs = AbcStarRegInfo::instance()->abcregisterMap;
     eachAbc([&](auto &abc) {
             int this_chipID = abc.getABCchipID();
 
-            logger->info("Starting on ABC {} with {} registers", this_chipID, abc_regs.size());
+            logger->info("Write ABC {} trim registers", this_chipID);
             for(unsigned int addr = ABCStarRegister::TrimDAC0; addr <= ABCStarRegister::TrimDAC39; addr++) {
                 logger->debug("Writing Register {} for chipID {}", addr, this_chipID);
                 writeABCRegister(addr, abc);
@@ -250,7 +257,7 @@ bool StarChips::writeRegisters(){
         // First write HCC
         int hccId = getHCCchipID();
 
-        const auto &hcc_regs = HccStarRegInfo::instance()->hccWriteMap;
+        const auto &hcc_regs = m_hcc_info->hccWriteMap;
 	logger->info("Starting on HCC {} with {} registers", hccId, hcc_regs.size());
 
         for(auto &map_iter: hcc_regs) {
@@ -260,7 +267,7 @@ bool StarChips::writeRegisters(){
         }
 
         // Then each ABC
-        const auto &abc_regs = AbcStarRegInfo::instance()->abcWriteMap;
+        const auto &abc_regs = m_abc_info->abcWriteMap;
 	eachAbc([&](auto &abc) {
                 int this_chipID = abc.getABCchipID();
 
@@ -319,7 +326,7 @@ void StarChips::readRegisters(){
 	//Read all known registers, both for HCC & all ABCs
         logger->debug("Looping over all chips in readRegisters, where m_nABC is {}", numABCs());
 
-        auto &hcc_regs = HccStarRegInfo::instance()->hccregisterMap;
+        auto &hcc_regs = m_hcc_info->hccregisterMap;
 
         for(auto &map_iter: hcc_regs) {
                 auto addr = map_iter.first;
@@ -330,7 +337,7 @@ void StarChips::readRegisters(){
                 readHCCRegister(addr);
         }
 
-        auto &abc_regs = AbcStarRegInfo::instance()->abcregisterMap;
+        const auto &abc_regs = m_abc_info->abcregisterMap;
 
         eachAbc([&](const auto &abc) {
                 int this_chipID = abc.getABCchipID();
