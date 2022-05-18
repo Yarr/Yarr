@@ -91,7 +91,6 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
         for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
             FrontEnd *fe = keeper->getEntry(id).fe;
             if(fe->getActive()) {	
-                unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
                 logger().info(" --> Final parameter of Fe {} is {}", id, chanInfo[id].values);
             }
         }
@@ -110,7 +109,7 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
                 waitForFeedback(id);
                 logger().info(" --> Received Feedback on ID {} with value: {}",
                         id,
-                        chanInfo[dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()].values);
+                        chanInfo[id].values);
             }
         }
         cur++;
