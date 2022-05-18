@@ -6,6 +6,8 @@
 
 #include "EventData.h"
 
+#include "Rd53bCfg.h"
+
 #include "rd53b_test_stream.h"
 #include "rd53b_test_truth.h"
 
@@ -17,7 +19,9 @@ TEST_CASE("Rd53bDataProcessor", "[rd53b][data_processor]") {
   ClipBoard<RawDataContainer> rd_cp;
   ClipBoard<EventDataBase> em_cp;
 
-  proc->connect( &rd_cp, &em_cp );
+  Rd53bCfg cfg;  
+
+  proc->connect(&cfg, &rd_cp, &em_cp );
 
   proc->init();
   proc->run();

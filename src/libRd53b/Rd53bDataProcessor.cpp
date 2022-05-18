@@ -45,6 +45,10 @@ Rd53bDataProcessor::Rd53bDataProcessor()
 
     _isCompressedHitmap = true; // Whether the hit map is compressed (binary tree + Huffman coding) or not (raw 16-bit hit map)
     _dropToT = false;           // Whether ToT values are kept in the data stream
+    _enChipId = false;
+    _chipIdShift = 0;
+    _chipId = 15;
+    _streamMask = 0x7FFFFFFF;
 
     // Data stream components
     _ccol = 0;
@@ -72,6 +76,13 @@ void Rd53bDataProcessor::init()
     _wordCount = 0;
     _hits = 0;
 
+    // Load decoder specific bits
+    _isCompressedHitmap = (m_feCfg->DataEnRaw.read() == 0 ? true : false);
+    _dropToT = (m_feCfg->DataEnBinaryRo.read() == 1 ? true : false);
+    _enChipId = (m_feCfg->EnChipId.read() == 1 ? true : false);
+    _chipIdShift = (m_feCfg->EnChipId.read() == 1 ? 2 : 0);
+    _chipId = m_feCfg->getChipId() & 0x3;
+    _streamMask = (_enChipId ? 0x1FFFFFFF : 0x7FFFFFFF);
 }
 
 void Rd53bDataProcessor::run()
@@ -133,7 +144,7 @@ bool Rd53bDataProcessor::retrieve(uint64_t &variable, const unsigned length, con
     {
         // Whether the bits to be retrieved are fully contained by the first half or second half of the 64-bit block (each corresponds to one 32-bit data word), or they span across the two 32-bit data words
         variable = (((_bitIdx + length) <= HALFBLOCKSIZE) || (_bitIdx >= HALFBLOCKSIZE)) ? ((_data[_bitIdx / HALFBLOCKSIZE] & (0xFFFFFFFFUL >> (_bitIdx - ((_bitIdx >> 5) << 5)))) >> ((((_bitIdx >> 5) + 1) << 5) - length - _bitIdx))
-                                                                                         : (((_data[0] & (0xFFFFFFFFUL >> _bitIdx)) << (length + _bitIdx - HALFBLOCKSIZE)) | (_data[1] >> (BLOCKSIZE - length - _bitIdx)));
+            : (((_data[0] & (0xFFFFFFFFUL >> _bitIdx)) << (length + _bitIdx - HALFBLOCKSIZE)) | (_data[1] >> (BLOCKSIZE - length - _bitIdx)));
         _bitIdx += length; // Move bit index
     }
     // If the bits overflow to the next 64-bit block
@@ -141,7 +152,8 @@ bool Rd53bDataProcessor::retrieve(uint64_t &variable, const unsigned length, con
     {
         // Retrieve all the remaining bits in the current 64-bit lock
         // Need different treatment depending on whether the bit index is in the first or second 32-bit data word of current 64-bit block
-        variable = (((_bitIdx < HALFBLOCKSIZE) ? (((_data[0] & (0xFFFFFFFFUL >> _bitIdx)) << HALFBLOCKSIZE) | _data[1]) : (_data[1] & (0xFFFFFFFFUL >> (_bitIdx - HALFBLOCKSIZE)))) << (length + _bitIdx - BLOCKSIZE));
+        variable = (((_bitIdx < HALFBLOCKSIZE) ? (((_data[0] & (0xFFFFFFFFUL >> _bitIdx)) << HALFBLOCKSIZE) | _data[1])
+                    : (_data[1] & (0xFFFFFFFFUL >> (_bitIdx - HALFBLOCKSIZE)))) << (length + _bitIdx - BLOCKSIZE));
 
         // Move to the next block
         // If the block index already reaches the end of the raw data container, stop here
@@ -165,7 +177,7 @@ bool Rd53bDataProcessor::retrieve(uint64_t &variable, const unsigned length, con
             // We are over-drafting bits and would expect non-zero probablitiy of running into the end of the stream. In this case, stop retrieving more bits and return the current value
             else if (skipNSCheck || _bitIdx + length == BLOCKSIZE)
             {
-                _bitIdx -= (63 - length); // Still move the bit index as if we have retrieved the overflow bits in the next block. The index will be rolled back in the process() method
+                _bitIdx -= (63 - length - _chipIdShift); // Still move the bit index as if we have retrieved the overflow bits in the next block. The index will be rolled back in the process() method
                 return true;
             }
             // Otherwise only throw an error essage. Keep reading the next block neglecting the NS bit
@@ -182,9 +194,10 @@ bool Rd53bDataProcessor::retrieve(uint64_t &variable, const unsigned length, con
         // Retrieve the bits overflow to the next 64-bit data block. Here we need to separate the cases where the overflow bits are fully contained in the first 32-bit data word, or extend to the second 32-bit data word
         // This check is needed because the maximum number of bits retrieved could be 64 bits (reading ToT for all 16 pixels from a full hit map)
         // Can be simplified if the data word is 64 instead of 32 bits, or if the ToT is read pixel-by-pixel (in which case the maximum number of bits retrieved will always be below 32 bits)
-        variable |= (((_bitIdx + length) < (HALFBLOCKSIZE + BLOCKSIZE)) ? ((_data[0] & 0x7FFFFFFFUL) >> (95 - (_bitIdx + length))) : (((_data[0] & 0x7FFFFFFFUL) << (_bitIdx + length - 95)) | (_data[1] >> (127 - (length + _bitIdx)))));
+        variable |= (((_bitIdx + length) < (HALFBLOCKSIZE + BLOCKSIZE)) ? ((_data[0] & _streamMask) >> (95 - (_bitIdx + length) - _chipIdShift)) 
+                : (((_data[0] & _streamMask) << (_bitIdx + length - 95-_chipIdShift)) | (_data[1] >> (127 - (length + _bitIdx) - _chipIdShift))));
 
-        _bitIdx -= (63 - length); // Move bit index. Note the NS bit should also be counted
+        _bitIdx -= (63 - length - _chipIdShift); // Move bit index. Note the NS bit should also be counted
     }
 
     return true;
@@ -197,12 +210,12 @@ void Rd53bDataProcessor::rollBack(const unsigned length)
     if (unlikely(length == 0))
         return;
     // After rolling back the index is still within the block. Keep in mind there is one extra bit from NS
-    if (_bitIdx >= (length + 1))
+    if (_bitIdx >= (length + 1 + _chipIdShift))
         _bitIdx -= length;
     // Rolling back to the previous block
     else
     {                              
-        _bitIdx += (63 - length);  // Correct the bit index. Keep in mind there is NS bit
+        _bitIdx += (63 - length - _chipIdShift);  // Correct the bit index. Keep in mind there is NS bit
         getPreviousDataBlock();
     }
 }
@@ -223,8 +236,8 @@ void Rd53bDataProcessor::process_core()
             logger->error("Expect new stream while NS = 0: {}{}. Skipping block...", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
             return;
         }
-        _tag = (_data[0] >> 23) & 0xFF;
-        _bitIdx = 9; // Reset bit index = NS + tag
+        _tag = (_data[0] >> (23-_chipIdShift)) & 0xFF;
+        _bitIdx = 9+_chipIdShift; // Reset bit index = NS + tag
 
         // Create a new event
         // RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
@@ -262,8 +275,8 @@ void Rd53bDataProcessor::process_core()
                     logger->error("Expect new stream while NS = 0: {}{}. Skipping block...", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
                     continue;
                 }
-                _tag = (_data[0] >> 23) & 0xFF;
-                _bitIdx = 9; // Reset bit index = NS + tag
+                _tag = (_data[0] >> (23-_chipIdShift)) & 0xFF;
+                _bitIdx = 9 + _chipIdShift; // Reset bit index = NS + tag
 
                 // Create a new event
                 // RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
@@ -486,6 +499,8 @@ bool Rd53bDataProcessor::getNextDataBlock()
             _data = &_curInV->data[0]->get(0);
             if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
                  return getNextDataBlock();
+            if (((_data[0] >> 29) & 0x3) != _chipId && _enChipId)
+                 return getNextDataBlock();
             return true;
         }
         _wordIdx += 2; // Increase block index
@@ -543,6 +558,8 @@ bool Rd53bDataProcessor::getNextDataBlock()
     // Return success code
     if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
          return getNextDataBlock();
+    if (((_data[0] >> 29) & 0x3) != _chipId && _enChipId)
+         return getNextDataBlock();
     return true;
 }
 
@@ -563,5 +580,7 @@ void Rd53bDataProcessor::getPreviousDataBlock()
     _data = &_curInV->data[_rawDataIdx]->get(_wordIdx); // Also roll back the block index and data word pointer
 
     if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
+        getPreviousDataBlock();
+    if (((_data[0] >> 29) & 0x3) != _chipId && _enChipId)
         getPreviousDataBlock();
 }

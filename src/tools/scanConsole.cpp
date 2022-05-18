@@ -256,6 +256,8 @@ int main(int argc, char *argv[]) {
     // TODO Check RX sync
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
     hwCtrl->flushBuffer();
+    int comCheckErrors = 0;
+    int idCheckErrors = 0;
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
         FrontEnd *fe = bookie->getEntry(id).fe;
         auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
@@ -267,15 +269,23 @@ int main(int argc, char *argv[]) {
 
         // check communication with FE by reading back a register
         if (fe->checkCom() != 1) {
-            logger->critical("Can't establish communication, aborting!");
-            return -1;
+            logger->error("Can't establish communication, aborting!");
+            comCheckErrors++;
+            continue;
         }
 
         // check that the current FE name is valid
         if (!fe->hasValidName()) {
-            logger->critical("Invalid chip name, aborting!");
-            return -1;
+            logger->error("Invalid chip name, aborting!");
+            idCheckErrors++;
         }
+
+    }
+
+    if (comCheckErrors > 0 || idCheckErrors > 0) {
+        logger->critical("Could not establish correct communication or read incorrect efuse id from at least one FE! Abortin!");
+        return -1;
+    } else {
         logger->info("... success!");
     }
 
