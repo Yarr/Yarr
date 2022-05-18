@@ -27,15 +27,13 @@ Rd53bCoreColLoop::Rd53bCoreColLoop() : LoopActionBase(LOOP_STYLE_MASK){
     loopType = typeid(this);
     m_done = false;
     m_usePToT = false;
+    m_disUnused = false;
 }
 
 void Rd53bCoreColLoop::init() {
     SPDLOG_LOGGER_TRACE(logger, "");
     m_done = false;
     m_cur = 0;
-    
-    m_coreCols = {0x0, 0x0, 0x0, 0x0};
-    this->setCores();
 }
 
 void Rd53bCoreColLoop::execPart1() {
@@ -60,7 +58,7 @@ void Rd53bCoreColLoop::execPart2() {
 }
 
 void Rd53bCoreColLoop::end() {
-
+    // TODO return to original config
 }
 
 void Rd53bCoreColLoop::writeConfig(json &j) {
@@ -81,7 +79,9 @@ void Rd53bCoreColLoop::loadConfig(const json &j) {
     if (j.contains("nSteps"))
         m_nSteps = j["nSteps"];
     if (j.contains("usePToT"))
-        m_usePToT = j["usePToT"];		
+        m_usePToT = j["usePToT"];
+    if (j.contains("disableUnused"))
+        m_disUnused = j["disableUnused"];
     min = 0;
     max = m_nSteps;
     if (m_nSteps > (m_maxCore-m_minCore) )
@@ -91,17 +91,21 @@ void Rd53bCoreColLoop::loadConfig(const json &j) {
 void Rd53bCoreColLoop::setCores() {
     g_tx->setCmdEnable(keeper->getTxMask());
     Rd53b *rd53b = dynamic_cast<Rd53b*>(g_fe);
-    // TODO make core column enable configurable
-    rd53b->writeRegister(&Rd53b::EnCoreCol0, m_coreCols[0]);
-    rd53b->writeRegister(&Rd53b::EnCoreCol1, m_coreCols[1]);
-    rd53b->writeRegister(&Rd53b::EnCoreCol2, m_coreCols[2]);
-    rd53b->writeRegister(&Rd53b::EnCoreCol3, m_coreCols[3]);
-    while(!g_tx->isCmdEmpty()) {}
+    // When enabling/disabling large amount
+    if (m_disUnused) {
+        if (m_nSteps <= 5)
+            logger->warn("Enabling/disabling large amounts of core columns could lead to data link instability!");
+        rd53b->writeRegister(&Rd53b::EnCoreCol0, m_coreCols[0]);
+        rd53b->writeRegister(&Rd53b::EnCoreCol1, m_coreCols[1]);
+        rd53b->writeRegister(&Rd53b::EnCoreCol2, m_coreCols[2]);
+        rd53b->writeRegister(&Rd53b::EnCoreCol3, m_coreCols[3]);
+        while(!g_tx->isCmdEmpty()) {}
+    }
     // Set correct reset path
-    rd53b->writeRegister(&Rd53b::RstCoreCol0, m_coreCols[0]);
-    rd53b->writeRegister(&Rd53b::RstCoreCol1, m_coreCols[1]);
-    rd53b->writeRegister(&Rd53b::RstCoreCol2, m_coreCols[2]);
-    rd53b->writeRegister(&Rd53b::RstCoreCol3, m_coreCols[3]);
+    //rd53b->writeRegister(&Rd53b::RstCoreCol0, m_coreCols[0]);
+    //rd53b->writeRegister(&Rd53b::RstCoreCol1, m_coreCols[1]);
+    //rd53b->writeRegister(&Rd53b::RstCoreCol2, m_coreCols[2]);
+    //rd53b->writeRegister(&Rd53b::RstCoreCol3, m_coreCols[3]);
     //while(!g_tx->isCmdEmpty()) {}
     // Enable injection to core
     rd53b->writeRegister(&Rd53b::EnCoreColCal0, m_coreCols[0]);

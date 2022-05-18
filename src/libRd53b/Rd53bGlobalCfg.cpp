@@ -194,7 +194,7 @@ void Rd53bGlobalCfg::init() {
     //53
     InjDigEn.init           ( 53, &m_cfg[ 53], 7,  1, 0); regMap["InjDigEn"] = &Rd53bGlobalCfg::InjDigEn;
     InjAnaMode.init         ( 53, &m_cfg[ 53], 6,  1, 0); regMap["InjAnaMode"] = &Rd53bGlobalCfg::InjAnaMode;
-    InjFineDelay.init       ( 53, &m_cfg[ 53], 0,  6, 0); regMap["InjFineDelay"] = &Rd53bGlobalCfg::InjFineDelay;
+    InjFineDelay.init       ( 53, &m_cfg[ 53], 0,  6, 5); regMap["InjFineDelay"] = &Rd53bGlobalCfg::InjFineDelay;
     //54
     FineDelayClk.init       ( 54, &m_cfg[ 54], 6,  6, 0); regMap["FineDelayClk"] = &Rd53bGlobalCfg::FineDelayClk;
     FineDelayData.init      ( 54, &m_cfg[ 54], 0,  6, 0); regMap["FineDelayData"] = &Rd53bGlobalCfg::FineDelayData;

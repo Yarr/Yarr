@@ -88,6 +88,7 @@ void Rd53bDataProcessor::join()
 
 void Rd53bDataProcessor::process()
 {
+    logger->info("Started raw data processor thread.");
     while (true)
     {
         m_input->waitNotEmptyOrDone();
@@ -104,6 +105,7 @@ void Rd53bDataProcessor::process()
     }
 
     process_core();
+    logger->info("Finished raw data processor thread.");
 }
 
 // Method for retrieving bits from data
