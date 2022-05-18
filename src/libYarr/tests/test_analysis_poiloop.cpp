@@ -341,7 +341,7 @@ TEST_CASE("AnalysisPOILoops", "[Analysis]") {
       for (unsigned x=5; x<=15; x+=5) {
         for (unsigned y=2; y<=8; y+=2) {
           int ibin = hh->binNum(x, y);
-          REQUIRE ( fabs(hh->getBin(ibin) - 870./168*10/(x*y)) < 1e-10 );
+          REQUIRE ( fabs(hh->getBin(ibin) - (float)(870./168*10/(x*y))) < 1e-10 );
         } // x
       } // y
 

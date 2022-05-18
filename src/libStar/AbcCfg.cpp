@@ -6,11 +6,22 @@ namespace {
   auto logger = logging::make_log("StarCfgABC");
 }
 
-std::shared_ptr<AbcStarRegInfo> AbcStarRegInfo::m_instance;
+std::shared_ptr<const AbcStarRegInfo> AbcStarRegInfo::instance(int version) {
+  static std::array<std::shared_ptr<AbcStarRegInfo>, 2> instance_var{nullptr, nullptr};
+
+  if(version > 0) version = 1;
+  else version = 0;
+
+  if(!instance_var[version]) {
+    instance_var[version].reset(new AbcStarRegInfo(version));
+  }
+
+  return instance_var[version];
+}
 
 //Register enums definitions
 typedef std::tuple<ABCStarSubRegister, unsigned int, unsigned int, unsigned int> abcsubregdef;
-const std::vector<abcsubregdef> s_abcsubregdefs = {
+const std::vector<abcsubregdef> s_abcsubregdefs_v0 = {
   {ABCStarSubRegister::RRFORCE			,0	,0	,1}	,
   {ABCStarSubRegister::WRITEDISABLE		,0	,1	,1}	,
   {ABCStarSubRegister::STOPHPR			,0	,2	,1}	,
@@ -76,10 +87,94 @@ const std::vector<abcsubregdef> s_abcsubregdefs = {
   {ABCStarSubRegister::LCB_ERRCOUNT_THR	        ,38	,0	,16}
 };
 
-AbcStarRegInfo::AbcStarRegInfo() {
+const std::vector<abcsubregdef> s_abcsubregdefs_v1 = {
+  // SCREG
+  {ABCStarSubRegister::RRFORCE,      0, 0, 1},
+  {ABCStarSubRegister::WRITEDISABLE, 0, 1, 1},
+  {ABCStarSubRegister::STOPHPR,      0, 2, 1},
+  {ABCStarSubRegister::TESTHPR,      0, 3, 1},
+  {ABCStarSubRegister::EFUSEL,       0, 4, 1},
+  {ABCStarSubRegister::LCBERRCNTCLR, 0, 5, 1},
+  {ABCStarSubRegister::ADCRESET,     0, 6, 1},
+
+  // DCS1
+  {ABCStarSubRegister::BVREF,                1, 0,  5},
+  {ABCStarSubRegister::BIREF,                1, 5,  5},
+  {ABCStarSubRegister::B8BREF,               1, 10, 5},
+  {ABCStarSubRegister::BTRANGE,              1, 15, 5},
+  {ABCStarSubRegister::BVT,                  1, 20, 8},
+  {ABCStarSubRegister::DIS_CLK,              1, 28, 3},
+  {ABCStarSubRegister::LCB_SELF_TEST_ENABLE, 1, 31, 1},
+
+  // DCS2
+  {ABCStarSubRegister::STR_DEL_R,     2, 0,  2},
+  {ABCStarSubRegister::STR_DEL,       2, 2,  6},
+  {ABCStarSubRegister::COMBIAS,       2, 8,  5},
+  {ABCStarSubRegister::BCAL,          2, 13, 9},
+  {ABCStarSubRegister::DATA_IDLE,     2, 22, 4},
+  {ABCStarSubRegister::EN_GLITCH_A,   2, 26, 1},
+  {ABCStarSubRegister::EN_GLITCH_B,   2, 27, 1},
+  {ABCStarSubRegister::EN_GLITCH_C,   2, 28, 1},
+  {ABCStarSubRegister::EN_GLITCH_V,   2, 29, 1},
+  {ABCStarSubRegister::EN_GLITCH_ADC, 2, 30, 1},
+  {ABCStarSubRegister::RING_OSC_EN,   2, 31, 1},
+
+  // DCS3
+  {ABCStarSubRegister::ADC_BIAS,       3, 0,  4},
+  {ABCStarSubRegister::ADC_CH,         3, 4,  4},
+  {ABCStarSubRegister::ADC_ENABLE,     3, 8,  1},
+  {ABCStarSubRegister::BTMUX_DEC,      3, 9,  4},
+  {ABCStarSubRegister::BTMUXD,         3, 13, 1},
+  {ABCStarSubRegister::A_S_DEC,        3, 14, 5},
+  {ABCStarSubRegister::A_LOW,          3, 19, 1},
+  {ABCStarSubRegister::A_EN_CTRL,      3, 20, 1},
+  {ABCStarSubRegister::D_S_DEC,        3, 21, 5},
+  {ABCStarSubRegister::D_LOW,          3, 26, 1},
+  {ABCStarSubRegister::D_EN_CTRL,      3, 27, 1},
+  {ABCStarSubRegister::EN_OUT_DECODER, 3, 28, 4},
+
+  // CFG0
+  {ABCStarSubRegister::TEST_PULSE_ENABLE, 32, 0,  1},
+  {ABCStarSubRegister::ENCOUNT,           32, 1,  1},
+  {ABCStarSubRegister::MASKHPR,           32, 2,  1},
+  {ABCStarSubRegister::PR_ENABLE,         32, 3,  1},
+  {ABCStarSubRegister::LP_ENABLE,         32, 4,  1},
+  {ABCStarSubRegister::RRMODE,            32, 5,  2},
+  {ABCStarSubRegister::TM,                32, 7,  2},
+  {ABCStarSubRegister::TESTPATT_ENABLE,   32, 9,  1},
+  {ABCStarSubRegister::TESTPATT1,         32, 10, 4},
+  {ABCStarSubRegister::TESTPATT2,         32, 14, 4},
+  {ABCStarSubRegister::CURRDRIV,          32, 18, 3},
+  {ABCStarSubRegister::CALPULSE_ENABLE,   32, 21, 1},
+  {ABCStarSubRegister::CALPULSE_POLARITY, 32, 22, 1},
+  {ABCStarSubRegister::LATENCY,           32, 23, 9},
+
+  // CFG1
+  {ABCStarSubRegister::DTESTOUTSEL,            33, 0,  7},
+  {ABCStarSubRegister::DETMODE,                33, 7,  2},
+  {ABCStarSubRegister::MAX_CLUSTER,            33, 9,  6},
+  {ABCStarSubRegister::MAX_CLUSTER_ENABLE,     33, 15, 1},
+  // {ABCStarSubRegister::DOFUSEADDR,             33, 16,  5},
+  {ABCStarSubRegister::V0_READOUT_MODE,        33, 21, 1},
+  {ABCStarSubRegister::DIS_CLKS_EN,            33, 22, 1},
+  {ABCStarSubRegister::LCB_ERRCOUNT_THR,       33, 23, 8},
+  {ABCStarSubRegister::READOUT_TIMEOUT_ENABLE, 33, 31, 1},
+};
+
+AbcStarRegInfo::AbcStarRegInfo(int version) {
+    // Build using writeable map
+    std::map<unsigned, std::shared_ptr<RegisterInfo>> regMap;
+
     for (ABCStarRegister reg : ABCStarRegister::_values()) {
         int addr = reg;
-        abcregisterMap[addr] = std::make_shared<RegisterInfo>(addr);
+
+        if(version == 1 &&
+           ((addr > ABCStarRegs::ADCS3 && addr <= ABCStarRegs::ADCS7)
+            || (addr > ABCStarRegs::CREG1 && addr <= ABCStarRegs::CREG6))) {
+          continue;
+        }
+
+        regMap[addr] = std::make_shared<RegisterInfo>(addr);
     }
 
     for (ABCStarRegister reg : ABCStarRegister::_values()) {
@@ -90,16 +185,26 @@ AbcStarRegInfo::AbcStarRegInfo() {
           continue;
         }
 
-        abcWriteMap[addr] = abcregisterMap[addr];
+        if(version == 1 &&
+           ((addr > ABCStarRegs::ADCS3 && addr <= ABCStarRegs::ADCS7)
+            || (addr > ABCStarRegs::CREG1 && addr <= ABCStarRegs::CREG6))) {
+          continue;
+        }
+
+        abcWriteMap[addr] = regMap[addr];
     }
 
-    for (auto def : s_abcsubregdefs) {
+    auto &subregdefs = (version == 0)?
+      s_abcsubregdefs_v0 : s_abcsubregdefs_v1;
+
+    for (auto def : subregdefs) {
         auto reg_id = std::get<0>(def);
         std::string subregname = std::string(reg_id._to_string());
         auto addr = std::get<1>(def);
         auto offset = std::get<2>(def);
         auto width = std::get<3>(def);
-        abcSubRegisterMap_all[reg_id] = abcregisterMap[addr]->addSubRegister(subregname, offset, width);
+        auto reg_info = regMap.at(addr);
+        abcSubRegisterMap_all[reg_id] = reg_info->addSubRegister(subregname, offset, width);
     }
 
     ////# 256 TrimDac regs 4-bit lsb
@@ -111,7 +216,8 @@ AbcStarRegInfo::AbcStarRegInfo() {
             std::string trimDAC_name = "trimdac_4lsb_"+std::to_string(channel);
             ////std::to_string(((channel>>7)&1)+1)+"_"+std::to_string((channel&0x7f)+1); //trimdac_4lsb_<nthRow>_<nthCol>; row(1-2); col(1-256); match to histogram
             //  		std::cout << " reg[" << i <<"] for channel[" << channel  << "]----->" << trimDAC_name <<  "     @ nthStartBit: "<< nthStartBit<< std::endl;
-            trimDAC_4LSB_RegisterMap_all[channel] = abcregisterMap[i]->addSubRegister(trimDAC_name, nthStartBit, 4);
+            auto reg_info = regMap.at(i);
+            trimDAC_4LSB_RegisterMap_all[channel] = reg_info->addSubRegister(trimDAC_name, nthStartBit, 4);
             channel++;
             nthStartBit+=4;
         }
@@ -124,56 +230,72 @@ AbcStarRegInfo::AbcStarRegInfo() {
             std::string trimDAC_name = "trimdac_1msb_"+std::to_string(channel);
             ////std::to_string(((channel>>7)&1)+1)+"_"+std::to_string((channel&0x7f)+1); //trimdac_1msb_<nthRow>_<nthCol>; row(1-2); col(1-256); match to histogram
             //   		std::cout << " reg[" << i <<"] for channel[" << channel  << "]----->" << trimDAC_name << std::endl;;
-            trimDAC_1MSB_RegisterMap_all[channel] = abcregisterMap[i]->addSubRegister(trimDAC_name, j, 1);
+            auto reg_info = regMap.at(i);
+            trimDAC_1MSB_RegisterMap_all[channel] = reg_info->addSubRegister(trimDAC_name, j, 1);
             channel++;
         }
     }
+
+    // Copy to const for remainder of life
+    for(auto &i: regMap) {
+      abcregisterMap[i.first] = i.second;
+    }
 }
 
-AbcCfg::AbcCfg()
-  : m_info(AbcStarRegInfo::instance())
+AbcCfg::AbcCfg(int version)
+  : m_registerMap{},
+    m_registerSet{},
+    m_info(AbcStarRegInfo::instance(version))
 {
-    setupMaps();
-    setDefaults();
+    setupMaps(version);
+    setDefaults(version);
 }
 
-void AbcCfg::setupMaps() {
-    auto len = ABCStarRegister::_size();
-    // In case it's not already empty
-    m_registerSet.clear();
-    m_registerSet.reserve( len );
-
+void AbcCfg::setupMaps(int version) {
     /// TODO Still not sure if this is a good implementation; to-be-optimized.
 
     //DD    //Loop over each ABC register in the default list, and create the Register object
     //DD    //Add the location in memory of this Register to the register maps
     for (ABCStarRegister reg : ABCStarRegister::_values()) {
         int addr = reg;
-        Register tmp_Reg(m_info->abcregisterMap[addr], 0);
+
+        if(version == 1 &&
+           ((addr > ABCStarRegs::ADCS3 && addr <= ABCStarRegs::ADCS7)
+            || (addr > ABCStarRegs::CREG1 && addr <= ABCStarRegs::CREG6))) {
+          continue;
+        }
+
+        Register tmp_Reg(m_info->abcregisterMap.at(addr), 0);
         m_registerSet.push_back( std::move(tmp_Reg) ); //Save it to the list
         int lastReg = m_registerSet.size()-1;
         m_registerMap[addr] = lastReg; //Save it's position in memory to the registerMap
     }
-
-    if(m_registerSet.size() != len) {
-      logger->info("Mismatch between size {} and values {}", len, m_registerSet.size());
-    }
 }
 
-void AbcCfg::setDefaults() {
+void AbcCfg::setDefaults(int version) {
     //// Initialize 32-bit register with default values
     ////#special reg
     getRegister(ABCStarRegister::SCReg).setValue(0x00000000);
 
     ////#Analog and DCS regs
-    for (unsigned int iReg=ABCStarRegister::ADCS1; iReg<=ABCStarRegister::ADCS7; iReg++)
+    for (unsigned int iReg=ABCStarRegister::ADCS1; iReg<=ABCStarRegister::ADCS7; iReg++) {
+        if(version == 1 &&
+           (iReg > ABCStarRegs::ADCS3 && iReg <= ABCStarRegs::ADCS7)) {
+          continue;
+        }
         getRegister(iReg).setValue(0x00000000);
+    }
 
     ////#Congfiguration regs
     for (unsigned int iReg=ABCStarRegister::CREG0; iReg<=ABCStarRegister::CREG6; iReg++) {
         if(iReg == ABCStarRegister::CREG0 + 5) {
             // Skip CREG5 as it's fuse register
             continue;
+        }
+        if(version == 1 &&
+           (iReg > ABCStarRegs::CREG1 && iReg <= ABCStarRegs::CREG6)) {
+          // Skip v0 only registers
+          continue;
         }
         getRegister(iReg).setValue(0x00000000);
     }
@@ -204,7 +326,7 @@ void AbcCfg::setTrimDACRaw(unsigned channel, int value) {
     std::string trimDAC_1msb_name = "trimdac_1msb_"+std::to_string(channel);
 
     if (m_info->trimDAC_4LSB_RegisterMap_all.find(channel) != m_info->trimDAC_4LSB_RegisterMap_all.end()) {
-        auto info = m_info->trimDAC_4LSB_RegisterMap_all[channel];
+        auto info = m_info->trimDAC_4LSB_RegisterMap_all.at(channel);
         getRegister(info->m_regAddress).getSubRegister(info).updateValue(value&0xf);
     } else {
         logger->error("Could not find sub register for 4LSB for channel {} for chip[ID {}]",
@@ -213,7 +335,7 @@ void AbcCfg::setTrimDACRaw(unsigned channel, int value) {
 
     if (m_info->trimDAC_1MSB_RegisterMap_all.find(channel) != m_info->trimDAC_1MSB_RegisterMap_all.end()) {
         //		std::cout << " value: " << value << "  " << ((value>>4)&0x1) << std::endl;
-        auto info = m_info->trimDAC_1MSB_RegisterMap_all[channel];
+        auto info = m_info->trimDAC_1MSB_RegisterMap_all.at(channel);
         getRegister(info->m_regAddress).getSubRegister(info).updateValue((value>>4)&0x1);
     } else {
         logger->error("Could not find sub register for 1MSB for channel {} for chip[ID {}]", channel, getABCchipID());
@@ -231,14 +353,14 @@ int AbcCfg::getTrimDACRaw(unsigned channel) const {
         return 0;
     }
 
-    auto info4 = m_info->trimDAC_4LSB_RegisterMap_all[channel];
+    auto info4 = m_info->trimDAC_4LSB_RegisterMap_all.at(channel);
 
     if (m_info->trimDAC_1MSB_RegisterMap_all.find(channel) == m_info->trimDAC_1MSB_RegisterMap_all.end()) {
         logger->error("Could not find sub register for 1MSB for channel {} for chip[ID {}]", channel, getABCchipID());
         return 0;
     }
 
-    auto info1 = m_info->trimDAC_1MSB_RegisterMap_all[channel];
+    auto info1 = m_info->trimDAC_1MSB_RegisterMap_all.at(channel);
 
     unsigned trimDAC_4LSB = getRegister(info4->m_regAddress).getSubRegister(info4).getValue();
     unsigned trimDAC_1MSB = getRegister(info1->m_regAddress).getSubRegister(info1).getValue();

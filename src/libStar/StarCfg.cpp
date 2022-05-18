@@ -15,7 +15,14 @@ namespace {
   auto logger = logging::make_log("StarCfg");
 }
 
-StarCfg::StarCfg() = default;
+StarCfg::StarCfg(int abc_version, int hcc_version)
+  : m_abc_info(AbcStarRegInfo::instance(abc_version)),
+    m_hcc_info(HccStarRegInfo::instance(hcc_version)),
+    m_abc_version(abc_version),
+    m_hcc_version(hcc_version),
+    m_hcc(hcc_version),
+    m_ABCchips{}
+{}
 
 StarCfg::~StarCfg() = default;
 
@@ -116,7 +123,7 @@ void StarCfg::writeConfig(json &j) {
 
     j["HCC"]["ID"] = getHCCchipID();
 
-    auto &hccRegs = HccStarRegInfo::instance()->hccregisterMap;
+    auto &hccRegs = m_hcc_info->hccregisterMap;
 
     for(auto &reg: hccRegs) {
         auto &info = reg.second;
@@ -133,7 +140,7 @@ void StarCfg::writeConfig(json &j) {
         }
     }
 
-    auto &abcRegs = AbcStarRegInfo::instance()->abcregisterMap;
+    auto &abcRegs = m_abc_info->abcregisterMap;
 
     std::map<std::string, std::string> common;
     // Store until we know which are not common
@@ -274,7 +281,7 @@ void StarCfg::loadConfig(const json &j) {
         throw std::runtime_error("Missing ID in config file");
     }
 
-    m_hcc.setDefaults();
+    m_hcc.setDefaults(m_hcc_version);
 
     if (hcc.contains("regs")) {
         auto &regs = hcc["regs"];
@@ -346,7 +353,7 @@ void StarCfg::loadConfig(const json &j) {
 
     // Initialize register maps for consistency
     // Make all registers and subregisters for the ABC
-    eachAbc( [&](auto &abc) {abc.setDefaults();});
+    eachAbc( [&](auto &abc) {abc.setDefaults(m_abc_version);});
 
     // First, commont register settings
     if(abcs.find("common") != abcs.end()) {
@@ -374,6 +381,8 @@ void StarCfg::loadConfig(const json &j) {
                 logger->trace("All ABCs reg {} has been set to {:08x}", regName, regValue);
             } catch(std::runtime_error &e) {
                 logger->warn("Reg {} in JSON file does not exist as an ABC register.  It will be ignored!", regName);
+            } catch(std::out_of_range &e) {
+                logger->warn("Reg {} in JSON file is not valid ABC register (version {}).  It will be ignored!", regName, m_abc_version);
             }
         }
     }
@@ -427,8 +436,6 @@ void StarCfg::loadConfig(const json &j) {
             logger->error("ABCs/subregs array size does not match number of ABCs");
             return;
         }
-
-        auto abcSubRegs = AbcStarRegInfo::instance()->abcSubRegisterMap_all;
 
         for (int iABC = 0; iABC < abc_arr_length; iABC++) {
             if (ids[iABC].is_null())
