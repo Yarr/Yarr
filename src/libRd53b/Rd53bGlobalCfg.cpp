@@ -408,6 +408,7 @@ void Rd53bGlobalCfg::init() {
 
     // Special virtual registers
     InjVcalDiff.init(&InjVcalMed, &InjVcalHigh, true); virtRegMap["InjVcalDiff"] = (Rd53bReg Rd53bGlobalCfg::*)&Rd53bGlobalCfg::InjVcalDiff;
+    DiffTh1.init({&DiffTh1M, &DiffTh1L, &DiffTh1R}); virtRegMap["DiffTh1"] = (Rd53bReg Rd53bGlobalCfg::*) &Rd53bGlobalCfg::DiffTh1;
 }
 
 void Rd53bGlobalCfg::writeConfig(json &j) {
