@@ -51,15 +51,16 @@ TEST_CASE("Histogram1dOK", "[Histo1d]") {
 
   SECTION("One Entry") {
     histo.fill(1.0);
-    // info.e ++;
-    info.m = 1.0;
+    info.e ++;
+    info.m = 1.5;
   }
 
   SECTION("Two Entries") {
     histo.fill(1.0);
     histo.fill(2.0);
-    // info.e += 2;
-    info.m = 1.0;
+    info.e += 2;
+    info.m = 2.0;
+    info.sd = 0.5;
   }
 
   SECTION("Overflow") {

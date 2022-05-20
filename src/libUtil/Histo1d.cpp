@@ -256,9 +256,13 @@ bool Histo1d::fromJson(const json &j) {
     underflow = j["Underflow"];
     overflow = j["Overflow"];
 
+    entries = j["Entries"];
+
+    sum = 0.0;
     data.resize(bins);
     for (unsigned i=0; i<bins; i++) {
         data[i] = j["Data"][i];
+        sum += data[i];
     }
 
     return true;
