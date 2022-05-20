@@ -38,8 +38,8 @@ class Histo2d : public HistogramBase {
         void scale(const double s);
         void setBin(unsigned x, double v);
 
-        double getMean();
-        double getStdDev();
+        double getMean() const;
+        double getStdDev() const;
         
         double getBin(unsigned n) const;
         int binNum(double x, double y) const;

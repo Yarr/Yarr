@@ -81,7 +81,7 @@ Histo2d::Histo2d(Histo2d *h) : HistogramBase(h->getName()) {
     overflow = h->getOverflow();
 
     data = std::vector<float>(xbins*ybins,0);
-    m_isFilled = std::vector<bool>(xbins*ybins,false);
+    m_isFilled = h->m_isFilled;
     for(unsigned i=0; i<xbins*ybins; i++)
         data[i] = h->getBin(i);
     entries = h->getNumOfEntries();
@@ -132,7 +132,9 @@ void Histo2d::add(const Histo2d &h) {
     if (this->size() != h.size())
         return;
     for (unsigned int i=0; i<(xbins*ybins); i++) {
-        data[i] += h.getBin(i);
+        double d = h.getBin(i);
+        data[i] += d;
+        max = std::max(d, max);
 	if (h.isFilled(i))
 		m_isFilled[i] = true;
     }
@@ -167,7 +169,7 @@ void Histo2d::scale(const double s) {
     }
 }
 
-double Histo2d::getMean() {
+double Histo2d::getMean() const {
     double sum = 0;
     double entries = 0;
     for (unsigned int i=0; i<(xbins*ybins); i++) {
@@ -180,7 +182,7 @@ double Histo2d::getMean() {
     return sum/entries;
 }
 
-double Histo2d::getStdDev() {
+double Histo2d::getStdDev() const {
     double mean = this->getMean();
     double mu = 0;
     double entries = 0;
@@ -301,6 +303,7 @@ bool Histo2d::fromFile(const std::string &filename) {
         }
         try {
             j = json::parse(file);
+            file.close();
         } catch (json::parse_error &e) {
             throw std::runtime_error(e.what());
         }
@@ -350,14 +353,23 @@ bool Histo2d::fromJson(const json &j) {
         underflow = j["Underflow"];
         overflow = j["Overflow"];
 
+        entries = j["Entries"];
+
         data = std::vector<float>(xbins*ybins);
+        m_isFilled.resize(xbins*ybins);
+        m_isFilled.assign(m_isFilled.size(), false);
         for (unsigned int y=0; y<ybins; y++) {
             for (unsigned int x=0; x<xbins; x++) {
-                data[x+(y*xbins)] = j["Data"][x][y];
+                auto index = x+(y*xbins);
+                double d = j["Data"][x][y];;
+                data[index] = d;
+                if(d > 0.0) {
+                    m_isFilled[index] = true;
+                    max = std::max(d, max);
+                }
             }
         }
     }
-    file.close();
     return true;
 }
 

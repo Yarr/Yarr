@@ -2,6 +2,7 @@ add_executable(testUtil
         main.cpp
         test_misc.cpp
         test_histo1d.cpp
+        test_histo2d.cpp
 )
 
 # Need to be able to include HistogramBase
