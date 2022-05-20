@@ -62,7 +62,7 @@ unsigned Histo1d::getEntries() const {
     return entries;
 }
 
-double Histo1d::getMean() {
+double Histo1d::getMean() const {
     if (sum == 0 || entries == 0)
         return 0;
     double weighted_sum = 0;
@@ -77,7 +77,7 @@ double Histo1d::getMean() {
     return weighted_sum/n;
 }
 
-double Histo1d::getStdDev() {
+double Histo1d::getStdDev() const {
     if (sum == 0 || entries == 0)
         return 0;
     double mean = this->getMean();
