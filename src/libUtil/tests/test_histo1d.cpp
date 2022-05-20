@@ -14,14 +14,19 @@ struct HistoInfo {
 void checkHisto(const Histo1d &hh, const HistoInfo &hi) {
   CAPTURE (hi.s, hi.e, hi.m, hi.sd, hi.u, hi.o);
 
-  REQUIRE (hh.size() == hi.s);
-  REQUIRE (hh.getEntries() == hi.e);
-  REQUIRE (hh.getMean() == hi.m);
-  REQUIRE (hh.getStdDev() == hi.sd);
-  REQUIRE (hh.getUnderflow() == hi.u);
-  REQUIRE (hh.getOverflow() == hi.o);
+  CHECK (hh.size() == hi.s);
+  CHECK (hh.getEntries() == hi.e);
+  CHECK (hh.getMean() == Approx(hi.m));
+  CHECK (hh.getStdDev() == Approx(hi.sd));
+  CHECK (hh.getUnderflow() == hi.u);
+  CHECK (hh.getOverflow() == hi.o);
 }
 
+// For a given histogram:
+// 1. Check contents
+// 2. Save to json
+// 3. Read from json
+// 4. Check contents of new histo
 void testSaveLoad(const Histo1d &hh, const HistoInfo &hi) {
   checkHisto(hh, hi);
 
@@ -58,6 +63,24 @@ TEST_CASE("Histogram1dOK", "[Histo1d]") {
   SECTION("Two Entries") {
     histo.fill(1.0);
     histo.fill(2.0);
+    info.e += 2;
+    info.m = 2.0;
+    info.sd = 0.5;
+  }
+
+  SECTION("Two unequal entries") {
+    histo.fill(1.0);
+    histo.setBin(2, 4.0);
+    info.e += 2;
+    info.m = 2.3;
+    info.sd = 0.4;
+  }
+
+  SECTION("Two Entries via add") {
+    histo.fill(1.0);
+    Histo1d histo_to_add("TestHistoAdd", 3, 0, 3);
+    histo_to_add.fill(2.0);
+    histo.add(histo_to_add);
     info.e += 2;
     info.m = 2.0;
     info.sd = 0.5;
