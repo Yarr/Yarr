@@ -108,12 +108,13 @@ void Histo2d::fill(double x, double y, double v) {
     } else {
         unsigned xbin = (x-xlow)/xbinWidth;
         unsigned ybin = (y-ylow)/ybinWidth;
-        data[xbin+(ybin*xbins)]+=v;
+        auto index = xbin+(ybin*xbins);
+        data[index]+=v;
         if (v > max)
             max = v;
         if (v < min)
             min = v;
-        m_isFilled[xbin+(ybin*xbins)] = true;
+        m_isFilled[index] = true;
     }
     entries++;
 }
