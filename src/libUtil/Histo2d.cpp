@@ -308,6 +308,22 @@ bool Histo2d::fromFile(const std::string &filename) {
         hlog->error("Error opening histogram: {}", e.what());
         return false;
     }
+
+    try {
+        auto isOk = fromJson(j);
+        if(!isOk) {
+          hlog->error("Reading file: {}", filename);
+        }
+        return isOk;
+    } catch (std::runtime_error &e) {
+        hlog->error("Exception while loading {}", filename);
+        throw;
+    }
+
+    return true;
+}
+
+bool Histo2d::fromJson(const json &j) {
     // Check for type
     if (!j.contains("Type")) {
         hlog->error("ERROR this does not seem to be a histogram file, could not parse.");
