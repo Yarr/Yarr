@@ -12,6 +12,8 @@ struct HistoInfo {
 };
 
 void checkHisto(const Histo1d &hh, const HistoInfo &hi) {
+  CAPTURE (hi.s, hi.e, hi.m, hi.sd, hi.u, hi.o);
+
   REQUIRE (hh.size() == hi.s);
   REQUIRE (hh.getEntries() == hi.e);
   REQUIRE (hh.getMean() == hi.m);
@@ -29,6 +31,11 @@ void testSaveLoad(const Histo1d &hh, const HistoInfo &hi) {
   Histo1d out_histo{j["Name"], j["x"]["Bins"], j["x"]["Low"], j["x"]["High"]};
 
   out_histo.fromJson(j);
+
+  std::string json_output;
+  j.dump(json_output);
+
+  CAPTURE (json_output);
 
   // Check the loaded histogram looks the same
   checkHisto(out_histo, hi);
