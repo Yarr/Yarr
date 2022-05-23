@@ -124,7 +124,7 @@ bool testConnectivity(json config) {
 
 bool testScanConfig(const json &scanConfig) {
   try {
-    Bookkeeper b{0, 0};
+    Bookkeeper b{nullptr, nullptr};
     FeedbackClipboardMap* feedbackMap = nullptr;
     ScanFactory s(&b, feedbackMap);
     s.loadConfig(scanConfig);

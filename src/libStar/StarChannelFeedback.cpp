@@ -89,7 +89,7 @@ void StarChannelFeedback::init() {
             if (fe->getActive()) {
             	int nRow = fe->geo.nRow;
             	int nCol = fe->geo.nCol; 
-                m_fb[id] = NULL;
+                m_fb[id] = nullptr;
                 for (unsigned row=1; row<=nRow; row++) {
                     for (unsigned col=1; col<=nCol; col++) {                        
                         //Initial TDAC in mid of the range
