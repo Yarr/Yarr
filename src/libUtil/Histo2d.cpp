@@ -38,7 +38,7 @@ Histo2d::Histo2d(const std::string &arg_name, unsigned arg_xbins, double arg_xlo
     underflow = 0;
     overflow = 0;
     data = std::vector<float>(xbins*ybins,0);
-    isFilled = std::vector<bool>(xbins*ybins,false);
+    m_isFilled = std::vector<bool>(xbins*ybins,false);
     entries = 0;
 
 }
@@ -60,7 +60,7 @@ Histo2d::Histo2d(const std::string &arg_name, unsigned arg_xbins, double arg_xlo
     underflow = 0;
     overflow = 0;
     data = std::vector<float>(xbins*ybins,0);
-    isFilled =  std::vector<bool>(xbins*ybins,false);
+    m_isFilled =  std::vector<bool>(xbins*ybins,false);
     entries = 0;
 }
 
@@ -81,7 +81,7 @@ Histo2d::Histo2d(Histo2d *h) : HistogramBase(h->getName()) {
     overflow = h->getOverflow();
 
     data = std::vector<float>(xbins*ybins,0);
-    isFilled = std::vector<bool>(xbins*ybins,false);
+    m_isFilled = h->m_isFilled;
     for(unsigned i=0; i<xbins*ybins; i++)
         data[i] = h->getBin(i);
     entries = h->getNumOfEntries();
@@ -108,12 +108,13 @@ void Histo2d::fill(double x, double y, double v) {
     } else {
         unsigned xbin = (x-xlow)/xbinWidth;
         unsigned ybin = (y-ylow)/ybinWidth;
-        data[xbin+(ybin*xbins)]+=v;
+        auto index = xbin+(ybin*xbins);
+        data[index]+=v;
         if (v > max)
             max = v;
         if (v < min)
             min = v;
-        isFilled[xbin+(ybin*xbins)] = true;
+        m_isFilled[index] = true;
     }
     entries++;
 }
@@ -131,7 +132,11 @@ void Histo2d::add(const Histo2d &h) {
     if (this->size() != h.size())
         return;
     for (unsigned int i=0; i<(xbins*ybins); i++) {
-        data[i] += h.getBin(i);
+        double d = h.getBin(i);
+        data[i] += d;
+        max = std::max(d, max);
+	if (h.isFilled(i))
+		m_isFilled[i] = true;
     }
     entries += h.numOfEntries();
 }
@@ -164,11 +169,11 @@ void Histo2d::scale(const double s) {
     }
 }
 
-double Histo2d::getMean() {
+double Histo2d::getMean() const {
     double sum = 0;
     double entries = 0;
     for (unsigned int i=0; i<(xbins*ybins); i++) {
-        if (isFilled[i]) {
+        if (m_isFilled[i]) {
             sum += data[i];
             entries++;
         }
@@ -177,12 +182,12 @@ double Histo2d::getMean() {
     return sum/entries;
 }
 
-double Histo2d::getStdDev() {
+double Histo2d::getStdDev() const {
     double mean = this->getMean();
     double mu = 0;
     double entries = 0;
     for (unsigned int i=0; i<(xbins*ybins); i++) {
-        if (isFilled[i]) {
+        if (m_isFilled[i]) {
              mu += pow(data[i]-mean, 2);
              entries++;
         }
@@ -191,6 +196,10 @@ double Histo2d::getStdDev() {
     return sqrt(mu/(double)(entries-1));
 }
 
+
+bool Histo2d::isFilled(unsigned n) const {
+    return (m_isFilled.size()>=n && m_isFilled.at(n));
+}
 
 double Histo2d::getBin(unsigned n) const {
     if (n < this->size()) {
@@ -203,7 +212,7 @@ double Histo2d::getBin(unsigned n) const {
 void Histo2d::setBin(unsigned n, double v) {
     if (n < this->size()) {
         data[n] = v;
-        isFilled[n] = true;
+        m_isFilled[n] = true;
     }
 }
 
@@ -294,6 +303,7 @@ bool Histo2d::fromFile(const std::string &filename) {
         }
         try {
             j = json::parse(file);
+            file.close();
         } catch (json::parse_error &e) {
             throw std::runtime_error(e.what());
         }
@@ -301,6 +311,22 @@ bool Histo2d::fromFile(const std::string &filename) {
         hlog->error("Error opening histogram: {}", e.what());
         return false;
     }
+
+    try {
+        auto isOk = fromJson(j);
+        if(!isOk) {
+          hlog->error("Reading file: {}", filename);
+        }
+        return isOk;
+    } catch (std::runtime_error &e) {
+        hlog->error("Exception while loading {}", filename);
+        throw;
+    }
+
+    return true;
+}
+
+bool Histo2d::fromJson(const json &j) {
     // Check for type
     if (!j.contains("Type")) {
         hlog->error("ERROR this does not seem to be a histogram file, could not parse.");
@@ -327,14 +353,23 @@ bool Histo2d::fromFile(const std::string &filename) {
         underflow = j["Underflow"];
         overflow = j["Overflow"];
 
+        entries = j["Entries"];
+
         data = std::vector<float>(xbins*ybins);
+        m_isFilled.resize(xbins*ybins);
+        m_isFilled.assign(m_isFilled.size(), false);
         for (unsigned int y=0; y<ybins; y++) {
             for (unsigned int x=0; x<xbins; x++) {
-                data[x+(y*xbins)] = j["Data"][x][y];
+                auto index = x+(y*xbins);
+                double d = j["Data"][x][y];;
+                data[index] = d;
+                if(d > 0.0) {
+                    m_isFilled[index] = true;
+                    max = std::max(d, max);
+                }
             }
         }
     }
-    file.close();
     return true;
 }
 

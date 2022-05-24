@@ -38,11 +38,13 @@ class Histo2d : public HistogramBase {
         void scale(const double s);
         void setBin(unsigned x, double v);
 
-        double getMean();
-        double getStdDev();
+        double getMean() const;
+        double getStdDev() const;
         
         double getBin(unsigned n) const;
         int binNum(double x, double y) const;
+
+	bool isFilled(unsigned n) const;
         
         double getUnderflow() const {return underflow;}
         double getOverflow() const {return overflow;}
@@ -61,6 +63,7 @@ class Histo2d : public HistogramBase {
         
         void toFile(const std::string &filename, const std::string &dir = "", bool header= true) const override;
         bool fromFile(const std::string &filename);
+        bool fromJson(const json &jfile);
         void plot(const std::string &filename, const std::string &dir = "") const override;
 
     void toStream(std::ostream &out) const override;
@@ -70,7 +73,7 @@ class Histo2d : public HistogramBase {
 
 private:
         std::vector<float> data;
-        std::vector<bool> isFilled;
+        std::vector<bool> m_isFilled;
 
         double underflow;
         double overflow;
@@ -88,8 +91,6 @@ private:
         double max;
         double min;
         unsigned entries;
-
-        //std::map<unsigned, bool> isFilled;
 };
 
 #endif
