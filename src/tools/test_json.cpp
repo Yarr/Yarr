@@ -8,7 +8,9 @@
 #include "AllHwControllers.h"
 #include "AllChips.h"
 #include "Bookkeeper.h"
+#include "DataProcessor.h"
 #include "ScanFactory.h"
+#include "ScanHelper.h"
 
 #include "storage.hpp"
 
@@ -22,6 +24,18 @@ enum class ConfigType {
   FRONT_END,
   SCAN_CONFIG,
   UNKNOWN
+};
+
+/// Minimal FrontEnd needed, otherwise scan config not checked
+class MyFrontEnd : public FrontEnd {
+public:
+  void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {}
+  void maskPixel(unsigned col, unsigned row) {}
+  unsigned getPixelEn(unsigned col, unsigned row) { return 1; }
+  void enableAll() {}
+  void configure() {}
+  void writeNamedRegister(std::string name, uint16_t value) {}
+  void setInjCharge(double, bool, bool) {}
 };
 
 std::ostream &operator <<(std::ostream &os, ConfigType &ct) {
@@ -108,30 +122,29 @@ bool testConnectivity(json config) {
   return true;
 }
 
-bool testScanConfig(json config) {
+bool testScanConfig(const json &scanConfig) {
   try {
     Bookkeeper b{0, 0};
     FeedbackClipboardMap* feedbackMap = nullptr;
     ScanFactory s(&b, feedbackMap);
-    s.loadConfig(config);
+    s.loadConfig(scanConfig);
 
-    {
-      json histo = config["scan"]["histogrammer"];
+    // Using ScanHelper for consistency, but that needs more infrastructure
+    std::map<unsigned, std::unique_ptr<DataProcessor> > histogrammers;
+    std::map<unsigned, std::vector<std::unique_ptr<DataProcessor>> > analyses;
 
-      int n = histo["n_count"];
-      for(int i=0; i<n; i++) {
-        std::string algo_name = histo[std::to_string(i)]["algorithm"];
-      }
-    }
+    std::unique_ptr<FrontEnd> fe(new MyFrontEnd());
 
-    {
-      json analysis = config["scan"]["analysis"];
+    // If we don't add a front-end the info isn't checked...
+    b.addFe(fe.release(), 12, 12);
 
-      int n = analysis["n_count"];
-      for(int i=0; i<n; i++) {
-        std::string algo_name = analysis[std::to_string(i)]["algorithm"];
-      }
-    }
+    // This is run by ScanHelper, but doesn't depend on config
+    // ScanHelper::buildRawDataProcs(procs, bookie, chipType);
+    ScanHelper::buildHistogrammers(histogrammers, scanConfig,
+                                   b, &s, "no_dir");
+    int mask_opt = 0;
+    ScanHelper::buildAnalyses(analyses, scanConfig, b, &s,
+                              feedbackMap, mask_opt, "no_dir");
 
     return true;
   } catch(std::runtime_error &te) {
@@ -146,13 +159,27 @@ int checkJson(json &jsonConfig, ConfigType jsonFileType) {
     {
       int count = 0;
       std::string name;
-      for(auto &el: jsonConfig) {
-        name = el;
-        count ++;
+      {
+        auto b = std::begin(jsonConfig);
+        auto e = std::end(jsonConfig);
+        for(auto i=b; i!=e; i++) {
+          name = i.key();
+          count ++;
+        }
       }
       if(count != 1) {
-        std::cout << "Expect one top-level entry in FrontEnd config\n";
-        return 1;
+        if(jsonConfig.contains("HCC") && jsonConfig.contains("ABCs")) {
+          name = "Star";
+        } else {
+          std::cout << "Expect one top-level entry (not " << count << ") in FrontEnd config (or it's Star)\n";
+
+          auto b = std::begin(jsonConfig);
+          auto e = std::end(jsonConfig);
+          for(auto i=b; i!=e; i++) {
+            std::cout << "  " << i.key() << "\n";
+          }
+          return 1;
+        }
       }
 
       if(name == "FE65-P2") name = "FE65P2";
@@ -190,8 +217,12 @@ int checkJson(json &jsonConfig, ConfigType jsonFileType) {
   default:
     std::cout << "Unspecified file type, top-level names are:\n";
 
-    for (auto& el : jsonConfig) {
-        std::cout << "  " << el << '\n';
+    {
+      auto b = std::begin(jsonConfig);
+      auto e = std::end(jsonConfig);
+      for(auto i=b; i!=e; i++) {
+        std::cout << "  " << i.key() << '\n';
+      }
     }
     break;
   }
@@ -274,6 +305,10 @@ int main(int argc, char *argv[]) {
       return 1;
     }
     jsonConfig = json::parse(ifs);
+    if(jsonConfig.is_null()) {
+      std::cerr << "Failed to parse file: " << jsonFileName << '\n';
+      return 1;
+    }
     ifs.close();
   } catch (std::runtime_error &e) {
     std::cerr << "Failed to parse file as json: " << e.what() << '\n';
