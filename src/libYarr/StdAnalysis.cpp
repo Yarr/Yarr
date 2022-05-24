@@ -132,13 +132,13 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
 
     // Select correct output container
     unsigned long ident = 0;
-    unsigned long offset = 0;
+    unsigned long offset = 1;
 
     // Determine identifier
     std::string name = "OccupancyMap";
     std::string name2 = "EnMask";
     for (unsigned n=0; n<loops.size(); n++) {
-        ident += h->getStat().get(loops[n])+offset;
+        ident += h->getStat().get(loops[n])*offset;
         offset *= loopMax[n];
         name += "-" + std::to_string(h->getStat().get(loops[n]));
         name2 += "-" + std::to_string(h->getStat().get(loops[n]));
@@ -273,13 +273,13 @@ void TotAnalysis::init(ScanBase *s) {
 void TotAnalysis::processHistogram(HistogramBase *h) {
     // Select correct output container
     unsigned long ident = 0;
-    unsigned long offset = 0;
+    unsigned long offset = 1;
     // Determine identifier
     std::string name = "OccMap";
     std::string name2 = "TotMap";
     std::string name3 = "Tot2Map";
     for (unsigned n=0; n<loops.size(); n++) {
-        ident += h->getStat().get(loops[n])+offset;
+        ident += h->getStat().get(loops[n])*offset;
         offset *= loopMax[n];
         name += "-" + std::to_string(h->getStat().get(loops[n]));
         name2 += "-" + std::to_string(h->getStat().get(loops[n]));
@@ -660,12 +660,12 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
     Histo2d *hh = (Histo2d*) h;
 
     unsigned long medIdent = 0;
-    unsigned long medOffset = 0;
+    unsigned long medOffset = 1;
     unsigned long outerIdent = 0;
-    unsigned long outerOffset = 0;
+    unsigned long outerOffset = 1;
     for (unsigned n=0; n<loops.size(); n++) {
-        outerIdent += hh->getStat().get(loops[n])+outerOffset;
-        medIdent += hh->getStat().get(loops[n])+medOffset;
+        outerIdent += hh->getStat().get(loops[n])*outerOffset;
+        medIdent += hh->getStat().get(loops[n])*medOffset;
         medOffset *= loopMax[n];
         outerOffset *= loopMax[n];
     }
@@ -684,7 +684,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                 name += "-" + std::to_string(col) + "-" + std::to_string(row);
                 // Check for other loops
                 for (unsigned n=0; n<loops.size(); n++) {
-                    ident += hh->getStat().get(loops[n])+offset;
+                    ident += hh->getStat().get(loops[n])*offset;
                     offset *= loopMax[n];
                     name += "-" + std::to_string(hh->getStat().get(loops[n]));
                 }
@@ -1033,13 +1033,13 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
 
     // Select correct output container
     unsigned long ident = 0;
-    unsigned long offset = 0;
+    unsigned long offset = 1;
 
     // Determine identifier
     std::string name = "OccupancyMap";
     std::string name2 = "OccupancyDist";
     for (unsigned n=0; n<loops.size(); n++) {
-        ident += h->getStat().get(loops[n])+offset;
+        ident += h->getStat().get(loops[n])*offset;
         offset *= loopMax[n];
         name += "-" + std::to_string(h->getStat().get(loops[n]));
         name2 += "-" + std::to_string(h->getStat().get(loops[n]));
@@ -1150,13 +1150,13 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
 
     // Select correct output container
     unsigned long ident = 0;
-    unsigned long offset = 0;
+    unsigned long offset = 1;
 
     // Determine identifier
     std::string name = "OccupancyMap";
     std::string name2 = "OccupancyDist";
     for (unsigned n=0; n<loops.size(); n++) {
-        ident += h->getStat().get(loops[n])+offset;
+        ident += h->getStat().get(loops[n])*offset;
         offset *= loopMax[n];
         name += "-" + std::to_string(h->getStat().get(loops[n]));
         name2 += "-" + std::to_string(h->getStat().get(loops[n]));
@@ -1239,12 +1239,12 @@ void L1Analysis::init(ScanBase *s) {
 void L1Analysis::processHistogram(HistogramBase *h) {
     // Select correct output container
     unsigned long ident = 0;
-    unsigned long offset = 0;
+    unsigned long offset = 1;
 
     // Determine identifier
     std::string name = "L1Dist";
     for (unsigned n=0; n<loops.size(); n++) {
-        ident += h->getStat().get(loops[n])+offset;
+        ident += h->getStat().get(loops[n])*offset;
         offset *= loopMax[n];
         name += "-" + std::to_string(h->getStat().get(loops[n]));
     }
@@ -1297,14 +1297,14 @@ void TagAnalysis::init(ScanBase *s) {
 void TagAnalysis::processHistogram(HistogramBase *h) {
     // Select correct output container
     unsigned long ident = 0;
-    unsigned long offset = 0;
+    unsigned long offset = 1;
 
     // Determine identifier
     std::string name = "TagDist";
     std::string name2 = "TagMap";
     std::string name3 = "OccMap";
     for (unsigned n=0; n<loops.size(); n++) {
-        ident += h->getStat().get(loops[n])+offset;
+        ident += h->getStat().get(loops[n])*offset;
         offset *= loopMax[n];
         name += "-" + std::to_string(h->getStat().get(loops[n]));
         name2 += "-" + std::to_string(h->getStat().get(loops[n]));
@@ -1402,12 +1402,12 @@ void TotDistPlotter::processHistogram(HistogramBase *h) {
 
     // Select correct output container
     unsigned long ident = 0;
-    unsigned long offset = 0;
+    unsigned long offset = 1;
 
     // Determine identifier
     std::string name = "TotDist";
     for (unsigned n=0; n<loops.size(); n++) {
-        ident += h->getStat().get(loops[n])+offset;
+        ident += h->getStat().get(loops[n])*offset;
         offset *= loopMax[n];
         name += "-" + std::to_string(h->getStat().get(loops[n]));
     }
@@ -1520,12 +1520,12 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
 
     // Select correct output container
     unsigned long ident = 0;
-    unsigned long offset = 0;
+    unsigned long offset = 1;
 
     // Determine identifier
     std::string name = "OccMap";
     for (unsigned n=0; n<loops.size(); n++) {
-        ident += h->getStat().get(loops[n])+offset;
+        ident += h->getStat().get(loops[n])*offset;
         offset *= loopMax[n];
         name += "-" + std::to_string(h->getStat().get(loops[n]));
     }
@@ -1645,12 +1645,12 @@ void DelayAnalysis::processHistogram(HistogramBase *h) {
                     /*
                        unsigned outerIdent = 0;
                        unsigned offset = nCol*nRow;
-                       unsigned outerOffset = 0;
+                       unsigned outerOffset = 1;
                        for (unsigned n=0; n<loops.size(); n++) {
-                       ident += hh->getStat().get(loops[n])+offset;
-                       outerIdent += hh->getStat().get(loops[n])+offset;
-                       offset += loopMax[n];
-                       outerOffset += loopMax[n];
+                       ident += hh->getStat().get(loops[n])*offset;
+                       outerIdent += hh->getStat().get(loops[n])*offset;
+                       offset *= loopMax[n];
+                       outerOffset *= loopMax[n];
                        name += "-" + std::to_string(hh->getStat().get(loops[n]));
                        }*/
 
@@ -1758,9 +1758,9 @@ void ParameterAnalysis::processHistogram(HistogramBase *h) {
     Histo2d *hh = (Histo2d*) h;
 
     unsigned long outerIdent = 0;
-    unsigned long outerOffset = 0;
+    unsigned long outerOffset = 1;
     for (unsigned n=0; n<loops.size(); n++) {
-        outerIdent += hh->getStat().get(loops[n])+outerOffset;
+        outerIdent += hh->getStat().get(loops[n])*outerOffset;
         outerOffset *= loopMax[n];
     }
 
@@ -1777,7 +1777,7 @@ void ParameterAnalysis::processHistogram(HistogramBase *h) {
                 name += "-" + std::to_string(col) + "-" + std::to_string(row);
                 // Check for other loops
                 for (unsigned n=0; n<loops.size(); n++) {
-                    ident += hh->getStat().get(loops[n])+offset;
+                    ident += hh->getStat().get(loops[n])*offset;
                     offset *= loopMax[n];
                     name += "-" + std::to_string(hh->getStat().get(loops[n]));
                 }
