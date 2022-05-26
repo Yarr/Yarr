@@ -29,56 +29,56 @@ namespace {
 
 namespace {
     bool oa_registered =
-      StdDict::registerAnalysis("OccupancyAnalysis",
-                                []() { return std::unique_ptr<AnalysisAlgorithm>(new OccupancyAnalysis());});
+        StdDict::registerAnalysis("OccupancyAnalysis",
+                []() { return std::unique_ptr<AnalysisAlgorithm>(new OccupancyAnalysis());});
 
     bool l1_registered =
-      StdDict::registerAnalysis("L1Analysis",
-                                []() { return std::unique_ptr<AnalysisAlgorithm>(new L1Analysis());});
-    
+        StdDict::registerAnalysis("L1Analysis",
+                []() { return std::unique_ptr<AnalysisAlgorithm>(new L1Analysis());});
+
     bool tag_registered =
-      StdDict::registerAnalysis("TagAnalysis",
-                                []() { return std::unique_ptr<AnalysisAlgorithm>(new TagAnalysis());});
+        StdDict::registerAnalysis("TagAnalysis",
+                []() { return std::unique_ptr<AnalysisAlgorithm>(new TagAnalysis());});
 
     bool tot_registered =
-      StdDict::registerAnalysis("TotAnalysis",
-                                []() { return std::unique_ptr<AnalysisAlgorithm>(new TotAnalysis());});
+        StdDict::registerAnalysis("TotAnalysis",
+                []() { return std::unique_ptr<AnalysisAlgorithm>(new TotAnalysis());});
 
     bool no_registered =
-      StdDict::registerAnalysis("NoiseAnalysis",
-                                []() { return std::unique_ptr<AnalysisAlgorithm>(new NoiseAnalysis());});
+        StdDict::registerAnalysis("NoiseAnalysis",
+                []() { return std::unique_ptr<AnalysisAlgorithm>(new NoiseAnalysis());});
 
     bool no_tune_registered =
-      StdDict::registerAnalysis("NoiseTuning",
-                                []() { return std::unique_ptr<AnalysisAlgorithm>(new NoiseTuning());});
+        StdDict::registerAnalysis("NoiseTuning",
+                []() { return std::unique_ptr<AnalysisAlgorithm>(new NoiseTuning());});
 
     bool sf_registered =
-      StdDict::registerAnalysis("ScurveFitter",
-                                []() { return std::unique_ptr<AnalysisAlgorithm>(new ScurveFitter());});
+        StdDict::registerAnalysis("ScurveFitter",
+                []() { return std::unique_ptr<AnalysisAlgorithm>(new ScurveFitter());});
 
     bool gbl_thr_registered =
-      StdDict::registerAnalysis("OccGlobalThresholdTune",
-                                []() { return std::unique_ptr<AnalysisAlgorithm>(new OccGlobalThresholdTune());});
+        StdDict::registerAnalysis("OccGlobalThresholdTune",
+                []() { return std::unique_ptr<AnalysisAlgorithm>(new OccGlobalThresholdTune());});
 
     bool pix_thr_registered =
-      StdDict::registerAnalysis("OccPixelThresholdTune",
-                                []() { return std::unique_ptr<AnalysisAlgorithm>(new OccPixelThresholdTune());});
+        StdDict::registerAnalysis("OccPixelThresholdTune",
+                []() { return std::unique_ptr<AnalysisAlgorithm>(new OccPixelThresholdTune());});
 
     bool del_registered =
-      StdDict::registerAnalysis("DelayAnalysis",
-                                []() { return std::unique_ptr<AnalysisAlgorithm>(new DelayAnalysis());});
+        StdDict::registerAnalysis("DelayAnalysis",
+                []() { return std::unique_ptr<AnalysisAlgorithm>(new DelayAnalysis());});
 
     bool np_registered =
-      StdDict::registerAnalysis("NPointGain",
-                                []() { return std::unique_ptr<AnalysisAlgorithm>(new NPointGain());});
+        StdDict::registerAnalysis("NPointGain",
+                []() { return std::unique_ptr<AnalysisAlgorithm>(new NPointGain());});
 
     bool param_registered = 
-      StdDict::registerAnalysis("ParameterAnalysis",
-				[]() { return std::unique_ptr<AnalysisAlgorithm>(new ParameterAnalysis());});
+        StdDict::registerAnalysis("ParameterAnalysis",
+                []() { return std::unique_ptr<AnalysisAlgorithm>(new ParameterAnalysis());});
 
     bool archiver_registered = 
-      StdDict::registerAnalysis("HistogramArchiver",
-				[]() { return std::unique_ptr<AnalysisAlgorithm>(new HistogramArchiver());});
+        StdDict::registerAnalysis("HistogramArchiver",
+                []() { return std::unique_ptr<AnalysisAlgorithm>(new HistogramArchiver());});
 
 }
 
@@ -86,18 +86,18 @@ void HistogramArchiver::init(ScanBase *s) {
 }
 
 void HistogramArchiver::processHistogram(HistogramBase *histo) {
-  FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
+    FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
 
-  std::string name = feCfg->getName();
+    std::string name = feCfg->getName();
 
-  histo->toFile(name, output_dir);
+    histo->toFile(name, output_dir);
 }
 
 void HistogramArchiver::loadConfig(const json &j){
 }
 
 void HistogramArchiver::setOutputDirectory(std::string dir) {
-  output_dir = dir;
+    output_dir = dir;
 }
 
 void OccupancyAnalysis::init(ScanBase *s) {
@@ -131,15 +131,15 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
         return;
 
     // Select correct output container
-    unsigned ident = 0;
-    unsigned offset = 0;
+    unsigned long ident = 0;
+    unsigned long offset = 1;
 
     // Determine identifier
     std::string name = "OccupancyMap";
     std::string name2 = "EnMask";
     for (unsigned n=0; n<loops.size(); n++) {
-        ident += h->getStat().get(loops[n])+offset;
-        offset += loopMax[n];
+        ident += h->getStat().get(loops[n])*offset;
+        offset *= loopMax[n];
         name += "-" + std::to_string(h->getStat().get(loops[n]));
         name2 += "-" + std::to_string(h->getStat().get(loops[n]));
     }
@@ -170,7 +170,7 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
             } else {
                 failed_cnt++;
                 if (make_mask&&createMask) {
-                    bookie->getFe(channel)->maskPixel((i/nRow), (i%nRow));
+                    bookie->getFe(id)->maskPixel((i/nRow), (i%nRow));
                 }
             }
         }
@@ -272,15 +272,15 @@ void TotAnalysis::init(ScanBase *s) {
 
 void TotAnalysis::processHistogram(HistogramBase *h) {
     // Select correct output container
-    unsigned ident = 0;
-    unsigned offset = 0;
+    unsigned long ident = 0;
+    unsigned long offset = 1;
     // Determine identifier
     std::string name = "OccMap";
     std::string name2 = "TotMap";
     std::string name3 = "Tot2Map";
     for (unsigned n=0; n<loops.size(); n++) {
-        ident += h->getStat().get(loops[n])+offset;
-        offset += loopMax[n];
+        ident += h->getStat().get(loops[n])*offset;
+        offset *= loopMax[n];
         name += "-" + std::to_string(h->getStat().get(loops[n]));
         name2 += "-" + std::to_string(h->getStat().get(loops[n]));
         name3 += "-" + std::to_string(h->getStat().get(loops[n]));
@@ -309,7 +309,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
     }
 
     if (chargeVsTotMap == NULL && hasVcalLoop) {
-        FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
+        FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
         double chargeMin = feCfg->toCharge(vcalMin, useScap, useLcap);
         double chargeMax = feCfg->toCharge(vcalMax, useScap, useLcap);
         double chargeStep = feCfg->toCharge(vcalStep, useScap, useLcap);
@@ -322,16 +322,16 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
     }
 
     if (pixelTotMap == NULL && hasVcalLoop) {
-        FrontEndCfg *feCfgp = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
-	double chargeMinp = feCfgp->toCharge(vcalMin, useScap, useLcap);
-	double chargeMaxp = feCfgp->toCharge(vcalMax, useScap, useLcap);
-	double chargeStepp = feCfgp->toCharge(vcalStep, useScap, useLcap);
+        FrontEndCfg *feCfgp = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
+        double chargeMinp = feCfgp->toCharge(vcalMin, useScap, useLcap);
+        double chargeMaxp = feCfgp->toCharge(vcalMax, useScap, useLcap);
+        double chargeStepp = feCfgp->toCharge(vcalStep, useScap, useLcap);
 
-	Histo2d *pp2 = new Histo2d("PixelTotMap", nCol*nRow, 0, nCol*nRow, vcalBins+1, chargeMinp-chargeStepp/2, chargeMaxp+chargeStepp/2);
-	pp2->setXaxisTitle("Pixels");
-	pp2->setYaxisTitle("Injected Charge [e]");
-	pp2->setZaxisTitle("avg ToT");
-	pixelTotMap.reset(pp2);
+        Histo2d *pp2 = new Histo2d("PixelTotMap", nCol*nRow, 0, nCol*nRow, vcalBins+1, chargeMinp-chargeStepp/2, chargeMaxp+chargeStepp/2);
+        pp2->setXaxisTitle("Pixels");
+        pp2->setYaxisTitle("Injected Charge [e]");
+        pp2->setZaxisTitle("avg ToT");
+        pixelTotMap.reset(pp2);
     }
 
     // Gather Histogram
@@ -388,17 +388,17 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
             sigmaTotDist->fill(sigma);
         }
         if (hasVcalLoop) {
-            FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
+            FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
             double currentCharge = feCfg->toCharge(ident, useScap, useLcap);
             for (unsigned i=0; i<tempMeanTotDist->size(); i++) {
                 chargeVsTotMap->fill(currentCharge, (i+1)*0.1, tempMeanTotDist->getBin(i));
             }
-	    for (unsigned n=0; n<meanTotMap->size(); n++) {
-	      pixelTotMap->fill(n, currentCharge, meanTotMap->getBin(n));
-	    }
+            for (unsigned n=0; n<meanTotMap->size(); n++) {
+                pixelTotMap->fill(n, currentCharge, meanTotMap->getBin(n));
+            }
         }
 
-        alog->info("\033[1;33mChannel:{} ScanID:{} ToT Mean = {} +- {}\033[0m", channel, ident,  meanTotDist->getMean(), meanTotDist->getStdDev());
+        alog->info("\033[1;33mId:{} ScanID:{} ToT Mean = {} +- {}\033[0m", id, ident,  meanTotDist->getMean(), meanTotDist->getStdDev());
 
         if (globalFb != NULL) {
             double mean = 0;
@@ -426,7 +426,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
                 sign = 0;
                 last = true;
             }
-            globalFb->feedbackBinary(channel, sign, last);
+            globalFb->feedbackBinary(id, sign, last);
         }
 
         if (pixelFb != NULL) {
@@ -445,7 +445,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
                 fbHisto->setBin(i, sign);
             }
 
-            pixelFb->feedback(channel, std::move(fbHisto));
+            pixelFb->feedback(id, std::move(fbHisto));
         }
 
         output->pushData(std::move(meanTotMap));
@@ -460,108 +460,108 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
 
 void TotAnalysis::end() {
     if (hasVcalLoop) {
-      FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel)); //replace these with more dynamic conversions 
-	double injQMin = feCfg->toCharge(vcalMin, useScap, useLcap);
-	double injQMax = feCfg->toCharge(vcalMax, useScap, useLcap);
-	double injQStep = feCfg->toCharge(vcalStep, useScap, useLcap);
-	std::unique_ptr<Histo1d> avgTotVsCharge( new Histo1d("avgTotVsCharge", vcalBins+1, injQMin-injQStep/2.0, injQMax+injQStep/2.0));
-	avgTotVsCharge->setXaxisTitle("Injected Charge [e]");
-	avgTotVsCharge->setYaxisTitle("avg ToT");
+        FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id)); //replace these with more dynamic conversions 
+        double injQMin = feCfg->toCharge(vcalMin, useScap, useLcap);
+        double injQMax = feCfg->toCharge(vcalMax, useScap, useLcap);
+        double injQStep = feCfg->toCharge(vcalStep, useScap, useLcap);
+        std::unique_ptr<Histo1d> avgTotVsCharge( new Histo1d("avgTotVsCharge", vcalBins+1, injQMin-injQStep/2.0, injQMax+injQStep/2.0));
+        avgTotVsCharge->setXaxisTitle("Injected Charge [e]");
+        avgTotVsCharge->setYaxisTitle("avg ToT");
 
-	for (unsigned k=0; k<avgTotVsCharge->size(); k++) {  
-	  double injQ = feCfg->toCharge(vcalMin+k*vcalStep, useScap, useLcap); 
-	  double sum = 0;
-	  double entries = 0;
-	  for (float measToT=0.0; measToT<=16.0; measToT+=0.1) {
-	    int n = chargeVsTotMap->binNum(injQ, measToT);
-	    sum += (chargeVsTotMap->getBin(n))*(measToT); 
-	    entries += chargeVsTotMap->getBin(n);
-	  }
-	  double averageToT = sum/entries;
-	  avgTotVsCharge->fill(injQ, averageToT);
-	}
+        for (unsigned k=0; k<avgTotVsCharge->size(); k++) {  
+            double injQ = feCfg->toCharge(vcalMin+k*vcalStep, useScap, useLcap); 
+            double sum = 0;
+            double entries = 0;
+            for (float measToT=0.0; measToT<=16.0; measToT+=0.1) {
+                int n = chargeVsTotMap->binNum(injQ, measToT);
+                sum += (chargeVsTotMap->getBin(n))*(measToT); 
+                entries += chargeVsTotMap->getBin(n);
+            }
+            double averageToT = sum/entries;
+            avgTotVsCharge->fill(injQ, averageToT);
+        }
 
-	//extracting ToT-to-charge data now
-	std::unique_ptr<Histo3d> measQtemp ( new Histo3d("measQtemp", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5, vcalBins+1,  injQMin-injQStep/2.0, injQMax+injQStep/2.0) ); 
+        //extracting ToT-to-charge data now
+        std::unique_ptr<Histo3d> measQtemp ( new Histo3d("measQtemp", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5, vcalBins+1,  injQMin-injQStep/2.0, injQMax+injQStep/2.0) ); 
 
-	int Nmessage = 0;  //boolean to be used for a message to user; in presence of middle holes, user may wish to use finer injQ steps.
-	
-	std::unique_ptr<Histo2d> measQOut ( new Histo2d("measQOut", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5) );
-	std::unique_ptr<Histo2d> measQRMSOut ( new Histo2d("measQRMSOut", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5) );
-	for (unsigned n=0; n<nCol*nRow; n++) {
-	  if (bookie->getFe(channel)->getPixelEn((n/nRow), (n%nRow)) == 0) { //if pixel isn't masked
-	    int anyzero = 0;
-	    for (unsigned k=0; k<avgTotVsCharge->size(); k++) {
-	      double q = feCfg->toCharge(vcalMin+k*vcalStep, useScap, useLcap);
-	      double avgTot = pixelTotMap->getBin(pixelTotMap->binNum(n, q));
-	      double frac = fmod(avgTot,1);
-	      double tot = avgTot - fmod(avgTot,1);
-	      measQtemp->fill(n, tot, q, 100*(1-frac)); 
-	      if (frac != 0.0) { measQtemp->fill(n, tot+1, q, 100*(frac)); }
-	    }
-	    for (unsigned tot = 0; tot < 16; tot++) { 
-	      double mean = 0; 
-	      double count = 0;
-	      double meanSq = 0;
-	      for(unsigned k=0; k<avgTotVsCharge->size(); k++) {
-		double q = feCfg->toCharge(vcalMin+k*vcalStep, useScap, useLcap);
-		int binNum = measQtemp->binNum(n, tot, q);
-		mean += measQtemp->getBin(binNum)*q;
-		meanSq += measQtemp->getBin(binNum)*q*q;
-		count += measQtemp->getBin(binNum);
-	      }
-	      if (count!=0) { 
-		mean = mean/count; 
-		meanSq = meanSq/count;
-		meanSq = std::sqrt(std::fabs(mean*mean - meanSq)); 
-	      }
-	      measQOut->fill(n, tot, mean); 
-	      measQRMSOut->fill(n,tot, meanSq);
-	    }
-	    
-	    bool message = false;  //boolean to be used for a message to user; in presence of middle holes, user may wish to use finer injQ steps.
-	    for (unsigned tot = 1; tot < 16; tot++) {  //Extrapolation starts here
-              int binNum = measQOut->binNum(n, tot);  
-              double measQ = measQOut->getBin(binNum);
-	      unsigned tmaxIndex=tot;
-	      unsigned tminIndex=tot;
-	      double tmaxMeasQ = 0.0;
-	      double tminMeasQ = 0.0;
-              if (measQ == 0.0) {
-	    	while (tmaxMeasQ == 0.0 && tmaxIndex < 15) {
-	    	  tmaxIndex += 1;
-	    	  int tempBinNum = measQOut->binNum(n, tmaxIndex);
-	    	  tmaxMeasQ = measQOut->getBin(tempBinNum);
-	    	}
-	    	while (tminMeasQ == 0.0 && tminIndex > 1) {
-                  tminIndex -= 1;
-                  int tempBinNum = measQOut->binNum(n, tminIndex);
-                  tminMeasQ = measQOut->getBin(tempBinNum); 
+        int Nmessage = 0;  //boolean to be used for a message to user; in presence of middle holes, user may wish to use finer injQ steps.
+
+        std::unique_ptr<Histo2d> measQOut ( new Histo2d("measQOut", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5) );
+        std::unique_ptr<Histo2d> measQRMSOut ( new Histo2d("measQRMSOut", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5) );
+        for (unsigned n=0; n<nCol*nRow; n++) {
+            if (bookie->getFe(id)->getPixelEn((n/nRow), (n%nRow)) == 0) { //if pixel isn't masked
+                int anyzero = 0;
+                for (unsigned k=0; k<avgTotVsCharge->size(); k++) {
+                    double q = feCfg->toCharge(vcalMin+k*vcalStep, useScap, useLcap);
+                    double avgTot = pixelTotMap->getBin(pixelTotMap->binNum(n, q));
+                    double frac = fmod(avgTot,1);
+                    double tot = avgTot - fmod(avgTot,1);
+                    measQtemp->fill(n, tot, q, 100*(1-frac)); 
+                    if (frac != 0.0) { measQtemp->fill(n, tot+1, q, 100*(frac)); }
                 }
-	    	if (tmaxIndex == 15 && tmaxMeasQ == 0.0) { 
-	    	  measQOut->fill(n, tot, tminMeasQ);
-	    	  measQRMSOut->fill(n, tot, -1); 
-	    	} else {
-	    	  double stepMeasQ = (tmaxMeasQ - tminMeasQ)/(tmaxIndex - tminIndex);
-	    	  measQOut->fill(n, tot, tminMeasQ + stepMeasQ);
-		  if (!message  && tminIndex != 1) {message = true;} //if there are middle holes, add message to log for users.
-	    	}
-	      }
-	    } //end of extrapolation code
-	    if (message) {Nmessage += 1;}
-	  } //end of that specific pixel loop
-	} //end of VCal = true test.  
-	if (Nmessage != 0) {
-	  alog->info("Used linear extrapolation to fill missing measured charge values for middle ToT values.");
-	  alog->info("User may wish to use finer injection charge steps");
-	  alog->info("{} pixels needed extrapolation for middle ToT cases (not edge cases)", Nmessage);
-	}
+                for (unsigned tot = 0; tot < 16; tot++) { 
+                    double mean = 0; 
+                    double count = 0;
+                    double meanSq = 0;
+                    for(unsigned k=0; k<avgTotVsCharge->size(); k++) {
+                        double q = feCfg->toCharge(vcalMin+k*vcalStep, useScap, useLcap);
+                        int binNum = measQtemp->binNum(n, tot, q);
+                        mean += measQtemp->getBin(binNum)*q;
+                        meanSq += measQtemp->getBin(binNum)*q*q;
+                        count += measQtemp->getBin(binNum);
+                    }
+                    if (count!=0) { 
+                        mean = mean/count; 
+                        meanSq = meanSq/count;
+                        meanSq = std::sqrt(std::fabs(mean*mean - meanSq)); 
+                    }
+                    measQOut->fill(n, tot, mean); 
+                    measQRMSOut->fill(n,tot, meanSq);
+                }
 
-	output->pushData(std::move(chargeVsTotMap));
+                bool message = false;  //boolean to be used for a message to user; in presence of middle holes, user may wish to use finer injQ steps.
+                for (unsigned tot = 1; tot < 16; tot++) {  //Extrapolation starts here
+                    int binNum = measQOut->binNum(n, tot);  
+                    double measQ = measQOut->getBin(binNum);
+                    unsigned tmaxIndex=tot;
+                    unsigned tminIndex=tot;
+                    double tmaxMeasQ = 0.0;
+                    double tminMeasQ = 0.0;
+                    if (measQ == 0.0) {
+                        while (tmaxMeasQ == 0.0 && tmaxIndex < 15) {
+                            tmaxIndex += 1;
+                            int tempBinNum = measQOut->binNum(n, tmaxIndex);
+                            tmaxMeasQ = measQOut->getBin(tempBinNum);
+                        }
+                        while (tminMeasQ == 0.0 && tminIndex > 1) {
+                            tminIndex -= 1;
+                            int tempBinNum = measQOut->binNum(n, tminIndex);
+                            tminMeasQ = measQOut->getBin(tempBinNum); 
+                        }
+                        if (tmaxIndex == 15 && tmaxMeasQ == 0.0) { 
+                            measQOut->fill(n, tot, tminMeasQ);
+                            measQRMSOut->fill(n, tot, -1); 
+                        } else {
+                            double stepMeasQ = (tmaxMeasQ - tminMeasQ)/(tmaxIndex - tminIndex);
+                            measQOut->fill(n, tot, tminMeasQ + stepMeasQ);
+                            if (!message  && tminIndex != 1) {message = true;} //if there are middle holes, add message to log for users.
+                        }
+                    }
+                } //end of extrapolation code
+                if (message) {Nmessage += 1;}
+            } //end of that specific pixel loop
+        } //end of VCal = true test.  
+        if (Nmessage != 0) {
+            alog->info("Used linear extrapolation to fill missing measured charge values for middle ToT values.");
+            alog->info("User may wish to use finer injection charge steps");
+            alog->info("{} pixels needed extrapolation for middle ToT cases (not edge cases)", Nmessage);
+        }
+
+        output->pushData(std::move(chargeVsTotMap));
         output->pushData(std::move(pixelTotMap));
-	output->pushData(std::move(avgTotVsCharge));
-	output->pushData(std::move(measQOut));
-	output->pushData(std::move(measQRMSOut));
+        output->pushData(std::move(avgTotVsCharge));
+        output->pushData(std::move(measQOut));
+        output->pushData(std::move(measQRMSOut));
     }
 }
 
@@ -659,15 +659,15 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 
     Histo2d *hh = (Histo2d*) h;
 
-    unsigned medIdent = 0;
-    unsigned medOffset = 0;
-    unsigned outerIdent = 0;
-    unsigned outerOffset = 0;
+    unsigned long medIdent = 0;
+    unsigned long medOffset = 1;
+    unsigned long outerIdent = 0;
+    unsigned long outerOffset = 1;
     for (unsigned n=0; n<loops.size(); n++) {
-        outerIdent += hh->getStat().get(loops[n])+outerOffset;
-        medIdent += hh->getStat().get(loops[n])+medOffset;
-        medOffset += loopMax[n];
-        outerOffset += loopMax[n];
+        outerIdent += hh->getStat().get(loops[n])*outerOffset;
+        medIdent += hh->getStat().get(loops[n])*medOffset;
+        medOffset *= loopMax[n];
+        outerOffset *= loopMax[n];
     }
     medCnt[medIdent]++;
 
@@ -676,16 +676,16 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
             unsigned bin = hh->binNum(col, row);
             if (hh->getBin(bin) != 0 || reverse) {
                 // Select correct output container
-                unsigned ident = bin;
-                unsigned offset = nCol*nRow;
+                unsigned long ident = bin;
+                unsigned long offset = nCol*nRow;
                 unsigned vcal = hh->getStat().get(vcalLoop);
                 // Determine identifier
                 std::string name = "Scurve";
                 name += "-" + std::to_string(col) + "-" + std::to_string(row);
                 // Check for other loops
                 for (unsigned n=0; n<loops.size(); n++) {
-                    ident += hh->getStat().get(loops[n])+offset;
-                    offset += loopMax[n];
+                    ident += hh->getStat().get(loops[n])*offset;
+                    offset *= loopMax[n];
                     name += "-" + std::to_string(hh->getStat().get(loops[n]));
                 }
 
@@ -773,7 +773,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0 
                             && chi2 < 2.5 && chi2 > 1e-6
                             && fabs((par[2] - par[3])/injections - 1) < 0.1) {  // Add new criteria: difference between 100% baseline and 0% baseline should agree with number of injections within 10%
-                        FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
+                        FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
                         thrMap[outerIdent]->setBin(bin, feCfg->toCharge(par[0], useScap, useLcap));
                         // Reudce effect of vcal offset on this, don't want to probe at low vcal
                         sigMap[outerIdent]->setBin(bin, feCfg->toCharge(par[0]+par[1], useScap, useLcap)-feCfg->toCharge(par[0], useScap, useLcap));
@@ -810,7 +810,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
             hh2->setZaxisTitle("TDAC change");
             step[outerIdent] = std::move(hh2);
         }
-        
+
         if (deltaThr[outerIdent] == nullptr) {
             Histo2d *hh2 = new Histo2d("DeltaThreshold-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
             hh2->setXaxisTitle("Column");
@@ -849,15 +849,15 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
             }
         }
         prevOuter = outerIdent;
-        alog->info("[{}] --> Sending feedback #{}", this->channel, outerIdent);
-        fb->feedback(this->channel, std::move(std::make_unique<Histo2d>(*(step[outerIdent].get()))));
+        alog->info("[{}] --> Sending feedback #{}", this->id, outerIdent);
+        fb->feedback(this->id, std::move(std::make_unique<Histo2d>(*(step[outerIdent].get()))));
     }
 }
 
 void ScurveFitter::end() {
 
     if (fb != nullptr) {
-        alog->info("[{}] Tuned to ==> {}", thrTarget, this->channel);
+        alog->info("[{}] Tuned to ==> {}", thrTarget, this->id);
     }
 
     // TODO Loop over outerIdent
@@ -910,9 +910,9 @@ void ScurveFitter::end() {
             }
 
             // Before moving data to clipboard
-            alog->info("\033[1;33m[{}][{}] Threshold Mean = {} +- {}\033[0m", channel, i, thrMap[i]->getMean(), thrMap[i]->getStdDev());
-            alog->info("\033[1;33m[{}][{}] Noise Mean = {} +- {}\033[0m", channel, i, sigMap[i]->getMean(), sigMap[i]->getStdDev());
-            alog->info("\033[1;33m[{}][{}] Number of failed fits = {}\033[0m", channel, i, n_failedfit);
+            alog->info("\033[1;33m[{}][{}] Threshold Mean = {} +- {}\033[0m", id, i, thrMap[i]->getMean(), thrMap[i]->getStdDev());
+            alog->info("\033[1;33m[{}][{}] Noise Mean = {} +- {}\033[0m", id, i, sigMap[i]->getMean(), sigMap[i]->getStdDev());
+            alog->info("\033[1;33m[{}][{}] Number of failed fits = {}\033[0m", id, i, n_failedfit);
             output->pushData(std::move(thrDist[i]));
             output->pushData(std::move(thrMap[i]));
             output->pushData(std::move(sigDist[i]));
@@ -993,7 +993,7 @@ void NPointGain::loadConfig(const json &j) {
         }
     }
     if (j.contains("skipDependencyCheck"))
-       m_skipDependencyCheck = j["skipDependencyCheck"];
+        m_skipDependencyCheck = j["skipDependencyCheck"];
 }
 
 void OccGlobalThresholdTune::init(ScanBase *s) {
@@ -1032,15 +1032,15 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
         return;
 
     // Select correct output container
-    unsigned ident = 0;
-    unsigned offset = 0;
+    unsigned long ident = 0;
+    unsigned long offset = 1;
 
     // Determine identifier
     std::string name = "OccupancyMap";
     std::string name2 = "OccupancyDist";
     for (unsigned n=0; n<loops.size(); n++) {
-        ident += h->getStat().get(loops[n])+offset;
-        offset += loopMax[n];
+        ident += h->getStat().get(loops[n])*offset;
+        offset *= loopMax[n];
         name += "-" + std::to_string(h->getStat().get(loops[n]));
         name2 += "-" + std::to_string(h->getStat().get(loops[n]));
     }
@@ -1079,7 +1079,7 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
 
         double meanOcc = occDists[ident]->getMean()/(double)injections;
         double entries = occDists[ident]->getEntries();
-        alog->info("[{}] Mean Occupancy = {}", channel, meanOcc);
+        alog->info("[{}] Mean Occupancy = {}", id, meanOcc);
 
         if (entries < (nCol*nRow)*0.005) { // Want at least 1% of all pixels to fire
             sign = -1;
@@ -1092,7 +1092,7 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
             done = true;
         }
 
-        fb->feedback(this->channel, sign, done);
+        fb->feedback(this->id, sign, done);
         output->pushData(std::move(occMaps[ident]));
         output->pushData(std::move(occDists[ident]));
         innerCnt[ident] = 0;
@@ -1149,15 +1149,15 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
         return;
 
     // Select correct output container
-    unsigned ident = 0;
-    unsigned offset = 0;
+    unsigned long ident = 0;
+    unsigned long offset = 1;
 
     // Determine identifier
     std::string name = "OccupancyMap";
     std::string name2 = "OccupancyDist";
     for (unsigned n=0; n<loops.size(); n++) {
-        ident += h->getStat().get(loops[n])+offset;
-        offset += loopMax[n];
+        ident += h->getStat().get(loops[n])*offset;
+        offset *= loopMax[n];
         name += "-" + std::to_string(h->getStat().get(loops[n]));
         name2 += "-" + std::to_string(h->getStat().get(loops[n]));
     }
@@ -1182,7 +1182,7 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
         std::unique_ptr<Histo1d> occDist(new Histo1d(name2, injections-1, 0.5, injections-0.5));
         occDist->setXaxisTitle("Occupancy");
         occDist->setYaxisTitle("Number of Pixels");
-         
+
         for (unsigned i=0; i<fbHisto->size(); i++) {
             double occ = occMaps[ident]->getBin(i);
             if ((occ/(double)injections) > m_occHighCut) {
@@ -1196,10 +1196,10 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
             occDist->fill(occMaps[ident]->getBin(i));
         }
         
-        alog->info("[{}] Mean Occupancy = {}", channel, mean/(nCol*nRow*(double)injections));
-        alog->info("[{}] RMS = {}", channel, occDist->getStdDev());
+        alog->info("[{}] Mean Occupancy = {}", id, mean/(nCol*nRow*(double)injections));
+        alog->info("[{}] RMS = {}", id, occDist->getStdDev());
 
-        fb->feedback(this->channel, std::move(fbHisto));
+        fb->feedback(this->id, std::move(fbHisto));
         output->pushData(std::move(occMaps[ident]));
         output->pushData(std::move(occDist));
         innerCnt[ident] = 0;
@@ -1238,14 +1238,14 @@ void L1Analysis::init(ScanBase *s) {
 
 void L1Analysis::processHistogram(HistogramBase *h) {
     // Select correct output container
-    unsigned ident = 0;
-    unsigned offset = 0;
+    unsigned long ident = 0;
+    unsigned long offset = 1;
 
     // Determine identifier
     std::string name = "L1Dist";
     for (unsigned n=0; n<loops.size(); n++) {
-        ident += h->getStat().get(loops[n])+offset;
-        offset += loopMax[n];
+        ident += h->getStat().get(loops[n])*offset;
+        offset *= loopMax[n];
         name += "-" + std::to_string(h->getStat().get(loops[n]));
     }
 
@@ -1296,16 +1296,16 @@ void TagAnalysis::init(ScanBase *s) {
 
 void TagAnalysis::processHistogram(HistogramBase *h) {
     // Select correct output container
-    unsigned ident = 0;
-    unsigned offset = 0;
+    unsigned long ident = 0;
+    unsigned long offset = 1;
 
     // Determine identifier
     std::string name = "TagDist";
     std::string name2 = "TagMap";
     std::string name3 = "OccMap";
     for (unsigned n=0; n<loops.size(); n++) {
-        ident += h->getStat().get(loops[n])+offset;
-        offset += loopMax[n];
+        ident += h->getStat().get(loops[n])*offset;
+        offset *= loopMax[n];
         name += "-" + std::to_string(h->getStat().get(loops[n]));
         name2 += "-" + std::to_string(h->getStat().get(loops[n]));
         name3 += "-" + std::to_string(h->getStat().get(loops[n]));
@@ -1401,14 +1401,14 @@ void TotDistPlotter::processHistogram(HistogramBase *h) {
         return;
 
     // Select correct output container
-    unsigned ident = 0;
-    unsigned offset = 0;
+    unsigned long ident = 0;
+    unsigned long offset = 1;
 
     // Determine identifier
     std::string name = "TotDist";
     for (unsigned n=0; n<loops.size(); n++) {
-        ident += h->getStat().get(loops[n])+offset;
-        offset += loopMax[n];
+        ident += h->getStat().get(loops[n])*offset;
+        offset *= loopMax[n];
         name += "-" + std::to_string(h->getStat().get(loops[n]));
     }
 
@@ -1470,13 +1470,13 @@ void NoiseAnalysis::end() {
 
     noiseOcc->add(&*occ);
     noiseOcc->scale(1.0/(double)n_trigger);
-    alog->info("[{}] Received {} total trigger!", channel, n_trigger);
+    alog->info("[{}] Received {} total trigger!", id, n_trigger);
  
     for (unsigned i=0; i<noiseOcc->size(); i++) {
         if (noiseOcc->getBin(i) > noiseThr) {
             mask->setBin(i, 0);
             if (make_mask&&createMask) {
-                bookie->getFe(channel)->maskPixel((i/nRow), (i%nRow));
+                bookie->getFe(id)->maskPixel((i/nRow), (i%nRow));
             }
         } else {
             mask->setBin(i, 1);
@@ -1519,14 +1519,14 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
         return;
 
     // Select correct output container
-    unsigned ident = 0;
-    unsigned offset = 0;
+    unsigned long ident = 0;
+    unsigned long offset = 1;
 
     // Determine identifier
     std::string name = "OccMap";
     for (unsigned n=0; n<loops.size(); n++) {
-        ident += h->getStat().get(loops[n])+offset;
-        offset += loopMax[n];
+        ident += h->getStat().get(loops[n])*offset;
+        offset *= loopMax[n];
         name += "-" + std::to_string(h->getStat().get(loops[n]));
     }
 
@@ -1554,11 +1554,11 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
                     numOfHits++;
                 }
             }
-            alog->info("[{}] Number of pixels with hits: {}", channel, numOfHits);
+            alog->info("[{}] Number of pixels with hits: {}", id, numOfHits);
             if (numOfHits < 10) { // TODO not hardcode this value
-                globalFb->feedbackStep(channel, -1, false);
+                globalFb->feedbackStep(id, -1, false);
             } else {
-                globalFb->feedbackStep(channel, 0, true);
+                globalFb->feedbackStep(id, 0, true);
             }
         }
 
@@ -1574,9 +1574,9 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
                     fbHisto->setBin(i, 0);
                 }
             }
-            alog->info("[{}] Number of pixels with hits: {}", channel, pixelWoHits);
+            alog->info("[{}] Number of pixels with hits: {}", id, pixelWoHits);
 
-            pixelFb->feedbackStep(channel, std::move(fbHisto));
+            pixelFb->feedbackStep(id, std::move(fbHisto));
         }
         output->pushData(std::move(occMaps[ident]));
         occMaps[ident] = NULL;
@@ -1645,12 +1645,12 @@ void DelayAnalysis::processHistogram(HistogramBase *h) {
                     /*
                        unsigned outerIdent = 0;
                        unsigned offset = nCol*nRow;
-                       unsigned outerOffset = 0;
+                       unsigned outerOffset = 1;
                        for (unsigned n=0; n<loops.size(); n++) {
-                       ident += hh->getStat().get(loops[n])+offset;
-                       outerIdent += hh->getStat().get(loops[n])+offset;
-                       offset += loopMax[n];
-                       outerOffset += loopMax[n];
+                       ident += hh->getStat().get(loops[n])*offset;
+                       outerIdent += hh->getStat().get(loops[n])*offset;
+                       offset *= loopMax[n];
+                       outerOffset *= loopMax[n];
                        name += "-" + std::to_string(hh->getStat().get(loops[n]));
                        }*/
 
@@ -1757,11 +1757,11 @@ void ParameterAnalysis::processHistogram(HistogramBase *h) {
 
     Histo2d *hh = (Histo2d*) h;
 
-    unsigned outerIdent = 0;
-    unsigned outerOffset = 0;
+    unsigned long outerIdent = 0;
+    unsigned long outerOffset = 1;
     for (unsigned n=0; n<loops.size(); n++) {
-        outerIdent += hh->getStat().get(loops[n])+outerOffset;
-        outerOffset += loopMax[n];
+        outerIdent += hh->getStat().get(loops[n])*outerOffset;
+        outerOffset *= loopMax[n];
     }
 
     for(unsigned col=1; col<=nCol; col++) {
@@ -1769,16 +1769,16 @@ void ParameterAnalysis::processHistogram(HistogramBase *h) {
             unsigned bin = hh->binNum(col, row);
             if (hh->getBin(bin) != 0) {
                 // Select correct output containe
-                unsigned ident = bin;
-                unsigned offset = nCol*nRow;
+                unsigned long ident = bin;
+                unsigned long offset = nCol*nRow;
                 unsigned param = hh->getStat().get(paramLoopNo);
                 // Determine identifier
                 std::string name = "Param";
                 name += "-" + std::to_string(col) + "-" + std::to_string(row);
                 // Check for other loops
                 for (unsigned n=0; n<loops.size(); n++) {
-                    ident += hh->getStat().get(loops[n])+offset;
-                    offset += loopMax[n];
+                    ident += hh->getStat().get(loops[n])*offset;
+                    offset *= loopMax[n];
                     name += "-" + std::to_string(hh->getStat().get(loops[n]));
                 }
 
@@ -1808,9 +1808,9 @@ void ParameterAnalysis::processHistogram(HistogramBase *h) {
 }
 
 void ParameterAnalysis::end() {
-  alog->trace("ParameterAnalysis end");
-  for (unsigned i=0; i<paramCurves.size(); i++) {
-      output->pushData(std::move(paramMaps[i]));
-      output->pushData(std::move(paramCurves[i]));
-  }
+    alog->trace("ParameterAnalysis end");
+    for (unsigned i=0; i<paramCurves.size(); i++) {
+        output->pushData(std::move(paramMaps[i]));
+        output->pushData(std::move(paramCurves[i]));
+    }
 }

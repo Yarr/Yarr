@@ -112,11 +112,12 @@ void StarMaskLoop::execPart1() {
   }
 
   // FIXME: Global writes used, but loop over FE to be sure of tx mask
-  if(keeper->feList.empty()) {
+  if(keeper->getNumOfEntries() == 0) {
     logger->warn("No ABCs defined to write masks to!\n");
   }
 
-  for ( FrontEnd* fe : keeper->feList ) {
+  for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+    FrontEnd *fe = keeper->getEntry(id).fe;
     if (!fe->isActive()) {continue;}
 
     auto masks = m_maskedChannelsRing.readMask(offset);

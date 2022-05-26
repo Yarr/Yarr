@@ -24,6 +24,7 @@ class Rd53bCoreColLoop : public LoopActionBase {
         unsigned m_minCore;
         unsigned m_maxCore;
         bool m_usePToT;
+        bool m_disUnused;
 
         std::array<uint16_t, 4> m_coreCols;
 

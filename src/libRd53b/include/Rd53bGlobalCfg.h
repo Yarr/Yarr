@@ -72,7 +72,7 @@ class Rd53bDiffReg : public Rd53bReg {
         void init(Rd53bReg *arg_lowRef, Rd53bReg *arg_highRef, bool changeHigh) {
             lowRef = arg_lowRef;
             highRef = arg_highRef;
-            m_cfg = NULL; // Not needed
+            m_cfg = nullptr; // Not needed
             m_bOffset = 0; // Not needed
             m_bits = 0; // Not needed
             m_changeHigh = changeHigh;
@@ -114,6 +114,36 @@ class Rd53bDiffReg : public Rd53bReg {
         Rd53bReg *lowRef;
         Rd53bReg *highRef;
         bool m_changeHigh;
+};
+
+class Rd53bMultiReg : public Rd53bReg {
+    public:
+        void init(std::vector<Rd53bReg*> list) {
+            regList = list;
+            m_cfg = nullptr;
+            m_bOffset = 0;
+            m_bits = 0;
+            m_addr = 0;
+            if (!regList.empty()) {
+                // Only the first register will actually be writte in the chip
+                m_addr = regList[0]->addr();
+            }
+        }
+
+        void write(const uint16_t value) override {
+            for (auto &reg: regList) {
+                reg->write(value);
+            }
+        }
+
+        uint16_t read() const override {
+            if (regList.empty()) {
+                return 0;
+            }
+            return regList[0]->read();
+        }
+    private:
+        std::vector<Rd53bReg*> regList;
 };
 
 class Rd53bGlobalCfg {
@@ -489,6 +519,7 @@ class Rd53bGlobalCfg {
         
         // Special regs
         Rd53bDiffReg InjVcalDiff;
+        Rd53bMultiReg DiffTh1;
 };
 
 

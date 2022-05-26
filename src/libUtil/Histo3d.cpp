@@ -132,7 +132,7 @@ void Histo3d::fill(double x, double y, double z, double v) {
             max = v;
         if (v < min)
             min = v;
-        isFilled[((ybin+(xbin*ybins))*zbins)+zbin] = true;
+        m_isFilled[((ybin+(xbin*ybins))*zbins)+zbin] = true;
     }
     entries++;
 }
@@ -153,6 +153,8 @@ void Histo3d::add(const Histo3d &h) {
         return;
     for (unsigned int i=0; i<(xbins*ybins*zbins); i++) {
         data[i] += h.getBin(i);
+        if (h.isFilled(i))
+                m_isFilled[i] = true;
     }
     entries += h.numOfEntries();
 }
@@ -189,7 +191,7 @@ double Histo3d::getMean() {
     double sum = 0;
     double entries = 0;
     for (unsigned int i=0; i<(xbins*ybins*zbins); i++) {
-        if (isFilled[i]) {
+        if (m_isFilled[i]) {
             sum += data[i];
             entries++;
         }
@@ -203,13 +205,18 @@ double Histo3d::getStdDev() {
     double mu = 0;
     double entries = 0;
     for (unsigned int i=0; i<(xbins*ybins*zbins); i++) {
-        if (isFilled[i]) {
+        if (m_isFilled[i]) {
              mu += (data[i]-mean)*(data[i]-mean);
              entries++;
         }
     }
     if (entries < 2) return 0;
     return sqrt(mu/(double)(entries-1));
+}
+
+
+bool Histo3d::isFilled(unsigned n) const {
+    return (m_isFilled.size()>=n && m_isFilled.at(n));
 }
 
 

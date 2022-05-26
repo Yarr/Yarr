@@ -32,7 +32,8 @@ void Rd53bMaskLoop::init() {
     m_done = false;
     m_cur = min;
     
-    for (FrontEnd *fe : keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         Rd53b *rd53b = dynamic_cast<Rd53b*>(fe);
         g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         // Save current version of the pix regs to transferred back into the config at the end
@@ -40,7 +41,7 @@ void Rd53bMaskLoop::init() {
         // Turn off all pixels to start with
         for (unsigned col=0; col<Rd53b::n_Col; col++) {
             for (unsigned row=0; row<Rd53b::n_Row; row++) {
-                rd53b->setEn(col, row, 1); // TODO make configurable
+                rd53b->setEn(col, row, 0); // TODO make configurable
                 rd53b->setInjEn(col, row, 0);
                 rd53b->setHitbus(col, row, 0);
             }
@@ -55,7 +56,8 @@ void Rd53bMaskLoop::execPart1() {
     SPDLOG_LOGGER_TRACE(logger, "");
 
     unsigned counter = 0;
-    for(FrontEnd *fe : keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         std::vector<std::pair<unsigned, unsigned>> modPixels;
 
@@ -66,7 +68,7 @@ void Rd53bMaskLoop::execPart1() {
                 // Disable pixels of last mask stage
                 if (rd53b->getInjEn(col, row) == 1) {
                     //logger->info("Disabling {};{}", col, row);
-                    rd53b->setEn(col, row, 1); // TODO make configurable
+                    rd53b->setEn(col, row, 0); // TODO make configurable
                     rd53b->setInjEn(col, row, 0);
                     rd53b->setHitbus(col, row, 0);
                     modPixels.push_back(std::make_pair(col, row));
@@ -102,7 +104,8 @@ void Rd53bMaskLoop::execPart2() {
 }
 
 void Rd53bMaskLoop::end() {
-    for(FrontEnd *fe : keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         // Copy original registers back
         // TODO need to make sure analysis modifies the right config
         // TODO not thread safe, in case analysis modifies them to early

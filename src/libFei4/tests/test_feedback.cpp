@@ -61,6 +61,7 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
 
     fe->init(&empty, 0, 0);
     bookie.addFe(fe, 0, rx_channel);
+    unsigned feUid = bookie.getId(fe);
 
     auto g_fe = StdDict::getFrontEnd("FEI4B");
     g_fe->makeGlobal();
@@ -78,7 +79,7 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
 
     scan.init();
 
-    GlobalFeedbackSender send(&fb[rx_channel]);
+    GlobalFeedbackSender send(&fb[feUid]);
 
     uint32_t feedback_count = 0;
 
@@ -99,7 +100,7 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
                         stat.get(0), stat.get(1), stat.get(2));
 
           // As there's no inner loop, send feedback as soon as data arrives
-          send.feedbackBinary(rx_channel, 1, true);
+          send.feedbackBinary(feUid, 1, true);
           feedback_count ++;
 
           logger->debug("Sent feedback at iteration {}", loop_count);
@@ -114,7 +115,7 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
     // Skip pre/post scan
     scan.run();
 
-    bookie.rawDataMap[rx_channel].finish();
+    bookie.getEntry(feUid).fe->clipRawData.finish();
 
     t.join();
 
@@ -132,10 +133,11 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
 
     unsigned rx_channel = 0;
 
-    auto fe = StdDict::getFrontEnd("FEI4B").release();
+    FrontEnd* fe = StdDict::getFrontEnd("FEI4B").release();
     fe->setActive(true);
     fe->init(&empty, 0, 0);
     bookie.addFe(fe, 0, rx_channel);
+    unsigned feUid = bookie.getId(fe);
 
     auto g_fe = StdDict::getFrontEnd("FEI4B");
     g_fe->makeGlobal();
@@ -154,7 +156,7 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
 
     scan.init();
 
-    PixelFeedbackSender send(&fb[rx_channel]);
+    PixelFeedbackSender send(&fb[feUid]);
 
     uint32_t feedback_count = 0;
 
@@ -177,7 +179,7 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
 
           // As there's no inner loop, send feedback as soon as data arrives
           auto h = std::make_unique<Histo2d>("Test", 80, 0, 20, 336, 0, 20);
-          send.feedback(rx_channel, std::move(h));
+          send.feedback(feUid, std::move(h));
           feedback_count ++;
 
           logger->debug("Sent feedback at iteration {}", loop_count);
@@ -192,7 +194,7 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
     // Skip pre/post scan
     scan.run();
 
-    bookie.rawDataMap[rx_channel].finish();
+    bookie.getEntry(feUid).fe->clipRawData.finish();
 
     t.join();
 

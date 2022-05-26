@@ -19,7 +19,6 @@ namespace {
 }
 
 StdDataGatherer::StdDataGatherer() : LoopActionBase(LOOP_STYLE_DATA) {
-    storage = NULL;
     loopType = typeid(this);
     min = 0;
     max = 0;
@@ -69,11 +68,13 @@ void StdDataGatherer::execPart2() {
             if (newData.size() > 0) {
                 for (auto &dataChunk : newData) {
                     count += dataChunk->getSize();
-                    if (rdcMap[dataChunk->getAdr()] == nullptr) {
-                        rdcMap[dataChunk->getAdr()] = std::make_unique<RawDataContainer>(g_stat->record());
-                    }
+                    for (unsigned &uid : keeper->getRxToId(dataChunk->getAdr())) {
+                        if (rdcMap[uid] == nullptr) {
+                            rdcMap[uid] = std::make_unique<RawDataContainer>(g_stat->record());
+                        }
 
-                    rdcMap[dataChunk->getAdr()]->add(std::move(dataChunk));
+                        rdcMap[uid]->add(dataChunk);
+                    }
                 }
             }
             // Wait a little bit to increase chance of new data having arrived
@@ -82,7 +83,7 @@ void StdDataGatherer::execPart2() {
         }
 
         for (auto &[id, rdc] : rdcMap) {
-            storage->at(id).pushData(std::move(rdc));
+            keeper->getEntry(id).fe->clipRawData.pushData(std::move(rdc));
         }
         
         count = 0;
@@ -98,7 +99,3 @@ void StdDataGatherer::execPart2() {
     m_done = true;
     counter++;
 }
-
-//void StdDataGatherer::connect(ClipBoard<RawDataContainer> *clipboard) {
-//    storage = clipboard;
-//}

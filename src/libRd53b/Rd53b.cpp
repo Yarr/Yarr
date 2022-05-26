@@ -265,10 +265,10 @@ void Rd53b::readRegister(Rd53bReg Rd53bGlobalCfg::*ref) {
 
 void Rd53b::writeNamedRegister(std::string name, uint16_t value) {
     if(regMap.find(name) != regMap.end()) {
-        logger->info("Write named register {} -> {}", name, value);
+        logger->debug("Write named register {} -> {}", name, value);
         this->writeRegister(regMap[name], value);
     } else if(virtRegMap.find(name) != virtRegMap.end()) {
-        logger->info("Write named virtual register {} -> {}", name, value);
+        logger->debug("Write named virtual register {} -> {}", name, value);
         this->writeRegister(virtRegMap[name], value);
     } else {
         logger->error("Trying to write named register, register not found: {}", name);
@@ -291,7 +291,6 @@ int Rd53b::checkCom() {
         logger->error("Register messages not enabled, can't check communication ... proceeding blind! (Set \"ServiceBlockEn\" to 1 in the chip config)");
         return 1;
     }
-
     
     logger->debug("Checking communication for {} by reading a register ...", this->name);
     uint32_t regAddr = 21;

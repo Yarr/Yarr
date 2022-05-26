@@ -36,7 +36,6 @@ void Fei4NoiseScan::init() {
 
     // Loop 2: Data gatherer
     std::shared_ptr<StdDataGatherer> dataLoop(new StdDataGatherer);
-    dataLoop->connect(g_data);
 
     this->addLoop(triggerLoop);
     this->addLoop(dataLoop);

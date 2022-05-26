@@ -45,19 +45,19 @@ void StarChannelFeedback::loadConfig(const json &j) {
     }
 }
 
-void StarChannelFeedback::feedback(unsigned channel, std::unique_ptr<Histo2d> h) {
-    StarChips* fe = (StarChips*) keeper->getFe(channel);
+void StarChannelFeedback::feedback(unsigned id, std::unique_ptr<Histo2d> h) {
+    StarChips* fe = (StarChips*) keeper->getFe(id);
     int nRow = fe->geo.nRow;
     int nCol = fe->geo.nCol;
     // TODO Check on NULL pointer
     if (h->size() != nRow*nCol) {
-        logger->error("Wrong type of feedback histogram on channel {}.", channel);
-        doneMap[channel] = true;
+        logger->error("Wrong type of feedback histogram for ID {}.", id);
+        doneMap[id] = true;
     } else {
-        m_fb[channel] = std::move(h);
+        m_fb[id] = std::move(h);
         for (unsigned row=1; row<=nRow; row++) {
             for (unsigned col=1; col<=nCol; col++) {
-                int sign = m_fb[channel]->getBin(m_fb[channel]->binNum(col, row));
+                int sign = m_fb[id]->getBin(m_fb[id]->binNum(col, row));
 
                 //getTrimDAC and setTrimDAC use an old histogram layout converting here for now
                 int v = fe->getTrimDAC(col, row);
@@ -84,12 +84,12 @@ void StarChannelFeedback::init() {
     m_cur = 0;
     // Init maps
     if (m_resetTdac) {
-        for (auto *fe : keeper->feList) {
+        for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+            FrontEnd *fe = keeper->getEntry(id).fe;
             if (fe->getActive()) {
             	int nRow = fe->geo.nRow;
             	int nCol = fe->geo.nCol; 
-                unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-                m_fb[ch] = NULL;
+                m_fb[id] = NULL;
                 for (unsigned row=1; row<=nRow; row++) {
                     for (unsigned col=1; col<=nCol; col++) {                        
                         //Initial TDAC in mid of the range
@@ -104,7 +104,8 @@ void StarChannelFeedback::init() {
 void StarChannelFeedback::execPart1() {
     g_stat->set(this, m_cur);
     // Lock all mutexes
-    for (auto fe : keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if (fe->getActive()) {
             this->writeChannelCfg(dynamic_cast<StarChips*>(fe));
         }
@@ -113,10 +114,10 @@ void StarChannelFeedback::execPart1() {
 
 void StarChannelFeedback::execPart2() {
     // Wait for mutexes to be unlocked by feedback
-    for (auto fe: keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if (fe->getActive()) {
-            unsigned rx = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-            waitForFeedback(rx);
+            waitForFeedback(id);
         }
     }
     m_cur++;
@@ -127,7 +128,8 @@ void StarChannelFeedback::execPart2() {
 
 void StarChannelFeedback::end() {
     
-    for (auto fe: keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if (fe->getActive()) {
             this->writeChannelCfg(dynamic_cast<StarChips*>(fe));
         }

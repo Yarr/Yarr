@@ -25,7 +25,7 @@ class DataProcessor {
         virtual ~DataProcessor() = default;;
 
         // TODO there must be a nicer way for this
-        virtual void connect(ClipBoard<RawDataContainer> *arg_input, ClipBoard<EventDataBase> *arg_output) {}
+        virtual void connect(FrontEndCfg *feCfg, ClipBoard<RawDataContainer> *arg_input, ClipBoard<EventDataBase> *arg_output) {}
         virtual void connect(ClipBoard<EventDataBase> *arg_input, ClipBoard<HistogramBase> *arg_output) {}
         virtual void connect(ScanBase *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output) {}
 	virtual void setThreads(unsigned n) {  m_numThreads = n ;}

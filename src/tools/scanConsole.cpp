@@ -49,11 +49,11 @@ int main(int argc, char *argv[]) {
     json scanLog;
     std::unique_ptr<HwController> hwCtrl;
     std::unique_ptr<Bookkeeper> bookie;
-    std::map<FrontEnd*, std::array<std::string, 2>> feCfgMap;
+    std::map<unsigned, std::array<std::string, 2>> feCfgMap;
     std::unique_ptr<ScanBase> scanBase;
-    std::map<FrontEnd*, std::unique_ptr<DataProcessor> > histogrammers;
-    std::map<FrontEnd*, std::vector<std::unique_ptr<DataProcessor>> > analyses;
-    std::map<FrontEnd*, std::unique_ptr<DataProcessor> > procs;
+    std::map<unsigned, std::unique_ptr<DataProcessor> > histogrammers;
+    std::map<unsigned, std::vector<std::unique_ptr<DataProcessor>> > analyses;
+    std::map<unsigned, std::unique_ptr<DataProcessor> > procs;
     std::string chipType;
     std::string timestampStr;
     std::time_t now;
@@ -209,13 +209,15 @@ int main(int argc, char *argv[]) {
 
     // Reset masks
     if (scanOpts.mask_opt == 1) {
-        for (FrontEnd* fe : bookie->feList) {
+        for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
+            FrontEnd *fe = bookie->getEntry(id).fe;
             fe->enableAll();
         }
     }
-    for ( FrontEnd* fe : bookie->feList ) {
-       auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
-       ScanHelper::writeFeConfig(feCfg, scanOpts.outputDir + feCfgMap.at(fe)[1] + ".before");
+    for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
+        FrontEnd *fe = bookie->getEntry(id).fe;
+        auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
+        ScanHelper::writeFeConfig(feCfg, scanOpts.outputDir + feCfgMap.at(id)[1] + ".before");
     }
     bookie->initGlobalFe(StdDict::getFrontEnd(chipType).release());
     bookie->getGlobalFe()->makeGlobal();
@@ -234,7 +236,8 @@ int main(int argc, char *argv[]) {
         bookie->getGlobalFe()->resetAll();
     }
 
-    for ( FrontEnd* fe : bookie->feList ) {
+    for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
+        FrontEnd *fe = bookie->getEntry(id).fe;
         auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
         logger->info("Configuring {}", feCfg->getName());
         // Select correct channel
@@ -253,7 +256,10 @@ int main(int argc, char *argv[]) {
     // TODO Check RX sync
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
     hwCtrl->flushBuffer();
-    for ( FrontEnd* fe : bookie->feList ) {
+    int comCheckErrors = 0;
+    int idCheckErrors = 0;
+    for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
+        FrontEnd *fe = bookie->getEntry(id).fe;
         auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
         logger->info("Checking com {}", feCfg->getName());
         // Select correct channel
@@ -263,15 +269,23 @@ int main(int argc, char *argv[]) {
 
         // check communication with FE by reading back a register
         if (fe->checkCom() != 1) {
-            logger->critical("Can't establish communication, aborting!");
-            return -1;
+            logger->error("Can't establish communication, aborting!");
+            comCheckErrors++;
+            continue;
         }
 
         // check that the current FE name is valid
         if (!fe->hasValidName()) {
-            logger->critical("Invalid chip name, aborting!");
-            return -1;
+            logger->error("Invalid chip name, aborting!");
+            idCheckErrors++;
         }
+
+    }
+
+    if (comCheckErrors > 0 || idCheckErrors > 0) {
+        logger->critical("Could not establish correct communication or read incorrect efuse id from at least one FE! Abortin!");
+        return -1;
+    } else {
         logger->info("... success!");
     }
 
@@ -321,8 +335,8 @@ int main(int argc, char *argv[]) {
 
     // TODO not to use the raw pointer!
     try {
-        ScanHelper::buildRawDataProcs(procs, bookie->feList, chipType);
-        ScanHelper::buildHistogrammers(histogrammers, scanCfg, bookie->feList, scanBase.get(), scanOpts.outputDir);
+        ScanHelper::buildRawDataProcs(procs, *bookie, chipType);
+        ScanHelper::buildHistogrammers(histogrammers, scanCfg, *bookie, scanBase.get(), scanOpts.outputDir);
         ScanHelper::buildAnalyses(analyses, scanCfg, *bookie, scanBase.get(),
                                   &fbData, scanOpts.mask_opt, scanOpts.outputDir);
     } catch (const char *msg) {
@@ -337,18 +351,19 @@ int main(int argc, char *argv[]) {
 
     // Run from downstream to upstream
     logger->info("Starting histogrammer and analysis threads:");
-    for ( FrontEnd* fe : bookie->feList ) {
+    for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
+        FrontEnd *fe = bookie->getEntry(id).fe;
         if (fe->isActive()) {
-          for (auto& ana : analyses[fe]) {
+          for (auto& ana : analyses[id]) {
             ana->init();
             ana->run();
           }
 
-          histogrammers[fe]->init();
-          histogrammers[fe]->run();
+          histogrammers[id]->init();
+          histogrammers[id]->run();
           
-          procs[fe]->init();
-          procs[fe]->run();
+          procs[id]->init();
+          procs[id]->run();
 
           logger->info(" .. started threads of Fe {}", dynamic_cast<FrontEndCfg*>(fe)->getRxChannel());
         }
@@ -365,10 +380,10 @@ int main(int argc, char *argv[]) {
     logger->info("Scan done!");
 
     // Join from upstream to downstream.
-    for (unsigned i=0; i<bookie->feList.size(); i++) {
-        FrontEnd *fe = bookie->feList[i];
+    for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
+        FrontEnd *fe = bookie->getEntry(id).fe;
         if (fe->isActive()) {
-          fe->clipRawData->finish();
+          fe->clipRawData.finish();
         }
     }
 
@@ -383,9 +398,10 @@ int main(int argc, char *argv[]) {
     std::chrono::steady_clock::time_point processor_done = std::chrono::steady_clock::now();
     logger->info("Processor done, waiting for histogrammer ...");
 
-    for (auto fe : bookie->feList) {
+    for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
+        FrontEnd *fe = bookie->getEntry(id).fe;
         if (fe->isActive()) {
-          fe->clipData->finish();
+            fe->clipData.finish();
         }
     }
 
@@ -396,19 +412,20 @@ int main(int argc, char *argv[]) {
 
     logger->info("Processor done, waiting for analysis ...");
 
-    for (auto fe : bookie->feList) {
+    for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
+        FrontEnd *fe = bookie->getEntry(id).fe;
         if (fe->isActive()) {
-          fe->clipHisto->finish();
+            fe->clipHisto.finish();
         }
     }
 
     // Join analyses
     for( auto& ana : analyses ) {
-      FrontEnd *fe = ana.first;
+      FrontEnd *fe = bookie->getEntry(ana.first).fe;
       for (unsigned i=0; i<ana.second.size(); i++) {
         ana.second[i]->join();
         // Also declare done for its output ClipBoard
-        fe->clipResult->at(i)->finish();
+        fe->clipResult.at(i)->finish();
       }
     }
 
@@ -441,13 +458,14 @@ int main(int argc, char *argv[]) {
 
     // Cleanup
     //delete scanBase;
-    for (auto fe : bookie->feList) {
+    for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
+        FrontEnd *fe = bookie->getEntry(id).fe;
         if(!fe->isActive()) continue;
         auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
 
         // Save config
         if (!feCfg->isLocked()) {
-            const std::string &filename=feCfgMap.at(fe)[0];
+            const std::string &filename=feCfgMap.at(id)[0];
             logger->info("Saving config of FE {} to {}",
                          feCfg->getName(), filename);
             ScanHelper::writeFeConfig(feCfg, filename);
@@ -456,13 +474,13 @@ int main(int argc, char *argv[]) {
         }
 
         // Save extra config in data folder
-        ScanHelper::writeFeConfig(feCfg, scanOpts.outputDir + feCfgMap.at(fe)[1] + ".after");
+        ScanHelper::writeFeConfig(feCfg, scanOpts.outputDir + feCfgMap.at(id)[1] + ".after");
 
         // Plot
         // store output results (if any)
         if(analyses.empty()) continue;
         logger->info("-> Storing output results of FE {}", feCfg->getRxChannel());
-        auto &output = *(fe->clipResult->back());
+        auto &output = *(fe->clipResult.back());
         std::string name = feCfg->getName();
         if (output.empty()) {
             logger->warn(

@@ -46,6 +46,8 @@ class Histo3d : public HistogramBase {
         
         double getBin(unsigned n) const;
         int binNum(double x, double y, double z) const;
+
+	bool isFilled(unsigned n) const;
         
         double getUnderflow() const {return underflow;}
         double getOverflow() const {return overflow;}
@@ -68,6 +70,7 @@ class Histo3d : public HistogramBase {
         
         void toFile(const std::string &filename, const std::string &dir = "", bool header= true) const override;
         bool fromFile(const std::string &filename);
+        bool fromJson(const json &jfile);
         void plot(const std::string &filename, const std::string &dir = "") const override;
 
     void toStream(std::ostream &out) const override;
@@ -99,7 +102,7 @@ private:
         double min;
         unsigned entries;
 
-        std::map<unsigned, bool> isFilled;
+        std::map<unsigned, bool> m_isFilled;
 };
 
 #endif

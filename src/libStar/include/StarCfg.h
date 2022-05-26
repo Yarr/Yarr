@@ -21,7 +21,7 @@
 /// Represents configuration for one particular Star front-end (HCC + ABCs)
 class StarCfg : public FrontEndCfg {
  public:
-  StarCfg();
+  StarCfg(int abc_version, int hcc_version);
   ~StarCfg() override;
 
   //Function to make all Registers for the ABC
@@ -60,8 +60,8 @@ class StarCfg : public FrontEndCfg {
   }
 
   void addABCchipID(unsigned int chipID, unsigned int hccIn) {
-      m_ABCchips.emplace(hccIn,AbcCfg{});
-      m_ABCchips[hccIn].setABCChipId(chipID);
+      m_ABCchips.emplace(hccIn, m_abc_version);
+      m_ABCchips.at(hccIn).setABCChipId(chipID);
   }
 
   void clearABCchipIDs() { m_ABCchips.clear();}
@@ -94,7 +94,7 @@ class StarCfg : public FrontEndCfg {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
       return m_hcc.getSubRegisterParentAddr(subRegName);
     } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
-      return AbcStarRegInfo::instance()->getSubRegisterParentAddr(subRegName);
+      return m_abc_info->getSubRegisterParentAddr(subRegName);
     }else {
       std::cerr << " --> Error: Could not find register \""<< subRegName << "\"" << std::endl;
     }
@@ -172,7 +172,13 @@ class StarCfg : public FrontEndCfg {
       return (*m_ABCchips.end()).second;
   }
 
+  std::shared_ptr<const AbcStarRegInfo> m_abc_info; 
+  std::shared_ptr<const HccStarRegInfo> m_hcc_info; 
+
   uint32_t m_sn=0;//serial number set by eFuse bits
+
+  int m_abc_version; 
+  int m_hcc_version; 
 
   HccCfg m_hcc;
 
@@ -185,7 +191,7 @@ class StarCfg : public FrontEndCfg {
 
   AbcCfg &abcFromIndex(int chipIndex) {
     assert(abcAtIndex(chipIndex));
-    return m_ABCchips[chipIndex-1];
+    return m_ABCchips.at(chipIndex-1);
   }
 
   const AbcCfg &abcFromIndex(int chipIndex) const {
