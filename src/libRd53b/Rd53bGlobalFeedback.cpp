@@ -111,7 +111,7 @@ bool Rd53bGlobalFeedback::allDone() {
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
         FrontEnd *fe = keeper->getEntry(id).fe;
         if (fe->getActive()) {
-            if (!m_doneMap[dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()])
+            if (!m_doneMap[id])
                 return false;
         }
     }
@@ -126,7 +126,7 @@ void Rd53bGlobalFeedback::writePar() {
             // Enable single channel
             g_tx->setCmdEnable(feCfg->getTxChannel());
             // Write parameter
-            dynamic_cast<Rd53b*>(fe)->writeRegister(parPtr, m_values[feCfg->getRxChannel()]);
+            dynamic_cast<Rd53b*>(fe)->writeRegister(parPtr, m_values[id]);
             while(!g_tx->isCmdEmpty()){}
         }
     }
@@ -143,11 +143,10 @@ void Rd53bGlobalFeedback::init() {
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
         FrontEnd *fe = keeper->getEntry(id).fe;
         if (fe->getActive()) {
-            unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-            m_localStep[ch] = step;
-            m_values[ch] = max;
-            m_oldSign[ch] = -1;
-            m_doneMap[ch] = false;
+            m_localStep[id] = step;
+            m_values[id] = max;
+            m_oldSign[id] = -1;
+            m_doneMap[id] = false;
         }
     }
     this->writePar();
@@ -179,10 +178,8 @@ void Rd53bGlobalFeedback::execPart2() {
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
         FrontEnd *fe = keeper->getEntry(id).fe;
         if (fe->getActive()) {
-            unsigned rx = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-
-            waitForFeedback(rx);
-            logger->info(" --> Received Feedback on Channel {} with value: {}", rx, m_values[rx]);
+            waitForFeedback(id);
+            logger->info(" --> Received Feedback on ID {} with value: {}", id, m_values[id]);
         }
     }
     m_cur++;
@@ -194,8 +191,7 @@ void Rd53bGlobalFeedback::end() {
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
         FrontEnd *fe = keeper->getEntry(id).fe;
         if (fe->getActive()) {
-            unsigned rx = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-            logger->info(" --> Final parameter for Channel {} is {}", rx, m_values[rx]);
+            logger->info(" --> Final parameter for ID {} is {}", id, m_values[id]);
         }
     }
     this->writePar();
