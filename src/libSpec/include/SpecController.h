@@ -66,6 +66,10 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
                 }
                 if(j.contains({"trigConfig","deadtime"}))
                     this->setTriggerDeadtime(j["trigConfig"]["deadtime"]);
+                if(j.contains({"trigConfig","extendInterval"}))
+                    this->setTriggerExtendInterval(j["trigConfig"]["extendInterval"]);
+                if(j.contains({"trigConfig","encoderEnable"}))
+                    this->setEncoderEnable(j["trigConfig"]["encoderEnable"]);
             }
 
             // Configure pulse logic
