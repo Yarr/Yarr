@@ -71,8 +71,7 @@ void setupLoggers(const json &j, const std::string &path) {
         std::string key = jl["name"];
         std::string fname = path + std::string(jl["file_name"]);
 
-        auto new_sink = std::shared_ptr<spdlog::sinks::basic_file_sink_mt>
-          (new spdlog::sinks::basic_file_sink_mt(fname));
+        auto new_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(fname);
 
         if(jl.contains("level")) {
             std::string level_name = jl["level"];

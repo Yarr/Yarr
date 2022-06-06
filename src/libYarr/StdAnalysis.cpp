@@ -254,13 +254,13 @@ void TotAnalysis::init(ScanBase *s) {
 
         if (l->isGlobalFeedbackLoop()) {
             alog->debug("Found global feedback loop");
-            globalFb.reset(new GlobalFeedbackSender(feedback));
+            globalFb = std::make_unique<GlobalFeedbackSender>(feedback);
             alog->debug("Connect global feedback");
         }
 
         if (l->isPixelFeedbackLoop()) {
             alog->debug("Found pixel feedback loop");
-            pixelFb.reset(new PixelFeedbackSender(feedback));
+            pixelFb = std::make_unique<PixelFeedbackSender>(feedback);
         }
 
         // Vcal Loop
@@ -612,7 +612,7 @@ void ScurveFitter::init(ScanBase *s) {
 
         // find potential pixel feedback
         if (l->isPixelFeedbackLoop()) {
-            fb.reset(new PixelFeedbackSender(feedback));
+            fb = std::make_unique<PixelFeedbackSender>(feedback);
             if(fb == nullptr) {
                 alog->error("ScurveFitter: loop declared as pixel feedback, does not implement feedback");
             }
@@ -1514,11 +1514,11 @@ void NoiseTuning::init(ScanBase *s) {
         }
 
         if (l->isGlobalFeedbackLoop()) {
-            globalFb.reset(new GlobalFeedbackSender(feedback));
+            globalFb = std::make_unique<GlobalFeedbackSender>(feedback);
         }
 
         if (l->isPixelFeedbackLoop()) {
-            pixelFb.reset(new PixelFeedbackSender(feedback));
+            pixelFb = std::make_unique<PixelFeedbackSender>(feedback);
         }
     }
 }
@@ -1680,13 +1680,13 @@ void DelayAnalysis::processHistogram(HistogramBase *h) {
                     // Got all data, finish up Analysis
                     if (delay == delayMax) { // TODO hardcoded
                         if (delayMap == nullptr) {
-                            delayMap.reset(new Histo2d("DelayMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
+                            delayMap = std::make_unique<Histo2d>("DelayMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
                             delayMap->setXaxisTitle("Col");
                             delayMap->setYaxisTitle("Row");
                             delayMap->setZaxisTitle("Mean Delay");
                         }
                         if (rmsMap == nullptr) {
-                            rmsMap.reset(new Histo2d("RmsMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
+                            rmsMap = std::make_unique<Histo2d>("RmsMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
                             rmsMap->setXaxisTitle("Col");
                             rmsMap->setYaxisTitle("Row");
                             rmsMap->setZaxisTitle("RMS");
