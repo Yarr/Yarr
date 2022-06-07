@@ -164,16 +164,21 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
         mask->setZaxisTitle("Enable");
 
         unsigned failed_cnt = 0;
-        for (unsigned i=0; i<occMaps[ident]->size(); i++) {
-            if (occMaps[ident]->getBin(i) == injections) {
-                mask->setBin(i, 1);
-            } else {
-                failed_cnt++;
-                if (make_mask&&createMask) {
-                    bookie->getFe(id)->maskPixel((i/nRow), (i%nRow));
+        for(unsigned col=1; col<=nCol; col++) {
+            for (unsigned row=1; row<=nRow; row++) {
+                unsigned i = occMaps[ident]->binNum(col, row);
+                if (occMaps[ident]->getBin(i) == injections) {
+                    mask->setBin(i, 1);
+                } else {
+                    failed_cnt++;
+                    if (make_mask&&createMask) {
+                        // maskPixel starts at 0,0
+                        bookie->getFe(id)->maskPixel(col-1, row-1);
+                    }
                 }
             }
         }
+
         alog->info("\033[1m\033[31mTotal number of failing pixels: {}\033[0m", failed_cnt);
         output->pushData(std::move(mask)); // TODO push this mask to the specific configuration
         output->pushData(std::move(occMaps[ident]));
@@ -1472,14 +1477,18 @@ void NoiseAnalysis::end() {
     noiseOcc->scale(1.0/(double)n_trigger);
     alog->info("[{}] Received {} total trigger!", id, n_trigger);
  
-    for (unsigned i=0; i<noiseOcc->size(); i++) {
-        if (noiseOcc->getBin(i) > noiseThr) {
-            mask->setBin(i, 0);
-            if (make_mask&&createMask) {
-                bookie->getFe(id)->maskPixel((i/nRow), (i%nRow));
+    for(unsigned col=1; col<=nCol; col++) {
+        for (unsigned row=1; row<=nRow; row++) {
+            unsigned i = noiseOcc->binNum(col, row);
+            if (noiseOcc->getBin(i) > noiseThr) {
+                mask->setBin(i, 0);
+                if (make_mask&&createMask) {
+                    // maskPixel starts at 0,0
+                    bookie->getFe(id)->maskPixel(col-1, row-1);
+                }
+            } else {
+                mask->setBin(i, 1);
             }
-        } else {
-            mask->setBin(i, 1);
         }
     }
 
