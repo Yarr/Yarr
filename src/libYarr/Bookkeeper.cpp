@@ -33,7 +33,6 @@ Bookkeeper::~Bookkeeper() {
     delete g_fe;
 }
 
-// RxChannel is unique ident
 void Bookkeeper::addFe(FrontEnd *fe, unsigned txChannel, unsigned rxChannel) {
     // Create new entry
     bookEntries.emplace_back();
@@ -56,7 +55,6 @@ void Bookkeeper::addFe(FrontEnd *fe, unsigned channel) {
     this->addFe(fe, channel, channel);
 }
 
-// RxChannel is unique ident
 void Bookkeeper::delFe(unsigned id) {
     if (id >= bookEntries.size()) {
         SPDLOG_LOGGER_ERROR(blog, "Id not in use, can not delete FE!");
