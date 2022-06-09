@@ -27,7 +27,8 @@
         "flushTime_ms": 50,
         "enable_monitor": true,
         "monitor_interval_ms": 1000,
-        "queue_limit_MB": 4000
+        "queue_limit_MB": 4000,
+        "wait_time_us": 10000
       }
     }
   }

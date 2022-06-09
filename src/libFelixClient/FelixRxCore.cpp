@@ -252,6 +252,11 @@ void FelixRxCore::loadConfig(const json &j) {
     frlog->info(" queue limit = {} MB", m_queue_limit);
   }
 
+  if (j.contains("wait_time_us")) {
+    m_waitTime = std::chrono::microseconds(j["wait_time_us"]);
+    frlog->info(" rx wait time = {} microseconds", m_waitTime.count());
+  }
+
   if (m_runMonitor) {
     runMonitor();
   }
