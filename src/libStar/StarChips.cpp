@@ -188,6 +188,12 @@ void StarChips::configure() {
 
 	this->writeRegisters();
 
+    logger->debug("Sending fast command #{} LOGIC_RESET", LCB::LOGIC_RESET);
+    sendCmd(LCB::fast_command(LCB::LOGIC_RESET, 0) );
+
+    logger->debug("Sending lonely_BCR");
+    sendCmd(LCB::lonely_bcr());
+
 	// Make histo size match number of configured ABCs
 	geo.nCol = 128 * (highestABC()+1);
 }
