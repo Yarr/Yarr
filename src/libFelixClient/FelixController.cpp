@@ -15,10 +15,21 @@ void FelixController::loadConfig(const json &j) {
     FelixClientThread::Config fcConfig;
 
     // Callbacks
-    fcConfig.on_init_callback = std::bind(&FelixController::on_init, this);
-    fcConfig.on_data_callback = std::bind(&FelixController::on_data, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
-    fcConfig.on_connect_callback = std::bind(&FelixController::on_connect, this, std::placeholders::_1);
-    fcConfig.on_disconnect_callback = std::bind(&FelixController::on_disconnect, this, std::placeholders::_1);
+    fcConfig.on_init_callback = [this]() {
+      FelixController::on_init();
+    };
+
+    fcConfig.on_data_callback = [this](uint64_t fid, const uint8_t* data, size_t size, uint8_t status) {
+      FelixController::on_data(fid, data, size, status);
+    };
+
+    fcConfig.on_connect_callback = [this](uint64_t fid) {
+      FelixController::on_connect(fid);
+    };
+
+    fcConfig.on_disconnect_callback = [this](uint64_t fid) {
+      FelixController::on_disconnect(fid);
+    };
 
     auto clientCfg = j["FelixClient"];
 
