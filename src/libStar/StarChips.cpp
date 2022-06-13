@@ -135,17 +135,10 @@ void StarChips::resetABCStars() {
 	logger->debug("Sending fast command #{} ABC_SLOW_COMMAND_RESET", LCB::ABC_SLOW_COMMAND_RESET);
 	sendCmd(LCB::fast_command(LCB::ABC_SLOW_COMMAND_RESET, delay) );
 
-	logger->debug("Sending fast command #{} ABC_SEU_RESET", LCB::ABC_SEU_RESET);
-	sendCmd(LCB::fast_command(LCB::ABC_SEU_RESET, delay) );
-
-	logger->debug("Sending fast command #{} ABC_HIT_COUNT_RESET", LCB::ABC_HIT_COUNT_RESET);
-	sendCmd(LCB::fast_command(LCB::ABC_HIT_COUNT_RESET, delay) );
-
-	logger->debug("Sending fast command #{} ABC_HIT_COUNT_START", LCB::ABC_HIT_COUNT_START);
-	sendCmd(LCB::fast_command(LCB::ABC_HIT_COUNT_START, delay) );
-
-	logger->debug("Sending lonely_BCR");
-	sendCmd(LCB::lonely_bcr());
+	// TODO: This should be done somewhere, but only after we're
+	//       also reading out the SEU status registers
+	// logger->debug("Sending fast command #{} ABC_SEU_RESET", LCB::ABC_SEU_RESET);
+	// sendCmd(LCB::fast_command(LCB::ABC_SEU_RESET, delay) );
 }
 
 void StarChips::resetAll(){
