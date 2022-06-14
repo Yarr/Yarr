@@ -104,6 +104,10 @@ int main(int argc, char **argv) {
       logger->info("Sending data to chn {}", elink_tx);
       hwCtrl->setCmdEnable(elink_tx);
 
+      // Read FELIX register
+      json j_status = hwCtrl->getStatus();
+      j_status.dump();
+
       hwCtrl->writeFifo(0xdeadbeef);
       hwCtrl->releaseFifo();
 

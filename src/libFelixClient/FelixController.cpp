@@ -1,6 +1,8 @@
 #include "AllHwControllers.h"
 #include "FelixController.h"
 
+#include "Utils.h"
+
 #include "logging.h"
 
 #include "felix/felix_client_properties.h"
@@ -71,6 +73,155 @@ void FelixController::loadConfig(const json &j) {
     fclog->error("Failed to load FelixRxCore config");
     throw je;
   }
+}
+
+bool FelixController::readFelixRegister(
+  const std::string& registerName, uint64_t& value)
+{
+  fclog->debug("Read FELIX register {}", registerName);
+
+  bool success = false;
+
+  std::vector<uint64_t> fids;
+  for (auto const& [fid, enable] : FelixTxCore::m_enables) {
+    if (enable) fids.push_back(fid);
+  }
+
+  // felix-register can potentially serve multiple devices
+  std::vector<FelixClientThread::Reply> replies;
+
+  auto status_summary = client->send_cmd(
+    fids, FelixClientThread::Cmd::GET, {registerName}, replies
+    );
+
+  if (replies.empty()) {
+    fclog->warn("Fail to read register {}. No replies. Status: {}", registerName, FelixClientThread::to_string(status_summary));
+  } else {
+    // The current setup assumes only one FELIX card
+    // replies.size() is expected to be one.
+
+    if (replies.size() > 1) {
+      fclog->warn("Received more than one replies from reading FELIX register. There are likely more than one active FELIX cards in the system. Take only the first entry for now.");
+    }
+    const auto& re = replies[0];
+
+    // check status
+    success = re.status == FelixClientThread::Status::OK;
+    if (not success) {
+      fclog->warn("Fail to read register {}. Status: {}", registerName, FelixClientThread::to_string(re.status));
+      fclog->warn(re.message);
+    } else {
+      // status OK
+      value = re.value;
+
+      fclog->trace("OK from {}", re.ctrl_fid);
+      fclog->debug("Register value = 0x{:x}", re.value);
+      if (not re.message.empty()) fclog->debug("message: {}", re.message);
+    }
+
+  } // if (replies.empty())
+
+  return success;
+}
+
+const json FelixController::getStatus() {
+  fclog->debug("getStatus");
+  json j_status;
+
+  uint64_t reg_value;
+  bool read_good = false;
+
+  // card type
+  if ( readFelixRegister("CARD_TYPE", reg_value) ) {
+    switch (reg_value) {
+    case 0x2c5:
+      j_status["card_type"] = "FLX709";
+      break;
+    case 0x2c6:
+      j_status["card_type"] = "FLX710";
+      break;
+    case 0x2c7:
+      j_status["card_type"] = "FLX711";
+      break;
+    case 0x2c8:
+      j_status["card_type"] = "FLX712";
+      break;
+    case 0x080:
+      j_status["card_type"] = "FLX128";
+      break;
+    }
+  }
+
+  // register map version
+  if ( readFelixRegister("REG_MAP_VERSION", reg_value) ) {
+    // 0xabcd => version ab.cd
+    int major = (reg_value >> 8) & 0xff;
+    int minor = reg_value & 0xff;
+    j_status["register_map_version"] = std::to_string(major)+"."+std::to_string(minor);
+  }
+
+  /*
+  // firmware git hash
+  if ( readFelixRegister("GIT_HASH", reg_value) ) {
+    j_status["firmware_git_hash"] = Utils::hexify(reg_value);
+  }
+
+  The above would crash in client->send_cmd:
+     terminate called after throwing an instance of 'simdjson::simdjson_error'
+     what():  The JSON number is too large or too small to fit within the requested type.
+  */
+
+  // firmware git tag
+  if ( readFelixRegister("GIT_TAG", reg_value) ) {
+    j_status["firmware_git_tag"] = Utils::hexify(reg_value);
+  }
+
+  // firmware mode
+  if ( readFelixRegister("FIRMWARE_MODE", reg_value) ) {
+    switch (reg_value) {
+    case 0:
+      j_status["firmware_mode"] = "GBT mode";
+      break;
+    case 1:
+      j_status["firmware_mode"] = "FULL mode";
+      break;
+    case 2:
+      j_status["firmware_mode"] = "LTDB mode";
+      break;
+    case 3:
+      j_status["firmware_mode"] = "FEI4 mode";
+      break;
+    case 4:
+      j_status["firmware_mode"] = "ITK Pixel";
+      break;
+    case 5:
+      j_status["firmware_mode"] = "ITK Strip";
+      break;
+    case 6:
+      j_status["firmware_mode"] = "FELIG";
+      break;
+    case 7:
+      j_status["firmware_mode"] = "FULL mode emulator";
+      break;
+    case 8:
+      j_status["firmware_mode"] = "FELIX_MROD mode";
+      break;
+    case 9:
+      j_status["firmware_mode"] = "lpGBT mode";
+      break;
+    case 10:
+      j_status["firmware_mode"] = "25G Interlaken";
+      break;
+    }
+  }
+
+  // XADC temperature monitor for the FPGA CORE
+  if ( readFelixRegister("FPGA_CORE_TEMP", reg_value) ) {
+    float temp_C = ((reg_value* 502.9098)/4096)-273.8195;
+    j_status["fpga_core_temperature"] = temp_C;
+  }
+
+  return j_status;
 }
 
 bool felix_registered = StdDict::registerHwController(
