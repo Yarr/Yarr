@@ -458,8 +458,6 @@ int main(int argc, char *argv[]) {
 
     ScanHelper::banner(logger,"Cleanup");
 
-    // Call constructor (eg shutdown Emu threads)
-    hwCtrl.reset();
     scanLog["finishTime"] = (int)std::time(nullptr);
     ScanHelper::writeScanLog(scanLog, scanOpts.outputDir + "scanLog.json");
 
