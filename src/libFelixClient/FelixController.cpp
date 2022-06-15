@@ -87,6 +87,11 @@ bool FelixController::readFelixRegister(
     if (enable) fids.push_back(fid);
   }
 
+  if (fids.empty()) {
+    fclog->debug("No tx channels are enabled. Skip reading.");
+    return success;
+  }
+
   // felix-register can potentially serve multiple devices
   std::vector<FelixClientThread::Reply> replies;
 
