@@ -232,7 +232,13 @@ namespace ScanHelper {
     int loadConfigFile(const ScanOpts &scanOpts, bool writeConfig, json &config) {
         // load controller configs
         json ctrlCfg;
-        ctrlCfg = ScanHelper::openJsonFile(scanOpts.ctrlCfgPath);
+        try {
+          ctrlCfg = ScanHelper::openJsonFile(scanOpts.ctrlCfgPath);
+        } catch(std::runtime_error &e) {
+          shlog->error("Error opening controller config ({}): {}",
+                       scanOpts.ctrlCfgPath, e.what());
+          throw (std::runtime_error("loadConfigFile failure"));
+        }
         
         if(!ctrlCfg.contains({"ctrlCfg", "cfg"})) {
             shlog->critical("#ERROR# invalid controller config");
@@ -255,7 +261,7 @@ namespace ScanHelper {
             try {
                 cfg["__chipCfg_data__"]=ScanHelper::openJsonFile(cfg["chipCfg"]);
             } catch (std::runtime_error &e) {
-                shlog->critical("#ERROR# opening emulator chip model config: {}", e.what());
+                shlog->critical("#ERROR# opening emulator chip model config ({}): {}", (std::string)cfg["chipCfg"], e.what());
                 return -1;
             }
         }
@@ -267,7 +273,7 @@ namespace ScanHelper {
             try {
                 feconfig = ScanHelper::openJsonFile(sTmp);
             } catch (std::runtime_error &e) {
-                shlog->critical("#ERROR# opening connectivity or chip configs: {}", e.what());
+                shlog->critical("#ERROR# opening connectivity or chip configs ({}): {}", sTmp, e.what());
                 return -1;
             }
             loadChipConfigs(feconfig,writeConfig);
@@ -757,7 +763,10 @@ namespace ScanHelper {
         scanOpts.dbUserCfgPath = defaultDbUserCfgPath();
         for (int i=1;i<argc;i++)scanOpts. commandLineStr.append(std::string(argv[i]).append(" "));
         scanOpts.progName=argv[0];
-        static struct option long_options[] = {{"skip-reset", no_argument, 0, 'z'},
+        static struct option long_options[] =
+          {
+            {"skip-reset", no_argument, 0, 'z'},
+            {"help", no_argument, 0, 'h'},
             {0, 0, 0, 0}};
         int opt_index=0;
         int c;
@@ -854,9 +863,23 @@ namespace ScanHelper {
                     break;
                 default:
                     spdlog::critical("Error while parsing command line parameters!");
+                    std::cout << "Rerun with --help for more information\n";
                     return -1;
             }
         }
+
+        if(scanOpts.ctrlCfgPath.empty()) {
+          spdlog::critical("Controller config required (-r)");
+          std::cout << "Rerun with --help for more information\n";
+          return -1;
+        }
+
+        if(scanOpts.cConfigPaths.empty()) {
+          spdlog::critical("Error: no connectivity config files given, please specify config file name under -c option, even if file does not exist!");
+          std::cout << "Rerun with --help for more information\n";
+          return -1;
+        }
+
         return 1;
     }
 } // Close namespace

@@ -116,11 +116,6 @@ int main(int argc, char *argv[]) {
     dataDir=scanOpts.outputDir;
     strippedScan=ScanHelper::createOutputDir(scanOpts.scanType,runCounter,scanOpts.outputDir);
 
-    if (scanOpts.cConfigPaths.empty()) {
-        logger->error("Error: no config files given, please specify config file name under -c option, even if file does not exist!");
-        return -1;
-    }
-
     if(scanOpts.scan_config_provided) {
         logger->info("Scan Type/Config {}", scanOpts.scanType);
     } else {
