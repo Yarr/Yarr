@@ -187,8 +187,8 @@ void StarChips::configure() {
     logger->debug("Sending lonely_BCR");
     sendCmd(LCB::lonely_bcr());
 
-	// Make histo size match number of configured ABCs
-	geo.nCol = 128 * (highestABC()+1);
+    // Make histo size match number of configured ABCs
+    geo.nCol = 128 * numABCs();
 }
 
 void StarChips::sendCmd(uint16_t cmd){

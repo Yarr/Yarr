@@ -7,6 +7,7 @@
 #include "LoopStatus.h"
 
 #include "StarChipPacket.h"
+#include "StarCfg.h"
 
 #include "EventData.h"
 
@@ -17,7 +18,8 @@ namespace {
 }
 
 void process_data(RawData &curIn,
-                  FrontEndData &curOut);
+                  FrontEndData &curOut,
+                  const std::array<uint8_t, 11> &chip_map);
 
 bool star_proc_registered =
   StdDict::registerDataProcessor("Star", []() { return std::unique_ptr<DataProcessor>(new StarDataProcessor());});
@@ -30,6 +32,27 @@ StarDataProcessor::~StarDataProcessor() = default;
 
 void StarDataProcessor::init() {
 
+}
+
+void StarDataProcessor::connect(FrontEndCfg *feCfg, ClipBoard<RawDataContainer> *arg_input, ClipBoard<EventDataBase> *arg_output) {
+  if(feCfg == nullptr) {
+    throw std::runtime_error("StarDataProcessor::connect given null config");
+  }
+  StarCfg *cfg = dynamic_cast<StarCfg*>(feCfg);
+  if(cfg == nullptr) {
+    throw std::runtime_error("StarDataProcessor::connect given bad config (not StarCfg");
+  }
+
+  chip_map = cfg->hcc().histoChipMap();
+
+  logger->debug("Map loaded from config: {} {} {} {} {} {} {} {} {} {} {}",
+                chip_map[0], chip_map[1], chip_map[2],
+                chip_map[3], chip_map[4], chip_map[5],
+                chip_map[6], chip_map[7], chip_map[8],
+                chip_map[9], chip_map[10]);
+
+  input = arg_input;
+  output = arg_output;
 }
 
 void StarDataProcessor::run() {
@@ -77,7 +100,7 @@ void StarDataProcessor::process_core() {
         for(unsigned c=0; c<size; c++) {
             RawDataPtr r = curInV->data[c];
             unsigned channel = r->getAdr(); //elink number
-            process_data(*r, *curOut);
+            process_data(*r, *curOut, chip_map);
         }
 
         output->pushData(std::move(curOut));
@@ -86,7 +109,8 @@ void StarDataProcessor::process_core() {
 }
 
 void process_data(RawData &curIn,
-                  FrontEndData &curOut) {
+                  FrontEndData &curOut,
+                  const std::array<uint8_t, 11> &chip_map) {
     StarChipPacket packet;
 
     packet.add_word(0x13C); //add SOP, only to make decoder happy
@@ -123,9 +147,23 @@ void process_data(RawData &curIn,
 
             int row = ((cluster.address>>7)&1)+1;
 
+            if(cluster.input_channel >= HCC_INPUT_CHANNEL_COUNT) {
+              logger->warn("Bad input channel {} in cluster",
+                           cluster.input_channel);
+              continue;
+            }
+            int histo_chip = chip_map[cluster.input_channel];
+            if(histo_chip == HCC_INPUT_CHANNEL_BAD_SLOT) {
+              logger->warn("Bad input channel {} missing in config",
+                           cluster.input_channel);
+              continue;
+            }
+            logger->trace("Mapped ic {} to histo {}", cluster.input_channel, histo_chip);
+            int histo_base = histo_chip * 128;
+
             // Split hits into two rows of strips
             curOut.curEvent->addHit( row,
-                                     cluster.input_channel*128+((cluster.address&0x7f)+1), 1);
+                                     histo_base+((cluster.address&0x7f)+1), 1);
             //NOTE::tot(1) is just dummy value, because of """if(curHit.tot > 0)""" in Fei4Histogrammer::XXX::processEvent(Fei4Data *data)
             //row and col both + 1 because pixel row & col numbering start from 1, see Fei4Histogrammer & Fei4Analysis
 
@@ -134,7 +172,7 @@ void process_data(RawData &curIn,
                 if(!nextPattern.test(i)) continue;
                 auto nextAddress = cluster.address+(3-i);
                 curOut.curEvent->addHit( row,
-                                         cluster.input_channel*128+((nextAddress&0x7f)+1),1);
+                                         histo_base+((nextAddress&0x7f)+1),1);
 
                 // It's an error for cluster to escape either "side"
                 if((cluster.address & (~0x7f)) != (nextAddress & (~0x7f))) {
