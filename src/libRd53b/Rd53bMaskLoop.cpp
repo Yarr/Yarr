@@ -120,8 +120,6 @@ void Rd53bMaskLoop::init() {
 void Rd53bMaskLoop::execPart1() {
     SPDLOG_LOGGER_TRACE(logger, "");
 
-    //logger->info(" ---> start Mask Stage {} ", m_cur);
-
     unsigned counter = 0;
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
         FrontEnd *fe = keeper->getEntry(id).fe;
@@ -222,36 +220,39 @@ void Rd53bMaskLoop::execPart1() {
 void Rd53bMaskLoop::execPart2() {
     SPDLOG_LOGGER_TRACE(logger, "");
 
+
  // Loop over FrontEnds to clean it up
     if (m_maskType == CrossTalkMask or m_maskType == CrossTalkMaskv2 ){
-        for(FrontEnd *fe : keeper->feList) {
-            g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
 
-            Rd53b* rd53b = dynamic_cast<Rd53b*>(fe);
-            std::vector<std::pair<unsigned, unsigned>> modPixels;
-            for(unsigned col=0; col<Rd53b::n_Col; col++) {
-                for(unsigned row=0; row<Rd53b::n_Row; row++) {
-                    if (applyMask(col,row)){
-                        std::vector<std::pair<int, int>> neighbours;		 
-                        //switch off central pixel
-                        rd53b->setInjEn(col, row, 0);		
-                        rd53b->setEn(col, row, 0);
-                        rd53b->setHitbus(col, row, 0);
-                        modPixels.push_back(std::make_pair(col, row));
-                        //switch off neighbours
-                        getNeighboursMap(col,row, m_sensorType,m_maskSize, neighbours);
-                        for (auto n: neighbours){ 		  	       
-                            rd53b->setInjEn(n.first, n.second, 0);
-                            rd53b->setEn(n.first, n.second, 0);
-			    rd53b->setHitbus(n.first, n.second, 0);
-                            modPixels.push_back(std::make_pair(n.first, n.second));
-                        }
-                    }
-                }
-            }	
-            rd53b->configurePixels(modPixels);
-            while(!g_tx->isCmdEmpty()) {}	
-        }
+      for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
+        g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+        
+	Rd53b* rd53b = dynamic_cast<Rd53b*>(fe);
+	std::vector<std::pair<unsigned, unsigned>> modPixels;
+	for(unsigned col=0; col<Rd53b::n_Col; col++) {
+	  for(unsigned row=0; row<Rd53b::n_Row; row++) {
+	    if (applyMask(col,row)){
+	      std::vector<std::pair<int, int>> neighbours;		 
+	      //switch off central pixel
+	      rd53b->setInjEn(col, row, 0);		
+	      rd53b->setEn(col, row, 0);
+	      rd53b->setHitbus(col, row, 0);
+	      modPixels.push_back(std::make_pair(col, row));
+	      //switch off neighbours
+	      getNeighboursMap(col,row, m_sensorType,m_maskSize, neighbours);
+	      for (auto n: neighbours){ 		  	       
+		rd53b->setInjEn(n.first, n.second, 0);
+		rd53b->setEn(n.first, n.second, 0);
+		rd53b->setHitbus(n.first, n.second, 0);
+		modPixels.push_back(std::make_pair(n.first, n.second));
+	      }
+	    }
+	  }
+	}	
+	rd53b->configurePixels(modPixels);
+	while(!g_tx->isCmdEmpty()) {}	
+      }
     }
 
     m_cur += step;
