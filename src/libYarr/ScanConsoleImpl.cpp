@@ -268,13 +268,6 @@ int ScanConsoleImpl::configure() {
     // Enable all tx channels
     hwCtrl->setCmdEnable(bookie->getTxMaskUnique());
 
-    // Try adding controller status to the scan log again
-    // Some controllers, such as Felix client, require enabling tx channels
-    // before accessing controller registers
-    if (scanLog["ctrlStatus"].is_null()) {
-        scanLog["ctrlStatus"] = hwCtrl->getStatus();
-    }
-
     // send global/broadcast reset command to all frontends
     if(scanOpts.doResetBeforeScan) {
         bookie->getGlobalFe()->resetAll();

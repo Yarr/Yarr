@@ -82,15 +82,9 @@ bool FelixController::readFelixRegister(
 
   bool success = false;
 
-  std::vector<uint64_t> fids;
-  for (auto const& [fid, enable] : FelixTxCore::m_enables) {
-    if (enable) fids.push_back(fid);
-  }
-
-  if (fids.empty()) {
-    fclog->debug("No tx channels are enabled. Skip reading.");
-    return success;
-  }
+  // A dummy fid made from the correct did and cid, but arbitrary link number
+  // send_cmd will map this to the proper fid for register access
+  std::vector<uint64_t> fids = {FelixTxCore::fid_from_channel(42)};
 
   // felix-register can potentially serve multiple devices
   std::vector<FelixClientThread::Reply> replies;
