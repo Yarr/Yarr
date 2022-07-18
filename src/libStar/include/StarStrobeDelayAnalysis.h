@@ -16,7 +16,6 @@
 class HistogramBase;
 class Histo1d;
 class Histo2d;
-class Histo3d;
 
 class StarStrobeDelayFitter : public AnalysisAlgorithm {
     public:
@@ -51,8 +50,8 @@ class StarStrobeDelayFitter : public AnalysisAlgorithm {
 
         bool m_dumpDebugSDPlots=false;                    //!< Boolean to dump histograms of occupancy vs strobe delay per channel (every 10 channels for first row only).
 
-	unsigned findBinPassingThreshold(const Histo1d *h_in, const float & fraction, const bool & goesAbove, const bool & goesBelow); //!< Function to find first x-axis value for which y-value goes above/below a certain fraction of the maximum
-        std::vector<double> fitScurveForSD(const Histo1d *h_in, const bool & leftEdge, const unsigned & n_par, const unsigned & nBins, const double & plateauCenter, std::vector<double> strobeDelayVec, std::vector<double> occVec); //!< Fit a single s-curve (left ot right edge) on a given range of strobe delay pulse
+	unsigned findBinPassingThreshold(const Histo1d *h_in, float fraction, bool goesAbove, bool goesBelow); //!< Function to find first x-axis value for which y-value goes above/below a certain fraction of the maximum
+        std::vector<double> fitScurveForSD(const Histo1d *h_in, bool leftEdge, unsigned n_par, unsigned nBins, double plateauCenter, const std::vector<double> &strobeDelayVec, const std::vector<double> &occVec); //!< Fit a single s-curve (left ot right edge) on a given range of strobe delay pulse
         void splitStrobeDelayRange(const Histo1d *h_in, double & plateauCenter, std::vector<double> & strobeDelayVecLeft, std::vector<double> & strobeDelayVecRight, std::vector<double> & occVecLeft, std::vector<double> & occVecRight); //!< Split up strobe delay range into left and right parts to do the two s-curve fits
   std::vector<std::vector<double>> fitDoubleScurve(const Histo1d *h_in); //!< Do the double s-curve fit to obtain rising and falling edge.
 	
