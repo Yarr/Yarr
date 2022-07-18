@@ -30,25 +30,27 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq {
         void maskRxEnable(uint32_t val, uint32_t mask) override;
 
         void checkRxSync() override;
-        
+
         std::vector<RawDataPtr> readData() override;
+        std::map<uint32_t, std::vector<uint32_t>> dataMap;
+
         void flushBuffer() override;
-        
+
         uint32_t getDataRate() override;
         bool isBridgeEmpty() override;
-        
+
 
         void printSortStatus();
-    
-    protected:
-        std::chrono::microseconds m_waitTime; 
 
-    private:        
+    protected:
+        std::chrono::microseconds m_waitTime;
+
+    private:
         bool mSetupMode;
-        
+
         std::vector<uint> activeChannels; 
         std::vector<std::queue<uint32_t>> sBuffer;
-                
+
         struct userkDataT {
             uint8_t  AuroraKWord;
             uint8_t  Status;
@@ -66,17 +68,17 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq {
             uint16_t Address;
             uint16_t Data;
         };
-               
+
         void initSortBuffer();
         uint sortChannels(std::vector<uint32_t>& in);
         void buildData(uint32_t* out, uint bIndex, uint oIndex);
         void buildUserk(uint32_t* out, uint bIndex, uint oIndex);
         uint buildStream(uint32_t* out, uint size);
-                
-        BdaqRxCore::userkDataT interpretUserkFrame(uint64_t userkWordA, 
-                                                    uint64_t userkWordB); 
+
+        BdaqRxCore::userkDataT interpretUserkFrame(uint64_t userkWordA,
+                                                    uint64_t userkWordB);
         std::vector<BdaqRxCore::regDataT> getRegData(BdaqRxCore::userkDataT in);
-        void encodeToYarr(BdaqRxCore::regDataT in, uint32_t* out, 
+        void encodeToYarr(BdaqRxCore::regDataT in, uint32_t* out,
                             unsigned int index);
 
         bool checkTDC(const uint32_t& word);

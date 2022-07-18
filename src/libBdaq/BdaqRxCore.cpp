@@ -1,6 +1,7 @@
 #include <thread>
 
 #include "BdaqRxCore.h"
+
 #include "logging.h"
 
 namespace {
@@ -17,6 +18,7 @@ namespace {
 #define TDC_ID_2         0x30000000
 #define TDC_ID_3         0x40000000
 #define TDC_HEADER_MASK  0xF0000000
+
 
 BdaqRxCore::BdaqRxCore() {
     mSetupMode = true;
@@ -83,39 +85,109 @@ void BdaqRxCore::checkRxSync() {
 	}
 }
 
+
 // TODO this does not work, it will compile but does not do the necessary processing of the data
 std::vector<RawDataPtr> BdaqRxCore::readData() {
-    uint size = fifo.getAvailableWords();
-    std::vector<RawDataPtr> dataVec;
-    std::map<uint32_t, std::vector<uint32_t>> dataMap;
-    if (size > 0) {
-        std::vector<uint32_t> inBuf;
-        fifo.readData(inBuf, size);
-        for (const auto& word : inBuf) {
-            if ((word & TLU_MASK) == TLU_ID) {
-                logger->critical("TLU data is not supported.");
-                exit(-1);
-            } 
-            if (checkTDC(word)) {
-                logger->critical("TDC data is not supported.");
-                exit(-1);
-            } 
-            uint channel = 0;
-            for (const auto& channelId : activeChannels) {
-                // Testing Aurora RX Identifier 
-                if (((word >> 20) & 0xF) == channelId) {
-                    dataMap[channelId].push_back(word);
-                }
-                ++channel;
-            }
-        }  
-        // TODO need to decode the data (sortChannels, buildStream)
-        for (const uint32_t channelId : activeChannels) {
-            dataVec.push_back(std::make_shared<RawData>(channelId, dataMap[channelId]));
-        }
-    }
-    return dataVec;
+     uint size = fifo.getAvailableWords();
+     std::vector<RawDataPtr> dataVec;
+     std::map<uint32_t, std::vector<uint32_t>> dataMap_copy;
+     dataMap_copy.clear();
+     std::vector<uint32_t> inBuf;
+     fifo.readData(inBuf, size);
+     if (size > 0) {
+         for (const auto& word : inBuf) {
+             if ((word & TLU_MASK) == TLU_ID) {
+                 logger->critical("TLU data is not supported.");
+                 exit(-1);
+             }
+             if (checkTDC(word)) {
+                 logger->critical("TDC data is not supported.");
+                 exit(-1);
+             }
+             uint channel = 0;
+             for (auto& channelId : activeChannels) {
+                 // Testing Aurora RX Identifier
+                 if (((word >> 20) & 0xF) == channelId) {
+                     dataMap[channelId].push_back(word);
+                 }
+                 ++channel;
+             }
+         }
+
+         uint channel = 0;
+         for (auto& data_map: dataMap) {
+             channel = data_map.first;
+             if (data_map.second.size() != 0){
+                 if ((data_map.second.size() > 3) &&
+                     (data_map.second.at(0) & USERK_FRAME_MASK) == USERK_FRAME_ID) {
+
+                     // Building USERK frame (userkWordA and userkWordB)
+                     uint32_t hi = data_map.second.front() & 0xFFFF;
+                     logger->debug("USERK: 0x{0:X}", data_map.second.front());
+                     data_map.second.erase(data_map.second.begin());
+                     uint32_t lo = data_map.second.front() & 0xFFFF;
+                     logger->debug("USERK: 0x{0:X}", data_map.second.front());
+                     data_map.second.erase(data_map.second.begin());
+                     uint64_t userkWordA = (hi << 16) | lo;
+                     hi = data_map.second.front()  & 0xFFFF;
+                     logger->debug("USERK: 0x{0:X}", data_map.second.front());
+                     data_map.second.erase(data_map.second.begin());
+                     lo = data_map.second.front() & 0xFFFF;
+                     logger->debug("USERK: 0x{0:X}", data_map.second.front());
+                     data_map.second.erase(data_map.second.begin());
+                     uint64_t userkWordB = (hi << 16) | lo;
+
+                     // Interpreting the USERK frame and getting register data
+                     BdaqRxCore::userkDataT userkData =
+                     interpretUserkFrame(userkWordA, userkWordB);
+                     std::vector<regDataT> regData = getRegData(userkData);
+                     for (const auto& reg : regData) {
+                         dataMap_copy[channel].clear();
+                         dataMap_copy[channel].push_back(0x55000000);  //  DO NOT reverse this line with the one below
+                         dataMap_copy[channel].push_back((reg.Address & 0x3FF) << 16 | (reg.Data  & 0xFFFF));
+                         dataMap[channel].clear();
+                     }
+                 }else if(data_map.second.size() > 1){
+                     // build Data
+                     uint32_t dataWord;
+                     uint64_t hi;
+                     uint64_t lo;
+                     dataMap_copy[channel].clear();
+                     while(data_map.second.size() > 1){
+                         hi = data_map.second.front() & 0xFFFF;
+                         data_map.second.erase(data_map.second.begin());
+                         lo = data_map.second.front() & 0xFFFF;
+                         data_map.second.erase(data_map.second.begin());
+                         dataWord = (hi << 16) | lo;
+                         dataMap_copy[channel].push_back(dataWord);
+                     }
+                 }else{
+                     dataMap_copy[channel].clear();
+                     uint32_t null_dataWord = 0xFFFF0000;
+                     dataMap_copy[channel].push_back(null_dataWord);
+                 }
+             }else{
+                 dataMap_copy[channel].clear();
+                 uint32_t null_dataWord = 0xFFFF0000;
+                 dataMap_copy[channel].push_back(null_dataWord);
+             }
+         }
+
+         // TODO need to decode the data (sortChannels, buildStream)
+         for (const uint32_t channelId : activeChannels) {
+             RawDataPtr data;
+             data = std::make_shared <RawData> (channelId, dataMap_copy[channelId]);
+             data->getAdr() = channelId;  // set rx channel number as address for data
+             dataVec.push_back(data);
+             dataMap_copy[channelId].clear();
+         }
+     }else{
+        return std::vector<RawDataPtr>();
+     }
+     return dataVec;
 }
+
+
 
 void BdaqRxCore::flushBuffer() {
     std::stringstream d; 
@@ -276,7 +348,6 @@ BdaqRxCore::userkDataT BdaqRxCore::interpretUserkFrame(uint64_t userkWordA,
     u.Data0_AddrFlag = (Data0 >> 25) & 0x1;
     u.Data0_Addr = (Data0 >> 16) & 0x1FF;
     u.Data0_Data = (Data0 >> 0) & 0xFFFF;
-    
     return u;
 }
 
@@ -316,7 +387,7 @@ void BdaqRxCore::encodeToYarr(BdaqRxCore::regDataT in, uint32_t* out,
                                 unsigned int index) {
     out[index  ] = 0x55000000;
     out[index+1] = (in.Address & 0x3FF) << 16 | 
-                   (in.Data    & 0xFFFF);                               
+                   (in.Data    & 0xFFFF);
 }
 
 // TDC Data Decoding ===========================================================
