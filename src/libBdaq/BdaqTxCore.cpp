@@ -1,4 +1,5 @@
 #include "BdaqTxCore.h"
+#include "Bdaq.h"
 #include "logging.h"
 
 namespace {
@@ -10,44 +11,65 @@ BdaqTxCore::BdaqTxCore() = default;
 BdaqTxCore::~BdaqTxCore() = default;
 
 void BdaqTxCore::writeFifo(uint32_t value) {
-    std::stringstream d; 
+    std::stringstream d;
     d << __PRETTY_FUNCTION__ << " : Writing 0x" << std::hex << value << std::dec;
     logger->debug(d.str());
 
     //Filling the Command Data Vector
-    cmdData.push_back(value >> 24 & 0xFF);
-    cmdData.push_back(value >> 16 & 0xFF);
-    cmdData.push_back(value >>  8 & 0xFF);
-    cmdData.push_back(value       & 0xFF);
+
+        if(cmdData.size() < 4080){
+            cmdData.push_back(value >> 24 & 0xFF);
+            cmdData.push_back(value >> 16 & 0xFF);
+            cmdData.push_back(value >>  8 & 0xFF);
+            cmdData.push_back(value       & 0xFF);
+        }else if(cmdData1.size() < 4080){
+            cmdData1.push_back(value >> 24 & 0xFF);
+            cmdData1.push_back(value >> 16 & 0xFF);
+            cmdData1.push_back(value >>  8 & 0xFF);
+            cmdData1.push_back(value       & 0xFF);
+        }else if(cmdData2.size() < 4080){
+            cmdData2.push_back(value >> 24 & 0xFF);
+            cmdData2.push_back(value >> 16 & 0xFF);
+            cmdData2.push_back(value >>  8 & 0xFF);
+            cmdData2.push_back(value       & 0xFF);
+        }
 
     // Checking for cmd_rd53 buffer (FPGA) overflow.
     // Should never happen if isCmdEmpty() is correctly called.
     // Commands are written thru RBCP (UDP) which has a maximum payload of
     // 255 bytes per packet. Thus, 4080 is the maxiumum integer multiple of 255
     // and 4 (we get 32-bit words) being less than 4096 (max buffer size).
+
     if (cmdData.size() > 4080) {
-        std::stringstream error; 
-        error << __PRETTY_FUNCTION__ << ": cmd_rd53 buffer > 4080 bytes!"; 
+        std::stringstream error;
+        error << __PRETTY_FUNCTION__ << ": cmd_rd53 buffer > 4080 bytes!";
         logger->critical(error.str());
         exit(-1);
     }
 }
 
 void BdaqTxCore::sendCommand() {
-    if (cmdData.size() == 0) return;  
-    /*uint fillTotal = (4080 - cmdData.size()) / 2;  
-    for (uint i=0;i<fillTotal;++i) {
-        cmdData.push_back(0x81);
-        cmdData.push_back(0x7E);
-    }*/
-    //logger->info("Command Size = {}", cmdData.size());
+    if ((cmdData.size() == 0) && (cmdData1.size() == 0) && (cmdData2.size() == 0)) return;
+
     cmd.setData(cmdData);
     cmd.setSize(cmdData.size());
+    if(cmdData1.size() > 0){
+        cmd.setData(cmdData1);
+        cmd.setSize(cmdData1.size());
+    }
+    if(cmdData2.size() > 0){
+        cmd.setData(cmdData2);
+        cmd.setSize(cmdData2.size());
+    }
     cmd.setRepetitions(1);
     cmd.start();
     while(!cmd.isDone()); //wait for completion. 
-    cmdData.clear();
+      cmdData.clear();
+      cmdData1.clear();
+      cmdData2.clear();
+
 }
+
 
 // value: 1, 2, 4, 8
 void BdaqTxCore::setCmdEnable(uint32_t value) {
@@ -71,7 +93,7 @@ void BdaqTxCore::setCmdEnable(std::vector<uint32_t> channels) {
     d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << mask << std::dec;
     logger->debug(d.str());
 
-    // There is one Command Encoder connected to all DP    
+    // There is one Command Encoder connected to all DP
     cmd.setOutputEn(true);
 
     enMask = mask;

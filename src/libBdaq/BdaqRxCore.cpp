@@ -94,95 +94,190 @@ std::vector<RawDataPtr> BdaqRxCore::readData() {
      dataMap_copy.clear();
      std::vector<uint32_t> inBuf;
      fifo.readData(inBuf, size);
-     if (size > 0) {
-         for (const auto& word : inBuf) {
-             if ((word & TLU_MASK) == TLU_ID) {
-                 logger->critical("TLU data is not supported.");
-                 exit(-1);
-             }
-             if (checkTDC(word)) {
-                 logger->critical("TDC data is not supported.");
-                 exit(-1);
-             }
-             uint channel = 0;
-             for (auto& channelId : activeChannels) {
-                 // Testing Aurora RX Identifier
-                 if (((word >> 20) & 0xF) == channelId) {
-                     dataMap[channelId].push_back(word);
+
+     if (chipType == 0){ // it is RD53A
+         if (size > 0) {
+             for (const auto& word : inBuf) {
+                 if ((word & TLU_MASK) == TLU_ID) {
+                     logger->critical("TLU data is not supported.");
+                     exit(-1);
                  }
-                 ++channel;
-             }
-         }
-
-         uint channel = 0;
-         for (auto& data_map: dataMap) {
-             channel = data_map.first;
-             if (data_map.second.size() != 0){
-                 if ((data_map.second.size() > 3) &&
-                     (data_map.second.at(0) & USERK_FRAME_MASK) == USERK_FRAME_ID) {
-
-                     // Building USERK frame (userkWordA and userkWordB)
-                     uint32_t hi = data_map.second.front() & 0xFFFF;
-                     logger->debug("USERK: 0x{0:X}", data_map.second.front());
-                     data_map.second.erase(data_map.second.begin());
-                     uint32_t lo = data_map.second.front() & 0xFFFF;
-                     logger->debug("USERK: 0x{0:X}", data_map.second.front());
-                     data_map.second.erase(data_map.second.begin());
-                     uint64_t userkWordA = (hi << 16) | lo;
-                     hi = data_map.second.front()  & 0xFFFF;
-                     logger->debug("USERK: 0x{0:X}", data_map.second.front());
-                     data_map.second.erase(data_map.second.begin());
-                     lo = data_map.second.front() & 0xFFFF;
-                     logger->debug("USERK: 0x{0:X}", data_map.second.front());
-                     data_map.second.erase(data_map.second.begin());
-                     uint64_t userkWordB = (hi << 16) | lo;
-
-                     // Interpreting the USERK frame and getting register data
-                     BdaqRxCore::userkDataT userkData =
-                     interpretUserkFrame(userkWordA, userkWordB);
-                     std::vector<regDataT> regData = getRegData(userkData);
-                     for (const auto& reg : regData) {
-                         dataMap_copy[channel].clear();
-                         dataMap_copy[channel].push_back(0x55000000);  //  DO NOT reverse this line with the one below
-                         dataMap_copy[channel].push_back((reg.Address & 0x3FF) << 16 | (reg.Data  & 0xFFFF));
-                         dataMap[channel].clear();
+                 if (checkTDC(word)) {
+                     logger->critical("TDC data is not supported.");
+                     exit(-1);
+                 }
+                 uint channel = 0;
+                 for (auto& channelId : activeChannels) {
+                     // Testing Aurora RX Identifier
+                     if (((word >> 20) & 0xF) == channelId) {
+                         dataMap[channelId].push_back(word);
                      }
-                 }else if(data_map.second.size() > 1){
-                     // build Data
-                     uint32_t dataWord;
-                     uint64_t hi;
-                     uint64_t lo;
-                     dataMap_copy[channel].clear();
-                     while(data_map.second.size() > 1){
-                         hi = data_map.second.front() & 0xFFFF;
+                     ++channel;
+                 }
+             }
+
+             uint channel = 0;
+             for (auto& data_map: dataMap) {
+                 channel = data_map.first;
+                 if (data_map.second.size() != 0){
+                     if ((data_map.second.size() > 3) &&
+                         (data_map.second.at(0) & USERK_FRAME_MASK) == USERK_FRAME_ID) {
+
+                         // Building USERK frame (userkWordA and userkWordB)
+                         uint32_t hi = data_map.second.front() & 0xFFFF;
+                         logger->debug("USERK: 0x{0:X}", data_map.second.front());
+                         data_map.second.erase(data_map.second.begin());
+                         uint32_t lo = data_map.second.front() & 0xFFFF;
+                         logger->debug("USERK: 0x{0:X}", data_map.second.front());
+                         data_map.second.erase(data_map.second.begin());
+                         uint64_t userkWordA = (hi << 16) | lo;
+                         hi = data_map.second.front()  & 0xFFFF;
+                         logger->debug("USERK: 0x{0:X}", data_map.second.front());
                          data_map.second.erase(data_map.second.begin());
                          lo = data_map.second.front() & 0xFFFF;
+                         logger->debug("USERK: 0x{0:X}", data_map.second.front());
                          data_map.second.erase(data_map.second.begin());
-                         dataWord = (hi << 16) | lo;
-                         dataMap_copy[channel].push_back(dataWord);
+                         uint64_t userkWordB = (hi << 16) | lo;
+
+                         // Interpreting the USERK frame and getting register data
+                         BdaqRxCore::userkDataT_RD53A userkData_RD53A =
+                         interpretUserkFrame_RD53A(userkWordA, userkWordB);
+                         std::vector<regDataT> regData = getRegData_RD53A(userkData_RD53A);
+                         for (const auto& reg : regData) {
+                             dataMap_copy[channel].clear();
+                             dataMap_copy[channel].push_back(0x55000000);
+                             dataMap_copy[channel].push_back((reg.Address & 0x3FF) << 16 | (reg.Data  & 0xFFFF));
+                             dataMap[channel].clear();
+                         }
+                     }else if(data_map.second.size() > 1){
+                         // build Data
+                         uint32_t dataWord;
+                         uint64_t hi;
+                         uint64_t lo;
+                         dataMap_copy[channel].clear();
+                         while(data_map.second.size() > 1){
+                             hi = data_map.second.front() & 0xFFFF;
+                             data_map.second.erase(data_map.second.begin());
+                             lo = data_map.second.front() & 0xFFFF;
+                             data_map.second.erase(data_map.second.begin());
+                             dataWord = (hi << 16) | lo;
+                             dataMap_copy[channel].push_back(dataWord);
+                         }
+                     }else{
+                         dataMap_copy[channel].clear();
+                         uint32_t null_dataWord = 0xFFFF0000;
+                         dataMap_copy[channel].push_back(null_dataWord);
                      }
                  }else{
                      dataMap_copy[channel].clear();
                      uint32_t null_dataWord = 0xFFFF0000;
                      dataMap_copy[channel].push_back(null_dataWord);
                  }
-             }else{
-                 dataMap_copy[channel].clear();
-                 uint32_t null_dataWord = 0xFFFF0000;
-                 dataMap_copy[channel].push_back(null_dataWord);
              }
+
+             // TODO need to decode the data (sortChannels, buildStream)
+             for (const uint32_t channelId : activeChannels) {
+                 RawDataPtr data;
+                 data = std::make_shared <RawData> (channelId, dataMap_copy[channelId]);
+                 data->getAdr() = channelId;  // set rx channel number as address for data
+                 dataVec.push_back(data);
+                 dataMap_copy[channelId].clear();
+             }
+         }else{
+             return std::vector<RawDataPtr>();
          }
 
-         // TODO need to decode the data (sortChannels, buildStream)
-         for (const uint32_t channelId : activeChannels) {
-             RawDataPtr data;
-             data = std::make_shared <RawData> (channelId, dataMap_copy[channelId]);
-             data->getAdr() = channelId;  // set rx channel number as address for data
-             dataVec.push_back(data);
-             dataMap_copy[channelId].clear();
+
+     }else if (chipType == 1){ // it is ItkPixV1 (RD53B)
+         if (size > 0) {
+             for (const auto& word : inBuf) {
+                 if ((word & TLU_MASK) == TLU_ID) {
+                     logger->critical("TLU data is not supported.");
+                     exit(-1);
+                 }
+                 if (checkTDC(word)) {
+                     logger->critical("TDC data is not supported.");
+                     exit(-1);
+                 }
+                 for (auto& channelId : activeChannels) {
+                     if (((word >> 20) & 0x0F) == channelId) {  // to be checked in build data case
+                         // Testing Aurora RX Identifier
+                         dataMap[channelId].push_back(word);
+                     }
+                 }
+             }
+
+             uint channel = 0;
+             for (auto& data_map: dataMap) {
+                 channel = data_map.first;
+                 if (data_map.second.size() != 0){
+                     if ((data_map.second.size() > 3) &&
+                         (data_map.second.front() & USERK_FRAME_MASK) == USERK_FRAME_ID) {
+                         uint userk_word_cnt = 0 ;
+                         uint64_t userkWordA, userkWordB, userk_word;
+                         while(data_map.second.size() > 0){
+                             // Building USERK frame (userkWordA and userkWordB)
+                             if(userk_word_cnt == 0){
+                                 userk_word = data_map.second.front() & 0x0FFF;
+                                 userkWordA = userk_word;
+                                 data_map.second.erase(data_map.second.begin());
+                             }else{
+                                 userk_word = userk_word << 16 | data_map.second.front() & 0xFFFF;
+                                 data_map.second.erase(data_map.second.begin());
+                             }
+                             userk_word_cnt++;
+                             if(userk_word_cnt == 4){
+                                 userkWordB = userk_word;
+                                 BdaqRxCore::userkDataT_RD53B userkData_RD53B =
+                                 interpretUserkFrame_RD53B(userkWordA, userkWordB);
+                                 std::vector<regDataT> regData = getRegData_RD53B(userkData_RD53B);
+                                 for (const auto& reg : regData) {
+                                     dataMap_copy[channel].clear();
+                                     dataMap_copy[channel].push_back(0x55000000);
+                                     dataMap_copy[channel].push_back((reg.Address & 0x3FF) << 16 | (reg.Data  & 0xFFFF));
+                                     dataMap[channel].clear();
+                                 }
+                                 userk_word_cnt = 0;
+                             }
+                         }
+                     }else if(data_map.second.size() > 1){
+                         // build Data
+                         uint32_t dataWord;
+                         uint64_t hi;
+                         uint64_t lo;
+                         dataMap_copy[channel].clear();
+                         while(data_map.second.size() > 1){
+                             hi = data_map.second.front() & 0xFFFF;
+                             data_map.second.erase(data_map.second.begin());
+                             lo = data_map.second.front() & 0xFFFF;
+                             data_map.second.erase(data_map.second.begin());
+                             dataWord = (hi << 16) | lo;
+                             dataMap_copy[channel].push_back(dataWord);
+                         }
+                     }else{
+                         dataMap_copy[channel].clear();
+                         uint32_t null_dataWord = 0xFFFF0000;
+                         dataMap_copy[channel].push_back(null_dataWord);
+                     }
+                 }else{
+                     dataMap_copy[channel].clear();
+                     uint32_t null_dataWord = 0xFFFF0000;
+                     dataMap_copy[channel].push_back(null_dataWord);
+                 }
+             }
+
+             // TODO need to decode the data (sortChannels, buildStream)
+             for (const uint32_t channelId : activeChannels) {
+                 RawDataPtr data;
+                 data = std::make_shared <RawData> (channelId, dataMap_copy[channelId]);
+                 data->getAdr() = channelId;  // set rx channel number as address for data
+                 dataVec.push_back(data);
+                 dataMap_copy[channelId].clear();
+             }
+
+         }else{
+             return std::vector<RawDataPtr>();
          }
-     }else{
-        return std::vector<RawDataPtr>();
      }
      return dataVec;
 }
@@ -216,15 +311,6 @@ bool BdaqRxCore::isBridgeEmpty() {
 // =============================================================================
 // BDAQ Decoding
 // =============================================================================
-
-void BdaqRxCore::printSortStatus() {
-    uint nChannel = 0;
-    for (const auto& c : activeChannels) {    
-        logger->info("RX ID = {}, Buffer Index = {}, Size = {}", c, nChannel, sBuffer.at(nChannel).size());
-        ++nChannel;
-    }
-}
-
 void BdaqRxCore::initSortBuffer() {
     sBuffer.clear();
     for (uint c : activeChannels) {
@@ -232,104 +318,13 @@ void BdaqRxCore::initSortBuffer() {
     }
 }
 
-uint BdaqRxCore::sortChannels(std::vector<uint32_t>& in) {
-    // Sorting
-    for (const auto& word : in) {
-        if ((word & TLU_MASK) == TLU_ID) {
-            logger->critical("TLU data is not supported.");
-            exit(-1);
-        } 
-        if (checkTDC(word)) {
-            logger->critical("TDC data is not supported.");
-            exit(-1);
-        } 
-        uint bIndex = 0;
-        for (const auto& channelId : activeChannels) {
-            // Testing Aurora RX Identifier 
-            if (((word >> 20) & 0xF) == channelId) {
-                sBuffer.at(bIndex).push(word);
-            }
-            ++bIndex;
-        }
-    }
-    // Calculating total size
-    uint acc = 0;
-    uint bIndex = 0;
-    for (const auto& channelId : activeChannels) {
-        acc += sBuffer.at(bIndex).size();
-        ++bIndex;
-    }
-    return acc; // Total size
-}
-
-void BdaqRxCore::buildData(uint32_t* out, uint bIndex, uint oIndex) {
-    uint32_t hi = sBuffer.at(bIndex).front() & 0xFFFF;
-    sBuffer.at(bIndex).pop();
-    uint32_t lo = sBuffer.at(bIndex).front() & 0xFFFF;
-    sBuffer.at(bIndex).pop();
-    out[oIndex] = (hi << 16) | lo;
-}
-
-void BdaqRxCore::buildUserk(uint32_t* out, uint bIndex, uint oIndex) {
-    // Building USERK frame (userkWordA and userkWordB)
-    uint32_t hi = sBuffer.at(bIndex).front() & 0xFFFF;
-    logger->debug("USERK: 0x{0:X}", sBuffer.at(bIndex).front());
-    sBuffer.at(bIndex).pop();
-    uint32_t lo = sBuffer.at(bIndex).front() & 0xFFFF;
-    logger->debug("USERK: 0x{0:X}", sBuffer.at(bIndex).front());
-    sBuffer.at(bIndex).pop();
-    uint64_t userkWordA = (hi << 16) | lo;
-    hi = sBuffer.at(bIndex).front() & 0xFFFF;
-    logger->debug("USERK: 0x{0:X}", sBuffer.at(bIndex).front());
-    sBuffer.at(bIndex).pop();
-    lo = sBuffer.at(bIndex).front() & 0xFFFF;
-    logger->debug("USERK: 0x{0:X}", sBuffer.at(bIndex).front());
-    sBuffer.at(bIndex).pop();
-    uint64_t userkWordB = (hi << 16) | lo;
-
-    // Interpreting the USERK frame ang getting register data
-    BdaqRxCore::userkDataT userkData = 
-        interpretUserkFrame(userkWordA, userkWordB);
-    std::vector<regDataT> regData = getRegData(userkData);
-    // Encoding to YARR format
-    for (const auto& reg : regData) {
-        encodeToYarr(reg, out, oIndex); //inserts 2 words in the out stream.
-        oIndex+=2;
-    }
-}
-
-uint BdaqRxCore::buildStream(uint32_t* out, uint size) {
-    uint procSize = 0;
-    uint oIndex = 0;
-    uint counter = 0;
-    while (procSize < size) {
-        uint bIndex = (counter/2)%activeChannels.size(); 
-        counter++;
-        if ((sBuffer.at(bIndex).size() > 3) && 
-        (sBuffer.at(bIndex).front() & USERK_FRAME_MASK) == USERK_FRAME_ID) {
-            buildUserk(out, bIndex, oIndex);
-            procSize += 4;
-            oIndex += 2;
-        } else if (sBuffer.at(bIndex).size() > 1) {
-            buildData(out, bIndex, oIndex);
-            procSize += 2;
-            oIndex += 1;
-        } else {
-            out[oIndex] = 0xFFFF0000;
-            procSize += sBuffer.at(bIndex).size();
-            oIndex += 1;
-        }
-    }
-    return oIndex; // Output stream size
-}
-
 // USERK Decoding ==============================================================
 
-// Extracts the data from an USERK frame (userkWordA + userkWordB).
-BdaqRxCore::userkDataT BdaqRxCore::interpretUserkFrame(uint64_t userkWordA, 
-                                                        uint64_t userkWordB) {  
+// Extracts the data from an USERK frame (userkWordA + userkWordB) for RD53A.
+BdaqRxCore::userkDataT_RD53A BdaqRxCore::interpretUserkFrame_RD53A(uint64_t userkWordA,
+                                                        uint64_t userkWordB) {
     uint64_t userkBlock, Data0, Data1;
-    userkDataT u;
+    userkDataT_RD53A u;
 
     logger->debug("userkWordA = {}", userkWordA);
     logger->debug("userkWordB = {}", userkWordB);
@@ -351,8 +346,34 @@ BdaqRxCore::userkDataT BdaqRxCore::interpretUserkFrame(uint64_t userkWordA,
     return u;
 }
 
-// Get register data from AuroraKWord.
-std::vector<BdaqRxCore::regDataT> BdaqRxCore::getRegData(BdaqRxCore::userkDataT in) {
+// Extracts the data from an USERK frame (userkWordA + userkWordB) for RD53B.
+BdaqRxCore::userkDataT_RD53B BdaqRxCore::interpretUserkFrame_RD53B(uint64_t userkWordA,
+                                                        uint64_t userkWordB) {
+    uint64_t Data0, Data1;
+    userkDataT_RD53B u;
+
+    logger->debug("userkWordA = {}", userkWordA);
+    logger->debug("userkWordB = {}", userkWordB);
+
+    Data1 = (userkWordB >> 34) & 0x7FFFFFF;
+    Data0 = (userkWordB >> 8) & 0x7FFFFFF;
+    u.Status = (userkWordA >> 12) & 0x3;
+    u.ChipID = (userkWordA >> 14) & 0x3;
+    u.AuroraKWord = userkWordB & 0xFF;
+    u.Data1 = Data1;
+    u.Data1_AddrFlag = (Data1 >> 25) & 0x1;
+    u.Data1_Addr = (Data1 >> 16) & 0x1FF;
+    u.Data1_Data = (Data1 >> 0) & 0xFFFF;
+    u.Data0 = Data0;
+    u.Data0_AddrFlag = (Data0 >> 25) & 0x1;
+    u.Data0_Addr = (Data0 >> 16) & 0x1FF;
+    u.Data0_Data = (Data0 >> 0) & 0xFFFF;
+
+    return u;
+}
+
+// Get register data from AuroraKWord for RD53A.
+std::vector<BdaqRxCore::regDataT> BdaqRxCore::getRegData_RD53A(BdaqRxCore::userkDataT_RD53A in) {
     BdaqRxCore::regDataT o;
     std::vector<BdaqRxCore::regDataT> regData;
 
@@ -382,18 +403,50 @@ std::vector<BdaqRxCore::regDataT> BdaqRxCore::getRegData(BdaqRxCore::userkDataT 
     return regData;
 }
 
+// Get register data from AuroraKWord for RD53B.
+std::vector<BdaqRxCore::regDataT> BdaqRxCore::getRegData_RD53B(BdaqRxCore::userkDataT_RD53B in) {
+    BdaqRxCore::regDataT o;
+    std::vector<BdaqRxCore::regDataT> regData;
+
+    logger->debug("AuroraKWord = {}", in.AuroraKWord);
+
+    // There is data in both Data0 and Data1 (data from 2 different registers?)
+    if (in.AuroraKWord == 0) {
+        o.Address = in.Data1_Addr;
+        o.Data = in.Data1;
+        regData.push_back(o);
+        o.Address = in.Data0_Addr;
+        o.Data = in.Data0;
+        regData.push_back(o);
+    }
+    // Register data in Data1
+    if (in.AuroraKWord == 1) {
+        o.Address = in.Data1_Addr;
+        o.Data = in.Data1;
+        regData.push_back(o);
+    }
+    // Register data in Data0
+    if (in.AuroraKWord == 2) {
+        o.Address = in.Data0_Addr;
+        o.Data = in.Data0;
+        regData.push_back(o);
+    }
+
+    return regData;
+}
+
 // Emulating the data format, expected by YARR, for a register read
-void BdaqRxCore::encodeToYarr(BdaqRxCore::regDataT in, uint32_t* out, 
+void BdaqRxCore::encodeToYarr(BdaqRxCore::regDataT in, uint32_t* out,
                                 unsigned int index) {
     out[index  ] = 0x55000000;
-    out[index+1] = (in.Address & 0x3FF) << 16 | 
+    out[index+1] = (in.Address & 0x3FF) << 16 |
                    (in.Data    & 0xFFFF);
 }
 
 // TDC Data Decoding ===========================================================
 
 bool BdaqRxCore::checkTDC(const uint32_t& word) {
-    if (((word & TDC_HEADER_MASK) == TDC_ID_0) || 
+    if (((word & TDC_HEADER_MASK) == TDC_ID_0) ||
         ((word & TDC_HEADER_MASK) == TDC_ID_1) ||
         ((word & TDC_HEADER_MASK) == TDC_ID_2) ||
         ((word & TDC_HEADER_MASK) == TDC_ID_3)) return true;

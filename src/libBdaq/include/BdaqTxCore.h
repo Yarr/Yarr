@@ -48,6 +48,8 @@ class BdaqTxCore : virtual public TxCore, virtual public Bdaq {
     private:
         // Registers Configuration
         std::vector<uint8_t> cmdData;
+        std::vector<uint8_t> cmdData1;
+        std::vector<uint8_t> cmdData2;
         void sendCommand();
 
         // Common Command Repeater (Trigger)
