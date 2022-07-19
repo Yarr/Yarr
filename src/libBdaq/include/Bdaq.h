@@ -35,7 +35,8 @@ struct daqVersion {
 
 class Bdaq {
 	public:
-        const std::string VERSION = "1.2"; // Must match FW version.
+//        const std::string VERSION = "1.2"; // Must match FW version.
+        const std::string VERSION = "1.8"; // Must match FW version.
 
         BdaqRBCP rbcp;
         Bdaq_i2c i2c;
@@ -45,7 +46,7 @@ class Bdaq {
         BdaqTCP tcp;
         BdaqSiTcpFifo fifo;
         BdaqGPIO bdaqControl;
-        
+
         std::map<int, std::string> hwMap = {
             {0, "SIMULATION"},
             {1, "BDAQ53"},
@@ -61,14 +62,14 @@ class Bdaq {
             {3, "Displayport"},
             {4, "Cocotb"}
         };
-        
+
         std::map<int, std::string> boardOptionsMap = {
             {0x01, "640Mbps"}
         };
-        
+
         Bdaq();
 		~Bdaq() = default;
-        
+
         void initialize(bdaqConfig c);
 		daqVersion getDaqVersion();
         bool waitForPllLock(uint timeout=1000);
@@ -78,7 +79,8 @@ class Bdaq {
         void enableAutoSync();
         void disableAutoSync();
         void setMonitorFilter(BdaqAuroraRx::userkFilterMode mode);
-                
+        int  chipType;
+
 	private:
         daqVersion dv;
 };

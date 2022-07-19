@@ -51,7 +51,21 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq {
         std::vector<uint> activeChannels; 
         std::vector<std::queue<uint32_t>> sBuffer;
 
-        struct userkDataT {
+        struct userkDataT_RD53A {
+            uint8_t  AuroraKWord;
+            uint8_t  Status;
+            uint16_t Data1;
+            uint16_t Data1_AddrFlag;
+            uint16_t Data1_Addr;
+            uint16_t Data1_Data;
+            uint16_t Data0;
+            uint16_t Data0_AddrFlag;
+            uint16_t Data0_Addr;
+            uint16_t Data0_Data;
+        };
+
+        struct userkDataT_RD53B {
+            uint8_t  ChipID;
             uint8_t  AuroraKWord;
             uint8_t  Status;
             uint16_t Data1;
@@ -70,14 +84,15 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq {
         };
 
         void initSortBuffer();
-        uint sortChannels(std::vector<uint32_t>& in);
-        void buildData(uint32_t* out, uint bIndex, uint oIndex);
-        void buildUserk(uint32_t* out, uint bIndex, uint oIndex);
-        uint buildStream(uint32_t* out, uint size);
 
-        BdaqRxCore::userkDataT interpretUserkFrame(uint64_t userkWordA,
+        BdaqRxCore::userkDataT_RD53A interpretUserkFrame_RD53A(uint64_t userkWordA,
                                                     uint64_t userkWordB);
-        std::vector<BdaqRxCore::regDataT> getRegData(BdaqRxCore::userkDataT in);
+        std::vector<BdaqRxCore::regDataT> getRegData_RD53A(BdaqRxCore::userkDataT_RD53A in);
+
+        BdaqRxCore::userkDataT_RD53B interpretUserkFrame_RD53B(uint64_t userkWordA,
+                                                    uint64_t userkWordB);
+        std::vector<BdaqRxCore::regDataT> getRegData_RD53B(BdaqRxCore::userkDataT_RD53B in);
+
         void encodeToYarr(BdaqRxCore::regDataT in, uint32_t* out,
                             unsigned int index);
 

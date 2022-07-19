@@ -133,6 +133,33 @@ To match the BDAQ hardware/firmware configuration, the RD53A Clock and Data Reco
 "CdrSelSerClk": 0
 ```
 
+# RD53B registers configuration
+
+To set the correct configuration registers please see the configuration in RD53B.md(Active Lanes).
+So in case one RD53B SCC is used set the following registers:
+ ```
+"AuroraActiveLanes": 1,
+"DataMergeOutMux0": 3,
+"DataMergeOutMux1": 2,
+"DataMergeOutMux2": 1,
+"DataMergeOutMux3": 0,
+"SerEnLane": 8,
+```
+
+In addition the following registers have to be set:
+
+```
+"AutoRead0": 511,
+"AutoRead1": 511,
+"AutoRead2": 511,
+"AutoRead3": 511,
+"AutoRead4": 511,
+"AutoRead5": 511,
+"AutoRead6": 511,
+"AutoRead7": 511,
+```
+
+
 # Trigger Frequency
 
 When running with a single chip, the default trigger frequencies, set in the scan configuration files, should work out-of-the-box. However, when reading out **more than 1 chip**, at the same time, the **trigger frequency should be reduced**.
