@@ -117,10 +117,6 @@ int ScanConsoleImpl::loadConfig() {
         ScanHelper::createSymlink(dataDir,strippedScan,runCounter);
     }
 
-    if (scanOpts.cConfigPaths.empty()) {
-        logger->error("Error: no config files given, please specify config file name under -c option, even if file does not exist!");
-        return -1;
-    }
     if(scanOpts.scan_config_provided) {
         logger->info("Scan Type/Config {}", scanOpts.scanType);
     } else {
