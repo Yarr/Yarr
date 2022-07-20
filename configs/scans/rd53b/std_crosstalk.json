@@ -48,9 +48,9 @@
         "config": {
           "max": 1536,
           "min": 0,
-          "step": 192,
+          "step": 1,
 	  "maskType" : 1,
-	  "maskSize" : 0,
+	  "maskSize" : 1,
 	  "sensorType" : 0
         },
         "loopAction": "Rd53bMaskLoop"
@@ -60,7 +60,7 @@
           "max": 50,
           "min": 0,
           "step": 1,
-          "nSteps": 5
+          "nSteps": 1
         },
         "loopAction": "Rd53bCoreColLoop"
       },
@@ -72,8 +72,7 @@
           "frequency": 5000,
           "noInject": false,
           "time": 0,
-	  "edgeMode" : true,
-	  "edgeDuration" : 20
+	  "edgeMode" : false
         },
         "loopAction": "Rd53bTriggerLoop"
       },

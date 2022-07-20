@@ -87,7 +87,7 @@
     ],
     "name": "DiscBumpScan",
     "prescan": {
-        "InjVcalMed": 800,
+        "InjVcalMed": 100,
         "InjVcalHigh": 4000,
         "InjDigEn": 0,
         "Latency": 60
