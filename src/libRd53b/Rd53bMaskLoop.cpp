@@ -270,6 +270,10 @@ void Rd53bMaskLoop::end() {
 }
 
 bool Rd53bMaskLoop::applyMask(unsigned col, unsigned row) {
+  
+  //Do not run over edges pixels, if not explicity requested  
+  if (ignorePixel(col, row)) return false;
+  
     // This is the mask pattern
     unsigned core_row = row/8;
     unsigned serial;
@@ -367,10 +371,10 @@ bool Rd53bMaskLoop::ignorePixel(int col, int row){
 
     //check if all pixels are requested:
     if (m_includedPixels == includeEdges) return false;
-
+    
     //if not, remove the edges == TO BE CHECKED
     if (m_sensorType==SquareSensor){
-        if ((col==0 or col==Rd53b::n_Col-1) or (row==0 or row==Rd53b::n_Row-1)) return true;
+      if ((col==0 or col==Rd53b::n_Col-1) or (row==0 or row==Rd53b::n_Row-1)) return true;    
     }
     if (m_sensorType!=SquareSensor){
         if (col==0 or col==1 or col==Rd53b::n_Col-1 or col==Rd53b::n_Col-2) return true;
