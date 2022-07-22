@@ -82,11 +82,11 @@
     "name": "DigitalScan",
     "prescan": {
         "InjDigEn": 1,
-        "Latency": 60,
+        "Latency": 57,
         "SelfTrigEn": 1,
         "SelfTrigDigThrEn": 1,
         "SelfTrigDigThr": 1,
-        "SelfTrigMulti": 16,
+        "SelfTrigMulti": 4,
         "SelfTrigDelay": 45
     }
   }
