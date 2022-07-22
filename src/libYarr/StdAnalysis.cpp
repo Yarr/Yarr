@@ -167,7 +167,7 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
         for(unsigned col=1; col<=nCol; col++) {
             for (unsigned row=1; row<=nRow; row++) {
                 unsigned i = occMaps[ident]->binNum(col, row);
-                if (occMaps[ident]->getBin(i) == injections) {
+                if (occMaps[ident]->getBin(i) == injections || (selfTrig && (occMaps[ident]->getBin(i) > injections-10) && (occMaps[ident]->getBin(i) < 2*injections+10))) {
                     mask->setBin(i, 1);
                 } else {
                     failed_cnt++;
@@ -191,6 +191,9 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
 void OccupancyAnalysis::loadConfig(const json &j){
     if (j.contains("createMask")){
         createMask=j["createMask"];
+    }
+    if (j.contains("selfTrig")){
+      selfTrig=j["selfTrig"];
     }
 }
 

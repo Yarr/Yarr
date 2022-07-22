@@ -19,7 +19,7 @@
 
 class OccupancyAnalysis : public AnalysisAlgorithm {
     public:
-        OccupancyAnalysis() : AnalysisAlgorithm() {createMask = true;}
+         OccupancyAnalysis() : AnalysisAlgorithm() {createMask = true; selfTrig = false;}
         ~OccupancyAnalysis() override = default;
 
         void init(ScanBase *s) override;
@@ -29,7 +29,7 @@ class OccupancyAnalysis : public AnalysisAlgorithm {
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
-        bool createMask;
+        bool createMask, selfTrig;
         unsigned n_count;
         unsigned injections;
         std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
