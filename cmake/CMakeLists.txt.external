@@ -92,6 +92,26 @@ function(YARR_ADD_FELIX)
     include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/felixbase4)
 endfunction()
 
+function(YARR_ADD_FELIX_CLIENT)
+    # FELIX Client Thread
+    ExternalProject_Add (
+        felix_client_thread
+        GIT_REPOSITORY https://gitlab.cern.ch/atlas-tdaq-felix/felix-client-thread.git
+        GIT_TAG 4.2.x
+        UPDATE_COMMAND ""
+        PATCH_COMMAND ""
+        INSTALL_COMMAND ""
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND cd ${CMAKE_CURRENT_BINARY_DIR}/external/src/felix_client_thread && ./build-standalone.sh
+        PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
+        )
+
+    link_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/felix_client_thread)
+    include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/felix_client_thread)
+    include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/felix_client_thread/felix-interface)
+
+endfunction()
+
 function(YARR_ADD_ROGUE)
     if (TARGET rogue)
         return()

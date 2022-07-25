@@ -263,8 +263,11 @@ int ScanConsoleImpl::configure() {
     // Before configuring each FE, broadcast reset to all tx channels
     // Enable all tx channels
     hwCtrl->setCmdEnable(bookie->getTxMaskUnique());
-    // Use global FE
-    bookie->getGlobalFe()->resetAll();
+
+    // send global/broadcast reset command to all frontends
+    if(scanOpts.doResetBeforeScan) {
+        bookie->getGlobalFe()->resetAll();
+    }
 
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
         FrontEnd *fe = bookie->getEntry(id).fe;
