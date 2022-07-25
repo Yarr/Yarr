@@ -10,6 +10,7 @@ add_library(Rd53b SHARED
         Rd53bGlobalFeedback.cpp
         Rd53bHistogrammer.cpp
         Rd53bMaskLoop.cpp
+        Rd53bParMaskLoop.cpp
         Rd53bParameterLoop.cpp
         Rd53bPixelCfg.cpp
         Rd53bPixelFeedback.cpp

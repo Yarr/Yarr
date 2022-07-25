@@ -229,6 +229,26 @@ void Rd53b::configurePixels() {
     }
 }
 
+void Rd53b::configurePixelMaskParallel() {
+    logger->debug("Configure all pixel mask regs in parallel ...");
+    // Setup pixel programming
+    this->writeRegister(&Rd53b::PixAutoRow, 1);
+    this->writeRegister(&Rd53b::PixConfMode, 0);
+    this->writeRegister(&Rd53b::PixBroadcast, 1);
+    // Writing all core columns at the same time, loop over dc in core
+    for (unsigned dc=0; dc<4; dc++) {
+        this->writeRegister(&Rd53b::PixRegionCol, dc);
+        this->writeRegister(&Rd53b::PixRegionRow, 0);
+        std::array<uint16_t, n_Row> maskBits;
+        for (unsigned row=0; row<n_Row; row++) {
+            maskBits[row] = toTenBitMask(pixRegs[dc][row]);
+        }
+        this->sendPixRegBlock(m_chipId, maskBits);
+        while(!core->isCmdEmpty()){;}
+    }
+
+}
+
 void Rd53b::configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels) {
     logger->debug("Configuring some pixel registers ...");
     // Writing two columns and six rows at the same time

@@ -107,6 +107,21 @@ void Rd53bCmd::sendWrReg(uint8_t chipId, uint16_t address, uint16_t data) {
     core->releaseFifo();
 }
 
+uint16_t Rd53bCmd::conv10Bit(uint16_t value) {
+    return uint16_t(enc5to8[(value>>5)&0x1F]<<8 | enc5to8[value&0x1F]);
+}
+
+void Rd53bCmd::sendPixRegBlock(uint8_t chipId, std::array<uint16_t, 384> &data) {
+    logger->debug("Sending PixRegBlock(id({}))", chipId);
+    std::array<uint16_t, 4> wrReg = Rd53bCmd::genWrReg(chipId, 0, 0);
+    core->writeFifo(((uint32_t)wrReg[0] << 16) | this->conv10Bit(0x0200));
+    for (unsigned i=0; i<data.size(); i+=2) {
+        core->writeFifo(this->conv10Bit(data[i] << 16) | this->conv10Bit(data[i+1]));
+    }
+    core->writeFifo(0x817eAAAA);
+    core->releaseFifo();
+}
+
 void Rd53bCmd::sendRdReg(uint8_t chipId, uint16_t address) {
     logger->debug("Sending RdReg(id({}),addr({}))", chipId, address);
     std::array<uint16_t, 2> rdReg = Rd53bCmd::genRdReg(chipId, address);
