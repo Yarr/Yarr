@@ -123,6 +123,10 @@ void OccupancyAnalysis::init(ScanBase *s) {
             }
         }
     }
+    if(LowThr == 0.0 && HighThr == 0.0) {
+      LowThr = injections;
+      HighThr = injections;
+    }
 }
 
 void OccupancyAnalysis::processHistogram(HistogramBase *h) {
@@ -167,7 +171,7 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
         for(unsigned col=1; col<=nCol; col++) {
             for (unsigned row=1; row<=nRow; row++) {
                 unsigned i = occMaps[ident]->binNum(col, row);
-                if (occMaps[ident]->getBin(i) == injections || (selfTrig && (occMaps[ident]->getBin(i) > injections-10) && (occMaps[ident]->getBin(i) < 2*injections+10))) {
+		if (occMaps[ident]->getBin(i) >= LowThr && occMaps[ident]->getBin(i) <= HighThr) {
                     mask->setBin(i, 1);
                 } else {
                     failed_cnt++;
@@ -192,8 +196,11 @@ void OccupancyAnalysis::loadConfig(const json &j){
     if (j.contains("createMask")){
         createMask=j["createMask"];
     }
-    if (j.contains("selfTrig")){
-      selfTrig=j["selfTrig"];
+    if (j.contains("LowThr")){
+      LowThr=j["LowThr"];
+    }
+    if (j.contains("HighThr")){
+      HighThr=j["HighThr"];
     }
 }
 
