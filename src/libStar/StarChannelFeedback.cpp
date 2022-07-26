@@ -40,7 +40,7 @@ void StarChannelFeedback::loadConfig(const json &j) {
         m_resetTdac = j["resetTdac"];
     if (j.contains("steps")) {
         m_steps.clear();
-        for(auto i: j["steps"])
+        for(auto &i: j["steps"])
             m_steps.push_back(i);
     }
 }

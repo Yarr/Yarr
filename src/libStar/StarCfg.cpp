@@ -216,14 +216,14 @@ void StarCfg::writeConfig(json &j) {
     }
 
     for(size_t a=0; a<regs.size(); a++) {
-        for(auto r: regs[a]) {
+        for(auto &r: regs[a]) {
             if(common.find(r.first) != common.end()) {
                 continue;
             }
             j["ABCs"]["regs"][a][r.first] = r.second;
         }
     }
-    for(auto m: common) {
+    for(auto &m: common) {
         j["ABCs"]["common"][m.first] = m.second;
     }
 }
