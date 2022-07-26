@@ -8,7 +8,19 @@
 #include <memory>
 
 TEST_CASE("StarDataProcessor", "[star][data_processor]") {
-  std::shared_ptr<DataProcessor> proc = StdDict::getDataProcessor("Star");
+  std::shared_ptr<DataProcessor> proc;
+
+  SECTION("Star") {
+    proc = StdDict::getDataProcessor("Star");
+  }
+
+  SECTION("Star_PPA") {
+    proc = StdDict::getDataProcessor("Star_vH0A1");
+  }
+
+  SECTION("Star_PPB") {
+    proc = StdDict::getDataProcessor("Star_vH1A1");
+  }
 
   REQUIRE (proc);
 
