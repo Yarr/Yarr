@@ -145,6 +145,12 @@ HccStarRegInfo::HccStarRegInfo(int version) {
   std::map<unsigned, std::shared_ptr<RegisterInfo>> regMap;
 
   for (HCCStarRegister reg : HCCStarRegister::_values()) {
+    if(version == 1
+       && (reg == HCCStarRegister(HCCStarRegister::PLL2)
+           || reg == HCCStarRegister(HCCStarRegister::PLL3))) {
+      continue;
+    }
+
     int addr = reg;
     regMap[addr] = std::make_shared<RegisterInfo>(addr);
   }
