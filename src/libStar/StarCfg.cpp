@@ -44,7 +44,7 @@ int StarCfg::hccChannelForABCchipID(unsigned int chipID) {
 }
 
 //HCC register accessor functions
-const uint32_t StarCfg::getHCCRegister(HCCStarRegister addr){
+uint32_t StarCfg::getHCCRegister(HCCStarRegister addr){
   return m_hcc.getRegisterValue(addr);
 }
 void StarCfg::setHCCRegister(HCCStarRegister addr, uint32_t val){
@@ -52,7 +52,7 @@ void StarCfg::setHCCRegister(HCCStarRegister addr, uint32_t val){
 }
 
 //ABC register accessor functions, converts chipID into chip index
-const uint32_t StarCfg::getABCRegister(ABCStarRegister addr, int32_t chipID){
+uint32_t StarCfg::getABCRegister(ABCStarRegister addr, int32_t chipID){
   auto &abc = abcFromChipID(chipID);
   return abc.getRegisterValue(addr);
 }
