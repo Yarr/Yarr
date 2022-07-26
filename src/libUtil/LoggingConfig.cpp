@@ -140,7 +140,7 @@ void setupLoggers(const json &j, const std::string &path) {
     auto default_logger = spdlog::default_logger();
     auto &old_sinks = default_logger->sinks();
     std::remove_reference<decltype(old_sinks)>::type new_sinks;
-    for(int i=1; i<old_sinks.size(); i++) {
+    for(size_t i=1; i<old_sinks.size(); i++) {
       new_sinks.push_back(old_sinks[i]);
     }
     old_sinks = new_sinks;    

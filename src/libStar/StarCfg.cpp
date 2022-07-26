@@ -396,7 +396,7 @@ void StarCfg::loadConfig(const json &j) {
             return;
         }
 
-        for (int iABC = 0; iABC < abc_arr_length; iABC++) {
+        for (size_t iABC = 0; iABC < abc_arr_length; iABC++) {
             if (ids[iABC].is_null())
                 continue;
 
@@ -437,7 +437,7 @@ void StarCfg::loadConfig(const json &j) {
             return;
         }
 
-        for (int iABC = 0; iABC < abc_arr_length; iABC++) {
+        for (size_t iABC = 0; iABC < abc_arr_length; iABC++) {
             if (ids[iABC].is_null())
                 continue;
 
@@ -476,7 +476,7 @@ void StarCfg::loadConfig(const json &j) {
         }
 
         // Each chip has a list of strips
-        for (int iABC = 0; iABC < abc_arr_length; iABC++) {
+        for (size_t iABC = 0; iABC < abc_arr_length; iABC++) {
             if (ids[iABC].is_null())
                 continue;
             auto &maskedStrips = maskArray[iABC];
@@ -497,7 +497,7 @@ void StarCfg::loadConfig(const json &j) {
         }
 
         // Each chip has either single integer (all the same), or array of value per strip
-        for (int iABC = 0; iABC < abc_arr_length; iABC++) {
+        for (size_t iABC = 0; iABC < abc_arr_length; iABC++) {
             if (ids[iABC].is_null())
                 continue;
             auto &abc = abcFromIndex(iABC+1);
