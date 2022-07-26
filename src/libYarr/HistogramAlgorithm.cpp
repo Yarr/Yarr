@@ -29,7 +29,7 @@ void HistogrammerProcessor::clearHistogrammers() {
 
 
 void HistogrammerProcessor::run() {
-    thread_ptr.reset( new std::thread( &HistogrammerProcessor::process, this ) );
+    thread_ptr = std::make_unique<std::thread>( &HistogrammerProcessor::process, this );
 }
 
 void HistogrammerProcessor::join() {

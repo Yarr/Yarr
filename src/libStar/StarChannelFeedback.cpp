@@ -40,15 +40,15 @@ void StarChannelFeedback::loadConfig(const json &j) {
         m_resetTdac = j["resetTdac"];
     if (j.contains("steps")) {
         m_steps.clear();
-        for(auto i: j["steps"])
+        for(auto &i: j["steps"])
             m_steps.push_back(i);
     }
 }
 
 void StarChannelFeedback::feedback(unsigned id, std::unique_ptr<Histo2d> h) {
     StarChips* fe = (StarChips*) keeper->getFe(id);
-    int nRow = fe->geo.nRow;
-    int nCol = fe->geo.nCol;
+    unsigned nRow = fe->geo.nRow;
+    unsigned nCol = fe->geo.nCol;
     // TODO Check on NULL pointer
     if (h->size() != nRow*nCol) {
         logger->error("Wrong type of feedback histogram for ID {}.", id);
@@ -87,9 +87,9 @@ void StarChannelFeedback::init() {
         for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
             FrontEnd *fe = keeper->getEntry(id).fe;
             if (fe->getActive()) {
-            	int nRow = fe->geo.nRow;
-            	int nCol = fe->geo.nCol; 
-                m_fb[id] = NULL;
+                unsigned nRow = fe->geo.nRow;
+                unsigned nCol = fe->geo.nCol; 
+                m_fb[id] = nullptr;
                 for (unsigned row=1; row<=nRow; row++) {
                     for (unsigned col=1; col<=nCol; col++) {                        
                         //Initial TDAC in mid of the range

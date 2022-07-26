@@ -66,7 +66,7 @@ void StarDataProcessor::process_core() {
     while(!input->empty()) {
         // Get data containers
         std::unique_ptr<RawDataContainer> curInV = input->popData();
-        if (curInV == NULL)
+        if (curInV == nullptr)
             continue;
 
         // Create Output Container

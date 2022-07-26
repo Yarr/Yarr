@@ -63,7 +63,7 @@ void EmuController<Rd53a, Rd53aEmu>::loadConfig(const json &j) {
 //    EmuTxCore::setCom(new EmuShm(j["tx"]["id"], j["tx"]["size"], true));
 //    EmuRxCore::setCom(new EmuShm(j["rx"]["id"], j["rx"]["size"], true));
 
-  int srand_seed = time(NULL);
+  int srand_seed = time(nullptr);
   std::string infotoken = "";
   if (j["seed"] == "fixed") {
     srand_seed = 1;

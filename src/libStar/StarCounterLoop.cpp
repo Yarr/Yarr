@@ -50,7 +50,7 @@ void StarCounterLoop::init() {
         
 	logger->trace("Built trigger words {}:", m_trigWordLength);
         if(logger->should_log(spdlog::level::trace)) {
-            for(int i=0; i<m_trigWordLength; i++) {
+            for(size_t i=0; i<m_trigWordLength; i++) {
                 logger->trace("{:08x}", m_trigWord[i]);
             }
         }
