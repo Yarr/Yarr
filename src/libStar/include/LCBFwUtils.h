@@ -53,7 +53,7 @@ namespace LCB_FELIX {
     return {
       ABCREGRD,
       static_cast<uint8_t>( address & 0xff ),
-      static_cast<uint8_t>( (hccID & 0xf) << 4 + (abcID & 0xf) )
+      static_cast<uint8_t>( ((hccID & 0xf) << 4) + (abcID & 0xf) )
     };
   }
 
