@@ -4,6 +4,9 @@
 
 #include "logging.h"
 
+#include <algorithm>
+#include <cmath>
+
 namespace {
   auto logger = logging::make_log("StarFwTriggerLoop");
 }
@@ -53,24 +56,22 @@ void StarFelixTriggerLoop::init() {
   // Hard code to 1 kHz for now. Need to check this.
   g_tx->setTrigFreq(1000);
 
-  // The TrigCnt is the number of time to loop over the trickle memory
-  uint32_t nPulse = getTrigCnt() / m_nTrigsTrickle;
-  // m_nTrigsTrickle is determined in makeTrickleSequence()
-
-  // The actual number of triggers is equal to or greater than what is requested
-  if (getTrigCnt() % m_nTrigsTrickle) { 
-    nPulse += 1;
-  }
-
+  // The TrigCnt of g_tx is the number of time to loop over the trickle memory
+  // round up
+  uint32_t nPulse = std::ceil(static_cast<float>(getTrigCnt()) / m_nTrigsTrickle);
   g_tx->setTrigCnt(nPulse);
 
+  // The total number of triggers that are actually sent out.
   unsigned nTotalTrigs = nPulse * m_nTrigsTrickle;
 
-  if (nTotalTrigs != getTrigCnt()) {
-    logger->warn("The actual number of triggers sent is set to {}", nTotalTrigs);
+  // This is always equal to or greater than what is requested.
+  // (Otherwise, have to compute and change the read address of the trickle
+  // memory for the last iteration in order to send the exact number of triggers)
 
+  if (nTotalTrigs != getTrigCnt()) {
     // Update the trigger counts to what is actually sent for analysis later
     setTrigCnt(nTotalTrigs);
+    logger->warn("The actual number of triggers sent is {}", nTotalTrigs);
   }
 
   g_tx->setTrigTime(m_trigTime);
@@ -89,6 +90,10 @@ void StarFelixTriggerLoop::init() {
 
 void StarFelixTriggerLoop::execPart1() {
   logger->debug("execPart1");
+
+  // Do we need to set ABCStar ENCOUNT = 1, LP_ENABLE = 0, PR_ENABLE = 0 here?
+  // Or assume the pre-scan would set the registers?
+
   // Enable Trigger
   g_tx->setTrigEnable(0x1);
 }
@@ -149,10 +154,13 @@ void StarFelixTriggerLoop::loadConfig(const json &config) {
   logger->info("Configured trigger loop: trig_count: {} trig_frequency: {} l0_delay: {}", getTrigCnt(), m_trigFreq, m_trigDelay);
 }
 
-std::tuple<std::vector<uint8_t>, unsigned> StarFelixTriggerLoop::getTriggerSegment() {
+std::tuple<std::vector<uint8_t>, unsigned> StarFelixTriggerLoop::getTriggerSegment(unsigned max_trigs) {
 
   std::vector<uint8_t> triggers;
-  unsigned nTriggers; // number of triggers in triggers;
+  unsigned nTriggers {0}; // number of triggers in triggers;
+
+  if (max_trigs == 0)
+    return {triggers, nTriggers};
 
   if (m_trigFreq < 10e6) { // 10 MHz
     // One trigger per L0A
@@ -170,32 +178,59 @@ std::tuple<std::vector<uint8_t>, unsigned> StarFelixTriggerLoop::getTriggerSegme
 
   } else if (m_trigFreq < 15e6) { // 10 ~ 15 MHz
     logger->info("Effective trigger rate is set to: 13.33 MHz");
+    // L0A bits: 0010 0100 1001 ...
 
-    auto l0a_0 = LCB_FELIX::l0a_mask(0b0010, false);
-    auto l0a_1 = LCB_FELIX::l0a_mask(0b0100, false);
-    auto l0a_2 = LCB_FELIX::l0a_mask(0b1001, false);
+    auto l0a = LCB_FELIX::l0a_mask(0b0010, false);
+    triggers.insert(triggers.end(), l0a.begin(), l0a.end());
+    nTriggers += 1;
 
-    triggers.insert(triggers.end(), l0a_0.begin(), l0a_0.end());
-    triggers.insert(triggers.end(), l0a_1.begin(), l0a_1.end());
-    triggers.insert(triggers.end(), l0a_2.begin(), l0a_2.end());
+    if (max_trigs > 1) {
+      l0a = LCB_FELIX::l0a_mask(0b0100, false);
+      triggers.insert(triggers.end(), l0a.begin(), l0a.end());
+      nTriggers += 1;
+    }
 
-    nTriggers = 4;
+    if (max_trigs == 3) {
+      l0a = LCB_FELIX::l0a_mask(0b1000, false);
+      triggers.insert(triggers.end(), l0a.begin(), l0a.end());
+      nTriggers += 1;
+    } else if (max_trigs > 3) {
+      l0a = LCB_FELIX::l0a_mask(0b1001, false);
+      triggers.insert(triggers.end(), l0a.begin(), l0a.end());
+      nTriggers += 2;
+    }
 
   } else if (m_trigFreq < 30e6) { // 15 ~ 30 MHz
     logger->info("Effective trigger rate is set to: 20 MHz");
-
-    auto l0a = LCB_FELIX::l0a_mask(0b0101);
-    triggers.insert(triggers.end(), l0a.begin(), l0a.end());
-
+    // L0A bits: 0101 ...
+    uint8_t mask = 0b0101;
     nTriggers = 2;
+
+    if (max_trigs < 2) {
+      mask = 0b0100;
+      nTriggers = 1;
+    }
+
+    auto l0a = LCB_FELIX::l0a_mask(mask);
+    triggers.insert(triggers.end(), l0a.begin(), l0a.end());
 
   } else { // > 30 MHz
     logger->info("Effective trigger rate is set to: 40 MHz");
+    // L0A bits: 1111
+    uint8_t mask = 0b1111;
 
-    auto l0a = LCB_FELIX::l0a_mask(0b1111);
+    if (max_trigs == 3) {
+      mask = 0b1110;
+    } else if (max_trigs == 2) {
+      mask = 0b1100;
+    } else if (max_trigs == 1) {
+      mask = 0b1000;
+    }
+
+    auto l0a = LCB_FELIX::l0a_mask(mask);
     triggers.insert(triggers.end(), l0a.begin(), l0a.end());
 
-    nTriggers = 4;
+    nTriggers = std::min<unsigned>(4, max_trigs);
   }
 
   return {triggers, nTriggers};
@@ -267,11 +302,19 @@ std::vector<uint8_t> StarFelixTriggerLoop::makeTrickleSequence() {
 
   // Put multiple trigger sequences together. The total number of triggers should
   // be < 256 to avoid overflow of the hit counters.
-  // Use 248 since it is divisible by 4
-  unsigned nTrigs = 248;
+  // Use 250
+  unsigned nTrigs = std::min<unsigned>(250, getTrigCnt());
   unsigned nSegments = nTrigs / ntrigs_per_seg;
+
   for (unsigned s=0; s<nSegments; s++) {
     trickleSeq_main.insert(trickleSeq_main.end(), trigger_seg.begin(), trigger_seg.end());
+  }
+
+  // Add the remaining triggers in case nTrigs is not divisible by ntrigs_per_seg
+  if (nTrigs%ntrigs_per_seg) {
+    auto [trigger_last, ntrigs_last] = getTriggerSegment(nTrigs%ntrigs_per_seg);
+    trickleSeq_main.insert(trickleSeq_main.end(), trigger_last.begin(), trigger_last.end());
+    assert( nSegments * ntrigs_per_seg + ntrigs_last == nTrigs );
   }
 
   // Read the hit counters and reset them
@@ -279,15 +322,18 @@ std::vector<uint8_t> StarFelixTriggerLoop::makeTrickleSequence() {
   trickleSeq_main.insert(trickleSeq_main.end(), hitcount_seg.begin(), hitcount_seg.end());
 
   // trickleSeq_main can be repeated to fill up the trickle memory
-  int nBurst = (LCB_FELIX::TRICKLE_MEM_SIZE - trickleSeq_pre.size() - trickleSeq_post.size()) / trickleSeq_main.size();
+  // Max number of times allowed to repeat trickleSeq_main
+  int nBurstMax = (LCB_FELIX::TRICKLE_MEM_SIZE - trickleSeq_pre.size() - trickleSeq_post.size()) / trickleSeq_main.size();
 
-  if (nBurst < 1) {
+  if (nBurstMax < 1) {
     logger->critical("Cannot write the trigger sequence to trickle memory: trigger frequency is too low. No trigger will be sent.");
   }
 
-  //////
-  // Total number of triggers in the trickle memory
-  m_nTrigsTrickle = ntrigs_per_seg * nSegments * nBurst;
+  // Repetitions of trickleSeq_main necessary for sending the required number of triggers
+  int nBurstNeed = std::ceil(static_cast<float>(getTrigCnt()) / nTrigs);
+
+  // The actual number of times to repeat trickleSeq_main in the trickle memory
+  int nBurst = std::min(nBurstNeed, nBurstMax);
 
   // Put everything together
   std::vector<uint8_t> trickleSeq;
@@ -298,6 +344,10 @@ std::vector<uint8_t> StarFelixTriggerLoop::makeTrickleSequence() {
   }
 
   trickleSeq.insert(trickleSeq.end(), trickleSeq_post.begin(), trickleSeq_post.end());
+
+  //////
+  // Total number of triggers in the trickle memory
+  m_nTrigsTrickle = nTrigs * nBurst;
 
   return trickleSeq;
 }

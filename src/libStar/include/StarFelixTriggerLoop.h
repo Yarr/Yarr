@@ -43,7 +43,7 @@ private:
 
   unsigned m_nTrigsTrickle; // number of triggers stored in the trickle memory
 
-  std::tuple<std::vector<uint8_t>, unsigned> getTriggerSegment();
+  std::tuple<std::vector<uint8_t>, unsigned> getTriggerSegment(unsigned max_trigs = -1);
   std::vector<uint8_t> getHitCounterSegment();
   std::vector<uint8_t> makeTrickleSequence();
 
