@@ -56,6 +56,10 @@ class ClipBoard {
             return tmp;
         }
 
+	int size() {
+	  return dataQueue.size();
+	}
+
         bool empty() {
             std::lock_guard<std::mutex> lock(queueMutex);
             return rawEmpty();
