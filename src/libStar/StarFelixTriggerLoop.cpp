@@ -8,7 +8,7 @@
 #include <cmath>
 
 namespace {
-  auto logger = logging::make_log("StarFwTriggerLoop");
+  auto logger = logging::make_log("StarFelixTriggerLoop");
 }
 
 StarFelixTriggerLoop::StarFelixTriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) {
