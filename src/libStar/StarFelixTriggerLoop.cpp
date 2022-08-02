@@ -52,9 +52,8 @@ void StarFelixTriggerLoop::init() {
   g_tx->setTrigWord(&m_trigWord[0], m_trigWordLength);
   g_tx->setTrigWordLength(m_trigWordLength);
 
-  // The TrigFreq here determines the interval between TRICKLE_TRIGGER_PULSE
-  // Hard code to 1 kHz for now. Need to check this.
-  g_tx->setTrigFreq(1000);
+  // Frequency to send trickle pulse
+  g_tx->setTrigFreq(m_trickleFreq);
 
   // The TrigCnt of g_tx is the number of time to loop over the trickle memory
   // round up
@@ -129,6 +128,7 @@ void StarFelixTriggerLoop::writeConfig(json &config) {
   config["l0_latency"] = m_trigDelay;
   config["noInject"] = m_noInject;
   config["digital"] = m_digital;
+  config["trickle_frequency"] = m_trickleFreq;
 }
 
 void StarFelixTriggerLoop::loadConfig(const json &config) {
@@ -150,6 +150,9 @@ void StarFelixTriggerLoop::loadConfig(const json &config) {
 
   if (config.contains("digital"))
     m_digital = config["digital"];
+
+  if (config.contains("trickle_frequency"))
+    m_trickleFreq = config["trickle_frequency"];
 
   logger->info("Configured trigger loop: trig_count: {} trig_frequency: {} l0_delay: {}", getTrigCnt(), m_trigFreq, m_trigDelay);
 }

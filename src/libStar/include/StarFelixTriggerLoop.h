@@ -33,6 +33,8 @@ private:
   double m_trigFreq {1e5};
   double m_trigTime {10};
 
+  double m_trickleFreq {1000}; // frequency to send trickle pulse
+
   // How many words of pattern buffer to use
   uint32_t m_trigWordLength;
   // This matches the pattern buffer in TxCore
