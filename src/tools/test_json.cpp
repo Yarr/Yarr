@@ -182,7 +182,28 @@ int checkJsonFE(json &jsonConfig) {
   }
   if(count != 1) {
     if(jsonConfig.contains("HCC") && jsonConfig.contains("ABCs")) {
-      return checkJsonFE(jsonConfig, "Star");
+      bool pass_all = true;
+      bool pass_one = false;
+      for(auto &n: {"Star", "Star_vH0A1", "Star_vH1A1"}) {
+        try {
+          int ret_val = checkJsonFE(jsonConfig, n);
+          if(ret_val != 0) {
+            // Failure to load class, nothing to do with the file
+            return ret_val;
+          }
+          pass_one = true;
+        } catch (std::out_of_range &e) {
+          pass_all = false;
+        }
+      }
+      if(pass_all) {
+        std::cout << "Loaded successfully in all Star variations\n";
+      }
+      if(pass_one) {
+        return 0;
+      } else {
+        return 1;
+      }
     } else {
       std::cout << "Expect one top-level entry (not " << count << ") in FrontEnd config (or it's Star)\n";
 
