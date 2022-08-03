@@ -898,6 +898,8 @@ TEST_CASE("StarEmulatorVersions", "[star][emulator]") {
 
   json cfg;
 
+  SECTION("Default") {}
+
   SECTION("PPA") {
     cfg["abcVersion"] = 1;
   }
@@ -906,8 +908,13 @@ TEST_CASE("StarEmulatorVersions", "[star][emulator]") {
     cfg["abcVersion"] = 1;
     cfg["hccVersion"] = 1;
   }
-  
+
   emu->loadConfig(cfg);
+
+  // Send reset fast commands (these include loops over register lists)
+  emu->writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::LOGIC_RESET, 0));
+  emu->writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::ABC_REG_RESET, 0));
+  emu->writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::HCC_REG_RESET, 0));
 
   StarCmd star;
 
