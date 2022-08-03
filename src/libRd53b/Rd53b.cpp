@@ -454,6 +454,19 @@ uint32_t Rd53b::readEfusesRaw() {
     return ((efuse_data_1 & 0xffff) << 16) | (efuse_data_0 & 0xffff);
 }
 
+void Rd53b::localUpdateNamedRegister(std::string name) {
+    if(regMap.find(name) != regMap.end()) {
+        logger->debug("Local update named register {}", name);
+        this->localUpdateSingleRegister(regMap[name]);
+    } else {
+        logger->error("Trying to local update named register, register not found: {}", name);
+    }
+}
+
+void Rd53b::localUpdateSingleRegister(Rd53bReg Rd53bGlobalCfg::*ref) {
+	uint32_t reg = readSingleRegister(ref);
+	m_cfg[(this->*ref).addr()] = reg;
+}
 
 uint32_t Rd53b::readSingleRegister(Rd53bReg Rd53bGlobalCfg::*ref) {
     // send a read register command to the chip so that it

@@ -161,11 +161,13 @@ int main(int argc, char* argv[]) {
         if (!use_chip_name) {
             if ( (chip_idx < 0) || (chip_idx == ichip) ) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
+                fe->updateLocalNamedRegister(register_name);
                 fe->writeNamedRegister(register_name, register_value);
             }
         } else {
             if (current_chip_name == chip_name) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
+                fe->updateLocalNamedRegister(register_name);
                 fe->writeNamedRegister(register_name, register_value);
             }
         }
