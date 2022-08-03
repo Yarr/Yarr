@@ -304,7 +304,13 @@ void StarChipsetEmu::readRegister(const uint8_t address, bool isABC,
     }
 
     // read register
-    unsigned data = m_starCfg->getABCRegister(address, ABCID);
+    unsigned data;
+    try {
+      data = m_starCfg->getABCRegister(address, ABCID);
+    } catch(std::out_of_range &e) {
+      // non-existant register
+      data = 0xffffffff;
+    }
 
     // ABC status bits
     // for now
@@ -323,7 +329,13 @@ void StarChipsetEmu::readRegister(const uint8_t address, bool isABC,
     PacketTypes ptype = PacketTypes::HCCRegRd;
 
     // read register
-    unsigned data = m_starCfg->getHCCRegister(address);
+    unsigned data;
+    try {
+      data = m_starCfg->getHCCRegister(address);
+    } catch(std::out_of_range &e) {
+      // non-existant register
+      data = 0xffffffff;
+    }
 
     // build and send data packet
     auto packet = buildHCCRegisterPacket(ptype, address, data);
