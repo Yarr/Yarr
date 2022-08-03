@@ -165,7 +165,7 @@ std::tuple<std::vector<uint8_t>, unsigned> StarFelixTriggerLoop::getTriggerSegme
   if (max_trigs == 0)
     return {triggers, nTriggers};
 
-  if (m_trigFreq < 10e6) { // 10 MHz
+  if (m_trigFreq <= 10e6) { // < 10 MHz
     // One trigger per L0A
     auto l0a = LCB_FELIX::l0a_mask(1, false);
 
@@ -179,8 +179,13 @@ std::tuple<std::vector<uint8_t>, unsigned> StarFelixTriggerLoop::getTriggerSegme
 
     nTriggers = 1;
 
+    // Update to the actual trigger frequency
+    // (in case m_trigFreq is not divisible by 10^7)
+    m_trigFreq = 1e9 / (nFrames * 100);
+
+    logger->info("Effective trigger rate is set to: {:.2f} kHz", m_trigFreq/1000);
+
   } else if (m_trigFreq < 15e6) { // 10 ~ 15 MHz
-    logger->info("Effective trigger rate is set to: 13.33 MHz");
     // L0A bits: 0010 0100 1001 ...
 
     auto l0a = LCB_FELIX::l0a_mask(0b0010, false);
@@ -203,8 +208,11 @@ std::tuple<std::vector<uint8_t>, unsigned> StarFelixTriggerLoop::getTriggerSegme
       nTriggers += 2;
     }
 
+    // Update to the actual trigger frequency
+    m_trigFreq = 1e9 / (3*25); // Hz
+    logger->info("Effective trigger rate is set to: 13.33 MHz");
+
   } else if (m_trigFreq < 30e6) { // 15 ~ 30 MHz
-    logger->info("Effective trigger rate is set to: 20 MHz");
     // L0A bits: 0101 ...
     uint8_t mask = 0b0101;
     nTriggers = 2;
@@ -217,8 +225,11 @@ std::tuple<std::vector<uint8_t>, unsigned> StarFelixTriggerLoop::getTriggerSegme
     auto l0a = LCB_FELIX::l0a_mask(mask);
     triggers.insert(triggers.end(), l0a.begin(), l0a.end());
 
+    // Update to the actual trigger frequency
+    m_trigFreq = 1e9 / (2*25); // Hz
+    logger->info("Effective trigger rate is set to: 20 MHz");
+
   } else { // > 30 MHz
-    logger->info("Effective trigger rate is set to: 40 MHz");
     // L0A bits: 1111
     uint8_t mask = 0b1111;
 
@@ -234,6 +245,10 @@ std::tuple<std::vector<uint8_t>, unsigned> StarFelixTriggerLoop::getTriggerSegme
     triggers.insert(triggers.end(), l0a.begin(), l0a.end());
 
     nTriggers = std::min<unsigned>(4, max_trigs);
+
+    // Update to the actual trigger frequency
+    m_trigFreq = 1e9/25; // Hz
+    logger->info("Effective trigger rate is set to: 40 MHz");
   }
 
   return {triggers, nTriggers};
