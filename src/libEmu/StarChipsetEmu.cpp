@@ -32,7 +32,7 @@ auto logger = logging::make_log("StarChipsetEmu");
 StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
                                const std::string& json_emu_file_path,
                                std::unique_ptr<StarCfg> regCfg,
-                               unsigned hpr_period)
+                               unsigned hpr_period, int abc_version, int hcc_version)
   : m_rxbuffer ( rx )
   , m_bccnt ( 0 )
   , m_ignoreCmd ( true )
@@ -41,6 +41,8 @@ StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
   , m_bc_sel ( 0 )
   , m_starCfg (std::move(regCfg))
   , HPRPERIOD( hpr_period )
+  , m_abc_version( abc_version )
+  , m_hcc_version( hcc_version )
 {
   // Emulator analog FE configurations
   if (not json_emu_file_path.empty()) {
@@ -460,8 +462,7 @@ void StarChipsetEmu::logicReset() {
 }
 
 void StarChipsetEmu::resetABCRegisters() {
-  int abc_version = 0;
-  m_starCfg->eachAbc([&](auto &abc){abc.setDefaults(abc_version);});
+  m_starCfg->eachAbc([&](auto &abc){abc.setDefaults(m_abc_version);});
   resetABCHitCounts();
 }
 
@@ -490,8 +491,7 @@ void StarChipsetEmu::resetSlowCommand() {
 }
 
 void StarChipsetEmu::resetHCCRegisters() {
-  int hcc_version = 0;
-  (m_starCfg->hcc()).setDefaults(hcc_version);
+  (m_starCfg->hcc()).setDefaults(m_hcc_version);
 }
 
 void StarChipsetEmu::resetHCCSEU() {

@@ -53,7 +53,7 @@ StarEmu::StarEmu(std::vector<ClipBoard<RawData>*> &rx, EmuCom * tx, EmuCom * tx2
             regCfg->addABCchipID(15);
         }
 
-        chipEmus.emplace_back( new StarChipsetEmu(rx[i], json_emu_file_path, std::move(regCfg), hpr_period) );
+        chipEmus.emplace_back( new StarChipsetEmu(rx[i], json_emu_file_path, std::move(regCfg), hpr_period, abc_version, hcc_version) );
     }
 }
 
