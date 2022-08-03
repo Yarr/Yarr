@@ -116,7 +116,7 @@ void Rd53bCmd::sendPixRegBlock(uint8_t chipId, std::array<uint16_t, 384> &data) 
     std::array<uint16_t, 4> wrReg = Rd53bCmd::genWrReg(chipId, 0, 0);
     core->writeFifo(((uint32_t)wrReg[0] << 16) | this->conv10Bit(0x0200));
     for (unsigned i=0; i<data.size(); i+=2) {
-        core->writeFifo(this->conv10Bit(data[i] << 16) | this->conv10Bit(data[i+1]));
+        core->writeFifo(this->conv10Bit(data[i]) << 16 | this->conv10Bit(data[i+1]));
     }
     core->writeFifo(0x817eAAAA);
     core->releaseFifo();

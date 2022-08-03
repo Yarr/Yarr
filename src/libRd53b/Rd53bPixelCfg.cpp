@@ -103,5 +103,5 @@ uint16_t Rd53bPixelCfg::getPixelBit(PixelArray &input, unsigned col, unsigned ro
 }
 
 uint16_t Rd53bPixelCfg::toTenBitMask(uint16_t pixReg) {
-    return uint16_t(0x3FF & (((pixReg&0x700)>>3) || (pixReg&0x7)));
+    return uint16_t(0x3FF & (((pixReg&0x700)>>3) | (pixReg&0x7)));
 }
