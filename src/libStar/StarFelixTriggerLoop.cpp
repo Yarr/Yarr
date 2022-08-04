@@ -281,6 +281,8 @@ std::vector<uint8_t> StarFelixTriggerLoop::getHitCounterSegment() {
 
 std::vector<uint8_t> StarFelixTriggerLoop::makeTrickleSequence() {
 
+  std::vector<uint8_t> trickleSeq;
+
   //////
   // Commands to be sent before starting to send tiggers
   std::vector<uint8_t> trickleSeq_pre;
@@ -308,64 +310,107 @@ std::vector<uint8_t> StarFelixTriggerLoop::makeTrickleSequence() {
 
   //////
   // Main command sequence
-  std::vector<uint8_t> trickleSeq_main;
-
-  auto [trigger_seg, ntrigs_per_seg] = getTriggerSegment();
+  auto [trigger_seg, ntrig_per_seg] = getTriggerSegment();
   // This is one trigger segment with m_trigFreq taken into account
-  // The number of triggers in one segment is indicated by ntrigs_per_seg
+  // The number of triggers in one segment is indicated by ntrig_per_seg
 
-  // TODO: add pulse
-  // compute index for inserting pulse command
-  //int iBC_pulse;
-
-  // Put multiple trigger sequences together. The total number of triggers should
-  // be < 256 to avoid overflow of the hit counters.
-  // Use 250
-  unsigned nTrigs = std::min<unsigned>(250, getTrigCnt());
-  unsigned nSegments = nTrigs / ntrigs_per_seg;
-
-  for (unsigned s=0; s<nSegments; s++) {
-    trickleSeq_main.insert(trickleSeq_main.end(), trigger_seg.begin(), trigger_seg.end());
-  }
-
-  // Add the remaining triggers in case nTrigs is not divisible by ntrigs_per_seg
-  if (nTrigs%ntrigs_per_seg) {
-    auto [trigger_last, ntrigs_last] = getTriggerSegment(nTrigs%ntrigs_per_seg);
-    trickleSeq_main.insert(trickleSeq_main.end(), trigger_last.begin(), trigger_last.end());
-    assert( nSegments * ntrigs_per_seg + ntrigs_last == nTrigs );
-  }
-
-  // Read the hit counters and reset them
+  // Command segment to read and reset hit counters
   auto hitcount_seg = getHitCounterSegment();
-  trickleSeq_main.insert(trickleSeq_main.end(), hitcount_seg.begin(), hitcount_seg.end());
 
-  // trickleSeq_main can be repeated to fill up the trickle memory
-  // Max number of times allowed to repeat trickleSeq_main
-  int nBurstMax = (LCB_FELIX::TRICKLE_MEM_SIZE - trickleSeq_pre.size() - trickleSeq_post.size()) / trickleSeq_main.size();
+  // Put multiple trigger segments together, followed by hit counters read
+  // The max number of triggers should be < 256 to avoid hit counter overflow
+  // Use 250
+  unsigned ntrig_per_burst = std::min<unsigned>(250, getTrigCnt());
+  unsigned nSeg_per_burst = ntrig_per_burst / ntrig_per_seg;
+
+  // The number of trigger segments per burst is also constrained by the trickle
+  // memory size
+  unsigned bytes_available = LCB_FELIX::TRICKLE_MEM_SIZE - trickleSeq_pre.size() - trickleSeq_post.size() - hitcount_seg.size();
+  unsigned nMaxSeg_by_size = bytes_available / trigger_seg.size();
+
+  if (nMaxSeg_by_size == 0) {
+    logger->error("The trigger sequence is too long to be written into the trickle memory. The trigger frequency is too low.");
+    logger->error("No trigger will be sent");
+
+    m_nTrigsTrickle = 0;
+    m_trigFreq = -1; // set to some invalid value
+
+    return trickleSeq; // empty vector
+
+  } else if (nMaxSeg_by_size < 2) {
+    logger->warn("Only one trigger segment is written into the trickle memory! The trigger frequency will not be accurate.");
+    logger->warn("Increase the trigger frequency to write more triggers into the trickle memory.");
+
+    m_trigFreq = -1; // set to some invalid value
+  }
+
+  if (nSeg_per_burst >= nMaxSeg_by_size) {
+    // Number of trigger segment is limited by the trickle memory size
+    nSeg_per_burst = nMaxSeg_by_size;
+
+    // Also update the number of triggers per burst
+    ntrig_per_burst = nSeg_per_burst * ntrig_per_seg;
+  }
+
+  // Fill the burst
+  std::vector<uint8_t> trickleSeq_burst;
+  for (unsigned s=0; s<nSeg_per_burst; s++) {
+    trickleSeq_burst.insert(trickleSeq_burst.end(), trigger_seg.begin(), trigger_seg.end());
+  }
+
+  logger->trace("ntrig_per_burst = {}", ntrig_per_burst);
+  logger->trace("ntrig_per_seg = {}", ntrig_per_seg);
+  logger->trace("nSeg_per_burst = {}", nSeg_per_burst);
+
+  // Add the remaining triggers in case ntrig_per_burst is not divisible by ntrig_per_seg
+  // Only needed when trigger frequency is > 10 MHz
+  if (ntrig_per_burst % ntrig_per_seg) {
+    auto [trigger_last, ntrig_last] = getTriggerSegment(ntrig_per_burst % ntrig_per_seg);
+    trickleSeq_burst.insert(trickleSeq_burst.end(), trigger_last.begin(), trigger_last.end());
+    assert( nSeg_per_burst * ntrig_per_seg + ntrig_last == ntrig_per_burst );
+
+    logger->trace("ntrig_last = {}", ntrig_last);
+  }
+
+  // Add hit counter read and reset commands
+  trickleSeq_burst.insert(trickleSeq_burst.end(), hitcount_seg.begin(), hitcount_seg.end());
+
+  // The trigger burst can be repeated to fill up the trickle memory
+  // Max number of repetitions allowed by size
+  int nBurstMax = (LCB_FELIX::TRICKLE_MEM_SIZE - trickleSeq_pre.size() - trickleSeq_post.size()) / trickleSeq_burst.size();
 
   if (nBurstMax < 1) {
-    logger->critical("Cannot write the trigger sequence to trickle memory: trigger frequency is too low. No trigger will be sent.");
+    logger->error("No triggers are written to the trickle memory!");
   }
 
-  // Repetitions of trickleSeq_main necessary for sending the required number of triggers
-  int nBurstNeed = std::ceil(static_cast<float>(getTrigCnt()) / nTrigs);
+  // Number of trickleSeq_burst needed to send the required number of triggers
+  int nBurstNeed = std::ceil(static_cast<float>(getTrigCnt()) / ntrig_per_burst);
 
-  // The actual number of times to repeat trickleSeq_main in the trickle memory
+  // The actual number of times to repeat trickleSeq_burst in the trickle memory
   int nBurst = std::min(nBurstNeed, nBurstMax);
 
+  logger->trace("nBurstNeed = {}", nBurstNeed);
+  logger->trace("nBurstMax = {}", nBurstMax);
+  logger->trace("nBurst = {}", nBurst);
+
   // Put everything together
-  std::vector<uint8_t> trickleSeq;
   trickleSeq.insert(trickleSeq.end(), trickleSeq_pre.begin(), trickleSeq_pre.end());
 
   for (unsigned i=0; i<nBurst; i++) {
-    trickleSeq.insert(trickleSeq.end(), trickleSeq_main.begin(), trickleSeq_main.end());
+    trickleSeq.insert(trickleSeq.end(), trickleSeq_burst.begin(), trickleSeq_burst.end());
   }
 
   trickleSeq.insert(trickleSeq.end(), trickleSeq_post.begin(), trickleSeq_post.end());
 
   //////
   // Total number of triggers in the trickle memory
-  m_nTrigsTrickle = nTrigs * nBurst;
+  m_nTrigsTrickle = ntrig_per_burst * nBurst;
+
+  logger->trace("m_nTrigsTrickle = {}", m_nTrigsTrickle);
 
   return trickleSeq;
+
+  // TODO: add pulse
+  // compute index for inserting pulse command
+  //int iBC_pulse;
 }
