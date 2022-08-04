@@ -344,7 +344,7 @@ std::vector<double> StarStrobeDelayFitter::fitScurveForSD(const Histo1d *h_in, c
     maxRange = m_strobeDelayMax;
   }
   if (par[0] > minRange && par[0] < maxRange && par[1] > 0 && par[1] < (maxRange-minRange) 
-      && chi2 < 2.5
+      && chi2 < 10
       && fabs((par[2] - par[3])/m_injections - 1) < 0.1) {
     alog->debug("Fit succeeded for {} with leftEdge {}: p0 = {}, p1 = {}, p2 = {}, p3 = {}", h_in->getName(), leftEdge, par[0], par[1], par[2], par[3]);
     for (unsigned int ipar=0; ipar<n_par; ipar++)
@@ -355,6 +355,14 @@ std::vector<double> StarStrobeDelayFitter::fitScurveForSD(const Histo1d *h_in, c
     else
       m_nFailedfit_right++;
     alog->debug("Fit failed for {} with leftEdge {}: p0 = {}, p1 = {}, p2 = {}, p3 = {}", h_in->getName(), leftEdge, par[0], par[1], par[2], par[3]);
+    if (par[0] < minRange || par[0] > maxRange)
+      alog->debug("p0 out of range");
+    else if ( par[1] < 0 || par[1] > (maxRange-minRange))
+      alog->debug("p1 out of range");
+    else if (chi2 > 10)
+      alog->debug("chi2 = {} > 10", chi2);
+    else if ( fabs((par[2] - par[3])/m_injections - 1) > 0.1)
+    alog->debug("(p2 - p3)/m_injections - 1 = {} > 0.1", fabs((par[2] - par[3])/m_injections - 1));
     for (unsigned int ipar=0; ipar<n_par; ipar++)
       fitParams.push_back(-999.);
   }
