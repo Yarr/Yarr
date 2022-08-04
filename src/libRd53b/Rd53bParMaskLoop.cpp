@@ -70,7 +70,7 @@ void Rd53bParMaskLoop::execPart1() {
                 //if(m_applyEnMask && !Rd53b::getPixelBit(m_pixRegs[g_fe], col, row, 0)) continue;
 
                 //logger->info("Enabling {};{}", col, row);
-                rd53b->setEn(col, row, 1); // TODO Make configurable
+                rd53b->setEn(col, row, (m_maskType == PToTMask) ? 0 : 1); // TODO Make configurable
                 rd53b->setInjEn(col, row, 1);
                 rd53b->setHitbus(col, row, 1);
                 counter++;
