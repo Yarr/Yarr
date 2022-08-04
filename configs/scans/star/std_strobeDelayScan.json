@@ -1,18 +1,14 @@
 {
   "scan": {
     "analysis": {
-        "0": {
-                "algorithm": "OccupancyAnalysis",
-	        "config": {}
-            },
-	"1": {
+	"0": {
         	"algorithm": "StarStrobeDelayFitter",
         	"config": {
           		"parametersOfInterest": ["ABCs_STR_DEL"],
-	 		"dumpDebugSDPlots": true
+	 		"dumpDebugSDPlots": false
         	}
          },
-	"n_count": 2
+	"n_count": 1
     },
     "histogrammer": {
         "0": {
@@ -33,10 +29,10 @@
       },
       {
         "config": {
-            "trig_count": 100,
-            "trig_frequency": 50,
+            "trig_count": 1000,
+            "trig_frequency": 500,
             "trig_time": 0,
-            "l0_latency": 7,
+            "l0_latency": 19,
             "verbose": false,
             "extTrigger": false,
             "noInject": false
@@ -53,16 +49,15 @@
         "ABCs_STOPHPR": 1,
         "HCC_MASKHPR": 1,
         "HCC_STOPHPR": 1,
-        "ABCs_BCAL": 200,
-        "ABCs_BVT":  75,
+        "ABCs_BCAL": 114,
+        "ABCs_BVT":  61,
 	"ABCs_PR_ENABLE":      1,
 	"ABCs_LP_ENABLE":      1,
-        "ABCs_DETMODE": 1,
+        "ABCs_DETMODE": 2,
         "ABCs_CALPULSE_ENABLE":    1,
         "ABCs_CALPULSE_POLARITY":  0,
         "ABCs_CURRDRIV": 4,
         "ABCs_STR_DEL_R": 3,
-        "ABCs_LATENCY": 3,
         "ABCs_BCFLAG_ENABLE": 0,
         "ABCs_BCOFFSET": 65
     }
