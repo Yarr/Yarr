@@ -284,6 +284,13 @@ void StarCfg::loadConfig(const json &j) {
         throw std::runtime_error("Missing ID in config file");
     }
 
+    std::string str_sn="";
+    if (hcc.contains("serialnumber")) {
+      str_sn = hcc["serialnumber"];
+      m_sn = std::stol(str_sn, nullptr, 16);
+      logger->info("Reading configuration for chip with serial number=0x{:08x}", m_sn);
+    }
+
     m_hcc.setDefaults(m_hcc_version);
 
     if (hcc.contains("regs")) {
