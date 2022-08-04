@@ -98,42 +98,42 @@ std::unique_ptr<StarJsonData> StarTrimDacAnalysis::initOutputJsonData() const {
   \param listThresholds Output list of reached thresholds over all channels (later used to determine the range of threshold over which to look for a target threshold
 */
 void StarTrimDacAnalysis::fillGlobalMapOfTrimDacVsThreshold(std::map<unsigned, std::map<TrimRangeTrimDac, double> > & mapThresholdVsTrimDacVsChannelNumber, std::vector<double> & listThresholds) const {
-        //Storing all input results in big map that will later be used to search for the best TrimDac and list of potential targets
-        for (unsigned int iChip=0; iChip<(nCol/128); iChip++) {
-                //Will also fill some debugging plots on the way
-                GraphErrors* grTrimDacVsThresholdForChip = new GraphErrors("TrimDacVsThreshold_Chip" + std::to_string(iChip));
-                grTrimDacVsThresholdForChip->setXaxisTitle("Threshold");
-                grTrimDacVsThresholdForChip->setYaxisTitle("TrimRange*32 + TrimDAC");
-                Histo1d *hDistThr = new Histo1d("ThresholdDist", 120, 0, 120);
-                hDistThr->setXaxisTitle("Threshold [e]");
-                hDistThr->setYaxisTitle("Number of channels");
+  //Storing all input results in big map that will later be used to search for the best TrimDac and list of potential targets
+  for (unsigned int iChip=0; iChip<(nCol/128); iChip++) {
+    //Will also fill some debugging plots on the way
+    GraphErrors* grTrimDacVsThresholdForChip = new GraphErrors("TrimDacVsThreshold_Chip" + std::to_string(iChip));
+    grTrimDacVsThresholdForChip->setXaxisTitle("Threshold");
+    grTrimDacVsThresholdForChip->setYaxisTitle("TrimRange*32 + TrimDAC");
+    Histo1d *hDistThr = new Histo1d("ThresholdDist", 120, 0, 120);
+    hDistThr->setXaxisTitle("Threshold [e]");
+    hDistThr->setYaxisTitle("Number of channels");
 
-                //Filling the map and the plots
-                for (auto jDvsTrimDac : m_jDvsTrimRangeTrimDac) {
-                  unsigned trimRange = jDvsTrimDac.first.range();
-                  unsigned trimDac   = jDvsTrimDac.first.dac();
-                  for (unsigned iStrip=0; iStrip<128; iStrip++)
-                    for (unsigned row=0; row<2; row++) {
-                      std::shared_ptr<const StarJsonData> spJD = jDvsTrimDac.second;
-                      const StarJsonData* jd = spJD.get();
-                      double thr = jd->getValForProp("ABCStar_" + std::to_string(iChip) + "/Threshold/Row" + std::to_string(row), iStrip).value_or(-999);
-                      if (thr!=-999) {
-                        alog->info("Filling map for channel = {}, trimRange = {}, trimDac = {} with thr = {}", iStrip + 128*row + iChip*255, trimRange,  trimDac, thr);
-                        mapThresholdVsTrimDacVsChannelNumber[iStrip + 128*row + iChip*256][TrimRangeTrimDac(trimRange,trimDac)] = thr;
-                        listThresholds.push_back(thr);
-                        grTrimDacVsThresholdForChip->addPoint(thr, trimRange*32 + trimDac);
-                        hDistThr->fill(thr);
-                      }
-                    }//end of loop over rows
-                }//end of loop over trim dacs & trim ranges
-                //Dumping debugging plots
-                std::unique_ptr<GraphErrors> upgrTrimDacVsThresholdForChip;
-                upgrTrimDacVsThresholdForChip.reset(grTrimDacVsThresholdForChip);
-                output->pushData(std::move(upgrTrimDacVsThresholdForChip));
-                std::unique_ptr<Histo1d> uphDistThr;
-                uphDistThr.reset(hDistThr);
-                output->pushData(std::move(uphDistThr));
-        }//end of loop over chips to fill in the global map
+    //Filling the map and the plots
+    for (auto jDvsTrimDac : m_jDvsTrimRangeTrimDac) {
+      unsigned trimRange = jDvsTrimDac.first.range();
+      unsigned trimDac   = jDvsTrimDac.first.dac();
+      for (unsigned iStrip=0; iStrip<128; iStrip++){
+        for (unsigned row=0; row<2; row++) {
+          std::shared_ptr<const StarJsonData> spJD = jDvsTrimDac.second;
+          const StarJsonData* jd = spJD.get();
+          double thr = jd->getValForProp("ABCStar_" + std::to_string(iChip) + "/Threshold/Row" + std::to_string(row), iStrip).value_or(-999);
+          if (thr!=-999) {
+            mapThresholdVsTrimDacVsChannelNumber[iStrip + 128*row + iChip*256][TrimRangeTrimDac(trimRange,trimDac)] = thr;
+            listThresholds.push_back(thr);
+            grTrimDacVsThresholdForChip->addPoint(thr, trimRange*32 + trimDac);
+            hDistThr->fill(thr);
+          }
+        } //end of loop over rows
+      } //end loop over strips
+    }//end of loop over trim dacs & trim ranges
+    //Dumping debugging plots
+    std::unique_ptr<GraphErrors> upgrTrimDacVsThresholdForChip;
+    upgrTrimDacVsThresholdForChip.reset(grTrimDacVsThresholdForChip);
+    output->pushData(std::move(upgrTrimDacVsThresholdForChip));
+    std::unique_ptr<Histo1d> uphDistThr;
+    uphDistThr.reset(hDistThr);
+    output->pushData(std::move(uphDistThr));
+  }//end of loop over chips to fill in the global map
 }
 
 
@@ -164,21 +164,20 @@ std::map<int, double> StarTrimDacAnalysis::findTargetThresholds(const std::map<u
 
         //Will collect the list of TrimRanges to scan
         std::vector<int> trimRanges = getTrimRanges(mapThresholdVsTrimDacVsChannelNumber);
-        alog->info("In findTargetThresholds, trimRanges are: ");
-        for (auto trimRange : trimRanges){
-          std::cout << trimRange << std::endl;
-        }
 
         std::map<double,int> multForAllChips;//Will collect info for all chips together in case we want an overall target
         //Probing target thresholds using 60 steps between 0 and the max reachable target (not magic under the '60', just a historical number)
-        double stepThr = (listThresholds.size()>1) ? (listThresholds[0]-listThresholds[listThresholds.size()-1])/60. : listThresholds[0];
+        double minThr = (listThresholds.size()>1) ? listThresholds[listThresholds.size()-1] : 0.;
+        double maxThr = listThresholds[0];
+        int nStepsThr = 60;
+        double stepThr = (listThresholds.size()>1) ? (double)((maxThr-minThr)/nStepsThr) : maxThr;
         for (unsigned int iChip=0; iChip<(nCol/128); iChip++) {
           outJD->initialiseStarChannelsDataAtProp("ABCStar_" + std::to_string(iChip) + "/TargetThreshold", 1);
-          Histo1d *hNTrimmable = new Histo1d("NumTrimmable_Chip" + std::to_string(iChip), 60, listThresholds[listThresholds.size()-1], listThresholds[0]);
+          Histo1d *hNTrimmable = new Histo1d("NumTrimmable_Chip" + std::to_string(iChip), nStepsThr+1, minThr-(stepThr/2.), maxThr+(stepThr/2.));
           hNTrimmable->setXaxisTitle("Threshold [e]");
           hNTrimmable->setYaxisTitle("Number of trimmable channels");
           double targetThr=-1; int maxMultOverAllThresholds=-1;
-          for (double thr=listThresholds[0]; thr>0.; thr-=stepThr) {
+          for (double thr=maxThr; thr>=minThr; thr-=stepThr) {
                 std::map<unsigned,int> mapOfTrims;
                 int maxMultForChipOverTrimRanges = 0.;
                 for (auto trimRange : trimRanges) {
@@ -186,40 +185,43 @@ std::map<int, double> StarTrimDacAnalysis::findTargetThresholds(const std::map<u
                   if (mult > maxMultForChipOverTrimRanges)
                     maxMultForChipOverTrimRanges = mult;
                 }
-                multForAllChips[thr] += maxMultForChipOverTrimRanges;
-                alog->info("For ABC {}, threshold={} got {} channels able to reach it.", iChip, thr, maxMultForChipOverTrimRanges);
+                multForAllChips[thr] += maxMultForChipOverTrimRanges;;
                 hNTrimmable->fill(thr, maxMultForChipOverTrimRanges);
                 if (maxMultForChipOverTrimRanges > maxMultOverAllThresholds) {
                         maxMultOverAllThresholds = maxMultForChipOverTrimRanges;
                         targetThr = thr;
                 }
           }
-          outJD->setValForProp("ABCStar_" + std::to_string(iChip) + "/TargetThreshold", 0, targetThr);
-          targetThrPerChip[iChip] = targetThr;
           alog->info("For ABC {}, target threshold is {}", iChip, targetThr);
-
+          if (m_targetThresholdPerChip){
+            outJD->setValForProp("ABCStar_" + std::to_string(iChip) + "/TargetThreshold", 0, targetThr);
+            targetThrPerChip[iChip] = targetThr;
+          }
           std::unique_ptr<Histo1d> uphNTrimmable;
           uphNTrimmable.reset(hNTrimmable);
           output->pushData(std::move(uphNTrimmable));
         }
         //Looking for an overall threshold for all chips
-        unsigned int maxMultForAllChips=-1;
+        unsigned int maxMultForAllChips=0;
         double targetOverallForAllChips=-1;
-        for (auto mult : multForAllChips) {
-                if (mult.second > maxMultForAllChips) {
-                        maxMultForAllChips = mult.second;
-                        targetOverallForAllChips = mult.first;
+        alog->info("Looking for overall target for all chips.");
+        for (auto mult = multForAllChips.rbegin(); mult != multForAllChips.rend(); ++mult){
+                if (mult->second > maxMultForAllChips) {
+                        maxMultForAllChips = mult->second;
+                        targetOverallForAllChips = mult->first;
                 }
         }
 
-        outJD->initialiseStarChannelsDataAtProp("OverallTrimDacTarget",1);
-        outJD->setValForProp("OverallTrimDacTarget", 0, targetOverallForAllChips);
+        outJD->initialiseStarChannelsDataAtProp("OverallTargetThreshold",1);
+        outJD->setValForProp("OverallTargetThreshold", 0, targetOverallForAllChips);
         alog->info("Target threshold overall over all chips would be {}", targetOverallForAllChips);
         //In case we want a common target for all chips, we reset the content of targetThrPerChip (to match the targetOverallForAllChips)
         if (!m_targetThresholdPerChip) {
                 alog->info("Setting threshold for all chips to this.");
-                for (unsigned int iChip=0; iChip<(nCol/128); iChip++)
-                        targetThrPerChip[iChip] = targetOverallForAllChips;
+                for (unsigned int iChip=0; iChip<(nCol/128); iChip++){
+                  outJD->setValForProp("ABCStar_" + std::to_string(iChip) + "/TargetThreshold", 0, targetOverallForAllChips);
+                  targetThrPerChip[iChip] = targetOverallForAllChips;
+                }
         }
 
         return targetThrPerChip;
@@ -241,11 +243,10 @@ void StarTrimDacAnalysis::makeSummaryPlotsForChip(const std::map<unsigned, std::
                 Histo1d *hDistThrTrimmed = new Histo1d("ThresholdDistTrimmed_Chip" + std::to_string(iChip), 120, 0, 120);
                 hDistThrTrimmed->setXaxisTitle("Threshold [e]");
                 hDistThrTrimmed->setYaxisTitle("Number of channels");
-                TrimRangeTrimDac defaultTrimDAC(0, 16);
+                TrimRangeTrimDac defaultTrimDAC(6, 16);
                 //Getting the optimal TrimDAC for each channel
                 outJD->initialiseStarChannelsDataAtProp("ABCStar_" + std::to_string(iChip) + "/TrimRange", 1);
                 outJD->setValForProp("ABCStar_" + std::to_string(iChip) + "/TrimRange", 0, bestTrimRange);
-                alog->info("Found best trimRange {} for chip {}", bestTrimRange, iChip);
                 for (unsigned row=0; row<2; row++) {
                         outJD->initialiseStarChannelsDataAtProp("ABCStar_" + std::to_string(iChip) + "/TrimDAC/Row" + std::to_string(row));
                         for (unsigned iStrip=0; iStrip<128; iStrip++) {
@@ -258,27 +259,19 @@ void StarTrimDacAnalysis::makeSummaryPlotsForChip(const std::map<unsigned, std::
                                 }
                                 //Filling in monitoring plots
                                 if (mapThresholdVsTrimDacVsChannelNumber.find(iChannelInTrimMap)!=mapThresholdVsTrimDacVsChannelNumber.end()){
-                                  alog->info("Found channel number {} in global map.", iChannelInTrimMap);
                                   if (mapThresholdVsTrimDacVsChannelNumber.at(iChannelInTrimMap).find(defaultTrimDAC)!=mapThresholdVsTrimDacVsChannelNumber.at(iChannelInTrimMap).end()){
-                                        alog->info("Found default TrimDAC for channel number {} in global map.", iChannelInTrimMap);
                                         TrimRangeTrimDac oldTrimDAC=defaultTrimDAC;
-                                        alog->info("Filling hDistThrBefore for channel {} and TrimRange/TrimDAC {}/{} with Threshold {}", iChannelInTrimMap, oldTrimDAC.range(), oldTrimDAC.dac(), mapThresholdVsTrimDacVsChannelNumber.at(iChannelInTrimMap).at(oldTrimDAC));
                                         hDistThrBef->fill(mapThresholdVsTrimDacVsChannelNumber.at(iChannelInTrimMap).at(oldTrimDAC));
                                         if (newTrimDAC!=-999){
-                                          TrimRangeTrimDac newTrimRangeTrimDac(bestTrimRange,abs(newTrimDAC));
-                                          if (newTrimDAC >=0)
-                                                alog->info("Filling hDistThrTrimmed for channel {} and new positive TrimDAC {} with Threshold {}", iChannelInTrimMap, newTrimDAC, mapThresholdVsTrimDacVsChannelNumber.at(iChannelInTrimMap).at(newTrimRangeTrimDac));
-                                          else
-                                                alog->info("Filling hDistThrTrimmed for channel {} and new negative TrimDAC {} with Threshold {}", iChannelInTrimMap, newTrimDAC, mapThresholdVsTrimDacVsChannelNumber.at(iChannelInTrimMap).at(newTrimRangeTrimDac));
+                                          TrimRangeTrimDac newTrimRangeTrimDac(bestTrimRange,abs(newTrimDAC));;
                                           hDistThrTrimmed->fill(mapThresholdVsTrimDacVsChannelNumber.at(iChannelInTrimMap).at(newTrimRangeTrimDac));
                                         }
                                         else {
-                                          alog->info("Filling hDistThrTrimmed for channel {} and new TrimDAC {} with Threshold {}", iChannelInTrimMap, newTrimDAC, mapThresholdVsTrimDacVsChannelNumber.at(iChannelInTrimMap).at(oldTrimDAC));
                                           hDistThrTrimmed->fill(mapThresholdVsTrimDacVsChannelNumber.at(iChannelInTrimMap).at(oldTrimDAC));
                                         }
                                   }//If even the default TrimDac's results were not available
                                   else {
-                                    alog->info("Could not find any threshold result for channel {}", iChannelInTrimMap);
+                                    alog->info("Could not find result for default trim range and trimDAC for channel {}", iChannelInTrimMap);
                                   }
                                 }
                         }
@@ -311,7 +304,8 @@ void StarTrimDacAnalysis::end() {
         //Doing here the search for the best target Threshold looping all m_jDvsTrimDac (i.e. finding the position "threshold_max" of maximum in the distribution of Thresholds having the largest peak)
 
         //Let's find the threshold 'targetThr' with the maximum multiplicity of channels per chip and overall
-        sort(listThresholds.begin(), listThresholds.end(), std::greater<double>()); //we'll start probing the threshold values in decreaseing order
+        sort(listThresholds.begin(), listThresholds.end(), std::greater<double>()); //we'll start probing the threshold values in decreasing order
+
         std::map<int, double> targetThrPerChip = findTargetThresholds(mapThresholdVsTrimDacVsChannelNumber, listThresholds, outJD);
 
         //Let's retrieve the trims for the target, i.e. finding for each channel the value of TrimDac leading to the Threshold the closest to targetThr
@@ -323,38 +317,14 @@ void StarTrimDacAnalysis::end() {
           for (auto trimRange : trimRanges) {
             std::map<unsigned,int> mapOfTrims;
             unsigned int mult = getChannelMultReachingTarget(mapThresholdVsTrimDacVsChannelNumber, trimRange, targetThrPerChip[iChip], mapOfTrims, iChip);
-            //
-            if (!iChip) {
-              Histo1d *hDistThrTrimmed = new Histo1d("ThresholdDistTrimmed_Chip" + std::to_string(iChip) + "_TrimRange" + std::to_string(trimRange), 120, 0, 120);
-              hDistThrTrimmed->setXaxisTitle("Threshold [e]");
-              hDistThrTrimmed->setYaxisTitle("Number of channels");
-              TrimRangeTrimDac defaultTrimDAC(0, 16);
-              for (unsigned row=0; row<2; row++) {
-                outJD->initialiseStarChannelsDataAtProp("ABCStar_" + std::to_string(iChip) + "/TrimDACForTrimRange" + std::to_string(trimRange) + "/Row" + std::to_string(row));
-                for (unsigned iStrip=0; iStrip<128; iStrip++) {
-                  unsigned iChannelInTrimMap = iStrip + row*128 + 256*iChip;
-                  int newTrimDAC=-999;
-                  if (mapOfTrims.find(iChannelInTrimMap) != mapOfTrims.end()) {
-                    newTrimDAC=mapOfTrims.at(iChannelInTrimMap);
-                    outJD->setValForProp("ABCStar_" + std::to_string(iChip) + "/TrimDACForTrimRange" + std::to_string(trimRange) + "/Row" + std::to_string(row), iStrip, newTrimDAC);
-                  }
-                  if (mapThresholdVsTrimDacVsChannelNumber.find(iChannelInTrimMap)!=mapThresholdVsTrimDacVsChannelNumber.end()){
-                    if (mapThresholdVsTrimDacVsChannelNumber.at(iChannelInTrimMap).find(defaultTrimDAC)!=mapThresholdVsTrimDacVsChannelNumber.at(iChannelInTrimMap).end()){
-                      TrimRangeTrimDac oldTrimDAC=defaultTrimDAC;
-                      if (newTrimDAC!=-999){
-                        TrimRangeTrimDac newTrimRangeTrimDac(trimRange,abs(newTrimDAC));
-                        hDistThrTrimmed->fill(mapThresholdVsTrimDacVsChannelNumber.at(iChannelInTrimMap).at(newTrimRangeTrimDac));
-                      }
-                      else {
-                        hDistThrTrimmed->fill(mapThresholdVsTrimDacVsChannelNumber.at(iChannelInTrimMap).at(oldTrimDAC));
-                      }
-                    }
-                  }
-                }
-              }
-              std::unique_ptr<Histo1d> uphDistThrTrimmed;
-              uphDistThrTrimmed.reset(hDistThrTrimmed);
-              output->pushData(std::move(uphDistThrTrimmed));
+            if (mult>bestMultForChip) {
+              bestMultForChip = mult;
+              bestTrimRangeForChip[iChip] = trimRange;
+              mapOfBestTrims[iChip] = mapOfTrims;
+            }
+          }
+          makeSummaryPlotsForChip(mapThresholdVsTrimDacVsChannelNumber, bestTrimRangeForChip[iChip], mapOfBestTrims[iChip], outJD, iChip);
+        }
 
         //Dumping full JsonData
         output->pushData(std::move(upJD));
@@ -387,13 +357,11 @@ void StarTrimDacAnalysis::loadConfig(const json &j) {
 unsigned int StarTrimDacAnalysis::getChannelMultReachingTarget(const std::map<unsigned, std::map<TrimRangeTrimDac, double> > mapThresholdVsTrimDacVsChannelNumber, const int & trimRange, const double & target, std::map<unsigned,int> & mapOfTrims, const int & iChip) const {
         unsigned int mult = 0;
         //Looping over channels
-        alog->info("In getChannelMultReachingTarget with chip = {}, target = {} and trimRange = {}", iChip, target, trimRange);
         for (auto vals : mapThresholdVsTrimDacVsChannelNumber) {
                 unsigned channel = vals.first;
                 //In case we're interested only in channels from a specific chip (i.e. iChip!=-1), skipping other channels
                 if (iChip!=-1 && channel / 256 != iChip)
                   continue;
-                alog->info("Trying to reach target {} for channel #{}", target, channel);
                 //Looping over TrimDac in decreasing order to find the closest to target
                 int bestTrimDacForChannel = -999;
                 if (vals.second.size()) {
@@ -401,16 +369,10 @@ unsigned int StarTrimDacAnalysis::getChannelMultReachingTarget(const std::map<un
 
                         //Let's find the first values for the given TrimRange
                         double bestThr=0;
-                        std::cout << "Entering first while loop" << std::endl;
                         while (bestTrimDacForChannel<0 && rit!=vals.second.rend()) {
                           double curThr = rit->second; TrimRangeTrimDac curTrimRangeTrimDac = rit->first;
                           unsigned curTrimRange = curTrimRangeTrimDac.range();  unsigned curTrimDac = curTrimRangeTrimDac.dac();
-                          std::cout << "  curTrimRange = " << curTrimRange << std::endl;
-                          if (curTrimRange != trimRange) {
-                            std::cout << "Current trim range is NOT the one we want." << std::endl;
-                          }
-                          else {
-                            std::cout << "Current trim range IS the one we want." << std::endl;
+                          if (curTrimRange == trimRange) {
                             //Taking the first available TrimDAC as best but marked as 'untrimmed' (negative)
                             bestThr=curThr;
                             bestTrimDacForChannel = curTrimDac;
@@ -419,43 +381,32 @@ unsigned int StarTrimDacAnalysis::getChannelMultReachingTarget(const std::map<un
                         }
                         //Let's mark the found bestTrimDac as untrimmed (i.e. negative)
                         bestTrimDacForChannel = -1 * abs(bestTrimDacForChannel);
-                        std::cout << "Entering second while loop" << std::endl;
                         //Now let's find the best trimDac among the following values
                         while (bestTrimDacForChannel<0 && rit!=vals.second.rend()) {
                                 double curThr = rit->second; TrimRangeTrimDac curTrimRangeTrimDac = rit->first;
                                 unsigned curTrimRange = curTrimRangeTrimDac.range();  unsigned curTrimDac = curTrimRangeTrimDac.dac();
-                                std::cout << "  curTrimRange = " << curTrimRange << std::endl;
                                 if (curTrimRange != trimRange) {
-                                  std::cout << "Current trim range is NOT the one we want." << std::endl;
                                   ++rit;
                                   continue;
                                 }
-                                else {
-                                  std::cout << "Current trim range IS the one we want." << std::endl;
-                                }
-                                alog->info("Searching whether channel reaches target. Best: thr = {}, trim = {}, ... New: thr = {}, trim = {}.", bestThr, bestTrimDacForChannel, curThr, curTrimDac);
                                 //If the target threshold is in between the values for the current and the previous best TrimDac we keep the closest as the best TrimDAC and mark the channel as 'trimmed' (positive TrimDac)
                                 if (bestThr >= target && curThr < target && std::fabs(bestThr - target) < 5) {
                                   if ( (bestThr-target) < (target-curThr) ) {
                                     bestTrimDacForChannel=abs(bestTrimDacForChannel);
-                                    alog->info("Keeping previous best TrimDAC (positive)");
                                   }
                                   else {
                                     bestTrimDacForChannel = curTrimDac;
                                     bestThr = curThr;
-                                    alog->info("Taking current TrimDAC (positive)");
                                   }
                                 }
                                 //Otherwise we keep the TrimDAC leading to the threshold closest to the target but mark it as 'untrimmed' (negative)
                                 else {
                                   if ( std::fabs(bestThr-target) < std::fabs(target-curThr) ) {
                                     bestTrimDacForChannel = -1 * abs(bestTrimDacForChannel);
-                                    alog->info("Keeping previous best TrimDAC (negative)");
                                   }
                                   else {
                                     bestTrimDacForChannel = -curTrimDac;
                                     bestThr = curThr;
-                                    alog->info("Taking current TrimDAC (negative)");
                                   }
                                 }
                                 ++rit;
@@ -467,7 +418,6 @@ unsigned int StarTrimDacAnalysis::getChannelMultReachingTarget(const std::map<un
                           mult++;
                         }
                 }
-                alog->info("  returning bestTrimDacForChannel={}", bestTrimDacForChannel);
         }
         return mult;
 }
