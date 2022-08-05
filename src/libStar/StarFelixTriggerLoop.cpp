@@ -254,6 +254,53 @@ std::tuple<std::vector<uint8_t>, unsigned> StarFelixTriggerLoop::getTriggerSegme
   return {triggers, nTriggers};
 }
 
+void StarFelixTriggerLoop::addChargeInjection(std::vector<uint8_t>& trig_segment) {
+  if (m_trigFreq > 5e6) { // trigger frequency > 5 MHz
+    // No gap between L0A frames. Not possible to insert pulse command.
+    logger->error("Trigger frequency is too high to add charge injection command. No charge is injected.");
+    // Set m_trigDelay to some invalid value
+    m_trigDelay = -1;
+    return;
+  }
+
+  // TODO
+  // For now, assume m_trigDelay is less than the number of BCs between L0As
+  // Otherwise a pulse fast command need be injected to the previous trigger segment. This has to be done elsewhere.
+  if (m_trigDelay >= 1e9 /m_trigFreq / 25) { // 1 BC is 25 ns
+    logger->warn("Trigger delay is greater than the interval between triggers. Cannot inject charges with the current version.");
+    // Set m_trigDelay to some invalid value
+    m_trigDelay = -1;
+    return;
+  }
+
+  // The last two bytes should be an L0A, all other entries before that are IDLEs
+  assert(trig_segment.size() >1);
+  assert(trig_segment[trig_segment.size()-2] == LCB_FELIX::L0A);
+
+  // Charge injection command
+  std::array<uint8_t, 2> inj;
+  uint8_t bcsel = 3 - (m_trigDelay % 4);
+
+  if (m_digital) {
+    inj = LCB_FELIX::fast_command(LCB::ABC_DIGITAL_PULSE, bcsel);
+  } else {
+    inj = LCB_FELIX::fast_command(LCB::ABC_CAL_PULSE, bcsel);
+  }
+
+  // Number of IDLE frames between the fast command and L0A
+  int nIDLE = m_trigDelay / 4;
+
+  // Index of the IDLE frame to be replaced by the fast command
+  // trig_segment.size()-2 is the index of the start of L0A
+  int iInj = trig_segment.size()-2 - nIDLE - 1;
+  assert(iInj >= 0); // due to the assumption above
+
+  // Replace the IDLE frame
+  trig_segment.erase(trig_segment.begin()+iInj);
+  trig_segment.insert(trig_segment.begin()+iInj, inj.begin(), inj.end());
+}
+
+
 std::vector<uint8_t> StarFelixTriggerLoop::getHitCounterSegment() {
   std::vector<uint8_t> readHitCounts;
 
@@ -314,6 +361,11 @@ std::vector<uint8_t> StarFelixTriggerLoop::makeTrickleSequence() {
   // This is one trigger segment with m_trigFreq taken into account
   // The number of triggers in one segment is indicated by ntrig_per_seg
 
+  // Add charge injection if needed
+  if (not m_noInject) {
+    addChargeInjection(trigger_seg);
+  }
+
   // Command segment to read and reset hit counters
   auto hitcount_seg = getHitCounterSegment();
 
@@ -330,7 +382,7 @@ std::vector<uint8_t> StarFelixTriggerLoop::makeTrickleSequence() {
 
   if (nMaxSeg_by_size == 0) {
     logger->error("The trigger sequence is too long to be written into the trickle memory. The trigger frequency is too low.");
-    logger->error("No trigger will be sent");
+    logger->warn("No trigger will be sent");
 
     m_nTrigsTrickle = 0;
     m_trigFreq = -1; // set to some invalid value
@@ -409,8 +461,4 @@ std::vector<uint8_t> StarFelixTriggerLoop::makeTrickleSequence() {
   logger->trace("m_nTrigsTrickle = {}", m_nTrigsTrickle);
 
   return trickleSeq;
-
-  // TODO: add pulse
-  // compute index for inserting pulse command
-  //int iBC_pulse;
 }

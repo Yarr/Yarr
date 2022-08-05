@@ -40,12 +40,13 @@ private:
   // This matches the pattern buffer in TxCore
   std::array<uint32_t, 32> m_trigWord;
 
-  bool m_noInject;
-  bool m_digital;
+  bool m_noInject {true};
+  bool m_digital {false};
 
   unsigned m_nTrigsTrickle; // number of triggers stored in the trickle memory
 
   std::tuple<std::vector<uint8_t>, unsigned> getTriggerSegment(unsigned max_trigs = -1);
+  void addChargeInjection(std::vector<uint8_t>&);
   std::vector<uint8_t> getHitCounterSegment();
   std::vector<uint8_t> makeTrickleSequence();
 
