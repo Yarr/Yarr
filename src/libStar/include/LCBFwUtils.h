@@ -116,12 +116,16 @@ namespace LCB_FELIX {
     ABC_MASK_F = 0x1E
   };
 
-  // Command to configure the firmware LCB encoder
+  // Command to configure the firmware LCB encoder sent via config virtual elinks
+  enum ConfigCmd : uint8_t {
+    LCBREG = 0x10
+  };
+
   inline std::array<uint8_t, 4> config_command_bytes(
     uint8_t addr, uint16_t value)
   {
     return {
-      0x10,
+      LCBREG,
       static_cast<uint8_t>( (value >> 8) & 0xff ),
       static_cast<uint8_t>( value & 0xff ),
       addr
