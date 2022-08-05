@@ -26,11 +26,11 @@ class StarThrottleLoop : public LoopActionBase, public GlobalFeedbackReceiver {
         StarThrottleLoop(Register StarCfg::*ref);
 
         void writeConfig(json &j) override;
-        void loadConfig(json &j) override;
+        void loadConfig(const json &j) override;
 
         // TODO should probably register a single function
         void feedback(unsigned channel, double sign, bool last = false) override;
-        void feedbackBinary(unsigned channel, double sign, bool last) {};
+        void feedbackBinary(unsigned channel, double sign, bool last) override {}
 
     private:
         Register StarCfg::*parPtr;
@@ -46,10 +46,10 @@ class StarThrottleLoop : public LoopActionBase, public GlobalFeedbackReceiver {
 
         bool allDone();
         
-        void init();
-        void end();
-        void execPart1();
-        void execPart2();
+        void init() override;
+        void end() override;
+        void execPart1() override;
+        void execPart2() override;
 };
 
 

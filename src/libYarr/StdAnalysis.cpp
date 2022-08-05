@@ -2092,13 +2092,13 @@ void ParameterAnalysis::end() {
     }
 }
 
-void TriggerThrottleAnalysis::init(ScanBase *s) {
+void TriggerThrottleAnalysis::init(const ScanLoopInfo *s) {
     n_count = 1;
     target_occ = 128;
     current_inj = 0;
-    int receivers;
+    // int receivers;
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        auto l = s->getLoop(n);
         if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -2110,7 +2110,7 @@ void TriggerThrottleAnalysis::init(ScanBase *s) {
         }
 
         if (l->isTriggerLoop()) {
-            trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            trigLoop = dynamic_cast<const StdTriggerAction*>(l);
             if(trigLoop == nullptr) {
                 alog->error("TriggerThrottleAnalysis");
             } else {
@@ -2189,7 +2189,11 @@ void TriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
         alog->trace("Throttling trigger with {} injections, sign {}. Total inj {}. Target {}.",injections,sign, current_inj, target_inj);
         if (sign == 1) {
             injections *= 2;
-            trigLoop->setTrigCnt(injections);
+
+            alog->warn("Trigger throttle wants to change trigger count {} {}",
+                       trigLoop->getTrigCnt(),
+                       injections);
+            // trigLoop->setTrigCnt(injections);
         } else if (sign == -1) {
             injections /= 2;
         }
@@ -2201,8 +2205,12 @@ void TriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
         } else if (injections+current_inj > target_inj) {
             injections = target_inj - current_inj;
         }
-        trigLoop->setTrigCnt(injections);
-        fb->feedback(this->channel, sign, done);
+
+        alog->warn("Trigger throttle wants to change trigger count {} {}",
+                   trigLoop->getTrigCnt(),
+                   injections);
+        // trigLoop->setTrigCnt(injections);
+        fb->feedback(this->id, sign, done);
 
         //output->pushData(std::move(occMaps[ident]));
         innerCnt[ident] = 0;
@@ -2215,7 +2223,7 @@ void TriggerThrottleAnalysis::end() {
 
 }
 
-void TriggerThrottleAnalysis::loadConfig(json &j) {
+void TriggerThrottleAnalysis::loadConfig(const json &j) {
     if (!j["target_occ"].empty()) {
         target_occ = j["target_occ"];
     }

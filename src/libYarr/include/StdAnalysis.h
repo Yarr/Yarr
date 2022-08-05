@@ -509,10 +509,10 @@ class TriggerThrottleAnalysis : public AnalysisAlgorithm {
  TriggerThrottleAnalysis() : AnalysisAlgorithm() {};
     ~TriggerThrottleAnalysis() {};
     
-    void init(ScanBase *s);
-    void processHistogram(HistogramBase *h);
-    void end();
-    void loadConfig(json &config);
+    void init(const ScanLoopInfo *s) override;
+    void processHistogram(HistogramBase *h) override;
+    void end() override;
+    void loadConfig(const json &config) override;
  private:
     std::vector<unsigned> loops;
     std::vector<unsigned> loopMax;
@@ -520,10 +520,13 @@ class TriggerThrottleAnalysis : public AnalysisAlgorithm {
     std::map<unsigned, std::unique_ptr<Histo2d>> outerOccMaps;
     std::map<unsigned, unsigned> innerCnt;
     unsigned target_occ, target_inj, current_inj;
-    int n_count;
+    unsigned n_count;
     int injections, start_inj;
     std::unique_ptr<GlobalFeedbackSender> fb;
-    StdTriggerAction* trigLoop;
+
+    /// Save pointer to trigger loop to be adjusted
+    // TODO make this possible
+    const StdTriggerAction* trigLoop;
 };
 
 #endif

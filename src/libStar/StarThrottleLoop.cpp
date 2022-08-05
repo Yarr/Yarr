@@ -2,6 +2,8 @@
  */
 
 #include "StarThrottleLoop.h"
+
+#include "Bookkeeper.h"
 #include "logging.h"
 
 namespace {
@@ -31,7 +33,7 @@ void StarThrottleLoop::writeConfig(json &j) {
     j["max_iters"] = max_iters;
 }
 
-void StarThrottleLoop::loadConfig(json &j) {
+void StarThrottleLoop::loadConfig(const json &j) {
     if (!j["max"].empty())
         max = j["max"];
     if (!j["step"].empty())
@@ -52,9 +54,10 @@ void StarThrottleLoop::execPart1() {
 }
 
 void StarThrottleLoop::execPart2() {
-    for (auto fe: keeper->feList) {
-        if (fe->getActive()) {
-            unsigned rx = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
+    for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        auto &fe = *keeper->getEntry(id).fe;
+        if (fe.getActive()) {
+            unsigned rx = dynamic_cast<FrontEndCfg&>(fe).getRxChannel();
             waitForFeedback(rx);
         }
     }
