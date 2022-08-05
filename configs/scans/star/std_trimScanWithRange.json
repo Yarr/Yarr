@@ -2,29 +2,25 @@
   "scan": {
     "analysis": {
       "0": {
-        "algorithm": "OccupancyAnalysis",
-        "config": {}
-      },
-      "1": {
         "algorithm": "StarScurveFitter",
-        "storeInputHisto": 1,
         "config": {
           "reverse": true,
           "parametersOfInterest": ["ABCs_BVT"],
           "dumpStarJsonDataResults" : true,
-          "dumpDebugScurvePlots": true
+          "dumpDebugScurvePlots": false
         }
       },
-      "2": {
+      "1": {
         "algorithm": "StarTrimDacAnalysis",
         "config": {
           "parametersOfInterest": ["ABCs_BTRANGE", "TrimDAC"],
           "skipDependencyCheck": 0,
-          "dumpStarJsonDataResults": true
+          "dumpStarJsonDataResults": true,
+          "targetThresholdPerChip": true
         },
         "dependOn": ["StarScurveFitter"]
       },
-      "n_count": 3
+      "n_count": 2
     },
     "histogrammer": {
       "0": {
@@ -36,18 +32,18 @@
     "loops": [
       {
         "config": {
-          "max": 8,
-          "min": 0,
-          "step": 4,
+          "max": 6,
+          "min": 6,
+          "step": 1,
           "parameter":"ABCs_BTRANGE"
         },
         "loopAction": "StdParameterLoop"
       },
       {
         "config": {
-          "max": 28,
+          "max": 31,
           "min": 0,
-          "step": 4,
+          "step": 1,
           "parameter":"TrimDAC"
         },
         "loopAction": "StarTrimDacLoop"
@@ -63,10 +59,10 @@
       },
       {
         "config": {
-          "trig_count": 100,
-          "trig_frequency": 200,
+          "trig_count": 500,
+          "trig_frequency": 1000,
           "trig_time": 0,
-          "l0_latency": 7,
+          "l0_latency": 19,
           "extTrigger": false,
           "noInject": false
         },
@@ -80,7 +76,6 @@
     "prescan": {
         "ABCs_PR_ENABLE":  1,
         "ABCs_LP_ENABLE":  1,
-        "#ABCs_BTRANGE":    6,
         "ABCs_B8BREF":    13,
         "ABCs_BVREF":     13,
         "ABCs_BIREF":     15,
@@ -88,14 +83,13 @@
         "ABCs_DETMODE":    0,
         "ABCs_MASKHPR":    1,
         "ABCs_STOPHPR":    1,
-        "ABCs_BVT":        5,
         "ABCs_COMBIAS":   16,
         "HCC_MASKHPR":     1,
         "HCC_STOPHPR":     1,
-        "#ABCs_STR_DEL":   35,
-        "#ABCs_STR_DEL_R":  3,
-        "#ABCs_BCAL":     200,
-        "#ABCs_LATENCY": 3
+        "ABCs_BCAL":       0,
+        "ABCs_CALPULSE_ENABLE":    1,
+        "ABCs_CALPULSE_POLARITY":  0,
+        "ABCs_CURRDRIV": 4
     }
   }
 }
