@@ -347,6 +347,13 @@ TEST_CASE("StarFelixTriggerLoopTest", "[star][trigger_loop]") {
     j["l0_latency"] = 233;
   }
 
+  //////
+  // Disable hit counters
+  SECTION("Default with hit counters disabled") {
+    j["noInject"] = false;
+    j["useHitCount"] = false;
+  }
+
   action->loadConfig(j);
 
   LoopStatusMaster ls;

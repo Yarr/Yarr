@@ -42,6 +42,7 @@ private:
 
   bool m_noInject {true};
   bool m_digital {false};
+  bool m_useHitCount {true};
 
   unsigned m_nTrigsTrickle; // number of triggers stored in the trickle memory
 

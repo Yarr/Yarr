@@ -91,9 +91,6 @@ void StarFelixTriggerLoop::init() {
 void StarFelixTriggerLoop::execPart1() {
   logger->debug("execPart1");
 
-  // Do we need to set ABCStar ENCOUNT = 1, LP_ENABLE = 0, PR_ENABLE = 0 here?
-  // Or assume the pre-scan would set the registers?
-
   // Enable Trigger
   g_tx->setTrigEnable(0x1);
 }
@@ -129,6 +126,7 @@ void StarFelixTriggerLoop::writeConfig(json &config) {
   config["l0_latency"] = m_trigDelay;
   config["noInject"] = m_noInject;
   config["digital"] = m_digital;
+  config["useHitCount"] = m_useHitCount;
   config["trickle_frequency"] = m_trickleFreq;
 }
 
@@ -151,6 +149,9 @@ void StarFelixTriggerLoop::loadConfig(const json &config) {
 
   if (config.contains("digital"))
     m_digital = config["digital"];
+
+  if (config.contains("useHitCount"))
+    m_useHitCount = config["useHitCount"];
 
   if (config.contains("trickle_frequency"))
     m_trickleFreq = config["trickle_frequency"];
@@ -338,13 +339,15 @@ std::vector<uint8_t> StarFelixTriggerLoop::makeTrickleSequence() {
   auto stopCnt = LCB_FELIX::fast_command(LCB::ABC_HIT_COUNT_STOP, 0);
   trickleSeq_pre.insert(trickleSeq_pre.end(), stopCnt.begin(), stopCnt.end());
 
-  // Reset hit counters
-  auto resetCnt = LCB_FELIX::fast_command(LCB::ABC_HIT_COUNT_RESET, 0);
-  trickleSeq_pre.insert(trickleSeq_pre.end(), resetCnt.begin(), resetCnt.end());
+  if (m_useHitCount) {
+    // Reset hit counters
+    auto resetCnt = LCB_FELIX::fast_command(LCB::ABC_HIT_COUNT_RESET, 0);
+    trickleSeq_pre.insert(trickleSeq_pre.end(), resetCnt.begin(), resetCnt.end());
 
-  // Start hit counters
-  auto startCnt = LCB_FELIX::fast_command(LCB::ABC_HIT_COUNT_START, 0);
-  trickleSeq_pre.insert(trickleSeq_pre.end(), startCnt.begin(), startCnt.end());
+    // Start hit counters
+    auto startCnt = LCB_FELIX::fast_command(LCB::ABC_HIT_COUNT_START, 0);
+    trickleSeq_pre.insert(trickleSeq_pre.end(), startCnt.begin(), startCnt.end());
+  }
 
   // TODO: add some register commands as "pre-buffering"?
 
@@ -367,7 +370,10 @@ std::vector<uint8_t> StarFelixTriggerLoop::makeTrickleSequence() {
   }
 
   // Command segment to read and reset hit counters
-  auto hitcount_seg = getHitCounterSegment();
+  std::vector<uint8_t> hitcount_seg;
+  if (m_useHitCount) {
+    hitcount_seg = getHitCounterSegment();
+  }
 
   // Put multiple trigger segments together, followed by hit counters read
   // The max number of triggers should be < 256 to avoid hit counter overflow
