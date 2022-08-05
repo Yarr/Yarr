@@ -1,6 +1,7 @@
 #include "StarFelixTriggerLoop.h"
 #include "LCBUtils.h"
 #include "LCBFwUtils.h"
+#include "AbcCfg.h"
 
 #include "logging.h"
 
@@ -310,8 +311,7 @@ std::vector<uint8_t> StarFelixTriggerLoop::getHitCounterSegment() {
   // configuration registers on FELIX could be set accordingly.
 
   // Loop over hit counter registers
-  // FIXME: should not hard code the address
-  for (int addr = 0x80; addr <= 0xbf; addr++) {
+  for (unsigned addr = ABCStarRegister::HitCountREG0; addr <= ABCStarRegister::HitCountREG63; addr++) {
     auto rr = LCB_FELIX::read_abc_register(addr);
     readHitCounts.insert(readHitCounts.end(), rr.begin(), rr.end());
 
