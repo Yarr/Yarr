@@ -3,6 +3,7 @@
 
 #include "AllStdActions.h"
 #include "EmptyHw.h"
+#include "LCBUtils.h"
 #include "LCBFwUtils.h"
 #include "StarFelixTriggerLoop.h"
 
@@ -74,6 +75,41 @@ public:
 /*
   Some helper functions for checking triggers stored in the buffer / trickle memory
 */
+uint32_t increment_bytes(uint8_t header) {
+  switch (header) {
+    case LCB_FELIX::IDLE:
+      return 1;
+    case LCB_FELIX::L0A:
+      return 2;
+    case LCB_FELIX::FASTCMD:
+      return 2;
+    case LCB_FELIX::ABCREGRD:
+    case LCB_FELIX::HCCREGRD:
+      return 3;
+    case LCB_FELIX::ABCREGWR:
+    case LCB_FELIX::HCCREGWR:
+      return 7;
+    default:
+      return 1;
+  }
+}
+
+uint32_t increment_BCs(uint8_t header) {
+  switch (header) {
+    case LCB_FELIX::IDLE:
+    case LCB_FELIX::L0A:
+    case LCB_FELIX::FASTCMD:
+      return 4;
+    case LCB_FELIX::ABCREGRD:
+    case LCB_FELIX::HCCREGRD:
+      return 16; // 4 LCB frames, 4 BCs per frame
+    case LCB_FELIX::ABCREGWR:
+    case LCB_FELIX::HCCREGWR:
+      return 36; // 9 LCB frames, 4 BCs per frame
+    default:
+      return 0;
+  }
+}
 
 uint32_t count_triggers(const std::vector<uint8_t>& buffer) {
   uint32_t ntrigs = 0;
@@ -87,16 +123,9 @@ uint32_t count_triggers(const std::vector<uint8_t>& buffer) {
       if (buffer[ibyte+1] & 4) ntrigs+=1;
       if (buffer[ibyte+1] & 2) ntrigs+=1;
       if (buffer[ibyte+1] & 1) ntrigs+=1;
-      ibyte += 2;
-    } else if (buffer[ibyte] == LCB_FELIX::FASTCMD) {
-      ibyte += 2;
-    } else if (buffer[ibyte] == LCB_FELIX::HCCREGRD or buffer[ibyte] == LCB_FELIX::ABCREGRD) {
-      ibyte += 3;
-    } else if (buffer[ibyte] == LCB_FELIX::HCCREGWR or buffer[ibyte] == LCB_FELIX::ABCREGWR) {
-      ibyte += 7;
-    } else { // IDLE
-      ibyte += 1;
     }
+
+    ibyte += increment_bytes(buffer[ibyte]);
   }
 
   return ntrigs;
@@ -123,28 +152,12 @@ double get_trig_frequency(const std::vector<uint8_t>& buffer) {
 
         BC += 1;
       }
-      ibyte += 2;
-
-    } else if (buffer[ibyte] == LCB_FELIX::IDLE) { // an IDLE frame
-      BC += 4; // 4 BCs per frame
-      ibyte += 1;
-
-    } else if (buffer[ibyte] == LCB_FELIX::FASTCMD) { // a fast command
-      BC += 4; // 4 BCs per frame
-      ibyte += 2;
-
-    } else if (buffer[ibyte] == LCB_FELIX::HCCREGRD or buffer[ibyte] == LCB_FELIX::ABCREGRD) {
-      BC += 4*4; // 4 LCB frames, 4 BCs per frame
-      ibyte += 3;
-
-    } else if (buffer[ibyte] == LCB_FELIX::HCCREGWR or buffer[ibyte] == LCB_FELIX::ABCREGWR) {
-      BC += 9*4; // 9 LCB frames, 4 BCs per frame
-      ibyte += 7;
-
     } else {
-      // Shouldn't be here. Just in case
-      ibyte += 1;
+      // increase BC in case of other frames
+      BC += increment_BCs(buffer[ibyte]);
     }
+
+    ibyte += increment_bytes(buffer[ibyte]);
 
     if (trigBCs.size() > 2)
       break;
@@ -168,45 +181,114 @@ double get_trig_frequency(const std::vector<uint8_t>& buffer) {
   return trigFreq;
 }
 
-TEST_CASE("StarFelixTriggerLoopNoInj", "[star][trigger_loop]") {
+int get_trig_delay(const std::vector<uint8_t>& buffer) {
+  int delay = 0; // number of BCs
+  bool startCount = false;
+  bool stopCount = false;
+
+  uint32_t ibyte = 0;
+  while(ibyte < buffer.size()) {
+
+    if (buffer[ibyte] == LCB_FELIX::FASTCMD) {
+      // A fast command. Check the next byte
+      uint8_t cmd = buffer[ibyte+1] & 0xf;
+      uint8_t bcsel = (buffer[ibyte+1] >> 4) & 0x3;
+
+      if (cmd == LCB::ABC_CAL_PULSE or cmd == LCB::ABC_DIGITAL_PULSE) {
+
+        // A pulse command
+        startCount = true;
+        delay = -bcsel;
+      } else {
+        // Other fast command
+        if (startCount) {
+          delay += increment_BCs(LCB_FELIX::FASTCMD);
+        }
+      }
+
+    } else if (buffer[ibyte] == LCB_FELIX::L0A) { // L0A
+      if (startCount) {
+        uint8_t mask = buffer[ibyte+1] & 0xf;
+        for (int i=3; i>=0; i--) { // check each bit, from left to right
+          if (mask & (1<<i)) {
+            // A trigger
+            stopCount = true;
+            break;
+          } else {
+            delay += 1;
+          }
+        }
+      }
+    } else { // other frames
+      if (startCount) {
+        delay += increment_BCs(buffer[ibyte]);
+      }
+    }
+
+    if (stopCount) break;
+
+    ibyte += increment_bytes(buffer[ibyte]);
+  } // end of while(ibyte < buffer.size())
+
+  if (not startCount) {
+    // Never found the pulse fast command
+    WARN("No pulse command in the sequence.");
+    delay = -1;
+  } else if (not stopCount) {
+    WARN("No trigger in the sequence.");
+    delay = -1;
+  }
+  // -1 is the value set to m_trigDelay in StarFelixTriggerLoop in case it cannot insert a pulse command
+
+  return delay;
+}
+
+TEST_CASE("StarFelixTriggerLoopTest", "[star][trigger_loop]") {
   std::shared_ptr<LoopActionBase> action = StdDict::getLoopAction("StarFelixTriggerLoop");
 
   REQUIRE ( action );
 
   json j;
 
-  j["noInject"] = true;
-
   // Test different configurations
+  //////
+  // Without charge injection
   SECTION("Default") {
+    j["noInject"] = true;
   }
 
   SECTION("10 MHz 10 triggers") {
+    j["noInject"] = true;
     j["trig_frequency"] = 10e6; // Hz
     j["trig_count"] = 10;
   }
 
   SECTION("40 MHz 103 triggers") {
+    j["noInject"] = true;
     j["trig_frequency"] = 40e6; // Hz
     j["trig_count"] = 103;
   }
 
   SECTION("20 MHz 12321 triggers") {
+    j["noInject"] = true;
     j["trig_frequency"] = 20e6; // Hz
     j["trig_count"] = 12321;
   }
 
   SECTION("11 MHz 71 triggers") {
+    j["noInject"] = true;
     j["trig_frequency"] = 11e6; // Hz
     j["trig_count"] = 71;
   }
 
   SECTION("2 kHz 100001 triggers") {
+    j["noInject"] = true;
     j["trig_frequency"] = 2000; // Hz
     j["trig_count"] = 100001;
   }
 
   SECTION("3 kHz 5 triggers") {
+    j["noInject"] = true;
     j["trig_frequency"] = 3000; // Hz
     j["trig_count"] = 5;
   }
@@ -215,6 +297,7 @@ TEST_CASE("StarFelixTriggerLoopNoInj", "[star][trigger_loop]") {
     // Very low trigger frequency: the trickle memory can only store one trigger
     // Should still send the number of triggers requested
     // The actual trigger frequency is determined by the frequency of the trickle pulse
+    j["noInject"] = true;
     j["trig_frequency"] = 1000; // Hz
     j["trig_count"] = 66;
   }
@@ -222,9 +305,46 @@ TEST_CASE("StarFelixTriggerLoopNoInj", "[star][trigger_loop]") {
   SECTION("500 Hz 66 triggers") {
     // Trigger frequency is below the threshold.
     // One trigger sequence is too long to be stored in the trickle memory
-    // Should see error messages. No trigger will be sent. 
+    // Should see error messages. No trigger will be sent.
+    j["noInject"] = true;
     j["trig_frequency"] = 500; // Hz
     j["trig_count"] = 66;
+  }
+
+  //////
+  // With charge injection
+  SECTION("1 MHz 251 triggers 0 delay") {
+    j["noInject"] = false;
+    j["trig_frequency"] = 1e6; // Hz
+    j["trig_count"] = 251;
+    j["noInject"] = false;
+    j["l0_latency"] = 0;
+  }
+
+  SECTION("100 kHz 212121 triggers 42 delay") {
+    j["noInject"] = false;
+    j["trig_frequency"] = 1e5; // Hz
+    j["trig_count"] = 212121;
+    j["noInject"] = false;
+    j["l0_latency"] = 42;
+  }
+
+  SECTION("7 MHz 25 triggers 1 delay") {
+    // Trigger frequency is too high. Can't insert fast command
+    j["noInject"] = false;
+    j["trig_frequency"] = 7e6; // Hz
+    j["trig_count"] = 25;
+    j["noInject"] = false;
+    j["l0_latency"] = 1;
+  }
+
+  SECTION("1 MHz 10 triggers 233 delay") {
+    // Trigger delay is larger than the trigger period. Can't insert fast command
+    j["noInject"] = false;
+    j["trig_frequency"] = 1e6; // Hz
+    j["trig_count"] = 10;
+    j["noInject"] = false;
+    j["l0_latency"] = 233;
   }
 
   action->loadConfig(j);
@@ -284,4 +404,16 @@ TEST_CASE("StarFelixTriggerLoopNoInj", "[star][trigger_loop]") {
   CAPTURE ( trigFreq_sent );
 
   REQUIRE ( trigFreq_sent == trigFreq_expected );
+
+  //
+  // Trigger delay
+  if (not j["noInject"]) {
+    int trigDelay_expected = std::dynamic_pointer_cast<StarFelixTriggerLoop>(action)->getTrigDelay();
+    CAPTURE ( trigDelay_expected );
+
+    int trigDelay_sent = get_trig_delay(tx.m_fifo[trickleChn]);
+    CAPTURE ( trigDelay_sent );
+
+    REQUIRE ( trigDelay_sent == trigDelay_expected );
+  }
 }
