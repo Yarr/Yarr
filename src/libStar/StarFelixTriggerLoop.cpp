@@ -2,6 +2,7 @@
 #include "LCBUtils.h"
 #include "LCBFwUtils.h"
 #include "AbcCfg.h"
+#include "HccCfg.h"
 
 #include "logging.h"
 
@@ -336,6 +337,11 @@ std::vector<uint8_t> StarFelixTriggerLoop::makeTrickleSequence() {
   // Commands to be sent before starting to send tiggers
   std::vector<uint8_t> trickleSeq_pre;
 
+  // Add some register commands as pre-buffering for the command decoder
+  // Read HCC OPmode register
+  auto hccRR = LCB_FELIX::read_hcc_register(HCCStarRegister::OPmode);
+  trickleSeq_pre.insert(trickleSeq_pre.end(), hccRR.begin(), hccRR.end());
+
   // Stop hit counters
   auto stopCnt = LCB_FELIX::fast_command(LCB::ABC_HIT_COUNT_STOP, 0);
   trickleSeq_pre.insert(trickleSeq_pre.end(), stopCnt.begin(), stopCnt.end());
@@ -349,8 +355,6 @@ std::vector<uint8_t> StarFelixTriggerLoop::makeTrickleSequence() {
     auto startCnt = LCB_FELIX::fast_command(LCB::ABC_HIT_COUNT_START, 0);
     trickleSeq_pre.insert(trickleSeq_pre.end(), startCnt.begin(), startCnt.end());
   }
-
-  // TODO: add some register commands as "pre-buffering"?
 
   //////
   // Commands to be sent after triggers are done
