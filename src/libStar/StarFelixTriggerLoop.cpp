@@ -308,6 +308,10 @@ void StarFelixTriggerLoop::addChargeInjection(std::vector<uint8_t>& trig_segment
 std::vector<uint8_t> StarFelixTriggerLoop::getHitCounterSegment() {
   std::vector<uint8_t> readHitCounts;
 
+  for (int i=0; i<10; i++) {
+    readHitCounts.push_back(LCB_FELIX::IDLE);
+  }
+
   // Broadcast read commands for hit counter registers
   // TODO:
   // In case we wish to mask some FEs, the HCC_MASK and ABC_MASK_* of the LCB
@@ -318,13 +322,20 @@ std::vector<uint8_t> StarFelixTriggerLoop::getHitCounterSegment() {
     auto rr = LCB_FELIX::read_abc_register(addr);
     readHitCounts.insert(readHitCounts.end(), rr.begin(), rr.end());
 
-    // Insert some IDLEs?
-    //readCnt.push_back(LCB_FELIX::IDLE);
+    // Some register reads would be ignored in the firmware LCB encoder if they are sent consecutively.
+    // Inserting some (10) IDLEs between the register reads seems to help.
+    for (int i=0; i<10; i++) {
+      readHitCounts.push_back(LCB_FELIX::IDLE);
+    }
   }
 
   // reset hit counters
   auto hitCntRst = LCB_FELIX::fast_command(LCB::ABC_HIT_COUNT_RESET, 0);
   readHitCounts.insert(readHitCounts.end(), hitCntRst.begin(), hitCntRst.end());
+
+  for (int i=0; i<10; i++) {
+    readHitCounts.push_back(LCB_FELIX::IDLE);
+  }
 
   return readHitCounts;
 }
@@ -354,6 +365,11 @@ std::vector<uint8_t> StarFelixTriggerLoop::makeTrickleSequence() {
     // Start hit counters
     auto startCnt = LCB_FELIX::fast_command(LCB::ABC_HIT_COUNT_START, 0);
     trickleSeq_pre.insert(trickleSeq_pre.end(), startCnt.begin(), startCnt.end());
+  }
+
+  // Add some IDLE frames before sending triggers
+  for (int i=0; i<10; i++) {
+    trickleSeq_pre.push_back(LCB_FELIX::IDLE);
   }
 
   //////
