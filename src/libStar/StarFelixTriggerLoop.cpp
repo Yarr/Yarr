@@ -60,6 +60,7 @@ void StarFelixTriggerLoop::init() {
   // round up
   uint32_t nPulse = std::ceil(static_cast<float>(getTrigCnt()) / m_nTrigsTrickle);
   g_tx->setTrigCnt(nPulse);
+  logger->debug("nPulse = {}", nPulse);
 
   // The total number of triggers that are actually sent out.
   unsigned nTotalTrigs = nPulse * m_nTrigsTrickle;
@@ -416,9 +417,9 @@ std::vector<uint8_t> StarFelixTriggerLoop::makeTrickleSequence() {
     trickleSeq_burst.insert(trickleSeq_burst.end(), trigger_seg.begin(), trigger_seg.end());
   }
 
-  logger->trace("ntrig_per_burst = {}", ntrig_per_burst);
-  logger->trace("ntrig_per_seg = {}", ntrig_per_seg);
-  logger->trace("nSeg_per_burst = {}", nSeg_per_burst);
+  logger->debug("ntrig_per_burst = {}", ntrig_per_burst);
+  logger->debug("ntrig_per_seg = {}", ntrig_per_seg);
+  logger->debug("nSeg_per_burst = {}", nSeg_per_burst);
 
   // Add the remaining triggers in case ntrig_per_burst is not divisible by ntrig_per_seg
   // Only needed when trigger frequency is > 10 MHz
@@ -427,7 +428,7 @@ std::vector<uint8_t> StarFelixTriggerLoop::makeTrickleSequence() {
     trickleSeq_burst.insert(trickleSeq_burst.end(), trigger_last.begin(), trigger_last.end());
     assert( nSeg_per_burst * ntrig_per_seg + ntrig_last == ntrig_per_burst );
 
-    logger->trace("ntrig_last = {}", ntrig_last);
+    logger->debug("ntrig_last = {}", ntrig_last);
   }
 
   // Add hit counter read and reset commands
@@ -447,9 +448,9 @@ std::vector<uint8_t> StarFelixTriggerLoop::makeTrickleSequence() {
   // The actual number of times to repeat trickleSeq_burst in the trickle memory
   int nBurst = std::min(nBurstNeed, nBurstMax);
 
-  logger->trace("nBurstNeed = {}", nBurstNeed);
-  logger->trace("nBurstMax = {}", nBurstMax);
-  logger->trace("nBurst = {}", nBurst);
+  logger->debug("nBurstNeed = {}", nBurstNeed);
+  logger->debug("nBurstMax = {}", nBurstMax);
+  logger->debug("nBurst = {}", nBurst);
 
   // Put everything together
   trickleSeq.insert(trickleSeq.end(), trickleSeq_pre.begin(), trickleSeq_pre.end());
@@ -464,7 +465,12 @@ std::vector<uint8_t> StarFelixTriggerLoop::makeTrickleSequence() {
   // Total number of triggers in the trickle memory
   m_nTrigsTrickle = ntrig_per_burst * nBurst;
 
-  logger->trace("m_nTrigsTrickle = {}", m_nTrigsTrickle);
+  logger->debug("m_nTrigsTrickle = {}", m_nTrigsTrickle);
+
+  logger->debug("trickleSeq.size = {}", trickleSeq.size());
+  for (auto seq : trickleSeq) {
+    logger->trace("{:x}", seq);
+  }
 
   return trickleSeq;
 }
