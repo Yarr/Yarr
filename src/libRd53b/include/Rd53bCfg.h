@@ -60,6 +60,8 @@ class Rd53bCfg : public FrontEndCfg, public Rd53bGlobalCfg, public Rd53bPixelCfg
         float m_kSenseInD;                                 // Multiplicator of IinD
         float m_kSenseShuntA;                              // Multiplicator of IshuntA
         float m_kSenseShuntD;                              // Multiplicator of IshuntD
+        float m_kShuntA;                              // kFactor of the analog shunt circuit
+        float m_kShuntD;                              // kFactor of the digital shunt circuit
         std::array<float, 3> m_ntcCalPar;                 // Steinhart coefficients
 };
 
