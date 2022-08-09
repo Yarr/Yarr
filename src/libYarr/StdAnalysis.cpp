@@ -164,23 +164,28 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
         mask->setZaxisTitle("Enable");
 
         unsigned failed_cnt = 0;
-        for (unsigned i=0; i<occMaps[ident]->size(); i++) {
-            if (occMaps[ident]->getBin(i) == injections) {
-                mask->setBin(i, 1);
-            } else {
-                failed_cnt++;
-                if (make_mask&&createMask) {
-                    bookie->getFe(id)->maskPixel((i/nRow), (i%nRow));
+        for(unsigned col=1; col<=nCol; col++) {
+            for (unsigned row=1; row<=nRow; row++) {
+                unsigned i = occMaps[ident]->binNum(col, row);
+                if (occMaps[ident]->getBin(i) == injections) {
+                    mask->setBin(i, 1);
+                } else {
+                    failed_cnt++;
+                    if (make_mask&&createMask) {
+                        // maskPixel starts at 0,0
+                        bookie->getFe(id)->maskPixel(col-1, row-1);
+                    }
                 }
             }
         }
+
         alog->info("\033[1m\033[31mTotal number of failing pixels: {}\033[0m", failed_cnt);
         output->pushData(std::move(mask)); // TODO push this mask to the specific configuration
         output->pushData(std::move(occMaps[ident]));
 
 
         //delete occMaps[ident];
-        //occMaps[ident] = NULL;
+        //occMaps[ident] = nullptr;
     }
 }
 void OccupancyAnalysis::loadConfig(const json &j){
@@ -222,8 +227,8 @@ void TotAnalysis::init(ScanBase *s) {
     useLcap = true;
     n_count = 1;
     injections = 1;
-    pixelFb = NULL;
-    globalFb = NULL;
+    pixelFb = nullptr;
+    globalFb = nullptr;
     hasVcalLoop = false;
 
     for (unsigned n=0; n<s->size(); n++) {
@@ -249,13 +254,13 @@ void TotAnalysis::init(ScanBase *s) {
 
         if (l->isGlobalFeedbackLoop()) {
             alog->debug("Found global feedback loop");
-            globalFb.reset(new GlobalFeedbackSender(feedback));
+            globalFb = std::make_unique<GlobalFeedbackSender>(feedback);
             alog->debug("Connect global feedback");
         }
 
         if (l->isPixelFeedbackLoop()) {
             alog->debug("Found pixel feedback loop");
-            pixelFb.reset(new PixelFeedbackSender(feedback));
+            pixelFb = std::make_unique<PixelFeedbackSender>(feedback);
         }
 
         // Vcal Loop
@@ -287,7 +292,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
     }
 
     // Check if Histogram exists
-    if (occMaps[ident] == NULL) {
+    if (occMaps[ident] == nullptr) {
         Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
@@ -308,7 +313,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         tot2InnerCnt[ident] = 0;
     }
 
-    if (chargeVsTotMap == NULL && hasVcalLoop) {
+    if (chargeVsTotMap == nullptr && hasVcalLoop) {
         FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
         double chargeMin = feCfg->toCharge(vcalMin, useScap, useLcap);
         double chargeMax = feCfg->toCharge(vcalMax, useScap, useLcap);
@@ -321,7 +326,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         chargeVsTotMap.reset(hh);
     }
 
-    if (pixelTotMap == NULL && hasVcalLoop) {
+    if (pixelTotMap == nullptr && hasVcalLoop) {
         FrontEndCfg *feCfgp = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
         double chargeMinp = feCfgp->toCharge(vcalMin, useScap, useLcap);
         double chargeMaxp = feCfgp->toCharge(vcalMax, useScap, useLcap);
@@ -400,7 +405,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
 
         alog->info("\033[1;33mId:{} ScanID:{} ToT Mean = {} +- {}\033[0m", id, ident,  meanTotDist->getMean(), meanTotDist->getStdDev());
 
-        if (globalFb != NULL) {
+        if (globalFb != nullptr) {
             double mean = 0;
             double entries = 0;
             for (unsigned i=0; i<meanTotMap->size(); i++) {
@@ -429,7 +434,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
             globalFb->feedbackBinary(id, sign, last);
         }
 
-        if (pixelFb != NULL) {
+        if (pixelFb != nullptr) {
             double targetTot = bookie->getTargetTot();
             auto fbHisto = std::make_unique<Histo2d>("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
             for (unsigned i=0; i<meanTotMap->size(); i++) {
@@ -566,7 +571,7 @@ void TotAnalysis::end() {
 }
 
 void ScurveFitter::init(ScanBase *s) {
-    fb = NULL;
+    fb = nullptr;
     scan = s;
     n_count = 1;
     vcalLoop = 0;
@@ -607,7 +612,7 @@ void ScurveFitter::init(ScanBase *s) {
 
         // find potential pixel feedback
         if (l->isPixelFeedbackLoop()) {
-            fb.reset(new PixelFeedbackSender(feedback));
+            fb = std::make_unique<PixelFeedbackSender>(feedback);
             if(fb == nullptr) {
                 alog->error("ScurveFitter: loop declared as pixel feedback, does not implement feedback");
             }
@@ -690,7 +695,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                 }
 
                 // Check if Histogram exists
-                if (histos[ident] == NULL) {
+                if (histos[ident] == nullptr) {
                     Histo1d *hhh = new Histo1d(name, vcalBins+1, vcalMin-((double)vcalStep/2.0), vcalMax+((double)vcalStep/2.0));
                     hhh->setXaxisTitle("Vcal");
                     hhh->setYaxisTitle("Occupancy");
@@ -727,7 +732,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 
                     end = std::chrono::high_resolution_clock::now();
                     std::chrono::microseconds fitTime = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
-                    if (thrMap[outerIdent] == NULL) {
+                    if (thrMap[outerIdent] == nullptr) {
                         Histo2d *hh2 = new Histo2d("ThresholdMap-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, hh->getStat());
                         hh2->setXaxisTitle("Column");
                         hh2->setYaxisTitle("Row");
@@ -862,7 +867,7 @@ void ScurveFitter::end() {
 
     // TODO Loop over outerIdent
     for (unsigned i=0; i<thrMap.size(); i++) {
-        if (thrMap[i] != NULL) {
+        if (thrMap[i] != nullptr) {
 
 
             int bin_width, xlow, xhigh, bins;
@@ -1046,7 +1051,7 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
     }
 
     // Check if Histogram exists
-    if (occMaps[ident] == NULL) {
+    if (occMaps[ident] == nullptr) {
         Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
@@ -1163,7 +1168,7 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
     }
 
     // Check if Histogram exists
-    if (occMaps[ident] == NULL) {
+    if (occMaps[ident] == nullptr) {
         Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
@@ -1204,7 +1209,7 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
         output->pushData(std::move(occDist));
         innerCnt[ident] = 0;
         //delete occMaps[ident];
-        occMaps[ident] = NULL;
+        occMaps[ident] = nullptr;
     }
 
 }
@@ -1250,7 +1255,7 @@ void L1Analysis::processHistogram(HistogramBase *h) {
     }
 
     // Check if Histogram exists
-    if (l1Histos[ident] == NULL) {
+    if (l1Histos[ident] == nullptr) {
         Histo1d *hh = new Histo1d(name, 16, -0.5, 15.5);
         hh->setXaxisTitle("L1Id");
         hh->setYaxisTitle("Hits");
@@ -1312,7 +1317,7 @@ void TagAnalysis::processHistogram(HistogramBase *h) {
     }
 
     // Check if Histogram exists
-    if (tagHistos[ident] == NULL) {
+    if (tagHistos[ident] == nullptr) {
         Histo1d *h = new Histo1d(name, 257, -0.5, 256.5);
         h->setXaxisTitle("Tag");
         h->setYaxisTitle("Hits");
@@ -1413,7 +1418,7 @@ void TotDistPlotter::processHistogram(HistogramBase *h) {
     }
 
     // Check if Histogram exists
-    if (tot[ident] == NULL) {
+    if (tot[ident] == nullptr) {
         Histo1d *hh = new Histo1d(name, 16, 0.5, 16.5);
         hh->setXaxisTitle("ToT [bc]");
         hh->setYaxisTitle("Hits");
@@ -1472,14 +1477,18 @@ void NoiseAnalysis::end() {
     noiseOcc->scale(1.0/(double)n_trigger);
     alog->info("[{}] Received {} total trigger!", id, n_trigger);
  
-    for (unsigned i=0; i<noiseOcc->size(); i++) {
-        if (noiseOcc->getBin(i) > noiseThr) {
-            mask->setBin(i, 0);
-            if (make_mask&&createMask) {
-                bookie->getFe(id)->maskPixel((i/nRow), (i%nRow));
+    for(unsigned col=1; col<=nCol; col++) {
+        for (unsigned row=1; row<=nRow; row++) {
+            unsigned i = noiseOcc->binNum(col, row);
+            if (noiseOcc->getBin(i) > noiseThr) {
+                mask->setBin(i, 0);
+                if (make_mask&&createMask) {
+                    // maskPixel starts at 0,0
+                    bookie->getFe(id)->maskPixel(col-1, row-1);
+                }
+            } else {
+                mask->setBin(i, 1);
             }
-        } else {
-            mask->setBin(i, 1);
         }
     }
 
@@ -1490,8 +1499,8 @@ void NoiseAnalysis::end() {
 
 void NoiseTuning::init(ScanBase *s) {
     n_count = 1;
-    pixelFb = NULL;
-    globalFb = NULL;
+    pixelFb = nullptr;
+    globalFb = nullptr;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
         if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
@@ -1505,11 +1514,11 @@ void NoiseTuning::init(ScanBase *s) {
         }
 
         if (l->isGlobalFeedbackLoop()) {
-            globalFb.reset(new GlobalFeedbackSender(feedback));
+            globalFb = std::make_unique<GlobalFeedbackSender>(feedback);
         }
 
         if (l->isPixelFeedbackLoop()) {
-            pixelFb.reset(new PixelFeedbackSender(feedback));
+            pixelFb = std::make_unique<PixelFeedbackSender>(feedback);
         }
     }
 }
@@ -1531,7 +1540,7 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
     }
 
 
-    if (occMaps[ident] == NULL) {
+    if (occMaps[ident] == nullptr) {
         Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
@@ -1546,7 +1555,7 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
 
     if (innerCnt[ident] == n_count) {
         SPDLOG_LOGGER_TRACE(alog, "");
-        if (globalFb != NULL) { // Global Threshold Tuning
+        if (globalFb != nullptr) { // Global Threshold Tuning
             SPDLOG_LOGGER_TRACE(alog, "");
             unsigned numOfHits = 0;
             for (unsigned i=0; i<occMaps[ident]->size(); i++) {
@@ -1562,7 +1571,7 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
             }
         }
 
-        if (pixelFb != NULL) { // Pixel Threshold Tuning
+        if (pixelFb != nullptr) { // Pixel Threshold Tuning
             auto fbHisto = std::make_unique<Histo2d>("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
             SPDLOG_LOGGER_TRACE(alog, "");
             unsigned pixelWoHits = 0;
@@ -1579,7 +1588,7 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
             pixelFb->feedbackStep(id, std::move(fbHisto));
         }
         output->pushData(std::move(occMaps[ident]));
-        occMaps[ident] = NULL;
+        occMaps[ident] = nullptr;
     }
 }
 
@@ -1655,7 +1664,7 @@ void DelayAnalysis::processHistogram(HistogramBase *h) {
                        }*/
 
                     // Check if Histogram exists
-                    if (histos[ident] == NULL) {
+                    if (histos[ident] == nullptr) {
                         Histo1d *hhh = new Histo1d(name, 256, -0.5, 255.5); // TODO hardcoded
                         hhh->setXaxisTitle("Delay");
                         hhh->setYaxisTitle("Occupancy");
@@ -1671,13 +1680,13 @@ void DelayAnalysis::processHistogram(HistogramBase *h) {
                     // Got all data, finish up Analysis
                     if (delay == delayMax) { // TODO hardcoded
                         if (delayMap == nullptr) {
-                            delayMap.reset(new Histo2d("DelayMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
+                            delayMap = std::make_unique<Histo2d>("DelayMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
                             delayMap->setXaxisTitle("Col");
                             delayMap->setYaxisTitle("Row");
                             delayMap->setZaxisTitle("Mean Delay");
                         }
                         if (rmsMap == nullptr) {
-                            rmsMap.reset(new Histo2d("RmsMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
+                            rmsMap = std::make_unique<Histo2d>("RmsMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
                             rmsMap->setXaxisTitle("Col");
                             rmsMap->setYaxisTitle("Row");
                             rmsMap->setZaxisTitle("RMS");
@@ -1783,14 +1792,14 @@ void ParameterAnalysis::processHistogram(HistogramBase *h) {
                 }
 
                 // Check if Histogram exists
-                if (paramMaps[outerIdent] == NULL) {
+                if (paramMaps[outerIdent] == nullptr) {
                     Histo2d *hhh = new Histo2d(paramName, paramBins+1, paramMin-((double)paramStep/2.0), paramMax+((double)paramStep/2.0), injections-1, 0.5, injections-0.5);
                     hhh->setXaxisTitle(paramName);
                     hhh->setYaxisTitle("Occupancy");
                     hhh->setZaxisTitle("Number of pixels");
                     paramMaps[outerIdent].reset(hhh);
                 }
-                if (paramCurves[outerIdent] == NULL) {
+                if (paramCurves[outerIdent] == nullptr) {
                     Histo2d *hhh = new Histo2d(paramName + "_Map", nCol*nRow, -0.5, nCol*nRow-0.5, paramBins+1, paramMin-((double)paramStep/2.0), paramMax+((double)paramStep/2.0));
                     hhh->setXaxisTitle("Channel Number");
                     hhh->setYaxisTitle(paramName);

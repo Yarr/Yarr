@@ -9,9 +9,10 @@ list(APPEND tools
         scanConsole
         scurve_test
         test_json
+        dumpRawDataToText
         )
 
-if (NOT ${TARGET_ARCH} MATCHES "arm*")
+if (NOT "${TARGET_ARCH}" MATCHES "arm*")
     list(APPEND tools write-register reset-all)
 endif()
  

@@ -127,7 +127,7 @@ void Rd53aGlobalFeedback::writePar() {
             // Enable single channel
             g_tx->setCmdEnable(feCfg->getTxChannel());
             // Write parameter
-            dynamic_cast<Rd53a*>(fe)->writeRegister(parPtr, m_values[feCfg->getRxChannel()]);
+            dynamic_cast<Rd53a*>(fe)->writeRegister(parPtr, m_values[id]);
             while(!g_tx->isCmdEmpty()){}
         }
     }

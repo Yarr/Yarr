@@ -513,7 +513,7 @@ bool testRegisterReadWrite(HwController& hwCtrl, uint32_t regAddr, uint32_t writ
 
   ////
   // Test register read
-  int reg_read_value = -1;
+  unsigned int reg_read_value = 0xfffffff;
 
   std::string reg_str;
   PacketType ptype;

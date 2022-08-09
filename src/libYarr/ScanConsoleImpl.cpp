@@ -117,10 +117,6 @@ int ScanConsoleImpl::loadConfig() {
         ScanHelper::createSymlink(dataDir,strippedScan,runCounter);
     }
 
-    if (scanOpts.cConfigPaths.empty()) {
-        logger->error("Error: no config files given, please specify config file name under -c option, even if file does not exist!");
-        return -1;
-    }
     if(scanOpts.scan_config_provided) {
         logger->info("Scan Type/Config {}", scanOpts.scanType);
     } else {
@@ -267,8 +263,11 @@ int ScanConsoleImpl::configure() {
     // Before configuring each FE, broadcast reset to all tx channels
     // Enable all tx channels
     hwCtrl->setCmdEnable(bookie->getTxMaskUnique());
-    // Use global FE
-    bookie->getGlobalFe()->resetAll();
+
+    // send global/broadcast reset command to all frontends
+    if(scanOpts.doResetBeforeScan) {
+        bookie->getGlobalFe()->resetAll();
+    }
 
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
         FrontEnd *fe = bookie->getEntry(id).fe;

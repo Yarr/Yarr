@@ -35,7 +35,7 @@ EmuShm::EmuShm(key_t key, uint32_t size, bool _create)
     }
 
     // attach the shared memory segment to our data space
-    if ((shm_pointer = (char *) shmat(shm_id, NULL, 0)) == (char *) -1)
+    if ((shm_pointer = (char *) shmat(shm_id, nullptr, 0)) == (char *) -1)
     {
         fprintf(stderr, "shmat failure\n");
     }

@@ -44,7 +44,7 @@ int StarCfg::hccChannelForABCchipID(unsigned int chipID) {
 }
 
 //HCC register accessor functions
-const uint32_t StarCfg::getHCCRegister(HCCStarRegister addr){
+uint32_t StarCfg::getHCCRegister(HCCStarRegister addr){
   return m_hcc.getRegisterValue(addr);
 }
 void StarCfg::setHCCRegister(HCCStarRegister addr, uint32_t val){
@@ -52,7 +52,7 @@ void StarCfg::setHCCRegister(HCCStarRegister addr, uint32_t val){
 }
 
 //ABC register accessor functions, converts chipID into chip index
-const uint32_t StarCfg::getABCRegister(ABCStarRegister addr, int32_t chipID){
+uint32_t StarCfg::getABCRegister(ABCStarRegister addr, int32_t chipID){
   auto &abc = abcFromChipID(chipID);
   return abc.getRegisterValue(addr);
 }
@@ -216,14 +216,14 @@ void StarCfg::writeConfig(json &j) {
     }
 
     for(size_t a=0; a<regs.size(); a++) {
-        for(auto r: regs[a]) {
+        for(auto &r: regs[a]) {
             if(common.find(r.first) != common.end()) {
                 continue;
             }
             j["ABCs"]["regs"][a][r.first] = r.second;
         }
     }
-    for(auto m: common) {
+    for(auto &m: common) {
         j["ABCs"]["common"][m.first] = m.second;
     }
 }
@@ -396,7 +396,7 @@ void StarCfg::loadConfig(const json &j) {
             return;
         }
 
-        for (int iABC = 0; iABC < abc_arr_length; iABC++) {
+        for (size_t iABC = 0; iABC < abc_arr_length; iABC++) {
             if (ids[iABC].is_null())
                 continue;
 
@@ -437,7 +437,7 @@ void StarCfg::loadConfig(const json &j) {
             return;
         }
 
-        for (int iABC = 0; iABC < abc_arr_length; iABC++) {
+        for (size_t iABC = 0; iABC < abc_arr_length; iABC++) {
             if (ids[iABC].is_null())
                 continue;
 
@@ -476,7 +476,7 @@ void StarCfg::loadConfig(const json &j) {
         }
 
         // Each chip has a list of strips
-        for (int iABC = 0; iABC < abc_arr_length; iABC++) {
+        for (size_t iABC = 0; iABC < abc_arr_length; iABC++) {
             if (ids[iABC].is_null())
                 continue;
             auto &maskedStrips = maskArray[iABC];
@@ -497,7 +497,7 @@ void StarCfg::loadConfig(const json &j) {
         }
 
         // Each chip has either single integer (all the same), or array of value per strip
-        for (int iABC = 0; iABC < abc_arr_length; iABC++) {
+        for (size_t iABC = 0; iABC < abc_arr_length; iABC++) {
             if (ids[iABC].is_null())
                 continue;
             auto &abc = abcFromIndex(iABC+1);
