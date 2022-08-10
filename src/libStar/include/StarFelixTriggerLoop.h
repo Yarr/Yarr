@@ -30,10 +30,10 @@ public:
 private:
 
   uint32_t m_trigDelay {45};
-  double m_trigFreq {1e5};
+  double m_trigFreq {1e6};
   double m_trigTime {10};
 
-  double m_trickleFreq {1000}; // frequency to send trickle pulse
+  double m_trickleFreq {10}; // frequency to send trickle pulse
 
   // How many words of pattern buffer to use
   uint32_t m_trigWordLength;
