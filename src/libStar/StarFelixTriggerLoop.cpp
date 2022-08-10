@@ -333,6 +333,10 @@ std::vector<uint8_t> StarFelixTriggerLoop::getHitCounterSegment() {
   auto hitCntRst = LCB_FELIX::fast_command(LCB::ABC_HIT_COUNT_RESET, 0);
   readHitCounts.insert(readHitCounts.end(), hitCntRst.begin(), hitCntRst.end());
 
+  // start hit counters again
+  auto hitCntStart = LCB_FELIX::fast_command(LCB::ABC_HIT_COUNT_START, 0);
+  readHitCounts.insert(readHitCounts.end(), hitCntStart.begin(), hitCntStart.end());
+
   for (int i=0; i<10; i++) {
     readHitCounts.push_back(LCB_FELIX::IDLE);
   }
