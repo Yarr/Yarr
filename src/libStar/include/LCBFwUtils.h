@@ -30,10 +30,11 @@ namespace LCB_FELIX {
     };
   }
 
-  inline std::array<uint8_t, 2> l0a_mask(uint8_t mask, bool bcr=false) { // tag?
+  inline std::array<uint8_t, 3> l0a_mask(uint8_t mask, uint8_t tag, bool bcr=false) {
     return {
       L0A,
-      static_cast<uint8_t>( (bcr << 4) + (mask & 0xf) )
+      static_cast<uint8_t>( (bcr << 4) + (mask & 0xf) ),
+      tag
     };
   }
 

@@ -171,7 +171,7 @@ std::tuple<std::vector<uint8_t>, unsigned> StarFelixTriggerLoop::getTriggerSegme
 
   if (m_trigFreq <= 10e6) { // < 10 MHz
     // One trigger per L0A
-    auto l0a = LCB_FELIX::l0a_mask(1, false);
+    auto l0a = LCB_FELIX::l0a_mask(1, 0, false);
 
     // Number of LCB frames between each L0A
     // One frame covers 4 BCs = 100 ns
@@ -192,22 +192,22 @@ std::tuple<std::vector<uint8_t>, unsigned> StarFelixTriggerLoop::getTriggerSegme
   } else if (m_trigFreq < 15e6) { // 10 ~ 15 MHz
     // L0A bits: 0010 0100 1001 ...
 
-    auto l0a = LCB_FELIX::l0a_mask(0b0010, false);
+    auto l0a = LCB_FELIX::l0a_mask(0b0010, 0, false);
     triggers.insert(triggers.end(), l0a.begin(), l0a.end());
     nTriggers += 1;
 
     if (max_trigs > 1) {
-      l0a = LCB_FELIX::l0a_mask(0b0100, false);
+      l0a = LCB_FELIX::l0a_mask(0b0100, 0, false);
       triggers.insert(triggers.end(), l0a.begin(), l0a.end());
       nTriggers += 1;
     }
 
     if (max_trigs == 3) {
-      l0a = LCB_FELIX::l0a_mask(0b1000, false);
+      l0a = LCB_FELIX::l0a_mask(0b1000, 0, false);
       triggers.insert(triggers.end(), l0a.begin(), l0a.end());
       nTriggers += 1;
     } else if (max_trigs > 3) {
-      l0a = LCB_FELIX::l0a_mask(0b1001, false);
+      l0a = LCB_FELIX::l0a_mask(0b1001, 0, false);
       triggers.insert(triggers.end(), l0a.begin(), l0a.end());
       nTriggers += 2;
     }
@@ -226,7 +226,7 @@ std::tuple<std::vector<uint8_t>, unsigned> StarFelixTriggerLoop::getTriggerSegme
       nTriggers = 1;
     }
 
-    auto l0a = LCB_FELIX::l0a_mask(mask);
+    auto l0a = LCB_FELIX::l0a_mask(mask, 0, false);
     triggers.insert(triggers.end(), l0a.begin(), l0a.end());
 
     // Update to the actual trigger frequency
@@ -245,7 +245,7 @@ std::tuple<std::vector<uint8_t>, unsigned> StarFelixTriggerLoop::getTriggerSegme
       mask = 0b1000;
     }
 
-    auto l0a = LCB_FELIX::l0a_mask(mask);
+    auto l0a = LCB_FELIX::l0a_mask(mask, 0, false);
     triggers.insert(triggers.end(), l0a.begin(), l0a.end());
 
     nTriggers = std::min<unsigned>(4, max_trigs);
@@ -277,9 +277,12 @@ void StarFelixTriggerLoop::addChargeInjection(std::vector<uint8_t>& trig_segment
     return;
   }
 
-  // The last two bytes should be an L0A, all other entries before that are IDLEs
+  // The last three bytes should be an L0A, all other entries before that are IDLEs
   assert(trig_segment.size() >1);
-  assert(trig_segment[trig_segment.size()-2] == LCB_FELIX::L0A);
+
+  // Index of the start of L0A
+  unsigned index_l0a = trig_segment.size() - 3;
+  assert(trig_segment[index_l0a] == LCB_FELIX::L0A);
 
   // Charge injection command
   std::array<uint8_t, 2> inj;
@@ -295,8 +298,7 @@ void StarFelixTriggerLoop::addChargeInjection(std::vector<uint8_t>& trig_segment
   int nIDLE = m_trigDelay / 4;
 
   // Index of the IDLE frame to be replaced by the fast command
-  // trig_segment.size()-2 is the index of the start of L0A
-  int iInj = trig_segment.size()-2 - nIDLE - 1;
+  int iInj = index_l0a - nIDLE - 1;
   assert(iInj >= 0); // due to the assumption above
 
   // Replace the IDLE frame
