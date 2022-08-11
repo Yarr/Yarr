@@ -4,7 +4,6 @@ add_library(Emu SHARED
         EmuRxCore.cpp
         EmuShm.cpp
         EmuTxCore.cpp
-        Fei4Emu.cpp
         PixelModel.cpp
         Rd53aDiffPixelModel.cpp
         Rd53aEmu.cpp
@@ -17,4 +16,4 @@ post_build_debug_library(Emu)
 target_include_directories(Emu PRIVATE ../libYarr/include)
 target_include_directories(Emu PRIVATE ../libUtil/include)
 target_include_directories(Emu PUBLIC ./include)
-target_link_libraries(Emu Scan Rd53a Fei4)
+target_link_libraries(Emu Scan Rd53a)
