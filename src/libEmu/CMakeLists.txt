@@ -11,12 +11,10 @@ add_library(Emu SHARED
         Rd53aLinPixelModel.cpp
         Rd53aSyncPixelModel.cpp
         RingBuffer.cpp
-        StarChipsetEmu.cpp
-        StarEmu.cpp
         StripModel.cpp)
 
 post_build_debug_library(Emu)
 target_include_directories(Emu PRIVATE ../libYarr/include)
 target_include_directories(Emu PRIVATE ../libUtil/include)
 target_include_directories(Emu PUBLIC ./include)
-target_link_libraries(Emu Scan Rd53a Fei4 Star)
+target_link_libraries(Emu Scan Rd53a Fei4)
