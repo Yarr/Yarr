@@ -349,6 +349,11 @@ void EmuController<StarChips, StarEmu>::loadConfig(const json &j) {
     logger->info("Using config: {}", emuCfgFile);
   }
 
+  // Rx wait time
+  if (j.contains("rx_wait_time")) {
+      m_waitTime = std::chrono::microseconds(j["rx_wait_time"]);
+  }
+
   // HPR packet:
   // 40000 BC (i.e. 1 ms) by default.
   // Can be set to a smaller value for testing, but need to be a multiple of 4

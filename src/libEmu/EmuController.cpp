@@ -40,6 +40,10 @@ void EmuController<Fei4, Fei4Emu>::loadConfig(const json &j) {
 //    EmuTxCore::setCom(new EmuShm(j["tx"]["id"], j["tx"]["size"], true));
 //    EmuRxCore::setCom(new EmuShm(j["rx"]["id"], j["rx"]["size"], true));
 
+  if (j.contains("rx_wait_time")) {
+    m_waitTime = std::chrono::microseconds(j["rx_wait_time"]);
+  }
+
   // Tx EmuCom
   tx_coms.emplace_back(new RingBuffer(128));
   EmuTxCore<Fei4>::setCom(0, tx_coms.back().get());
@@ -62,6 +66,10 @@ template<>
 void EmuController<Rd53a, Rd53aEmu>::loadConfig(const json &j) {
 //    EmuTxCore::setCom(new EmuShm(j["tx"]["id"], j["tx"]["size"], true));
 //    EmuRxCore::setCom(new EmuShm(j["rx"]["id"], j["rx"]["size"], true));
+
+  if (j.contains("rx_wait_time")) {
+    m_waitTime = std::chrono::microseconds(j["rx_wait_time"]);
+  }
 
   int srand_seed = time(nullptr);
   std::string infotoken = "";

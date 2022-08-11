@@ -9,7 +9,8 @@
         "manchester": false,
         "flip": false,
         "extend": false,
-        "fetype": "star"
+        "fetype": "star",
+        "rx_wait_time": 500
       }
     }
   }
