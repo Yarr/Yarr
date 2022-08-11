@@ -18,9 +18,6 @@ RingBuffer::RingBuffer(uint32_t size)
 
     read_index = 0;
     write_index = 0;
-
-//    sem_init(&read_sem, 0, 0);
-//    sem_init(&write_sem, 0, ringbuffer_size / element_size - 2);
 }
 
 RingBuffer::~RingBuffer()
@@ -33,8 +30,6 @@ void RingBuffer::write32(uint32_t word)
     // wait if the write index would catch up to the read index
     std::unique_lock<std::mutex> lk(mtx);
     cv.wait(lk, [&] { return ((write_index + element_size >= ringbuffer_size) ? 0 : write_index + element_size) != read_index; });
-
-//    sem_wait(&write_sem);
 
     // do the write
     memcpy(&buffer[write_index], &word, element_size);
@@ -50,8 +45,6 @@ void RingBuffer::write32(uint32_t word)
 
     // notify the cv that a read/write has occured
     cv.notify_all();
-
-//    sem_post(&read_sem);
 }
 
 uint32_t RingBuffer::read32()
@@ -61,8 +54,6 @@ uint32_t RingBuffer::read32()
     // wait if the read pointer has caught up to the write pointer
     std::unique_lock<std::mutex> lk(mtx);
     cv.wait(lk, [&] { return read_index != write_index; });
-
-//    sem_wait(&read_sem);
 
     // do the read
     memcpy(&word, &buffer[read_index], element_size);
@@ -78,8 +69,6 @@ uint32_t RingBuffer::read32()
 
     // notify the cv that a read/write has occured
     cv.notify_all();
-
-//    sem_post(&write_sem);
 
     return word;
 }
@@ -121,8 +110,6 @@ return 1;
     {
         read_index = read_index - (ringbuffer_size - element_size) - element_size;
     }
-
-//    for (uint32_t i = 0; i < length; i++) { sem_post(&write_sem); }
 
     // notify the cv that a read/write has occured
     cv.notify_all();
