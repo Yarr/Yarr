@@ -8,40 +8,32 @@
 
 #include <cstring>
 #include <iostream>
+#include <sstream>
 
 RingBuffer::RingBuffer(uint32_t size)
 {
-    ringbuffer_size = size;
-    element_size = sizeof(uint32_t);
-
-    buffer = (uint32_t *) malloc(ringbuffer_size * element_size);
+    buffer.resize(size);
 
     read_index = 0;
     write_index = 0;
 }
 
-RingBuffer::~RingBuffer()
-{
-    free(buffer);
-}
+RingBuffer::~RingBuffer() = default;
 
 void RingBuffer::write32(uint32_t word)
 {
     // wait if the write index would catch up to the read index
     std::unique_lock<std::mutex> lk(mtx);
-    cv.wait(lk, [&] { return ((write_index + element_size >= ringbuffer_size) ? 0 : write_index + element_size) != read_index; });
+    cv.wait(lk, [&] {
+        auto next_write = (write_index + 1) % buffer.size();
+        return next_write != read_index;
+      });
 
     // do the write
-    memcpy(&buffer[write_index], &word, element_size);
+    buffer[write_index] = word;
 
     // update the write pointer
-    write_index += element_size;
-
-    // check if the write_index must wrap
-    if (write_index >= ringbuffer_size)
-    {
-        write_index = 0;
-    }
+    write_index = (write_index + 1) % buffer.size();
 
     // notify the cv that a read/write has occured
     cv.notify_all();
@@ -49,23 +41,16 @@ void RingBuffer::write32(uint32_t word)
 
 uint32_t RingBuffer::read32()
 {
-    uint32_t word;
 
     // wait if the read pointer has caught up to the write pointer
     std::unique_lock<std::mutex> lk(mtx);
     cv.wait(lk, [&] { return read_index != write_index; });
 
     // do the read
-    memcpy(&word, &buffer[read_index], element_size);
+    uint32_t word = buffer[read_index];
 
     // update the read pointer
-    read_index += element_size;
-
-    // check if the read_index must wrap
-    if (read_index >= ringbuffer_size)
-    {
-        read_index = 0;
-    }
+    read_index = (read_index + 1) % buffer.size();
 
     // notify the cv that a read/write has occured
     cv.notify_all();
@@ -82,39 +67,37 @@ uint32_t RingBuffer::readBlock32(uint32_t* buf, uint32_t length)
         return 0;
     }
 
-for (uint32_t i = 0; i < length; i++) buf[i] = this->read32();
+#if 0
+    for (uint32_t i = 0; i < length; i++) {
+      buf[i] = this->read32();
+    }
 
 return 1;
-
+#else
     //
     // 0 1 2 3 4 5 6 7
     //     w     r | |
-    if (read_index + (length * element_size) >= ringbuffer_size) {
+    if ((read_index + length) >= buffer.size()) {
         //split transfer
         // length of first part
 
-        uint32_t length_p1 = ringbuffer_size - read_index;
-        uint32_t length_p2 = length * element_size - length_p1;
-        memcpy(&buf[0], &buffer[read_index], length_p1);
-        memcpy(&buf[(length_p1) / element_size], &buffer[0], length_p2);
+        uint32_t length_p1 = buffer.size() - read_index;
+        uint32_t length_p2 = length - length_p1;
+        memcpy(&buf[0], &buffer[read_index], length_p1 * element_size);
+        memcpy(&buf[length_p1], &buffer[0], length_p2 * element_size);
     } else {
         //one transfer
         memcpy(&buf[0], &buffer[read_index], element_size * length);
     }
+
     // update the read pointer
-
-    read_index += element_size * length;
-
-    // check if the read_index must wrap
-    if (read_index >= ringbuffer_size)
-    {
-        read_index = read_index - (ringbuffer_size - element_size) - element_size;
-    }
+    read_index = (read_index + length) % buffer.size();
 
     // notify the cv that a read/write has occured
     cv.notify_all();
 
     return 1;
+#endif
 }
 
 bool RingBuffer::isEmpty()
@@ -127,13 +110,25 @@ bool RingBuffer::isEmpty()
 }
 
 uint32_t RingBuffer::getCurSize() {
-    return ((write_index - read_index) + (ringbuffer_size)) % (ringbuffer_size);
+    // NB intermediate -ve number is undefined behvaiour
+    //  which makes a difference if buffer size is not power of 2
+    auto element_count = (write_index + buffer.size() - read_index) % (buffer.size());
+    return element_count * element_size;
 }
 
 void RingBuffer::dump()
 {
-    for (uint32_t i = 0; i < ringbuffer_size / element_size; i++)
+    std::stringstream ss;
+    for (uint32_t i = 0; i < buffer.size(); i++)
     {
-        std::cout << "[" << i << "]\t\t0x" << std::hex << (uint32_t) *((uint32_t*) &buffer[i * element_size]) << std::dec << std::endl;
+      ss << "[" << i << "]\t\t0x" << std::hex << buffer[i] << std::dec;
+      if(i == read_index) {
+        ss << " READ";
+      }
+      if(i == write_index) {
+        ss << " WRITE";
+      }
+      ss << '\n';
     }
+    std::cout << ss.str();
 }

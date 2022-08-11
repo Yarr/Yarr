@@ -11,6 +11,7 @@
 #include <mutex>
 #include <atomic>
 #include <condition_variable>
+#include <vector>
 
 #include "EmuCom.h"
 
@@ -19,12 +20,11 @@ class RingBuffer : public EmuCom {
 		RingBuffer(uint32_t size);
 		~RingBuffer() override;
 
-		uint32_t * buffer;
-
-		uint32_t ringbuffer_size;	// in bytes
+	private:
+                std::vector<uint32_t> buffer;
 
 		// this is the size of the elements in the buffer/array
-		uint32_t element_size;
+		static constexpr uint32_t element_size = sizeof(uint32_t);
 
 		// these indicate the index in the ring buffer where the write and read "cursors" are
 		std::atomic<std::uint32_t> write_index;
@@ -33,6 +33,7 @@ class RingBuffer : public EmuCom {
 		std::mutex mtx;
 		std::condition_variable cv;
 
+	public:
 		// the main functionality of the class - write to and read from the ring buffer
 		void write32(uint32_t word) override;
 		uint32_t read32() override;
@@ -42,7 +43,6 @@ class RingBuffer : public EmuCom {
 		bool isEmpty() override;
 		uint32_t getCurSize() override;
 		virtual void dump();
-	private:
 };
 
 #endif
