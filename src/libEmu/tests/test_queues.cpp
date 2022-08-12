@@ -78,7 +78,7 @@ TEST_CASE("RingBufferBlocks", "[emu][ring]") {
       for(size_t i=0; i<receive_count; i++) {
         std::array<uint32_t, block_len> buf;
         auto read_success = rb.readBlock32(buf.data(), block_len);
-        CHECK (read_success);
+        // CHECK (read_success);
         if(!read_success) {
           // retry
           i -= 1;
