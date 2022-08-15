@@ -68,13 +68,15 @@ uint32_t RingBuffer::readBlock32(uint32_t* buf, uint32_t length)
         return 0;
     }
 
-#if 0
+#if 1
     for (uint32_t i = 0; i < length; i++) {
       buf[i] = this->read32();
     }
 
 return 1;
 #else
+    // This needs more testing (should at least have a lock),
+    // but this method is not used, so go for the simpler method
     //
     // 0 1 2 3 4 5 6 7
     //     w     r | |
