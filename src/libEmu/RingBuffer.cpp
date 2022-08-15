@@ -60,10 +60,11 @@ uint32_t RingBuffer::read32()
 
 uint32_t RingBuffer::readBlock32(uint32_t* buf, uint32_t length)
 {
-    if ((length * element_size) > this->getCurSize()) {
+    auto occupancy = this->getCurSize();
+    if ((length * element_size) > occupancy) {
         std::cerr << __PRETTY_FUNCTION__
             << " -> ERROR : not enough data in buffer! This should not be possible! Requested: "
-            << length * element_size << ", actual: " << this->getCurSize() << std::endl;
+            << length * element_size << ", actual: " << occupancy << std::endl;
         return 0;
     }
 
@@ -110,9 +111,21 @@ bool RingBuffer::isEmpty()
 }
 
 uint32_t RingBuffer::getCurSize() {
-    // NB intermediate -ve number is undefined behvaiour
+    uint32_t w = write_index;
+    uint32_t test_w, r;
+
+    // Don't read inconsistent numbers, but also don't want to use mutex
+    do {
+        test_w = w;
+        r = read_index;
+        w = write_index;
+    } while(test_w != w);
+
+    // Extra size added to make sure it's positive
     //  which makes a difference if buffer size is not power of 2
-    auto element_count = (write_index + buffer.size() - read_index) % (buffer.size());
+    size_t offset = w + buffer.size() - r;
+
+    auto element_count = offset % (buffer.size());
     return element_count * element_size;
 }
 
