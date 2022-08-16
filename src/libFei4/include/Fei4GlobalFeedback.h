@@ -40,15 +40,15 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
         if (val > (int)max) val = max;
         if (val < 0) val = 0;
         chan.values = val;
-        doneMap[channel] |= last;
+        fbDoneMap[channel] |= last;
 
         if (chan.localStep == 1) {
-            doneMap[channel] = true;
+            fbDoneMap[channel] = true;
         }
 
         // Abort if we are getting to low
         if (val < 50) {
-            doneMap[channel] = true;
+            fbDoneMap[channel] = true;
         }
     }
 
@@ -60,10 +60,10 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
         if (val < 0) val = 0;
         chan.values = val;
         chan.localStep  = chan.localStep/2;
-        doneMap[channel] |= last;
+        fbDoneMap[channel] |= last;
 
         if (chan.localStep == 1) {
-            doneMap[channel] = true;
+            fbDoneMap[channel] = true;
         }
     }
     void writeConfig(json &config) override;
@@ -81,7 +81,7 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
                 info.localStep = step;
                 info.values = max;
                 info.oldSign = -1;
-                doneMap[id] = false;
+                fbDoneMap[id] = false;
             }
         }
         this->writePar();
@@ -98,7 +98,7 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
 
     void execPart1() override {
         g_stat->set(this, cur);
-        m_done = allDone();
+        m_done = isFeedbackDone();
     }
 
     void execPart2() override {
@@ -133,17 +133,6 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
             }
         }
         g_tx->setCmdEnable(keeper->getTxMask());
-    }
-
-    bool allDone() {
-        for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-            Fei4 *fe = dynamic_cast<Fei4*>(keeper->getEntry(id).fe);
-            if(fe->getActive()) {
-                if (!doneMap[id])
-                    return false;
-            }
-        }
-        return true;
     }
 
     Fei4Register Fei4GlobalCfg::*parPtr;

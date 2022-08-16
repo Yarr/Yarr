@@ -59,6 +59,12 @@ class GlobalFeedbackReceiver : public GlobalFeedbackBase {
         /// Wait for feedback to be received and apply it
         void waitForFeedback(unsigned ch);
 
+        /// Check all fbDoneMap entries
+        bool isFeedbackDone() const;
+
+        /// Commonly used to store 'last' flag from feedback invocation
+        std::map<unsigned, bool> fbDoneMap;
+
     private:
         FeedbackClipboardMap *clip;
 };
@@ -92,6 +98,12 @@ class PixelFeedbackReceiver : public PixelFeedbackBase {
     protected:
         /// Wait for feedback to be received and apply it
         void waitForFeedback(unsigned ch);
+
+        /// Check all fbDoneMap entries
+        bool isFeedbackDone() const;
+
+        /// Commonly used to store 'last' flag from feedback invocation
+        std::map<unsigned, bool> fbDoneMap;
 
     private:
         FeedbackClipboardMap *clip;
