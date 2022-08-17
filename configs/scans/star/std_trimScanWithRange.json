@@ -58,7 +58,7 @@
           "trig_count": 500,
           "trig_frequency": 1000,
           "trig_time": 0,
-          "l0_latency": 19,
+          "l0_latency": 20,
           "extTrigger": false,
           "noInject": false
         },
@@ -85,7 +85,8 @@
         "ABCs_BCAL":       0,
         "ABCs_CALPULSE_ENABLE":    1,
         "ABCs_CALPULSE_POLARITY":  0,
-        "ABCs_CURRDRIV": 4
+        "ABCs_CURRDRIV": 4,
+	"ABCs_RRMODE": 0
     }
   }
 }
