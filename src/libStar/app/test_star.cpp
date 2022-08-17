@@ -675,6 +675,8 @@ bool testRegisterReadWrite(HwController& hwCtrl, uint32_t regAddr, uint32_t writ
     sendCommand(star.read_abc_register(regAddr, hccId, abcId), hwCtrl);
   }
 
+  bool regAccessGood = true;
+
   // Read data
   auto wdata = readData(
     hwCtrl,
@@ -700,14 +702,22 @@ bool testRegisterReadWrite(HwController& hwCtrl, uint32_t regAddr, uint32_t writ
     } else {
       logger->error("Register write: Fail");
       logger->error("The value read back from register {} is: 0x{:08x}", regAddr, wpacket.value);
-      return false;
+      regAccessGood = false;
     }
   } else {
     logger->error("Failed to read data");
-    return false;
+    regAccessGood = false;
   }
 
-  return true;
+  // Set the register back to its value before the test
+  logger->debug(" Restore register {} to value 0x{:08x}", reg_str, reg_read_value);
+  if (isHCC) {
+    sendCommand(star.write_hcc_register(regAddr, reg_read_value, hccId), hwCtrl);
+  } else {
+    sendCommand(star.write_abc_register(regAddr, reg_read_value, hccId, abcId), hwCtrl);
+  }
+
+  return regAccessGood;
 }
 
 bool testHCCRegisterAccess(HwController& hwCtrl, const std::vector<Hybrid>& hccStars) {
