@@ -2,6 +2,7 @@
 #include <iostream>
 #include <functional>
 #include <tuple>
+#include <set>
 
 #include "SpecController.h"
 #include "AllHwControllers.h"
@@ -102,6 +103,32 @@ uint32_t updateABCRegister(const std::string& regName, uint32_t value, StarCfg& 
   return addr;
 }
 
+// Enable Tx and Rx channels that are connected to HCCs
+void enableConnectedChannels(HwController& hwCtrl, std::vector<Hybrid>& hccStars) {
+  // Turn all channels off first
+  hwCtrl.disableCmd();
+  hwCtrl.disableRx();
+
+  if (hccStars.empty())
+    return;
+
+  std::set<uint32_t> txChns;
+  std::set<uint32_t> rxChns;
+
+  for (auto& hcc : hccStars) {
+    txChns.insert(hcc.tx);
+    rxChns.insert(hcc.rx);
+  }
+
+  // Enable Tx
+  std::vector<uint32_t> txChns_vec(txChns.begin(), txChns.end());
+  hwCtrl.setCmdEnable(txChns_vec);
+
+  // Enable Rx
+  std::vector<uint32_t> rxChns_vec(rxChns.begin(), rxChns.end());
+  hwCtrl.setRxEnable(rxChns_vec);
+}
+
 int packetFromRawData(StarChipPacket& packet, RawData& data) {
   packet.clear();
 
@@ -122,23 +149,27 @@ RawDataPtr readData(
   uint32_t timeout=1000)
 {
   bool nodata = true;
+  bool done = false;
 
-  std::vector<RawDataPtr> dataVec = hwCtrl.readData();
   RawDataPtr data;
-  if (dataVec.size() > 0)
-      data = dataVec[0];
+  std::vector<RawDataPtr> dataVec;
 
   auto start_reading = std::chrono::steady_clock::now();
+  while (not done) {
+    dataVec = hwCtrl.readData();
 
-  while (true) {
-    if (data) {
+    if (not dataVec.empty()) {
       nodata = false;
-      logger->trace("Use data: {}", (void*)data->getBuf());
+      for (auto d : dataVec) {
+        logger->trace("Use data: {}", (void*)d->getBuf());
 
-      // check if it is the type of data we want
-      bool good = filter_cb(*data);
-      if (good) {
-        break;
+        // check if it is the type of data we want
+        bool good = filter_cb(*d);
+        if (good) {
+          data = d;
+          done = true;
+          break;
+        }
       }
     } else { // no data
       // wait a bit
@@ -149,14 +180,7 @@ RawDataPtr readData(
     auto run_time = std::chrono::steady_clock::now() - start_reading;
     if ( run_time > std::chrono::milliseconds(timeout) ) {
       logger->debug("readData timeout");
-      break;
-    }
-
-    dataVec = hwCtrl.readData();
-    if (dataVec.size() > 0) {
-      data = dataVec[0];
-    } else {
-      data = nullptr;
+      done = true;
     }
   }
 
@@ -415,12 +439,12 @@ bool checkHPRs(HwController& hwCtrl,
 
   bool hprOK = false;
 
-  // Should not be necessary except for the emulator, but toggle the TestHPR
-  // bit anyway in case HPR was stopped previously
-  sendCommand(star.write_hcc_register(HCCStarRegister::Pulse, 0x2), hwCtrl);
-
   for (auto rx : rxChannels) {
     logger->info("Reading HPR packets from Rx channel {}", rx);
+
+    // Should not be necessary except for the emulator, but toggle the TestHPR
+    // bit anyway in case HPR was stopped previously
+    sendCommand(star.write_hcc_register(HCCStarRegister::Pulse, 0x2), hwCtrl);
 
     std::function<bool(RawData&)> filter_hpr = [rx](RawData& d) {
       return isPacketType(d, TYP_HCC_HPR) and isFromChannel(d, rx);
@@ -479,11 +503,11 @@ bool probeHCCs(
     // Toggle bit 2 in register Pulse to load serial number into register Addressing
     sendCommand(star.write_hcc_register(HCCStarRegister::Pulse, 0x4), hwCtrl);
 
-    // Read the register Addressing
-    sendCommand(star.read_hcc_register(HCCStarRegister::Addressing), hwCtrl);
-
     // Scan through the Rx channels and look for response
     for (auto rx : rxChannels) {
+      // Read the register Addressing
+      sendCommand(star.read_hcc_register(HCCStarRegister::Addressing), hwCtrl);
+
       auto data = readData(
         hwCtrl,
         [rx](RawData& d) {
@@ -530,6 +554,9 @@ bool probeHCCs(
     return false;
   }
 
+  // Enable only the Tx and Rx channels that are connected to the HCCs
+  enableConnectedChannels(hwCtrl, HCCs);
+
   return true;
 }
 
@@ -540,12 +567,16 @@ bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars
     sendCommand(LCB::fast_command(LCB::ABC_REG_RESET, 0), hwCtrl);
   }
 
-  // Toggle the TestHPR bit in case of the emulator or HPR was previously stopped
-  auto [addr_sc, val_sc] = updateABCSubRegister("TESTHPR", 1, cfg);
-  sendCommand(star.write_abc_register(addr_sc, val_sc), hwCtrl);
-
   for (auto& hcc : hccStars) {
     logger->info("Reading HPR packets from ABCStars on HCCStar {}", hcc.hcc_id);
+
+    // Enable the tx and rx channel
+    hwCtrl.setCmdEnable(hcc.tx);
+    hwCtrl.setRxEnable(hcc.rx);
+
+    // Toggle the TestHPR bit in case of the emulator or HPR was previously stopped
+    auto [addr_sc, val_sc] = updateABCSubRegister("TESTHPR", 1, cfg);
+    sendCommand(star.write_abc_register(addr_sc, val_sc), hwCtrl);
 
     unsigned activeInChannels = 0;
 
@@ -601,6 +632,9 @@ bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars
   if (not hasABCStar) {
     logger->error("No ABCStar from any HCCStar");
   }
+
+  // Restore channel enable flags
+  enableConnectedChannels(hwCtrl, hccStars);
 
   return hasABCStar;
 }
