@@ -26,9 +26,8 @@ namespace {
     uint32_t hcc_id;
     std::map<uint32_t,uint32_t> abcs; // key: channel; value: chipID
   };
-}
 
-static void printHelp() {
+void printHelp() {
   std::cout << "Usage: test_star HW_CONFIG [OPTIONS] ... \n";
   std::cout << "   Run Star FE tests with HardwareController configuration from HW_CONFIG\n";
   std::cout << " -h: Show this help.\n";
@@ -1035,6 +1034,8 @@ bool readABCRegisters(HwController& hwCtrl, bool do_spec_specific=false) {
 
   return success;
 }
+
+} // end of unnamed namespace
 
 //////////
 int main(int argc, char *argv[]) {
