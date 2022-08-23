@@ -87,6 +87,7 @@ int ScanConsoleImpl::init(ScanOpts options) {
     }
     spdlog::info("Configuring logger ...");
     logging::setupLoggers(loggerConfig);
+    ScanHelper::banner(logger,"Welcome to YARR - ScanConsole");
     return 1;
 }
 
