@@ -6,7 +6,6 @@ list(APPEND tools
         makeRd53aPixelModelCfg
         replot
         scan_cli
-        scanConsole
         scurve_test
         test_json
         dumpRawDataToText
@@ -15,6 +14,11 @@ list(APPEND tools
 if (NOT "${TARGET_ARCH}" MATCHES "arm*")
     list(APPEND tools write-register reset-all)
 endif()
+
+add_executable(scanConsole scan_cli.cpp)
+post_build_debug_executable(scanConsole)
+target_link_libraries(scanConsole Yarr)
+target_link_libraries(scanConsole Scan)
  
 foreach (target IN LISTS tools)
     add_executable(${target} ${target}.cpp)
