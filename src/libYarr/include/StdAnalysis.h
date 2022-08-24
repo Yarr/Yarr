@@ -19,7 +19,7 @@
 
 class OccupancyAnalysis : public AnalysisAlgorithm {
     public:
-        OccupancyAnalysis() : AnalysisAlgorithm() {createMask = true;}
+        OccupancyAnalysis() : AnalysisAlgorithm() {createMask = true; LowThr = 0.0; HighThr = 0.0;}
         ~OccupancyAnalysis() override = default;
 
         void init(ScanBase *s) override;
@@ -32,6 +32,7 @@ class OccupancyAnalysis : public AnalysisAlgorithm {
         bool createMask;
         unsigned n_count;
         unsigned injections;
+	double LowThr, HighThr;
         std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
         std::map<unsigned, unsigned> innerCnt;
 };
