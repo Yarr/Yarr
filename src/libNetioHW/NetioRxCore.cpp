@@ -186,5 +186,9 @@ void NetioRxCore::loadConfig(const json &j) {
   m_nioh.setFeType(m_fetype);
   m_nioh.setFelixHost(m_felixhost);
   m_nioh.setFelixRXPort(m_felixport);
+
+  if (j["NetIO"].contains("rx_wait_time")) {
+    m_waitTime = std::chrono::microseconds(j["NetIO"]["rx_wait_time"]);
+  }
 }
 
