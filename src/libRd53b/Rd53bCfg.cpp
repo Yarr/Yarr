@@ -27,7 +27,9 @@ Rd53bCfg::Rd53bCfg() :
     m_kSenseInA(21000),
     m_kSenseInD(21000),
     m_kSenseShuntA(26000),
-    m_kSenseShuntD(26000)
+    m_kSenseShuntD(26000),
+    m_kShuntA(1040),
+    m_kShuntD(1040)
 {}
 
 double Rd53bCfg::toCharge(double vcal) {
@@ -61,6 +63,8 @@ void Rd53bCfg::writeConfig(json &j) {
     j["RD53B"]["Parameter"]["KSenseInD"] = m_kSenseInD;
     j["RD53B"]["Parameter"]["KSenseShuntA"] = m_kSenseShuntA;
     j["RD53B"]["Parameter"]["KSenseShuntD"] = m_kSenseShuntD;
+    j["RD53B"]["Parameter"]["KShuntA"] = m_kShuntA;
+    j["RD53B"]["Parameter"]["KShuntD"] = m_kShuntD;
     for(unsigned  i=0;i<m_vcalPar.size();i++)  
         j["RD53B"]["Parameter"]["VcalPar"][i]= m_vcalPar[i];
     j["RD53B"]["Parameter"]["EnforceNameIdCheck"] = enforceChipIdInName;
@@ -108,6 +112,12 @@ void Rd53bCfg::loadConfig(const json &j) {
 
     if (j.contains({"RD53B","Parameter","KSenseShuntD"}))
         m_kSenseShuntD = j["RD53B"]["Parameter"]["KSenseShuntD"];
+
+    if (j.contains({"RD53B","Parameter","KShuntA"}))
+        m_kSenseShuntA = j["RD53B"]["Parameter"]["KShuntA"];
+
+    if (j.contains({"RD53B","Parameter","KShuntD"}))
+        m_kSenseShuntD = j["RD53B"]["Parameter"]["KShuntD"];
     
     if (j.contains({"RD53B","Parameter","VcalPar"}))
         if (j["RD53B"]["Parameter"]["VcalPar"].size() == m_vcalPar.size()) {
