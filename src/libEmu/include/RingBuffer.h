@@ -11,7 +11,6 @@
 #include <mutex>
 #include <atomic>
 #include <condition_variable>
-#include <semaphore.h>
 
 #include "EmuCom.h"
 
@@ -33,9 +32,6 @@ class RingBuffer : public EmuCom {
 
 		std::mutex mtx;
 		std::condition_variable cv;
-
-                sem_t read_sem;
-                sem_t write_sem;
 
 		// the main functionality of the class - write to and read from the ring buffer
 		void write32(uint32_t word) override;

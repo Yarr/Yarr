@@ -3,7 +3,6 @@ add_executable(testStar
         test_chips.cpp
         test_config.cpp
         test_data_processor.cpp
-        test_emulator.cpp
         test_json.cpp
         test_lcb.cpp
         test_mask_loop.cpp
