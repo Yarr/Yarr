@@ -52,7 +52,7 @@ void StarChannelFeedback::feedback(unsigned id, std::unique_ptr<Histo2d> h) {
     // TODO Check on NULL pointer
     if (h->size() != nRow*nCol) {
         logger->error("Wrong type of feedback histogram for ID {}.", id);
-        doneMap[id] = true;
+        fbDoneMap[id] = true;
     } else {
         m_fb[id] = std::move(h);
         for (unsigned row=1; row<=nRow; row++) {
@@ -122,6 +122,9 @@ void StarChannelFeedback::execPart2() {
     }
     m_cur++;
     if (m_cur == m_steps.size()) {
+        m_done = true;
+    } else if(isFeedbackDone()) {
+        logger->error("Wrong type of feedback histogram on all channels");
         m_done = true;
     }
 }

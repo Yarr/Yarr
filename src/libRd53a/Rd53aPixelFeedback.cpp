@@ -59,7 +59,7 @@ void Rd53aPixelFeedback::feedback(unsigned id, std::unique_ptr<Histo2d> h) {
     // TODO Check on NULL pointer
     if (h->size() != Rd53a::n_Row*Rd53a::n_Col) {
         logger->error("Wrong type of feedback histogram on channel {}", id);
-        doneMap[id] = true;
+        fbDoneMap[id] = true;
     } else {
         auto rd53a = dynamic_cast<Rd53a*>(keeper->getFe(id));
         for (unsigned row=1; row<=Rd53a::n_Row; row++) {
@@ -142,7 +142,11 @@ void Rd53aPixelFeedback::execPart2() {
     m_cur++;
     if (m_cur == m_steps.size()) {
         m_done = true;
+    } else if(isFeedbackDone()) {
+        logger->error("Wrong type of feedback histogram on all channels");
+        m_done = true;
     }
+
 }
 
 void Rd53aPixelFeedback::end() {

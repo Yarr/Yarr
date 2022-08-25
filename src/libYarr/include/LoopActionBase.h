@@ -93,7 +93,6 @@ class LoopActionBase {
         TxCore *g_tx;
         RxCore *g_rx;
 		Bookkeeper *keeper;
-		std::map<unsigned, bool> doneMap;
 
         LoopStyle m_style;
         std::type_index loopType;
