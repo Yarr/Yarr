@@ -15,8 +15,8 @@
             "DRV2": "00000014",
 
             "ICenable": "000003ff",
-            "OPmode": "00020001",
-            "OPmodeC": "00020001",
+            "OPmode": "00030001",
+            "OPmodeC": "00030001",
             "Cfg1": "00000000",
 
             "Cfg2": "0000018e",
@@ -30,11 +30,11 @@
         "IDs": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
 
         "common": {
-            "ADCS1": "000d0f0d",
-            "ADCS2": "100f100d",
-            "ADCS3": "00000d02",
-            "CREG0": "00000700",
-            "CREG1": "00000004"
+            "ADCS1": "00d031ac",
+            "ADCS2": "00000b36",
+            "ADCS3": "89934008",
+            "CREG0": "0830003c",
+            "CREG1": "43200200"
         },
 
         "comment": "These are the sub-regs that are most likely to need tweaking",
