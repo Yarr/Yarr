@@ -32,6 +32,7 @@ public:
     void getResults(json &result);
     void run();
     void dump();
+    static void setupLogger();
     ~ScanConsole();
 private:
     std::unique_ptr<ScanConsoleImpl> pimpl;

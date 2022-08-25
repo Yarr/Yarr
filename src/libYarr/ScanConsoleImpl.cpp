@@ -583,4 +583,14 @@ void ScanConsoleImpl::dump() {
     scanConsoleConfig.dump();
     scanLog.dump();
 }
+void ScanConsoleImpl::setupLogger() {
+  json loggerConfig;
+  loggerConfig["pattern"] = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";
+        loggerConfig["log_config"][0]["name"] = "all";
+        loggerConfig["log_config"][0]["level"] = "info";
+        loggerConfig["outputDir"]="";
+}
 
+void ScanConsoleImpl::setupLogger(const json &config) {
+   setupLogger(config);
+}

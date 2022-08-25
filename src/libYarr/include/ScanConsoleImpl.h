@@ -40,6 +40,8 @@ public:
     void getResults(json &result);
     void run();
     void dump();
+    static void setupLogger(const json &config);
+    static void setupLogger();
     ~ScanConsoleImpl() = default;
 
 private:
