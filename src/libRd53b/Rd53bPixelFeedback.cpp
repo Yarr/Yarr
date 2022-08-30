@@ -85,6 +85,9 @@ void Rd53bPixelFeedback::init() {
     m_done = false;
     m_cur = 0;
     // Init maps
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        fbDoneMap[id] = false;
+    }
     if (m_rstPixelReg) {
         for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
             FrontEnd *fe = keeper->getEntry(id).fe;
