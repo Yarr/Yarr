@@ -33,10 +33,11 @@ std::string ScanConsoleImpl::parseConfig(const std::vector<std::string> &args) {
     json result;
     result["status"] = "failed";
     int argc = args.size();
-    char *argv[argc];
+    char *argv[argc+1];
     for (int i = 0; i < argc; i++) {
         argv[i] = (char *) args[i].c_str();
     }
+    argv[argc] = nullptr; // should be a null terminated array
     ScanOpts options;
     json scanConsoleConfig;
     int res = ScanHelper::parseOptions(argc, argv, options);
