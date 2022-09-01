@@ -66,7 +66,7 @@ void Rd53b::resetAll() {
     logger->debug("Performing hard reset ...");
     // Send low number of transitions for at least 10us to put chip in reset state 
     logger->debug(" ... asserting CMD reset via low activity");
-    for (unsigned int i=0; i<400; i++) {
+    for (unsigned int i=0; i<85; i++) {
         // Pattern corresponds to approx. 0.83MHz
         core->writeFifo(0xFFFFFFFF);
         core->writeFifo(0xFFFFFFFF);

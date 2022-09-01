@@ -35,6 +35,9 @@ NetioTxCore::NetioTxCore()
 
   m_context = new context("posix");
   m_socket = new low_latency_send_socket(m_context);
+
+  m_calFW = true;
+
 }
 
 NetioTxCore::~NetioTxCore(){
@@ -340,6 +343,10 @@ void NetioTxCore::setTrigWord(uint32_t *word, uint32_t size){
   for(uint32_t i=0;i<size;i++){m_trigWords.push_back(word[i]);}
 }
 
+void NetioTxCore::setCalFW(bool doCalFW){
+  m_calFW = doCalFW;
+}
+
 void NetioTxCore::setTriggerLogicMask(uint32_t mask){
   //Nothing to do yet
 }
@@ -361,11 +368,25 @@ void NetioTxCore::prepareTrigger(){
     m_trigFifo[it->first].clear();
 
     // send a sync to make sure the following commands are not interrrupted for a while
-    if (m_feType == "rd53a")
-        writeFifo(&m_trigFifo[it->first],0x817e817e);
+    //MT
+    if(m_calFW){ //special 16b character in the F/W = {1110, #iteration (7b), frequency(5b)
+      uint32_t trigFreq_ratio = (40000000/m_trigFreq)/256; //40 Mhz/m_trigFreq(Hz) and /256 as F/W can in/decrease frequency only in multiple of 128
 
-    for(int32_t j=m_trigWords.size()-1; j>=0;j--){
-      writeFifo(&m_trigFifo[it->first],m_trigWords[j]);
+      if(trigFreq_ratio > 31) {cerr<<"m_trigFreq "<<m_trigFreq<<" not supported by the F/W. Supported frequency is >= 9.8 kHz"<<endl; exit(1);} //9.8 is wrong
+      if(trigFreq_ratio == 0) {cerr<<"m_trigFreq "<<m_trigFreq<<" not supported by the F/W. Supported frequency is <~ 156 kHz"<<endl; exit(1);}
+      if(m_trigCnt > 127)     {cerr<<"m_trigCnt "<<m_trigCnt<<" not supported by the F/W. Supported range is 1 to 127"<<endl; exit(1);}
+				
+      uint32_t calinj_char = 0x817e<<16 | (0xE<<12 & 0xF000) | (m_trigCnt<<5 & 0xFE0) | (trigFreq_ratio & 0x1F);
+      //      printf("m_trigCnt=%d, m_trigFreq=%d, calinj_char=\%08x \n", m_trigCnt, m_trigFreq, calinj_char);
+      writeFifo(&m_trigFifo[it->first],calinj_char);
+    }
+    else{
+      if (m_feType == "rd53a")
+        writeFifo(&m_trigFifo[it->first],0x817e817e);    
+
+      for(int32_t j=m_trigWords.size()-1; j>=0;j--){
+	writeFifo(&m_trigFifo[it->first],m_trigWords[j]);
+      }
     }
     //writeFifo(&m_trigFifo[it->first],0x0); //Waste!
     prepareFifo(&m_trigFifo[it->first]);
@@ -377,11 +398,21 @@ void NetioTxCore::doTriggerCnt() {
   prepareTrigger();
 
   uint32_t trigs=0;
-  for(uint32_t i=0; i<m_trigCnt; i++) {
-    if(m_trigEnabled==false) break;
-    trigs++;
-    trigger();
-    std::this_thread::sleep_for(std::chrono::microseconds((int)(1e6/m_trigFreq))); // Frequency in Hz
+  if(m_calFW){
+    for(uint32_t i=0; i<1; i++) {
+      if(m_trigEnabled==false) break;
+      trigs=m_trigCnt;
+      trigger();
+      std::this_thread::sleep_for(std::chrono::microseconds((int)(1e6*m_trigCnt/m_trigFreq)));      
+    }
+  }
+  else{ //
+    for(uint32_t i=0; i<m_trigCnt; i++) {
+      if(m_trigEnabled==false) break;
+      trigs++;
+      trigger();
+      std::this_thread::sleep_for(std::chrono::microseconds((int)(1e6/m_trigFreq))); // Frequency in Hz
+    }
   }
   m_trigEnabled = false;
 

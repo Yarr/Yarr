@@ -299,10 +299,10 @@ int ScanConsoleImpl::configure() {
         hwCtrl->setRxEnable(feCfg->getRxChannel());
         hwCtrl->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
         // Configure
-        if (fe->checkCom() != 1) {
-            logger->critical("Can't establish communication, aborting!");
-            return -1;
-        }
+        // if (fe->checkCom() != 1) {
+        //     logger->critical("Can't establish communication, aborting!");
+        //     return -1;
+        // }
         logger->info("... success!");
     }
 

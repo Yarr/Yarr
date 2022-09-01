@@ -30,6 +30,8 @@ Rd53bTriggerLoop::Rd53bTriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) {
     m_edgeMode = false;
     m_edgeDuration = 40;
 
+    m_calFW = true;
+
     min = 0;
     max = 0;
     step = 1;
@@ -124,6 +126,7 @@ void Rd53bTriggerLoop::init() {
     g_tx->setTrigWord(&m_trigWord[0], 32);
     g_tx->setTrigWordLength(m_trigWordLength);
     g_tx->setTrigTime(m_trigTime);
+    g_tx->setCalFW(m_calFW);
 
     g_tx->setCmdEnable(keeper->getTxMask());
     while(!g_tx->isCmdEmpty());
@@ -154,33 +157,33 @@ void Rd53bTriggerLoop::execPart2() {
     g_tx->setTrigEnable(0x0);
     dynamic_cast<HwController*>(g_tx)->setupMode();
     
-    if (m_zeroTot) {
-        // Reset ToT memories
-        Rd53b *rd53b = dynamic_cast<Rd53b*>(g_fe);
-        uint16_t latency = rd53b->Latency.read();
-        uint16_t injDigEn = rd53b->InjDigEn.read();
-        rd53b->writeRegister(&Rd53b::Latency, 500);
-        rd53b->writeRegister(&Rd53b::InjDigEn, 1);
+    // if (m_zeroTot) {
+    //     // Reset ToT memories
+    //     Rd53b *rd53b = dynamic_cast<Rd53b*>(g_fe);
+    //     uint16_t latency = rd53b->Latency.read();
+    //     uint16_t injDigEn = rd53b->InjDigEn.read();
+    //     rd53b->writeRegister(&Rd53b::Latency, 500);
+    //     rd53b->writeRegister(&Rd53b::InjDigEn, 1);
 
-        while(!g_tx->isCmdEmpty()){;}
+    //     while(!g_tx->isCmdEmpty()){;}
 
-        this->setEdgeMode(2);
-        g_tx->setTrigFreq(800000);
-        g_tx->setTrigCnt(100);
-        g_tx->setTrigWord(&m_trigWord[0], 32);
-        g_tx->setTrigWordLength(32);
-        g_tx->setTrigConfig(INT_COUNT);
+    //     this->setEdgeMode(2);
+    //     g_tx->setTrigFreq(800000);
+    //     g_tx->setTrigCnt(100);
+    //     g_tx->setTrigWord(&m_trigWord[0], 32);
+    //     g_tx->setTrigWordLength(32);
+    //     g_tx->setTrigConfig(INT_COUNT);
 
-        g_tx->setTrigEnable(0x1);
-        std::this_thread::sleep_for(std::chrono::microseconds(10));
-        while(!g_tx->isTrigDone());
-        g_tx->setTrigEnable(0x0);
+    //     g_tx->setTrigEnable(0x1);
+    //     std::this_thread::sleep_for(std::chrono::microseconds(10));
+    //     while(!g_tx->isTrigDone());
+    //     g_tx->setTrigEnable(0x0);
 
-        rd53b->writeRegister(&Rd53b::Latency, latency);
-        rd53b->writeRegister(&Rd53b::InjDigEn, injDigEn);
+    //     rd53b->writeRegister(&Rd53b::Latency, latency);
+    //     rd53b->writeRegister(&Rd53b::InjDigEn, injDigEn);
         
-        while(!g_tx->isCmdEmpty()){;}
-    }
+    //     while(!g_tx->isCmdEmpty()){;}
+    // }
     
     m_done = true;
 }

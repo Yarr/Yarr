@@ -48,6 +48,8 @@ class TxCore {
         virtual void setTrigTime(double time) = 0; // in s
         virtual void setTrigWordLength(uint32_t length) = 0; // From Msb
         virtual void setTrigWord(uint32_t *word, uint32_t length) = 0; // 4 words, start at Msb
+	virtual void setCalFW(bool doCalFW) { return; }
+
         virtual void toggleTrigAbort() = 0;
 
         // Software AZ (for select hw controllers)

@@ -44,6 +44,8 @@ class Rd53aTriggerLoop: public LoopActionBase, public StdTriggerAction {
         uint32_t m_trigMultiplier;
         bool m_sendEcr;
 
+	bool     m_calFW;                          //! Cal+trigger from F/W
+
         bool isInner;
         void init() override;
         void execPart1() override;

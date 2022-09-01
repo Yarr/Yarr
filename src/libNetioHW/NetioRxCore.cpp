@@ -138,22 +138,48 @@ std::vector<RawDataPtr> NetioRxCore::readData(){
 	auto buffer = new_rdp->getBuf();
 	auto address = new_rdp->getAdr();
 	auto words = new_rdp->getSize();
+	
+	//std::cout<<"NetioRxCore::readdata"<<std::endl;
+	//	std::cout<<"before"<<std::endl;
+	//	std::cout<<"***NetioRxCore::readdata words="<<words<<"***"<<std::endl;
+	// for (unsigned int iw = 0 ; iw<words; iw++){
+	//   if (iw%2==0)
+	//     printf("%08x %08x ", buffer[iw], buffer[iw+1]); 
+	// }
+	// printf("\n");
 
-        if(m_fetype == "rd53a"){
-            //TODO:fix this in firmware; the header needs to be in buffer[0]
-            uint32_t temp;
-            temp = buffer[0];
-            buffer[0] = buffer[1];
-            buffer[1] = temp;
+	// for (unsigned int iw = 0 ; iw<words; iw++){
+	//   uint32_t temp;
+	//   if (iw%2==0){
+	//     temp = buffer[iw];
+	//     buffer[iw] = buffer[iw+1];
+	//     buffer[iw+1] = temp;
+	//   }
+	// }
 
-            //TODO: Fix this  in firmware too
-            if( (buffer[words-2]>>16) == 0x0 ) //To deal with the E-frames fr$
-                buffer[words-2] = 0xFFFF;
+	//	std::cout<<"after"<<endl;
+	// for (unsigned int iw = 0 ; iw<words; iw++){
+	//   if (iw%2==0)
+	//     printf("%08x %08x ", buffer[iw], buffer[iw+1]); 
+	// }
+	// printf("\n");
 
-            //TODO: Fix this  in firmware too
-            if( (buffer[words-1]>>16) == 0x0 ) //To deal with the E-frames fr$
-                buffer[words-1] = 0xFFFF;
-        }
+
+        // if(m_fetype == "rd53a"){
+        //     //TODO:fix this in firmware; the header needs to be in buffer[0]
+        //     uint32_t temp;
+	//     temp = buffer[0];
+        //     buffer[0] = buffer[1];
+        //     buffer[1] = temp;
+
+        //     //TODO: Fix this  in firmware too
+        //     if( (buffer[words-2]>>16) == 0x0 ) //To deal with the E-frames fr$
+        //         buffer[words-2] = 0xFFFF;
+
+        //     //TODO: Fix this  in firmware too
+        //     if( (buffer[words-1]>>16) == 0x0 ) //To deal with the E-frames fr$
+        //         buffer[words-1] = 0xFFFF;
+        // }
         ++rxDataCount;
         dataVec.push_back(new_rdp);
 
@@ -186,9 +212,5 @@ void NetioRxCore::loadConfig(const json &j) {
   m_nioh.setFeType(m_fetype);
   m_nioh.setFelixHost(m_felixhost);
   m_nioh.setFelixRXPort(m_felixport);
-
-  if (j["NetIO"].contains("rx_wait_time")) {
-    m_waitTime = std::chrono::microseconds(j["NetIO"]["rx_wait_time"]);
-  }
 }
 
