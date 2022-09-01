@@ -34,6 +34,8 @@ static std::string_view level_string(int lvl) {
 namespace logging {
 
 void setupLoggers(const json &j, const std::string &path) {
+    // initialized logger only once
+    if(initialized) return;
     spdlog::sink_ptr default_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
 
     std::map<std::string, spdlog::sink_ptr> other_sinks;
@@ -151,6 +153,7 @@ void setupLoggers(const json &j, const std::string &path) {
     if(j.contains("report_loggers")) {
       listLoggers(true);
     }
+    initialized =  true;
 }
 
 void listLoggers(bool print_details) {
