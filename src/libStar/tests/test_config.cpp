@@ -285,6 +285,10 @@ TEST_CASE("StarCfg_HCCv1", "[star][config]") {
   hcc.setSubRegisterValue("EPLLENABLEPHASE", 0x3);
   hcc.setSubRegisterValue("EPLLPHASE160", 0x7);
 
+  REQUIRE (hcc.getSubRegisterValue("EPLLICP") == 0xf);
+  REQUIRE (hcc.getSubRegisterValue("EPLLRES") == 0xf);
+  REQUIRE (hcc.getSubRegisterValue("EPLLPHASE160") == 0x7);
+
   uint32_t pll1 = 0xe0033f3f;
 
   REQUIRE (test_config.getHCCRegister(HCCStarRegister::PLL1) == pll1);

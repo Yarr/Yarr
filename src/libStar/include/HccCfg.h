@@ -8,6 +8,10 @@
 
 #include "StarRegister.h"
 
+static const size_t HCC_INPUT_CHANNEL_COUNT = 11;
+/// No mapping for this input channel to histogram slot
+static const size_t HCC_INPUT_CHANNEL_BAD_SLOT = 15;
+
 //Different HCC registers that can be used
 BETTER_ENUM(HCCStarRegister, int,
             SEU1=0, SEU2=1, SEU3=2, FrameRaw=3, LCBerr=4, ADCStatus=5, Status=6,
@@ -136,7 +140,7 @@ class HccCfg {
             m_registerMap.at(info->m_regAddress)->getSubRegister(info).updateValue(value);
         }
 
-        uint32_t getSubRegisterValue(std::string subRegName) {
+        uint32_t getSubRegisterValue(std::string subRegName) const {
             auto info = m_info->subRegByName(subRegName);
             return m_registerMap.at(info->m_regAddress)->getSubRegister(info).getValue();
         }
@@ -154,6 +158,8 @@ class HccCfg {
         uint32_t getRegisterValue(HCCStarRegister addr) const;
 
         void setRegisterValue(HCCStarRegister addr, uint32_t val);
+
+        std::array<uint8_t, HCC_INPUT_CHANNEL_COUNT> histoChipMap() const;
 
     private:
         SubRegister getSubRegister(HCCStarSubRegister r) const {
