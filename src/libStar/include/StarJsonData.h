@@ -45,12 +45,13 @@
 #include <vector>
 #include <string>
 #include <optional>
-#include <boost/algorithm/string.hpp>
 
 /*! Actual implementation for reading input data from json file on disk, implements methods to do summing of (star) channels */
 class StarJsonData : public JsonData
 {
 public:
+       typedef std::vector<std::string> PropName;
+
        StarJsonData(const std::string &arg_name) : JsonData(arg_name) {}; //!< Constructor with object name without LoopStatus
        StarJsonData(const std::string &arg_name, const LoopStatus &stat) : JsonData(arg_name, stat) {}; //!< Constructor with object name and LoopStatus
        ~StarJsonData() {};
@@ -59,12 +60,12 @@ public:
        {
               m_jsondata["Type"] = type;
        }; 
-       void initialiseStarChannelsDataAtProp(const std::string propName, const unsigned int nbVals=128); //!<Initializes a vector of nbVals (usually nbChannels per row)
-       std::optional<double> getValForProp(const std::string propName, const unsigned int index) const; //!<Returns the data value at index index for property propName
-       template<class T> void setValForProp(const std::string propName, const unsigned int index, const T val); //!<Sets the value val for the item at index in the vector of data at propName
-       int getNumberOfEntriesForProp(const std::string propName) const; //!<Gets the number of entries for a given property
-       double getSumOfEntriesForProp(const std::string propName) const; //!<Gets the sum of all entries for a given property
-       double getSumOfSquaredEntriesForProp(const std::string propName) const; //!<Gets the sum of all squared entries for a given property
+       void initialiseStarChannelsDataAtProp(const PropName &propName, const unsigned int nbVals=128); //!<Initializes a vector of nbVals (usually nbChannels per row)
+       std::optional<double> getValForProp(const PropName &propName, const unsigned int index) const; //!<Returns the data value at index index for property propName
+       template<class T> void setValForProp(const PropName &propName, const unsigned int index, const T val); //!<Sets the value val for the item at index in the vector of data at propName
+       int getNumberOfEntriesForProp(const PropName &propName) const; //!<Gets the number of entries for a given property
+       double getSumOfEntriesForProp(const PropName &propName) const; //!<Gets the sum of all entries for a given property
+       double getSumOfSquaredEntriesForProp(const PropName &propName) const; //!<Gets the sum of all squared entries for a given property
        //void plotAs2DMapRowVsAllChannels(const std::string &basename, const std::string &dir = ""); //!<Not mandatory, To be implemented
 protected:
 
@@ -77,13 +78,9 @@ private:
   \param index Index of the item in the property we want to change
   \param val New value of the item
 */
-template<class T> void StarJsonData::setValForProp(const std::string propName, const unsigned int index, const T val)
+template<class T> void StarJsonData::setValForProp(const PropName &propName, const unsigned int index, const T val)
 {
-       std::vector<std::string> splitProp;
-       boost::split(splitProp, propName, [](char c)
-       {
-              return c == '/';
-       });
+       auto splitProp = propName;
        //Getting the element in the json property structure
        auto ref = std::ref(m_jsondata);
        for (std::string i : splitProp)

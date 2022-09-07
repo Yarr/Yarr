@@ -11,9 +11,6 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
-//#include <boost/algorithm/string.hpp>
-
-//#include "storage.hpp"
 
 #include "logging.h"
 
@@ -29,11 +26,10 @@ auto hlog = logging::make_log("StarJsonData");
   \param propName Name of the json property to initialize (hierarchy levels being separated by '/')
   \param nbVals Number of items the property's data will contain
 */
-void StarJsonData::initialiseStarChannelsDataAtProp(const std::string propName, const unsigned int nbVals)
+void StarJsonData::initialiseStarChannelsDataAtProp(const PropName &propName, const unsigned int nbVals)
 {
-       hlog->debug("StarJsonData initialising StarChannelsData for prop '{}' with {} vals in the Data vector.", propName, nbVals);
-       std::vector<std::string> splitProp;
-       boost::split(splitProp, propName, [](char c) { return c == '/'; });
+       hlog->debug("StarJsonData initialising StarChannelsData for prop '{}' with {} vals in the Data vector.", propName.back(), nbVals);
+       auto &splitProp = propName;
        //Creating the json property structure
        auto level = std::ref(m_jsondata);
        for (unsigned int iPropLev=0; iPropLev<splitProp.size(); iPropLev++)
@@ -56,10 +52,9 @@ void StarJsonData::initialiseStarChannelsDataAtProp(const std::string propName, 
   \param propName Name of the json property (hierarchy levels being separated by '/') we want to retrieve the value from
   \param index Index of the item in the property to retrieve
 */
-std::optional<double> StarJsonData::getValForProp(const std::string propName, const unsigned int index) const
+std::optional<double> StarJsonData::getValForProp(const PropName &propName, const unsigned int index) const
 {
-       std::vector<std::string> splitProp;
-       boost::split(splitProp, propName, [](char c) { return c == '/'; });
+       auto &splitProp = propName;
        //Getting the element in the json property structure
        auto ref = std::ref(m_jsondata);
        for (std::string i : splitProp)
@@ -74,11 +69,10 @@ std::optional<double> StarJsonData::getValForProp(const std::string propName, co
 /*!
   \param propName Name of the json property (hierarchy levels being separated by '/') we want the sum of number of entries for
 */
-int StarJsonData::getNumberOfEntriesForProp(const std::string propName) const
+int StarJsonData::getNumberOfEntriesForProp(const PropName &propName) const
 {
-       hlog->debug("StarJsonData counting entries for property {}", propName);
-       std::vector<std::string> splitProp;
-       boost::split(splitProp, propName, [](char c) { return c == '/'; });
+       hlog->debug("StarJsonData counting entries for property {}", propName.back());
+       auto &splitProp = propName;
        //Getting the element in the json property structure
        auto ref = std::ref(m_jsondata);
        for (std::string i : splitProp)
@@ -90,12 +84,15 @@ int StarJsonData::getNumberOfEntriesForProp(const std::string propName) const
               ref = ref.get()["Data"];
               for (unsigned int index=0; index<ref.get().size(); index++)
                      if (!ref.get()[index].is_null()) entries++;
+       } else {
+              for (auto it = ref.get().begin(); it != ref.get().end(); ++it) {
+                PropName keyProp = propName;
+                keyProp.push_back(it.key());
+                entries += getNumberOfEntriesForProp(keyProp);
+              }
        }
-       else
-              for (auto it = ref.get().begin(); it != ref.get().end(); ++it)
-                     entries += getNumberOfEntriesForProp(propName + "/" + it.key());
 
-       hlog->debug("StarJsonData counted {} entries for property {}", entries, propName);
+       hlog->debug("StarJsonData counted {} entries for property {}", entries, propName.back());
        return entries;
 }
 
@@ -103,11 +100,10 @@ int StarJsonData::getNumberOfEntriesForProp(const std::string propName) const
 /*!
   \param propName Name of the json property (hierarchy levels being separated by '/') we want the sum of entries for
 */
-double StarJsonData::getSumOfEntriesForProp(const std::string propName) const
+double StarJsonData::getSumOfEntriesForProp(const PropName &propName) const
 {
-       hlog->debug("StarJsonData computing sum for {}", propName);
-       std::vector<std::string> splitProp;
-       boost::split(splitProp, propName, [](char c) { return c == '/'; });
+       hlog->debug("StarJsonData computing sum for {}", propName.back());
+       auto &splitProp = propName;
        //Getting the element in the json property structure
        auto ref = std::ref(m_jsondata);
        for (std::string i : splitProp)
@@ -119,12 +115,15 @@ double StarJsonData::getSumOfEntriesForProp(const std::string propName) const
               ref = ref.get()["Data"];
               for (unsigned int index=0; index<ref.get().size(); index++)
                      sum += getValForProp(propName, index).value_or(0);
+       } else {
+              for (auto it = ref.get().begin(); it != ref.get().end(); ++it) {
+                     PropName keyProp = propName;
+                     keyProp.push_back(it.key());
+                     sum += getSumOfEntriesForProp(keyProp);
+              }
        }
-       else
-              for (auto it = ref.get().begin(); it != ref.get().end(); ++it)
-                     sum += getSumOfEntriesForProp(propName + "/" + it.key());
 
-       hlog->debug("StarJsonData computed a sum of {} for {}", sum, propName);
+       hlog->debug("StarJsonData computed a sum of {} for {}", sum, propName.back());
        return sum;
 }
 
@@ -132,11 +131,10 @@ double StarJsonData::getSumOfEntriesForProp(const std::string propName) const
 /*!
   \param propName Name of the json property (hierarchy levels being separated by '/') we want the sum of squares of entries for
 */
-double StarJsonData::getSumOfSquaredEntriesForProp(const std::string propName) const
+double StarJsonData::getSumOfSquaredEntriesForProp(const PropName &propName) const
 {
-       hlog->debug("StarJsonData computing sum of squares for {}", propName);
-       std::vector<std::string> splitProp;
-       boost::split(splitProp, propName, [](char c) { return c == '/'; });
+       hlog->debug("StarJsonData computing sum of squares for {}", propName.back());
+       auto &splitProp = propName;
        //Getting the element in the json property structure
        auto ref = std::ref(m_jsondata);
        for (std::string i : splitProp)
@@ -151,12 +149,15 @@ double StarJsonData::getSumOfSquaredEntriesForProp(const std::string propName) c
                      double val = getValForProp(propName, index).value_or(0);
                      sum += val*val;
               }
+       } else {
+              for (auto it = ref.get().begin(); it != ref.get().end(); ++it) {
+                     StarJsonData::PropName keyProp = propName;
+                     keyProp.push_back(it.key());
+                     sum += getSumOfSquaredEntriesForProp(keyProp);
+              }
        }
-       else
-              for (auto it = ref.get().begin(); it != ref.get().end(); ++it)
-                     sum += getSumOfSquaredEntriesForProp(propName + "/" + it.key());
 
-       hlog->debug("StarJsonData computed a sum of squares = {} for {}", sum, propName);
+       hlog->debug("StarJsonData computed a sum of squares = {} for {}", sum, propName.back());
        return sum;
 }
 
