@@ -276,7 +276,14 @@ void StarStrobeDelayFitter::end() {
 */
 unsigned StarStrobeDelayFitter::findBinPassingThreshold(const Histo1d *h_in, float fraction, bool goesAbove, bool goesBelow){  
   int bin,i;   
-  float y = h_in->getMaximumY()*fraction;   
+
+  // In the original version this code was in Histo1d.cpp
+  double maxVal = 0.0;
+  for(size_t i=0; i<h_in->size(); i++) {
+    maxVal = std::max(h_in->getData()[i], maxVal);
+  }
+
+  float y = maxVal * fraction;
   if(goesBelow){         // find last bin which is > y          
     for(i=0; i<m_strobeDelayBins; i++){       
       if(h_in->getBin(i)>y) bin = i;     
