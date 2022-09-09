@@ -228,7 +228,7 @@ void StarStrobeDelayFitter::end() {
 
   // Output occupancy map vs SD vs channel per chip/row
   for (unsigned int row=0; row<2; row++){
-    auto hOccVsSDVsCh = std::make_unique<Histo2d>("OccVsStrobeDelayVsChan_Row" + std::to_string(row), 1280, 0, 1280, m_strobeDelayBins+1,  m_strobeDelayMin-((double)m_strobeDelayStep/2.0), m_strobeDelayMax+((double)m_strobeDelayStep/2.0));
+    auto hOccVsSDVsCh = std::make_unique<Histo2d>("OccVsStrobeDelayVsChan_Row" + std::to_string(row), nCol, 0, nCol, m_strobeDelayBins+1,  m_strobeDelayMin-((double)m_strobeDelayStep/2.0), m_strobeDelayMax+((double)m_strobeDelayStep/2.0));
     for (unsigned int iChip=0; iChip<(nCol/128); iChip++) {
       auto hOccVsStrobeDelayPerRow = m_hOccVsStrobeDelayVsChannelPerRow[iChip*2 + row]->profileY();
       const unsigned n_par = 4;
