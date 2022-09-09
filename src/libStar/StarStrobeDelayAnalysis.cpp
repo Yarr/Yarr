@@ -28,6 +28,8 @@ namespace {
     bool oa_registered =
       StdDict::registerAnalysis("StarStrobeDelayFitter",
                                 []() { return std::make_unique<StarStrobeDelayFitter>();});
+
+    constexpr unsigned FIT_N_PAR = 4;
 }
 
 //! Initializes the analysis ; mostly consists of getting the loop parameter over which data will be aggregated
@@ -233,7 +235,7 @@ void StarStrobeDelayFitter::end() {
     auto hOccVsSDVsCh = std::make_unique<Histo2d>("OccVsStrobeDelayVsChan_Row" + std::to_string(row), nCol, 0, nCol, m_strobeDelayBins+1,  m_strobeDelayMin-((double)m_strobeDelayStep/2.0), m_strobeDelayMax+((double)m_strobeDelayStep/2.0));
     for (unsigned int iChip=0; iChip<(nCol/128); iChip++) {
       auto hOccVsStrobeDelayPerRow = m_hOccVsStrobeDelayVsChannelPerRow[iChip*2 + row]->profileY();
-      const unsigned n_par = 4;
+      const unsigned n_par = FIT_N_PAR;
       upJD->initialiseStarChannelsDataAtProp({"ABCStar_" + std::to_string(iChip), "FitParamsLeft", "Row" + std::to_string(row)}, n_par);
       upJD->initialiseStarChannelsDataAtProp({"ABCStar_" + std::to_string(iChip), "FitParamsRight", "Row" + std::to_string(row)}, n_par);
       upJD->initialiseStarChannelsDataAtProp({"ABCStar_" + std::to_string(iChip), "Width", "Row" + std::to_string(row)}, 1);
@@ -301,19 +303,19 @@ unsigned StarStrobeDelayFitter::findBinPassingThreshold(const Histo1d &h_in, flo
 /*!
   \param h_in Input histogram (full strobe delay pulse)
   \param leftEdge Boolean to decide whether to fit the left edge (leftEdge = true) or right edge (leftEdge = false)
-  \param n_par Number of parameters in the fit 
   \param nBins Number of bins in the desied range
   \param plateauCenter Point of separation between the left and right ranges
   \param strobeDelayVec Strobe delay values in the desired range
   \param occVec Occupancy values in the desired range 
 */
-std::vector<double> StarStrobeDelayFitter::fitScurveForSD(const Histo1d &h_in, bool leftEdge, unsigned n_par, unsigned nBins, double plateauCenter, const std::vector<double> &strobeDelayVec, const std::vector<double> &occVec){
+std::vector<double> StarStrobeDelayFitter::fitScurveForSD(const Histo1d &h_in, bool leftEdge, unsigned nBins, double plateauCenter, const std::vector<double> &strobeDelayVec, const std::vector<double> &occVec) {
   lm_status_struct status;
   lm_control_struct control;
   control = lm_control_float;
   control.verbosity = 0;
   // Guess initial parameters
-  unsigned p0initial_bin; double p0initial; double par[n_par] = {};
+  unsigned p0initial_bin; double p0initial; std::array<double, FIT_N_PAR> par;
+  auto n_par = par.size();
   if (leftEdge){
     p0initial_bin = findBinPassingThreshold(h_in, 0.5, true, false);
     p0initial = m_strobeDelayMin + (m_strobeDelayStep * p0initial_bin); 
@@ -324,10 +326,10 @@ std::vector<double> StarStrobeDelayFitter::fitScurveForSD(const Histo1d &h_in, b
   }
   par[0] = p0initial; par[1] = 0.05 * p0initial; par[2] = (double)m_injections; par[3] = 0.;
   // Do the fit
-  if (leftEdge)
-    lmcurve(n_par, par, nBins, &strobeDelayVec[0], &occVec[0], scurveFct, &control, &status);
-  else
-    lmcurve(n_par, par, nBins, &strobeDelayVec[0], &occVec[0], reverseScurveFct, &control, &status);
+  lmcurve(n_par, par.data(), nBins, &strobeDelayVec[0], &occVec[0],
+          leftEdge?scurveFct:reverseScurveFct,
+          &control, &status);
+
   double chi2 = status.fnorm/(double)(nBins - n_par);
   // Check that the fit results are reasonable
   std::vector<double> fitParams;
@@ -401,14 +403,13 @@ std::vector<std::vector<double>> StarStrobeDelayFitter::fitDoubleScurve(const Hi
   unsigned nStrobeDelayBinsRight = strobeDelayVec_right.size();
 		  
   // Do the fits
-  const unsigned n_par = 4;
   std::vector<std::vector<double>> fitParams;
   
   // Left edge fit
-  fitParams.push_back( fitScurveForSD(h_in, true, n_par, nStrobeDelayBinsLeft, plateauCenter, strobeDelayVec_left, occVec_left) );
+  fitParams.push_back( fitScurveForSD(h_in, true, nStrobeDelayBinsLeft, plateauCenter, strobeDelayVec_left, occVec_left) );
 
   // Right edge fit
-  fitParams.push_back( fitScurveForSD(h_in, false, n_par, nStrobeDelayBinsRight, plateauCenter, strobeDelayVec_right, occVec_right) );
+  fitParams.push_back( fitScurveForSD(h_in, false, nStrobeDelayBinsRight, plateauCenter, strobeDelayVec_right, occVec_right) );
 
   return fitParams;
 
