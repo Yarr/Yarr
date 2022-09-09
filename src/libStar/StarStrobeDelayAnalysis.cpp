@@ -65,6 +65,8 @@ void StarStrobeDelayFitter::init(ScanBase *s) {
     }
     m_nFailedfit_left =0;
     m_nFailedfit_right =0;
+
+    alog->debug("Found sd info {} - {} step {} count {} (using {} max)", m_strobeDelayMin, m_strobeDelayMax, m_strobeDelayStep, m_strobeDelayBins, m_injections);
 }
 
 void StarStrobeDelayFitter::loadConfig(const json &j) {
@@ -340,7 +342,8 @@ std::vector<double> StarStrobeDelayFitter::fitScurveForSD(const Histo1d &h_in, b
   if (par[0] > minRange && par[0] < maxRange && par[1] > 0 && par[1] < (maxRange-minRange) 
       && chi2 < 10
       && fabs((par[2] - par[3])/m_injections - 1) < 0.1) {
-    alog->debug("Fit succeeded for {} with leftEdge {}: p0 = {}, p1 = {}, p2 = {}, p3 = {}", h_in.getName(), leftEdge, par[0], par[1], par[2], par[3]);
+    alog->debug("Fit succeeded for {} on {} edge: p0 = {}, p1 = {}, p2 = {}, p3 = {}",
+                h_in.getName(), leftEdge?"left":"right", par[0], par[1], par[2], par[3]);
     for (unsigned int ipar=0; ipar<n_par; ipar++)
       fitParams.push_back(par[ipar]);
   } else {
@@ -348,7 +351,8 @@ std::vector<double> StarStrobeDelayFitter::fitScurveForSD(const Histo1d &h_in, b
       m_nFailedfit_left++;
     else
       m_nFailedfit_right++;
-    alog->debug("Fit failed for {} with leftEdge {}: p0 = {}, p1 = {}, p2 = {}, p3 = {}", h_in.getName(), leftEdge, par[0], par[1], par[2], par[3]);
+    alog->debug("Fit failed for {} on {} edge: p0 = {}, p1 = {}, p2 = {}, p3 = {}",
+                h_in.getName(), leftEdge?"left":"right", par[0], par[1], par[2], par[3]);
     if (par[0] < minRange || par[0] > maxRange)
       alog->debug("p0 out of range");
     else if ( par[1] < 0 || par[1] > (maxRange-minRange))
