@@ -146,7 +146,7 @@ void StarStrobeDelayFitter::processHistogram(HistogramBase *h) {
                 if (m_strobeDelayCnt == m_strobeDelayBins) {
 
 		  // Do double s-curve fit
-		  std::vector<std::vector<double>> fitParams = fitDoubleScurve(m_strobeDelayHistos[ident].get());
+		  std::vector<std::vector<double>> fitParams = fitDoubleScurve(*m_strobeDelayHistos[ident]);
 		  m_leftEdgeMap[ident] = fitParams[0][0];
 		  m_rightEdgeMap[ident] = fitParams[1][0];
 
@@ -230,7 +230,7 @@ void StarStrobeDelayFitter::end() {
   for (unsigned int row=0; row<2; row++){
     auto hOccVsSDVsCh = std::make_unique<Histo2d>("OccVsStrobeDelayVsChan_Row" + std::to_string(row), 1280, 0, 1280, m_strobeDelayBins+1,  m_strobeDelayMin-((double)m_strobeDelayStep/2.0), m_strobeDelayMax+((double)m_strobeDelayStep/2.0));
     for (unsigned int iChip=0; iChip<(nCol/128); iChip++) {
-      Histo1d * hOccVsStrobeDelayPerRow = m_hOccVsStrobeDelayVsChannelPerRow[iChip*2 + row]->profileY();
+      auto hOccVsStrobeDelayPerRow = m_hOccVsStrobeDelayVsChannelPerRow[iChip*2 + row]->profileY();
       const unsigned n_par = 4;
       upJD->initialiseStarChannelsDataAtProp({"ABCStar_" + std::to_string(iChip), "FitParamsLeft", "Row" + std::to_string(row)}, n_par);
       upJD->initialiseStarChannelsDataAtProp({"ABCStar_" + std::to_string(iChip), "FitParamsRight", "Row" + std::to_string(row)}, n_par);
@@ -242,15 +242,13 @@ void StarStrobeDelayFitter::end() {
 	  hOccVsSDVsCh->fill(iChip*128 + iStrip, sd, binContent);
 	} // end loop over points
       } // end loop over strips
-      std::vector<std::vector<double>> fitParamsPerRow = fitDoubleScurve(hOccVsStrobeDelayPerRow);
+      std::vector<std::vector<double>> fitParamsPerRow = fitDoubleScurve(*hOccVsStrobeDelayPerRow);
       for (unsigned int ipar=0; ipar<n_par; ipar++){
 	upJD->setValForProp({"ABCStar_" + std::to_string(iChip), "FitParamsLeft", "Row" + std::to_string(row)}, ipar, fitParamsPerRow[0][ipar]);
 	upJD->setValForProp({"ABCStar_" + std::to_string(iChip), "FitParamsRight", "Row" + std::to_string(row)}, ipar, fitParamsPerRow[1][ipar]);
       }
       upJD->setValForProp({"ABCStar_" + std::to_string(iChip), "Width", "Row" + std::to_string(row)}, 0, fitParamsPerRow[1][0] - fitParamsPerRow[0][0]);
-      std::unique_ptr<Histo1d> uphOccVsStrobeDelayPerRow;
-      uphOccVsStrobeDelayPerRow.reset(hOccVsStrobeDelayPerRow);
-      output->pushData(std::move(uphOccVsStrobeDelayPerRow));
+      output->pushData(std::move(hOccVsStrobeDelayPerRow));
     } // end loop over chips
     hOccVsSDVsCh->setXaxisTitle("Channel number");
     hOccVsSDVsCh->setYaxisTitle("Strobe Delay");
@@ -274,24 +272,24 @@ void StarStrobeDelayFitter::end() {
   \param goesAbove Find x-value for which y-value goes above the threshold
   \param goesBelow Find x-value for which y-value goes below the threshold
 */
-unsigned StarStrobeDelayFitter::findBinPassingThreshold(const Histo1d *h_in, float fraction, bool goesAbove, bool goesBelow){  
+unsigned StarStrobeDelayFitter::findBinPassingThreshold(const Histo1d &h_in, float fraction, bool goesAbove, bool goesBelow){  
   int bin,i;   
 
   // In the original version this code was in Histo1d.cpp
   double maxVal = 0.0;
-  for(size_t i=0; i<h_in->size(); i++) {
-    maxVal = std::max(h_in->getData()[i], maxVal);
+  for(size_t i=0; i<h_in.size(); i++) {
+    maxVal = std::max(h_in.getData()[i], maxVal);
   }
 
   float y = maxVal * fraction;
   if(goesBelow){         // find last bin which is > y          
     for(i=0; i<m_strobeDelayBins; i++){       
-      if(h_in->getBin(i)>y) bin = i;     
+      if(h_in.getBin(i)>y) bin = i;     
     }   
   }else if (goesAbove){             // find first bin which is > y     
     bin = 1;     
     for(i=m_strobeDelayBins; i>0; i--){       
-      if(h_in->getBin(i)>y) bin = i;     
+      if(h_in.getBin(i)>y) bin = i;     
     }   
   }   
   return bin;
@@ -307,7 +305,7 @@ unsigned StarStrobeDelayFitter::findBinPassingThreshold(const Histo1d *h_in, flo
   \param strobeDelayVec Strobe delay values in the desired range
   \param occVec Occupancy values in the desired range 
 */
-std::vector<double> StarStrobeDelayFitter::fitScurveForSD(const Histo1d *h_in, bool leftEdge, unsigned n_par, unsigned nBins, double plateauCenter, const std::vector<double> &strobeDelayVec, const std::vector<double> &occVec){
+std::vector<double> StarStrobeDelayFitter::fitScurveForSD(const Histo1d &h_in, bool leftEdge, unsigned n_par, unsigned nBins, double plateauCenter, const std::vector<double> &strobeDelayVec, const std::vector<double> &occVec){
   lm_status_struct status;
   lm_control_struct control;
   control = lm_control_float;
@@ -342,7 +340,7 @@ std::vector<double> StarStrobeDelayFitter::fitScurveForSD(const Histo1d *h_in, b
   if (par[0] > minRange && par[0] < maxRange && par[1] > 0 && par[1] < (maxRange-minRange) 
       && chi2 < 10
       && fabs((par[2] - par[3])/m_injections - 1) < 0.1) {
-    alog->debug("Fit succeeded for {} with leftEdge {}: p0 = {}, p1 = {}, p2 = {}, p3 = {}", h_in->getName(), leftEdge, par[0], par[1], par[2], par[3]);
+    alog->debug("Fit succeeded for {} with leftEdge {}: p0 = {}, p1 = {}, p2 = {}, p3 = {}", h_in.getName(), leftEdge, par[0], par[1], par[2], par[3]);
     for (unsigned int ipar=0; ipar<n_par; ipar++)
       fitParams.push_back(par[ipar]);
   } else {
@@ -350,7 +348,7 @@ std::vector<double> StarStrobeDelayFitter::fitScurveForSD(const Histo1d *h_in, b
       m_nFailedfit_left++;
     else
       m_nFailedfit_right++;
-    alog->debug("Fit failed for {} with leftEdge {}: p0 = {}, p1 = {}, p2 = {}, p3 = {}", h_in->getName(), leftEdge, par[0], par[1], par[2], par[3]);
+    alog->debug("Fit failed for {} with leftEdge {}: p0 = {}, p1 = {}, p2 = {}, p3 = {}", h_in.getName(), leftEdge, par[0], par[1], par[2], par[3]);
     if (par[0] < minRange || par[0] > maxRange)
       alog->debug("p0 out of range");
     else if ( par[1] < 0 || par[1] > (maxRange-minRange))
@@ -372,25 +370,26 @@ std::vector<double> StarStrobeDelayFitter::fitScurveForSD(const Histo1d *h_in, b
   \param strobeDelayVec Strobe delay values in the desired range
   \param occVec Occupancy values in the desired range 
 */
-void StarStrobeDelayFitter::splitStrobeDelayRange(const Histo1d *h_in, double & plateauCenter, std::vector<double> & strobeDelayVecLeft, std::vector<double> & strobeDelayVecRight, std::vector<double> & occVecLeft, std::vector<double> & occVecRight){
+void StarStrobeDelayFitter::splitStrobeDelayRange(const Histo1d &h_in, double & plateauCenter, std::vector<double> & strobeDelayVecLeft, std::vector<double> & strobeDelayVecRight, std::vector<double> & occVecLeft, std::vector<double> & occVecRight){
 
   //Split up strobe delay range into two parts to do separate s-curve fits
   unsigned plateauLeftEdge = findBinPassingThreshold(h_in, 0.9, true, false);
   unsigned plateauRightEdge = findBinPassingThreshold(h_in, 0.9, false, true);
   unsigned plateauCenterBin = (plateauLeftEdge + plateauRightEdge)/2;
   plateauCenter = m_strobeDelayMin + (m_strobeDelayStep * plateauCenterBin);
-  alog->debug(" Results of splitting up strobe delay range for {}: plateauLeftEdge = {}, plateauRightEdge = {}, plateauCenterBin = {}, plateauCenter = {}", h_in->getName(), plateauLeftEdge, plateauRightEdge, plateauCenterBin, plateauCenter);
+  alog->debug(" Results of splitting up strobe delay range for {}: plateauLeftEdge = {}, plateauRightEdge = {}, plateauCenterBin = {}, plateauCenter = {}", h_in.getName(), plateauLeftEdge, plateauRightEdge, plateauCenterBin, plateauCenter);
   strobeDelayVecLeft = {m_strobeDelayVec.begin(), m_strobeDelayVec.begin() + plateauCenterBin-1};
   strobeDelayVecRight = {m_strobeDelayVec.begin() + plateauCenterBin, m_strobeDelayVec.end()};
-  occVecLeft = {h_in->getData(), h_in->getData() + plateauCenterBin-1};
-  occVecRight = {h_in->getData() + plateauCenterBin, h_in->getData() + h_in->size()};
+  auto data = h_in.getData();
+  occVecLeft = {data, data + plateauCenterBin-1};
+  occVecRight = {data + plateauCenterBin, data + h_in.size()};
 }
 
 //! Do the double s-curve fit to obtain rising and falling edge. Returns vector of vectors containing fit parameters for left side (index 0) and right side (index 1).
 /*!
   \param h_in Input histogram (full strobe delay pulse)
  */
-std::vector<std::vector<double>> StarStrobeDelayFitter::fitDoubleScurve(const Histo1d *h_in){
+std::vector<std::vector<double>> StarStrobeDelayFitter::fitDoubleScurve(const Histo1d &h_in){
   //Split up strobe delay range into two parts to do separate s-curve fits
   double plateauCenter; std::vector<double> strobeDelayVec_left, strobeDelayVec_right, occVec_left, occVec_right;
   splitStrobeDelayRange(h_in, plateauCenter, strobeDelayVec_left, strobeDelayVec_right, occVec_left, occVec_right);
