@@ -159,7 +159,7 @@ void StarStrobeDelayFitter::processHistogram(HistogramBase *h) {
 		  m_rightEdgeMap[ident] = fitParams[1][0];
 
 		  // Dump SD plots if desired
-		  if (m_dumpDebugSDPlots && row == nRow/2 && col%10 == 0 || (m_rightEdgeMap[ident] ==-999. || m_leftEdgeMap[ident]==-999.)) {
+		  if (m_dumpDebugSDPlots && row == nRow/2 && col%10 == 0) {
 		    output->pushData(std::move(m_strobeDelayHistos[ident]));
 		  }
 		  m_strobeDelayHistos[ident].reset(nullptr);
