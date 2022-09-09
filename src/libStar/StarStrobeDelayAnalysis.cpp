@@ -225,7 +225,6 @@ void StarStrobeDelayFitter::end() {
   // Output left/right edge distributions
   output->pushData(std::move(hDistLeftEdge));
   output->pushData(std::move(hDistRightEdge));
-  output->pushData(std::move(upJD));
 
   // Output occupancy map vs SD vs channel per chip/row
   for (unsigned int row=0; row<2; row++){
@@ -258,6 +257,9 @@ void StarStrobeDelayFitter::end() {
     hOccVsSDVsCh->setZaxisTitle("Occupancy");
     output->pushData(std::move(hOccVsSDVsCh));
   }
+
+  output->pushData(std::move(upJD));
+
   for (std::map<unsigned, std::unique_ptr<Histo2d>>::iterator i=m_hOccVsStrobeDelayVsChannelPerRow.begin(); i!=m_hOccVsStrobeDelayVsChannelPerRow.end(); i++) {
     output->pushData(std::move((*i).second));
   }
