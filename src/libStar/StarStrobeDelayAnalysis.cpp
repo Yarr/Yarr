@@ -107,7 +107,11 @@ void StarStrobeDelayFitter::processHistogram(HistogramBase *h) {
     if (h->getName().find(OccupancyMap::outputName()) != 0)
         return;
 
-    Histo2d *hh = (Histo2d*) h;
+    auto hh = dynamic_cast<Histo2d *>(h);
+    if(!hh) {
+        alog->error("OccupancyMap data is not Histo2d");
+        return;
+    }
 
     m_strobeDelayCnt++;
     for(unsigned col=1; col<=nCol; col++) {
@@ -262,7 +266,7 @@ void StarStrobeDelayFitter::end() {
 
   output->pushData(std::move(upJD));
 
-  for (std::map<unsigned, std::unique_ptr<Histo2d>>::iterator i=m_hOccVsStrobeDelayVsChannelPerRow.begin(); i!=m_hOccVsStrobeDelayVsChannelPerRow.end(); i++) {
+  for (auto i=m_hOccVsStrobeDelayVsChannelPerRow.begin(); i!=m_hOccVsStrobeDelayVsChannelPerRow.end(); i++) {
     output->pushData(std::move((*i).second));
   }
    
@@ -276,8 +280,8 @@ void StarStrobeDelayFitter::end() {
   \param goesAbove Find x-value for which y-value goes above the threshold
   \param goesBelow Find x-value for which y-value goes below the threshold
 */
-unsigned StarStrobeDelayFitter::findBinPassingThreshold(const Histo1d &h_in, float fraction, bool goesAbove, bool goesBelow){  
-  int bin,i;   
+unsigned StarStrobeDelayFitter::findBinPassingThreshold(const Histo1d &h_in, float fraction, bool goesAbove, bool goesBelow) const {
+  int bin = goesAbove?0:m_strobeDelayBins-1;
 
   // In the original version this code was in Histo1d.cpp
   double maxVal = 0.0;
@@ -287,12 +291,12 @@ unsigned StarStrobeDelayFitter::findBinPassingThreshold(const Histo1d &h_in, flo
 
   float y = maxVal * fraction;
   if(goesBelow){         // find last bin which is > y          
-    for(i=0; i<m_strobeDelayBins; i++){       
+    for(unsigned i=0; i<m_strobeDelayBins; i++){       
       if(h_in.getBin(i)>y) bin = i;     
     }   
   }else if (goesAbove){             // find first bin which is > y     
     bin = 1;     
-    for(i=m_strobeDelayBins; i>0; i--){       
+    for(unsigned i=m_strobeDelayBins; i>0; i--){       
       if(h_in.getBin(i)>y) bin = i;     
     }   
   }   
@@ -376,7 +380,7 @@ std::vector<double> StarStrobeDelayFitter::fitScurveForSD(const Histo1d &h_in, b
   \param strobeDelayVec Strobe delay values in the desired range
   \param occVec Occupancy values in the desired range 
 */
-void StarStrobeDelayFitter::splitStrobeDelayRange(const Histo1d &h_in, double & plateauCenter, std::vector<double> & strobeDelayVecLeft, std::vector<double> & strobeDelayVecRight, std::vector<double> & occVecLeft, std::vector<double> & occVecRight){
+void StarStrobeDelayFitter::splitStrobeDelayRange(const Histo1d &h_in, double & plateauCenter, std::vector<double> & strobeDelayVecLeft, std::vector<double> & strobeDelayVecRight, std::vector<double> & occVecLeft, std::vector<double> & occVecRight) const {
 
   //Split up strobe delay range into two parts to do separate s-curve fits
   unsigned plateauLeftEdge = findBinPassingThreshold(h_in, 0.9, true, false);

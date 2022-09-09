@@ -50,10 +50,12 @@ class StarStrobeDelayFitter : public AnalysisAlgorithm {
 
         bool m_dumpDebugSDPlots=false;                    //!< Boolean to dump histograms of occupancy vs strobe delay per channel (every 10 channels for first row only).
 
-	unsigned findBinPassingThreshold(const Histo1d &h_in, float fraction, bool goesAbove, bool goesBelow); //!< Function to find first x-axis value for which y-value goes above/below a certain fraction of the maximum
+	unsigned findBinPassingThreshold(const Histo1d &h_in, float fraction, bool goesAbove, bool goesBelow) const; //!< Function to find first x-axis value for which y-value goes above/below a certain fraction of the maximum
+        // Not const decause of m_nFailedfit_left/right
         std::vector<double> fitScurveForSD(const Histo1d &h_in, bool leftEdge, unsigned nBins, double plateauCenter, const std::vector<double> &strobeDelayVec, const std::vector<double> &occVec); //!< Fit a single s-curve (left ot right edge) on a given range of strobe delay pulse
-        void splitStrobeDelayRange(const Histo1d &h_in, double & plateauCenter, std::vector<double> & strobeDelayVecLeft, std::vector<double> & strobeDelayVecRight, std::vector<double> & occVecLeft, std::vector<double> & occVecRight); //!< Split up strobe delay range into left and right parts to do the two s-curve fits
-  std::vector<std::vector<double>> fitDoubleScurve(const Histo1d &h_in); //!< Do the double s-curve fit to obtain rising and falling edge.
+        void splitStrobeDelayRange(const Histo1d &h_in, double & plateauCenter, std::vector<double> & strobeDelayVecLeft, std::vector<double> & strobeDelayVecRight, std::vector<double> & occVecLeft, std::vector<double> & occVecRight) const; //!< Split up strobe delay range into left and right parts to do the two s-curve fits
+        // Not const as calls fitScurveForSD 
+        std::vector<std::vector<double>> fitDoubleScurve(const Histo1d &h_in); //!< Do the double s-curve fit to obtain rising and falling edge.
 	
 	std::map<unsigned, std::unique_ptr<Histo2d>> m_hOccVsStrobeDelayVsChannelPerRow; //!< 2D Histogram of occupancy vs strobe delay vs channel number, split per row and per chip. The map identifier is the chip number*2 + row number (both starting at 0)
 };
