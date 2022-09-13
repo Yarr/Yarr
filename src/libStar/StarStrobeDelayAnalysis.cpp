@@ -26,8 +26,8 @@ namespace {
 
 namespace {
     bool oa_registered =
-      StdDict::registerAnalysis("StarStrobeDelayFitter",
-                                []() { return std::make_unique<StarStrobeDelayFitter>();});
+      StdDict::registerAnalysis("StarStrobeDelayAnalysis",
+                                []() { return std::make_unique<StarStrobeDelayAnalysis>();});
 
     constexpr unsigned FIT_N_PAR = 4;
 }
@@ -35,7 +35,7 @@ namespace {
 //! Initializes the analysis ; mostly consists of getting the loop parameter over which data will be aggregated
 /*!
 */
-void StarStrobeDelayFitter::init(ScanBase *s) {
+void StarStrobeDelayAnalysis::init(ScanBase *s) {
 
     scan = s;
     strobeDelayLoop = 0;
@@ -55,7 +55,7 @@ void StarStrobeDelayFitter::init(ScanBase *s) {
         if (l->isTriggerLoop()) {
             auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
             if(trigLoop == nullptr) {
-                alog->error("StarStrobeDelayFitter: loop declared as trigger loop, does not have a trigger count");
+                alog->error("StarStrobeDelayAnalysis: loop declared as trigger loop, does not have a trigger count");
             } else {
                 m_injections = trigLoop->getTrigCnt();
             }
@@ -71,7 +71,7 @@ void StarStrobeDelayFitter::init(ScanBase *s) {
     alog->debug("Found sd info {} - {} step {} count {} (using {} max)", m_strobeDelayMin, m_strobeDelayMax, m_strobeDelayStep, m_strobeDelayBins, m_injections);
 }
 
-void StarStrobeDelayFitter::loadConfig(const json &j) {
+void StarStrobeDelayAnalysis::loadConfig(const json &j) {
 
     if (j.contains("dumpDebugSDPlots")) {
         m_dumpDebugSDPlots = j["dumpDebugSDPlots"];
@@ -101,7 +101,7 @@ double reverseScurveFct(double x, const double *par) {
 /*!
   \param h HistogramBase object that corresponds to an OccupancyMap
 */
-void StarStrobeDelayFitter::processHistogram(HistogramBase *h) {
+void StarStrobeDelayAnalysis::processHistogram(HistogramBase *h) {
 
     // Check if right Histogram
     if (h->getName().find(OccupancyMap::outputName()) != 0)
@@ -171,7 +171,7 @@ void StarStrobeDelayFitter::processHistogram(HistogramBase *h) {
 //! Once all scan inputs have been collected, finds optimal strobe delay for each chip and dumps results and control plots
 /*!
 */
-void StarStrobeDelayFitter::end() {
+void StarStrobeDelayAnalysis::end() {
 
   // Make histograms of left/right edge for all channels
   auto hDistLeftEdge = std::make_unique<Histo1d>("LeftEdgeDist", m_strobeDelayBins+1, m_strobeDelayMin-((double)m_strobeDelayStep/2.0), m_strobeDelayMax+((double)m_strobeDelayStep/2.0));
@@ -280,7 +280,7 @@ void StarStrobeDelayFitter::end() {
   \param goesAbove Find x-value for which y-value goes above the threshold
   \param goesBelow Find x-value for which y-value goes below the threshold
 */
-unsigned StarStrobeDelayFitter::findBinPassingThreshold(const Histo1d &h_in, float fraction, bool goesAbove, bool goesBelow) const {
+unsigned StarStrobeDelayAnalysis::findBinPassingThreshold(const Histo1d &h_in, float fraction, bool goesAbove, bool goesBelow) const {
   int bin = goesAbove?0:m_strobeDelayBins-1;
 
   // In the original version this code was in Histo1d.cpp
@@ -312,7 +312,7 @@ unsigned StarStrobeDelayFitter::findBinPassingThreshold(const Histo1d &h_in, flo
   \param strobeDelayVec Strobe delay values in the desired range
   \param occVec Occupancy values in the desired range 
 */
-std::vector<double> StarStrobeDelayFitter::fitScurveForSD(const Histo1d &h_in, bool leftEdge, unsigned nBins, double plateauCenter, const std::vector<double> &strobeDelayVec, const std::vector<double> &occVec) {
+std::vector<double> StarStrobeDelayAnalysis::fitScurveForSD(const Histo1d &h_in, bool leftEdge, unsigned nBins, double plateauCenter, const std::vector<double> &strobeDelayVec, const std::vector<double> &occVec) {
   lm_status_struct status;
   lm_control_struct control;
   control = lm_control_float;
@@ -380,7 +380,7 @@ std::vector<double> StarStrobeDelayFitter::fitScurveForSD(const Histo1d &h_in, b
   \param strobeDelayVec Strobe delay values in the desired range
   \param occVec Occupancy values in the desired range 
 */
-void StarStrobeDelayFitter::splitStrobeDelayRange(const Histo1d &h_in, double & plateauCenter, std::vector<double> & strobeDelayVecLeft, std::vector<double> & strobeDelayVecRight, std::vector<double> & occVecLeft, std::vector<double> & occVecRight) const {
+void StarStrobeDelayAnalysis::splitStrobeDelayRange(const Histo1d &h_in, double & plateauCenter, std::vector<double> & strobeDelayVecLeft, std::vector<double> & strobeDelayVecRight, std::vector<double> & occVecLeft, std::vector<double> & occVecRight) const {
 
   //Split up strobe delay range into two parts to do separate s-curve fits
   unsigned plateauLeftEdge = findBinPassingThreshold(h_in, 0.9, true, false);
@@ -399,7 +399,7 @@ void StarStrobeDelayFitter::splitStrobeDelayRange(const Histo1d &h_in, double & 
 /*!
   \param h_in Input histogram (full strobe delay pulse)
  */
-std::vector<std::vector<double>> StarStrobeDelayFitter::fitDoubleScurve(const Histo1d &h_in){
+std::vector<std::vector<double>> StarStrobeDelayAnalysis::fitDoubleScurve(const Histo1d &h_in){
   //Split up strobe delay range into two parts to do separate s-curve fits
   double plateauCenter; std::vector<double> strobeDelayVec_left, strobeDelayVec_right, occVec_left, occVec_right;
   splitStrobeDelayRange(h_in, plateauCenter, strobeDelayVec_left, strobeDelayVec_right, occVec_left, occVec_right);

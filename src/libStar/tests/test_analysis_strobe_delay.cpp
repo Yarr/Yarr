@@ -58,7 +58,7 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
     int nRow = 2;
 
     {
-      auto ana = StdDict::getAnalysis("StarStrobeDelayFitter");
+      auto ana = StdDict::getAnalysis("StarStrobeDelayAnalysis");
 
       REQUIRE (ana);
 

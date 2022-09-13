@@ -2,7 +2,7 @@
   "scan": {
     "analysis": {
 	"0": {
-        	"algorithm": "StarStrobeDelayFitter",
+        	"algorithm": "StarStrobeDelayAnalysis",
         	"config": {
           		"parametersOfInterest": ["ABCs_STR_DEL"],
 	 		"dumpDebugSDPlots": false

@@ -17,10 +17,10 @@ class HistogramBase;
 class Histo1d;
 class Histo2d;
 
-class StarStrobeDelayFitter : public AnalysisAlgorithm {
+class StarStrobeDelayAnalysis : public AnalysisAlgorithm {
     public:
-        StarStrobeDelayFitter() : AnalysisAlgorithm() {}  //!< Default constructor
-        ~StarStrobeDelayFitter() override = default;      //!< Default constructor
+        StarStrobeDelayAnalysis() : AnalysisAlgorithm() {}  //!< Default constructor
+        ~StarStrobeDelayAnalysis() override = default;      //!< Default constructor
 
         void init(ScanBase *s) override;                  //!< Initializes the analysis ; mostly consists of getting the loop parameter over which data will be aggregated
         void processHistogram(HistogramBase *h) override; //!< Fits the left and right edge of strobe delay pulse for each channel and stores them for further analysis
