@@ -76,8 +76,9 @@ job_build_clang:
       - source scl_source enable llvm-toolset-11.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir -p build
       - cd build 
-      - CXXFLAGS=-Werror cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang
+      - CXXFLAGS=-Werror cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang
       - make install -j4
+      - CTEST_OUTPUT_ON_FAILURE=1 make test
       - cd ..
       - bin/scanConsole -k
 
