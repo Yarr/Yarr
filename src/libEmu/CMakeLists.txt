@@ -1,5 +1,4 @@
 add_library(Emu SHARED
-        EmuCom.cpp
         PixelModel.cpp
         Rd53aDiffPixelModel.cpp
         Rd53aLinPixelModel.cpp

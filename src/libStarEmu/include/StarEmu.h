@@ -2,10 +2,9 @@
 #define __STAR_EMU_H__
 
 #include "StarChipsetEmu.h"
-
+#include "EmuCom.h"
 #include <atomic>
 
-class EmuCom;
 
 /**
  * Emulation of data returned by HCCStars in one channel

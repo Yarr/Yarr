@@ -8,7 +8,6 @@
 #include "EmuCom.h"
 #include "EmuRxCore.h"
 #include "LCBUtils.h"
-#include "RingBuffer.h"
 #include "ScanHelper.h"
 #include "logging.h"
 

@@ -13,13 +13,11 @@
 #include <condition_variable>
 #include <vector>
 
-#include "EmuCom.h"
 
-class RingBuffer : public EmuCom {
+class RingBuffer  {
 	public:
 		RingBuffer(uint32_t size);
-		~RingBuffer() override;
-
+		~RingBuffer();
 	private:
                 std::vector<uint32_t> buffer;
 
@@ -35,14 +33,13 @@ class RingBuffer : public EmuCom {
 
 	public:
 		// the main functionality of the class - write to and read from the ring buffer
-		void write32(uint32_t word) override;
-		uint32_t read32() override;
-		uint32_t readBlock32(uint32_t *buf, uint32_t length) override;
+		void write32(uint32_t word);
+		uint32_t read32();
+		uint32_t readBlock32(uint32_t *buf, uint32_t length);
 
 		// useful utility functions
-		bool isEmpty() override;
-		uint32_t getCurSize() override;
-		virtual void dump();
+		bool isEmpty();
+		uint32_t getCurSize();
+		void dump();
 };
-
 #endif
