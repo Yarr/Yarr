@@ -187,7 +187,7 @@ void Rd53aEmu::executeLoop() {
         
         
         // read the command header
-        if( commandStream.size() == 0 ) {
+        if( commandStream.empty() ) {
             retrieve();
         }
         
@@ -263,37 +263,37 @@ void Rd53aEmu::executeLoop() {
 
 //____________________________________________________________________________________________________
 void Rd53aEmu::outputLoop() {
-        auto tag = outTags.front();
+    auto tag = outTags.front();
 
-        //////////////////////////////////////////////////////////////////////////////
-        //
-        // push the data out
-        //
-        // the MSB in the header or not set, only bit 26, discrepancy  between actual chip and manual
-        // used to be (0x7f << 25 )
-        uint32_t header = (0x1 << 25 ) | ( (l1id & 0x1f)<<20 ) | ( (tag & 0x1f) << 15 ) | (bcid & 0x7fff);
-        pushOutput( header );
-        
-        //std::cout << "header = " << HEXF(8, header) << ", outWords size = " << outWords.size() << std::endl;
-        
-        for( auto& w : outWords[tag] ) {
-            
-            if( 0 == w ) continue;
-            
-            // ToT fields w/o hits need to be filled with 0xf.
-            if( ( (w & 0x000f) >>  0 ) == 0x0 ) { w |= 0x000f; }
-            if( ( (w & 0x00f0) >>  4 ) == 0x0 ) { w |= 0x00f0; }
-            if( ( (w & 0x0f00) >>  8 ) == 0x0 ) { w |= 0x0f00; }
-            if( ( (w & 0xf000) >> 12 ) == 0x0 ) { w |= 0xf000; }
-            
-            pushOutput( w );
-        }
+    //////////////////////////////////////////////////////////////////////////////
+    //
+    // push the data out
+    //
+    // the MSB in the header or not set, only bit 26, discrepancy  between actual chip and manual
+    // used to be (0x7f << 25 )
+    std::vector<uint32_t> out;
+    uint32_t header = (0x1 << 25) | ((l1id & 0x1f) << 20) | ((tag & 0x1f) << 15) | (bcid & 0x7fff);
+    out.push_back(header);
 
-        outWords.erase( outWords.find( tag ) );
-        outTags.pop_front();
+    //std::cout << "header = " << HEXF(8, header) << ", outWords size = " << outWords[tag].size() << std::endl;
 
+    for (auto &w: outWords[tag]) {
+
+        if (0 == w) continue;
+
+        // ToT fields w/o hits need to be filled with 0xf.
+        if (((w & 0x000f) >> 0) == 0x0) { w |= 0x000f; }
+        if (((w & 0x00f0) >> 4) == 0x0) { w |= 0x00f0; }
+        if (((w & 0x0f00) >> 8) == 0x0) { w |= 0x0f00; }
+        if (((w & 0xf000) >> 12) == 0x0) { w |= 0xf000; }
+
+        out.push_back(w);
+    }
+    m_rxRingBuffer->write32(out);
+
+    outWords.erase(outWords.find(tag));
+    outTags.pop_front();
 }
-
 
 //____________________________________________________________________________________________________
 void Rd53aEmu::retrieve() {
@@ -968,8 +968,8 @@ void Rd53aEmu::formatWords( const uint32_t coreCol, const uint32_t coreRow, cons
     size_t coord = (coreCol*2+subCol/4)*192 + (coreRow*8+subRow);
 
     {
-        std::unique_lock<std::mutex> lock(this->queue_mutex);
-        outWords[tag].at(coord) |= word;
+      //  std::unique_lock<std::mutex> lock(this->queue_mutex);
+        outWords[tag][coord] |= word;
     }
 
     totalDigitalHits++;
