@@ -23,7 +23,7 @@ class RawData {
             buf.reserve(arg_words);   
         }
 
-        RawData(uint32_t arg_adr, std::vector<uint32_t> &arg_buf) {
+        RawData(uint32_t arg_adr, std::vector<uint32_t> &&arg_buf) : adr(arg_adr) {
             buf = std::move(arg_buf);
         }
 
