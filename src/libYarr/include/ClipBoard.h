@@ -14,10 +14,13 @@
 #include <mutex>
 #include <deque>
 #include <condition_variable>
+#include <chrono>
 
 #include "RawData.h"
 
 #include <typeinfo>
+
+static const std::chrono::microseconds microsecond_unit(1);
 
 template <class T>
 class ClipBoard {
@@ -56,9 +59,9 @@ class ClipBoard {
             return tmp;
         }
 
-	int size() {
-	  return dataQueue.size();
-	}
+        int size() {
+          return dataQueue.size();
+        }
 
         bool empty() {
             std::lock_guard<std::mutex> lock(queueMutex);
@@ -77,6 +80,12 @@ class ClipBoard {
         void waitNotEmptyOrDone() {
           std::unique_lock<std::mutex> lk(queueMutex);
           cvNotEmpty.wait(lk,
+                            [&] { return doneFlag || !rawEmpty(); } );
+        }
+
+        bool waitNotEmptyOrDoneOrTimeout(unsigned n_usec) {
+          std::unique_lock<std::mutex> lk(queueMutex);
+          return cvNotEmpty.wait_for(lk, n_usec * microsecond_unit,
                             [&] { return doneFlag || !rawEmpty(); } );
         }
 
