@@ -20,8 +20,6 @@
 
 #include <typeinfo>
 
-static const std::chrono::microseconds microsecond_unit(1);
-
 template <class T>
 class ClipBoard {
     public:
@@ -83,9 +81,10 @@ class ClipBoard {
                             [&] { return doneFlag || !rawEmpty(); } );
         }
 
-        bool waitNotEmptyOrDoneOrTimeout(unsigned n_usec) {
+        template<typename Rep, typename TimeUnit>
+        bool waitNotEmptyOrDoneOrTimeout(std::chrono::duration<Rep, TimeUnit> timeout) {
           std::unique_lock<std::mutex> lk(queueMutex);
-          return cvNotEmpty.wait_for(lk, n_usec * microsecond_unit,
+          return cvNotEmpty.wait_for(lk, timeout,
                             [&] { return doneFlag || !rawEmpty(); } );
         }
 
