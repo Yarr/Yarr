@@ -20,7 +20,7 @@ class Rd53bTriggerLoop : public LoopActionBase, public StdTriggerAction {
         
         void setTrigTime(double time) {m_trigTime = time;}
         void setTrigFreq(double freq) {m_trigFreq = freq;}
-        void setTrigDelay(uint32_t delay);
+        void setTrigDelay(uint32_t delay, uint32_t cal_edge_delay);
         void setEdgeMode(uint32_t duration);
         void setNoInject();
 
@@ -29,6 +29,7 @@ class Rd53bTriggerLoop : public LoopActionBase, public StdTriggerAction {
 
     private:
         uint32_t m_trigDelay;
+        uint32_t m_calEdgeDelay;
         float m_trigTime;
         float m_trigFreq;
         std::array<uint32_t, 32> m_trigWord;
