@@ -304,10 +304,12 @@ int ScanConsoleImpl::configure() {
             logger->critical("Can't establish communication, aborting!");
             return -1;
         }
-	// check that the current FE name is valid
+        // check that the current FE name is valid
         if (!fe->hasValidName()) {
-            logger->error("Invalid chip name, aborting!");
+            logger->critical("Invalid chip name, aborting!");
+            return -1;
         }
+
         logger->info("... success!");
     }
 
