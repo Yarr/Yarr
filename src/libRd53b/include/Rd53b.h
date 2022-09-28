@@ -64,6 +64,7 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         // perform the necessary steps to program the E-fuse circuitry and perform
         // the readback of the E-fuse data
         itkpix_efuse_codec::EfuseData readEfuses();
+        uint32_t readEfusesRaw();
 
         void runRingOsc(uint16_t duration, bool isBankB);
         void confAdc(uint16_t MONMUX, bool doCur = false);

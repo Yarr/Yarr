@@ -111,6 +111,20 @@ namespace itkpix_efuse_codec {
         return decoded_binary_str;
     }
 
+        static inline std::string decodeOldFormat(const uint32_t& efuse_data) {
+
+        // expect LSB 8-bits to hold the 5 parity bits
+        uint32_t parityR = (0x1f & efuse_data);
+	uint32_t parity = ((parityR&0x10)>>4) | ((parityR&0x8)>>2) | (parityR&0x4) | ((parityR&0x2)<<2) | ((parityR&0x1)<<4);
+        uint32_t without_parity = 0xffffff & (efuse_data >> 8);
+        uint32_t efuse_data_formatted = (without_parity << 5) | parity;
+        std::string decoded_binary_str = hamming_codec::decode(efuse_data_formatted
+                                                            ,29
+                                                            ,hamming_codec::ParityLocation::LSB
+                                                            ,5);
+        return decoded_binary_str;
+    }
+
     static inline std::string encode(const std::string& probe_location_name, const uint32_t& chip_serial_number) {
 
         // check probe location
