@@ -1452,13 +1452,27 @@ void NoiseAnalysis::init(ScanBase *s) {
     occ->setXaxisTitle("Col");
     occ->setYaxisTitle("Row");
     occ->setZaxisTitle("Hits");
+    tag.reset(new Histo1d("TagDist", 257, -0.5, 256.5));
+    tag->setXaxisTitle("Tag");
+    tag->setYaxisTitle("Hits");
+    tot.reset(new Histo2d("TotMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
+    tot->setXaxisTitle("Col");
+    tot->setYaxisTitle("Row");
+    tot->setZaxisTitle("Averaged ToT");        
     n_trigger = 0;
 }
 
 void NoiseAnalysis::processHistogram(HistogramBase *h) {
     if (h->getName() == OccupancyMap::outputName()) {
         occ->add(*(Histo2d*)h);
-    } else if (h->getName() == HitsPerEvent::outputName()) {
+    }
+    else if (h->getName() == TotMap::outputName()) {
+        tot->add(*(Histo2d*)h);
+    }    
+    else if (h->getName() == TagDist::outputName()) {
+        tag->add(*(Histo1d*)h);
+    }     
+    else if (h->getName() == HitsPerEvent::outputName()) {
         n_trigger += ((Histo1d*)h)->getEntries();       
     }
 }
@@ -1502,7 +1516,12 @@ void NoiseAnalysis::end() {
         }
     }
 
+    // Get averaged tot
+    tot->divide(*occ);
+
     output->pushData(std::move(occ));
+    output->pushData(std::move(tot));
+    output->pushData(std::move(tag));
     output->pushData(std::move(noiseOcc));
     output->pushData(std::move(mask));
 }
