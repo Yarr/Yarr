@@ -145,6 +145,12 @@ HccStarRegInfo::HccStarRegInfo(int version) {
   std::map<unsigned, std::shared_ptr<RegisterInfo>> regMap;
 
   for (HCCStarRegister reg : HCCStarRegister::_values()) {
+    if(version == 1
+       && (reg == HCCStarRegister(HCCStarRegister::PLL2)
+           || reg == HCCStarRegister(HCCStarRegister::PLL3))) {
+      continue;
+    }
+
     int addr = reg;
     regMap[addr] = std::make_shared<RegisterInfo>(addr);
   }
@@ -279,9 +285,27 @@ void HccCfg::setDefaults(int version) {
 }
 
 uint32_t HccCfg::getRegisterValue(HCCStarRegister addr) const {
-  return getRegister(addr).getValue();
+  try {
+    return getRegister(addr).getValue();
+  } catch(std::out_of_range &e) {
+    logger->info("Failed request for get HCC reg: {}", addr);
+    for(auto &rm: m_registerMap) {
+      logger->debug("Have: {}", rm.first);
+    }
+
+    throw std::out_of_range("Attempt to get value for bad HCC register");
+  }
 }
 
 void HccCfg::setRegisterValue(HCCStarRegister addr, uint32_t val) {
-  getRegister(addr).setValue(val);
+  try {
+    getRegister(addr).setValue(val);
+  } catch(std::out_of_range &e) {
+    logger->info("Failed request for set HCC reg: {}", addr);
+    for(auto &rm: m_registerMap) {
+      logger->debug("Have: {}", rm.first);
+    }
+
+    throw std::out_of_range("Attempt to set value for bad HCC register");
+  }
 }

@@ -23,6 +23,12 @@ void process_data(RawData &curIn,
 
 bool star_proc_registered =
   StdDict::registerDataProcessor("Star", []() { return std::unique_ptr<DataProcessor>(new StarDataProcessor());});
+bool star_proc_registered_0 =
+  StdDict::registerDataProcessor("Star_vH0A0", []() { return std::unique_ptr<DataProcessor>(new StarDataProcessor());});
+bool star_proc_registered_ppa =
+  StdDict::registerDataProcessor("Star_vH0A1", []() { return std::unique_ptr<DataProcessor>(new StarDataProcessor());});
+bool star_proc_registered_ppb =
+  StdDict::registerDataProcessor("Star_vH1A1", []() { return std::unique_ptr<DataProcessor>(new StarDataProcessor());});
 
 StarDataProcessor::StarDataProcessor()
   : DataProcessor()
