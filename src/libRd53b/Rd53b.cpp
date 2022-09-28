@@ -349,20 +349,30 @@ bool Rd53b::hasValidName() {
     // field, then readback the E-fuses to get the actual chip's ID
     //itkpix_efuse_codec::EfuseData efuse_data = this->readEfuses();
     uint32_t efuse_data_raw = this->readEfusesRaw();
-    std::string decoded_efuse= itkpix_efuse_codec::decode(efuse_data_raw);
-    std::string decoded_efuse_old= itkpix_efuse_codec::decodeOldFormat(efuse_data_raw);
 
-    bool id_in_name = name.find(decoded_efuse) != std::string::npos;
-    bool id_in_name_old = name.find(decoded_efuse_old) != std::string::npos;
+    itkpix_efuse_codec::EfuseData efuse_data = itkpix_efuse_codec::EfuseData{itkpix_efuse_codec::decode(efuse_data_raw)};
+    itkpix_efuse_codec::EfuseData efuse_data_old = itkpix_efuse_codec::EfuseData{itkpix_efuse_codec::decodeOldFormat(efuse_data_raw)};
+
+    std::stringstream id_from_efuse;
+    id_from_efuse << std::hex << efuse_data.chip_sn();
+
+    std::stringstream id_from_efuse_old;
+    id_from_efuse_old << std::hex << efuse_data_old.chip_sn();
+
+    logger->info("Chip serial number obtained from e-fuse data (raw): 0x{:x}", efuse_data_raw);
+    bool id_in_name = name.find(id_from_efuse.str()) != std::string::npos;
+    bool id_in_name_old = name.find(id_from_efuse_old.str()) != std::string::npos;
     if(!id_in_name) {
-        logger->error("Chip serial number from e-fuse data (0x{:x}) does not appear in Chip \"name\" field (\"{}\") in loaded configuration  for chip with ChipId = {}", id_in_name, name, m_chipId);
+        logger->error("Chip serial number decoded from e-fuse data (0x{:x}) does not appear in Chip \"name\" field (\"{}\") in loaded configuration  for chip with ChipId = {}", efuse_data.chip_sn(), name, m_chipId);
 	if (id_in_name_old) {
-    		logger->info("Chip serial number decoded with old format from e-fuse data: 0x{:x} (decoded e-fuse data: 0x{:x})", decoded_efuse, efuse_data_raw);
+    		logger->info("Chip serial number decoded with old format from e-fuse data: 0x{:x}", efuse_data_old.chip_sn());
     		return true;
-	} else
-        return false;
+	} else {
+        	logger->error("Chip serial number decoded with old format from e-fuse data (0x{:x}) does not appear in Chip \"name\" field (\"{}\") in loaded configuration  for chip with ChipId = {}", efuse_data_old.chip_sn(), name, m_chipId);
+        	return false;
+	}
     }
-    logger->info("Chip serial number obtained from e-fuse data: 0x{:x} (decoded e-fuse data: 0x{:x})", decoded_efuse, efuse_data_raw);
+    logger->info("Chip serial number obtained from e-fuse data: 0x{:x}", efuse_data.chip_sn() );
     return true;
 }
 
