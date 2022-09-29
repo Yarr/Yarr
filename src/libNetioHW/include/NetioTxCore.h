@@ -15,10 +15,7 @@
 #include "felixbase/client.hpp"
 
 #include <cstdint>
-#include <queue>
 #include <vector>
-#include <mutex>
-
 
 #include "storage.hpp"
 
@@ -78,7 +75,6 @@ private:
   netio::low_latency_send_socket * m_socket; //! netio send socket
   netio::context * m_context;                //! netio underlaying technology
   std::thread m_trigProc;                    //! trigger thread
-  std::mutex m_mutex;
 
   void connect();
   void trigger();

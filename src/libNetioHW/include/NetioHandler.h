@@ -10,8 +10,6 @@
  * Date: November 2017
  *********************************/
 
-#include "ProducerConsumerQueue.h"
-#include "QueueMonitor.h"
 #include "netio/netio.hpp"
 
 #include "RawData.h"
@@ -20,8 +18,6 @@
 #include <map>
 #include <memory>
 #include <thread>
-#include <mutex>
-#include <algorithm>
 
 class NetioHandler
 {
@@ -32,10 +28,6 @@ public:
   NetioHandler& operator=(NetioHandler const&) = delete;  // Copy assign
   NetioHandler& operator=(NetioHandler &&) = delete;      // Move assign
 
-  // Custom types
-  typedef folly::ProducerConsumerQueue<uint32_t> FollyQueue;
-  typedef std::shared_ptr<FollyQueue> SharedQueue;
-
   ClipBoard<RawData> rawData;
   void setFlushBuffer(bool);
 
@@ -45,27 +37,13 @@ public:
   // Functionalities
   void addChannel(uint64_t chn); // Enable an elink (prepare a queue, socket-pairs and sub to elink.
   void delChannel(uint64_t chn); // Enable an elink (prepare a queue, socket-pairs and sub to elink.
-  void monitorSetup(size_t sensitivity, size_t delay, size_t numOf=0); // Configures monitoring threads.
-  void configureMonitors(size_t sensitivity, size_t delay); // Configures monitors -> new dynamic way
-  void startChecking(); // Starts the monitoring threads.
-  void stopChecking();  // Stops the monitoring threads.
-  void send(uint64_t chn, netio::message& msg){ m_send_sockets[chn]->send(msg); } // Sends the msg
-  std::vector<uint32_t> pushOut(uint64_t chn); // Push out every records from channel queue.
-  SharedQueue& getQueue(uint64_t chn){ return m_pcqs[chn]; } // Access for elink's queue.
-  size_t getNumOfChannels() const { return m_activeChannels; } // Get the number of active channels.
-  bool isStable(size_t monitorID); // Returns the stability of elink's queue.
-  bool isAllStable(); // Returns the aggregated stability of the queues.
   void setFelixHost(std::string felixHost){m_felixHost=felixHost;}
   void setFelixRXPort(uint16_t felixRXPort){m_felixRXPort=felixRXPort;}
-  void setFelixTXPort(uint16_t felixTXPort){m_felixTXPort=felixTXPort;}
 
   // set flag to keep rd53a and strips specific things seperate
   void setFeType(std::string fetype){m_feType=fetype;}
 
-public:
-  NetioHandler(std::string contextStr="posix", std::string felixHost="localhost",
-               uint16_t felixTXPort=12340, uint16_t felixRXPort=12345,
-               size_t queueSize=10000000);
+  NetioHandler(std::string contextStr, std::string felixHost, uint16_t felixRXPort);
   //MW: FIX CLANG COMPILATION
   ~NetioHandler();
 
@@ -75,56 +53,20 @@ private:
   // used as a flag to keep rd53a and strips specific things seperate
   std::string m_feType;
 
-  bool m_isConfigured = false;
   std::vector<uint64_t> m_channels;
-  enum E_MONITOR_MODE { single=1, dual=2, quad=4 };
-  E_MONITOR_MODE m_monitor_mode = E_MONITOR_MODE::single; // R.S. FIXME hardcode
-  std::map<uint32_t, std::vector<uint64_t>> m_monitor_config_dynamic{ };
-
-  // Configuration -> HARDCODE... should come from configuration.
-  std::map<uint32_t, std::vector<uint64_t>> m_monitor_config_basic {
-    { 0, { 0 } },
-    { 1, { 1 } },
-    { 2, { 2 } },
-    { 3, { 3 } }
-  };
-  std::map<uint32_t, std::vector<uint64_t>> m_monitor_config {
-    { 0, { 0 , 1 , 2 , 3  } }, // monitor 0 - egroup 0
-    { 1, { 4 , 5 , 6 , 7  } }, // monitor 1 - egroup 1
-    { 2, { 8 , 9 , 10, 11 } }, // monitor 2 - egroup 2
-    { 3, { 12, 13, 14, 15 } }  // monitor 3 - egroup 3
-  };
-  const uint32_t m_datasize = 3;
-  const uint32_t m_headersize = sizeof(felix::base::FromFELIXHeader);
 
   // NETIO
   netio::context * m_context; // context
   std::string m_felixHost;    // hostname
-  uint16_t m_felixTXPort;     // TX port (ususally 12340)
   uint16_t m_felixRXPort;     // RX port (ususally 12345)
   std::thread m_netio_bg_thread;
   std::map<uint64_t, netio::low_latency_subscribe_socket*> m_sub_sockets; // subscribe sockets.
-  std::map<uint64_t, netio::low_latency_send_socket*> m_send_sockets;     // send sockets.
-
-  size_t m_activeChannels;
 
   // used to keep strips and rd53a specific things seperate
   std::string fetype; // rd53a or fei4
 
-
-  // Statistic thread options
-  size_t m_sensitivity;
-  size_t m_delay;
-  size_t m_queueSize;
-
-  // Queues and the stability check threads
-  std::map<uint64_t, SharedQueue> m_pcqs; // Queues for elink RX.
-  std::vector<QueueMonitor> m_monitors;   // Queue monitoring threads.
-
   // Other statistics for channels:
   std::map<uint64_t, uint32_t> m_msgErrors;
-
-  std::mutex m_mutex;
 };
 
 #endif
