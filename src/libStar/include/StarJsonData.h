@@ -59,17 +59,15 @@ public:
        void setJsonDataType(const std::string & type) //!<Gives a type to the set of data containing in the Json object
        {
               m_jsondata["Type"] = type;
-       };
- 
-       void initialiseStarChannelsDataAtProp(const std::string propName, const unsigned int nbVals=128); //!<Initializes a vector of nbVals (usually nbChannels per row)
-       std::optional<double> getValForProp(const std::string propName, const unsigned int index) const; //!<Returns the data value at index index for property propName
-       std::string getStringForProp(const std::string& propName) const; //!<Returns the string value at property propName
-       template<class T> void setValForProp(const std::string propName, const unsigned int index, const T val); //!<Sets the value val for the item at index in the vector of data at propName
-       int getNumberOfEntriesForProp(const std::string propName) const; //!<Gets the number of entries for a given property
-       double getSumOfEntriesForProp(const std::string propName) const; //!<Gets the sum of all entries for a given property
-       double getSumOfSquaredEntriesForProp(const std::string propName) const; //!<Gets the sum of all squared entries for a given property
+       }; 
+       void initialiseStarChannelsDataAtProp(const PropName &propName, const unsigned int nbVals=128); //!<Initializes a vector of nbVals (usually nbChannels per row)
+       std::optional<double> getValForProp(const PropName &propName, const unsigned int index) const; //!<Returns the data value at index index for property propName
+       std::string getStringForProp(const PropName &propName) const; //!<Returns the string value at property propName
+       template<class T> void setValForProp(const PropName &propName, const unsigned int index, const T val); //!<Sets the value val for the item at index in the vector of data at propName
+       int getNumberOfEntriesForProp(const PropName &propName) const; //!<Gets the number of entries for a given property
+       double getSumOfEntriesForProp(const PropName &propName) const; //!<Gets the sum of all entries for a given property
+       double getSumOfSquaredEntriesForProp(const PropName &propName) const; //!<Gets the sum of all squared entries for a given property
        //void plotAs2DMapRowVsAllChannels(const std::string &basename, const std::string &dir = ""); //!<Not mandatory, To be implemented
-
 protected:
 
 private:

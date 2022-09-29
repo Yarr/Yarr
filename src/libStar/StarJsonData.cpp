@@ -68,7 +68,7 @@ std::optional<double> StarJsonData::getValForProp(const PropName &propName, cons
 /*!
   \param propName Name of the json property (hierarchy levels being separated by '/') we want to retrieve the value from
 */
-std::string StarJsonData::getStringForProp(const std::string& propName) const
+std::string StarJsonData::getStringForProp(const PropName &propName) const
 {
   return  m_jsondata[propName];
 }
