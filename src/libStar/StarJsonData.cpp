@@ -70,7 +70,12 @@ std::optional<double> StarJsonData::getValForProp(const PropName &propName, cons
 */
 std::string StarJsonData::getStringForProp(const PropName &propName) const
 {
-  return  m_jsondata[propName];
+       auto &splitProp = propName;
+       //Getting the element in the json property structure
+       auto ref = std::ref(m_jsondata);
+       for (std::string i : splitProp)
+              ref = ref.get()[i];
+       return ref.get();
 }
 
 //! Returns the number of entries in all data for the property
