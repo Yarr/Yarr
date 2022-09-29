@@ -8,6 +8,11 @@ ScanConsole::ScanConsole() : pimpl(std::make_unique<ScanConsoleImpl>()) {}
 
 ScanConsole::~ScanConsole() = default;
 
+
+void ScanConsole::setupLogger(const char* config) {
+    ScanConsoleImpl::setupLogger(config);
+}
+
 std::string ScanConsole::parseConfig(const std::vector<std::string> &args) {
      return ScanConsoleImpl::parseConfig(args);
 }

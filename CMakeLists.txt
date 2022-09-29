@@ -34,6 +34,10 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+# Set RPATH to find shlib relative to executable
+SET(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
+SET(CMAKE_BUILD_RPATH ../lib)
+
 add_compile_options(-g)
 
 if(CMAKE_BUILD_TYPE MATCHES Asan)
@@ -58,6 +62,9 @@ set(YARR_FRONT_ENDS_TO_BUILD "Fei4;Rd53a;Star;Rd53b"
     CACHE STRING "Semicolon-separated list of controllers to build, or \"all\"")
 set(YARR_CONTROLLERS_TO_BUILD  "Spec;Emu"
     CACHE STRING "Semicolon-separated list of controllers to build, or \"all\".")
+set(YARR_EMULATORS_TO_BUILD "StarEmu;Fei4Emu;Rd53aEmu"
+    CACHE STRING "Semicolon-separated list of front-end specific emulators to build (if Emu in controller list)")
+
 set(YARR_ACTIVE_LOGGER_LEVEL "DEBUG"
     CACHE STRING "This sets SPDLOG_ACTIVE_LEVEL, below which logger macros are disabled at build time. One of TRACE, DEBUG, INFO, WARN, ERROR, CRITICAL, OFF")
 
@@ -68,11 +75,14 @@ set(CONTROLLERS "")
 
 # only build those controllers specified in YARR_CONTROLLERS_TO_BUILD
 if(YARR_CONTROLLERS_TO_BUILD STREQUAL "all")
-   set(CONTROLLERS "Spec;Emu;Bdaq;Rogue;NetioHW;FelixClient;ItsdaqFW")
+   set(CONTROLLERS "Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Bdaq;Rogue;NetioHW;FelixClient;ItsdaqFW")
 else()
   foreach(ctrl IN LISTS YARR_CONTROLLERS_TO_BUILD )
     if(NOT ${ctrl} IN_LIST CONTROLLERS)
        LIST(APPEND CONTROLLERS ${ctrl})
+    endif()
+    if((${ctrl} MATCHES Emu) AND (NOT Emu IN_LIST CONTROLLERS))
+       LIST(APPEND CONTROLLERS Emu)
     endif()
   endforeach()
 endif()
@@ -84,6 +94,14 @@ else()
     foreach(fe IN LISTS YARR_FRONT_ENDS_TO_BUILD)
         if(NOT ${fe} IN_LIST FRONT_ENDS)
             LIST(APPEND FRONT_ENDS ${fe})
+        endif()
+    endforeach()
+endif()
+
+if(Emu IN_LIST CONTROLLERS)
+    foreach(fe_emu IN LISTS YARR_EMULATORS_TO_BUILD)
+        if(NOT ${fe_emu} IN_LIST CONTROLLERS)
+            LIST(APPEND CONTROLLERS ${fe_emu})
         endif()
     endforeach()
 endif()

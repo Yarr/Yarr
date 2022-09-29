@@ -383,3 +383,16 @@ uint32_t AbcCfg::getRegisterValue(ABCStarRegister addr) const {
 void AbcCfg::setRegisterValue(ABCStarRegister addr, uint32_t val) {
     getRegister(addr).setValue(val);
 }
+
+AbcStarRegInfo::SubInfoPtr AbcStarRegInfo::subRegFromEnum(ABCStarSubRegister subReg) const
+{
+    try {
+        return abcSubRegisterMap_all.at(subReg);
+    } catch(std::out_of_range &e) {
+        logger->info("Failed request for subReg: {}", subReg._to_string());
+        for(auto &sr: abcSubRegisterMap_all) {
+            logger->debug(" Have: {}", sr.first);
+        }
+        throw std::out_of_range("Attempt to get info for bad ABC sub register");
+    }
+}

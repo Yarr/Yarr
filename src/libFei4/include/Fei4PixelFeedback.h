@@ -48,7 +48,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
             // TODO Check on NULL pointer
             if (h->size() != 26880) {
                 logger().error("Wrong type of feedback histogram on channel {}", channel);
-                doneMap[channel] = true;
+                fbDoneMap[channel] = true;
             } else {
                 fbHistoMap[channel] = std::move(h);
             }
@@ -133,17 +133,6 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
             if(step == 0)
                 step = 1;
             cur++;
-        }
-
-        bool allDone() {
-            for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-                FrontEnd *fe = keeper->getEntry(id).fe;
-                if(fe->getActive()) {
-                    if (!doneMap[id])
-                        return false;
-                }
-            }
-            return true;
         }
 
         unsigned getPixel(Fei4 *fe, unsigned col, unsigned row) {

@@ -14,6 +14,7 @@
 #include <mutex>
 #include <deque>
 #include <condition_variable>
+#include <chrono>
 
 #include "RawData.h"
 
@@ -56,9 +57,9 @@ class ClipBoard {
             return tmp;
         }
 
-	int size() {
-	  return dataQueue.size();
-	}
+        int size() {
+          return dataQueue.size();
+        }
 
         bool empty() {
             std::lock_guard<std::mutex> lock(queueMutex);
@@ -77,6 +78,13 @@ class ClipBoard {
         void waitNotEmptyOrDone() {
           std::unique_lock<std::mutex> lk(queueMutex);
           cvNotEmpty.wait(lk,
+                            [&] { return doneFlag || !rawEmpty(); } );
+        }
+
+        template<typename Rep, typename TimeUnit>
+        bool waitNotEmptyOrDoneOrTimeout(std::chrono::duration<Rep, TimeUnit> timeout) {
+          std::unique_lock<std::mutex> lk(queueMutex);
+          return cvNotEmpty.wait_for(lk, timeout,
                             [&] { return doneFlag || !rawEmpty(); } );
         }
 

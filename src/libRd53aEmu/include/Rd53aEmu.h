@@ -4,7 +4,6 @@
 #include "Rd53aCfg.h"
 #include "AnyType.h"
 #include "ThreadPool.h"
-#include "EmuShm.h"
 #include "EmuCom.h"
 #include "Gauss.h"
 

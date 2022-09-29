@@ -127,13 +127,25 @@ TEST_CASE("StarBasicConfig", "[star][chips]") {
   MyTxCore &tx = hw;
 
   // Default is with "global" addresses
-  auto gen_fe = StdDict::getFrontEnd("Star");
+  std::string fe_name = "Star";
+
+  SECTION("Default") {}
+  SECTION("PPA") {
+    fe_name = "Star_vH0A1";
+  }
+  SECTION("PPB") {
+    fe_name = "Star_vH1A1";
+  }
+
+  auto gen_fe = StdDict::getFrontEnd(fe_name);
   auto star_fe = dynamic_cast<StarChips*> (&*gen_fe);
   REQUIRE(star_fe);
 
   star_fe->init(&hw, 0, 0);
 
   REQUIRE (tx.buffers.empty());
+
+  star_fe->resetAll();
 
   star_fe->configure();
 

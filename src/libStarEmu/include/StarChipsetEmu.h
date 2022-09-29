@@ -23,7 +23,8 @@ public:
   };
 
   StarChipsetEmu(ClipBoard<RawData>* rx, const std::string& json_emu_file_path,
-                 std::unique_ptr<StarCfg> regCfg,  unsigned hpr_period);
+                 std::unique_ptr<StarCfg> regCfg, unsigned hpr_period,
+                 int abc_version, int hcc_version);
   ~StarChipsetEmu();
 
   void doL0A(bool, uint8_t, uint8_t);
@@ -158,6 +159,9 @@ private:
   // Flag indicating if at least one HPR packet has been sent
   std::vector<bool> hpr_sent;
   const unsigned HPRPERIOD; // HPR packet period
+
+  int m_abc_version;
+  int m_hcc_version;
 
   ////////////////////////////////////////
   // HCCStar and ABCStar configurations

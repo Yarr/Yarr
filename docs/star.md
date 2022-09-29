@@ -133,6 +133,12 @@ bin/scanConsole -r configs/controller/itsdaq.json -c configs/connectivity/daqloa
 An example of the occupancy map after a successful strobe delay scan for a hybrid module for which the optimal strobe delay value is 21 is given below.
 ![Occupancy map Strobe Delay](images/MGF_star_strobedelay_OccupancyMap-21.png)
 
+The strobe delay scan can also be run on a full module, instead of just a hybrid. An example of the occupancy map, as well as the strobe delay (``ABCs_STR_DEL``) map after a successful strobe delay scan for a full module is given below.
+![Occupancy map Strobe Delay, Full Module](images/MGF_star_fullmodule_strobedelay_OccupancyMap-20.png)
+![Strobe Delay map, Full Module](images/MGF_star_fullmodule_strobedelay_ABCs_STR_DEL_Map.png)
+
+
+
 ### Three/N Point Gain / Response curve
 
 To run a three point gain scan execute the following command:
@@ -155,6 +161,13 @@ Example of the threshold and noise map, as well as the response curve for a hybr
 ![Noise map NPointGain](images/MGF_star_3PG_NoiseMap-140.png)
 ![Response curve NPoint Gain](images/MGF_star_3PG_responseCurve.png)
 
+Example of the same plots for a full module are also given:
+![Threshold map NPointGain, Full Module](images/MGF_star_fullmodule_3PG_ThresholdMap-140.png)
+![Noise map NPointGain, Full Module](images/MGF_star_fullmodule_3PG_NoiseMap-140.png)
+![Response curve NPoint Gain, Full Module](images/MGF_star_fullmodule_3PG_responseCurve.png)
+
+
+
 ### Noise Occupancy
 To run a noise occupancy scan execute the following command:
 ```bash
@@ -165,4 +178,22 @@ Also in this case the value of ``ABCs_STR_DEL`` has to be set to the correct val
 An example of the occupancy map after a successful noise occupancy scan for a hybrid module is given below.
 ![Occupancy map Noise Occupancy](images/MGF_star_noiseoccupancy_OccupancyMap-14.png)
 
-**Plots to be updated**
+An example of the occupancy map after a successful noise occupancy scan for a full module is also given.
+![Occupancy map Noise Occupancy, Full Module](images/MGF_star_fullmodule_noiseoccupancy_OccupancyMap-14.png)
+
+
+
+### Pixel-like Throshold scan
+The traditional approach for Threshold scans in the Strip community is to fix the injected charge to a module and vary the channel threshold, while the Pixel community follows the opposite approach, fixing the thresholds for each of the channela and then perform the scan varying the injected charge.
+
+The pixel-like approach enables to fit a non-reverse S-curve (differently from the strip-like approach) and, by fixing the thresholds in advance, allows to be less susceptible to noise, avoiding potential double-knees/shoulders in the S-curves.
+
+An example of the reverse S-curve and the threshold (``ABCs_BVT``) occupancy map after a successful strip-like threshold scan for a full module is given below.
+![S-curve strip-like Th. scan](images/MGF_star_fullmodule_striplikethresholdscan_ABCs_BVT.png)
+![Occupancy map strip-like Th. scan](images/MGF_star_fullmodule_striplikethresholdscan_ABCs_BVT_Map.png)
+
+An example of the non-reverse S-curve and the charge (``ABCs_BCAL``) occupancy map after a successful pixel-like threshold scan for a full module is given below.
+![S-curve pixel-like Th. scan](images/MGF_star_fullmodule_pixellikethresholdscan_ABCs_BCAL.png)
+![Occupancy map pixel-like Th. scan](images/MGF_star_fullmodule_pixellikethresholdscan_ABCs_BCAL_Map.png)
+
+

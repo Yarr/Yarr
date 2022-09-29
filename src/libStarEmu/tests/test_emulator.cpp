@@ -891,6 +891,52 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
   checkData(staremu.get(), expected);
 }
 
+TEST_CASE("StarEmulatorVersions", "[star][emulator]") {
+  std::shared_ptr<HwController> emu = StdDict::getHwController("emu_Star");
+
+  REQUIRE (emu);
+
+  json cfg;
+
+  SECTION("Default") {}
+
+  SECTION("PPA") {
+    cfg["abcVersion"] = 1;
+  }
+
+  SECTION("PPB") {
+    cfg["abcVersion"] = 1;
+    cfg["hccVersion"] = 1;
+  }
+
+  emu->loadConfig(cfg);
+
+  // Send reset fast commands (these include loops over register lists)
+  emu->writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::LOGIC_RESET, 0));
+  emu->writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::ABC_REG_RESET, 0));
+  emu->writeFifo((LCB::IDLE << 16) + LCB::fast_command(LCB::HCC_REG_RESET, 0));
+
+  StarCmd star;
+
+  typedef std::string PacketCompare;
+
+  // What data to expect, and how to mask the comparison
+  std::map<uint32_t, std::deque<PacketCompare>> expected;
+
+  // For now just read a generic register
+  auto readABCCmd_mask0 = star.read_abc_register(16); // broadcast reg read
+  sendCommand(*emu, readABCCmd_mask0);
+
+  expected[1].push_back("Packet type TYP_ABC_RR, ABC 0, Address 10, Value 00000000\n");
+
+  emu->releaseFifo();
+
+  while(!emu->isCmdEmpty())
+    ;
+
+  checkData(emu.get(), expected);
+}
+
 template<typename PacketT>
 void checkData(HwController* emu, std::map<uint32_t, std::deque<PacketT>>& expected, const PacketT *const mask_pattern)
 {

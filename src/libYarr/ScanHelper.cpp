@@ -758,20 +758,23 @@ namespace ScanHelper {
     }
 
     int parseOptions(int argc, char *argv[], ScanOpts &scanOpts) {
+        optind = 1; // this is a global libc variable to reset getopt
         scanOpts.dbCfgPath = defaultDbCfgPath();
         scanOpts.dbSiteCfgPath = defaultDbSiteCfgPath();
         scanOpts.dbUserCfgPath = defaultDbUserCfgPath();
-        for (int i=1;i<argc;i++)scanOpts. commandLineStr.append(std::string(argv[i]).append(" "));
+        for (int i=1;i<argc;i++)scanOpts.commandLineStr.append(std::string(argv[i]).append(" "));
         scanOpts.progName=argv[0];
-        static struct option long_options[] =
+        const struct option long_options[] =
         {
             {"skip-reset", no_argument, 0, 'z'},
             {"help", no_argument, 0, 'h'},
             {0, 0, 0, 0}};
-        int opt_index=0;
         int c;
-        while ((c = getopt_long(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:l:QIz", long_options, &opt_index)) != -1) {
+        while (true) {
+            int opt_index=0;
+            c = getopt_long(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:l:QIz", long_options, &opt_index);
             int count = 0;
+            if(c == -1) break;
             switch (c) {
                 case 'h':
                     printHelp();
@@ -779,7 +782,6 @@ namespace ScanHelper {
                     break;
                 case 'n':
                     scanOpts.nThreads = atoi(optarg);
-                    break;
                     break;
                 case 'k':
                     ScanHelper::listKnown();

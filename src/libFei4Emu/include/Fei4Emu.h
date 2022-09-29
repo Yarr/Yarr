@@ -11,7 +11,6 @@
 #define HEXF(x,y) std::hex << "0x" << std::hex << std::setw(x) << std::setfill('0') << static_cast<int>(y) << std::dec
 
 #include "Fei4Cfg.h"
-#include "EmuShm.h"
 #include "EmuCom.h"
 #include "Gauss.h"
 #include "PixelModel.h"
@@ -66,9 +65,6 @@ class Fei4Emu {
         void processCAL();
         void processSLOW(uint8_t *cmdPtr);
 
-
-//        std::shared_ptr<EmuShm> m_txShm;
-//        std::shared_ptr<EmuShm> m_rxShm;
         EmuCom * m_txRingBuffer;
         EmuCom * m_rxRingBuffer;
         std::shared_ptr<Fei4Cfg> m_feCfg;

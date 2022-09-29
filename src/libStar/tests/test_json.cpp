@@ -90,7 +90,7 @@ TEST_CASE("StarJsonMinimal", "[star][json]") {
     fe_name = "Star";
   }
   SECTION("With ABCv1") {
-    fe_name = "Star_PPA";
+    fe_name = "Star_vH0A1";
   }
 
   CAPTURE (fe_name);
@@ -131,7 +131,7 @@ TEST_CASE("StarJsonMinimalABC", "[star][json]") {
     common_size = 13;
   }
   SECTION("With ABCv1") {
-    fe_name = "Star_PPA";
+    fe_name = "Star_vH0A1";
     common_size = 5;
   }
 
@@ -222,7 +222,7 @@ TEST_CASE("StarJsonAbcRegs", "[star][json]") {
     fe_name = "Star";
   }
   SECTION("With ABCv1") {
-    fe_name = "Star_PPA";
+    fe_name = "Star_vH0A1";
   }
 
   CAPTURE (fe_name);
@@ -269,7 +269,7 @@ TEST_CASE("StarJsonAbcMasks", "[star][json]") {
     fe_name = "Star";
   }
   SECTION("With ABCv1") {
-    fe_name = "Star_PPA";
+    fe_name = "Star_vH0A1";
   }
 
   CAPTURE (fe_name);
@@ -325,7 +325,7 @@ TEST_CASE("StarJsonAbcSubRegs", "[star][json]") {
     lcb_thr_width = 16;
   }
   SECTION("With ABCv1") {
-    fe_name = "Star_PPA";
+    fe_name = "Star_vH0A1";
     lcb_thr_reg = "CREG1";
     lcb_thr_offset = 23;
     lcb_thr_width = 8;
@@ -376,7 +376,7 @@ TEST_CASE("StarJsonAbcTrim", "[star][json]") {
     fe_name = "Star";
   }
   SECTION("With ABCv1") {
-    fe_name = "Star_PPA";
+    fe_name = "Star_vH0A1";
   }
 
   CAPTURE (fe_name);
@@ -422,7 +422,7 @@ TEST_CASE("StarJsonAbcCommon", "[star][json]") {
     fe_name = "Star";
   }
   SECTION("With ABCv1") {
-    fe_name = "Star_PPA";
+    fe_name = "Star_vH0A1";
   }
 
   CAPTURE (fe_name);
@@ -476,7 +476,7 @@ TEST_CASE("StarJsonNullChan", "[star][json]") {
     fe_name = "Star";
   }
   SECTION("With ABCv1") {
-    fe_name = "Star_PPA";
+    fe_name = "Star_vH0A1";
   }
 
   CAPTURE (fe_name);

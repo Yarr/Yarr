@@ -100,7 +100,7 @@ function(YARR_ADD_FELIX_CLIENT)
         GIT_TAG 4.2.x
         UPDATE_COMMAND ""
         PATCH_COMMAND ""
-        INSTALL_COMMAND ""
+        INSTALL_COMMAND mkdir -p ${TARGET_INSTALL_AREA}/lib && cp ${CMAKE_CURRENT_BINARY_DIR}/external/src/felix_client_thread/libfelix-client-thread.so ${TARGET_INSTALL_AREA}/lib
         CONFIGURE_COMMAND ""
         BUILD_COMMAND cd ${CMAKE_CURRENT_BINARY_DIR}/external/src/felix_client_thread && ./build-standalone.sh
         PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
@@ -125,10 +125,10 @@ function(YARR_ADD_ROGUE)
         UPDATE_COMMAND ""
         INSTALL_COMMAND make install
         PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
-        CMAKE_ARGS "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}" "-DNO_PYTHON=1" "-DSTATIC_LIB=1" "-DCMAKE_POSITION_INDEPENDENT_CODE=ON"
+        CMAKE_ARGS "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}" "-DNO_PYTHON=1" "-DSTATIC_LIB=1" "-DCMAKE_POSITION_INDEPENDENT_CODE=ON" "-DCMAKE_INSTALL_LIBDIR=${TARGET_INSTALL_AREA}/lib"
         )
 
-    link_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/rogue/lib)
+    link_directories(${TARGET_INSTALL_AREA}/lib)
     include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/rogue/include)
 endfunction()
 
