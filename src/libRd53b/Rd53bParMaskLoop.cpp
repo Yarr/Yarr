@@ -2,7 +2,7 @@
 // # Author: Timon Heim
 // # Email: timon.heim at cern.ch
 // # Project: Yarr
-// # Description: Parallel Mask Loop for RD53B
+// # Description: Parallel Mask Loop for RD53B, fixed mask pattern
 // # Date: 07/2022
 // ################################
 
@@ -14,8 +14,6 @@ namespace {
   auto logger = logging::make_log("Rd53bParMaskLoop");
 }
 
-enum MaskType {StandardMask = 0, CrossTalkMask = 1, CrossTalkMaskv2 = 2, PToTMask = 3};
-
 Rd53bParMaskLoop::Rd53bParMaskLoop() : LoopActionBase(LOOP_STYLE_MASK) {
     min = 0;
     max = 64;
@@ -23,8 +21,6 @@ Rd53bParMaskLoop::Rd53bParMaskLoop() : LoopActionBase(LOOP_STYLE_MASK) {
     m_cur = 0;
     loopType = typeid(this);
     m_done = false;
-    m_maskType = StandardMask;
-    m_applyEnMask = false;
 }
 
 void Rd53bParMaskLoop::init() {
@@ -38,7 +34,7 @@ void Rd53bParMaskLoop::init() {
     // Turn off all pixels to start with
     for (unsigned col=0; col<8; col++) { // Just need first core col
         for (unsigned row=0; row<Rd53b::n_Row; row++) {
-            rd53b->setEn(col, row, 0); // TODO make configurable
+            rd53b->setEn(col, row, 0);
             rd53b->setInjEn(col, row, 0);
             rd53b->setHitbus(col, row, 0);
         }
@@ -59,18 +55,13 @@ void Rd53bParMaskLoop::execPart1() {
         for(unsigned row=0; row<Rd53b::n_Row; row++) {
             // Disable pixels of last mask stage
             if (rd53b->getInjEn(col, row) == 1) {
-                //logger->info("Disabling {};{}", col, row);
-                rd53b->setEn(col, row, 0); // TODO make configurable
+                rd53b->setEn(col, row, 0);
                 rd53b->setInjEn(col, row, 0);
                 rd53b->setHitbus(col, row, 0);
             }		
             // Enable pixels of current mask stage
             if (applyMask(col,row)){
-                // If the pixel is disabled, skip it
-                //if(m_applyEnMask && !Rd53b::getPixelBit(m_pixRegs[g_fe], col, row, 0)) continue;
-
-                //logger->info("Enabling {};{}", col, row);
-                rd53b->setEn(col, row, (m_maskType == PToTMask) ? 0 : 1); // TODO Make configurable
+                rd53b->setEn(col, row, 1);
                 rd53b->setInjEn(col, row, 1);
                 rd53b->setHitbus(col, row, 1);
                 counter++;
@@ -93,24 +84,14 @@ void Rd53bParMaskLoop::execPart2() {
 }
 
 void Rd53bParMaskLoop::end() {
-    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
-        // Copy original registers back
-        // TODO need to make sure analysis modifies the right config
-        // TODO not thread safe, in case analysis modifies them to early
-        dynamic_cast<Rd53b*>(fe)->pixRegs = m_pixRegs[fe];
-    }
+
 }
 
 bool Rd53bParMaskLoop::applyMask(unsigned col, unsigned row) {
     // This is the mask pattern
     unsigned core_row = row/8;
     unsigned serial;
-    if (m_maskType == PToTMask) {
-        serial = row * 2 + (col % 8)/4;
-    } else {
-        serial = (core_row*64)+((col+(core_row%8))%8)*8+row%8;
-    }
+    serial = (core_row*64)+((col+(core_row%8))%8)*8+row%8;
     //unsigned serial = (col%8*Rd53b::n_Row)+row;
     if ((serial%max) == m_cur){
         return true;
@@ -122,8 +103,6 @@ void Rd53bParMaskLoop::writeConfig(json &j) {
     j["min"] = min;
     j["max"] = max;
     j["step"] = step;
-    j["maskType"] = m_maskType;
-    j["applyEnMask"] = m_applyEnMask;
 }
 
 void Rd53bParMaskLoop::loadConfig(const json &j) {
@@ -133,8 +112,4 @@ void Rd53bParMaskLoop::loadConfig(const json &j) {
         max = j["max"];
     if (j.contains("step"))
         step = j["step"];
-    if (j.contains("maskType"))
-        m_maskType = j["maskType"];
-    if (j.contains("applyEnMask"))
-        m_applyEnMask = j["applyEnMask"];        
 }
