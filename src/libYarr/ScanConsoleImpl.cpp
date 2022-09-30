@@ -33,10 +33,11 @@ std::string ScanConsoleImpl::parseConfig(const std::vector<std::string> &args) {
     json result;
     result["status"] = "failed";
     int argc = args.size();
-    char *argv[argc];
+    char *argv[argc+1];
     for (int i = 0; i < argc; i++) {
         argv[i] = (char *) args[i].c_str();
     }
+    argv[argc] = nullptr; // should be a null terminated array
     ScanOpts options;
     json scanConsoleConfig;
     int res = ScanHelper::parseOptions(argc, argv, options);
@@ -87,6 +88,7 @@ int ScanConsoleImpl::init(ScanOpts options) {
     }
     spdlog::info("Configuring logger ...");
     logging::setupLoggers(loggerConfig);
+    ScanHelper::banner(logger,"Welcome to YARR - ScanConsole");
     return 1;
 }
 
@@ -117,10 +119,6 @@ int ScanConsoleImpl::loadConfig() {
         ScanHelper::createSymlink(dataDir,strippedScan,runCounter);
     }
 
-    if (scanOpts.cConfigPaths.empty()) {
-        logger->error("Error: no config files given, please specify config file name under -c option, even if file does not exist!");
-        return -1;
-    }
     if(scanOpts.scan_config_provided) {
         logger->info("Scan Type/Config {}", scanOpts.scanType);
     } else {
@@ -188,7 +186,7 @@ int ScanConsoleImpl::setupScan() {
     // TODO not to use the raw pointer!
     try {
         ScanHelper::buildRawDataProcs(procs, *bookie, chipType);
-        ScanHelper::buildHistogrammers(histogrammers, scanOpts.scanType, *bookie, scanBase.get(), scanOpts.outputDir);
+        ScanHelper::buildHistogrammers(histogrammers, scanCfg, *bookie, scanBase.get(), scanOpts.outputDir);
         ScanHelper::buildAnalyses(analyses, scanCfg, *bookie, scanBase.get(),
                                   &fbData, scanOpts.mask_opt, scanOpts.outputDir);
     } catch (const char *msg) {
@@ -267,8 +265,11 @@ int ScanConsoleImpl::configure() {
     // Before configuring each FE, broadcast reset to all tx channels
     // Enable all tx channels
     hwCtrl->setCmdEnable(bookie->getTxMaskUnique());
-    // Use global FE
-    bookie->getGlobalFe()->resetAll();
+
+    // send global/broadcast reset command to all frontends
+    if(scanOpts.doResetBeforeScan) {
+        bookie->getGlobalFe()->resetAll();
+    }
 
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
         FrontEnd *fe = bookie->getEntry(id).fe;
@@ -303,6 +304,12 @@ int ScanConsoleImpl::configure() {
             logger->critical("Can't establish communication, aborting!");
             return -1;
         }
+        // check that the current FE name is valid
+        if (!fe->hasValidName()) {
+            logger->critical("Invalid chip name, aborting!");
+            return -1;
+        }
+
         logger->info("... success!");
     }
 
@@ -584,3 +591,16 @@ void ScanConsoleImpl::dump() {
     scanLog.dump();
 }
 
+void ScanConsoleImpl::setupLogger(const char *config) {
+    json loggerConfig;
+    loggerConfig["pattern"] = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";
+    loggerConfig["log_config"][0]["name"] = "all";
+    loggerConfig["log_config"][0]["level"] = "info";
+    loggerConfig["outputDir"] = "";
+    if (config) {
+        try {
+            json::parse(config, loggerConfig);
+        } catch (...) {}
+    }
+    logging::setupLoggers(loggerConfig);
+}

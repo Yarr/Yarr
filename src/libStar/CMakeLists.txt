@@ -8,6 +8,7 @@ add_library(Star SHARED
         StarCmd.cpp
         StarCounterLoop.cpp
         StarDataProcessor.cpp
+	StarJsonData.cpp
         StarMaskLoop.cpp
         StarRegDump.cpp
         StarTriggerLoop.cpp)

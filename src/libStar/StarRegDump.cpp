@@ -39,12 +39,12 @@ void StarRegDump::execPart1() {
 
             logger->trace("Dumping all regs");
           
-            for (int index = 0; index < ABCStarRegs::_size(); ++index) {
+            for (size_t index = 0; index < ABCStarRegs::_size(); ++index) {
                 logger->trace(ABCStarRegs::_names()[index]);
                 ((StarChips*) fe)->sendCmd( ((StarChips*) fe)->read_abc_register(ABCStarRegs::_values()[index]));
             }
 
-            for (int index = 0; index < HCCStarRegister::_size(); ++index) {
+            for (size_t index = 0; index < HCCStarRegister::_size(); ++index) {
                 logger->trace(HCCStarRegister::_names()[index]);
                 ((StarChips*) fe)->sendCmd( ((StarChips*) fe)->read_hcc_register(HCCStarRegister::_values()[index]));
             }

@@ -132,11 +132,12 @@ void Histo2d::add(const Histo2d &h) {
     if (this->size() != h.size())
         return;
     for (unsigned int i=0; i<(xbins*ybins); i++) {
+      if (h.isFilled(i)){
         double d = h.getBin(i);
         data[i] += d;
         max = std::max(d, max);
-	if (h.isFilled(i))
-		m_isFilled[i] = true;
+	m_isFilled[i] = true;
+      }
     }
     entries += h.numOfEntries();
 }

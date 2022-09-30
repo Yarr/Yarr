@@ -28,9 +28,9 @@ class StarCfg : public FrontEndCfg {
   void configure_ABC_Registers(int chipID);
 
   //Accessor functions
-  const uint32_t getHCCRegister(HCCStarRegister addr);
+  uint32_t getHCCRegister(HCCStarRegister addr);
   void     setHCCRegister(HCCStarRegister addr, uint32_t val);
-  const uint32_t getABCRegister(ABCStarRegister addr, int32_t chipID );
+  uint32_t getABCRegister(ABCStarRegister addr, int32_t chipID );
   void     setABCRegister(ABCStarRegister addr, uint32_t val, int32_t chipID);
   // Overload with integer register address
   inline const uint32_t getHCCRegister(uint32_t addr) {

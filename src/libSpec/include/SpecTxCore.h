@@ -40,6 +40,8 @@
 #define TX_SYNC_WORD 0x11
 #define TX_SYNC_INTERVAL 0x12
 #define TX_IDLE_WORD 0x13
+#define TRIG_EXTEND_INTERVAL 0x14
+#define TRIG_ENCODER_ENABLE 0x15
 
 #define TX_CLK_PERIOD 25e-9
 
@@ -130,6 +132,14 @@ class SpecTxCore : virtual public TxCore, virtual public SpecCom{
         void resetTriggerLogic() override {
             SpecCom::writeSingle(TRIG_LOGIC_ADR | 0xFF, 0x1);
         }
+
+	void setTriggerEncoderMultiplier(uint32_t interval) {
+	    SpecCom::writeSingle(TX_ADDR | TRIG_EXTEND_INTERVAL, interval);
+	}
+
+	void setTriggerEncoderEnable(uint32_t value) {
+	    SpecCom::writeSingle(TX_ADDR | TRIG_ENCODER_ENABLE, value);
+	}
 
         void setTxPolarity(uint32_t value);
         uint32_t getTxPolarity();

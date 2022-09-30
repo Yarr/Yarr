@@ -15,10 +15,10 @@ namespace {
 LoopActionBase::LoopActionBase(LoopStyle l)
   : m_style(l), loopType(typeid(void))
 {
-    g_fe = NULL;
-    g_tx = NULL;
-    g_rx = NULL;
-    g_stat = NULL;
+    g_fe = nullptr;
+    g_tx = nullptr;
+    g_rx = nullptr;
+    g_stat = nullptr;
     m_done = false;
 }
 

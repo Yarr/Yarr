@@ -143,8 +143,8 @@ namespace ScanHelper {
             shlog->info("Loading chip #{}", i);
             json &chip = config["chips"][i];
             if (!chip.contains("enable") || !chip.contains("config")) {
-                    shlog->error("Connectivity config for chip #{} malformed, skipping!", i);
-                    continue;
+                shlog->error("Connectivity config for chip #{} malformed, skipping!", i);
+                continue;
             }
 
             if (chip["enable"] == 0) {
@@ -187,8 +187,8 @@ namespace ScanHelper {
     }
 
     void buildRawDataProcs( std::map<unsigned, std::unique_ptr<DataProcessor> > &procs,
-                           Bookkeeper &bookie,
-                           const std::string &chipType) {
+            Bookkeeper &bookie,
+            const std::string &chipType) {
         bhlog->info("Loading RawData processors ..");
         for (unsigned id = 0; id<bookie.getNumOfEntries(); id++) {
             FrontEnd *fe = bookie.getEntry(id).fe;
@@ -232,14 +232,20 @@ namespace ScanHelper {
     int loadConfigFile(const ScanOpts &scanOpts, bool writeConfig, json &config) {
         // load controller configs
         json ctrlCfg;
-        ctrlCfg = ScanHelper::openJsonFile(scanOpts.ctrlCfgPath);
-        
+        try {
+            ctrlCfg = ScanHelper::openJsonFile(scanOpts.ctrlCfgPath);
+        } catch(std::runtime_error &e) {
+            shlog->error("Error opening controller config ({}): {}",
+                    scanOpts.ctrlCfgPath, e.what());
+            throw (std::runtime_error("loadConfigFile failure"));
+        }
+
         if(!ctrlCfg.contains({"ctrlCfg", "cfg"})) {
             shlog->critical("#ERROR# invalid controller config");
             return -1;
         }
         json &cfg=ctrlCfg["ctrlCfg"]["cfg"];
-        
+
         // Emulator specific case
         if(cfg.contains("feCfg")) {
             try {
@@ -255,7 +261,7 @@ namespace ScanHelper {
             try {
                 cfg["__chipCfg_data__"]=ScanHelper::openJsonFile(cfg["chipCfg"]);
             } catch (std::runtime_error &e) {
-                shlog->critical("#ERROR# opening emulator chip model config: {}", e.what());
+                shlog->critical("#ERROR# opening emulator chip model config ({}): {}", (std::string)cfg["chipCfg"], e.what());
                 return -1;
             }
         }
@@ -267,13 +273,13 @@ namespace ScanHelper {
             try {
                 feconfig = ScanHelper::openJsonFile(sTmp);
             } catch (std::runtime_error &e) {
-                shlog->critical("#ERROR# opening connectivity or chip configs: {}", e.what());
+                shlog->critical("#ERROR# opening connectivity or chip configs ({}): {}", sTmp, e.what());
                 return -1;
             }
             loadChipConfigs(feconfig,writeConfig);
             chipConfig.push_back(feconfig);
         }
-        
+
         // Load scans
         json scan;
         try {
@@ -427,7 +433,7 @@ namespace ScanHelper {
                                 auto archiver = dynamic_cast<HistogramArchiver*>(analysis.get());
                                 archiver->setOutputDirectory(outputDir);
                             }
-                            
+
                             ana.addAlgorithm(std::move(analysis));
                         } else {
                             balog->error("Error, Analysis Algorithm \"{} unknown, skipping!", algo_name);
@@ -752,17 +758,23 @@ namespace ScanHelper {
     }
 
     int parseOptions(int argc, char *argv[], ScanOpts &scanOpts) {
+        optind = 1; // this is a global libc variable to reset getopt
         scanOpts.dbCfgPath = defaultDbCfgPath();
         scanOpts.dbSiteCfgPath = defaultDbSiteCfgPath();
         scanOpts.dbUserCfgPath = defaultDbUserCfgPath();
-        for (int i=1;i<argc;i++)scanOpts. commandLineStr.append(std::string(argv[i]).append(" "));
+        for (int i=1;i<argc;i++)scanOpts.commandLineStr.append(std::string(argv[i]).append(" "));
         scanOpts.progName=argv[0];
-        static struct option long_options[] = {{"skip-reset", no_argument, 0, 'z'},
+        const struct option long_options[] =
+        {
+            {"skip-reset", no_argument, 0, 'z'},
+            {"help", no_argument, 0, 'h'},
             {0, 0, 0, 0}};
-        int opt_index=0;
         int c;
-        while ((c = getopt_long(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:l:QIz", long_options, &opt_index)) != -1) {
+        while (true) {
+            int opt_index=0;
+            c = getopt_long(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:l:QIz", long_options, &opt_index);
             int count = 0;
+            if(c == -1) break;
             switch (c) {
                 case 'h':
                     printHelp();
@@ -770,7 +782,6 @@ namespace ScanHelper {
                     break;
                 case 'n':
                     scanOpts.nThreads = atoi(optarg);
-                    break;
                     break;
                 case 'k':
                     ScanHelper::listKnown();
@@ -854,9 +865,23 @@ namespace ScanHelper {
                     break;
                 default:
                     spdlog::critical("Error while parsing command line parameters!");
+                    std::cout << "Rerun with --help for more information\n";
                     return -1;
             }
         }
+
+        if(scanOpts.ctrlCfgPath.empty()) {
+            spdlog::critical("Controller config required (-r)");
+            std::cout << "Rerun with --help for more information\n";
+            return -1;
+        }
+
+        if(scanOpts.cConfigPaths.empty()) {
+            spdlog::critical("Error: no connectivity config files given, please specify config file name under -c option, even if file does not exist!");
+            std::cout << "Rerun with --help for more information\n";
+            return -1;
+        }
+
         return 1;
     }
 } // Close namespace

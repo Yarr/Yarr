@@ -38,12 +38,11 @@ class Rd53bGlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver
         std::map<unsigned, unsigned> m_values;
         std::map<unsigned, unsigned> m_localStep;
         std::map<unsigned, int> m_oldSign;
-        std::map<unsigned, bool> m_doneMap;
+
         bool m_rstPixelReg;
         int m_pixelReg;
 
         void writePar();
-        bool allDone();
         
         void init() override;
         void end() override;

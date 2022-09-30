@@ -367,15 +367,32 @@ bool Rd53b::hasValidName() {
 
     // if user is requested to enforce that the chip id be in the FrontEnd "name"
     // field, then readback the E-fuses to get the actual chip's ID
-    itkpix_efuse_codec::EfuseData efuse_data = this->readEfuses();
+    //itkpix_efuse_codec::EfuseData efuse_data = this->readEfuses();
+    uint32_t efuse_data_raw = this->readEfusesRaw();
+
+    itkpix_efuse_codec::EfuseData efuse_data = itkpix_efuse_codec::EfuseData{itkpix_efuse_codec::decode(efuse_data_raw)};
+    itkpix_efuse_codec::EfuseData efuse_data_old = itkpix_efuse_codec::EfuseData{itkpix_efuse_codec::decodeOldFormat(efuse_data_raw)};
+
     std::stringstream id_from_efuse;
     id_from_efuse << std::hex << efuse_data.chip_sn();
+
+    std::stringstream id_from_efuse_old;
+    id_from_efuse_old << std::hex << efuse_data_old.chip_sn();
+
+    logger->info("Chip serial number obtained from e-fuse data (raw): 0x{:x}", efuse_data_raw);
     bool id_in_name = name.find(id_from_efuse.str()) != std::string::npos;
+    bool id_in_name_old = name.find(id_from_efuse_old.str()) != std::string::npos;
     if(!id_in_name) {
-        logger->error("Chip serial number from e-fuse data (0x{:x}) does not appear in Chip \"name\" field (\"{}\") in loaded configuration  for chip with ChipId = {}", efuse_data.chip_sn(), name, m_chipId);
-        return false;
+        logger->error("Chip serial number decoded from e-fuse data (0x{:x}) does not appear in Chip \"name\" field (\"{}\") in loaded configuration  for chip with ChipId = {}", efuse_data.chip_sn(), name, m_chipId);
+	if (id_in_name_old) {
+    		logger->info("Chip serial number decoded with old format from e-fuse data: 0x{:x}", efuse_data_old.chip_sn());
+    		return true;
+	} else {
+        	logger->error("Chip serial number decoded with old format from e-fuse data (0x{:x}) does not appear in Chip \"name\" field (\"{}\") in loaded configuration  for chip with ChipId = {}", efuse_data_old.chip_sn(), name, m_chipId);
+        	return false;
+	}
     }
-    logger->info("Chip serial number obtained from e-fuse data: 0x{:x} (decoded e-fuse data: 0x{:x})", efuse_data.chip_sn(), efuse_data.raw());
+    logger->info("Chip serial number obtained from e-fuse data: 0x{:x}", efuse_data.chip_sn() );
     return true;
 }
 
@@ -425,6 +442,38 @@ itkpix_efuse_codec::EfuseData Rd53b::readEfuses() {
     std::string decoded_efuse_binary_str = itkpix_efuse_codec::decode(efuse_data);
     return itkpix_efuse_codec::EfuseData{decoded_efuse_binary_str};
 }
+
+uint32_t Rd53b::readEfusesRaw() {
+
+    //
+    // put E-fuse programmer circuit block into READ mode
+    //
+    this->writeRegister(&Rd53b::EfuseConfig, 0x0f0f);
+    while(!core->isCmdEmpty()) {}
+
+    //
+    // send E-fuse circuit the reset signal to halt any other state (reset E-fuse block FSM)
+    //
+    //this->writeRegister(&Rd53b::GlobalPulseConf, 0x100);
+    //this->writeRegister(&Rd53b::GlobalPulseWidth, 200);
+    //while(!core->isCmdEmpty()) {}
+    //this->sendGlobalPulse(m_chipId);
+
+    //
+    // read back the E-fuse registers
+    //
+    uint32_t efuse_data_0 = 0;
+    uint32_t efuse_data_1 = 0;
+    try {
+        efuse_data_0 = readSingleRegister(&Rd53b::EfuseReadData0);
+        efuse_data_1 = readSingleRegister(&Rd53b::EfuseReadData1);
+    } catch (std::exception& e) {
+        logger->warn("Failed to readback E-fuse data for chip with {}, exception received: {}", m_chipId, e.what());
+        return 0;
+    }
+    return ((efuse_data_1 & 0xffff) << 16) | (efuse_data_0 & 0xffff);
+}
+
 
 uint32_t Rd53b::readSingleRegister(Rd53bReg Rd53bGlobalCfg::*ref) {
     // send a read register command to the chip so that it

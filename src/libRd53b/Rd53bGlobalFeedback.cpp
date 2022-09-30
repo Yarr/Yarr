@@ -73,15 +73,15 @@ void Rd53bGlobalFeedback::feedback(unsigned channel, double sign, bool last) {
     if (val > (int)max) val = max;
     if (val < min) val = min;
     m_values[channel] = val;
-    m_doneMap[channel] |= last;
+    fbDoneMap[channel] |= last;
 
     if (m_localStep[channel] == 1 || val == min) {
-        m_doneMap[channel] = true;
+        fbDoneMap[channel] = true;
     }
 
     // Abort if we are getting to low
     if (val <= min) {
-        m_doneMap[channel] = true;
+        fbDoneMap[channel] = true;
     }
 }
 
@@ -91,31 +91,19 @@ void Rd53bGlobalFeedback::feedbackBinary(unsigned channel, double sign, bool las
     if (val < 0) val = 0;
     m_values[channel] = val;
     m_localStep[channel]  = m_localStep[channel]/2;
-    m_doneMap[channel] |= last;
+    fbDoneMap[channel] |= last;
 
     if (m_localStep[channel] == 1) {
-        m_doneMap[channel] = true;
+        fbDoneMap[channel] = true;
     }
     if (m_values[channel] == 0) {
-        m_doneMap[channel] = true;
+        fbDoneMap[channel] = true;
     }
 }
 
 void Rd53bGlobalFeedback::feedbackStep(unsigned channel, double sign, bool last) {
     m_values[channel] = m_values[channel] + sign;
-    m_doneMap[channel] |= last;
-}
-
-
-bool Rd53bGlobalFeedback::allDone() {
-    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
-        if (fe->getActive()) {
-            if (!m_doneMap[id])
-                return false;
-        }
-    }
-    return true;
+    fbDoneMap[channel] |= last;
 }
 
 void Rd53bGlobalFeedback::writePar() {
@@ -146,7 +134,7 @@ void Rd53bGlobalFeedback::init() {
             m_localStep[id] = step;
             m_values[id] = max;
             m_oldSign[id] = -1;
-            m_doneMap[id] = false;
+            fbDoneMap[id] = false;
         }
     }
     this->writePar();
@@ -184,7 +172,7 @@ void Rd53bGlobalFeedback::execPart2() {
     }
     m_cur++;
     this->writePar();
-    m_done = this->allDone();
+    m_done = this->isFeedbackDone();
 }
 
 void Rd53bGlobalFeedback::end() {

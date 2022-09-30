@@ -73,9 +73,9 @@ void FrontEndEvent::doClustering() {
 void FrontEndData::toFile(std::string filename) {
     std::fstream file(filename, std::fstream::out | std::fstream::app);
     file << events.size() << std::endl;
-    for (auto event : events) {
+    for (auto &event : events) {
         file << event.l1id << " " << event.bcid << " " << event.nHits << std::endl;
-        for (auto hit : event.hits) {
+        for (auto &hit : event.hits) {
             file << hit.col << " " << hit.row << " " << hit.tot << std::endl;
         }
     } // event

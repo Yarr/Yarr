@@ -4,7 +4,6 @@ add_library(NetioHW SHARED
         Netio.cpp
         NetioHandler.cpp
         NetioRxCore.cpp
-        NetioTools.cpp
         NetioTxCore.cpp
         )
 

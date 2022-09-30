@@ -145,6 +145,12 @@ HccStarRegInfo::HccStarRegInfo(int version) {
   std::map<unsigned, std::shared_ptr<RegisterInfo>> regMap;
 
   for (HCCStarRegister reg : HCCStarRegister::_values()) {
+    if(version == 1
+       && (reg == HCCStarRegister(HCCStarRegister::PLL2)
+           || reg == HCCStarRegister(HCCStarRegister::PLL3))) {
+      continue;
+    }
+
     int addr = reg;
     regMap[addr] = std::make_shared<RegisterInfo>(addr);
   }
@@ -226,6 +232,32 @@ void HccCfg::setupMaps(int version) {
   }
 }
 
+std::array<uint8_t, HCC_INPUT_CHANNEL_COUNT> HccCfg::histoChipMap() const {
+  // On HCCv0, input channel numbers are reversed
+  // On HCCv1, we map histogram slots based on increasing IC number
+
+  // Mask of enabled ICs
+  auto input_enables = getSubRegisterValue("ICENABLE");
+  auto version_1 = m_registerSet.size() != HCCStarRegister::_size();
+
+  size_t offset = 0;
+
+  std::array<uint8_t, HCC_INPUT_CHANNEL_COUNT> chip_map;
+  chip_map.fill(HCC_INPUT_CHANNEL_BAD_SLOT);
+
+  // logger->trace("Build map from mask: {}", input_enables);
+  for(int index=0; index<11; index++) {
+    int ic = version_1?index:(10-index);
+    int mask = 1<<ic;
+    if(mask & input_enables) {
+      chip_map[ic] = offset ++;
+    }
+    // logger->trace("Build map: {} {} {}", ic, mask, offset);
+  }
+
+  return chip_map;
+}
+
 void HccCfg::setDefaults(int version) {
   // NB version 1 only adds status registers
 
@@ -253,9 +285,27 @@ void HccCfg::setDefaults(int version) {
 }
 
 uint32_t HccCfg::getRegisterValue(HCCStarRegister addr) const {
-  return getRegister(addr).getValue();
+  try {
+    return getRegister(addr).getValue();
+  } catch(std::out_of_range &e) {
+    logger->info("Failed request for get HCC reg: {}", addr);
+    for(auto &rm: m_registerMap) {
+      logger->debug("Have: {}", rm.first);
+    }
+
+    throw std::out_of_range("Attempt to get value for bad HCC register");
+  }
 }
 
 void HccCfg::setRegisterValue(HCCStarRegister addr, uint32_t val) {
-  getRegister(addr).setValue(val);
+  try {
+    getRegister(addr).setValue(val);
+  } catch(std::out_of_range &e) {
+    logger->info("Failed request for set HCC reg: {}", addr);
+    for(auto &rm: m_registerMap) {
+      logger->debug("Have: {}", rm.first);
+    }
+
+    throw std::out_of_range("Attempt to set value for bad HCC register");
+  }
 }
