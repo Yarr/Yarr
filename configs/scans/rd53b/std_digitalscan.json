@@ -50,7 +50,7 @@
           "min": 0,
           "step": 1
         },
-        "loopAction": "Rd53bMaskLoop"
+        "loopAction": "Rd53bParMaskLoop"
       },
       {
         "config": {
