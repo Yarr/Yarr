@@ -170,6 +170,16 @@ deploy_coverage:
     script:
         - deploy-eos
 
+doxygen:
+    stage: build
+    before_script:
+        - yum install -y doxygen graphviz
+    script:
+        - doxygen Doxyfile
+    artifacts:
+        paths:
+            - doxygen/html
+
 build_docs:
     stage: build
     before_script:
@@ -181,6 +191,20 @@ build_docs:
     artifacts:
         paths:
             - site
+
+deploy_devel_doxygen:
+    stage: deploy
+    dependencies: ["doxygen"]
+    only:
+        - devel@YARR/YARR
+    variables:
+        "EOS_PATH" : "/eos/user/t/theim/www/yarr/doxygen/devel/"
+        "CI_OUTPUT_DIR" : "doxygen/html/"
+    image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
+    script:
+        - mkdir -p /eos/user/t/theim/www/yarr/doxygen/devel/
+        - deploy-eos
+
 
 deploy_master:
     stage: deploy
