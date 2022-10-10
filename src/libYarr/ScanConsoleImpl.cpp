@@ -94,7 +94,6 @@ int ScanConsoleImpl::init(ScanOpts options) {
 
 
 int ScanConsoleImpl::loadConfig() {
-    ScanHelper::loadConfigFile(scanOpts, true, scanConsoleConfig);
     int result = ScanHelper::loadConfigFile(scanOpts, true, scanConsoleConfig);
     if(result<0) {
         logger->error("Failed to read configs");
