@@ -473,7 +473,7 @@ uint32_t Rd53b::readSingleRegister(Rd53bReg Rd53bGlobalCfg::*ref) {
     // sends back the current value of the register
     this->sendRdReg(m_chipId, (this->*ref).addr());
     while(!core->isCmdEmpty()) {}
-    std::this_thread::sleep_for(std::chrono::milliseconds(1)) ;
+    std::this_thread::sleep_for(std::chrono::milliseconds(10)) ;
 
     // go through the incoming data stream and get the register read data
     std::vector<RawDataPtr> dataVec = m_rxcore->readData();

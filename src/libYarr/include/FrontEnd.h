@@ -45,7 +45,7 @@ class FrontEnd {
 
         virtual void resetAll() {}
 
-        virtual void updateLocalNamedRegister(std::string name) {}
+        virtual void localUpdateNamedRegister(std::string name) {}
         /// Write to a register using a string name (most likely from json)
         virtual void writeNamedRegister(std::string name, uint16_t value) = 0;
         
