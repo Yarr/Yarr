@@ -163,7 +163,7 @@ int main(int argc, char* argv[]) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
         	hw->setRxEnable(cfg->getRxChannel());
         	hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-                fe->localUpdateNamedRegister(register_name);
+                fe->readUpdateWriteNamedReg(register_name);
                 fe->writeNamedRegister(register_name, register_value);
             }
         } else {
@@ -171,7 +171,7 @@ int main(int argc, char* argv[]) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
         	hw->setRxEnable(cfg->getRxChannel());
         	hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-                fe->localUpdateNamedRegister(register_name);
+                fe->readUpdateWriteNamedReg(register_name);
                 fe->writeNamedRegister(register_name, register_value);
             }
         }
