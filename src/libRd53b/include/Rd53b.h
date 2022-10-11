@@ -59,6 +59,7 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         }
         
         static std::pair<uint32_t, uint32_t> decodeSingleRegRead(uint32_t higher, uint32_t lower);
+        static std::tuple<uint8_t, uint32_t, uint32_t> decodeSingleRegReadID(uint32_t higher, uint32_t lower);
         uint32_t readSingleRegister(Rd53bReg Rd53bGlobalCfg::*ref);
         
         // perform the necessary steps to program the E-fuse circuitry and perform
