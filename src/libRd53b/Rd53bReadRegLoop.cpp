@@ -19,50 +19,8 @@ Rd53bReadRegLoop::Rd53bReadRegLoop() : LoopActionBase(LOOP_STYLE_NOP)
 // TODO this should not be here
 uint16_t Rd53bReadRegLoop::ReadRegister(Rd53bReg Rd53bGlobalCfg::*ref, Rd53b *tmpFE = NULL)
 {
-
-    if (tmpFE == NULL)
-        tmpFE = keeper->globalFe<Rd53b>();
-
-    g_rx->flushBuffer();
-
-    g_tx->setCmdEnable(dynamic_cast<FrontEndCfg *>(tmpFE)->getTxChannel());
-    tmpFE->readRegister(ref);
-    std::this_thread::sleep_for(std::chrono::microseconds(500));
-    g_tx->setCmdEnable(keeper->getTxMask());
-
-    std::vector<RawDataPtr> dataVec = g_rx->readData();
-    RawDataPtr data;
-    if (dataVec.size() > 0) {
-        data = dataVec[0];
-    }
-    
-    if (!data)
-    {
-        logger->warn("Warning!!! No Word Recieved in ReadRegister");
-        return 0xffff;
-    }
-
-    unsigned size = data->getSize();
-    logger->debug("Word size is: {}", size);
-    for (unsigned c = 0; c < size / 2; c++)
-    {
-        if (c * 2 + 1 < size)
-        {
-            std::pair<uint32_t, uint32_t> readReg = Rd53b::decodeSingleRegRead(data->get(c * 2), data->get(c * 2 + 1));
-            if (readReg.first == (tmpFE->*ref).addr())
-            {
-                return readReg.second;
-            }
-        }
-        else
-        {
-            logger->warn("Warning!!! Halfword recieved in ADC Register Read {}", data->get(c * 2));
-            return 0xffff;
-        }
-    }
-
-    logger->warn("Warning!!! Requested Register {} not found in received words", (tmpFE->*ref).addr());
-    return 0xffff;
+    uint16_t reg = tmpFE->readSingleRegister(ref);
+    return reg;
 }
 
 //Configures the ADC, reads the register returns the first recieved register.

@@ -466,7 +466,12 @@ uint32_t Rd53b::readSingleRegister(Rd53bReg Rd53bGlobalCfg::*ref) {
     std::vector<RawDataPtr> dataVec = m_rxcore->readData();
     RawDataPtr data;
     if (dataVec.size() > 0) {
-        data = dataVec[0];
+    	for (std::vector<RawDataPtr>::iterator it = dataVec.begin(); it != dataVec.end(); it++) {
+	     if ((*it)->get(0) != 0xffffdead) {
+    		data = (*it);
+		break;
+	     }
+    	}
     }
     
     if(data != NULL) {
