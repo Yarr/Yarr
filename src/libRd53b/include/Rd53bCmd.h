@@ -71,6 +71,7 @@ class Rd53bCmd {
         void sendGlobalPulse(uint8_t chipId);
         void sendWrReg(uint8_t chipId, uint16_t address, uint16_t data);
         void sendRdReg(uint8_t chipId, uint16_t address);
+        void sendPixRegBlock(uint8_t chipId, std::array<uint16_t, 384> &data);
 
     protected:
         Rd53bCmd();
@@ -83,6 +84,7 @@ class Rd53bCmd {
         
         TxCore *core;
     private:
+        static uint16_t conv10Bit(uint16_t value);
 };
 
 #endif
