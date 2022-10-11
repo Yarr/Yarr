@@ -35,4 +35,5 @@ PYBIND11_MODULE(_pyyarr, m) {
          py::call_guard<py::gil_scoped_release>());
     m.def("parseConfig", &ScanConsole::parseConfig, py::call_guard<py::gil_scoped_release>());
     m.def("setupLogger", &ScanConsole::setupLogger, py::call_guard<py::gil_scoped_release>());
+    m.def("getLog", &ScanConsole::getLog, py::call_guard<py::gil_scoped_release>());
 }
