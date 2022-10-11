@@ -408,6 +408,18 @@ std::pair<uint32_t, uint32_t> Rd53b::decodeSingleRegRead(uint32_t higher, uint32
     return std::make_pair(999, 666);
 }
 
+std::tuple<uint8_t, uint32_t, uint32_t> Rd53b::decodeSingleRegReadID(uint32_t higher, uint32_t lower) {
+    if ((higher & 0xFF000000) == 0x55000000) {
+        return std::make_tuple((higher>>22)&0x3, (lower>>16)&0x3FF, lower&0xFFFF);
+    } else if ((higher & 0xFF000000) == 0x99000000) {
+        return std::make_tuple((higher>>22)&0x3, (higher>>10)&0x3FF, ((lower>>26)&0x3F)+((higher&0x3FF)<<6));
+    } else {
+        logger->error("Could not decode reg read!");
+        return std::make_tuple(16, 999, 666);
+    }
+    return std::make_tuple(16, 999, 666);
+}
+
 itkpix_efuse_codec::EfuseData Rd53b::readEfuses() {
 
     //
@@ -502,25 +514,25 @@ uint32_t Rd53b::readSingleRegister(Rd53bReg Rd53bGlobalCfg::*ref) {
     	for (std::vector<RawDataPtr>::iterator it = dataVec.begin(); it != dataVec.end(); it++) {
 	     if ((*it)->get(0) != 0xffffdead) {
     		data = (*it);
-		break;
+        	if(!(data->getSize() >= 2)) {
+            		logger->warn("readSingleRegister failed, received wrong number of words ({}) for FE with chipId {}", data->getSize(), m_chipId);
+            		continue;
+        	}
+
+        	auto [id, received_address, register_value] = Rd53b::decodeSingleRegReadID(data->get(0), data->get(1));
+		if(id == (m_chipId&0x3)) {
+        	    if(received_address != (this->*ref).addr()) {
+            		logger->warn("readSingleRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
+            		return 0;
+        	    }
+        	    return register_value;
+		} else {
+		    logger->info("readSingleRegister 0x{:x} 0x{:x} -> ID {} - {}, addr 0x{:x} val 0x{:x}", data->get(0), data->get(1), id, m_chipId&0x3, received_address, register_value);
+		}
 	     }
     	}
     }
     
-    if(data != NULL) {
-        if(!(data->getSize() >= 2)) {
-            logger->warn("readSingleRegister failed, received wrong number of words ({}) for FE with chipId {}", data->getSize(), m_chipId);
-            return 0;
-        }
-
-        auto [received_address, register_value] = Rd53b::decodeSingleRegRead(data->get(0), data->get(1));
-        if(received_address != (this->*ref).addr()) {
-            logger->warn("readSingleRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
-            return 0;
-        }
-        return register_value;
-    }
-
     logger->warn("readSingleRegister failed, did not received register readback data from chip with chipId {}", m_chipId);
     return 0;
 }
