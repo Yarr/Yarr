@@ -229,6 +229,26 @@ void Rd53b::configurePixels() {
     }
 }
 
+void Rd53b::configurePixelMaskParallel() {
+    logger->debug("Configure all pixel mask regs in parallel ...");
+    // Setup pixel programming
+    this->writeRegister(&Rd53b::PixAutoRow, 1);
+    this->writeRegister(&Rd53b::PixConfMode, 0);
+    this->writeRegister(&Rd53b::PixBroadcast, 1);
+    // Writing all core columns at the same time, loop over dc in core
+    for (unsigned dc=0; dc<4; dc++) {
+        this->writeRegister(&Rd53b::PixRegionCol, dc);
+        this->writeRegister(&Rd53b::PixRegionRow, 0);
+        std::array<uint16_t, n_Row> maskBits;
+        for (unsigned row=0; row<n_Row; row++) {
+            maskBits[row] = toTenBitMask(pixRegs[dc][row]);
+        }
+        this->sendPixRegBlock(m_chipId, maskBits);
+        while(!core->isCmdEmpty()){;}
+    }
+
+}
+
 void Rd53b::configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels) {
     logger->debug("Configuring some pixel registers ...");
     // Writing two columns and six rows at the same time
@@ -466,13 +486,26 @@ uint32_t Rd53b::readEfusesRaw() {
     return ((efuse_data_1 & 0xffff) << 16) | (efuse_data_0 & 0xffff);
 }
 
+void Rd53b::readUpdateWriteNamedReg(std::string name) {
+    if(regMap.find(name) != regMap.end()) {
+        logger->debug("Local update named register {}", name);
+        this->readUpdateWriteReg(regMap[name]);
+    } else {
+        logger->error("Trying to local update named register, register not found: {}", name);
+    }
+}
+
+void Rd53b::readUpdateWriteReg(Rd53bReg Rd53bGlobalCfg::*ref) {
+	uint32_t reg = readSingleRegister(ref);
+	m_cfg[(this->*ref).addr()] = reg;
+}
 
 uint32_t Rd53b::readSingleRegister(Rd53bReg Rd53bGlobalCfg::*ref) {
     // send a read register command to the chip so that it
     // sends back the current value of the register
     this->sendRdReg(m_chipId, (this->*ref).addr());
     while(!core->isCmdEmpty()) {}
-    std::this_thread::sleep_for(std::chrono::milliseconds(1)) ;
+    std::this_thread::sleep_for(std::chrono::milliseconds(10)) ;
 
     // go through the incoming data stream and get the register read data
     std::vector<RawDataPtr> dataVec = m_rxcore->readData();

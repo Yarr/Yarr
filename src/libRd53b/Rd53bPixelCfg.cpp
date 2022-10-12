@@ -101,3 +101,7 @@ void Rd53bPixelCfg::loadConfig(const json &j) {
 uint16_t Rd53bPixelCfg::getPixelBit(PixelArray &input, unsigned col, unsigned row, unsigned bit){
     return getBit(input[col/2][row], (col&0x1)*8 + bit);
 }
+
+uint16_t Rd53bPixelCfg::toTenBitMask(uint16_t pixReg) {
+    return uint16_t(0x3FF & (((pixReg&0x700)>>3) | (pixReg&0x7)));
+}

@@ -64,6 +64,19 @@ std::optional<double> StarJsonData::getValForProp(const PropName &propName, cons
        return ref.get()[index];
 }
 
+//! Gets the string data value for the property propName when content is not a list
+/*!
+  \param propName Name of the json property (hierarchy levels being separated by '/') we want to retrieve the value from
+*/
+std::string StarJsonData::getStringForProp(const PropName &propName) const
+{
+       auto &splitProp = propName;
+       //Getting the element in the json property structure
+       auto ref = std::ref(m_jsondata);
+       for (std::string i : splitProp)
+              ref = ref.get()[i];
+       return ref.get();
+}
 
 //! Returns the number of entries in all data for the property
 /*!

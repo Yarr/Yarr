@@ -11,7 +11,7 @@
 #include "logging.h"
 
 namespace {
-  auto logger = logging::make_log("Rd53bMaskLoop");
+    auto logger = logging::make_log("Rd53bMaskLoop");
 }
 
 enum MaskType {StandardMask = 0, CrossTalkMask = 1, CrossTalkMaskv2 = 2, PToTMask = 3};
@@ -95,8 +95,8 @@ void Rd53bMaskLoop::init() {
     SPDLOG_LOGGER_TRACE(logger, "");
     m_done = false;
     m_cur = min;
-        
-    
+
+
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
         FrontEnd *fe = keeper->getEntry(id).fe;
         Rd53b *rd53b = dynamic_cast<Rd53b*>(fe);
@@ -127,91 +127,91 @@ void Rd53bMaskLoop::execPart1() {
         std::vector<std::pair<unsigned, unsigned>> modPixels;
 
         Rd53b *rd53b = dynamic_cast<Rd53b*>(fe);
-        
+
         for(unsigned col=0; col<Rd53b::n_Col; col++) {
             for(unsigned row=0; row<Rd53b::n_Row; row++) {
                 //Disable pixels of last mask stage if they were injected to 
-	        if (rd53b->getInjEn(col, row) == 1) {
-		//logger->info("Disabling {};{}", col, row);
-		    rd53b->setEn(col, row, 0); // TODO make configurable
+                if (rd53b->getInjEn(col, row) == 1) {
+                    //logger->info("Disabling {};{}", col, row);
+                    rd53b->setEn(col, row, 0); // TODO make configurable
                     rd53b->setInjEn(col, row, 0);
                     rd53b->setHitbus(col, row, 0);
                     modPixels.push_back(std::make_pair(col, row));
-	      }
-	    }
-	}
-	     
-        for(unsigned col=0; col<Rd53b::n_Col; col++) {
-	  for(unsigned row=0; row<Rd53b::n_Row; row++) {
-	    //Disable pixels of last mask stage if they were injected to 
-	    // Enable pixels of current mask stage
-	    if (applyMask(col,row)){
-	      // If the pixel is disabled, skip it
-		if(m_applyEnMask && !Rd53b::getPixelBit(m_pixRegs[fe], col, row, 0)) continue;
-		
-		    //---------------------------------------------------------------------------------
-		    // std cross-talk scan, inj in surrounding pixels and read out the central one
-		    //---------------------------------------------------------------------------------		    		  
-                    if (m_maskType == CrossTalkMask  ){	      
-		      std::vector<std::pair<int, int>> neighbours;		 
-		      getNeighboursMap(col,row,m_sensorType, m_maskSize, neighbours);
-		      //Read-only central pixel
-		      //logger->info("Enabling {} {}", col, row);
-		      rd53b->setEn(col, row, 1);
-		      rd53b->setInjEn(col, row, 0);		
-		      rd53b->setHitbus(col, row, 1);
-		      modPixels.push_back(std::make_pair(col, row));
-		      counter++;
-		      //Inject only neighbours
-		      for (auto n: neighbours){ 
-			//logger->info("Inject in {} {}", n.first, n.second);
-			rd53b->setEn(n.first, n.second, 0);
-			rd53b->setInjEn(n.first, n.second,1);
-			rd53b->setHitbus(n.first, n.second, 0);
-			modPixels.push_back(std::make_pair(n.first, n.second));
-		      }
-                    }
-		    //---------------------------------------------------------------------------------
-		    // alternative cross-talk scan, inj central pixel, read out the surrounding ones
-		    //--------------------------------------------------------------------------------		  
-                    else if (m_maskType == CrossTalkMaskv2 ){	      
-		      std::vector<std::pair<int, int>> neighbours;		 
-		      getNeighboursMap(col,row, m_sensorType,m_maskSize,neighbours);
-		      //Inject-only central pixel
-		      rd53b->setEn(col, row, 0);
-		      rd53b->setInjEn(col, row, 1);	
-		      rd53b->setHitbus(col, row, 0);	
-		      modPixels.push_back(std::make_pair(col, row));
-		      counter++;
-		      //Read out neighbours
-		      for (auto n: neighbours){ 		  	       
-			rd53b->setInjEn(n.first, n.second, 0);
-			rd53b->setEn(n.first, n.second, 1);
-			rd53b->setHitbus(col, row, 1);	
-			modPixels.push_back(std::make_pair(n.first, n.second));
-		      }
-		    }
-		    else{
-		      //------------------------------------------------------------------------
-		      //standard map, inj and read out the same pixel
-		      //------------------------------------------------------------------------
-		      //logger->info("Enabling {};{}", col, row);
-		      rd53b->setEn(col, row, (m_maskType == PToTMask) ? 0 : 1); // TODO Make configurable
-		      rd53b->setInjEn(col, row, 1);
-		      rd53b->setHitbus(col, row, 1);
-		      modPixels.push_back(std::make_pair(col, row));
-		      counter++;		    
-		    }
-	    }
-	  }
+                }
+            }
         }
-	//logger->info(" ---> Active pixels ");
-	//for (auto n: modPixels)
-	//  logger->info("{} {}",n.first,n.second);
+
+        for(unsigned col=0; col<Rd53b::n_Col; col++) {
+            for(unsigned row=0; row<Rd53b::n_Row; row++) {
+                //Disable pixels of last mask stage if they were injected to 
+                // Enable pixels of current mask stage
+                if (applyMask(col,row)){
+                    // If the pixel is disabled, skip it
+                    if(m_applyEnMask && !Rd53b::getPixelBit(m_pixRegs[fe], col, row, 0)) continue;
+
+                    //---------------------------------------------------------------------------------
+                    // std cross-talk scan, inj in surrounding pixels and read out the central one
+                    //---------------------------------------------------------------------------------		    		  
+                    if (m_maskType == CrossTalkMask  ){	      
+                        std::vector<std::pair<int, int>> neighbours;		 
+                        getNeighboursMap(col,row,m_sensorType, m_maskSize, neighbours);
+                        //Read-only central pixel
+                        //logger->info("Enabling {} {}", col, row);
+                        rd53b->setEn(col, row, 1);
+                        rd53b->setInjEn(col, row, 0);		
+                        rd53b->setHitbus(col, row, 1);
+                        modPixels.push_back(std::make_pair(col, row));
+                        counter++;
+                        //Inject only neighbours
+                        for (auto n: neighbours){ 
+                            //logger->info("Inject in {} {}", n.first, n.second);
+                            rd53b->setEn(n.first, n.second, 0);
+                            rd53b->setInjEn(n.first, n.second,1);
+                            rd53b->setHitbus(n.first, n.second, 0);
+                            modPixels.push_back(std::make_pair(n.first, n.second));
+                        }
+                    }
+                    //---------------------------------------------------------------------------------
+                    // alternative cross-talk scan, inj central pixel, read out the surrounding ones
+                    //--------------------------------------------------------------------------------		  
+                    else if (m_maskType == CrossTalkMaskv2 ){	      
+                        std::vector<std::pair<int, int>> neighbours;		 
+                        getNeighboursMap(col,row, m_sensorType,m_maskSize,neighbours);
+                        //Inject-only central pixel
+                        rd53b->setEn(col, row, 0);
+                        rd53b->setInjEn(col, row, 1);	
+                        rd53b->setHitbus(col, row, 0);	
+                        modPixels.push_back(std::make_pair(col, row));
+                        counter++;
+                        //Read out neighbours
+                        for (auto n: neighbours){ 		  	       
+                            rd53b->setInjEn(n.first, n.second, 0);
+                            rd53b->setEn(n.first, n.second, 1);
+                            rd53b->setHitbus(col, row, 1);	
+                            modPixels.push_back(std::make_pair(n.first, n.second));
+                        }
+                    }
+                    else{
+                        //------------------------------------------------------------------------
+                        //standard map, inj and read out the same pixel
+                        //------------------------------------------------------------------------
+                        //logger->info("Enabling {};{}", col, row);
+                        rd53b->setEn(col, row, (m_maskType == PToTMask) ? 0 : 1); // TODO Make configurable
+                        rd53b->setInjEn(col, row, 1);
+                        rd53b->setHitbus(col, row, 1);
+                        modPixels.push_back(std::make_pair(col, row));
+                        counter++;		    
+                    }
+                }
+            }
+        }
+        //logger->info(" ---> Active pixels ");
+        //for (auto n: modPixels)
+        //  logger->info("{} {}",n.first,n.second);
         rd53b->configurePixels(modPixels);
         while(!g_tx->isCmdEmpty()) {}
     }
-    
+
     g_tx->setCmdEnable(keeper->getTxMask());
     g_stat->set(this, m_cur);
     logger->info(" ---> Mask Stage {} (Activated {} pixels)", m_cur, counter);
@@ -221,38 +221,38 @@ void Rd53bMaskLoop::execPart2() {
     SPDLOG_LOGGER_TRACE(logger, "");
 
 
- // Loop over FrontEnds to clean it up
+    // Loop over FrontEnds to clean it up
     if (m_maskType == CrossTalkMask or m_maskType == CrossTalkMaskv2 ){
 
-      for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
-        g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
-        
-	Rd53b* rd53b = dynamic_cast<Rd53b*>(fe);
-	std::vector<std::pair<unsigned, unsigned>> modPixels;
-	for(unsigned col=0; col<Rd53b::n_Col; col++) {
-	  for(unsigned row=0; row<Rd53b::n_Row; row++) {
-	    if (applyMask(col,row)){
-	      std::vector<std::pair<int, int>> neighbours;		 
-	      //switch off central pixel
-	      rd53b->setInjEn(col, row, 0);		
-	      rd53b->setEn(col, row, 0);
-	      rd53b->setHitbus(col, row, 0);
-	      modPixels.push_back(std::make_pair(col, row));
-	      //switch off neighbours
-	      getNeighboursMap(col,row, m_sensorType,m_maskSize, neighbours);
-	      for (auto n: neighbours){ 		  	       
-		rd53b->setInjEn(n.first, n.second, 0);
-		rd53b->setEn(n.first, n.second, 0);
-		rd53b->setHitbus(n.first, n.second, 0);
-		modPixels.push_back(std::make_pair(n.first, n.second));
-	      }
-	    }
-	  }
-	}	
-	rd53b->configurePixels(modPixels);
-	while(!g_tx->isCmdEmpty()) {}	
-      }
+        for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+            FrontEnd *fe = keeper->getEntry(id).fe;
+            g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
+
+            Rd53b* rd53b = dynamic_cast<Rd53b*>(fe);
+            std::vector<std::pair<unsigned, unsigned>> modPixels;
+            for(unsigned col=0; col<Rd53b::n_Col; col++) {
+                for(unsigned row=0; row<Rd53b::n_Row; row++) {
+                    if (applyMask(col,row)){
+                        std::vector<std::pair<int, int>> neighbours;		 
+                        //switch off central pixel
+                        rd53b->setInjEn(col, row, 0);		
+                        rd53b->setEn(col, row, 0);
+                        rd53b->setHitbus(col, row, 0);
+                        modPixels.push_back(std::make_pair(col, row));
+                        //switch off neighbours
+                        getNeighboursMap(col,row, m_sensorType,m_maskSize, neighbours);
+                        for (auto n: neighbours){ 		  	       
+                            rd53b->setInjEn(n.first, n.second, 0);
+                            rd53b->setEn(n.first, n.second, 0);
+                            rd53b->setHitbus(n.first, n.second, 0);
+                            modPixels.push_back(std::make_pair(n.first, n.second));
+                        }
+                    }
+                }
+            }	
+            rd53b->configurePixels(modPixels);
+            while(!g_tx->isCmdEmpty()) {}	
+        }
     }
 
     m_cur += step;
@@ -270,10 +270,10 @@ void Rd53bMaskLoop::end() {
 }
 
 bool Rd53bMaskLoop::applyMask(unsigned col, unsigned row) {
-  
-  //Do not run over edges pixels, if not explicity requested  
-  if (ignorePixel(col, row)) return false;
-  
+
+    //Do not run over edges pixels, if not explicity requested  
+    if (ignorePixel(col, row)) return false;
+
     // This is the mask pattern
     unsigned core_row = row/8;
     unsigned serial;
@@ -301,22 +301,22 @@ void Rd53bMaskLoop::writeConfig(json &j) {
 }
 
 void Rd53bMaskLoop::loadConfig(const json &j) {
-  if (j.contains("min"))
-    min = j["min"];
-  if (j.contains("max"))
-    max = j["max"];
-  if (j.contains("step"))
-    step = j["step"];
-  if (j.contains("maskType"))
-    m_maskType = j["maskType"];
-  if (j.contains("applyEnMask"))
-    m_applyEnMask = j["applyEnMask"];    
-  if (j.contains("maskSize"))
-    m_maskSize = j["maskSize"];
-  if (j.contains("sensorType"))
-    m_sensorType = j["sensorType"];
-  if (j.contains("includedPixels"))
-    m_includedPixels = j["includedPixels"];
+    if (j.contains("min"))
+        min = j["min"];
+    if (j.contains("max"))
+        max = j["max"];
+    if (j.contains("step"))
+        step = j["step"];
+    if (j.contains("maskType"))
+        m_maskType = j["maskType"];
+    if (j.contains("applyEnMask"))
+        m_applyEnMask = j["applyEnMask"];    
+    if (j.contains("maskSize"))
+        m_maskSize = j["maskSize"];
+    if (j.contains("sensorType"))
+        m_sensorType = j["sensorType"];
+    if (j.contains("includedPixels"))
+        m_includedPixels = j["includedPixels"];
 }
 
 
@@ -371,10 +371,10 @@ bool Rd53bMaskLoop::ignorePixel(int col, int row){
 
     //check if all pixels are requested:
     if (m_includedPixels == includeEdges) return false;
-    
+
     //if not, remove the edges == TO BE CHECKED
     if (m_sensorType==SquareSensor){
-      if ((col==0 or col==Rd53b::n_Col-1) or (row==0 or row==Rd53b::n_Row-1)) return true;    
+        if ((col==0 or col==Rd53b::n_Col-1) or (row==0 or row==Rd53b::n_Row-1)) return true;    
     }
     if (m_sensorType!=SquareSensor){
         if (col==0 or col==1 or col==Rd53b::n_Col-1 or col==Rd53b::n_Col-2) return true;

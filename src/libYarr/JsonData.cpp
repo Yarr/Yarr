@@ -87,13 +87,15 @@ void JsonData::loadJsonData(const std::string &filename)
 void JsonData::toFile(const std::string &prefix, const std::string &dir, bool /*jsonType*/) const
 {
        hlog->info("JsonData::toFile({}, {}) writing with HistogramBase::name {}", prefix, dir, HistogramBase::name);
+       json jsonDataToWrite = m_jsondata;
+       jsonDataToWrite["FEname"] = prefix;
        std::string filename = dir + prefix + "_" + HistogramBase::name;
        for (unsigned i=0; i<lStat.size(); i++)
               filename += "_" + std::to_string(lStat.get(i));
        filename += ".json";
 
        std::fstream file(filename, std::fstream::out | std::fstream::trunc);
-       file << std::setw(4) << m_jsondata;
+       file << std::setw(4) << jsonDataToWrite;
        file.close();
 }
 

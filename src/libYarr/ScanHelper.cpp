@@ -117,6 +117,12 @@ namespace ScanHelper {
             } else {
                 hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
             }
+            shlog->info("Loaded controller config:");
+            std::stringstream ss;
+            ss << ctrlCfg["ctrlCfg"]["cfg"];
+            std::string line;
+            while (std::getline(ss, line)) shlog->info("~~~ {}", line);
+
         } else {
             shlog->critical("Unknown config type: {}",  std::string(ctrlCfg["ctrlCfg"]["type"]));
             shlog->warn("Known HW controllers:");

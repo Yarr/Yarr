@@ -47,7 +47,7 @@
           "min": 0,
           "step": 4
         },
-        "loopAction": "Rd53bMaskLoop"
+        "loopAction": "Rd53bParMaskLoop"
       },
       {
         "config": {
