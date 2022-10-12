@@ -450,6 +450,7 @@ void ScanConsoleImpl::cleanup() {
         // store output results (if any)
         if(analyses.empty()) continue;
         logger->info("-> Storing output results of FE {}", feCfg->getRxChannel());
+        if (fe->clipResult.empty()) continue;
         auto &output = *(fe->clipResult.back());
         std::string name = feCfg->getName();
         if (output.empty()) {
