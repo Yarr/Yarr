@@ -118,8 +118,10 @@ namespace ScanHelper {
                 hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
             }
             shlog->info("Loaded controller config:");
+            json cfg = ctrlCfg["ctrlCfg"]["cfg"];
+            if(cfg.contains("__feCfg_data__")) cfg.erase("__feCfg_data__");
             std::stringstream ss;
-            ss << ctrlCfg["ctrlCfg"]["cfg"];
+            ss << cfg;
             std::string line;
             while (std::getline(ss, line)) shlog->info("~~~ {}", line);
 
