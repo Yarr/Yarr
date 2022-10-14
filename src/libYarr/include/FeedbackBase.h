@@ -123,7 +123,7 @@ class PixelFeedbackSender : public PixelFeedbackBase {
 //* \brief Information from data processors
 typedef struct
 {
-    int trigger_tag = -1;
+    int trigger_tag;
 } FeedbackProcessingInfo;
 
 typedef std::map<uint32_t, ClipBoard<FeedbackProcessingInfo>> ClipboardMapProcessingFeedback;
