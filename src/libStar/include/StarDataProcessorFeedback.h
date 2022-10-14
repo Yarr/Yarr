@@ -11,15 +11,14 @@
 
 #include "StarDataProcessor.h"
 #include "FeedbackBase.h"
+#include "EventData.h"
 
 class StarDataProcessorFeedback : public StarDataProcessor {
     public:
         void connect(ClipBoard<FeedbackProcessingInfo> *arg_proc_status) override {statusFb = arg_proc_status;}
 
-        //void process_core();
-        void process_data(RawData &curIn,
-                  FrontEndData &curOut,
-                  const std::array<uint8_t, 11> &chip_map);
+        void process_core();
+        void process_data(RawData &curIn, FrontEndData &curOut);
 
     private:
         ClipBoard<FeedbackProcessingInfo> *statusFb = nullptr;

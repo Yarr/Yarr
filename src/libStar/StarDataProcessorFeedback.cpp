@@ -2,7 +2,6 @@
 
 #include "AllProcessors.h"
 #include "logging.h"
-#include "EventData.h"
 #include "StarChipPacket.h"
 
 //#include <bitset>
@@ -19,12 +18,12 @@ bool starFeedback_proc_registered =
   StdDict::registerDataProcessor("StarFeedback", []() { return std::unique_ptr<DataProcessor>(new StarDataProcessorFeedback());});
 
 //int process_data(RawData &curIn,
-//                 FrontEndData &curOut);
+//                  FrontEndData &curOut,
+//                  bool flagInvertChipOrder, unsigned short highestHCCinputChannel);
 
-/*
 void StarDataProcessorFeedback::process_core() {
-    unsigned dataCnt = 0; // it counts number of distinct events processed in the given input RawDataContainer
-    int trigger_tag = 0;
+    //unsigned dataCnt = 0; // it counts number of distinct events processed in the given input RawDataContainer
+    //int trigger_tag = 0;
     uint8_t max_processed_trigger_tag = 0;
 
     while(!input->empty()) {
@@ -41,24 +40,27 @@ void StarDataProcessorFeedback::process_core() {
         for(unsigned c=0; c<size; c++) {
             RawDataPtr r = curInV->data[c];
             unsigned channel = r->getAdr(); //elink number
-            trigger_tag = process_data(*r, *curOut); dataCnt++;
-            if (trigger_tag > max_processed_trigger_tag) max_processed_trigger_tag = trigger_tag;
+            process_data(*r, *curOut);
+            //dataCnt++;
+            //if (trigger_tag > max_processed_trigger_tag) max_processed_trigger_tag = trigger_tag;
         }
 
         output->pushData(std::move(curOut));
         //dataCnt++;
     }
 
-    FeedbackProcessingInfo stat = {.trigger_tag = max_processed_trigger_tag};
-    // so, it pushes the count of events processed and the last trigger tag
-    statusFb->pushData(std::make_unique<FeedbackProcessingInfo>(stat));
+    //struct DataProcFeedbackParams stat = {.event_count = dataCnt, .trigger_tag = max_processed_trigger_tag};
+    //// so, it pushes the count of events processed and the last trigger tag
+    //statusFb->feedback(stat);
+
+    //FeedbackProcessingInfo stat = {.trigger_tag = max_processed_trigger_tag};
+    //statusFb->pushData(std::make_unique<FeedbackProcessingInfo>(stat));
 }
-*/
 
 void StarDataProcessorFeedback::process_data(RawData &curIn,
-                  FrontEndData &curOut,
-                  const std::array<uint8_t, 11> &chip_map) {
+                  FrontEndData &curOut) {
     StarChipPacket packet;
+    int trigger_tag = -10;
 
     packet.add_word(0x13C); //add SOP, only to make decoder happy
     for(unsigned iw=0; iw<curIn.getSize(); iw++) {
@@ -81,13 +83,18 @@ void StarDataProcessorFeedback::process_data(RawData &curIn,
 
     PacketType packetType = packet.getType();
     if(packetType == TYP_LP || packetType == TYP_PR){
-        if (packet.n_clusters()==0) return; //empty packet
+        if (packet.n_clusters()==0) { //empty packet
+          FeedbackProcessingInfo stat = {.trigger_tag = -1};
+          statusFb->pushData(std::make_unique<FeedbackProcessingInfo>(stat));
+          return;
+        }
 
-        int tag = packet.l0id;
+        trigger_tag = packet.l0id;
+
         auto l1id = packet.l0id;
         auto bcid = packet.bcid;
 
-        curOut.newEvent(tag, l1id, bcid);
+        curOut.newEvent(trigger_tag, l1id, bcid);
 
         for(unsigned  ithCluster=0; ithCluster < packet.clusters.size(); ++ithCluster){
             Cluster cluster = packet.clusters.at(ithCluster);
@@ -129,14 +136,20 @@ void StarDataProcessorFeedback::process_data(RawData &curIn,
         }
     } else if(packetType == TYP_ABC_RR || packetType == TYP_HCC_RR) {
         //Assume we don't want to see hit counter reads but want to see other RR's
+        trigger_tag = -2; // RR tag
+
         if(logger->should_log(spdlog::level::debug) || packet.address < 0x80 || packet.address > 0xbf) {
             packet.print_more(std::cout);
         }
         if(packet.address >= 0x80 && packet.address <= 0xbf) {
             //Hit Counter Register Read
-            if (packet.value == 0) return; //No Hits
+            if (packet.value == 0) { //return; //No Hits
+              FeedbackProcessingInfo stat = {.trigger_tag = -4};
+              statusFb->pushData(std::make_unique<FeedbackProcessingInfo>(stat));
+              return;
+            }
             logger->trace("Adding hits from HitCounter",packet.address);
-              
+
             curOut.newEvent(0,0,0); //No l0id or bcid
             int start_channel = (packet.address - 0x80)*4;
             for (int i=0; i < 4; i++) {
@@ -148,13 +161,19 @@ void StarDataProcessorFeedback::process_data(RawData &curIn,
                                              packet.channel_abc*128+( ((channel>>1)&0x7f)+1), 1);
             }
         }
+
     } else if (packetType == TYP_ABC_HPR || packetType == TYP_HCC_HPR) {
+        trigger_tag = -3; // HPR tag
         if(logger->should_log(spdlog::level::trace)) {
             std::stringstream os;
             packet.print_clusters(os);
             logger->trace("{}", os.str());
         }
     }
+
+    FeedbackProcessingInfo stat = {.trigger_tag = trigger_tag};
+    statusFb->pushData(std::make_unique<FeedbackProcessingInfo>(stat));
 }
+
 // Need to instantiate something to register the logger
 bool parser_logger_feedback_registered = [](){ StarChipPacket::make_logger(); return true; }();

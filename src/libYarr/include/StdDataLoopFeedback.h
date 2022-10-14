@@ -9,10 +9,9 @@
 #include "StdDataLoop.h"
 #include "FeedbackBase.h"
 
-class StdDataLoopFeedback: public StdDataLoop, public DataProcFeedbackReceiver {
+class StdDataLoopFeedback: public StdDataLoop, public ReceiverOfRawDataProcessingFeedback {
     private:
         void execPart2() override;
-        void dataproc_feedback(unsigned channel, struct DataProcFeedbackParams p) override;
 };
 
 #endif

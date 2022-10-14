@@ -126,12 +126,12 @@ typedef struct
     int trigger_tag = -1;
 } FeedbackProcessingInfo;
 
-typedef std::map<unsigned, ClipBoard<FeedbackProcessingInfo>> ClipboardMapProcessingFeedback;
+typedef std::map<uint32_t, ClipBoard<FeedbackProcessingInfo>> ClipboardMapProcessingFeedback;
 
 class ReceiverOfRawDataProcessingFeedback {
     public:
         void connect(ClipboardMapProcessingFeedback *fbProc) {feedbackFromRawDataProcessing = fbProc;}
-    private:
+    protected:
         ClipboardMapProcessingFeedback *feedbackFromRawDataProcessing;
 };
 
