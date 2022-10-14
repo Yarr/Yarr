@@ -33,9 +33,11 @@ class StarDataProcessor : public DataProcessor {
         void process() override;
         void process_core();
 
-    private:
+    protected:
         ClipBoard<RawDataContainer> *input;
         ClipBoard<EventDataBase> *output;
+
+    private:
         std::unique_ptr<std::thread> thread_ptr;
 
         /// Map from HCC input channel (0-10) number to histogram slot

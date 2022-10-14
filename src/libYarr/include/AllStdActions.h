@@ -1,4 +1,5 @@
 #include "StdDataLoop.h"
+#include "StdDataLoopFeedback.h"
 #include "StdDataGatherer.h"
 #include "StdDataAction.h"
 #include "StdRepeater.h"

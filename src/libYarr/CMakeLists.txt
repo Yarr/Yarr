@@ -38,6 +38,7 @@ add_library(Scan SHARED
         StdAnalysis.cpp
         StdDataGatherer.cpp
         StdDataLoop.cpp
+        StdDataLoopFeedback.cpp
         StdHistogrammer.cpp
         StdParameterLoop.cpp
         StdRepeater.cpp

@@ -16,20 +16,19 @@ namespace {
 
 #include "AllChips.h"
 
-bool star_chips_default_registered =
-StdDict::registerFrontEnd
-  ("Star", []() { return std::unique_ptr<FrontEnd>(new StarChips(0, 0)); });
 bool star_chips_v0_registered =
 StdDict::registerFrontEnd
-  ("Star_vH0A0", []() { return std::unique_ptr<FrontEnd>(new StarChips(0, 0)); });
-// a.k.a PPA
+  ("Star", []() { return std::unique_ptr<FrontEnd>(new StarChips(0, 0)); });
+// PPA vH0A1 but with Feedback DataProcessor
+bool star_chips_v1_registered_feedback =
+StdDict::registerFrontEnd
+  ("StarFeedback", []() { return std::unique_ptr<FrontEnd>(new StarChips(1, 0)); });
 bool star_chips_v1_registered =
 StdDict::registerFrontEnd
-  ("Star_vH0A1", []() { return std::unique_ptr<FrontEnd>(new StarChips(1, 0)); });
-// a.k.a PPB
+  ("Star_PPA", []() { return std::unique_ptr<FrontEnd>(new StarChips(1, 0)); });
 bool star_chips_v1_both_registered =
 StdDict::registerFrontEnd
-  ("Star_vH1A1", []() { return std::unique_ptr<FrontEnd>(new StarChips(1, 1)); });
+  ("Star_PPB", []() { return std::unique_ptr<FrontEnd>(new StarChips(1, 1)); });
 
 StarChips::StarChips(int abc_version, int hcc_version)
   : StarCfg(abc_version, hcc_version), StarCmd(), FrontEnd()
@@ -192,8 +191,8 @@ void StarChips::configure() {
     logger->debug("Sending lonely_BCR");
     sendCmd(LCB::lonely_bcr());
 
-    // Make histo size match number of configured ABCs
-    geo.nCol = 128 * numABCs();
+	// Make histo size match number of configured ABCs
+	geo.nCol = 128 * (highestABC()+1);
 }
 
 void StarChips::sendCmd(uint16_t cmd){
