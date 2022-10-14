@@ -53,6 +53,11 @@ namespace ScanHelper {
         std::unique_ptr<ScanBase> buildScan( const json& scanType,
                                              Bookkeeper& bookie,
                                              FeedbackClipboardMap *fbData);
+       // the scan helper owns the ClipboardMap of data processing feeedback
+       // and pases it implicitly to the LoopActions in buildScan
+       // and to the DataProcessors in buildRawDataProcs
+       extern ClipboardMapProcessingFeedback feedbackRawDataProcessing;
+
        std::string defaultDbUserCfgPath();
        std::string defaultDbSiteCfgPath();
        std::string defaultDbCfgPath();

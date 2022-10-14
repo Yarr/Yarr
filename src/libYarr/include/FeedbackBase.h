@@ -120,4 +120,19 @@ class PixelFeedbackSender : public PixelFeedbackBase {
         FeedbackClipboard *clip;
 };
 
+//* \brief Information from data processors
+typedef struct
+{
+    int trigger_tag = -1;
+} FeedbackProcessingInfo;
+
+typedef std::map<unsigned, ClipBoard<FeedbackProcessingInfo>> ClipboardMapProcessingFeedback;
+
+class ReceiverOfRawDataProcessingFeedback {
+    public:
+        void connect(ClipboardMapProcessingFeedback *fbProc) {feedbackFromRawDataProcessing = fbProc;}
+    private:
+        ClipboardMapProcessingFeedback *feedbackFromRawDataProcessing;
+};
+
 #endif

@@ -16,7 +16,7 @@
 #include <functional>
 class ScanFactory : public ScanBase {
     public:
-        ScanFactory(Bookkeeper *k, FeedbackClipboardMap *fb);
+        ScanFactory(Bookkeeper *k, FeedbackClipboardMap *fb, ClipboardMapProcessingFeedback *fbProc=nullptr);
 
         void loadConfig(const json &scanCfg) override;
 
@@ -27,6 +27,7 @@ class ScanFactory : public ScanBase {
         json m_config;
         // Keep around until configuration
         FeedbackClipboardMap *feedback;
+        ClipboardMapProcessingFeedback *feedbackDataProcessing;
 };
 
 namespace StdDict {

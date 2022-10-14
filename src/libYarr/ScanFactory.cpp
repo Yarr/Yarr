@@ -20,8 +20,8 @@ namespace {
     auto sflog = logging::make_log("ScanFactory");
 }
 
-ScanFactory::ScanFactory(Bookkeeper *k, FeedbackClipboardMap *fb)
-  : ScanBase(k), feedback(fb) {
+ScanFactory::ScanFactory(Bookkeeper *k, FeedbackClipboardMap *fb, ClipboardMapProcessingFeedback *fbProc)
+  : ScanBase(k), feedback(fb), feedbackDataProcessing(fbProc) {
 }
 
 void ScanFactory::init() {
@@ -102,6 +102,16 @@ void ScanFactory::loadConfig(const json &scanCfg) {
         if(auto *fbPixel = dynamic_cast<PixelFeedbackReceiver*>(&*action)) {
             fbPixel->connectClipboard(feedback);
         }
+
+        if(auto *fbDataProcReceiver = dynamic_cast<ReceiverOfRawDataProcessingFeedback*>(&*action)) {
+            if (feedbackDataProcessing == nullptr) {
+                sflog->error("LoopAction {} is a ReceiverOfRawDataProcessingFeedback, but ClipboardMapProcessingFeedback is not provided: this LoopAction will not work correctly", loopAction);
+                throw std::runtime_error("Missing ClipboardMapProcessingFeedback");
+            }
+
+            fbDataProcReceiver->connect(feedbackDataProcessing);
+        }
+
         this->addLoop(action);
 
         json tCfg;
