@@ -60,11 +60,26 @@ void HistogrammerProcessor::process_core() {
         FrontEndData *data = dynamic_cast<FrontEndData*>(d.get());
         if (data == nullptr)
             continue;
+
+        // if it is the marker of the end of scan iteration:
+        // publish, reset the iteration, and skip the algorithms
+        if (data->lStat.is_end_of_iteration) {
+            this->publish();
+            is_new_iteration = true; // reset for the next iteration
+            continue; // skip the algorithms
+        }
+
+        // otherwise process data
         for (unsigned i=0; i<algorithms.size(); i++) {
-            algorithms[i]->create(data->lStat);
+            // create only on new iteration
+            if (is_new_iteration) {
+                algorithms[i]->create(data->lStat);
+            }
             algorithms[i]->processEvent(data);
         }
-        this->publish();
+
+        // set an iteration is ongoing
+        if (is_new_iteration) { is_new_iteration = false; }
     }
 }
 

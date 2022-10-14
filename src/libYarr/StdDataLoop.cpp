@@ -95,7 +95,16 @@ void StdDataLoop::execPart2() {
     for (auto &[id, rdc] : rdcMap) {
         keeper->getEntry(id).fe->clipRawData.pushData(std::move(rdc));
     }
-        
+
+    // push the empty container that marks the end of the scan iteration
+    // for the processors, histogrammers, analysis, etc threads
+    LoopStatus loop_status_iteration_end({0}, {LoopStyle::LOOP_STYLE_GLOBAL_FEEDBACK});
+    loop_status_iteration_end.is_end_of_iteration = true;
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        std::unique_ptr<RawDataContainer> c_iter_end = std::make_unique<RawDataContainer>(std::move(loop_status_iteration_end));
+        keeper->getEntry(id).fe->clipRawData.pushData(std::move(c_iter_end));
+    }
+
     if (count == 0) {
       SPDLOG_LOGGER_DEBUG(sdllog, "\033[1m\033[31m--> Received {} words in {} iterations!\033[0m", count ,iterations);
     } else {

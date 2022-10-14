@@ -50,6 +50,8 @@ class LoopStatus {
         bool operator==(const LoopStatus &l){
                 return statVec == l.statVec;
         }
+
+        bool is_end_of_iteration = false;
 };
 
 /// Where we are in the scan engine (this one gets updated)
