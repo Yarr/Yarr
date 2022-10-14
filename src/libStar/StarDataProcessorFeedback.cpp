@@ -17,15 +17,9 @@ namespace {
 bool starFeedback_proc_registered =
   StdDict::registerDataProcessor("StarFeedback", []() { return std::unique_ptr<DataProcessor>(new StarDataProcessorFeedback());});
 
-//int process_data(RawData &curIn,
-//                  FrontEndData &curOut,
-//                  bool flagInvertChipOrder, unsigned short highestHCCinputChannel);
-
+// process_core is exactly the same as in StarDataProcessor
+// except it calls the StarDataProcessorFeedback::process_data
 void StarDataProcessorFeedback::process_core() {
-    //unsigned dataCnt = 0; // it counts number of distinct events processed in the given input RawDataContainer
-    //int trigger_tag = 0;
-    uint8_t max_processed_trigger_tag = 0;
-
     while(!input->empty()) {
         // Get data containers
         std::unique_ptr<RawDataContainer> curInV = input->popData();
@@ -41,22 +35,15 @@ void StarDataProcessorFeedback::process_core() {
             RawDataPtr r = curInV->data[c];
             unsigned channel = r->getAdr(); //elink number
             process_data(*r, *curOut);
-            //dataCnt++;
-            //if (trigger_tag > max_processed_trigger_tag) max_processed_trigger_tag = trigger_tag;
         }
 
         output->pushData(std::move(curOut));
-        //dataCnt++;
+        // dataCnt++;
     }
-
-    //struct DataProcFeedbackParams stat = {.event_count = dataCnt, .trigger_tag = max_processed_trigger_tag};
-    //// so, it pushes the count of events processed and the last trigger tag
-    //statusFb->feedback(stat);
-
-    //FeedbackProcessingInfo stat = {.trigger_tag = max_processed_trigger_tag};
-    //statusFb->pushData(std::make_unique<FeedbackProcessingInfo>(stat));
 }
 
+// StarDataProcessorFeedback::process_data is the same as process_data in StarDataProcessor
+// except it pushes trigger tags to the StarDataProcessorFeedback::statusFb
 void StarDataProcessorFeedback::process_data(RawData &curIn,
                   FrontEndData &curOut) {
     StarChipPacket packet;

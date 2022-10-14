@@ -1,13 +1,9 @@
 /*
- * Authors: T. Heim <timon.heim@cern.ch>,
- * Date: 2014-Sep-27
+ * Authors: A. Toldaiev <alex.toldaiev@cern.ch>,
+ * Date: 2022-Sep-5
  */
 
 #include "StdDataLoopFeedback.h"
-
-//#include <iostream>
-//#include <thread>
-//#include <algorithm>
 
 #include <chrono>
 using Clock = std::chrono::steady_clock;
@@ -17,11 +13,6 @@ using Clock = std::chrono::steady_clock;
 namespace {
     auto sdllog = logging::make_log("StdDataLoopFeedback");
 }
-
-//void StdDataLoopFeedback::dataproc_feedback(unsigned channel, struct DataProcFeedbackParams p)
-//{
-//    SPDLOG_LOGGER_DEBUG(sdllog, "--> StdDataLoop::dataproc_feedback channel {} event counter {} trigger tag {}", channel, p.event_count, p.trigger_tag);
-//}
 
 void StdDataLoopFeedback::execPart2() {
     SPDLOG_LOGGER_TRACE(sdllog, "");
@@ -129,14 +120,13 @@ void StdDataLoopFeedback::execPart2() {
             for (const auto &item : channelReceivedTriggersCnt) {
                 uint32_t channel_n = item.first;
 
-                //FeedbackProcessingInfo params  = waitForDataProcFeedback(channel_n); // = {};
                 received_feedback |= feedbackFromRawDataProcessing->at(channel_n).waitNotEmptyOrDoneOrTimeout(std::chrono::microseconds(100));
-                //SPDLOG_LOGGER_DEBUG(sdllog, "--> StdDataLoopFeedback::execPart2 feedback : channel {} event counter {} trigger tag {}", channel_n, params.event_count, params.trigger_tag);
 
                 if (!received_feedback) continue;
 
                 // params is a unique_ptr of FeedbackProcessingInfo
                 auto params = feedbackFromRawDataProcessing->at(channel_n).popData();
+                //SPDLOG_LOGGER_DEBUG(sdllog, "--> StdDataLoopFeedback::execPart2 feedback : channel {} trigger tag {}", channel_n, params->trigger_tag);
 
                 // sum up the processed events for each channel
                 if (params->trigger_tag >=  0) channelReceivedTriggersCnt[channel_n] += 1;
@@ -163,14 +153,12 @@ void StdDataLoopFeedback::execPart2() {
 
     } while (not_received_all_triggers && still_time);
 
-    // send end-of-iteration empty container with LoopStatus = END
-    // TODO: take the current status and append end to it
-    //std::vector<unsigned> loop_ids = {0};
-    LoopStatus loop_status_iteration_end({0}, {LoopStyle::LOOP_STYLE_END});
+    // send end-of-iteration empty container with LoopStatus::is_end_of_iteration = true
+    LoopStatus loop_status_iteration_end({0}, {LoopStyle::LOOP_STYLE_GLOBAL_FEEDBACK});
+    loop_status_iteration_end.is_end_of_iteration = true;
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        //
-        std::unique_ptr<RawDataContainer> empty_container_iteration_end = std::make_unique<RawDataContainer>(std::move(loop_status_iteration_end));
-        keeper->getEntry(id).fe->clipRawData.pushData(std::move(empty_container_iteration_end));
+        std::unique_ptr<RawDataContainer> c_iter_end = std::make_unique<RawDataContainer>(std::move(loop_status_iteration_end));
+        keeper->getEntry(id).fe->clipRawData.pushData(std::move(c_iter_end));
     }
 
     SPDLOG_LOGGER_DEBUG(sdllog, "--> StdDataLoopFeedback::execPart2 feedback FINISH : received {} triggers from {} ({}) elapsed time {} from delay limit {} {}", channelReceivedTriggersCnt[0], n_triggers_to_receive, not_received_all_triggers, time_elapsed.count(), wait_time.count(), time_elapsed.count() < wait_time.count());
