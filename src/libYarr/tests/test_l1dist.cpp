@@ -25,12 +25,6 @@ TEST_CASE("HistogramL1Dist", "[Histogrammer][L1Dist]") {
         data->newEvent(1, 2, 3);
         data->curEvent->addHit(1, 2, 3);
         input.pushData(std::move(data));
-
-        // push the marker of the iteration end
-        LoopStatus end_of_processing({0}, {LOOP_STYLE_DATA});
-        end_of_processing.is_end_of_iteration = true;
-        data = std::make_unique<FrontEndData>(end_of_processing);
-        input.pushData(std::move(data));
     }
 
     input.finish();

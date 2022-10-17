@@ -21,41 +21,49 @@ TEST_CASE("HistogrammerOperation", "[Histogrammer][Operation]") {
     histogrammer.init();
     histogrammer.run();
 
-    { // empty event
+    // the following 3 examples result in the same histograms
+    { // 1 FrontEndData with 2 events
         auto data = std::make_unique<FrontEndData>();
-        // 1 event with 0 hits
-        data->newEvent(1, 2, 3);
-        input.pushData(std::move(data));
-    }
-
-    { // a couple events in one data
-        auto data = std::make_unique<FrontEndData>();
-        // 2 events with 1 hit each
+        // each event with 1 hit
         data->newEvent(1, 2, 3);
         data->curEvent->addHit(1, 2, 3);
         data->newEvent(1, 10, 3);
         data->curEvent->addHit(1, 5, 3);
-        input.pushData(std::move(data));
+        input.pushData(std::move(data)); // data is by default end_of_iteration
     }
 
-    { // final event data
-        auto data = std::make_unique<FrontEndData>();
-        // event with 2 hits
-        data->newEvent(1, 1, 1);
-        data->curEvent->addHit(1, 1, 1);
-        data->curEvent->addHit(1, 2, 3);
-        input.pushData(std::move(data));
+    { // 2 FrontEndData with 1 event each
+        auto data1 = std::make_unique<FrontEndData>();
+        data1->newEvent(1, 2, 3);
+        data1->curEvent->addHit(1, 2, 3);
+        data1->lStat.is_end_of_iteration = false;
+        input.pushData(std::move(data1));
+
+        auto data2 = std::make_unique<FrontEndData>();
+        //data2->lStat.is_end_of_iteration = true; // it is true by default
+        data2->newEvent(1, 10, 3);
+        data2->curEvent->addHit(1, 5, 3);
+        input.pushData(std::move(data2));
     }
 
-    { // marker of the end of iteration, the data in the marker is ignored
-        LoopStatus end_of_processing({0}, {LOOP_STYLE_DATA});
-        end_of_processing.is_end_of_iteration = true;
-        auto data = std::make_unique<FrontEndData>(end_of_processing);
-        // event with 2 hits
-        data->newEvent(1, 1, 1);
-        data->curEvent->addHit(1, 1, 1); // these hits won't be analysed
-        data->curEvent->addHit(1, 2, 3);
-        input.pushData(std::move(data));
+    { // 2 FrontEndData with events, and 1 empty FrontEndData as the marker of the iteration end
+        auto data1 = std::make_unique<FrontEndData>();
+        data1->lStat.is_end_of_iteration = false;
+        data1->newEvent(1, 2, 3);
+        data1->curEvent->addHit(1, 2, 3);
+        input.pushData(std::move(data1));
+
+        auto data2 = std::make_unique<FrontEndData>();
+        data2->lStat.is_end_of_iteration = false;
+        data2->newEvent(5, 3, 3);
+        data2->curEvent->addHit(7, 8, 10);
+        input.pushData(std::move(data2));
+
+        auto data_end = std::make_unique<FrontEndData>();
+        // empty FrontEndData, but it marks the iteration end
+        data_end->lStat.is_end_of_iteration = true;
+        input.pushData(std::move(data_end));
+
     }
 
     input.finish();
@@ -63,43 +71,40 @@ TEST_CASE("HistogrammerOperation", "[Histogrammer][Operation]") {
 
     REQUIRE (!output.empty());
 
-    std::unique_ptr<HistogramBase> result = output.popData();
+    int n_iterations = 3;
+    while (n_iterations-- > 0) {
+        std::unique_ptr<HistogramBase> result = output.popData();
 
-    // Only one thing
-    REQUIRE (output.empty());
+        REQUIRE (result->getXaxisTitle() == "Number of Hits");
+        REQUIRE (result->getYaxisTitle() == "Events");
 
-    REQUIRE (result->getXaxisTitle() == "Number of Hits");
-    REQUIRE (result->getYaxisTitle() == "Events");
+        auto histo_as_1d = dynamic_cast<Histo1d *>(&*result);
 
-    auto histo_as_1d = dynamic_cast<Histo1d *>(&*result);
+        REQUIRE (histo_as_1d);
 
-    REQUIRE (histo_as_1d);
+        REQUIRE (histo_as_1d->getEntries() == 2); // 2 events
+        REQUIRE (histo_as_1d->getMean() == 1.0);
 
-    REQUIRE (histo_as_1d->getEntries() == 4); // 4 events
-    REQUIRE (histo_as_1d->getMean() == 1.0);
+        const unsigned int max = 1000; // Fei4?
+        REQUIRE (histo_as_1d->size() == max);
 
-    const unsigned int max = 1000; // Fei4?
-    REQUIRE (histo_as_1d->size() == max);
+        auto lowX = -0.5;
+        auto highX = max-0.5;
+        auto deltaX = 1.0;
 
-    auto lowX = -0.5;
-    auto highX = max-0.5;
-    auto deltaX = 1.0;
+        for(auto x=lowX+deltaX/2; x<highX; x+=deltaX) {
+            auto bin = x; // histo_as_1d->getBin(x);
+            CAPTURE (x, bin);
 
-    for(auto x=lowX+deltaX/2; x<highX; x+=deltaX) {
-        auto bin = x; // histo_as_1d->getBin(x);
-        CAPTURE (x, bin);
+            float val = 0.0f;
+            if((int)x == 1) { // with 1 hit
+                val = 2.0f;   // 2 events
+            }
 
-        float val = 0.0f;
-        if((int)x == 0) { // with 0 hit
-            val = 1.0f;   // 1 events
+            REQUIRE (histo_as_1d->getBin(bin) == val);
         }
-        if((int)x == 1) { // with 1 hit
-            val = 2.0f;   // 2 events
-        }
-        if((int)x == 2) { // with 2 hits
-            val = 1.0f;   // 1 event
-        }
-
-        REQUIRE (histo_as_1d->getBin(bin) == val);
     }
+
+    // only 3 histogram outputs
+    REQUIRE (output.empty());
 }

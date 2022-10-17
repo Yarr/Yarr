@@ -61,17 +61,9 @@ void HistogrammerProcessor::process_core() {
         if (data == nullptr)
             continue;
 
-        // if it is the marker of the end of scan iteration:
-        // publish, reset the iteration, and skip the algorithms
-        if (data->lStat.is_end_of_iteration) {
-            this->publish();
-            is_new_iteration = true; // reset for the next iteration
-            continue; // skip the algorithms
-        }
-
-        // otherwise process data
+        // process the data
         for (unsigned i=0; i<algorithms.size(); i++) {
-            // create only on new iteration
+            // create on new iteration
             if (is_new_iteration) {
                 algorithms[i]->create(data->lStat);
             }
@@ -80,6 +72,13 @@ void HistogrammerProcessor::process_core() {
 
         // set an iteration is ongoing
         if (is_new_iteration) { is_new_iteration = false; }
+
+        // if it is the marker of the end of scan iteration:
+        // publish, reset the iteration
+        if (data->lStat.is_end_of_iteration) {
+            this->publish();
+            is_new_iteration = true; // reset for the next iteration
+        }
     }
 }
 

@@ -98,6 +98,7 @@ void StdDataLoopFeedback::execPart2() {
 
         // push data for processing
         for (auto &[id, rdc] : rdcMap) {
+            rdc->stat.is_end_of_iteration = false;
             keeper->getEntry(id).fe->clipRawData.pushData(std::move(rdc));
         }
 

@@ -51,7 +51,7 @@ class LoopStatus {
                 return statVec == l.statVec;
         }
 
-        bool is_end_of_iteration = false;
+        bool is_end_of_iteration = true;
 };
 
 /// Where we are in the scan engine (this one gets updated)
