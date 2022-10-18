@@ -5,12 +5,19 @@
 // # Description: Conversion tools class
 // ################################
 
-#include <cmath>
-#include <unistd.h>
+#include <string>
+#include <vector>
 
 class StarConversionTools {
-    public:
-  void loadDACtoVConversion(std::vector<double> &thrConverted);
+public:
+  StarConversionTools();
+  StarConversionTools(const std::string& file_name);
 
-  std::pair<double, double> convertDACtoV(const double & thrDAC, const double & err_thrDAC, const std::vector<double> & thrRef_mV);
+  virtual ~StarConversionTools() = default;
+
+  std::pair<double, double> convertDACtoV(double thrDAC, double err_thrDAC);
+
+private:
+
+  std::vector<double>  m_thrCal_mV;
 };

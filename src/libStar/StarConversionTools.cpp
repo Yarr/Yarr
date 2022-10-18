@@ -5,9 +5,6 @@
 // # Description: Conversion tools class
 // ################################
 
-#include <cmath>
-#include <unistd.h>
-#include <vector>
 #include "logging.h"
 
 #include "StarConversionTools.h"
@@ -16,18 +13,25 @@ namespace {
     auto alog = logging::make_log("StarConversionTools");
 }
 
-void StarConversionTools::loadDACtoVConversion(std::vector<double> &thrConverted) {
-  thrConverted.resize(256, -1.);
+StarConversionTools::StarConversionTools() {
+  // Default conversion from BVT to mV if no configuration is provided
+  // Taken from https://gitlab.cern.ch/atlas-itk-strips-daq/itsdaq-sw/-/blob/master/macros/abc_star/ResponseCurvePlot.cpp#L1343
+  m_thrCal_mV.resize(256);
+  for(int j=0; j<256; j++) {
+    m_thrCal_mV[j] = 2.7264 * j + 1.041;
+  }
+}
+
+StarConversionTools::StarConversionTools(const std::string& file_name) {
+  m_thrCal_mV.resize(256, -1.);
 
   int i = 0, j=0;
 
-  std::string file_name = "../configs/scans/star/ABCStar_thrCal.txt";
   double factor = 1000.0; // Values stored in V, want them in mV
 
   FILE* DACtoVConversionFile = fopen(file_name.c_str(),"r");
   if(DACtoVConversionFile == NULL){
     alog->warn("Failed to open threshold calibration file {}", file_name);
-    return;
   }
   else {
     alog->info("Successfully opened threshold calibration file {}", file_name);
@@ -38,7 +42,7 @@ void StarConversionTools::loadDACtoVConversion(std::vector<double> &thrConverted
     float thrConvertedFromFile;
     int narg = sscanf(line,"%d\t%fm",&thrDAC,&thrConvertedFromFile);
     if(narg==2) {    // Expect 2 columns
-      thrConverted[i++]=thrConvertedFromFile * factor;
+      m_thrCal_mV[i++]=thrConvertedFromFile * factor;
     }
     j++;
   }
@@ -50,18 +54,18 @@ void StarConversionTools::loadDACtoVConversion(std::vector<double> &thrConverted
   //}
 }
 
-std::pair<double, double> StarConversionTools::convertDACtoV(const double & thrDAC, const double & err_thrDAC, const std::vector<double> & thrRef_mV){
+std::pair<double, double> StarConversionTools::convertDACtoV(double thrDAC, double err_thrDAC){
 
   int thrBin = (int) thrDAC;
   double thrConverted = -1., err_thrConverted = -1.;
   if((thrBin >= 0) && (thrBin < 256)){
-    if(thrRef_mV[thrBin] > -1.){
+    if(m_thrCal_mV[thrBin] > -1.){
       double remainder = (double)(thrDAC - thrBin);
-      thrConverted = thrRef_mV[thrBin] + (thrRef_mV[thrBin+1] - thrRef_mV[thrBin]) * remainder;
+      thrConverted = m_thrCal_mV[thrBin] + (m_thrCal_mV[thrBin+1] - m_thrCal_mV[thrBin]) * remainder;
       if(thrBin < 128){
-	err_thrConverted = err_thrDAC * (thrRef_mV[thrBin+1] - thrRef_mV[thrBin]);
+	err_thrConverted = err_thrDAC * (m_thrCal_mV[thrBin+1] - m_thrCal_mV[thrBin]);
       } else{
-	err_thrConverted = err_thrDAC * (thrRef_mV[thrBin] - thrRef_mV[thrBin-1]);
+	err_thrConverted = err_thrDAC * (m_thrCal_mV[thrBin] - m_thrCal_mV[thrBin-1]);
       }
     }
   }
