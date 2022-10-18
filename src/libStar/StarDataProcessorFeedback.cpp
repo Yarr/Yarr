@@ -26,6 +26,8 @@ void StarDataProcessorFeedback::process_core() {
         if (curInV == nullptr)
             continue;
 
+        logger->trace("Star packet parsing\n");
+
         // Create Output Container
         std::unique_ptr<FrontEndData> curOut(new FrontEndData(curInV->stat));
 
@@ -70,16 +72,15 @@ void StarDataProcessorFeedback::process_data(RawData &curIn,
 
     PacketType packetType = packet.getType();
     if(packetType == TYP_LP || packetType == TYP_PR){
+        trigger_tag = packet.l0id;
+        auto l1id = packet.l0id;
+        auto bcid = packet.bcid;
+
         if (packet.n_clusters()==0) { //empty packet
-          FeedbackProcessingInfo stat = {.trigger_tag = -1};
+          FeedbackProcessingInfo stat = {.trigger_tag = trigger_tag};
           statusFb->pushData(std::make_unique<FeedbackProcessingInfo>(stat));
           return;
         }
-
-        trigger_tag = packet.l0id;
-
-        auto l1id = packet.l0id;
-        auto bcid = packet.bcid;
 
         curOut.newEvent(trigger_tag, l1id, bcid);
 

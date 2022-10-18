@@ -98,6 +98,7 @@ void StdDataLoopFeedback::execPart2() {
 
         // push data for processing
         for (auto &[id, rdc] : rdcMap) {
+            SPDLOG_LOGGER_DEBUG(sdllog, "\033[1m\033[31m pushData for processing {} {}\033[0m", id, rdc->size());
             rdc->stat.is_end_of_iteration = false;
             keeper->getEntry(id).fe->clipRawData.pushData(std::move(rdc));
         }

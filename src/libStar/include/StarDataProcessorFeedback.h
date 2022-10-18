@@ -17,7 +17,7 @@ class StarDataProcessorFeedback : public StarDataProcessor {
     public:
         void connect(ClipBoard<FeedbackProcessingInfo> *arg_proc_status) override {statusFb = arg_proc_status;}
 
-        void process_core();
+        void process_core() override;
         void process_data(RawData &curIn, FrontEndData &curOut);
 
     private:

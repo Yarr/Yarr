@@ -31,7 +31,7 @@ class StarDataProcessor : public DataProcessor {
         void run() override;
         void join() override;
         void process() override;
-        void process_core();
+        virtual void process_core();
 
     protected:
         ClipBoard<RawDataContainer> *input;
