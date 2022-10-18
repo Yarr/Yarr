@@ -6,6 +6,7 @@ add_library(Star SHARED
         StarChannelFeedback.cpp
         StarChips.cpp
         StarCmd.cpp
+        StarConversionTools.cpp
         StarCounterLoop.cpp
         StarDataProcessor.cpp
 	StarJsonData.cpp
