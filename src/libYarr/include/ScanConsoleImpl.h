@@ -18,6 +18,7 @@
 #include "DBHandler.h"
 
 #include "storage.hpp"
+#include "logging.h"
 
 class ScanConsoleImpl {
 public:
@@ -26,7 +27,6 @@ public:
     int init(ScanOpts options);
     int init(int argc, char *argv[]);
     int init(const std::vector<std::string> &args);
-    static std::vector<std::string> getLog(unsigned n = 0) {return std::vector<std::string>();};
     int loadConfig();
     static int loadConfig(const json &config) {return 0;};
     int loadConfig(const char *config);
@@ -38,6 +38,7 @@ public:
     void cleanup();
     std::string getResults();
     void getResults(json &result);
+    static std::vector<std::string> getLog(std::size_t lim) {return logging::getLog(lim);}
     void run();
     void dump();
     static void setupLogger(const char *config = nullptr);

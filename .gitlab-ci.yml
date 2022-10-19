@@ -17,7 +17,7 @@ job_build_and_test:
       - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
       - cd build
-      - CXXFLAGS=-Werror cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
+      - CXXFLAGS=-Werror cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DENABLE_PYTHON=On
       - make install -j4
       - CTEST_OUTPUT_ON_FAILURE=1 make test
       - export USER=test
@@ -33,6 +33,8 @@ job_build_and_test:
       - if [ "$NUM100" != "26880" ]; then exit 2; fi
       - bin/scanConsole -k
       - bin/test_star configs/controller/emuCfg_star.json -r 0 -t 0
+      - PYTHONPATH=$PWD/lib python3 python/scan_cli_logger.py -r configs/controller/emuCfg_rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json
+
 
 job_build_and_test_out_of_source:
     stage: build
@@ -65,7 +67,7 @@ job_build_all:
       - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
       - cd build
-      - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE
+      - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DENABLE_PYTHON=On
       - make install -j4
       - bin/scanConsole -k
 
