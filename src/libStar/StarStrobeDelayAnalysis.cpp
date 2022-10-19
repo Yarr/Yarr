@@ -217,6 +217,11 @@ void StarStrobeDelayAnalysis::end() {
     }
     alog->debug("  Found optimal strobe delay = {} for chip {}", strobeDelayOpt, iChip);
     upJD->setValForProp({"ABCStar_" + std::to_string(iChip), "OptimalStrobeDelay"}, 0, strobeDelayOpt);   
+
+    // TODO: Write optimal value to STR_DEL in the front end configuration.
+    //       Complicated by working out the mapping from histogram position
+    //       to the right AbcCfg (HccCfg::histoChipMap gets half-way, but
+    //       might need to assume something).
   } // end loop over chips
 
   double leftEdgeMean = hDistLeftEdge->getMean();
