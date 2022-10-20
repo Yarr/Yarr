@@ -71,3 +71,8 @@ std::pair<double, double> StarConversionTools::convertDACtoV(double thrDAC, doub
   //alog->debug("Converted from DAC to mV: {} +/- {} (DAC) -> {} +/- {} (mV)", thrDAC, err_thrDAC, thrConverted, err_thrConverted);
   return std::make_pair(thrConverted, err_thrConverted);
 }
+
+double StarConversionTools::convertBCALtofC(int injDAC) {
+  // BCAL: 9 bits for charge range 0 ~ 10 fC
+  return injDAC * 10. / (1<<9);
+}

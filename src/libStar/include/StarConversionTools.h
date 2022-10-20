@@ -16,6 +16,7 @@ public:
   virtual ~StarConversionTools() = default;
 
   std::pair<double, double> convertDACtoV(double thrDAC, double err_thrDAC);
+  double convertBCALtofC(int injDAC);
 
 private:
 
