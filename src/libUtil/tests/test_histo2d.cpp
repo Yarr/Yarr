@@ -135,8 +135,14 @@ TEST_CASE("Histogram2dOK", "[Histo2d]") {
   testSaveLoad(histo, info);
 }
 
+// Check that the right bins are being selected for the profile
 TEST_CASE("Histogram2dProfile", "[Histo2d]") {
-  Histo2d histo("Histo", 3, 0, 3, 3, 0, 3);
+  size_t check_size = 3;
+
+  auto histo = std::make_unique<Histo2d>("Histo", 3, 0, 3, 3, 0, 3);
+
+  CHECK (histo->getXbinWidth() == 1.0);
+  CHECK (histo->getYbinWidth() == 1.0);
 
   double check = 0.0;
 
@@ -145,18 +151,33 @@ TEST_CASE("Histogram2dProfile", "[Histo2d]") {
 
   SECTION("One Third") {
     check = 1.0/3.0;
-    histo.fill(0, 0, 1.0);
+    histo->fill(0, 0, 1.0);
+    histo->fill(0, 1, 2.0);
+  }
+
+  SECTION("Bigger") {
+    check_size = 128;
+    histo = std::make_unique<Histo2d>("Histo", check_size, 0, check_size, check_size, 0, check_size);
+    check = 1.0;
+    for(int i=0; i<128; i++) {
+      histo->fill(i, 0, 1.0);
+      histo->fill(i, 1, 2.0);
+    }
   }
 
   SECTION("One") {
     check = 1.0;
-    histo.fill(0, 0, 1.0);
-    histo.fill(1, 0, 1.0);
-    histo.fill(2, 0, 1.0);
+    histo->fill(0, 0, 1.0);
+    histo->fill(1, 0, 1.0);
+    histo->fill(2, 0, 1.0);
+    histo->fill(0, 1, 2.0);
+    histo->fill(1, 1, 2.0);
+    histo->fill(2, 1, 2.0);
   }
 
-  auto p = histo.profileY();
+  auto p = histo->profileY();
 
-  CHECK (p->size() == 3);
+  CHECK (p->size() == check_size);
   CHECK (p->getBin(0) == check);
+  CHECK (p->getBin(1) == check * 2);
 }
