@@ -5,6 +5,8 @@
 // # Description: Conversion tools class
 // ################################
 
+#include <fstream>
+
 #include "logging.h"
 
 #include "StarConversionTools.h"
@@ -25,28 +27,25 @@ StarConversionTools::StarConversionTools() {
 StarConversionTools::StarConversionTools(const std::string& file_name) {
   m_thrCal_mV.resize(256, -1.);
 
-  int i = 0, j=0;
-
-  double factor = 1000.0; // Values stored in V, want them in mV
-
-  FILE* DACtoVConversionFile = fopen(file_name.c_str(),"r");
-  if(DACtoVConversionFile == NULL){
+  std::ifstream DACtoVConversionFile(file_name);
+  if(!DACtoVConversionFile){
     alog->warn("Failed to open threshold calibration file {}", file_name);
   }
   else {
     alog->info("Successfully opened threshold calibration file {}", file_name);
   }
-  char line[160 + 1];
-  while((fgets(line,160,DACtoVConversionFile)!=NULL)&&(i<256)&&(j<300)){
-    int thrDAC;
-    float thrConvertedFromFile;
-    int narg = sscanf(line,"%d\t%fm",&thrDAC,&thrConvertedFromFile);
-    if(narg==2) {    // Expect 2 columns
-      m_thrCal_mV[i++]=thrConvertedFromFile * factor;
-    }
-    j++;
+
+  // Expect 2 columns in the file
+  // The first column is threshold in DAC count; the second is threshold in V
+  int thrDAC;
+  float thrConvertedFromFile;
+  double factor = 1000.0; // convert V to mV
+
+  while (DACtoVConversionFile >> thrDAC >> thrConvertedFromFile) {
+    m_thrCal_mV[thrDAC] = thrConvertedFromFile * factor;
   }
-  fclose(DACtoVConversionFile);
+
+  DACtoVConversionFile.close();
 
   //alog->debug("Got threshold calibration from file:");
   //for(unsigned int i=0; i<256; i++){
