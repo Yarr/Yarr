@@ -1,5 +1,6 @@
 #include "catch.hpp"
 
+#include "Histo1d.h"
 #include "Histo2d.h"
 
 struct HistoInfo {
@@ -132,4 +133,30 @@ TEST_CASE("Histogram2dOK", "[Histo2d]") {
   }
 
   testSaveLoad(histo, info);
+}
+
+TEST_CASE("Histogram2dProfile", "[Histo2d]") {
+  Histo2d histo("Histo", 3, 0, 3, 3, 0, 3);
+
+  double check = 0.0;
+
+  // Empty histogram is easy
+  SECTION("Zero") { }
+
+  SECTION("One Third") {
+    check = 1.0/3.0;
+    histo.fill(0, 0, 1.0);
+  }
+
+  SECTION("One") {
+    check = 1.0;
+    histo.fill(0, 0, 1.0);
+    histo.fill(1, 0, 1.0);
+    histo.fill(2, 0, 1.0);
+  }
+
+  auto p = histo.profileY();
+
+  CHECK (p->size() == 3);
+  CHECK (p->getBin(0) == check);
 }
