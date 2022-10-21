@@ -49,7 +49,7 @@ void StarStrobeDelayAnalysis::init(ScanBase *s) {
             m_strobeDelayMax = l->getMax();
             m_strobeDelayMin = l->getMin();
             m_strobeDelayStep = l->getStep();
-            m_strobeDelayBins = (m_strobeDelayMax-m_strobeDelayMin)/m_strobeDelayStep;
+            m_strobeDelayBins = ((m_strobeDelayMax-m_strobeDelayMin)/m_strobeDelayStep) + 1;
         }
 
         if (l->isTriggerLoop()) {
@@ -125,7 +125,7 @@ void StarStrobeDelayAnalysis::processHistogram(HistogramBase *h) {
 
                 // Check if Histogram exists
                 if (m_strobeDelayHistos[ident] == nullptr) {
-                    auto hOccVsSDPerStrip = std::make_unique<Histo1d>(name, m_strobeDelayBins+1, m_strobeDelayMin-((double)m_strobeDelayStep/2.0), m_strobeDelayMax+((double)m_strobeDelayStep/2.0));
+                    auto hOccVsSDPerStrip = std::make_unique<Histo1d>(name, m_strobeDelayBins, m_strobeDelayMin-((double)m_strobeDelayStep/2.0), m_strobeDelayMax+((double)m_strobeDelayStep/2.0));
                     hOccVsSDPerStrip->setXaxisTitle("Strobe Delay");
                     hOccVsSDPerStrip->setYaxisTitle("Occupancy");
                     m_strobeDelayHistos[ident] = std::move(hOccVsSDPerStrip);
@@ -141,7 +141,7 @@ void StarStrobeDelayAnalysis::processHistogram(HistogramBase *h) {
 		unsigned binInChip  = (col-1)%128;
 		if (m_hOccVsStrobeDelayVsChannelPerRow[iChipRow] == nullptr) {
 		  std::string name = "OccVsStrobeDelayVsChanChip" + std::to_string(iChip) + "Row" + std::to_string(row);
-		  auto hOccVsSDVsChPerRow = std::make_unique<Histo2d>(name, 128, 0, 128, m_strobeDelayBins+1, m_strobeDelayMin-((double)m_strobeDelayStep/2.0), m_strobeDelayMax+((double)m_strobeDelayStep/2.0));
+		  auto hOccVsSDVsChPerRow = std::make_unique<Histo2d>(name, 128, 0, 128, m_strobeDelayBins, m_strobeDelayMin-((double)m_strobeDelayStep/2.0), m_strobeDelayMax+((double)m_strobeDelayStep/2.0));
 		  hOccVsSDVsChPerRow->setXaxisTitle("Channel number");
 		  hOccVsSDVsChPerRow->setYaxisTitle("Strobe Delay");
 		  hOccVsSDVsChPerRow->setZaxisTitle("Occupancy");
@@ -174,10 +174,10 @@ void StarStrobeDelayAnalysis::processHistogram(HistogramBase *h) {
 void StarStrobeDelayAnalysis::end() {
 
   // Make histograms of left/right edge for all channels
-  auto hDistLeftEdge = std::make_unique<Histo1d>("LeftEdgeDist", m_strobeDelayBins+1, m_strobeDelayMin-((double)m_strobeDelayStep/2.0), m_strobeDelayMax+((double)m_strobeDelayStep/2.0));
+  auto hDistLeftEdge = std::make_unique<Histo1d>("LeftEdgeDist", m_strobeDelayBins, m_strobeDelayMin-((double)m_strobeDelayStep/2.0), m_strobeDelayMax+((double)m_strobeDelayStep/2.0));
   hDistLeftEdge->setXaxisTitle("Left edge");
   hDistLeftEdge->setYaxisTitle("Number of channels");
-  auto hDistRightEdge = std::make_unique<Histo1d>("RightEdgeDist", m_strobeDelayBins+1, m_strobeDelayMin-((double)m_strobeDelayStep/2.0), m_strobeDelayMax+((double)m_strobeDelayStep/2.0));
+  auto hDistRightEdge = std::make_unique<Histo1d>("RightEdgeDist", m_strobeDelayBins, m_strobeDelayMin-((double)m_strobeDelayStep/2.0), m_strobeDelayMax+((double)m_strobeDelayStep/2.0));
   hDistRightEdge->setXaxisTitle("Right edge");
   hDistRightEdge->setYaxisTitle("Number of channels");
  
@@ -241,7 +241,7 @@ void StarStrobeDelayAnalysis::end() {
 
   // Output occupancy map vs SD vs channel per chip/row
   for (unsigned int row=0; row<2; row++){
-    auto hOccVsSDVsCh = std::make_unique<Histo2d>("OccVsStrobeDelayVsChan_Row" + std::to_string(row), nCol, 0, nCol, m_strobeDelayBins+1,  m_strobeDelayMin-((double)m_strobeDelayStep/2.0), m_strobeDelayMax+((double)m_strobeDelayStep/2.0));
+    auto hOccVsSDVsCh = std::make_unique<Histo2d>("OccVsStrobeDelayVsChan_Row" + std::to_string(row), nCol, 0, nCol, m_strobeDelayBins,  m_strobeDelayMin-((double)m_strobeDelayStep/2.0), m_strobeDelayMax+((double)m_strobeDelayStep/2.0));
     for (unsigned int iChip=0; iChip<(nCol/128); iChip++) {
       auto hOccVsStrobeDelayPerRow = m_hOccVsStrobeDelayVsChannelPerRow[iChip*2 + row]->profileY();
       const unsigned n_par = FIT_N_PAR;
@@ -301,7 +301,7 @@ unsigned StarStrobeDelayAnalysis::findBinPassingThreshold(const Histo1d &h_in, f
     }   
   }else if (goesAbove){             // find first bin which is > y     
     bin = 1;     
-    for(unsigned i=m_strobeDelayBins; i>0; i--){       
+    for(unsigned i=m_strobeDelayBins-1; i>0; i--){       
       if(h_in.getBin(i)>y) bin = i;     
     }   
   }   
