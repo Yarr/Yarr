@@ -80,7 +80,7 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
       // Create Loop objects so they're available to analysis
       scanCfg["scan"]["loops"][0]["loopAction"] = "StdParameterLoop";
       scanCfg["scan"]["loops"][0]["config"]["min"] = 0;
-      scanCfg["scan"]["loops"][0]["config"]["max"] = bin_count;
+      scanCfg["scan"]["loops"][0]["config"]["max"] = bin_count - 1;
       scanCfg["scan"]["loops"][0]["config"]["step"] = 1;
       // scanCfg["scan"]["loops"][0]["config"]["parameter"] = "TEST_PARAM";
 
@@ -162,7 +162,7 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
             CHECK (hh->getXbinWidth() == 1.0);
             CHECK (hh->getYbinWidth() == 1.0);
             CHECK (hh->getXbins() == 128 * chip_count);
-            CHECK (hh->getYbins() == bin_count + 1);
+            CHECK (hh->getYbins() == bin_count);
         } else if(output_name.find("OccVsStrobeDelayVsChanChip") == 0) {
             if(output_name.find("_pfy") != std::string::npos) {
               CHECK (result->getXaxisTitle() == "Strobe Delay");
@@ -187,7 +187,7 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
               CHECK (hh->getXbinWidth() == 1.0);
               CHECK (hh->getYbinWidth() == 1.0);
               CHECK (hh->getXbins() == 128 * chip_count);
-              CHECK (hh->getYbins() == bin_count + 1);
+              CHECK (hh->getYbins() == bin_count);
             }
         } else if(output_name.find("StrobeDelay") == 0) {
             CHECK (result->getXaxisTitle() == "Strobe Delay");
