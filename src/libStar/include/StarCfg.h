@@ -18,6 +18,8 @@
 #include "AbcCfg.h"
 #include "HccCfg.h"
 
+#include "StarConversionTools.h"
+
 /// Represents configuration for one particular Star front-end (HCC + ABCs)
 class StarCfg : public FrontEndCfg {
  public:
@@ -125,6 +127,8 @@ class StarCfg : public FrontEndCfg {
    */
   double toCharge(double vcal, bool sCap, bool lCap) override;
 
+  StarConversionTools &starConversion() { return m_ct; }
+
   /// Set trim DAC based on col/row in histogram
   void setTrimDAC(unsigned col, unsigned row, int value);
 
@@ -203,6 +207,8 @@ class StarCfg : public FrontEndCfg {
   std::tuple<json, std::vector<json>> createConfigSingleFE();
   std::tuple<json, std::vector<json>> createConfigLSStave();
   std::tuple<json, std::vector<json>> createConfigPetal();
+
+  StarConversionTools m_ct;
 };
 
 #endif

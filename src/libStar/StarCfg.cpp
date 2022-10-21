@@ -340,6 +340,10 @@ void StarCfg::loadConfig(const json &j) {
         }
     }
 
+    // Load calibration config for converting BVT and BCAL
+    if (abcs.contains("DACConversion")) {
+        m_ct.loadConfig(abcs["DACConversion"]);
+    }
 
     auto abc_count = numABCs();
 
