@@ -405,10 +405,13 @@ void StarStrobeDelayAnalysis::splitStrobeDelayRange(const Histo1d &h_in, double 
   unsigned plateauCenterBin = (plateauLeftEdge + plateauRightEdge)/2;
   plateauCenter = m_strobeDelayMin + (m_strobeDelayStep * plateauCenterBin);
   alog->debug(" Results of splitting up strobe delay range for {}: plateauLeftEdge = {}, plateauRightEdge = {}, plateauCenterBin = {}, plateauCenter = {}", h_in.getName(), plateauLeftEdge, plateauRightEdge, plateauCenterBin, plateauCenter);
-  strobeDelayVecLeft = {m_strobeDelayVec.begin(), m_strobeDelayVec.begin() + plateauCenterBin-1};
+
+  // Left portion, including the centre bin
+  strobeDelayVecLeft = {m_strobeDelayVec.begin(), m_strobeDelayVec.begin() + plateauCenterBin + 2};
+  // Right portion, including the centre bin
   strobeDelayVecRight = {m_strobeDelayVec.begin() + plateauCenterBin, m_strobeDelayVec.end()};
   auto data = h_in.getData();
-  occVecLeft = {data, data + plateauCenterBin-1};
+  occVecLeft = {data, data + plateauCenterBin + 2};
   occVecRight = {data + plateauCenterBin, data + h_in.size()};
 }
 
