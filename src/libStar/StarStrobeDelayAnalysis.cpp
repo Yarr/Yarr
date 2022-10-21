@@ -120,6 +120,12 @@ void StarStrobeDelayAnalysis::processHistogram(HistogramBase *h) {
     }
 
     m_strobeDelayCnt++;
+
+    if (m_strobeDelayCnt > m_strobeDelayBins) {
+      std::cout << "Received " << m_strobeDelayCnt << " histograms for bins: " << m_strobeDelayBins << "\n";
+      abort();
+    }
+
     for(unsigned col=1; col<=nCol; col++) {
         for (unsigned row=1; row<=nRow; row++) {
 	  unsigned bin = hh->binNum(col, row);
