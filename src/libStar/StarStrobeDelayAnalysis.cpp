@@ -74,6 +74,7 @@ void StarStrobeDelayAnalysis::init(ScanBase *s) {
 void StarStrobeDelayAnalysis::loadConfig(const json &j) {
     m_dumpDebugSDPlots = false;
     m_parametersOfInterest = {};
+    m_sdFraction = 0.57;
 
     if (j.contains("dumpDebugSDPlots")) {
         m_dumpDebugSDPlots = j["dumpDebugSDPlots"];
@@ -82,6 +83,9 @@ void StarStrobeDelayAnalysis::loadConfig(const json &j) {
         for (unsigned i=0; i<j["parametersOfInterest"].size(); i++) {
             m_parametersOfInterest.push_back(j["parametersOfInterest"][i]);
         }
+    }
+    if (j.contains("fractionSD")) {
+        m_sdFraction = j["fractionSD"];
     }
 }
 
@@ -215,7 +219,7 @@ void StarStrobeDelayAnalysis::end() {
     alog->debug("  Found max left edge = {} and min right edge = {} for chip {}", maxLeftEdgeForChip, minRightEdgeForChip, iChip);
     int strobeDelayOpt = -999;
     if (maxLeftEdgeForChip < minRightEdgeForChip){
-      strobeDelayOpt = maxLeftEdgeForChip + 0.57*(minRightEdgeForChip - maxLeftEdgeForChip);
+      strobeDelayOpt = maxLeftEdgeForChip + m_sdFraction*(minRightEdgeForChip - maxLeftEdgeForChip);
     }
     alog->debug("  Found optimal strobe delay = {} for chip {}", strobeDelayOpt, iChip);
     upJD->setValForProp({"ABCStar_" + std::to_string(iChip), "OptimalStrobeDelay"}, 0, strobeDelayOpt);   
