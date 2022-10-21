@@ -72,6 +72,8 @@ void StarStrobeDelayAnalysis::init(ScanBase *s) {
 }
 
 void StarStrobeDelayAnalysis::loadConfig(const json &j) {
+    m_dumpDebugSDPlots = false;
+    m_parametersOfInterest = {};
 
     if (j.contains("dumpDebugSDPlots")) {
         m_dumpDebugSDPlots = j["dumpDebugSDPlots"];
