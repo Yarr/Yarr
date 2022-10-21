@@ -31,9 +31,9 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
     SECTION ("Default") {
     }
 
-    // SECTION ("More chips") {
-    //   chip_count = 2;
-    // }
+    SECTION ("More chips") {
+      chip_count = 2;
+    }
 
     // SECTION ("POI") {
     //   analysisCfg["parametersOfInterest"][0] = "TEST_PARAM";
@@ -101,6 +101,9 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
                                                 nCol, 0.5, nCol + 0.5,
                                                 nRow, 0.5, nRow + 0.5, stat);
 
+        CHECK(hist->getYbins() == nRow);
+        CHECK(hist->getXbins() == nCol);
+
         int val = n_injections * bin_points[i];
 
         for(int c=0; c<nCol; c++) {
@@ -122,6 +125,8 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
 
     REQUIRE (!output.empty());
 
+    int histo_count = 0;
+
     // Do some very basic checks on output
     while(!output.empty()) {
         std::unique_ptr<HistogramBase> result = output.popData();
@@ -129,6 +134,8 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
         auto output_name = result->getName();
 
         CAPTURE (output_name);
+
+        histo_count ++;
 
         if(output_name == "JsonData_StarStrobeDelayResult") {
             CHECK (result->getXaxisTitle() == "x");
@@ -148,9 +155,34 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
             CHECK (jt == output_name);
 
             REQUIRE (j_out.contains("ABCStar_0"));
+            REQUIRE (j_out.contains({"ABCStar_0", "OptimalStrobeDelay"}));
+            REQUIRE (j_out.contains({"ABCStar_0", "OptimalStrobeDelay", "Data"}));
+            CHECK (j_out["ABCStar_0"]["OptimalStrobeDelay"]["Data"][0] == Approx(5.0));
             if(chip_count > 1) {
                 REQUIRE (j_out.contains("ABCStar_1"));
+                REQUIRE (j_out.contains({"ABCStar_1", "OptimalStrobeDelay"}));
+                REQUIRE (j_out.contains({"ABCStar_1", "OptimalStrobeDelay", "Data"}));
+                CHECK (j_out["ABCStar_1"]["OptimalStrobeDelay"]["Data"][0] == Approx(5.0));
             }
+
+            REQUIRE (j_out.contains({"ABCStar_0", "LeftEdge"}));
+            REQUIRE (j_out.contains({"ABCStar_0", "RightEdge"}));
+
+            auto left = j_out["ABCStar_0"]["LeftEdge"];
+            auto right = j_out["ABCStar_0"]["RightEdge"];
+
+            REQUIRE (left.contains("Row0"));
+            REQUIRE (left.contains({"Row0", "Data"}));
+            REQUIRE (right.contains("Row1"));
+            REQUIRE (right.contains({"Row1", "Data"}));
+
+            // For each channel
+            CHECK (left["Row0"]["Data"][0] == 3.0);
+            CHECK (left["Row0"]["Data"][10] == 3.0);
+            CHECK (right["Row0"]["Data"][0] == 8.0);
+            CHECK (right["Row0"]["Data"][10] == 8.0);
+
+            CHECK (j_out["ABCStar_0"]["Width"]["Row0"]["Data"][0] == 5.0);
         } else if(output_name.find("OccVsStrobeDelayVsChan_Row") == 0) {
             CHECK (result->getXaxisTitle() == "Channel number");
             CHECK (result->getYaxisTitle() == "Strobe Delay");
@@ -173,9 +205,7 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
               REQUIRE (hh != nullptr);
 
               // CHECK (hh->getXbinWidth() == 1.0);
-              // CHECK (hh->getYbinWidth() == 1.0);
-              // CHECK (hh->getXbins() == 128 * chip_count);
-              // CHECK (hh->getYbins() == bin_count);
+              CHECK (hh->size() == bin_count);
             } else {
               CHECK (result->getXaxisTitle() == "Channel number");
               CHECK (result->getYaxisTitle() == "Strobe Delay");
@@ -186,7 +216,7 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
 
               CHECK (hh->getXbinWidth() == 1.0);
               CHECK (hh->getYbinWidth() == 1.0);
-              CHECK (hh->getXbins() == 128 * chip_count);
+              CHECK (hh->getXbins() == 128);
               CHECK (hh->getYbins() == bin_count);
             }
         } else if(output_name.find("StrobeDelay") == 0) {
@@ -198,7 +228,7 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
             REQUIRE (hh != nullptr);
 
             // CHECK (hh->binWidth() == 1.0);
-            // CHECK (hh->getXbins() == bin_count);
+            CHECK (hh->size() == bin_count);
         } else if(output_name.find("LeftEdgeDist") == 0) {
             CHECK (result->getXaxisTitle() == "Left edge");
             CHECK (result->getYaxisTitle() == "Number of channels");
@@ -208,7 +238,7 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
             REQUIRE (hh != nullptr);
 
             // CHECK (hh->getXbinWidth() == 1.0);
-            // CHECK (hh->getXbins() == bin_count);
+            CHECK (hh->size() == bin_count);
         } else if(output_name.find("RightEdgeDist") == 0) {
             CHECK (result->getXaxisTitle() == "Right edge");
             CHECK (result->getYaxisTitle() == "Number of channels");
@@ -218,18 +248,23 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
             REQUIRE (hh != nullptr);
 
             // CHECK (hh->getXbinWidth() == 1.0);
-            // CHECK (hh->getXbins() == bin_count);
+            CHECK (hh->size() == bin_count);
         } else {
             // Info about any other data
             CAPTURE (result->getXaxisTitle());
             CAPTURE (result->getYaxisTitle());
             CAPTURE (result->getZaxisTitle());
 
-            logger->error("Extra histo {}", [&]() -> std::string {
+            logger->error("Extra histogram {}: {}", output_name,
+                          [&]() -> std::string {
                 json j; result->toJson(j);
                 std::stringstream ss; ss << j; return ss.str(); }());
 
             CHECK (false);
         }
     }
+
+    // OccVsStrobeDelayVsChanChip0Row1 is per chip (+ profile)
+    // OccVsStrobeDelayVsChan_Row1 is per row
+    CHECK (histo_count == 5 + chip_count * 4);
 }
