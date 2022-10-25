@@ -62,7 +62,7 @@ class Histo2d : public HistogramBase {
         double getMin() const {return min;}
         double getNumOfEntries() const {return entries;}
 
-        Histo1d * profileY();
+        std::unique_ptr<Histo1d> profileY() const;
 
         void toFile(const std::string &filename, const std::string &dir = "", bool header= true) const override;
         bool fromFile(const std::string &filename);

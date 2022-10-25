@@ -409,9 +409,9 @@ void Histo2d::plot(const std::string &prefix, const std::string &dir) const{
 }
 
 
-Histo1d* Histo2d::profileY() {
+std::unique_ptr<Histo1d> Histo2d::profileY() const {
   // Create the profile histogram
-  Histo1d * outH = new Histo1d(getName() + "_pfy", getYbins(), getYlow(), getYhigh());
+  auto outH = std::make_unique<Histo1d>(getName() + "_pfy", getYbins(), getYlow(), getYhigh());
   outH->setXaxisTitle(getYaxisTitle());
  
   // Fill the profile histogram
