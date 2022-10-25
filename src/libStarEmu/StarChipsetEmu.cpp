@@ -675,8 +675,10 @@ void StarChipsetEmu::doL0A(bool bcr, uint8_t l0a_mask, uint8_t l0a_tag) {
           this->countHits(abc, hits);
 
           // form clusters
-          auto abc_clusters = this->getClusters(abc, hits);
-          clusters.push_back(abc_clusters);
+          if (abc.getSubRegisterValue("LP_ENABLE")) {
+            auto abc_clusters = this->getClusters(abc, hits);
+            clusters.push_back(abc_clusters);
+          }
         });
 
       // build and send data packet
@@ -690,18 +692,22 @@ void StarChipsetEmu::doL0A(bool bcr, uint8_t l0a_mask, uint8_t l0a_tag) {
           // L0 address
           auto l0addr = this->getL0BufferAddr(abc, ibc);
 
-          // fill m_evtbuffers_lite
-          int abcId = abc.getABCchipID();
-          if (m_evtbuffers_lite.find(abcId) == m_evtbuffers_lite.end())
-            m_evtbuffers_lite[abcId] = std::array<EvtBufData, EvtBufDepth>();
+          if (abc.getSubRegisterValue("LP_ENABLE")) {
+            // fill m_evtbuffers_lite
+            int abcId = abc.getABCchipID();
+            if (m_evtbuffers_lite.find(abcId) == m_evtbuffers_lite.end())
+              m_evtbuffers_lite[abcId] = std::array<EvtBufData, EvtBufDepth>();
 
-          // event buffer address
-          uint8_t evaddr = (l0a_tag+ibc)%EvtBufDepth;
-          // 8-bit BCID@L0A
-          auto bcidl0 = EvtBufData( (m_bccnt+ibc) & 0xff );
-          m_evtbuffers_lite[abcId][evaddr] = EvtBufData(l0addr)<<8 | bcidl0;
+            // event buffer address
+            uint8_t evaddr = (l0a_tag+ibc)%EvtBufDepth;
+            // 8-bit BCID@L0A
+            auto bcidl0 = EvtBufData( (m_bccnt+ibc) & 0xff );
+            m_evtbuffers_lite[abcId][evaddr] = EvtBufData(l0addr)<<8 | bcidl0;
+          }
 
-          // count hits?
+          // count hits
+          StripData hits = this->getFEData(abc, l0addr).second;
+          this->countHits(abc, hits);
         });
     }
   } // 4 BCs
@@ -735,6 +741,9 @@ void StarChipsetEmu::doPRLP(uint8_t mask, uint8_t l0tag) {
 
   // for each ABC
   m_starCfg->eachAbc([this, l0tag, &bcid, &clusters](auto& abc) {
+      if (not abc.getSubRegisterValue("PR_ENABLE"))
+        return;
+
       int abcId = abc.getABCchipID();
       if (m_evtbuffers_lite.find(abcId) == m_evtbuffers_lite.end()) {
         logger->critical("No event buffer instantiated for chip ID {}", abcId);
