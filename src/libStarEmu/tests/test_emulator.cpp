@@ -117,8 +117,8 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
   // HCC StopHPR on
   std::array<LCB::Frame, 9> writeHCCCmd_StopHPROn = star.write_hcc_register(16, 0x00000001);
   sendCommand(*emu, writeHCCCmd_StopHPROn);
-  // ABC MaskHPR on
-  std::array<LCB::Frame, 9> writeABCCmd_MaskHPROn = star.write_abc_register(32, 0x00000040);
+  // ABC MaskHPR on, also set RRmode, LP Enable, and PR Enable to 1
+  std::array<LCB::Frame, 9> writeABCCmd_MaskHPROn = star.write_abc_register(32, 0x00000740);
   sendCommand(*emu, writeABCCmd_MaskHPROn);
   // ABC StopHPR on
   std::array<LCB::Frame, 9> writeABCCmd_StopHPROn = star.write_abc_register(0, 0x00000004);
@@ -181,7 +181,8 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
 
   SECTION("Mask Registers") {
     // Switch to static test mode: TM = 1
-    std::array<LCB::Frame, 9> writeABCCmd_TM = star.write_abc_register(32, 0x00010040);
+    // (And MaskHPR = 1, LP_Enable = 1, PR_Enable = 1, RRMode = 1)
+    std::array<LCB::Frame, 9> writeABCCmd_TM = star.write_abc_register(32, 0x00010740);
     sendCommand(*emu, writeABCCmd_TM);
 
     // Set mask registers
@@ -201,7 +202,8 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
 
   SECTION("Hit Counters") {
     // Switch to static test mode (TM = 1) and enable hit counters
-    std::array<LCB::Frame, 9> writeABCCmd_TM = star.write_abc_register(32, 0x00010060);
+    // (And MaskHPR = 1, LP_Enable = 0, PR_Enable = 0, RRMode = 1)
+    std::array<LCB::Frame, 9> writeABCCmd_TM = star.write_abc_register(32, 0x00010460);
     sendCommand(*emu, writeABCCmd_TM);
 
     // Set a mask register
@@ -244,7 +246,8 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
 
   SECTION("L0 Latency") {
     // Switch to test pulse mode: TM = 2, TestPulseEnable = 1
-    std::array<LCB::Frame, 9> writeABCCmd_cfg = star.write_abc_register(32, 0x00020050);
+    // (And MaskHPR = 1, LP_Enable = 1, PR_Enable = 1, RRMode = 1)
+    std::array<LCB::Frame, 9> writeABCCmd_cfg = star.write_abc_register(32, 0x00020750);
     sendCommand(*emu, writeABCCmd_cfg);
 
     // Set a mask register so we are expecting a non-empty cluster packet
@@ -570,7 +573,7 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
   sendCommand(*emu, writeHCCCmd_MaskHPR);
   auto writeHCCCmd_StopHPR = star.write_hcc_register(16, 0x00000001);
   sendCommand(*emu, writeHCCCmd_StopHPR);
-  auto writeABCCmd_MaskHPR = star.write_abc_register(32, 0x00000040);
+  auto writeABCCmd_MaskHPR = star.write_abc_register(32, 0x00000740); // Also LPEnable = 1, PREnable = 1, RRmode = 1
   sendCommand(*emu, writeABCCmd_MaskHPR);
   auto writeABCCmd_StopHPR = star.write_abc_register(0, 0x00000004);
   sendCommand(*emu, writeABCCmd_StopHPR);
@@ -697,7 +700,8 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
     emu->writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(0, 0, true));
 
     // Switch to the static test mode (TM = 1)
-    auto writeABCCmd_TM = star.write_abc_register(32, 0x00010040);
+    // (And MaskHPR = 1, LP_Enable = 1, PR_Enable = 1, RRMode = 1)
+    auto writeABCCmd_TM = star.write_abc_register(32, 0x00010740);
     sendCommand(*emu, writeABCCmd_TM);
 
     // Write 0xfffe0000 to MaskInput3 so we will have a non-empty cluster
@@ -798,7 +802,8 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
   sendCommand(*staremu, 2, IdleCmd);
 
   // tx (channel 0)
-  auto writeABCCmd_MaskHPR = star.write_abc_register(32, 0x00000040);
+  // MaskHPR = 1, LP_Enable = 1, PR_Enable = 1, RRMode = 1
+  auto writeABCCmd_MaskHPR = star.write_abc_register(32, 0x00000740);
   sendCommand(*staremu, 0, writeABCCmd_MaskHPR);
   // tx2 (channel 2)
   sendCommand(*staremu, 2, IdleCmd);
@@ -828,7 +833,8 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
   //////////////////////////
   // Start test
   // Switch to test pulse mode: TM = 2, TestPulseEnable = 1
-  auto writeABCCmd_tm = star.write_abc_register(32, 0x00020050);
+  // MaskHPR = 1, LP_Enable = 1, PR_Enable = 1, RRMode = 1
+  auto writeABCCmd_tm = star.write_abc_register(32, 0x00020750);
   sendCommand(*staremu, 0, writeABCCmd_tm);
   sendCommand(*staremu, 2, IdleCmd);
 
