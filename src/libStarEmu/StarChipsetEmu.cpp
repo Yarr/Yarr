@@ -692,18 +692,16 @@ void StarChipsetEmu::doL0A(bool bcr, uint8_t l0a_mask, uint8_t l0a_tag) {
           // L0 address
           auto l0addr = this->getL0BufferAddr(abc, ibc);
 
-          if (abc.getSubRegisterValue("LP_ENABLE")) {
-            // fill m_evtbuffers_lite
-            int abcId = abc.getABCchipID();
-            if (m_evtbuffers_lite.find(abcId) == m_evtbuffers_lite.end())
-              m_evtbuffers_lite[abcId] = std::array<EvtBufData, EvtBufDepth>();
+          // fill m_evtbuffers_lite
+          int abcId = abc.getABCchipID();
+          if (m_evtbuffers_lite.find(abcId) == m_evtbuffers_lite.end())
+            m_evtbuffers_lite[abcId] = std::array<EvtBufData, EvtBufDepth>();
 
-            // event buffer address
-            uint8_t evaddr = (l0a_tag+ibc)%EvtBufDepth;
-            // 8-bit BCID@L0A
-            auto bcidl0 = EvtBufData( (m_bccnt+ibc) & 0xff );
-            m_evtbuffers_lite[abcId][evaddr] = EvtBufData(l0addr)<<8 | bcidl0;
-          }
+          // event buffer address
+          uint8_t evaddr = (l0a_tag+ibc)%EvtBufDepth;
+          // 8-bit BCID@L0A
+          auto bcidl0 = EvtBufData( (m_bccnt+ibc) & 0xff );
+          m_evtbuffers_lite[abcId][evaddr] = EvtBufData(l0addr)<<8 | bcidl0;
 
           // count hits
           StripData hits = this->getFEData(abc, l0addr).second;
@@ -740,9 +738,16 @@ void StarChipsetEmu::doPRLP(uint8_t mask, uint8_t l0tag) {
   uint8_t bcid;
 
   // for each ABC
-  m_starCfg->eachAbc([this, l0tag, &bcid, &clusters](auto& abc) {
-      if (not abc.getSubRegisterValue("PR_ENABLE"))
+  m_starCfg->eachAbc([this, l0tag, isPR, &bcid, &clusters](auto& abc) {
+      if (isPR and not abc.getSubRegisterValue("PR_ENABLE")) {
+        // Skip if a R3 command for PR packets is received but PR_ENABLE is 0
         return;
+      }
+
+      if (not isPR and not abc.getSubRegisterValue("LP_ENABLE")) {
+        // Skip if an L1 command for LP packets is received but LP_ENABLE is 0
+        return;
+      }
 
       int abcId = abc.getABCchipID();
       if (m_evtbuffers_lite.find(abcId) == m_evtbuffers_lite.end()) {
