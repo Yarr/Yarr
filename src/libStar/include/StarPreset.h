@@ -7,10 +7,11 @@
 
 #include <functional>
 
-// For generating example configurations
+/// For generating example configurations
 namespace StarPreset {
   auto logger = logging::make_log("StarPreset");
 
+  /// Unique info about hybrid
   struct HybridInfo {
     std::string name; unsigned hccID; unsigned numABCs;  unsigned offset; unsigned tx; unsigned rx;
   };

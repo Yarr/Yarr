@@ -29,33 +29,53 @@ class StarCfg : public FrontEndCfg {
   //Function to make all Registers for the ABC
   void configure_ABC_Registers(int chipID);
 
-  //Accessor functions
+  /// Return value of HCC register
   uint32_t getHCCRegister(HCCStarRegister addr);
+
+  /// Set value of HCC register
   void     setHCCRegister(HCCStarRegister addr, uint32_t val);
+
+  /// Get value of ABC register (by ABC communications ID)
   uint32_t getABCRegister(ABCStarRegister addr, int32_t chipID );
+
+  /// Set value of ABC register (by ABC communications ID)
   void     setABCRegister(ABCStarRegister addr, uint32_t val, int32_t chipID);
-  // Overload with integer register address
+
+  /// Return value of HCC register (integer version)
   inline const uint32_t getHCCRegister(uint32_t addr) {
     return getHCCRegister(HCCStarRegister::_from_integral(addr));
   }
+
+  /// Set value of HCC register (integer version)
   inline void setHCCRegister(uint32_t addr, uint32_t val) {
     setHCCRegister(HCCStarRegister::_from_integral(addr), val);
   }
+
+  /// Get value of ABC register (by integer address and ABC communications ID)
   inline const uint32_t getABCRegister(uint32_t addr, int32_t chipID ) {
     return getABCRegister(ABCStarRegister(ABCStarRegs::_from_integral(addr)), chipID);
   }
+
+  /// Set value of ABC register (by integer address and ABC communications ID)
   inline void setABCRegister(uint32_t addr, uint32_t val, int32_t chipID) {
     setABCRegister(ABCStarRegister(ABCStarRegs::_from_integral(addr)), val, chipID);
   }
 
+  /// Get the ID used to communicate with this HCC
   unsigned int getHCCchipID(){ return m_hcc.getHCCchipID(); }
+  /// Set the ID used to communicate with this HCC
   void setHCCChipId(unsigned hccID){ m_hcc.setHCCChipId(hccID); }
 
+  /// Get the recorded HCC fuse ID (used to set communication ID)
   const uint32_t getHCCfuseID() const{return m_fuse_id;}
+
+  /// Set the HCC fuse ID used to set communication ID
   void setHCCfuseID(uint32_t fuseID) { m_fuse_id = fuseID; }
 
+  /// Get the ID associated with an ABC
   const unsigned int getABCchipID(unsigned int chipIndex) { return abcFromIndex(chipIndex).getABCchipID(); }
 
+  /// Add new ABC with given communications ID
   void addABCchipID(unsigned int chipID) {
       if (m_ABCchips.size() == 0)
           addABCchipID(chipID, 0);
@@ -64,13 +84,16 @@ class StarCfg : public FrontEndCfg {
           addABCchipID(chipID, m_ABCchips.rbegin()->first +1);
   }
 
+  /// Add new ABC with given communications ID and HCC input channel
   void addABCchipID(unsigned int chipID, unsigned int hccIn) {
       m_ABCchips.emplace(hccIn, m_abc_version);
       m_ABCchips.at(hccIn).setABCChipId(chipID);
   }
 
+  /// Remove all ABCs
   void clearABCchipIDs() { m_ABCchips.clear();}
 
+  /// Set value of named register field (either ABC or HCC)
   void setSubRegisterValue(int chipIndex, std::string subRegName, uint32_t value) {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
       return m_hcc.setSubRegisterValue(subRegName, value);
@@ -82,7 +105,7 @@ class StarCfg : public FrontEndCfg {
     }
   }
 
-
+  /// Get value of named register field (either ABC or HCC)
   uint32_t getSubRegisterValue(int chipIndex, std::string subRegName) {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
       return m_hcc.getSubRegisterValue(subRegName);
@@ -95,6 +118,7 @@ class StarCfg : public FrontEndCfg {
     return 0;
   }
 
+  /// Get register address for named register field (either ABC or HCC)
   int getSubRegisterParentAddr(int chipIndex, std::string subRegName) {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
       return m_hcc.getSubRegisterParentAddr(subRegName);
@@ -106,7 +130,7 @@ class StarCfg : public FrontEndCfg {
     return 0;
   }
 
-
+  /// Get register value for named register field (either ABC or HCC)
   uint32_t getSubRegisterParentValue(int chipIndex, std::string subRegName) {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
       return m_hcc.getSubRegisterParentValue(subRegName);
@@ -142,18 +166,26 @@ class StarCfg : public FrontEndCfg {
   /// Get trim DAC based on col/row in histogram
   int getTrimDAC(unsigned col, unsigned row) const;
 
-
+  /// Save configuration to json
   void writeConfig(json &j) override;
+
+  /// Load configuration fromjson
   void loadConfig(const json &j) override;
 
+  /// Generate set of configuration from template
   std::tuple<json, std::vector<json>> getPreset(const std::string& systemType) override;
 
+  /// How many ABCs are attached
   size_t numABCs() { return m_ABCchips.size(); }
+
+  /// Return highest input channel? of connected ABCs (internal?)
   int highestABC() { 
       if (m_ABCchips.size() == 0)
           return -1;
       return m_ABCchips.rbegin()->first; 
   } 
+
+  /// Return lowest input channel? of connected ABCs (internal?)
   int lowestABC() { 
       if (m_ABCchips.size() == 0)
           return -1;
@@ -167,8 +199,10 @@ class StarCfg : public FrontEndCfg {
     }
   }
 
+  /// Return HCC config
   HccCfg &hcc() { return m_hcc; }
 
+  /// Return HCC input channel for ABC communications ID
   int hccChannelForABCchipID(unsigned int chipID);
 
   StarConversionTools &getStarConversion() {return m_ct;}
