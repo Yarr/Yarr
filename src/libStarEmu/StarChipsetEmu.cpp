@@ -134,9 +134,15 @@ std::vector<uint8_t> StarChipsetEmu::buildPhysicsPacket(
 
   // Todo: error block
 
-  // Fixed 16-bit end of packet cluster pattern
-  data_packets.push_back((endOfPacket>>8) & 0xff);
-  data_packets.push_back(endOfPacket & 0xff);
+  if (data_packets.size() == 2) {
+    // Only the two header bytes. No clusters added from any ABCStars.
+    // return an empty vector;
+    data_packets.clear();
+  } else {
+    // Add the end of packet pattern
+    data_packets.push_back((endOfPacket>>8) & 0xff);
+    data_packets.push_back(endOfPacket & 0xff);
+  }
 
   return data_packets;
 }
@@ -684,7 +690,9 @@ void StarChipsetEmu::doL0A(bool bcr, uint8_t l0a_mask, uint8_t l0a_tag) {
       // build and send data packet
       PacketTypes ptype = PacketTypes::LP;
       std::vector<uint8_t> packet = buildPhysicsPacket(clusters, ptype, l0a_tag+ibc, bcid);
-      sendPacket(packet);
+      if (not packet.empty()) {
+        sendPacket(packet);
+      }
 
     } else { // multi-level trigger
       // for each ABC
@@ -771,7 +779,9 @@ void StarChipsetEmu::doPRLP(uint8_t mask, uint8_t l0tag) {
   // build and send data packet
   PacketTypes ptype = isPR ? PacketTypes::PR : PacketTypes::LP;
   std::vector<uint8_t> packet = buildPhysicsPacket(clusters, ptype, l0tag, bcid);
-  sendPacket(packet);
+  if (not packet.empty()) {
+    sendPacket(packet);
+  }
 }
 
 unsigned int StarChipsetEmu::countTriggers(LCB::Frame frame) {
