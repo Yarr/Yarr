@@ -695,6 +695,18 @@ namespace ScanHelper {
         }
     }
 
+    void listAnalyses() {
+        for(std::string &ana_type: StdDict::listAnalyses()) {
+            std::cout << "  " << ana_type << "\n";
+        }
+    }
+
+    void listHistogrammers() {
+        for(std::string &histo_type: StdDict::listHistogrammers()) {
+            std::cout << "  " << histo_type << "\n";
+        }
+    }
+
     void listScans() {
         for(std::string &scan_name: StdDict::listScans()) {
             std::cout << "  " << scan_name << "\n";
@@ -722,6 +734,12 @@ namespace ScanHelper {
 
         std::cout << " Known Processors:\n";
         listProcessors();
+
+        std::cout << " Known analysis algorithms:\n";
+        listAnalyses();
+
+        std::cout << " Known histogram algorithms:\n";
+        listHistogrammers();
 
         std::cout << " Known Scans:\n";
         listScans();
