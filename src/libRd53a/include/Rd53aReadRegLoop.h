@@ -45,7 +45,16 @@ class Rd53aReadRegLoop : public LoopActionBase {
         void execPart2() override;
         void end() override;
 
-        Rd53aReg Rd53aGlobalCfg::* OscRegisters[8] = {&Rd53a::RingOsc0,&Rd53a::RingOsc1,&Rd53a::RingOsc2,&Rd53a::RingOsc3,&Rd53a::RingOsc4,&Rd53a::RingOsc5,&Rd53a::RingOsc6,&Rd53a::RingOsc7};
+        Rd53aReg Rd53aGlobalCfg::* OscRegisters[8] = {
+                (Rd53aReg Rd53aGlobalCfg::*) &Rd53a::RingOsc0,
+                (Rd53aReg Rd53aGlobalCfg::*) &Rd53a::RingOsc1,
+                (Rd53aReg Rd53aGlobalCfg::*) &Rd53a::RingOsc2,
+                (Rd53aReg Rd53aGlobalCfg::*) &Rd53a::RingOsc3,
+                (Rd53aReg Rd53aGlobalCfg::*) &Rd53a::RingOsc4,
+                (Rd53aReg Rd53aGlobalCfg::*) &Rd53a::RingOsc5,
+                (Rd53aReg Rd53aGlobalCfg::*) &Rd53a::RingOsc6,
+                (Rd53aReg Rd53aGlobalCfg::*) &Rd53a::RingOsc7
+        };
 
 };
 

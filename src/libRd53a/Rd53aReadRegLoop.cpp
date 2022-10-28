@@ -75,7 +75,7 @@ uint16_t Rd53aReadRegLoop::ReadADC(unsigned short Reg,  bool doCur=false,  Rd53a
     tmpFE->confADC(Reg,doCur);
     g_tx->setCmdEnable(keeper->getTxMask());
 
-    uint16_t RegVal =  ReadRegister(&Rd53a::AdcRead, dynamic_cast<Rd53a*>(tmpFE));
+    uint16_t RegVal =  ReadRegister((Rd53aReg Rd53aGlobalCfg::*) &Rd53a::AdcRead, dynamic_cast<Rd53a*>(tmpFE));
 
 
     return RegVal;
