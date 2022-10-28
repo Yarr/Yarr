@@ -295,6 +295,17 @@ void Rd53b::writeNamedRegister(std::string name, uint16_t value) {
     }
 }
 
+uint16_t Rd53b::readNamedRegister(std::string name) {
+    if(regMap.find(name) != regMap.end()) {
+        logger->debug("Read named register {}", name);
+        this->readUpdateWriteReg(regMap[name]);
+        return (this->*regMap[name]).read();
+    } else {
+        logger->error("Trying to read named register, register not found: {}", name);
+    }
+    return 0;
+}
+
 Rd53bReg Rd53bGlobalCfg::*  Rd53b::getNamedRegister(std::string name) {
     if(regMap.find(name) != regMap.end()) {
         return regMap[name];

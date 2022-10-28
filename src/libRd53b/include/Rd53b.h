@@ -54,6 +54,8 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         void writeRegister(Rd53bReg Rd53bGlobalCfg::*ref, uint16_t value);
         void readRegister(Rd53bReg Rd53bGlobalCfg::*ref);
         void writeNamedRegister(std::string name, uint16_t value) override;
+        uint16_t readNamedRegister(std::string name) override;
+        
         Rd53bReg Rd53bGlobalCfg::* getNamedRegister(std::string name);
 
         void setInjCharge(double charge, bool sCap=true, bool lCap=true) override {
@@ -61,8 +63,8 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         }
         
         static std::pair<uint32_t, uint32_t> decodeSingleRegRead(uint32_t higher, uint32_t lower);
-	void readUpdateWriteNamedReg(std::string name) override;
-	void readUpdateWriteReg(Rd53bReg Rd53bGlobalCfg::*ref);
+        void readUpdateWriteNamedReg(std::string name) override;
+        void readUpdateWriteReg(Rd53bReg Rd53bGlobalCfg::*ref);
         uint32_t readSingleRegister(Rd53bReg Rd53bGlobalCfg::*ref);
         
         // perform the necessary steps to program the E-fuse circuitry and perform
