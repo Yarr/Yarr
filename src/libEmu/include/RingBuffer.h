@@ -16,7 +16,7 @@
 
 class RingBuffer  {
 	public:
-		RingBuffer(uint32_t size) {};
+		RingBuffer() = default;
 		~RingBuffer() = default;
 	private:
         std::queue<uint32_t> buffer;
