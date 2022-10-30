@@ -6,7 +6,7 @@
 
 TEST_CASE("RingBufferSimple", "[emu][ring]") {
   const size_t len = 16;
-  RingBuffer rb(len);
+  RingBuffer rb;
 
   CHECK (rb.isEmpty() == true);
   CHECK (rb.getCurSize() == 0);
@@ -31,7 +31,7 @@ TEST_CASE("RingBufferSimple", "[emu][ring]") {
 TEST_CASE("RingBufferThread", "[emu][ring]") {
   const size_t len = 16;
   const size_t send_count = 1600;
-  RingBuffer rb(len);
+  RingBuffer rb;
 
   auto data = [](size_t i) { return (i*i) % 0xffffffff; };
 
@@ -62,7 +62,7 @@ TEST_CASE("RingBufferBlocks", "[emu][ring]") {
   const size_t send_count = len * block_len;
   const size_t receive_count = len;
 
-  RingBuffer rb(len);
+  RingBuffer rb;
 
   auto data = [](size_t i) { return (i*(i+1)) % 0xffffffff; };
 

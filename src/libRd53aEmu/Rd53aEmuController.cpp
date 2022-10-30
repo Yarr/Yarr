@@ -47,10 +47,10 @@ void EmuController<Rd53a, Rd53aEmu>::loadConfig(const json &j) {
   }
 
   // Tx EmuCom
-  tx_coms.emplace_back(new RingBuffer(128));
+  tx_coms.emplace_back(new RingBuffer());
   EmuTxCore<Rd53a>::setCom(0, tx_coms.back().get());
   // Rx EmuCom
-  rx_coms.emplace_back(new RingBuffer(128));
+  rx_coms.emplace_back(new RingBuffer());
   EmuRxCore<Rd53a>::setCom(0, rx_coms.back().get());
 
   auto tx = EmuTxCore<Rd53a>::getCom(0);
