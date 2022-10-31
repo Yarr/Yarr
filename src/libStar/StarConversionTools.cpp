@@ -6,7 +6,7 @@ namespace {
     auto alog = logging::make_log("StarConversionTools");
 }
 
-bool StarConversionTools::loadCalJsonToVec(const json& jcal, std::vector<double>& vec, unsigned length) {
+bool StarConversionTools::loadCalJsonToVec(const json& jcal, std::vector<float>& vec, unsigned length) {
   vec.clear();
 
   if (jcal.is_value_array()) {
@@ -16,11 +16,8 @@ bool StarConversionTools::loadCalJsonToVec(const json& jcal, std::vector<double>
       return false;
     }
 
-    //vec = jcal;
-    vec.resize(length);
-    for (unsigned i=0; i<length; i++) {
-      vec[i] = jcal[i];
-    }
+    vec = jcal;
+
   } else if (jcal.is_object()) {
     // The conversion is expected to be provided as two arrays: "DAC" and "values"
     if (not jcal.contains("DAC")) {
@@ -40,7 +37,7 @@ bool StarConversionTools::loadCalJsonToVec(const json& jcal, std::vector<double>
     }
 
     // make a vector of pairs
-    std::vector<std::pair<int, double>> DACValArr;
+    std::vector<std::pair<int, float>> DACValArr;
     for (unsigned i=0; i<DACArr.size(); i++) {
       DACValArr.push_back(std::make_pair(DACArr[i], valArr[i]));
     }
@@ -117,13 +114,13 @@ void StarConversionTools::writeConfig(json& j) {
 
 }
 
-std::pair<double, double> StarConversionTools::convertDACtomV(double thrDAC, double err_thrDAC){
+std::pair<float, float> StarConversionTools::convertDACtomV(float thrDAC, float err_thrDAC){
 
   int thrBin = (int) thrDAC;
-  double thrConverted = -1., err_thrConverted = -1.;
+  float thrConverted = -1., err_thrConverted = -1.;
   if((thrBin >= 0) && (thrBin < 256)){
     if(convertBVTtomV(thrBin) > -1.){
-      double remainder = (double)(thrDAC - thrBin);
+      float remainder = (float)(thrDAC - thrBin);
       thrConverted = convertBVTtomV(thrBin) + (convertBVTtomV(thrBin+1) - convertBVTtomV(thrBin)) * remainder;
       if(thrBin < 128){
         err_thrConverted = err_thrDAC * (convertBVTtomV(thrBin+1) - convertBVTtomV(thrBin));
@@ -136,8 +133,8 @@ std::pair<double, double> StarConversionTools::convertDACtomV(double thrDAC, dou
   return std::make_pair(thrConverted, err_thrConverted);
 }
 
-double StarConversionTools::convertBVTtomV(unsigned thrDAC) {
-  double thrmV = -1;
+float StarConversionTools::convertBVTtomV(unsigned thrDAC) {
+  float thrmV = -1;
 
   if (m_thrCal.empty()) {
     // Default conversion from BVT to mV if no configuration is provided
@@ -152,8 +149,8 @@ double StarConversionTools::convertBVTtomV(unsigned thrDAC) {
   return thrmV;
 }
 
-double StarConversionTools::convertBCALtofC(unsigned injDAC) {
-  double injfC = -1;
+float StarConversionTools::convertBCALtofC(unsigned injDAC) {
+  float injfC = -1;
 
   if (m_injCal.empty()) {
     // Default conversion from BCAL to fC if no configuration is provided
