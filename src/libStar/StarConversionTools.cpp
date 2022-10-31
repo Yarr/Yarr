@@ -127,7 +127,18 @@ void StarConversionTools::loadConfig(const json& j) {
 }
 
 void StarConversionTools::writeConfig(json& j) {
+  alog->debug("Write StarConversionTools config to json");
 
+  j["BVTtoV"] = m_thrCal;
+
+  j["BCALtoV"] = m_injCal;
+
+  j["ResponseFitFunction"] = m_fitFuncName;
+
+  j["ResponseFitParams"] = json::array();
+  for (const auto& [hccChn, params]: m_fitParams) {
+    j["ResponseFitParams"][hccChn] = params;
+  }
 }
 
 std::pair<float, float> StarConversionTools::convertDACtomV(float thrDAC, float err_thrDAC){

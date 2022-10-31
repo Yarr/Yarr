@@ -227,7 +227,7 @@ void StarCfg::writeConfig(json &j) {
         j["ABCs"]["common"][m.first] = m.second;
     }
 
-    m_ct.writeConfig(j);
+    m_ct.writeConfig(j["Parameters"]);
 }
 
 // No hex in json, so interpret a string
