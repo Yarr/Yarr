@@ -226,6 +226,8 @@ void StarCfg::writeConfig(json &j) {
     for(auto &m: common) {
         j["ABCs"]["common"][m.first] = m.second;
     }
+
+    m_ct.writeConfig(j);
 }
 
 // No hex in json, so interpret a string
@@ -338,11 +340,6 @@ void StarCfg::loadConfig(const json &j) {
                 continue;
             addABCchipID(id, iABC);
         }
-    }
-
-    // Load calibration config for converting BVT and BCAL
-    if (abcs.contains("DACConversion")) {
-        m_ct.loadConfig(abcs["DACConversion"]);
     }
 
     auto abc_count = numABCs();
@@ -520,6 +517,11 @@ void StarCfg::loadConfig(const json &j) {
                 }
             }
         }
+    }
+
+    // Load calibration config for converting BVT and BCAL
+    if (abcs.contains("Parameters")) {
+        m_ct.loadConfig(abcs["Parameters"]);
     }
 }
 

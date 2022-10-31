@@ -127,8 +127,6 @@ class StarCfg : public FrontEndCfg {
    */
   double toCharge(double vcal, bool sCap, bool lCap) override;
 
-  StarConversionTools &starConversion() { return m_ct; }
-
   /// Set trim DAC based on col/row in histogram
   void setTrimDAC(unsigned col, unsigned row, int value);
 
@@ -165,6 +163,8 @@ class StarCfg : public FrontEndCfg {
   HccCfg &hcc() { return m_hcc; }
 
   int hccChannelForABCchipID(unsigned int chipID);
+
+  StarConversionTools &getStarConversion() {return m_ct;}
 
  protected:
   AbcCfg &abcFromChipID(unsigned int chipID) {

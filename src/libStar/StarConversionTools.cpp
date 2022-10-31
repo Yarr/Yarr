@@ -1,12 +1,3 @@
-// #################################
-// # Author: Olivier Arnaez & Elise Le Boulicaut
-// # Email: Olivier Arnaez at cern.ch
-// # Project: Yarr
-// # Description: Conversion tools class
-// ################################
-
-#include <fstream>
-
 #include "logging.h"
 
 #include "StarConversionTools.h"
@@ -15,34 +6,115 @@ namespace {
     auto alog = logging::make_log("StarConversionTools");
 }
 
-void StarConversionTools::loadConfig(const std::string& file_name) {
-  m_thrCal_mV.clear();
-  m_thrCal_mV.resize(256, -1.);
+bool StarConversionTools::loadCalJsonToVec(const json& jcal, std::vector<double>& vec, unsigned length) {
+  vec.clear();
 
-  std::ifstream DACtoVConversionFile(file_name);
-  if(!DACtoVConversionFile){
-    alog->warn("Failed to open threshold calibration file {}", file_name);
+  if (jcal.is_value_array()) {
+    // The conversion is provided as an array
+    if (jcal.size() != length) {
+      alog->error("Array in the config does not have the required length {}", length);
+      return false;
+    }
+
+    //vec = jcal;
+    vec.resize(length);
+    for (unsigned i=0; i<length; i++) {
+      vec[i] = jcal[i];
+    }
+  } else if (jcal.is_object()) {
+    // The conversion is expected to be provided as two arrays: "DAC" and "values"
+    if (not jcal.contains("DAC")) {
+      alog->error("Cannot load config: feild \"DAC\" is not found");
+      return false;
+    }
+    if (not jcal.contains("values")) {
+      alog->error("Cannot load config: field \"values\" is not found");
+      return false;
+    }
+
+    auto& DACArr = jcal["DAC"];
+    auto& valArr = jcal["values"];
+    if (DACArr.size() != valArr.size()) {
+      alog->error("Cannot load config: arrays in \"DAC\" and \"values\" are of different lengths");
+      return false;
+    }
+
+    // make a vector of pairs
+    std::vector<std::pair<int, double>> DACValArr;
+    for (unsigned i=0; i<DACArr.size(); i++) {
+      DACValArr.push_back(std::make_pair(DACArr[i], valArr[i]));
+    }
+
+    unsigned npoints = DACValArr.size();
+    if (npoints > length) {
+      alog->warn("The provided calibration arrays are longer than what is needed. Extra points are ignored.");
+    } else if (npoints < 2) {
+      alog->error("Only {} calibration point is provided. Cannot extrapolate!", DACValArr.size());
+      return false;
+    }
+
+    // Sort based on DAC counts
+    std::sort(DACValArr.begin(), DACValArr.end());
+
+    unsigned iCalPoint = 0;
+    auto calPoint_low = DACValArr[0];
+    auto calPoint_high = DACValArr[1];
+
+    vec.resize(length, -1);
+    for (int dac=0; dac<length; dac++) {
+      if (dac > calPoint_high.first and iCalPoint+2 < npoints) {
+        // Move to the next interval
+        iCalPoint++;
+        calPoint_low = DACValArr[iCalPoint];
+        calPoint_high = DACValArr[iCalPoint+1];
+      }
+
+      // Assign the vector based on linear extrapolations of the provided points
+      vec[dac] = (calPoint_high.second - calPoint_low.second) / (calPoint_high.first - calPoint_low.first) * (dac - calPoint_low.first) + calPoint_low.second;
+    }
   }
-  else {
-    alog->info("Successfully opened threshold calibration file {}", file_name);
+
+  return true;
+}
+
+void StarConversionTools::loadConfig(const json& j) {
+  alog->debug("Load config from json");
+
+  // Threshold
+  if (j.contains("BVTtoV")) {
+    alog->debug("Load \"BVTtoV\"");
+
+    bool loadThr = loadCalJsonToVec(j["BVTtoV"], m_thrCal, NVALBVT);
+    if (not loadThr) {
+      alog->error("Failed to load \"BVTtoV\"");
+      j["BVTtoV"].dump();
+      return;
+    }
   }
 
-  // Expect 2 columns in the file
-  // The first column is threshold in DAC count; the second is threshold in V
-  int thrDAC;
-  float thrConvertedFromFile;
-  double factor = 1000.0; // convert V to mV
-
-  while (DACtoVConversionFile >> thrDAC >> thrConvertedFromFile) {
-    m_thrCal_mV[thrDAC] = thrConvertedFromFile * factor;
+  // Charge injection
+  if (j.contains("BCALtoV")) {
+    alog->debug("Load \"BCALtoV\"");
+    bool loadInj = loadCalJsonToVec(j["BCALtoV"], m_injCal, NVALBCAL);
+    if (not loadInj) {
+      alog->error("Failed to load \"BCALtoV\"");
+      j["BCALtoV"].dump();
+      return;
+    }
   }
 
-  DACtoVConversionFile.close();
+  // Response curve parameters
+  if (j.contains("ResponseFitFunction")) {
+    j["ResponseFitFunction"];
+  }
 
-  //alog->debug("Got threshold calibration from file:");
-  //for(unsigned int i=0; i<256; i++){
-  //alog->debug("{}  {}",i,thrConverted[i]);
-  //}
+  if (j.contains("ResponseFitParams")) {
+    j["ResponseFitParams"];
+  }
+}
+
+void StarConversionTools::writeConfig(json& j) {
+
 }
 
 std::pair<double, double> StarConversionTools::convertDACtomV(double thrDAC, double err_thrDAC){
@@ -64,23 +136,33 @@ std::pair<double, double> StarConversionTools::convertDACtomV(double thrDAC, dou
   return std::make_pair(thrConverted, err_thrConverted);
 }
 
-double StarConversionTools::convertBVTtomV(unsigned BCAL) {
-  double thrmV = -1.;
+double StarConversionTools::convertBVTtomV(unsigned thrDAC) {
+  double thrmV = -1;
 
-  if (m_thrCal_mV.empty()) {
+  if (m_thrCal.empty()) {
     // Default conversion from BVT to mV if no configuration is provided
     // Taken from https://gitlab.cern.ch/atlas-itk-strips-daq/itsdaq-sw/-/blob/master/macros/abc_star/ResponseCurvePlot.cpp#L1343
-    thrmV = 2.7264 * BCAL + 1.041;
+    thrmV = 2.7264 * thrDAC + 1.041;
 
-  } else if (BCAL < m_thrCal_mV.size()) {
+  } else if (thrDAC < m_thrCal.size()) {
     // From the calibration config
-    thrmV = m_thrCal_mV[BCAL];
+    thrmV = m_thrCal[thrDAC] * 1000; // convert V to mV
   }
 
   return thrmV;
 }
 
 double StarConversionTools::convertBCALtofC(unsigned injDAC) {
-  // BCAL: 9 bits for charge range 0 ~ 10 fC
-  return injDAC * 10. / (1<<9);
+  double injfC = -1;
+
+  if (m_injCal.empty()) {
+    // Default conversion from BCAL to fC if no configuration is provided
+    // BCAL: 9 bits for charge range 0 ~ 10 fC
+    injfC = injDAC * 10. / (1<<9);
+  } else if (injDAC < m_injCal.size()) {
+    // Voltage * calibration capacitor
+    injfC = m_injCal[injDAC] * injCapfF;
+  }
+
+  return injfC;
 }
