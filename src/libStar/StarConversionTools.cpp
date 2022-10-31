@@ -11,13 +11,11 @@ bool StarConversionTools::loadCalJsonToVec(const json& jcal, std::vector<float>&
 
   if (jcal.is_value_array()) {
     // The conversion is provided as an array
-    if (jcal.size() != length) {
+    vec = jcal;
+    if (vec.size() != length) {
       alog->error("Array in the config does not have the required length {}", length);
       return false;
     }
-
-    vec = jcal;
-
   } else if (jcal.is_object()) {
     // The conversion is expected to be provided as two arrays: "DAC" and "values"
     if (not jcal.contains("DAC")) {
@@ -102,11 +100,29 @@ void StarConversionTools::loadConfig(const json& j) {
 
   // Response curve parameters
   if (j.contains("ResponseFitFunction")) {
-    j["ResponseFitFunction"];
+    m_fitFuncName = j["ResponseFitFunction"];
+    if (m_fitFuncName == "linear") {
+      m_fitFunction = &FitFunction::linFct;
+    } else if (m_fitFuncName == "polynomial") {
+      m_fitFunction = &FitFunction::polyFct;
+    } else if (m_fitFuncName == "exponential") {
+      m_fitFunction = &FitFunction::expFct;
+    } else {
+      alog->error("Unknown \"ResponseFitFunction\": {}", m_fitFuncName);
+      return;
+    }
   }
 
   if (j.contains("ResponseFitParams")) {
-    j["ResponseFitParams"];
+    unsigned ichip = 0;
+    for (auto& params : j["ResponseFitParams"]) {
+      m_fitParams[ichip];
+      // m_fitParams[ichip] = params; gives an "Unexpected index" exception
+      for (auto& p : params) {
+        m_fitParams[ichip].push_back(p);
+      }
+      ichip++;
+    }
   }
 }
 
@@ -162,4 +178,18 @@ float StarConversionTools::convertBCALtofC(unsigned injDAC) {
   }
 
   return injfC;
+}
+
+float StarConversionTools::response(float threshold, unsigned hccChannel) {
+  // Convert threshold to charge
+  std::vector<float> params;
+
+  try {
+    params = m_fitParams.at(hccChannel);
+  } catch (const std::out_of_range& oor) {
+    alog->error("Response curve parameters for ABCStar on HCCStar input channel {} are not available", hccChannel);
+    return -66;
+  }
+
+  return m_fitFunction(threshold, params.data());
 }

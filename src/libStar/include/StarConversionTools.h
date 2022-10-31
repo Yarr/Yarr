@@ -40,6 +40,8 @@ public:
   float convertBVTtomV(unsigned BVT);
   float convertBCALtofC(unsigned injDAC);
 
+  float response(float threshold, unsigned hccChannel);
+
 private:
 
   bool loadCalJsonToVec(const json& cfg, std::vector<float>& vec, unsigned length);
@@ -53,6 +55,13 @@ private:
   // Charge injection calibration for converting BCAL to V
   std::vector<float> m_injCal;
   float injCapfF {60}; // Capacitance fF of the charge injection capacitor
+
+  // Response curve fit function
+  std::string m_fitFuncName;
+  std::function<float(float, const float *)> m_fitFunction;
+
+  // Fit parameters
+  std::map<unsigned, std::vector<float>> m_fitParams;
 };
 
 #endif
