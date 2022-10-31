@@ -10,6 +10,7 @@ add_executable(testStar
         test_mask_loop.cpp
         test_parser.cpp
         test_trigger_loop.cpp
+        test_conversion_tool.cpp
         )
 target_link_libraries(testStar Yarr)
 add_test(testStar ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/testStar)
