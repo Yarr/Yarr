@@ -22,7 +22,7 @@ Rd53aParameterLoop::Rd53aParameterLoop() : LoopActionBase(LOOP_STYLE_PARAMETER) 
 
 }
 
-Rd53aParameterLoop::Rd53aParameterLoop(Rd53aReg Rd53aGlobalCfg::*ref) : LoopActionBase(LOOP_STYLE_PARAMETER), parPtr(ref) {
+Rd53aParameterLoop::Rd53aParameterLoop(Rd53Reg Rd53aGlobalCfg::*ref) : LoopActionBase(LOOP_STYLE_PARAMETER), parPtr(ref) {
     loopType = typeid(this);
     min = 0;
     max = 100;

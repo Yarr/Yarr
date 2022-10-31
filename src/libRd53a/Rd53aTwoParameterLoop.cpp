@@ -24,7 +24,7 @@ Rd53aTwoParameterLoop::Rd53aTwoParameterLoop() : LoopActionBase(LOOP_STYLE_PARAM
 
 }
 
-Rd53aTwoParameterLoop::Rd53aTwoParameterLoop(Rd53aReg Rd53aGlobalCfg::*ref): LoopActionBase(LOOP_STYLE_PARAMETER), parPtr(ref) {
+Rd53aTwoParameterLoop::Rd53aTwoParameterLoop(Rd53Reg Rd53aGlobalCfg::*ref): LoopActionBase(LOOP_STYLE_PARAMETER), parPtr(ref) {
     loopType = typeid(this);
     min = 0;
     max = 100;
@@ -97,7 +97,7 @@ void Rd53aTwoParameterLoop::end() {
 
 }
 
-void Rd53aTwoParameterLoop::writePar(Rd53aReg Rd53aGlobalCfg::*p, uint32_t m) {
+void Rd53aTwoParameterLoop::writePar(Rd53Reg Rd53aGlobalCfg::*p, uint32_t m) {
     keeper->globalFe<Rd53a>()->writeRegister(p, m);
     while(!g_tx->isCmdEmpty());
     //std::this_thread::sleep_for(std::chrono::milliseconds(20));

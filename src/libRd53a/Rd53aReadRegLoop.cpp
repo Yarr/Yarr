@@ -21,7 +21,7 @@ Rd53aReadRegLoop::Rd53aReadRegLoop() : LoopActionBase(LOOP_STYLE_NOP) {
     m_RingOscRep=1;
 }
 
-uint16_t Rd53aReadRegLoop::ReadRegister(Rd53aReg Rd53aGlobalCfg::*ref,  Rd53a *tmpFE = NULL) {
+uint16_t Rd53aReadRegLoop::ReadRegister(Rd53Reg Rd53aGlobalCfg::*ref, Rd53a *tmpFE = NULL) {
 
     if(tmpFE==NULL)
         tmpFE= keeper->globalFe<Rd53a>();
@@ -75,7 +75,7 @@ uint16_t Rd53aReadRegLoop::ReadADC(unsigned short Reg,  bool doCur=false,  Rd53a
     tmpFE->confADC(Reg,doCur);
     g_tx->setCmdEnable(keeper->getTxMask());
 
-    uint16_t RegVal =  ReadRegister((Rd53aReg Rd53aGlobalCfg::*) &Rd53a::AdcRead, dynamic_cast<Rd53a*>(tmpFE));
+    uint16_t RegVal =  ReadRegister((Rd53Reg Rd53aGlobalCfg::*) &Rd53a::AdcRead, dynamic_cast<Rd53a*>(tmpFE));
 
 
     return RegVal;
@@ -127,7 +127,7 @@ void Rd53aReadRegLoop::init() {
 
     if(m_STDReg.size()==1 && m_STDReg[0]=="All"){
         m_STDReg.clear();
-        for (std::pair<std::string, Rd53aReg Rd53aGlobalCfg::*> tmpMap : keeper->globalFe<Rd53a>()->regMap) {
+        for (std::pair<std::string, Rd53Reg Rd53aGlobalCfg::*> tmpMap : keeper->globalFe<Rd53a>()->regMap) {
             m_STDReg.push_back(tmpMap.first);
         }
     }
