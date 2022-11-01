@@ -13,37 +13,11 @@
 #include <string>
 #include <map>
 #include <cmath>
+#include <Rd53Reg.h>
 
 #include "storage.hpp"
 
-class Rd53aReg {
-public:
-    Rd53aReg() = default;
-    virtual ~Rd53aReg() = default;
-    virtual void write(uint16_t value) = 0;
-    virtual uint16_t read() const = 0;
-
-
-    uint16_t applyMask(uint16_t value) const {
-        unsigned mask = (1<<m_bits)-1;
-        return ((value >> m_bOffset) & mask);
-    }
-
-    unsigned addr() const{
-        return m_addr;
-    }
-
-    unsigned bits() const {
-        return m_bits;
-    }
-     protected:
-        uint16_t *m_cfg = nullptr;
-        unsigned m_bOffset = 0;
-        unsigned m_bits = 9;
-        unsigned m_addr = 999;
-};
-
-class Rd53aRegDefault : public Rd53aReg {
+class Rd53aRegDefault : public Rd53Reg {
     public:
 
         void init(unsigned addr, uint16_t *cfg, const unsigned bOffset, const unsigned bits, const uint16_t value) {
@@ -65,7 +39,7 @@ class Rd53aRegDefault : public Rd53aReg {
         }
 };
 
-class Rd53aDiffReg : public Rd53aReg {
+class Rd53aDiffReg : public Rd53Reg {
     public:
         void init(Rd53aRegDefault *arg_lowRef, Rd53aRegDefault *arg_highRef, bool changeHigh) {
             lowRef = arg_lowRef;
@@ -164,7 +138,7 @@ class Rd53aGlobalCfg {
         void loadConfig(const json &j);
     private:
     public:
-        std::map<std::string, Rd53aReg Rd53aGlobalCfg::*> regMap;
+        std::map<std::string, Rd53Reg Rd53aGlobalCfg::*> regMap;
         //Special diff registers
         Rd53aDiffReg InjVcalDiff;
 

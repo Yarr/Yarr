@@ -17,7 +17,7 @@ Rd53bReadRegLoop::Rd53bReadRegLoop() : LoopActionBase(LOOP_STYLE_NOP)
 }
 
 // TODO this should not be here
-uint16_t Rd53bReadRegLoop::ReadRegister(Rd53bReg Rd53bGlobalCfg::*ref, Rd53b *tmpFE = NULL)
+uint16_t Rd53bReadRegLoop::ReadRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, Rd53b *tmpFE = NULL)
 {
 
     if (tmpFE == NULL)
@@ -194,7 +194,7 @@ void Rd53bReadRegLoop::init()
     if (m_STDReg.size() == 1 && m_STDReg[0] == "All")
     {
         m_STDReg.clear();
-        for (std::pair<std::string, Rd53bReg Rd53bGlobalCfg::*> tmpMap : keeper->globalFe<Rd53b>()->regMap)
+        for (std::pair<std::string, Rd53bRegDefault Rd53bGlobalCfg::*> tmpMap : keeper->globalFe<Rd53b>()->regMap)
         {
             m_STDReg.push_back(tmpMap.first);
         }
