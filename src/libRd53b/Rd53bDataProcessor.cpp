@@ -99,7 +99,7 @@ void Rd53bDataProcessor::join()
 
 void Rd53bDataProcessor::process()
 {
-    logger->info("Started raw data processor thread.");
+    logger->info("Started raw data processor thread for {}.", m_feCfg->getName());
     while (true)
     {
         m_input->waitNotEmptyOrDone();
@@ -116,7 +116,7 @@ void Rd53bDataProcessor::process()
     }
 
     process_core();
-    logger->info("Finished raw data processor thread.");
+    logger->info("Finished raw data processor thread for {}.", m_feCfg->getName());
 }
 
 // Method for retrieving bits from data
@@ -230,7 +230,7 @@ void Rd53bDataProcessor::process_core()
         if (!getNextDataBlock())
             return;
 
-        // Get event tag. TODO: add support of chip ID
+        // Get event tag
         if (unlikely(!(_data[0] >> 31 & 0x1)))
         {
             logger->error("Expect new stream while NS = 0: {}{}. Skipping block...", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
@@ -242,7 +242,7 @@ void Rd53bDataProcessor::process_core()
         // Create a new event
         // RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
         _curOut->newEvent(_tag, _l1id, _bcid);
-        //logger->info("New Stream, New Event: {} ", tag[_channel]);
+        //logger->info("New Stream, New Event: {} ", _tag);
         _events++;
     }
 
@@ -253,15 +253,12 @@ void Rd53bDataProcessor::process_core()
         case INIT:
         case CCOL:
             _status = CCOL;
-            // logger->warn("Read core column");
             // Start from getting core column index
             // This is also the ONLY place where we check end-of-stream. In other places we simply assuming continuation of stream, and will throw an error message if the end of stream is somehow reached.
             if (!retrieve(_ccol, 6, true))
                 return;
-            // if(_debug) std::cout << "Column number: " << HEXF(6, ccol) << std::endl;
         case CCC:
             _status = CCC;
-            // logger->warn("Check core column");
             // End of stream is marked with 0b000000. This is ensured in software in spite of the chip orphan bit configuration
             if (_ccol == 0)
             {
@@ -281,7 +278,7 @@ void Rd53bDataProcessor::process_core()
                 // Create a new event
                 // RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
                 _curOut->newEvent(_tag, _l1id, _bcid);
-                //logger->info("New Stream, New Event: {} ", tag[_channel]);
+                //logger->info("New Stream, New Event: {} ", _tag);
                 _events++;
                 _status = CCOL;
                 continue;
@@ -298,7 +295,7 @@ void Rd53bDataProcessor::process_core()
                 // Create a new event
                 // There is no L1ID and BCID in RD53B data stream. Currently put dummy values
                 _curOut->newEvent(_tag, _l1id, _bcid);
-                //logger->info("Same Stream, New Event: {} ", tag[_channel]);
+                //logger->info("Same Stream, New Event: {} ", _tag);
                 _events++;
                 _status = CCOL;
                 continue;
@@ -385,7 +382,6 @@ void Rd53bDataProcessor::process_core()
                 // Check whether it is precision ToT (PToT) data. PToT data is indicated by unphysical qrow index 196, and it should not be aggregated by the isnext bit
                 if (_qrow[_ccol] == 196 && !(_islast_isneighbor & 0x1))
                 {
-                    // logger->info("Hit: ccol({}) qrow({}) hitmap (0x{:x})) ", ccol, qrow, hitmap);
                     if (!retrieve(_ToT, _LUT_PlainHMap_To_ColRow_ArrSize[_hitmap] << 2))
                         return;
 
@@ -435,8 +431,6 @@ void Rd53bDataProcessor::process_core()
                             const unsigned step = _curOut->lStat.get(maskLoopIndex);
                             const uint16_t pix_col = (_ccol - 1) * 8 + PToT_maskStaging[step % 4][ibus] + 1;
                             const uint16_t pix_row = step / 2 + 1;
-                            // logger->info("Hit: row({}) col({}) tot({}) ", pix_row, pix_col, PToT);
-                            // _curOut[_channel]->curEvent->addHit(pix_row, pix_col, (PToT >> 4) - 1);
 
                             _curOut->curEvent->addHit({pix_col, pix_row, static_cast<uint16_t>(PToT | (PToA << 11))});
                         }
@@ -462,7 +456,6 @@ void Rd53bDataProcessor::process_core()
                         const uint16_t pix_col = ((_ccol - 1) * 8) + (_LUT_PlainHMap_To_ColRow[_hitmap][ihit] >> 4) + 1;
                         const uint16_t pix_row = ((_qrow[_ccol])*2) + (_LUT_PlainHMap_To_ColRow[_hitmap][ihit] & 0xF) + 1;
 
-                        // logger->info("Ccol: {} Qrow: {} col: {} row: {} ToT: {}", _ccol, _qrow, pix_col, pix_row, pix_tot);
                         // For now fill in _events without checking whether the addresses are valid
                         if (_events == 0)
                         {
@@ -473,7 +466,6 @@ void Rd53bDataProcessor::process_core()
                         }
 
                         _curOut->curEvent->addHit({pix_col, pix_row, pix_tot});
-                        // logger->info("Hit: row({}) col({}) tot({}) {}", pix_row, pix_col, pix_tot, _events[_channel]);
                         _hits++;
                     }
                 }
@@ -482,7 +474,6 @@ void Rd53bDataProcessor::process_core()
             }
             _status = ILIN;
         } while (!(_islast_isneighbor & 0x2)); // Need to keep track of block index to make sure it is within the packet while we loop over the hits in the event
-        //logger->info("total number of hits: {}", hits[_channel]);
         _status = CCOL;
     }
 }

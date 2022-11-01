@@ -74,7 +74,7 @@ void Rd53bParMaskLoop::execPart1() {
     
     g_tx->setCmdEnable(keeper->getTxMask());
     g_stat->set(this, m_cur);
-    logger->info(" ---> Mask Stage {} (Activated {} pixels)", m_cur, counter);
+    logger->info(" ---> Mask Stage {} (Activated {} pixels in one Core Column)", m_cur, counter);
 }
 
 void Rd53bParMaskLoop::execPart2() {
