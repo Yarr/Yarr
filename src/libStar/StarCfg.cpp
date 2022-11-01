@@ -342,6 +342,7 @@ void StarCfg::loadConfig(const json &j) {
         }
     }
 
+
     auto abc_count = numABCs();
 
     if( abc_count == 0 ){

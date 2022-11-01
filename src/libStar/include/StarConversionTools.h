@@ -40,7 +40,15 @@ public:
   float convertBVTtomV(unsigned BVT);
   float convertBCALtofC(unsigned injDAC);
 
-  float response(float threshold, unsigned hccChannel);
+  float response(float charge, unsigned hccChannel);
+
+  void setResponseParameters(const std::vector<float>& params, unsigned hccChannel) {
+    m_fitParams[hccChannel] = params;
+  }
+
+  std::vector<float> getResponseParameters(unsigned hccChannel) {
+    return m_fitParams[hccChannel];
+  }
 
 private:
 

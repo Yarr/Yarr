@@ -191,7 +191,7 @@ float StarConversionTools::convertBCALtofC(unsigned injDAC) {
   return injfC;
 }
 
-float StarConversionTools::response(float threshold, unsigned hccChannel) {
+float StarConversionTools::response(float charge, unsigned hccChannel) {
   // Convert threshold to charge
   std::vector<float> params;
 
@@ -202,5 +202,5 @@ float StarConversionTools::response(float threshold, unsigned hccChannel) {
     return -66;
   }
 
-  return m_fitFunction(threshold, params.data());
+  return m_fitFunction(charge, params.data());
 }
