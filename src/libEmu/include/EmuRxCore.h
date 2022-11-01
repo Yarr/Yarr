@@ -78,16 +78,10 @@ EmuCom* EmuRxCore<FE>::getCom(uint32_t chn) {
 
 template<class FE>
 RawDataPtr EmuRxCore<FE>::readData(uint32_t chn) {
-    //std::this_thread::sleep_for(std::chrono::microseconds(1));
-    uint32_t words = this->getCurCount(chn)/sizeof(uint32_t);
     RawDataPtr data;
-    if (words > 0) {
-        data = std::make_shared<RawData>(chn, words);
-        uint32_t *buf = data->getBuf();
-        //for(unsigned i=0; i<words; i++)
-        //    buf[i] = m_com->read32();
-        m_coms[chn]->readBlock32(buf, words);
-    }
+    std::vector<uint32_t> in;
+    m_coms[chn]->readAll(in);
+    data = std::make_shared<RawData>(chn, std::move(in));
     return std::move(data);
 }
 

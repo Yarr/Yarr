@@ -16,18 +16,18 @@
 class Rd53aTwoParameterLoop : public LoopActionBase {
     public:
         Rd53aTwoParameterLoop();
-        Rd53aTwoParameterLoop(Rd53aReg Rd53aGlobalCfg::*ref);
+        Rd53aTwoParameterLoop(Rd53Reg Rd53aGlobalCfg::*ref);
 
         void writeConfig(json &j) override;
         void loadConfig(const json &j) override;
 
 
             private:
-                Rd53aReg Rd53aGlobalCfg::*parPtr{};
+                Rd53Reg Rd53aGlobalCfg::*parPtr{};
                 std::string parName;
                 std::string parCompare;
                 std::vector<std::string> parNameMultiple;
-                void writePar(Rd53aReg Rd53aGlobalCfg::*p, uint32_t m);
+                void writePar(Rd53Reg Rd53aGlobalCfg::*p, uint32_t m);
                 std::vector<unsigned> m_cur;
                 bool multipleParams = false;
                 signed add = 0;

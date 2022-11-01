@@ -7,6 +7,7 @@
 // ################################
 
 #include "Histo2d.h"
+#include "Histo1d.h"
 
 #include <cmath>
 #include <fstream>
@@ -407,3 +408,24 @@ void Histo2d::plot(const std::string &prefix, const std::string &dir) const{
     pclose(gnu);
 }
 
+std::unique_ptr<Histo1d> Histo2d::profileY() const {
+  // Create the profile histogram
+  auto outH = std::make_unique<Histo1d>(getName() + "_pfy", getYbins(), getYlow(), getYhigh());
+  outH->setXaxisTitle(getYaxisTitle());
+ 
+  // Fill the profile histogram
+  for (int ybin = 0; ybin < getYbins(); ybin++) {
+    double bin_y = getYlow() + ybin * getYbinWidth();
+    for (int xbin = 0; xbin < getXbins(); xbin++) {
+      auto bin = xbin+(ybin*xbins);
+      double cxy = getBin(bin);
+      if (cxy)
+	outH->fill( bin_y, cxy );
+    }
+    //Let's divide by the number of bins we profiled
+    unsigned binOnOutH = outH->binNum(bin_y);
+    outH->setBin(binOnOutH, outH->getBin(binOnOutH)/(double)getXbins());
+  }
+ 
+  return outH;
+}

@@ -21,7 +21,7 @@ public:
     };
 
     // 0: sensor enable, 1: path chonice, 2: bias selection
-    Rd53bReg Rd53bGlobalCfg::*TransSensorCfg[3][3] = {
+    Rd53bRegDefault Rd53bGlobalCfg::*TransSensorCfg[3][3] = {
         {&Rd53b::MonSensSldoDigEn, &Rd53b::MonSensSldoDigDem, &Rd53b::MonSensSldoDigSelBias},
         {&Rd53b::MonSensSldoAnaEn, &Rd53b::MonSensSldoAnaDem, &Rd53b::MonSensSldoAnaSelBias},
         {&Rd53b::MonSensAcbEn, &Rd53b::MonSensAcbDem, &Rd53b::MonSensAcbSelBias}};
@@ -56,7 +56,7 @@ private:
     std::vector<std::string> m_TempSensors;
     std::vector<std::string> m_RadSensors;
 
-    uint16_t ReadRegister(Rd53bReg Rd53bGlobalCfg::*ref, Rd53b *tmpFE);
+    uint16_t ReadRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, Rd53b *tmpFE);
     uint16_t ReadADC(unsigned short Reg, bool doCur = false, Rd53b *tmpFE = NULL);
     float ReadNTCTemp(Rd53b *tmpFE, bool in_kelvin = false);
     float ReadTransSensor(Rd53b *tmpFE, TransSensorLocation loc, TransSensorType type, Rd53bCfg::TransSensor sensor, bool in_kelvin = false);
@@ -69,7 +69,7 @@ private:
     void execPart2() override;
     void end() override;
 
-    Rd53bReg Rd53bGlobalCfg::*RingOscBEn[5] = {&Rd53b::RingOscBEnBl, &Rd53b::RingOscBEnBr, &Rd53b::RingOscBEnFf, &Rd53b::RingOscBEnLvt, &Rd53b::RingOscBEnCapA};
+    Rd53bRegDefault Rd53bGlobalCfg::*RingOscBEn[5] = {&Rd53b::RingOscBEnBl, &Rd53b::RingOscBEnBr, &Rd53b::RingOscBEnFf, &Rd53b::RingOscBEnLvt, &Rd53b::RingOscBEnCapA};
 };
 
 #endif
