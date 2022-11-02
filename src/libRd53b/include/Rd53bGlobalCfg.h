@@ -30,12 +30,12 @@ class Rd53bRegDefault : public Rd53Reg {
             this->write(value);
         }
 
-        void write(const uint16_t value) final {
+        void write(const uint16_t value) override {
             unsigned mask = (1<<m_bits)-1;
             *m_cfg = (*m_cfg&(~(mask<<m_bOffset))) | ((value&mask)<<m_bOffset);
         }
 
-        uint16_t read() const final {
+        uint16_t read() const override {
             unsigned mask = (1<<m_bits)-1;
             return ((*m_cfg >> m_bOffset) & mask);
         }
@@ -58,7 +58,7 @@ class Rd53bDiffReg : public Rd53Reg {
 
         }
 
-        void write(const uint16_t value) final {
+        void write(const uint16_t value) override {
             uint16_t highValue = highRef->read();
             uint16_t lowValue = lowRef->read();
             if (m_changeHigh) {
@@ -79,7 +79,7 @@ class Rd53bDiffReg : public Rd53Reg {
 
         }
 
-        uint16_t read() const final {
+        uint16_t read() const override {
             uint16_t lowValue = lowRef->read();
             uint16_t highValue = highRef->read();
             return highValue - lowValue;
@@ -104,13 +104,13 @@ class Rd53bMultiReg : public Rd53Reg {
             }
         }
 
-        void write(const uint16_t value) final {
+        void write(const uint16_t value) override {
             for (auto &reg: regList) {
                 reg->write(value);
             }
         }
 
-        uint16_t read() const final {
+        uint16_t read() const override {
             if (regList.empty()) {
                 return 0;
             }
