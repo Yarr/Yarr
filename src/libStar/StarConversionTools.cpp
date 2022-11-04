@@ -9,13 +9,17 @@ namespace {
 bool StarConversionTools::loadCalJsonToVec(const json& jcal, std::vector<float>& vec, unsigned length) {
   vec.clear();
 
-  if (jcal.is_value_array()) {
+  if (jcal.is_array()) {
     // The conversion is provided as an array
-    vec = jcal;
-    if (vec.size() != length) {
+    if (jcal.size() != length) {
       alog->error("Array in the config does not have the required length {}", length);
       return false;
     }
+
+    for (unsigned i=0; i<jcal.size(); i++) {
+      vec.push_back(jcal[i]);
+    }
+
   } else if (jcal.is_object()) {
     // The conversion is expected to be provided as two arrays: "DAC" and "values"
     if (not jcal.contains("DAC")) {
