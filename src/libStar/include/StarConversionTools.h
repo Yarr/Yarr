@@ -52,17 +52,23 @@ public:
 
 private:
 
-  bool loadCalJsonToVec(const json& cfg, std::vector<float>& vec, unsigned length);
+  bool loadCalJsonToVec(const json& jcal, std::vector<float>& vec, std::vector<std::pair<int,float>>& vec_pair, unsigned length);
 
   static constexpr unsigned NVALBVT = 256;
   static constexpr unsigned NVALBCAL = 512;
 
   // Threshold calibration for converting BVT to V
   std::vector<float> m_thrCal;
+  // A vector of {DAC, value} pair if the calibration is only provided for a few points
+  std::vector<std::pair<int, float>> m_thrCalPoints;
 
   // Charge injection calibration for converting BCAL to V
   std::vector<float> m_injCal;
-  float injCapfF {60}; // Capacitance fF of the charge injection capacitor
+  // A vector of {DAC, value} pair if the calibration is only provided for a few points
+  std::vector<std::pair<int, float>> m_injCalPoints;
+
+  // Capacitance fF of the charge injection capacitor
+  float injCapfF {60};
 
   // Response curve fit function
   std::string m_fitFuncName;

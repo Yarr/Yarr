@@ -6,8 +6,9 @@ namespace {
     auto alog = logging::make_log("StarConversionTools");
 }
 
-bool StarConversionTools::loadCalJsonToVec(const json& jcal, std::vector<float>& vec, unsigned length) {
+bool StarConversionTools::loadCalJsonToVec(const json& jcal, std::vector<float>& vec, std::vector<std::pair<int,float>>& vec_pair, unsigned length) {
   vec.clear();
+  vec_pair.clear();
 
   if (jcal.is_array()) {
     // The conversion is provided as an array
@@ -38,34 +39,33 @@ bool StarConversionTools::loadCalJsonToVec(const json& jcal, std::vector<float>&
       return false;
     }
 
-    // make a vector of pairs
-    std::vector<std::pair<int, float>> DACValArr;
+    // add to the vector of pairs
     for (unsigned i=0; i<DACArr.size(); i++) {
-      DACValArr.push_back(std::make_pair(DACArr[i], valArr[i]));
+      vec_pair.push_back(std::make_pair(DACArr[i], valArr[i]));
     }
 
-    unsigned npoints = DACValArr.size();
+    unsigned npoints = vec_pair.size();
     if (npoints > length) {
       alog->warn("The provided calibration arrays are longer than what is needed. Extra points are ignored.");
     } else if (npoints < 2) {
-      alog->error("Only {} calibration point is provided. Cannot extrapolate!", DACValArr.size());
+      alog->error("Only {} calibration point is provided. Cannot extrapolate!", vec_pair.size());
       return false;
     }
 
     // Sort based on DAC counts
-    std::sort(DACValArr.begin(), DACValArr.end());
+    std::sort(vec_pair.begin(), vec_pair.end());
 
     unsigned iCalPoint = 0;
-    auto calPoint_low = DACValArr[0];
-    auto calPoint_high = DACValArr[1];
+    auto calPoint_low = vec_pair[0];
+    auto calPoint_high = vec_pair[1];
 
     vec.resize(length, -1);
     for (int dac=0; dac<length; dac++) {
       if (dac > calPoint_high.first and iCalPoint+2 < npoints) {
         // Move to the next interval
         iCalPoint++;
-        calPoint_low = DACValArr[iCalPoint];
-        calPoint_high = DACValArr[iCalPoint+1];
+        calPoint_low = vec_pair[iCalPoint];
+        calPoint_high = vec_pair[iCalPoint+1];
       }
 
       // Assign the vector based on linear extrapolations of the provided points
@@ -83,7 +83,7 @@ void StarConversionTools::loadConfig(const json& j) {
   if (j.contains("BVTtoV")) {
     alog->debug("Load \"BVTtoV\"");
 
-    bool loadThr = loadCalJsonToVec(j["BVTtoV"], m_thrCal, NVALBVT);
+    bool loadThr = loadCalJsonToVec(j["BVTtoV"], m_thrCal, m_thrCalPoints, NVALBVT);
     if (not loadThr) {
       alog->error("Failed to load \"BVTtoV\"");
       j["BVTtoV"].dump();
@@ -94,7 +94,7 @@ void StarConversionTools::loadConfig(const json& j) {
   // Charge injection
   if (j.contains("BCALtoV")) {
     alog->debug("Load \"BCALtoV\"");
-    bool loadInj = loadCalJsonToVec(j["BCALtoV"], m_injCal, NVALBCAL);
+    bool loadInj = loadCalJsonToVec(j["BCALtoV"], m_injCal, m_injCalPoints, NVALBCAL);
     if (not loadInj) {
       alog->error("Failed to load \"BCALtoV\"");
       j["BCALtoV"].dump();
@@ -133,9 +133,40 @@ void StarConversionTools::loadConfig(const json& j) {
 void StarConversionTools::writeConfig(json& j) {
   alog->debug("Write StarConversionTools config to json");
 
-  j["BVTtoV"] = m_thrCal;
+  if (not m_thrCalPoints.empty()) {
+    // The original config provides the calibration via two arrays "DAC" and "values"
+    j["BVTtoV"]["DAC"] = json::array();
+    j["BVTtoV"]["values"] = json::array();
 
-  j["BCALtoV"] = m_injCal;
+    for (unsigned p = 0; p < m_thrCalPoints.size(); p++) {
+      j["BVTtoV"]["DAC"][p] = m_thrCalPoints[p].first;
+      j["BVTtoV"]["values"][p] = m_thrCalPoints[p].second;
+    }
+
+  } else {
+    j["BVTtoV"] = json::array();
+
+    for (unsigned i = 0; i < m_thrCal.size(); i++) {
+      j["BVTtoV"][i] = m_thrCal[i];
+    }
+  }
+
+  if (not m_injCalPoints.empty()) {
+    // The original config provides the calibration via two arrays "DAC" and "values"
+    j["BCALtoV"]["DAC"] = json::array();
+    j["BCALtoV"]["values"] = json::array();
+
+    for (unsigned p = 0; p < m_injCalPoints.size(); p++) {
+      j["BCALtoV"]["DAC"][p] = m_injCalPoints[p].first;
+      j["BCALtoV"]["values"][p] = m_injCalPoints[p].second;
+    }
+  } else {
+    j["BCALtoV"] = json::array();
+
+    for (unsigned i = 0; i < m_injCal.size(); i++) {
+      j["BCALtoV"][i] = m_injCal[i];
+    }
+  }
 
   j["ResponseFitFunction"] = m_fitFuncName;
 
