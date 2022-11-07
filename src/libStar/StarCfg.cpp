@@ -227,7 +227,8 @@ void StarCfg::writeConfig(json &j) {
         j["ABCs"]["common"][m.first] = m.second;
     }
 
-    m_ct.writeConfig(j["Parameters"]);
+    auto cfg_ct = j["ABCs"]["Parameters"] = json::object();
+    m_ct.writeConfig(cfg_ct);
 }
 
 // No hex in json, so interpret a string
