@@ -36,7 +36,7 @@ public:
   void loadConfig(const json& cfg);
   void writeConfig(json &j);
 
-  std::pair<float, float> convertDACtomV(float thrDAC, float err_thrDAC);
+  std::pair<float, float> convertBVTtomVwithError(float thrDAC, float err_thrDAC);
   float convertBVTtomV(unsigned BVT);
   float convertBCALtofC(unsigned injDAC);
 

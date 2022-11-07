@@ -176,7 +176,7 @@ void StarConversionTools::writeConfig(json& j) {
   }
 }
 
-std::pair<float, float> StarConversionTools::convertDACtomV(float thrDAC, float err_thrDAC){
+std::pair<float, float> StarConversionTools::convertBVTtomVwithError(float thrDAC, float err_thrDAC){
 
   int thrBin = (int) thrDAC;
   float thrConverted = -1., err_thrConverted = -1.;
