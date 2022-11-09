@@ -113,5 +113,25 @@ TEST_CASE("StarConversionTools", "[star][json]") {
     }
   }
 
+  SECTION("Trim target") {
+    cfg["TrimTarget"] = {
+      { {"BCAL", 10}, {"BVT", {11, 22, 33}} }
+      };
+
+    // std::map of the above trim targets
+    std::map<unsigned, std::map<unsigned, unsigned>> trim_targets {
+      {10, {{0, 11}, {1, 22}, {2, 33}}}
+      };
+
+    ct.loadConfig(cfg);
+
+    REQUIRE(ct.getTrimTarget(10, 0)==11);
+    REQUIRE(ct.getTrimTarget(10) == trim_targets[10]);
+
+    // Change a trim target
+    ct.setTrimTarget(0, {{0, 111},{1,222},{2,333}});
+    REQUIRE(ct.getTrimTarget(0, 1)==222);
+  }
+
   //cfg.dump();
 }

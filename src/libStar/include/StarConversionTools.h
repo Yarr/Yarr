@@ -50,6 +50,22 @@ public:
     return m_fitParams[hccChannel];
   }
 
+  void setTrimTarget(unsigned BCAL, unsigned iABC, unsigned targetBVT) {
+    m_trimTargets[BCAL][iABC] = targetBVT;
+  }
+
+  void setTrimTarget(unsigned BCAL, const std::map<unsigned, unsigned>& targetBVTs) {
+    m_trimTargets[BCAL] = targetBVTs;
+  }
+
+  unsigned getTrimTarget(unsigned BCAL, unsigned iABC) const {
+    return m_trimTargets.at(BCAL).at(iABC);
+  }
+
+  std::map<unsigned, unsigned> getTrimTarget(unsigned BCAL) const {
+    return m_trimTargets.at(BCAL);
+  }
+
 private:
 
   bool loadCalJsonToVec(const json& jcal, std::vector<float>& vec, std::vector<std::pair<int,float>>& vec_pair, unsigned length);
@@ -77,6 +93,9 @@ private:
 
   // Fit parameters
   std::map<unsigned, std::vector<float>> m_fitParams;
+
+  // Trim targets
+  std::map<unsigned, std::map<unsigned, unsigned>> m_trimTargets;
 };
 
 #endif

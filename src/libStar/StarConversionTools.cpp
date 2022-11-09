@@ -81,6 +81,19 @@ bool StarConversionTools::loadCalJsonToVec(const json& jcal, std::vector<float>&
 void StarConversionTools::loadConfig(const json& j) {
   alog->debug("Load config from json");
 
+  // Trim targets
+  if (j.contains("TrimTarget")) {
+    auto& targets = j["TrimTarget"];
+
+    // loop over different charge injections for different trim targets
+    for (const auto& target : j["TrimTarget"]) {
+      unsigned inj = target["BCAL"];
+      for (unsigned iabc = 0; iabc < target["BVT"].size(); iabc++) {
+        m_trimTargets[inj][iabc] = target["BVT"][iabc];
+      }
+    }
+  }
+
   // Threshold
   if (j.contains("BVTtoV")) {
     alog->debug("Load \"BVTtoV\"");
@@ -143,6 +156,17 @@ void StarConversionTools::loadConfig(const json& j) {
 
 void StarConversionTools::writeConfig(json& j) {
   alog->debug("Write StarConversionTools config to json");
+
+  j["TrimTarget"] = json::array();
+  unsigned i_inj = 0;
+  for (const auto& [inj, targets] : m_trimTargets) {
+    j["TrimTarget"][i_inj]["BCAL"] = inj;
+
+    for (const auto& [iabc, thr] : targets) {
+      j["TrimTarget"][i_inj]["BVT"][iabc] = thr;
+    }
+    i_inj++;
+  }
 
   if (not m_thrCalPoints.empty()) {
     // The original config provides the calibration via two arrays "DAC" and "values"
