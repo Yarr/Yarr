@@ -71,6 +71,8 @@ bool StarConversionTools::loadCalJsonToVec(const json& jcal, std::vector<float>&
       // Assign the vector based on linear extrapolations of the provided points
       vec[dac] = (calPoint_high.second - calPoint_low.second) / (calPoint_high.first - calPoint_low.first) * (dac - calPoint_low.first) + calPoint_low.second;
     }
+  } else if (jcal.is_null()) {
+    alog->debug("No calibration is provided. Will use default conversion.");
   }
 
   return true;
@@ -121,7 +123,7 @@ void StarConversionTools::loadConfig(const json& j) {
     unsigned ichip = 0;
     for (auto& params : j["ResponseFitParams"]) {
       m_fitParams[ichip];
-      // m_fitParams[ichip] = params; gives an "Unexpected index" exception
+
       for (auto& p : params) {
         m_fitParams[ichip].push_back(p);
       }
@@ -142,8 +144,7 @@ void StarConversionTools::writeConfig(json& j) {
       j["BVTtoV"]["DAC"][p] = m_thrCalPoints[p].first;
       j["BVTtoV"]["values"][p] = m_thrCalPoints[p].second;
     }
-
-  } else {
+  } else if (not m_thrCal.empty()) {
     j["BVTtoV"] = json::array();
 
     for (unsigned i = 0; i < m_thrCal.size(); i++) {
@@ -160,7 +161,7 @@ void StarConversionTools::writeConfig(json& j) {
       j["BCALtoV"]["DAC"][p] = m_injCalPoints[p].first;
       j["BCALtoV"]["values"][p] = m_injCalPoints[p].second;
     }
-  } else {
+  } else if (not m_injCal.empty()) {
     j["BCALtoV"] = json::array();
 
     for (unsigned i = 0; i < m_injCal.size(); i++) {
@@ -168,11 +169,13 @@ void StarConversionTools::writeConfig(json& j) {
     }
   }
 
-  j["ResponseFitFunction"] = m_fitFuncName;
+  if (not m_fitFuncName.empty()) {
+    j["ResponseFitFunction"] = m_fitFuncName;
 
-  j["ResponseFitParams"] = json::array();
-  for (const auto& [hccChn, params]: m_fitParams) {
-    j["ResponseFitParams"][hccChn] = params;
+    j["ResponseFitParams"] = json::array();
+    for (const auto& [hccChn, params]: m_fitParams) {
+      j["ResponseFitParams"][hccChn] = params;
+    }
   }
 }
 
