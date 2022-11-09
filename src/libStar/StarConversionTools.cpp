@@ -109,10 +109,13 @@ void StarConversionTools::loadConfig(const json& j) {
     m_fitFuncName = j["ResponseFitFunction"];
     if (m_fitFuncName == "linear") {
       m_fitFunction = &FitFunction::linFct;
+      m_fitFuncNPars = 2;
     } else if (m_fitFuncName == "polynomial") {
       m_fitFunction = &FitFunction::polyFct;
+      m_fitFuncNPars = 3;
     } else if (m_fitFuncName == "exponential") {
       m_fitFunction = &FitFunction::expFct;
+      m_fitFuncNPars = 3;
     } else {
       alog->error("Unknown \"ResponseFitFunction\": {}", m_fitFuncName);
       return;
@@ -122,6 +125,12 @@ void StarConversionTools::loadConfig(const json& j) {
   if (j.contains("ResponseFitParams")) {
     unsigned ichip = 0;
     for (auto& params : j["ResponseFitParams"]) {
+      // check number of parameters
+      if (params.size() != m_fitFuncNPars) {
+        alog->error("Fucntion \"{}\" requires {} parameters, but {} parameters are provided for chip in input {}.", m_fitFuncName, m_fitFuncNPars, params.size(), ichip);
+        continue;
+      }
+
       m_fitParams[ichip];
 
       for (auto& p : params) {

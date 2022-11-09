@@ -73,6 +73,7 @@ private:
   // Response curve fit function
   std::string m_fitFuncName;
   std::function<float(float, const float *)> m_fitFunction;
+  unsigned m_fitFuncNPars;
 
   // Fit parameters
   std::map<unsigned, std::vector<float>> m_fitParams;

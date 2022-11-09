@@ -100,6 +100,17 @@ TEST_CASE("StarConversionTools", "[star][json]") {
 
       REQUIRE_THAT(ct.response(5, 0), Catch::Matchers::WithinAbs(3.924, 0.001));
     }
+
+    SECTION("wrong number of parameters") {
+      cfg["ResponseFitFunction"] = "polynomial";
+      cfg["ResponseFitParams"] = {{0.3,0.2}};
+
+      ct.loadConfig(cfg);
+
+      // No fit functions nor parameters are loaded.
+      // Expect an error message and a default return value -66
+      REQUIRE_THAT(ct.response(5, 0), Catch::Matchers::WithinAbs(-66., 0.1));
+    }
   }
 
   //cfg.dump();
