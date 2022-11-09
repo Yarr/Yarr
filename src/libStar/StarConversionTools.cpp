@@ -32,8 +32,8 @@ bool StarConversionTools::loadCalJsonToVec(const json& jcal, std::vector<float>&
       return false;
     }
 
-    auto& DACArr = jcal["DAC"];
-    auto& valArr = jcal["values"];
+    const auto& DACArr = jcal["DAC"];
+    const auto& valArr = jcal["values"];
     if (DACArr.size() != valArr.size()) {
       alog->error("Cannot load config: arrays in \"DAC\" and \"values\" are of different lengths");
       return false;
@@ -44,7 +44,7 @@ bool StarConversionTools::loadCalJsonToVec(const json& jcal, std::vector<float>&
       vec_pair.push_back(std::make_pair(DACArr[i], valArr[i]));
     }
 
-    unsigned npoints = vec_pair.size();
+    const unsigned npoints = vec_pair.size();
     if (npoints > length) {
       alog->warn("The provided calibration arrays are longer than what is needed. Extra points are ignored.");
     } else if (npoints < 2) {
@@ -146,7 +146,7 @@ void StarConversionTools::loadConfig(const json& j) {
   }
 }
 
-void StarConversionTools::writeConfig(json& j) {
+void StarConversionTools::writeConfig(json& j) const {
   alog->debug("Write StarConversionTools config to json");
 
   j["TrimTarget"] = json::array();
@@ -204,7 +204,7 @@ void StarConversionTools::writeConfig(json& j) {
   }
 }
 
-std::pair<float, float> StarConversionTools::convertBVTtomVwithError(float thrDAC, float err_thrDAC){
+std::pair<float, float> StarConversionTools::convertBVTtomVwithError(float thrDAC, float err_thrDAC) const {
 
   int thrBin = (int) thrDAC;
   float thrConverted = -1., err_thrConverted = -1.;
@@ -223,7 +223,7 @@ std::pair<float, float> StarConversionTools::convertBVTtomVwithError(float thrDA
   return std::make_pair(thrConverted, err_thrConverted);
 }
 
-float StarConversionTools::convertBVTtomV(unsigned thrDAC) {
+float StarConversionTools::convertBVTtomV(unsigned thrDAC) const {
   float thrmV = -1;
 
   if (m_thrCal.empty()) {
@@ -239,7 +239,7 @@ float StarConversionTools::convertBVTtomV(unsigned thrDAC) {
   return thrmV;
 }
 
-float StarConversionTools::convertBCALtofC(unsigned injDAC) {
+float StarConversionTools::convertBCALtofC(unsigned injDAC) const {
   float injfC = -1;
 
   if (m_injCal.empty()) {
@@ -254,7 +254,7 @@ float StarConversionTools::convertBCALtofC(unsigned injDAC) {
   return injfC;
 }
 
-float StarConversionTools::convertfCtomV(float charge, unsigned hccChannel) {
+float StarConversionTools::convertfCtomV(float charge, unsigned hccChannel) const {
   // Convert charge in fC to threshold in mV based on the response function
   try {
     auto& params = m_fitParams.at(hccChannel);
@@ -265,7 +265,7 @@ float StarConversionTools::convertfCtomV(float charge, unsigned hccChannel) {
   }
 }
 
-float StarConversionTools::convertmVtofC(float threshold, unsigned hccChannel) {
+float StarConversionTools::convertmVtofC(float threshold, unsigned hccChannel) const {
   // Convert threshold in mV to charge in fC based on the inverse of the response function
   try {
     auto& params = m_fitParams.at(hccChannel);

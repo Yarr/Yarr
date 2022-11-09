@@ -49,14 +49,14 @@ public:
   virtual ~StarConversionTools() = default;
 
   void loadConfig(const json& cfg);
-  void writeConfig(json &j);
+  void writeConfig(json &j) const;
 
-  std::pair<float, float> convertBVTtomVwithError(float thrDAC, float err_thrDAC);
-  float convertBVTtomV(unsigned BVT);
-  float convertBCALtofC(unsigned injDAC);
+  std::pair<float, float> convertBVTtomVwithError(float thrDAC, float err_thrDAC) const;
+  float convertBVTtomV(unsigned BVT) const;
+  float convertBCALtofC(unsigned injDAC) const;
 
-  float convertfCtomV(float charge, unsigned hccChannel);
-  float convertmVtofC(float threshold, unsigned hccChannel);
+  float convertfCtomV(float charge, unsigned hccChannel) const;
+  float convertmVtofC(float threshold, unsigned hccChannel) const;
 
   void setResponseFunction(const std::string& functionName);
   std::string getResponseFunctionName() const {return m_fitFuncName;}
