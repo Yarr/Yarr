@@ -119,18 +119,10 @@ void StarConversionTools::loadConfig(const json& j) {
 
   // Response curve parameters
   if (j.contains("ResponseFitFunction")) {
-    m_fitFuncName = j["ResponseFitFunction"];
-    if (m_fitFuncName == "linear") {
-      m_fitFunction = &FitFunction::linFct;
-      m_fitFuncNPars = 2;
-    } else if (m_fitFuncName == "polynomial") {
-      m_fitFunction = &FitFunction::polyFct;
-      m_fitFuncNPars = 3;
-    } else if (m_fitFuncName == "exponential") {
-      m_fitFunction = &FitFunction::expFct;
-      m_fitFuncNPars = 3;
-    } else {
-      alog->error("Unknown \"ResponseFitFunction\": {}", m_fitFuncName);
+    try {
+      setResponseFunction(j["ResponseFitFunction"]);
+    } catch (const std::exception &e) {
+      alog->error("Failed to set response fit function. {}", e.what());
       return;
     }
   }
@@ -262,16 +254,77 @@ float StarConversionTools::convertBCALtofC(unsigned injDAC) {
   return injfC;
 }
 
-float StarConversionTools::response(float charge, unsigned hccChannel) {
-  // Convert threshold to charge
-  std::vector<float> params;
-
+float StarConversionTools::convertfCtomV(float charge, unsigned hccChannel) {
+  // Convert charge in fC to threshold in mV based on the response function
   try {
-    params = m_fitParams.at(hccChannel);
+    auto& params = m_fitParams.at(hccChannel);
+    return m_fitFunction(charge, params.data());
   } catch (const std::out_of_range& oor) {
     alog->error("Response curve parameters for ABCStar on HCCStar input channel {} are not available", hccChannel);
     return -66;
   }
-
-  return m_fitFunction(charge, params.data());
 }
+
+float StarConversionTools::convertmVtofC(float threshold, unsigned hccChannel) {
+  // Convert threshold in mV to charge in fC based on the inverse of the response function
+  try {
+    auto& params = m_fitParams.at(hccChannel);
+    return m_fitFunction_inv(threshold, params.data());
+  } catch (const std::out_of_range& oor) {
+    alog->error("Response curve parameters for ABCStar on HCCStar input channel {} are not available", hccChannel);
+    return -66;
+  }
+}
+
+void StarConversionTools::setResponseFunction(const std::string& functionName) {
+  try {
+    m_fitFunction = responseFunctions.at(functionName);
+    m_fitFunction_inv =  responseFunctions_inv.at(functionName);
+    m_fitFuncNPars = funcNParams.at(functionName);
+    m_fitFuncName = functionName;
+    alog->debug("Set response fit function to {}", functionName);
+  } catch (const std::out_of_range& oor) {
+    alog->error("Unknown \"ResponseFitFunction\": {}", m_fitFuncName);
+    // Let the caller handle the exception
+    throw;
+  }
+}
+
+void StarConversionTools::setResponseParameters(const std::string& functionName, const std::vector<float>& params, unsigned hccChannel) {
+  if (functionName != m_fitFuncName) {
+    if (not m_fitFuncName.empty()) {
+      alog->warn("Fit function will be changed from {} to {}", m_fitFuncName, functionName);
+    }
+
+    try {
+      setResponseFunction(functionName);
+    } catch (const std::exception &e) {
+      alog->error("Failed to set response fit function and parameters. {}", e.what());
+      return;
+    }
+  }
+
+  // Check if the number of parameters matches the function requirement
+  if (params.size() != m_fitFuncNPars) {
+    alog->error("Failed to set the function parameters: the required number of parameters is {}, but {} are provided.", m_fitFuncNPars, params.size());
+    return;
+  }
+
+  m_fitParams[hccChannel] = params;
+}
+
+const std::map<std::string, StarConversionTools::RespFuncT> StarConversionTools::responseFunctions {
+  {"linear", &StarFitFunction::linFct},
+  {"polynomial", &StarFitFunction::polyFct},
+  {"exponential", &StarFitFunction::expFct}
+};
+
+const std::map<std::string, StarConversionTools::RespFuncT> StarConversionTools::responseFunctions_inv {
+  {"linear", &StarFitFunction::linFct_inv},
+  {"polynomial", &StarFitFunction::polyFct_inv},
+  {"exponential", &StarFitFunction::expFct_inv}
+};
+
+const std::map<std::string, unsigned> StarConversionTools::funcNParams {
+  {"linear", 2}, {"polynomial", 3}, {"exponential", 3}
+};

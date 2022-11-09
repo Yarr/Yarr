@@ -11,10 +11,11 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <cmath>
 
 #include "storage.hpp"
 
-namespace FitFunction {
+namespace StarFitFunction {
   inline float linFct(float x, const float *par){
     return par[0] + x*par[1];
   }
@@ -25,6 +26,20 @@ namespace FitFunction {
 
   inline float expFct(float x, const float *par){
     return par[2] + par[0] / (1 + exp(-x / par[1]));
+  }
+
+  // Inverse of the above functions
+  inline float linFct_inv(float y, const float *par){
+    return (y - par[0]) / par[1];
+  }
+
+  inline float polyFct_inv(float y, const float *par){
+    // always take the root with the positive sign
+    return ( std::sqrt( par[1]*par[1] - 4.0*par[2]*(par[0]-y) ) - par[1] ) / ( 2.0*par[2] );
+  }
+
+  inline float expFct_inv(float y, const float *par){
+    return -par[1] * std::log( par[0]/(y - par[2]) - 1);
   }
 }
 
@@ -40,14 +55,16 @@ public:
   float convertBVTtomV(unsigned BVT);
   float convertBCALtofC(unsigned injDAC);
 
-  float response(float charge, unsigned hccChannel);
+  float convertfCtomV(float charge, unsigned hccChannel);
+  float convertmVtofC(float threshold, unsigned hccChannel);
 
-  void setResponseParameters(const std::vector<float>& params, unsigned hccChannel) {
-    m_fitParams[hccChannel] = params;
-  }
+  void setResponseFunction(const std::string& functionName);
+  std::string getResponseFunctionName() const {return m_fitFuncName;}
 
-  std::vector<float> getResponseParameters(unsigned hccChannel) {
-    return m_fitParams[hccChannel];
+  void setResponseParameters(const std::string& functionName, const std::vector<float>& params, unsigned hccChannel);
+
+  std::pair<std::string, std::vector<float>> getResponseParameters(unsigned hccChannel) const {
+    return std::make_pair(m_fitFuncName, m_fitParams.at(hccChannel));
   }
 
   void setTrimTarget(unsigned BCAL, unsigned iABC, unsigned targetBVT) {
@@ -65,6 +82,12 @@ public:
   std::map<unsigned, unsigned> getTrimTarget(unsigned BCAL) const {
     return m_trimTargets.at(BCAL);
   }
+
+  using RespFuncT = std::function<float(float, const float *)>;
+
+  static const std::map<std::string, RespFuncT> responseFunctions;
+  static const std::map<std::string, RespFuncT> responseFunctions_inv;
+  static const std::map<std::string, unsigned> funcNParams;
 
 private:
 
@@ -88,7 +111,8 @@ private:
 
   // Response curve fit function
   std::string m_fitFuncName;
-  std::function<float(float, const float *)> m_fitFunction;
+  RespFuncT m_fitFunction;
+  RespFuncT m_fitFunction_inv;
   unsigned m_fitFuncNPars;
 
   // Fit parameters

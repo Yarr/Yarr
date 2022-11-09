@@ -19,7 +19,7 @@ TEST_CASE("StarConversionTools", "[star][json]") {
 
     // Response
     // No fit parameters are loaded. Expect an error message and a default return value -66
-    REQUIRE_THAT(ct.response(42, 10), Catch::Matchers::WithinAbs(-66., 0.1));
+    REQUIRE_THAT(ct.convertfCtomV(42, 10), Catch::Matchers::WithinAbs(-66., 0.1));
   }
 
   SECTION("BVTtoV") {
@@ -78,9 +78,14 @@ TEST_CASE("StarConversionTools", "[star][json]") {
 
       ct.loadConfig(cfg);
 
-      REQUIRE_THAT(ct.response(66, 0), Catch::Matchers::WithinAbs(13.3, 0.001));
-      REQUIRE_THAT(ct.response(66, 1), Catch::Matchers::WithinAbs(26.7, 0.001));
-      REQUIRE_THAT(ct.response(66, 2), Catch::Matchers::WithinAbs(40.1, 0.001));
+      REQUIRE_THAT(ct.convertfCtomV(66, 0), Catch::Matchers::WithinAbs(13.3, 0.001));
+      REQUIRE_THAT(ct.convertfCtomV(66, 1), Catch::Matchers::WithinAbs(26.7, 0.001));
+      REQUIRE_THAT(ct.convertfCtomV(66, 2), Catch::Matchers::WithinAbs(40.1, 0.001));
+
+      // inverse
+      REQUIRE_THAT(ct.convertmVtofC(13.3, 0), Catch::Matchers::WithinAbs(66, 0.001));
+      REQUIRE_THAT(ct.convertmVtofC(26.7, 1), Catch::Matchers::WithinAbs(66, 0.001));
+      REQUIRE_THAT(ct.convertmVtofC(40.1, 2), Catch::Matchers::WithinAbs(66, 0.001));
     }
 
     SECTION("polynomial") {
@@ -89,7 +94,10 @@ TEST_CASE("StarConversionTools", "[star][json]") {
 
       ct.loadConfig(cfg);
 
-      REQUIRE_THAT(ct.response(5, 0), Catch::Matchers::WithinAbs(3.8, 0.001));
+      REQUIRE_THAT(ct.convertfCtomV(5, 0), Catch::Matchers::WithinAbs(3.8, 0.001));
+
+      // inverse
+      REQUIRE_THAT(ct.convertmVtofC(3.8, 0), Catch::Matchers::WithinAbs(5, 0.001));
     }
 
     SECTION("exponential") {
@@ -98,7 +106,10 @@ TEST_CASE("StarConversionTools", "[star][json]") {
 
       ct.loadConfig(cfg);
 
-      REQUIRE_THAT(ct.response(5, 0), Catch::Matchers::WithinAbs(3.924, 0.001));
+      REQUIRE_THAT(ct.convertfCtomV(5, 0), Catch::Matchers::WithinAbs(3.924, 0.001));
+
+      // inverse
+      REQUIRE_THAT(ct.convertmVtofC(3.924, 0), Catch::Matchers::WithinAbs(5, 0.01));
     }
 
     SECTION("wrong number of parameters") {
@@ -109,7 +120,7 @@ TEST_CASE("StarConversionTools", "[star][json]") {
 
       // No fit functions nor parameters are loaded.
       // Expect an error message and a default return value -66
-      REQUIRE_THAT(ct.response(5, 0), Catch::Matchers::WithinAbs(-66., 0.1));
+      REQUIRE_THAT(ct.convertfCtomV(5, 0), Catch::Matchers::WithinAbs(-66., 0.1));
     }
   }
 
