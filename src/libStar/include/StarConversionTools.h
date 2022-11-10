@@ -46,7 +46,7 @@ namespace StarFitFunction {
 class StarConversionTools {
 public:
   StarConversionTools() = default;
-  virtual ~StarConversionTools() = default;
+  ~StarConversionTools() = default;
 
   void loadConfig(const json& cfg);
   void writeConfig(json &j) const;
