@@ -292,10 +292,6 @@ void StarConversionTools::setResponseFunction(const std::string& functionName) {
 
 void StarConversionTools::setResponseParameters(const std::string& functionName, const std::vector<float>& params, unsigned hccChannel) {
   if (functionName != m_fitFuncName) {
-    if (not m_fitFuncName.empty()) {
-      alog->warn("Fit function will be changed from {} to {}", m_fitFuncName, functionName);
-    }
-
     try {
       setResponseFunction(functionName);
     } catch (const std::exception &e) {
