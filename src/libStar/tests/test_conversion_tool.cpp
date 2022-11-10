@@ -18,8 +18,8 @@ TEST_CASE("StarConversionTools", "[star][json]") {
     REQUIRE_THAT(ct.convertBCALtofC(100), Catch::Matchers::WithinAbs(1.953125, 1e-7));
 
     // Response
-    // No fit parameters are loaded. Expect an error message and a default return value -66
-    REQUIRE_THAT(ct.convertfCtomV(42, 10), Catch::Matchers::WithinAbs(-66., 0.1));
+    // No fit parameters are loaded. Expect an error message and an exception
+    REQUIRE_THROWS_AS(ct.convertfCtomV(42, 10), std::out_of_range);
   }
 
   SECTION("BVTtoV") {
@@ -118,9 +118,9 @@ TEST_CASE("StarConversionTools", "[star][json]") {
 
       ct.loadConfig(cfg);
 
-      // No fit functions nor parameters are loaded.
-      // Expect an error message and a default return value -66
-      REQUIRE_THAT(ct.convertfCtomV(5, 0), Catch::Matchers::WithinAbs(-66., 0.1));
+      // Fit function is set but function parameters are not loaded.
+      // Expect an error message and an exception
+      REQUIRE_THROWS_AS(ct.convertfCtomV(5, 0), std::out_of_range);
     }
   }
 

@@ -261,7 +261,7 @@ float StarConversionTools::convertfCtomV(float charge, unsigned hccChannel) cons
     return m_fitFunction(charge, params.data());
   } catch (const std::out_of_range& oor) {
     alog->error("Response curve parameters for ABCStar on HCCStar input channel {} are not available", hccChannel);
-    return -66;
+    throw;
   }
 }
 
@@ -272,7 +272,7 @@ float StarConversionTools::convertmVtofC(float threshold, unsigned hccChannel) c
     return m_fitFunction_inv(threshold, params.data());
   } catch (const std::out_of_range& oor) {
     alog->error("Response curve parameters for ABCStar on HCCStar input channel {} are not available", hccChannel);
-    return -66;
+    throw;
   }
 }
 
