@@ -74,7 +74,7 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         uint32_t readEfusesRaw();
 
         void runRingOsc(uint16_t duration, bool isBankB);
-        void confAdc(uint16_t MONMUX, bool doCur = false);
+        void confAdc(uint16_t MONMUX, bool doCur = false) override;
     protected:
     private:
 };
