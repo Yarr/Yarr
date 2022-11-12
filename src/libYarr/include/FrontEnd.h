@@ -51,6 +51,8 @@ class FrontEnd {
         virtual void writeNamedRegister(std::string name, uint16_t value) = 0;
         /// Reads a named register and returns the value of it
         virtual uint16_t readNamedRegister(std::string name) {return 0;}
+        /// Configures ADC
+        virtual void confAdc(uint16_t MONMUX, bool doCur) {}
         
         virtual void setInjCharge(double, bool, bool) = 0;
 
