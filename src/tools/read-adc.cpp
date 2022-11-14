@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////
-// A utility to read ADC counts of specific vmux 
+// A utility to read ADC of specific vmux 
 // Based on read-register tool
 //
 // author: Emily Thompson
@@ -24,7 +24,7 @@ namespace fs = std::filesystem;
 #include "ScanHelper.h" // openJson
 
 void print_usage(char* argv[]) {
-    std::cerr << " read-adc-counts" << std::endl;
+    std::cerr << " read-adc" << std::endl;
     std::cerr << std::endl;
     std::cerr << " Usage: " << argv[0] << " [options] MonitorV" << std::endl;
     std::cerr << " Options:" << std::endl;
@@ -33,6 +33,7 @@ void print_usage(char* argv[]) {
     std::cerr << "   -i          Position of chip in connectivity file chips list, starting from 0 (default: all chips)" << std::endl;
     std::cerr << "   -n          Chip name (if given will override use of chip index)" << std::endl;
     std::cerr << "   -I          Measure current through vmux pad" << std::endl;
+    std::cerr << "   -R          Return raw ADC count" << std::endl;
     std::cerr << "   -h|--help   Print this help message and exit" << std::endl;
     std::cerr << std::endl;
 }
@@ -70,9 +71,10 @@ int main(int argc, char* argv[]) {
     uint16_t monitorV = 0; 
     bool use_chip_name = false;
     bool meas_curr = false;
+    bool return_count = false;
 
     int c = 0;
-    while (( c = getopt(argc, argv, "r:c:i:n:Ih")) != -1) {
+    while (( c = getopt(argc, argv, "r:c:i:n:IRh")) != -1) {
         switch (c) {
             case 'r' :
                 hw_controller_filename = optarg;
@@ -97,6 +99,9 @@ int main(int argc, char* argv[]) {
                 return 0;
             case 'I' :
 		meas_curr = true;
+                break;
+            case 'R' :
+		return_count = true;
                 break;
             default :
                 std::cerr << "Invalid option '" << c << "' supplied, aborting" << std::endl;
@@ -167,7 +172,9 @@ int main(int argc, char* argv[]) {
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
                 fe->confAdc(monitorV, meas_curr);
                 uint16_t res = fe->readNamedRegister("MonitoringDataAdc");
-                std::cout << res << std::endl;
+		if (return_count) std::cout << res << std::endl;
+		else if (meas_curr) std::cout << cfg->adcToI(res)/1e-6 << " uA" << std::endl;
+		else std::cout << cfg->adcToV(res) << " V " << std::endl;
             }
         } else {
             if (current_chip_name == chip_name) {
@@ -177,7 +184,9 @@ int main(int argc, char* argv[]) {
                 fe->confAdc(monitorV, meas_curr);
                 fe->readUpdateWriteNamedReg("MonitoringDataAdc");
                 uint16_t res = fe->readNamedRegister("MonitoringDataAdc");
-                std::cout << res << std::endl;
+		if (return_count) std::cout << res << std::endl;
+		else if (meas_curr) std::cout << cfg->adcToI(res)/1e-6 << " uA" << std::endl;
+		else std::cout << cfg->adcToV(res) << " V " << std::endl;
             }
         }
     }

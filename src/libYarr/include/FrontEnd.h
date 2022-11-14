@@ -53,7 +53,7 @@ class FrontEnd {
         virtual uint16_t readNamedRegister(std::string name) {return 0;}
         /// Configures ADC
         virtual void confAdc(uint16_t MONMUX, bool doCur) {}
-        
+
         virtual void setInjCharge(double, bool, bool) = 0;
 
         // Clipboards to buffer data
@@ -94,6 +94,10 @@ class FrontEndCfg {
         std::string getName() {return name;}
         bool checkChipIdInName() { return enforceChipIdInName; }
 
+        // Convert ADC counts to current
+	virtual float adcToI(uint16_t ADC) {return 0.0;} 
+        // Convert ADC counts to voltage
+	virtual float adcToV(uint16_t ADC) {return 0.0;} 
         
         void setChannel(unsigned channel) {txChannel = channel; rxChannel = channel;}
 		void setChannel(unsigned arg_txChannel, unsigned arg_rxChannel) {txChannel = arg_txChannel; rxChannel = arg_rxChannel;}
