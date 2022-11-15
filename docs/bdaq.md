@@ -316,6 +316,8 @@ Some parameters from BDAQ controller might be configured via the hardware contro
 | "i2cAddr" | "0x1000" | FPGA i2c controller address. |
 | "cmdAddr" | "0x9000" | FPGA Command Driver controller address. |
 | "controlAddr" | "0x2100" | FPGA GPIO controller address. |
+| "chipType" | "RD53B" | Type of the chip under operation. |
+| "chipType" | "RD53B" | Type of the chip under operation. |
 
 # Troubleshooting
 
