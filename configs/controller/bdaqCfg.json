@@ -11,7 +11,8 @@
             "rxAddr"      : "0x6000",
             "i2cAddr"     : "0x1000",
             "cmdAddr"     : "0x9000",
-            "controlAddr" : "0x2100"
+            "controlAddr" : "0x2100",
+            "chipType"    : "RD53B"
         }
     }
 }
