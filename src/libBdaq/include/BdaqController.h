@@ -71,6 +71,14 @@ class BdaqController : public HwController, public BdaqTxCore, public BdaqRxCore
                 c.controlAddr = std::stoi(j["controlAddr"], nullptr, 16);
             else
                 c.controlAddr = 0x2100;
+            // Chip Type
+            if (j.contains("chipType")){
+                c.feType = j["chipType"];
+            }else{
+                c.feType = "none";
+            }
+
+
             // Initialize controller with the above configuration
             initialize(c);
         }
