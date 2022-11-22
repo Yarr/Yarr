@@ -20,8 +20,8 @@
     },
     "histogrammer": {
       "0": {
-        "algorithm": "OccupancyMap",
-        "config": {}
+          "algorithm": "OccupancyMap",
+          "config": {}
       },
       "n_count": 1
     },
@@ -56,7 +56,7 @@
       {
         "config": {
           "trig_count": 500,
-          "trig_frequency": 1000,
+          "trig_frequency": 250,
           "trig_time": 0,
           "l0_latency": 20,
           "extTrigger": false,
@@ -72,21 +72,15 @@
     "prescan": {
         "ABCs_PR_ENABLE":  1,
         "ABCs_LP_ENABLE":  1,
-        "ABCs_B8BREF":    13,
-        "ABCs_BVREF":     13,
-        "ABCs_BIREF":     15,
-        "ABCs_TM":         0,
         "ABCs_DETMODE":    0,
         "ABCs_MASKHPR":    1,
         "ABCs_STOPHPR":    1,
-        "ABCs_COMBIAS":   16,
         "HCC_MASKHPR":     1,
         "HCC_STOPHPR":     1,
         "ABCs_BCAL":       0,
         "ABCs_CALPULSE_ENABLE":    1,
         "ABCs_CALPULSE_POLARITY":  0,
-        "ABCs_CURRDRIV": 4,
-	"ABCs_RRMODE": 0
+        "ABCs_CURRDRIV": 4
     }
   }
 }
