@@ -408,27 +408,29 @@ bool Rd53b::hasValidName() {
 }
 
 std::pair<uint32_t, uint32_t> Rd53b::decodeSingleRegRead(uint32_t higher, uint32_t lower) {
+    output = std::make_pair(999, 666);
     if ((higher & 0x55000000) == 0x55000000) {
-        return std::make_pair((lower>>16)&0x3FF, lower&0xFFFF);
+        output = std::make_pair((lower>>16)&0x3FF, lower&0xFFFF);
     } else if ((higher & 0x99000000) == 0x99000000) {
-        return std::make_pair((higher>>10)&0x3FF, ((lower>>26)&0x3F)+((higher&0x3FF)<<6));
+        output = std::make_pair((higher>>10)&0x3FF, ((lower>>26)&0x3F)+((higher&0x3FF)<<6));
     } else {
         logger->error("Could not decode reg read!");
-        return std::make_pair(999, 666);
+        output = std::make_pair(999, 666);
     }
-    return std::make_pair(999, 666);
+    return output;
 }
 
 std::tuple<uint8_t, uint32_t, uint32_t> Rd53b::decodeSingleRegReadID(uint32_t higher, uint32_t lower) {
+    output = std::make_tuple(16, 999, 666);
     if ((higher & 0xFF000000) == 0x55000000) {
-        return std::make_tuple((higher>>22)&0x3, (lower>>16)&0x3FF, lower&0xFFFF);
+        output = std::make_tuple((higher>>22)&0x3, (lower>>16)&0x3FF, lower&0xFFFF);
     } else if ((higher & 0xFF000000) == 0x99000000) {
-        return std::make_tuple((higher>>22)&0x3, (higher>>10)&0x3FF, ((lower>>26)&0x3F)+((higher&0x3FF)<<6));
+        output = std::make_tuple((higher>>22)&0x3, (higher>>10)&0x3FF, ((lower>>26)&0x3F)+((higher&0x3FF)<<6));
     } else {
         logger->error("Could not decode reg read!");
-        return std::make_tuple(16, 999, 666);
+        output = std::make_tuple(16, 999, 666);
     }
-    return std::make_tuple(16, 999, 666);
+    return output;
 }
 
 itkpix_efuse_codec::EfuseData Rd53b::readEfuses() {
@@ -522,9 +524,9 @@ uint32_t Rd53b::readSingleRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref) {
     std::vector<RawDataPtr> dataVec = m_rxcore->readData();
     RawDataPtr data;
     if (dataVec.size() > 0) {
-    	for (std::vector<RawDataPtr>::iterator it = dataVec.begin(); it != dataVec.end(); it++) {
-	     if ((*it)->get(0) != 0xffffdead) {
-    		data = (*it);
+	for(auto const &v : dataVec) {
+	     if (v->get(0) != 0xffffdead) {
+    		data = v;
         	if(!(data->getSize() >= 2)) {
             		logger->warn("readSingleRegister failed, received wrong number of words ({}) for FE with chipId {}", data->getSize(), m_chipId);
             		continue;
