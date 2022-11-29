@@ -133,7 +133,9 @@ int main (int argc, char *argv[]) {
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     hwCtrl->setRxEnable(0);
     int globalPulseWidth=30;	
-    int nPulse=11;
+    int nPulse=20;
+    std::ofstream file;
+    file.open("rosc_"+std::to_string(std::time(nullptr))+".txt");
  
     // Bank A ring oscillators	
     for (unsigned i=0; i<8; i++){
@@ -143,16 +145,51 @@ int main (int argc, char *argv[]) {
 	    rd53b.writeRegister(&Rd53b::RingOscAClear,0);
 	    rd53b.writeRegister(&Rd53b::GlobalPulseConf,8192);
 	    rd53b.writeRegister(&Rd53b::GlobalPulseWidth,globalPulseWidth);
-            logger->info("Sending Pulse");		
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
+            //logger->info("Sending Pulse");		
 		for(int r=0; r<nPulse; r++) {
 		    rd53b.sendGlobalPulse(15);
-		    usleep(1000);
+       		    std::this_thread::sleep_for(std::chrono::microseconds(100));
 		    rd53b.readRegister(&Rd53b::RingOscAOut);
+       		    std::this_thread::sleep_for(std::chrono::microseconds(100));
 	  	    rd53b.writeRegister(&Rd53b::RingOscAClear,1);
+       		    std::this_thread::sleep_for(std::chrono::microseconds(1000));
 	    	    rd53b.writeRegister(&Rd53b::RingOscAClear,0);
+       		    std::this_thread::sleep_for(std::chrono::microseconds(1000));
 		}
+
+	    std::vector<RawDataPtr> dataVec = hwCtrl->readData();
+	    RawDataPtr data;
+	    unsigned int m=1;	
+	    double RingValuesSum = 0;
+	    double RingValuesSumSquared = 0;	
+	    double frequency=0.0;	
+	    double error=0.0;
+	    double min_freq=1000.0;
+	    double max_freq=.0;
+            int countpulses=0;
+	    while (dataVec.size() > 0) {
+		if  (dataVec.size() > 0) {
+		    data = dataVec[0];             
+		    auto answer = rd53b.decodeSingleRegRead(data->get(0), data->get(1));
+	  	    frequency=(answer.second & 0xFFF)/(2*(globalPulseWidth)*0.025);
+		    min_freq=std::min(min_freq,frequency);
+		    max_freq=std::max(max_freq,frequency);
+		    RingValuesSum+= frequency;
+		    RingValuesSumSquared += pow(frequency, 2);
+	            countpulses++;
+		}
+
+		dataVec = hwCtrl->readData();
+	    }
+	    frequency=RingValuesSum/(countpulses);
+       	    error=(max_freq-min_freq)/2;
+	    file << i << "\t" << frequency << "\t" << error << "\n";
+	    logger->info("Mean frequency ROSC {}: {} +/- {} Mhz",i,frequency,error);
+
 	}
-	
+
+
     // Bank B ring oscillators  
     for (unsigned i=0; i<34; i++){
 	    rd53b.writeRegister(&Rd53b::RingOscBEnBl,1);
@@ -165,7 +202,7 @@ int main (int argc, char *argv[]) {
 	    rd53b.writeRegister(&Rd53b::RingOscBClear,0);
 	    rd53b.writeRegister(&Rd53b::GlobalPulseConf,16384);
 	    rd53b.writeRegister(&Rd53b::GlobalPulseWidth,globalPulseWidth);
-            logger->info("Sending Pulse");		
+            //logger->info("Sending Pulse");		
 		for(int r=0; r<nPulse; r++) {
 		    rd53b.sendGlobalPulse(15);
 		    usleep(1000);
@@ -173,49 +210,37 @@ int main (int argc, char *argv[]) {
 	  	    rd53b.writeRegister(&Rd53b::RingOscBClear,1);
 	    	    rd53b.writeRegister(&Rd53b::RingOscBClear,0);
 		}
+	    std::vector<RawDataPtr> dataVec = hwCtrl->readData();
+	    RawDataPtr data;
+	    unsigned int m=1;	
+	    double RingValuesSum = 0;
+	    double RingValuesSumSquared = 0;	
+	    double frequency=0.0;	
+	    double error=0.0;
+	    double min_freq=1000.0;
+	    double max_freq=.0;
+            int countpulses=0;
+	    while (dataVec.size() > 0) {
+		if  (dataVec.size() > 0) {
+		    data = dataVec[0];             
+		    auto answer = rd53b.decodeSingleRegRead(data->get(0), data->get(1));
+	  	    frequency=(answer.second & 0xFFF)/(2*(globalPulseWidth)*0.025);
+		    min_freq=std::min(min_freq,frequency);
+		    max_freq=std::max(max_freq,frequency);
+		    RingValuesSum+= frequency;
+		    RingValuesSumSquared += pow(frequency, 2);
+	            countpulses++;
+		}
+
+		dataVec = hwCtrl->readData();
+	    }
+	    frequency=RingValuesSum/(countpulses);
+       	    error=(max_freq-min_freq)/2;
+	    file << i+8 << "\t" << frequency << "\t" << error << "\n";
+	    logger->info("Mean frequency ROSC {}: {} +/- {} Mhz",i+8,frequency,error);
 
 	}
 
-    // Read back registers and save to file
-    std::vector<RawDataPtr> dataVec = hwCtrl->readData();
-    RawDataPtr data;
-
-    unsigned int m=1;	
-    double RingValuesSum = 0;
-    double RingValuesSumSquared = 0;
-    double frequency=0.0;
-    double error=0.0;
-    double min_freq=1000.0;
-    double max_freq=.0;
-
-    std::ofstream file;
-    file.open("rosc_"+std::to_string(std::time(nullptr))+".txt");
-
-    while (dataVec.size() > 0) {
-        if  (dataVec.size() > 0) {
-            data = dataVec[0];
-            auto answer = rd53b.decodeSingleRegRead(data->get(0), data->get(1));
-            frequency=(answer.second & 0xFFF)/(2*(globalPulseWidth)*0.025);
-            min_freq=std::min(min_freq,frequency);
-            max_freq=std::max(max_freq,frequency);
-	        if (!(m%nPulse)){
-			frequency=RingValuesSum/(nPulse-1);
-			error=(max_freq-min_freq)/2;
-		        logger->info("Mean frequency ROSC {}: {} +/- {} Mhz",m/10,frequency,error);
-			file << m/10-1 << "\t" << frequency << "\t" << error << "\n";
-			RingValuesSum = 0;
-			RingValuesSumSquared = 0;
-			min_freq=1000.0;
-			max_freq=0.0;
-		} else {
-                        RingValuesSum+= frequency;
-                        RingValuesSumSquared += pow(frequency, 2);
-		}		
-		m++;
-        }
-
-        dataVec = hwCtrl->readData();
-    }
     file.close();
 
     logger->info("... done! bye!");
