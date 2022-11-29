@@ -157,6 +157,7 @@ int main(int argc, char* argv[]) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
                 hw->setRxEnable(cfg->getRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
+                fe->readUpdateWriteNamedReg(register_name);
                 uint16_t res = fe->readNamedRegister(register_name);
                 std::cout << res << std::endl;
             }

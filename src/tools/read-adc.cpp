@@ -171,6 +171,7 @@ int main(int argc, char* argv[]) {
                 hw->setRxEnable(cfg->getRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
                 fe->confAdc(monitorV, meas_curr);
+                fe->readUpdateWriteNamedReg("MonitoringDataAdc");
                 uint16_t res = fe->readNamedRegister("MonitoringDataAdc");
 		if (return_count) std::cout << res << std::endl;
 		else if (meas_curr) std::cout << cfg->adcToI(res)/1e-6 << " uA" << std::endl;
