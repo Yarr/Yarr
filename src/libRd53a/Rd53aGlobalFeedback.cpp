@@ -26,7 +26,7 @@ Rd53aGlobalFeedback::Rd53aGlobalFeedback() : LoopActionBase(LOOP_STYLE_GLOBAL_FE
     m_pixelReg = {0, 0};
 }
 
-Rd53aGlobalFeedback::Rd53aGlobalFeedback(Rd53aReg Rd53aGlobalCfg::*ref) : LoopActionBase(LOOP_STYLE_GLOBAL_FEEDBACK), parPtr(ref) {
+Rd53aGlobalFeedback::Rd53aGlobalFeedback(Rd53Reg Rd53aGlobalCfg::*ref) : LoopActionBase(LOOP_STYLE_GLOBAL_FEEDBACK), parPtr(ref) {
     min = 0;
     max = 255;
     step = 1;

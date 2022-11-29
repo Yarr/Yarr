@@ -272,13 +272,13 @@ void Rd53b::configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels) 
     while(!core->isCmdEmpty()){;}
 }
 
-void Rd53b::writeRegister(Rd53bReg Rd53bGlobalCfg::*ref, uint16_t value) {
+void Rd53b::writeRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t value) {
     (this->*ref).write(value);
     logger->debug("Writing register {} with {}", (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
     this->sendWrReg(m_chipId, (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
 }
 
-void Rd53b::readRegister(Rd53bReg Rd53bGlobalCfg::*ref) {
+void Rd53b::readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref) {
     logger->debug("Reading register {}", (this->*ref).addr());
     this->sendRdReg(m_chipId, (this->*ref).addr());
 }
@@ -295,7 +295,18 @@ void Rd53b::writeNamedRegister(std::string name, uint16_t value) {
     }
 }
 
-Rd53bReg Rd53bGlobalCfg::*  Rd53b::getNamedRegister(std::string name) {
+uint16_t Rd53b::readNamedRegister(std::string name) {
+    if(regMap.find(name) != regMap.end()) {
+        logger->debug("Read named register {}", name);
+        this->readUpdateWriteReg(regMap[name]);
+        return (this->*regMap[name]).read();
+    } else {
+        logger->error("Trying to read named register, register not found: {}", name);
+    }
+    return 0;
+}
+
+Rd53bRegDefault Rd53bGlobalCfg::*  Rd53b::getNamedRegister(std::string name) {
     if(regMap.find(name) != regMap.end()) {
         return regMap[name];
     } else if(virtRegMap.find(name) != virtRegMap.end()) {
@@ -495,12 +506,12 @@ void Rd53b::readUpdateWriteNamedReg(std::string name) {
     }
 }
 
-void Rd53b::readUpdateWriteReg(Rd53bReg Rd53bGlobalCfg::*ref) {
+void Rd53b::readUpdateWriteReg(Rd53bRegDefault Rd53bGlobalCfg::*ref) {
 	uint32_t reg = readSingleRegister(ref);
 	m_cfg[(this->*ref).addr()] = reg;
 }
 
-uint32_t Rd53b::readSingleRegister(Rd53bReg Rd53bGlobalCfg::*ref) {
+uint32_t Rd53b::readSingleRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref) {
     // send a read register command to the chip so that it
     // sends back the current value of the register
     this->sendRdReg(m_chipId, (this->*ref).addr());

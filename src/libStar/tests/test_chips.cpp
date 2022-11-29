@@ -9,6 +9,8 @@
 
 #include "EmptyHw.h"
 
+namespace {
+
 /**
    Override TxCore to record what is written to FIFO.
  */
@@ -120,6 +122,8 @@ public:
 
   void loadConfig(json const&j) override {}
 };
+
+} // End namespace
 
 TEST_CASE("StarBasicConfig", "[star][chips]") {
   MyHwController hw;

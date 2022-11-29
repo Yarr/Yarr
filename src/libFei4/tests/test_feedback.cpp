@@ -90,7 +90,7 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
     std::thread t([&]() {
         int loop_count = 0;
         while(feedback_count < 2) {
-          std::shared_ptr<RawDataContainer> data = std::make_shared<RawDataContainer>(LoopStatus({{1}, {1}, {2}}, {{LOOP_STYLE_DATA}, {LOOP_STYLE_TRIGGER}, {LOOP_STYLE_GLOBAL_FEEDBACK}}));
+          std::shared_ptr<RawDataContainer> data = std::make_shared<RawDataContainer>(LoopStatus({1, 1, 2}, {LOOP_STYLE_DATA, LOOP_STYLE_TRIGGER, LOOP_STYLE_GLOBAL_FEEDBACK}));
           logger->debug("Received data");
 
           const LoopStatus &stat = data->stat;
@@ -167,7 +167,7 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
     std::thread t([&]() {
         int loop_count = 0;
         while(feedback_count<4) {
-          std::shared_ptr<RawDataContainer> data = std::make_shared<RawDataContainer>(LoopStatus({{1}, {1}, {4}}, {{LOOP_STYLE_DATA}, {LOOP_STYLE_TRIGGER}, {LOOP_STYLE_PIXEL_FEEDBACK}}));
+          std::shared_ptr<RawDataContainer> data = std::make_shared<RawDataContainer>(LoopStatus({1, 1, 4}, {LOOP_STYLE_DATA, LOOP_STYLE_TRIGGER, LOOP_STYLE_PIXEL_FEEDBACK}));
 
           logger->debug("Received data");
 

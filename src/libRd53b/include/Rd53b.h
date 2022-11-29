@@ -51,13 +51,15 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
 
         void enableAll() override;
 
-        void writeRegister(Rd53bReg Rd53bGlobalCfg::*ref, uint16_t value);
-        void readRegister(Rd53bReg Rd53bGlobalCfg::*ref);
+        void writeRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t value);
+        void readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref);
         void writeNamedRegister(std::string name, uint16_t value) override;
-        Rd53bReg Rd53bGlobalCfg::* getNamedRegister(std::string name);
+        uint16_t readNamedRegister(std::string name) override;
+        
+        Rd53bRegDefault Rd53bGlobalCfg::* getNamedRegister(std::string name);
 
         void setInjCharge(double charge, bool sCap=true, bool lCap=true) override {
-            this->writeRegister((Rd53bReg Rd53bGlobalCfg::*)&Rd53bGlobalCfg::InjVcalDiff, this->toVcal(charge));
+            this->writeRegister((Rd53bRegDefault Rd53bGlobalCfg::*)&Rd53bGlobalCfg::InjVcalDiff, this->toVcal(charge));
         }
         
         static std::pair<uint32_t, uint32_t> decodeSingleRegRead(uint32_t higher, uint32_t lower);

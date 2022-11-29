@@ -40,10 +40,10 @@ void EmuController<Fei4, Fei4Emu>::loadConfig(const json &j) {
   }
 
   // Tx EmuCom
-  tx_coms.emplace_back(new RingBuffer(128));
+  tx_coms.emplace_back(new RingBuffer());
   EmuTxCore<Fei4>::setCom(0, tx_coms.back().get());
   // Rx EmuCom
-  rx_coms.emplace_back(new RingBuffer(128));
+  rx_coms.emplace_back(new RingBuffer());
   EmuRxCore<Fei4>::setCom(0, rx_coms.back().get());
 
   auto tx = EmuTxCore<Fei4>::getCom(0);

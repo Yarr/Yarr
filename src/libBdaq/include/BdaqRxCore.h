@@ -17,6 +17,8 @@
 #include "Bdaq.h"
 #include "RawData.h"
 
+#include "BdaqTxCore.h"
+
 class BdaqRxCore : virtual public RxCore, virtual public Bdaq {
     public:
         BdaqRxCore();
@@ -33,6 +35,8 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq {
 
         std::vector<RawDataPtr> readData() override;
         std::map<uint32_t, std::vector<uint32_t>> dataMap;
+        std::map<uint32_t, std::vector<uint32_t>> dataMap_copy;
+        uint32_t dataWord;
 
         void flushBuffer() override;
 
@@ -65,17 +69,17 @@ class BdaqRxCore : virtual public RxCore, virtual public Bdaq {
         };
 
         struct userkDataT_RD53B {
-            uint8_t  ChipID;
-            uint8_t  AuroraKWord;
-            uint8_t  Status;
-            uint16_t Data1;
-            uint16_t Data1_AddrFlag;
-            uint16_t Data1_Addr;
-            uint16_t Data1_Data;
-            uint16_t Data0;
-            uint16_t Data0_AddrFlag;
-            uint16_t Data0_Addr;
-            uint16_t Data0_Data;
+            uint8_t  ChipID = 0;
+            uint8_t  AuroraKWord = 0;
+            uint8_t  Status = 0;
+            uint16_t Data1 = 0;
+            uint16_t Data1_AddrFlag = 0;
+            uint16_t Data1_Addr = 0;
+            uint16_t Data1_Data = 0;
+            uint16_t Data0 = 0;
+            uint16_t Data0_AddrFlag = 0;
+            uint16_t Data0_Addr = 0;
+            uint16_t Data0_Data = 0;
         };
 
         struct regDataT {

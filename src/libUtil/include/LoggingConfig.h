@@ -12,6 +12,9 @@ void setupLoggers(const json &j, const std::string &path="");
 /// List loggers to std::cout, with details of sinks and levels
 void listLoggers(bool print_details = false);
 static bool initialized = false;
+
+// get messages from ringbuffer sink
+std::vector<std::string> getLog(size_t lim);
 }
 
 #endif

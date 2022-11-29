@@ -7,6 +7,8 @@
 
 #include "EmptyHw.h"
 
+namespace {
+
 /**
    Override TxCore to record what trigger word is set to.
  */
@@ -34,6 +36,8 @@ public:
     return (last_buffer[offset] >> (16*side)) & 0xffff;
   }
 };
+
+} // End namespace
 
 TEST_CASE("StarTriggerLoopDelay", "[star][trigger_loop]") {
   std::shared_ptr<LoopActionBase> action = StdDict::getLoopAction("StarTriggerLoop");

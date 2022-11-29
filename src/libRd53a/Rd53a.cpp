@@ -68,15 +68,6 @@ void Rd53a::init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rx
     core->setClkPeriod(6.25e-9);
 }
 
-void Rd53a::writeRegister(Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value) {
-    (this->*ref).write(value);
-    wrRegister(m_chipId, (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
-}
-
-void Rd53a::readRegister(Rd53aReg Rd53aGlobalCfg::*ref) {
-    rdRegister(m_chipId, (this->*ref).addr());
-}
-
 void Rd53a::enableAll() {
     logger->info("Resetting enable/hitbus pixel mask to all enabled!");
     for (unsigned int col = 0; col < n_Col; col++) {

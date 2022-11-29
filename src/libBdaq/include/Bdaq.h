@@ -23,6 +23,7 @@ struct bdaqConfig {
     uint        controlAddr;
     uint        rxAddr;
     uint        cmdAddr;
+    std::string feType;
 };
 
 struct daqVersion {

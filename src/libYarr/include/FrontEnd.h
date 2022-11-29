@@ -45,9 +45,12 @@ class FrontEnd {
 
         virtual void resetAll() {}
 
+        /// Reads the named register and writes it to the local object memory
         virtual void readUpdateWriteNamedReg(std::string name) {}
         /// Write to a register using a string name (most likely from json)
         virtual void writeNamedRegister(std::string name, uint16_t value) = 0;
+        /// Reads a named register and returns the value of it
+        virtual uint16_t readNamedRegister(std::string name) {return 0;}
         
         virtual void setInjCharge(double, bool, bool) = 0;
 
@@ -56,9 +59,6 @@ class FrontEnd {
         ClipBoard<EventDataBase> clipData;
         ClipBoard<HistogramBase> clipHisto;
         std::vector<std::unique_ptr<ClipBoard<HistogramBase>> > clipResult;
-
-        //Fei4Analysis *ana;
-        //Fei4Histogrammer *histogrammer;
         
         FrontEndGeometry geo;
 

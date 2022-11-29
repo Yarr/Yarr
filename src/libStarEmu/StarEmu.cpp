@@ -8,7 +8,6 @@
 #include "EmuCom.h"
 #include "EmuRxCore.h"
 #include "LCBUtils.h"
-#include "RingBuffer.h"
 #include "ScanHelper.h"
 #include "logging.h"
 
@@ -433,7 +432,7 @@ void EmuController<StarChips, StarEmu>::loadConfig(const json &j) {
         logger->error("Tx channel {} has already been set up!", chn_tx);
         throw std::runtime_error("Fail to load emulator configuration");
       }
-      tx_coms.emplace_back(new RingBuffer(128));
+      tx_coms.emplace_back(new RingBuffer());
       EmuTxCore<StarChips>::setCom(chn_tx, tx_coms.back().get());
 
       // TX2 if required
@@ -443,7 +442,7 @@ void EmuController<StarChips, StarEmu>::loadConfig(const json &j) {
           logger->error("Tx channel {} has already been set up!", chn_tx2);
           throw std::runtime_error("Fail to load emulator configuration");
         }
-        tx_coms.emplace_back(new RingBuffer(128));
+        tx_coms.emplace_back(new RingBuffer());
         EmuTxCore<StarChips>::setCom(chn_tx2, tx_coms.back().get());
       }
 

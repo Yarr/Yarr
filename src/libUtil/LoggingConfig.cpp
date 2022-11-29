@@ -6,6 +6,7 @@
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/ringbuffer_sink.h"
 
 // spdlog::level::level_enum, but then construction doesn't work?
 static const std::map<std::string, int> level_map = {
@@ -33,11 +34,16 @@ static std::string_view level_string(int lvl) {
 
 namespace logging {
 
+spdlog::sink_ptr default_sink;
 void setupLoggers(const json &j, const std::string &path) {
     // initialized logger only once
     if(initialized) return;
-    spdlog::sink_ptr default_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-
+    if(j.contains("default_sink") && j["default_sink"] == "ringbuffer") {
+        std::size_t ringbuffer_size = 1000;
+        if(j.contains("ringbufer_size")) ringbuffer_size = j["ringbuffer_size"];
+        default_sink = std::make_shared<spdlog::sinks::ringbuffer_sink_mt>(ringbuffer_size);
+    }
+    else default_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     std::map<std::string, spdlog::sink_ptr> other_sinks;
 
     std::string default_pattern = "";
@@ -200,6 +206,13 @@ void listLoggers(bool print_details) {
           }
         }
     }
+}
+
+std::vector<std::string> getLog(size_t lim) {
+  std::vector<std::string> result;
+  auto *sink=dynamic_cast<spdlog::sinks::ringbuffer_sink_mt *>(default_sink.get());
+  if(sink) result=sink->pop_formatted(lim);
+  return result;
 }
 
 } // End namespace logging

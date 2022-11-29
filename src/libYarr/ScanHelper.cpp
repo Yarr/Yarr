@@ -118,8 +118,10 @@ namespace ScanHelper {
                 hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
             }
             shlog->info("Loaded controller config:");
+            json cfg = ctrlCfg["ctrlCfg"]["cfg"];
+            if(cfg.contains("__feCfg_data__")) cfg.erase("__feCfg_data__");
             std::stringstream ss;
-            ss << ctrlCfg["ctrlCfg"]["cfg"];
+            ss << cfg;
             std::string line;
             while (std::getline(ss, line)) shlog->info("~~~ {}", line);
 
@@ -693,6 +695,18 @@ namespace ScanHelper {
         }
     }
 
+    void listAnalyses() {
+        for(std::string &ana_type: StdDict::listAnalyses()) {
+            std::cout << "  " << ana_type << "\n";
+        }
+    }
+
+    void listHistogrammers() {
+        for(std::string &histo_type: StdDict::listHistogrammers()) {
+            std::cout << "  " << histo_type << "\n";
+        }
+    }
+
     void listScans() {
         for(std::string &scan_name: StdDict::listScans()) {
             std::cout << "  " << scan_name << "\n";
@@ -720,6 +734,12 @@ namespace ScanHelper {
 
         std::cout << " Known Processors:\n";
         listProcessors();
+
+        std::cout << " Known analysis algorithms:\n";
+        listAnalyses();
+
+        std::cout << " Known histogram algorithms:\n";
+        listHistogrammers();
 
         std::cout << " Known Scans:\n";
         listScans();

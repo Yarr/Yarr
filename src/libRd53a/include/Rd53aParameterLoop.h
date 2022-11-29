@@ -16,13 +16,13 @@
 class Rd53aParameterLoop : public LoopActionBase {
     public:
         Rd53aParameterLoop();
-        Rd53aParameterLoop(Rd53aReg Rd53aGlobalCfg::*ref);
+        Rd53aParameterLoop(Rd53Reg Rd53aGlobalCfg::*ref);
 
         void writeConfig(json &j) override;
         void loadConfig(const json &j) override;
 
     private:
-        Rd53aReg Rd53aGlobalCfg::*parPtr{};
+        Rd53Reg Rd53aGlobalCfg::*parPtr{};
         std::string parName;
         void writePar();
         unsigned m_cur{};

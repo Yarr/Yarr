@@ -12,7 +12,7 @@ list(APPEND tools
         )
 
 if (NOT "${TARGET_ARCH}" MATCHES "arm*")
-    list(APPEND tools write-register reset-all)
+    list(APPEND tools write-register read-register reset-all)
 endif()
 
 add_executable(scanConsole scan_cli.cpp)

@@ -29,9 +29,6 @@ int ScanConsole::init(const std::vector<std::string> &args) {
     return pimpl->init(args);
 }
 
-std::vector<std::string> ScanConsole::getLog(unsigned n) {
-    return pimpl->getLog(n);
-}
 int ScanConsole::loadConfig() {
     return pimpl->loadConfig();
 }
@@ -81,4 +78,8 @@ void ScanConsole::run() {
 
 void ScanConsole::dump() {
     pimpl->dump();
+}
+
+std::vector<std::string> ScanConsole::getLog(std::size_t lim) {
+    return ScanConsoleImpl::getLog(lim);
 }
