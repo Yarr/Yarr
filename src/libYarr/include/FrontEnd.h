@@ -94,10 +94,8 @@ class FrontEndCfg {
         std::string getName() {return name;}
         bool checkChipIdInName() { return enforceChipIdInName; }
 
-        // Convert ADC counts to current
-	virtual float adcToI(uint16_t ADC) {return 0.0;} 
-        // Convert ADC counts to voltage
-	virtual float adcToV(uint16_t ADC) {return 0.0;} 
+        // Returns converted ADC counts (float) and unit (string)
+	virtual std::pair<float, std::string> convertAdc(uint16_t ADC, bool meas_curr) {return std::make_pair(0.0, "None");} 
         
         void setChannel(unsigned channel) {txChannel = channel; rxChannel = channel;}
 		void setChannel(unsigned arg_txChannel, unsigned arg_rxChannel) {txChannel = arg_txChannel; rxChannel = arg_rxChannel;}

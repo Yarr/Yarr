@@ -174,8 +174,10 @@ int main(int argc, char* argv[]) {
                 fe->readUpdateWriteNamedReg("MonitoringDataAdc");
                 uint16_t res = fe->readNamedRegister("MonitoringDataAdc");
 		if (return_count) std::cout << res << std::endl;
-		else if (meas_curr) std::cout << cfg->adcToI(res)/1e-6 << " uA" << std::endl;
-		else std::cout << cfg->adcToV(res) << " V " << std::endl;
+                else{
+                  std::pair<float, std::string> convertedAdc = cfg->convertAdc(res, meas_curr);
+		  std::cout << convertedAdc.first << " " << convertedAdc.second << std::endl;
+                }
             }
         } else {
             if (current_chip_name == chip_name) {
@@ -186,8 +188,10 @@ int main(int argc, char* argv[]) {
                 fe->readUpdateWriteNamedReg("MonitoringDataAdc");
                 uint16_t res = fe->readNamedRegister("MonitoringDataAdc");
 		if (return_count) std::cout << res << std::endl;
-		else if (meas_curr) std::cout << cfg->adcToI(res)/1e-6 << " uA" << std::endl;
-		else std::cout << cfg->adcToV(res) << " V " << std::endl;
+                else{
+                  std::pair<float, std::string> convertedAdc = cfg->convertAdc(res, meas_curr);
+		  std::cout << convertedAdc.first << " " << convertedAdc.second << std::endl;
+                }
             }
         }
     }
