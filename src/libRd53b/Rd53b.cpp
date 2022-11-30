@@ -408,7 +408,7 @@ bool Rd53b::hasValidName() {
 }
 
 std::pair<uint32_t, uint32_t> Rd53b::decodeSingleRegRead(uint32_t higher, uint32_t lower) {
-    output = std::make_pair(999, 666);
+    std::pair<uint32_t, uint32_t> output = std::make_pair(999, 666);
     if ((higher & 0x55000000) == 0x55000000) {
         output = std::make_pair((lower>>16)&0x3FF, lower&0xFFFF);
     } else if ((higher & 0x99000000) == 0x99000000) {
@@ -421,7 +421,7 @@ std::pair<uint32_t, uint32_t> Rd53b::decodeSingleRegRead(uint32_t higher, uint32
 }
 
 std::tuple<uint8_t, uint32_t, uint32_t> Rd53b::decodeSingleRegReadID(uint32_t higher, uint32_t lower) {
-    output = std::make_tuple(16, 999, 666);
+    std::tuple<uint8_t, uint32_t, uint32_t> output = std::make_tuple(16, 999, 666);
     if ((higher & 0xFF000000) == 0x55000000) {
         output = std::make_tuple((higher>>22)&0x3, (lower>>16)&0x3FF, lower&0xFFFF);
     } else if ((higher & 0xFF000000) == 0x99000000) {
