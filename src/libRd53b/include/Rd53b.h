@@ -66,8 +66,8 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         static std::tuple<uint8_t, uint32_t, uint32_t> decodeSingleRegReadID(uint32_t higher, uint32_t lower);
 
 	void readUpdateWriteNamedReg(std::string name) override;
-	void readUpdateWriteReg(Rd53bReg Rd53bGlobalCfg::*ref);
-        uint32_t readSingleRegister(Rd53bReg Rd53bGlobalCfg::*ref);
+	void readUpdateWriteReg(Rd53bRegDefault Rd53bGlobalCfg::*ref);
+        uint32_t readSingleRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref);
         
         // perform the necessary steps to program the E-fuse circuitry and perform
         // the readback of the E-fuse data
