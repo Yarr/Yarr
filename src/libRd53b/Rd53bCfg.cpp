@@ -157,6 +157,11 @@ float Rd53bCfg::adcToI(uint16_t ADC) {
     return adcToV(ADC)/m_adcCalPar[2];
 }
 
+std::pair<float, std::string> Rd53bCfg::convertAdc(uint16_t ADC, bool meas_curr) {
+    if (meas_curr) return std::make_pair(adcToI(ADC)/1e-6, "uA");
+    else return std::make_pair(adcToV(ADC), "V");
+}
+
 float Rd53bCfg::vToTemp(float V, uint16_t Sensor, bool isRadSensor) {
     float p0 = 0;
     float p1 = 0;

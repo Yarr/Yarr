@@ -1,11 +1,10 @@
 //////////////////////////////////////////////////
-// A utility to read a specific register from a
-// a given front-end without running any other
-// configuration. Based on write-register tool
+// A utility to read ADC of specific vmux 
+// Based on read-register tool
 //
-// author: Timon Heim
-// e-mail: timon.heim@cern.ch
-// Oct 2022
+// author: Emily Thompson
+// e-mail: emily.anne.thompson@cern.ch
+// Nov 2022
 //////////////////////////////////////////////////
 
 // std/stl
@@ -25,14 +24,16 @@ namespace fs = std::filesystem;
 #include "ScanHelper.h" // openJson
 
 void print_usage(char* argv[]) {
-    std::cerr << " read-register" << std::endl;
+    std::cerr << " read-adc" << std::endl;
     std::cerr << std::endl;
-    std::cerr << " Usage: " << argv[0] << " [options] register-name " << std::endl;
+    std::cerr << " Usage: " << argv[0] << " [options] MonitorV" << std::endl;
     std::cerr << " Options:" << std::endl;
     std::cerr << "   -r          Hardware controller JSON file path [required]" << std::endl;
     std::cerr << "   -c          Input connectivity JSON file path [required]" << std::endl;
     std::cerr << "   -i          Position of chip in connectivity file chips list, starting from 0 (default: all chips)" << std::endl;
     std::cerr << "   -n          Chip name (if given will override use of chip index)" << std::endl;
+    std::cerr << "   -I          Measure current through vmux pad" << std::endl;
+    std::cerr << "   -R          Return raw ADC count" << std::endl;
     std::cerr << "   -h|--help   Print this help message and exit" << std::endl;
     std::cerr << std::endl;
 }
@@ -67,12 +68,13 @@ int main(int argc, char* argv[]) {
     std::string connectivity_filename = "";
     int chip_idx = -1;
     std::string chip_name = "";
-    std::string register_name = "";
-    uint32_t register_value = 0;
+    uint16_t monitorV = 0; 
     bool use_chip_name = false;
+    bool meas_curr = false;
+    bool return_count = false;
 
     int c = 0;
-    while (( c = getopt(argc, argv, "r:c:i:n:h")) != -1) {
+    while (( c = getopt(argc, argv, "r:c:i:n:IRh")) != -1) {
         switch (c) {
             case 'r' :
                 hw_controller_filename = optarg;
@@ -95,6 +97,12 @@ int main(int argc, char* argv[]) {
             case 'h' :
                 print_usage(argv);
                 return 0;
+            case 'I' :
+		meas_curr = true;
+                break;
+            case 'R' :
+		return_count = true;
+                break;
             default :
                 std::cerr << "Invalid option '" << c << "' supplied, aborting" << std::endl;
                 return 1;
@@ -106,7 +114,12 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    register_name = argv[optind++];
+    try {
+        monitorV = std::stoi(argv[optind++]);
+    } catch (std::exception& e) {
+        std::cerr << "ERROR: Invalid value provided for MonitorV: \"" << argv[optind++] << "\" (non-integer)" << std::endl;
+        return 1;
+    }
 
     fs::path hw_controller_path{hw_controller_filename};
     if(!fs::exists(hw_controller_path)) {
@@ -157,18 +170,28 @@ int main(int argc, char* argv[]) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
                 hw->setRxEnable(cfg->getRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-                fe->readUpdateWriteNamedReg(register_name);
-                uint16_t res = fe->readNamedRegister(register_name);
-                std::cout << res << std::endl;
+                fe->confAdc(monitorV, meas_curr);
+                fe->readUpdateWriteNamedReg("MonitoringDataAdc");
+                uint16_t res = fe->readNamedRegister("MonitoringDataAdc");
+		if (return_count) std::cout << res << std::endl;
+                else{
+                  std::pair<float, std::string> convertedAdc = cfg->convertAdc(res, meas_curr);
+		  std::cout << convertedAdc.first << " " << convertedAdc.second << std::endl;
+                }
             }
         } else {
             if (current_chip_name == chip_name) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
                 hw->setRxEnable(cfg->getRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-                fe->readUpdateWriteNamedReg(register_name);
-                uint16_t res = fe->readNamedRegister(register_name);
-                std::cout << res << std::endl;
+                fe->confAdc(monitorV, meas_curr);
+                fe->readUpdateWriteNamedReg("MonitoringDataAdc");
+                uint16_t res = fe->readNamedRegister("MonitoringDataAdc");
+		if (return_count) std::cout << res << std::endl;
+                else{
+                  std::pair<float, std::string> convertedAdc = cfg->convertAdc(res, meas_curr);
+		  std::cout << convertedAdc.first << " " << convertedAdc.second << std::endl;
+                }
             }
         }
     }

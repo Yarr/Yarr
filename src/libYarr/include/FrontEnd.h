@@ -51,7 +51,9 @@ class FrontEnd {
         virtual void writeNamedRegister(std::string name, uint16_t value) = 0;
         /// Reads a named register and returns the value of it
         virtual uint16_t readNamedRegister(std::string name) {return 0;}
-        
+        /// Configures ADC
+        virtual void confAdc(uint16_t MONMUX, bool doCur) {}
+
         virtual void setInjCharge(double, bool, bool) = 0;
 
         // Clipboards to buffer data
@@ -92,6 +94,8 @@ class FrontEndCfg {
         std::string getName() {return name;}
         bool checkChipIdInName() { return enforceChipIdInName; }
 
+        // Returns converted ADC counts (float) and unit (string)
+	virtual std::pair<float, std::string> convertAdc(uint16_t ADC, bool meas_curr) {return std::make_pair(0.0, "None");} 
         
         void setChannel(unsigned channel) {txChannel = channel; rxChannel = channel;}
 		void setChannel(unsigned arg_txChannel, unsigned arg_rxChannel) {txChannel = arg_txChannel; rxChannel = arg_rxChannel;}

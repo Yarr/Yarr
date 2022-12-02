@@ -30,6 +30,7 @@ class Rd53bCfg : public FrontEndCfg, public Rd53bGlobalCfg, public Rd53bPixelCfg
         void setChipId(unsigned id);
         unsigned getChipId() const;
 
+        std::pair<float, std::string> convertAdc(uint16_t ADC, bool meas_curr) override;
         float adcToV(uint16_t ADC);
         float adcToI(uint16_t ADC);
         float vToTemp(float V, uint16_t Sensor = 1, bool isRadSensor = false); // Read temperature from resistance sensor (not ready for ITkPix-V1)
