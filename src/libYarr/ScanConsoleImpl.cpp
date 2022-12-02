@@ -478,8 +478,11 @@ void ScanConsoleImpl::cleanup() {
         database->cleanUp("scan", scanOpts.outputDir, false, false);
     }
 
-    if (scanOpts.doPlots) {
+    if (scanOpts.makeGraph) {
         diagram.toFile(scanOpts.outputDir + "diagram.json");
+        if (scanOpts.doPlots) {
+            diagram.toPlot(scanOpts.outputDir + "diagram.png");
+        }
     }
 }
 

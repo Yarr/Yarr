@@ -136,6 +136,7 @@ class YarrDiagram {
 
     void toJson(json& j);
     void toFile(const std::string& filename);
+    void toPlot(const std::string& filename);
 
   private:
 

@@ -253,3 +253,7 @@ void YarrDiagram::toFile(const std::string& filename) {
   fdiagram << std::setw(4) << jdiagram;
   fdiagram.close();
 }
+
+void YarrDiagram::toPlot(const std::string& filename) {
+
+}
