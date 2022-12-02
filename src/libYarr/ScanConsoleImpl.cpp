@@ -193,6 +193,11 @@ int ScanConsoleImpl::setupScan() {
         return -1;
     }
 
+    // Make YARR diagram
+    if (scanOpts.makeGraph) {
+        diagram.makeDiagram(*bookie, procs, histogrammers, analyses);
+    }
+
     logger->info("Running pre scan!");
     scanBase->init();
     scanBase->preScan();
@@ -471,6 +476,10 @@ void ScanConsoleImpl::cleanup() {
     // Register test info into database
     if (scanOpts.dbUse) {
         database->cleanUp("scan", scanOpts.outputDir, false, false);
+    }
+
+    if (scanOpts.doPlots) {
+        diagram.toFile(scanOpts.outputDir + "diagram.json");
     }
 }
 

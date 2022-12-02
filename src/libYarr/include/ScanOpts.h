@@ -29,5 +29,6 @@ struct ScanOpts {
     std::string progName;
     int nThreads{4};
     bool doResetBeforeScan = true;
+    bool makeGraph = false;
 };
 #endif //YARR_SCANOPTS_H

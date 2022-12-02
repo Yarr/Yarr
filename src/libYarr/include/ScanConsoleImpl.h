@@ -16,6 +16,7 @@
 #include "FeedbackBase.h"
 #include "DataProcessor.h"
 #include "DBHandler.h"
+#include "YarrDiagram.h"
 
 #include "storage.hpp"
 #include "logging.h"
@@ -73,6 +74,7 @@ private:
     std::chrono::steady_clock::time_point cfg_end, cfg_start;
     std::chrono::steady_clock::time_point scan_done, scan_start;
     std::chrono::steady_clock::time_point processor_done, all_done;
+    YarrDiagram diagram;
 };
 
 
