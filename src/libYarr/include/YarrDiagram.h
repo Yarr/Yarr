@@ -17,6 +17,8 @@ struct Node {
 
   // labels
   std::string label;
+  std::string label_left;
+  std::string label_right;
 
   // position
   std::pair<float,float> position;
@@ -50,10 +52,18 @@ struct Box : Node {
   }
 
   void toJson(json& j) const override {
-    j["label"] = label;
     j["shape"] = "rectangle";
     j["x"] = {x0, x1};
     j["y"] = {y0, y1};
+
+    if (not label.empty())
+      j["label"] = label;
+
+    if (not label_left.empty())
+      j["label_left"] = label_left;
+
+    if (not label_right.empty())
+      j["label_right"] = label_right;
   }
 
 };
@@ -78,7 +88,6 @@ struct Hex : Node {
 
   void toJson(json& j) const override {
 
-    j["label"] = label;
     j["shape"] = "hexagon";
     j["x"] = json::array();
     j["y"] = json::array();
@@ -86,6 +95,15 @@ struct Hex : Node {
       j["x"][v] = vertices[v].first;
       j["y"][v] = vertices[v].second;
     }
+
+    if (not label.empty())
+      j["label"] = label;
+
+    if (not label_left.empty())
+      j["label_left"] = label_left;
+
+    if (not label_right.empty())
+      j["label_right"] = label_right;
   }
 
 };
