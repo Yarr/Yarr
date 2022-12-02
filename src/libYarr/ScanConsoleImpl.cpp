@@ -479,6 +479,7 @@ void ScanConsoleImpl::cleanup() {
     }
 
     if (scanOpts.makeGraph) {
+        diagram.getStats();
         diagram.toFile(scanOpts.outputDir + "diagram.json");
         if (scanOpts.doPlots) {
             diagram.toPlot(scanOpts.outputDir + "diagram.png");

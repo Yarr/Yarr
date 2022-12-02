@@ -134,6 +134,7 @@ class YarrDiagram {
       const std::map<unsigned, std::vector<std::unique_ptr<DataProcessor>>>& ana_procs
     );
 
+    void getStats();
     void toJson(json& j);
     void toFile(const std::string& filename);
     void toPlot(const std::string& filename);

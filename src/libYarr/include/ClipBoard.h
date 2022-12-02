@@ -24,7 +24,7 @@ template <class T>
 class ClipBoard {
     public:
 
-        ClipBoard() : doneFlag(false) {}
+        ClipBoard() : doneFlag(false), numDataIn(0), numDataOut(0) {}
         ~ClipBoard() {
             while(!dataQueue.empty()) {
                 std::unique_ptr<T> tmp = this->popData();
@@ -38,7 +38,10 @@ class ClipBoard {
 
         void pushData(std::unique_ptr<T> data) {
             queueMutex.lock();
-            if (data != NULL) dataQueue.push_back(std::move(data));
+            if (data != NULL) {
+                dataQueue.push_back(std::move(data));
+                numDataIn++;
+            }
             queueMutex.unlock();
             //static unsigned cnt = 0;
             //std::cout << "Pushed " << cnt++ << " " << typeid(T).name() << " objects so far" << std::endl;
@@ -52,13 +55,22 @@ class ClipBoard {
             if(!dataQueue.empty()) {
                 tmp = std::move(dataQueue.front());
                 dataQueue.pop_front();
+                numDataOut++;
             }
             queueMutex.unlock();
             return tmp;
         }
 
-        int size() {
+        int size() const {
           return dataQueue.size();
+        }
+
+        long long getNumDataIn() const {
+            return numDataIn;
+        }
+
+        unsigned getNumDataOut() const {
+            return numDataOut;
         }
 
         bool empty() {
@@ -66,7 +78,7 @@ class ClipBoard {
             return rawEmpty();
         }
 
-        bool isDone() {
+        bool isDone() const {
             return doneFlag;
         }
 
@@ -90,6 +102,8 @@ class ClipBoard {
 
         void reset() {
             doneFlag = false;
+            numDataIn = 0;
+            numDataOut = 0;
         };
 
     private:
@@ -103,6 +117,8 @@ class ClipBoard {
         std::deque<std::unique_ptr<T>> dataQueue;
 
         std::atomic<bool> doneFlag;
+        std::atomic<unsigned> numDataIn;
+        std::atomic<unsigned> numDataOut;
 };
 
 template class ClipBoard<RawData>;

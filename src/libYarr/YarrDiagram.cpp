@@ -119,6 +119,54 @@ void YarrDiagram::addDataNodes(const BookEntry& entry) {
   }
 }
 
+void YarrDiagram::getStats() {
+    using RawDataType = const ClipBoard<RawDataContainer>;
+    using EventType = const ClipBoard<EventDataBase>;
+    using HistType = const ClipBoard<HistogramBase>;
+    using ResultType = const ClipBoard<HistogramBase>;
+
+    for (auto& node : rawData) {
+      // Add the number of input data objects to the left label of the node
+      auto datain = static_cast<RawDataType*>(node->objPtr)->getNumDataIn();
+      node->label_left = std::to_string(datain);
+
+      // Add the number of output data objects to the right label of the node
+      auto dataout = static_cast<RawDataType*>(node->objPtr)->getNumDataOut();
+      node->label_right = std::to_string(dataout);
+    }
+
+    for (auto& node : events) {
+      // Add the number of input data objects to the left label of the node
+      auto datain = static_cast<EventType*>(node->objPtr)->getNumDataIn();
+      node->label_left = std::to_string(datain);
+
+      // Add the number of output data objects to the right label of the node
+      auto dataout = static_cast<EventType*>(node->objPtr)->getNumDataOut();
+      node->label_right = std::to_string(dataout);
+    }
+
+    for (auto& node : hists) {
+      // Add the number of input data objects to the left label of the node
+      auto datain = static_cast<HistType*>(node->objPtr)->getNumDataIn();
+      node->label_left = std::to_string(datain);
+
+      // Add the number of output data objects to the right label of the node
+      auto dataout = static_cast<HistType*>(node->objPtr)->getNumDataOut();
+      node->label_right = std::to_string(dataout);
+    }
+    for (const auto& res : results) {
+      for (auto& node : res) {
+        // Add the number of input data objects to the left label of the node
+        auto datain = static_cast<ResultType*>(node->objPtr)->getNumDataIn();
+        node->label_left = std::to_string(datain);
+
+        // Add the number of output data objects to the right label of the node
+        auto dataout = static_cast<ResultType*>(node->objPtr)->getNumDataOut();
+        node->label_right = std::to_string(dataout);
+      }
+    }
+}
+
 void YarrDiagram::connect(Node* up, Node* down) {
   up->downstreams.push_back(down);
   down->upstreams.push_back(up);
