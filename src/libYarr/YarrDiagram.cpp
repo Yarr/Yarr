@@ -78,7 +78,8 @@ void YarrDiagram::addProcNodes(
 
   for (unsigned ia = 0; ia < analyses.size(); ia++) {
     procAna[ia].push_back(std::make_unique<Box>());
-    procAna[ia].back()->label = typeid(*analyses[ia]).name();
+    auto anaPtr = analyses[ia].get();
+    procAna[ia].back()->label = typeid(*anaPtr).name();
     procAna[ia].back()->objPtr = analyses[ia].get();
     if (procAna[ia].back()->width > maxCellWidth)
       maxCellWidth = procAna[ia].back()->width;
@@ -112,7 +113,8 @@ void YarrDiagram::addDataNodes(const BookEntry& entry) {
 
   for (unsigned i = 0; i < entry.fe->clipResult.size(); i++) {
     results[i].push_back(std::make_unique<Hex>());
-    results[i].back()->label = typeid(*(entry.fe->clipResult)[i]).name();
+    auto resPtr = entry.fe->clipResult[i].get();
+    results[i].back()->label = typeid(*resPtr).name();
     results[i].back()->objPtr = (entry.fe->clipResult)[i].get();
     if (results[i].back()->width > maxCellWidth)
       maxCellWidth = results[i].back()->width;
