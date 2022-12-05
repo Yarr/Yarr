@@ -115,13 +115,16 @@ void SpecCom::readBlock(uint32_t off, uint32_t *val, size_t words) {
 
 int SpecCom::writeDma(uint32_t off, uint32_t *data, size_t words) {
     int status = this->getDmaStatus(); 
+    slog->info("Write started");
     if ( status == DMAIDLE || status == DMADONE || status == DMAABORTED) {
+	slog->info("WR_DMA status = 0x{:x}", status);
         UserMemory *um = &spec->mapUserMemory(data, words*4, false);
         KernelMemory *km = &spec->allocKernelMemory(sizeof(struct dma_linked_list)*um->getSGcount());
 
         struct dma_linked_list *llist = this->prepDmaList(um, km, off, 1);
-
+	slog->info("Dma linked list creation ok");
         this->writeBlock(bar0, DMACSTARTR, (uint32_t*) &llist[0], sizeof(struct dma_linked_list)/sizeof(uint32_t));
+	slog->info("Dma linked list writing ok");
         this->startDma();
 
         if (spec->waitForInterrupt(0) < 1) {
@@ -147,11 +150,11 @@ int SpecCom::writeDma(uint32_t off, uint32_t *data, size_t words) {
 int SpecCom::readDma(uint32_t off, uint32_t *data, size_t words) {
     int status = this->getDmaStatus(); 
     if ( status == DMAIDLE || status == DMADONE || status == DMAABORTED) {
+	slog->info("RD_DMA status = 0x{:x}", status);
         UserMemory *um = &spec->mapUserMemory(data, words*4, false);
         KernelMemory *km = &spec->allocKernelMemory(sizeof(struct dma_linked_list)*um->getSGcount());
-
+	
         struct dma_linked_list *llist = this->prepDmaList(um, km, off, 0);
-        
         this->writeBlock(bar0, DMACSTARTR, (uint32_t*) &llist[0], sizeof(struct dma_linked_list)/sizeof(uint32_t));
         this->startDma();
 
@@ -410,8 +413,15 @@ struct dma_linked_list* SpecCom::prepDmaList(UserMemory *um, KernelMemory *km, u
 
 void SpecCom::startDma() {
     uint32_t *addr = (uint32_t*) bar0+DMACTRLR;
-    // Set t 0x1 to start DMA transfer
-    *addr = 0x1;
+    *addr = 0x20; // clear the linked list FIFO
+    std::cout << ""; // give enough time for the PCIe to make the transaction
+    *addr = 0x10; // latch the registered data into the linked list fifo
+    std::cout << "";
+    *addr = 0x01; // Set t 0x1 to start DMA transfer
+    std::cout << "";
+
+    // /!\ the cout instruction in between the write are important as they give the CPu time to 
+    // send the PCIe packet. Without them the register won't be modified
 }
 
 void SpecCom::abortDma() {
