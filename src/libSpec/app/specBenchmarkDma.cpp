@@ -23,6 +23,8 @@ int main(int argc, char *argv[]) {
 
     timeval start, end;
 
+    mySpec.resetFIFO();
+
     std::cout << std::endl << "==========================================" << std::endl;
     std::cout << "Starting DMA Write Benchmark:" << std::endl;
     for (int cycles=0; cycles<maxCycles; cycles++) {

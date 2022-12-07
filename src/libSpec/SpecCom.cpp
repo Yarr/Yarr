@@ -115,16 +115,15 @@ void SpecCom::readBlock(uint32_t off, uint32_t *val, size_t words) {
 
 int SpecCom::writeDma(uint32_t off, uint32_t *data, size_t words) {
     int status = this->getDmaStatus(); 
-    slog->info("Write started");
     if ( status == DMAIDLE || status == DMADONE || status == DMAABORTED) {
 	slog->info("WR_DMA status = 0x{:x}", status);
         UserMemory *um = &spec->mapUserMemory(data, words*4, false);
         KernelMemory *km = &spec->allocKernelMemory(sizeof(struct dma_linked_list)*um->getSGcount());
 
         struct dma_linked_list *llist = this->prepDmaList(um, km, off, 1);
-	slog->info("Dma linked list creation ok");
+	//std::cout << "Nb of items: " << (((llist->attr) >> 2) + 1) << std::endl;
+
         this->writeBlock(bar0, DMACSTARTR, (uint32_t*) &llist[0], sizeof(struct dma_linked_list)/sizeof(uint32_t));
-	slog->info("Dma linked list writing ok");
         this->startDma();
 
         if (spec->waitForInterrupt(0) < 1) {
@@ -155,6 +154,8 @@ int SpecCom::readDma(uint32_t off, uint32_t *data, size_t words) {
         KernelMemory *km = &spec->allocKernelMemory(sizeof(struct dma_linked_list)*um->getSGcount());
 	
         struct dma_linked_list *llist = this->prepDmaList(um, km, off, 0);
+	//std::cout << "Nb of items: " << (((llist->attr) >> 2) + 1) << std::endl;
+
         this->writeBlock(bar0, DMACSTARTR, (uint32_t*) &llist[0], sizeof(struct dma_linked_list)/sizeof(uint32_t));
         this->startDma();
 
@@ -376,7 +377,7 @@ struct dma_linked_list* SpecCom::prepDmaList(UserMemory *um, KernelMemory *km, u
             next += (sizeof(struct dma_linked_list) * ( j + 1 ));
             llist[j].host_next_l = (uint32_t)((uint64_t)next & 0xFFFFFFFF);
             llist[j].host_next_h = (uint32_t)((uint64_t)next >> 32);
-            llist[j].attr = 0x1 + (write << 1); // L2P, not last
+            llist[j].attr = 0x1 + (write << 1) ; // L2P, not last
 #if 0
             std::cout << "Linked List Entry [" << std::dec << j << std::hex << "]:" << std::endl;
             std::cout << "  Carrier Start: 0x" << llist[j].carrier_start << std::endl;
@@ -398,6 +399,14 @@ struct dma_linked_list* SpecCom::prepDmaList(UserMemory *um, KernelMemory *km, u
     llist[j-1].host_next_l = 0x0;
     llist[j-1].host_next_h = 0x0;
     llist[j-1].attr = 0x0 + (write << 1); // last item
+
+
+    // Add to each item attribute the number of items remaining
+    for(unsigned int k = 0;k<j;k++)
+    {
+	llist[k].attr += ((j-k-1) << 2); 
+    }
+
 #if 0
     std::cout << "Modified Last Item[" << std::dec << j-1 << "]" << std::hex << std::endl;
     std::cout << "  Host Next L    0x" << llist[j-1].host_next_l << std::endl;
@@ -411,16 +420,20 @@ struct dma_linked_list* SpecCom::prepDmaList(UserMemory *um, KernelMemory *km, u
     return llist;
 }
 
-void SpecCom::startDma() {
+void SpecCom::resetFIFO(){
     uint32_t *addr = (uint32_t*) bar0+DMACTRLR;
     *addr = 0x20; // clear the linked list FIFO
-    std::cout << ""; // give enough time for the PCIe to make the transaction
-    *addr = 0x10; // latch the registered data into the linked list fifo
-    std::cout << "";
-    *addr = 0x01; // Set t 0x1 to start DMA transfer
-    std::cout << "";
+}
 
-    // /!\ the cout instruction in between the write are important as they give the CPu time to 
+void SpecCom::startDma() {
+    uint32_t *addr = (uint32_t*) bar0+DMACTRLR;
+    //*addr = 0x20; // reset the FIFO
+    //std::cout << ""; //give enough time for the PCIe to make the transaction
+    *addr = 0x10; // latch the registered data into the linked list fifo
+    std::cout << ""; 
+    *addr = 0x01; // Set t 0x1 to start DMA transfer
+
+    // /!\ the cout instruction in between the write are important as they give the CPU time to 
     // send the PCIe packet. Without them the register won't be modified
 }
 

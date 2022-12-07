@@ -24,6 +24,7 @@ int main(int argc, char **argv) {
     if (argc == 2)
         specNum = atoi(argv[1]);
     SpecCom mySpec(specNum);
+    mySpec.resetFIFO();
     std::string tmp;
     const size_t size = 256*8;
     unsigned err_count = 0;

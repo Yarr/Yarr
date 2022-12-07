@@ -77,6 +77,8 @@ class SpecCom {
         void init(unsigned int id);
         const json getStatus();
 
+	void resetFIFO();
+
         void writeSingle(uint32_t off, uint32_t val);
         uint32_t readSingle(uint32_t off);
 
