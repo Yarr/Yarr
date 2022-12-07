@@ -253,7 +253,7 @@ int ScanConsoleImpl::configure() {
         if(scanOpts.doOutput)
             ScanHelper::writeFeConfig(feCfg, scanOpts.outputDir + feCfgMap.at(id)[1] + ".before");
     }
-    bookie->initGlobalFe(StdDict::getFrontEnd(chipType).release());
+    bookie->initGlobalFe(chipType);
     bookie->getGlobalFe()->makeGlobal();
     bookie->getGlobalFe()->init(&*hwCtrl, 0, 0);
 
@@ -413,7 +413,7 @@ int ScanConsoleImpl::initHardware() {
         if(scanOpts.doOutput)
             ScanHelper::writeFeConfig(feCfg, scanOpts.outputDir + feCfgMap.at(id)[1] + ".before");
     }
-    bookie->initGlobalFe(StdDict::getFrontEnd(chipType).release());
+    bookie->initGlobalFe(chipType);
     bookie->getGlobalFe()->makeGlobal();
     bookie->getGlobalFe()->init(&*hwCtrl, 0, 0);
     return 0;

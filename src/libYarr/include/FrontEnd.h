@@ -20,6 +20,8 @@
 
 #include "storage.hpp"
 
+class Bookkeeper;
+
 class FrontEnd {
     public:
         FrontEnd() = default;
@@ -38,6 +40,7 @@ class FrontEnd {
 		bool isActive() const;
 		void setActive(bool active);
         virtual void makeGlobal(){};
+        virtual void connectBookkeeper(Bookkeeper* k){};
        
         virtual void configure()=0;
         virtual int checkCom() {return 1;}

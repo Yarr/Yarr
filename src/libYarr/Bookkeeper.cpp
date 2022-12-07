@@ -9,6 +9,7 @@
 #include <set>
 
 #include "Bookkeeper.h"
+#include "AllChips.h"
 
 #include "logging.h"
 
@@ -31,6 +32,19 @@ Bookkeeper::~Bookkeeper() {
         this->delFe(i);
     }
     delete g_fe;
+}
+
+void Bookkeeper::initGlobalFe(std::string chipType) {
+    // Better way to implement this than checking substring in chip type?
+    if (chipType.substr(0,4) == "Star") {
+        // Special case for Star chips
+        chipType.replace(0, 4, "Star_Global");
+    }
+
+    g_fe = StdDict::getFrontEnd(chipType).release();
+
+    // The global FE may need to know the configuration of other FEs
+    g_fe->connectBookkeeper(this);
 }
 
 void Bookkeeper::addFe(FrontEnd *fe, unsigned txChannel, unsigned rxChannel) {
