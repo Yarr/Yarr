@@ -137,7 +137,7 @@ namespace ScanHelper {
         return hwCtrl;
     }
 
-    std::string loadChipConfigs(json &config, bool createConfig) {
+    std::string loadChipConfigs(json &config, bool createConfig, std::string dir) {
         std::string chipType;
         if (!config.contains("chipType") || !config.contains("chips")) {
             shlog->error("Invalid config, chip type or chips not specified!");
@@ -159,7 +159,28 @@ namespace ScanHelper {
                 shlog->warn(" ... chip not enabled, skipping!");
                 continue;
             }
-            std::string chipConfigPath = chip["config"];
+            // Check if config path is:
+            // - relative to exectuteable (default)
+            // - relative to connectivity file
+            // - absolute
+            // - database (TODO)
+            std::string chipConfigPath;
+            bool pullFromDb = false;
+            if (chip.contains("path")) {
+                if (chip["path"] == "relToExec") {
+                    chipConfigPath = chip["config"];
+                } else if (chip["path"] == "relToCon") {
+                    chipConfigPath = dir + "/" + std::string(chip["config"]);
+                } else if (chip["path"] == "abs") {
+                    chipConfigPath = chip["config"];
+                } else if (chip["path"] == "db") {
+                    pullFromDb = true;
+                }
+            } else {
+                // default is relative to exec
+                chipConfigPath = chip["config"];
+            }
+
             // TODO should be a shared pointer
             auto fe=StdDict::getFrontEnd(chipType);
             auto *feCfg = dynamic_cast<FrontEndCfg *>(fe.get());
@@ -284,7 +305,7 @@ namespace ScanHelper {
                 shlog->critical("#ERROR# opening connectivity or chip configs ({}): {}", sTmp, e.what());
                 return -1;
             }
-            loadChipConfigs(feconfig,writeConfig);
+            loadChipConfigs(feconfig, writeConfig, Utils::dirFromPath(sTmp));
             chipConfig.push_back(feconfig);
         }
 
