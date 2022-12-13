@@ -163,6 +163,7 @@ namespace ScanHelper {
             // - relative to exectuteable (default)
             // - relative to connectivity file
             // - absolute
+            // - relative to "YARR_CONFIG_PATH" env var
             // - database (TODO)
             std::string chipConfigPath;
             bool pullFromDb = false;
@@ -173,6 +174,8 @@ namespace ScanHelper {
                     chipConfigPath = dir + "/" + std::string(chip["config"]);
                 } else if (chip["path"] == "abs") {
                     chipConfigPath = chip["config"];
+                } else if (chip["path"] == "relToYarrPath") {
+                    chipConfigPath = std::string(std::getenv("YARR_CONFIG_PATH")) + "/" + std::string(chip["config"]);
                 } else if (chip["path"] == "db") {
                     pullFromDb = true;
                 }
