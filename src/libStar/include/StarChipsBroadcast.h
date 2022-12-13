@@ -1,13 +1,13 @@
-#ifndef STAR_CHIPS_GLOBAL_HEADER_
-#define STAR_CHIPS_GLOBAL_HEADER_
+#ifndef STAR_CHIPS_BROADCAST_HEADER_
+#define STAR_CHIPS_BROADCAST_HEADER_
 
 #include "Bookkeeper.h"
 #include "StarChips.h"
 
-class StarChipsGlobal : public StarChips {
+class StarChipsBroadcast : public StarChips {
   public:
 
-    StarChipsGlobal(int abc_version, int hcc_version);
+    StarChipsBroadcast(int abc_version, int hcc_version);
 
     void resetAll() override;
 
