@@ -49,9 +49,9 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
 
   void setHccId(unsigned);//Set the HCC ID to the argument, uses the chip serial number set by eFuse
 
-  void makeGlobal() override {
-      StarCfg::setHCCChipId(15);
-  }
+  void makeGlobal() override {}
+
+  std::unique_ptr<FrontEnd> getGlobal() override;
 
   void resetHCCStars();
   void resetABCStars();

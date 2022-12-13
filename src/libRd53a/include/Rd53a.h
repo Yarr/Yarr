@@ -33,6 +33,10 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
             m_chipId = 8;
         }
 
+        std::unique_ptr<FrontEnd> getGlobal() override {
+            return std::make_unique<Rd53a>();
+        }
+
         void resetAll() override;
         void configure() override;
         void configureInit();

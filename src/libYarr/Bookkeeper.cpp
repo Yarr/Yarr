@@ -35,13 +35,11 @@ Bookkeeper::~Bookkeeper() {
 }
 
 void Bookkeeper::initGlobalFe(std::string chipType) {
-    // Better way to implement this than checking substring in chip type?
-    if (chipType.substr(0,4) == "Star") {
-        // Special case for Star chips
-        chipType.replace(0, 4, "Star_Global");
-    }
+    std::unique_ptr<FrontEnd> fe_tmp = StdDict::getFrontEnd(chipType);
 
-    g_fe = StdDict::getFrontEnd(chipType).release();
+    g_fe = fe_tmp->getGlobal().release();
+
+    g_fe->makeGlobal();
 
     // The global FE may need to know the configuration of other FEs
     g_fe->connectBookkeeper(this);

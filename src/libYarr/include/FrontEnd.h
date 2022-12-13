@@ -40,6 +40,7 @@ class FrontEnd {
 		bool isActive() const;
 		void setActive(bool active);
         virtual void makeGlobal(){};
+        virtual std::unique_ptr<FrontEnd> getGlobal() {return nullptr;}
         virtual void connectBookkeeper(Bookkeeper* k){};
        
         virtual void configure()=0;

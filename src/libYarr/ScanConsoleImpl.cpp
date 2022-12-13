@@ -254,7 +254,6 @@ int ScanConsoleImpl::configure() {
             ScanHelper::writeFeConfig(feCfg, scanOpts.outputDir + feCfgMap.at(id)[1] + ".before");
     }
     bookie->initGlobalFe(chipType);
-    bookie->getGlobalFe()->makeGlobal();
     bookie->getGlobalFe()->init(&*hwCtrl, 0, 0);
 
     ScanHelper::banner(logger,"Configure FEs");
@@ -414,7 +413,6 @@ int ScanConsoleImpl::initHardware() {
             ScanHelper::writeFeConfig(feCfg, scanOpts.outputDir + feCfgMap.at(id)[1] + ".before");
     }
     bookie->initGlobalFe(chipType);
-    bookie->getGlobalFe()->makeGlobal();
     bookie->getGlobalFe()->init(&*hwCtrl, 0, 0);
     return 0;
 }

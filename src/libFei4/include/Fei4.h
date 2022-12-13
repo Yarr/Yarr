@@ -58,6 +58,10 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
             chipId = 8;
         }
 
+        std::unique_ptr<FrontEnd> getGlobal() override {
+            return std::make_unique<Fei4>();
+        }
+
         void initMask(enum MASK_STAGE mask);
         void initMask(uint32_t mask);
         void shiftMask();
