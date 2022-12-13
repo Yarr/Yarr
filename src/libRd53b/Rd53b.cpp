@@ -514,36 +514,42 @@ void Rd53b::readUpdateWriteReg(Rd53bRegDefault Rd53bGlobalCfg::*ref) {
 }
 
 uint32_t Rd53b::readSingleRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref) {
+    
+    m_rxcore->flushBuffer();
     // send a read register command to the chip so that it
     // sends back the current value of the register
     this->sendRdReg(m_chipId, (this->*ref).addr());
     while(!core->isCmdEmpty()) {}
-    std::this_thread::sleep_for(std::chrono::milliseconds(10)) ;
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     // go through the incoming data stream and get the register read data
     std::vector<RawDataPtr> dataVec = m_rxcore->readData();
     RawDataPtr data;
     if (dataVec.size() > 0) {
-	for(auto const &v : dataVec) {
-	     if (v->get(0) != 0xffffdead) {
-    		data = v;
-        	if(!(data->getSize() >= 2)) {
-            		logger->warn("readSingleRegister failed, received wrong number of words ({}) for FE with chipId {}", data->getSize(), m_chipId);
-            		continue;
-        	}
+        for(auto const &v : dataVec) {
+            // Find raw data for this address
+            if (rxChannel != v->getAdr())
+                continue;
 
-        	auto [id, received_address, register_value] = Rd53b::decodeSingleRegReadID(data->get(0), data->get(1));
-		if(id == (m_chipId&0x3)) {
-        	    if(received_address != (this->*ref).addr()) {
-            		logger->warn("readSingleRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
-            		return 0;
-        	    }
-        	    return register_value;
-		} else {
-		    logger->info("readSingleRegister 0x{:x} 0x{:x} -> ID {} - {}, addr 0x{:x} val 0x{:x}", data->get(0), data->get(1), id, m_chipId&0x3, received_address, register_value);
-		}
-	     }
-    	}
+            if (v->get(0) != 0xffffdead) {
+                data = v;
+                if(!(data->getSize() >= 2)) {
+                    logger->warn("readSingleRegister failed, received wrong number of words ({}) for FE with chipId {}", data->getSize(), m_chipId);
+                    continue;
+                }
+
+                auto [id, received_address, register_value] = Rd53b::decodeSingleRegReadID(data->get(0), data->get(1));
+                if(id == (m_chipId&0x3)) {
+                    if(received_address != (this->*ref).addr()) {
+                        logger->warn("readSingleRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
+                        return 0;
+                    }
+                    return register_value;
+                } else {
+                    logger->info("readSingleRegister 0x{:x} 0x{:x} -> ID {} - {}, addr 0x{:x} val 0x{:x}", data->get(0), data->get(1), id, m_chipId&0x3, received_address, register_value);
+                }
+            }
+        }
     }
     
     logger->warn("readSingleRegister failed, did not received register readback data from chip with chipId {}", m_chipId);
@@ -569,7 +575,6 @@ void Rd53b::confAdc(uint16_t MONMUX, bool doCur) {
 
     this->writeRegister(&Rd53b::MonitorEnable, 1); // Enabling monitoring
     while(!core->isCmdEmpty()){;}
-    std::this_thread::sleep_for(std::chrono::microseconds(100));
 
     this->writeRegister(&Rd53b::GlobalPulseConf, 0x40); // Reset ADC
     this->writeRegister(&Rd53b::GlobalPulseWidth, 4);   // Duration = 4 inherited from RD53A
@@ -577,7 +582,7 @@ void Rd53b::confAdc(uint16_t MONMUX, bool doCur) {
     std::this_thread::sleep_for(std::chrono::microseconds(100));
 
     this->sendGlobalPulse(m_chipId);
-    std::this_thread::sleep_for(std::chrono::microseconds(1000000)); // Need to wait long enough for ADC to reset
+    std::this_thread::sleep_for(std::chrono::milliseconds(10)); // Need to wait long enough for ADC to reset
 
     this->writeRegister(&Rd53b::GlobalPulseConf, 0x1000); //Trigger ADC Conversion
     while (!core->isCmdEmpty()){;}
