@@ -183,6 +183,7 @@ namespace ScanHelper {
                 // default is relative to exec
                 chipConfigPath = chip["config"];
             }
+            chip["__config_path__"] = chipConfigPath;
 
             // TODO should be a shared pointer
             auto fe=StdDict::getFrontEnd(chipType);
@@ -244,7 +245,7 @@ namespace ScanHelper {
                 shlog->warn(" ... chip not enabled, skip config!");
                 continue;
             }
-            std::string chipConfigPath = chip["config"];
+            std::string chipConfigPath = chip["__config_path__"];
             bookie.addFe(StdDict::getFrontEnd(chipType).release(), chip["tx"], chip["rx"]);
             bookie.getLastFe()->init(hwCtrl, chip["tx"], chip["rx"]);
             bookie.getLastFe()->init(hwCtrl, chip["tx"], chip["rx"]);
