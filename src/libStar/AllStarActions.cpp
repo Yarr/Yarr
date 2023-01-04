@@ -19,6 +19,8 @@ bool channel_feedback_registered = registerLoopAction("StarChannelFeedback",
   bool counter_loop_registered = registerLoopAction("StarCounterLoop",
                        []() { return std::unique_ptr<LoopActionBase>(new StarCounterLoop); });
 
+  bool felixtrig_loop_registered = registerLoopAction("StarFelixTriggerLoop",
+                       []() { return std::unique_ptr<LoopActionBase>(new StarFelixTriggerLoop); });
 }
 
 

@@ -3,3 +3,4 @@
 #include "StarTriggerLoop.h"
 #include "StarChannelFeedback.h"
 #include "StarCounterLoop.h"
+#include "StarFelixTriggerLoop.h"
