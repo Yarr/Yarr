@@ -10,7 +10,7 @@
 // #          Modified for SPEC card
 // ################################
 
-#include <stdint.h>
+#include <cstdint>
 #include <string>
 
 #include "storage.hpp"

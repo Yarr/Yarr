@@ -9,7 +9,7 @@
 #include "Rd53a2TriggerLoop.h"
 #include <bitset>
 #include <algorithm>
-#include <math.h>
+#include <cmath>
 
 
 #include "logging.h"

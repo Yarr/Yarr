@@ -12,7 +12,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
-#include <stdlib.h>
+#include <cstdlib>
 #include <bitset>
 #include <cstring>
 #include <sstream>

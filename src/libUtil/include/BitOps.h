@@ -1,4 +1,4 @@
-#include <stdint.h>
+#include <cstdint>
 
 namespace BitOps {
     constexpr uint8_t reverse_bits(uint8_t x) {
