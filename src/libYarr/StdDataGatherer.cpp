@@ -10,7 +10,7 @@
 #include <thread>
 #include <algorithm>
 
-#include <signal.h>
+#include <csignal>
 
 #include "logging.h"
 

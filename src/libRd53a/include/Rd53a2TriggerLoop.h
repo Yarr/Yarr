@@ -12,7 +12,7 @@
 #include <array>
 #include <chrono>
 #include <thread>
-#include <math.h>
+#include <cmath>
 #include "LoopActionBase.h"
 #include "StdTriggerAction.h"
 #include "Rd53a.h"

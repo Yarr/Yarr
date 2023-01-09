@@ -3,8 +3,8 @@
 #include <iostream>
 #include <fstream>
 #include <sys/time.h>
-#include <string.h>
-#include <stdint.h>
+#include <string>
+#include <cstdint>
 
 int main(int argc, char *argv[]) {
     unsigned spec_num = 0;

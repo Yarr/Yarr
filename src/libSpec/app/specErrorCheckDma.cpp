@@ -1,11 +1,11 @@
 #include <SpecCom.h>
 
 #include <iostream>
-#include <stdint.h>
-#include <time.h>
-#include <stdlib.h>
+#include <cstdint>
+#include <ctime>
+#include <cstdlib>
 #include <unistd.h>
-#include <string.h>
+#include <string>
 #include <cmath>
 
 uint32_t rand32() {
