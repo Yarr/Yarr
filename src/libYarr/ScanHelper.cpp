@@ -175,7 +175,10 @@ namespace ScanHelper {
                 } else if (chip["path"] == "abs") {
                     chipConfigPath = chip["config"];
                 } else if (chip["path"] == "relToYarrPath") {
-                    chipConfigPath = std::string(std::getenv("YARR_CONFIG_PATH")) + "/" + std::string(chip["config"]);
+                    std::string yarr_path = "";
+                    if (std::getenv("YARR_CONFIG_PATH"))
+                        yarr_path = std::string(std::getenv("YARR_CONFIG_PATH"));
+                    chipConfigPath = yarr_path + "/" + std::string(chip["config"]);
                 } else if (chip["path"] == "db") {
                     pullFromDb = true;
                 }
