@@ -31,7 +31,9 @@ namespace ScanHelper {
         std::unique_ptr<HwController> loadController(const json &ctrlCfg);
         std::string buildChips(const json &j, Bookkeeper &bookie, HwController *hwCtrl, std::map<unsigned,
                               std::array<std::string, 2>> &feCfgMap);
-        std::string loadChipConfigs(json &j, bool createConfig=false, std::string dir="");
+        
+        std::string loadChipConfigs(json &j, const bool &createConfig, const std::string &dir);
+        std::string loadChipConfigs(json &j, bool createConfig=false);
         int loadConfigFile(const ScanOpts &scanOpts, bool writeConfig, json &config);
 // TODO Do not want to use the raw pointer ScanBase*
         void buildHistogrammers( std::map<unsigned, std::unique_ptr<DataProcessor>>& histogrammers, const json &scanConfig,

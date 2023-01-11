@@ -137,7 +137,11 @@ namespace ScanHelper {
         return hwCtrl;
     }
 
-    std::string loadChipConfigs(json &config, bool createConfig, std::string dir) {
+    std::string loadChipConfigs(json &config, bool createConfig) {
+        return loadChipConfigs(config, createConfig, "");
+    }
+
+    std::string loadChipConfigs(json &config, const bool &createConfig, const std::string &dir) {
         std::string chipType;
         if (!config.contains("chipType") || !config.contains("chips")) {
             shlog->error("Invalid config, chip type or chips not specified!");
