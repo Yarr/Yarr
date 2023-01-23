@@ -1,4 +1,4 @@
-site_name: YARR Docs
+site_name: YARR Docks
 nav:
     - Home: index.md
     - SW Installation: install.md

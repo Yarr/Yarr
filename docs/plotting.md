@@ -3,6 +3,7 @@
 ## Installation and compilation
 
 If ROOT is installed Yarr will automatically compile and install [Plotting-Tools](https://gitlab.cern.ch/YARR/utilities/plotting-tools), this is the same library used to make ROOT plots as used by the local-DB.
+To skip the installation of the plotting tools, see [software install](install.md).
 
 If ROOT is not installed (you can check by calling ``$ root``), you can install it via
 ```bash
