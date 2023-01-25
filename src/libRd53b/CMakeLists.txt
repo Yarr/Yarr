@@ -28,7 +28,8 @@ LIST(APPEND apps
         rd53bDecodeTool
         rd53bReadRingosc
         rd53bRegSEETest
-        rd53bTest)
+        rd53bTest
+        rd53bEfuseCheck)
 
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)
