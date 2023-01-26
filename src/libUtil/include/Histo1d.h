@@ -19,12 +19,12 @@ class Histo1d : public HistogramBase {
     public:
         Histo1d(const std::string &arg_name, unsigned arg_bins, double arg_xlow, double arg_xhigh);
         Histo1d(const std::string &arg_name, unsigned arg_bins, double arg_xlow, double arg_xhigh, const LoopStatus &stat);
-        ~Histo1d();
+        ~Histo1d() override;
         
         unsigned size() const;
         unsigned getEntries() const;
-        double getMean();
-        double getStdDev();
+        double getMean() const;
+        double getStdDev() const;
 
         void fill(double x, double v=1);
 
@@ -33,12 +33,14 @@ class Histo1d : public HistogramBase {
         
         void setBin(unsigned n, double v);
         double getBin(unsigned n) const;
+        int binNum(double x) const;
         double const * getData() const { return data.data();};
         double getUnderflow() const {return underflow;};
         double getOverflow() const {return overflow;};
         
         void toFile(const std::string &filename, const std::string &dir = "", bool header= true) const override;
         bool fromFile(const std::string &filename);
+        bool fromJson(const json &jfile);
         void plot(const std::string &filename, const std::string &dir = "") const override;
 
     void toStream(std::ostream &out) const override;

@@ -8,7 +8,5 @@
 
 #include "DataProcessor.h"
 
-DataProcessor::DataProcessor() {
-
-}
+DataProcessor::DataProcessor() = default;
 

@@ -19,10 +19,10 @@
 class Rd53bGlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver {
     public:
         Rd53bGlobalFeedback();
-        Rd53bGlobalFeedback(Rd53bReg Rd53bGlobalCfg::*ref);
+        Rd53bGlobalFeedback(Rd53bRegDefault Rd53bGlobalCfg::*ref);
 
         void writeConfig(json &j) override;
-        void loadConfig(json &j) override;
+        void loadConfig(const json &j) override;
 
         // TODO should probably register a single function
         void feedback(unsigned channel, double sign, bool last = false) override;
@@ -31,19 +31,18 @@ class Rd53bGlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver
 
     protected:
     private:
-        Rd53bReg Rd53bGlobalCfg::*parPtr;
+        Rd53bRegDefault Rd53bGlobalCfg::*parPtr;
         std::string parName;
         int m_cur;
 
         std::map<unsigned, unsigned> m_values;
         std::map<unsigned, unsigned> m_localStep;
         std::map<unsigned, int> m_oldSign;
-        std::map<unsigned, bool> m_doneMap;
+
         bool m_rstPixelReg;
         int m_pixelReg;
 
         void writePar();
-        bool allDone();
         
         void init() override;
         void end() override;

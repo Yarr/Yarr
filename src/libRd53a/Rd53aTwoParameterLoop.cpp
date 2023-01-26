@@ -24,7 +24,7 @@ Rd53aTwoParameterLoop::Rd53aTwoParameterLoop() : LoopActionBase(LOOP_STYLE_PARAM
 
 }
 
-Rd53aTwoParameterLoop::Rd53aTwoParameterLoop(Rd53aReg Rd53aGlobalCfg::*ref): LoopActionBase(LOOP_STYLE_PARAMETER), parPtr(ref) {
+Rd53aTwoParameterLoop::Rd53aTwoParameterLoop(Rd53Reg Rd53aGlobalCfg::*ref): LoopActionBase(LOOP_STYLE_PARAMETER), parPtr(ref) {
     loopType = typeid(this);
     min = 0;
     max = 100;
@@ -97,7 +97,7 @@ void Rd53aTwoParameterLoop::end() {
 
 }
 
-void Rd53aTwoParameterLoop::writePar(Rd53aReg Rd53aGlobalCfg::*p, uint32_t m) {
+void Rd53aTwoParameterLoop::writePar(Rd53Reg Rd53aGlobalCfg::*p, uint32_t m) {
     keeper->globalFe<Rd53a>()->writeRegister(p, m);
     while(!g_tx->isCmdEmpty());
     //std::this_thread::sleep_for(std::chrono::milliseconds(20));
@@ -117,7 +117,7 @@ void Rd53aTwoParameterLoop::writeConfig(json &j) {
     }
 }
 
-void Rd53aTwoParameterLoop::loadConfig(json &j) {
+void Rd53aTwoParameterLoop::loadConfig(const json &j) {
     //Figure out if j contains dicts named 1, 2, 3, etc. each containing a min, max, step, and parname.
     //If an element named "1" is found, we assume multiple parameters to step has been given.
     //If not element named "1" is found, we assume only one parameter is to be stepped.
@@ -132,16 +132,16 @@ void Rd53aTwoParameterLoop::loadConfig(json &j) {
         multipleParams = true;
         //std::cout << "Processing multi-parameter ParameterLoop." << std::endl;
     }
-    if (!j_a["min"].empty()){
+    if (j_a.contains("min")){
         min = j_a["min"];
     }
-    if (!j_a["max"].empty()){
+    if (j_a.contains("max")){
         max = j_a["max"];
     }
-    if (!j_a["step"].empty()){
+    if (j_a.contains("step")){
         step = j_a["step"];
     }
-    if (!j_a["parameter"].empty()) {
+    if (j_a.contains("parameter")) {
         parName = j_a["parameter"];
     }
 
@@ -157,22 +157,22 @@ void Rd53aTwoParameterLoop::loadConfig(json &j) {
               if(j_a.size() == 4) {
 
               if (typeid(j_a) == typeid(json::object())){
-                  if (!j_a["min"].empty()){
+                  if (j_a.contains("min")){
                       minMultiple.push_back(j_a["min"]);
                   }else{
                       minMultiple.push_back(0); //Default values are needed to keep all values (max, min, step, parameter) and the same index n in all the vectors.
                   }
-                  if (!j_a["max"].empty()){
+                  if (j_a.contains("max")){
                       maxMultiple.push_back(j_a["max"]);
                   }else{
                       maxMultiple.push_back(0); //Default values are needed to keep all values (max, min, step, parameter) and the same index n in all the vectors.
                   }
-                  if (!j_a["step"].empty()){
+                  if (j_a.contains("step")){
                       stepMultiple.push_back(j_a["step"]);
                   }else{
                       stepMultiple.push_back(0); //Default values are needed to keep all values (max, min, step, parameter) and the same index n in all the vectors.
                   }
-                  if (!j_a["parameter"].empty()) {
+                  if (j_a.contains("parameter")) {
                       parNameMultiple.push_back(j_a["parameter"]);
                   }else{
                       parNameMultiple.push_back(""); //Default values are needed to keep all values (max, min, step, parameter) and the same index n in all the vectors.
@@ -182,14 +182,14 @@ void Rd53aTwoParameterLoop::loadConfig(json &j) {
     }
 }
     //We have a parameter which allows us to add a value to the logged value. This enables us to set offsets.
-    if (!j["addValue"].empty()){
+    if (j.contains("addValue")){
         add = j["addValue"];
     }
     //Parameter "log" lets the user decide which parameter to use for logging and analysis (e.g. g_stat.set()).
     //It is optional and defaults to the first parameter in the list of parameters to concurrently step.
     //If the parameter is not in the list of parameters to concurrently step it defaults to the first parameter.
     bool def = true; //Use default?
-    if (!j["log"].empty()){
+    if (j.contains("log")){
       parCompare = j["log"];
         for(std::vector<int>::size_type i = 0; i != parNameMultiple.size(); i++){
             if (parNameMultiple[i]== parCompare){

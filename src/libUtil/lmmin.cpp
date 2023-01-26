@@ -13,10 +13,10 @@
  * Homepage:  apps.jcns.fz-juelich.de/lmfit
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-#include <float.h>
+#include <cstdlib>
+#include <cstdio>
+#include <cmath>
+#include <cfloat>
 #include "lmmin.h"
 
 #define MIN(a,b) (((a)<=(b)) ? (a) : (b))

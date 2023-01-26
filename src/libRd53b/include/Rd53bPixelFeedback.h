@@ -18,7 +18,7 @@ class Rd53bPixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
         Rd53bPixelFeedback();
 
         void writeConfig(json &j) override;
-        void loadConfig(json &j) override;
+        void loadConfig(const json &j) override;
 
         void feedback(unsigned channel, std::unique_ptr<Histo2d> h) override;
     protected:
@@ -26,7 +26,7 @@ class Rd53bPixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
         unsigned m_cur;
         bool m_rstPixelReg;
         int m_pixelReg;
-        std::vector<unsigned> m_steps;
+        std::vector<int> m_steps;
 
         std::map<unsigned, std::unique_ptr<Histo2d>> m_fb;
 

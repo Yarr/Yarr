@@ -86,7 +86,7 @@ void Fei4DcLoop::setMode(enum DC_MODE mode) {
     }
 }
 
-uint32_t Fei4DcLoop::getMode() {
+uint32_t Fei4DcLoop::getMode() const {
     return m_mode;
 }
 
@@ -97,13 +97,13 @@ void Fei4DcLoop::writeConfig(json &config) {
     config["mode"] = m_mode;
 }
 
-void Fei4DcLoop::loadConfig(json &config) {
-    if (!config["min"].empty())
+void Fei4DcLoop::loadConfig(const json &config) {
+    if (config.contains("min"))
       min = config["min"];
-    if (!config["max"].empty())
+    if (config.contains("max"))
       max = config["max"];
-    if (!config["step"].empty())
+    if (config.contains("step"))
       step = config["step"];
-    if (!config["mode"].empty())
+    if (config.contains("mode"))
       m_mode = (uint32_t) config["mode"];
 }

@@ -19,11 +19,9 @@ Rd53bGlobalCfg::Rd53bGlobalCfg() {
     this->init();
 }
 
-Rd53bGlobalCfg::~Rd53bGlobalCfg() {
+Rd53bGlobalCfg::~Rd53bGlobalCfg() = default;
 
-}
-
-uint16_t Rd53bGlobalCfg::getValue(Rd53bReg Rd53bGlobalCfg::*ref) const {
+uint16_t Rd53bGlobalCfg::getValue(Rd53bRegDefault Rd53bGlobalCfg::*ref) const {
     return (this->*ref).read();
 }
 
@@ -38,7 +36,7 @@ uint16_t Rd53bGlobalCfg::getValue(std::string name) const {
     return 0;
 }
 
-void Rd53bGlobalCfg::setValue(Rd53bReg Rd53bGlobalCfg::*ref, uint16_t val) {
+void Rd53bGlobalCfg::setValue(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t val) {
     (this->*ref).write(val);
 }
 
@@ -105,11 +103,11 @@ void Rd53bGlobalCfg::init() {
     //16
     DiffVff.init            ( 16, &m_cfg[ 16], 0, 10, 160); regMap["DiffVff"] = &Rd53bGlobalCfg::DiffVff;
     //17
-    DiffTh1L.init           ( 17, &m_cfg[ 17], 0, 10, 200); regMap["DiffTh1L"] = &Rd53bGlobalCfg::DiffTh1L;
+    DiffTh1L.init           ( 17, &m_cfg[ 17], 0, 10, 350); regMap["DiffTh1L"] = &Rd53bGlobalCfg::DiffTh1L;
     //18
-    DiffTh1R.init           ( 18, &m_cfg[ 18], 0, 10, 200); regMap["DiffTh1R"] = &Rd53bGlobalCfg::DiffTh1R;
+    DiffTh1R.init           ( 18, &m_cfg[ 18], 0, 10, 350); regMap["DiffTh1R"] = &Rd53bGlobalCfg::DiffTh1R;
     //19
-    DiffTh1M.init           ( 19, &m_cfg[ 19], 0, 10, 200); regMap["DiffTh1M"] = &Rd53bGlobalCfg::DiffTh1M;
+    DiffTh1M.init           ( 19, &m_cfg[ 19], 0, 10, 350); regMap["DiffTh1M"] = &Rd53bGlobalCfg::DiffTh1M;
     //20
     DiffTh2.init            ( 20, &m_cfg[ 20], 0, 10, 50); regMap["DiffTh2"] = &Rd53bGlobalCfg::DiffTh2;
     //21
@@ -196,7 +194,7 @@ void Rd53bGlobalCfg::init() {
     //53
     InjDigEn.init           ( 53, &m_cfg[ 53], 7,  1, 0); regMap["InjDigEn"] = &Rd53bGlobalCfg::InjDigEn;
     InjAnaMode.init         ( 53, &m_cfg[ 53], 6,  1, 0); regMap["InjAnaMode"] = &Rd53bGlobalCfg::InjAnaMode;
-    InjFineDelay.init       ( 53, &m_cfg[ 53], 0,  6, 0); regMap["InjFineDelay"] = &Rd53bGlobalCfg::InjFineDelay;
+    InjFineDelay.init       ( 53, &m_cfg[ 53], 0,  6, 5); regMap["InjFineDelay"] = &Rd53bGlobalCfg::InjFineDelay;
     //54
     FineDelayClk.init       ( 54, &m_cfg[ 54], 6,  6, 0); regMap["FineDelayClk"] = &Rd53bGlobalCfg::FineDelayClk;
     FineDelayData.init      ( 54, &m_cfg[ 54], 0,  6, 0); regMap["FineDelayData"] = &Rd53bGlobalCfg::FineDelayData;
@@ -219,7 +217,7 @@ void Rd53bGlobalCfg::init() {
     //61
     GlobalPulseWidth.init   ( 61, &m_cfg[ 61], 0,  8, 0); regMap["GlobalPulseWidth"] = &Rd53bGlobalCfg::GlobalPulseWidth;
     //62
-    ServiceBlockEn.init     ( 62, &m_cfg[ 62], 8,  1, 0); regMap["ServiceBlockEn"] = &Rd53bGlobalCfg::ServiceBlockEn;
+    ServiceBlockEn.init     ( 62, &m_cfg[ 62], 8,  1, 1); regMap["ServiceBlockEn"] = &Rd53bGlobalCfg::ServiceBlockEn;
     ServiceBlockPeriod.init ( 62, &m_cfg[ 62], 0,  8, 50); regMap["ServiceBlockPeriod"] = &Rd53bGlobalCfg::ServiceBlockPeriod;
     //63
     TotEnPtot.init          ( 63, &m_cfg[ 63], 12,  1, 0); regMap["TotEnPtot"] = &Rd53bGlobalCfg::TotEnPtot;
@@ -409,19 +407,20 @@ void Rd53bGlobalCfg::init() {
     MonitoringDataAdc.init  (137, &m_cfg[137], 0, 12, 0); regMap["MonitoringDataAdc"] = &Rd53bGlobalCfg::MonitoringDataAdc;
 
     // Special virtual registers
-    InjVcalDiff.init(&InjVcalMed, &InjVcalHigh, true); virtRegMap["InjVcalDiff"] = (Rd53bReg Rd53bGlobalCfg::*)&Rd53bGlobalCfg::InjVcalDiff;
+    InjVcalDiff.init(&InjVcalMed, &InjVcalHigh, true); virtRegMap["InjVcalDiff"] = (Rd53bRegDefault Rd53bGlobalCfg::*)&Rd53bGlobalCfg::InjVcalDiff;
+    DiffTh1.init({&DiffTh1M, &DiffTh1L, &DiffTh1R}); virtRegMap["DiffTh1"] = (Rd53bRegDefault Rd53bGlobalCfg::*) &Rd53bGlobalCfg::DiffTh1;
 }
 
-void Rd53bGlobalCfg::toJson(json &j) {
+void Rd53bGlobalCfg::writeConfig(json &j) {
     for(auto it : regMap) {
         logger->debug("Writing reg: {}", it.first);
         j["RD53B"]["GlobalConfig"][it.first] = (this->*it.second).read();
     }    
 }
 
-void Rd53bGlobalCfg::fromJson(json &j) {
+void Rd53bGlobalCfg::loadConfig(json const &j) {
     for (auto it : regMap) {
-        if (!j["RD53B"]["GlobalConfig"][it.first].empty()) {
+        if (j.contains({"RD53B","GlobalConfig",it.first})) {
             (this->*it.second).write(j["RD53B"]["GlobalConfig"][it.first]);
         } else {
             logger->error("Could not find register \"{}\" using default!", it.first);

@@ -1,0 +1,79 @@
+{
+    "scan": {
+	"analysis": {
+	    "0": {
+		"algorithm": "OccupancyAnalysis",
+		"config": {
+                    "createMask": false
+                }
+	    },
+            "1": {
+                "algorithm": "Analysis2D",
+                "config": {
+                }
+            },
+            "n_count": 2
+	},
+	"histogrammer": [
+	    {
+		"algorithm": "OccupancyMap",
+		"config": {}
+	    }
+	],
+	"loops": [
+	    
+	    {
+		"config": {
+		    "max": 60,
+		    "min": 0,
+		    "step": 1,
+		    "parameter":"ABCs_STR_DEL"
+		},
+		"loopAction": "StdParameterLoop"
+	    },
+
+	    {
+		"config": {
+		    "trig_count": 32,
+		    "trig_frequency": 1000,
+		    "trig_time": 0,
+		    "l0_latency": 30,
+		    "verbose": false,
+		    "extTrigger": false,
+		    "noInject": false          
+		},
+		"loopAction": "StarTriggerLoop"
+	    },
+	    {
+		"loopAction": "StdDataLoop"
+	    }
+	],
+	"name": "strobeDelayScan",
+	"prescan": {
+            "ABCs_LATENCY": 27,
+            "ABCs_CALPULSE_ENABLE": 1,
+            "ABCs_LP_ENABLE": 1,
+            "ABCs_PR_ENABLE": 1,
+            "ABCs_TM": 0,
+            "ABCs_DETMODE": 2,
+            "ABCs_RRMODE": 1,
+            "ABCs_BCAL": 114,
+            "ABCs_BVT":  61,
+            "ABCs_STR_DEL_R": 3,
+            "ABCs_COMBIAS": 16,
+            "ABCs_BTRANGE":    6, 
+            "ABCs_B8BREF":    13,     
+            "ABCs_BVREF":     13,     
+            "ABCs_BIREF":     15,
+            "ABCs_CURRDRIV":  4,
+        "ABCs_MASKHPR":    1,
+        "ABCs_STOPHPR":    1,
+            "HCC_MASKHPR":     1,
+            "HCC_STOPHPR":     1,
+
+
+            "ABCs_BIFEED": 15,
+            "ABCs_BIPRE": 16
+	}
+    }
+}

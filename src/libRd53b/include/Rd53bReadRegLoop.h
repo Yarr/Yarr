@@ -21,7 +21,7 @@ public:
     };
 
     // 0: sensor enable, 1: path chonice, 2: bias selection
-    Rd53bReg Rd53bGlobalCfg::*TransSensorCfg[3][3] = {
+    Rd53bRegDefault Rd53bGlobalCfg::*TransSensorCfg[3][3] = {
         {&Rd53b::MonSensSldoDigEn, &Rd53b::MonSensSldoDigDem, &Rd53b::MonSensSldoDigSelBias},
         {&Rd53b::MonSensSldoAnaEn, &Rd53b::MonSensSldoAnaDem, &Rd53b::MonSensSldoAnaSelBias},
         {&Rd53b::MonSensAcbEn, &Rd53b::MonSensAcbDem, &Rd53b::MonSensAcbSelBias}};
@@ -45,9 +45,9 @@ public:
 public:
     Rd53bReadRegLoop();
 
-    void writeConfig(json &config);
-    void loadConfig(json &config);
-    double convertRingOscCntToMHz(double counter) { return counter / (m_RingOscDur << 1) * 40; }
+    void writeConfig(json &config) override;
+    void loadConfig(const json &config) override;
+    double convertRingOscCntToMHz(double counter) const { return counter / (m_RingOscDur << 1) * 40; }
 
 private:
     std::vector<unsigned short> m_VoltMux;
@@ -56,20 +56,19 @@ private:
     std::vector<std::string> m_TempSensors;
     std::vector<std::string> m_RadSensors;
 
-    uint16_t ReadRegister(Rd53bReg Rd53bGlobalCfg::*ref, Rd53b *tmpFE);
-    uint16_t ReadADC(unsigned short Reg, bool doCur = false, Rd53b *tmpFE = NULL);
-    float ReadNTCTemp(Rd53b *tmpFE, bool in_kelvin = false);
-    float ReadTransSensor(Rd53b *tmpFE, TransSensorLocation loc, TransSensorType type, bool in_kelvin = false);
-    float ReadResistTemp(Rd53b *tmpFE = NULL, bool in_kelvin = false); // Broken for RD53B. Need to be fixed
+    uint16_t ReadADC(unsigned short Reg, bool doCur, Rd53b *fe);
+    float ReadNTCTemp(Rd53b *fe, bool in_kelvin);
+    float ReadTransSensor(Rd53b *fe, TransSensorLocation loc, TransSensorType type, Rd53bCfg::TransSensor sensor, bool in_kelvin = false);
+    float ReadResistTemp(Rd53b *fe, bool in_kelvin); // Broken for RD53B. Need to be fixed
 
     uint16_t m_EnblRingOscA, m_EnblRingOscB, m_RingOscDur, m_RingOscRep;
 
-    void init();
-    void execPart1();
-    void execPart2();
-    void end();
+    void init() override;
+    void execPart1() override;
+    void execPart2() override;
+    void end() override;
 
-    Rd53bReg Rd53bGlobalCfg::*RingOscBEn[5] = {&Rd53b::RingOscBEnBl, &Rd53b::RingOscBEnBr, &Rd53b::RingOscBEnFf, &Rd53b::RingOscBEnLvt, &Rd53b::RingOscBEnCapA};
+    Rd53bRegDefault Rd53bGlobalCfg::*RingOscBEn[5] = {&Rd53b::RingOscBEnBl, &Rd53b::RingOscBEnBr, &Rd53b::RingOscBEnFf, &Rd53b::RingOscBEnLvt, &Rd53b::RingOscBEnCapA};
 };
 
 #endif

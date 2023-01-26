@@ -6,6 +6,8 @@
 // # Comment: Global container for data
 // ################################
 
+#include <set>
+
 #include "Bookkeeper.h"
 
 #include "logging.h"
@@ -25,104 +27,137 @@ Bookkeeper::Bookkeeper(TxCore *arg_tx, RxCore *arg_rx) {
 
 // Delete all leftover data, Bookkeeper should be deleted last
 Bookkeeper::~Bookkeeper() {
-    for(unsigned int k=0; k<feList.size(); k++) {
-        delete feList[k];
-        feList.erase(feList.begin() + k);
+    for (unsigned i=0; i<bookEntries.size(); i++) {
+        this->delFe(i);
     }
     delete g_fe;
 }
 
-// RxChannel is unique ident
 void Bookkeeper::addFe(FrontEnd *fe, unsigned txChannel, unsigned rxChannel) {
-    if(isChannelUsed(rxChannel)) {
-        SPDLOG_LOGGER_ERROR(blog, "Rx channel already in use, not adding FE");
-    } else {
-        feList.push_back(fe);
-        FrontEndCfg *cfg = dynamic_cast<FrontEndCfg*>(feList.back());
-        if(cfg) cfg->setChannel(txChannel, rxChannel);
-        eventMap[rxChannel];
-        histoMap[rxChannel];
-        resultMap[rxChannel];
-        feList.back()->clipData = &eventMap[rxChannel];
-        feList.back()->clipHisto = &histoMap[rxChannel];
-        feList.back()->clipResult = &resultMap[rxChannel];
-    }
+    // Create new entry
+    bookEntries.emplace_back();
+    bookEntries.back().fe = fe;
+    idMap[fe] = bookEntries.size()-1;
+    bookEntries.back().active = true;
+    bookEntries.back().txChannel = txChannel;
+    bookEntries.back().rxChannel = rxChannel;
+
+    FrontEndCfg *cfg = dynamic_cast<FrontEndCfg*>(fe);
+    if(cfg) cfg->setChannel(txChannel, rxChannel);
+
+    rxToIdMap[rxChannel].emplace_back(idMap[fe]);
 
     // Using macro includes file/line info
-    SPDLOG_LOGGER_INFO(blog, "Added FE: Tx({}), Rx({})", txChannel, rxChannel);
+    SPDLOG_LOGGER_INFO(blog, "Added FE: Tx({}), Rx({}) under ID {}", txChannel, rxChannel, idMap[fe]);
 }
 
 void Bookkeeper::addFe(FrontEnd *fe, unsigned channel) {
     this->addFe(fe, channel, channel);
 }
 
-// RxChannel is unique ident
-void Bookkeeper::delFe(unsigned rxChannel) {
-    if (!isChannelUsed(rxChannel)) {
-        SPDLOG_LOGGER_ERROR(blog, "Rx channel not in use, can not delete FE!");
+void Bookkeeper::delFe(unsigned id) {
+    if (id >= bookEntries.size()) {
+        SPDLOG_LOGGER_ERROR(blog, "Id not in use, can not delete FE!");
     } else {
-        for(unsigned int k=0; k<feList.size(); k++) {
-            if(dynamic_cast<FrontEndCfg*>(feList[k])->getChannel() == rxChannel) {
-                delete feList[k];
-                feList.erase(feList.begin() + k);
-            }
-        }
-        histoMap.erase(rxChannel);
-        resultMap.erase(rxChannel);
+        SPDLOG_LOGGER_DEBUG(blog, "Removed FE: Tx({}), Rx({})", bookEntries[id].txChannel, bookEntries[id].rxChannel);
+        delete bookEntries[id].fe;
+        unsigned rx = bookEntries[id].rxChannel;
+        rxToIdMap[rx].erase(std::remove(rxToIdMap[rx].begin(), rxToIdMap[rx].end(), id), rxToIdMap[rx].end());
+        bookEntries.erase(bookEntries.begin() + id);
+    }
+    // Remap everything
+    for (unsigned i=0; i<bookEntries.size(); i++) {
+        idMap[bookEntries[i].fe] = i;
     }
 }
 
 void Bookkeeper::delFe(FrontEnd* fe) {
-    unsigned arg_channel = dynamic_cast<FrontEndCfg*>(fe)->getChannel();
-    delFe(arg_channel);
+    delFe(idMap[fe]);
 }
 
-FrontEnd* Bookkeeper::getFeByChannel(unsigned arg_channel) {
-    for(unsigned int k=0; k<feList.size(); k++) {
-        if(dynamic_cast<FrontEndCfg*>(feList[k])->getChannel() == arg_channel) {
-            return feList[k];
-        }
+FrontEnd* Bookkeeper::getFe(unsigned id) {
+    if (id >= bookEntries.size()) {
+        SPDLOG_LOGGER_ERROR(blog, "Id not in use, can not find FE!");
+        return nullptr;
+    } else {
+        return bookEntries[id].fe;
     }
-    return NULL;	
 }
 
-FrontEnd* Bookkeeper::getFe(unsigned rxChannel) {
-    for(unsigned int k=0; k<feList.size(); k++) {
-        if(dynamic_cast<FrontEndCfg*>(feList[k])->getChannel() == rxChannel) {
-            return feList[k];
-        }
+FrontEndCfg* Bookkeeper::getFeCfg(unsigned id) {
+    if (id >= bookEntries.size()) {
+        SPDLOG_LOGGER_ERROR(blog, "Id not in use, can not find FE!");
+        return nullptr;
+    } else {
+        return dynamic_cast<FrontEndCfg*>(bookEntries[id].fe);
     }
-    return NULL;
 }
 
 FrontEnd* Bookkeeper::getLastFe() {
-    return feList.back();
-}
-
-bool Bookkeeper::isChannelUsed(unsigned arg_channel) {
-    for (unsigned i=0; i<feList.size(); i++) {
-        if (dynamic_cast<FrontEndCfg*>(feList[i])->getRxChannel() == arg_channel)
-            return true;
-    }
-    return false;
+    return bookEntries.back().fe;
 }
 
 std::vector<uint32_t> Bookkeeper::getTxMask() {
     std::vector<uint32_t> activeChannels;
-    for (unsigned i=0; i<feList.size(); i++) {
-        if (feList[i]->isActive()) {
-            activeChannels.push_back(dynamic_cast<FrontEndCfg*>(feList[i])->getTxChannel());
-        }
+    for (BookEntry &entry : bookEntries) {
+        if (entry.active)
+            activeChannels.push_back(entry.txChannel);
     }
     return activeChannels;
 }
 
 std::vector<uint32_t> Bookkeeper::getRxMask() {
     std::vector<uint32_t> activeChannels;
-    for (unsigned i=0; i<feList.size(); i++) {
-        if (feList[i]->isActive()) {
-            activeChannels.push_back(dynamic_cast<FrontEndCfg*>(feList[i])->getRxChannel());
-        }
+    for (BookEntry &entry : bookEntries) {
+        if (entry.active)
+            activeChannels.push_back(entry.rxChannel);
     }
     return activeChannels;
+}
+
+std::vector<uint32_t> Bookkeeper::getTxMaskUnique() {
+    std::set<uint32_t> uniqueChannels;
+    for (BookEntry &entry : bookEntries) {
+        if (entry.active) {
+            uniqueChannels.insert(entry.txChannel);
+        }
+    }
+
+    std::vector<uint32_t> vecChannels(uniqueChannels.begin(), uniqueChannels.end());
+    return vecChannels;
+}
+
+std::vector<uint32_t> Bookkeeper::getRxMaskUnique() {
+    std::set<uint32_t> uniqueChannels;
+    for (BookEntry &entry : bookEntries) {
+        if (entry.active) {
+            uniqueChannels.insert(entry.rxChannel);
+        }
+    }
+
+    std::vector<uint32_t> vecChannels(uniqueChannels.begin(), uniqueChannels.end());
+    return vecChannels;
+}
+
+
+unsigned Bookkeeper::getId(FrontEnd *fe) {
+    if (idMap.find(fe) != idMap.end()) {
+        return idMap[fe];
+    } else {
+        SPDLOG_LOGGER_ERROR(blog, "Could not find Id for FrontEnd at 0x{:x}", fmt::ptr(fe));
+    }
+    return 0;
+}
+
+BookEntry& Bookkeeper::getEntry(unsigned id) {
+    if (id >= bookEntries.size()) {
+        SPDLOG_LOGGER_CRITICAL(blog, "Could not retrieve entry {}", id);
+        exit(-1);
+    }
+    return bookEntries[id];
+}
+
+std::vector<unsigned>& Bookkeeper::getRxToId(unsigned rx) {
+    // Construct empty if does not exist ok!
+    return rxToIdMap[rx];
 }

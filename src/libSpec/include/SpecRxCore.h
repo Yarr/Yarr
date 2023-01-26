@@ -31,21 +31,60 @@
 #define RX_BRIDGE_EMPTY 0x5
 #define RX_CUR_COUNT 0x6
 
+class SpecRawData : public RawData {
+    public:
+        SpecRawData(uint32_t arg_adr, RawDataPtr arg_data) : RawData(0, 0) {
+            adr = arg_adr;
+            data = arg_data;
+        }
+
+        ~SpecRawData()=default;
+
+        inline void resize(unsigned arg_words) override {
+            data->resize(arg_words);
+        }
+
+        inline uint32_t& getAdr() override {
+            return adr;
+        }
+        
+        void setItAndOffset(uint32_t activeChannels, uint32_t channel) {
+            m_activeChannels = activeChannels;
+            m_channel = channel;
+        }
+        
+        inline unsigned getSize() const override {
+            return data->getSize()/m_activeChannels;
+        }
+
+        inline uint32_t& operator [](size_t i) override {
+            return data->get(((i/2)*m_activeChannels*2)+(m_channel*2)+(i%2));
+        }
+
+        inline uint32_t& get(size_t i) override {
+            return data->get(((i/2)*m_activeChannels*2)+(m_channel*2)+(i%2));
+        }
+    private:
+        uint32_t m_activeChannels{1};
+        uint32_t m_channel{0};
+        RawDataPtr data;
+};
+
 class SpecRxCore : virtual public RxCore, virtual public SpecCom{
     public:
         SpecRxCore();
 
-        void setRxEnable(uint32_t val);
-        void setRxEnable(std::vector<uint32_t> channels);
-        void disableRx();
-        void maskRxEnable(uint32_t val, uint32_t mask);
+        void setRxEnable(uint32_t val) override;
+        void setRxEnable(std::vector<uint32_t> channels) override;
+        void disableRx() override;
+        void maskRxEnable(uint32_t val, uint32_t mask) override;
 
-        RawData* readData();
-        void flushBuffer();
+        std::vector<RawDataPtr > readData() override;
+        void flushBuffer() override;
         
-        uint32_t getDataRate();
-        uint32_t getCurCount();
-        bool isBridgeEmpty();
+        uint32_t getDataRate() override;
+        uint32_t getCurCount() override;
+        bool isBridgeEmpty() override;
         
         uint32_t getLinkStatus();
         
@@ -55,7 +94,7 @@ class SpecRxCore : virtual public RxCore, virtual public SpecCom{
         void setRxActiveLanes(uint32_t val);
         uint32_t getRxActiveLanes();
 
-        void checkRxSync();
+        void checkRxSync() override;
 
     protected:
         uint32_t m_rxActiveLanes;
@@ -63,6 +102,7 @@ class SpecRxCore : virtual public RxCore, virtual public SpecCom{
     private:
         uint32_t getStartAddr();
         uint32_t getDataCount();
+        std::vector<uint32_t> m_rxEnable;
 
 };
 

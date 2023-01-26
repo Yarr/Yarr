@@ -15,21 +15,21 @@
 class Rd53bParameterLoop : public LoopActionBase {
     public:
         Rd53bParameterLoop();
-        Rd53bParameterLoop(Rd53bReg Rd53bGlobalCfg::*ref);
+        Rd53bParameterLoop(Rd53bRegDefault Rd53bGlobalCfg::*ref);
 
-        void writeConfig(json &j);
-        void loadConfig(json &j);
+        void writeConfig(json &j) override;
+        void loadConfig(const json &j) override;
 
     private:
-        Rd53bReg Rd53bGlobalCfg::*parPtr;
+        Rd53bRegDefault Rd53bGlobalCfg::*parPtr;
         std::string parName;
         void writePar();
         unsigned m_cur;
 
-        void init();
-        void end();
-        void execPart1();
-        void execPart2();
+        void init() override;
+        void end() override;
+        void execPart1() override;
+        void execPart2() override;
 };
 
 #endif

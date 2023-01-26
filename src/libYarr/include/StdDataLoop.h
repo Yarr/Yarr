@@ -19,10 +19,10 @@ class StdDataLoop: public LoopActionBase, public StdDataAction {
     private:
         //ClipBoard<RawDataContainer> *storage;
         unsigned counter;
-        void init();
-        void end();
-        void execPart1();
-        void execPart2();
+        void init() override;
+        void end() override;
+        void execPart1() override;
+        void execPart2() override;
 };
 
 #endif

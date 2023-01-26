@@ -15,9 +15,16 @@ namespace {
   auto logger = logging::make_log("StarCfg");
 }
 
-StarCfg::StarCfg() {}
+StarCfg::StarCfg(int abc_version, int hcc_version)
+  : m_abc_info(AbcStarRegInfo::instance(abc_version)),
+    m_hcc_info(HccStarRegInfo::instance(hcc_version)),
+    m_abc_version(abc_version),
+    m_hcc_version(hcc_version),
+    m_hcc(hcc_version),
+    m_ABCchips{}
+{}
 
-StarCfg::~StarCfg() {}
+StarCfg::~StarCfg() = default;
 
 double StarCfg::toCharge(double vcal) {
     // Q = C*V
@@ -37,7 +44,7 @@ int StarCfg::hccChannelForABCchipID(unsigned int chipID) {
 }
 
 //HCC register accessor functions
-const uint32_t StarCfg::getHCCRegister(HCCStarRegister addr){
+uint32_t StarCfg::getHCCRegister(HCCStarRegister addr){
   return m_hcc.getRegisterValue(addr);
 }
 void StarCfg::setHCCRegister(HCCStarRegister addr, uint32_t val){
@@ -45,7 +52,7 @@ void StarCfg::setHCCRegister(HCCStarRegister addr, uint32_t val){
 }
 
 //ABC register accessor functions, converts chipID into chip index
-const uint32_t StarCfg::getABCRegister(ABCStarRegister addr, int32_t chipID){
+uint32_t StarCfg::getABCRegister(ABCStarRegister addr, int32_t chipID){
   auto &abc = abcFromChipID(chipID);
   return abc.getRegisterValue(addr);
 }
@@ -109,14 +116,14 @@ int StarCfg::getTrimDAC(unsigned col, unsigned row) const {
     return 0;
 }
 
-void StarCfg::toFileJson(json &j) {
+void StarCfg::writeConfig(json &j) {
     logger->debug("Send StarCfg to json");
 
     j["name"] = name;
 
     j["HCC"]["ID"] = getHCCchipID();
 
-    auto &hccRegs = HccStarRegInfo::instance()->hccregisterMap;
+    auto &hccRegs = m_hcc_info->hccregisterMap;
 
     for(auto &reg: hccRegs) {
         auto &info = reg.second;
@@ -133,7 +140,7 @@ void StarCfg::toFileJson(json &j) {
         }
     }
 
-    auto &abcRegs = AbcStarRegInfo::instance()->abcregisterMap;
+    auto &abcRegs = m_abc_info->abcregisterMap;
 
     std::map<std::string, std::string> common;
     // Store until we know which are not common
@@ -209,14 +216,14 @@ void StarCfg::toFileJson(json &j) {
     }
 
     for(size_t a=0; a<regs.size(); a++) {
-        for(auto r: regs[a]) {
+        for(auto &r: regs[a]) {
             if(common.find(r.first) != common.end()) {
                 continue;
             }
             j["ABCs"]["regs"][a][r.first] = r.second;
         }
     }
-    for(auto m: common) {
+    for(auto &m: common) {
         j["ABCs"]["common"][m.first] = m.second;
     }
 }
@@ -253,10 +260,10 @@ uint32_t valFromJson(const json &jValue) {
     }
 }
  
-void StarCfg::fromFileJson(json &j) {
+void StarCfg::loadConfig(const json &j) {
     logger->debug("Read StarCfg from json");
 
-    if (!j["name"].empty()) {
+    if (j.contains("name")) {
         name = j["name"];
     }
 
@@ -267,16 +274,16 @@ void StarCfg::fromFileJson(json &j) {
 
     auto &hcc = j["HCC"];
 
-    if (!hcc["ID"].empty()) {
+    if (hcc.contains("ID")) {
         setHCCChipId(hcc["ID"]);
     } else {
         logger->error("No HCC ID found in the config file!");
         throw std::runtime_error("Missing ID in config file");
     }
 
-    m_hcc.setDefaults();
+    m_hcc.setDefaults(m_hcc_version);
 
-    if (!hcc["regs"].empty()) {
+    if (hcc.contains("regs")) {
         auto &regs = hcc["regs"];
 
         if(!regs.is_object()) {
@@ -322,7 +329,7 @@ void StarCfg::fromFileJson(json &j) {
     unsigned abc_arr_length = 0;
 
     // Load the IDs
-    if (!abcs["IDs"].empty()) {
+    if (abcs.contains("IDs")) {
         auto &ids = abcs["IDs"];
         abc_arr_length = ids.size();
         for (int iABC = 0; iABC < ids.size(); iABC++) {
@@ -346,7 +353,7 @@ void StarCfg::fromFileJson(json &j) {
 
     // Initialize register maps for consistency
     // Make all registers and subregisters for the ABC
-    eachAbc( [&](auto &abc) {abc.setDefaults();});
+    eachAbc( [&](auto &abc) {abc.setDefaults(m_abc_version);});
 
     // First, commont register settings
     if(abcs.find("common") != abcs.end()) {
@@ -374,6 +381,8 @@ void StarCfg::fromFileJson(json &j) {
                 logger->trace("All ABCs reg {} has been set to {:08x}", regName, regValue);
             } catch(std::runtime_error &e) {
                 logger->warn("Reg {} in JSON file does not exist as an ABC register.  It will be ignored!", regName);
+            } catch(std::out_of_range &e) {
+                logger->warn("Reg {} in JSON file is not valid ABC register (version {}).  It will be ignored!", regName, m_abc_version);
             }
         }
     }
@@ -387,7 +396,7 @@ void StarCfg::fromFileJson(json &j) {
             return;
         }
 
-        for (int iABC = 0; iABC < abc_arr_length; iABC++) {
+        for (size_t iABC = 0; iABC < abc_arr_length; iABC++) {
             if (ids[iABC].is_null())
                 continue;
 
@@ -428,9 +437,7 @@ void StarCfg::fromFileJson(json &j) {
             return;
         }
 
-        auto abcSubRegs = AbcStarRegInfo::instance()->abcSubRegisterMap_all;
-
-        for (int iABC = 0; iABC < abc_arr_length; iABC++) {
+        for (size_t iABC = 0; iABC < abc_arr_length; iABC++) {
             if (ids[iABC].is_null())
                 continue;
 
@@ -469,7 +476,7 @@ void StarCfg::fromFileJson(json &j) {
         }
 
         // Each chip has a list of strips
-        for (int iABC = 0; iABC < abc_arr_length; iABC++) {
+        for (size_t iABC = 0; iABC < abc_arr_length; iABC++) {
             if (ids[iABC].is_null())
                 continue;
             auto &maskedStrips = maskArray[iABC];
@@ -490,7 +497,7 @@ void StarCfg::fromFileJson(json &j) {
         }
 
         // Each chip has either single integer (all the same), or array of value per strip
-        for (int iABC = 0; iABC < abc_arr_length; iABC++) {
+        for (size_t iABC = 0; iABC < abc_arr_length; iABC++) {
             if (ids[iABC].is_null())
                 continue;
             auto &abc = abcFromIndex(iABC+1);

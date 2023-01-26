@@ -1,8 +1,7 @@
 #include "NetioHandler.h"
 #include <memory>
 
-#include "NetioFei4Records.h"
-
+#include "felixbase/client.hpp"
 #include "logging.h"
 
 namespace {
@@ -15,13 +14,10 @@ bool doFlushBuffer = false;
 //MW: FIX CLANG COMPILATION
 // TODO default constructor?
 NetioHandler::NetioHandler(std::string contextStr, std::string felixHost,
-               uint16_t felixTXPort, uint16_t felixRXPort,
-               size_t queueSize) :
-    m_felixHost(felixHost), m_felixTXPort(felixTXPort), m_felixRXPort(felixRXPort),
-    m_queueSize(queueSize)
+                           uint16_t felixRXPort) :
+    m_felixHost(felixHost), m_felixRXPort(felixRXPort)
 {
   nlog->debug("### NetioHandler::NetioHandler() -> Setting up context");
-  m_activeChannels=0;
   m_context = new netio::context(contextStr);
   m_netio_bg_thread = std::thread( [&](){m_context->event_loop()->run_forever();} );
   handlerDataCount = 0;
@@ -32,19 +28,12 @@ NetioHandler::~NetioHandler() {
   nlog->debug("###  Stopping communication with FELIX:");
   nlog->debug("###   -> Closing send sockets...");
 
-  for (auto socketIt : m_send_sockets ) {
-    if (socketIt.second->is_open()) socketIt.second->disconnect();
-  }
-  nlog->debug("###   -> Clearing send and sub sockets...");
-  m_send_sockets.clear();
+  nlog->debug("###   -> Clearing sub sockets...");
   m_sub_sockets.clear();
   nlog->debug("###   -> Stopping event loop...");
   m_context->event_loop()->stop();
   nlog->debug("###   -> Background thread joining...");
   m_netio_bg_thread.join();
-  nlog->debug("###  Cleaning up buffers and utilities:");
-  nlog->debug("###   -> Clearing monitors...");
-  m_monitors.clear();
 
   nlog->debug("###  Summary of NETIO Message errors (netio msg too small):");
   for(auto it = m_msgErrors.cbegin(); it != m_msgErrors.cend(); ++it) {
@@ -52,106 +41,14 @@ NetioHandler::~NetioHandler() {
                 it->first, it->second);
   }
 
-  nlog->debug("###   -> Clearing queues...");
-  m_pcqs.clear();
   nlog->debug("### NetioHandler::~NetioHandler() -> Clean shutdown.");
-}
-
-void NetioHandler::monitorSetup(size_t sensitivity, size_t delay, size_t numOf){
-  m_sensitivity=sensitivity;
-  m_delay=delay;
-  if (numOf==0) {
-    for (uint32_t i=0; i<m_activeChannels; ++i){
-      m_monitors.push_back( QueueMonitor(i, std::ref(m_monitor_config_basic[i]), m_pcqs, m_sensitivity, m_delay) );
-    }
-  } else {
-    for (uint32_t i=0; i<numOf; ++i){
-      m_monitors.push_back( QueueMonitor(i, std::ref(m_monitor_config[i]), m_pcqs, m_sensitivity, m_delay) );
-    }
-  }
-}
-
-void NetioHandler::configureMonitors(size_t sensitivity, size_t delay) {
-  m_sensitivity=sensitivity;
-  m_delay=delay;
-  nlog->debug("### NetioHandler::configureMonitors(sensitivity={}, delay={})",
-              sensitivity, delay);
-  nlog->debug("###   -> Making monitor mapping for active channels: {}",
-              m_activeChannels);
-  switch(m_monitor_mode)
-  {
-    case single:
-      {
-        nlog->debug("###  -> 1 Monitor per single elink mode.");
-        for (uint32_t i=0; i<m_activeChannels; ++i) {
-          m_monitor_config_dynamic.insert( std::pair<uint32_t, std::vector<uint64_t>>(i, {m_channels[i]}) );
-          m_monitors.emplace_back( QueueMonitor(i, std::ref(m_monitor_config_dynamic[i]), m_pcqs, m_sensitivity, m_delay) );
-        }
-      }
-      break;
-    case dual:
-      {
-        //if (m_activeChannels/2 != 0) { std::cout << "### ERROR -> Active channels number are not the "}
-        nlog->debug("###  -> 1 Monitor per 2 elink mode.");
-        for (uint32_t i=0; i<m_activeChannels; i=i+2) {
-          m_monitor_config_dynamic.insert( std::pair<uint32_t, std::vector<uint64_t>>(i/2, {m_channels[i], m_channels[i+1]}) );
-          m_monitors.emplace_back( QueueMonitor(i/2, std::ref(m_monitor_config_dynamic[i/2]), m_pcqs, m_sensitivity, m_delay) );
-        }
-      }
-      break;
-    case quad:
-      {
-        //if (m_activeChannels/2 != 0) { std::cout << "### ERROR -> Active channels number are not the "}
-        nlog->debug("###  -> 1 Monitor per 4 elink mode.");
-        for (uint32_t i=0; i<m_activeChannels; i=i+4) {
-          m_monitor_config_dynamic.insert( std::pair<uint32_t, std::vector<uint64_t>>(i/4, {m_channels[i], m_channels[i+1], m_channels[i+2], m_channels[i+3]}) );
-          m_monitors.emplace_back( QueueMonitor(i/4, std::ref(m_monitor_config_dynamic[i/4]), m_pcqs, m_sensitivity, m_delay) );
-        }
-      }
-      break;
-  }
-}
-
-void NetioHandler::startChecking(){
-  for (uint32_t i=0; i<m_monitors.size(); ++i) {
-    m_monitors[i].startMonitor();
-  }
-}
-
-void NetioHandler::stopChecking(){
-  nlog->warn("### NetioHandler -> DON'T CALL stopChecking() for monitors!");
-}
-
-bool NetioHandler::isStable(size_t monitorID) {
-  const std::map<uint64_t, bool>& stab = m_monitors[monitorID].getStability();
-  for (auto it=stab.begin(); it!=stab.end(); ++it){
-    if (!it->second) return false;
-  }
-  return true;
-}
-
-bool NetioHandler::isAllStable() {
-  for (uint32_t i=0; i<m_monitors.size(); ++i){
-    if ( !isStable(i) ) return false;
-  }
-  return true;
-}
-
-std::vector<uint32_t> NetioHandler::pushOut(uint64_t chn) {
-  std::vector<uint32_t> dataVec;
-  while ( !m_pcqs[chn]->isEmpty() ) {
-    uint32_t record;
-    m_pcqs[chn]->read(std::ref(record));
-    dataVec.push_back(record);
-  }
-  return dataVec;
 }
 
 void NetioHandler::setFlushBuffer(bool status){
 	doFlushBuffer = status;
 }
 
-int NetioHandler::getDataCount() {
+int NetioHandler::getDataCount() const {
         return handlerDataCount;
 }
 
@@ -160,7 +57,6 @@ void NetioHandler::addChannel(uint64_t chn){
 
   m_channels.push_back(chn);
   nlog->info("### NetioHandler -> Adding channel: {}");
-  m_pcqs[chn] = std::make_shared<FollyQueue>(m_queueSize);
 
   m_msgErrors[chn] = 0;
 
@@ -209,7 +105,8 @@ void NetioHandler::addChannel(uint64_t chn){
 	  if(numWords==0)
 		return;
 
-	  uint32_t *buffer = new uint32_t[numWords]; 
+      std::unique_ptr<RawData> rd(new RawData(my_chn, numWords));
+	  uint32_t *buffer = rd->getBuf();
           // Copy number of bytes to avoid dereferencing a bad word on the end
           memcpy(buffer, &data[offset], msg_size-offset);
 
@@ -223,14 +120,12 @@ void NetioHandler::addChannel(uint64_t chn){
 	  //printf(" .... \n");
 	  //event_number++;
           
-	  RawData* rd = new RawData(my_chn, buffer, numWords);
-	  std::unique_ptr<RawData> rdp =  std::unique_ptr<RawData>(rd);
-	  rawData.pushData(std::move(rdp));
+	  rawData.pushData(std::move(rd));
 
           ++handlerDataCount;
         } else  { 
         	nlog->warn("WARNING: NetIO message is shorter than {} bytes. It is {} bytes.", my_headersize, data.size());
-          	//m_msgErrors[cid]++;
+          	m_msgErrors[chn]++;
 		return;
         }
 
@@ -244,7 +139,6 @@ void NetioHandler::addChannel(uint64_t chn){
     return;
   }
   nlog->debug("### NetioHandler::addChannel({}) -> Success. Queue and socket-pair created, subscribed.", chn);
-  m_activeChannels++;
 
   //std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
@@ -261,9 +155,7 @@ void NetioHandler::delChannel(uint64_t chn){
     m_channels.erase(it);
     //SHIT: please do not unsubscribe: because felixcore/netio doesn't like it
     m_sub_sockets[chn]->unsubscribe(chn, netio::endpoint(m_felixHost, m_felixRXPort));
-    delete m_send_sockets[chn];
     delete m_sub_sockets[chn];
-    m_send_sockets.erase(chn);
     m_sub_sockets.erase(chn);
   }
 }

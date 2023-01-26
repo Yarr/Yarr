@@ -17,8 +17,7 @@ ItsdaqRxCore::ItsdaqRxCore(ItsdaqHandler&h)
 {
 }
 
-ItsdaqRxCore::~ItsdaqRxCore(){
-}
+ItsdaqRxCore::~ItsdaqRxCore()= default;
 
 void ItsdaqRxCore::init() {
   logger->debug("init");
@@ -123,8 +122,13 @@ void ItsdaqRxCore::flushBuffer(){
   logger->debug("Skip flushBuffer");
 }
 
-RawData* ItsdaqRxCore::readData(){
-  return m_h.GetData().release();
+std::vector<RawDataPtr> ItsdaqRxCore::readData(){
+  std::vector<RawDataPtr> dataVec;
+  RawDataPtr data = m_h.GetData();
+  if (data != nullptr) {
+      dataVec.push_back(data);
+  }
+  return dataVec;
 }
 
 uint32_t ItsdaqRxCore::getDataRate(){
@@ -144,14 +148,14 @@ bool ItsdaqRxCore::isBridgeEmpty() {
   return (t1 - bridge_watcher) > std::chrono::microseconds(100);
 }
 
-void ItsdaqRxCore::toFileJson(json &j) {
+void ItsdaqRxCore::writeConfig(json &j) const {
   if(m_streamConfig != 0) {
     j["streamConfig"] = m_streamConfig;
   }
 }
 
-void ItsdaqRxCore::fromFileJson(json &j) {
-  if(j["streamConfig"]) {
+void ItsdaqRxCore::loadConfig(const json &j) {
+  if(j.contains("streamConfig")) {
     m_streamConfig =  j["streamConfig"];
   }
 

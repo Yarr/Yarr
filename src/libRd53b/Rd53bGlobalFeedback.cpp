@@ -25,7 +25,7 @@ Rd53bGlobalFeedback::Rd53bGlobalFeedback() : LoopActionBase(LOOP_STYLE_GLOBAL_FE
     m_pixelReg = 0;
 }
 
-Rd53bGlobalFeedback::Rd53bGlobalFeedback(Rd53bReg Rd53bGlobalCfg::*ref) : LoopActionBase(LOOP_STYLE_GLOBAL_FEEDBACK), parPtr(ref) {
+Rd53bGlobalFeedback::Rd53bGlobalFeedback(Rd53bRegDefault Rd53bGlobalCfg::*ref) : LoopActionBase(LOOP_STYLE_GLOBAL_FEEDBACK), parPtr(ref) {
     min = 0;
     max = 255;
     step = 1;
@@ -45,18 +45,18 @@ void Rd53bGlobalFeedback::writeConfig(json &j) {
     j["rstPixelReg"] = m_rstPixelReg;
 }
 
-void Rd53bGlobalFeedback::loadConfig(json &j) {
-    if (!j["min"].empty())
+void Rd53bGlobalFeedback::loadConfig(const json &j) {
+    if (j.contains("min"))
         min = j["min"];
-    if (!j["max"].empty())
+    if (j.contains("max"))
         max = j["max"];
-    if (!j["step"].empty())
+    if (j.contains("step"))
         step = j["step"];
-    if (!j["pixelReg"].empty()) 
+    if (j.contains("pixelReg"))
         m_pixelReg = j["pixelReg"];
-    if (!j["rstPixelReg"].empty())
+    if (j.contains("rstPixelReg"))
         m_rstPixelReg = j["rstPixelReg"];
-    if (!j["parameter"].empty()) {
+    if (j.contains("parameter")) {
         logger->info("Linking parameter: {}", std::string(j["parameter"]));
         parName = j["parameter"];
     }
@@ -73,15 +73,15 @@ void Rd53bGlobalFeedback::feedback(unsigned channel, double sign, bool last) {
     if (val > (int)max) val = max;
     if (val < min) val = min;
     m_values[channel] = val;
-    m_doneMap[channel] |= last;
+    fbDoneMap[channel] |= last;
 
     if (m_localStep[channel] == 1 || val == min) {
-        m_doneMap[channel] = true;
+        fbDoneMap[channel] = true;
     }
 
     // Abort if we are getting to low
     if (val <= min) {
-        m_doneMap[channel] = true;
+        fbDoneMap[channel] = true;
     }
 }
 
@@ -91,40 +91,30 @@ void Rd53bGlobalFeedback::feedbackBinary(unsigned channel, double sign, bool las
     if (val < 0) val = 0;
     m_values[channel] = val;
     m_localStep[channel]  = m_localStep[channel]/2;
-    m_doneMap[channel] |= last;
+    fbDoneMap[channel] |= last;
 
     if (m_localStep[channel] == 1) {
-        m_doneMap[channel] = true;
+        fbDoneMap[channel] = true;
     }
     if (m_values[channel] == 0) {
-        m_doneMap[channel] = true;
+        fbDoneMap[channel] = true;
     }
 }
 
 void Rd53bGlobalFeedback::feedbackStep(unsigned channel, double sign, bool last) {
     m_values[channel] = m_values[channel] + sign;
-    m_doneMap[channel] |= last;
-}
-
-
-bool Rd53bGlobalFeedback::allDone() {
-    for (auto *fe : keeper->feList) {
-        if (fe->getActive()) {
-            if (!m_doneMap[dynamic_cast<FrontEndCfg*>(fe)->getRxChannel()])
-                return false;
-        }
-    }
-    return true;
+    fbDoneMap[channel] |= last;
 }
 
 void Rd53bGlobalFeedback::writePar() {
-    for (auto *fe : keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if(fe->getActive()) {
             auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
             // Enable single channel
             g_tx->setCmdEnable(feCfg->getTxChannel());
             // Write parameter
-            dynamic_cast<Rd53b*>(fe)->writeRegister(parPtr, m_values[feCfg->getRxChannel()]);
+            dynamic_cast<Rd53b*>(fe)->writeRegister(parPtr, m_values[id]);
             while(!g_tx->isCmdEmpty()){}
         }
     }
@@ -136,21 +126,22 @@ void Rd53bGlobalFeedback::init() {
     logger->debug("init");
     m_done = false;
     m_cur = 0;
-    parPtr = keeper->globalFe<Rd53b>()->regMap[parName];
+    parPtr = keeper->globalFe<Rd53b>()->getNamedRegister(parName);
     // Init maps
-    for (auto *fe : keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if (fe->getActive()) {
-            unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-            m_localStep[ch] = step;
-            m_values[ch] = max;
-            m_oldSign[ch] = -1;
-            m_doneMap[ch] = false;
+            m_localStep[id] = step;
+            m_values[id] = max;
+            m_oldSign[id] = -1;
+            fbDoneMap[id] = false;
         }
     }
     this->writePar();
 
     if (m_rstPixelReg) {
-        for (auto *fe : keeper->feList) {
+        for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+            FrontEnd *fe = keeper->getEntry(id).fe;
             if (fe->getActive()) {
                 Rd53b *rd53b = dynamic_cast<Rd53b*>(fe);
                 g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
@@ -172,24 +163,23 @@ void Rd53bGlobalFeedback::execPart1() {
 
 void Rd53bGlobalFeedback::execPart2() {
     // Wait for mutexes to be unlocked by feedback
-    for (auto fe: keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if (fe->getActive()) {
-            unsigned rx = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-
-            waitForFeedback(rx);
-            logger->info(" --> Received Feedback on Channel {} with value: {}", rx, m_values[rx]);
+            waitForFeedback(id);
+            logger->info(" --> Received Feedback on ID {} with value: {}", id, m_values[id]);
         }
     }
     m_cur++;
     this->writePar();
-    m_done = this->allDone();
+    m_done = this->isFeedbackDone();
 }
 
 void Rd53bGlobalFeedback::end() {
-    for (auto fe: keeper->feList) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if (fe->getActive()) {
-            unsigned rx = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-            logger->info(" --> Final parameter for Channel {} is {}", rx, m_values[rx]);
+            logger->info(" --> Final parameter for ID {} is {}", id, m_values[id]);
         }
     }
     this->writePar();

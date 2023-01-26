@@ -1,0 +1,83 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "ScurveFitter"
+      },
+     "1": {
+        "algorithm": "ParameterAnalysis"
+      },
+      "n_count": 2
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "1": {
+        "algorithm": "TagDist",
+        "config": {}
+      },
+      "2": {
+        "algorithm": "HitsPerEvent",
+        "config": {}
+      },
+      "3": {
+        "algorithm": "DataArchiver",
+        "config": {}
+      },
+      "n_count": 4
+    },
+    "loops": [
+	{
+        "config": {
+          "max": 1536,
+          "min": 0,
+          "step": 1,
+	  "maskType" : 1,
+	  "maskSize" : 1,
+	  "sensorType" : 0
+        },
+        "loopAction": "Rd53bMaskLoop"
+      },
+      {
+        "config": {
+            "max": 3850,
+            "min": 700,
+            "step": 50,
+            "parameter":"InjVcalDiff"
+        },
+            "loopAction": "StdParameterLoop"
+      },
+      {
+        "config": {
+          "max": 50,
+          "min": 0,
+          "step": 1,
+          "nSteps": 1
+        },
+        "loopAction": "Rd53bCoreColLoop"
+      },
+      {
+        "config": {
+          "count": 100,
+          "delay": 56,
+          "extTrigger": false,
+          "frequency": 5000,
+          "noInject": false,
+          "time": 0,
+	  "edgeMode" : false
+        },
+        "loopAction": "Rd53bTriggerLoop"
+      },
+      {
+        "loopAction": "StdDataLoop"
+      }
+    ],
+  "name": "CrossTalkThresholdScan",
+    "prescan": {
+        "InjDigEn": 0,
+        "Latency": 60
+    }
+  }
+}

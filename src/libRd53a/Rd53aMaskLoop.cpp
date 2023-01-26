@@ -95,7 +95,8 @@ void Rd53aMaskLoop::init() {
     SPDLOG_LOGGER_TRACE(logger, "");
     m_done = false;
     m_cur = min;
-    for(FrontEnd *fe : keeper->feList) {
+    for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         auto rd53a = dynamic_cast<Rd53a*>(fe);
         // Make copy of pixRegs
         m_pixRegs[fe] = rd53a->pixRegs;
@@ -118,7 +119,8 @@ void Rd53aMaskLoop::execPart1() {
     SPDLOG_LOGGER_TRACE(logger, "");
 
     // Loop over FrontEnds
-    for(FrontEnd *fe : keeper->feList) {
+    for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         std::vector<std::pair<unsigned, unsigned>> modPixels;
 
@@ -200,7 +202,8 @@ void Rd53aMaskLoop::execPart2() {
 
     // Loop over FrontEnds to clean it up
     if (m_maskType == CrossTalkMask or m_maskType == CrossTalkMaskv2 ){
-        for(FrontEnd *fe : keeper->feList) {
+        for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+            FrontEnd *fe = keeper->getEntry(id).fe;
             g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
 
             auto rd53a = dynamic_cast<Rd53a*>(fe);
@@ -239,7 +242,8 @@ void Rd53aMaskLoop::execPart2() {
 void Rd53aMaskLoop::end() {
     SPDLOG_LOGGER_TRACE(logger, "");
 
-    for(FrontEnd *fe : keeper->feList) {
+    for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         // Copy original registers back
         // TODO need to make sure analysis modifies the right config
         // TODO not thread safe
@@ -262,20 +266,20 @@ void Rd53aMaskLoop::writeConfig(json &j) {
 
 }
 
-void Rd53aMaskLoop::loadConfig(json &j) {
-    if (!j["min"].empty())
+void Rd53aMaskLoop::loadConfig(const json &j) {
+    if (j.contains("min"))
         min = j["min"];
-    if (!j["max"].empty())
+    if (j.contains("max"))
         max = j["max"];
-    if (!j["step"].empty())
+    if (j.contains("step"))
         step = j["step"];
-    if (!j["maskType"].empty())
+    if (j.contains("maskType"))
         m_maskType = j["maskType"];
-    if (!j["maskSize"].empty())
+    if (j.contains("maskSize"))
         m_maskSize = j["maskSize"];
-    if (!j["sensorType"].empty())
+    if (j.contains("sensorType"))
         m_sensorType = j["sensorType"];
-    if (!j["includedPixels"].empty())
+    if (j.contains("includedPixels"))
         m_includedPixels = j["includedPixels"];
 
 }
@@ -340,7 +344,7 @@ bool Rd53aMaskLoop::applyMask(int col, int row){
 }
 
 
-bool Rd53aMaskLoop::ignorePixel(int col, int row){
+bool Rd53aMaskLoop::ignorePixel(int col, int row) const{
 
     //if checking bump bonding connections for rectangular sensors, only use (0,0) pixel
     if ( m_includedPixels == only00CornerForBumpBonding){

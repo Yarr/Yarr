@@ -36,18 +36,18 @@ void Rd53aPixelFeedback::writeConfig(json &j) {
     j["resetTdac"] = m_resetTdac;
 }
 
-void Rd53aPixelFeedback::loadConfig(json &j) {
-    if (!j["min"].empty())
+void Rd53aPixelFeedback::loadConfig(const json &j) {
+    if (j.contains("min"))
         min = j["min"];
-    if (!j["max"].empty())
+    if (j.contains("max"))
         max = j["max"];
-    if (!j["tuneDiff"].empty())
+    if (j.contains("tuneDiff"))
         tuneDiff = j["tuneDiff"];
-    if (!j["tuneLin"].empty())
+    if (j.contains("tuneLin"))
         tuneLin = j["tuneLin"];
-    if (!j["resetTdac"].empty())
+    if (j.contains("resetTdac"))
         m_resetTdac = j["resetTdac"];
-    if (!j["steps"].empty()) {
+    if (j.contains("steps")) {
         m_steps.clear();
         for(auto i: j["steps"])
             m_steps.push_back(i);
@@ -55,13 +55,13 @@ void Rd53aPixelFeedback::loadConfig(json &j) {
     }
 }
 
-void Rd53aPixelFeedback::feedback(unsigned channel, std::unique_ptr<Histo2d> h) {
+void Rd53aPixelFeedback::feedback(unsigned id, std::unique_ptr<Histo2d> h) {
     // TODO Check on NULL pointer
     if (h->size() != Rd53a::n_Row*Rd53a::n_Col) {
-        logger->error("Wrong type of feedback histogram on channel {}", channel);
-        doneMap[channel] = true;
+        logger->error("Wrong type of feedback histogram on channel {}", id);
+        fbDoneMap[id] = true;
     } else {
-        auto rd53a = dynamic_cast<Rd53a*>(keeper->getFe(channel));
+        auto rd53a = dynamic_cast<Rd53a*>(keeper->getFe(id));
         for (unsigned row=1; row<=Rd53a::n_Row; row++) {
             for (unsigned col=1; col<=Rd53a::n_Col; col++) {
                 int sign = h->getBin(h->binNum(col, row));
@@ -78,7 +78,7 @@ void Rd53aPixelFeedback::feedback(unsigned channel, std::unique_ptr<Histo2d> h) 
                 rd53a->setTDAC(col-1, row-1, v);
             }
         }
-        m_fb[channel] = std::move(h);
+        m_fb[id] = std::move(h);
     }
 }
 
@@ -94,12 +94,15 @@ void Rd53aPixelFeedback::init() {
     m_done = false;
     m_cur = 0;
     // Init maps
+    for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        fbDoneMap[id] = true;
+    }
     if (m_resetTdac) {
-        for (auto *fe : keeper->feList) {
+        for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+            FrontEnd *fe = keeper->getEntry(id).fe;
             if (fe->getActive()) {
-                unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-                auto rd53a = dynamic_cast<Rd53a*>(keeper->getFe(ch));
-                m_fb[ch] = NULL;
+                auto rd53a = dynamic_cast<Rd53a*>(fe);
+                m_fb[id] = NULL;
                 int linCnt = 0;
                 int diffCnt = 0;
                 for (unsigned col=1; col<=Rd53a::n_Col; col++) {
@@ -122,7 +125,8 @@ void Rd53aPixelFeedback::init() {
 void Rd53aPixelFeedback::execPart1() {
     g_stat->set(this, m_cur);
     // Lock all mutexes
-    for (auto fe : keeper->feList) {
+    for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if (fe->getActive()) {
             this->writePixelCfg(dynamic_cast<Rd53a*>(fe));
         }
@@ -132,24 +136,27 @@ void Rd53aPixelFeedback::execPart1() {
 
 void Rd53aPixelFeedback::execPart2() {
     // Wait for mutexes to be unlocked by feedback
-    for (auto fe: keeper->feList) {
+    for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if (fe->getActive()) {
-            unsigned rx = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-            waitForFeedback(rx);
+            waitForFeedback(id);
         }
     }
     m_cur++;
     if (m_cur == m_steps.size()) {
         m_done = true;
+    } else if(isFeedbackDone()) {
+        logger->error("Wrong type of feedback histogram on all channels");
+        m_done = true;
     }
+
 }
 
 void Rd53aPixelFeedback::end() {
     /*
-    for (auto fe: keeper->feList) {
-        if (fe->getActive()) {
-            unsigned rx = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-            keeper->mutexMap[rx].lock();
+    for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
+            keeper->mutexMap[id].lock();
             this->writePixelCfg(dynamic_cast<Rd53a*>(fe));
         }
     }

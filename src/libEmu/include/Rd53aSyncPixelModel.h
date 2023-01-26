@@ -23,8 +23,8 @@ class Rd53aSyncPixelModel {
 		float noise_sigma_gauss;
 
 		// functions for modeling pixel responses
-		float calculateThreshold(uint32_t VthresholdSync);
-		float calculateNoise();
+		float calculateThreshold(uint32_t VthresholdSync) const;
+		float calculateNoise() const;
 		uint32_t calculateToT(float charge);
 
 	private:

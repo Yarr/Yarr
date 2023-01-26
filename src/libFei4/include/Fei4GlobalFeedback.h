@@ -40,15 +40,15 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
         if (val > (int)max) val = max;
         if (val < 0) val = 0;
         chan.values = val;
-        doneMap[channel] |= last;
+        fbDoneMap[channel] |= last;
 
         if (chan.localStep == 1) {
-            doneMap[channel] = true;
+            fbDoneMap[channel] = true;
         }
 
         // Abort if we are getting to low
         if (val < 50) {
-            doneMap[channel] = true;
+            fbDoneMap[channel] = true;
         }
     }
 
@@ -60,57 +60,56 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
         if (val < 0) val = 0;
         chan.values = val;
         chan.localStep  = chan.localStep/2;
-        doneMap[channel] |= last;
+        fbDoneMap[channel] |= last;
 
         if (chan.localStep == 1) {
-            doneMap[channel] = true;
+            fbDoneMap[channel] = true;
         }
     }
     void writeConfig(json &config) override;
-    void loadConfig(json &config) override;
+    void loadConfig(const json &config) override;
     private:
     std::string parName = "";
     void init() override {
         m_done = false;
         cur = 0;
         // Init all maps:
-        for(unsigned int k=0; k<keeper->feList.size(); k++) {
-            if(keeper->feList[k]->getActive()) {
-                unsigned ch = dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel();
-                ChannelInfo &info = chanInfo[ch];
+        for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+            FrontEnd *fe = keeper->getEntry(id).fe;
+            if(fe->getActive()) {
+                ChannelInfo &info = chanInfo[id];
                 info.localStep = step;
                 info.values = max;
                 info.oldSign = -1;
-                doneMap[ch] = false;
+                fbDoneMap[id] = false;
             }
         }
         this->writePar();
     }
 
     void end() override {
-        for(unsigned int k=0; k<keeper->feList.size(); k++) {
-            if(keeper->feList[k]->getActive()) {	
-                unsigned ch = dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel();
-                logger().info(" --> Final parameter of Fe {} is {}", ch, chanInfo[ch].values);
+        for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+            FrontEnd *fe = keeper->getEntry(id).fe;
+            if(fe->getActive()) {	
+                logger().info(" --> Final parameter of Fe {} is {}", id, chanInfo[id].values);
             }
         }
     }
 
     void execPart1() override {
         g_stat->set(this, cur);
-        m_done = allDone();
+        m_done = isFeedbackDone();
     }
 
     void execPart2() override {
         // Wait for mutexes to be unlocked by feedback
-        for(unsigned int k=0; k<keeper->feList.size(); k++) {
-            if(keeper->feList[k]->getActive()) {
-                unsigned ch = dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel();
-                waitForFeedback(ch);
-
-                logger().info(" --> Received Feedback on Channel {} with value: {}",
-                        dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel(),
-                        chanInfo[dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel()].values);
+        for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+            FrontEnd *fe = keeper->getEntry(id).fe;
+            if(fe->getActive()) {
+                waitForFeedback(id);
+                logger().info(" --> Received Feedback on ID {} with value: {}",
+                        id,
+                        chanInfo[id].values);
             }
         }
         cur++;
@@ -121,37 +120,26 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
         if(parName!=""){
             parPtr = keeper->globalFe<Fei4>()->regMap[parName];
         }
-        for(unsigned int k=0; k<keeper->feList.size(); k++) {
-            if(keeper->feList[k]->getActive()) {
-                auto fe = dynamic_cast<Fei4*>(keeper->feList[k]);
+        for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+            Fei4 *fe = dynamic_cast<Fei4*>(keeper->getEntry(id).fe);
+            if(fe->getActive()) {
                 auto fe_cfg = dynamic_cast<FrontEndCfg*>(fe);
                 auto tx_channel = fe_cfg->getTxChannel();
                 auto rx_channel = fe_cfg->getRxChannel();
                 
                 g_tx->setCmdEnable(tx_channel);
-                fe->writeRegister(parPtr, chanInfo[fe_cfg->getRxChannel()].values);
+                fe->writeRegister(parPtr, chanInfo[id].values);
                 while(!g_tx->isCmdEmpty());
             }
         }
         g_tx->setCmdEnable(keeper->getTxMask());
     }
 
-    bool allDone() {
-        for(unsigned int k=0; k<keeper->feList.size(); k++) {
-            if(keeper->feList[k]->getActive()) {
-                unsigned ch = dynamic_cast<FrontEndCfg*>(keeper->feList[k])->getRxChannel();
-                if (!doneMap[ch])
-                    return false;
-            }
-        }
-        return true;
-    }
-
     Fei4Register Fei4GlobalCfg::*parPtr;
 
     protected:
 
-    struct ChannelInfo {
+    struct ChannelInfo{
       unsigned values;
       unsigned localStep;
       unsigned oldSign;

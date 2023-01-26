@@ -9,7 +9,7 @@
 #include "Rd53a2TriggerLoop.h"
 #include <bitset>
 #include <algorithm>
-#include <math.h>
+#include <cmath>
 
 
 #include "logging.h"
@@ -144,7 +144,7 @@ void Rd53a2TriggerLoop::flexibleTrigger(uint8_t offset, int injDelay, int trigge
     }
 }
 
-uint8_t Rd53a2TriggerLoop::findSmallestDelay(){
+uint8_t Rd53a2TriggerLoop::findSmallestDelay() const{
     //The smallest allowable doubledelay in a two-command scheme depends on several variables and is not trivial to express analytically.
     //This function emulates setFlexibleTrigger to find the smallest doubledelay that will not cause overlap between the first trigger frames and the second injection header frame.
     uint8_t empty_frames;
@@ -163,7 +163,7 @@ uint8_t Rd53a2TriggerLoop::findSmallestDelay(){
     return (k+4)*8 - injDelay;
 }
 
-uint8_t Rd53a2TriggerLoop::greatestDelay(){
+uint8_t Rd53a2TriggerLoop::greatestDelay() const{
     //Calculates greatest allowed delay between the two injections
     return (m_trigWordLength-1-m_synPulse - 5)*8-((m_trigDelay2+m_Ntrig2)/8)*8-CMDDEL+9+7;
 }
@@ -261,31 +261,31 @@ void Rd53a2TriggerLoop::writeConfig(json &config) {
     config["Ntrig2"] = m_Ntrig2;
 }
 
-void Rd53a2TriggerLoop::loadConfig(json &config) {
-    if (!config["count"].empty())
+void Rd53a2TriggerLoop::loadConfig(const json &config) {
+    if (config.contains("count"))
         setTrigCnt(config["count"]);
-    if (!config["frequency"].empty())
+    if (config.contains("frequency"))
         m_trigFreq = config["frequency"];
-    if (!config["time"].empty())
+    if (config.contains("time"))
         m_trigTime = config["time"];
-    if (!config["delay"].empty())
+    if (config.contains("delay"))
         m_trigDelay = int(config["delay"]); //Actual trigger delay between first injection and first trigger pulse train.
-    if (!config["delay2"].empty()){
+    if (config.contains("delay2")){
         m_trigDelay2 = int(config["delay2"]); //Actual trigger delay between second injection and second trigger pulse train.
     }else{
         m_trigDelay2 = m_trigDelay; //If not specified, use delay
     }
-    if (!config["noInject"].empty())
+    if (config.contains("noInject"))
         m_noInject = config["noInject"];
-    if (!config["noInject2"].empty())
+    if (config.contains("noInject2"))
         m_noInject2 = config["noInject2"];
-    if (!config["extTrig"].empty())
+    if (config.contains("extTrig"))
         m_extTrig = config["extTrig"];
-    if (!config["doubleDelay"].empty())
+    if (config.contains("doubleDelay"))
         m_doubleDelay = config["doubleDelay"];
-    if (!config["Ntrig"].empty())
+    if (config.contains("Ntrig"))
         m_Ntrig1 = config["Ntrig"];
-    if (!config["Ntrig2"].empty()){
+    if (config.contains("Ntrig2")){
         m_Ntrig2 = config["Ntrig2"];
     }else{
         m_Ntrig2 = m_Ntrig1; //If not specified, use Ntrig1

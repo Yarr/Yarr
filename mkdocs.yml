@@ -1,5 +1,5 @@
-site_name: YARR Docs
-pages:
+site_name: YARR Docks
+nav:
     - Home: index.md
     - SW Installation: install.md
     - Kernel Driver: kernel_driver.md

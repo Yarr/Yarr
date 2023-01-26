@@ -48,7 +48,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
             // TODO Check on NULL pointer
             if (h->size() != 26880) {
                 logger().error("Wrong type of feedback histogram on channel {}", channel);
-                doneMap[channel] = true;
+                fbDoneMap[channel] = true;
             } else {
                 fbHistoMap[channel] = std::move(h);
             }
@@ -59,14 +59,14 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
             config["step"]=step;
             config["parameter"] = parName;
         }
-        void loadConfig(json &config) override {
-	    if (!config["min"].empty())
+        void loadConfig(const json &config) override {
+	    if (config.contains("min"))
 	      min = config["min"];
-	    if (!config["max"].empty())
+	    if (config.contains("max"))
 	      max = config["max"];
-	    if (!config["step"].empty())
+	    if (config.contains("step"))
 	      step = config["step"];
-	    if (!config["parameter"].empty())
+	    if (config.contains("parameter"))
 	      parName = config["parameter"];
 	    if(parName=="TDAC_FB"){
 	      fbType=TDAC_FB;
@@ -82,16 +82,14 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
             cur = 0;
 
             // Loop over active FEs
-            for(unsigned int k=0; k<keeper->feList.size(); k++) {
-                auto fe = keeper->feList[k];
+            for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+                FrontEnd *fe = keeper->getEntry(id).fe;
                 if(fe->getActive()) {
-                    unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-                    
                     // Init Maps
-                    fbHistoMap[ch].reset();
+                    fbHistoMap[id].reset();
                     
                     // Initilize Pixel regs with default config
-                    auto fei4 = dynamic_cast<Fei4*>(keeper->feList[k]);
+                    auto fei4 = dynamic_cast<Fei4*>(fe);
                     for (unsigned col=1; col<81; col++) {
                         for (unsigned row=1; row<337; row++) {
                             this->setPixel(fei4, col, row, min);
@@ -109,8 +107,8 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
         void execPart1() override {
             g_stat->set(this, cur);
          
-            for(unsigned int k=0; k<keeper->feList.size(); k++) {
-                auto fe = keeper->feList[k];
+            for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+                FrontEnd *fe = keeper->getEntry(id).fe;
                 if(fe->getActive()) {
                     // Write config
                     this->writePixelCfg(dynamic_cast<Fei4*>(fe));
@@ -119,13 +117,12 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
         }
 
         void execPart2() override {
-            for(unsigned int k=0; k<keeper->feList.size(); k++) {
-                auto fe = keeper->feList[k];
+            for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+                FrontEnd *fe = keeper->getEntry(id).fe;
                 if(fe->getActive()) {
-                    unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-                    waitForFeedback(ch);
+                    waitForFeedback(id);
 
-                    this->addFeedback(ch);
+                    this->addFeedback(id);
                 }
             }
             // Execute last step twice to get full range
@@ -136,18 +133,6 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
             if(step == 0)
                 step = 1;
             cur++;
-        }
-
-        bool allDone() {
-            for(unsigned int k=0; k<keeper->feList.size(); k++) {
-                auto fe = keeper->feList[k];
-                if(fe->getActive()) {
-                    unsigned ch = dynamic_cast<FrontEndCfg*>(fe)->getRxChannel();
-                    if (!doneMap[ch])
-                        return false;
-                }
-            }
-            return true;
         }
 
         unsigned getPixel(Fei4 *fe, unsigned col, unsigned row) {
@@ -174,10 +159,10 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
             }
         }
 
-        void addFeedback(unsigned ch) {
-            auto &histo = fbHistoMap[ch];
+        void addFeedback(unsigned id) {
+            auto &histo = fbHistoMap[id];
             if (histo != nullptr) {
-                auto fe = dynamic_cast<Fei4*>(keeper->getFe(ch));
+                auto fe = dynamic_cast<Fei4*>(keeper->getFe(id));
                 for (unsigned row=1; row<337; row++) {
                     for (unsigned col=1; col<81; col++) {
                         int sign = histo->getBin(histo->binNum(col, row));
@@ -188,7 +173,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
                         this->setPixel(fe, col, row, v);
                     }
                 }
-                fbHistoMap[ch].reset();
+                fbHistoMap[id].reset();
             }
         }
 

@@ -12,7 +12,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
-#include <stdlib.h>
+#include <cstdlib>
 #include <bitset>
 #include <cstring>
 #include <sstream>
@@ -197,7 +197,7 @@ class StarChipPacket{
     this->clear();
   }
 
-  bool is_parsed(){
+  bool is_parsed() const{
     if( this->type == TYP_NONE )
       return false;
     else
@@ -210,22 +210,22 @@ class StarChipPacket{
   }
 
   //Return number of 8-bit words in the packet
-  unsigned int n_words(){
+  unsigned int n_words() const{
     return raw_words.size();
   }
 
   //Return number of clusters in the packet
-  unsigned int n_clusters(){
+  unsigned int n_clusters() const{
     return clusters.size();
   }
 
   //Return type of packet
-  PacketType getType(){
+  PacketType getType() const{
    return type;
   }
 
   //If packet words are empty
-  bool is_empty(){
+  bool is_empty() const{
     if( raw_words.size() == 0 )
       return true;
     else
@@ -233,7 +233,7 @@ class StarChipPacket{
   }
 
   //Print basic info
-  void print(std::ostream &os) {
+  void print(std::ostream &os) const {
     if(this->type == TYP_LP || this->type == TYP_PR){
       os << "Packet info: BCID " << bcid << " (" << bcid_parity << "), "
          << "L0ID " << l0id << ", nClusters " << this->clusters.size() << "\n";
@@ -247,7 +247,7 @@ class StarChipPacket{
     }
   }
 
-  void print_more(std::ostream &os) {
+  void print_more(std::ostream &os) const {
     std::string type_name = packet_type_names[this->type];
     os << "Packet type " << type_name << ", ";
     if(this->type == TYP_LP || this->type == TYP_PR){

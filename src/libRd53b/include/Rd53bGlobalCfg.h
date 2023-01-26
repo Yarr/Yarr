@@ -14,20 +14,14 @@
 #include <map>
 #include <string>
 #include <cmath>
+#include <utility>
 
 #include "storage.hpp"
+#include "Rd53Reg.h"
 
-class Rd53bReg {
+class Rd53bRegDefault : public Rd53Reg {
     public:
-        Rd53bReg() {
-            m_cfg = NULL;
-            m_bOffset = 0;
-            m_bits = 0;
-            m_addr = 999;
-        }
 
-        virtual ~Rd53bReg() {}
-        
         void init(unsigned addr, uint16_t *cfg, const unsigned bOffset, const unsigned bits, const uint16_t value) {
             m_addr = addr;
             m_cfg = cfg;
@@ -36,43 +30,23 @@ class Rd53bReg {
             this->write(value);
         }
 
-        virtual void write(const uint16_t value) {
+        void write(const uint16_t value) override {
             unsigned mask = (1<<m_bits)-1;
             *m_cfg = (*m_cfg&(~(mask<<m_bOffset))) | ((value&mask)<<m_bOffset);
         }
 
-        virtual uint16_t read() const {
+        uint16_t read() const override {
             unsigned mask = (1<<m_bits)-1;
             return ((*m_cfg >> m_bOffset) & mask);
         }
-
-        uint16_t applyMask(uint16_t value) {
-            unsigned mask = (1<<m_bits)-1;
-            return ((value >> m_bOffset) & mask);
-        }
-
-        unsigned addr() const{
-            return m_addr;
-        }
-
-        unsigned bits() const {
-            return m_bits;
-        }
-
-    protected:
-        uint16_t *m_cfg;
-        unsigned m_bOffset;
-        unsigned m_bits;
-        unsigned m_addr;
-    private:
 };
 
-class Rd53bDiffReg : public Rd53bReg {
+class Rd53bDiffReg : public Rd53Reg {
     public:
-        void init(Rd53bReg *arg_lowRef, Rd53bReg *arg_highRef, bool changeHigh) {
+        void init(Rd53bRegDefault *arg_lowRef, Rd53bRegDefault *arg_highRef, bool changeHigh) {
             lowRef = arg_lowRef;
             highRef = arg_highRef;
-            m_cfg = NULL; // Not needed
+            m_cfg = nullptr; // Not needed
             m_bOffset = 0; // Not needed
             m_bits = 0; // Not needed
             m_changeHigh = changeHigh;
@@ -111,9 +85,39 @@ class Rd53bDiffReg : public Rd53bReg {
             return highValue - lowValue;
         }
     private:
-        Rd53bReg *lowRef;
-        Rd53bReg *highRef;
+        Rd53bRegDefault *lowRef;
+        Rd53bRegDefault *highRef;
         bool m_changeHigh;
+};
+
+class Rd53bMultiReg : public Rd53Reg {
+    public:
+        void init(std::vector<Rd53bRegDefault*> list) {
+            regList = std::move(list);
+            m_cfg = nullptr;
+            m_bOffset = 0;
+            m_bits = 0;
+            m_addr = 0;
+            if (!regList.empty()) {
+                // Only the first register will actually be writte in the chip
+                m_addr = regList[0]->addr();
+            }
+        }
+
+        void write(const uint16_t value) override {
+            for (auto &reg: regList) {
+                reg->write(value);
+            }
+        }
+
+        uint16_t read() const override {
+            if (regList.empty()) {
+                return 0;
+            }
+            return regList[0]->read();
+        }
+    private:
+        std::vector<Rd53bRegDefault*> regList;
 };
 
 class Rd53bGlobalCfg {
@@ -123,365 +127,365 @@ class Rd53bGlobalCfg {
 
         void init();
 
-        uint16_t getValue(Rd53bReg Rd53bGlobalCfg::*ref) const;
+        uint16_t getValue(Rd53bRegDefault Rd53bGlobalCfg::*ref) const;
         uint16_t getValue(std::string name) const;
-        void setValue(Rd53bReg Rd53bGlobalCfg::*ref, uint16_t val);
+        void setValue(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t val);
         void setValue(std::string name, uint16_t val);
 
         uint16_t& operator[](unsigned index);
 
         // TODO this not be public
-        std::map<std::string, Rd53bReg Rd53bGlobalCfg::*> regMap;
-        std::map<std::string, Rd53bReg Rd53bGlobalCfg::*> virtRegMap;
+        std::map<std::string, Rd53bRegDefault Rd53bGlobalCfg::*> regMap;
+        std::map<std::string, Rd53bRegDefault Rd53bGlobalCfg::*> virtRegMap;
     protected:
         static constexpr unsigned numRegs = 138;
         std::array<uint16_t, numRegs> m_cfg;
 
-        void toJson(json &j);
-        void fromJson(json &j);
+        void writeConfig(json &j);
+        void loadConfig(const json &j);
     private:
     public:
 
         //0
-        Rd53bReg PixPortal;
+        Rd53bRegDefault PixPortal;
         //1
-        Rd53bReg PixRegionCol;
+        Rd53bRegDefault PixRegionCol;
         //2
-        Rd53bReg PixRegionRow;
+        Rd53bRegDefault PixRegionRow;
         //3
-        Rd53bReg PixBroadcast;
-        Rd53bReg PixConfMode;
-        Rd53bReg PixAutoRow;
+        Rd53bRegDefault PixBroadcast;
+        Rd53bRegDefault PixConfMode;
+        Rd53bRegDefault PixAutoRow;
         //4
-        Rd53bReg PixDefaultConfig;
+        Rd53bRegDefault PixDefaultConfig;
         //5
-        Rd53bReg PixDefaultConfigB;
+        Rd53bRegDefault PixDefaultConfigB;
         //6
-        Rd53bReg GcrDefaultConfig;
+        Rd53bRegDefault GcrDefaultConfig;
         //7
-        Rd53bReg GcrDefaultConfigB;
+        Rd53bRegDefault GcrDefaultConfigB;
 
         // Diff AFE
         //8
-        Rd53bReg DiffPreampL;
+        Rd53bRegDefault DiffPreampL;
         //9
-        Rd53bReg DiffPreampR;
+        Rd53bRegDefault DiffPreampR;
         //10
-        Rd53bReg DiffPreampTL;
+        Rd53bRegDefault DiffPreampTL;
         //11
-        Rd53bReg DiffPreampTR;
+        Rd53bRegDefault DiffPreampTR;
         //12
-        Rd53bReg DiffPreampT;
+        Rd53bRegDefault DiffPreampT;
         //13
-        Rd53bReg DiffPreampM;
+        Rd53bRegDefault DiffPreampM;
         //14
-        Rd53bReg DiffPreComp;
+        Rd53bRegDefault DiffPreComp;
         //15
-        Rd53bReg DiffComp;
+        Rd53bRegDefault DiffComp;
         //16
-        Rd53bReg DiffVff;
+        Rd53bRegDefault DiffVff;
         //17
-        Rd53bReg DiffTh1L;
+        Rd53bRegDefault DiffTh1L;
         //18
-        Rd53bReg DiffTh1R;
+        Rd53bRegDefault DiffTh1R;
         //19
-        Rd53bReg DiffTh1M;
+        Rd53bRegDefault DiffTh1M;
         //20
-        Rd53bReg DiffTh2;
+        Rd53bRegDefault DiffTh2;
         //21
-        Rd53bReg DiffLcc;
+        Rd53bRegDefault DiffLcc;
         //37
-        Rd53bReg DiffLccEn;
-        Rd53bReg DiffFbCapEn;
+        Rd53bRegDefault DiffLccEn;
+        Rd53bRegDefault DiffFbCapEn;
 
         // Lin AFE
         //22
-        Rd53bReg LinPreampL;
+        Rd53bRegDefault LinPreampL;
         //23
-        Rd53bReg LinPreampR;
+        Rd53bRegDefault LinPreampR;
         //24
-        Rd53bReg LinPreampTL;
+        Rd53bRegDefault LinPreampTL;
         //25
-        Rd53bReg LinPreampTR;
+        Rd53bRegDefault LinPreampTR;
         //26
-        Rd53bReg LinPreampT;
+        Rd53bRegDefault LinPreampT;
         //27
-        Rd53bReg LinPreampM;
+        Rd53bRegDefault LinPreampM;
         //28
-        Rd53bReg LinFc;
+        Rd53bRegDefault LinFc;
         //29
-        Rd53bReg LinKrumCurr;
+        Rd53bRegDefault LinKrumCurr;
         //30
-        Rd53bReg LinRefKrum;
+        Rd53bRegDefault LinRefKrum;
         //31
-        Rd53bReg LinComp;
+        Rd53bRegDefault LinComp;
         //32
-        Rd53bReg LinCompTa;
+        Rd53bRegDefault LinCompTa;
         //33
-        Rd53bReg LinGdacL;
+        Rd53bRegDefault LinGdacL;
         //34
-        Rd53bReg LinGdacR;
+        Rd53bRegDefault LinGdacR;
         //35
-        Rd53bReg LinGdacM;
+        Rd53bRegDefault LinGdacM;
         //36
-        Rd53bReg LinLdac;
+        Rd53bRegDefault LinLdac;
 
         // Power
         //38
-        Rd53bReg SldoEnUndershuntA;
-        Rd53bReg SldoEnUndershuntD;
-        Rd53bReg SldoTrimA;
-        Rd53bReg SldoTrimD;
+        Rd53bRegDefault SldoEnUndershuntA;
+        Rd53bRegDefault SldoEnUndershuntD;
+        Rd53bRegDefault SldoTrimA;
+        Rd53bRegDefault SldoTrimD;
 
         // Pixel Matrix
         //39
-        Rd53bReg EnCoreCol3;
+        Rd53bRegDefault EnCoreCol3;
         //40
-        Rd53bReg EnCoreCol2;
+        Rd53bRegDefault EnCoreCol2;
         //41
-        Rd53bReg EnCoreCol1;
+        Rd53bRegDefault EnCoreCol1;
         //42
-        Rd53bReg EnCoreCol0;
+        Rd53bRegDefault EnCoreCol0;
         //43
-        Rd53bReg RstCoreCol3;
+        Rd53bRegDefault RstCoreCol3;
         //44
-        Rd53bReg RstCoreCol2;
+        Rd53bRegDefault RstCoreCol2;
         //45
-        Rd53bReg RstCoreCol1;
+        Rd53bRegDefault RstCoreCol1;
         //46
-        Rd53bReg RstCoreCol0;
+        Rd53bRegDefault RstCoreCol0;
 
         // Digital functions
         //47
-        Rd53bReg TwoLevelTrig;
-        Rd53bReg Latency;
+        Rd53bRegDefault TwoLevelTrig;
+        Rd53bRegDefault Latency;
         //48
-        Rd53bReg SelfTrigEn;
-        Rd53bReg SelfTrigDigThrEn;
-        Rd53bReg SelfTrigDigThr;
+        Rd53bRegDefault SelfTrigEn;
+        Rd53bRegDefault SelfTrigDigThrEn;
+        Rd53bRegDefault SelfTrigDigThr;
         //49
-        Rd53bReg SelfTrigDelay;
-        Rd53bReg SelfTrigMulti;
+        Rd53bRegDefault SelfTrigDelay;
+        Rd53bRegDefault SelfTrigMulti;
         //50
-        Rd53bReg SelfTrigPattern;
+        Rd53bRegDefault SelfTrigPattern;
         //51
-        Rd53bReg DataReadDelay;
-        Rd53bReg ReadTrigLatency;
+        Rd53bRegDefault DataReadDelay;
+        Rd53bRegDefault ReadTrigLatency;
         //52
-        Rd53bReg TruncTimeoutConf;
+        Rd53bRegDefault TruncTimeoutConf;
         //53
-        Rd53bReg InjDigEn;
-        Rd53bReg InjAnaMode;
-        Rd53bReg InjFineDelay;
+        Rd53bRegDefault InjDigEn;
+        Rd53bRegDefault InjAnaMode;
+        Rd53bRegDefault InjFineDelay;
         //54
-        Rd53bReg FineDelayClk;
-        Rd53bReg FineDelayData;
+        Rd53bRegDefault FineDelayClk;
+        Rd53bRegDefault FineDelayData;
         //55
-        Rd53bReg InjVcalHigh;
+        Rd53bRegDefault InjVcalHigh;
         //56
-        Rd53bReg InjVcalMed;
+        Rd53bRegDefault InjVcalMed;
         //57
-        Rd53bReg CapMeasEnPar;
-        Rd53bReg CapMeasEn;
-        Rd53bReg InjVcalRange;
+        Rd53bRegDefault CapMeasEnPar;
+        Rd53bRegDefault CapMeasEn;
+        Rd53bRegDefault InjVcalRange;
         //58
-        Rd53bReg CdrOverwriteLimit;
-        Rd53bReg CdrPhaseDetSel;
-        Rd53bReg CdrClkSel;
+        Rd53bRegDefault CdrOverwriteLimit;
+        Rd53bRegDefault CdrPhaseDetSel;
+        Rd53bRegDefault CdrClkSel;
         //59
-        Rd53bReg ChSyncLockThr;
+        Rd53bRegDefault ChSyncLockThr;
         //60
-        Rd53bReg GlobalPulseConf;
+        Rd53bRegDefault GlobalPulseConf;
         //61
-        Rd53bReg GlobalPulseWidth;
+        Rd53bRegDefault GlobalPulseWidth;
         //62
-        Rd53bReg ServiceBlockEn;
-        Rd53bReg ServiceBlockPeriod;
+        Rd53bRegDefault ServiceBlockEn;
+        Rd53bRegDefault ServiceBlockPeriod;
         //63
-        Rd53bReg TotEnPtot;
-        Rd53bReg TotEnPtoa;
-        Rd53bReg TotEn80;
-        Rd53bReg TotEn6b4b;
-        Rd53bReg TotPtotLatency;
+        Rd53bRegDefault TotEnPtot;
+        Rd53bRegDefault TotEnPtoa;
+        Rd53bRegDefault TotEn80;
+        Rd53bRegDefault TotEn6b4b;
+        Rd53bRegDefault TotPtotLatency;
         //64
-        Rd53bReg PtotCoreColEn3;
+        Rd53bRegDefault PtotCoreColEn3;
         //65
-        Rd53bReg PtotCoreColEn2;
+        Rd53bRegDefault PtotCoreColEn2;
         //66
-        Rd53bReg PtotCoreColEn1;
+        Rd53bRegDefault PtotCoreColEn1;
         //67
-        Rd53bReg PtotCoreColEn0;
+        Rd53bRegDefault PtotCoreColEn0;
         //68
-        Rd53bReg DataMergeInPol;
-        Rd53bReg EnChipId;
-        Rd53bReg DataMergeEnClkGate;
-        Rd53bReg DataMergeSelClk;
-        Rd53bReg DataMergeEn;
-        Rd53bReg DataMergeEnBond;
+        Rd53bRegDefault DataMergeInPol;
+        Rd53bRegDefault EnChipId;
+        Rd53bRegDefault DataMergeEnClkGate;
+        Rd53bRegDefault DataMergeSelClk;
+        Rd53bRegDefault DataMergeEn;
+        Rd53bRegDefault DataMergeEnBond;
         //69
-        Rd53bReg DataMergeInMux3;
-        Rd53bReg DataMergeInMux2;
-        Rd53bReg DataMergeInMux1;
-        Rd53bReg DataMergeInMux0;
-        Rd53bReg DataMergeOutMux3;
-        Rd53bReg DataMergeOutMux2;
-        Rd53bReg DataMergeOutMux1;
-        Rd53bReg DataMergeOutMux0;
+        Rd53bRegDefault DataMergeInMux3;
+        Rd53bRegDefault DataMergeInMux2;
+        Rd53bRegDefault DataMergeInMux1;
+        Rd53bRegDefault DataMergeInMux0;
+        Rd53bRegDefault DataMergeOutMux3;
+        Rd53bRegDefault DataMergeOutMux2;
+        Rd53bRegDefault DataMergeOutMux1;
+        Rd53bRegDefault DataMergeOutMux0;
         //70-73
-        Rd53bReg EnCoreColCal3;
-        Rd53bReg EnCoreColCal2;
-        Rd53bReg EnCoreColCal1;
-        Rd53bReg EnCoreColCal0;
+        Rd53bRegDefault EnCoreColCal3;
+        Rd53bRegDefault EnCoreColCal2;
+        Rd53bRegDefault EnCoreColCal1;
+        Rd53bRegDefault EnCoreColCal0;
         //74
-        Rd53bReg DataEnBcid;
-        Rd53bReg DataEnL1id;
-        Rd53bReg DataEnEos;
-        Rd53bReg NumOfEventsInStream;
+        Rd53bRegDefault DataEnBcid;
+        Rd53bRegDefault DataEnL1id;
+        Rd53bRegDefault DataEnEos;
+        Rd53bRegDefault NumOfEventsInStream;
         //75
-        Rd53bReg DataEnBinaryRo;
-        Rd53bReg DataEnRaw;
-        Rd53bReg DataEnHitRemoval;
-        Rd53bReg DataMaxHits;
-        Rd53bReg DataEnIsoHitRemoval;
-        Rd53bReg DataMaxTot;
+        Rd53bRegDefault DataEnBinaryRo;
+        Rd53bRegDefault DataEnRaw;
+        Rd53bRegDefault DataEnHitRemoval;
+        Rd53bRegDefault DataMaxHits;
+        Rd53bRegDefault DataEnIsoHitRemoval;
+        Rd53bRegDefault DataMaxTot;
         //76
-        Rd53bReg EvenMask;
+        Rd53bRegDefault EvenMask;
         //77
-        Rd53bReg OddMask;
+        Rd53bRegDefault OddMask;
         //78
-        Rd53bReg EfuseConfig;
+        Rd53bRegDefault EfuseConfig;
         //79
-        Rd53bReg EfuseWriteData1;
+        Rd53bRegDefault EfuseWriteData1;
         //80
-        Rd53bReg EfuseWriteData0;
+        Rd53bRegDefault EfuseWriteData0;
         //81
-        Rd53bReg AuroraEnPrbs;
-        Rd53bReg AuroraActiveLanes;
-        Rd53bReg AuroraCCWait;
-        Rd53bReg AuroraCCSend;
+        Rd53bRegDefault AuroraEnPrbs;
+        Rd53bRegDefault AuroraActiveLanes;
+        Rd53bRegDefault AuroraCCWait;
+        Rd53bRegDefault AuroraCCSend;
         //82
-        Rd53bReg AuroraCBWait1;
+        Rd53bRegDefault AuroraCBWait1;
         //83
-        Rd53bReg AuroraCBWait0;
-        Rd53bReg AuroraCBSend;
+        Rd53bRegDefault AuroraCBWait0;
+        Rd53bRegDefault AuroraCBSend;
         //84
-        Rd53bReg AuroraInitWait;
+        Rd53bRegDefault AuroraInitWait;
         //85
-        Rd53bReg GpValReg;
-        Rd53bReg GpCmosEn;
-        Rd53bReg GpCmosDs;
-        Rd53bReg GpLvdsEn;
-        Rd53bReg GpLvdsBias;
+        Rd53bRegDefault GpValReg;
+        Rd53bRegDefault GpCmosEn;
+        Rd53bRegDefault GpCmosDs;
+        Rd53bRegDefault GpLvdsEn;
+        Rd53bRegDefault GpLvdsBias;
         //86
-        Rd53bReg GpCmosRoute;
+        Rd53bRegDefault GpCmosRoute;
         //87
-        Rd53bReg GpLvdsPad3;
-        Rd53bReg GpLvdsPad2;
+        Rd53bRegDefault GpLvdsPad3;
+        Rd53bRegDefault GpLvdsPad2;
         //88
-        Rd53bReg GpLvdsPad1;
-        Rd53bReg GpLvdsPad0;
+        Rd53bRegDefault GpLvdsPad1;
+        Rd53bRegDefault GpLvdsPad0;
         //89
-        Rd53bReg CdrCp;
+        Rd53bRegDefault CdrCp;
         //90
-        Rd53bReg CdrCpFd;
+        Rd53bRegDefault CdrCpFd;
         //91
-        Rd53bReg CdrCpBuff;
+        Rd53bRegDefault CdrCpBuff;
         //92
-        Rd53bReg CdrVco;
+        Rd53bRegDefault CdrVco;
         //93
-        Rd53bReg CdrVcoBuff;
+        Rd53bRegDefault CdrVcoBuff;
         //94
-        Rd53bReg SerSelOut3;
-        Rd53bReg SerSelOut2;
-        Rd53bReg SerSelOut1;
-        Rd53bReg SerSelOut0;
+        Rd53bRegDefault SerSelOut3;
+        Rd53bRegDefault SerSelOut2;
+        Rd53bRegDefault SerSelOut1;
+        Rd53bRegDefault SerSelOut0;
         //95
-        Rd53bReg SerInvTap;
-        Rd53bReg SerEnTap;
-        Rd53bReg SerEnLane;
+        Rd53bRegDefault SerInvTap;
+        Rd53bRegDefault SerEnTap;
+        Rd53bRegDefault SerEnLane;
         //96
-        Rd53bReg CmlBias2;
+        Rd53bRegDefault CmlBias2;
         //97
-        Rd53bReg CmlBias1;
+        Rd53bRegDefault CmlBias1;
         //98
-        Rd53bReg CmlBias0;
+        Rd53bRegDefault CmlBias0;
         //99
-        Rd53bReg MonitorEnable;
-        Rd53bReg MonitorI;
-        Rd53bReg MonitorV;
+        Rd53bRegDefault MonitorEnable;
+        Rd53bRegDefault MonitorI;
+        Rd53bRegDefault MonitorV;
         //100
-        Rd53bReg ErrWngMask;
+        Rd53bRegDefault ErrWngMask;
         //101
-        Rd53bReg MonSensSldoDigEn;
-        Rd53bReg MonSensSldoDigDem;
-        Rd53bReg MonSensSldoDigSelBias;
-        Rd53bReg MonSensSldoAnaEn;
-        Rd53bReg MonSensSldoAnaDem;
-        Rd53bReg MonSensSldoAnaSelBias;
+        Rd53bRegDefault MonSensSldoDigEn;
+        Rd53bRegDefault MonSensSldoDigDem;
+        Rd53bRegDefault MonSensSldoDigSelBias;
+        Rd53bRegDefault MonSensSldoAnaEn;
+        Rd53bRegDefault MonSensSldoAnaDem;
+        Rd53bRegDefault MonSensSldoAnaSelBias;
         //102
-        Rd53bReg MonSensAcbEn;
-        Rd53bReg MonSensAcbDem;
-        Rd53bReg MonSensAcbSelBias;
+        Rd53bRegDefault MonSensAcbEn;
+        Rd53bRegDefault MonSensAcbDem;
+        Rd53bRegDefault MonSensAcbSelBias;
         //103
-        Rd53bReg VrefRsensBot;
-        Rd53bReg VrefRsensTop;
-        Rd53bReg VrefIn;
-        Rd53bReg MonAdcTrim;
+        Rd53bRegDefault VrefRsensBot;
+        Rd53bRegDefault VrefRsensTop;
+        Rd53bRegDefault VrefIn;
+        Rd53bRegDefault MonAdcTrim;
         //104
-        Rd53bReg NtcDac;
+        Rd53bRegDefault NtcDac;
         //105-108
-        Rd53bReg HitOrMask3;
-        Rd53bReg HitOrMask2;
-        Rd53bReg HitOrMask1;
-        Rd53bReg HitOrMask0;
+        Rd53bRegDefault HitOrMask3;
+        Rd53bRegDefault HitOrMask2;
+        Rd53bRegDefault HitOrMask1;
+        Rd53bRegDefault HitOrMask0;
         //109-116
-        Rd53bReg AutoRead0;
-        Rd53bReg AutoRead1;
-        Rd53bReg AutoRead2;
-        Rd53bReg AutoRead3;
-        Rd53bReg AutoRead4;
-        Rd53bReg AutoRead5;
-        Rd53bReg AutoRead6;
-        Rd53bReg AutoRead7;
+        Rd53bRegDefault AutoRead0;
+        Rd53bRegDefault AutoRead1;
+        Rd53bRegDefault AutoRead2;
+        Rd53bRegDefault AutoRead3;
+        Rd53bRegDefault AutoRead4;
+        Rd53bRegDefault AutoRead5;
+        Rd53bRegDefault AutoRead6;
+        Rd53bRegDefault AutoRead7;
         //117
-        Rd53bReg RingOscBClear;
-        Rd53bReg RingOscBEnBl;
-        Rd53bReg RingOscBEnBr;
-        Rd53bReg RingOscBEnCapA;
-        Rd53bReg RingOscBEnFf;
-        Rd53bReg RingOscBEnLvt;
-        Rd53bReg RingOscAClear;
-        Rd53bReg RingOscAEn;
+        Rd53bRegDefault RingOscBClear;
+        Rd53bRegDefault RingOscBEnBl;
+        Rd53bRegDefault RingOscBEnBr;
+        Rd53bRegDefault RingOscBEnCapA;
+        Rd53bRegDefault RingOscBEnFf;
+        Rd53bRegDefault RingOscBEnLvt;
+        Rd53bRegDefault RingOscAClear;
+        Rd53bRegDefault RingOscAEn;
         //118
-        Rd53bReg RingOscARoute;
-        Rd53bReg RingOscBRoute;
+        Rd53bRegDefault RingOscARoute;
+        Rd53bRegDefault RingOscBRoute;
         //119-120
-        Rd53bReg RingOscAOut;
-        Rd53bReg RingOscBOut;
+        Rd53bRegDefault RingOscAOut;
+        Rd53bRegDefault RingOscBOut;
         //121-123 RO
-        Rd53bReg BcidCnt;
-        Rd53bReg TrigCnt;
-        Rd53bReg ReadTrigCnt;
+        Rd53bRegDefault BcidCnt;
+        Rd53bRegDefault TrigCnt;
+        Rd53bRegDefault ReadTrigCnt;
         //124-128
-        Rd53bReg LockLossCnt;
-        Rd53bReg BitFlipWngCnt;
-        Rd53bReg BitFlipErrCnt;
-        Rd53bReg CmdErrCnt;
-        Rd53bReg RdWrFifoErrCnt;
+        Rd53bRegDefault LockLossCnt;
+        Rd53bRegDefault BitFlipWngCnt;
+        Rd53bRegDefault BitFlipErrCnt;
+        Rd53bRegDefault CmdErrCnt;
+        Rd53bRegDefault RdWrFifoErrCnt;
         //129
-        Rd53bReg AiRegionRow;
+        Rd53bRegDefault AiRegionRow;
         //130-133
-        Rd53bReg HitOrCnt3;
-        Rd53bReg HitOrCnt2;
-        Rd53bReg HitOrCnt1;
-        Rd53bReg HitOrCnt0;
+        Rd53bRegDefault HitOrCnt3;
+        Rd53bRegDefault HitOrCnt2;
+        Rd53bRegDefault HitOrCnt1;
+        Rd53bRegDefault HitOrCnt0;
         //134
-        Rd53bReg SkippedTrigCnt;
+        Rd53bRegDefault SkippedTrigCnt;
         //135-136
-        Rd53bReg EfuseReadData0;
-        Rd53bReg EfuseReadData1;
+        Rd53bRegDefault EfuseReadData0;
+        Rd53bRegDefault EfuseReadData1;
         //137
-        Rd53bReg MonitoringDataAdc;
+        Rd53bRegDefault MonitoringDataAdc;
         //138-201
         //SEU_notmr - not implemented, do not need to store
         //202-255
@@ -489,6 +493,7 @@ class Rd53bGlobalCfg {
         
         // Special regs
         Rd53bDiffReg InjVcalDiff;
+        Rd53bMultiReg DiffTh1;
 };
 
 

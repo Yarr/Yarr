@@ -1,11 +1,9 @@
 #include "NetioTxCore.h"
-#include "NetioTools.h"
+
 #include <cstdint>
 #include <iostream>
 #include <iomanip>
 #include <chrono>
-
-#include "felixbase/client.hpp"
 
 #include "logging.h"
 
@@ -122,7 +120,7 @@ void NetioTxCore::writeFifo(uint32_t elink, uint32_t value){
   writeFifo(&m_fifo[elink],value);
 }
 
-void NetioTxCore::writeFifo(vector<uint8_t> *fifo, uint32_t value){
+void NetioTxCore::writeFifo(vector<uint8_t> *fifo, uint32_t value) const{
   if(m_extend==4){
     for(int32_t b=3;b>=0;b--){
       for(int32_t i=0;i<4;i++){
@@ -140,7 +138,7 @@ void NetioTxCore::writeFifo(vector<uint8_t> *fifo, uint32_t value){
   }
 }
 
-void NetioTxCore::prepareFifo(vector<uint8_t> *fifo){
+void NetioTxCore::prepareFifo(vector<uint8_t> *fifo) const{
 
   if(m_padding==true){
     nlog->trace("Padding");
@@ -376,12 +374,21 @@ void NetioTxCore::doTriggerCnt() {
 
   prepareTrigger();
 
+  using clk = chrono::steady_clock;
+
+  clk::time_point last_trigger = clk::now();
+
+  const auto delta = std::chrono::nanoseconds((int64_t)(1e9/m_trigFreq));
+
   uint32_t trigs=0;
   for(uint32_t i=0; i<m_trigCnt; i++) {
     if(m_trigEnabled==false) break;
     trigs++;
     trigger();
-    std::this_thread::sleep_for(std::chrono::microseconds((int)(1e6/m_trigFreq))); // Frequency in Hz
+
+    last_trigger += delta;
+
+    std::this_thread::sleep_until(last_trigger);
   }
   m_trigEnabled = false;
 
@@ -417,7 +424,7 @@ void NetioTxCore::printFifo(uint32_t elink){
   std:cout << dec << endl;
 }
 
-void NetioTxCore::toFileJson(json &j)  {
+void NetioTxCore::writeConfig(json &j)  {
   j["NetIO"]["host"] = m_felixhost;
   j["NetIO"]["txport"] = m_felixport;
   j["NetIO"]["manchester"] = m_manchester;
@@ -425,7 +432,7 @@ void NetioTxCore::toFileJson(json &j)  {
   j["NetIO"]["extend"] = (m_extend == 4);
 }
 
-void NetioTxCore::fromFileJson(json &j){
+void NetioTxCore::loadConfig(const json &j){
    m_felixhost  = j["NetIO"]["host"];
    m_felixport  = j["NetIO"]["txport"];
    m_manchester = j["NetIO"]["manchester"];

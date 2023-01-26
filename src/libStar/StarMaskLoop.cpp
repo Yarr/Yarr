@@ -112,11 +112,12 @@ void StarMaskLoop::execPart1() {
   }
 
   // FIXME: Global writes used, but loop over FE to be sure of tx mask
-  if(keeper->feList.empty()) {
+  if(keeper->getNumOfEntries() == 0) {
     logger->warn("No ABCs defined to write masks to!\n");
   }
 
-  for ( FrontEnd* fe : keeper->feList ) {
+  for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+    FrontEnd *fe = keeper->getEntry(id).fe;
     if (!fe->isActive()) {continue;}
 
     auto masks = m_maskedChannelsRing.readMask(offset);
@@ -227,7 +228,7 @@ void StarMaskLoop::writeConfig(json &config) {
     config["doNmask"] = m_doNmask;
 }
 
-void StarMaskLoop::loadConfig(json &config) {
+void StarMaskLoop::loadConfig(const json &config) {
     min = config["min"];
     max = config["max"];
     step = config["step"];
@@ -243,15 +244,15 @@ void StarMaskLoop::loadConfig(json &config) {
       m_EnabledMaskedShift = 0;
     }
 
-    if((!config["parameter"].empty()) && config["parameter"]) {
+    if(config.contains("parameter") && config["parameter"]) {
       m_style = LOOP_STYLE_PARAMETER;
     }
 
-    if(!config["maskOnly"].empty()) {
+    if(config.contains("maskOnly")) {
       m_onlyMask = config["maskOnly"];
     }
 
-    if(!config["doNmask"].empty()) {
+    if(config.contains("doNmask")) {
       m_doNmask = config["doNmask"];
     }
 

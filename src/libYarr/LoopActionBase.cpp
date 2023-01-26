@@ -15,10 +15,10 @@ namespace {
 LoopActionBase::LoopActionBase(LoopStyle l)
   : m_style(l), loopType(typeid(void))
 {
-    g_fe = NULL;
-    g_tx = NULL;
-    g_rx = NULL;
-    g_stat = NULL;
+    g_fe = nullptr;
+    g_tx = nullptr;
+    g_rx = nullptr;
+    g_stat = nullptr;
     m_done = false;
 }
 
@@ -57,15 +57,15 @@ void LoopActionBase::run() {
     this->end();
 }
 
-unsigned LoopActionBase::getMin() {
+unsigned LoopActionBase::getMin() const {
     return min;
 }
 
-unsigned LoopActionBase::getMax() {
+unsigned LoopActionBase::getMax() const {
     return max;
 }
 
-unsigned LoopActionBase::getStep() {
+unsigned LoopActionBase::getStep() const {
     return step;
 }
 

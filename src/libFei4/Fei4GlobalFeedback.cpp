@@ -12,14 +12,14 @@ void Fei4GlobalFeedback::writeConfig(json &config){
     config["step"] = step;
     config["parameter"] = parName;
 }
-void Fei4GlobalFeedback::loadConfig(json &config){
-    if (!config["min"].empty())
+void Fei4GlobalFeedback::loadConfig(const json &config){
+    if (config.contains("min"))
       min = config["min"];
-    if (!config["max"].empty())
+    if (config.contains("max"))
       max = config["max"];
-    if (!config["step"].empty())
+    if (config.contains("step"))
       step = config["step"];
-    if (!config["parameter"].empty())
+    if (config.contains("parameter"))
       parName = config["parameter"];
 }
 

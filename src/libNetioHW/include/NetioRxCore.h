@@ -13,7 +13,7 @@
 #include "RawData.h"
 #include "NetioHandler.h"
 #include "netio/netio.hpp"
-#include <queue>
+
 #include <cstdint>
 #include <chrono>
 #include <vector>
@@ -40,15 +40,15 @@ public:
    * @brief Default destructor
    * Stop the NetioHandler. Delete the channels from the NetioHandler.
    **/
-  ~NetioRxCore();
+  ~NetioRxCore() override;
 
   void setRxEnable(uint32_t val) override;
-  void setRxEnable(std::vector<uint32_t> channels);
-  void disableRx();
+  void setRxEnable(std::vector<uint32_t> channels) override;
+  void disableRx() override;
   void maskRxEnable(uint32_t val, uint32_t mask) override;
 
   void flushBuffer() override;
-  RawData* readData() override;
+  std::vector<RawDataPtr> readData() override;
 
   /**
    * @brief get rate of events
@@ -64,7 +64,7 @@ public:
 
   /**
    * @brief check if the NetioHandler is not receiving data still
-   * @return true if the NetioHanlder is not receiving data
+   * @return true if the NetioHandler is not receiving data
    **/
   bool isBridgeEmpty() override;
 
@@ -73,14 +73,14 @@ public:
    * @param j reference to json where to write the configuration to
    * Not implemented
    **/
-  void toFileJson(json &j);
+  void writeConfig(json &j);
 
   /**
    * @brief read configuration from json
    * @param j reference to string where to write the configuration from
    * Json structure should be {"NetIO":{"host":"hostname","rxport":port}}
    **/
-  void fromFileJson(json &j);
+  void loadConfig(const json &j);
 
 private:
   // to keep track of amount of data received at rxcore
@@ -97,8 +97,6 @@ private:
 
   std::string m_felixhost;          //! felix hostname
   uint16_t m_felixport;             //! felix port for reading
-
-  netio::context * m_context;       //! the netio context
 
   std::map<uint64_t,bool> m_elinks; //! elinks map
 

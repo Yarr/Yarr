@@ -29,7 +29,7 @@ void StdParameterLoop::init() {
 }
 
 void StdParameterLoop::execPart1() {
-    SPDLOG_LOGGER_DEBUG(spllog, "ParameterLoop at -> {}", m_cur);
+    SPDLOG_LOGGER_DEBUG(spllog, "ParameterLoop for {} at -> {}", parName, m_cur);
     g_stat->set(this, m_cur);
 }
 
@@ -64,18 +64,18 @@ void StdParameterLoop::writeConfig(json &j) {
     j["waitTime"] = m_waitTime.count();
 }
 
-void StdParameterLoop::loadConfig(json &j) {
-    if (!j["min"].empty())
+void StdParameterLoop::loadConfig(const json &j) {
+    if (j.contains("min"))
         min = j["min"];
-    if (!j["max"].empty())
+    if (j.contains("max"))
         max = j["max"];
-    if (!j["step"].empty())
+    if (j.contains("step"))
         step = j["step"];
-    if (!j["parameter"].empty()) {
-        SPDLOG_LOGGER_INFO(spllog, "Linking parameter: {}", std::string(j["parameter"]));
+    if (j.contains("parameter")) {
+        SPDLOG_LOGGER_DEBUG(spllog, "Linking parameter: {}", std::string(j["parameter"]));
         parName = j["parameter"];
     }
-    if (!j["waitTime"].empty()) {
+    if (j.contains("waitTime")) {
         m_waitTime = std::chrono::microseconds(j["waitTime"]);
     }
 }

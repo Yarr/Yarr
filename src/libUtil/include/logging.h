@@ -2,6 +2,8 @@
 #define YARR_LOGGING_H
 
 #include <memory>
+#include <vector>
+#include <string>
 
 #include "spdlog/logger.h"
 #include "spdlog/spdlog.h"
@@ -22,7 +24,7 @@ inline std::shared_ptr<spdlog::logger> make_log(std::string name) {
   }
   return log;
 }
-
-} // End logging namespace
+std::vector<std::string> getLog(std::size_t lim);
+}; // End logging namespace
 
 #endif

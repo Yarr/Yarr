@@ -55,7 +55,7 @@ void StarTriggerLoop::init() {
 
 	logger->trace("Built trigger words {}:", m_trigWordLength);
         if(logger->should_log(spdlog::level::trace)) {
-          for(int i=0; i<m_trigWordLength; i++) {
+          for(size_t i=0; i<m_trigWordLength; i++) {
             logger->trace("{:08x}", m_trigWord[i]);
           }
         }
@@ -142,24 +142,24 @@ void StarTriggerLoop::writeConfig(json &config) {
 	config["digital"] = m_digital;
 }
 
-void StarTriggerLoop::loadConfig(json &config) {
+void StarTriggerLoop::loadConfig(const json &config) {
 
-	if (!config["trig_count"].empty())
+	if (config.contains("trig_count"))
 		setTrigCnt(config["trig_count"]);
 
-	if (!config["trig_frequency"].empty())
+	if (config.contains("trig_frequency"))
 		m_trigFreq = config["trig_frequency"];
 
-	if (!config["trig_time"].empty())
+	if (config.contains("trig_time"))
 		m_trigTime = config["trig_time"];
 
-	if (!config["l0_latency"].empty())
+	if (config.contains("l0_latency"))
 		m_trigDelay = config["l0_latency"];
 
-	if (!config["noInject"].empty())
+	if (config.contains("noInject"))
 		m_noInject = config["noInject"];
 
-	if (!config["digital"].empty())
+	if (config.contains("digital"))
 		m_digital = config["digital"];
 
 	logger->info("Configured trigger loop: trig_count: {} trig_frequency: {} l0_delay: {}",

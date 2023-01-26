@@ -31,38 +31,38 @@ namespace {
 // FrontEndScopeAnalysis
 //
 //////////////////////////////////////////////////////////////////////////////
-void FrontEndScopeAnalysis::loadConfig(json& j) {
+void FrontEndScopeAnalysis::loadConfig(const json &j) {
 
-    if(!j["doPulseShapeMap"].empty()) {
+    if(j.contains("doPulseShapeMap")) {
         m_doPulseShapeMap = static_cast<bool>(j["doPulseShapeMap"]);;
     } else {
         m_doPulseShapeMap = false;
     }
 
-    if(!j["pulseShapeBins"].empty()) {
+    if(j.contains("pulseShapeBins")) {
         auto j_bounds = j["pulseShapeBins"];
-        if(!j_bounds["xlo"].empty()) {
+        if(j_bounds.contains("xlo")) {
             m_pulseShape_xlo = j_bounds["xlo"];
         }
-        if(!j_bounds["xhi"].empty()) {
+        if(j_bounds.contains("xhi")) {
             m_pulseShape_xhi = j_bounds["xhi"];
         }
-        if(!j_bounds["nxbins"].empty()) {
+        if(j_bounds.contains("nxbins")) {
             m_pulseShape_nxbins = j_bounds["nxbins"];
         }
 
-        if(!j_bounds["ylo"].empty()) {
+        if(j_bounds.contains("ylo")) {
             m_pulseShape_ylo = j_bounds["ylo"];
         }
-        if(!j_bounds["yhi"].empty()) {
+        if(j_bounds.contains("yhi")) {
             m_pulseShape_yhi = j_bounds["yhi"];
         }
-        if(!j_bounds["nybins"].empty()) {
+        if(j_bounds.contains("nybins")) {
             m_pulseShape_nybins = j_bounds["nybins"];
         }
     }
 
-    if(!j["excludeLRCols"].empty()) {
+    if(j.contains("excludeLRCols")) {
         m_exclude_LRCols = j["excludeLRCols"];
     }
 
@@ -287,12 +287,12 @@ void FrontEndScopeAnalysis::end() {
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-void ToaAnalysis::loadConfig(json &j) {
+void ToaAnalysis::loadConfig(const json &j) {
 
     // check for valid ToA histogram bin configuration
-    if (!j["toa_bins"].empty()) {
+    if (j.contains("toa_bins")) {
         auto j_bins = j["toa_bins"];
-        if (!j_bins["n_bins"].empty() && !j_bins["x_lo"].empty() && !j_bins["x_hi"].empty()) {
+        if (j_bins.contains("n_bins") && j_bins.contains("x_lo") && j_bins.contains("x_hi")) {
             toa_bins_n = static_cast<unsigned>(j_bins["n_bins"]);
             toa_bins_x_lo = static_cast<float>(j_bins["x_lo"]);
             toa_bins_x_hi = static_cast<float>(j_bins["x_hi"]);
@@ -300,14 +300,14 @@ void ToaAnalysis::loadConfig(json &j) {
     }
 
     // ToA unit
-    if (!j["toa_unit"].empty()) {
+    if (j.contains("toa_unit")) {
         toa_unit = static_cast<std::string>(j["toa_unit"]);
     }
 
     // check for valid ToA sigma histogram bin configuration
-    if (!j["toa_sigma_bins"].empty()) {
+    if (j.contains("toa_sigma_bins")) {
         auto j_bins = j["toa_sigma_bins"];
-        if (!j_bins["n_bins"].empty() && !j_bins["x_lo"].empty() && !j_bins["x_hi"].empty()) {
+        if (j_bins.contains("n_bins") && j_bins.contains("x_lo") && j_bins.contains("x_hi")) {
             toa_sigma_bins_n = static_cast<unsigned>(j_bins["n_bins"]);
             toa_sigma_bins_x_lo = static_cast<float>(j_bins["x_lo"]);
             toa_sigma_bins_x_hi = static_cast<float>(j_bins["x_hi"]);
@@ -415,7 +415,7 @@ void ToaAnalysis::processHistogram(HistogramBase *h) {
 
     // ToA vs charge
     if(m_hasVcalLoop && h_chargeVsToaMap == NULL) {
-        auto cfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
+        auto cfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
         double chargeMin = cfg->toCharge(m_vcalMin);
         double chargeMax = cfg->toCharge(m_vcalMax);
         double chargeStep = cfg->toCharge(m_vcalStep);
@@ -511,11 +511,11 @@ void ToaAnalysis::processHistogram(HistogramBase *h) {
             fineMeanPToADist->fill(meanPToAMap->getBin(ii));
         } // ii
 
-        logger->info("\033[1;33mChannel:{} ScanID:{} ToA Mean = {} +- {}\033[0m", channel, ident, meanPToADist->getMean(), meanPToADist->getStdDev());
+        logger->info("\033[1;33mId:{} ScanID:{} ToA Mean = {} +- {}\033[0m", id, ident, meanPToADist->getMean(), meanPToADist->getStdDev());
 
         // ToA vs charge
         if (m_hasVcalLoop) {
-            auto cfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(channel));
+            auto cfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
             double chargeAtCurrentStep = cfg->toCharge(ident);
             double bin_width = ((toa_bins_x_hi+0.5) - (toa_bins_x_lo+0.5)) / (toa_bins_n);
             for (unsigned ii = 0; ii < fineMeanPToADist->size(); ii++) {

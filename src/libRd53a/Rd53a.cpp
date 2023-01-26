@@ -68,15 +68,6 @@ void Rd53a::init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rx
     core->setClkPeriod(6.25e-9);
 }
 
-void Rd53a::writeRegister(Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value) {
-    (this->*ref).write(value);
-    wrRegister(m_chipId, (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
-}
-
-void Rd53a::readRegister(Rd53aReg Rd53aGlobalCfg::*ref) {
-    rdRegister(m_chipId, (this->*ref).addr());
-}
-
 void Rd53a::enableAll() {
     logger->info("Resetting enable/hitbus pixel mask to all enabled!");
     for (unsigned int col = 0; col < n_Col; col++) {
@@ -87,8 +78,11 @@ void Rd53a::enableAll() {
     }
 }
 
-void Rd53a::configure() {
+void Rd53a::resetAll() {
     this->configureInit();
+}
+
+void Rd53a::configure() {
     // Turn off clock to matrix
     uint16_t tmp_enCoreColSync = EnCoreColSync.read();
     uint16_t tmp_enCoreColLin1 = EnCoreColLin1.read();
@@ -276,14 +270,18 @@ int Rd53a::checkCom() {
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     // TODO not happy about this, rx knowledge should not be here
-    RawData *data = m_rxcore->readData();
+    std::vector<RawDataPtr> dataVec = m_rxcore->readData();
+    RawDataPtr data;
+    if (dataVec.size() > 0) {
+        data = dataVec[0];
+    }
 
     if (data != NULL) {
-        if (!(data->words == 2 || data->words == 4 || data->words == 8 || data->words == 12 || data->words == 6)) {
-            logger->error("Received wrong number of words ({}) for {}", data->words, this->name);
+        if (!(data->getSize() == 2 || data->getSize() == 4 || data->getSize() == 8 || data->getSize() == 12 || data->getSize() == 6)) {
+            logger->error("Received wrong number of words ({}) for {}", data->getSize(), this->name);
             return 0;
         }
-        std::pair<uint32_t, uint32_t> answer = decodeSingleRegRead(data->buf[0], data->buf[1]);
+        std::pair<uint32_t, uint32_t> answer = decodeSingleRegRead(data->get(0), data->get(1));
         logger->debug("Addr ({}) Value({})", answer.first, answer.second);
 
         if (answer.first != regAddr || answer.second != regValue) {

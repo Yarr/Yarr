@@ -2,8 +2,8 @@
 #include <vector>
 #include <thread>
 #include <chrono>
+#include <cmath>
 
-#include <math.h>
 
 #include "Bdaq.h"
 #include "logging.h"
@@ -22,11 +22,11 @@ Bdaq::Bdaq() :
 void Bdaq::initialize(bdaqConfig c) {
 	// Initialize Remote Bus Control Protocol (RBCP)
 	rbcp.connect(c.ipAddr, c.udpPort);
-	
+
 	// Get DAQ (board) version
  	dv = getDaqVersion();
 	if (VERSION != dv.fwVersion) {
-		std::string error = "Firmware version " + dv.fwVersion + 
+		std::string error = "Firmware version " + dv.fwVersion +
 		" is different than software version " + VERSION + "! Please update.";
 		logger->critical(error);
 		exit(-1);
@@ -38,13 +38,13 @@ void Bdaq::initialize(bdaqConfig c) {
 		logger->critical(error);
 		exit(-1);
 	}
-	logger->info("\033[1;32mFound board " + dv.boardVersion + " with " + 
-		dv.connectorVersion + " running firmware version " + 
+	logger->info("\033[1;32mFound board " + dv.boardVersion + " with " +
+		dv.connectorVersion + " running firmware version " +
 		dv.fwVersion + "\033[0m");
-	logger->info("Board has " + std::to_string(dv.numRxChannels) + 
+	logger->info("Board has " + std::to_string(dv.numRxChannels) +
 		" Aurora receiver channel(s)");
-	
-	// Initialize FPGA modules/drivers	
+
+	// Initialize FPGA modules/drivers
 	rx.reserve(7);
 	for (uint i=0;i<7;++i) {
 		rx.emplace_back(BdaqAuroraRx(rbcp));
@@ -82,8 +82,22 @@ void Bdaq::initialize(bdaqConfig c) {
 
 	//Reset BdaqDriver (command TX)
 	cmd.reset();
-	//Setting BdaqDriver to RD53A
-	setChipTypeRD53A(); // Move it to "main" code, when "rd53b_devel" is merged
+
+        if(c.feType == "RD53A"){
+            //Setting BdaqDriver to RD53A
+            setChipTypeRD53A();  // Move it to "main" code, when "rd53b_devel" is merged
+            chipType = 0 ;
+        }else if(c.feType == "RD53B"){
+            //Setting BdaqDriver to RD53B
+            setChipTypeITkPixV1();
+            chipType = 1 ;
+        }else{
+            std::stringstream error;
+            error << __PRETTY_FUNCTION__ << ": chip type is undefined, it should be either RD53A or Rd53B";
+            logger->critical(error.str());
+            exit(-1);
+        }
+
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	//Configure the Aurora link
 	waitForPllLock();
@@ -95,7 +109,7 @@ daqVersion Bdaq::getDaqVersion() {
 	daqVersion dv;
 	//Firmware version
 	rbcp.read(0x0, buf, 2);
-	dv.fwVersion = std::to_string(buf.at(1)) + "." + std::to_string(buf.at(0));
+        dv.fwVersion = std::to_string(buf.at(0)) + "." + std::to_string(buf.at(1));// for frimware = 1.8
 	//Board version
 	rbcp.read(0x2, buf, 2);
 	dv.boardVersion = hwMap[buf.at(0)];
@@ -104,10 +118,11 @@ daqVersion Bdaq::getDaqVersion() {
 	dv.numRxChannels = buf.at(0);
 	//Board options
 	rbcp.read(0x4, buf, 1);
-	dv.boardOptions = buf.at(0);
+//	dv.boardOptions = buf.at(0); // for frimware = 1.2
+        dv.boardOptions = 0x01;      // for frimware = 1.8 (To be fixed "not accepted")
 	//Connector Version
 	rbcp.read(0x5, buf, 2);
-	dv.connectorVersion = hwConMap[buf.at(0)];
+       	dv.connectorVersion = hwConMap[buf.at(1)];
 	return dv;
 }
 
@@ -119,9 +134,9 @@ bool Bdaq::waitForPllLock(uint timeout) {
 	uint times = 0;
 	bool locked = false;
 	while (times < timeout && locked == false) {
-		locked = rx.at(0).getPllLocked() && rx.at(1).getPllLocked() && 
-		         rx.at(2).getPllLocked() && rx.at(3).getPllLocked() && 
-				 rx.at(4).getPllLocked() && rx.at(5).getPllLocked() && 
+		locked = rx.at(0).getPllLocked() && rx.at(1).getPllLocked() &&
+		         rx.at(2).getPllLocked() && rx.at(3).getPllLocked() &&
+				 rx.at(4).getPllLocked() && rx.at(5).getPllLocked() &&
 				 rx.at(6).getPllLocked();
 		++times;
 	}
@@ -167,5 +182,5 @@ void Bdaq::setMonitorFilter(BdaqAuroraRx::userkFilterMode mode) {
 		rx.at(i).setUserKfilterMask(2, 0x01); // Only allow register data frames
 		rx.at(i).setUserKfilterMask(3, 0x02); // Only allow register data frames
 		rx.at(i).setUserkFilterMode(mode);
-	}	
+	}
 }

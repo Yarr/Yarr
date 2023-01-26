@@ -22,7 +22,7 @@ Rd53bParameterLoop::Rd53bParameterLoop() : LoopActionBase(LOOP_STYLE_PARAMETER) 
 
 }
 
-Rd53bParameterLoop::Rd53bParameterLoop(Rd53bReg Rd53bGlobalCfg::*ref) : LoopActionBase(LOOP_STYLE_PARAMETER), parPtr(ref) {
+Rd53bParameterLoop::Rd53bParameterLoop(Rd53bRegDefault Rd53bGlobalCfg::*ref) : LoopActionBase(LOOP_STYLE_PARAMETER), parPtr(ref) {
     loopType = typeid(this);
     min = 0;
     max = 100;
@@ -73,14 +73,14 @@ void Rd53bParameterLoop::writeConfig(json &j) {
     j["parameter"] = parName;
 }
 
-void Rd53bParameterLoop::loadConfig(json &j) {
-    if (!j["min"].empty())
+void Rd53bParameterLoop::loadConfig(const json &j) {
+    if (j.contains("min"))
         min = j["min"];
-    if (!j["max"].empty())
+    if (j.contains("max"))
         max = j["max"];
-    if (!j["step"].empty())
+    if (j.contains("step"))
         step = j["step"];
-    if (!j["parameter"].empty()) {
+    if (j.contains("parameter")) {
         logger->info("Linking parameter: {}", std::string(j["parameter"]));
         parName = j["parameter"];
     }

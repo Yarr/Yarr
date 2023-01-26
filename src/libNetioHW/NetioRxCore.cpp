@@ -1,8 +1,8 @@
 #include "NetioRxCore.h"
-#include "NetioTools.h"
+
+#include "logging.h"
 
 #include <iomanip>
-#include "felixbase/client.hpp"
 
 using namespace std;
 using namespace netio;
@@ -12,14 +12,12 @@ auto nlog = logging::make_log("NetioHW::RxCore");
 }
 
 NetioRxCore::NetioRxCore()
-  : m_nioh("posix", "localhost", 12340, 12345, 50000000)
+  : m_nioh("posix", "localhost", 12345)
 {
   m_t0 = std::chrono::steady_clock::now();
-  string cntx = "posix";
   m_felixhost = "localhost";
   m_felixport = 12345;
   m_bytesReceived = 0;
-  m_context = new context(cntx);
   m_cont = true;
   rxDataCount = 0; // initialize to zero data received 
 
@@ -39,7 +37,7 @@ NetioRxCore::NetioRxCore()
 }
 
 NetioRxCore::~NetioRxCore(){
-  m_nioh.stopChecking();
+  // m_nioh.stopChecking();
   m_cont=false;
   map<uint64_t,bool>::iterator it;
   for(it=m_elinks.begin();it!=m_elinks.end();it++){
@@ -47,7 +45,6 @@ NetioRxCore::~NetioRxCore(){
     m_nioh.delChannel(it->first);
     //FIXME: //m_socket->unsubscribe(it->first, endpoint(m_felixhost,m_felixport));
     //m_sockets[it->first]->unsubscribe(it->first, endpoint(m_felixhost,m_felixport));
-    //m_queues[it->first]->~MonitoredQueue();
     //delete m_sockets[it->first];
   }
   m_statistics.join();
@@ -119,7 +116,7 @@ void NetioRxCore::flushBuffer(){
 
 }
 
-RawData* NetioRxCore::readData(){
+std::vector<RawDataPtr> NetioRxCore::readData(){
   // Loop over all links looking for data
   // Return the first one we find (slow?)
 
@@ -127,16 +124,17 @@ RawData* NetioRxCore::readData(){
   //for(it=m_elinks.begin();it!=m_elinks.end();it++){    // For every channel's queue:
     //if(!it->second) continue;
     //uint64_t elink=it->first;
+    std::vector<RawDataPtr> dataVec;
 
     nlog->debug("NetioRxCore::readData()");
 
     std::unique_ptr<RawData> rdp = m_nioh.rawData.popData();
     if(rdp != NULL){
-	auto buffer = rdp.get()->buf;
-	auto address = rdp.get()->adr;
-	auto words = rdp.get()->words;
 
-	RawData* new_rdp = new RawData(address, buffer, words);
+    RawDataPtr new_rdp = std::move(rdp);
+	auto buffer = new_rdp->getBuf();
+	auto address = new_rdp->getAdr();
+	auto words = new_rdp->getSize();
 
         if(m_fetype == "rd53a"){
             //TODO:fix this in firmware; the header needs to be in buffer[0]
@@ -154,10 +152,10 @@ RawData* NetioRxCore::readData(){
                 buffer[words-1] = 0xFFFF;
         }
         ++rxDataCount;
-	return new_rdp;
+        dataVec.push_back(new_rdp);
 
   }
-  return NULL;
+  return dataVec;
 }
 
 uint32_t NetioRxCore::getDataRate(){
@@ -170,20 +168,24 @@ uint32_t NetioRxCore::getCurCount(){
 }
 
 bool NetioRxCore::isBridgeEmpty(){ // True, if queues are stable.
-  return m_nioh.isAllStable();
+  return true;
 }
 
-void NetioRxCore::toFileJson(json &j) {
+void NetioRxCore::writeConfig(json &j) {
   j["NetIO"]["host"] = m_felixhost;
   j["NetIO"]["rxport"] = m_felixport;
 }
 
-void NetioRxCore::fromFileJson(json &j) {
+void NetioRxCore::loadConfig(const json &j) {
   m_felixhost = j["NetIO"]["host"];
   m_felixport = j["NetIO"]["rxport"];
   m_fetype = j["NetIO"]["fetype"];
   m_nioh.setFeType(m_fetype);
   m_nioh.setFelixHost(m_felixhost);
   m_nioh.setFelixRXPort(m_felixport);
+
+  if (j["NetIO"].contains("rx_wait_time")) {
+    m_waitTime = std::chrono::microseconds(j["NetIO"]["rx_wait_time"]);
+  }
 }
 

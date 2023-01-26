@@ -26,7 +26,7 @@ class Histo3d : public HistogramBase {
                 unsigned arg_zbins, double arg_zlow, double arg_zhigh, 
                 const LoopStatus &stat);
         Histo3d(Histo3d *h);
-        ~Histo3d();
+        ~Histo3d() override;
         
         unsigned size() const;
         unsigned numOfEntries() const;
@@ -45,29 +45,32 @@ class Histo3d : public HistogramBase {
         double getStdDev();
         
         double getBin(unsigned n) const;
-        int binNum(double x, double y, double z);
+        int binNum(double x, double y, double z) const;
+
+	bool isFilled(unsigned n) const;
         
-        double getUnderflow() {return underflow;}
-        double getOverflow() {return overflow;}
-        unsigned getXbins() {return xbins;}
-        double getXlow() {return xlow;}
-        double getXhigh() {return xhigh;}
-        double getXbinWidth() {return xbinWidth;}
-        unsigned getYbins() {return ybins;}
-        double getYlow() {return ylow;}
-        double getYhigh() {return yhigh;}
-        double getYbinWidth() {return ybinWidth;}
-        unsigned getZbins() {return zbins;}
-        double getZlow() {return zlow;}
-        double getZhigh() {return zhigh;}
-        double getZbinWidth() {return zbinWidth;}
-        double getMax() {return max;}
-        double getMin() {return min;}
-        double getNumOfEntries() {return entries;}
+        double getUnderflow() const {return underflow;}
+        double getOverflow() const {return overflow;}
+        unsigned getXbins() const {return xbins;}
+        double getXlow() const {return xlow;}
+        double getXhigh() const {return xhigh;}
+        double getXbinWidth() const {return xbinWidth;}
+        unsigned getYbins() const {return ybins;}
+        double getYlow() const {return ylow;}
+        double getYhigh() const {return yhigh;}
+        double getYbinWidth() const {return ybinWidth;}
+        unsigned getZbins() const {return zbins;}
+        double getZlow() const {return zlow;}
+        double getZhigh() const {return zhigh;}
+        double getZbinWidth() const {return zbinWidth;}
+        double getMax() const {return max;}
+        double getMin() const {return min;}
+        double getNumOfEntries() const {return entries;}
 
         
         void toFile(const std::string &filename, const std::string &dir = "", bool header= true) const override;
         bool fromFile(const std::string &filename);
+        bool fromJson(const json &jfile);
         void plot(const std::string &filename, const std::string &dir = "") const override;
 
     void toStream(std::ostream &out) const override;
@@ -99,7 +102,7 @@ private:
         double min;
         unsigned entries;
 
-        std::map<unsigned, bool> isFilled;
+        std::map<unsigned, bool> m_isFilled;
 };
 
 #endif

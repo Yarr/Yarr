@@ -2,8 +2,6 @@
 #define __ROGUE_COM_H__
 
 #include <cstdint>
-#include <tbb/concurrent_vector.h>
-#include <tbb/concurrent_queue.h>
 #include <mutex>
 #include <memory>
 #include <rogue/Logging.h>
@@ -24,7 +22,8 @@
 #include <rogue/hardware/axi/AxiStreamDma.h>
 #include <rogue/interfaces/stream/FrameLock.h>
 #include <iomanip>
-
+#include <queue>
+#include <unistd.h>
 #include <fstream>
 class RogueCom;
 class RogueSender:  public rogue::interfaces::stream::Master {
@@ -48,7 +47,7 @@ class RogueReceiver :  public rogue::interfaces::stream::Slave {
   rx_bytes(0),rx_max_pkt(0),
     rx_pkts(0),rx_min_pkt(0xffffffff), _type(type),
     _port(port),  _com(com) {}  
-  void acceptFrame ( std::shared_ptr<rogue::interfaces::stream::Frame> frame);  
+  void acceptFrame ( std::shared_ptr<rogue::interfaces::stream::Frame> frame) override;
   void resetCnt(){ rx_bytes=0; rx_pkts=0; rx_max_pkt=0; rx_min_pkt=0xffffffff; }
   uint32_t rx_bytes;
   uint32_t rx_max_pkt;
@@ -763,7 +762,7 @@ void queue_data(uint32_t data,unsigned queuenumber) {
   void setForceRelaseTxfifo(bool enable=true) {
     forceRelaseTxfifo=enable;
   }
-  bool getFirmwareTrigger() {return firmwareTrigger;}
+  bool getFirmwareTrigger() const {return firmwareTrigger;}
 
   void flushBuffer();
  protected:
@@ -792,8 +791,7 @@ void queue_data(uint32_t data,unsigned queuenumber) {
   int m_manualDlyCtrl;//>0: manual mode; =0: auto mode; <0: ignore
   bool m_tuningDly;
   uint32_t m_speedrate;//0 for 1.28Gbps; 1,2,3 for 640, 320, 160 Mbps
-  tbb::concurrent_queue<uint32_t> rxfifo[8];// 0-3 for debug; 4-7 for data
-  //tbb::concurrent_queue<uint32_t> rxdebugfifo[4];
+  std::queue<uint32_t> rxfifo[8];// 0-3 for debug; 4-7 for data
   rogue::interfaces::memory::MasterPtr mast;
   std::shared_ptr<RogueSender> configStream[4];
   std::shared_ptr<RogueReceiver> debugStream[4];

@@ -17,17 +17,15 @@
 #include "DataProcessor.h"
 #include "ClipBoard.h"
 #include "RawData.h"
+#include "HccCfg.h"
 
 class StarDataProcessor : public DataProcessor {
     public:
-        // TODO processor should receive whole chip config seperatly
         StarDataProcessor();
-        ~StarDataProcessor();
-        
-        void connect(ClipBoard<RawDataContainer> *arg_input, std::map<unsigned, ClipBoard<EventDataBase> > *arg_outMap) override {
-            input = arg_input;
-            outMap = arg_outMap;
-        }
+        ~StarDataProcessor() override;
+
+        /// Connect this instance to data for a particular FrontEnd
+        void connect(FrontEndCfg *feCfg, ClipBoard<RawDataContainer> *arg_input, ClipBoard<EventDataBase> *arg_output) override;
     
         void init() override;
         void run() override;
@@ -37,9 +35,11 @@ class StarDataProcessor : public DataProcessor {
 
     private:
         ClipBoard<RawDataContainer> *input;
-        std::map<unsigned, ClipBoard<EventDataBase> > *outMap;
-        std::vector<unsigned> activeChannels;
+        ClipBoard<EventDataBase> *output;
         std::vector<std::unique_ptr<std::thread>> thread_ptrs;
+
+        /// Map from HCC input channel (0-10) number to histogram slot
+        std::array<uint8_t, HCC_INPUT_CHANNEL_COUNT> chip_map;
 };
 
 #endif

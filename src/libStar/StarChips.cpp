@@ -16,12 +16,23 @@ namespace {
 
 #include "AllChips.h"
 
-bool star_chips_registered =
+bool star_chips_default_registered =
 StdDict::registerFrontEnd
-  ("Star", []() { return std::unique_ptr<FrontEnd>(new StarChips); });
+  ("Star", []() { return std::unique_ptr<FrontEnd>(new StarChips(0, 0)); });
+bool star_chips_v0_registered =
+StdDict::registerFrontEnd
+  ("Star_vH0A0", []() { return std::unique_ptr<FrontEnd>(new StarChips(0, 0)); });
+// a.k.a PPA
+bool star_chips_v1_registered =
+StdDict::registerFrontEnd
+  ("Star_vH0A1", []() { return std::unique_ptr<FrontEnd>(new StarChips(1, 0)); });
+// a.k.a PPB
+bool star_chips_v1_both_registered =
+StdDict::registerFrontEnd
+  ("Star_vH1A1", []() { return std::unique_ptr<FrontEnd>(new StarChips(1, 1)); });
 
-StarChips::StarChips()
-: StarCmd(), FrontEnd()
+StarChips::StarChips(int abc_version, int hcc_version)
+  : StarCfg(abc_version, hcc_version), StarCmd(), FrontEnd()
 {
 	m_txcore  = nullptr;
 
@@ -37,6 +48,7 @@ StarChips::StarChips()
 	addABCchipID(0xf, 0);
 }
 
+#if 0
 StarChips::StarChips(HwController *arg_core)
 : StarCmd(), FrontEnd()
 {
@@ -75,6 +87,7 @@ StarChips::StarChips(HwController *arg_core, unsigned arg_txChannel, unsigned ar
 	geo.nRow = 2;
 	geo.nCol = 128;
 }
+#endif
 
 void StarChips::enableAll() {
     eachAbc([&](auto &abc) {
@@ -113,34 +126,55 @@ void StarChips::setHccId(unsigned hccID) {
   logger->info("Set HCC ID to {} (sent on reg17 0x{:08x})", hccID, newReg17val);
 }
 
+void StarChips::resetHCCStars() {
+    logger->debug("Sending fast command #{} HCC_REG_RESET", LCB::HCC_REG_RESET);
+    this->sendCmd(LCB::fast_command(LCB::HCC_REG_RESET, 0) );
+}
 
-
-void StarChips::reset(){
-	logger->info("Global reseting all HCC and ABC on the same LCB control segment");
-
+void StarChips::resetABCStars() {
 	uint8_t delay = 0; //2 bits BC delay
 
-	//sendCmd(LCB::fast_command(LCB::LOGIC_RESET, delay) );
 	logger->debug("Sending fast command #{} ABC_REG_RESET", LCB::ABC_REG_RESET);
 	sendCmd(LCB::fast_command(LCB::ABC_REG_RESET, delay) );
 
 	logger->debug("Sending fast command #{} ABC_SLOW_COMMAND_RESET", LCB::ABC_SLOW_COMMAND_RESET);
 	sendCmd(LCB::fast_command(LCB::ABC_SLOW_COMMAND_RESET, delay) );
 
-	logger->debug("Sending fast command #{} ABC_SEU_RESET", LCB::ABC_SEU_RESET);
-	sendCmd(LCB::fast_command(LCB::ABC_SEU_RESET, delay) );
+	// TODO: This should be done somewhere, but only after we're
+	//       also reading out the SEU status registers
+	// logger->debug("Sending fast command #{} ABC_SEU_RESET", LCB::ABC_SEU_RESET);
+	// sendCmd(LCB::fast_command(LCB::ABC_SEU_RESET, delay) );
+}
 
-	logger->debug("Sending fast command #{} ABC_HIT_COUNT_RESET", LCB::ABC_HIT_COUNT_RESET);
-	sendCmd(LCB::fast_command(LCB::ABC_HIT_COUNT_RESET, delay) );
+void StarChips::resetAll(){
+	logger->info("Global reseting all HCC and ABC on the same LCB control segment");
 
-	logger->debug("Sending fast command #{} ABC_HIT_COUNT_START", LCB::ABC_HIT_COUNT_START);
-	sendCmd(LCB::fast_command(LCB::ABC_HIT_COUNT_START, delay) );
+    logger->debug("Sending fast command #{} LOGIC_RESET", LCB::LOGIC_RESET);
+    sendCmd(LCB::fast_command(LCB::LOGIC_RESET, 0) );
 
-	logger->debug("Sending fast command #{} HCC_START_PRLP", LCB::HCC_START_PRLP);
-	sendCmd(LCB::fast_command(LCB::HCC_START_PRLP, delay) );
+    // Reset HCCs
+    resetHCCStars();
 
-	logger->debug("Sending lonely_BCR");
-	sendCmd(LCB::lonely_bcr());
+    // Minimal configurations for HCCs to establish communications with ABCs(v0)
+    logger->debug("Configure HCCs to establish communications with ABCs");
+    //
+    // Broadcast the register commands without modifying hccregisterMap
+    // Delay 1 (register 32): delay for signals from HCC to ABCs
+    uint32_t val_hcc32 = 0x02400000;
+    logger->trace("Writing 0x{:08x} to Register {} of all HCCs", val_hcc32, 32);
+    sendCmd(write_hcc_register(32, val_hcc32));
+    //
+    // DRV1 (register 38): enable driver and currents
+    uint32_t val_hcc38 = 0x0fffffff;
+    logger->trace("Writing 0x{:08x} to Register {} of all HCCs", val_hcc38, 38);
+    sendCmd(write_hcc_register(38, val_hcc38) );
+
+    // Reset ABCs
+    resetABCStars();
+
+    // Star PR&LP to ABCs
+    logger->debug("Sending fast command #{} HCC_START_PRLP", LCB::HCC_START_PRLP);
+	sendCmd(LCB::fast_command(LCB::HCC_START_PRLP, 0) );
 }
 
 void StarChips::configure() {
@@ -148,15 +182,18 @@ void StarChips::configure() {
 	//Set the HCC ID
         if (m_sn) this->setHccId(getHCCchipID());
 
-	logger->debug("Sending fast command #{} HCC_REG_RESET", LCB::HCC_REG_RESET);
-	this->sendCmd(LCB::fast_command(LCB::HCC_REG_RESET, 0) );
-
 	logger->info("Sending registers configuration...");
 
 	this->writeRegisters();
 
-	// Make histo size match number of configured ABCs
-	geo.nCol = 128 * (highestABC()+1);
+    logger->debug("Sending fast command #{} LOGIC_RESET", LCB::LOGIC_RESET);
+    sendCmd(LCB::fast_command(LCB::LOGIC_RESET, 0) );
+
+    logger->debug("Sending lonely_BCR");
+    sendCmd(LCB::lonely_bcr());
+
+    // Make histo size match number of configured ABCs
+    geo.nCol = 128 * numABCs();
 }
 
 void StarChips::sendCmd(uint16_t cmd){
@@ -201,11 +238,10 @@ bool StarChips::writeTrims(){
     int hccId = getHCCchipID();
 
     // Then each ABC
-    const auto &abc_regs = AbcStarRegInfo::instance()->abcregisterMap;
     eachAbc([&](auto &abc) {
             int this_chipID = abc.getABCchipID();
 
-            logger->info("Starting on ABC {} with {} registers", this_chipID, abc_regs.size());
+            logger->info("Write ABC {} trim registers", this_chipID);
             for(unsigned int addr = ABCStarRegister::TrimDAC0; addr <= ABCStarRegister::TrimDAC39; addr++) {
                 logger->debug("Writing Register {} for chipID {}", addr, this_chipID);
                 writeABCRegister(addr, abc);
@@ -225,7 +261,7 @@ bool StarChips::writeRegisters(){
         // First write HCC
         int hccId = getHCCchipID();
 
-        const auto &hcc_regs = HccStarRegInfo::instance()->hccWriteMap;
+        const auto &hcc_regs = m_hcc_info->hccWriteMap;
 	logger->info("Starting on HCC {} with {} registers", hccId, hcc_regs.size());
 
         for(auto &map_iter: hcc_regs) {
@@ -234,11 +270,8 @@ bool StarChips::writeRegisters(){
               writeHCCRegister(addr);
         }
 
-        // Send resets to ABC now HCC is configured
-        this->reset();
-
         // Then each ABC
-        const auto &abc_regs = AbcStarRegInfo::instance()->abcWriteMap;
+        const auto &abc_regs = m_abc_info->abcWriteMap;
 	eachAbc([&](auto &abc) {
                 int this_chipID = abc.getABCchipID();
 
@@ -297,7 +330,7 @@ void StarChips::readRegisters(){
 	//Read all known registers, both for HCC & all ABCs
         logger->debug("Looping over all chips in readRegisters, where m_nABC is {}", numABCs());
 
-        auto &hcc_regs = HccStarRegInfo::instance()->hccregisterMap;
+        auto &hcc_regs = m_hcc_info->hccregisterMap;
 
         for(auto &map_iter: hcc_regs) {
                 auto addr = map_iter.first;
@@ -308,7 +341,7 @@ void StarChips::readRegisters(){
                 readHCCRegister(addr);
         }
 
-        auto &abc_regs = AbcStarRegInfo::instance()->abcregisterMap;
+        const auto &abc_regs = m_abc_info->abcregisterMap;
 
         eachAbc([&](const auto &abc) {
                 int this_chipID = abc.getABCchipID();

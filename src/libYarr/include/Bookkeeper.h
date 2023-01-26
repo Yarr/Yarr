@@ -21,6 +21,15 @@
 #include "TxCore.h"
 #include "RxCore.h"
 
+struct BookEntry {
+    FrontEnd *fe = nullptr;
+
+    bool active = false;
+    
+    uint32_t txChannel = 666;
+    uint32_t rxChannel = 666;
+};
+
 class Bookkeeper {
     public:
         Bookkeeper(TxCore *arg_tx, RxCore *arg_rx);
@@ -32,51 +41,49 @@ class Bookkeeper {
         void addFe(FrontEnd *fe, unsigned txChannel, unsigned rxChannel);
         void addFe(FrontEnd *fe, unsigned channel);
 		
-        void delFe(unsigned rxChannel);
+        void delFe(unsigned id);
 		void delFe(FrontEnd *fe);
 
-		FrontEnd* getFeByChannel(unsigned channel);
-		FrontEnd* getFe(unsigned rxChannel);
+		FrontEnd* getFe(unsigned id);
+		FrontEndCfg* getFeCfg(unsigned id);
         FrontEnd* getLastFe();
-        FrontEnd* getGlobalFe() {
+        FrontEnd* getGlobalFe() const {
             return g_fe;
         }
 
-		bool isChannelUsed(unsigned arg_channel);
-        
         // Construct mask of active channels
         std::vector<uint32_t> getTxMask();
         std::vector<uint32_t> getRxMask();
 
+        // mask of unique active channels
+        std::vector<uint32_t> getTxMaskUnique();
+        std::vector<uint32_t> getRxMaskUnique();
+
         void setTargetTot(int v) {target_tot = v;}
-        int getTargetTot() {return target_tot;}
+        int getTargetTot() const {return target_tot;}
         
         void setTargetCharge(int v) {target_charge = v;}
-        int getTargetCharge() {return target_charge;}
+        int getTargetCharge() const {return target_charge;}
 
         template<typename T> T* globalFe() {return dynamic_cast<T*>(g_fe);}
         // TODO make private, not nice like that
         FrontEnd *g_fe;
         TxCore *tx;
         RxCore *rx;
-        
-        std::vector<FrontEnd*> feList;
 
-        ClipBoard<RawDataContainer> rawData;
+        unsigned getId(FrontEnd *fe);
+        BookEntry &getEntry(unsigned id);
+        unsigned getNumOfEntries() {return bookEntries.size();};
 
-        // per rx link
-	    std::map<unsigned, ClipBoard<EventDataBase> > eventMap;
-	    std::map<unsigned, ClipBoard<HistogramBase> > histoMap;
-	    std::map<unsigned, ClipBoard<HistogramBase> > resultMap;
-        
-		std::vector<FrontEnd*> activeFeList;
+        std::vector<unsigned> &getRxToId(unsigned rx);
 
     private:
-        //uint32_t activeTxMask;
-        //uint32_t activeRxMask;
+        
+        // Index of vector is UID 
+        std::vector<BookEntry> bookEntries;
+        std::map<FrontEnd* , unsigned> idMap;
+        std::map<unsigned, std::vector<unsigned>> rxToIdMap;
 
-		//uint32_t activeMask;
-		//uint32_t usedChannels;
 
         int target_tot;
         int target_threshold;

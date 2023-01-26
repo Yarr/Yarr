@@ -1,12 +1,14 @@
 # Plotting tools
+include(ExternalProject)
+include(FetchContent)
 function(YARR_ADD_PLOTTING)
     ExternalProject_Add (
         plotting_tools
         GIT_REPOSITORY https://gitlab.cern.ch/YARR/utilities/plotting-tools.git
         GIT_TAG master
-        CMAKE_ARGS 
-            -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+        CMAKE_ARGS "-DTARGET_INSTALL_AREA=${TARGET_INSTALL_AREA}"
         PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
+	INSTALL_COMMAND make install
         )
 endfunction()
 
@@ -54,13 +56,13 @@ function(YARR_ADD_NETIO)
     # NetIO
     ExternalProject_Add (
         netio4
-        GIT_REPOSITORY https://:@gitlab.cern.ch:8443/wittgen/netio.git
+        GIT_REPOSITORY https://:@gitlab.cern.ch:8443/atlas-tdaq-felix/netio.git
         GIT_TAG felix-4.0.x
         UPDATE_COMMAND ""
         PATCH_COMMAND cp ${PROJECT_SOURCE_DIR}/cmake/CMakeLists.txt.netio ${CMAKE_CURRENT_BINARY_DIR}/external/src/netio4/CMakeLists.txt
         INSTALL_COMMAND ""
         PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
-        CMAKE_ARGS "${TOOLCHAIN}" -DCMAKE_CXX_FLAGS=-fPIC
+        CMAKE_ARGS "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}" -DCMAKE_CXX_FLAGS=-fPIC
         DEPENDS tbb_2020
         )
 
@@ -76,7 +78,7 @@ function(YARR_ADD_FELIX)
     # FELIX
     ExternalProject_Add (
         felixbase4
-        GIT_REPOSITORY https://:@gitlab.cern.ch:8443/wittgen/felixbase.git
+        GIT_REPOSITORY https://:@gitlab.cern.ch:8443/atlas-tdaq-felix/felixbase.git
         GIT_TAG felix-4.0.x
         UPDATE_COMMAND ""
         PATCH_COMMAND ""
@@ -90,6 +92,26 @@ function(YARR_ADD_FELIX)
     include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/felixbase4)
 endfunction()
 
+function(YARR_ADD_FELIX_CLIENT)
+    # FELIX Client Thread
+    ExternalProject_Add (
+        felix_client_thread
+        GIT_REPOSITORY https://gitlab.cern.ch/atlas-tdaq-felix/felix-client-thread.git
+        GIT_TAG 4.2.x
+        UPDATE_COMMAND ""
+        PATCH_COMMAND ""
+        INSTALL_COMMAND mkdir -p ${TARGET_INSTALL_AREA}/lib && cp ${CMAKE_CURRENT_BINARY_DIR}/external/src/felix_client_thread/libfelix-client-thread.so ${TARGET_INSTALL_AREA}/lib
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND cd ${CMAKE_CURRENT_BINARY_DIR}/external/src/felix_client_thread && ./build-standalone.sh
+        PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
+        )
+
+    link_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/felix_client_thread)
+    include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/felix_client_thread)
+    include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/felix_client_thread/felix-interface)
+
+endfunction()
+
 function(YARR_ADD_ROGUE)
     if (TARGET rogue)
         return()
@@ -99,34 +121,66 @@ function(YARR_ADD_ROGUE)
     ExternalProject_Add (
         rogue
         GIT_REPOSITORY https://github.com/slaclab/rogue.git
-        GIT_TAG v3.6.0
+        GIT_TAG v5.13.0
         UPDATE_COMMAND ""
         INSTALL_COMMAND make install
         PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
-        CMAKE_ARGS "-DNO_PYTHON=1" "-DNO_ZMQ=1" "-DNO_BZIP=1" "-DSTATIC_LIB=1" "${TOOLCHAIN}"
-        DEPENDS tbb_2020
+        CMAKE_ARGS "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}" "-DNO_PYTHON=1" "-DSTATIC_LIB=1" "-DCMAKE_POSITION_INDEPENDENT_CODE=ON" "-DCMAKE_INSTALL_LIBDIR=${TARGET_INSTALL_AREA}/lib"
         )
 
-    link_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/rogue/lib)
+    link_directories(${TARGET_INSTALL_AREA}/lib)
     include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/rogue/include)
 endfunction()
 
-function(YARR_ADD_VARIANT)
-    if (TARGET variant)
-        return()
-    endif()
-
+function(YARR_ADD_EXTERNAL_DEPS)
     # Variant
-    ExternalProject_Add (
+    FetchContent_Declare(
         variant
-        GIT_REPOSITORY  https://gitlab.cern.ch/wittgen/variant.git
-        GIT_TAG v1.5.1
-        UPDATE_COMMAND ""
-        INSTALL_COMMAND ""
-        BUILD_COMMAND ""
-        CONFIGURE_COMMAND ""	
-        PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
-        )
-    link_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/variant)
-    include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/variant/include)
+        GIT_REPOSITORY  https://gitlab.cern.ch/atlas-sw-misc/variant.git
+        GIT_TAG v1.5.6
+        SOURCE_SUBDIR variant
+    )
+    FetchContent_MakeAvailable(variant)
+    include_directories(${CMAKE_CURRENT_BINARY_DIR}/../_deps/variant-src/include)
+
+    # spdlog
+    FetchContent_Declare(
+        spdlog
+        GIT_REPOSITORY  https://gitlab.cern.ch/atlas-sw-misc/spdlog.git
+        GIT_TAG v1.9.2.x
+        SOURCE_SUBDIR  spdlog
+    )
+    FetchContent_MakeAvailable(spdlog)
+    include_directories(${CMAKE_CURRENT_BINARY_DIR}/../_deps/spdlog-src/include)
+
 endfunction()
+
+function(YARR_ADD_PYBIND11)
+   FetchContent_Declare(
+       pybind11
+       GIT_REPOSITORY https://github.com/pybind/pybind11.git
+       GIT_TAG v2.9.2
+       SOURCE_SUBDIR pybind11
+   )
+   FetchContent_GetProperties(pybind11)
+   if(NOT pybind11_POPULATED)
+       FetchContent_Populate(pybind11)
+       add_subdirectory(${pybind11_SOURCE_DIR} ${pybind11_BINARY_DIR})
+   endif()
+endfunction()
+
+# Plotting Tools
+if (NOT "${TARGET_ARCH}" MATCHES "arm*")
+if (NOT DISABLE_PLOTTING_TOOLS)
+set(CMAKE_MESSAGE_LOG_LEVEL "ERROR")
+find_package(ROOT COMPONENTS Hist Graf)
+set(CMAKE_MESSAGE_LOG_LEVEL "STATUS")
+if (${ROOT_FOUND})
+    YARR_ADD_PLOTTING()
+    MESSAGE(STATUS "Compiling plotting tools!")
+    MESSAGE(STATUS "ROOT requires CXXFLAGS: ${ROOT_CXX_FLAGS}" )
+else (${ROOT_FOUND})
+    MESSAGE(STATUS "Could not locate ROOT. Will not compile plotting tools!")
+endif (${ROOT_FOUND})
+endif ()
+endif ()

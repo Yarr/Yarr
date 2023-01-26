@@ -24,32 +24,20 @@ Rd53aDataProcessor::Rd53aDataProcessor()  {
     m_numThreads = std::thread::hardware_concurrency();
 }
 
-Rd53aDataProcessor::~Rd53aDataProcessor() {
-
-}
+Rd53aDataProcessor::~Rd53aDataProcessor() = default;
 
 void Rd53aDataProcessor::init() {
     SPDLOG_LOGGER_TRACE(logger, "");
-
-    for (auto &it : *m_outMap) {
-        activeChannels.push_back(it.first);
-    }
 }
 
 void Rd53aDataProcessor::run() {
     SPDLOG_LOGGER_TRACE(logger, "");
 
-    unsigned int numThreads = m_numThreads;
-    for (unsigned i=0; i<numThreads; i++) {
-        thread_ptrs.emplace_back(new std::thread(&Rd53aDataProcessor::process, this));
-        logger->info("  -> Processor thread #{} started!", i);
-    }
+    thread_ptr.reset(new std::thread(&Rd53aDataProcessor::process, this));
 }
 
 void Rd53aDataProcessor::join() {
-    for( auto& thread : thread_ptrs ) {
-        if( thread->joinable() ) thread->join();
-    }
+    thread_ptr->join();
 }
 
 void Rd53aDataProcessor::process() {
@@ -71,13 +59,11 @@ void Rd53aDataProcessor::process() {
 
 void Rd53aDataProcessor::process_core() {
     // TODO put data from channels back into input, so other processors can use it
-    for (auto &i : activeChannels) {
-        tag[i] = 666;
-        l1id[i] = 666;
-        bcid[i] = 666;
-        wordCount[i] = 0;
-        hits[i] = 0;
-    }
+    tag = 666;
+    l1id = 666;
+    bcid = 666;
+    wordCount = 0;
+    hits = 0;
 
     unsigned dataCnt = 0;
     while(!m_input->empty()) {
@@ -87,34 +73,32 @@ void Rd53aDataProcessor::process_core() {
             continue;
 
         // Create Output Container
-        std::map<unsigned, std::unique_ptr<FrontEndData>> curOut;
-        std::map<unsigned, int> events;
-        for (unsigned i=0; i<activeChannels.size(); i++) {
-            curOut[activeChannels[i]].reset(new FrontEndData(curInV->stat));
-            events[activeChannels[i]] = 0;
-        }
+        std::unique_ptr<FrontEndData> curOut(new FrontEndData(curInV->stat));
+        int events = 0;
 
         unsigned size = curInV->size();
         for(unsigned c=0; c<size; c++) {
-            RawData curIn(curInV->adr[c], curInV->buf[c], curInV->words[c]);
+            RawDataPtr curIn = curInV->data[c];
             // Process
-            unsigned words = curIn.words;
+            unsigned words = curIn->getSize();
             dataCnt += words;
             for (unsigned i=0; i<words; i++) {
                 // Decode content
                 // TODO this needs review, can't deal with user-k data
-                uint32_t data = curIn.buf[i];
+                uint32_t data = curIn->get(i);
 
-                unsigned channel = activeChannels[(i/2)%activeChannels.size()];
+                // TODO get channel from parent
+                unsigned channel = 0;
+                //unsigned channel = activeChannels[(i/2)%activeChannels.size()];
                 logger->debug("[{}]\t\t[{}] = 0x{:x}", i, channel, data);
                 if (__builtin_expect(((data & 0xFFFF0000) != 0xFFFF0000 ), 1)) {
                     if ((data >> 25) & 0x1) { // is header
-                        l1id[channel] = 0x1F & (data >> 20);
-                        tag[channel] = 0x1F & (data >> 15);
-                        bcid[channel] = 0x7FFF & data;
+                        l1id = 0x1F & (data >> 20);
+                        tag = 0x1F & (data >> 15);
+                        bcid = 0x7FFF & data;
                         // Create new event
-                        curOut[channel]->newEvent(tag[channel], l1id[channel], bcid[channel]);
-                        events[channel]++;
+                        curOut->newEvent(tag, l1id, bcid);
+                        events++;
                         //logger->debug("[Header] : L1ID({}) TAG({}) BCID({})", l1id[channel], tag[channel], bcid[channel]);
                     } else { // is hit data
                         unsigned core_col = 0x3F & (data >> 26);
@@ -131,32 +115,32 @@ void Rd53aDataProcessor::process_core() {
 
                         if (__builtin_expect((pix_col < Rd53a::n_Col && pix_row < Rd53a::n_Row), 1)) {
                             // Check if there is already an event
-                            if (events[channel] == 0) {
+                            if (events == 0) {
                                 logger->debug("[{}] No header in data fragment!", channel);
-                                curOut[channel]->newEvent(666, l1id[channel], bcid[channel]);
-                                events[channel]++;
+                                curOut->newEvent(666, l1id, bcid);
+                                events++;
                             }
                             // TODO Make decision on pixel address start 0,0 or 1,1
                             pix_row++;
                             pix_col++;
                             if (tot0 != 0xF) {
-                                curOut[channel]->curEvent->addHit(pix_row, pix_col, tot0+1);
-                                hits[channel]++;
+                                curOut->curEvent->addHit(pix_row, pix_col, tot0+1);
+                                hits++;
                             }
                             if (tot1 != 0xF) {
-                                curOut[channel]->curEvent->addHit(pix_row, pix_col+1, tot1+1);
-                                hits[channel]++;
+                                curOut->curEvent->addHit(pix_row, pix_col+1, tot1+1);
+                                hits++;
                             }
                             if (tot2 != 0xF) {
-                                curOut[channel]->curEvent->addHit(pix_row, pix_col+2, tot2+1);
-                                hits[channel]++;
+                                curOut->curEvent->addHit(pix_row, pix_col+2, tot2+1);
+                                hits++;
                             }
                             if (tot3 != 0xF) {
-                                curOut[channel]->curEvent->addHit(pix_row, pix_col+3, tot3+1);
-                                hits[channel]++;
+                                curOut->curEvent->addHit(pix_row, pix_col+3, tot3+1);
+                                hits++;
                             }
                         } else {
-                            logger->error("[{}] Received data not valid: 0x{:x}", channel, curIn.words);
+                            logger->error("[{}] Received data not valid: 0x{:x}", channel, curIn->getSize());
                         }
 
                     }
@@ -165,16 +149,9 @@ void Rd53aDataProcessor::process_core() {
         }
 
         // Push data out
-        for (unsigned i=0; i<activeChannels.size(); i++) {
-            if (events[activeChannels[i]] > 0) {
-                m_outMap->at(activeChannels[i]).pushData(std::move(curOut[activeChannels[i]]));
-            } else {
-                // Maybe wait for end of method instead of deleting here?
-                curOut[activeChannels[i]].reset();
-            }
-
+        if (events > 0) {
+            m_output->pushData(std::move(curOut));
         }
-        //Cleanup
     }
 
 }

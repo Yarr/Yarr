@@ -3,8 +3,8 @@
 #include <SpecCom.h>
 
 #include <sys/time.h>
-#include <stdint.h>
-#include <string.h>
+#include <cstdint>
+#include <string>
 
 namespace BenchmarkTools {
    double measureWriteTime(SpecCom *spec, uint32_t addr, uint32_t *data, size_t size, int repetitions) {

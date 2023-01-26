@@ -40,8 +40,10 @@ Preferred mode for testing should be LDO mode.
 
 - SLDO mode:
     - Power jumpers the same as for LDO mode
-    - ``SHUNT_EN`` should be closed
+    - ``SHUNT_EN`` jumper should be closed
+    - ``VOFS`` jumper should be closed
     - Crosscheck value of ``R_EXTA``, ``R_EXTD``, ``R_IOFS``, and ``R_IOFS_LB`` to be according to your operational needs (read manual for further info).
+    - Supply current fitting your offset and slope choice, optimal voltage across the module is around 1.6V
 
 ## DAQ specifics for RD53B
 
@@ -58,23 +60,22 @@ Recommended is 640Mbps.
 
 ### Number Data Lanes
 
-At the current point in time it is necessary to only one lane (default). This can be chosen via the ``AuroraActiveLanes`` register where each bit represents one lane.
+Choose the number of active data lanes according to your setup and firmware. This can be chosen via the ``AuroraActiveLanes`` register where each bit represents one lane.
+Typically 16x1 firmware uses one lane ``AuroraActiveLanes = 1`` and 4x4 firmware uses ``AuroraActiveLanes = 15``.
 
 ## Scan Console for RD53B
 
 The general structure of the scanConsole command is:
 ```bash
-bin/scanConsole -r configs/controller/specCfg-rd53b.json -c configs/connectivity/example_rd53b_setup.json -s configs/scans/rd53b/<type of scan>.json -p -n 1
+bin/scanConsole -r configs/controller/specCfg-rd53b.json -c configs/connectivity/example_rd53b_setup.json -s configs/scans/rd53b/<type of scan>.json -p
 ```
 
 which specifies the controller (`-r`), the chip list and chip type (`-c`), and the scan (`-s`). The option `-p` selects plotting so plots are produced after the scans.
 If you run a scan for the first time, it will create a default configuration for the chip along with running the scan.
 
-Note currently the decoder needs to be limited to one thread ``-n 1``.
-
 ## Start-up
 
-### ITkPixV1
+### ITkPixV1.0
 
 ITkPixV1 contains a bug which leads to large current on the digital rail caused by wrongly designed ToT latch. It is not desireable to leave the chip in this high current state for too long without at least passive cooling of some sort. The current can be reduced either by running a ``std_digitalscan`` or the ``clear_tot_mem`` routine (``clear_tot_mem`` might need to be run two times``). Once the current has been reduced it should stay in this mode until fully power cycled.
 
@@ -108,7 +109,7 @@ After ``std_digitalscan`` (depends on exact config):
 
 We recommend the following tuning routine:
 
-1. Tune global threshold to 1500e (Note: edge columns need to be adjusted by hand)
+1. Tune global threshold to 1500e (Note: edge columns need to be adjusted by hand via ``DiffTh1L/R``)
 2. Tune pixel threshold to 1500e
 3. Retune (not changing TDACs) global threshold to 1000e
 4. Retune pixel threshold to 1000e
@@ -137,3 +138,92 @@ Please note that the number of active lanes might also need to be specified in t
 ## Link sharing
 
 TODO
+
+# Testing with ITkPixV1.0 and ITkPixV1.1 Quad Modules
+
+The design files for the quad PCB [Common Quad v2.4](https://gitlab.cern.ch/itk-pixel-hybrid/itkpixv1_quad/-/tree/RD53B_ITKPixV1_QuadHybrid_Rev2.4)
+
+Due to an issue in the SW you can only read out ONE chip at a time.
+
+## Testing with ITkPixV1.0
+
+Since one can read only ONE chip at the time, at the begining of each scan the reset should be avoided, MR is here https://gitlab.cern.ch/YARR/YARR/-/merge_requests/482 
+
+Tunning routine should use precision ToT scans:
+- ptot_digitalscan
+- ptot_analogscan
+- ptot_thresholdscan
+- ptot_tune_globalthreshold (target 1500e)
+- ptot_tune_pixelthreshold (target 1500e)
+- ptot_retune_globalthreshold (target 1000e)
+- ptot_retune_pixelthreshold (target 1000e)
+- ptot_thresholdscan
+
+## Testing with ITkPixV1.1
+
+Since one can read only ONE chip at the time, at the begining of each scan the reset should be avoided, MR is here https://gitlab.cern.ch/YARR/YARR/-/merge_requests/482 
+
+Tunning routine:
+- std_digitalscan
+- std_analogscan
+- std_thresholdscan
+- std_tune_globalthreshold (target 1500e)
+- std_tune_pixelthreshold (target 1500e)
+- std_retune_globalthreshold (target 1000e)
+- std_retune_pixelthreshold (target 1000e)
+- std_thresholdscan
+
+
+## Configuration files with 1-DisplayPort Data Adapter Card
+
+The DisplayPort is connected to Port A of the Ohio cars. Note that DisplayPort pins are connected to:
+- pins 1,3 correspond to channel 0
+- pins 4,6 to channel 1
+- pins 7,9 to channel 2
+- pins 10,12 to channel 3
+
+Connectifvity file when DisplayPort cable is connected to Port A of the Ohio card
+
+```bash
+"chipType" : "RD53B",
+"chips" : [
+    {
+        "config" : "configs/rd53b_1DPQuad04_Chip1.json",
+        "tx" : 0,
+        "rx" : 2,
+        "enable" : 1,
+        "locked" : 0
+    },
+    {
+        "config" : "configs/rd53b_1DPQuad04_Chip2.json",
+        "tx" : 0,
+        "rx" : 1,
+        "enable" : 0,
+        "locked" : 0
+    },
+    {
+        "config" : "configs/rd53b_1DPQuad04_Chip3.json",
+        "tx" : 0,
+        "rx" : 0,
+        "enable" : 0,
+        "locked" : 0
+    },
+    {
+        "config" : "configs/rd53b_1DPQuad04_Chip4.json",
+        "tx" : 0,
+        "rx" : 3,
+        "enable" : 0,
+        "locked" : 0
+    }
+]
+}
+```
+
+Summary table of Chip configs:
+
+| #Chip | `ChipID` | `DataMergeOutMux0/1/2/3` | `SerEnLane` | 
+| :---: | :---: | :---: | :---: |
+| Chip1 | 12 | 2/3/0/1 | 4 |
+| Chip2 | 13 | 0/1/2/3 | 1 |
+| Chip3 | 14 | 1/2/3/0 | 8 |
+| Chip4 | 15 | 0/1/2/3 | 1 |

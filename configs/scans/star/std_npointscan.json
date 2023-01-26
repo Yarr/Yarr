@@ -1,0 +1,74 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "ScurveFitter",
+        "config": {
+          "reverse": true,
+          "parametersOfInterest": ["ABCs_BVT"]
+        }
+      },
+      "1": {
+        "algorithm": "NPointGain",
+        "config": {
+          "parametersOfInterest": ["ABCs_BCAL"]
+        },
+        "dependOn": ["ScurveFitter"]
+      },
+      "n_count": 2
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "n_count": 1
+    },
+    "loops": [
+      {
+        "config": {
+          "max": 140,
+          "min": 100,
+          "step": 20,
+          "parameter":"ABCs_BCAL"
+        },
+        "loopAction": "StdParameterLoop"
+      },
+      {
+        "config": {
+          "max": 110,
+          "min": 65,
+          "step": 5,
+          "parameter":"ABCs_BVT"
+        },
+        "loopAction": "StdParameterLoop"
+      },
+      {
+        "config": {
+          "trig_count": 50,
+          "trig_frequency": 100,
+          "trig_time": 0,
+          "l0_latency": 5,
+          "verbose": true,
+          "extTrigger": false,
+          "noInject": false       
+        },
+        "loopAction": "StarTriggerLoop"
+      },
+      {
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "nPointScan",
+    "prescan": {
+      "ABCs_PR_ENABLE": 1,
+      "ABCs_LP_ENABLE": 1,
+      "ABCs_RRMODE": 1,
+      "ABCs_TM": 0,
+      "ABCs_CALPULSE_ENABLE":    1,
+      "ABCs_CALPULSE_POLARITY":    0,
+      "ABCs_MAX_CLUSTER_ENABLE": 0,
+      "ABCs_LATENCY": 5
+    }
+  }
+}

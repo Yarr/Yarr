@@ -1,18 +1,22 @@
+#include <chrono>
+#include <thread>
+
 #include "BdaqTxCore.h"
+#include "Bdaq.h"
 #include "logging.h"
+
+#include "BdaqRxCore.h"
 
 namespace {
   auto logger = logging::make_log("BdaqTxCore");
 }
 
-BdaqTxCore::BdaqTxCore() {
-}
+BdaqTxCore::BdaqTxCore() = default;
 
-BdaqTxCore::~BdaqTxCore() {
-}
+BdaqTxCore::~BdaqTxCore() = default;
 
 void BdaqTxCore::writeFifo(uint32_t value) {
-    std::stringstream d; 
+    std::stringstream d;
     d << __PRETTY_FUNCTION__ << " : Writing 0x" << std::hex << value << std::dec;
     logger->debug(d.str());
 
@@ -20,36 +24,70 @@ void BdaqTxCore::writeFifo(uint32_t value) {
     cmdData.push_back(value >> 24 & 0xFF);
     cmdData.push_back(value >> 16 & 0xFF);
     cmdData.push_back(value >>  8 & 0xFF);
-    cmdData.push_back(value       & 0xFF);
+    cmdData.push_back(value	  & 0xFF);
 
     // Checking for cmd_rd53 buffer (FPGA) overflow.
     // Should never happen if isCmdEmpty() is correctly called.
     // Commands are written thru RBCP (UDP) which has a maximum payload of
     // 255 bytes per packet. Thus, 4080 is the maxiumum integer multiple of 255
     // and 4 (we get 32-bit words) being less than 4096 (max buffer size).
-    if (cmdData.size() > 4080) {
-        std::stringstream error; 
-        error << __PRETTY_FUNCTION__ << ": cmd_rd53 buffer > 4080 bytes!"; 
-        logger->critical(error.str());
-        exit(-1);
-    }
 }
 
 void BdaqTxCore::sendCommand() {
-    if (cmdData.size() == 0) return;  
-    /*uint fillTotal = (4080 - cmdData.size()) / 2;  
-    for (uint i=0;i<fillTotal;++i) {
-        cmdData.push_back(0x81);
-        cmdData.push_back(0x7E);
+    if (cmdData.size() == 0) return;
+/*    if(cmdData.size() < 4080){
+        uint fillTotal = (4080 - cmdData.size()) / 2;
+        for (uint i=0;i<fillTotal;++i) {
+            cmdData.push_back(0x81);
+             cmdData.push_back(0x7E);
+        }
     }*/
     //logger->info("Command Size = {}", cmdData.size());
-    cmd.setData(cmdData);
-    cmd.setSize(cmdData.size());
-    cmd.setRepetitions(1);
-    cmd.start();
-    while(!cmd.isDone()); //wait for completion. 
-    cmdData.clear();
+
+    if(cmdData.size() > 4080){
+        // check if it is periodic, and if it is the case truncate it and repeat it in firmware level
+        std::vector<int> cmdDataPeriods;
+        cmdDataPeriods.clear();
+        std::vector<uint8_t> cmdDataCopy;
+        cmdDataCopy.clear();
+
+        for(int p = 1; p < cmdData.size() ; p++){
+            if(isPeriod(cmdData, p) &&(cmdData.size() % p == 0) && (p <= 4080)){
+                cmdDataPeriods.push_back(p);
+            }
+        }
+
+        if(cmdDataPeriods.size() == 0){
+            std::stringstream error;
+            error << __PRETTY_FUNCTION__ << ": cmd_rd53 buffer > 4080 bytes! and it is not periodic to be turncated and repeated by the firmware";
+            logger->critical(error.str());
+            exit(-1);
+        }else{
+            for (int i = 0; i < cmdDataPeriods.front(); i++) {
+                cmdDataCopy.push_back(cmdData.at(i));
+            }
+
+            int repetitions;
+            repetitions = cmdData.size() / cmdDataPeriods.front();
+
+            cmd.setData(cmdDataCopy);
+            cmd.setSize(cmdDataCopy.size());
+            cmd.setRepetitions(repetitions);
+            cmd.start();
+            while(!cmd.isDone()); //wait for completion.
+            cmdDataCopy.clear();
+            cmdData.clear();
+        }
+    }else{
+        cmd.setData(cmdData);
+        cmd.setSize(cmdData.size());
+        cmd.setRepetitions(1);
+        cmd.start();
+        while(!cmd.isDone()); //wait for completion.
+        cmdData.clear();
+    }
 }
+
 
 // value: 1, 2, 4, 8
 void BdaqTxCore::setCmdEnable(uint32_t value) {
@@ -73,7 +111,7 @@ void BdaqTxCore::setCmdEnable(std::vector<uint32_t> channels) {
     d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << mask << std::dec;
     logger->debug(d.str());
 
-    // There is one Command Encoder connected to all DP    
+    // There is one Command Encoder connected to all DP
     cmd.setOutputEn(true);
 
     enMask = mask;
@@ -94,21 +132,38 @@ bool BdaqTxCore::isCmdEmpty() {
     return true;
 }
 
+
+
 //==============================================================================
 // Command Repeater (Trigger) Stuff
 //==============================================================================
 
 void BdaqTxCore::setTrigWord(uint32_t *word, uint32_t length) {
-    std::stringstream d; 
+    std::stringstream d;
     d << __PRETTY_FUNCTION__;
     logger->debug(d.str());
-    
+
     // Converting YARR format to BDAQ format
     for (uint i=0; i<length; ++i) {
         trgData.push_back(word[length-i-1] >> 24 & 0xFF);
         trgData.push_back(word[length-i-1] >> 16 & 0xFF);
         trgData.push_back(word[length-i-1] >>  8 & 0xFF);
         trgData.push_back(word[length-i-1]       & 0xFF);
+    }
+
+    if (chipType == 1){ // it is RD53B (ItkpixV1)
+        for (uint i=0; i<trgData.size(); ++i) {  // it can be uncommented, but it has no effect
+            if(static_cast<int>(trgData.at(i)) == 0xAA){
+                trgData.erase(trgData.begin() + i);
+                trgData.insert(trgData.begin() + i, 0x81);
+                trgData.erase(trgData.begin() + i + 1);
+                 trgData.insert(trgData.begin() + i + 1, 0x7E);
+            }
+        }
+        for(int i=0; i<360; i++){
+            trgData.insert(trgData.begin(), 0x7E);
+            trgData.insert(trgData.begin(), 0x81);
+        }
     }
 }
 
@@ -122,11 +177,11 @@ void BdaqTxCore::setTrigCnt(uint32_t count) {
 }
 
 void BdaqTxCore::setTrigEnable(uint32_t value) {
-    std::stringstream d; 
+    std::stringstream d;
     d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << value << std::dec;
     logger->debug(d.str());
     // Emulating SPEC register
-    trgEnable = value; 
+    trgEnable = value;
     // Timed Trigger (software implemented, for noise scans for example)
     if (timedTrigger) {
         if (value == 0x0) {
@@ -234,33 +289,35 @@ bool BdaqTxCore::isTrigDone() {
 //------------------------------------------------------------------------------
 
 void BdaqTxCore::hardwareTriggerSet() {
-    // Subtracing the number of "other commands" from the number of NOOPs
-    // to get the right trigger frequency. The "other commands" size is
-    // (trgData.size() / 2): each command takes 16 bits.
-    hardwareTriggerNoop = hardwareTriggerNoop - (trgData.size() / 2);
-    // POST Delay: Trigger Frequency
-    std::vector<uint8_t> fixPostDelay(hardwareTriggerNoop*2, 0x69); 
-    trgData.insert(trgData.end(), fixPostDelay.begin(), fixPostDelay.end());
-    // Setting hardware registers/buffers
+    if (chipType == 0){ // it is RD53A
+        // Subtracing the number of "other commands" from the number of NOOPs
+        // to get the right trigger frequency. The "other commands" size is
+        // (trgData.size() / 2): each command takes 16 bits.
+        hardwareTriggerNoop = hardwareTriggerNoop - (trgData.size() / 2);
+        // POST Delay: Trigger Frequency
+        std::vector<uint8_t> fixPostDelay(hardwareTriggerNoop*2, 0x69); 
+        trgData.insert(trgData.end(), fixPostDelay.begin(), fixPostDelay.end());
+    }
     cmd.setData(trgData);
-    cmd.setSize(trgData.size()); 
+    cmd.setSize(trgData.size());
     cmd.setRepetitions(hardwareTriggerCount);
-    logger->debug("Hardware Trigger Size (in bytes): {}", trgData.size());
     trgData.clear();
 }
 
+
 void BdaqTxCore::hardwareTriggerRun() {
-    cmd.start(); 
+    cmd.start();
+    while(!cmd.isDone()); //wait for completion.
 }
 
 //------------------------------------------------------------------------------
-// Timed Trigger (software) Emulation 
+// Timed Trigger (software) Emulation
 //------------------------------------------------------------------------------
 
 void BdaqTxCore::timedTriggerSet() {
     // Setting hardware registers/buffers
     cmd.setData(trgData);
-    cmd.setSize(trgData.size()); 
+    cmd.setSize(trgData.size());
     cmd.setRepetitions(1);
     logger->debug("Timed Trigger Size (in bytes): {}", trgData.size());
     trgData.clear();
@@ -283,4 +340,20 @@ void BdaqTxCore::timedTriggerRun() {
         if (timedTriggerAbort) break;
     }
     timedTriggerDone = true;
+}
+
+
+//------------------------------------------------------------------------------
+// Helper Functions
+//------------------------------------------------------------------------------
+
+bool BdaqTxCore::isPeriod(const std::vector<uint8_t> v, int n){
+    // check if n is a period of vector v
+    bool is_period = false;
+    if (n < v.size()){
+        int j = 0;
+        while (j < v.size() - n && v[j] == v[j + n]) ++j;
+        is_period = j + n == v.size();
+    }
+    return is_period;
 }

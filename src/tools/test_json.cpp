@@ -8,7 +8,9 @@
 #include "AllHwControllers.h"
 #include "AllChips.h"
 #include "Bookkeeper.h"
+#include "DataProcessor.h"
 #include "ScanFactory.h"
+#include "ScanHelper.h"
 
 #include "storage.hpp"
 
@@ -22,6 +24,18 @@ enum class ConfigType {
   FRONT_END,
   SCAN_CONFIG,
   UNKNOWN
+};
+
+/// Minimal FrontEnd needed, otherwise scan config not checked
+class MyFrontEnd : public FrontEnd {
+public:
+  void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {}
+  void maskPixel(unsigned col, unsigned row) {}
+  unsigned getPixelEn(unsigned col, unsigned row) { return 1; }
+  void enableAll() {}
+  void configure() {}
+  void writeNamedRegister(std::string name, uint16_t value) {}
+  void setInjCharge(double, bool, bool) {}
 };
 
 std::ostream &operator <<(std::ostream &os, ConfigType &ct) {
@@ -65,7 +79,7 @@ bool testController(json controller_file) {
 
 bool testConnectivity(json config) {
   try {
-    if (config["chipType"].empty() || config["chips"].empty()) {
+    if (!config.contains("chipType") || !config.contains("chips")) {
       std::cout << "chip type or chips not specified!\n";
       return false;
     }
@@ -94,7 +108,7 @@ bool testConnectivity(json config) {
       FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(&*fe);
       feCfg->fromFileJson(cfg);
 
-      if (!chip["locked"].empty())
+      if (chip.contains("locked"))
         feCfg->setLocked(chip["locked"]);
 
       cfgFile.close();
@@ -108,30 +122,29 @@ bool testConnectivity(json config) {
   return true;
 }
 
-bool testScanConfig(json config) {
+bool testScanConfig(const json &scanConfig) {
   try {
-    Bookkeeper b{0, 0};
+    Bookkeeper b{nullptr, nullptr};
     FeedbackClipboardMap* feedbackMap = nullptr;
     ScanFactory s(&b, feedbackMap);
-    s.loadConfig(config);
+    s.loadConfig(scanConfig);
 
-    {
-      json histo = config["scan"]["histogrammer"];
+    // Using ScanHelper for consistency, but that needs more infrastructure
+    std::map<unsigned, std::unique_ptr<DataProcessor> > histogrammers;
+    std::map<unsigned, std::vector<std::unique_ptr<DataProcessor>> > analyses;
 
-      int n = histo["n_count"];
-      for(int i=0; i<n; i++) {
-        std::string algo_name = histo[std::to_string(i)]["algorithm"];
-      }
-    }
+    std::unique_ptr<FrontEnd> fe(new MyFrontEnd());
 
-    {
-      json analysis = config["scan"]["analysis"];
+    // If we don't add a front-end the info isn't checked...
+    b.addFe(fe.release(), 12, 12);
 
-      int n = analysis["n_count"];
-      for(int i=0; i<n; i++) {
-        std::string algo_name = analysis[std::to_string(i)]["algorithm"];
-      }
-    }
+    // This is run by ScanHelper, but doesn't depend on config
+    // ScanHelper::buildRawDataProcs(procs, bookie, chipType);
+    ScanHelper::buildHistogrammers(histogrammers, scanConfig,
+                                   b, &s, "no_dir");
+    int mask_opt = 0;
+    ScanHelper::buildAnalyses(analyses, scanConfig, b, &s,
+                              feedbackMap, mask_opt, "no_dir");
 
     return true;
   } catch(std::runtime_error &te) {
@@ -140,37 +153,79 @@ bool testScanConfig(json config) {
   }
 }
 
+int checkJsonFE(json &jsonConfig, std::string fe_name) {
+  auto fe = std::move(StdDict::getFrontEnd(fe_name));
+  if(!fe) {
+    std::cout << "FrontEnd not found: " << fe_name << "!\n";
+    return 2;
+  }
+  FrontEndCfg *cfg = dynamic_cast<FrontEndCfg*>(fe.get());
+  if(cfg == nullptr) {
+    std::cout << "FrontEnd: " << fe_name << " does not implement FrontEndCfg!\n";
+    return 2;
+  }
+
+  cfg->loadConfig(jsonConfig);
+  return 0;
+}
+
+int checkJsonFE(json &jsonConfig) {
+  int count = 0;
+  std::string name;
+  {
+    auto b = std::begin(jsonConfig);
+    auto e = std::end(jsonConfig);
+    for(auto i=b; i!=e; i++) {
+      name = i.key();
+      count ++;
+    }
+  }
+  if(count != 1) {
+    if(jsonConfig.contains("HCC") && jsonConfig.contains("ABCs")) {
+      bool pass_all = true;
+      bool pass_one = false;
+      for(auto &n: {"Star", "Star_vH0A1", "Star_vH1A1"}) {
+        try {
+          int ret_val = checkJsonFE(jsonConfig, n);
+          if(ret_val != 0) {
+            // Failure to load class, nothing to do with the file
+            return ret_val;
+          }
+          pass_one = true;
+        } catch (std::out_of_range &e) {
+          pass_all = false;
+        }
+      }
+      if(pass_all) {
+        std::cout << "Loaded successfully in all Star variations\n";
+      }
+      if(pass_one) {
+        return 0;
+      } else {
+        return 1;
+      }
+    } else {
+      std::cout << "Expect one top-level entry (not " << count << ") in FrontEnd config (or it's Star)\n";
+
+      auto b = std::begin(jsonConfig);
+      auto e = std::end(jsonConfig);
+      for(auto i=b; i!=e; i++) {
+        std::cout << "  " << i.key() << "\n";
+      }
+      return 1;
+    }
+  }
+
+  if(name == "FE65-P2") name = "FE65P2";
+  else if(name == "FE-I4B") name = "FEI4B";
+
+  return checkJsonFE(jsonConfig, name);
+}
+
 int checkJson(json &jsonConfig, ConfigType jsonFileType) {
   switch(jsonFileType) {
   case ConfigType::FRONT_END:
-    {
-      int count = 0;
-      std::string name;
-      for(auto &el: jsonConfig) {
-        name = el;
-        count ++;
-      }
-      if(count != 1) {
-        std::cout << "Expect one top-level entry in FrontEnd config\n";
-        return 1;
-      }
-
-      if(name == "FE65-P2") name = "FE65P2";
-      else if(name == "FE-I4B") name = "FEI4B";
-
-      auto fe = std::move(StdDict::getFrontEnd(name));
-      if(!fe) {
-        std::cout << "FrontEnd not found: " << name << "!\n";
-        return 2;
-      }
-      FrontEndCfg *cfg = dynamic_cast<FrontEndCfg*>(fe.get());
-      if(cfg == nullptr) {
-        std::cout << "FrontEnd: " << name << " does not implement FrontEndCfg!\n";
-        return 2;
-      }
-
-      cfg->fromFileJson(jsonConfig);
-    }
+    return checkJsonFE(jsonConfig);
     break;
   case ConfigType::CONNECTIVITY:
     if(!testConnectivity(jsonConfig)) {
@@ -190,8 +245,12 @@ int checkJson(json &jsonConfig, ConfigType jsonFileType) {
   default:
     std::cout << "Unspecified file type, top-level names are:\n";
 
-    for (auto& el : jsonConfig) {
-        std::cout << "  " << el << '\n';
+    {
+      auto b = std::begin(jsonConfig);
+      auto e = std::end(jsonConfig);
+      for(auto i=b; i!=e; i++) {
+        std::cout << "  " << i.key() << '\n';
+      }
     }
     break;
   }
@@ -205,8 +264,8 @@ void printHelp() {
     std::cout << "Parameters\n";
     std::cout << " -h: Shows this help\n";
     std::cout << " -f <config_name> : Json file to examine\n";
-    std::cout << "                   CONNECTIVITY,CONTROLLER,SCAN_CONFIG,FRONT_END\n";
     std::cout << " -t <config_type> : Type of config file, default to guessing\n";
+    std::cout << "                   CONNECTIVITY,CONTROLLER,SCAN_CONFIG,FRONT_END\n";
     std::cout << " -K : Check controller file, which might talk to hardware\n";
     std::cout << " -v : Be more verbose\n";
 }
@@ -274,6 +333,10 @@ int main(int argc, char *argv[]) {
       return 1;
     }
     jsonConfig = json::parse(ifs);
+    if(jsonConfig.is_null()) {
+      std::cerr << "Failed to parse file: " << jsonFileName << '\n';
+      return 1;
+    }
     ifs.close();
   } catch (std::runtime_error &e) {
     std::cerr << "Failed to parse file as json: " << e.what() << '\n';

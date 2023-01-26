@@ -10,11 +10,7 @@
 
 class StdDataAction {
     public:
-        void connect(ClipBoard<RawDataContainer> *clipboard) {
-            storage = clipboard;
-        }
     protected:
-        ClipBoard<RawDataContainer> *storage;
 };
 
 #endif

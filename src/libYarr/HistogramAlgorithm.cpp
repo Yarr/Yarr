@@ -16,11 +16,9 @@ namespace {
     auto alog = logging::make_log("HistogramAlgorithm");
 }
 
-HistogrammerProcessor::HistogrammerProcessor() {
-}
+HistogrammerProcessor::HistogrammerProcessor() = default;
 
-HistogrammerProcessor::~HistogrammerProcessor() {
-}
+HistogrammerProcessor::~HistogrammerProcessor() = default;
 
 void HistogrammerProcessor::init() {
 }
@@ -31,7 +29,7 @@ void HistogrammerProcessor::clearHistogrammers() {
 
 
 void HistogrammerProcessor::run() {
-    thread_ptr.reset( new std::thread( &HistogrammerProcessor::process, this ) );
+    thread_ptr = std::make_unique<std::thread>( &HistogrammerProcessor::process, this );
 }
 
 void HistogrammerProcessor::join() {

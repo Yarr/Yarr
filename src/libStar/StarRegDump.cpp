@@ -31,19 +31,20 @@ void StarRegDump::execPart1() {
     SPDLOG_LOGGER_DEBUG(logger, "");
     logger->trace("Executing Register Dump");
 
-    for ( FrontEnd* fe : keeper->feList ) {
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        FrontEnd *fe = keeper->getEntry(id).fe;
         if (!fe->isActive()) {continue;}
 
         if (m_addr == -1) { //Default to looping over all regs
 
             logger->trace("Dumping all regs");
           
-            for (int index = 0; index < ABCStarRegs::_size(); ++index) {
+            for (size_t index = 0; index < ABCStarRegs::_size(); ++index) {
                 logger->trace(ABCStarRegs::_names()[index]);
                 ((StarChips*) fe)->sendCmd( ((StarChips*) fe)->read_abc_register(ABCStarRegs::_values()[index]));
             }
 
-            for (int index = 0; index < HCCStarRegister::_size(); ++index) {
+            for (size_t index = 0; index < HCCStarRegister::_size(); ++index) {
                 logger->trace(HCCStarRegister::_names()[index]);
                 ((StarChips*) fe)->sendCmd( ((StarChips*) fe)->read_hcc_register(HCCStarRegister::_values()[index]));
             }
@@ -72,9 +73,9 @@ void StarRegDump::writeConfig(json &config) {
         config["addr"] = m_addr;
 }
 
-void StarRegDump::loadConfig(json &config) {
+void StarRegDump::loadConfig(const json &config) {
 
-        if (!config["addr"].empty())
+        if (config.contains("addr"))
                 m_addr = config["addr"];
 }
 

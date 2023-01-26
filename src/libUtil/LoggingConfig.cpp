@@ -1,10 +1,12 @@
 #include "LoggingConfig.h"
 
+#include <optional>
 #include <iostream>
 
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/ringbuffer_sink.h"
 
 // spdlog::level::level_enum, but then construction doesn't work?
 static const std::map<std::string, int> level_map = {
@@ -32,55 +34,61 @@ static std::string_view level_string(int lvl) {
 
 namespace logging {
 
-void setupLoggers(const json &j) {
-    spdlog::sink_ptr default_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-
+spdlog::sink_ptr default_sink;
+void setupLoggers(const json &j, const std::string &path) {
+    // initialized logger only once
+    if(initialized) return;
+    if(j.contains("default_sink") && j["default_sink"] == "ringbuffer") {
+        std::size_t ringbuffer_size = 1000;
+        if(j.contains("ringbufer_size")) ringbuffer_size = j["ringbuffer_size"];
+        default_sink = std::make_shared<spdlog::sinks::ringbuffer_sink_mt>(ringbuffer_size);
+    }
+    else default_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     std::map<std::string, spdlog::sink_ptr> other_sinks;
 
     std::string default_pattern = "";
 
-    if(!j["simple"].empty()) {
+    if(j.contains("simple")) {
         // Don't print log level and timestamp
         if (j["simple"])
             default_pattern = "%v";
     }
 
-    if(!j["level"].empty()) {
+    if(j.contains("level")) {
         std::string level_name = j["level"];
         default_sink->set_level((spdlog::level::level_enum)level_map.at(level_name));
     }
 
     // NB this sets things at the sink level, so not specifying a particular logger...
     // Also doing it last means it applies to all registered sinks
-    if(!j["pattern"].empty()) {
+    if(j.contains("pattern")) {
         default_pattern = j["pattern"];
     }
 
-    if(!j["sinks"].empty()) {
+    if(j.contains("sinks")) {
       for(auto &jl: j["sinks"]) {
-        if(jl["name"].empty()) {
+        if(!jl.contains("name")) {
           spdlog::warn("Log json file: missing 'name' field for additional sink configuration");
           continue;
         }
-        if(jl["file_name"].empty()) {
+        if(!jl.contains("file_name")) {
           spdlog::warn("Log json file: missing 'file_name' field for additional sink configuration");
           continue;
         }
 
         std::string key = jl["name"];
-        std::string fname = jl["file_name"];
+        std::string fname = path + std::string(jl["file_name"]);
 
-        auto new_sink = std::shared_ptr<spdlog::sinks::basic_file_sink_mt>
-          (new spdlog::sinks::basic_file_sink_mt(fname));
+        auto new_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(fname);
 
-        if(!jl["level"].empty()) {
+        if(jl.contains("level")) {
             std::string level_name = jl["level"];
             new_sink->set_level((spdlog::level::level_enum)level_map.at(level_name));
         }
 
         std::string pattern = default_pattern;
 
-        if(!jl["pattern"].empty()) {
+        if(jl.contains("pattern")) {
           pattern = jl["pattern"];
         }
 
@@ -93,9 +101,9 @@ void setupLoggers(const json &j) {
       default_sink->set_pattern(default_pattern);
     }
 
-    if(!j["log_config"].empty()) {
+    if(j.contains("log_config")) {
         for(auto &jl: j["log_config"]) {
-            if(jl["name"].empty()) {
+            if(!jl.contains("name")) {
                 spdlog::error("Log json file: 'log_config' list item must have 'name");
                 continue;
             }
@@ -103,14 +111,14 @@ void setupLoggers(const json &j) {
             std::string name = jl["name"];
 
             std::optional<spdlog::level::level_enum> opt_level;
-            if(!jl["level"].empty()) {
+            if(jl.contains("level")) {
                 std::string level_name = jl["level"];
 
                 opt_level = (spdlog::level::level_enum)level_map.at(level_name);
             }
 
             auto sink = default_sink;
-            if(!jl["sink"].empty()) {
+            if(jl.contains("sink")) {
                 std::string sink_name = jl["sink"];
                 sink = other_sinks[sink_name];
             }
@@ -139,7 +147,7 @@ void setupLoggers(const json &j) {
     auto default_logger = spdlog::default_logger();
     auto &old_sinks = default_logger->sinks();
     std::remove_reference<decltype(old_sinks)>::type new_sinks;
-    for(int i=1; i<old_sinks.size(); i++) {
+    for(size_t i=1; i<old_sinks.size(); i++) {
       new_sinks.push_back(old_sinks[i]);
     }
     old_sinks = new_sinks;    
@@ -148,9 +156,10 @@ void setupLoggers(const json &j) {
     //  so this won't appear unless requested
     spdlog::trace("Log json file: A quick message using the default logger");
 
-    if(!j["report_loggers"].empty()) {
+    if(j.contains("report_loggers")) {
       listLoggers(true);
     }
+    initialized =  true;
 }
 
 void listLoggers(bool print_details) {
@@ -197,6 +206,13 @@ void listLoggers(bool print_details) {
           }
         }
     }
+}
+
+std::vector<std::string> getLog(size_t lim) {
+  std::vector<std::string> result;
+  auto *sink=dynamic_cast<spdlog::sinks::ringbuffer_sink_mt *>(default_sink.get());
+  if(sink) result=sink->pop_formatted(lim);
+  return result;
 }
 
 } // End namespace logging

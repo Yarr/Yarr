@@ -19,12 +19,14 @@ class RxCore;
 
 class StarChips : public StarCfg, public StarCmd, public FrontEnd {
  public:
-  StarChips();
+  StarChips(int abc_version, int hcc_version);
+#if 0
   StarChips(HwController *arg_core);
   StarChips(HwController *arg_core, unsigned arg_channel);
   StarChips(HwController *arg_core, unsigned arg_txchannel, unsigned arg_rxchannel);
+#endif
 
-  ~StarChips() {}
+  ~StarChips() override = default;
 
     void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override;
 
@@ -43,15 +45,17 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
 
     //! configure
     //! brief configure the chip (virtual)
-    void configure() override final;
+    void configure() override;
 
   void setHccId(unsigned);//Set the HCC ID to the argument, uses the chip serial number set by eFuse
 
-  void makeGlobal() override final {
+  void makeGlobal() override {
       StarCfg::setHCCChipId(15);
   }
 
-  void reset();
+  void resetHCCStars();
+  void resetABCStars();
+  void resetAll() override;
   void sendCmd(std::array<uint16_t, 9> cmd);
   void sendCmd(uint16_t cmd);
 

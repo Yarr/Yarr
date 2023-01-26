@@ -81,7 +81,7 @@ SpecDevice::~SpecDevice()
  * @returns file handle of the opened PCI device.
  *
  */
-int SpecDevice::getHandle()
+int SpecDevice::getHandle() const
 {
 	if (handle == -1)
 		throw Exception(Exception::NOT_OPEN);
@@ -171,7 +171,7 @@ UserMemory& SpecDevice::mapUserMemory(void *mem, unsigned int size, bool merged)
  * Waits for an interrupt.
  *
  */
-int SpecDevice::waitForInterrupt(unsigned int int_id)
+int SpecDevice::waitForInterrupt(unsigned int int_id) const
 {
 	if (handle == -1)
 		throw Exception(Exception::NOT_OPEN);
@@ -188,7 +188,7 @@ int SpecDevice::waitForInterrupt(unsigned int int_id)
  * Clears the interrupt queue.
  *
  */
-void SpecDevice::clearInterruptQueue(unsigned int int_id)
+void SpecDevice::clearInterruptQueue(unsigned int int_id) const
 {
 	if (handle == -1)
 		throw Exception( Exception::NOT_OPEN );
@@ -204,7 +204,7 @@ void SpecDevice::clearInterruptQueue(unsigned int int_id)
  * @returns the size of the given BAR
  *
  */
-unsigned int SpecDevice::getBARsize(unsigned int bar)
+unsigned int SpecDevice::getBARsize(unsigned int bar) const
 {
 	pci_board_info info = {0};
 
@@ -225,7 +225,7 @@ unsigned int SpecDevice::getBARsize(unsigned int bar)
  * Gets the bus ID of the PCI device
  *
  */
-unsigned short SpecDevice::getBus() 
+unsigned short SpecDevice::getBus() const
 {
 	pci_board_info info = {0};
 
@@ -243,7 +243,7 @@ unsigned short SpecDevice::getBus()
  * Gets the slot of the PCI device
  *
  */
-unsigned short SpecDevice::getSlot()
+unsigned short SpecDevice::getSlot() const
 {
 	pci_board_info info = {0};
 
@@ -315,7 +315,7 @@ void *SpecDevice::mapBAR(unsigned int bar)
  * Unmap the specified bar.
  *
  */
-void SpecDevice::unmapBAR(unsigned int bar, void *ptr)
+void SpecDevice::unmapBAR(unsigned int bar, void *ptr) const
 {
 	pci_board_info info = {0};
 
@@ -340,7 +340,7 @@ void SpecDevice::unmapBAR(unsigned int bar, void *ptr)
 	munmap(ptr, info.bar_length[bar]);
 }
 	
-unsigned char SpecDevice::readConfigByte(unsigned int addr)
+unsigned char SpecDevice::readConfigByte(unsigned int addr) const
 {
 	pci_cfg_cmd cmd;
 
@@ -354,7 +354,7 @@ unsigned char SpecDevice::readConfigByte(unsigned int addr)
 	return cmd.val.byte;
 }
 
-unsigned short SpecDevice::readConfigWord(unsigned int addr)
+unsigned short SpecDevice::readConfigWord(unsigned int addr) const
 {
 	pci_cfg_cmd cmd;
 
@@ -368,7 +368,7 @@ unsigned short SpecDevice::readConfigWord(unsigned int addr)
 	return cmd.val.word;
 }
 
-unsigned int SpecDevice::readConfigDWord(unsigned int addr)
+unsigned int SpecDevice::readConfigDWord(unsigned int addr) const
 {
 	pci_cfg_cmd cmd;
 
@@ -382,7 +382,7 @@ unsigned int SpecDevice::readConfigDWord(unsigned int addr)
 	return cmd.val.dword;
 }
 	
-void SpecDevice::writeConfigByte(unsigned int addr, unsigned char val)
+void SpecDevice::writeConfigByte(unsigned int addr, unsigned char val) const
 {
 	pci_cfg_cmd cmd;
 
@@ -397,7 +397,7 @@ void SpecDevice::writeConfigByte(unsigned int addr, unsigned char val)
 	return;
 }
 
-void SpecDevice::writeConfigWord(unsigned int addr, unsigned short val)
+void SpecDevice::writeConfigWord(unsigned int addr, unsigned short val) const
 {
 	pci_cfg_cmd cmd;
 
@@ -412,7 +412,7 @@ void SpecDevice::writeConfigWord(unsigned int addr, unsigned short val)
 	return;
 }
 
-void SpecDevice::writeConfigDWord(unsigned int addr, unsigned int val)
+void SpecDevice::writeConfigDWord(unsigned int addr, unsigned int val) const
 {
 	pci_cfg_cmd cmd;
 

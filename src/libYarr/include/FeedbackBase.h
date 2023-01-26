@@ -44,7 +44,7 @@ typedef std::map<unsigned, FeedbackClipboard> FeedbackClipboardMap;
 
 class GlobalFeedbackBase {
     public:
-        virtual ~GlobalFeedbackBase() {}
+        virtual ~GlobalFeedbackBase() = default;
         virtual void feedback(unsigned channel, double sign, bool last) = 0;
         virtual void feedbackBinary(unsigned channel, double sign, bool last) = 0; // TODO Algorithm should be selected in scan
         virtual void feedbackStep(unsigned channel, double sign, bool last) {}
@@ -58,6 +58,12 @@ class GlobalFeedbackReceiver : public GlobalFeedbackBase {
     protected:
         /// Wait for feedback to be received and apply it
         void waitForFeedback(unsigned ch);
+
+        /// Check all fbDoneMap entries
+        bool isFeedbackDone() const;
+
+        /// Commonly used to store 'last' flag from feedback invocation
+        std::map<unsigned, bool> fbDoneMap;
 
     private:
         FeedbackClipboardMap *clip;
@@ -78,7 +84,7 @@ class GlobalFeedbackSender : public GlobalFeedbackBase {
 
 class PixelFeedbackBase {
     public:
-        virtual ~PixelFeedbackBase() {}
+        virtual ~PixelFeedbackBase() = default;
         virtual void feedback(unsigned channel, std::unique_ptr<Histo2d> h) {};
         virtual void feedbackStep(unsigned channel, std::unique_ptr<Histo2d> h) {};
 };
@@ -92,6 +98,12 @@ class PixelFeedbackReceiver : public PixelFeedbackBase {
     protected:
         /// Wait for feedback to be received and apply it
         void waitForFeedback(unsigned ch);
+
+        /// Check all fbDoneMap entries
+        bool isFeedbackDone() const;
+
+        /// Commonly used to store 'last' flag from feedback invocation
+        std::map<unsigned, bool> fbDoneMap;
 
     private:
         FeedbackClipboardMap *clip;

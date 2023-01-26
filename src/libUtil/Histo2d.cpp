@@ -7,6 +7,7 @@
 // ################################
 
 #include "Histo2d.h"
+#include "Histo1d.h"
 
 #include <cmath>
 #include <fstream>
@@ -37,8 +38,8 @@ Histo2d::Histo2d(const std::string &arg_name, unsigned arg_xbins, double arg_xlo
     max = 0;
     underflow = 0;
     overflow = 0;
-    data = std::vector<double>(xbins*ybins,0);
-    isFilled = std::vector<bool>(xbins*ybins,false);
+    data = std::vector<float>(xbins*ybins,0);
+    m_isFilled = std::vector<bool>(xbins*ybins,false);
     entries = 0;
 
 }
@@ -59,8 +60,8 @@ Histo2d::Histo2d(const std::string &arg_name, unsigned arg_xbins, double arg_xlo
     max = 0;
     underflow = 0;
     overflow = 0;
-    data = std::vector<double>(xbins*ybins,0);
-    isFilled =  std::vector<bool>(xbins*ybins,false);
+    data = std::vector<float>(xbins*ybins,0);
+    m_isFilled =  std::vector<bool>(xbins*ybins,false);
     entries = 0;
 }
 
@@ -80,16 +81,15 @@ Histo2d::Histo2d(Histo2d *h) : HistogramBase(h->getName()) {
     underflow = h->getUnderflow();
     overflow = h->getOverflow();
 
-    data = std::vector<double>(xbins*ybins,0);
-    isFilled = std::vector<bool>(xbins*ybins,false);
+    data = std::vector<float>(xbins*ybins,0);
+    m_isFilled = h->m_isFilled;
     for(unsigned i=0; i<xbins*ybins; i++)
         data[i] = h->getBin(i);
     entries = h->getNumOfEntries();
     lStat = h->getStat();
 }
 
-Histo2d::~Histo2d() {
-}
+Histo2d::~Histo2d() = default;
 
 unsigned Histo2d::size() const {
     return xbins*ybins;
@@ -109,12 +109,13 @@ void Histo2d::fill(double x, double y, double v) {
     } else {
         unsigned xbin = (x-xlow)/xbinWidth;
         unsigned ybin = (y-ylow)/ybinWidth;
-        data[ybin+(xbin*ybins)]+=v;
+        auto index = xbin+(ybin*xbins);
+        data[index]+=v;
         if (v > max)
             max = v;
         if (v < min)
             min = v;
-        isFilled[ybin+(xbin*ybins)] = true;
+        m_isFilled[index] = true;
     }
     entries++;
 }
@@ -122,7 +123,7 @@ void Histo2d::fill(double x, double y, double v) {
 void Histo2d::setAll(double v) {
     for (unsigned int i=0; i<ybins; i++) {
         for (unsigned int j=0; j<xbins; j++) {
-            data[i+(j*ybins)] = v;
+            data[j+(i*xbins)] = v;
             entries++;
         }
     }
@@ -132,7 +133,12 @@ void Histo2d::add(const Histo2d &h) {
     if (this->size() != h.size())
         return;
     for (unsigned int i=0; i<(xbins*ybins); i++) {
-        data[i] += h.getBin(i);
+      if (h.isFilled(i)){
+        double d = h.getBin(i);
+        data[i] += d;
+        max = std::max(d, max);
+	m_isFilled[i] = true;
+      }
     }
     entries += h.numOfEntries();
 }
@@ -165,11 +171,11 @@ void Histo2d::scale(const double s) {
     }
 }
 
-double Histo2d::getMean() {
+double Histo2d::getMean() const {
     double sum = 0;
     double entries = 0;
     for (unsigned int i=0; i<(xbins*ybins); i++) {
-        if (isFilled[i]) {
+        if (m_isFilled[i]) {
             sum += data[i];
             entries++;
         }
@@ -178,12 +184,12 @@ double Histo2d::getMean() {
     return sum/entries;
 }
 
-double Histo2d::getStdDev() {
+double Histo2d::getStdDev() const {
     double mean = this->getMean();
     double mu = 0;
     double entries = 0;
     for (unsigned int i=0; i<(xbins*ybins); i++) {
-        if (isFilled[i]) {
+        if (m_isFilled[i]) {
              mu += pow(data[i]-mean, 2);
              entries++;
         }
@@ -192,6 +198,10 @@ double Histo2d::getStdDev() {
     return sqrt(mu/(double)(entries-1));
 }
 
+
+bool Histo2d::isFilled(unsigned n) const {
+    return (m_isFilled.size()>=n && m_isFilled.at(n));
+}
 
 double Histo2d::getBin(unsigned n) const {
     if (n < this->size()) {
@@ -204,12 +214,12 @@ double Histo2d::getBin(unsigned n) const {
 void Histo2d::setBin(unsigned n, double v) {
     if (n < this->size()) {
         data[n] = v;
-        isFilled[n] = true;
+        m_isFilled[n] = true;
     }
 }
 
 
-int Histo2d::binNum(double x, double y) {
+int Histo2d::binNum(double x, double y) const {
     if (x < xlow || y < ylow) {
         //std::cout << "Underflow " << x << " " << y << std::endl;
         return -1;
@@ -219,7 +229,7 @@ int Histo2d::binNum(double x, double y) {
     } else {
         unsigned xbin = (x-xlow)/xbinWidth;
         unsigned ybin = (y-ylow)/ybinWidth;
-        return (ybin+(xbin*ybins));
+        return (xbin+(ybin*xbins));
     }
 }
 
@@ -227,7 +237,7 @@ void Histo2d::toStream(std::ostream &out) const{
     // Raw Data
     for (unsigned int i=0; i<ybins; i++) {
         for (unsigned int j=0; j<xbins; j++) {
-            out << data[i+(j*ybins)] << " ";
+            out << data[j+(i*xbins)] << " ";
         }
         out << std::endl;
     }
@@ -252,9 +262,14 @@ void Histo2d::toJson(json &j) const{
     j["Underflow"] = underflow;
     j["Overflow"] = overflow;
 
+    j["Entries"] = entries;
+
+    for (unsigned i=0; i<lStat.size(); i++)
+        j["loopStatus"][i] = (lStat.get(i));
+
     for (unsigned int y=0; y<ybins; y++) {
         for (unsigned int x=0; x<xbins; x++) {
-            j["Data"][x][y] = data[y+(x*ybins)] ;
+            j["Data"][x][y] = data[x+(y*xbins)] ;
         }
     }
 }
@@ -262,6 +277,8 @@ void Histo2d::toJson(json &j) const{
 void Histo2d::toFile(const std::string &prefix, const std::string &dir, bool jsonType) const{
     std::string filename = dir + prefix + "_" + HistogramBase::name;
     json j;
+    for (unsigned i=0; i<lStat.size(); i++)
+        filename += "_" + std::to_string(lStat.get(i));
 
     if (jsonType) {
         filename += ".json";
@@ -288,6 +305,7 @@ bool Histo2d::fromFile(const std::string &filename) {
         }
         try {
             j = json::parse(file);
+            file.close();
         } catch (json::parse_error &e) {
             throw std::runtime_error(e.what());
         }
@@ -295,8 +313,24 @@ bool Histo2d::fromFile(const std::string &filename) {
         hlog->error("Error opening histogram: {}", e.what());
         return false;
     }
+
+    try {
+        auto isOk = fromJson(j);
+        if(!isOk) {
+          hlog->error("Reading file: {}", filename);
+        }
+        return isOk;
+    } catch (std::runtime_error &e) {
+        hlog->error("Exception while loading {}", filename);
+        throw;
+    }
+
+    return true;
+}
+
+bool Histo2d::fromJson(const json &j) {
     // Check for type
-    if (j["Type"].empty()) {
+    if (!j.contains("Type")) {
         hlog->error("ERROR this does not seem to be a histogram file, could not parse.");
         return false;
     } else {
@@ -315,20 +349,29 @@ bool Histo2d::fromFile(const std::string &filename) {
         xhigh = j["x"]["High"];
 
         ybins = j["y"]["Bins"];
-        xlow = j["y"]["Low"];
-        xhigh = j["y"]["High"];
+        ylow = j["y"]["Low"];
+        yhigh = j["y"]["High"];
         
-        underflow = j["underflow"];
-        overflow = j["overflow"];
+        underflow = j["Underflow"];
+        overflow = j["Overflow"];
 
-        data = std::vector<double>(xbins*ybins);
-        for (unsigned int x=0; x<ybins; x++) {
-            for (unsigned int y=0; y<xbins; y++) {
-                data[x+(y*ybins)] = j["Data"][x][y];
+        entries = j["Entries"];
+
+        data = std::vector<float>(xbins*ybins);
+        m_isFilled.resize(xbins*ybins);
+        m_isFilled.assign(m_isFilled.size(), false);
+        for (unsigned int y=0; y<ybins; y++) {
+            for (unsigned int x=0; x<xbins; x++) {
+                auto index = x+(y*xbins);
+                double d = j["Data"][x][y];;
+                data[index] = d;
+                if(d > 0.0) {
+                    m_isFilled[index] = true;
+                    max = std::max(d, max);
+                }
             }
         }
     }
-    file.close();
     return true;
 }
 
@@ -341,7 +384,6 @@ void Histo2d::plot(const std::string &prefix, const std::string &dir) const{
     output += ".png";
 
     // Open gnuplot as file and pipe commands
-
     std::string input;
 
     input+="$'set terminal png size 1280, 1024;";
@@ -349,22 +391,41 @@ void Histo2d::plot(const std::string &prefix, const std::string &dir) const{
     input+="unset key;";
     input+="set title \""  +HistogramBase::name+"\";";
     input+="set xlabel \""  +HistogramBase::xAxisTitle+"\";";
+    input+="set xlabel \""  +HistogramBase::xAxisTitle+"\";";
     input+="set ylabel \""  +HistogramBase::yAxisTitle+"\";";
     input+="set cblabel \""  +HistogramBase::zAxisTitle+"\";";
     input+="set xrange["+ std::to_string(xlow)+ ":"+std::to_string(xhigh)+ "];";
     input+="set yrange["+ std::to_string(ylow)+ ":"+std::to_string(yhigh)+ "];";
-    input+="plot \\'-\\' matrix u (($1)*(("+std::to_string(xhigh);
-    input+="-"+std::to_string(xlow)+")/";
-    input+=std::to_string(xbins)+".0)+"+std::to_string(xlow +(xhigh-xlow)/(xbins*2.0));
-    input+= "):(($2)*(("+std::to_string(yhigh);
-    input+="-"+std::to_string(ylow)+")/";
-    input+=std::to_string(ybins)+".0)+"+std::to_string(ylow +(yhigh-ylow)/(ybins*2.0));
-    input+="):3 with image'";
+    input+="plot \\'-\\' binary array=(" + std::to_string(xbins) + "," + std::to_string(ybins) + ") ";// format=\"\%float\" ";
+    input+="dx=" +std::to_string((xhigh-xlow)/((double)xbins)) + " ";
+    input+="dy=" +std::to_string((yhigh-ylow)/((double)ybins)) + " ";
+    input+="origin=(" + std::to_string(xlow+(xhigh-xlow)/(xbins*2.0)) + "," + std::to_string(ylow+(yhigh-ylow)/(ybins*2.0)) + ") ";
+    input+="with image'";
+
     std::string cmd="gnuplot  -e "+input+" > "+output+"\n";
     FILE *gnu = popen(cmd.c_str(), "w");
-    std::stringstream ss;
-    toStream(ss);
-    fprintf(gnu,"%s",ss.str().c_str());
+    fwrite(&data[0], sizeof(float), data.size(), gnu); 
     pclose(gnu);
 }
 
+std::unique_ptr<Histo1d> Histo2d::profileY() const {
+  // Create the profile histogram
+  auto outH = std::make_unique<Histo1d>(getName() + "_pfy", getYbins(), getYlow(), getYhigh());
+  outH->setXaxisTitle(getYaxisTitle());
+ 
+  // Fill the profile histogram
+  for (int ybin = 0; ybin < getYbins(); ybin++) {
+    double bin_y = getYlow() + ybin * getYbinWidth();
+    for (int xbin = 0; xbin < getXbins(); xbin++) {
+      auto bin = xbin+(ybin*xbins);
+      double cxy = getBin(bin);
+      if (cxy)
+	outH->fill( bin_y, cxy );
+    }
+    //Let's divide by the number of bins we profiled
+    unsigned binOnOutH = outH->binNum(bin_y);
+    outH->setBin(binOnOutH, outH->getBin(binOnOutH)/(double)getXbins());
+  }
+ 
+  return outH;
+}

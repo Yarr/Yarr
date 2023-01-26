@@ -41,6 +41,15 @@ void GlobalFeedbackReceiver::waitForFeedback(unsigned channel) {
     }
 }
 
+bool GlobalFeedbackReceiver::isFeedbackDone() const {
+    for(auto &doneEntry: fbDoneMap) {
+        if (!doneEntry.second) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void PixelFeedbackReceiver::connectClipboard(FeedbackClipboardMap *fe) {
     logger->trace("Connect clipboard map for PixelFeedbackReceiver");
     clip = fe;
@@ -70,6 +79,15 @@ void PixelFeedbackReceiver::waitForFeedback(unsigned channel) {
     } else {
         feedback(channel, std::move(data.histo));
     }
+}
+
+bool PixelFeedbackReceiver::isFeedbackDone() const {
+    for(auto &doneEntry: fbDoneMap) {
+        if (!doneEntry.second) {
+            return false;
+        }
+    }
+    return true;
 }
 
 GlobalFeedbackSender::GlobalFeedbackSender(FeedbackClipboard *fb)
