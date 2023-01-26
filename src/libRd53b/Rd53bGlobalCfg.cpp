@@ -103,11 +103,11 @@ void Rd53bGlobalCfg::init() {
     //16
     DiffVff.init            ( 16, &m_cfg[ 16], 0, 10, 160); regMap["DiffVff"] = &Rd53bGlobalCfg::DiffVff;
     //17
-    DiffTh1L.init           ( 17, &m_cfg[ 17], 0, 10, 200); regMap["DiffTh1L"] = &Rd53bGlobalCfg::DiffTh1L;
+    DiffTh1L.init           ( 17, &m_cfg[ 17], 0, 10, 350); regMap["DiffTh1L"] = &Rd53bGlobalCfg::DiffTh1L;
     //18
-    DiffTh1R.init           ( 18, &m_cfg[ 18], 0, 10, 200); regMap["DiffTh1R"] = &Rd53bGlobalCfg::DiffTh1R;
+    DiffTh1R.init           ( 18, &m_cfg[ 18], 0, 10, 350); regMap["DiffTh1R"] = &Rd53bGlobalCfg::DiffTh1R;
     //19
-    DiffTh1M.init           ( 19, &m_cfg[ 19], 0, 10, 200); regMap["DiffTh1M"] = &Rd53bGlobalCfg::DiffTh1M;
+    DiffTh1M.init           ( 19, &m_cfg[ 19], 0, 10, 350); regMap["DiffTh1M"] = &Rd53bGlobalCfg::DiffTh1M;
     //20
     DiffTh2.init            ( 20, &m_cfg[ 20], 0, 10, 50); regMap["DiffTh2"] = &Rd53bGlobalCfg::DiffTh2;
     //21
