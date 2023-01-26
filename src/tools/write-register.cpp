@@ -23,6 +23,7 @@ namespace fs = std::filesystem;
 #include "FrontEnd.h"
 #include "AllChips.h"
 #include "ScanHelper.h" // openJson
+#include "Utils.h"
 
 void print_usage(char* argv[]) {
     std::cerr << " write-register" << std::endl;
@@ -37,8 +38,7 @@ void print_usage(char* argv[]) {
     std::cerr << std::endl;
 }
 
-std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, std::string config, int fe_num) {
-    json jconn = ScanHelper::openJsonFile(config);
+std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn, int fe_num) {
     std::string chip_type = jconn["chipType"];
     auto fe = StdDict::getFrontEnd(chip_type);
     auto cfg = dynamic_cast<FrontEndCfg*>(fe.get());
@@ -50,7 +50,7 @@ std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, std::string
     }
     auto chip_config = chip_configs[fe_num];
     fe->init(&*hw, chip_config["tx"], chip_config["rx"]);
-    auto chip_register_file_path = chip_config["config"];
+    auto chip_register_file_path = chip_config["__config_path__"];
     fs::path pconfig{chip_register_file_path};
     if(!fs::exists(pconfig)) {
         std::cerr << "WARNING: Chip config \"" << chip_register_file_path << "\" not found" << std::endl;
@@ -142,16 +142,19 @@ int main(int argc, char* argv[]) {
 
     // open up the connectivity config to get the list of front-ends
     auto jconn = ScanHelper::openJsonFile(connectivity_filename);
+
+    std::string chipType = ScanHelper::loadChipConfigs(jconn, false, Utils::dirFromPath(connectivity_filename));
+
     auto chip_configs = jconn["chips"];
     size_t n_chips = chip_configs.size();
     for (size_t ichip = 0; ichip < n_chips; ichip++) {
-        fs::path chip_register_file_path{chip_configs[ichip]["config"]};
+        fs::path chip_register_file_path{chip_configs[ichip]["__config_path__"]};
         if(!fs::exists(chip_register_file_path)) {
-            std::cerr << "WARNING: Chip config for chip at index " << ichip << " in connectivity file does not exist, skipping" << std::endl;
+            std::cerr << "WARNING: Chip config for chip at index " << ichip << " in connectivity file does not exist, skipping (" << chip_register_file_path << ")" << std::endl;
             continue;
         }
         
-        auto fe = init_fe(hw, connectivity_filename, ichip);
+        auto fe = init_fe(hw, jconn, ichip);
         if(!fe) {
             std::cerr << "WARNING: Skipping chip at index " << ichip << " in connectivity file" << std::endl;
             continue;
