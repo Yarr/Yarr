@@ -39,11 +39,11 @@
           "count": 0,
           "delay": 58,
           "extTrigger": false,
-          "frequency": 500,
+          "frequency": 12000,
           "noInject": true,
-          "time": 30,
+          "time": 60,
           "edgeMode": false,
-          "trigMultiplier": 32
+          "trigMultiplier": 16
         },
         "loopAction": "Rd53bTriggerLoop"
       },

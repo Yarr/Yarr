@@ -34,14 +34,18 @@
         "config": {}
       },
       "4": {
-        "algorithm": "HitsPerEvent",
+        "algorithm": "TagMap",
         "config": {}
       },
       "5": {
+        "algorithm": "HitsPerEvent",
+        "config": {}
+      },
+      "6": {
         "algorithm": "DataArchiver",
         "config": {}
       },
-      "n_count": 4
+      "n_count": 5
     },
     "loops": [
       {
