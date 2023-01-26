@@ -1,0 +1,94 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "ScurveFitter"
+      },
+     "1": {
+        "algorithm": "ParameterAnalysis"
+      },
+     "2": {
+        "algorithm": "OccupancyAnalysis"
+      },
+      "n_count": 2
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "1": {
+        "algorithm": "TotMap",
+        "config": {}
+      },
+      "2": {
+        "algorithm": "Tot2Map",
+        "config": {}
+      },
+      "3": {
+        "algorithm": "TagDist",
+        "config": {}
+      },
+      "4": {
+        "algorithm": "HitsPerEvent",
+        "config": {}
+      },
+      "5": {
+        "algorithm": "DataArchiver",
+        "config": {}
+      },
+      "n_count": 4
+    },
+    "loops": [
+      {
+        "config": {
+          "max": 64,
+          "min": 0,
+          "step": 1
+        },
+        "loopAction": "Rd53bParMaskLoop"
+      },
+      {
+        "config": {
+          "max": 300,
+          "min": 0,
+          "step": 5,
+          "parameter":"InjVcalDiff",
+          "waitTime": 100
+        },
+        "loopAction": "StdParameterLoop"
+      },
+      {
+        "config": {
+          "max": 50,
+          "min": 0,
+          "step": 1,
+          "nSteps": 5
+        },
+        "loopAction": "Rd53bCoreColLoop"
+      },
+      {
+        "config": {
+          "count": 50,
+          "delay": 56,
+          "extTrigger": false,
+          "frequency": 8000,
+          "noInject": false,
+          "time": 0,
+          "edgeMode": false
+        },
+        "loopAction": "Rd53bTriggerLoop"
+      },
+      {
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "DigitalScan",
+    "prescan": {
+        "InjDigEn": 0,
+        "InjVcalMed": 500,
+        "InjVcalRange": 1,
+        "Latency": 56
+    }
+  }
+}
