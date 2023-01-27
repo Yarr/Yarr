@@ -21,7 +21,7 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
 ### Software:
 
 - CentOS 7/8 or Ubuntu 20.04 LTS
-- cmake 3.6 or higher
+- cmake 3.14 or higher
 - GCC version 9 or higher
     - for example from devtoolset-9
 - Some misc packages (can be installed via yum):
