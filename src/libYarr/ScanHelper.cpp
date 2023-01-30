@@ -796,7 +796,6 @@ namespace ScanHelper {
 
         std::cout << "Help:" << std::endl;
         std::cout << " -h: Shows this." << std::endl;
-        std::cout << " -n <threads> : Set number of processing threads." << std::endl;
         std::cout << " -s <scan_type> : Scan config" << std::endl;
         std::cout << " -c <connectivity.json> [<cfg2.json> ...]: Provide connectivity configuration, can take multiple arguments." << std::endl;
         std::cout << " -r <ctrl.json> Provide controller configuration." << std::endl;
@@ -837,9 +836,6 @@ namespace ScanHelper {
                 case 'h':
                     printHelp();
                     return 0;
-                    break;
-                case 'n':
-                    scanOpts.nThreads = atoi(optarg);
                     break;
                 case 'k':
                     ScanHelper::listKnown();
@@ -912,7 +908,7 @@ namespace ScanHelper {
                     scanOpts.doResetBeforeScan = false;
                     break;
                 case '?':
-                    if (optopt == 's' || optopt == 'n') {
+                    if (optopt == 's') {
                         spdlog::error("Option {} requires a parameter! (Proceeding with default)", (char) optopt);
                     } else if (optopt == 'g' || optopt == 'c') {
                         spdlog::error("Option {} requires a parameter! Aborting... ", (char) optopt);
