@@ -11,7 +11,7 @@
 #include "EmuController.h"
 #include "StarEmu.h"
 
-void sendCommand(TxCore &hw, std::array<uint16_t, 9> &cmd) {
+void sendCommand(TxCore &hw, const std::array<uint16_t, 9> &cmd) {
   hw.writeFifo((LCB::IDLE << 16) + LCB::IDLE);
   hw.writeFifo((cmd[0] << 16) + cmd[1]);
   hw.writeFifo((cmd[2] << 16) + cmd[3]);
@@ -20,7 +20,7 @@ void sendCommand(TxCore &hw, std::array<uint16_t, 9> &cmd) {
   hw.writeFifo((cmd[8] << 16) + LCB::IDLE);
 }
 
-void sendCommand(EmuTxCore<StarChips> &hw, uint32_t channel, std::array<uint16_t, 9> &cmd) {
+void sendCommand(EmuTxCore<StarChips> &hw, uint32_t channel, const std::array<uint16_t, 9> &cmd) {
   hw.writeFifo(channel, (LCB::IDLE << 16) + LCB::IDLE);
   hw.writeFifo(channel, (cmd[0] << 16) + cmd[1]);
   hw.writeFifo(channel, (cmd[2] << 16) + cmd[3]);
@@ -52,6 +52,9 @@ TEST_CASE("StarEmulatorParsing", "[star][emulator]") {
   std::map<uint32_t, std::deque<PacketCompare>> expected;
 
   SECTION("Read HCCStar interposed") {
+    // Set LP_Enable to 1
+    sendCommand(*emu, star.write_abc_register(32, 0x00000740));
+
     // read another HCCStar register
     std::array<LCB::Frame, 9> readHCCCmd2 = star.read_hcc_register(17);
     emu->writeFifo((readHCCCmd2[0] << 16) + readHCCCmd2[1]);
@@ -117,8 +120,8 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
   // HCC StopHPR on
   std::array<LCB::Frame, 9> writeHCCCmd_StopHPROn = star.write_hcc_register(16, 0x00000001);
   sendCommand(*emu, writeHCCCmd_StopHPROn);
-  // ABC MaskHPR on
-  std::array<LCB::Frame, 9> writeABCCmd_MaskHPROn = star.write_abc_register(32, 0x00000040);
+  // ABC MaskHPR on, also set RRmode, LP Enable, and PR Enable to 1
+  std::array<LCB::Frame, 9> writeABCCmd_MaskHPROn = star.write_abc_register(32, 0x00000740);
   sendCommand(*emu, writeABCCmd_MaskHPROn);
   // ABC StopHPR on
   std::array<LCB::Frame, 9> writeABCCmd_StopHPROn = star.write_abc_register(0, 0x00000004);
@@ -181,7 +184,8 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
 
   SECTION("Mask Registers") {
     // Switch to static test mode: TM = 1
-    std::array<LCB::Frame, 9> writeABCCmd_TM = star.write_abc_register(32, 0x00010040);
+    // (And MaskHPR = 1, LP_Enable = 1, PR_Enable = 1, RRMode = 1)
+    std::array<LCB::Frame, 9> writeABCCmd_TM = star.write_abc_register(32, 0x00010740);
     sendCommand(*emu, writeABCCmd_TM);
 
     // Set mask registers
@@ -201,7 +205,8 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
 
   SECTION("Hit Counters") {
     // Switch to static test mode (TM = 1) and enable hit counters
-    std::array<LCB::Frame, 9> writeABCCmd_TM = star.write_abc_register(32, 0x00010060);
+    // (And MaskHPR = 1, LP_Enable = 0, PR_Enable = 0, RRMode = 1)
+    std::array<LCB::Frame, 9> writeABCCmd_TM = star.write_abc_register(32, 0x00010460);
     sendCommand(*emu, writeABCCmd_TM);
 
     // Set a mask register
@@ -242,9 +247,63 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     expected[1].push_back({0x40, 0xbf, 0x00, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x00});
   }
 
+  SECTION("LPEnable and EnCount") {
+    // Set a mask register to non-zero value: MaskInput0 to 0x00000001
+    sendCommand(*emu, star.write_abc_register(16, 0x00000001));
+
+    // Configure ABCStar
+    SECTION("Double Count") { // Both LP_Enable and EnCount are 1
+      // MarkHPR = 1, RRMode = 1, TM = 1 (static test mode)
+      // LP_Enable = 1, PR_Enable = 1, EnCount = 1
+      sendCommand(*emu, star.write_abc_register(32, 0x00010760));
+
+      // Expect an LP packet:
+      // tag = 0+3;
+      // BCID: at the time of L0A, bc count = 7; L0 latency = 0; so 8-bit BCID = 7 - 4 = 0x3. The 4-bit BCID in the packet = 0b0110;
+      // clusters = {0x0000}: only the strip #0 has a hit
+      // end of packet: 0x6fed
+      expected[1].push_back({0x20, 0x36, 0x00, 0x00, 0x6f, 0xed});
+
+      // Also expect value 0x00000001 from reading the hit counter register 0x80
+      expected[1].push_back({0x40, 0x80, 0x00, 0x00, 0x00, 0x00, 0x1f, 0x00, 0x00});
+    }
+
+    SECTION("LP only") {
+      // Enable LP, disable hit counters
+      sendCommand(*emu, star.write_abc_register(32, 0x00010740));
+
+      // Expect an LP packet with a hit at strip 0
+      expected[1].push_back({0x20, 0x36, 0x00, 0x00, 0x6f, 0xed});
+
+      // Register read from hit counter register 0x80 should have value 0
+      expected[1].push_back({0x40, 0x80, 0x00, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x00});
+    }
+
+    SECTION("Hit counts only") {
+      // Disable LP, enable hit counters
+      sendCommand(*emu, star.write_abc_register(32, 0x00010460));
+
+      // No LP packets since LP_ENABLE is 0
+
+      // Register read from hit counter register 0x80 should have value 1
+      expected[1].push_back({0x40, 0x80, 0x00, 0x00, 0x00, 0x00, 0x1f, 0x00, 0x00});
+    }
+
+    // Reset and start hit counters
+    emu->writeFifo((LCB::fast_command(LCB::ABC_HIT_COUNT_RESET, 0) << 16) + LCB::fast_command(LCB::ABC_HIT_COUNT_START, 0));
+
+    // BC reset
+    emu->writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(0, 0, true));
+
+    // Send an L0A and a register read command to read a hit count register
+    emu->writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(1, 0, false));
+    sendCommand(*emu, star.read_abc_register(128));
+  }
+
   SECTION("L0 Latency") {
     // Switch to test pulse mode: TM = 2, TestPulseEnable = 1
-    std::array<LCB::Frame, 9> writeABCCmd_cfg = star.write_abc_register(32, 0x00020050);
+    // (And MaskHPR = 1, LP_Enable = 1, PR_Enable = 1, RRMode = 1)
+    std::array<LCB::Frame, 9> writeABCCmd_cfg = star.write_abc_register(32, 0x00020750);
     sendCommand(*emu, writeABCCmd_cfg);
 
     // Set a mask register so we are expecting a non-empty cluster packet
@@ -570,7 +629,7 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
   sendCommand(*emu, writeHCCCmd_MaskHPR);
   auto writeHCCCmd_StopHPR = star.write_hcc_register(16, 0x00000001);
   sendCommand(*emu, writeHCCCmd_StopHPR);
-  auto writeABCCmd_MaskHPR = star.write_abc_register(32, 0x00000040);
+  auto writeABCCmd_MaskHPR = star.write_abc_register(32, 0x00000740); // Also LPEnable = 1, PREnable = 1, RRmode = 1
   sendCommand(*emu, writeABCCmd_MaskHPR);
   auto writeABCCmd_StopHPR = star.write_abc_register(0, 0x00000004);
   sendCommand(*emu, writeABCCmd_StopHPR);
@@ -697,7 +756,8 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
     emu->writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(0, 0, true));
 
     // Switch to the static test mode (TM = 1)
-    auto writeABCCmd_TM = star.write_abc_register(32, 0x00010040);
+    // (And MaskHPR = 1, LP_Enable = 1, PR_Enable = 1, RRMode = 1)
+    auto writeABCCmd_TM = star.write_abc_register(32, 0x00010740);
     sendCommand(*emu, writeABCCmd_TM);
 
     // Write 0xfffe0000 to MaskInput3 so we will have a non-empty cluster
@@ -798,7 +858,8 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
   sendCommand(*staremu, 2, IdleCmd);
 
   // tx (channel 0)
-  auto writeABCCmd_MaskHPR = star.write_abc_register(32, 0x00000040);
+  // MaskHPR = 1, LP_Enable = 1, PR_Enable = 1, RRMode = 1
+  auto writeABCCmd_MaskHPR = star.write_abc_register(32, 0x00000740);
   sendCommand(*staremu, 0, writeABCCmd_MaskHPR);
   // tx2 (channel 2)
   sendCommand(*staremu, 2, IdleCmd);
@@ -827,11 +888,6 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
 
   //////////////////////////
   // Start test
-  // Switch to test pulse mode: TM = 2, TestPulseEnable = 1
-  auto writeABCCmd_tm = star.write_abc_register(32, 0x00020050);
-  sendCommand(*staremu, 0, writeABCCmd_tm);
-  sendCommand(*staremu, 2, IdleCmd);
-
   // Set MaskInput0 register to 0x00000001 so there would be a non-empty cluster
   auto writeABCCmd_mask = star.write_abc_register(16, 0x00000001);
   sendCommand(*staremu, 0, writeABCCmd_mask);
@@ -848,6 +904,60 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
   auto writeHCCCmd_id = star.write_hcc_register(17, hccID<<24);
   sendCommand(*staremu, 0, writeHCCCmd_id);
   sendCommand(*staremu, 2, IdleCmd);
+
+  SECTION("LPEnable=1 PREnable=1") {
+    // Switch to test pulse mode: TM = 2, TestPulseEnable = 1
+    // MaskHPR = 1, LP_Enable = 1, PR_Enable = 1, RRMode = 1
+    sendCommand(*staremu, 0, star.write_abc_register(32, 0x00020750));
+    sendCommand(*staremu, 2, IdleCmd);
+
+    // Expected packets from the test sequence below
+    // First a PR packet: tag = 42 (0x2a); 4-bit BCID = 0b0110
+    expected[1].push_back({0x12, 0xa6, 0x00, 0x00, 0x6f, 0xed});
+
+    // A second PR packet: tag = 66 (0x42), 4-bit BCID = 0b1111
+    expected[1].push_back({0x14, 0x2f, 0x00, 0x00, 0x6f, 0xed});
+
+    // Followed by an LP packet with tag = 42 (0x2a), 4-bit BCID = 0b0110
+    expected[1].push_back({0x22, 0xa6, 0x00, 0x00, 0x6f, 0xed});
+  }
+
+  SECTION("LPEnable=0 PREnable=1") {
+    // Switch to test pulse mode: TM = 2, TestPulseEnable = 1
+    // MaskHPR = 1, LP_Enable = 0, PR_Enable = 1, RRMode = 1
+    sendCommand(*staremu, 0, star.write_abc_register(32, 0x00020550));
+    sendCommand(*staremu, 2, IdleCmd);
+
+    // Expected packets from the test sequence below
+    // First a PR packet: tag = 42 (0x2a); 4-bit BCID = 0b0110
+    expected[1].push_back({0x12, 0xa6, 0x00, 0x00, 0x6f, 0xed});
+
+    // A second PR packet: tag = 66 (0x42), 4-bit BCID = 0b1111
+    expected[1].push_back({0x14, 0x2f, 0x00, 0x00, 0x6f, 0xed});
+
+    // No more LP packet since LP_ENABLE is 0
+  }
+
+  SECTION("LPEnable=1 PREnable=0") {
+    // Switch to test pulse mode: TM = 2, TestPulseEnable = 1
+    // MaskHPR = 1, LP_Enable = 1, PR_Enable = 0, RRMode = 1
+    sendCommand(*staremu, 0, star.write_abc_register(32, 0x00020650));
+    sendCommand(*staremu, 2, IdleCmd);
+
+    // No PR packets since PR_ENABLE is 0
+
+    // Expect an LP packet with tag = 42 (0x2a), 4-bit BCID = 0b0110
+    expected[1].push_back({0x22, 0xa6, 0x00, 0x00, 0x6f, 0xed});
+  }
+
+  SECTION("LPEnable=0 PREnable=0") {
+    // Switch to test pulse mode: TM = 2, TestPulseEnable = 1
+    // MaskHPR = 1, LP_Enable = 0, PR_Enable = 0, RRMode = 1
+    sendCommand(*staremu, 0, star.write_abc_register(32, 0x00020450));
+    sendCommand(*staremu, 2, IdleCmd);
+
+    // Expect no PR packets nor LP packets
+  }
 
   // Reset BC counters
   staremu->writeFifo(0, (LCB::IDLE << 16) + LCB::l0a_mask(0, 0, true));
@@ -871,20 +981,12 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
   uint16_t r3frame1 = LCB::raw_bits( (modulemask<<7) + tag1 );
   staremu->writeFifo(2, (r3frame1 << 16) + LCB::IDLE);
 
-  // Expect a PR packet: tag = 42 (0x2a); 4-bit BCID = 0b0110
-  expected[1].push_back({0x12, 0xa6, 0x00, 0x00, 0x6f, 0xed});
-
   // Send another R3 frame to read the second event with tag 66
   // Followed by an L1 command that read the previous event
   staremu->writeFifo(0, (LCB::IDLE << 16) + LCB::IDLE);
   uint16_t r3frame2 = LCB::raw_bits( (modulemask<<7) + tag2 );
   uint16_t l1frame = LCB::raw_bits( tag1 );
   staremu->writeFifo(2, (r3frame2 << 16) + l1frame);
-
-  // Expected a PR packet: tag = 66 (0x42), 4-bit BCID = 0b1111
-  expected[1].push_back({0x14, 0x2f, 0x00, 0x00, 0x6f, 0xed});
-  // And an LP packet with tag = 42 (0x2a), 4-bit BCID = 0b0110
-  expected[1].push_back({0x22, 0xa6, 0x00, 0x00, 0x6f, 0xed});
 
   staremu->releaseFifo();
   while(!staremu->isCmdEmpty());
