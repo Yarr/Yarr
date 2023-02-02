@@ -18,6 +18,8 @@
 #include "AbcCfg.h"
 #include "HccCfg.h"
 
+#include "StarConversionTools.h"
+
 /// Represents configuration for one particular Star front-end (HCC + ABCs)
 class StarCfg : public FrontEndCfg {
  public:
@@ -162,6 +164,8 @@ class StarCfg : public FrontEndCfg {
 
   int hccChannelForABCchipID(unsigned int chipID);
 
+  StarConversionTools &getStarConversion() {return m_ct;}
+
  protected:
   AbcCfg &abcFromChipID(unsigned int chipID) {
       for(auto &abcPair : m_ABCchips) {
@@ -203,6 +207,8 @@ class StarCfg : public FrontEndCfg {
   std::tuple<json, std::vector<json>> createConfigSingleFE();
   std::tuple<json, std::vector<json>> createConfigLSStave();
   std::tuple<json, std::vector<json>> createConfigPetal();
+
+  StarConversionTools m_ct;
 };
 
 #endif

@@ -50,6 +50,16 @@
         "masked": [null, null, null, null, null, null, null, null, null, null],
         "trims": [16, 16, 16, 16, 16, 16, 16, 16, 16, 16],
 
+        "Parameters": {
+            "TrimTarget": [
+                {"BCAL": 0, "BVT": [15, 15, 15, 15, 15, 15, 15, 15, 15, 15]}
+            ],
+            "BCALtoV": {
+                "DAC": [6, 22, 38, 48, 62, 74, 100, 152, 204, 308],
+                "values": [0.0032, 0.00832167, 0.01343333, 0.01663333, 0.02111667, 0.02494833, 0.03326667, 0.04988333, 0.06651667, 0.09975]
+            }
+        },
+
         "comment": "Useful to end with a comment"
     }
 }
