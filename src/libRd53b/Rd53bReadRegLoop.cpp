@@ -16,130 +16,76 @@ Rd53bReadRegLoop::Rd53bReadRegLoop() : LoopActionBase(LOOP_STYLE_NOP)
     m_RingOscRep = 1;
 }
 
-// TODO this should not be here
-uint16_t Rd53bReadRegLoop::ReadRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, Rd53b *tmpFE = NULL)
-{
-
-    if (tmpFE == NULL)
-        tmpFE = keeper->globalFe<Rd53b>();
-
-    g_rx->flushBuffer();
-
-    g_tx->setCmdEnable(dynamic_cast<FrontEndCfg *>(tmpFE)->getTxChannel());
-    tmpFE->readRegister(ref);
-    std::this_thread::sleep_for(std::chrono::microseconds(500));
-    g_tx->setCmdEnable(keeper->getTxMask());
-
-    std::vector<RawDataPtr> dataVec = g_rx->readData();
-    RawDataPtr data;
-    if (dataVec.size() > 0) {
-        data = dataVec[0];
-    }
-    
-    if (!data)
-    {
-        logger->warn("Warning!!! No Word Recieved in ReadRegister");
-        return 0xffff;
-    }
-
-    unsigned size = data->getSize();
-    logger->debug("Word size is: {}", size);
-    for (unsigned c = 0; c < size / 2; c++)
-    {
-        if (c * 2 + 1 < size)
-        {
-            std::pair<uint32_t, uint32_t> readReg = Rd53b::decodeSingleRegRead(data->get(c * 2), data->get(c * 2 + 1));
-            if (readReg.first == (tmpFE->*ref).addr())
-            {
-                return readReg.second;
-            }
-        }
-        else
-        {
-            logger->warn("Warning!!! Halfword recieved in ADC Register Read {}", data->get(c * 2));
-            return 0xffff;
-        }
-    }
-
-    logger->warn("Warning!!! Requested Register {} not found in received words", (tmpFE->*ref).addr());
-    return 0xffff;
-}
-
 //Configures the ADC, reads the register returns the first recieved register.
-uint16_t Rd53bReadRegLoop::ReadADC(unsigned short Reg, bool doCur, Rd53b *tmpFE)
-{
+uint16_t Rd53bReadRegLoop::ReadADC(unsigned short Reg, bool doCur, Rd53b *fe) {
+    if (fe == NULL)
+        return 0;
 
-    if (tmpFE == NULL)
-        tmpFE = keeper->globalFe<Rd53b>();
+    fe->confAdc(Reg, doCur);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    uint16_t regVal = fe->readSingleRegister(&Rd53b::MonitoringDataAdc);
+    regVal = fe->readSingleRegister(&Rd53b::MonitoringDataAdc);
 
-    g_tx->setCmdEnable(dynamic_cast<FrontEndCfg *>(tmpFE)->getTxChannel());
-    tmpFE->confAdc(Reg, doCur);
-    g_tx->setCmdEnable(keeper->getTxMask());
-
-    uint16_t RegVal = ReadRegister(&Rd53b::MonitoringDataAdc, dynamic_cast<Rd53b *>(tmpFE));
-
-    return RegVal;
+    return regVal;
 }
 
-float Rd53bReadRegLoop::ReadNTCTemp(Rd53b *tmpFE, bool in_kelvin)
-{
+float Rd53bReadRegLoop::ReadNTCTemp(Rd53b *fe, bool in_kelvin) {
     //Sensor Config
-    if (tmpFE == NULL)
-        tmpFE = keeper->globalFe<Rd53b>();
+    if (fe == NULL)
+        return 0;
 
-    float voltage = tmpFE->adcToV(this->ReadADC(2, false, tmpFE));
-    float current = tmpFE->adcToI(this->ReadADC(9, true, tmpFE));
+    float voltage = fe->adcToV(this->ReadADC(2, false, fe));
+    float current = fe->adcToI(this->ReadADC(9, true, fe));
 
-    return tmpFE->readNtcTemp(voltage / current, in_kelvin);
+    return fe->readNtcTemp(voltage / current, in_kelvin);
 }
 
-float Rd53bReadRegLoop::ReadResistTemp(Rd53b *tmpFE, bool in_kelvin)
-{
+float Rd53bReadRegLoop::ReadResistTemp(Rd53b *fe, bool in_kelvin) {
     //Sensor Config
-    if (tmpFE == NULL)
-        tmpFE = keeper->globalFe<Rd53b>();
+    if (fe == NULL)
+        return 0;
     
     // Read top sensor: toggle Vref to top
-    tmpFE->writeRegister(&Rd53b::VrefRsensTop, 1);
-    tmpFE->writeRegister(&Rd53b::VrefRsensBot, 0);
-    tmpFE->writeRegister(&Rd53b::VrefIn, 0);
+    fe->writeRegister(&Rd53b::VrefRsensTop, 1);
+    fe->writeRegister(&Rd53b::VrefRsensBot, 0);
+    fe->writeRegister(&Rd53b::VrefIn, 0);
     while (!g_tx->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::microseconds(100));
 
-    float voltageTop = tmpFE->adcToV(this->ReadADC(5, false, tmpFE));
+    float voltageTop = fe->adcToV(this->ReadADC(5, false, fe));
 
     // Read bottom sensor: toggle Vref to bottom
-    tmpFE->writeRegister(&Rd53b::VrefRsensTop, 0);
-    tmpFE->writeRegister(&Rd53b::VrefRsensBot, 1);
-    tmpFE->writeRegister(&Rd53b::VrefIn, 0);
+    fe->writeRegister(&Rd53b::VrefRsensTop, 0);
+    fe->writeRegister(&Rd53b::VrefRsensBot, 1);
+    fe->writeRegister(&Rd53b::VrefIn, 0);
     while (!g_tx->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::microseconds(100));
 
-    float voltageBot = tmpFE->adcToV(this->ReadADC(6, false, tmpFE));
+    float voltageBot = fe->adcToV(this->ReadADC(6, false, fe));
 
     // Reset the Vref configuration
-    tmpFE->writeRegister(&Rd53b::VrefRsensTop, 0);
-    tmpFE->writeRegister(&Rd53b::VrefRsensBot, 0);
-    tmpFE->writeRegister(&Rd53b::VrefIn, 1);
+    fe->writeRegister(&Rd53b::VrefRsensTop, 0);
+    fe->writeRegister(&Rd53b::VrefRsensBot, 0);
+    fe->writeRegister(&Rd53b::VrefIn, 1);
     while (!g_tx->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::microseconds(100));
 
     // Convert voltage difference into temperature. The sensors at top and bottom of the chip are good for providing relative measurements, not absolute one
     // TODO: verify calibration
-    float tK = tmpFE->vToTemp(voltageTop - voltageBot);
+    float tK = fe->vToTemp(voltageTop - voltageBot);
     if (in_kelvin) return tK;
     return tK - 273.15;
 }
 
-float Rd53bReadRegLoop::ReadTransSensor(Rd53b *tmpFE, TransSensorLocation loc, TransSensorType type, Rd53bCfg::TransSensor sensor, bool in_kelvin)
+float Rd53bReadRegLoop::ReadTransSensor(Rd53b *fe, TransSensorLocation loc, TransSensorType type, Rd53bCfg::TransSensor sensor, bool in_kelvin)
 {
     //Sensor Config
-    if (tmpFE == NULL)
-        tmpFE = keeper->globalFe<Rd53b>();
+    if (fe == NULL)
+        return 0;
 
     // enable sensor, and switch off bias
-    tmpFE->writeRegister(TransSensorCfg[loc][0], 1);
-    tmpFE->writeRegister(TransSensorCfg[loc][2], 0);
+    fe->writeRegister(TransSensorCfg[loc][0], 1);
+    fe->writeRegister(TransSensorCfg[loc][2], 0);
     while (!g_tx->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::microseconds(100));
 
@@ -147,15 +93,15 @@ float Rd53bReadRegLoop::ReadTransSensor(Rd53b *tmpFE, TransSensorLocation loc, T
     // Loop over DEM and measure VMUX
     for (unsigned dem = 0; dem < 16; dem++)
     {
-        tmpFE->writeRegister(TransSensorCfg[loc][1], dem);
+        fe->writeRegister(TransSensorCfg[loc][1], dem);
         while (!g_tx->isCmdEmpty()){;}
         std::this_thread::sleep_for(std::chrono::microseconds(100));
         // Readout VMUX
-        VD += tmpFE->adcToV(this->ReadADC(TransSensorVMUX[loc][type], false, tmpFE));
+        VD += fe->adcToV(this->ReadADC(TransSensorVMUX[loc][type], false, fe));
     }
 
     // switch on bias and loop again
-    tmpFE->writeRegister(TransSensorCfg[loc][2], 1);
+    fe->writeRegister(TransSensorCfg[loc][2], 1);
     while (!g_tx->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::microseconds(100));
 
@@ -163,23 +109,23 @@ float Rd53bReadRegLoop::ReadTransSensor(Rd53b *tmpFE, TransSensorLocation loc, T
     // Loop over DEM and measure VMUX
     for (unsigned dem = 0; dem < 16; dem++)
     {
-        tmpFE->writeRegister(TransSensorCfg[loc][1], dem);
+        fe->writeRegister(TransSensorCfg[loc][1], dem);
         while (!g_tx->isCmdEmpty()){;}
         std::this_thread::sleep_for(std::chrono::microseconds(100));
         // Readout VMUX
-        VDR += tmpFE->adcToV(this->ReadADC(TransSensorVMUX[loc][type], false, tmpFE));
+        VDR += fe->adcToV(this->ReadADC(TransSensorVMUX[loc][type], false, fe));
     }
 
     // Switch off sensor and bias
-    tmpFE->writeRegister(TransSensorCfg[loc][0], 0);
-    tmpFE->writeRegister(TransSensorCfg[loc][2], 0);
+    fe->writeRegister(TransSensorCfg[loc][0], 0);
+    fe->writeRegister(TransSensorCfg[loc][2], 0);
     while (!g_tx->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::microseconds(100));
 
     float deltaV = (VDR - VD) / 16.;
 
     if (type == MOS)
-        return tmpFE->readMosTemp(deltaV, sensor, in_kelvin);
+        return fe->readMosTemp(deltaV, sensor, in_kelvin);
     else{
         // TODO: implement radiation sensor calibration
         return deltaV;
@@ -203,60 +149,48 @@ void Rd53bReadRegLoop::init()
 
 void Rd53bReadRegLoop::execPart1()
 {
-    dynamic_cast<HwController *>(g_rx)->setupMode(); //This is need to make sure the global pulse doesn't refresh the ADCRegister
-
-    //Currently for Rd53b, each board needs to be configured alone due to a bug with the read out of the Rd53b. This can be changed in rd53b.
+    //Scan chip by chip.
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
         FrontEnd *fe = keeper->getEntry(id).fe;
-        if (fe->getActive())
-        {
+        if (fe->getActive()) {
+            g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
             std::string feName = dynamic_cast<FrontEndCfg *>(fe)->getName();
             Rd53b *feRd53b = dynamic_cast<Rd53b *>(fe);
 
             logger->info("Measuring for FE {} on Rx {}", feName, id);
 
             // Reading Standard Registers
-            for (auto Reg : m_STDReg)
-            {
-                if (keeper->globalFe<Rd53b>()->regMap.find(Reg) != keeper->globalFe<Rd53b>()->regMap.end())
-                {
-                    uint16_t RegisterVal = (feRd53b->*(feRd53b->regMap[Reg])).applyMask(ReadRegister(keeper->globalFe<Rd53b>()->regMap[Reg], feRd53b));
+            for (auto Reg : m_STDReg) {
+                if (feRd53b->regMap.find(Reg) != feRd53b->regMap.end()) {
+                    uint16_t RegisterVal = (feRd53b->*(feRd53b->regMap[Reg])).applyMask(feRd53b->readSingleRegister(feRd53b->regMap[Reg]));
                     logger->info("[{}][{}] REG: {}, Value: {}", id, feName, Reg, RegisterVal);
 
                     uint16_t StoredVal = (feRd53b->*(feRd53b->regMap[Reg])).read();
 
                     // Compare the Register with the stored value, it's a safety mechanism.
-                    if (StoredVal != RegisterVal)
-                    {
+                    if (StoredVal != RegisterVal) {
                         logger->warn("[{}][{}] For Reg: {}, the stored register value ({}) doesn't match the one on the chip ({}).", id, feName, Reg, StoredVal, RegisterVal);
                     }
-                }
-                else
+                } else {
                     logger->warn("[{}][{}] Requested Register {} not found, please check your runcard", id, feName, Reg);
+                }
             }
 
             // Reading Voltage  ADC
-            for (auto Reg : m_VoltMux)
-            {
+            for (auto Reg : m_VoltMux) {
                 uint16_t ADCVal = ReadADC(Reg, false, feRd53b);
                 logger->info("[{}][{}] MON MUX_V: {}, Value: {} => {} V", id, feName, Reg, ADCVal, dynamic_cast<Rd53b *>(fe)->adcToV(ADCVal));
             }
 
             // Reading Temperature sensors from the ADC
-            for (auto Reg : m_TempSensors)
-            {
-                if (Reg == "NTC")
-                {
-                    float TempVal = ReadNTCTemp(feRd53b);
+            for (auto Reg : m_TempSensors) {
+                if (Reg == "NTC") {
+                    float TempVal = ReadNTCTemp(feRd53b, false);
                     logger->info("[{}][{}] MON NTC: {} C", id, feName, TempVal);
-                }
-                else if (Reg == "Resistor")
-                {
-                    float TempVal = ReadResistTemp(feRd53b);
+                } else if (Reg == "Resistor") {
+                    float TempVal = ReadResistTemp(feRd53b, false);
                     logger->info("[{}][{}] MON poly resistor temperature sensor chip top minus bottom: {} C", id, feName, TempVal);
-                }
-                else if (Reg == "MOS")
-                {
+                } else if (Reg == "MOS") {
                     float TempValDSLDO = ReadTransSensor(feRd53b, DSLDO, MOS, Rd53bCfg::DSLDO);
                     float TempValASLDO = ReadTransSensor(feRd53b, ASLDO, MOS, Rd53bCfg::ASLDO);
                     float TempValACB = ReadTransSensor(feRd53b, ACB, MOS, Rd53bCfg::ACB);
@@ -264,10 +198,8 @@ void Rd53bReadRegLoop::execPart1()
                 }
             }
 
-            for (auto Reg : m_RadSensors)
-            {
-                if (Reg == "BJT")
-                {
+            for (auto Reg : m_RadSensors) {
+                if (Reg == "BJT") {
                     float RadValDSLDO = ReadTransSensor(feRd53b, DSLDO, BJT, Rd53bCfg::Other);
                     float RadValASLDO = ReadTransSensor(feRd53b, ASLDO, BJT, Rd53bCfg::Other);
                     float RadValACB = ReadTransSensor(feRd53b, ACB, BJT, Rd53bCfg::Other);
@@ -276,8 +208,7 @@ void Rd53bReadRegLoop::execPart1()
             }
 
             // Reading Current ADC
-            for (auto Reg : m_CurMux)
-            {
+            for (auto Reg : m_CurMux) {
                 uint16_t ADCVal = ReadADC(Reg, true, feRd53b);
                 logger->info("[{}][{}] MON MUX_C: {} Value: {} => {} uA", id, feName, Reg, ADCVal, dynamic_cast<Rd53b *>(fe)->adcToI(ADCVal)/1e-6);
             }
@@ -314,7 +245,7 @@ void Rd53bReadRegLoop::execPart1()
                     // Run oscillators for some time
                     feRd53b->runRingOsc(m_RingOscDur, false);
 
-                    double value = ReadRegister(&Rd53b::RingOscAOut, dynamic_cast<Rd53b *>(fe)) & 0xFFF;
+                    double value = feRd53b->readSingleRegister(&Rd53b::RingOscAOut) & 0xFFF;
                     RingValuesSumA[tmpCount] += value;
                     RingValuesSumSquaredA[tmpCount] += pow(value, 2);
                 }
@@ -375,7 +306,7 @@ void Rd53bReadRegLoop::execPart1()
                     // Run oscillators for some time
                     feRd53b->runRingOsc(m_RingOscDur, true);
 
-                    double value = ReadRegister(&Rd53b::RingOscBOut, dynamic_cast<Rd53b *>(fe)) & 0xFFF;
+                    double value = feRd53b->readSingleRegister(&Rd53b::RingOscBOut) & 0xFFF;
                     RingValuesSumB[tmpCount] += value;
                     RingValuesSumSquaredB[tmpCount] += pow(value, 2);
                 }

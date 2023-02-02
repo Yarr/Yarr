@@ -13,6 +13,7 @@
 #include <string>
 #include <sstream>
 #include <getopt.h>
+#include <memory>
 
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -23,7 +24,7 @@ namespace fs = std::filesystem;
 #include "FrontEnd.h"
 #include "AllChips.h"
 #include "ScanHelper.h" // openJson
-#include "Utils.h"
+#include "LoggingConfig.h"
 
 void print_usage(char* argv[]) {
     std::cerr << " write-register" << std::endl;
@@ -38,7 +39,10 @@ void print_usage(char* argv[]) {
     std::cerr << std::endl;
 }
 
-std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn, int fe_num) {
+auto logger = logging::make_log("rd53bEfuseCheck");
+
+std::shared_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, std::string config, int fe_num) {
+    json jconn = ScanHelper::openJsonFile(config);
     std::string chip_type = jconn["chipType"];
     auto fe = StdDict::getFrontEnd(chip_type);
     auto cfg = dynamic_cast<FrontEndCfg*>(fe.get());
@@ -50,7 +54,7 @@ std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn
     }
     auto chip_config = chip_configs[fe_num];
     fe->init(&*hw, chip_config["tx"], chip_config["rx"]);
-    auto chip_register_file_path = chip_config["__config_path__"];
+    auto chip_register_file_path = chip_config["config"];
     fs::path pconfig{chip_register_file_path};
     if(!fs::exists(pconfig)) {
         std::cerr << "WARNING: Chip config \"" << chip_register_file_path << "\" not found" << std::endl;
@@ -63,6 +67,14 @@ std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn
 }
 
 int main(int argc, char* argv[]) {
+    // Setup logger
+    json loggerConfig;
+    loggerConfig["pattern"] = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";
+    loggerConfig["log_config"][0]["name"] = "all";
+    loggerConfig["log_config"][0]["level"] = "info";
+    loggerConfig["outputDir"] = "";
+    logging::setupLoggers(loggerConfig);
+
     std::string hw_controller_filename = "";
     std::string connectivity_filename = "";
     int chip_idx = -1;
@@ -72,7 +84,7 @@ int main(int argc, char* argv[]) {
     bool use_chip_name = false;
 
     int c = 0;
-    while (( c = getopt(argc, argv, "r:c:i:n:h")) != -1) {
+    while (( c = getopt(argc, argv, "r:c:h")) != -1) {
         switch (c) {
             case 'r' :
                 hw_controller_filename = optarg;
@@ -80,18 +92,6 @@ int main(int argc, char* argv[]) {
             case 'c' :
                 connectivity_filename = optarg;
                 break;
-            case 'i' :
-                    try {
-                        chip_idx = std::stoi(optarg);
-                    } catch (std::exception& e) {
-                        std::cerr << "ERROR: Chip index must be an integer value (you provided: " << optarg << ")" << std::endl;
-                        return 1;
-                    }
-                break;
-            case 'n' :
-                    chip_name = optarg;
-                    use_chip_name = true;
-                    break;
             case 'h' :
                 print_usage(argv);
                 return 0;
@@ -100,19 +100,6 @@ int main(int argc, char* argv[]) {
                 return 1;
         } // switch
     } // while
-
-    if (optind > argc - 2) {
-        std::cerr << "ERROR: Missing positional arguments" << std::endl;
-        return 1;
-    }
-
-    register_name = argv[optind++];
-    try {
-        register_value = std::stoi(argv[optind++]);
-    } catch (std::exception& e) {
-        std::cerr << "ERROR: Invalid value provided for register \"" << register_name << "\" (non-integer)" << std::endl;
-        return 1;
-    }
 
     fs::path hw_controller_path{hw_controller_filename};
     if(!fs::exists(hw_controller_path)) {
@@ -138,51 +125,39 @@ int main(int argc, char* argv[]) {
     }
     hw->setupMode();
     hw->setTrigEnable(0);
-    hw->disableRx(); // needed?
+
+    int errors = 0;
 
     // open up the connectivity config to get the list of front-ends
     auto jconn = ScanHelper::openJsonFile(connectivity_filename);
-
-    std::string chipType = ScanHelper::loadChipConfigs(jconn, false, Utils::dirFromPath(connectivity_filename));
-
     auto chip_configs = jconn["chips"];
     size_t n_chips = chip_configs.size();
     for (size_t ichip = 0; ichip < n_chips; ichip++) {
-        if (chip_configs[ichip]["enable"] == 0)
-            continue;
-        fs::path chip_register_file_path{chip_configs[ichip]["__config_path__"]};
+        fs::path chip_register_file_path{chip_configs[ichip]["config"]};
         if(!fs::exists(chip_register_file_path)) {
-            std::cerr << "WARNING: Chip config for chip at index " << ichip << " in connectivity file does not exist, skipping (" << chip_register_file_path << ")" << std::endl;
+            std::cerr << "WARNING: Chip config for chip at index " << ichip << " in connectivity file does not exist, skipping" << std::endl;
             continue;
         }
+        auto fe = init_fe(hw, connectivity_filename, ichip);
         
-        auto fe = init_fe(hw, jconn, ichip);
-        if(!fe) {
-            std::cerr << "WARNING: Skipping chip at index " << ichip << " in connectivity file" << std::endl;
-            continue;
+        auto feCfg = std::dynamic_pointer_cast<FrontEndCfg>(fe);
+        hw->setCmdEnable(feCfg->getTxChannel());
+        hw->setRxEnable(feCfg->getRxChannel());
+        logger->info("Reading efuse of chip: {}", feCfg->getName()); 
+
+        if (!fe->hasValidName()) {
+            logger->error("Invalid chip name!");
+            errors--;
         }
-        auto cfg = dynamic_cast<FrontEndCfg*>(fe.get());
-        std::string current_chip_name = cfg->getName();
-        if (!use_chip_name) {
-            if ( (chip_idx < 0) || (chip_idx == ichip) ) {
-                hw->setCmdEnable(cfg->getTxChannel()); 
-        	hw->setRxEnable(cfg->getRxChannel());
-        	hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-                fe->readUpdateWriteNamedReg(register_name);
-                fe->writeNamedRegister(register_name, register_value);
-            }
-        } else {
-            if (current_chip_name == chip_name) {
-                hw->setCmdEnable(cfg->getTxChannel()); 
-        	hw->setRxEnable(cfg->getRxChannel());
-        	hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-                fe->readUpdateWriteNamedReg(register_name);
-                fe->writeNamedRegister(register_name, register_value);
-            }
-        }
+    }
+
+    if (errors == 0) {
+        logger->info("All IDs were read succesfully");
+    } else {
+        logger->error("There were errors reading back e-fuse IDs!");
     }
 
     std::cerr << "Done." << std::endl;
 
-    return 0;
+    return errors;
 }

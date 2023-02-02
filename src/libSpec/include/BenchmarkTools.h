@@ -2,7 +2,7 @@
 #define BENCHMARKTOOLS_H
 
 #include <SpecCom.h>
-#include <stdint.h>
+#include <cstdint>
 
 namespace BenchmarkTools {
     double measureWriteTime(SpecCom *spec, uint32_t addr, uint32_t *data, size_t size, int repetitions);

@@ -12,7 +12,8 @@ add_library(Star SHARED
 	StarJsonData.cpp
         StarMaskLoop.cpp
         StarRegDump.cpp
-	StarStrobeDelayAnalysis.cpp
+        StarStrobeDelayAnalysis.cpp
+        StarFelixTriggerLoop.cpp
         StarTriggerLoop.cpp)
 
 post_build_debug_library(Star)

@@ -2,19 +2,15 @@
   "scan": {
     "analysis": {
       "0": {
-        "algorithm": "OccupancyAnalysis",
-        "config": {
-          "createMask": true
-        }
+        "algorithm": "ScurveFitter"
       },
-      "1": {
-        "algorithm": "TagAnalysis"
+     "1": {
+        "algorithm": "ParameterAnalysis"
       },
-      "2": {
-        "algorithm": "TotAnalysis",
-        "config": {}
+     "2": {
+        "algorithm": "OccupancyAnalysis"
       },
-      "n_count": 3
+      "n_count": 2
     },
     "histogrammer": {
       "0": {
@@ -34,18 +30,14 @@
         "config": {}
       },
       "4": {
-        "algorithm": "TagMap",
-        "config": {}
-      },
-      "5": {
         "algorithm": "HitsPerEvent",
         "config": {}
       },
-      "6": {
+      "5": {
         "algorithm": "DataArchiver",
         "config": {}
       },
-      "n_count": 5
+      "n_count": 4
     },
     "loops": [
       {
@@ -58,6 +50,16 @@
       },
       {
         "config": {
+          "max": 500,
+          "min": 0,
+          "step": 10,
+          "parameter":"InjVcalDiff",
+          "waitTime": 10
+        },
+        "loopAction": "StdParameterLoop"
+      },
+      {
+        "config": {
           "max": 50,
           "min": 0,
           "step": 1,
@@ -67,14 +69,13 @@
       },
       {
         "config": {
-          "count": 100,
-          "delay": 58,
+          "count": 50,
+          "delay": 56,
           "extTrigger": false,
-          "frequency": 5000,
+          "frequency": 8000,
           "noInject": false,
           "time": 0,
-          "edgeMode": true,
-          "edgeDuration": 20
+          "edgeMode": false
         },
         "loopAction": "Rd53bTriggerLoop"
       },
@@ -82,12 +83,12 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "DigitalScan",
+    "name": "ThresholdScan",
     "prescan": {
-        "InjVcalMed": 100,
-        "InjVcalHigh": 2000,
-        "InjDigEn": 1,
-        "Latency": 60
+        "InjDigEn": 0,
+        "InjVcalMed": 500,
+        "InjVcalRange": 1,
+        "Latency": 56
     }
   }
 }

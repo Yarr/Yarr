@@ -63,9 +63,10 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         }
         
         static std::pair<uint32_t, uint32_t> decodeSingleRegRead(uint32_t higher, uint32_t lower);
-	
-        void readUpdateWriteNamedReg(std::string name) override;
-	    void readUpdateWriteReg(Rd53bRegDefault Rd53bGlobalCfg::*ref);
+        static std::tuple<uint8_t, uint32_t, uint32_t> decodeSingleRegReadID(uint32_t higher, uint32_t lower);
+
+	void readUpdateWriteNamedReg(std::string name) override;
+	void readUpdateWriteReg(Rd53bRegDefault Rd53bGlobalCfg::*ref);
         uint32_t readSingleRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref);
         
         // perform the necessary steps to program the E-fuse circuitry and perform
@@ -74,7 +75,7 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         uint32_t readEfusesRaw();
 
         void runRingOsc(uint16_t duration, bool isBankB);
-        void confAdc(uint16_t MONMUX, bool doCur = false);
+        void confAdc(uint16_t MONMUX, bool doCur = false) override;
     protected:
     private:
 };

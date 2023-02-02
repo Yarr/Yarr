@@ -62,18 +62,11 @@ void StarDataProcessor::connect(FrontEndCfg *feCfg, ClipBoard<RawDataContainer> 
 }
 
 void StarDataProcessor::run() {
-    //std::cout << __PRETTY_FUNCTION__ << std::endl;
-    const unsigned int numThreads = std::thread::hardware_concurrency();
-    for (unsigned i=0; i<numThreads; i++) {
-        thread_ptrs.emplace_back( new std::thread(&StarDataProcessor::process, this) );
-        logger->info("  -> Processor thread #{} started!", i);
-    }
+    thread_ptr.reset( new std::thread(&StarDataProcessor::process, this));
 }
 
 void StarDataProcessor::join() {
-    for( auto& thread : thread_ptrs ) {
-        if( thread->joinable() ) thread->join();
-    }
+    thread_ptr->join();
 }
 
 void StarDataProcessor::process() {

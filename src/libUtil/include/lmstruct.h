@@ -26,7 +26,7 @@
 # define __END_DECLS /* empty */
 #endif
 
-#include <stdio.h>
+#include <cstdio>
 
 /* Collection of input parameters for fit control. */
 typedef struct {

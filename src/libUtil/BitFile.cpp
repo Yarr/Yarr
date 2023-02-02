@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <fstream>
-#include <stdint.h>
+#include <cstdint>
 #include <string>
 
 namespace BitFile {

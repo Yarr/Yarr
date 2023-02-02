@@ -10,7 +10,7 @@
 // ################################
 
 #include <iostream>
-#include <stdint.h>
+#include <cstdint>
 #include <thread>
 #include <chrono>
 #include <vector>

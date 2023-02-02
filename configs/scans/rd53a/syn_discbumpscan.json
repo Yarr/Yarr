@@ -85,7 +85,7 @@
         "InjVcalMed": 0,
         "EnCoreColDiff1": 0,
         "EnCoreColDiff2": 0,
-        "EnCoreColLin1": 0,
+        "EnCoreColLin1": 1,
         "EnCoreColLin2": 0
     }
   }
