@@ -63,6 +63,7 @@ Example of a connectivity config:
     "chips" : [
         {
             "config" : "configs/rd53a_test.json",
+            "path": "relToExec",
             "tx" : 0,
             "rx" : 0,
             "enable" : 1,
@@ -70,6 +71,7 @@ Example of a connectivity config:
         },
         {
             "config" : "configs/rd53a_test_1.json",
+            "path": "relToExec",
             "tx" : 1,
             "rx" : 1,
             "enable" : 0,
@@ -79,9 +81,17 @@ Example of a connectivity config:
 }
 
 ```
+The `path` can be as following ([MR](https://gitlab.cern.ch/YARR/YARR/-/merge_requests/599)):
+
+- ``relToExec`` : relative to current executable path (default)
+- ``relToCon`` : relative to dir of connectivity
+- ``abs`` : absolute path
+- ``relToYarrPath`` : relative to environmental variable ``YARR_CONFIG_PATH``
+- ``db`` : (to be implemented) config to be loaded from DB by given "tag"
+
 In the above example, the chip using tx 0 and rx 0 is enabled, meaning that transmission and reception will be established with that chip using the display port cable located in slot 0. Tx refers to transmission to the FE chip, while rx refers to reception of data from the FE chip. That chip will have a default configuration file made, called `rd53a_test.json`, located in the `configs/` folder. The chip on the tx/rx line 1 is ignored. 
 
-The "chipType" can be one of three: `RD53A`, `FEI4B`, or `FE65P2`.
+The `chipType` can be one of three: `RD53A`, `FEI4B`, or `FE65P2`.
 "chips" contains an array of chips, each element needs to contain the path to the config, and the tx and rx channel/link. Each chip can be read out individually by toggling "enable". The chip config can be prevented from overwriting if it is locked.
 
 #### Configuration for multiple FE chips with each FE receiving its own command line
