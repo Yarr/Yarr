@@ -47,8 +47,12 @@ for i, node_d in enumerate(diagram["Diagram"]):
         shapes.append( TBox(x1, y1, x2, y2) )
         shapes[-1].Draw("l same")
 
+        # cell length and width
+        clen = x2 - x1
+        cwid = y2 - y1
+
         # Add label
-        texts.append( TText(x1+(x2-x1)/4, (y1+y2)/2., node_d["label"]) )
+        texts.append( TText(x1+clen/4, (y1+y2)/2., node_d["label"]) )
         texts[-1].SetTextSize(0.01)
         texts[-1].Draw("same")
 
@@ -56,9 +60,9 @@ for i, node_d in enumerate(diagram["Diagram"]):
         if "label_left" in node_d:
             lsleft = node_d["label_left"].split("\n")
             for l in range(len(lsleft)):
-                xl = x1-(x2-x1)/5.
-                yl = y2 - (y2-y1)/4. - (y2-y1)/2.*l
-                texts.append( TText(xl, yl, lsleft[l]) )
+                xleft = x1-clen/5.
+                yleft = y2 - cwid/4. - cwid/2.*l
+                texts.append( TText(xleft, yleft, lsleft[l]) )
                 texts[-1].SetTextSize(0.008)
                 texts[-1].Draw("same")
 
@@ -77,13 +81,17 @@ for i, node_d in enumerate(diagram["Diagram"]):
         texts[-1].SetTextSize(0.01)
         texts[-1].Draw("same")
 
+        # cell length and width
+        clen = x2 - x1
+        cwid = y2 - y1
+
         if "label_left" in node_d:
-            texts.append( TText(x1-(x2-x1)/10., y2 - (y2-y1)/4., node_d["label_left"]) )
+            texts.append( TText(x1 - clen/10., y2 - cwid/4., node_d["label_left"]) )
             texts[-1].SetTextSize(0.008)
             texts[-1].Draw("same")
 
         if "label_right" in node_d:
-            texts.append( TText(x2, y2 - (y2-y1)/4., node_d["label_right"]) )
+            texts.append( TText(x2, y2 - cwid/4., node_d["label_right"]) )
             texts[-1].SetTextSize(0.008)
             texts[-1].Draw("samee")
 
