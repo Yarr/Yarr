@@ -34,7 +34,7 @@ void StdDataLoopFeedback::execPart2() {
 
     bool received_all_triggers = true;
     bool still_time = false;
-    uint32_t n_triggers_to_receive = 500; // g_tx->getTrigCnt(); // TODO find this number
+    n_triggers_to_receive = (m_trigLoop != nullptr ? m_trigLoop->getTrigCnt() : 500); // g_tx->getTrigCnt(); // TODO find this number
     std::chrono::microseconds time_elapsed;
     std::chrono::microseconds wait_time = 1000 * 10 * g_rx->getWaitTime() * 10; // emulator is slow x10
     std::chrono::microseconds wait_time_2 = 50 * g_rx->getWaitTime();

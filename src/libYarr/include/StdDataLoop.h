@@ -8,6 +8,7 @@
 
 #include "LoopActionBase.h"
 #include "StdDataAction.h"
+#include "StdTriggerAction.h"
 #include "ClipBoard.h"
 #include "RawData.h"
 
@@ -15,7 +16,11 @@ class StdDataLoop: public LoopActionBase, public StdDataAction {
     public:
         StdDataLoop();
         //void connect(ClipBoard<RawDataContainer> *clipboard);
-        
+        void connect(std::shared_ptr<StdTriggerAction> trigLoop) {m_trigLoop = trigLoop;};
+
+    protected:
+        std::shared_ptr<StdTriggerAction> m_trigLoop = nullptr;
+
     private:
         //ClipBoard<RawDataContainer> *storage;
         unsigned counter;

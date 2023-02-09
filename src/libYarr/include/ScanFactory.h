@@ -12,8 +12,10 @@
 #include "ScanBase.h"
 
 #include "FeedbackBase.h"
+#include "StdTriggerAction.h"
 #include "storage.hpp"
 #include <functional>
+
 class ScanFactory : public ScanBase {
     public:
         ScanFactory(Bookkeeper *k, FeedbackClipboardMap *fb, ClipboardMapProcessingFeedback *fbProc=nullptr);
@@ -28,6 +30,7 @@ class ScanFactory : public ScanBase {
         // Keep around until configuration
         FeedbackClipboardMap *feedback;
         ClipboardMapProcessingFeedback *feedbackDataProcessing;
+        std::shared_ptr<StdTriggerAction> trigger_loop = nullptr;
 };
 
 namespace StdDict {

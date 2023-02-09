@@ -12,6 +12,7 @@
 class StdDataLoopFeedback: public StdDataLoop, public ReceiverOfRawDataProcessingFeedback {
     private:
         void execPart2() override;
+        uint32_t n_triggers_to_receive = 0;
 };
 
 #endif

@@ -112,6 +112,14 @@ void ScanFactory::loadConfig(const json &scanCfg) {
             fbDataProcReceiver->connect(feedbackDataProcessing);
         }
 
+        if(auto *trigLoop = dynamic_cast<StdTriggerAction*>(&*action)) {
+            trigger_loop = std::make_shared<StdTriggerAction>(*trigLoop);
+        }
+
+        if(auto *dataLoop = dynamic_cast<StdDataLoop*>(&*action)) {
+            dataLoop->connect(trigger_loop);
+        }
+
         this->addLoop(action);
 
         json tCfg;

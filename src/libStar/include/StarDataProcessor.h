@@ -37,7 +37,7 @@ class StarDataProcessor : public DataProcessor {
         ClipBoard<RawDataContainer> *input;
         ClipBoard<EventDataBase> *output;
 
-    private:
+    //private:// TODO: merge to StarDataProcessor and more to private?
         std::unique_ptr<std::thread> thread_ptr;
 
         /// Map from HCC input channel (0-10) number to histogram slot
