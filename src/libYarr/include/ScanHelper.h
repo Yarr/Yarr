@@ -56,7 +56,7 @@ namespace ScanHelper {
        // the scan helper owns the ClipboardMap of data processing feeedback
        // and pases it implicitly to the LoopActions in buildScan
        // and to the DataProcessors in buildRawDataProcs
-       extern ClipboardMapProcessingFeedback feedbackRawDataProcessing;
+       extern std::shared_ptr<ClipboardMapProcessingFeedback> feedbackRawDataProcessing;
 
        std::string defaultDbUserCfgPath();
        std::string defaultDbSiteCfgPath();

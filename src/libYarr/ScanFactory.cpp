@@ -20,7 +20,7 @@ namespace {
     auto sflog = logging::make_log("ScanFactory");
 }
 
-ScanFactory::ScanFactory(Bookkeeper *k, FeedbackClipboardMap *fb, ClipboardMapProcessingFeedback *fbProc)
+ScanFactory::ScanFactory(Bookkeeper *k, FeedbackClipboardMap *fb, std::shared_ptr<ClipboardMapProcessingFeedback> fbProc)
   : ScanBase(k), feedback(fb), feedbackDataProcessing(fbProc) {
 }
 
