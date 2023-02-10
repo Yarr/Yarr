@@ -185,6 +185,15 @@ void StdDataLoop::execPart2() {
         SPDLOG_LOGGER_DEBUG(sdllog, "--> StdDataLoop::execPart2 : still time {} = {} < {} and all trigs = {}", there_is_still_time, time_elapsed.count(), m_totalIterationTime.count(), received_all_triggers);
     } while (!received_all_triggers && there_is_still_time);
 
+    // the iteration end marker for the processing & analysis
+    // send end-of-iteration empty container with LoopStatus::is_end_of_iteration = true
+    LoopStatus loop_status_iteration_end({0}, {LoopStyle::LOOP_STYLE_GLOBAL_FEEDBACK});
+    loop_status_iteration_end.is_end_of_iteration = true;
+    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+        std::unique_ptr<RawDataContainer> c_iter_end = std::make_unique<RawDataContainer>(std::move(loop_status_iteration_end));
+        keeper->getEntry(id).fe->clipRawData.pushData(std::move(c_iter_end));
+    }
+
     m_done = true;
     counter++;
 }
