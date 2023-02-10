@@ -130,9 +130,9 @@ typedef std::map<uint32_t, ClipBoard<FeedbackProcessingInfo>> ClipboardMapProces
 
 class ReceiverOfRawDataProcessingFeedback {
     public:
-        void connect(ClipboardMapProcessingFeedback *fbProc) {feedbackFromRawDataProcessing = fbProc;}
+        void connect(std::shared_ptr<ClipboardMapProcessingFeedback> fbProc) {feedbackFromRawDataProcessing = fbProc;}
     protected:
-        ClipboardMapProcessingFeedback *feedbackFromRawDataProcessing;
+        std::shared_ptr<ClipboardMapProcessingFeedback> feedbackFromRawDataProcessing = nullptr;
 };
 
 #endif

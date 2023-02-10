@@ -104,11 +104,6 @@ void ScanFactory::loadConfig(const json &scanCfg) {
         }
 
         if(auto *fbDataProcReceiver = dynamic_cast<ReceiverOfRawDataProcessingFeedback*>(&*action)) {
-            if (feedbackDataProcessing == nullptr) {
-                sflog->error("LoopAction {} is a ReceiverOfRawDataProcessingFeedback, but ClipboardMapProcessingFeedback is not provided: this LoopAction will not work correctly", loopAction);
-                throw std::runtime_error("Missing ClipboardMapProcessingFeedback");
-            }
-
             fbDataProcReceiver->connect(feedbackDataProcessing);
         }
 

@@ -29,7 +29,7 @@ class ScanFactory : public ScanBase {
         json m_config;
         // Keep around until configuration
         FeedbackClipboardMap *feedback;
-        ClipboardMapProcessingFeedback *feedbackDataProcessing;
+        std::shared_ptr<ClipboardMapProcessingFeedback> feedbackDataProcessing = nullptr;
         std::shared_ptr<StdTriggerAction> trigger_loop = nullptr;
 };
 

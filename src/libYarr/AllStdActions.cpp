@@ -22,10 +22,6 @@ namespace AllStdActionsRegistry {
     registerLoopAction("StdDataLoop",
                        []() { return std::unique_ptr<LoopActionBase>(new StdDataLoop); });
 
-  bool data_loop_feedback_registered =
-    registerLoopAction("StdDataLoopFeedback",
-                       []() { return std::unique_ptr<LoopActionBase>(new StdDataLoopFeedback); });
-
   bool data_gatherer_registered =
     registerLoopAction("StdDataGatherer",
                        []() { return std::unique_ptr<LoopActionBase>(new StdDataGatherer); });
