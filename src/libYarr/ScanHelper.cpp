@@ -235,7 +235,7 @@ namespace ScanHelper {
             FrontEnd *fe = bookie.getEntry(id).fe;
             procs[id] = StdDict::getDataProcessor(chipType);
             procs[id]->connect(dynamic_cast<FrontEndCfg*>(fe), &bookie.getEntry(id).fe->clipRawData, &bookie.getEntry(id).fe->clipData);
-            procs[id]->connect(&((*feedbackRawDataProcessing)[id]));
+            procs[id]->connect(id, feedbackRawDataProcessing);
             // TODO load global processor config
             // TODO load chip specific config
         }

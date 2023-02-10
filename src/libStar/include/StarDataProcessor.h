@@ -26,7 +26,7 @@ class StarDataProcessor : public DataProcessor {
 
         /// Connect this instance to data for a particular FrontEnd
         void connect(FrontEndCfg *feCfg, ClipBoard<RawDataContainer> *arg_input, ClipBoard<EventDataBase> *arg_output) override;
-        void connect(ClipBoard<FeedbackProcessingInfo> *arg_proc_status) override {statusFb = arg_proc_status;}
+        void connect(unsigned id, std::shared_ptr<ClipboardMapProcessingFeedback> arg_proc_statuses) override {statusFb = &(*arg_proc_statuses)[id];}
     
         void init() override;
         void run() override;

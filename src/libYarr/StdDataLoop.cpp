@@ -141,19 +141,23 @@ void StdDataLoop::execPart2() {
         }
 
         // if the feedback system has been set up -- work feedback-based
-        if (feedbackFromRawDataProcessing != nullptr) {
+        if (feedbackFromRawDataProcessing != nullptr && !feedbackFromRawDataProcessing->empty()) {
             // check for any feedback from data processing
             bool received_feedback = false;
             do {
                 received_feedback = false;
 
-                // check all the active channels for feedback
-                for (auto& chan_id : activeChannels) {
-                    bool received_on_chan = feedbackFromRawDataProcessing->at(chan_id).waitNotEmptyOrDoneOrTimeout(m_dataProcessingTime);
+                // check all the feedback channels that are active
+                // (note, if the data processor has not set up its clipboard in the map, StdDataLoop won't try to get its feedback)
+                auto& feedback_chan_map = *feedbackFromRawDataProcessing;
+                for (auto& [chan_id, chan_clipboard] : feedback_chan_map) {
+                    if (activeChannels.find(chan_id) == activeChannels.end()) continue; // skip not active channel
+
+                    bool received_on_chan = chan_clipboard.waitNotEmptyOrDoneOrTimeout(m_dataProcessingTime);
                     if (!received_on_chan) continue;
 
                     received_feedback |= received_on_chan;
-                    auto params = feedbackFromRawDataProcessing->at(chan_id).popData();
+                    auto params = chan_clipboard.popData();
 
                     if (params->trigger_tag >=  0) channelReceivedTriggersCnt[chan_id] += 1;
                     else if (params->trigger_tag == -2) channelReceivedRRCnt[chan_id]  += 1;
@@ -200,11 +204,11 @@ void StdDataLoop::execPart2() {
 
 void StdDataLoop::loadConfig(const json &config) {
 
-	if (config.contains("total_iteration_time_us"))
-		m_totalIterationTime = std::chrono::microseconds(config["total_iteration_time_us"]);
+    if (config.contains("total_iteration_time_us"))
+        m_totalIterationTime = std::chrono::microseconds(config["total_iteration_time_us"]);
 
-	if (config.contains("average_data_processing_time_us"))
-		m_dataProcessingTime = std::chrono::microseconds(config["average_data_processing_time_us"]);
+    if (config.contains("average_data_processing_time_us"))
+        m_dataProcessingTime = std::chrono::microseconds(config["average_data_processing_time_us"]);
 
-	SPDLOG_LOGGER_INFO(sdllog, "Configured StdDataLoop: average_data_processing_time_us: {}", m_dataProcessingTime.count());
+    SPDLOG_LOGGER_INFO(sdllog, "Configured StdDataLoop: average_data_processing_time_us: {}", m_dataProcessingTime.count());
 }
