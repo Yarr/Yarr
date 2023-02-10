@@ -126,6 +126,11 @@ typedef struct
     int trigger_tag;
 } FeedbackProcessingInfo;
 
+// extra int trigger tags to pass more feedback from the data processors
+#define PROCESSING_FEEDBACK_TRIGGER_TAG_ERROR  -10
+#define PROCESSING_FEEDBACK_TRIGGER_TAG_RR      -2
+#define PROCESSING_FEEDBACK_TRIGGER_TAG_Control -3
+
 typedef std::map<uint32_t, ClipBoard<FeedbackProcessingInfo>> ClipboardMapProcessingFeedback;
 
 class ReceiverOfRawDataProcessingFeedback {

@@ -160,8 +160,8 @@ void StdDataLoop::execPart2() {
                     auto params = chan_clipboard.popData();
 
                     if (params->trigger_tag >=  0) channelReceivedTriggersCnt[chan_id] += 1;
-                    else if (params->trigger_tag == -2) channelReceivedRRCnt[chan_id]  += 1;
-                    else if (params->trigger_tag == -3) channelReceivedControlCnt[chan_id] += 1;
+                    else if (params->trigger_tag == PROCESSING_FEEDBACK_TRIGGER_TAG_RR)      channelReceivedRRCnt[chan_id]  += 1;
+                    else if (params->trigger_tag == PROCESSING_FEEDBACK_TRIGGER_TAG_Control) channelReceivedControlCnt[chan_id] += 1;
                     else {
                         SPDLOG_LOGGER_DEBUG(sdllog, "--> StdDataLoop::execPart2 feedback received an unexpected trigger tag {}", params->trigger_tag);
                     }
