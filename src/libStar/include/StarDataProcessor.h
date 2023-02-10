@@ -26,6 +26,7 @@ class StarDataProcessor : public DataProcessor {
 
         /// Connect this instance to data for a particular FrontEnd
         void connect(FrontEndCfg *feCfg, ClipBoard<RawDataContainer> *arg_input, ClipBoard<EventDataBase> *arg_output) override;
+        void connect(ClipBoard<FeedbackProcessingInfo> *arg_proc_status) override {statusFb = arg_proc_status;}
     
         void init() override;
         void run() override;
@@ -33,11 +34,11 @@ class StarDataProcessor : public DataProcessor {
         void process() override;
         virtual void process_core();
 
-    protected:
+    private:
         ClipBoard<RawDataContainer> *input;
         ClipBoard<EventDataBase> *output;
+        ClipBoard<FeedbackProcessingInfo> *statusFb = nullptr;
 
-    //private:// TODO: merge to StarDataProcessor and more to private?
         std::unique_ptr<std::thread> thread_ptr;
 
         /// Map from HCC input channel (0-10) number to histogram slot
