@@ -30,7 +30,7 @@ class ScanFactory : public ScanBase {
         // Keep around until configuration
         FeedbackClipboardMap *feedback;
         std::shared_ptr<ClipboardMapProcessingFeedback> feedbackDataProcessing = nullptr;
-        std::shared_ptr<StdTriggerAction> trigger_loop = nullptr;
+        std::shared_ptr<StdTriggerAction> triggerLoop = nullptr;
 };
 
 namespace StdDict {
