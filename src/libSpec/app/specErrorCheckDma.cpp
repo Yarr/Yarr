@@ -25,7 +25,7 @@ int main (void) {
     int overall_errors = 0;
     uint32_t off = 0;
 
-    const size_t size = 256*100; // 1kB
+    const size_t size = 256*16; // 16kB
     
     srand(time(NULL));
 
@@ -57,8 +57,8 @@ int main (void) {
         //std::cout << "Creating Sample of size " << size*4/1024 << "kB ... ";
         uint32_t *sample = new uint32_t[size];
         for(unsigned int i = 0; i<size; i++)
-            //sample[i] = rand32();
-            sample[i] = (i+off);
+            sample[i] = rand32();
+            //sample[i] = (i+off);
 
         //std::cout << "Writing Sample ... ";
         if (mySpec.writeDma(off, sample, size))
@@ -75,9 +75,10 @@ int main (void) {
                 counter ++;
                 std::cout << loop << " [" << i << "] " << std::hex << sample[i] << "\t" << readBack[i] << std::dec << std::endl;
             }
+
         }
-        //std::cout << "Found #" << counter << " errors!" << std::endl;
-        //std::cout << "==================================" << std::endl;
+        std::cout << "Found #" << counter << " errors!" << std::endl;
+        std::cout << "==================================" << std::endl;
         overall_errors += counter;
         //if (counter != 0) return 0;
         off += size;

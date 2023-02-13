@@ -22,6 +22,8 @@ target_include_directories(Spec PUBLIC ./include)
 LIST(APPEND apps
         config-GBT-FMC
         specBenchmarkDma
+	specBenchmarkDmaSingleRead
+	specBenchmarkDmaSingleWrite
         specBenchmarkSingle
         specComTest
         specErrorCheckDma

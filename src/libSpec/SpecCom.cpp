@@ -121,7 +121,7 @@ int SpecCom::writeDma(uint32_t off, uint32_t *data, size_t words) {
         KernelMemory *km = &spec->allocKernelMemory(sizeof(struct dma_linked_list)*um->getSGcount());
 
         struct dma_linked_list *llist = this->prepDmaList(um, km, off, 1);
-	//std::cout << "Nb of items: " << (((llist->attr) >> 2) + 1) << std::endl;
+	//slog->info("Nb of items: {:x}",((llist->attr) >> 2) + 1);
 
         this->writeBlock(bar0, DMACSTARTR, (uint32_t*) &llist[0], sizeof(struct dma_linked_list)/sizeof(uint32_t));
         this->startDma();
@@ -154,7 +154,7 @@ int SpecCom::readDma(uint32_t off, uint32_t *data, size_t words) {
         KernelMemory *km = &spec->allocKernelMemory(sizeof(struct dma_linked_list)*um->getSGcount());
 	
         struct dma_linked_list *llist = this->prepDmaList(um, km, off, 0);
-	//std::cout << "Nb of items: " << (((llist->attr) >> 2) + 1) << std::endl;
+	//slog->info("Nb of items: {:x}",((llist->attr) >> 2) + 1);
 
         this->writeBlock(bar0, DMACSTARTR, (uint32_t*) &llist[0], sizeof(struct dma_linked_list)/sizeof(uint32_t));
         this->startDma();
@@ -427,8 +427,6 @@ void SpecCom::resetFIFO(){
 
 void SpecCom::startDma() {
     uint32_t *addr = (uint32_t*) bar0+DMACTRLR;
-    //*addr = 0x20; // reset the FIFO
-    //std::cout << ""; //give enough time for the PCIe to make the transaction
     *addr = 0x10; // latch the registered data into the linked list fifo
     std::cout << ""; 
     *addr = 0x01; // Set t 0x1 to start DMA transfer
