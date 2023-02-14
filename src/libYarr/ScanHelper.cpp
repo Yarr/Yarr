@@ -34,8 +34,6 @@ namespace {
 }
 
 namespace ScanHelper {
-    std::shared_ptr<ClipboardMapProcessingFeedback> feedbackRawDataProcessing = std::make_shared<ClipboardMapProcessingFeedback>();
-
     unsigned newRunCounter() {
         unsigned runCounter = 0;
 
@@ -235,7 +233,7 @@ namespace ScanHelper {
             FrontEnd *fe = bookie.getEntry(id).fe;
             procs[id] = StdDict::getDataProcessor(chipType);
             procs[id]->connect(dynamic_cast<FrontEndCfg*>(fe), &bookie.getEntry(id).fe->clipRawData, &bookie.getEntry(id).fe->clipData);
-            procs[id]->connect(id, feedbackRawDataProcessing);
+            procs[id]->connect(&bookie.getEntry(id).fe->clipProcFeedback);
             // TODO load global processor config
             // TODO load chip specific config
         }
@@ -644,7 +642,7 @@ namespace ScanHelper {
     std::unique_ptr<ScanBase> buildScan(const json &scanCfg, Bookkeeper& bookie,  FeedbackClipboardMap *fbData) {
 
         shlog->info("Found Scan config, constructing scan ...");
-        std::unique_ptr<ScanFactory> s ( new ScanFactory(&bookie, fbData, feedbackRawDataProcessing) );
+        std::unique_ptr<ScanFactory> s ( new ScanFactory(&bookie, fbData) );
         s->loadConfig(scanCfg);
 
         return s;

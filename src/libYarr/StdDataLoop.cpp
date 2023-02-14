@@ -140,45 +140,36 @@ void StdDataLoop::execPart2() {
           SPDLOG_LOGGER_DEBUG(sdllog, "--> Received {} words in {} iterations!", all_rawdata_count ,iterations);
         }
 
-        // if the feedback system has been set up -- work feedback-based
-        if (feedbackFromRawDataProcessing != nullptr && !feedbackFromRawDataProcessing->empty()) {
-            // check for any feedback from data processing
-            bool received_feedback = false;
-            do {
-                received_feedback = false;
+        // check for any feedback from data processing
+        bool received_feedback = false;
+        do {
+            received_feedback = false;
 
-                // check all the feedback channels that are active
-                // (note, if the data processor has not set up its clipboard in the map, StdDataLoop won't try to get its feedback)
-                auto& feedback_chan_map = *feedbackFromRawDataProcessing;
-                for (auto& [chan_id, chan_clipboard] : feedback_chan_map) {
-                    if (activeChannels.find(chan_id) == activeChannels.end()) continue; // skip not active channel
+            // check the active channels for feedback
+            for (auto& chan_id : activeChannels) {
+                bool received_on_chan = keeper->getEntry(chan_id).fe->clipProcFeedback.waitNotEmptyOrDoneOrTimeout(m_dataProcessingTime); 
+                if (!received_on_chan) continue;
 
-                    bool received_on_chan = chan_clipboard.waitNotEmptyOrDoneOrTimeout(m_dataProcessingTime);
-                    if (!received_on_chan) continue;
+                received_feedback |= received_on_chan;
+                auto params = keeper->getEntry(chan_id).fe->clipProcFeedback.popData();
 
-                    received_feedback |= received_on_chan;
-                    auto params = chan_clipboard.popData();
-
-                    if (params->trigger_tag >=  0) channelReceivedTriggersCnt[chan_id] += 1;
-                    else if (params->trigger_tag == PROCESSING_FEEDBACK_TRIGGER_TAG_RR)      channelReceivedRRCnt[chan_id]  += 1;
-                    else if (params->trigger_tag == PROCESSING_FEEDBACK_TRIGGER_TAG_Control) channelReceivedControlCnt[chan_id] += 1;
-                    else {
-                        SPDLOG_LOGGER_DEBUG(sdllog, "--> StdDataLoop::execPart2 feedback received an unexpected trigger tag {}", params->trigger_tag);
-                    }
+                if (params->trigger_tag >=  0) channelReceivedTriggersCnt[chan_id] += 1;
+                else if (params->trigger_tag == PROCESSING_FEEDBACK_TRIGGER_TAG_RR)      channelReceivedRRCnt[chan_id]  += 1;
+                else if (params->trigger_tag == PROCESSING_FEEDBACK_TRIGGER_TAG_Control) channelReceivedControlCnt[chan_id] += 1;
+                else {
+                    SPDLOG_LOGGER_DEBUG(sdllog, "--> StdDataLoop::execPart2 feedback received an unexpected trigger tag {}", params->trigger_tag);
                 }
-            } while (received_feedback);
-
-            // test whether all channels received all triggers
-            received_all_triggers = true;
-            for (auto &[id, received_triggers] : channelReceivedTriggersCnt) {
-                SPDLOG_LOGGER_DEBUG(sdllog, "--> StdDataLoop::execPart2 : chan {} received {} triggers from {}", id, received_triggers, n_triggers_to_receive);
-
-                bool the_chan_got_all_trigs = received_triggers >= n_triggers_to_receive;
-                received_all_triggers &= the_chan_got_all_trigs;
-                if (the_chan_got_all_trigs) activeChannels.erase(id);
             }
-        } else {
-            received_all_triggers = true; // no feedback system -- consider it's true
+        } while (received_feedback);
+
+        // test whether all channels received all triggers
+        received_all_triggers = true;
+        for (auto &[id, received_triggers] : channelReceivedTriggersCnt) {
+            SPDLOG_LOGGER_DEBUG(sdllog, "--> StdDataLoop::execPart2 : chan {} received {} triggers from {}", id, received_triggers, n_triggers_to_receive);
+
+            bool the_chan_got_all_trigs = received_triggers >= n_triggers_to_receive;
+            received_all_triggers &= the_chan_got_all_trigs;
+            if (the_chan_got_all_trigs) activeChannels.erase(id);
         }
 
         // test whether there is still time for this iteration

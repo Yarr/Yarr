@@ -18,7 +18,7 @@
 
 class ScanFactory : public ScanBase {
     public:
-        ScanFactory(Bookkeeper *k, FeedbackClipboardMap *fb, std::shared_ptr<ClipboardMapProcessingFeedback> fbProc=nullptr);
+        ScanFactory(Bookkeeper *k, FeedbackClipboardMap *fb);
 
         void loadConfig(const json &scanCfg) override;
 
@@ -29,7 +29,6 @@ class ScanFactory : public ScanBase {
         json m_config;
         // Keep around until configuration
         FeedbackClipboardMap *feedback;
-        std::shared_ptr<ClipboardMapProcessingFeedback> feedbackDataProcessing = nullptr;
         std::shared_ptr<StdTriggerAction> triggerLoop = nullptr;
 };
 

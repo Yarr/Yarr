@@ -20,8 +20,8 @@ namespace {
     auto sflog = logging::make_log("ScanFactory");
 }
 
-ScanFactory::ScanFactory(Bookkeeper *k, FeedbackClipboardMap *fb, std::shared_ptr<ClipboardMapProcessingFeedback> fbProc)
-  : ScanBase(k), feedback(fb), feedbackDataProcessing(fbProc) {
+ScanFactory::ScanFactory(Bookkeeper *k, FeedbackClipboardMap *fb)
+  : ScanBase(k), feedback(fb) {
 }
 
 void ScanFactory::init() {
@@ -101,10 +101,6 @@ void ScanFactory::loadConfig(const json &scanCfg) {
         }
         if(auto *fbPixel = dynamic_cast<PixelFeedbackReceiver*>(&*action)) {
             fbPixel->connectClipboard(feedback);
-        }
-
-        if(auto *fbDataProcReceiver = dynamic_cast<ReceiverOfRawDataProcessingFeedback*>(&*action)) {
-            fbDataProcReceiver->connect(feedbackDataProcessing);
         }
 
         //if(auto *trigLoop = dynamic_cast<StdTriggerAction*>(&*action))

@@ -15,6 +15,7 @@
 #include "ClipBoard.h"
 #include "HistogramBase.h"
 #include "EventDataBase.h"
+#include "FeedbackBase.h"
 #include "HwController.h"
 #include "FrontEndGeometry.h"
 
@@ -30,7 +31,7 @@ class FrontEnd {
         // col/row starting at 0,0
         virtual void maskPixel(unsigned col, unsigned row) = 0;
 
-	virtual unsigned getPixelEn(unsigned col, unsigned row) = 0;
+        virtual unsigned getPixelEn(unsigned col, unsigned row) = 0;
         /// Enable (disable mask) for all pixels
         virtual void enableAll() = 0;
 
@@ -60,6 +61,7 @@ class FrontEnd {
         ClipBoard<RawDataContainer> clipRawData;
         ClipBoard<EventDataBase> clipData;
         ClipBoard<HistogramBase> clipHisto;
+        ClipBoard<FeedbackProcessingInfo> clipProcFeedback;
         std::vector<std::unique_ptr<ClipBoard<HistogramBase>> > clipResult;
         
         FrontEndGeometry geo;

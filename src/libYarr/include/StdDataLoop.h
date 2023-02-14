@@ -13,7 +13,7 @@
 #include "ClipBoard.h"
 #include "RawData.h"
 
-class StdDataLoop: public LoopActionBase, public StdDataAction, public ReceiverOfRawDataProcessingFeedback {
+class StdDataLoop: public LoopActionBase, public StdDataAction {
     public:
         StdDataLoop();
         //void connect(ClipBoard<RawDataContainer> *clipboard);

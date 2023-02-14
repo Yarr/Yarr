@@ -131,13 +131,4 @@ typedef struct
 #define PROCESSING_FEEDBACK_TRIGGER_TAG_RR      -2
 #define PROCESSING_FEEDBACK_TRIGGER_TAG_Control -3
 
-typedef std::map<uint32_t, ClipBoard<FeedbackProcessingInfo>> ClipboardMapProcessingFeedback;
-
-class ReceiverOfRawDataProcessingFeedback {
-    public:
-        void connect(std::shared_ptr<ClipboardMapProcessingFeedback> fbProc) {feedbackFromRawDataProcessing = fbProc;}
-    protected:
-        std::shared_ptr<ClipboardMapProcessingFeedback> feedbackFromRawDataProcessing = nullptr;
-};
-
 #endif
