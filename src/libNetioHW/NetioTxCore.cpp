@@ -29,7 +29,7 @@ NetioTxCore::NetioTxCore()
   m_padding = false;
   m_flip = false;
   m_manchester = false;
-
+  m_buffersize = 0;
   m_felixhost = "localhost";
   m_felixport = 12340;
 
@@ -103,6 +103,7 @@ uint32_t NetioTxCore::getCmdEnable() {
 }
 
 void NetioTxCore::writeFifo(uint32_t value){
+
   nlog->trace("NetioTxCore::writeFifo val={:08x}", value);
   map<uint32_t,bool>::iterator it;
 
@@ -115,6 +116,7 @@ void NetioTxCore::writeFifo(uint32_t value){
 }
 
 void NetioTxCore::writeFifo(uint32_t elink, uint32_t value){
+
   nlog->trace("NetioTxCore::writeFifo elink={} val=0x{:08x}", elink, value);
 
   if(m_elinks[elink] == false) {
@@ -126,6 +128,7 @@ void NetioTxCore::writeFifo(uint32_t elink, uint32_t value){
 }
 
 void NetioTxCore::writeFifo(vector<uint8_t> *fifo, uint32_t value) const{
+
   if(m_extend==4){
     for(int32_t b=3;b>=0;b--){
       for(int32_t i=0;i<4;i++){
@@ -185,13 +188,12 @@ void NetioTxCore::prepareFifo(vector<uint8_t> *fifo) const{
   }
 }
 
-void NetioTxCore::releaseFifo(){
+void NetioTxCore::sendFifo(){
 
   //try to connect
   connect();
 
-  nlog->trace("NetioTxCore::releaseFifo");
-  //create the message for NetIO
+  nlog->trace("NetioTxCore::sendFifo");
   map<uint32_t,bool>::iterator it;
 
   for(it=m_elinks.begin();it!=m_elinks.end();it++)
@@ -212,21 +214,42 @@ void NetioTxCore::releaseFifo(){
     	m_size.push_back(this_fifo.size());	
     }
 
-  message msg(m_data,m_size);
-
-  //Send through the socket
-  m_socket->send(msg);
-
-  for(it=m_elinks.begin();it!=m_elinks.end();it++){
-    if(it->second==false) continue;
-    m_fifo[it->first].clear();
-  }
-
-  m_size.clear();
-  m_data.clear();
-
+  message msg(m_data,m_size);                                                                                                                             
+  //Send through the socket                                                                                                                               
+  m_socket->send(msg);                                                                                                                                    
+                                                                                                                                                          
+  for(it=m_elinks.begin();it!=m_elinks.end();it++){                                                                                                       
+    if(it->second==false) continue;                                                                                                                       
+    m_fifo[it->first].clear();                                                                                                                            
+  }                                                                                                                                                       
+                                                                                                                                                      
+  m_size.clear();                                                                                                                                         
+  m_data.clear();                                                                                                                                    
+                                                                                                                                                          
   return;
 }
+
+void NetioTxCore::releaseFifo(){ 
+
+  nlog->trace("NetioTxCore::releaseFifo"); 
+  
+  map<uint32_t,bool>::iterator it;
+  int buffer_size = 0;
+
+  for(it=m_elinks.begin();it!=m_elinks.end();it++)
+    if(it->second){
+      auto elink = it->first;
+      auto &this_fifo = m_fifo[elink];
+      buffer_size += this_fifo.size(); //total size of buffer from all active elinks
+    }
+
+  if(buffer_size>m_buffersize){
+    sendFifo();
+  }
+
+  return;
+
+}   
 
 void NetioTxCore::trigger(){
 
@@ -269,15 +292,27 @@ void NetioTxCore::trigger(){
 
 }
 
-bool NetioTxCore::isCmdEmpty(){ //TODO: Does not really work for NetIO.
-  map<uint32_t,bool>::iterator it;
+bool NetioTxCore::isCmdEmpty(){
 
+  //Check if buffer is empty.
+  //Regardless, empty the FIFO in case any data is still there, but
+  // return the status of the FIFO before emptying it;
+  // this allows the user to know that the FIFO had something in it
+  // and decide if to wait a bit or just call again immediately 
+  // isCmdEmpty(), that will at that point return true.
+
+  map<uint32_t,bool>::iterator it;
+  bool is_buffer_empty = true;
   for(it=m_elinks.begin();it!=m_elinks.end();it++)
     if(it->second)
-    	if(!m_fifo[it->first].empty()) 
-		return false;
-  
-  return true;
+      if(!m_fifo[it->first].empty()) 
+	is_buffer_empty = false;
+
+  if (not is_buffer_empty){
+    sendFifo();
+  }
+
+  return is_buffer_empty;
 }
 
 void NetioTxCore::setTrigEnable(uint32_t value){
@@ -454,6 +489,7 @@ void NetioTxCore::writeConfig(json &j)  {
   j["NetIO"]["manchester"] = m_manchester;
   j["NetIO"]["flip"] = m_flip;
   j["NetIO"]["extend"] = (m_extend == 4);
+  j["NetIO"]["buffersize"] = m_buffersize;
 }
 
 void NetioTxCore::loadConfig(const json &j){
@@ -463,10 +499,12 @@ void NetioTxCore::loadConfig(const json &j){
    m_flip       = j["NetIO"]["flip"];
    m_extend     = (j["NetIO"]["extend"]?4:1);
    m_feType     = j["NetIO"]["fetype"];
+   m_buffersize = j["NetIO"]["buffersize"];
 
    nlog->info("NetioTxCore:");
    nlog->info(" manchester={}", m_manchester);
    nlog->info(" flip={}", m_flip);
    nlog->info(" extend={}", m_extend);
    nlog->info(" feType={}", m_feType);
+   nlog->info(" buffersize={}", m_buffersize);
 }

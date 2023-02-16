@@ -88,10 +88,12 @@ private:
   void doTriggerCnt();                       //! loop for a fixed number of triggers
   void doTriggerTime();                      //! loop to trigger during a time slot
   void printFifo(uint32_t elink);
+  void sendFifo(); //! Prepare packet from FIFO and send it through socket.
   uint32_t m_extend;
   bool m_padding;
   bool m_flip;
   bool m_manchester;
+  int m_buffersize;
   bool m_debug;
 
   void enableChannel(uint32_t channel);

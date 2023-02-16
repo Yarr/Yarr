@@ -9,7 +9,10 @@
         "manchester": false,
         "flip": false,
         "extend": false,
-        "fetype": "rd53a"
+        "fetype": "rd53b",
+	"buffersize": 64,
+	"waitTime": 5000000,
+	"TimeOut_data": false
       }
     }
   }

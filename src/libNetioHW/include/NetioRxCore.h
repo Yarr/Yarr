@@ -110,7 +110,8 @@ private:
 
   NetioHandler m_nioh;              //! NetioHandler object
   std::chrono::steady_clock::time_point m_t0; //! clock used for time measurements
-
+  
+  bool m_TimeOut=true;
 };
 
 #endif

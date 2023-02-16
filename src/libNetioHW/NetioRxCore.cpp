@@ -130,11 +130,25 @@ std::vector<RawDataPtr> NetioRxCore::readData(){
     std::vector<RawDataPtr> dataVec;
 
     nlog->debug("NetioRxCore::readData()");
-
     std::unique_ptr<RawData> rdp = m_nioh.rawData.popData();
-    if(rdp != NULL){
 
-    RawDataPtr new_rdp = std::move(rdp);
+    chrono::steady_clock::time_point t0 = chrono::steady_clock::now();
+    chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
+    while ((rdp == NULL) and (m_TimeOut == false)) {
+      //sleep for a bit
+      std::this_thread::sleep_for(std::chrono::milliseconds(50));
+      t1 = chrono::steady_clock::now();
+      if(chrono::duration_cast<chrono::microseconds>(t1-t0) > m_waitTime){
+    	m_TimeOut=true;
+      }
+      //ask data
+      rdp = m_nioh.rawData.popData();
+    }
+
+
+    if(rdp != NULL){
+      
+      RawDataPtr new_rdp = std::move(rdp);
 	auto buffer = new_rdp->getBuf();
 	auto address = new_rdp->getAdr();
 	auto words = new_rdp->getSize();
@@ -203,12 +217,16 @@ bool NetioRxCore::isBridgeEmpty(){ // True, if queues are stable.
 void NetioRxCore::writeConfig(json &j) {
   j["NetIO"]["host"] = m_felixhost;
   j["NetIO"]["rxport"] = m_felixport;
+  std::chrono::microseconds{j["NetIO"]["waitTime"]} = m_waitTime;  
+  j["NetIO"]["TimeOut_data"] = m_TimeOut;
 }
 
 void NetioRxCore::loadConfig(const json &j) {
   m_felixhost = j["NetIO"]["host"];
   m_felixport = j["NetIO"]["rxport"];
   m_fetype = j["NetIO"]["fetype"];
+  m_waitTime= std::chrono::microseconds{j["NetIO"]["waitTime"]};
+  m_TimeOut = j["NetIO"]["TimeOut_data"];
   m_nioh.setFeType(m_fetype);
   m_nioh.setFelixHost(m_felixhost);
   m_nioh.setFelixRXPort(m_felixport);
