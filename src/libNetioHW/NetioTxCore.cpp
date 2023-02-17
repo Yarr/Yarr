@@ -484,6 +484,8 @@ void NetioTxCore::writeConfig(json &j)  {
   j["NetIO"]["manchester"] = m_manchester;
   j["NetIO"]["flip"] = m_flip;
   j["NetIO"]["extend"] = (m_extend == 4);
+  j["NetIO"]["buffersize"] = m_buffersize;
+  j["NetIO"]["Fwtrigger"] = m_Fwtrigger;
 }
 
 void NetioTxCore::loadConfig(const json &j){
