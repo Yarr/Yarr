@@ -109,8 +109,7 @@ private:
   std::thread m_statistics;         //! statistics thread
 
   NetioHandler m_nioh;              //! NetioHandler object
-  std::chrono::steady_clock::time_point m_t0; //! clock used for time measurements
-  
+  std::chrono::steady_clock::time_point m_t0; //! clock used for time measurements  
 };
 
 #endif

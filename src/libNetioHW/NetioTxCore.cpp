@@ -35,7 +35,7 @@ NetioTxCore::NetioTxCore()
 
   m_context = new context("posix");
   m_socket = new low_latency_send_socket(m_context);
-  m_Fwtrigger = true;
+  m_Fwtrigger = false;
 
 }
 
@@ -484,8 +484,6 @@ void NetioTxCore::writeConfig(json &j)  {
   j["NetIO"]["manchester"] = m_manchester;
   j["NetIO"]["flip"] = m_flip;
   j["NetIO"]["extend"] = (m_extend == 4);
-  j["NetIO"]["buffersize"] = m_buffersize;
-  j["NetIO"]["Fwtrigger"] = m_Fwtrigger;
 }
 
 void NetioTxCore::loadConfig(const json &j){
@@ -495,14 +493,20 @@ void NetioTxCore::loadConfig(const json &j){
    m_flip       = j["NetIO"]["flip"];
    m_extend     = (j["NetIO"]["extend"]?4:1);
    m_feType     = j["NetIO"]["fetype"];
-   m_buffersize = j["NetIO"]["buffersize"];
-   m_Fwtrigger = j["NetIO"]["Fwtrigger"];
+
+   if(j["NetIO"].contains("buffersize")){
+     m_buffersize = j["NetIO"]["buffersize"];
+     nlog->info(" buffersize={}", m_buffersize);
+   }
+
+   if(j["NetIO"].contains("Fwtrigger")){
+     m_Fwtrigger = j["NetIO"]["Fwtrigger"];
+     nlog->info(" Fwtrigger={}", m_Fwtrigger);
+   }
 
    nlog->info("NetioTxCore:");
    nlog->info(" manchester={}", m_manchester);
    nlog->info(" flip={}", m_flip);
    nlog->info(" extend={}", m_extend);
    nlog->info(" fetype={}", m_feType);
-   nlog->info(" buffersize={}", m_buffersize);
-   nlog->info(" Fwtrigger={}", m_Fwtrigger);
 }

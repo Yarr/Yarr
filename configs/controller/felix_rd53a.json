@@ -9,10 +9,7 @@
         "manchester": false,
         "flip": false,
         "extend": false,
-        "fetype": "rd53b",
-	"buffersize": 64,
-	"waitTime": 1000000,
-	"Fwtrigger": true
+        "fetype": "rd53a"
       }
     }
   }
