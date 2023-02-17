@@ -35,8 +35,7 @@ NetioTxCore::NetioTxCore()
 
   m_context = new context("posix");
   m_socket = new low_latency_send_socket(m_context);
-
-  m_calFW = true;
+  m_Fwtrigger = true;
 
 }
 
@@ -378,10 +377,6 @@ void NetioTxCore::setTrigWord(uint32_t *word, uint32_t size){
   for(uint32_t i=0;i<size;i++){m_trigWords.push_back(word[i]);}
 }
 
-void NetioTxCore::setCalFW(bool doCalFW){
-  m_calFW = doCalFW;
-}
-
 void NetioTxCore::setTriggerLogicMask(uint32_t mask){
   //Nothing to do yet
 }
@@ -404,7 +399,7 @@ void NetioTxCore::prepareTrigger(){
 
     // send a sync to make sure the following commands are not interrrupted for a while
     //MT
-    if(m_calFW){ //special 16b character in the F/W = {1110, #iteration (7b), frequency(5b)
+    if(m_Fwtrigger){ //special 16b character in the F/W = {1110, #iteration (7b), frequency(5b)
       uint32_t trigFreq_ratio = (40000000/m_trigFreq)/256; //40 Mhz/m_trigFreq(Hz) and /256 as F/W can in/decrease frequency only in multiple of 128
 
       if(trigFreq_ratio > 31) {cerr<<"m_trigFreq "<<m_trigFreq<<" not supported by the F/W. Supported frequency is >= 9.8 kHz"<<endl; exit(1);} //9.8 is wrong
@@ -433,7 +428,7 @@ void NetioTxCore::doTriggerCnt() {
   prepareTrigger();
 
   uint32_t trigs=0;
-  if(m_calFW){
+  if(m_Fwtrigger){
     for(uint32_t i=0; i<1; i++) {
       if(m_trigEnabled==false) break;
       trigs=m_trigCnt;
@@ -490,6 +485,7 @@ void NetioTxCore::writeConfig(json &j)  {
   j["NetIO"]["flip"] = m_flip;
   j["NetIO"]["extend"] = (m_extend == 4);
   j["NetIO"]["buffersize"] = m_buffersize;
+  j["NetIO"]["Fwtrigger"] = m_Fwtrigger;
 }
 
 void NetioTxCore::loadConfig(const json &j){
@@ -500,11 +496,13 @@ void NetioTxCore::loadConfig(const json &j){
    m_extend     = (j["NetIO"]["extend"]?4:1);
    m_feType     = j["NetIO"]["fetype"];
    m_buffersize = j["NetIO"]["buffersize"];
+   m_Fwtrigger = j["NetIO"]["Fwtrigger"];
 
    nlog->info("NetioTxCore:");
    nlog->info(" manchester={}", m_manchester);
    nlog->info(" flip={}", m_flip);
    nlog->info(" extend={}", m_extend);
-   nlog->info(" feType={}", m_feType);
+   nlog->info(" fetype={}", m_feType);
    nlog->info(" buffersize={}", m_buffersize);
+   nlog->info(" Fwtrigger={}", m_Fwtrigger);
 }

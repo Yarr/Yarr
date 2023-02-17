@@ -30,8 +30,6 @@ Rd53aTriggerLoop::Rd53aTriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) {
     m_edgeMode = false;
     m_edgeDuration = 10;
 
-    m_calFW = false;
-
     min = 0;
     max = 0;
     step = 1;
@@ -119,8 +117,6 @@ void Rd53aTriggerLoop::init() {
     g_tx->setTrigWord(&m_trigWord[0], 32);
     g_tx->setTrigWordLength(m_trigWordLength);
     g_tx->setTrigTime(m_trigTime);
-    g_tx->setCalFW(m_calFW);
-
 
     g_tx->setCmdEnable(keeper->getTxMask());
     while(!g_tx->isCmdEmpty());

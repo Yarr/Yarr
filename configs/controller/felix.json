@@ -11,8 +11,8 @@
         "extend": false,
         "fetype": "rd53b",
 	"buffersize": 64,
-	"waitTime": 5000000,
-	"TimeOut_data": false
+	"waitTime": 1000000,
+	"Fwtrigger": true
       }
     }
   }
