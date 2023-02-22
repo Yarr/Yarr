@@ -19,6 +19,10 @@ StarCounterLoop::StarCounterLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) {
 	m_trigFreq = 1e3; // 1kHz
 	m_trigTime = 10; // 10s
 	m_noInject = false;
+
+	m_trigWordLength = 0;
+	m_trigWord.fill(0);
+
 	min = 0;
 	max = 0;
 	step = 1;
@@ -91,18 +95,6 @@ void StarCounterLoop::execPart2() {
     SPDLOG_LOGGER_DEBUG(logger, "Triggers finished");
     // Disable Trigger
     g_tx->setTrigEnable(0x0);
-
-    //Disable Counters
-    auto readReg = [&](auto words) {
-        g_tx->writeFifo((words[0] << 16) + words[1]);
-        g_tx->writeFifo((words[2] << 16) + words[3]);
-        g_tx->writeFifo((words[4] << 16) + words[5]);
-        g_tx->writeFifo((words[6] << 16) + words[7]);
-        g_tx->writeFifo((words[8] << 16) + LCB::IDLE);
-
-        // Could have this once for all regs though...
-        g_tx->releaseFifo();
-    };
 
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
         FrontEnd *fe = keeper->getEntry(id).fe;

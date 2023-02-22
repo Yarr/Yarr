@@ -116,11 +116,11 @@ private:
   // Internal states
   //
   // For register command sequence
-  bool m_ignoreCmd;
-  bool m_isForABC;
+  bool m_ignoreCmd{true};
+  bool m_isForABC{false};
 
   // buffer for register read/write command sequence
-  std::queue<uint8_t> m_reg_cmd_buffer;
+  std::queue<uint8_t> m_reg_cmd_buffer{};
 
   // Front-end data pipeline
   // Simplified L0 buffer
@@ -148,11 +148,11 @@ private:
   // (If ABCs never have different L0 latency settings, one array instead of a map of arrays would suffice.)
 
   // BC counter
-  uint16_t m_bccnt;
+  uint16_t m_bccnt{0};
 
   // Count hits
-  bool m_startHitCount;
-  uint8_t m_bc_sel;
+  bool m_startHitCount{false};
+  uint8_t m_bc_sel{0};
 
   // Clock counter for HPR packets
   unsigned hpr_clkcnt; // unit: BC (25 ns)
