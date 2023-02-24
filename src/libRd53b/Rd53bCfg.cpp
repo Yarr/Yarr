@@ -114,10 +114,10 @@ void Rd53bCfg::loadConfig(const json &j) {
         m_kSenseShuntD = j["RD53B"]["Parameter"]["KSenseShuntD"];
 
     if (j.contains({"RD53B","Parameter","KShuntA"}))
-        m_kSenseShuntA = j["RD53B"]["Parameter"]["KShuntA"];
+        m_kShuntA = j["RD53B"]["Parameter"]["KShuntA"];
 
     if (j.contains({"RD53B","Parameter","KShuntD"}))
-        m_kSenseShuntD = j["RD53B"]["Parameter"]["KShuntD"];
+        m_kShuntD = j["RD53B"]["Parameter"]["KShuntD"];
     
     if (j.contains({"RD53B","Parameter","VcalPar"}))
         if (j["RD53B"]["Parameter"]["VcalPar"].size() == m_vcalPar.size()) {
