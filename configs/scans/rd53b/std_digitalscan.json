@@ -34,14 +34,18 @@
         "config": {}
       },
       "4": {
-        "algorithm": "HitsPerEvent",
+        "algorithm": "TagMap",
         "config": {}
       },
       "5": {
+        "algorithm": "HitsPerEvent",
+        "config": {}
+      },
+      "6": {
         "algorithm": "DataArchiver",
         "config": {}
       },
-      "n_count": 4
+      "n_count": 5
     },
     "loops": [
       {
@@ -50,14 +54,14 @@
           "min": 0,
           "step": 1
         },
-        "loopAction": "Rd53bMaskLoop"
+        "loopAction": "Rd53bParMaskLoop"
       },
       {
         "config": {
           "max": 50,
           "min": 0,
           "step": 1,
-          "nSteps": 1
+          "nSteps": 5
         },
         "loopAction": "Rd53bCoreColLoop"
       },

@@ -53,12 +53,23 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
 
         void enableAll() override;
 
-        void writeRegister(Rd53aReg Rd53aGlobalCfg::*ref, uint32_t value);
-        void readRegister(Rd53aReg Rd53aGlobalCfg::*ref);
+
+        template <typename T>
+        void writeRegister(T Rd53aGlobalCfg::*ref, uint32_t value) {
+            (this->*ref).write(value);
+            wrRegister(m_chipId, (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
+        }
+
+        template <typename T>
+        void readRegister(T Rd53aGlobalCfg::*ref) {
+            rdRegister(m_chipId, (this->*ref).addr());
+        }
+
+
         void writeNamedRegister(std::string name, uint16_t value) override;
         
         void setInjCharge(double charge, bool sCap=true, bool lCap=true) override {
-            this->writeRegister((Rd53aReg Rd53aGlobalCfg::*)&Rd53aGlobalCfg::InjVcalDiff, this->toVcal(charge));
+            this->writeRegister((Rd53Reg Rd53aGlobalCfg::*)&Rd53aGlobalCfg::InjVcalDiff, this->toVcal(charge));
         }
         
         void enableCalCol(unsigned col);

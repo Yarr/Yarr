@@ -1,10 +1,10 @@
 #include <SpecCom.h>
 
 #include <iostream>
-#include <stdint.h>
-#include <time.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdint>
+#include <ctime>
+#include <cstdlib>
+#include <string>
 
 uint32_t rand32() {
     uint32_t number = 0;

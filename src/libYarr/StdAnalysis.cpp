@@ -183,7 +183,7 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
             }
         }
 
-        alog->info("\033[1m\033[31mTotal number of failing pixels: {}\033[0m", failed_cnt);
+        alog->info("\033[1m\033[31m[{}][{}] Total number of failing pixels: {}\033[0m", id, bookie->getFeCfg(id)->getName(), failed_cnt);
         output->pushData(std::move(mask)); // TODO push this mask to the specific configuration
         output->pushData(std::move(occMaps[ident]));
 
@@ -413,7 +413,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
             }
         }
 
-        alog->info("\033[1;33mId:{} ScanID:{} ToT Mean = {} +- {}\033[0m", id, ident,  meanTotDist->getMean(), meanTotDist->getStdDev());
+        alog->info("\033[1;33m[{}][{}][{}] ToT Mean = {} +- {}\033[0m", id, dynamic_cast<FrontEndCfg*>(bookie->getFe(id))->getName(), ident,  meanTotDist->getMean(), meanTotDist->getStdDev());
 
         if (globalFb != nullptr) {
             double mean = 0;
@@ -800,7 +800,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 
                     } else {
                         n_failedfit++;
-                        alog->debug("Failed fit Col({}) Row({}) Threshold({}) Chi2({}) Status({}) Entries({}) Mean({})", col, row, thrMap[outerIdent]->getBin(bin), chi2, status.outcome, histos[ident]->getEntries(), histos[ident]->getMean());
+                        alog->debug("[{}] [{}] Failed fit Col({}) Row({}) Threshold({}) Chi2({}) Status({}) Entries({}) Mean({})", id, bookie->getFeCfg(id)->getName(), col, row, thrMap[outerIdent]->getBin(bin), chi2, status.outcome, histos[ident]->getEntries(), histos[ident]->getMean());
                     }
                     if (m_dumpDebugScurvePlots && row == nRow/2 && col%10 == 0) {
                         output->pushData(std::move(histos[ident]));
@@ -872,7 +872,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 void ScurveFitter::end() {
 
     if (fb != nullptr) {
-        alog->info("[{}] Tuned to ==> {}", thrTarget, this->id);
+        alog->info("[{}] Tuned to ==> {}", this->id, thrTarget);
     }
 
     // TODO Loop over outerIdent
@@ -925,9 +925,9 @@ void ScurveFitter::end() {
             }
 
             // Before moving data to clipboard
-            alog->info("\033[1;33m[{}][{}] Threshold Mean = {} +- {}\033[0m", id, i, thrMap[i]->getMean(), thrMap[i]->getStdDev());
-            alog->info("\033[1;33m[{}][{}] Noise Mean = {} +- {}\033[0m", id, i, sigMap[i]->getMean(), sigMap[i]->getStdDev());
-            alog->info("\033[1;33m[{}][{}] Number of failed fits = {}\033[0m", id, i, n_failedfit);
+            alog->info("\033[1;33m[{}][{}][{}] Threshold Mean = {} +- {}\033[0m", id, bookie->getFeCfg(id)->getName(), i, thrMap[i]->getMean(), thrMap[i]->getStdDev());
+            alog->info("\033[1;33m[{}][{}][{}] Noise Mean = {} +- {}\033[0m", id, bookie->getFeCfg(id)->getName(), i, sigMap[i]->getMean(), sigMap[i]->getStdDev());
+            alog->info("\033[1;33m[{}][{}][{}] Number of failed fits = {}\033[0m", id, bookie->getFeCfg(id)->getName(), i, n_failedfit);
             output->pushData(std::move(thrDist[i]));
             output->pushData(std::move(thrMap[i]));
             output->pushData(std::move(sigDist[i]));
@@ -1452,13 +1452,27 @@ void NoiseAnalysis::init(ScanBase *s) {
     occ->setXaxisTitle("Col");
     occ->setYaxisTitle("Row");
     occ->setZaxisTitle("Hits");
+    tag.reset(new Histo1d("TagDist", 257, -0.5, 256.5));
+    tag->setXaxisTitle("Tag");
+    tag->setYaxisTitle("Hits");
+    tot.reset(new Histo2d("TotMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
+    tot->setXaxisTitle("Col");
+    tot->setYaxisTitle("Row");
+    tot->setZaxisTitle("Averaged ToT");        
     n_trigger = 0;
 }
 
 void NoiseAnalysis::processHistogram(HistogramBase *h) {
     if (h->getName() == OccupancyMap::outputName()) {
         occ->add(*(Histo2d*)h);
-    } else if (h->getName() == HitsPerEvent::outputName()) {
+    }
+    else if (h->getName() == TotMap::outputName()) {
+        tot->add(*(Histo2d*)h);
+    }    
+    else if (h->getName() == TagDist::outputName()) {
+        tag->add(*(Histo1d*)h);
+    }     
+    else if (h->getName() == HitsPerEvent::outputName()) {
         n_trigger += ((Histo1d*)h)->getEntries();       
     }
 }
@@ -1502,7 +1516,12 @@ void NoiseAnalysis::end() {
         }
     }
 
+    // Get averaged tot
+    tot->divide(*occ);
+
     output->pushData(std::move(occ));
+    output->pushData(std::move(tot));
+    output->pushData(std::move(tag));
     output->pushData(std::move(noiseOcc));
     output->pushData(std::move(mask));
 }

@@ -32,7 +32,7 @@ auto logger = logging::make_log("StarChipsetEmu");
 StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
                                const std::string& json_emu_file_path,
                                std::unique_ptr<StarCfg> regCfg,
-                               unsigned hpr_period)
+                               unsigned hpr_period, int abc_version, int hcc_version)
   : m_rxbuffer ( rx )
   , m_bccnt ( 0 )
   , m_ignoreCmd ( true )
@@ -41,6 +41,8 @@ StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
   , m_bc_sel ( 0 )
   , m_starCfg (std::move(regCfg))
   , HPRPERIOD( hpr_period )
+  , m_abc_version( abc_version )
+  , m_hcc_version( hcc_version )
 {
   // Emulator analog FE configurations
   if (not json_emu_file_path.empty()) {
@@ -244,10 +246,15 @@ void StarChipsetEmu::writeRegister(const uint32_t data, const uint8_t address,
         address == ABCStarRegister::STAT4 or
         address == ABCStarRegister::HPR
         or (address >= ABCStarRegister::Counter(0) && address <= ABCStarRegister::Counter(63))) {
-      logger->warn("A register write command is received for a read-only HCCStar register 0x{:x}. Skip writing.", address);
+      logger->warn("A register write command is received for a read-only ABCStar register 0x{:x}. Skip writing.", address);
       return;
     } else {
-      m_starCfg->setABCRegister(address, data, ABCID);
+      try {
+        m_starCfg->setABCRegister(address, data, ABCID);
+      } catch (std::out_of_range &e) {
+        logger->warn("Unexpected out of range for register write of ABCStar register 0x{:x}. Skip writing.", address);
+        return;
+      }
     }
   } else {
     // skip writing if the register is read only
@@ -259,7 +266,7 @@ void StarChipsetEmu::writeRegister(const uint32_t data, const uint8_t address,
         address == HCCStarRegister::ADCStatus or
         address == HCCStarRegister::Status or
         address == HCCStarRegister::HPR) {
-      logger->warn("A register write command is received for a read-only ABCStar register 0x{:x}. Skip writing.", address);
+      logger->warn("A register write command is received for a read-only HCCStar register 0x{:x}. Skip writing.", address);
       return;
     } else if (address == HCCStarRegister::Addressing) {
       // special case for dynamic addressing
@@ -274,7 +281,12 @@ void StarChipsetEmu::writeRegister(const uint32_t data, const uint8_t address,
         m_starCfg->setHCCChipId(data>>24);
       }
     } else {
-      m_starCfg->setHCCRegister(address, data);
+      try {
+        m_starCfg->setHCCRegister(address, data);
+      } catch (std::out_of_range &e) {
+        logger->warn("Unexpected out of range for register write of HCCStar register 0x{:x}. Skip writing.", address);
+        return;
+      }
     }
   }
 }
@@ -292,7 +304,13 @@ void StarChipsetEmu::readRegister(const uint8_t address, bool isABC,
     }
 
     // read register
-    unsigned data = m_starCfg->getABCRegister(address, ABCID);
+    unsigned data;
+    try {
+      data = m_starCfg->getABCRegister(address, ABCID);
+    } catch(std::out_of_range &e) {
+      // non-existant register
+      data = 0xffffffff;
+    }
 
     // ABC status bits
     // for now
@@ -311,7 +329,13 @@ void StarChipsetEmu::readRegister(const uint8_t address, bool isABC,
     PacketTypes ptype = PacketTypes::HCCRegRd;
 
     // read register
-    unsigned data = m_starCfg->getHCCRegister(address);
+    unsigned data;
+    try {
+      data = m_starCfg->getHCCRegister(address);
+    } catch(std::out_of_range &e) {
+      // non-existant register
+      data = 0xffffffff;
+    }
 
     // build and send data packet
     auto packet = buildHCCRegisterPacket(ptype, address, data);
@@ -450,8 +474,7 @@ void StarChipsetEmu::logicReset() {
 }
 
 void StarChipsetEmu::resetABCRegisters() {
-  int abc_version = 0;
-  m_starCfg->eachAbc([&](auto &abc){abc.setDefaults(abc_version);});
+  m_starCfg->eachAbc([&](auto &abc){abc.setDefaults(m_abc_version);});
   resetABCHitCounts();
 }
 
@@ -480,8 +503,7 @@ void StarChipsetEmu::resetSlowCommand() {
 }
 
 void StarChipsetEmu::resetHCCRegisters() {
-  int hcc_version = 0;
-  (m_starCfg->hcc()).setDefaults(hcc_version);
+  (m_starCfg->hcc()).setDefaults(m_hcc_version);
 }
 
 void StarChipsetEmu::resetHCCSEU() {

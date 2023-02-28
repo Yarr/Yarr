@@ -31,7 +31,7 @@
         "algorithm": "DataArchiver",
         "config": {}
       },
-      "n_count": 5 
+      "n_count": 5
     },
     "loops": [
       {
@@ -39,11 +39,11 @@
           "count": 0,
           "delay": 58,
           "extTrigger": false,
-          "frequency": 500,
+          "frequency": 12000,
           "noInject": true,
-          "time": 30,
+          "time": 60,
           "edgeMode": false,
-          "trigMultiplier": 32
+          "trigMultiplier": 16
         },
         "loopAction": "Rd53bTriggerLoop"
       },
@@ -51,7 +51,7 @@
         "loopAction": "StdDataGatherer"
       }
     ],
-    "name": "DigitalScan",
+    "name": "NoiseScan",
     "prescan": {
         "InjVcalDiff": 0,
         "InjDigEn": 0,

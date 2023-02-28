@@ -33,7 +33,7 @@ class Rd53aReadRegLoop : public LoopActionBase {
         std::vector<unsigned short> m_CurMux;
         std::vector<unsigned short> m_TempMux;
 
-        uint16_t ReadRegister(Rd53aReg Rd53aGlobalCfg::*ref,  Rd53a *tmpFE);
+        uint16_t ReadRegister(Rd53Reg Rd53aGlobalCfg::*ref, Rd53a *tmpFE);
         uint16_t ReadADC(unsigned short Reg, bool doCur,  Rd53a *tmpFE );
         std::pair<uint16_t,uint16_t> ReadTemp(unsigned short Reg, Rd53a *tmpFE);
 
@@ -45,7 +45,16 @@ class Rd53aReadRegLoop : public LoopActionBase {
         void execPart2() override;
         void end() override;
 
-        Rd53aReg Rd53aGlobalCfg::* OscRegisters[8] = {&Rd53a::RingOsc0,&Rd53a::RingOsc1,&Rd53a::RingOsc2,&Rd53a::RingOsc3,&Rd53a::RingOsc4,&Rd53a::RingOsc5,&Rd53a::RingOsc6,&Rd53a::RingOsc7};
+        Rd53Reg Rd53aGlobalCfg::* OscRegisters[8] = {
+                (Rd53Reg Rd53aGlobalCfg::*) &Rd53a::RingOsc0,
+                (Rd53Reg Rd53aGlobalCfg::*) &Rd53a::RingOsc1,
+                (Rd53Reg Rd53aGlobalCfg::*) &Rd53a::RingOsc2,
+                (Rd53Reg Rd53aGlobalCfg::*) &Rd53a::RingOsc3,
+                (Rd53Reg Rd53aGlobalCfg::*) &Rd53a::RingOsc4,
+                (Rd53Reg Rd53aGlobalCfg::*) &Rd53a::RingOsc5,
+                (Rd53Reg Rd53aGlobalCfg::*) &Rd53a::RingOsc6,
+                (Rd53Reg Rd53aGlobalCfg::*) &Rd53a::RingOsc7
+        };
 
 };
 

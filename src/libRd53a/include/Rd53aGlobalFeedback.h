@@ -22,7 +22,7 @@
 class Rd53aGlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver {
     public:
         Rd53aGlobalFeedback();
-        Rd53aGlobalFeedback(Rd53aReg Rd53aGlobalCfg::*ref);
+        Rd53aGlobalFeedback(Rd53Reg Rd53aGlobalCfg::*ref);
 
         void writeConfig(json &j) override;
         void loadConfig(const json &j) override;
@@ -34,7 +34,7 @@ class Rd53aGlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver
 
     protected:
     private:
-        Rd53aReg Rd53aGlobalCfg::*parPtr{};
+        Rd53Reg Rd53aGlobalCfg::*parPtr{};
         std::string parName;
         int m_cur;
 

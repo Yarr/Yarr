@@ -7,6 +7,11 @@
 // ################################
 
 #include "Rd53bPixelCfg.h"
+#include "logging.h"
+
+namespace {
+    auto logger = logging::make_log("Rd53bPixelCfg");
+}
 
 Rd53bPixelCfg::Rd53bPixelCfg() {
     for (unsigned dc=0; dc<n_DC; dc++) {
@@ -88,16 +93,24 @@ void Rd53bPixelCfg::writeConfig(json &j) {
 
 // TODO add failsaife
 void Rd53bPixelCfg::loadConfig(const json &j) {
-    for (unsigned col=0; col<n_Col; col++) {
-        for (unsigned row=0; row<n_Row; row++) {
-            this->setEn(col, row, j["RD53B"]["PixelConfig"][col]["Enable"][row]);
-            this->setHitbus(col, row, j["RD53B"]["PixelConfig"][col]["Hitbus"][row]);
-            this->setInjEn(col, row, j["RD53B"]["PixelConfig"][col]["InjEn"][row]);
-            this->setTDAC(col, row, j["RD53B"]["PixelConfig"][col]["TDAC"][row]);
-        }
-    }
+    if (j.contains({"RD53B","PixelConfig"})) {
+		for (unsigned col=0; col<n_Col; col++) {
+			for (unsigned row=0; row<n_Row; row++) {
+				this->setEn(col, row, j["RD53B"]["PixelConfig"][col]["Enable"][row]);
+				this->setHitbus(col, row, j["RD53B"]["PixelConfig"][col]["Hitbus"][row]);
+				this->setInjEn(col, row, j["RD53B"]["PixelConfig"][col]["InjEn"][row]);
+				this->setTDAC(col, row, j["RD53B"]["PixelConfig"][col]["TDAC"][row]);
+			}
+		}
+	} else {
+		logger->error("Could not find pixel registers, using default!");
+	}
 }
 
 uint16_t Rd53bPixelCfg::getPixelBit(PixelArray &input, unsigned col, unsigned row, unsigned bit){
     return getBit(input[col/2][row], (col&0x1)*8 + bit);
+}
+
+uint16_t Rd53bPixelCfg::toTenBitMask(uint16_t pixReg) {
+    return uint16_t(0x3FF & (((pixReg&0x700)>>3) | (pixReg&0x7)));
 }

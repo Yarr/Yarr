@@ -2,11 +2,9 @@
 #include <vector>
 #include <thread>
 #include <chrono>
+#include <cmath>
 
-#include <math.h>
 
-#include "ScanHelper.h"
-#include "ScanOpts.h"
 #include "Bdaq.h"
 #include "logging.h"
 
@@ -85,14 +83,20 @@ void Bdaq::initialize(bdaqConfig c) {
 	//Reset BdaqDriver (command TX)
 	cmd.reset();
 
-	//Setting BdaqDriver to RD53A
-//        setChipTypeRD53A();  // Move it to "main" code, when "rd53b_devel" is merged
-//        chipType = 0 ;       // in case RD53A
-        //Setting BdaqDriver to RD53B
-        setChipTypeITkPixV1(); // in case RD53B
-        chipType = 1 ;         // in case RD53B
-
-
+        if(c.feType == "RD53A"){
+            //Setting BdaqDriver to RD53A
+            setChipTypeRD53A();  // Move it to "main" code, when "rd53b_devel" is merged
+            chipType = 0 ;
+        }else if(c.feType == "RD53B"){
+            //Setting BdaqDriver to RD53B
+            setChipTypeITkPixV1();
+            chipType = 1 ;
+        }else{
+            std::stringstream error;
+            error << __PRETTY_FUNCTION__ << ": chip type is undefined, it should be either RD53A or Rd53B";
+            logger->critical(error.str());
+            exit(-1);
+        }
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	//Configure the Aurora link
@@ -105,7 +109,6 @@ daqVersion Bdaq::getDaqVersion() {
 	daqVersion dv;
 	//Firmware version
 	rbcp.read(0x0, buf, 2);
-//	dv.fwVersion = std::to_string(buf.at(1)) + "." + std::to_string(buf.at(0));// for frimware = 1.2
         dv.fwVersion = std::to_string(buf.at(0)) + "." + std::to_string(buf.at(1));// for frimware = 1.8
 	//Board version
 	rbcp.read(0x2, buf, 2);
@@ -119,8 +122,7 @@ daqVersion Bdaq::getDaqVersion() {
         dv.boardOptions = 0x01;      // for frimware = 1.8 (To be fixed "not accepted")
 	//Connector Version
 	rbcp.read(0x5, buf, 2);
-//	dv.connectorVersion = hwConMap[buf.at(0)];// for frimware = 1.2
-       	dv.connectorVersion = hwConMap[buf.at(1)];// for frimware = 1.8
+       	dv.connectorVersion = hwConMap[buf.at(1)];
 	return dv;
 }
 

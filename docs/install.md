@@ -101,6 +101,11 @@ one can provide an OR'ed chain of their names to the `SELECT_LIBS` CMake variabl
 ```
     $ cmake3 -DSELECT_TOOLS=scanConsole ..
 ```
+- In order to skip the installation of the plotting tools, switch on the option `DISABLE_PLOTTING_TOOLS` (default is `OFF`):
+
+```
+    $ cmake3 -DDISABLE_PLOTTING_TOOLS=ON ..
+```
 - Expert note: you can choose a specific toolchain via:
 ```bash
 $ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang # requires clang installed on Linux

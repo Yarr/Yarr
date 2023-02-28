@@ -8,7 +8,7 @@
 // # Comment: FE-I4 Pixel Register container
 // ################################
 
-#include <stdint.h>
+#include <cstdint>
 #include <iostream>
 #include <array>
 

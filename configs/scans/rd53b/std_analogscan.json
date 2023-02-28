@@ -54,7 +54,7 @@
                 "min": 0,
                 "step": 1
             },
-            "loopAction": "Rd53bMaskLoop"
+            "loopAction": "Rd53bParMaskLoop"
         },
         {
             "config": {
@@ -67,7 +67,7 @@
         },
             {
                 "config": {
-                    "count": 50,
+                    "count": 100,
                     "delay": 56,
                     "extTrigger": false,
                     "frequency": 5000,

@@ -3,19 +3,37 @@
 #include <iostream>
 
 #include "AllProcessors.h"
+#include "StarCfg.h"
 
 #include "EventData.h"
 #include <memory>
 
 TEST_CASE("StarDataProcessor", "[star][data_processor]") {
-  std::shared_ptr<DataProcessor> proc = StdDict::getDataProcessor("Star");
+  std::shared_ptr<DataProcessor> proc;
+
+  SECTION("Star") {
+    proc = StdDict::getDataProcessor("Star");
+  }
+
+  SECTION("Star_PPA") {
+    proc = StdDict::getDataProcessor("Star_vH0A1");
+  }
+
+  SECTION("Star_PPB") {
+    proc = StdDict::getDataProcessor("Star_vH1A1");
+  }
 
   REQUIRE (proc);
 
   ClipBoard<RawDataContainer> rd_cp;
   ClipBoard<EventDataBase> em_cp;
 
-  proc->connect(nullptr, &rd_cp, &em_cp );
+  // Use v1 mapping for simplicity
+  int hcc_version = 1;
+  StarCfg starCfg(0, hcc_version);
+  starCfg.hcc().setSubRegisterValue("ICENABLE", 0x3ff);
+
+  proc->connect(&starCfg, &rd_cp, &em_cp );
 
   proc->init();
   proc->run();
@@ -25,7 +43,10 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
     0x03, 0x8f, // Hit input channel 0, 0x71 and three following
     0x0b, 0xaf, // Hit input channel 1, 0x75 and three following
     0x4f, 0x28, // Hit input channel 9, 0xe5 only
+    // Unphysical, check it's skipped in output
     0x5c, 0x05, // Hit input channel 11, 0x80 and 101
+    // Not mapped, check it's skipped in output
+    0x53, 0x00, // Hit input channel 10
     0x1b, 0xf4, // Hit input channel 3, 0x7e and 1 following
     0x6f, 0xed  // Trailer
   };
@@ -35,7 +56,6 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
     0x0071, 0x0072, 0x0073, 0x0074,
     0x00f5, 0x00f6, 0x00f7, 0x00f8,
     0x84e5,
-    0x8580, 0x8581, 0x8583,
     0x01fe, 0x01ff
   };
 
@@ -87,14 +107,14 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
   REQUIRE (out_hits.size() == expected.size());
   std::sort(out_hits.begin(), out_hits.end());
 
-  for(size_t o=0; o<out_hits.size(); o++) {
-    CAPTURE (o);
-    bool found_row = out_hits[o] & 0x8000;
-    bool expect_row = expected[o] & 0x8000;
-    uint32_t found_channel_offset = out_hits[o] & 0x7f80;
-    uint32_t expect_channel_offset = expected[o] & 0x7f80;
-    uint32_t found_strip = out_hits[o] & 0x7f;
-    uint32_t expect_strip = expected[o] & 0x7f;
+  for(size_t index=0; index<out_hits.size(); index++) {
+    CAPTURE (index);
+    bool found_row = out_hits[index] & 0x8000;
+    bool expect_row = expected[index] & 0x8000;
+    uint32_t found_channel_offset = out_hits[index] & 0x7f80;
+    uint32_t expect_channel_offset = expected[index] & 0x7f80;
+    uint32_t found_strip = out_hits[index] & 0x7f;
+    uint32_t expect_strip = expected[index] & 0x7f;
 
     CAPTURE (found_row, found_channel_offset, found_strip, expect_row, expect_channel_offset, expect_strip);
 

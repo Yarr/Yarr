@@ -3,8 +3,8 @@
 #include <iostream>
 #include <fstream>
 #include <sys/time.h>
-#include <string.h>
-#include <stdint.h>
+#include <string>
+#include <cstdint>
 
 int main(void) {
     SpecCom mySpec(0);

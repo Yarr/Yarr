@@ -10,6 +10,7 @@ add_library(Rd53b SHARED
         Rd53bGlobalFeedback.cpp
         Rd53bHistogrammer.cpp
         Rd53bMaskLoop.cpp
+        Rd53bParMaskLoop.cpp
         Rd53bParameterLoop.cpp
         Rd53bPixelCfg.cpp
         Rd53bPixelFeedback.cpp
@@ -27,7 +28,8 @@ LIST(APPEND apps
         rd53bDecodeTool
         rd53bReadRingosc
         rd53bRegSEETest
-        rd53bTest)
+        rd53bTest
+        rd53bEfuseCheck)
 
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)

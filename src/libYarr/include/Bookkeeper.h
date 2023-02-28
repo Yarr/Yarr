@@ -45,6 +45,7 @@ class Bookkeeper {
 		void delFe(FrontEnd *fe);
 
 		FrontEnd* getFe(unsigned id);
+		FrontEndCfg* getFeCfg(unsigned id);
         FrontEnd* getLastFe();
         FrontEnd* getGlobalFe() const {
             return g_fe;

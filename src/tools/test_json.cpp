@@ -153,51 +153,79 @@ bool testScanConfig(const json &scanConfig) {
   }
 }
 
+int checkJsonFE(json &jsonConfig, std::string fe_name) {
+  auto fe = std::move(StdDict::getFrontEnd(fe_name));
+  if(!fe) {
+    std::cout << "FrontEnd not found: " << fe_name << "!\n";
+    return 2;
+  }
+  FrontEndCfg *cfg = dynamic_cast<FrontEndCfg*>(fe.get());
+  if(cfg == nullptr) {
+    std::cout << "FrontEnd: " << fe_name << " does not implement FrontEndCfg!\n";
+    return 2;
+  }
+
+  cfg->loadConfig(jsonConfig);
+  return 0;
+}
+
+int checkJsonFE(json &jsonConfig) {
+  int count = 0;
+  std::string name;
+  {
+    auto b = std::begin(jsonConfig);
+    auto e = std::end(jsonConfig);
+    for(auto i=b; i!=e; i++) {
+      name = i.key();
+      count ++;
+    }
+  }
+  if(count != 1) {
+    if(jsonConfig.contains("HCC") && jsonConfig.contains("ABCs")) {
+      bool pass_all = true;
+      bool pass_one = false;
+      for(auto &n: {"Star", "Star_vH0A1", "Star_vH1A1"}) {
+        try {
+          int ret_val = checkJsonFE(jsonConfig, n);
+          if(ret_val != 0) {
+            // Failure to load class, nothing to do with the file
+            return ret_val;
+          }
+          pass_one = true;
+        } catch (std::out_of_range &e) {
+          pass_all = false;
+        }
+      }
+      if(pass_all) {
+        std::cout << "Loaded successfully in all Star variations\n";
+      }
+      if(pass_one) {
+        return 0;
+      } else {
+        return 1;
+      }
+    } else {
+      std::cout << "Expect one top-level entry (not " << count << ") in FrontEnd config (or it's Star)\n";
+
+      auto b = std::begin(jsonConfig);
+      auto e = std::end(jsonConfig);
+      for(auto i=b; i!=e; i++) {
+        std::cout << "  " << i.key() << "\n";
+      }
+      return 1;
+    }
+  }
+
+  if(name == "FE65-P2") name = "FE65P2";
+  else if(name == "FE-I4B") name = "FEI4B";
+
+  return checkJsonFE(jsonConfig, name);
+}
+
 int checkJson(json &jsonConfig, ConfigType jsonFileType) {
   switch(jsonFileType) {
   case ConfigType::FRONT_END:
-    {
-      int count = 0;
-      std::string name;
-      {
-        auto b = std::begin(jsonConfig);
-        auto e = std::end(jsonConfig);
-        for(auto i=b; i!=e; i++) {
-          name = i.key();
-          count ++;
-        }
-      }
-      if(count != 1) {
-        if(jsonConfig.contains("HCC") && jsonConfig.contains("ABCs")) {
-          name = "Star";
-        } else {
-          std::cout << "Expect one top-level entry (not " << count << ") in FrontEnd config (or it's Star)\n";
-
-          auto b = std::begin(jsonConfig);
-          auto e = std::end(jsonConfig);
-          for(auto i=b; i!=e; i++) {
-            std::cout << "  " << i.key() << "\n";
-          }
-          return 1;
-        }
-      }
-
-      if(name == "FE65-P2") name = "FE65P2";
-      else if(name == "FE-I4B") name = "FEI4B";
-
-      auto fe = std::move(StdDict::getFrontEnd(name));
-      if(!fe) {
-        std::cout << "FrontEnd not found: " << name << "!\n";
-        return 2;
-      }
-      FrontEndCfg *cfg = dynamic_cast<FrontEndCfg*>(fe.get());
-      if(cfg == nullptr) {
-        std::cout << "FrontEnd: " << name << " does not implement FrontEndCfg!\n";
-        return 2;
-      }
-
-        cfg->loadConfig(jsonConfig);
-    }
+    return checkJsonFE(jsonConfig);
     break;
   case ConfigType::CONNECTIVITY:
     if(!testConnectivity(jsonConfig)) {
@@ -236,8 +264,8 @@ void printHelp() {
     std::cout << "Parameters\n";
     std::cout << " -h: Shows this help\n";
     std::cout << " -f <config_name> : Json file to examine\n";
-    std::cout << "                   CONNECTIVITY,CONTROLLER,SCAN_CONFIG,FRONT_END\n";
     std::cout << " -t <config_type> : Type of config file, default to guessing\n";
+    std::cout << "                   CONNECTIVITY,CONTROLLER,SCAN_CONFIG,FRONT_END\n";
     std::cout << " -K : Check controller file, which might talk to hardware\n";
     std::cout << " -v : Be more verbose\n";
 }

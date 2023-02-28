@@ -109,13 +109,7 @@ class AbcStarRegInfo {
   }
 
   /// Return sub register info from enum, throws std::runtime_error
-  SubInfoPtr subRegFromEnum(ABCStarSubRegister subReg) const {
-    try {
-      return abcSubRegisterMap_all.at(subReg);
-    } catch(std::out_of_range &e) {
-      throw std::runtime_error("Attempt to get info for bad sub register");
-    }
-  }
+  SubInfoPtr subRegFromEnum(ABCStarSubRegister subReg) const;
 
   int getSubRegisterParentAddr(std::string subRegName) const {
     return subRegByName(subRegName)->getRegAddress();

@@ -8,7 +8,6 @@
 #include "EmuCom.h"
 #include "EmuRxCore.h"
 #include "LCBUtils.h"
-#include "RingBuffer.h"
 #include "ScanHelper.h"
 #include "logging.h"
 
@@ -22,7 +21,7 @@ auto logger = logging::make_log("StarEmu");
 StarEmu::StarEmu(std::vector<ClipBoard<RawData>*> &rx, EmuCom * tx, EmuCom * tx2,
                  const std::string& json_emu_file_path,
                  const std::vector<std::string>& json_chip_file_paths,
-                 unsigned hpr_period)
+                 unsigned hpr_period, int abc_version, int hcc_version)
     : m_txRingBuffer ( tx )
     , m_txRingBuffer2 ( tx2 )
     , m_bccnt ( 0 )
@@ -32,12 +31,12 @@ StarEmu::StarEmu(std::vector<ClipBoard<RawData>*> &rx, EmuCom * tx, EmuCom * tx2
 
     // HCCStar and ABCStar chip configurations
     assert(rx.size()==json_chip_file_paths.size());
+    logger->debug("Making star configs with A{} H{}", abc_version, hcc_version);
     for (unsigned i=0; i<json_chip_file_paths.size(); i++) {
         // Set up the chip configuration and load it to the emulator
         const std::string& regCfgFile = json_chip_file_paths[i];
 
-        // Default to abc v0, hcc v0
-        auto regCfg = std::make_unique<StarCfg>(0, 0);
+        auto regCfg = std::make_unique<StarCfg>(abc_version, hcc_version);
         if (not regCfgFile.empty()) {
             json jChips;
             try {
@@ -53,7 +52,7 @@ StarEmu::StarEmu(std::vector<ClipBoard<RawData>*> &rx, EmuCom * tx, EmuCom * tx2
             regCfg->addABCchipID(15);
         }
 
-        chipEmus.emplace_back( new StarChipsetEmu(rx[i], json_emu_file_path, std::move(regCfg), hpr_period) );
+        chipEmus.emplace_back( new StarChipsetEmu(rx[i], json_emu_file_path, std::move(regCfg), hpr_period, abc_version, hcc_version) );
     }
 }
 
@@ -363,6 +362,19 @@ void EmuController<StarChips, StarEmu>::loadConfig(const json &j) {
     logger->debug("HPR packet transmission period is set to {} BC", hprperiod);
   }
 
+  unsigned abc_version = 0;
+  unsigned hcc_version = 0;
+
+  if (j.contains("abcVersion")) {
+    abc_version = j["abcVersion"];
+    logger->debug("ABC Version set to {}", abc_version);
+  }
+
+  if (j.contains("hccVersion")) {
+    hcc_version = j["hccVersion"];
+    logger->debug("HCC Version set to {}", hcc_version);
+  }
+
   json chipCfg;
   if (j.contains("chipCfg")) {
     try {
@@ -420,7 +432,7 @@ void EmuController<StarChips, StarEmu>::loadConfig(const json &j) {
         logger->error("Tx channel {} has already been set up!", chn_tx);
         throw std::runtime_error("Fail to load emulator configuration");
       }
-      tx_coms.emplace_back(new RingBuffer(128));
+      tx_coms.emplace_back(new RingBuffer());
       EmuTxCore<StarChips>::setCom(chn_tx, tx_coms.back().get());
 
       // TX2 if required
@@ -430,7 +442,7 @@ void EmuController<StarChips, StarEmu>::loadConfig(const json &j) {
           logger->error("Tx channel {} has already been set up!", chn_tx2);
           throw std::runtime_error("Fail to load emulator configuration");
         }
-        tx_coms.emplace_back(new RingBuffer(128));
+        tx_coms.emplace_back(new RingBuffer());
         EmuTxCore<StarChips>::setCom(chn_tx2, tx_coms.back().get());
       }
 
@@ -453,7 +465,7 @@ void EmuController<StarChips, StarEmu>::loadConfig(const json &j) {
 
     std::vector<ClipBoard<RawData>*>& rx = rxMap[chn.first];
 
-    emus.emplace_back(new StarEmu(rx, tx, tx2, emuCfgFile, chn.second, hprperiod));
+    emus.emplace_back(new StarEmu(rx, tx, tx2, emuCfgFile, chn.second, hprperiod, abc_version, hcc_version));
     emuThreads.push_back(std::thread(&StarEmu::executeLoop, emus.back().get()));
   }
 }

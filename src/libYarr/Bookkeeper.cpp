@@ -84,6 +84,15 @@ FrontEnd* Bookkeeper::getFe(unsigned id) {
     }
 }
 
+FrontEndCfg* Bookkeeper::getFeCfg(unsigned id) {
+    if (id >= bookEntries.size()) {
+        SPDLOG_LOGGER_ERROR(blog, "Id not in use, can not find FE!");
+        return nullptr;
+    } else {
+        return dynamic_cast<FrontEndCfg*>(bookEntries[id].fe);
+    }
+}
+
 FrontEnd* Bookkeeper::getLastFe() {
     return bookEntries.back().fe;
 }

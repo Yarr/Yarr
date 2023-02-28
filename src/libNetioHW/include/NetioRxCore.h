@@ -13,7 +13,7 @@
 #include "RawData.h"
 #include "NetioHandler.h"
 #include "netio/netio.hpp"
-#include <queue>
+
 #include <cstdint>
 #include <chrono>
 #include <vector>
@@ -64,7 +64,7 @@ public:
 
   /**
    * @brief check if the NetioHandler is not receiving data still
-   * @return true if the NetioHanlder is not receiving data
+   * @return true if the NetioHandler is not receiving data
    **/
   bool isBridgeEmpty() override;
 
@@ -97,8 +97,6 @@ private:
 
   std::string m_felixhost;          //! felix hostname
   uint16_t m_felixport;             //! felix port for reading
-
-  netio::context * m_context;       //! the netio context
 
   std::map<uint64_t,bool> m_elinks; //! elinks map
 

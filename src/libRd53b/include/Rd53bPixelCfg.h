@@ -51,6 +51,7 @@ class Rd53bPixelCfg {
 
         PixelArray pixRegs;
         static uint16_t getPixelBit(PixelArray &input, unsigned col, unsigned row, unsigned bit);
+        static uint16_t toTenBitMask(uint16_t pixReg);
 
     protected:
         void writeConfig(json &j);

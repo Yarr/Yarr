@@ -1,11 +1,9 @@
 #include "NetioTxCore.h"
-#include "NetioTools.h"
+
 #include <cstdint>
 #include <iostream>
 #include <iomanip>
 #include <chrono>
-
-#include "felixbase/client.hpp"
 
 #include "logging.h"
 
@@ -426,6 +424,12 @@ void NetioTxCore::prepareTrigger(){
 void NetioTxCore::doTriggerCnt() {
 
   prepareTrigger();
+
+  using clk = chrono::steady_clock;
+
+  clk::time_point last_trigger = clk::now();
+
+  const auto delta = std::chrono::nanoseconds((int64_t)(1e9/m_trigFreq));
 
   uint32_t trigs=0;
   if(m_Fwtrigger){

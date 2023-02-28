@@ -21,7 +21,7 @@ Rd53bGlobalCfg::Rd53bGlobalCfg() {
 
 Rd53bGlobalCfg::~Rd53bGlobalCfg() = default;
 
-uint16_t Rd53bGlobalCfg::getValue(Rd53bReg Rd53bGlobalCfg::*ref) const {
+uint16_t Rd53bGlobalCfg::getValue(Rd53bRegDefault Rd53bGlobalCfg::*ref) const {
     return (this->*ref).read();
 }
 
@@ -36,7 +36,7 @@ uint16_t Rd53bGlobalCfg::getValue(std::string name) const {
     return 0;
 }
 
-void Rd53bGlobalCfg::setValue(Rd53bReg Rd53bGlobalCfg::*ref, uint16_t val) {
+void Rd53bGlobalCfg::setValue(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t val) {
     (this->*ref).write(val);
 }
 
@@ -103,11 +103,11 @@ void Rd53bGlobalCfg::init() {
     //16
     DiffVff.init            ( 16, &m_cfg[ 16], 0, 10, 160); regMap["DiffVff"] = &Rd53bGlobalCfg::DiffVff;
     //17
-    DiffTh1L.init           ( 17, &m_cfg[ 17], 0, 10, 200); regMap["DiffTh1L"] = &Rd53bGlobalCfg::DiffTh1L;
+    DiffTh1L.init           ( 17, &m_cfg[ 17], 0, 10, 350); regMap["DiffTh1L"] = &Rd53bGlobalCfg::DiffTh1L;
     //18
-    DiffTh1R.init           ( 18, &m_cfg[ 18], 0, 10, 200); regMap["DiffTh1R"] = &Rd53bGlobalCfg::DiffTh1R;
+    DiffTh1R.init           ( 18, &m_cfg[ 18], 0, 10, 350); regMap["DiffTh1R"] = &Rd53bGlobalCfg::DiffTh1R;
     //19
-    DiffTh1M.init           ( 19, &m_cfg[ 19], 0, 10, 200); regMap["DiffTh1M"] = &Rd53bGlobalCfg::DiffTh1M;
+    DiffTh1M.init           ( 19, &m_cfg[ 19], 0, 10, 350); regMap["DiffTh1M"] = &Rd53bGlobalCfg::DiffTh1M;
     //20
     DiffTh2.init            ( 20, &m_cfg[ 20], 0, 10, 50); regMap["DiffTh2"] = &Rd53bGlobalCfg::DiffTh2;
     //21
@@ -407,8 +407,8 @@ void Rd53bGlobalCfg::init() {
     MonitoringDataAdc.init  (137, &m_cfg[137], 0, 12, 0); regMap["MonitoringDataAdc"] = &Rd53bGlobalCfg::MonitoringDataAdc;
 
     // Special virtual registers
-    InjVcalDiff.init(&InjVcalMed, &InjVcalHigh, true); virtRegMap["InjVcalDiff"] = (Rd53bReg Rd53bGlobalCfg::*)&Rd53bGlobalCfg::InjVcalDiff;
-    DiffTh1.init({&DiffTh1M, &DiffTh1L, &DiffTh1R}); virtRegMap["DiffTh1"] = (Rd53bReg Rd53bGlobalCfg::*) &Rd53bGlobalCfg::DiffTh1;
+    InjVcalDiff.init(&InjVcalMed, &InjVcalHigh, true); virtRegMap["InjVcalDiff"] = (Rd53bRegDefault Rd53bGlobalCfg::*)&Rd53bGlobalCfg::InjVcalDiff;
+    DiffTh1.init({&DiffTh1M, &DiffTh1L, &DiffTh1R}); virtRegMap["DiffTh1"] = (Rd53bRegDefault Rd53bGlobalCfg::*) &Rd53bGlobalCfg::DiffTh1;
 }
 
 void Rd53bGlobalCfg::writeConfig(json &j) {

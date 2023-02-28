@@ -42,14 +42,16 @@ class BdaqTxCore : virtual public TxCore, virtual public Bdaq {
         void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) override {}
         void resetTriggerLogic() override {}
         uint32_t getTrigInCount() override { return 0; }
+
+       // Helper functions
+        bool isPeriod(const std::vector<uint8_t> v, int n);
+
     protected:
         bool m_softwareAZ;
 
     private:
         // Registers Configuration
         std::vector<uint8_t> cmdData;
-        std::vector<uint8_t> cmdData1;
-        std::vector<uint8_t> cmdData2;
         void sendCommand();
 
         // Common Command Repeater (Trigger)
@@ -61,6 +63,7 @@ class BdaqTxCore : virtual public TxCore, virtual public Bdaq {
         uint hardwareTriggerNoop = 0;
         void hardwareTriggerSet();
         void hardwareTriggerRun();
+        bool firstTrigger = false;
 
         // Emulated Timed Trigger 
         bool timedTrigger = false;

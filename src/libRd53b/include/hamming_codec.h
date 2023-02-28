@@ -43,7 +43,7 @@ SOFTWARE.
 #include <sstream>
 #include <numeric> // accumulate
 #include <algorithm> // reverse, find
-#include <math.h>
+#include <cmath>
 
 namespace hamming_codec {
 

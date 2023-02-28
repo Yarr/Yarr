@@ -33,10 +33,11 @@ std::string ScanConsoleImpl::parseConfig(const std::vector<std::string> &args) {
     json result;
     result["status"] = "failed";
     int argc = args.size();
-    char *argv[argc];
+    char *argv[argc+1];
     for (int i = 0; i < argc; i++) {
         argv[i] = (char *) args[i].c_str();
     }
+    argv[argc] = nullptr; // should be a null terminated array
     ScanOpts options;
     json scanConsoleConfig;
     int res = ScanHelper::parseOptions(argc, argv, options);
@@ -93,7 +94,6 @@ int ScanConsoleImpl::init(ScanOpts options) {
 
 
 int ScanConsoleImpl::loadConfig() {
-    ScanHelper::loadConfigFile(scanOpts, true, scanConsoleConfig);
     int result = ScanHelper::loadConfigFile(scanOpts, true, scanConsoleConfig);
     if(result<0) {
         logger->error("Failed to read configs");
@@ -303,6 +303,12 @@ int ScanConsoleImpl::configure() {
             logger->critical("Can't establish communication, aborting!");
             return -1;
         }
+        // check that the current FE name is valid
+        if (!fe->hasValidName()) {
+            logger->critical("Invalid chip name, aborting!");
+            return -1;
+        }
+
         logger->info("... success!");
     }
 
@@ -443,6 +449,7 @@ void ScanConsoleImpl::cleanup() {
         // store output results (if any)
         if(analyses.empty()) continue;
         logger->info("-> Storing output results of FE {}", feCfg->getRxChannel());
+        if (fe->clipResult.empty()) continue;
         auto &output = *(fe->clipResult.back());
         std::string name = feCfg->getName();
         if (output.empty()) {
@@ -584,3 +591,16 @@ void ScanConsoleImpl::dump() {
     scanLog.dump();
 }
 
+void ScanConsoleImpl::setupLogger(const char *config) {
+    json loggerConfig;
+    loggerConfig["pattern"] = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";
+    loggerConfig["log_config"][0]["name"] = "all";
+    loggerConfig["log_config"][0]["level"] = "info";
+    loggerConfig["outputDir"] = "";
+    if (config) {
+        try {
+            json::parse(config, loggerConfig);
+        } catch (...) {}
+    }
+    logging::setupLoggers(loggerConfig);
+}

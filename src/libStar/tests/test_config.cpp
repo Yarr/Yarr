@@ -79,6 +79,9 @@ TEST_CASE("StarCfg", "[star][config]") {
 
   REQUIRE (test_config.getABCRegister(ABCStarRegister::CREG0, abc_id) == creg0_response);
   REQUIRE (test_config.getSubRegisterParentValue(abc_index, "TESTPATT1") == creg0_response);
+
+  json j;
+  test_config.writeConfig(j);
 }
 
 // Some ABC v1 specific registers
@@ -285,10 +288,17 @@ TEST_CASE("StarCfg_HCCv1", "[star][config]") {
   hcc.setSubRegisterValue("EPLLENABLEPHASE", 0x3);
   hcc.setSubRegisterValue("EPLLPHASE160", 0x7);
 
+  REQUIRE (hcc.getSubRegisterValue("EPLLICP") == 0xf);
+  REQUIRE (hcc.getSubRegisterValue("EPLLRES") == 0xf);
+  REQUIRE (hcc.getSubRegisterValue("EPLLPHASE160") == 0x7);
+
   uint32_t pll1 = 0xe0033f3f;
 
   REQUIRE (test_config.getHCCRegister(HCCStarRegister::PLL1) == pll1);
   REQUIRE (hcc.getSubRegisterParentValue("EPLLPHASE160") == pll1);
+
+  json j;
+  test_config.writeConfig(j);
 }
 
 TEST_CASE("Star_HccRegInfo", "[star][config]") {

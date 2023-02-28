@@ -1,10 +1,8 @@
 add_library(Emu SHARED
-        EmuCom.cpp
         PixelModel.cpp
         Rd53aDiffPixelModel.cpp
         Rd53aLinPixelModel.cpp
         Rd53aSyncPixelModel.cpp
-        RingBuffer.cpp
         StripModel.cpp)
 
 post_build_debug_library(Emu)

@@ -18,7 +18,6 @@ public:
     int init(const ScanOpts options);
     int init(int argc, char *argv[]);
     int init(const std::vector<std::string> &args);
-    std::vector<std::string> getLog(unsigned n = 0);
     int loadConfig();
     int loadConfig(const json &config);
     int loadConfig(const char *config);
@@ -32,6 +31,8 @@ public:
     void getResults(json &result);
     void run();
     void dump();
+    static std::vector<std::string> getLog(std::size_t lim);
+    static void setupLogger(const char *config=nullptr);
     ~ScanConsole();
 private:
     std::unique_ptr<ScanConsoleImpl> pimpl;

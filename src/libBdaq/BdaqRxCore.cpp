@@ -1,6 +1,15 @@
 #include <thread>
 
+#include <chrono>
+#include <iostream>
+#include <algorithm>
+
+
 #include "BdaqRxCore.h"
+#include "Bdaq.h"
+
+#include "BdaqTxCore.h"
+#include "StdDataLoop.h"
 
 #include "logging.h"
 
@@ -90,8 +99,6 @@ void BdaqRxCore::checkRxSync() {
 std::vector<RawDataPtr> BdaqRxCore::readData() {
      uint size = fifo.getAvailableWords();
      std::vector<RawDataPtr> dataVec;
-     std::map<uint32_t, std::vector<uint32_t>> dataMap_copy;
-     dataMap_copy.clear();
      std::vector<uint32_t> inBuf;
      fifo.readData(inBuf, size);
 
@@ -175,7 +182,6 @@ std::vector<RawDataPtr> BdaqRxCore::readData() {
                  }
              }
 
-             // TODO need to decode the data (sortChannels, buildStream)
              for (const uint32_t channelId : activeChannels) {
                  RawDataPtr data;
                  data = std::make_shared <RawData> (channelId, dataMap_copy[channelId]);
@@ -186,8 +192,7 @@ std::vector<RawDataPtr> BdaqRxCore::readData() {
          }else{
              return std::vector<RawDataPtr>();
          }
-
-
+                                   
      }else if (chipType == 1){ // it is ItkPixV1 (RD53B)
          if (size > 0) {
              for (const auto& word : inBuf) {
@@ -200,7 +205,7 @@ std::vector<RawDataPtr> BdaqRxCore::readData() {
                      exit(-1);
                  }
                  for (auto& channelId : activeChannels) {
-                     if (((word >> 20) & 0x0F) == channelId) {  // to be checked in build data case
+                     if (((word >> 20) & 0xF) == channelId) {
                          // Testing Aurora RX Identifier
                          dataMap[channelId].push_back(word);
                      }
@@ -219,7 +224,7 @@ std::vector<RawDataPtr> BdaqRxCore::readData() {
                              // Building USERK frame (userkWordA and userkWordB)
                              if(userk_word_cnt == 0){
                                  userk_word = data_map.second.front() & 0x0FFF;
-                                 userkWordA = userk_word;
+                                 userkWordA = data_map.second.front();
                                  data_map.second.erase(data_map.second.begin());
                              }else{
                                  userk_word = userk_word << 16 | data_map.second.front() & 0xFFFF;
@@ -240,19 +245,30 @@ std::vector<RawDataPtr> BdaqRxCore::readData() {
                                  userk_word_cnt = 0;
                              }
                          }
+
+
                      }else if(data_map.second.size() > 1){
                          // build Data
-                         uint32_t dataWord;
-                         uint64_t hi;
-                         uint64_t lo;
-                         dataMap_copy[channel].clear();
-                         while(data_map.second.size() > 1){
-                             hi = data_map.second.front() & 0xFFFF;
+                         uint32_t dataWordFirstHalf;
+                         uint32_t dataWordSecondHalf;
+                         uint64_t HiOne;
+                         uint64_t LoOne;
+                         uint64_t HiTwo;
+                         uint64_t LoTwo;
+                         while(data_map.second.size() > 3){
+                             HiOne = data_map.second.front() & 0xFFFF;
                              data_map.second.erase(data_map.second.begin());
-                             lo = data_map.second.front() & 0xFFFF;
+                             LoOne = data_map.second.front() & 0xFFFF;
                              data_map.second.erase(data_map.second.begin());
-                             dataWord = (hi << 16) | lo;
-                             dataMap_copy[channel].push_back(dataWord);
+                             dataWordFirstHalf = (HiOne << 16) | LoOne;
+                             dataMap_copy[channel].push_back(dataWordFirstHalf);
+
+                             HiTwo = data_map.second.front() & 0xFFFF;
+                             data_map.second.erase(data_map.second.begin());
+                             LoTwo = data_map.second.front() & 0xFFFF;
+                             data_map.second.erase(data_map.second.begin());
+                             dataWordSecondHalf = (HiTwo << 16) | LoTwo;
+                             dataMap_copy[channel].push_back(dataWordSecondHalf);
                          }
                      }else{
                          dataMap_copy[channel].clear();
@@ -266,16 +282,16 @@ std::vector<RawDataPtr> BdaqRxCore::readData() {
                  }
              }
 
-             // TODO need to decode the data (sortChannels, buildStream)
              for (const uint32_t channelId : activeChannels) {
-                 RawDataPtr data;
-                 data = std::make_shared <RawData> (channelId, dataMap_copy[channelId]);
-                 data->getAdr() = channelId;  // set rx channel number as address for data
-                 dataVec.push_back(data);
-                 dataMap_copy[channelId].clear();
+                 if(dataMap_copy[channelId].size() > 0){
+                     RawDataPtr data;
+                     data = std::make_shared <RawData> (channelId, dataMap_copy[channelId]);
+                     data->getAdr() = channelId;  // set rx channel number as address for data
+                     dataVec.push_back(data);
+                     dataMap_copy[channelId].clear();
+                 }
              }
-
-         }else{
+         }else {
              return std::vector<RawDataPtr>();
          }
      }
@@ -446,7 +462,7 @@ void BdaqRxCore::encodeToYarr(BdaqRxCore::regDataT in, uint32_t* out,
 // TDC Data Decoding ===========================================================
 
 bool BdaqRxCore::checkTDC(const uint32_t& word) {
-    if (((word & TDC_HEADER_MASK) == TDC_ID_0) ||
+    if (((word & TDC_HEADER_MASK) == TDC_ID_0) || 
         ((word & TDC_HEADER_MASK) == TDC_ID_1) ||
         ((word & TDC_HEADER_MASK) == TDC_ID_2) ||
         ((word & TDC_HEADER_MASK) == TDC_ID_3)) return true;
