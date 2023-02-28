@@ -27,13 +27,13 @@ NetioTxCore::NetioTxCore()
   m_padding = false;
   m_flip = false;
   m_manchester = false;
-  m_buffersize = 0;
   m_felixhost = "localhost";
   m_felixport = 12340;
 
   m_context = new context("posix");
   m_socket = new low_latency_send_socket(m_context);
   m_Fwtrigger = false;
+  m_bufferSize = 0;
 
 }
 
@@ -240,7 +240,7 @@ void NetioTxCore::releaseFifo(){
       buffer_size += this_fifo.size(); //total size of buffer from all active elinks
     }
 
-  if(buffer_size>m_buffersize){
+  if(buffer_size>m_bufferSize){
     sendFifo();
   }
 
@@ -484,25 +484,25 @@ void NetioTxCore::printFifo(uint32_t elink){
 
 void NetioTxCore::writeConfig(json &j)  {
   j["NetIO"]["host"] = m_felixhost;
-  j["NetIO"]["txport"] = m_felixport;
+  j["NetIO"]["txPort"] = m_felixport;
   j["NetIO"]["manchester"] = m_manchester;
   j["NetIO"]["flip"] = m_flip;
   j["NetIO"]["extend"] = (m_extend == 4);
-  j["NetIO"]["buffersize"] = m_buffersize;
+  j["NetIO"]["bufferSize"] = m_bufferSize;
   j["NetIO"]["Fwtrigger"] = m_Fwtrigger;
 }
 
 void NetioTxCore::loadConfig(const json &j){
    m_felixhost  = j["NetIO"]["host"];
-   m_felixport  = j["NetIO"]["txport"];
+   m_felixport  = j["NetIO"]["txPort"];
    m_manchester = j["NetIO"]["manchester"];
    m_flip       = j["NetIO"]["flip"];
    m_extend     = (j["NetIO"]["extend"]?4:1);
-   m_feType     = j["NetIO"]["fetype"];
+   m_feType     = j["NetIO"]["feType"];
 
-   if(j["NetIO"].contains("buffersize")){
-     m_buffersize = j["NetIO"]["buffersize"];
-     nlog->info(" buffersize={}", m_buffersize);
+   if(j["NetIO"].contains("bufferSize")){
+     m_bufferSize = j["NetIO"]["bufferSize"];
+     nlog->info(" bufferSize={}", m_bufferSize);
    }
 
    if(j["NetIO"].contains("Fwtrigger")){
@@ -514,5 +514,5 @@ void NetioTxCore::loadConfig(const json &j){
    nlog->info(" manchester={}", m_manchester);
    nlog->info(" flip={}", m_flip);
    nlog->info(" extend={}", m_extend);
-   nlog->info(" fetype={}", m_feType);
+   nlog->info(" feType={}", m_feType);
 }

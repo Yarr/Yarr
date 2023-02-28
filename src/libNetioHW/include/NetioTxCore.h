@@ -88,7 +88,7 @@ private:
   bool m_padding;
   bool m_flip;
   bool m_manchester;
-  int m_buffersize;
+  int m_bufferSize;
   bool m_debug;
 
   void enableChannel(uint32_t channel);

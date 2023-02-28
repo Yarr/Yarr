@@ -422,8 +422,8 @@ void help()
 int main(int argc, char** argv)
 {
   // Defaults, NetioTxCore sends to 12340 and NetioRxCore recvs from 12350
-  unsigned short rxport = 12340;
-  unsigned short txport = 12350;
+  unsigned short rxPort = 12340;
+  unsigned short txPort = 12350;
 
   // Potentially remote could be different for tx and rx
   std::string host = "127.0.0.1";
@@ -446,10 +446,10 @@ int main(int argc, char** argv)
       host = optarg;
       break;
     case 'p':
-      rxport = atoi(optarg);
+      rxPort = atoi(optarg);
       break;
     case 'q':
-      txport = atoi(optarg);
+      txPort = atoi(optarg);
       break;
     case 'f':
       fname = optarg;
@@ -539,23 +539,23 @@ int main(int argc, char** argv)
   tags.push_back(0);
 
   if(do_publish) {
-    sender.reset(new SenderPublish(&ctx, tags, txport));
+    sender.reset(new SenderPublish(&ctx, tags, txPort));
   } else if (sockettype == SOCKET_LL) {
-    sender.reset(new SenderLL(&ctx, host, txport));
+    sender.reset(new SenderLL(&ctx, host, txPort));
   } else if(sockettype == SOCKET_HT) {
-    sender.reset(new SenderHT(&ctx, host, txport));
+    sender.reset(new SenderHT(&ctx, host, txPort));
   }
 
   if(do_subscribe) {
     if(sockettype == SOCKET_LL) {
-      receiver.reset(new ReceiverSubscribeLL(&ctx, host, rxport, tags));
+      receiver.reset(new ReceiverSubscribeLL(&ctx, host, rxPort, tags));
     } else if(sockettype == SOCKET_HT) {
-      receiver.reset(new ReceiverSubscribeHT(&ctx, host, rxport, tags));
+      receiver.reset(new ReceiverSubscribeHT(&ctx, host, rxPort, tags));
     }
   } else if (sockettype == SOCKET_LL) {
-    receiver.reset(new ReceiverLL(&ctx, rxport));
+    receiver.reset(new ReceiverLL(&ctx, rxPort));
   } else if(sockettype == SOCKET_HT) {
-    receiver.reset(new ReceiverHT(&ctx, rxport));
+    receiver.reset(new ReceiverHT(&ctx, rxPort));
   } else {
     logger->error("No socket type selected");
     exit(1);

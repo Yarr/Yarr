@@ -4,13 +4,13 @@
     "cfg": {
       "NetIO": {
         "host": "127.0.0.1",
-        "txport": 12340,
-        "rxport": 12350,
+        "txPort": 12340,
+        "rxPort": 12350,
         "manchester": false,
         "flip": false,
         "extend": false,
-        "fetype": "star",
-        "rx_wait_time": 500
+        "feType": "star",
+        "rxWaitTime": 500
       }
     }
   }

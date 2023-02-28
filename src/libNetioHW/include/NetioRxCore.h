@@ -78,7 +78,7 @@ public:
   /**
    * @brief read configuration from json
    * @param j reference to string where to write the configuration from
-   * Json structure should be {"NetIO":{"host":"hostname","rxport":port}}
+   * Json structure should be {"NetIO":{"host":"hostname","rxPort":port}}
    **/
   void loadConfig(const json &j);
 
@@ -87,7 +87,7 @@ private:
   int rxDataCount;
 
   // used as flag for merge
-  std::string m_fetype;
+  std::string m_feType;
 
 
   void enableChannel(uint64_t chn);
@@ -108,6 +108,7 @@ private:
 
   NetioHandler m_nioh;              //! NetioHandler object
   std::chrono::steady_clock::time_point m_t0; //! clock used for time measurements  
+
 };
 
 #endif

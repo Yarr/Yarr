@@ -41,7 +41,7 @@ public:
   void setFelixRXPort(uint16_t felixRXPort){m_felixRXPort=felixRXPort;}
 
   // set flag to keep rd53a and strips specific things seperate
-  void setFeType(std::string fetype){m_feType=fetype;}
+  void setFeType(std::string feType){m_feType=feType;}
 
   NetioHandler(std::string contextStr, std::string felixHost, uint16_t felixRXPort);
   //MW: FIX CLANG COMPILATION
@@ -63,7 +63,7 @@ private:
   std::map<uint64_t, netio::low_latency_subscribe_socket*> m_sub_sockets; // subscribe sockets.
 
   // used to keep strips and rd53a specific things seperate
-  std::string fetype; // rd53a or fei4
+  std::string feType; // rd53a or fei4
 
   // Other statistics for channels:
   std::map<uint64_t, uint32_t> m_msgErrors;

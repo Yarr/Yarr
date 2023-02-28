@@ -158,19 +158,19 @@ bool NetioRxCore::isBridgeEmpty(){ // True, if queues are stable.
 
 void NetioRxCore::writeConfig(json &j) {
   j["NetIO"]["host"] = m_felixhost;
-  j["NetIO"]["rxport"] = m_felixport;
+  j["NetIO"]["rxPort"] = m_felixport;
 }
 
 void NetioRxCore::loadConfig(const json &j) {
   m_felixhost = j["NetIO"]["host"];
-  m_felixport = j["NetIO"]["rxport"];
-  m_fetype = j["NetIO"]["fetype"];
-  m_nioh.setFeType(m_fetype);
+  m_felixport = j["NetIO"]["rxPort"];
+  m_feType = j["NetIO"]["feType"];
+  m_nioh.setFeType(m_feType);
   m_nioh.setFelixHost(m_felixhost);
   m_nioh.setFelixRXPort(m_felixport);
 
-  if (j["NetIO"].contains("rx_wait_time")) {
-    m_waitTime = std::chrono::microseconds(j["NetIO"]["rx_wait_time"]);
+  if (j["NetIO"].contains("rxWaitTime")) {
+    m_waitTime = std::chrono::microseconds(j["NetIO"]["rxWaitTime"]);
   }
 }
 
