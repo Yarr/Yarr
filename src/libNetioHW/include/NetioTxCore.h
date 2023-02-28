@@ -66,7 +66,7 @@ private:
   uint32_t m_trigTime;                       //! trigger time
   uint32_t m_trigFreq;                       //! trigger frequency
   uint32_t m_trigWordLength;                 //! number of trigger words
-  bool     m_Fwtrigger;                          //! Cal+trigger from F/W 
+  bool     m_pixFwTrigger;                          //! Cal+trigger from F/W 
   std::vector<uint32_t> m_trigWords;         //! the trigger words
   std::map<uint32_t, std::vector<uint8_t> > m_trigFifo;  //! fifo per elink
   std::map<uint32_t, std::vector<uint8_t> > m_fifo;  //! fifo per elink

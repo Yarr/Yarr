@@ -32,7 +32,7 @@ NetioTxCore::NetioTxCore()
 
   m_context = new context("posix");
   m_socket = new low_latency_send_socket(m_context);
-  m_Fwtrigger = false;
+  m_pixFwTrigger = false;
   m_bufferSize = 0;
 
 }
@@ -233,12 +233,13 @@ void NetioTxCore::releaseFifo(){
   map<uint32_t,bool>::iterator it;
   int buffer_size = 0;
 
-  for(it=m_elinks.begin();it!=m_elinks.end();it++)
+  for(it=m_elinks.begin();it!=m_elinks.end();it++){
     if(it->second){
       auto elink = it->first;
       auto &this_fifo = m_fifo[elink];
       buffer_size += this_fifo.size(); //total size of buffer from all active elinks
     }
+  }
 
   if(buffer_size>m_bufferSize){
     sendFifo();
@@ -397,7 +398,8 @@ void NetioTxCore::prepareTrigger(){
 
     // send a sync to make sure the following commands are not interrrupted for a while
     //MT
-    if(m_Fwtrigger){ //special 16b character in the F/W = {1110, #iteration (7b), frequency(5b)
+    //For ITk pixel RM 5.0 firmware
+    if(m_pixFwTrigger){ //special 16b character in the F/W = {1110, #iteration (7b), frequency(5b)
       uint32_t trigFreq_ratio = (40000000/m_trigFreq)/256; //40 Mhz/m_trigFreq(Hz) and /256 as F/W can in/decrease frequency only in multiple of 128
 
       if(trigFreq_ratio > 31) {cerr<<"m_trigFreq "<<m_trigFreq<<" not supported by the F/W. Supported frequency is >= 9.8 kHz"<<endl; exit(1);} //9.8 is wrong
@@ -432,7 +434,7 @@ void NetioTxCore::doTriggerCnt() {
   const auto delta = std::chrono::nanoseconds((int64_t)(1e9/m_trigFreq));
 
   uint32_t trigs=0;
-  if(m_Fwtrigger){
+  if(m_pixFwTrigger){
     for(uint32_t i=0; i<1; i++) {
       if(m_trigEnabled==false) break;
       trigs=m_trigCnt;
@@ -489,7 +491,7 @@ void NetioTxCore::writeConfig(json &j)  {
   j["NetIO"]["flip"] = m_flip;
   j["NetIO"]["extend"] = (m_extend == 4);
   j["NetIO"]["bufferSize"] = m_bufferSize;
-  j["NetIO"]["Fwtrigger"] = m_Fwtrigger;
+  j["NetIO"]["pixFwTrigger"] = m_pixFwTrigger;
 }
 
 void NetioTxCore::loadConfig(const json &j){
@@ -505,9 +507,9 @@ void NetioTxCore::loadConfig(const json &j){
      nlog->info(" bufferSize={}", m_bufferSize);
    }
 
-   if(j["NetIO"].contains("Fwtrigger")){
-     m_Fwtrigger = j["NetIO"]["Fwtrigger"];
-     nlog->info(" Fwtrigger={}", m_Fwtrigger);
+   if(j["NetIO"].contains("pixFwTrigger")){
+     m_pixFwTrigger = j["NetIO"]["pixFwTrigger"];
+     nlog->info(" pixFwTrigger={}", m_pixFwTrigger);
    }
 
    nlog->info("NetioTxCore:");
