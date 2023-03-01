@@ -91,14 +91,16 @@ int specdriver_umem_sgmap(specdriver_privdata_t *privdata, umem_handle_t *umem_h
 	mod_info_dbg("allocated space for the SG list.\n");
 
 	/* Get the page information */
-	down_read(&current->mm->mmap_sem);
+	mmap_read_lock(current->mm);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,6,0)
 	res = get_user_pages_remote(
 #else
 	res = get_user_pages(
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,9,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,9,0) && LINUX_VERSION_CODE < KERNEL_VERSION(5,9,0)
 				current,
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,9,0)
 				current->mm,
 				umem_handle->vma,
 				nr_pages,
@@ -116,7 +118,7 @@ int specdriver_umem_sgmap(specdriver_privdata_t *privdata, umem_handle_t *umem_h
 				pages,
 				NULL );
 #endif
-	up_read(&current->mm->mmap_sem);
+	mmap_read_unlock(current->mm);
 
 	/* Error, not all pages mapped */
 	if (res < (int)nr_pages) {

@@ -75,7 +75,7 @@ int specdriver_probe_irq(specdriver_privdata_t *privdata)
 		if (bar_flags & IORESOURCE_PREFETCH)
 			privdata->bars_kmapped[i] = ioremap(bar_addr, bar_len);
 		else
-			privdata->bars_kmapped[i] = ioremap_nocache(bar_addr, bar_len);
+			privdata->bars_kmapped[i] = ioremap_cache(bar_addr, bar_len);
 
 		/* check for error */
 		if (privdata->bars_kmapped[i] == NULL) {
