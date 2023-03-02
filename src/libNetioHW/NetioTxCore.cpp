@@ -211,18 +211,18 @@ void NetioTxCore::sendFifo(){
     	m_size.push_back(this_fifo.size());	
     }
 
-  message msg(m_data,m_size);                                                                                                                             
-  //Send through the socket                                                                                                                               
-  m_socket->send(msg);                                                                                                                                    
-                                                                                                                                                          
-  for(it=m_elinks.begin();it!=m_elinks.end();it++){                                                                                                       
-    if(it->second==false) continue;                                                                                                                       
-    m_fifo[it->first].clear();                                                                                                                            
-  }                                                                                                                                                       
-                                                                                                                                                      
-  m_size.clear();                                                                                                                                         
-  m_data.clear();                                                                                                                                    
-                                                                                                                                                          
+  message msg(m_data,m_size);
+  //Send through the socket
+  m_socket->send(msg);
+
+  for(it=m_elinks.begin();it!=m_elinks.end();it++){
+    if(it->second==false) continue;
+    m_fifo[it->first].clear();
+  }
+
+  m_size.clear();
+  m_data.clear();
+
   return;
 }
 
@@ -495,12 +495,12 @@ void NetioTxCore::writeConfig(json &j)  {
 }
 
 void NetioTxCore::loadConfig(const json &j){
-   m_felixhost  = j["NetIO"]["host"];
-   m_felixport  = j["NetIO"]["txPort"];
-   m_manchester = j["NetIO"]["manchester"];
-   m_flip       = j["NetIO"]["flip"];
-   m_extend     = (j["NetIO"]["extend"]?4:1);
-   m_feType     = j["NetIO"]["feType"];
+   if j["NetIO"].contains("host") m_felixhost  = j["NetIO"]["host"];
+   if j["NetIO"].contains("txPort") m_felixport  = j["NetIO"]["txPort"];
+   if j["NetIO"].contains("manchester") m_manchester = j["NetIO"]["manchester"];
+   if j["NetIO"].contains("flip") m_flip       = j["NetIO"]["flip"];
+   if j["NetIO"].contains("extend") m_extend     = (j["NetIO"]["extend"]?4:1);
+   if j["NetIO"].contains("feType") m_feType     = j["NetIO"]["feType"];
 
    if(j["NetIO"].contains("bufferSize")){
      m_bufferSize = j["NetIO"]["bufferSize"];

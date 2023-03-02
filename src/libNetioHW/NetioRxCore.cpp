@@ -162,9 +162,9 @@ void NetioRxCore::writeConfig(json &j) {
 }
 
 void NetioRxCore::loadConfig(const json &j) {
-  m_felixhost = j["NetIO"]["host"];
-  m_felixport = j["NetIO"]["rxPort"];
-  m_feType = j["NetIO"]["feType"];
+  if j["NetIO"].contains("host") m_felixhost = j["NetIO"]["host"];
+  if j["NetIO"].contains("rxPort") m_felixport = j["NetIO"]["rxPort"];
+  if j["NetIO"].contains("feType") m_feType = j["NetIO"]["feType"];
   m_nioh.setFeType(m_feType);
   m_nioh.setFelixHost(m_felixhost);
   m_nioh.setFelixRXPort(m_felixport);
