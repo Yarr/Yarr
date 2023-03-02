@@ -495,12 +495,12 @@ void NetioTxCore::writeConfig(json &j)  {
 }
 
 void NetioTxCore::loadConfig(const json &j){
-   if j["NetIO"].contains("host") m_felixhost  = j["NetIO"]["host"];
-   if j["NetIO"].contains("txPort") m_felixport  = j["NetIO"]["txPort"];
-   if j["NetIO"].contains("manchester") m_manchester = j["NetIO"]["manchester"];
-   if j["NetIO"].contains("flip") m_flip       = j["NetIO"]["flip"];
-   if j["NetIO"].contains("extend") m_extend     = (j["NetIO"]["extend"]?4:1);
-   if j["NetIO"].contains("feType") m_feType     = j["NetIO"]["feType"];
+   if (j["NetIO"].contains("host")) m_felixhost  = j["NetIO"]["host"];
+   if (j["NetIO"].contains("txPort")) m_felixport  = j["NetIO"]["txPort"];
+   if (j["NetIO"].contains("manchester")) m_manchester = j["NetIO"]["manchester"];
+   if (j["NetIO"].contains("flip")) m_flip       = j["NetIO"]["flip"];
+   if (j["NetIO"].contains("extend")) m_extend     = (j["NetIO"]["extend"]?4:1);
+   if (j["NetIO"].contains("feType")) m_feType     = j["NetIO"]["feType"];
 
    if(j["NetIO"].contains("bufferSize")){
      m_bufferSize = j["NetIO"]["bufferSize"];
