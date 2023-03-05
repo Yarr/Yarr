@@ -69,9 +69,9 @@ void NetioTxCore::disableChannel(uint32_t elink){
 }
 
 void NetioTxCore::disableAllChannels() {
-    for (auto it=m_elinks.begin();it!=m_elinks.end();it++) {
-        m_elinks[it->first] = false;
-        nlog->debug("disabling channel: {}", it->first);
+    for (const auto it: m_elinks) {
+        m_elinks[it.first] = false;
+        nlog->debug("disabling channel: {}", it.first);
     }
 }
 
@@ -105,10 +105,10 @@ void NetioTxCore::writeFifo(uint32_t value){
 
   for(const auto it : m_elinks)
     //check if the e-link is active, and if so write on correspoding FIFO
-    if(it->second) {
-      nlog->trace("it->first: {}, it->second: {}",
-                  it->first, it->second);
-      writeFifo(it->first,value);
+    if(it.second) {
+      nlog->trace("it.first: {}, it.second: {}",
+                  it.first, it.second);
+      writeFifo(it.first,value);
     }
 }
 
@@ -195,8 +195,8 @@ void NetioTxCore::sendFifo(){
   for(const auto it : m_elinks)
     //check if e-link is active and, if so,
     // prepare FIFO for sending and flush if appropriate
-    if(it->second){
-        auto elink = it->first;
+    if(it.second){
+        auto elink = it.first;
         auto &this_fifo = m_fifo[elink];
     	prepareFifo(&this_fifo);
         nlog->trace("FIFO[{}][{}]: ", elink, this_fifo.size()-1);
@@ -216,9 +216,9 @@ void NetioTxCore::sendFifo(){
   //Send through the socket
   m_socket->send(msg);
 
-  for(it=m_elinks.begin();it!=m_elinks.end();it++){
-    if(it->second==false) continue;
-    m_fifo[it->first].clear();
+  for(const auto it : m_elinks){
+    if(it.second==false) continue;
+    m_fifo[it.first].clear();
   }
 
   m_size.clear();
@@ -236,8 +236,8 @@ void NetioTxCore::releaseFifo(){
   for(const auto it : m_elinks){
     //check if e-link is active and, if so,
     // prepare FIFO for flushing if conditions are met.
-    if(it->second){
-      auto elink = it->first;
+    if(it.second){
+      auto elink = it.first;
       auto &this_fifo = m_fifo[elink];
       buffer_size += this_fifo.size(); //total size of buffer from all active elinks
     }
@@ -265,14 +265,14 @@ void NetioTxCore::trigger(){
   //create the message for NetIO
   for(const auto it : m_elinks)
     //loop over active e-links
-    if(it->second){
-    	//prepareFifo(&m_trigFifo[it->first]);
-    	headers[it->first].elinkid=it->first;
-    	headers[it->first].length=m_trigFifo[it->first].size();
-    	data.push_back((uint8_t*)&(headers[it->first]));
+    if(it.second){
+    	//prepareFifo(&m_trigFifo[it.first]);
+    	headers[it.first].elinkid=it.first;
+    	headers[it.first].length=m_trigFifo[it.first].size();
+    	data.push_back((uint8_t*)&(headers[it.first]));
     	size.push_back(sizeof(felix::base::ToFELIXHeader));
-    	data.push_back((uint8_t*)&m_trigFifo[it->first][0]);
-    	size.push_back(m_trigFifo[it->first].size());	
+    	data.push_back((uint8_t*)&m_trigFifo[it.first][0]);
+    	size.push_back(m_trigFifo[it.first].size());	
     }
 
   message msg(data,size);
@@ -282,8 +282,8 @@ void NetioTxCore::trigger(){
 
   //the trigger fifo is emptied somewhere else
   //for(it=m_elinks.begin();it!=m_elinks.end();it++){
-    //if(it->second)
-    	//m_trigFifo[it->first].clear();
+    //if(it.second)
+    	//m_trigFifo[it.first].clear();
   //}
 
   size.clear();
@@ -302,8 +302,8 @@ bool NetioTxCore::isCmdEmpty(){
 
   bool is_buffer_empty = true;
   for(const auto it : m_elinks)
-    if(it->second)
-      if(!m_fifo[it->first].empty()) 
+    if(it.second)
+      if(!m_fifo[it.first].empty()) 
 	is_buffer_empty = false;
 
   if (not is_buffer_empty){
@@ -393,8 +393,8 @@ uint32_t NetioTxCore::getTrigInCount(){
 }
 
 void NetioTxCore::prepareTrigger(){
-  for(auto it=m_elinks.begin();it!=m_elinks.end();it++){
-    m_trigFifo[it->first].clear();
+  for(auto it : m_elinks){
+    m_trigFifo[it.first].clear();
 
     // send a sync to make sure the following commands are not interrrupted for a while
     //MT
@@ -408,18 +408,18 @@ void NetioTxCore::prepareTrigger(){
 				
       uint32_t calinj_char = 0x817e<<16 | (0xE<<12 & 0xF000) | (m_trigCnt<<5 & 0xFE0) | (trigFreq_ratio & 0x1F);
       //      printf("m_trigCnt=%d, m_trigFreq=%d, calinj_char=\%08x \n", m_trigCnt, m_trigFreq, calinj_char);
-      writeFifo(&m_trigFifo[it->first],calinj_char);
+      writeFifo(&m_trigFifo[it.first],calinj_char);
     }
     else{
       if (m_feType == "rd53a")
-        writeFifo(&m_trigFifo[it->first],0x817e817e);    
+        writeFifo(&m_trigFifo[it.first],0x817e817e);    
 
       for(int32_t j=m_trigWords.size()-1; j>=0;j--){
-	writeFifo(&m_trigFifo[it->first],m_trigWords[j]);
+	writeFifo(&m_trigFifo[it.first],m_trigWords[j]);
       }
     }
-    //writeFifo(&m_trigFifo[it->first],0x0); //Waste!
-    prepareFifo(&m_trigFifo[it->first]);
+    //writeFifo(&m_trigFifo[it.first],0x0); //Waste!
+    prepareFifo(&m_trigFifo[it.first]);
   }
 }
 
@@ -434,20 +434,21 @@ void NetioTxCore::doTriggerCnt() {
   const auto delta = std::chrono::nanoseconds((int64_t)(1e9/m_trigFreq));
 
   uint32_t trigs=0;
-  if(m_pixFwTrigger){
-    // send a single command that will start the firmware-based trigger sequence
-    if(m_trigEnabled==false) break;
-    trigs=m_trigCnt;
-    trigger();
-    std::this_thread::sleep_for(std::chrono::microseconds((int)(1e6*m_trigCnt/m_trigFreq)));      
-  }
-  else{ //
-    for(uint32_t i=0; i<m_trigCnt; i++) {
-      if(m_trigEnabled==false) break;
-      trigs++;
+  if (m_trigEnabled) {
+    if (m_pixFwTrigger){
+      // send a single command that will start the firmware-based trigger sequence
+      trigs=m_trigCnt;
       trigger();
-      last_trigger += delta;
-      std::this_thread::sleep_until(last_trigger);
+      std::this_thread::sleep_for(std::chrono::microseconds((int)(1e6*m_trigCnt/m_trigFreq)));      
+    }
+    else{ //
+      for(uint32_t i=0; i<m_trigCnt; i++) {
+	if(m_trigEnabled==false) break;
+	trigs++;
+	trigger();
+	last_trigger += delta;
+	std::this_thread::sleep_until(last_trigger);
+      }
     }
   }
   m_trigEnabled = false;
