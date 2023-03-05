@@ -102,9 +102,9 @@ uint32_t NetioTxCore::getCmdEnable() {
 void NetioTxCore::writeFifo(uint32_t value){
 
   nlog->trace("NetioTxCore::writeFifo val={:08x}", value);
-  map<uint32_t,bool>::iterator it;
 
-  for(it=m_elinks.begin();it!=m_elinks.end();it++)
+  for(const auto it : m_elinks)
+    //check if the e-link is active, and if so write on correspoding FIFO
     if(it->second) {
       nlog->trace("it->first: {}, it->second: {}",
                   it->first, it->second);
@@ -191,9 +191,10 @@ void NetioTxCore::sendFifo(){
   connect();
 
   nlog->trace("NetioTxCore::sendFifo");
-  map<uint32_t,bool>::iterator it;
 
-  for(it=m_elinks.begin();it!=m_elinks.end();it++)
+  for(const auto it : m_elinks)
+    //check if e-link is active and, if so,
+    // prepare FIFO for sending and flush if appropriate
     if(it->second){
         auto elink = it->first;
         auto &this_fifo = m_fifo[elink];
@@ -230,10 +231,11 @@ void NetioTxCore::releaseFifo(){
 
   nlog->trace("NetioTxCore::releaseFifo"); 
   
-  map<uint32_t,bool>::iterator it;
   int buffer_size = 0;
 
-  for(it=m_elinks.begin();it!=m_elinks.end();it++){
+  for(const auto it : m_elinks){
+    //check if e-link is active and, if so,
+    // prepare FIFO for flushing if conditions are met.
     if(it->second){
       auto elink = it->first;
       auto &this_fifo = m_fifo[elink];
@@ -261,9 +263,8 @@ void NetioTxCore::trigger(){
   nlog->trace("NetioTxCore::trigger");
 
   //create the message for NetIO
-  map<uint32_t,bool>::iterator it;
-
-  for(it=m_elinks.begin();it!=m_elinks.end();it++)
+  for(const auto it : m_elinks)
+    //loop over active e-links
     if(it->second){
     	//prepareFifo(&m_trigFifo[it->first]);
     	headers[it->first].elinkid=it->first;
@@ -299,9 +300,8 @@ bool NetioTxCore::isCmdEmpty(){
   // and decide if to wait a bit or just call again immediately 
   // isCmdEmpty(), that will at that point return true.
 
-  map<uint32_t,bool>::iterator it;
   bool is_buffer_empty = true;
-  for(it=m_elinks.begin();it!=m_elinks.end();it++)
+  for(const auto it : m_elinks)
     if(it->second)
       if(!m_fifo[it->first].empty()) 
 	is_buffer_empty = false;
