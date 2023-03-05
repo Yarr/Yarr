@@ -435,19 +435,19 @@ void NetioTxCore::doTriggerCnt() {
 
   uint32_t trigs=0;
   if(m_pixFwTrigger){
-    for(uint32_t i=0; i<1; i++) {
-      if(m_trigEnabled==false) break;
-      trigs=m_trigCnt;
-      trigger();
-      std::this_thread::sleep_for(std::chrono::microseconds((int)(1e6*m_trigCnt/m_trigFreq)));      
-    }
+    // send a single command that will start the firmware-based trigger sequence
+    if(m_trigEnabled==false) break;
+    trigs=m_trigCnt;
+    trigger();
+    std::this_thread::sleep_for(std::chrono::microseconds((int)(1e6*m_trigCnt/m_trigFreq)));      
   }
   else{ //
     for(uint32_t i=0; i<m_trigCnt; i++) {
       if(m_trigEnabled==false) break;
       trigs++;
       trigger();
-      std::this_thread::sleep_for(std::chrono::microseconds((int)(1e6/m_trigFreq))); // Frequency in Hz
+      last_trigger += delta;
+      std::this_thread::sleep_until(last_trigger);
     }
   }
   m_trigEnabled = false;
