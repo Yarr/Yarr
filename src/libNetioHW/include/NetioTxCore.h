@@ -47,6 +47,7 @@ public:
   void setTrigTime(double time) override; 	// set the trigger time in seconds
   void setTrigWordLength(uint32_t length) override; 	// set Trigger Word Length
   void setTrigWord(uint32_t *words, uint32_t size) override; 	// set the trigger words
+
   void toggleTrigAbort() override; 	// abort the trigger sequence
   void setTriggerLogicMask(uint32_t mask) override; 	// set the trigger logic
   void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) override; 	// set the trigger logic mode
@@ -65,6 +66,7 @@ private:
   uint32_t m_trigTime;                       //! trigger time
   uint32_t m_trigFreq;                       //! trigger frequency
   uint32_t m_trigWordLength;                 //! number of trigger words
+  bool     m_pixFwTrigger;                          //! Cal+trigger from F/W 
   std::vector<uint32_t> m_trigWords;         //! the trigger words
   std::map<uint32_t, std::vector<uint8_t> > m_trigFifo;  //! fifo per elink
   std::map<uint32_t, std::vector<uint8_t> > m_fifo;  //! fifo per elink
@@ -81,10 +83,12 @@ private:
   void doTriggerCnt();                       //! loop for a fixed number of triggers
   void doTriggerTime();                      //! loop to trigger during a time slot
   void printFifo(uint32_t elink);
+  void sendFifo(); //! Prepare packet from FIFO and send it through socket.
   uint32_t m_extend;
   bool m_padding;
   bool m_flip;
   bool m_manchester;
+  int m_bufferSize;
   bool m_debug;
 
   void enableChannel(uint32_t channel);

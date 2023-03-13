@@ -39,13 +39,12 @@ NetioRxCore::NetioRxCore()
 NetioRxCore::~NetioRxCore(){
   // m_nioh.stopChecking();
   m_cont=false;
-  map<uint64_t,bool>::iterator it;
-  for(it=m_elinks.begin();it!=m_elinks.end();it++){
-    nlog->debug("Unsubscribe elink: {:x}", it->first);
-    m_nioh.delChannel(it->first);
-    //FIXME: //m_socket->unsubscribe(it->first, endpoint(m_felixhost,m_felixport));
-    //m_sockets[it->first]->unsubscribe(it->first, endpoint(m_felixhost,m_felixport));
-    //delete m_sockets[it->first];
+  for(const auto it : m_elinks){
+    nlog->debug("Unsubscribe elink: {:x}", it.first);
+    m_nioh.delChannel(it.first);
+    //FIXME: //m_socket->unsubscribe(it.first, endpoint(m_felixhost,m_felixport));
+    //m_sockets[it.first]->unsubscribe(it.first, endpoint(m_felixhost,m_felixport));
+    //delete m_sockets[it.first];
   }
   m_statistics.join();
 }
@@ -127,30 +126,15 @@ std::vector<RawDataPtr> NetioRxCore::readData(){
     std::vector<RawDataPtr> dataVec;
 
     nlog->debug("NetioRxCore::readData()");
-
     std::unique_ptr<RawData> rdp = m_nioh.rawData.popData();
-    if(rdp != NULL){
 
-    RawDataPtr new_rdp = std::move(rdp);
+    if(rdp != NULL){
+      
+      RawDataPtr new_rdp = std::move(rdp);
 	auto buffer = new_rdp->getBuf();
 	auto address = new_rdp->getAdr();
 	auto words = new_rdp->getSize();
-
-        if(m_fetype == "rd53a"){
-            //TODO:fix this in firmware; the header needs to be in buffer[0]
-            uint32_t temp;
-            temp = buffer[0];
-            buffer[0] = buffer[1];
-            buffer[1] = temp;
-
-            //TODO: Fix this  in firmware too
-            if( (buffer[words-2]>>16) == 0x0 ) //To deal with the E-frames fr$
-                buffer[words-2] = 0xFFFF;
-
-            //TODO: Fix this  in firmware too
-            if( (buffer[words-1]>>16) == 0x0 ) //To deal with the E-frames fr$
-                buffer[words-1] = 0xFFFF;
-        }
+	
         ++rxDataCount;
         dataVec.push_back(new_rdp);
 
@@ -173,19 +157,19 @@ bool NetioRxCore::isBridgeEmpty(){ // True, if queues are stable.
 
 void NetioRxCore::writeConfig(json &j) {
   j["NetIO"]["host"] = m_felixhost;
-  j["NetIO"]["rxport"] = m_felixport;
+  j["NetIO"]["rxPort"] = m_felixport;
 }
 
 void NetioRxCore::loadConfig(const json &j) {
-  m_felixhost = j["NetIO"]["host"];
-  m_felixport = j["NetIO"]["rxport"];
-  m_fetype = j["NetIO"]["fetype"];
-  m_nioh.setFeType(m_fetype);
+  if (j["NetIO"].contains("host")) m_felixhost = j["NetIO"]["host"];
+  if (j["NetIO"].contains("rxPort")) m_felixport = j["NetIO"]["rxPort"];
+  if (j["NetIO"].contains("feType")) m_feType = j["NetIO"]["feType"];
+  m_nioh.setFeType(m_feType);
   m_nioh.setFelixHost(m_felixhost);
   m_nioh.setFelixRXPort(m_felixport);
 
-  if (j["NetIO"].contains("rx_wait_time")) {
-    m_waitTime = std::chrono::microseconds(j["NetIO"]["rx_wait_time"]);
+  if (j["NetIO"].contains("rxWaitTime")) {
+    m_waitTime = std::chrono::microseconds(j["NetIO"]["rxWaitTime"]);
   }
 }
 
