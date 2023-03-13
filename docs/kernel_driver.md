@@ -1,8 +1,34 @@
 # Kernel Driver Installation
 
-For any of the PCIe FPGA cards the custom PCIe kernel driver is required.  <span style="color:red">The installation of the kernel driver is only required once and sometimes after a kernel update.</span>
+For any of the PCIe FPGA cards the custom PCIe kernel driver is required. This driver can be found [here](https://gitlab.cern.ch/YARR/yarr-pcie/spec-driver):
+```
+$ git clone https://gitlab.cern.ch/YARR/yarr-pcie/spec-driver.git
+```
+
+<span style="color:red">The installation of the kernel driver is only required once and sometimes after a kernel update.</span>
+
+# Installation
+
+PCIe kernel driver can be installed in the following way:
+
+```bash
+$ git clone https://gitlab.cern.ch/YARR/yarr-pcie/spec-driver.git
+$ cd spec-driver
+$ cd src
+$ make
+<Lots of text>
+$ sudo make install
+<Copying files>
+$ sudo depmod
+<Builds dependencies>
+$ sudo modprobe -v specDriver
+insmod /lib/modules/3.10.0-229.14.1.el7.x86_64/extra/specDriver.ko
+```
+
+## Test
 
 You can test if the driver is installed and loaded properly by looking at the `dmesg` output:
+
 ```bash
 $ dmesg | grep spec
 <Lots of text>
@@ -20,18 +46,9 @@ $ dmesg | grep spec
 [246519.713527] Module loaded
 ```
 
-PCIe kernel driver can be installed in the following way:
-```bash
-$ cd Yarr/src/kernel
-$ make
-<Lots of text>
-$ sudo make install
-<Copying files>
-$ sudo depmod
-<Builds dependencies>
-$ sudo modprobe -v specDriver
-insmod /lib/modules/3.10.0-229.14.1.el7.x86_64/extra/specDriver.ko
-```
+## Troubleshoot
+
+### Dependency
 
 If you encounter something like
 ```bash
@@ -41,6 +58,7 @@ make: *** [Makefile:10: default] Error 2
 ```
 then the ``kernel-devel`` package is missing. Install with ``yum install kernel-devel-$(uname -r)``.
 
+### Signing
 
 In case you run into a problem during ``modprobe`` which looks like this: ``modprobe: ERROR: could not insert 'specDriver': Required key not available``. Do the following:
 ```bash
