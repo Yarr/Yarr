@@ -32,7 +32,8 @@ class StdDataLoop: public LoopActionBase, public StdDataAction {
         void execPart2() override;
 
         uint32_t n_triggers_to_receive = 0;
-        std::chrono::microseconds m_totalIterationTime{500};
+        uint32_t m_maxConsecutiveRxReads = 2;
+        std::chrono::microseconds m_totalIterationTime{5000000};
         std::chrono::microseconds m_dataProcessingTime{100};
 };
 
