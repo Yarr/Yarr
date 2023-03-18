@@ -65,6 +65,7 @@ namespace StarPreset {
       systemCfg["chips"][i]["tx"] = modules[i].tx;
       systemCfg["chips"][i]["rx"] = modules[i].rx;
       systemCfg["chips"][i]["locked"] = 1;
+      systemCfg["chips"][i]["enable"] = 1;
 
       // Chip config
       feCfg.setName(mName);
@@ -77,7 +78,7 @@ namespace StarPreset {
       }
 
       json chipCfg;
-        feCfg.writeConfig(chipCfg);
+      feCfg.writeConfig(chipCfg);
 
       // Add chip config to list
       chips.push_back(std::move(chipCfg));
@@ -92,16 +93,16 @@ namespace StarPreset {
 
     // Config for one HCCStar + several ABCStars
     json cfg;
-      feCfg.writeConfig(cfg);
+    feCfg.writeConfig(cfg);
     chips.push_back(std::move(cfg));
 
     // Connectivity configuration
     connectivity["chipType"] = "Star";
     connectivity["chips"][0]["config"] = feCfg.getName()+".json";
     connectivity["chips"][0]["tx"] = 0;
-	connectivity["chips"][0]["rx"] = 1;
-	connectivity["chips"][0]["locked"] = 1;
-	connectivity["chips"][0]["enable"] = 1;
+    connectivity["chips"][0]["rx"] = 1;
+    connectivity["chips"][0]["locked"] = 1;
+    connectivity["chips"][0]["enable"] = 1;
 
     return preset;
   }
