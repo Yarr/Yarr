@@ -73,9 +73,13 @@ namespace StarPreset {
 
       // Add ABCStars
       feCfg.clearABCchipIDs();
+      uint32_t maskHccIn = 0;
       for (int iABC=0; iABC<modules[i].numABCs; iABC++) {
         feCfg.addABCchipID(iABC);
+        maskHccIn = (maskHccIn<<1) + 1;
       }
+      // And set HCC's IC_Enable accordingly
+      feCfg.hcc().setSubRegisterValue("ICENABLE", maskHccIn);
 
       json chipCfg;
       feCfg.writeConfig(chipCfg);
@@ -89,7 +93,13 @@ namespace StarPreset {
 
   std::tuple<json, std::vector<json>> createConfigSingleStar(StarCfg& feCfg) {
     std::tuple<json, std::vector<json>> preset;
-	auto& [connectivity, chips] = preset;
+    auto& [connectivity, chips] = preset;
+
+    // Add an ABCStar
+    feCfg.clearABCchipIDs();
+    feCfg.addABCchipID(0, 0);
+    // And set HCC's IC_Enable accordingly
+    feCfg.hcc().setSubRegisterValue("ICENABLE", 0x1);
 
     // Config for one HCCStar + several ABCStars
     json cfg;
