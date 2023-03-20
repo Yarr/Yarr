@@ -120,15 +120,4 @@ class PixelFeedbackSender : public PixelFeedbackBase {
         FeedbackClipboard *clip;
 };
 
-//* \brief Information from data processors
-typedef struct
-{
-    int trigger_tag;
-} FeedbackProcessingInfo;
-
-// extra int trigger tags to pass more feedback from the data processors
-#define PROCESSING_FEEDBACK_TRIGGER_TAG_ERROR  -10
-#define PROCESSING_FEEDBACK_TRIGGER_TAG_RR      -2
-#define PROCESSING_FEEDBACK_TRIGGER_TAG_Control -3
-
 #endif
