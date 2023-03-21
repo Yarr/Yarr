@@ -29,7 +29,6 @@ class ScanFactory : public ScanBase {
         json m_config;
         // Keep around until configuration
         FeedbackClipboardMap *feedback;
-        std::shared_ptr<StdTriggerAction> triggerLoop = nullptr;
 };
 
 namespace StdDict {

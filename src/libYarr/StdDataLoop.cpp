@@ -29,7 +29,8 @@ StdDataLoop::StdDataLoop() : LoopActionBase(LOOP_STYLE_DATA) {
 
 void StdDataLoop::init() {
     m_done = false;
-    if (m_trigLoop != nullptr) n_triggers_to_receive = m_trigLoop->getTrigCnt();
+    auto trigAction = keeper->getTriggerAction();
+    if (trigAction != nullptr) n_triggers_to_receive = trigAction->getTrigCnt();
     SPDLOG_LOGGER_TRACE(sdllog, "");
 }
 

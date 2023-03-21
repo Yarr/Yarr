@@ -9,7 +9,6 @@
 #include "LoopActionBase.h"
 #include "StdDataAction.h"
 #include "DataProcessor.h"
-#include "StdTriggerAction.h"
 #include "ClipBoard.h"
 #include "RawData.h"
 
@@ -17,11 +16,7 @@ class StdDataLoop: public LoopActionBase, public StdDataAction {
     public:
         StdDataLoop();
         //void connect(ClipBoard<RawDataContainer> *clipboard);
-        void connect(std::shared_ptr<StdTriggerAction> trigLoop) {m_trigLoop = trigLoop;};
         void loadConfig(const json &config) override;
-
-    protected:
-        std::shared_ptr<StdTriggerAction> m_trigLoop = nullptr;
 
     private:
         //ClipBoard<RawDataContainer> *storage;

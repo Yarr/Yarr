@@ -105,11 +105,7 @@ void ScanFactory::loadConfig(const json &scanCfg) {
 
         //if(auto *trigLoop = dynamic_cast<StdTriggerAction*>(&*action))
         if(std::shared_ptr<StdTriggerAction> trigLoop = std::dynamic_pointer_cast<StdTriggerAction>(action)) {
-            triggerLoop = trigLoop;
-        }
-
-        if(auto *dataLoop = dynamic_cast<StdDataLoop*>(&*action)) {
-            dataLoop->connect(triggerLoop);
+            g_bk->setTriggerAction(trigLoop);
         }
 
         this->addLoop(action);
