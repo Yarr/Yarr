@@ -15,11 +15,24 @@
 #include "ClipBoard.h"
 #include "HistogramBase.h"
 #include "EventDataBase.h"
-#include "DataProcessor.h"
 #include "HwController.h"
 #include "FrontEndGeometry.h"
 
 #include "storage.hpp"
+
+//! extra int trigger tags to pass more feedback from the data processors
+#define PROCESSING_FEEDBACK_TRIGGER_TAG_ERROR  -10
+#define PROCESSING_FEEDBACK_TRIGGER_TAG_RR      -2
+#define PROCESSING_FEEDBACK_TRIGGER_TAG_Control -3  //!< HPRs in Strips
+
+//! \brief Information from data processors
+typedef struct
+{
+    unsigned packet_size; //!< the size of the packet that the FE sent, i.e. RawData.getSize()
+    int trigger_tag;      //!< l0id of the triggered data packets, and extra negative tags for RR etc
+    unsigned bcid;
+    unsigned n_clusters = 0;  //!< n_clusters in Strips & the number of hits in Pixels?
+} FeedbackProcessingInfo;
 
 class FrontEnd {
     public:

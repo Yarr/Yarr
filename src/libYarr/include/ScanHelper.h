@@ -22,6 +22,7 @@
 #include "logging.h"
 
 #include "ScanOpts.h"
+#include "ScanBase.h"
 
 namespace ScanHelper {
         /// Get a new run number, such that it's different next time
