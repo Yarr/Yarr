@@ -29,6 +29,7 @@ class StdDataLoop: public LoopActionBase, public StdDataAction {
         uint32_t n_triggers_to_receive = 0;
         uint32_t m_maxConsecutiveRxReads = 2;
         std::chrono::microseconds m_totalIterationTime{5000000};
+        std::chrono::microseconds m_rxReadDelay{100};
         std::chrono::microseconds m_dataProcessingTime{100};
 };
 

@@ -76,10 +76,12 @@ void StdDataLoop::execPart2() {
     bool received_all_triggers = true;
     bool there_is_still_time = false;
 
-    // Wait the typical latency of the HW controller (network for Netio etc)
+    //! wait the typical latency of the HW controller (network for Netio etc)
     std::this_thread::sleep_for(g_rx->getWaitTime()); // HW controller latency
 
-    do {
+    //! Rx read cycle: read the data from RxCore, push to data processors, check feedback
+    bool receiving_rx_data = true;
+    while (receiving_rx_data) {
         std::vector<RawDataPtr> newData;
 
         // accumulate the RawData chunks per each elink from N reads from HW controller RS
@@ -178,8 +180,13 @@ void StdDataLoop::execPart2() {
         // Check if trigger is done
         trigger_is_done = g_tx->isTrigDone();
 
-        SPDLOG_LOGGER_DEBUG(sdllog, "--> StdDataLoop::execPart2 : still time {} = {} < {} and all trigs = {} (n channels w all trigs = {})", there_is_still_time, time_elapsed.count(), m_totalIterationTime.count(), received_all_triggers, channels_w_all_trigs_n);
-    } while (!trigger_is_done || (there_is_still_time && !received_all_triggers));
+        // Whether to execute another Rx cycle:
+        receiving_rx_data = !trigger_is_done || (there_is_still_time && !received_all_triggers);
+        SPDLOG_LOGGER_DEBUG(sdllog, "one more Rx cycle: {} -- still time {} = {} < {} and all trigs = {} (n channels w all trigs = {})", receiving_rx_data, there_is_still_time, time_elapsed.count(), m_totalIterationTime.count(), received_all_triggers, channels_w_all_trigs_n);
+
+        // wait the latency for the Rx read cycle
+        if (receiving_rx_data) std::this_thread::sleep_for(m_rxReadDelay);
+    }
 
     // the iteration end marker for the processing & analysis
     // send end-of-iteration empty container with LoopStatus::is_end_of_iteration = true
@@ -190,7 +197,7 @@ void StdDataLoop::execPart2() {
         keeper->getEntry(id).fe->clipRawData.pushData(std::move(c_iter_end));
     }
 
-    // report averagy channel occupancy data
+    // report the average channel occupancy data
     for (auto &[id, received_triggers] : channelReceivedTriggersCnt) {
         float av_sizes    = ((float) channelReceivedPacketSize[id]) / ((float) received_triggers);
         float av_clusters = ((float) channelReceivedNClusters[id])  / ((float) received_triggers);
@@ -206,12 +213,14 @@ void StdDataLoop::loadConfig(const json &config) {
     if (config.contains("total_iteration_time_us"))
         m_totalIterationTime = std::chrono::microseconds(config["total_iteration_time_us"]);
 
-    if (config.contains("average_data_processing_time_us"))
-        m_dataProcessingTime = std::chrono::microseconds(config["average_data_processing_time_us"]);
+    if (config.contains("rx_read_delay_us"))
+        m_rxReadDelay = std::chrono::microseconds(config["rx_read_delay_us"]);
 
     if (config.contains("n_consecutive_rx_reads_before_processing"))
         m_maxConsecutiveRxReads = config["n_consecutive_rx_reads_before_processing"];
 
+    if (config.contains("average_data_processing_time_us"))
+        m_dataProcessingTime = std::chrono::microseconds(config["average_data_processing_time_us"]);
 
     SPDLOG_LOGGER_INFO(sdllog, "Configured StdDataLoop: average_data_processing_time_us: {}", m_dataProcessingTime.count());
 }
