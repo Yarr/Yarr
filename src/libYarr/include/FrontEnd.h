@@ -24,13 +24,14 @@
 #define PROCESSING_FEEDBACK_TRIGGER_TAG_ERROR  -10
 #define PROCESSING_FEEDBACK_TRIGGER_TAG_RR      -2
 #define PROCESSING_FEEDBACK_TRIGGER_TAG_Control -3  //!< HPRs in Strips
+#define PROCESSING_FEEDBACK_UNDEFINED_BCID -1
 
 //! \brief Information from data processors
 typedef struct
 {
-    unsigned packet_size; //!< the size of the packet that the FE sent, i.e. RawData.getSize()
-    int trigger_tag;      //!< l0id of the triggered data packets, and extra negative tags for RR etc
-    unsigned bcid;
+    unsigned packet_size = 0; //!< the size of the packet that the FE sent, i.e. RawData.getSize()
+    int trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_ERROR; //!< l0id of the triggered data packets, and extra negative tags for RR etc
+    int bcid = PROCESSING_FEEDBACK_UNDEFINED_BCID;
     unsigned n_clusters = 0;  //!< n_clusters in Strips & the number of hits in Pixels?
 } FeedbackProcessingInfo;
 
