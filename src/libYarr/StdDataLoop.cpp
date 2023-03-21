@@ -76,12 +76,11 @@ void StdDataLoop::execPart2() {
     bool received_all_triggers = true;
     bool there_is_still_time = false;
 
-    bool no_data_yet = true; // wait HW controller delay only while no data is received yet
+    // Wait the typical latency of the HW controller (network for Netio etc)
+    std::this_thread::sleep_for(g_rx->getWaitTime()); // HW controller latency
+
     do {
         std::vector<RawDataPtr> newData;
-
-        // Wait the typical latency of the HW controller (network for Netio etc)
-        if (no_data_yet) std::this_thread::sleep_for(g_rx->getWaitTime()); // HW controller latency
 
         // accumulate the RawData chunks per each elink from N reads from HW controller RS
         // at the end, push the RawDataContainers for processing
@@ -92,7 +91,6 @@ void StdDataLoop::execPart2() {
             iterations++;
 
             if (newData.size() > 0) {
-                no_data_yet &= false;
                 for (auto &dataChunk : newData) {
                     auto rx_rawdata_size = dataChunk->getSize(); // variables for probing/debugging
                     auto elink_id = dataChunk->getAdr();
@@ -118,10 +116,6 @@ void StdDataLoop::execPart2() {
                     n_rx_reads_so_far = 0; rdcMap.clear();
                 }
             }
-
-            // if the HW controller still has not received data -- wait its latency again?
-            //if (curCnt = g_rx->getCurCount() == 0) std::this_thread::sleep_for(g_rx->getWaitTime());
-            if (no_data_yet) std::this_thread::sleep_for(g_rx->getWaitTime());
         }
         while (newData.size() > 0 || g_rx->getCurCount() != 0);
 
