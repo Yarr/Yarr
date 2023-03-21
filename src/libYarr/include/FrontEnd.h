@@ -27,7 +27,7 @@
 #define PROCESSING_FEEDBACK_UNDEFINED_BCID -1
 
 //! \brief Information from data processors
-typedef struct
+typedef struct FeedbackProcessingInfo
 {
     unsigned packet_size = 0; //!< the size of the packet that the FE sent, i.e. RawData.getSize()
     int trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_ERROR; //!< l0id of the triggered data packets, and extra negative tags for RR etc
