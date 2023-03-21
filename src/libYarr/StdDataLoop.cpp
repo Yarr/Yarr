@@ -58,6 +58,8 @@ void StdDataLoop::execPart2() {
     std::map<uint32_t, uint32_t> channelReceivedTriggersCnt;
     std::map<uint32_t, uint32_t> channelReceivedRRCnt;
     std::map<uint32_t, uint32_t> channelReceivedControlCnt; // HPR etc
+    std::map<uint32_t, uint32_t> channelReceivedPacketSize;
+    std::map<uint32_t, uint32_t> channelReceivedNClusters;
 
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
         channelReceivedTriggersCnt[id] = 0;
@@ -147,7 +149,11 @@ void StdDataLoop::execPart2() {
                     received_feedback_somewhere |= received_on_chan;
                     auto params = keeper->getEntry(chan_id).fe->clipProcFeedback.popData();
 
-                    if (params->trigger_tag >=  0) channelReceivedTriggersCnt[chan_id] += 1;
+                    if (params->trigger_tag >=  0) {
+                        channelReceivedTriggersCnt[chan_id] += 1;
+                        channelReceivedPacketSize[chan_id] += params->packet_size;
+                        channelReceivedNClusters[chan_id]  += params->n_clusters;
+                    }
                     else if (params->trigger_tag == PROCESSING_FEEDBACK_TRIGGER_TAG_RR)      channelReceivedRRCnt[chan_id]  += 1;
                     else if (params->trigger_tag == PROCESSING_FEEDBACK_TRIGGER_TAG_Control) channelReceivedControlCnt[chan_id] += 1;
                     //else { // 
@@ -187,6 +193,13 @@ void StdDataLoop::execPart2() {
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
         std::unique_ptr<RawDataContainer> c_iter_end = std::make_unique<RawDataContainer>(std::move(loop_status_iteration_end));
         keeper->getEntry(id).fe->clipRawData.pushData(std::move(c_iter_end));
+    }
+
+    // report averagy channel occupancy data
+    for (auto &[id, received_triggers] : channelReceivedTriggersCnt) {
+        float av_sizes    = ((float) channelReceivedPacketSize[id]) / ((float) received_triggers);
+        float av_clusters = ((float) channelReceivedNClusters[id])  / ((float) received_triggers);
+        SPDLOG_LOGGER_DEBUG(sdllog, "channel {} received {} triggers, in packets sizes {} with {} clusters", id, received_triggers, av_sizes, av_clusters);
     }
 
     m_done = true;
