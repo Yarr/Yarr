@@ -796,12 +796,12 @@ namespace ScanHelper {
 
         std::cout << "Help:" << std::endl;
         std::cout << " -h: Shows this." << std::endl;
-        std::cout << " -n <threads> : Set number of processing threads." << std::endl;
         std::cout << " -s <scan_type> : Scan config" << std::endl;
         std::cout << " -c <connectivity.json> [<cfg2.json> ...]: Provide connectivity configuration, can take multiple arguments." << std::endl;
         std::cout << " -r <ctrl.json> Provide controller configuration." << std::endl;
         std::cout << " -t <target_charge> [<tot_target>] : Set target values for threshold/charge (and tot)." << std::endl;
         std::cout << " -p: Enable plotting of results." << std::endl;
+        std::cout << " -g: Enable making data pipeline graph." << std::endl;
         std::cout << " -o <dir> : Output directory. (Default ./data/)" << std::endl;
         std::cout << " -m <int> : 0 = pixel masking disabled, 1 = start with fresh pixel mask, default = pixel masking enabled" << std::endl;
         std::cout << " -k: Report known items (Scans, Hardware etc.)\n";
@@ -830,16 +830,13 @@ namespace ScanHelper {
         int c;
         while (true) {
             int opt_index=0;
-            c = getopt_long(argc, argv, "hn:ks:n:m:g:r:c:t:po:Wd:u:i:l:QIz", long_options, &opt_index);
+            c = getopt_long(argc, argv, "hn:ks:n:m:r:c:t:pgo:Wd:u:i:l:QIz", long_options, &opt_index);
             int count = 0;
             if(c == -1) break;
             switch (c) {
                 case 'h':
                     printHelp();
                     return 0;
-                    break;
-                case 'n':
-                    scanOpts.nThreads = atoi(optarg);
                     break;
                 case 'k':
                     ScanHelper::listKnown();
@@ -863,6 +860,9 @@ namespace ScanHelper {
                     break;
                 case 'p':
                     scanOpts.doPlots = true;
+                    break;
+                case 'g':
+                    scanOpts.makeGraph = true;
                     break;
                 case 'o':
                     scanOpts.outputDir = std::string(optarg);
@@ -912,7 +912,7 @@ namespace ScanHelper {
                     scanOpts.doResetBeforeScan = false;
                     break;
                 case '?':
-                    if (optopt == 's' || optopt == 'n') {
+                    if (optopt == 's') {
                         spdlog::error("Option {} requires a parameter! (Proceeding with default)", (char) optopt);
                     } else if (optopt == 'g' || optopt == 'c') {
                         spdlog::error("Option {} requires a parameter! Aborting... ", (char) optopt);

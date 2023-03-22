@@ -21,7 +21,6 @@ bool rd53a_proc_registered =
 
 Rd53aDataProcessor::Rd53aDataProcessor()  {
     m_input = NULL;
-    m_numThreads = std::thread::hardware_concurrency();
 }
 
 Rd53aDataProcessor::~Rd53aDataProcessor() = default;

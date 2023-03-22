@@ -26,21 +26,11 @@ There is very preliminary support for Star chips (strips).
 Support for YARR can be found in the [YARR Matter Most channel.](https://mattermost.web.cern.ch/yarr/ "YARR MatterMost")
 
 
-## Content
-   
-* [Software Installation](install.md)
-* PCIe Installation
-    * [PCIe Kernel Driver Installation](kernel_driver.md)
-    * [PCIe Firmware Setup](pcie.md)
-    * [External PCIe](pcie_ext.md)
-* [ScanConsole](scanconsole.md)
-    * [FE-I4](fei4.md)
-    * [FE65-P2](fe65p2.md)
-    * [RD53A](rd53a.md)
-    * [RD53B](rd53b.md)
-    * [Star Strips](star.md)
-* [Troubleshooting](troubleshooting.md)
+## Links to docs in development
 
+* Future docs: https://yarr.web.cern.ch/yarr/devel/
+* Developer docs: https://yarr.web.cern.ch/doxygen/devel/
+* Coverage: https://yarr.web.cern.ch/yarr/devel/coverage/
 
 ## Folder Structure
 ```bash

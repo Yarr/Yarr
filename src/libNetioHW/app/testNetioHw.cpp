@@ -105,12 +105,12 @@ int main(int argc, char **argv) {
 
     json j;
     j["NetIO"]["host"] = chost;
-    j["NetIO"]["txport"] = cptx;
-    j["NetIO"]["rxport"] = cprx;
+    j["NetIO"]["txPort"] = cptx;
+    j["NetIO"]["rxPort"] = cprx;
     j["NetIO"]["manchester"] = false;
     j["NetIO"]["flip"] = true;
     j["NetIO"]["extern"] = false;
-    j["NetIO"]["fetype"] = "strip";
+    j["NetIO"]["feType"] = "strip";
 
     cout << "Create NetIO with options\n";
     cout << j << endl;
@@ -432,8 +432,8 @@ int main(int argc, char **argv) {
 void printHelp() {
     std::cout << "Help:\n";
     std::cout << "  -H  host  server hostname (locahost)\n";
-    std::cout << "  -T  txport  TX port number (12340)\n";
-    std::cout << "  -R  rxport  RX port number (12345)\n";
+    std::cout << "  -T  txPort  TX port number (12340)\n";
+    std::cout << "  -R  rxPort  RX port number (12345)\n";
     std::cout << "  -t  tx-elink  TX elink number (0)\n";
     std::cout << "  -r  rx-elink  RX elink number (0)\n";
     std::cout << "  -r  rx-elink  RX elink number (0)\n";

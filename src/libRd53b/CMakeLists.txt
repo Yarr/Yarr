@@ -29,7 +29,8 @@ LIST(APPEND apps
         rd53bReadRingosc
         rd53bRegSEETest
         rd53bTest
-        rd53bEfuseCheck)
+        rd53bEfuseCheck
+        rd53bSendGlobalPulse)
 
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)

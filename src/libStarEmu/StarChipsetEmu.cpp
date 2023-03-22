@@ -134,9 +134,15 @@ std::vector<uint8_t> StarChipsetEmu::buildPhysicsPacket(
 
   // Todo: error block
 
-  // Fixed 16-bit end of packet cluster pattern
-  data_packets.push_back((endOfPacket>>8) & 0xff);
-  data_packets.push_back(endOfPacket & 0xff);
+  if (data_packets.size() == 2) {
+    // Only the two header bytes. No clusters added from any ABCStars.
+    // return an empty vector;
+    data_packets.clear();
+  } else {
+    // Add the end of packet pattern
+    data_packets.push_back((endOfPacket>>8) & 0xff);
+    data_packets.push_back(endOfPacket & 0xff);
+  }
 
   return data_packets;
 }
@@ -675,14 +681,18 @@ void StarChipsetEmu::doL0A(bool bcr, uint8_t l0a_mask, uint8_t l0a_tag) {
           this->countHits(abc, hits);
 
           // form clusters
-          auto abc_clusters = this->getClusters(abc, hits);
-          clusters.push_back(abc_clusters);
+          if (abc.getSubRegisterValue("LP_ENABLE")) {
+            auto abc_clusters = this->getClusters(abc, hits);
+            clusters.push_back(abc_clusters);
+          }
         });
 
       // build and send data packet
       PacketTypes ptype = PacketTypes::LP;
       std::vector<uint8_t> packet = buildPhysicsPacket(clusters, ptype, l0a_tag+ibc, bcid);
-      sendPacket(packet);
+      if (not packet.empty()) {
+        sendPacket(packet);
+      }
 
     } else { // multi-level trigger
       // for each ABC
@@ -701,7 +711,9 @@ void StarChipsetEmu::doL0A(bool bcr, uint8_t l0a_mask, uint8_t l0a_tag) {
           auto bcidl0 = EvtBufData( (m_bccnt+ibc) & 0xff );
           m_evtbuffers_lite[abcId][evaddr] = EvtBufData(l0addr)<<8 | bcidl0;
 
-          // count hits?
+          // count hits
+          StripData hits = this->getFEData(abc, l0addr).second;
+          this->countHits(abc, hits);
         });
     }
   } // 4 BCs
@@ -734,7 +746,17 @@ void StarChipsetEmu::doPRLP(uint8_t mask, uint8_t l0tag) {
   uint8_t bcid;
 
   // for each ABC
-  m_starCfg->eachAbc([this, l0tag, &bcid, &clusters](auto& abc) {
+  m_starCfg->eachAbc([this, l0tag, isPR, &bcid, &clusters](auto& abc) {
+      if (isPR and not abc.getSubRegisterValue("PR_ENABLE")) {
+        // Skip if a R3 command for PR packets is received but PR_ENABLE is 0
+        return;
+      }
+
+      if (not isPR and not abc.getSubRegisterValue("LP_ENABLE")) {
+        // Skip if an L1 command for LP packets is received but LP_ENABLE is 0
+        return;
+      }
+
       int abcId = abc.getABCchipID();
       if (m_evtbuffers_lite.find(abcId) == m_evtbuffers_lite.end()) {
         logger->critical("No event buffer instantiated for chip ID {}", abcId);
@@ -757,7 +779,9 @@ void StarChipsetEmu::doPRLP(uint8_t mask, uint8_t l0tag) {
   // build and send data packet
   PacketTypes ptype = isPR ? PacketTypes::PR : PacketTypes::LP;
   std::vector<uint8_t> packet = buildPhysicsPacket(clusters, ptype, l0tag, bcid);
-  sendPacket(packet);
+  if (not packet.empty()) {
+    sendPacket(packet);
+  }
 }
 
 unsigned int StarChipsetEmu::countTriggers(LCB::Frame frame) {

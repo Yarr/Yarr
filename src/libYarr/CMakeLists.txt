@@ -40,7 +40,8 @@ add_library(Scan SHARED
         StdDataLoop.cpp
         StdHistogrammer.cpp
         StdParameterLoop.cpp
-        StdRepeater.cpp)
+        StdRepeater.cpp
+        YarrDiagram.cpp)
 target_include_directories(Scan PRIVATE ../libUtil/include)
 target_include_directories(Scan PUBLIC ./include)
 target_link_libraries(Scan Util pthread)

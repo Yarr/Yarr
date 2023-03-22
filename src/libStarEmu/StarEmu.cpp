@@ -349,8 +349,8 @@ void EmuController<StarChips, StarEmu>::loadConfig(const json &j) {
   }
 
   // Rx wait time
-  if (j.contains("rx_wait_time")) {
-      m_waitTime = std::chrono::microseconds(j["rx_wait_time"]);
+  if (j.contains("rxWaitTime")) {
+      m_waitTime = std::chrono::microseconds(j["rxWaitTime"]);
   }
 
   // HPR packet:

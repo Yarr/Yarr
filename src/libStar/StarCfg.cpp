@@ -226,6 +226,9 @@ void StarCfg::writeConfig(json &j) {
     for(auto &m: common) {
         j["ABCs"]["common"][m.first] = m.second;
     }
+
+    auto &cfg_ct = j["ABCs"]["Parameters"] = json::object();
+    m_ct.writeConfig(cfg_ct);
 }
 
 // No hex in json, so interpret a string
@@ -516,6 +519,11 @@ void StarCfg::loadConfig(const json &j) {
                 }
             }
         }
+    }
+
+    // Load calibration config for converting BVT and BCAL
+    if (abcs.contains("Parameters")) {
+        m_ct.loadConfig(abcs["Parameters"]);
     }
 }
 

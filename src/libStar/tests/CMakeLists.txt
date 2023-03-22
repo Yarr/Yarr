@@ -10,6 +10,7 @@ add_executable(testStar
         test_mask_loop.cpp
         test_parser.cpp
         test_trigger_loop.cpp
+        test_conversion_tool.cpp
         test_felix_trigger_loop.cpp
         )
 target_link_libraries(testStar Yarr)

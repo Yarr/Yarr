@@ -1,11 +1,12 @@
 //////////////////////////////////////////////////
-// A utility to write a specific register to a
+// A utility to send a global pulse to
 // a given front-end without running any other
 // configuration.
+// A blatant rip of the write-register.cpp util
 //
-// author: Daniel Antrim
-// e-mail: daniel.joseph.antrim AT cern DOT ch
-// July 2021
+// author: Francesco Crescioli
+// e-mail: francesco.crescioli AT cern DOT ch
+// Feb 2023
 //////////////////////////////////////////////////
 
 // std/stl
@@ -21,14 +22,15 @@ namespace fs = std::filesystem;
 // YARR
 #include "HwController.h"
 #include "FrontEnd.h"
+#include "Rd53b.h"
 #include "AllChips.h"
 #include "ScanHelper.h" // openJson
 #include "Utils.h"
 
 void print_usage(char* argv[]) {
-    std::cerr << " write-register" << std::endl;
+    std::cerr << " send-global-pulse" << std::endl;
     std::cerr << std::endl;
-    std::cerr << " Usage: " << argv[0] << " [options] register-name register-value" << std::endl;
+    std::cerr << " Usage: " << argv[0] << " [options] pulse-conf pulse-width" << std::endl;
     std::cerr << " Options:" << std::endl;
     std::cerr << "   -r          Hardware controller JSON file path [required]" << std::endl;
     std::cerr << "   -c          Input connectivity JSON file path [required]" << std::endl;
@@ -67,8 +69,8 @@ int main(int argc, char* argv[]) {
     std::string connectivity_filename = "";
     int chip_idx = -1;
     std::string chip_name = "";
-    std::string register_name = "";
-    uint32_t register_value = 0;
+    uint32_t pulse_conf = 0;
+    uint32_t pulse_width = 0;
     bool use_chip_name = false;
 
     int c = 0;
@@ -106,11 +108,17 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    register_name = argv[optind++];
     try {
-        register_value = std::stoi(argv[optind++]);
+        pulse_conf = std::stoi(argv[optind++]);
     } catch (std::exception& e) {
-        std::cerr << "ERROR: Invalid value provided for register \"" << register_name << "\" (non-integer)" << std::endl;
+        std::cerr << "ERROR: Invalid value provided for pulse configuration (non-integer)" << std::endl;
+        return 1;
+    }
+
+    try {
+        pulse_width = std::stoi(argv[optind++]);
+    } catch (std::exception& e) {
+        std::cerr << "ERROR: Invalid value provided for pulse width (non-integer)" << std::endl;
         return 1;
     }
 
@@ -148,8 +156,6 @@ int main(int argc, char* argv[]) {
     auto chip_configs = jconn["chips"];
     size_t n_chips = chip_configs.size();
     for (size_t ichip = 0; ichip < n_chips; ichip++) {
-        if (chip_configs[ichip]["enable"] == 0)
-            continue;
         fs::path chip_register_file_path{chip_configs[ichip]["__config_path__"]};
         if(!fs::exists(chip_register_file_path)) {
             std::cerr << "WARNING: Chip config for chip at index " << ichip << " in connectivity file does not exist, skipping (" << chip_register_file_path << ")" << std::endl;
@@ -168,18 +174,22 @@ int main(int argc, char* argv[]) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
         	hw->setRxEnable(cfg->getRxChannel());
         	hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-                fe->readUpdateWriteNamedReg(register_name);
-                fe->writeNamedRegister(register_name, register_value);
-            }
+            } else continue;
         } else {
             if (current_chip_name == chip_name) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
         	hw->setRxEnable(cfg->getRxChannel());
         	hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-                fe->readUpdateWriteNamedReg(register_name);
-                fe->writeNamedRegister(register_name, register_value);
-            }
+            } else continue;
         }
+    	fe->writeNamedRegister("GlobalPulseConf", pulse_conf);
+    	fe->writeNamedRegister("GlobalPulseWidth", pulse_width);
+    	while(!hw->isCmdEmpty()){;}
+    	dynamic_cast<Rd53b&>(*fe).sendGlobalPulse(dynamic_cast<Rd53bCfg*>(cfg)->getChipId());
+    	while(!hw->isCmdEmpty()){;}
+    	std::this_thread::sleep_for(std::chrono::microseconds(100));
+    	// Reset register
+    	fe->writeNamedRegister("GlobalPulseConf", 0);
     }
 
     std::cerr << "Done." << std::endl;

@@ -164,6 +164,10 @@ void FelixRxCore::on_data(FelixID_t fid, const uint8_t* data, size_t size, uint8
   if (numWords == 0)
     return;
 
+  // increment counters before pushData
+  m_total_data_in += 1;
+  m_total_bytes_in += numWords * sizeof(uint32_t);
+
   // for now:
   // channel number consists of 6-bit elink, 13-bit link ID, 1-bit is_virtual
   // and also the lowest 12 bits of ConnectorID to fill up the 32 bits
@@ -176,9 +180,6 @@ void FelixRxCore::on_data(FelixID_t fid, const uint8_t* data, size_t size, uint8
   std::memcpy(rd->getBuf(), data, size);
 
   m_rawData.pushData(std::move(rd));
-
-  m_total_data_in += 1;
-  m_total_bytes_in += numWords * sizeof(uint32_t);
 }
 
 void FelixRxCore::on_connect(FelixID_t fid) {

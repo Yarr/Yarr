@@ -28,14 +28,11 @@ class DataProcessor {
         virtual void connect(FrontEndCfg *feCfg, ClipBoard<RawDataContainer> *arg_input, ClipBoard<EventDataBase> *arg_output) {}
         virtual void connect(ClipBoard<EventDataBase> *arg_input, ClipBoard<HistogramBase> *arg_output) {}
         virtual void connect(ScanBase *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output) {}
-	virtual void setThreads(unsigned n) {  m_numThreads = n ;}
         virtual void init() {}
         virtual void process() {}
         virtual void run() = 0;
         virtual void join() = 0;
 
-        // TODO make getter/setter
-        unsigned m_numThreads;	
     protected:
         std::condition_variable cv;
         std::mutex mtx;
