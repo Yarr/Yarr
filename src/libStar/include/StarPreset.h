@@ -32,20 +32,20 @@ namespace StarPreset {
   // 14 HCCStars on one side of a petal
   // An example configuration based on the ITSDAQ GLIB setup
   const std::array<HybridInfo, 14> petal {{
-      {.name="R0_H0", .hccID=0,  .numABCs=8,  .offset=3, .tx=102, .rx=16 },
-      {.name="R0_H1", .hccID=1,  .numABCs=9,  .offset=0, .tx=102, .rx=24 },
-      {.name="R1_H0", .hccID=2,  .numABCs=10, .offset=1, .tx=102, .rx=20 },
-      {.name="R1_H1", .hccID=3,  .numABCs=11, .offset=0, .tx=102, .rx=26 },
-      {.name="R2_H0", .hccID=4,  .numABCs=6,  .offset=5, .tx=101, .rx=22 },
-      {.name="R2_H1", .hccID=5,  .numABCs=6,  .offset=5, .tx=101, .rx=12 },
-      {.name="R3_H0", .hccID=6,  .numABCs=7,  .offset=4, .tx=101, .rx=14 },
-      {.name="R3_H1", .hccID=7,  .numABCs=7,  .offset=4, .tx=101, .rx=18 },
-      {.name="R3_H2", .hccID=8,  .numABCs=7,  .offset=0, .tx=101, .rx=0  },
-      {.name="R3_H3", .hccID=9,  .numABCs=7,  .offset=0, .tx=101, .rx=2  },
-      {.name="R4_H0", .hccID=10, .numABCs=8,  .offset=3, .tx=103, .rx=4  },
-      {.name="R4_H1", .hccID=11, .numABCs=8,  .offset=3, .tx=103, .rx=8  },
-      {.name="R5_H0", .hccID=12, .numABCs=9,  .offset=2, .tx=103, .rx=6  },
-      {.name="R5_H1", .hccID=13, .numABCs=9,  .offset=2, .tx=103, .rx=10 }
+      {.name="R0H0", .hccID=0,  .numABCs=8,  .offset=3, .tx=102, .rx=16 },
+      {.name="R0H1", .hccID=1,  .numABCs=9,  .offset=0, .tx=102, .rx=24 },
+      {.name="R1H0", .hccID=2,  .numABCs=10, .offset=1, .tx=102, .rx=20 },
+      {.name="R1H1", .hccID=3,  .numABCs=11, .offset=0, .tx=102, .rx=26 },
+      {.name="R2H0", .hccID=4,  .numABCs=6,  .offset=5, .tx=101, .rx=22 },
+      {.name="R2H1", .hccID=5,  .numABCs=6,  .offset=5, .tx=101, .rx=12 },
+      {.name="R3H0", .hccID=6,  .numABCs=7,  .offset=4, .tx=101, .rx=14 },
+      {.name="R3H1", .hccID=7,  .numABCs=7,  .offset=4, .tx=101, .rx=18 },
+      {.name="R3H2", .hccID=8,  .numABCs=7,  .offset=0, .tx=101, .rx=0  },
+      {.name="R3H3", .hccID=9,  .numABCs=7,  .offset=0, .tx=101, .rx=2  },
+      {.name="R4H0", .hccID=10, .numABCs=8,  .offset=3, .tx=103, .rx=4  },
+      {.name="R4H1", .hccID=11, .numABCs=8,  .offset=3, .tx=103, .rx=8  },
+      {.name="R5H0", .hccID=12, .numABCs=9,  .offset=2, .tx=103, .rx=6  },
+      {.name="R5H1", .hccID=13, .numABCs=9,  .offset=2, .tx=103, .rx=10 }
   }};
 
   std::tuple<json, std::vector<json>> createConfigStarObject(
