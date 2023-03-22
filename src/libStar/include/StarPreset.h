@@ -57,7 +57,7 @@ namespace StarPreset {
     const std::string chipName(feCfg.getName());
 
     // Connectivity config
-    systemCfg["chipType"] = "Star";
+    systemCfg["chipType"] = chipName;
 
     for (int i=0; i<modules.size(); i++) {
       std::string mName(chipName+"_"+modules[i].name);
@@ -115,7 +115,7 @@ namespace StarPreset {
     chips.push_back(std::move(cfg));
 
     // Connectivity configuration
-    connectivity["chipType"] = "Star";
+    connectivity["chipType"] = feCfg.getName();
     connectivity["chips"][0]["config"] = feCfg.getName()+".json";
     connectivity["chips"][0]["tx"] = 0;
     connectivity["chips"][0]["rx"] = 1;
