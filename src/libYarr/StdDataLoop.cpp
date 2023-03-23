@@ -79,6 +79,8 @@ void StdDataLoop::execPart2() {
     //! wait the typical latency of the HW controller (network for Netio etc)
     std::this_thread::sleep_for(g_rx->getWaitTime()); // HW controller latency
 
+    SPDLOG_LOGGER_DEBUG(sdllog, "Reading Rx data...");
+
     //! Rx read cycle: read the data from RxCore, push to data processors, check feedback
     bool receiving_rx_data = true;
     while (receiving_rx_data) {
@@ -170,7 +172,7 @@ void StdDataLoop::execPart2() {
                 channels_w_all_trigs_n += 1;
             }
         }
-        received_all_triggers = channels_w_all_trigs_n > keeper->getNumOfEntries();
+        received_all_triggers = channels_w_all_trigs_n >= keeper->getNumOfEntries();
 
         // test whether there is still time for this iteration
         time_elapsed =
