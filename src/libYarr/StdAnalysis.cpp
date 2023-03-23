@@ -891,11 +891,17 @@ void ScurveFitter::end() {
             int rThrMean = (int)(thrMean) - (int)(thrMean)%bin_width;
             int rThrRms = (int)(thrRms) - (int)(thrRms)%bin_width;
             xlow = rThrMean-(rThrRms*5)-bin_width/2.0;
-            if (xlow < 0) xlow = -1*bin_width/2.0;
+            if (xlow < 0)
+                xlow = -1*bin_width/2.0;
             xhigh = rThrMean+(rThrRms*5)+bin_width/2.0;
             if ((xhigh-xlow)%bin_width != 0)
                 xhigh += ((xhigh-xlow)%bin_width);
+            if (xlow > xhigh) {// Something wrong, prevent
+                xhigh = xlow+1;
+                alog->warn("[{}] --> xlow > xhigh, resetting boundaries, this should not happen under normal circumstances!", this->id);
+            }
             bins = (xhigh-xlow)/bin_width;
+
 
             Histo1d *hh1 = new Histo1d("ThresholdDist-" + std::to_string(i), bins, xlow, xhigh);
             hh1->setXaxisTitle("Threshold [e]");
@@ -906,10 +912,15 @@ void ScurveFitter::end() {
             int rSigMean = (int)(sigMean) - (int)(sigMean)%bin_width;
             int rSigRms = (int)(sigRms) - (int)(sigRms)%bin_width;
             xlow = rSigMean-(rSigRms*5)-bin_width/2.0;
-            if (xlow < 0) xlow = -1*bin_width/2.0;
+            if (xlow < 0) 
+                xlow = -1*bin_width/2.0;
             xhigh = rSigMean+(rSigRms*5)+bin_width/2.0;
             if ((xhigh-xlow)%bin_width != 0)
                 xhigh += ((xhigh-xlow)%bin_width);
+            if (xlow > xhigh) {// Something wrong, prevent
+                xhigh = xlow+1;
+                alog->warn("[{}] --> xlow > xhigh, resetting boundaries, this should not happen under normal circumstances!", this->id);
+            }
             bins = (xhigh-xlow)/bin_width;
 
             hh1 = new Histo1d("NoiseDist-" + std::to_string(i), bins, xlow, xhigh);
