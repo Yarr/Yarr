@@ -26,7 +26,8 @@ class StdDataLoop: public LoopActionBase, public StdDataAction {
         void execPart1() override;
         void execPart2() override;
 
-        uint32_t n_triggers_to_receive = 0;
+        uint32_t n_triggersToReceive = 0;
+        uint32_t n_triggersLostTolerance = 0; // allowed number of lost triggers
         uint32_t m_maxConsecutiveRxReads = 2;
         std::chrono::microseconds m_totalIterationTime{5000000};
         std::chrono::microseconds m_rxReadDelay{100};

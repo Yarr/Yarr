@@ -30,7 +30,7 @@ StdDataLoop::StdDataLoop() : LoopActionBase(LOOP_STYLE_DATA) {
 void StdDataLoop::init() {
     m_done = false;
     auto trigAction = keeper->getTriggerAction();
-    if (trigAction != nullptr) n_triggers_to_receive = trigAction->getTrigCnt();
+    if (trigAction != nullptr) n_triggersToReceive = trigAction->getTrigCnt() - n_triggersLostTolerance;
     SPDLOG_LOGGER_TRACE(sdllog, "");
 }
 
@@ -165,9 +165,9 @@ void StdDataLoop::execPart2() {
         // test whether all channels received all triggers
         unsigned channels_w_all_trigs_n = 0; // 
         for (auto &[id, received_triggers] : channelReceivedTriggersCnt) {
-            //SPDLOG_LOGGER_DEBUG(sdllog, "--> StdDataLoop::execPart2 : chan {} received {} triggers from {}", id, received_triggers, n_triggers_to_receive);
+            //SPDLOG_LOGGER_DEBUG(sdllog, "--> StdDataLoop::execPart2 : chan {} received {} triggers from {}", id, received_triggers, n_triggersToReceive);
 
-            if (received_triggers >= n_triggers_to_receive) {
+            if (received_triggers >= n_triggersToReceive) {
                 //activeChannels.erase(id); // ok, don't erase a channel - it looks like we receive some random 1-2 triggers here and there
                 channels_w_all_trigs_n += 1;
             }
@@ -223,6 +223,9 @@ void StdDataLoop::loadConfig(const json &config) {
 
     if (config.contains("average_data_processing_time_us"))
         m_dataProcessingTime = std::chrono::microseconds(config["average_data_processing_time_us"]);
+
+    if (config.contains("triggersLostTolerance"))
+        n_triggersLostTolerance = config["atriggersLostTolerance"];
 
     SPDLOG_LOGGER_INFO(sdllog, "Configured StdDataLoop: average_data_processing_time_us: {}", m_dataProcessingTime.count());
 }
