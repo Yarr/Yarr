@@ -225,7 +225,7 @@ void StdDataLoop::loadConfig(const json &config) {
         m_dataProcessingTime = std::chrono::microseconds(config["average_data_processing_time_us"]);
 
     if (config.contains("triggersLostTolerance"))
-        n_triggersLostTolerance = config["atriggersLostTolerance"];
+        n_triggersLostTolerance = config["triggersLostTolerance"];
 
     SPDLOG_LOGGER_INFO(sdllog, "Configured StdDataLoop: average_data_processing_time_us: {}", m_dataProcessingTime.count());
 }
