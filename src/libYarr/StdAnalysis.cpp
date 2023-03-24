@@ -897,7 +897,7 @@ void ScurveFitter::end() {
             if ((xhigh-xlow)%bin_width != 0)
                 xhigh += ((xhigh-xlow)%bin_width);
             if (xlow > xhigh) {// Something wrong, prevent
-                xhigh = xlow+1;
+                xhigh = xlow+bin_width;
                 alog->warn("[{}] --> xlow > xhigh, resetting boundaries, this should not happen under normal circumstances!", this->id);
             }
             bins = (xhigh-xlow)/bin_width;
@@ -918,7 +918,7 @@ void ScurveFitter::end() {
             if ((xhigh-xlow)%bin_width != 0)
                 xhigh += ((xhigh-xlow)%bin_width);
             if (xlow > xhigh) {// Something wrong, prevent
-                xhigh = xlow+1;
+                xhigh = xlow+bin_width;
                 alog->warn("[{}] --> xlow > xhigh, resetting boundaries, this should not happen under normal circumstances!", this->id);
             }
             bins = (xhigh-xlow)/bin_width;
