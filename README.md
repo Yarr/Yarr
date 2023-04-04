@@ -22,7 +22,7 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
 
 - CentOS 7/8 or Ubuntu 20.04 LTS
 - cmake 3.14 or higher
-- GCC version 9 or higher
+- GCC version 9
     - for example from devtoolset-9
 - Some misc packages (can be installed via yum):
     - gnuplot
@@ -39,7 +39,8 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
 	- ``$ git clone https://gitlab.cern.ch/YARR/YARR.git Yarr``
 - Compilation:
     - ``$ source scl_source enable devtoolset-9``
-    - ``$ cmake3 -S Yarr -B build`` or ``$ cmake3 -S Yarr -B build -DYARR_CONTROLLERS_TO_BUILD=all ..``
+    - ``cd Yarr``
+    - ``$ cmake3 -S ./ -B build`` or ``$ cmake3 -S ./ -B build -DYARR_CONTROLLERS_TO_BUILD=all``
     - ``$ cmake3 --build build -j4``
     - ``$ cmake3 --install build -j4``
 - Running
@@ -49,16 +50,16 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
 
 - In order to build with more controllers execute cmake with extra options
     - For all controllers:
-        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=all ..``
+        - ``-DYARR_CONTROLLERS_TO_BUILD=all``
     - For NetIO:
-        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;NetioHW"``
+        - ``-DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;NetioHW"``
     - For Rogue:
-        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;Rogue"``
+        - ``-DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;Rogue"``
 
 While developing, it might be useful to run some unit tests. These are run
 by default in the CI on gitlab, but can also be run locally:
 
-- cd build
-- make test
+- ``cd build``
+- ``make test``
 
 This runs the test_main binary, which gathers the tests found in src/tests.
