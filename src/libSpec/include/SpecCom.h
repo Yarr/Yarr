@@ -44,12 +44,20 @@ enum SPEC_DMA_STATUS {
     DMAABORTED = 0x4
 };
 
+#define SPEC_GREG (0x7 << 14)
+#define SPEC_GREG_LPMEN 0x0
+#define SPEC_GREG_LPMFREQ 0x0
+#define SPEC_GREG_FWVERS 0x6
+#define SPEC_GREG_FWIDENT 0x7
+
 const static std::string specIdentHw[] = {"undefined", "Trenz TEF1001_R1", "Trenz TEF1001_R2",
     "PLDA XpressK7 160", "PLDA XpressK7 325", "Xilinx KC705", "CERN SPEC S6"};
 const static std::string specIdentChip[] = {"undefined", "FE-I4", "FE65-P2", "RD53A/B", "ABC/HCCStar"};
 const static std::string specIdentFmc[] = {"undefined", "Creotech 32Ch LVDS (VHDCI)", "Ohio Card (Display Port)"};
 const static std::string specIdentSpeed[] = {"undefined", "160Mbps", "320Mbps", "640Mbps", "1280Mbps"};
-const static std::string specIdentChCfg[] = {"undefined", "4x4", "16x1", "8x4", "32x1"};
+const static std::string specIdentChCfg[] = {"undefined", "4x4", "16x1", "8x4", "32x1", "3x4 TLU", "3x4 Ext Trig", "12x1 TLU", "12x1 Ext Trig"};
+
+static std::map<uint16_t, std::string> specIdentFw = {{0x4256c32, "v1.3.1"},{0x2779a56, "v1.3"}, {0x4d9ff6d, "v1.2.1"}, {0x1493b73, "v1.1.1"}};
 
 struct dma_linked_list {
     uint32_t carrier_start;
