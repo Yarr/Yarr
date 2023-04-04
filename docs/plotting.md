@@ -12,6 +12,8 @@ $ sudo yum install root
 
 Once installed remove your build folder and restart the [software install](install.md) from the compilation stage.
 
+The minimum version requirement for ROOT is v6.0.8. We recommend v6.24 or higher.
+
 ## Usage
 
 Please refer to [Plotting-Tools](https://gitlab.cern.ch/YARR/utilities/plotting-tools) for detailed documentation on how to run the code.

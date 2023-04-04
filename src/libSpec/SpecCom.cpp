@@ -214,20 +214,22 @@ void SpecCom::init() {
     }
 
     // Get FW info
-    fw_vers = readSingle(0x7<<14 | 0x6);
-    fw_ident = readSingle(0x7<<14 | 0x7);
+    fw_vers = readSingle(SPEC_GREG | SPEC_GREG_FWVERS);
+    fw_ident = readSingle(SPEC_GREG | SPEC_GREG_FWIDENT);
     if (fw_ident == 0xFFFFFFFF || fw_vers == 0xFFFFFFFF) {
         slog->error("Could not read FW version or identifier!");
     } else {
         auto status = getStatus();
         slog->info("~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        slog->info("Firmware Version: {}", static_cast<std::string>(status["firmware_version"]));
+        slog->info("Firmware Hash: {}", static_cast<std::string>(status["firmware_hash"]));
+        slog->info("Firmware Version: {}", static_cast<std::string>(status["firmware_vers"]));
         slog->info("Firmware Identifier: {}", static_cast<std::string>(status["firmware_identifier"]));
         slog->info("FPGA card: {}", static_cast<std::string>(status["fpga_card"]));
         slog->info("FE Chip Type: {}", static_cast<std::string>(status["fe_chip_type"]));
         slog->info("FMC Card Type: {}", static_cast<std::string>(status["fmc_card_type"]));
         slog->info("RX Speed: {}", static_cast<std::string>(status["rx_speed"]));
         slog->info("Channel Configuration: {}", static_cast<std::string>(status["channel_configuration"]));
+        slog->info("LPM Status: {}", static_cast<uint32_t>(status["lpm_status"]));
         slog->info("~~~~~~~~~~~~~~~~~~~~~~~~~~~");
     } 
     // TODO decode firmware identifier
@@ -245,14 +247,16 @@ const json SpecCom::getStatus() {
     // do it here and rely on only std::string being in the returned JSON object)
     std::stringstream fw_string;
     fw_string << "0x" << std::hex << fw_vers;
-    j_status["firmware_version"] = fw_string.str(); fw_string.str("");
+    j_status["firmware_hash"] = fw_string.str(); fw_string.str("");
     fw_string << "0x" << std::hex << fw_ident;
+    j_status["firmware_vers"] = specIdentFw[fw_vers];
     j_status["firmware_identifier"] = fw_string.str(); fw_string.str("");
     j_status["fpga_card"] = getSpecIdentHw(fw_ident);
     j_status["fe_chip_type"] = getSpecIdentChip(fw_ident);
     j_status["fmc_card_type"] = getSpecIdentFmc(fw_ident);
     j_status["rx_speed"] = getSpecIdentSpeed(fw_ident);
     j_status["channel_configuration"] = getSpecIdentChCfg(fw_ident);
+    j_status["lpm_status"] = readSingle(SPEC_GREG | SPEC_GREG_LPMEN);
     return j_status;
 }
 
