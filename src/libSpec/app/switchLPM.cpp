@@ -9,7 +9,7 @@
 auto logger = logging::make_log("switchLPM");
 
 void printHelp() {
-    std::cout << "./bin/switchLPM on/off -e <int>: enabled TX channels (from binary number, e.g. for 1111 provide 15) -s <int> spec number -f <int> AC signal frequency in kHz" << std::endl;
+    std::cout << "./bin/switchLPM on/off \n -e <int>: enabled TX channels (decimal number from binary pattern starting from TX 0 as the least significant bit, for example 13 to switch on 1101, i.e. all TX channels apart from TX 1) \n -s <int> spec number \n -f <int> AC signal frequency in kHz (required to be > 80kHz for a square wave)" << std::endl;
 }
 
 int main(int argc, char **argv) {
@@ -54,6 +54,11 @@ int main(int argc, char **argv) {
 		    logger->critical("Invalid command line parameter(s) given!");
 		    return -1;
 	    }
+    }
+
+    if (frequency < 80){
+	logger->error("Please provide a frequency > 80 kHz!");
+	return -1;
     }
 
     SpecCom mySpec(specNum);
