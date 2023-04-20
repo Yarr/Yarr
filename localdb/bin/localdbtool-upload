@@ -393,18 +393,34 @@ def writeScan(self, i_dir):
             filename = 'chipCfg'
             chip_cfg_name = chip_json['config'].split('/')[len(chip_json['config'].split('/'))-1]
             for file_name in os.listdir(i_dir):
+                
                 ### config for componentTestRun
                 if chip_cfg_name in file_name:
+                    continue
+                    '''
                     cfg_json = common.readJson('{0}/{1}'.format(i_dir, file_name))
                     title = '{}Cfg'.format(file_name.split(chip_cfg_name)[1][1:])
                     self.setConfig(cfg_json, filename, title, 'componentTestRun', chip_json, conn_json)
                     continue
+                    '''
+                
                 ### attachment for componentTestRun
-                if '{}_'.format(chip_name) in file_name:
-                    file_path = '{0}/{1}'.format(i_dir, file_name)
-                    histoname = file_name.split('{}_'.format(chip_name))[1].split('.')[0]
-                    self.setAttachment(file_path, histoname, chip_json, conn_json)
+                try:
+                    hexSN = hex( int(chip_name[7:]) )
+                except:
                     continue
+                    
+                # self.logger.info( f'chip_name = {chip_name}, file_name = {file_name}, hexSN = {hexSN}' )
+                try:
+                    if '{}_'.format(hexSN) in file_name:
+                        file_path = '{0}/{1}'.format(i_dir, file_name)
+                        histoname = file_name.split('{}_'.format(hexSN))[1].split('.')[0]
+                        self.logger.info( f'writeScan: attaching {file_path} with histoname {histoname}' )
+                        self.setAttachment(file_path, histoname, chip_json, conn_json)
+                        continue
+                except Exception as e:
+                    self.logger.error( str(e) )
+
     ## finish
     tr_oids = self.completeTestRun(log_json, conn_jsons)
 

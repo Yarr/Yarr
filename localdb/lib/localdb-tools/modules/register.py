@@ -366,12 +366,12 @@ class RegisterData():
         def __run_exist(s, i_run):
             s['_id'].append(str(i_run['_id']))
             s['passed'].append(i_run.get('passed',False))
-        self.logger.info(f'RegisterData.{get_function_name()}: \tCheck TestRun')
+        self.logger.info(f'RegisterData.{get_function_name()}: \tCheck TestRun: i_tr_oid = {i_tr_oid}, i_timestamp = {i_timestamp}')
         status = {
             '_id'   : [],
             'passed': []
         }
-        if not i_tr_oid=='':
+        if not i_tr_oid=='' or i_tr_oid ==None:
             query = {
                 '_id'      : ObjectId(i_tr_oid),
                 'dbVersion': self.db_version
@@ -387,22 +387,26 @@ class RegisterData():
             }
             run_entries = self.localdb.testRun.find(query).sort([('$natural', -1)])
             for this_run in run_entries:
-                if not i_conn=={}:
-                    chip_ids = []
-                    for chip_json in i_conn['chips']:
-                        if chip_json.get('enable', 1)==0: continue
-                        chip_ids.append({ 'chip': chip_json['chip'] })
-                    query = {
-                        'testRun'  : str(this_run['_id']),
-                        'dbVersion': self.db_version,
-                        '$or'      : chip_ids
-                    }
-                    ctr_entries = self.localdb.componentTestRun.find(query)
-                    if not ctr_entries.count()==0:
+                try:
+                    if not i_conn=={}:
+                        chip_ids = []
+                        for chip_json in i_conn['chips']:
+                            if chip_json.get('enable', 1)==0: continue
+                            chip_ids.append({ 'chip': chip_json['chip'] })
+                        query = {
+                            'testRun'  : str(this_run['_id']),
+                            'dbVersion': self.db_version,
+                            '$or'      : chip_ids
+                        }
+                        ctr_entries = self.localdb.componentTestRun.find(query)
+                        if not ctr_entries.count()==0:
+                            __run_exist(status, this_run)
+                            break
+                    else:
                         __run_exist(status, this_run)
-                        break
-                else:
-                    __run_exist(status, this_run)
+                except Exception as e:
+                    self.logger.warning( str(e) )
+                    
 
         return status
 
@@ -532,7 +536,10 @@ class ScanData(RegisterData):
             conn['testRun'] = tr_oid
             if not conn['module'].get('component','...')=='...':
                 ctr_oid = self.__check_component_test_run(conn['module'], tr_oid)
+            
             for chip_json in conn['chips']:
+                if 'name' in chip_json:
+                    chip_json['name'] = self._get_chip_serial_number( chip_json['name'] )
                 ctr_oid = self.__check_component_test_run(chip_json, tr_oid)
             self.conns[i] = conn
             query = { '_id': ObjectId(tr_oid) }
@@ -592,8 +599,10 @@ class ScanData(RegisterData):
                     return False
             except:
                 return False
-        self.logger.info(f'RegisterData.{get_function_name()}: Set Attachment')
-        if not os.path.isfile(i_file_path): return
+        if not os.path.isfile(i_file_path):
+            self.logger.warning( f'{i_file_path} was not identified as a file' )
+            return
+
         with open(i_file_path, 'rb') as f:
             binary_data = f.read()
             if is_dat(binary_data):
