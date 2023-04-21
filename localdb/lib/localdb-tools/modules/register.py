@@ -126,7 +126,11 @@ class RegisterData():
                     path = '{0}/{1}.before'.format(i_cache_dir, chip_json['config'])
                 else:
                     path = chip_json['config']
-                chip_cfg_json = readJson(str(Path(conn_dir).parent / path))
+
+                if chip_json['path'] == 'relToCon':
+                    path = str(Path(conn_dir).parent / path)
+
+                chip_cfg_json = readJson(path)
                 if not self.chip_type in chip_cfg_json:
                     self.logger.error('Not found {0} in chip config file: {1}'.format(self.chip_type, path))
                     raise RegisterError
