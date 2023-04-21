@@ -96,7 +96,7 @@ class RegisterData():
         self.logger.info(f'RegisterData.{get_function_name()}: Set Site')
         self.site_json.update(i_json)
 
-    def setConnCfg(self, conn_dir, i_conn, i_cache_dir=''):
+    def setConnCfg(self, i_conn, i_cache_dir=''):
         self.logger.info(f'RegisterData.{get_function_name()}: Set Connectivity Config')
         if i_conn=={}:
             return i_conn
@@ -128,7 +128,7 @@ class RegisterData():
                     path = chip_json['config']
 
                 if chip_json['path'] == 'relToCon':
-                    path = str(Path(conn_dir).parent / path)
+                    path = str(Path(i_cache_dir).parent / path)
 
                 chip_cfg_json = readJson(path)
                 if not self.chip_type in chip_cfg_json:
