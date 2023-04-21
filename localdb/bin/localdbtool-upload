@@ -386,14 +386,14 @@ def writeScan(self, i_dir):
         scan_cfg_path = '{0}/{1}.json'.format(i_dir, test_type)
         cfg_json = common.readJson(scan_cfg_path)
         self.setConfig(cfg_json, test_type, 'scanCfg', 'testRun', {}, conn_json)
-        
+
         logger.info( '\t conn_json = ' + pprint.pformat( conn_json ) )
         for chip_json in conn_json['chips']:
             chip_name = chip_json['name']
             filename = 'chipCfg'
             chip_cfg_name = chip_json['config'].split('/')[len(chip_json['config'].split('/'))-1]
             for file_name in os.listdir(i_dir):
-                
+
                 ### config for componentTestRun
                 if chip_cfg_name in file_name:
                     continue
@@ -403,13 +403,13 @@ def writeScan(self, i_dir):
                     self.setConfig(cfg_json, filename, title, 'componentTestRun', chip_json, conn_json)
                     continue
                     '''
-                
+
                 ### attachment for componentTestRun
                 try:
                     hexSN = hex( int(chip_name[7:]) )
                 except:
                     continue
-                    
+
                 # self.logger.info( f'chip_name = {chip_name}, file_name = {file_name}, hexSN = {hexSN}' )
                 try:
                     if '{}_'.format(hexSN) in file_name:
