@@ -182,10 +182,10 @@ def checkConfigFormat(self, i_dir='', i_log={}, i_path=''):
     conn_jsons = common.readJson(args.conn) if args.conn else i_log.get('connectivity',{})
     self.logger.info( 'localdbtool-upload: checkConfigFormat(): conn_jsons = ' + pprint.pformat( conn_jsons ) )
     if not type(conn_jsons)==type([]):
-        self.setConnCfg(conn_jsons, i_dir)
+        self.setConnCfg(args.conn, conn_jsons, i_dir)
     else:
         for conn in conn_jsons:
-            self.setConnCfg(conn, i_dir)
+            self.setConnCfg(args.conn, conn, i_dir)
 
 common.addInstanceMethod(RegisterData, checkConfigFormat)
 

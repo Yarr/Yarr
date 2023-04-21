@@ -22,6 +22,7 @@ import inspect
 from logging import getLogger
 logger = getLogger('Log').getChild('Register')
 from common import readJson
+from pathlib import Path
 
 def get_function_name():
     return traceback.extract_stack(None, 2)[0][2]
@@ -42,7 +43,7 @@ class DcsDataError(Exception):
     pass
 
 class RegisterData():
-    
+
     def __init__(self):
         self.logger = getLogger('Log').getChild('Register')
         self.logger.info(f'RegisterData.{get_function_name()}: Initialize register function')
@@ -66,7 +67,7 @@ class RegisterData():
         }
         self.conns = []
 
-    
+
     def setDb(self, i_cfg, i_localdb, i_toolsdb):
         self.db_cfg = i_cfg
         self.localdb = i_localdb
@@ -86,20 +87,20 @@ class RegisterData():
             for value in i_cfg.get(key, []):
                 self.db_list[key].append(value.lower().replace(' ','_'))
 
-    
+
     def setUser(self, i_json):
         self.logger.info(f'RegisterData.{get_function_name()}: Set User')
         self.user_json.update(i_json)
-    
+
     def setSite(self, i_json):
         self.logger.info(f'RegisterData.{get_function_name()}: Set Site')
         self.site_json.update(i_json)
-    
-    def setConnCfg(self, i_conn, i_cache_dir=''):
+
+    def setConnCfg(self, conn_dir, i_conn, i_cache_dir=''):
         self.logger.info(f'RegisterData.{get_function_name()}: Set Connectivity Config')
         if i_conn=={}:
             return i_conn
-            
+
         # chip type
         self._check_empty(i_conn, 'chipType', 'connectivity config')
         self.chip_type = i_conn['chipType']
@@ -125,7 +126,7 @@ class RegisterData():
                     path = '{0}/{1}.before'.format(i_cache_dir, chip_json['config'])
                 else:
                     path = chip_json['config']
-                chip_cfg_json = readJson(path)
+                chip_cfg_json = readJson(str(Path(conn_dir).parent / path))
                 if not self.chip_type in chip_cfg_json:
                     self.logger.error('Not found {0} in chip config file: {1}'.format(self.chip_type, path))
                     raise RegisterError
@@ -145,7 +146,7 @@ class RegisterData():
         self.conns.append(conn)
         return conn
 
-    
+
     def _update_sys(self, i_oid, i_col):
         if i_oid in self.updated.get(i_col, []): return
         self.logger.info(f'RegisterData.{get_function_name()}: \t\t\tUpdate system information: {i_oid} in {i_col}')
@@ -163,7 +164,7 @@ class RegisterData():
             self.updated.update({ i_col: [] })
         self.updated[i_col].append(i_oid)
 
-    
+
     def _add_value(self, i_oid, i_col, i_key, i_value, i_type='string'):
         self.logger.info(f'RegisterData.{get_function_name()}: \t\t\tAdd document: {i_key} to {i_col}')
         if i_type=='string': value = str(i_value)
@@ -173,7 +174,7 @@ class RegisterData():
         doc_value = { '$set': { i_key: i_value }}
         self.localdb[i_col].update_one( query, doc_value )
 
-    
+
     def _get_hash(self, i_file_data, i_type='json'):
         self.logger.info(f'RegisterData.{get_function_name()}: \t\t\tGet Hash Code from File')
         if i_type=='json':
@@ -184,7 +185,7 @@ class RegisterData():
             shaHashed = hashlib.sha256(binary).hexdigest()
         return shaHashed
 
-    
+
     def _check_empty(self, i_json, i_key, i_filename):
         self.logger.info(f'RegisterData.{get_function_name()}: \tCheck Empty:')
         self.logger.info(f'RegisterData.{get_function_name()}: \t- key: {i_key}')
@@ -201,7 +202,7 @@ class RegisterData():
                 raise RegisterError
         return
 
-    
+
     def _check_number(self, i_json, i_key, i_filename):
         self.logger.info(f'RegisterData.{get_function_name()}: \tCheck Number:')
         self.logger.info(f'RegisterData.{get_function_name()}: \t- key: {i_key}')
@@ -214,7 +215,7 @@ class RegisterData():
             raise RegisterError
         return
 
-    
+
     def _check_user(self, i_register=True):
         """
         This function checks user data
@@ -240,7 +241,7 @@ class RegisterData():
         elif i_register: oid = self.__register_user()
         return oid
 
-    
+
     def _check_site(self, i_register=True):
         """
         This function checks site data
@@ -263,7 +264,7 @@ class RegisterData():
         elif i_register: oid = self.__register_site()
         return oid
 
-    
+
     def _check_component(self, i_json, i_qc=False):
         """
         This function checks component data
@@ -274,32 +275,32 @@ class RegisterData():
         oid = '...'
         if not 'serialNumber' in i_json:
             return oid
-            
+
         if not 'componentType' in i_json:
             return oid
-            
-            
+
+
         cptTypeString = i_json.get('componentType').lower().replace(' ', '_')
-        
+
         if cptTypeString == 'module':
             query = {
                 'serialNumber' : i_json['serialNumber'],
                 'componentType': i_json['componentType'].lower().replace(' ','_'),
             }
-            
+
         else:
             # FE chip
             query = {
                 'serialNumber' : self._get_chip_serial_number( i_json['serialNumber'] ),
                 'componentType': i_json['componentType'].lower().replace(' ','_'),
             }
-            
+
         this_cmp = self.localdb.component.find_one(query)
         oid = str(this_cmp['_id'])
-                
+
         return oid
 
-    
+
     def _get_chip_serial_number( self, hexstr ):
         try:
             return '20UPGFC' + str( int(hexstr, 16) ).zfill(7)
@@ -325,7 +326,7 @@ class RegisterData():
             if this_cpr: oid = str(this_cpr['_id'])
         return oid
 
-    
+
     def _check_chip(self, i_json, i_register=True):
         """
         This function checks chip data
@@ -340,9 +341,9 @@ class RegisterData():
                 'serialNumber' : i_json['name'],
                 'chipId'   : i_json['chipId']
             }
-            
+
             this_chip = self.localdb.component.find_one(query)
-            
+
             if this_chip == None:
                 try:
                     query = {
@@ -351,14 +352,14 @@ class RegisterData():
                     this_chip = self.localdb.component.find_one(query)
                 except:
                     pass
-                
+
             self.logger.info( f'RegisterData._check_chip(): \tFound chip in localdb: ObjectId = {this_chip["_id"]}')
-            
+
             if this_chip: oid = str(this_chip['_id'])
             elif i_register: oid = self.__register_chip(i_json)
         return oid
 
-    
+
     def _check_test_run(self, i_tr_oid='', i_conn={}, i_timestamp=None):
         """
         This function checks test run data
@@ -406,11 +407,11 @@ class RegisterData():
                         __run_exist(status, this_run)
                 except Exception as e:
                     self.logger.warning( str(e) )
-                    
+
 
         return status
 
-    
+
     def _check_list(self, i_value, i_name):
         """
         This function checks if the value is listed
@@ -423,7 +424,7 @@ class RegisterData():
             raise RegisterError
         return
 
-    
+
     def _verify_user(self, i_qc=False):
         """
         This function verifies user data
@@ -436,7 +437,7 @@ class RegisterData():
         self.logger.info(f'RegisterData.{get_function_name()}: ~~~     "institution": "\033[1;33m{self.user_json["institution"]}\033[0m"')
         self.logger.info(f'RegisterData.{get_function_name()}: ~~~ }}')
 
-    
+
     def _verify_site(self, i_qc=False):
         """
         This function verifies site data
@@ -448,7 +449,7 @@ class RegisterData():
         self.logger.info(f'RegisterData.{get_function_name()}: ~~~     "institution": "\033[1;33m{self.site_json["institution"]}\033[0m"')
         self.logger.info(f'RegisterData.{get_function_name()}: ~~~ }}')
 
-    
+
     def __register_user(self):
         """
         This function registeres user data
@@ -466,7 +467,7 @@ class RegisterData():
         self.logger.info(f'RegisterData.{get_function_name()}: \t\tdoc   : {oid}')
         return oid
 
-    
+
     def __register_site(self):
         """
         All the information in self.site_json is registered.
@@ -482,7 +483,7 @@ class RegisterData():
         self.logger.info(f'RegisterData.{get_function_name()}: \t\tdoc   : {oid}')
         return oid
 
-    
+
     def __register_chip(self, i_json):
         """
         chip data written in i_json is registered.
@@ -503,14 +504,14 @@ class RegisterData():
         return oid
 
 class ScanData(RegisterData):
-    
+
     def __init__(self):
         super().__init__()
 
     ##########
     # public #
     ##########
-    
+
     def setTestRun(self, i_log):
         self.logger.info(f'RegisterData.{get_function_name()}: Set TestRun')
         # user
@@ -521,7 +522,7 @@ class ScanData(RegisterData):
 
         # connectivity
         self.__check_conn()
-        
+
         # testRun and componentTestRun
         self.histo_names = []
         for i, conn in enumerate(self.conns):
@@ -536,7 +537,7 @@ class ScanData(RegisterData):
             conn['testRun'] = tr_oid
             if not conn['module'].get('component','...')=='...':
                 ctr_oid = self.__check_component_test_run(conn['module'], tr_oid)
-            
+
             for chip_json in conn['chips']:
                 if 'name' in chip_json:
                     chip_json['name'] = self._get_chip_serial_number( chip_json['name'] )
@@ -547,7 +548,7 @@ class ScanData(RegisterData):
             if this_run and not this_run.get('plots',[])==[]: self.histo_names = this_run['plots']
         return self.conns
 
-    
+
     def completeTestRun(self, i_scanlog_json, i_conns):
         self.logger.info(f'RegisterData.{get_function_name()}: Set Test Run (finish)')
         tr_oids = []
@@ -573,7 +574,7 @@ class ScanData(RegisterData):
             tr_oids.append(tr_oid)
         self.tr_oids = tr_oids
 
-    
+
     def setConfig(self, i_config_json, i_filename, i_title, i_col, i_chip_json, i_conn):
         self.logger.info(f'RegisterData.{get_function_name()}: Set Config Json')
         if i_config_json=={}: return
@@ -582,7 +583,7 @@ class ScanData(RegisterData):
 
         return
 
-    
+
     def setAttachment(self,i_file_path, i_histo_name, i_chip_json, i_conn):
         def is_dat(b):
             try:
@@ -617,13 +618,13 @@ class ScanData(RegisterData):
 
         return
 
-    
+
     def verifyCfg(self, i_qc):
         self._verify_user(i_qc)
         self._verify_site(i_qc)
         self.__verify_conn_cfg()
 
-    
+
     def __verify_conn_cfg(self):
         """
         This function verifies component data
@@ -694,7 +695,7 @@ class ScanData(RegisterData):
             self.logger.info(f'RegisterData.{get_function_name()}: ~~~     "stage": "\033[1;33m{{}}\033[0m"'.format(conn.get('stage','...')))
             self.logger.info(f'RegisterData.{get_function_name()}: ~~~ }}')
 
-    
+
     def __check_conn(self):
         """
         This function checks connectivity data
@@ -702,7 +703,7 @@ class ScanData(RegisterData):
         self.logger.info(f'RegisterData.__check_conn(): \tCheck Conn')
         conns = self.conns
         self.logger.info(f'RegisterData.__check_conn(): input conns = ' + pprint.pformat( conns ) )
-        
+
         self.conns = []
         for conn in conns:
             # module
@@ -729,11 +730,11 @@ class ScanData(RegisterData):
                 if 'cpr'           in chip_json: del chip_json['cpr']
                 conn['chips'].append(chip_json)
             self.conns.append(conn)
-            
+
         self.logger.info(f'RegisterData.__check_conn(): output conns = ' + pprint.pformat( self.conns ) )
 
 
-    
+
     def __check_stage(self, i_mo_oid):
         """
         This function checks current stage
@@ -748,7 +749,7 @@ class ScanData(RegisterData):
             if this: stage = this['currentStage']
         return stage
 
-    
+
     def __check_component_test_run(self, i_json, i_tr_oid):
         """
         This function checks test run data
@@ -770,7 +771,7 @@ class ScanData(RegisterData):
             oid = self.__register_component_test_run(i_json, i_tr_oid)
         return oid
 
-    
+
     def __check_config(self, i_title, i_col, i_tr_oid, i_chip_oid):
         self.logger.info(f'RegisterData.{get_function_name()}: \tCheck Config Json:')
         oid = None
@@ -790,7 +791,7 @@ class ScanData(RegisterData):
 
         return oid
 
-    
+
     def __check_attachment(self, i_histo_name, i_tr_oid, i_chip_oid, i_type):
         self.logger.info(f'RegisterData.{get_function_name()}: \tCheck Attachment:')
         oid = None
@@ -806,7 +807,7 @@ class ScanData(RegisterData):
         if not '{0}.{1}'.format(i_histo_name, i_type) in filenames: oid = str(this_ctr['_id'])
         return oid
 
-    
+
     def __check_gridfs(self, i_hash_code):
         self.logger.info(f'RegisterData.{get_function_name()}: \t\t\tCheck Json File by Hash')
         oid = None
@@ -819,7 +820,7 @@ class ScanData(RegisterData):
             oid = str(this_file['_id'])
         return oid
 
-    
+
     def __register_test_run(self, i_json, i_stage, i_tr_oid):
         """
         Almost all the information in i_json is registered.
@@ -856,7 +857,7 @@ class ScanData(RegisterData):
         self.logger.info(f'RegisterData.{get_function_name()}: \t\tdoc   : {{}}'.format(oid))
         return oid
 
-    
+
     def __register_component_test_run(self, i_json, i_tr_oid):
         """
         Almost all the information in i_json is registered.
@@ -874,7 +875,7 @@ class ScanData(RegisterData):
         self.logger.info(f'RegisterData.{get_function_name()}: \t\tdoc   : {{}}'.format(oid))
         return oid
 
-    
+
     def __register_config(self, i_file_json, i_filename, i_title, i_col, i_oid):
         self.logger.info(f'RegisterData.{get_function_name()}: \t\tRegister Config Json')
         hash_code = self._get_hash(i_file_json)
@@ -898,7 +899,7 @@ class ScanData(RegisterData):
         self.logger.info(f'RegisterData.{get_function_name()}: \t\tdata  : {{}}'.format(data_id))
         return oid
 
-    
+
     def __register_attachment(self, i_file_path, i_histo_name, i_oid, i_type):
         self.logger.info(f'RegisterData.{get_function_name()}: \t\tRegister Attachment')
         if i_type=='json':
@@ -930,7 +931,7 @@ class ScanData(RegisterData):
         self.logger.info(f'RegisterData.{get_function_name()}: \t\tdata  : {{}}'.format(oid))
         return oid
 
-    
+
     def __register_grid_fs_file(self, i_file_json, i_file_path, i_filename, i_hash=''):
         self.logger.info(f'RegisterData.{get_function_name()}: \t\t\tWrite File by GridFS')
         if not i_file_path=='':
@@ -946,17 +947,17 @@ class ScanData(RegisterData):
         return oid
 
 class DcsData(RegisterData):
-    
+
     def __init__(self):
         super().__init__()
         self.ctr_oids = []
 
-    
+
     def verifyCfg(self, i_log):
         self.__verify_dcs_log_format(i_log)
         self.__verify_test_data(i_log)
 
-    
+
     def __verify_dcs_log_format(self, i_log):
         """
         This function verifies DCS log file
@@ -981,7 +982,7 @@ class DcsData(RegisterData):
                 if 'margin' in env_j:
                     self._check_number(env_j, 'margin', filename)
 
-    
+
     def __verify_test_data(self, i_log):
         """
         This function verifies scan data
@@ -1003,7 +1004,7 @@ class DcsData(RegisterData):
             raise ValidationError
         self.dcs_tr_oids = tr_oids
 
-    
+
     def verifyDcsData(self, i_env):
         """
         This function verifies DCS data associated to scan data
@@ -1033,7 +1034,7 @@ class DcsData(RegisterData):
         i_env.update({ 'registered_oids': registered_oids, 'ctr_oids': ctr_oids, 'chips': chips, 'registered_chips': registered_chips })
         return i_env
 
-    
+
     def confirmDcsData(self, i_env):
         """
         This function display DCS configuration
@@ -1050,7 +1051,7 @@ class DcsData(RegisterData):
         if not i_env.get('registered_chips',[])==[]: self.logger.info(f'RegisterData.{get_function_name()}: ~~~     "\033[1;31mchips with registered DCS data\033[0m": {{}}'.format(', '.join(i_env['registered_chips'])))
         self.logger.info(f'RegisterData.{get_function_name()}: ~~~ }}')
 
-    
+
     def setDcs(self):
         self.logger.info(f'RegisterData.{get_function_name()}: \t\tSet DCS')
         environments = self.environments
@@ -1068,7 +1069,7 @@ class DcsData(RegisterData):
                 self.__register_dcs(ctr_oid, env_key, env_j)
                 self.ctr_oids.append({ 'ctr_oid': ctr_oid, 'key': env_key, 'num': env_j['num'], 'description': env_j['description'] })
 
-    
+
     def __check_conn(self):
         """
         This function checks connectivity data
@@ -1086,7 +1087,7 @@ class DcsData(RegisterData):
                 conn['chips'].append(chip_json)
             self.conns.append(conn)
 
-    
+
     def _check_dcs(self, i_ctr_oid, i_key, i_num, i_description):
         self.logger.info(f'RegisterData.{get_function_name()}: \tCheck DCS')
         ctr_oid = None
@@ -1107,7 +1108,7 @@ class DcsData(RegisterData):
                     break
         return ctr_oid
 
-    
+
     def __register_dcs(self, i_ctr_oid, i_env_key, i_env_j):
         self.logger.info(f'RegisterData.{get_function_name()}: \t\tRegister DCS')
         query = {
@@ -1158,7 +1159,7 @@ class DcsData(RegisterData):
         self._update_sys(tr_oid, 'testRun')
         self.tr_oids.append(tr_oid)
 
-    
+
     def __read_dcs_data(self, i_path, i_key, i_num, i_start=None, i_finish=None):
         self.logger.info(f'RegisterData.{get_function_name()}: \t\tRead DCS data')
         env_key = i_key.lower().replace(' ','_')
@@ -1249,16 +1250,16 @@ class DcsData(RegisterData):
         return array
 
 class CompData(RegisterData):
-    
+
     def __init__(self):
         super().__init__()
 
-    
+
     def verifyCfg(self):
         self._verify_user()
         self._verify_site()
 
-    
+
     def checkConnCfg(self, i_path):
         """
         Check Component Connectivity
@@ -1316,7 +1317,7 @@ class CompData(RegisterData):
         self.logger.warning('It will be override with the provided infomation if data already exists in Local DB.')
         self.conn = conn
 
-    
+
     def setComponent(self):
         """
         This function registers component information from cnnectivity file
@@ -1347,7 +1348,7 @@ class CompData(RegisterData):
         self.logger.info(f'RegisterData.{get_function_name()}: Succeeded uploading component data')
         return True
 
-    
+
     def __check_component(self, i_json):
         """
         This function checks component data
@@ -1368,7 +1369,7 @@ class CompData(RegisterData):
 
         return result
 
-    
+
     def __register_component(self, i_json, i_oid):
         """
         This function registers Component
@@ -1400,7 +1401,7 @@ class CompData(RegisterData):
         logger.info(f'RegisterData.{get_function_name()}: \t\tdoc   : {{}}'.format(oid))
         return oid
 
-    
+
     def __register_child_parent_relation(self, i_parent_oid, i_child_oid, i_chip_id, i_geom_id, i_oid, i_active=True):
         """
         This function registeres ChildParentRelation
