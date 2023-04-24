@@ -12,6 +12,7 @@ import os, sys, shutil, hashlib, json, uuid
 import gridfs
 from pymongo          import MongoClient, DESCENDING
 from bson.objectid    import ObjectId
+import pickle
 from datetime         import datetime, timezone, timedelta
 import time
 import pprint
@@ -108,12 +109,6 @@ class RegisterData():
 
         conn = { 'module': {}, 'chips': [] }
 
-        # module
-        if 'module' in i_conn:
-            self._check_empty(i_conn['module'], 'serialNumber', 'connectivity.module')
-            conn['module'] = i_conn['module']
-            conn['module']['name'] = conn['module']['serialNumber']
-            conn['module']['componentType'] = conn['module'].get('componentType', 'module')
         # chips
         for i, chip_json in enumerate(i_conn['chips']):
             if chip_json.get('enable', 1)==0: # disabled chip #TODO
@@ -138,15 +133,59 @@ class RegisterData():
                     chip_json['name'] = chip_cfg_json[self.chip_type]['name']
                     chip_json['chipId'] = chip_cfg_json[self.chip_type]['Parameter']['chipId']
                 elif 'Name' in chip_cfg_json[self.chip_type].get('Parameter',{}): # for RD53A
-                    chip_json['name'] = chip_cfg_json[self.chip_type]['Parameter']['Name']
-                    chip_json['chipId'] = chip_cfg_json[self.chip_type]['Parameter']['ChipId']
+                    
+                    chip_json['hexSN'] = chip_cfg_json[self.chip_type]['Parameter']['Name']
+                    chip_json['serialNumber'] = '20UPGFC' + str( int(chip_json.get('hexSN'), 16) ).zfill(7)
+                    
                 else: # TODO
                     chip_json['name'] = 'UnnamedChip_{}'.format(i)
                     chip_json['chipId'] = -1
-            chip_json['serialNumber'] = chip_json['name']
             chip_json['componentType'] = chip_json.get('componentType', 'front-end_chip')
             chip_json['geomId'] = chip_json.get('geomId', i)
             conn['chips'].append(chip_json)
+
+        try:
+            # module
+            if 'module' in i_conn:
+                self._check_empty(i_conn['module'], 'serialNumber', 'connectivity.module')
+                conn['module'] = i_conn['module']
+                conn['module']['name'] = conn['module']['serialNumber']
+                conn['module']['componentType'] = conn['module'].get('componentType', 'module')
+            else:
+
+                self.logger.info( f'RegisterData.{get_function_name()}: constructing module SN from chips information' )
+                chip_SNs = [ chip_json.get('serialNumber') for chip_json in conn.get('chips') ]
+
+                module_SNs = []
+                stages = []
+                for chip_SN in chip_SNs:
+                    chip_doc = self.localdb.component.find_one( {'serialNumber':chip_SN} )
+                    if chip_doc == None:
+                        continue
+                    parents = [ cpr.get('parent') for cpr in self.localdb.childParentRelation.find( {'child':str( chip_doc.get('_id') ) } ) ]
+
+                    for parent in parents:
+                        parent_doc = self.localdb.component.find_one( {'_id':ObjectId(parent), 'componentType' : 'module' } )
+                        if parent_doc != None:
+                            module_SNs += [ parent_doc.get('serialNumber') ]
+                            stage_doc = self.localdb.QC.module.status.find_one( {'component': parent} )
+                            stages += [ stage_doc.get('currentStage') ]
+
+                #self.logger.info( f'chip_SNs = {chip_SNs}' )
+                #self.logger.info( f'module_SNs = {module_SNs}' )
+                #self.logger.info( f'stages = {stages}' )
+                
+                assert( all( [ sn == module_SNs[0] for sn in module_SNs ] ) )
+                assert( all( [ stage == stages[0] for stage in stages ] ) )
+
+                conn['module'] = { 'serialNumber' : module_SNs[0] }
+                conn['stage'] = stages[0]
+                
+                
+        except Exception as e:
+            self.logger.error( str(e) )
+            
+            
         self.conns.append(conn)
         return conn
 
@@ -276,28 +315,14 @@ class RegisterData():
         If there is not a matching data, return '...'
         """
         self.logger.info(f'RegisterData.{get_function_name()}: \tCheck Component: query = {i_json}')
+        
         oid = '...'
         if not 'serialNumber' in i_json:
             return oid
 
-        if not 'componentType' in i_json:
-            return oid
-
-
-        cptTypeString = i_json.get('componentType').lower().replace(' ', '_')
-
-        if cptTypeString == 'module':
-            query = {
-                'serialNumber' : i_json['serialNumber'],
-                'componentType': i_json['componentType'].lower().replace(' ','_'),
-            }
-
-        else:
-            # FE chip
-            query = {
-                'serialNumber' : self._get_chip_serial_number( i_json['serialNumber'] ),
-                'componentType': i_json['componentType'].lower().replace(' ','_'),
-            }
+        query = {
+            'serialNumber' : i_json['serialNumber']
+        }
 
         this_cmp = self.localdb.component.find_one(query)
         oid = str(this_cmp['_id'])
@@ -342,20 +367,10 @@ class RegisterData():
         oid = '...'
         if not i_json.get('enable', 1)==0:
             query = {
-                'serialNumber' : i_json['name'],
-                'chipId'   : i_json['chipId']
+                'serialNumber' : i_json['serialNumber']
             }
 
             this_chip = self.localdb.component.find_one(query)
-
-            if this_chip == None:
-                try:
-                    query = {
-                        'serialNumber' : self._get_chip_serial_number( i_json['name'] )
-                    }
-                    this_chip = self.localdb.component.find_one(query)
-                except:
-                    pass
 
             self.logger.info( f'RegisterData._check_chip(): \tFound chip in localdb: ObjectId = {this_chip["_id"]}')
 
@@ -539,12 +554,12 @@ class ScanData(RegisterData):
             else:
                 tr_oid = self.__register_test_run(i_log, conn.get('stage', '...'), status_id)
             conn['testRun'] = tr_oid
-            if not conn['module'].get('component','...')=='...':
+            if 'module' in conn:
                 ctr_oid = self.__check_component_test_run(conn['module'], tr_oid)
 
             for chip_json in conn['chips']:
                 if 'name' in chip_json:
-                    chip_json['name'] = self._get_chip_serial_number( chip_json['name'] )
+                    chip_json['serialNumber'] = self._get_chip_serial_number( chip_json['name'] )
                 ctr_oid = self.__check_component_test_run(chip_json, tr_oid)
             self.conns[i] = conn
             query = { '_id': ObjectId(tr_oid) }
@@ -624,9 +639,11 @@ class ScanData(RegisterData):
 
 
     def verifyCfg(self, i_qc):
+        self.logger.info(f'RegisterData.{get_function_name()}: begin')
         self._verify_user(i_qc)
         self._verify_site(i_qc)
         self.__verify_conn_cfg()
+        self.logger.info(f'RegisterData.{get_function_name()}: done')
 
 
     def __verify_conn_cfg(self):
@@ -637,10 +654,14 @@ class ScanData(RegisterData):
         self.logger.info(f'RegisterData.{get_function_name()}: \tVerify Component')
         if not self.conns==[]:
             self.logger.info(f'RegisterData.{get_function_name()}: Loading component information ...')
+
+        #self.logger.info( '__verify_conn_cfg(): self.conns = ' + pprint.pformat( self.conns ) )
+        
         if True:
             conns = self.conns
             self.conns = []
             for conn in conns:
+
                 # module
                 if conn['module']=={}:
                     self.logger.error('Found an empty field in connectivity config file.')
@@ -653,6 +674,9 @@ class ScanData(RegisterData):
                     self.logger.error('{{ "module": {{ "serialNumber": "xxx" }} }} in connectivity file.')
                     raise ValidationError
                 conn['module']['component'] = mo_oid
+
+                
+                
                 # chips
                 chips_json = conn['chips']
                 conn['chips'] = []
@@ -686,18 +710,20 @@ class ScanData(RegisterData):
             if not conn['module']=={}:
                 self.logger.info(f'RegisterData.{get_function_name()}: ~~~     "parent": {{')
                 self.logger.info(f'RegisterData.{get_function_name()}: ~~~         "serialNumber": "\033[1;33m{{}}\033[0m",'.format(conn['module']['serialNumber']))
-                self.logger.info(f'RegisterData.{get_function_name()}: ~~~         "componentType": "\033[1;33m{{}}\033[0m"'.format(conn['module']['componentType']))
                 self.logger.info(f'RegisterData.{get_function_name()}: ~~~     }},')
+
+                
             self.logger.info(f'RegisterData.{get_function_name()}: ~~~     "children": [{{')
+            
             for i, chip in enumerate(conn['chips']):
                 if not i==0:
                     self.logger.info(f'RegisterData.{get_function_name()}: ~~~     }},{{')
-                self.logger.info(f'RegisterData.{get_function_name()}: ~~~         "serialNumber": "\033[1;33m{0}\033[0m",\033[1;33m{1}\033[0m'.format(chip['serialNumber'], ' (disabled)' if chip.get('enable',1)==0 else ''))
+                self.logger.info(f'RegisterData.{get_function_name()}: ~~~         "serialNumber": "\033[1;33m{chip.get("serialNumber")}\033[0m",\033[1;33m{ " (disabled)" if chip.get("enable",1) == 0 else ""}\033[0m')
                 self.logger.info(f'RegisterData.{get_function_name()}: ~~~         "componentType": "\033[1;33m{{}}\033[0m",'.format(chip['componentType']))
-                self.logger.info(f'RegisterData.{get_function_name()}: ~~~         "chipId": "\033[1;33m{{}}\033[0m",'.format(chip['chipId']))
             self.logger.info(f'RegisterData.{get_function_name()}: ~~~     }}],')
             self.logger.info(f'RegisterData.{get_function_name()}: ~~~     "stage": "\033[1;33m{{}}\033[0m"'.format(conn.get('stage','...')))
             self.logger.info(f'RegisterData.{get_function_name()}: ~~~ }}')
+            self.logger.info(f'RegisterData.{get_function_name()}: done.')
 
 
     def __check_conn(self):
@@ -758,7 +784,15 @@ class ScanData(RegisterData):
         """
         This function checks test run data
         """
-        self, logger.info(f'RegisterData.{get_function_name()}: \tCheck Component-TestRun')
+        self.logger.info(f'RegisterData.{get_function_name()}: \tCheck Component-TestRun')
+        self.logger.info(f'RegisterData.{get_function_name()}: i_json = {i_json}' )
+
+        component_doc = self.localdb.component.find_one( { '_id' : ObjectId( i_json.get('component') ) } )
+
+        i_json['name'] = component_doc.get('name')
+        i_json['serialNumber'] = component_doc.get('serialNumber')
+        i_json['componentType'] = component_doc.get('componentType')
+        
         oid = None
         query = {
             'chip'       : i_json.get('chip','module'),
@@ -881,13 +915,19 @@ class ScanData(RegisterData):
 
 
     def __register_config(self, i_file_json, i_filename, i_title, i_col, i_oid):
-        self.logger.info(f'RegisterData.{get_function_name()}: \t\tRegister Config Json')
-        hash_code = self._get_hash(i_file_json)
+        self.logger.info(f'RegisterData.{get_function_name()}: \t\tRegister Config Json: i_filename="{i_filename}", i_title="{i_title}", i_col = "{i_col}", i_oid="{i_oid}"')
+
+        data = pickle.dumps( i_file_json )
+        hash_code = hashlib.md5(data).hexdigest()
+        self.logger.info( f'hash_code = {hash_code}' )
+        
         data_id = self.__check_gridfs(hash_code)
-        if not data_id: data_id = self.__register_grid_fs_file(i_file_json, '', i_filename+'.json', hash_code)
+        self.logger.info( f'data_id = {data_id}' )
+        
+        if not data_id: data_id = self.__register_grid_fs_file(data, None, i_filename+'.pickle', hash_code)
         doc = {
             'sys'      : {},
-            'filename' : i_filename+'.json',
+            'filename' : i_filename+'.pickle',
             'chipType' : self.chip_type,
             'title'    : i_title,
             'format'   : 'fs.files',
@@ -905,18 +945,20 @@ class ScanData(RegisterData):
 
 
     def __register_attachment(self, i_file_path, i_histo_name, i_oid, i_type):
-        self.logger.info(f'RegisterData.{get_function_name()}: \t\tRegister Attachment')
+        self.logger.info(f'RegisterData.{get_function_name()}: \t\tRegister Attachment: i_file_path="{i_file_path}", i_histo_name="{i_histo_name}", i_oid="{i_oid}", i_type="{i_type}"')
         if i_type=='json':
             with open(i_file_path, 'rb') as f:
                 binary_data = f.read()
                 json_data = json.loads(binary_data.decode('utf-8'))
-            hash_code = self._get_hash(json_data)
+                pickle_data = pickle.dumps(json_data)
+                i_type = 'pickle'
+            hash_code = hashlib.md5(pickle_data).hexdigest()
             oid = self.__check_gridfs(hash_code)
-            if not oid: oid = self.__register_grid_fs_file(json_data, '', '{0}.{1}'.format(i_histo_name, i_type), hash_code)
+            if not oid: oid = self.__register_grid_fs_file(pickle_data, None, '{0}.{1}'.format(i_histo_name, i_type), hash_code)
         else:
             hash_code = self._get_hash(i_file_path)
             oid = self.__check_gridfs(hash_code)
-            if not oid: oid = self.__register_grid_fs_file({}, i_file_path, '{0}.{1}'.format(i_histo_name, i_type))
+            if not oid: oid = self.__register_grid_fs_file(None, i_file_path, '{0}.{1}'.format(i_histo_name, i_type), None)
         self.localdb.componentTestRun.update_one(
             { '_id': ObjectId(i_oid) },
             { '$push': {
@@ -936,18 +978,28 @@ class ScanData(RegisterData):
         return oid
 
 
-    def __register_grid_fs_file(self, i_file_json, i_file_path, i_filename, i_hash=''):
-        self.logger.info(f'RegisterData.{get_function_name()}: \t\t\tWrite File by GridFS')
-        if not i_file_path=='':
+    def __register_grid_fs_file(self, data, i_file_path, i_filename, i_hash):
+        
+        self.logger.info(f'RegisterData.{get_function_name()}: \t\t\tWrite File by GridFS: i_file_path = "{i_file_path}", i_filename="{i_filename}", i_hash="{i_hash}"')
+        
+        if data == None:
             with open(i_file_path, 'rb') as f:
                 binary = f.read()
         else:
-            binary = json.dumps(i_file_json, indent=4).encode('utf-8')
-        if i_hash=='':
-            oid = str(self.localfs.put( binary, filename=i_filename, dbVersion=self.db_version ))
-        else:
-            oid = str(self.localfs.put( binary, filename=i_filename, hash=i_hash, dbVersion=self.db_version ))
+            binary = data
+
+        md5 = hashlib.md5( binary ).hexdigest()
+        
+        duplicated = self.localdb.fs.files.find_one({"md5": md5})
+
+        if duplicated:
+            self._update_sys( str(duplicated), 'fs.files')
+            return str( duplicated )
+        
+        
+        oid = str(self.localfs.put( binary, filename=i_filename, dbVersion=self.db_version ))
         self._update_sys(oid, 'fs.files')
+        
         return oid
 
 class DcsData(RegisterData):
@@ -1324,7 +1376,11 @@ class CompData(RegisterData):
 
     def setComponent(self):
         """
-        This function registers component information from cnnectivity file
+        [deprecated] This function registers component information from cnnectivity file
+        """
+
+        return
+        
         """
         self.logger.info(f'RegisterData.{get_function_name()}: \t\tRegister from Connectivity')
 
@@ -1351,6 +1407,7 @@ class CompData(RegisterData):
 
         self.logger.info(f'RegisterData.{get_function_name()}: Succeeded uploading component data')
         return True
+        """
 
 
     def __check_component(self, i_json):

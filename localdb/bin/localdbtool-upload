@@ -13,11 +13,20 @@ from pymongo          import MongoClient, errors, DESCENDING
 from bson.objectid    import ObjectId
 from datetime         import datetime
 import pprint
+import traceback
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../lib/localdb-tools/modules'))
 from localdb import *
 import register
 from register import RegisterData, ScanData, DcsData, CompData
+
+import module_qc_database_tools
+from module_qc_database_tools.chip_config_api import ChipConfigAPI
+from module_qc_database_tools.core import Module
+from module_qc_database_tools.utils import (
+    chip_uid_to_serial_number,
+    get_layer_from_serial_number,
+)
 
 ### global variables
 home = os.environ['HOME']
@@ -25,6 +34,7 @@ if not 'HOSTNAME' in os.environ:
     hostname = 'default_host'
 else:
     hostname = os.environ['HOSTNAME']
+global db
 global localdb
 
 ### functions
@@ -62,7 +72,7 @@ class InteractiveExit(Exception):
 #######################
 
 def getArgs():
-    logger.debug('Get Arguments.')
+    logger.info('Get Arguments.')
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument(
         'command',
@@ -100,7 +110,8 @@ def checkUploadData(self):
     """
     This function check if data registered by searching with data id
     """
-    self.logger.debug('Check if TestRun Data registered.')
+    logger.info( f'localdbtool-upload.checkUploadData' )
+    logger.info('Check if TestRun Data registered.')
     tr_oids = []
     for tr_oid in self.tr_oids:
         try:
@@ -110,6 +121,8 @@ def checkUploadData(self):
                 if status['passed'][i]: tr_oids.append(oid)
         except DBConnectionError:
             pass
+        
+    logger.info( f'localdbtool-upload.checkUploadData: done' )
     return tr_oids
 
 common.addInstanceMethod(ScanData, checkUploadData)
@@ -118,7 +131,8 @@ def checkUploadData(self):
     """
     This function check if data registered by searching with data id
     """
-    self.logger.debug('Check if DCS data registered.')
+    logger.info( f'localdbtool-upload.checkUploadData' )
+    logger.info('Check if DCS data registered.')
     ctr_oids = []
     for entry in self.ctr_oids:
         try:
@@ -139,7 +153,8 @@ def checkDb(self, i_log={}, i_path=''):
     """
     This function check connection to Local DB
     """
-    self.logger.debug('Initialize.')
+    logger.info( f'localdbtool-upload.checkDb' )
+    logger.info('Initialize.')
     args = getArgs()
 
     if self.dbstatus:
@@ -160,6 +175,7 @@ def checkDb(self, i_log={}, i_path=''):
         localdb = db.getLocalDb()
         toolsdb = db.getLocalDbTools()
         self.setDb(db_cfg, localdb, toolsdb)
+        self.mongodb = db.getClient()
 
 common.addInstanceMethod(RegisterData, checkDb)
 
@@ -167,7 +183,8 @@ def checkConfigFormat(self, i_dir='', i_log={}, i_path=''):
     """
     This function checks config files
     """
-    self.logger.debug('Check config files before scan')
+    logger.info( f'localdbtool-upload.checkConfigFormat' )
+    logger.info('Check config files before scan')
     args = getArgs()
 
     # user
@@ -180,7 +197,9 @@ def checkConfigFormat(self, i_dir='', i_log={}, i_path=''):
 
     # connectivity
     conn_jsons = common.readJson(args.conn) if args.conn else i_log.get('connectivity',{})
-    self.logger.info( 'localdbtool-upload: checkConfigFormat(): conn_jsons = ' + pprint.pformat( conn_jsons ) )
+    logger.info( 'localdbtool-upload: checkConfigFormat(): conn_jsons = ' + pprint.pformat( conn_jsons ) )
+    self.checkDb()
+    
     if not type(conn_jsons)==type([]):
         self.setConnCfg(conn_jsons, i_dir)
     else:
@@ -193,15 +212,16 @@ def verifyData(self, i_log={}):
     """
     This function verifies config files for QC
     """
-    self.logger.debug('Verify config files for QC')
+    logger.info( f'localdbtool-upload.verifyData' )
+    logger.info('Verify config files for QC')
     args = getArgs()
 
     QC = args.QC if args.QC else i_log.get('dbCfg',{}).get('QC',False)
     self.verifyCfg(QC)
     if not args.log and args.interactive:
-        self.logger.warning('-> Confirmation')
-        self.logger.warning('Is this ok to upload data into Local DB?')
-        self.logger.warning('\033[5m(Please answer Y/y to continue or N/n to exit.)\033[0m')
+        logger.warning('-> Confirmation')
+        logger.warning('Is this ok to upload data into Local DB?')
+        logger.warning('\033[5m(Please answer Y/y to continue or N/n to exit.)\033[0m')
         while True:
             answer = input('[y/n]: ')
             if answer.lower()=='y':
@@ -215,28 +235,29 @@ def verifyData(self, i_log={}):
     """
     This function verifies config files for DCS uploading
     """
-    self.logger.debug('Verify config files for DCS uploading')
+    logger.info( f'localdbtool-upload.verifyData' )
+    logger.info('Verify config files for DCS uploading')
     args = getArgs()
     self.environments = []
 
-    self.logger.info('Loading DCS information ...')
+    logger.info('Loading DCS information ...')
     self.verifyCfg(i_log)
     registered_keys=[]
     ctr_oids = []
     for env_json in i_log['environments']:
         env_json = self.verifyDcsData(env_json)
         if env_json['chip'] and env_json['chips']==[] and env_json['registered_chips']==[]:
-            self.logger.error("Your chip/module '{}' may be not registered in Local DB.".format(env_json['chip']))
-            self.logger.error("Please register your chip/module in Local DB before associating DCS data to it.")
-            self.logger.error("No DCS data was uploaded to Local DB.")
-            raise DataError
+            logger.error("Your chip/module '{}' may be not registered in Local DB.".format(env_json['chip']))
+            logger.error("Please register your chip/module in Local DB before associating DCS data to it.")
+            logger.error("No DCS data was uploaded to Local DB.")
+            raise DataError("No DCS data was uploaded to Local DB.")
 
         if not env_json['registered_oids']==[]:
             if not args.log and args.interactive:
                 self.confirmDcsData(env_json)
-                self.logger.warning('DCS data with the key "{}" is already registered in Local DB.'.format(env_json['key']))
-                self.logger.warning('Do you continue to upload this data into Local DB? [y/n]')
-                self.logger.warning('\033[5m(Please answer Y/y to append new data or N/n to skip this registration.)\033[0m')
+                logger.warning('DCS data with the key "{}" is already registered in Local DB.'.format(env_json['key']))
+                logger.warning('Do you continue to upload this data into Local DB? [y/n]')
+                logger.warning('\033[5m(Please answer Y/y to append new data or N/n to skip this registration.)\033[0m')
                 while True:
                     answer = input('[y/n]: ')
                     if answer.lower()=='y':
@@ -259,15 +280,15 @@ def verifyData(self, i_log={}):
         for env_json in self.environments:
             self.confirmDcsData(env_json)
     if not registered_keys==[]:
-        self.logger.warning('DCS data with the key {} is already registered in Local DB, so skip.'.format(', '.join(registered_keys)))
+        logger.warning('DCS data with the key {} is already registered in Local DB, so skip.'.format(', '.join(registered_keys)))
     if ctr_oids==[]:
-        self.logger.error('No DCS data needed to be uploaded.')
+        logger.error('No DCS data needed to be uploaded.')
         raise DataError
     else:
         if not args.log and args.interactive:
-            self.logger.warning('-> Confirmation')
-            self.logger.warning('Is this ok to upload DCS data into Local DB?')
-            self.logger.warning('\033[5m(Please answer Y/y to continue or N/n to exit.)\033[0m')
+            logger.warning('-> Confirmation')
+            logger.warning('Is this ok to upload DCS data into Local DB?')
+            logger.warning('\033[5m(Please answer Y/y to continue or N/n to exit.)\033[0m')
             while True:
                 answer = input('[y/n]: ')
                 if answer.lower()=='y':
@@ -284,7 +305,8 @@ def setCache(self, i_dir, i_opt):
     b. DCS upload: path/to/cache/dbDcsLog.json
     """
     i_dir = os.path.realpath(os.path.abspath(i_dir))
-    self.logger.debug('Write cache data: {}.'.format(i_dir))
+    logger.info('loadbtool-upload.setCache')
+    logger.info('Write cache data: {}.'.format(i_dir))
     args = getArgs()
 
     ##################################
@@ -298,11 +320,13 @@ def setCache(self, i_dir, i_opt):
             self.writeDcs(i_dir)
         else:
             return
-    except DataError:
+    except DataError as e:
+        logger.warning( str(e) )
         remove = True
-    except:
+    except Exception as e:
+        logger.warning( str(e) )
         if not args.log and args.interactive:
-            self.logger.warning('Do you want to keep this data in the cache list and retry the upload later?')
+            logger.warning('Do you want to keep this data in the cache list and retry the upload later?')
             while True:
                 answer = input('[y/n]: ')
                 if answer.lower()=='y':
@@ -312,6 +336,7 @@ def setCache(self, i_dir, i_opt):
                     remove = True
                     break
     self.listCache(i_dir, i_opt, remove)
+    logger.info('loadbtool-upload.setCache: done')
 
 common.addInstanceMethod(RegisterData, setCache)
 
@@ -319,8 +344,9 @@ def writeScan(self, i_dir):
     """
     This function uploads scan data from result data files following scanLog.json
     """
-    self.logger.debug('Write cache scan data: {}.'.format(i_dir))
-    self.logger.info('Cache Directory: {}'.format(i_dir))
+    logger.info( f'localdbtool-upload.writeScan' )
+    logger.info('Write cache scan data: {}.'.format(i_dir))
+    logger.info('Cache Directory: {}'.format(i_dir))
 
     args = getArgs()
 
@@ -328,19 +354,24 @@ def writeScan(self, i_dir):
     log_path = 'scanLog.json'
     log_json = common.readJson('{0}/{1}'.format(i_dir, log_path))
     if log_json=={}:
-        self.logger.error('Not found {0} in {1}'.format(log_path, i_dir))
-        self.logger.error('Specify the correct path to result directory')
+        logger.error('Not found {0} in {1}'.format(log_path, i_dir))
+        logger.error('Specify the correct path to result directory')
         raise DataError
     log_json['QC'] = args.QC
 
     # DB Connection
+    logger.info( f'localdbtool-upload.writeScan: calling checkConfigFormat()' )
     self.checkConfigFormat(i_dir, log_json, log_path)
+    
+    logger.info( f'localdbtool-upload.writeScan: calling checkDb()' )
     self.checkDb(log_json, log_path)
 
     # Validation for QC
+    logger.info( f'localdbtool-upload.writeScan: calling verifyData()' )
     self.verifyData(log_json)
 
     # scanLog.json
+    logger.info( f'localdbtool-upload.writeScan: reading scanLog.json' )
     if 'startTime' in log_json:
         start_timestamp = log_json['startTime']
     elif 'timestamp' in log_json:
@@ -355,6 +386,7 @@ def writeScan(self, i_dir):
     log_json['finishTime'] = finish_timestamp
 
     # testType
+    logger.info( f'localdbtool-upload.writeScan: reading testType' )
     if 'testType' in log_json:
         test_type = log_json['testType']
     elif 'exec' in log_json:
@@ -373,9 +405,13 @@ def writeScan(self, i_dir):
     Almost all information of scanLog.json will be stored as test data with keeping the format.
     (Config data and timestamps are stored in the specific format.)
     """
+    
+    logger.info( f'localdbtool-upload.writeScan: creating ChipConfigAPI' )
+    chip_api = ChipConfigAPI( self.mongodb )
+    
     ## start
     conn_jsons = self.setTestRun(log_json)
-
+                
     ## config and attachment
     for conn_json in conn_jsons:
         ### config for testRun
@@ -385,41 +421,76 @@ def writeScan(self, i_dir):
             self.setConfig(cfg_json, key, key, 'testRun', {}, conn_json)
         scan_cfg_path = '{0}/{1}.json'.format(i_dir, test_type)
         cfg_json = common.readJson(scan_cfg_path)
+        
         self.setConfig(cfg_json, test_type, 'scanCfg', 'testRun', {}, conn_json)
 
         logger.info( '\t conn_json = ' + pprint.pformat( conn_json ) )
         for chip_json in conn_json['chips']:
-            chip_name = chip_json['name']
             filename = 'chipCfg'
             chip_cfg_name = chip_json['config'].split('/')[len(chip_json['config'].split('/'))-1]
+
+            hexSN = None
+            chip_SN = None
+            
+            # first loop -- chip config storing
             for file_name in os.listdir(i_dir):
 
                 ### config for componentTestRun
-                if chip_cfg_name in file_name:
-                    continue
-                    '''
+                if all( [ phrase in file_name for phrase in [chip_cfg_name, 'after'] ] ):
+
+                    logger.info( f'processing file {file_name}...' )
+
                     cfg_json = common.readJson('{0}/{1}'.format(i_dir, file_name))
                     title = '{}Cfg'.format(file_name.split(chip_cfg_name)[1][1:])
-                    self.setConfig(cfg_json, filename, title, 'componentTestRun', chip_json, conn_json)
-                    continue
-                    '''
+                    
+                    hexSN   = cfg_json.get('RD53B').get('Parameter').get('Name')
+                    chip_SN = chip_json.get('serialNumber')
+                    stage   = conn_json.get('stage')
 
-                ### attachment for componentTestRun
-                try:
-                    hexSN = hex( int(chip_name[7:]) )
-                except:
-                    continue
+                    branch = 'default'
+                    warm_list = ['WARM', 'PARYLENE_UNMASKING', 'WIREBOND_PROTECTION', 'THERMAL_CYCLES', 'LONG_TERM_STABILITY_TEST' ]
+                    cold_list = ['COLD']
+                    
+                    if any( [ phrase in stage for phrase in warm_list ] ):
+                        branch = 'warm'
+                    elif any( [ phrase in stage for phrase in cold_list ] ):
+                        branch = 'cold'
+                    
+                    config_id = chip_api.checkout( chip_SN, stage, branch )
 
-                # self.logger.info( f'chip_name = {chip_name}, file_name = {file_name}, hexSN = {hexSN}' )
+                    if config_id == None:
+                        before_cfg_json = common.readJson( '{0}/{1}'.format(i_dir, file_name).replace('after','before') )
+                        config_id = chip_api.create_config( chip_SN, stage, branch )
+                        chip_api.commit( config_id, before_cfg_json )
+
+                    prev_revision_id = chip_api.get_revision_id( config_id, 'HEAD' )
+                    this_revision_id = chip_api.commit( config_id, cfg_json )
+
+                    logger.info( f'prev_revision_id = {prev_revision_id}' )
+                    logger.info( f'this_revision_id = {this_revision_id}' )
+
+                    self.localdb.componentTestRun.update_one( { 'hexSN' : hexSN },
+                                                            { '$set' : { 'config_id' : config_id,
+                                                                         'config_revision_prev' : prev_revision_id,
+                                                                         'config_revision_current' : this_revision_id } } )
+                    
+                    logger.info( f'done processing file {file_name}.' )
+                    break
+                
+
+            # second loop -- result files storing
+            for file_name in os.listdir(i_dir):
+
+                logger.info( f'chip_SN = {chip_SN}, file_name = {file_name}, hexSN = {hexSN}' )
                 try:
                     if '{}_'.format(hexSN) in file_name:
                         file_path = '{0}/{1}'.format(i_dir, file_name)
                         histoname = file_name.split('{}_'.format(hexSN))[1].split('.')[0]
-                        self.logger.info( f'writeScan: attaching {file_path} with histoname {histoname}' )
+                        logger.info( f'writeScan: attaching {file_path} with histoname {histoname}' )
                         self.setAttachment(file_path, histoname, chip_json, conn_json)
                         continue
                 except Exception as e:
-                    self.logger.error( str(e) )
+                    logger.error( str(e) )
 
     ## finish
     tr_oids = self.completeTestRun(log_json, conn_jsons)
@@ -432,8 +503,8 @@ def writeDcs(self, i_dir):
     """
     This function uploads DCS data from result data files following dbDcsLog.json
     """
-    self.logger.debug('Write cache DCS data: {}.'.format(i_dir))
-    self.logger.info('Cache Directory: {}'.format(i_dir))
+    logger.info('Write cache DCS data: {}.'.format(i_dir))
+    logger.info('Cache Directory: {}'.format(i_dir))
 
     args = getArgs()
 
@@ -441,13 +512,13 @@ def writeDcs(self, i_dir):
     log_path = 'dbDcsLog.json'.format(i_dir)
     log_json = common.readJson('{0}/{1}'.format(i_dir, log_path))
     if log_json=={}:
-        self.logger.error('Not found {0} in {1}'.format(log_path, i_dir))
-        self.logger.error('Specify the correct path to result directory')
+        logger.error('Not found {0} in {1}'.format(log_path, i_dir))
+        logger.error('Specify the correct path to result directory')
         raise DataError
 
     # environments
     if not 'environments' in log_json:
-        self.logger.error('No "environments" data in {}'.format(log_path))
+        logger.error('No "environments" data in {}'.format(log_path))
         raise DataError
 
     # timestamp
@@ -462,7 +533,7 @@ def writeDcs(self, i_dir):
     self.checkConfigFormat(i_dir, log_json, log_path)
     self.checkDb(log_json, log_path)
 
-    self.logger.info('-> Setting DCS Log {}'.format(log_path))
+    logger.info('-> Setting DCS Log {}'.format(log_path))
     self.verifyData(log_json)
     self.setDcs()
 
@@ -474,7 +545,7 @@ def __upload_from_cache(i_opt):
     """
     This function uploads scan/DCS data from cache directories written in HOME/.yarr/localdb/run.dat or HOME/.yarr/localdb/dcs.dat
     """
-    logger.debug('Upload From Cache List.')
+    logger.info('Upload From Cache List.')
     file_paths = {
         'scan': '{}/.yarr/localdb/run.dat'.format(home),
         'dcs' : '{}/.yarr/localdb/dcs.dat'.format(home)
@@ -508,8 +579,9 @@ def uploadComp(self, i_path):
     """
     This function registeres component data following connectivity file
     """
-    self.logger.debug('Register Component Data.')
-    self.logger.info('Component Config File: {}'.format(i_path))
+    logger.info('loadbtool-upload.uploadComp')
+    logger.info('Register Component Data.')
+    logger.info('Component Config File: {}'.format(i_path))
     args = getArgs()
 
     # DB Connection
@@ -518,15 +590,16 @@ def uploadComp(self, i_path):
     self.verifyCfg()
     self.checkConnCfg(i_path)
 
-    self.logger.warning('Do you continue to upload data into Local DB? [y/n]')
-    self.logger.warning('\033[5m(Please answer Y/y to continue or N/n to exit.)\033[0m')
+    logger.warning('Do you continue to upload data into Local DB? [y/n]')
+    logger.warning('\033[5m(Please answer Y/y to continue or N/n to exit.)\033[0m')
     while True:
         answer = input('[y/n]: ')
         if answer.lower()=='y':
             break
         elif answer.lower()=='n':
             raise InteractiveExit
-    self.setComponent()
+    #self.setComponent()
+    logger.info('loadbtool-upload.uploadComp: done')
 
 common.addInstanceMethod(CompData, uploadComp)
 
@@ -534,7 +607,7 @@ def listCache(self, i_dir, i_opt, i_remove=False):
     """
     This function adjusts the cache list written in HOME/.yarr/localdb/run.dat or dcs.dat
     """
-    self.logger.debug('listCache')
+    logger.info('loadbtool-upload.listCache')
     file_paths = {
         'scan': '{}/.yarr/localdb/run.dat'.format(home),
         'dcs' : '{}/.yarr/localdb/dcs.dat'.format(home)
@@ -555,12 +628,12 @@ def listCache(self, i_dir, i_opt, i_remove=False):
             if i_dir in cache_list: cache_list.remove(i_dir)
         else:
             if not self.checkUploadData()==[]:
-                self.logger.info('Succeeded uploading {0} data from {1}'.format(i_opt, i_dir))
+                logger.info('Succeeded uploading {0} data from {1}'.format(i_opt, i_dir))
                 if i_dir in cache_list:
                     cache_list.remove(i_dir)
         with open(path, 'w') as f:
             if not cache_list==[]:
-                self.logger.warning('{0} data that has not been uploaded is listed in {1}'.format(i_opt.capitalize(), path))
+                logger.warning('{0} data that has not been uploaded is listed in {1}'.format(i_opt.capitalize(), path))
             for line in cache_list:
                 if not line or not line=='': f.write('{}\n'.format(line))
 
@@ -644,7 +717,7 @@ def __check_command():
         raise CommandError
 
 def main():
-    logger.debug('Main Function.')
+    logger.info('Main Function.')
     global logfile
 
     args = getArgs()
@@ -653,7 +726,8 @@ def main():
 
     try:
         __check_command()
-    except CommandError:
+    except CommandError as e:
+        logger.warning( str(e) )
         logger.error('')
         logger.error('Command Exception: Aborting...')
         sys.exit(1)
@@ -671,7 +745,8 @@ def main():
         scan = ScanData()
         try:
             scan.checkDb()
-        except:
+        except Exception as e:
+            logger.error( str(e) )
             logger.info('------------------------------')
             sys.exit(1)
 
@@ -689,6 +764,7 @@ def main():
             logger.info('------------------------------')
             sys.exit(10)
         except:
+            logger.error( str(e) )
             logger.error('Invalid configs for uploading data, aborting...')
             logger.info('------------------------------')
             sys.exit(1)
@@ -722,6 +798,7 @@ def main():
             logger.info('------------------------------')
             sys.exit(10)
         except:
+            logger.error( str(e) )
             logger.error('Invalid configs for uploading data, aborting...')
             logger.info('------------------------------')
             sys.exit(1)
