@@ -517,8 +517,6 @@ void Rd53b::readUpdateWriteReg(Rd53bRegDefault Rd53bGlobalCfg::*ref) {
      		break;
    		}
     	}
-    //	uint32_t reg = readSingleRegister(ref);
-    //	m_cfg[(this->*ref).addr()] = reg;
 }
 
 uint32_t Rd53b::readSingleRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref) {
