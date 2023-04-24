@@ -510,8 +510,15 @@ void Rd53b::readUpdateWriteNamedReg(std::string name) {
 }
 
 void Rd53b::readUpdateWriteReg(Rd53bRegDefault Rd53bGlobalCfg::*ref) {
-	uint32_t reg = readSingleRegister(ref);
-	m_cfg[(this->*ref).addr()] = reg;
+    for (unsigned int i=0; i<5; i++){
+   		uint32_t reg = readSingleRegister(ref);
+   		if (reg != 0) {
+     		m_cfg[(this->*ref).addr()] = reg;
+     		break;
+   		}
+    	}
+    //	uint32_t reg = readSingleRegister(ref);
+    //	m_cfg[(this->*ref).addr()] = reg;
 }
 
 uint32_t Rd53b::readSingleRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref) {
