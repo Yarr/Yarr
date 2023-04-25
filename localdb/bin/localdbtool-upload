@@ -13,6 +13,7 @@ from pymongo          import MongoClient, errors, DESCENDING
 from bson.objectid    import ObjectId
 from datetime         import datetime
 import pprint
+from pathlib import Path
 import traceback
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../lib/localdb-tools/modules'))
@@ -197,11 +198,20 @@ def checkConfigFormat(self, i_dir='', i_log={}, i_path=''):
 
     # connectivity
     conn_jsons = common.readJson(args.conn) if args.conn else i_log.get('connectivity',{})
+    
+    try:
+        conn_dir = Path( args.conn ).parent
+    except Exception as e:
+        conn_dir = ''
+        str(e)
+    
+    logger.debug( f'checkConfigFormat: conn_dir = {conn_dir}' )
     logger.debug( 'localdbtool-upload: checkConfigFormat(): conn_jsons = ' + pprint.pformat( conn_jsons ) )
+    
     self.checkDb()
     
     if not type(conn_jsons)==type([]):
-        self.setConnCfg(conn_jsons, i_dir)
+        self.setConnCfg(conn_jsons, i_dir, conn_dir)
     else:
         for conn in conn_jsons:
             self.setConnCfg(conn, i_dir)

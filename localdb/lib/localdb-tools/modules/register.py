@@ -97,7 +97,7 @@ class RegisterData():
         self.logger.debug(f'RegisterData.{get_function_name()}: Set Site')
         self.site_json.update(i_json)
 
-    def setConnCfg(self, i_conn, i_cache_dir=''):
+    def setConnCfg(self, i_conn, i_cache_dir='', conn_dir = '.'):
         self.logger.debug(f'RegisterData.{get_function_name()}: Set Connectivity Config')
         if i_conn=={}:
             return i_conn
@@ -122,13 +122,14 @@ class RegisterData():
                 else:
                     path = chip_json['config']
 
-                if chip_json['path'] == 'relToCon':
-                    path = str(Path(i_cache_dir).parent / path)
+                if conn_dir != '':
+                    path = str( Path( conn_dir ) / path )
+
 
                 chip_cfg_json = readJson(path)
                 if not self.chip_type in chip_cfg_json:
-                    self.logger.error('Not found {0} in chip config file: {1}'.format(self.chip_type, path))
-                    raise RegisterError
+                    self.logger.info('Not found {0} in chip config file: {1}'.format(self.chip_type, path))
+                    #raise RegisterError
                 if 'name' in chip_cfg_json[self.chip_type]: # for FEI4B
                     chip_json['name'] = chip_cfg_json[self.chip_type]['name']
                     chip_json['chipId'] = chip_cfg_json[self.chip_type]['Parameter']['chipId']
