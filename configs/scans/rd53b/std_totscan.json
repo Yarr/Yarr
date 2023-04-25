@@ -2,19 +2,13 @@
     "scan": {
         "analysis": {
             "0": {
-                "algorithm": "OccupancyAnalysis",
-                "config": {
-                    "createMask": true
-                }
-            },
-            "1": {
                 "algorithm": "TagAnalysis"
             },
-            "2": {
+            "1": {
                 "algorithm": "TotAnalysis",
                 "config": {}
             },
-            "n_count": 3
+            "n_count": 2
         },
         "histogrammer": {
             "0": {
