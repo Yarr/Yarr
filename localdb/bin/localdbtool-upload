@@ -456,23 +456,37 @@ def writeScan(self, i_dir):
                     elif any( [ phrase in stage for phrase in cold_list ] ):
                         branch = 'cold'
                     
-                    config_id = chip_api.checkout( chip_SN, stage, branch )
+                    try:
 
-                    if config_id == None:
-                        before_cfg_json = common.readJson( '{0}/{1}'.format(i_dir, file_name).replace('after','before') )
-                        config_id = chip_api.create_config( chip_SN, stage, branch )
-                        chip_api.commit( config_id, before_cfg_json )
+                        logger.info('localdbtool-upload.writeScan: writing config information to componentTestRun...')
+                        
+                        config_id = chip_api.checkout( chip_SN, stage, branch )
 
-                    prev_revision_id = chip_api.get_revision_id( config_id, 'HEAD' )
-                    this_revision_id = chip_api.commit( config_id, cfg_json )
+                        logger.info( f'checked-out config: id = {config_id}')
+                        
+                        if config_id == None:
+                            before_cfg_json = common.readJson( '{0}/{1}'.format(i_dir, file_name).replace('after','before') )
+                            config_id = chip_api.create_config( chip_SN, stage, branch )
+                            chip_api.commit( config_id, before_cfg_json )
 
-                    logger.info( f'prev_revision_id = {prev_revision_id}' )
-                    logger.info( f'this_revision_id = {this_revision_id}' )
+                        prev_revision_id = str( chip_api.get_revision_id( config_id, 'HEAD' ) )
+                        this_revision_id = str( chip_api.commit( config_id, cfg_json ) )
 
-                    self.localdb.componentTestRun.update_one( { 'hexSN' : hexSN },
-                                                            { '$set' : { 'config_id' : config_id,
-                                                                         'config_revision_prev' : prev_revision_id,
-                                                                         'config_revision_current' : this_revision_id } } )
+                        logger.info( f'prev_revision_id = {prev_revision_id}' )
+                        logger.info( f'this_revision_id = {this_revision_id}' )
+
+                        ctrs = [ ctr for ctr in self.localdb.componentTestRun.find( { 'serialNumber' : chip_SN }, sort=[ ("_id", -1 ) ] ) ]
+
+                        ctr_id = ctrs[0].get("_id")
+
+                        self.localdb.componentTestRun.update_one( { '_id' : ctr_id },
+                                                                  { '$set' : { 'config_id' : config_id,
+                                                                               'config_revision_prev' : prev_revision_id,
+                                                                               'config_revision_current' : this_revision_id } } )
+                    except Exception as e:
+                        logger.error( str(e) )
+                        logger.error( 'failure in recording config info to componentTestRun!' )
+                        raise e
                     
                     logger.info( f'done processing file {file_name}.' )
                     break
