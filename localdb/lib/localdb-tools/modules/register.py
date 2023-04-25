@@ -145,46 +145,59 @@ class RegisterData():
             conn['chips'].append(chip_json)
 
         try:
-            # module
-            if 'module' in i_conn:
-                self._check_empty(i_conn['module'], 'serialNumber', 'connectivity.module')
-                conn['module'] = i_conn['module']
-                conn['module']['name'] = conn['module']['serialNumber']
-                conn['module']['componentType'] = conn['module'].get('componentType', 'module')
-            else:
+            
+            self.logger.info( f'RegisterData.{get_function_name()}: constructing module SN from chips information' )
+            chip_SNs = [ chip_json.get('serialNumber') for chip_json in conn.get('chips') ]
 
-                self.logger.info( f'RegisterData.{get_function_name()}: constructing module SN from chips information' )
-                chip_SNs = [ chip_json.get('serialNumber') for chip_json in conn.get('chips') ]
+            module_SNs = []
+            stages = []
+            for chip_SN in chip_SNs:
+                chip_doc = self.localdb.component.find_one( {'serialNumber':chip_SN} )
+                if chip_doc == None:
+                    continue
+                parents = [ cpr.get('parent') for cpr in self.localdb.childParentRelation.find( {'child':str( chip_doc.get('_id') ) } ) ]
 
-                module_SNs = []
-                stages = []
-                for chip_SN in chip_SNs:
-                    chip_doc = self.localdb.component.find_one( {'serialNumber':chip_SN} )
-                    if chip_doc == None:
-                        continue
-                    parents = [ cpr.get('parent') for cpr in self.localdb.childParentRelation.find( {'child':str( chip_doc.get('_id') ) } ) ]
+                for parent in parents:
+                    parent_doc = self.localdb.component.find_one( {'_id':ObjectId(parent), 'componentType' : 'module' } )
+                    if parent_doc != None:
+                        module_SNs += [ parent_doc.get('serialNumber') ]
+                        stage_doc = self.localdb.QC.module.status.find_one( {'component': parent} )
+                        stages += [ stage_doc.get('currentStage') ]
 
-                    for parent in parents:
-                        parent_doc = self.localdb.component.find_one( {'_id':ObjectId(parent), 'componentType' : 'module' } )
-                        if parent_doc != None:
-                            module_SNs += [ parent_doc.get('serialNumber') ]
-                            stage_doc = self.localdb.QC.module.status.find_one( {'component': parent} )
-                            stages += [ stage_doc.get('currentStage') ]
+            #self.logger.info( f'chip_SNs = {chip_SNs}' )
+            #self.logger.info( f'module_SNs = {module_SNs}' )
+            #self.logger.info( f'stages = {stages}' )
 
-                #self.logger.info( f'chip_SNs = {chip_SNs}' )
-                #self.logger.info( f'module_SNs = {module_SNs}' )
-                #self.logger.info( f'stages = {stages}' )
-                
-                assert( all( [ sn == module_SNs[0] for sn in module_SNs ] ) )
-                assert( all( [ stage == stages[0] for stage in stages ] ) )
+            assert( all( [ sn == module_SNs[0] for sn in module_SNs ] ) )
+            assert( all( [ stage == stages[0] for stage in stages ] ) )
 
-                conn['module'] = { 'serialNumber' : module_SNs[0] }
-                conn['stage'] = stages[0]
-                
+            conn['module'] = { 'serialNumber' : module_SNs[0] }
+            conn['stage'] = stages[0]
+
+            if conn['stage'] in ['MODULE/ASSEMBLY', 'MODULE/WIREBONDING']:
+                msg = f'The stage of the module {conn["module"]["serialNumber"]} is still {conn["stage"]} and not adequate to push scan results to LocalDB'
+                raise Exception( msg )
+
+            parent_doc = self.localdb.component.find_one( { 'serialNumber' : conn.get('module').get('serialNumber') } )
+
+            if parent_doc == None:
+                msg = f'module doc for {conn.get("module").get("serialNumber") } is somehow missing in LocalDB??'
+                raise Exception( msg )
+
+            if parent_doc.get('is_config_generated', False) == False:
+                msgs = [ f'The initial config for the module {conn["module"]["serialNumber"]} is not generated',
+                         'LocalDB cannot store YARR scans at this moment.',
+                         'Please generate it first via LocalDB web interface.',
+                         '(you are redirected to do this when you switch to the stage MODULE/INITIAL_WARM)' ]
+                for msg in msgs:
+                    self.logger.error( msg )
+
+                raise Exception( 'Initial config is not generated' )
+                    
                 
         except Exception as e:
             self.logger.error( str(e) )
-            
+            raise e
             
         self.conns.append(conn)
         return conn
