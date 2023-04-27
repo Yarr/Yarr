@@ -25,6 +25,8 @@ LIST(APPEND apps
         specBenchmarkSingle
         specComTest
 	switchLPM
+	changeDelay
+	checkRxSync
         specErrorCheckDma
         specErrorCheckSingle
         specS6programFpga)
