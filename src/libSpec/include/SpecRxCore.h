@@ -22,6 +22,10 @@
 #define RX_STATUS 0x1
 #define RX_POLARITY 0x2
 #define RX_ACTIVE_LANES 0x3
+#define RX_LANE_SEL 0x4
+#define RX_LANE_DELAY 0x5
+#define RX_MANUAL_DELAY 0x6
+#define RX_LANE_DELAY_OUT 0x7
 
 #define RX_START_ADDR 0x0
 #define RX_DATA_COUNT 0x1
@@ -93,6 +97,8 @@ class SpecRxCore : virtual public RxCore, virtual public SpecCom{
 
         void setRxActiveLanes(uint32_t val);
         uint32_t getRxActiveLanes();
+
+        uint32_t setRxDelay(uint32_t lane);
 
         void checkRxSync() override;
 

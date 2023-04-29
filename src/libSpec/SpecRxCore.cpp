@@ -129,6 +129,30 @@ uint32_t SpecRxCore::getRxActiveLanes() {
     return SpecCom::readSingle(RX_ADDR | RX_ACTIVE_LANES);
 }
 
+uint32_t SpecRxCore::setRxDelay(uint32_t lane) {
+
+    uint32_t sel_lane = lane / 2;
+
+    // Select lane 
+    SpecCom::writeSingle(RX_ADDR | RX_LANE_SEL, sel_lane); 
+    uint32_t current_delay=SpecCom::readSingle(RX_ADDR | RX_LANE_DELAY_OUT);
+    uint32_t current_status=this->getLinkStatus(); 
+    uint32_t enable_mask = SpecCom::readSingle(RX_ADDR | RX_ENABLE);
+    srxlog->info("Locked lane {} on at delay {} with Rx Status {}", sel_lane, current_delay, current_status);
+
+    // Switch on manual delay
+    SpecCom::writeSingle(RX_ADDR | RX_MANUAL_DELAY, lane); 
+
+    // Increase delay by 1
+    uint32_t new_delay=current_delay+2;
+    SpecCom::writeSingle(RX_ADDR | RX_LANE_DELAY, new_delay);   
+    current_delay=SpecCom::readSingle(RX_ADDR | RX_LANE_DELAY_OUT);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    srxlog->info("updated delay {} with Rx Status {:b}", current_delay, current_status);
+
+    return SpecCom::readSingle(RX_ADDR |  RX_LANE_DELAY_OUT);
+}
+
 void SpecRxCore::checkRxSync() {
     uint32_t status = this->getLinkStatus();
     uint32_t enable_mask = SpecCom::readSingle(RX_ADDR | RX_ENABLE);
@@ -143,12 +167,18 @@ void SpecRxCore::checkRxSync() {
         return;
     }
     srxlog->info("Number of lanes: {}", numOfLanes);
+    uint32_t delay = 0;
+    uint32_t val=0;
+
     for (unsigned i=0; i<32; i++) {
         if ((1 << i) & enable_mask) {
             for (unsigned l=0; l<4; l++) {
                 if ((1 << l) & m_rxActiveLanes) {
                     if (status & (1 << ((i*numOfLanes)+l))) {
-                        srxlog->info("Channel {} Lane {} synchronized!", i, l);
+                        val=status & (1 << ((i*numOfLanes)+l));
+                        srxlog->info("Value {}!", val);
+                        delay=SpecRxCore::setRxDelay(val);
+                        srxlog->info("Channel {} Lane {} synchronized with delay {}!", i, l, delay);
                     } else {
                         srxlog->error("Channel {} Lane {} not synchronized!", i, l);
                     }
@@ -156,5 +186,7 @@ void SpecRxCore::checkRxSync() {
             }
         }
     }
+
+
 }
 
