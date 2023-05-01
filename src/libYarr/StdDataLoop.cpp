@@ -49,7 +49,7 @@ void StdDataLoop::execPart2() {
     SPDLOG_LOGGER_TRACE(sdllog, "");
     unsigned all_rawdata_count = 0;
     uint32_t done = 0;
-    unsigned iterations = 0;
+    unsigned n_all_rx_read_iterations = 0;
     uint32_t trigger_is_done = 0;
 
     // the RX channels that actually received data, and expect feedback
@@ -89,10 +89,11 @@ void StdDataLoop::execPart2() {
         // accumulate the RawData chunks per each elink from N reads from HW controller RS
         // at the end, push the RawDataContainers for processing
         std::map<uint32_t, std::unique_ptr<RawDataContainer>> rdcMap;
-        unsigned n_rx_reads_so_far = 0;
+        unsigned n_reads_in_current_rx_cycle = 0;
         do {
             newData = g_rx->readData();  // read the data from HW controller
-            iterations++;
+            n_all_rx_read_iterations++;
+            n_reads_in_current_rx_cycle++;
 
             if (newData.size() > 0) {
                 for (auto &dataChunk : newData) {
@@ -111,13 +112,13 @@ void StdDataLoop::execPart2() {
                 }
 
                 // push the accumulated chunks for processing, if N RX reads > threshold
-                if (n_rx_reads_so_far > m_maxConsecutiveRxReads) {
+                if (n_reads_in_current_rx_cycle > m_maxConsecutiveRxReads) {
                     for (auto &[id, rdc] : rdcMap) {
                         rdc->stat.is_end_of_iteration = false;
                         keeper->getEntry(id).fe->clipRawData.pushData(std::move(rdc));
                         activeChannels.insert(id);
                     }
-                    n_rx_reads_so_far = 0; rdcMap.clear();
+                    n_reads_in_current_rx_cycle = 0; rdcMap.clear();
                 }
             }
         }
@@ -131,13 +132,17 @@ void StdDataLoop::execPart2() {
         }
 
         if (all_rawdata_count == 0) {
-          SPDLOG_LOGGER_DEBUG(sdllog, "\033[1m\033[31m--> Received {} words in {} iterations!\033[0m", all_rawdata_count ,iterations);
+          SPDLOG_LOGGER_DEBUG(sdllog, "\033[1m\033[31m--> Received {} words in {} iterations!\033[0m", all_rawdata_count, n_all_rx_read_iterations);
         } else {
-          SPDLOG_LOGGER_DEBUG(sdllog, "--> Received {} words in {} iterations!", all_rawdata_count ,iterations);
+          SPDLOG_LOGGER_DEBUG(sdllog, "--> Received {} words in {} iterations!", all_rawdata_count, n_all_rx_read_iterations);
         }
 
         // check for any feedback from data processing
         bool received_feedback_somewhere = false;
+		// monitoring for debugging:
+		uint32_t iteration_n_rrs  = 0;
+		uint32_t iteration_n_hprs = 0;
+		uint32_t iteration_n_errs = 0;
         do {
             received_feedback_somewhere = false;
 
@@ -153,19 +158,27 @@ void StdDataLoop::execPart2() {
                         channelReceivedPacketSize[chan_id] += params->packet_size;
                         channelReceivedNClusters[chan_id]  += params->n_clusters;
                     }
-                    else if (params->trigger_tag == PROCESSING_FEEDBACK_TRIGGER_TAG_RR)      channelReceivedRRCnt[chan_id]  += 1;
-                    else if (params->trigger_tag == PROCESSING_FEEDBACK_TRIGGER_TAG_Control) channelReceivedControlCnt[chan_id] += 1;
-                    //else { // 
-                    //    SPDLOG_LOGGER_DEBUG(sdllog, "--> StdDataLoop::execPart2 feedback received an unexpected trigger tag {}", params->trigger_tag);
-                    //}
+                    else if (params->trigger_tag == PROCESSING_FEEDBACK_TRIGGER_TAG_RR) {
+                        channelReceivedRRCnt[chan_id]  += 1;
+                        iteration_n_rrs++;
+                    }
+                    else if (params->trigger_tag == PROCESSING_FEEDBACK_TRIGGER_TAG_Control) {
+                        channelReceivedControlCnt[chan_id] += 1;
+                        iteration_n_hprs++;
+                    }
+                    else { // SPDLOG_LOGGER_DEBUG(sdllog, "--> StdDataLoop::execPart2 feedback received an unexpected trigger tag {}", params->trigger_tag);
+                        iteration_n_errs++;
+                    }
                 }
             }
         } while (received_feedback_somewhere);
 
         // test whether all channels received all triggers
         unsigned channels_w_all_trigs_n = 0; // 
+        uint32_t n_all_received_triggers_so_far = 0;
         for (auto &[id, received_triggers] : channelReceivedTriggersCnt) {
             //SPDLOG_LOGGER_DEBUG(sdllog, "--> StdDataLoop::execPart2 : chan {} received {} triggers from {}", id, received_triggers, n_triggersToReceive);
+			n_all_received_triggers_so_far += received_triggers;
 
             if (received_triggers >= n_triggersToReceive) {
                 //activeChannels.erase(id); // ok, don't erase a channel - it looks like we receive some random 1-2 triggers here and there
@@ -184,7 +197,9 @@ void StdDataLoop::execPart2() {
 
         // Whether to execute another Rx cycle:
         receiving_rx_data = !trigger_is_done || (there_is_still_time && !received_all_triggers);
-        SPDLOG_LOGGER_DEBUG(sdllog, "one more Rx cycle: {} -- still time {} = {} < {} and all trigs = {} (n channels w all trigs = {})", receiving_rx_data, there_is_still_time, time_elapsed.count(), m_totalIterationTime.count(), received_all_triggers, channels_w_all_trigs_n);
+        SPDLOG_LOGGER_DEBUG(sdllog, "one more Rx cycle: {} -- still time {} = {} < {} and all trigs = {} (n channels w all trigs = {}, n trigs = {}, n rrs hprs errs = {} {} {})",
+            receiving_rx_data, there_is_still_time, time_elapsed.count(), m_totalIterationTime.count(), received_all_triggers,
+            channels_w_all_trigs_n, n_all_received_triggers_so_far, iteration_n_rrs, iteration_n_hprs, iteration_n_errs);
 
         // wait the latency for the Rx read cycle
         if (receiving_rx_data) std::this_thread::sleep_for(m_rxReadDelay);
