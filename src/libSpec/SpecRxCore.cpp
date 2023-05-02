@@ -131,7 +131,7 @@ uint32_t SpecRxCore::getRxActiveLanes() {
 
 uint32_t SpecRxCore::setRxDelay(uint32_t lane) {
 
-    uint32_t sel_lane = lane / 2;
+    uint32_t sel_lane = ffs(lane);
 
     // Select lane 
     SpecCom::writeSingle(RX_ADDR | RX_LANE_SEL, sel_lane); 
@@ -143,8 +143,8 @@ uint32_t SpecRxCore::setRxDelay(uint32_t lane) {
     // Switch on manual delay
     SpecCom::writeSingle(RX_ADDR | RX_MANUAL_DELAY, lane); 
 
-    // Increase delay by 1
-    uint32_t new_delay=current_delay+2;
+    // Increase delay by 2
+    uint32_t new_delay=current_delay+SpecRxCore::m_rxDelayOffset;
     SpecCom::writeSingle(RX_ADDR | RX_LANE_DELAY, new_delay);   
     current_delay=SpecCom::readSingle(RX_ADDR | RX_LANE_DELAY_OUT);
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
