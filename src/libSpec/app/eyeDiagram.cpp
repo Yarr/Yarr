@@ -51,6 +51,10 @@ int main(int argc, char **argv) {
 
     logger->info("Start writing to delay register  ...");
     logger->info("Writing delay to Spec Card {}, with delay {}", specNum, delay );
+
+    std::ofstream file;
+    file.open("results.txt");
+
 	// Enable manual delay control
 	mySpec.writeSingle(0x2 << 14 | 0x6, 15); 
 
@@ -83,7 +87,7 @@ int main(int argc, char **argv) {
 
 	logger->info("Scan results: \n");
     std::cout << s << std::endl;
-	
+	file << s;
 	// Disable manual delay control
 	mySpec.writeSingle(0x2 << 14 | 0x6, 0); 
 
