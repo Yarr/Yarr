@@ -114,6 +114,11 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
                 this->setRxActiveLanes(j["rxActiveLanes"]);
                 SpecRxCore::m_rxActiveLanes = j["rxActiveLanes"];
             }
+
+            // Set number of active lanes
+            if (j.contains("rxDelayOffset")) {
+                SpecRxCore::m_rxDelayOffset = j["rxDelayOffset"];
+            }
         }
 
         void setupMode() final{
