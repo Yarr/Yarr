@@ -37,14 +37,14 @@ void FelixController::loadConfig(const json &j) {
 
     // Properties
     // See https://gitlab.cern.ch/atlas-tdaq-felix/felix-interface/-/blob/master/felix/felix_client_properties.h
-    fcConfig.property[FELIX_CLIENT_LOCAL_IP_OR_INTERFACE] = clientCfg["local_ip_or_interface"];
-    fcConfig.property[FELIX_CLIENT_LOG_LEVEL] = clientCfg["log_level"];
-    fcConfig.property[FELIX_CLIENT_BUS_DIR] = clientCfg["bus_dir"];
-    fcConfig.property[FELIX_CLIENT_BUS_GROUP_NAME] = clientCfg["bus_group_name"];
-    fcConfig.property[FELIX_CLIENT_VERBOSE_BUS] = clientCfg["verbose_bus"] ? "True" : "False";
+    fcConfig.property[FELIX_CLIENT_LOCAL_IP_OR_INTERFACE] = clientCfg["localIPorInterface"];
+    fcConfig.property[FELIX_CLIENT_LOG_LEVEL] = clientCfg["logLevel"];
+    fcConfig.property[FELIX_CLIENT_BUS_DIR] = clientCfg["busDir"];
+    fcConfig.property[FELIX_CLIENT_BUS_GROUP_NAME] = clientCfg["busGroupName"];
+    fcConfig.property[FELIX_CLIENT_VERBOSE_BUS] = clientCfg["verboseBus"] ? "True" : "False";
     fcConfig.property[FELIX_CLIENT_TIMEOUT] = std::to_string(unsigned(clientCfg["timeout"]));
-    fcConfig.property[FELIX_CLIENT_NETIO_PAGES] = std::to_string(unsigned(clientCfg["netio_pages"]));
-    fcConfig.property[FELIX_CLIENT_NETIO_PAGESIZE] = std::to_string(unsigned(clientCfg["netio_pagesize"]));
+    fcConfig.property[FELIX_CLIENT_NETIO_PAGES] = std::to_string(unsigned(clientCfg["netioPages"]));
+    fcConfig.property[FELIX_CLIENT_NETIO_PAGESIZE] = std::to_string(unsigned(clientCfg["netioPagesize"]));
 
     // Construct felix client
     client = std::make_shared<FelixClientThread>(fcConfig);

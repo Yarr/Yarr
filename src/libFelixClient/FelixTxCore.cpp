@@ -313,12 +313,12 @@ void FelixTxCore::loadConfig(const json &j) {
     ftlog->info(" flip = {}", m_flip);
   }
 
-  if (j.contains("detector_id")) {
-    m_did = j["detector_id"];
+  if (j.contains("detectorID")) {
+    m_did = j["detectorID"];
     ftlog->info(" did = {}", m_did);
   }
-  if (j.contains("connector_id")) {
-    m_cid = j["connector_id"];
+  if (j.contains("connectorID")) {
+    m_cid = j["connectorID"];
     ftlog->info(" cid = {}", m_cid);
   }
   if (j.contains("protocol")) {
@@ -328,8 +328,8 @@ void FelixTxCore::loadConfig(const json &j) {
 }
 
 void FelixTxCore::writeConfig(json& j) {
-  j["detector_id"] = m_did;
-  j["connector_id"] = m_cid;
+  j["detectorID"] = m_did;
+  j["connectorID"] = m_cid;
   j["protocol"] = m_protocol;
   j["flip"] = m_flip;
 }
