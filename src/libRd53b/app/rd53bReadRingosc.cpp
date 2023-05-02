@@ -30,9 +30,6 @@ namespace fs = std::filesystem;
 #include "logging.h"
 #include "LoggingConfig.h"
 
-
-auto logger = logging::make_log("rd53bRingOsc_QC");
-
 void print_usage(char* argv[]) {
     std::cerr << " ring-oscillator-scan" << std::endl;
     std::cerr << std::endl;
@@ -73,21 +70,6 @@ std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn
 double convertRingOscCntToMHz(double counter, int RingOscDur) { return counter / (RingOscDur << 1) * 40; }
 
 int main(int argc, char* argv[]) {
-    // Setup logger with some defaults
-    std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
-    spdlog::set_pattern(defaultLogPattern);
-    json j; // empty
-    j["pattern"] = defaultLogPattern;
-    j["log_config"][0]["name"] = "all";
-    j["log_config"][0]["level"] = "info";
-    logging::setupLoggers(j);
-
-    logger->info("\033[1;31m##############################\033[0m");
-    logger->info("\033[1;31m# RD53B Ring Oscillator Scan #\033[0m");
-    logger->info("\033[1;31m##############################\033[0m");
-
-    logger->info("Parsing command line parameters ...");
-
     std::string hw_controller_filename = "";
     std::string connectivity_filename = "";
     int chip_idx = -1;
@@ -125,16 +107,6 @@ int main(int argc, char* argv[]) {
         } // switch
     } // while
 
-
-    logger->info("Connectivity file path  : {}", connectivity_filename);
-    logger->info("HW controller file path  : {}", hw_controller_filename);
-
-    logger->info("\033[1;31m#################\033[0m");
-    logger->info("\033[1;31m# Init Hardware #\033[0m");
-    logger->info("\033[1;31m#################\033[0m");
-
-    logger->info("-> Opening controller config: {}", hw_controller_filename);
-
     fs::path hw_controller_path{hw_controller_filename};
     if(!fs::exists(hw_controller_path)) {
         std::cerr << "ERROR: Provided hw controller file (=" << hw_controller_filename << ") does not exist" << std::endl;
@@ -161,12 +133,6 @@ int main(int argc, char* argv[]) {
     hw->setTrigEnable(0);
     hw->disableRx(); // needed?
 
-    logger->info("\033[1;31m###################\033[0m");
-    logger->info("\033[1;31m##  Chip Config  ##\033[0m");
-    logger->info("\033[1;31m###################\033[0m");
-
-    logger->info("-> Opening connectivity file: {}", connectivity_filename);
-
     // open up the connectivity config to get the list of front-ends
     auto jconn = ScanHelper::openJsonFile(connectivity_filename);
 
@@ -192,23 +158,17 @@ int main(int argc, char* argv[]) {
         std::string current_chip_name = cfg->getName();
         if (!use_chip_name) {
             if ( (chip_idx < 0) || (chip_idx == ichip) ) {
-                logger->info("Enable Tx");
                 hw->setCmdEnable(cfg->getTxChannel());
         	hw->setRxEnable(cfg->getRxChannel());
         	hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
             } else continue;
         } else {
             if (current_chip_name == chip_name) {
-                logger->info("Enable Tx");
                 hw->setCmdEnable(cfg->getTxChannel());
         	hw->setRxEnable(cfg->getRxChannel());
         	hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
             } else continue;
         }
-
-        logger->info("\033[1;31m###################\033[0m");
-        logger->info("\033[1;31m##   ROSC Scan   ##\033[0m");
-        logger->info("\033[1;31m###################\033[0m");
 
         // Need to run bank A and bank B separately. Global pulse can only drive one bank at a time
         // There are 42 oscillators in total, 8 from bank A, 34 from bank B
@@ -220,7 +180,6 @@ int main(int argc, char* argv[]) {
         double RingValuesSumSquared[42] = {0};
         double RingValuesFreq[42] = {0};
 
-        logger->info("Run ROSC Bank A ...");
         // Enable RingOscA
         feRd53b.writeRegister(&Rd53b::RingOscAEn, 0xff);
         while (!hw->isCmdEmpty()){;}
@@ -253,13 +212,8 @@ int main(int argc, char* argv[]) {
                 // Calculate average
                 RingValuesSum[tmpCount] /= (double)RingOscRep;
                 RingValuesFreq[tmpCount] = convertRingOscCntToMHz(RingValuesSum[tmpCount], RingOscDur);
-
-                logger->debug("[{}][{}] Bank A Ring Buffer: {} Values: {}", ichip, feName, tmpCount,
-                             RingValuesSum[tmpCount]);
-                logger->info("[{}][{}] Frequency: {} MHz", ichip, feName, RingValuesFreq[tmpCount]);
             }
-        
-        logger->info("Run ROSC Bank B ...");          
+               
         // Enable RingOscB
         feRd53b.writeRegister(&Rd53b::RingOscBEnBl,1);
 	    feRd53b.writeRegister(&Rd53b::RingOscBEnBr,1);
@@ -294,12 +248,9 @@ int main(int argc, char* argv[]) {
             // Calculate average
             RingValuesSum[tmpCount] = RingValuesSum[tmpCount] / (double)RingOscRep;
             RingValuesFreq[tmpCount] = convertRingOscCntToMHz(RingValuesSum[tmpCount], RingOscDur);
-
-            logger->debug("[{}][{}] Bank B Ring Buffer: {} Values: {}", ichip, feName, tmpCount,
-                        RingValuesSum[tmpCount]);
-            logger->info("[{}][{}] Frequency: {} MHz", ichip, feName, RingValuesFreq[tmpCount]);
         }
-        for(int i=0; i<42; i++) {std::cout << RingValuesFreq[i] << std::endl;}
+        for(int i=0; i<42; i++) {std::cout << RingValuesFreq[i] << " ";}
+        std::cout << std::endl;
     }
     std::cerr << "Done." << std::endl;
 
