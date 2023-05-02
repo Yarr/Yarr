@@ -147,7 +147,7 @@ uint32_t SpecRxCore::setRxDelay(uint32_t lane) {
     uint32_t new_delay=current_delay+2;
     SpecCom::writeSingle(RX_ADDR | RX_LANE_DELAY, new_delay);   
     current_delay=SpecCom::readSingle(RX_ADDR | RX_LANE_DELAY_OUT);
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
     srxlog->info("updated delay {} with Rx Status {:b}", current_delay, current_status);
 
     return SpecCom::readSingle(RX_ADDR |  RX_LANE_DELAY_OUT);
@@ -161,7 +161,7 @@ void SpecRxCore::checkRxSync() {
     srxlog->info("Rx Status 0x{:x}", status);
     uint32_t numOfLanes = 0;
     // Convert last digit (lanes) to int
-    numOfLanes = this->getSpecIdentChCfg(fw_ident).back() - 48;
+    numOfLanes = this->getSpecIdentLaneCfg(fw_ident);
     if (numOfLanes == 0 || numOfLanes > 4) {
         srxlog->error("Number of Lanes not acceptable: {}", numOfLanes);
         return;
