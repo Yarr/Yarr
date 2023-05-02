@@ -25,7 +25,7 @@ LIST(APPEND apps
         specBenchmarkSingle
         specComTest
 	switchLPM
-	changeDelay
+        eyeDiagram
 	checkRxSync
         specErrorCheckDma
         specErrorCheckSingle
