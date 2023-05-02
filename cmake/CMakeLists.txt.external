@@ -97,7 +97,7 @@ function(YARR_ADD_FELIX_CLIENT)
     ExternalProject_Add (
         felix_client_thread
         GIT_REPOSITORY https://gitlab.cern.ch/atlas-tdaq-felix/felix-client-thread.git
-        GIT_TAG 4.2.x
+        GIT_TAG master
         UPDATE_COMMAND ""
         PATCH_COMMAND ""
         INSTALL_COMMAND mkdir -p ${TARGET_INSTALL_AREA}/lib && cp ${CMAKE_CURRENT_BINARY_DIR}/external/src/felix_client_thread/libfelix-client-thread.so ${TARGET_INSTALL_AREA}/lib
