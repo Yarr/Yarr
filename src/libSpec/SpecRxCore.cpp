@@ -155,12 +155,16 @@ uint32_t SpecRxCore::setRxDelay(uint32_t lane) {
 }
 
 void SpecRxCore::checkRxSync() {
+    // Switch off manual delay 
+    SpecCom::writeSingle(RX_ADDR | RX_MANUAL_DELAY, 0); 
+
     uint32_t status = this->getLinkStatus();
     uint32_t enable_mask = SpecCom::readSingle(RX_ADDR | RX_ENABLE);
     srxlog->info("Active Rx channels: 0x{:x}", enable_mask);    
     srxlog->info("Active Rx lanes: 0x{:x}", m_rxActiveLanes);
     srxlog->info("Rx Status 0x{:x}", status);
     uint32_t numOfLanes = 0;
+    
     // Convert last digit (lanes) to int
     numOfLanes = this->getSpecIdentLaneCfg(fw_ident);
     if (numOfLanes == 0 || numOfLanes > 4) {
@@ -170,9 +174,7 @@ void SpecRxCore::checkRxSync() {
     srxlog->info("Number of lanes: {}", numOfLanes);
     uint32_t delay = 0;
     uint32_t val=0;
-    // Switch off manual delay 
-    SpecCom::writeSingle(RX_ADDR | RX_MANUAL_DELAY, 0); 
-
+    
     for (unsigned i=0; i<32; i++) {
         if ((1 << i) & enable_mask) {
             for (unsigned l=0; l<4; l++) {
