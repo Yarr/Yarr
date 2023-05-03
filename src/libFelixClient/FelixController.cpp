@@ -73,13 +73,9 @@ void FelixController::loadConfig(const json &j) {
   }
 }
 
-bool FelixController::readFelixRegister(
-  const std::string& registerName, uint64_t& value)
+FelixClientThread::Reply FelixController::accessFelixRegister(
+  FelixClientThread::Cmd cmd, const std::vector<std::string>& cmd_args)
 {
-  fclog->debug("Read FELIX register {}", registerName);
-
-  bool success = false;
-
   // A dummy fid made from the correct did and cid, but arbitrary link number
   // send_cmd will map this to the proper fid for register access
   std::vector<uint64_t> fids = {FelixTxCore::fid_from_channel(42)};
@@ -87,36 +83,78 @@ bool FelixController::readFelixRegister(
   // felix-register can potentially serve multiple devices
   std::vector<FelixClientThread::Reply> replies;
 
-  auto status_summary = client->send_cmd(
-    fids, FelixClientThread::Cmd::GET, {registerName}, replies
-    );
+  auto status_summary = client->send_cmd(fids, cmd, cmd_args, replies);
 
   if (replies.empty()) {
-    fclog->warn("Fail to read register {}. No replies. Status: {}", registerName, FelixClientThread::to_string(status_summary));
+    fclog->warn("Status: {}", FelixClientThread::to_string(status_summary));
+    throw std::runtime_error("No replies.");
+  }
+
+  // The current setup assumes the controller only handles one FELIX device (with m_did and m_cid)
+  // replies.size() should also be the same as fids.size() for send_cmd()
+  assert(replies.size()==1);
+  const auto& reply = replies[0];
+
+  return reply;
+}
+
+bool FelixController::checkReply(const FelixClientThread::Reply& reply) {
+
+  bool goodReply = reply.status == FelixClientThread::Status::OK;
+
+  if (not goodReply) {
+    fclog->warn("Status: {}", FelixClientThread::to_string(reply.status));
+    fclog->warn(reply.message);
   } else {
-    // The current setup assumes only one FELIX card
-    // replies.size() is expected to be one.
+    //status OK
+    fclog->debug("OK from 0x{:x}", reply.ctrl_fid);
+    fclog->debug("Register value = 0x{:x}", reply.value);
+    if (not reply.message.empty()) fclog->debug("message: {}", reply.message);
+  }
 
-    if (replies.size() > 1) {
-      fclog->warn("Received more than one replies from reading FELIX register. There are likely more than one active FELIX cards in the system. Take only the first entry for now.");
-    }
-    const auto& re = replies[0];
+  return goodReply;
+}
 
-    // check status
-    success = re.status == FelixClientThread::Status::OK;
-    if (not success) {
-      fclog->warn("Fail to read register {}. Status: {}", registerName, FelixClientThread::to_string(re.status));
-      fclog->warn(re.message);
-    } else {
-      // status OK
-      value = re.value;
+bool FelixController::readFelixRegister(
+  const std::string& registerName, uint64_t& value)
+{
+  fclog->debug("Read FELIX register {}", registerName);
 
-      fclog->trace("OK from {}", re.ctrl_fid);
-      fclog->debug("Register value = 0x{:x}", re.value);
-      if (not re.message.empty()) fclog->debug("message: {}", re.message);
-    }
+  bool success = false;
 
-  } // if (replies.empty())
+  try {
+    auto reply = accessFelixRegister(FelixClientThread::Cmd::GET, {registerName});
+    success = checkReply(reply);
+    value = reply.value;
+  } catch (std::runtime_error &e) {
+    fclog->error(e.what());
+  }
+
+  if (not success) {
+    fclog->error("Fail to read register {}", registerName);
+  }
+
+  return success;
+}
+
+bool FelixController::writeFelixRegister(
+  const std::string& registerName, const std::string& regValue
+)
+{
+  fclog->debug("Write value {} to FELIX register {}", regValue, registerName);
+
+  bool success = false;
+
+  try {
+    auto reply = accessFelixRegister(FelixClientThread::Cmd::SET, {registerName, regValue});
+    success = checkReply(reply);
+  } catch (std::runtime_error &e) {
+    fclog->error(e.what());
+  }
+
+  if (not success) {
+    fclog->error("Fail to write register {}", registerName);
+  }
 
   return success;
 }

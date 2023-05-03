@@ -19,6 +19,7 @@ public:
   const json getStatus() override;
 
   bool readFelixRegister(const std::string&, uint64_t&);
+  bool writeFelixRegister(const std::string&, const std::string&);
 
 private:
 
@@ -38,6 +39,9 @@ private:
   void on_data(uint64_t fid, const uint8_t* data, size_t size, uint8_t status) {
     FelixRxCore::on_data(fid, data, size, status);
   }
+
+  FelixClientThread::Reply accessFelixRegister(FelixClientThread::Cmd, const std::vector<std::string>&);
+  bool checkReply(const FelixClientThread::Reply&);
 };
 
 #endif
