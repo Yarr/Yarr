@@ -121,7 +121,7 @@ void FelixTxCore::fillFifo(std::vector<uint8_t>& fifo, uint32_t value) {
 void FelixTxCore::prepareFifo(std::vector<uint8_t>& fifo) {
 
   if (m_flip) {
-    ftlog->trace("Swap the top and botton four bits for every byte");
+    ftlog->trace("Swap the top and bottom four bits for every byte");
     for (uint8_t &word : fifo) {
       word = ((word & 0x0f) << 4) + ((word & 0xf0) >> 4);
     }
@@ -336,4 +336,90 @@ void FelixTxCore::writeConfig(json& j) {
 
 void FelixTxCore::setClient(std::shared_ptr<FelixClientThread> client) {
   fclient = client;
+}
+
+FelixClientThread::Reply FelixTxCore::accessFelixRegister(
+  FelixClientThread::Cmd cmd, const std::vector<std::string>& cmd_args)
+{
+  // A dummy fid made from the correct did and cid, but arbitrary link number
+  // send_cmd will map this to the proper fid for register access
+  std::vector<uint64_t> fids = {FelixTxCore::fid_from_channel(42)};
+
+  // felix-register can potentially serve multiple devices
+  std::vector<FelixClientThread::Reply> replies;
+
+  auto status_summary = fclient->send_cmd(fids, cmd, cmd_args, replies);
+
+  if (replies.empty()) {
+    ftlog->warn("Status: {}", FelixClientThread::to_string(status_summary));
+    throw std::runtime_error("No replies.");
+  }
+
+  // The current setup assumes the controller only handles one FELIX device (with m_did and m_cid)
+  // replies.size() should also be the same as fids.size() for send_cmd()
+  assert(replies.size()==1);
+  const auto& reply = replies[0];
+
+  return reply;
+}
+
+bool FelixTxCore::checkReply(const FelixClientThread::Reply& reply) {
+
+  bool goodReply = reply.status == FelixClientThread::Status::OK;
+
+  if (not goodReply) {
+    ftlog->warn("Status: {}", FelixClientThread::to_string(reply.status));
+    ftlog->warn(reply.message);
+  } else {
+    //status OK
+    ftlog->debug("OK from 0x{:x}", reply.ctrl_fid);
+    ftlog->debug("Register value = 0x{:x}", reply.value);
+    if (not reply.message.empty()) ftlog->debug("message: {}", reply.message);
+  }
+
+  return goodReply;
+}
+
+bool FelixTxCore::readFelixRegister(
+  const std::string& registerName, uint64_t& value)
+{
+  ftlog->debug("Read FELIX register {}", registerName);
+
+  bool success = false;
+
+  try {
+    auto reply = accessFelixRegister(FelixClientThread::Cmd::GET, {registerName});
+    success = checkReply(reply);
+    value = reply.value;
+  } catch (std::runtime_error &e) {
+    ftlog->error(e.what());
+  }
+
+  if (not success) {
+    ftlog->error("Fail to read register {}", registerName);
+  }
+
+  return success;
+}
+
+bool FelixTxCore::writeFelixRegister(
+  const std::string& registerName, const std::string& regValue
+)
+{
+  ftlog->debug("Write value {} to FELIX register {}", regValue, registerName);
+
+  bool success = false;
+
+  try {
+    auto reply = accessFelixRegister(FelixClientThread::Cmd::SET, {registerName, regValue});
+    success = checkReply(reply);
+  } catch (std::runtime_error &e) {
+    ftlog->error(e.what());
+  }
+
+  if (not success) {
+    ftlog->error("Fail to write register {}", registerName);
+  }
+
+  return success;
 }

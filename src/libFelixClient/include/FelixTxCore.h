@@ -44,6 +44,9 @@ public:
   void resetTriggerLogic() override; 	// reset the trigger logic
   uint32_t getTrigInCount() override; 	// get the number of triggers in
 
+  bool readFelixRegister(const std::string&, uint64_t&);
+  bool writeFelixRegister(const std::string&, const std::string&);
+
 protected:
 
   void loadConfig(const json &j); 		     // read configuration from json
@@ -65,6 +68,10 @@ protected:
   void doTriggerCnt(); // send a defined number of triggers
   void doTriggerTime(); // send triggers for a period of time
   void prepareTrigger();
+
+  // FELIX register access
+  FelixClientThread::Reply accessFelixRegister(FelixClientThread::Cmd, const std::vector<std::string>&);
+  bool checkReply(const FelixClientThread::Reply&);
 
   std::map<FelixID_t, bool> m_enables; // enable flag for each elink
   std::map<FelixID_t, std::vector<uint8_t> > m_fifo;     // data buffer
