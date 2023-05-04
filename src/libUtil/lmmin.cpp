@@ -60,10 +60,10 @@ void lm_qrsolv( int n, double *r, int ldr, int *ipvt, double *diag,
 
 const lm_control_struct lm_control_double = {
     LM_USERTOL, LM_USERTOL, LM_USERTOL, LM_USERTOL, 100., 100, 1, 
-    NULL, 0, -1, -1 };
+    nullptr, 0, -1, -1 };
 const lm_control_struct lm_control_float = {
     1.e-7,      1.e-7,      1.e-7,      1.e-7,      100., 100, 1,
-    NULL, 0, -1, -1 };
+    nullptr, 0, -1, -1 };
 
 
 /*****************************************************************************/
@@ -141,7 +141,7 @@ void lmmin( int n, double *x, int m, const void *data,
 
     int nout = C->n_maxpri==-1 ? n : MIN( C->n_maxpri, n );
 
-    /* The workaround msgfile=NULL is needed for default initialization */
+    /* The workaround msgfile=nullptr is needed for default initialization */
     FILE* msgfile = C->msgfile ? C->msgfile : stdout;
 
     /* Default status info; must be set ahead of first return statements */    
@@ -188,15 +188,15 @@ void lmmin( int n, double *x, int m, const void *data,
 
 /***  Allocate work space.  ***/
 
-    if ( (fvec = (double *) malloc(m * sizeof(double))) == NULL ||
-         (diag = (double *) malloc(n * sizeof(double))) == NULL ||
-         (qtf  = (double *) malloc(n * sizeof(double))) == NULL ||
-         (fjac = (double *) malloc(n*m*sizeof(double))) == NULL ||
-         (wa1  = (double *) malloc(n * sizeof(double))) == NULL ||
-         (wa2  = (double *) malloc(n * sizeof(double))) == NULL ||
-         (wa3  = (double *) malloc(n * sizeof(double))) == NULL ||
-         (wf  = (double *)  malloc(m * sizeof(double))) == NULL ||
-         (ipvt = (int *)    malloc(n * sizeof(int)   )) == NULL    ) {
+    if ( (fvec = (double *) malloc(m * sizeof(double))) == nullptr ||
+         (diag = (double *) malloc(n * sizeof(double))) == nullptr ||
+         (qtf  = (double *) malloc(n * sizeof(double))) == nullptr ||
+         (fjac = (double *) malloc(n*m*sizeof(double))) == nullptr ||
+         (wa1  = (double *) malloc(n * sizeof(double))) == nullptr ||
+         (wa2  = (double *) malloc(n * sizeof(double))) == nullptr ||
+         (wa3  = (double *) malloc(n * sizeof(double))) == nullptr ||
+         (wf  = (double *)  malloc(m * sizeof(double))) == nullptr ||
+         (ipvt = (int *)    malloc(n * sizeof(int)   )) == nullptr    ) {
         S->outcome = 9;
         return;
     }

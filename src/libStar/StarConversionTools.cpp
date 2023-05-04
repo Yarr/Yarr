@@ -83,10 +83,10 @@ void StarConversionTools::loadConfig(const json& j) {
 
   // Trim targets
   if (j.contains("TrimTarget")) {
-    auto& targets = j["TrimTarget"];
+    const auto& targets = j["TrimTarget"];
 
     // loop over different charge injections for different trim targets
-    for (const auto& target : j["TrimTarget"]) {
+    for (const auto& target : targets) {
       unsigned inj = target["BCAL"];
       for (unsigned iabc = 0; iabc < target["BVT"].size(); iabc++) {
         m_trimTargets[inj][iabc] = target["BVT"][iabc];

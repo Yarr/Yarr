@@ -88,7 +88,7 @@ void Rd53a2TriggerLoop::doubleCmdInject(){
       SPDLOG_LOGGER_ERROR(logger, "DoubleDelay is too large (Burst buffer words: "+std::to_string(of + 1 + m_synPulse)+").");
     }
 
-    flexibleTrigger(0.5 + of, m_edgeDelay + CMDDEL-1, m_Ntrig1, m_trigDelay); //Flexible trigger for first injection of double injection scheme
+    flexibleTrigger(of, m_edgeDelay + CMDDEL-1, m_Ntrig1, m_trigDelay); //Flexible trigger for first injection of double injection scheme
     m_trigWord[of] = 0x69696363; //First calibration command header //PRINTED OUT ()COMES FIRST
     if(m_noInject2){
         m_trigWord[of-1] = Rd53aCmd::genCal(8, 0, m_edgeDelay, 1, 1, m_auxDelay); // first calibration command

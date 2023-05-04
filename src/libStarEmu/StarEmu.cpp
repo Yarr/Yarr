@@ -207,6 +207,11 @@ class EmuRxCore<StarChips> : virtual public RxCore {
     public:
         EmuRxCore();
         ~EmuRxCore() override;
+
+        EmuRxCore(const EmuRxCore &other) = delete;
+        EmuRxCore(EmuRxCore &&other) = delete;
+        EmuRxCore &operator =(const EmuRxCore &) = delete;
+        EmuRxCore &operator =(EmuRxCore &&) = delete;
         
         void setCom(uint32_t chn, std::unique_ptr<ClipBoard<RawData>> queue);
         ClipBoard<RawData>* getCom(uint32_t chn);

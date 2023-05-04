@@ -62,7 +62,7 @@ void StarDataProcessor::connect(FrontEndCfg *feCfg, ClipBoard<RawDataContainer> 
 }
 
 void StarDataProcessor::run() {
-    thread_ptr.reset( new std::thread(&StarDataProcessor::process, this));
+    thread_ptr = std::make_unique<std::thread>(&StarDataProcessor::process, this);
 }
 
 void StarDataProcessor::join() {

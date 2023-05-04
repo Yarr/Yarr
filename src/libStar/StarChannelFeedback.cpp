@@ -46,7 +46,7 @@ void StarChannelFeedback::loadConfig(const json &j) {
 }
 
 void StarChannelFeedback::feedback(unsigned id, std::unique_ptr<Histo2d> h) {
-    StarChips* fe = (StarChips*) keeper->getFe(id);
+    auto fe = (StarChips*) keeper->getFe(id);
     unsigned nRow = fe->geo.nRow;
     unsigned nCol = fe->geo.nCol;
     // TODO Check on NULL pointer

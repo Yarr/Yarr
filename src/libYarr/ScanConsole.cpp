@@ -17,7 +17,7 @@ std::string ScanConsole::parseConfig(const std::vector<std::string> &args) {
      return ScanConsoleImpl::parseConfig(args);
 }
 
-int ScanConsole::init(const ScanOpts options) {
+int ScanConsole::init(const ScanOpts &options) {
     return pimpl->init(options);
 }
 
