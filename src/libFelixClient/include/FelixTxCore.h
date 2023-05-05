@@ -47,6 +47,10 @@ public:
   bool readFelixRegister(const std::string&, uint64_t&);
   bool writeFelixRegister(const std::string&, const std::string&);
 
+  void setBroadcast(bool doBroadcast) {m_broadcast = doBroadcast;}
+  bool getBroadcast() const {return m_broadcast;}
+  void prepareBroadcast();
+
 protected:
 
   void loadConfig(const json &j); 		     // read configuration from json
@@ -62,12 +66,14 @@ protected:
 
   void fillFifo(std::vector<uint8_t>& fifo, uint32_t value);
   void prepareFifo(std::vector<uint8_t>& fifo);
+  void sendFifo(FelixID_t fid, std::vector<uint8_t>& fifo);
 
   // Triggers
   void trigger();
   void doTriggerCnt(); // send a defined number of triggers
   void doTriggerTime(); // send triggers for a period of time
   void prepareTrigger();
+  void prepareTrigger(std::vector<uint8_t>&);
 
   // FELIX register access
   FelixClientThread::Reply accessFelixRegister(FelixClientThread::Cmd, const std::vector<std::string>&);
@@ -87,6 +93,13 @@ protected:
   uint32_t m_trigWordLength {4};           // number of trigger words
 
   bool m_flip {false};
+
+  bool m_broadcast {true};
+
+  // GBT link and e-link number for broadcasting
+  static constexpr unsigned BroadcastLink = 0x1f;
+  static constexpr unsigned BroadcastElink = 0x3f;
+  static constexpr unsigned BroadcastChn = 0x7ff; // (0x1f << 6) | 0x3f
 
   // For Felix ID
   FelixID_t fid_from_channel(uint32_t chn);

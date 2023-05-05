@@ -16,7 +16,8 @@
         "detectorID": 0,
         "connectorID": 0,
         "protocol": 0,
-        "flip": false
+        "flip": false,
+        "broadcast": true
       },
       "ToHost": {
         "detectorID": 0,

@@ -2,6 +2,9 @@
 
 #include "logging.h"
 
+#include <sstream>
+#include <iomanip>
+
 namespace {
   auto ftlog = logging::make_log("FelixTxCore");
 }
@@ -57,6 +60,43 @@ bool FelixTxCore::checkChannel(FelixID_t fid) {
   return true;
 }
 
+void FelixTxCore::prepareBroadcast() {
+  auto fid_broadcast = fid_from_channel(BroadcastChn);
+
+  // Check if the broadcast fid is available
+  if (not checkChannel(fid_broadcast)) {
+    ftlog->error("Broadcast link not available");
+    throw std::runtime_error("Fail to broadcast");
+  }
+
+  // Initialize the fifo
+  m_fifo[fid_broadcast];
+
+  // Set FELIX BROADCAST_ENABLE_[00:23] based on m_enables
+  // Max 24 link per FELIX device
+  std::array<uint64_t, 24> broadcastRegValues;
+  for (size_t l=0; l<24; l++) broadcastRegValues[l] = 0;
+
+  for (const auto& [fid, enable] : m_enables) {
+    auto link_id = FelixTools::link_from_fid(fid);
+    assert(link_id < 24);
+
+    auto elink = FelixTools::elink_from_fid(fid);
+
+    if (enable) {
+      broadcastRegValues[link_id] |= (1 << elink);
+    }
+  }
+
+  // Write the broadcast registers
+  for (size_t l=0; l<24; l++) {
+    std::stringstream brdcstRegName;
+    brdcstRegName << "BROADCAST_ENABLE_" << std::setfill('0') << std::setw(2) << l;
+
+    writeFelixRegister(brdcstRegName.str(), std::to_string(broadcastRegValues[l]));
+  }
+}
+
 void FelixTxCore::setCmdEnable(uint32_t chn) {
   // Switch off all channels first
   disableCmd();
@@ -100,11 +140,30 @@ bool FelixTxCore::isCmdEmpty() {
 }
 
 void FelixTxCore::writeFifo(uint32_t value) {
-  // write value to all enabled channels
-  for (auto& [chn, buffer] : m_fifo) {
-    if (m_enables[chn]) {
-      ftlog->trace("FelixTxCore::writeFifo link=0x{:x} val=0x{:08x}", chn, value);
-      fillFifo(buffer, value);
+
+  if (m_broadcast) {
+    try {
+      prepareBroadcast();
+
+      auto fid_broadcast = fid_from_channel(BroadcastChn);
+      ftlog->trace("FelixTxCore::writeFifo link=0x{:x} val=0x{:08x}", fid_broadcast, value);
+      fillFifo(m_fifo[fid_broadcast], value);
+
+    } catch (std::runtime_error &e) {
+      ftlog->warn("Switching off broadcast");
+      m_broadcast = false;
+
+      // and try again
+      writeFifo(value);
+    }
+
+  } else {
+    // write value to all enabled channels
+    for (auto& [chn, buffer] : m_fifo) {
+      if (m_enables[chn]) {
+        ftlog->trace("FelixTxCore::writeFifo link=0x{:x} val=0x{:08x}", chn, value);
+        fillFifo(buffer, value);
+      }
     }
   }
 }
@@ -130,32 +189,39 @@ void FelixTxCore::prepareFifo(std::vector<uint8_t>& fifo) {
   // padding, manchester still needed?
 }
 
-void FelixTxCore::releaseFifo() {
-  ftlog->trace("NetioTxCore::releaseFifo");
+void FelixTxCore::sendFifo(FelixID_t fid, std::vector<uint8_t>& fifo) {
+  ftlog->trace(" send to fid 0x{:x}", fid);
 
-  for (auto& [chn, buffer] : m_fifo) {
-    // skip disabled channels
-    if (not m_enables[chn])
-      continue;
+  prepareFifo(fifo);
 
-    ftlog->trace(" send to fid 0x{:x}", chn);
-
-    prepareFifo(buffer);
-
-    ftlog->trace("FIFO[{}][{}]: ", chn, buffer.size());
-    for (const auto& word : buffer) {
-      ftlog->trace(" {:02x}", word&0xff);
-    }
-
-    bool flush = false;
-    //fclient->init_send_data(chn);
-    fclient->send_data(chn, &buffer[0], buffer.size(), flush);
+  ftlog->trace("FIFO[{}][{}]: ", fid, fifo.size());
+  for (const auto& word : fifo) {
+    ftlog->trace(" {:02x}", word&0xff);
   }
 
-  // clear buffers
-  for (auto& [chn, buffer] : m_fifo) {
-    if (not m_enables[chn]) continue;
-    buffer.clear();
+  bool flush = false;
+  //fclient->init_send_data(fid);
+  fclient->send_data(fid, fifo.data(), fifo.size(), flush);
+
+  // clear the fifo
+  fifo.clear();
+}
+
+void FelixTxCore::releaseFifo() {
+  ftlog->trace("FelixTxCore::releaseFifo");
+
+  if (m_broadcast) {
+    auto fid_broadcast = fid_from_channel(BroadcastChn);
+    sendFifo(fid_broadcast, m_fifo[fid_broadcast]);
+
+  } else {
+    for (auto& [chn, buffer] : m_fifo) {
+      // skip disabled channels
+      if (not m_enables[chn])
+        continue;
+
+      sendFifo(chn, buffer);
+    }
   }
 
 }
@@ -247,19 +313,39 @@ uint32_t FelixTxCore::getTrigInCount() {
   return 0;
 }
 
+void FelixTxCore::prepareTrigger(std::vector<uint8_t>& trigFifo) {
+  trigFifo.clear();
+
+  // Need to send the last word in m_trigWords first
+  // (Because of the way TriggerLoop sets up the trigger words)
+  for (int j=m_trigWords.size()-1; j>=0; j--) {
+    fillFifo(trigFifo, m_trigWords[j]);
+  }
+
+   prepareFifo(trigFifo);
+}
+
 void FelixTxCore::prepareTrigger() {
-  for (const auto& [chn, enable] : m_enables) {
-    if (not enable) continue;
+  if (m_broadcast) {
+    try {
+      prepareBroadcast();
 
-    m_trigFifo[chn].clear();
+      auto fid_broadcast = fid_from_channel(BroadcastChn);
+      prepareTrigger(m_trigFifo[fid_broadcast]);
 
-    // Need to send the last word in m_trigWords first
-    // (Because of the way TriggerLoop sets up the trigger words)
-    for (int j=m_trigWords.size()-1; j>=0; j--) {
-      fillFifo(m_trigFifo[chn], m_trigWords[j]);
+    } catch (std::runtime_error &e) {
+      ftlog->warn("Switching off broadcast");
+      m_broadcast = false;
+
+      // and try again
+      prepareTrigger();
     }
 
-    prepareFifo(m_trigFifo[chn]);
+  } else {
+    for (const auto& [chn, enable] : m_enables) {
+      if (not enable) continue;
+      prepareTrigger(m_trigFifo[chn]);
+    }
   }
 }
 
@@ -297,11 +383,18 @@ void FelixTxCore::doTriggerTime() {
 void FelixTxCore::trigger() {
   ftlog->trace("FelixTxCore::trigger");
 
-  for (auto& [chn, buffer] : m_trigFifo) {
-    if (not m_enables[chn]) continue;
-
+  if (m_broadcast) {
+    auto fid_broadcast = fid_from_channel(BroadcastChn);
     bool flush = false;
-    fclient->send_data(chn, &buffer[0], buffer.size(), flush);
+    fclient->send_data(fid_broadcast, m_trigFifo[fid_broadcast].data(), m_trigFifo[fid_broadcast].size(), flush);
+
+  } else {
+    for (auto& [chn, buffer] : m_trigFifo) {
+      if (not m_enables[chn]) continue;
+
+      bool flush = false;
+      fclient->send_data(chn, buffer.data(), buffer.size(), flush);
+    }
   }
 }
 
@@ -324,6 +417,11 @@ void FelixTxCore::loadConfig(const json &j) {
   if (j.contains("protocol")) {
     m_protocol = j["protocol"];
     ftlog->info(" protocol = {}", m_protocol);
+  }
+
+  if (j.contains("broadcast")) {
+    m_broadcast = j["broadcast"];
+    ftlog->info(" broadcast = {}", m_broadcast);
   }
 }
 
