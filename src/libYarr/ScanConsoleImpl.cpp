@@ -476,7 +476,7 @@ void ScanConsoleImpl::cleanup() {
     logger->info("Finishing run: {}", runCounter);
     // Register test info into database
     if (scanOpts.dbUse) {
-        database->cleanUp("scan", scanOpts.outputDir, true, false);
+        database->cleanUp("scan", scanOpts.outputDir, true, false, scanOpts.dbTag );
     }
 
     if (scanOpts.makeGraph) {

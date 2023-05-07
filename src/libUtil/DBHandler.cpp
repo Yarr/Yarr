@@ -144,7 +144,7 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path) {
     return;
 }
 
-void DBHandler::cleanUp(std::string i_option, std::string i_dir, bool i_back, bool i_interactive) {
+void DBHandler::cleanUp(std::string i_option, std::string i_dir, bool i_back, bool i_interactive, std::string tag) {
 #if DBDEBUG
     std::cout << "DBHandler: Clean Up." << std::endl;
 #endif
@@ -210,6 +210,7 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir, bool i_back, bo
         if (m_db_cfg_path!="")            cmd = cmd + " --database " + m_db_cfg_path;
         if (m_qc)                         cmd = cmd + " --QC";
         if (m_interactive&&i_interactive) cmd = cmd + " --interactive";
+        if (tag!="") cmd = cmd + " --tag \"" + tag + "\"";
         if (i_back) {
             dlog->info("Uploading in the background. (log: ~/.yarr/localdb/log/)");
             cmd = cmd + " --log &";

@@ -23,7 +23,7 @@ class JsonData : public HistogramBase
 public:
     JsonData(const std::string &arg_name); //!< Constructor with object name
     JsonData(const std::string &arg_name, const LoopStatus &stat); //!< Constructor with object name and LoopStatus
-    ~JsonData();
+    ~JsonData() = default;
 
     void toStream(std::ostream &out) const override {};
     void toJson(json &j) const override  //!< Required by base class, returns the current object's data
