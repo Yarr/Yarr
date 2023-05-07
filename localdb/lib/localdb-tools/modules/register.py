@@ -901,6 +901,25 @@ class ScanData(RegisterData):
                 'finishTime' : datetime.utcfromtimestamp(i_json['finishTime']),
             })
             oid = str(self.localdb.testRun.insert_one(doc).inserted_id)
+
+            now = datetime.utcnow()
+
+            self.logger.info(f'RegisterData.{get_function_name()}: \t\tAdding tags to TestRun. Tags = {self.tags}')
+            
+            for tag in self.tags:
+                
+                if not self.toolsdb.viewer.tag.categories.find_one( { 'name' : tag } ):
+                    
+                    self.toolsdb.viewer.tag.categories.insert_one( { 'name' : tag,
+                                                                     'class' : 'scan',
+                                                                     'sys': { 'cts': now, 'mts': now, 'rev': 0 } } )
+
+                
+                if not self.toolsdb.viewer.tag.docs.find_one({ 'runId' : str(oid), 'name' : tag } ):
+                    
+                    self.toolsdb.viewer.tag.docs.insert_one( { 'runId' : str(oid), 'name' : tag, 'sys' : { 'cts' : now, 'mts' : now, 'rev' : 0 } } )
+                    self.logger.info(f'RegisterData.{get_function_name()}: \t\tAdded a new tag {tag} to TestRun.')
+                
         else:
             oid = i_tr_oid
             query = { '_id': ObjectId(i_tr_oid) }

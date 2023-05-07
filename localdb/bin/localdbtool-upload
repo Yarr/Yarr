@@ -98,6 +98,7 @@ def getArgs():
     parser.add_argument('--log',            help='Set Log Mode',                             action='store_true')
     parser.add_argument('--interactive',    help='Set Interactive Mode',                     action='store_true')
     parser.add_argument('--QC',             help='Set QC Mode',                              action='store_true')
+    parser.add_argument('--tag',            help='Set Scan Tags',                            type=str)
     args = parser.parse_args()
 
     if args.config:
@@ -177,6 +178,25 @@ def checkDb(self, i_log={}, i_path=''):
         toolsdb = db.getLocalDbTools()
         self.setDb(db_cfg, localdb, toolsdb)
         self.mongodb = db.getClient()
+
+        now = datetime.utcnow()
+
+        
+            
+        default_tags = ["MHT", "TUN", "PFA", "PFA_NOHV"]
+
+        for t in default_tags:
+
+            if not toolsdb.viewer.tag.categories.find_one( { 'name' : t, 'class' : 'scan' } ):
+
+                toolsdb.viewer.tag.categories.insert_one( { 'name' : t,
+                                                            'class' : 'scan',
+                                                            'sys': { 'cts': now,
+                                                                     'mts': now,
+                                                                     'rev': 0 } } )
+                
+                
+
 
 common.addInstanceMethod(RegisterData, checkDb)
 
@@ -368,6 +388,7 @@ def writeScan(self, i_dir):
         logger.error('Specify the correct path to result directory')
         raise DataError
     log_json['QC'] = args.QC
+
 
     # DB Connection
     logger.debug( f'localdbtool-upload.writeScan: calling checkConfigFormat()' )
@@ -768,10 +789,36 @@ def main():
 
     __set_log(args.log) ### logging
 
+    # tags
+    tags = []
+
+    if args.tag:
+
+        tag = args.tag.replace("'", "\"")
+
+
+        if '[' in tag and ']' in tag:
+
+            try:
+                tags = json.loads( tag )
+                
+            except Exception as e:
+                logger.warning( 'invalid tags specification' )
+                logger.error( str(e) )
+                raise e
+
+        else:
+
+            tag = tag.replace("'", "").replace('"', '')
+            tags += [ tag ]
+
+    logger.info( 'user tags = ' + pprint.pformat( tags ) )
+
     #try:
     if option=='init':
         logger.info('Function: Initialize upload function and check connection to Local DB')
         scan = ScanData()
+        scan.tags = tags
         try:
             scan.checkDb()
         except Exception as e:
@@ -801,6 +848,7 @@ def main():
     elif option=='scan': # verify
         logger.info('Function: Upload scan data from specified directory')
         scan = ScanData()
+        scan.tags = tags
         scan.setCache(command[1], option)
 
     elif option=='dcs': # verify
@@ -815,6 +863,7 @@ def main():
     elif option=='check': #TODO
         logger.info('Function: Check config files')
         scan = ScanData()
+        scan.tags = tags
         try:
             scan.checkConfigFormat()
             scan.checkDb()
@@ -826,7 +875,7 @@ def main():
             logger.info('Exiting...')
             logger.info('------------------------------')
             sys.exit(10)
-        except:
+        except Exception as e:
             logger.error( str(e) )
             logger.error('Invalid configs for uploading data, aborting...')
             logger.info('------------------------------')
