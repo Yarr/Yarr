@@ -18,6 +18,7 @@ void printHelp() {
   std::cout << " -t <TX_ELINK1> [<TX_ELINK2> ...] : A list of tx elinks for sending data." << std::endl;
   std::cout << " -r <RX_ELINK1> [<RX_ELINK2> ...] : A list of rx elinks for receiving data." << std::endl;
   std::cout << " -l LOG_CONFIG : Configuration for the logger." << std::endl;
+  std::cout << " -w SECONDS : Number of seconds to wait for data. Default: 1" << std::endl;
 }
 
 int main(int argc, char **argv) {
@@ -26,9 +27,10 @@ int main(int argc, char **argv) {
   std::string loggerCfg;
   std::vector<unsigned> elinks_tx;
   std::vector<unsigned> elinks_rx;
+  unsigned waitTime = 1; // second
 
   int opt;
-  while ((opt = getopt(argc, argv, "ht:r:l:")) != -1) {
+  while ((opt = getopt(argc, argv, "ht:r:l:w:")) != -1) {
     switch(opt) {
     case 'h':
       printHelp();
@@ -49,6 +51,9 @@ int main(int argc, char **argv) {
       break;
     case 'l':
       loggerCfg = std::string(optarg);
+      break;
+    case 'w':
+      waitTime = atoi(optarg);
       break;
     default:
       spdlog::critical("Error while parsing command line parameters!");
@@ -156,7 +161,7 @@ int main(int argc, char **argv) {
   if (not elinks_rx.empty()) {
     // Wait for data
     logger->info("Waiting for data...");
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    std::this_thread::sleep_for(std::chrono::seconds(waitTime));
 
     dynamic_cast<FelixController*>(hwCtrl.get())->stopMonitor();
 
