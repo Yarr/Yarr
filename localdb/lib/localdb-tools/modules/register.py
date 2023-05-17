@@ -112,9 +112,14 @@ class RegisterData():
         # chips
         for i, chip_json in enumerate(i_conn['chips']):
             if chip_json.get('enable', 1)==0: # disabled chip #TODO
-                if not 'name' in chip_json:   chip_json['name'] = chip_json.get('serialNumber', 'DisabledChip_{}'.format(i))
-                if not 'chipId' in chip_json: chip_json['chipId'] = -1
-                chip_json['component'] = '...'
+                if 'name' in chip_cfg_json[self.chip_type]: # for FEI4B
+                    chip_json['name'] = chip_cfg_json[self.chip_type]['name']
+                    chip_json['chipId'] = chip_cfg_json[self.chip_type]['Parameter']['chipId']
+                elif 'Name' in chip_cfg_json[self.chip_type].get('Parameter',{}): # for RD53A
+                    
+                    chip_json['hexSN'] = chip_cfg_json[self.chip_type]['Parameter']['Name']
+                    chip_json['serialNumber'] = '20UPGFC' + str( int(chip_json.get('hexSN'), 16) ).zfill(7)
+                    
             else: # enabled chip
                 if not i_cache_dir=='':
                     chip_json['config'] = chip_json['config'].split('/')[len(chip_json['config'].split('/'))-1]
@@ -205,8 +210,15 @@ class RegisterData():
 
 
     def _update_sys(self, i_oid, i_col):
-        if i_oid in self.updated.get(i_col, []): return
+        
+        """
+        i_col: collection name in localdb
+        """
+        
         self.logger.debug(f'RegisterData.{get_function_name()}: \t\t\tUpdate system information: {i_oid} in {i_col}')
+        if i_oid in self.updated.get(i_col, []):
+            self.logger.debug(f'RegisterData.{get_function_name()}: \t\t\t{i_oid} is already in in {i_col}')
+            return
         query = { '_id': ObjectId(i_oid), 'dbVersion': self.db_version }
         this = self.localdb[i_col].find_one(query)
         now = datetime.utcnow()
@@ -220,6 +232,8 @@ class RegisterData():
         if not i_col in self.updated:
             self.updated.update({ i_col: [] })
         self.updated[i_col].append(i_oid)
+    
+        self.logger.debug(f'RegisterData.{get_function_name()}: done.')
 
 
     def _add_value(self, i_oid, i_col, i_key, i_value, i_type='string'):
@@ -379,17 +393,16 @@ class RegisterData():
         """
         self.logger.debug(f'RegisterData.{get_function_name()}: \tCheck Chip data:')
         oid = '...'
-        if not i_json.get('enable', 1)==0:
-            query = {
-                'serialNumber' : i_json['serialNumber']
-            }
+        query = {
+            'serialNumber' : i_json['serialNumber']
+        }
 
-            this_chip = self.localdb.component.find_one(query)
+        this_chip = self.localdb.component.find_one(query)
 
-            self.logger.debug( f'RegisterData._check_chip(): \tFound chip in localdb: ObjectId = {this_chip["_id"]}')
+        self.logger.debug( f'RegisterData._check_chip(): \tFound chip in localdb: ObjectId = {this_chip["_id"]}')
 
-            if this_chip: oid = str(this_chip['_id'])
-            elif i_register: oid = self.__register_chip(i_json)
+        if this_chip: oid = str(this_chip['_id'])
+        elif i_register: oid = self.__register_chip(i_json)
         return oid
 
 
@@ -579,6 +592,8 @@ class ScanData(RegisterData):
             query = { '_id': ObjectId(tr_oid) }
             this_run = self.localdb.testRun.find_one(query)
             if this_run and not this_run.get('plots',[])==[]: self.histo_names = this_run['plots']
+            
+        self.logger.debug(f'RegisterData.{get_function_name()}: done')
         return self.conns
 
 
@@ -902,9 +917,12 @@ class ScanData(RegisterData):
             })
             oid = str(self.localdb.testRun.insert_one(doc).inserted_id)
         else:
+            self.logger.info(f'RegisterData.{get_function_name()}: \t\tnon-blank i_tr_oid = {i_tr_oid}.')
             oid = i_tr_oid
             query = { '_id': ObjectId(i_tr_oid) }
             self.localdb.testRun.update_one( query, {'$set': doc} )
+
+        self.logger.debug(f'RegisterData.{get_function_name()}: \t\tupdating sys for oid = {oid}...')
         self._update_sys(oid, 'testRun')
         self.logger.debug(f'RegisterData.{get_function_name()}: \t\tdoc   : {{}}'.format(oid))
         return oid
@@ -933,10 +951,10 @@ class ScanData(RegisterData):
 
         data = pickle.dumps( i_file_json )
         hash_code = hashlib.md5(data).hexdigest()
-        self.logger.info( f'hash_code = {hash_code}' )
+        self.logger.debug( f'RegisterData.{get_function_name()}: \t\thash_code = {hash_code}' )
         
         data_id = self.__check_gridfs(hash_code)
-        self.logger.info( f'data_id = {data_id}' )
+        self.logger.debug( f'RegisterData.{get_function_name()}: \t\tdata_id = {data_id}' )
         
         if not data_id: data_id = self.__register_grid_fs_file(data, None, i_filename+'.pickle', hash_code)
         doc = {
