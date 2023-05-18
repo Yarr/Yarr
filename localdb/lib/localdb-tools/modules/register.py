@@ -112,13 +112,12 @@ class RegisterData():
         # chips
         for i, chip_json in enumerate(i_conn['chips']):
             if chip_json.get('enable', 1)==0: # disabled chip #TODO
-                if 'name' in chip_cfg_json[self.chip_type]: # for FEI4B
-                    chip_json['name'] = chip_cfg_json[self.chip_type]['name']
-                    chip_json['chipId'] = chip_cfg_json[self.chip_type]['Parameter']['chipId']
-                elif 'Name' in chip_cfg_json[self.chip_type].get('Parameter',{}): # for RD53A
-                    
-                    chip_json['hexSN'] = chip_cfg_json[self.chip_type]['Parameter']['Name']
-                    chip_json['serialNumber'] = '20UPGFC' + str( int(chip_json.get('hexSN'), 16) ).zfill(7)
+
+                # only adapting to RD53B case
+                cfg_file = chip_json['config']
+                
+                chip_json['hexSN'] = cfg_file[ cfg_file.find('0x'): ].split('_')[0]
+                chip_json['serialNumber'] = '20UPGFC' + str( int(chip_json.get('hexSN'), 16) ).zfill(7)
                     
             else: # enabled chip
                 if not i_cache_dir=='':
