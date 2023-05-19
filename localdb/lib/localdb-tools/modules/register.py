@@ -48,8 +48,11 @@ class RegisterData():
 
     def __init__(self):
         self.logger = getLogger('Log').getChild('Register')
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.DEBUG)
+        self.logger.addHandler(handler)
         self.logger.debug(f'RegisterData.{get_function_name()}: Initialize register function')
-        self.logger.setLevel( logging.DEBUG )
         self.dbstatus = False
         self.updated = {}
         self.db_version = 1.01
