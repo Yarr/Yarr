@@ -20,6 +20,7 @@ import traceback
 import inspect
 
 # Log
+import logging
 from logging import getLogger
 logger = getLogger('Log').getChild('Register')
 from common import readJson
@@ -47,6 +48,10 @@ class RegisterData():
 
     def __init__(self):
         self.logger = getLogger('Log').getChild('Register')
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.DEBUG)
+        self.logger.addHandler(handler)
         self.logger.debug(f'RegisterData.{get_function_name()}: Initialize register function')
         self.dbstatus = False
         self.updated = {}
@@ -974,7 +979,9 @@ class ScanData(RegisterData):
         data_id = self.__check_gridfs(hash_code)
         self.logger.debug( f'RegisterData.{get_function_name()}: \t\tdata_id = {data_id}' )
         
-        if not data_id: data_id = self.__register_grid_fs_file(data, None, i_filename+'.pickle', hash_code)
+        if not data_id:
+            data_id = self.__register_grid_fs_file(data, None, i_filename+'.pickle', hash_code)
+            
         doc = {
             'sys'      : {},
             'filename' : i_filename+'.pickle',
@@ -1043,12 +1050,21 @@ class ScanData(RegisterData):
         duplicated = self.localdb.fs.files.find_one({"md5": md5})
 
         if duplicated:
-            self._update_sys( str(duplicated), 'fs.files')
-            return str( duplicated )
+            duplicated_oid = str(duplicated.get("_id"))
+            self.logger.info(f'RegisterData.{get_function_name()}: \t\t\tIdentical data was found on gidfs, not submitting. Reusing oid = { duplicated_oid }')
+            self._update_sys( duplicated_oid, 'fs.files')
+            return duplicated_oid
+        
+
+        else:
+            self.logger.info(f'RegisterData.{get_function_name()}: \t\t\tIdentical data record was not found on gidfs. Submitting the record...')
+
         
         
         oid = str(self.localfs.put( binary, filename=i_filename, dbVersion=self.db_version ))
         self._update_sys(oid, 'fs.files')
+        
+        self.logger.info(f'RegisterData.{get_function_name()}: \t\t\tSubmitted the data to gridfs. oid= {oid}')
         
         return oid
 
