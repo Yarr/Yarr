@@ -48,10 +48,10 @@ class RegisterData():
 
     def __init__(self):
         self.logger = getLogger('Log').getChild('Register')
-        handler = logging.StreamHandler()
-        handler.setLevel(logging.DEBUG)
-        self.logger.setLevel(logging.DEBUG)
-        self.logger.addHandler(handler)
+        #handler = logging.StreamHandler()
+        #handler.setLevel(logging.DEBUG)
+        #self.logger.setLevel(logging.DEBUG)
+        #self.logger.addHandler(handler)
         self.logger.debug(f'RegisterData.{get_function_name()}: Initialize register function')
         self.dbstatus = False
         self.updated = {}
@@ -1056,15 +1056,10 @@ class ScanData(RegisterData):
             return duplicated_oid
         
 
-        else:
-            self.logger.info(f'RegisterData.{get_function_name()}: \t\t\tIdentical data record was not found on gidfs. Submitting the record...')
-
-        
-        
         oid = str(self.localfs.put( binary, filename=i_filename, dbVersion=self.db_version ))
         self._update_sys(oid, 'fs.files')
         
-        self.logger.info(f'RegisterData.{get_function_name()}: \t\t\tSubmitted the data to gridfs. oid= {oid}')
+        self.logger.info(f'RegisterData.{get_function_name()}: \t\t\tSubmitted the data to gridfs. oid = {oid}')
         
         return oid
 
