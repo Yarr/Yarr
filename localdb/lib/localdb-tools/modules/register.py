@@ -1033,9 +1033,10 @@ class ScanData(RegisterData):
         duplicated = self.localdb.fs.files.find_one({"md5": md5})
 
         if duplicated:
-            self.logger.info(f'RegisterData.{get_function_name()}: \t\t\tIdentical data was found on gidfs, not submitting. Reusing oid = { str(duplicated.get("_id")) }')
-            self._update_sys( str(duplicated), 'fs.files')
-            return str( duplicated.get('_id') )
+            duplicated_oid = str(duplicated.get("_id"))
+            self.logger.info(f'RegisterData.{get_function_name()}: \t\t\tIdentical data was found on gidfs, not submitting. Reusing oid = { duplicated_oid }')
+            self._update_sys( duplicated_oid, 'fs.files')
+            return duplicated_oid
         
 
         else:
