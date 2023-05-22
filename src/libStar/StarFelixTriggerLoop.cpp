@@ -19,6 +19,7 @@ StarFelixTriggerLoop::StarFelixTriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER
   max = 0;
   step = 1;
   loopType = typeid(this);
+  m_nTrigsTrickle = 0;
 }
 
 void StarFelixTriggerLoop::init() {

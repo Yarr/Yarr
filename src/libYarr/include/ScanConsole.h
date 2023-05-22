@@ -15,7 +15,7 @@ class ScanConsole {
 public:
     ScanConsole();
     static std::string parseConfig(const std::vector<std::string> &args);
-    int init(const ScanOpts options);
+    int init(const ScanOpts &options);
     int init(int argc, char *argv[]);
     int init(const std::vector<std::string> &args);
     int loadConfig();

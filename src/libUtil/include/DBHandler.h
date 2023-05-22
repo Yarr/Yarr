@@ -70,7 +70,8 @@ class DBHandler {
                      std::string /*i_dir*/,
                      //bool        i_back=true);
                      bool        i_back=false,
-                     bool        i_interactive=true);
+                     bool        i_interactive=true,
+		     std::string tag = "");
 
         /***
         Upload unuploaded test cache data into Local DB

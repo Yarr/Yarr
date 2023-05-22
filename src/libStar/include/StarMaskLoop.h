@@ -95,7 +95,7 @@ class StarMaskLoop : public LoopActionBase {
   void initMasks();
   
  private:
-  short m_nMaskedStripsPerGroup,m_nEnabledStripsPerGroup, m_EnabledMaskedShift;
+  size_t m_nMaskedStripsPerGroup,m_nEnabledStripsPerGroup, m_EnabledMaskedShift;
   unsigned m_cur;
 
   // ie. don't send calibration masks

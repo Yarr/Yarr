@@ -45,11 +45,6 @@ JsonData::JsonData(const std::string &arg_name)
        m_jsondata["Name"] = name;
 }
 
-JsonData::~JsonData()
-{
-
-}
-
 //! Loads the json data from the pointed input file
 /*!
   \param filename Input json filename
