@@ -183,11 +183,20 @@ void FelixRxCore::on_data(FelixID_t fid, const uint8_t* data, size_t size, uint8
 }
 
 void FelixRxCore::on_connect(FelixID_t fid) {
-  m_qStats[fid].connected = true;
+  try {
+    m_qStats.at(fid).connected = true;
+  } catch (std::out_of_range &e) {
+    frlog->trace("Stats of fid 0x{:x} is not tracked.");
+  }
 }
 
 void FelixRxCore::on_disconnect(FelixID_t fid) {
-  m_qStats[fid].connected = false;
+  try {
+    m_qStats.at(fid).connected = false;
+  } catch (std::out_of_range &e) {
+    // For example, this is an fid used for reading/writing FELIX registers
+    frlog->trace("Stats of fid 0x{:x} is not tracked.");
+  }
 }
 
 void FelixRxCore::setClient(std::shared_ptr<FelixClientThread> client) {
