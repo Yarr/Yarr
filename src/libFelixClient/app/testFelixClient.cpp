@@ -19,6 +19,9 @@ void printHelp() {
   std::cout << " -r <RX_ELINK1> [<RX_ELINK2> ...] : A list of rx elinks for receiving data." << std::endl;
   std::cout << " -l LOG_CONFIG : Configuration for the logger." << std::endl;
   std::cout << " -w SECONDS : Number of seconds to wait for data. Default: 1" << std::endl;
+  std::cout << "Examples:" << std::endl;
+  std::cout << "* To send commands to elinks 1, 6, 11, and 16: bin/testFelixClient configs/controller/felix_client.json -t 1 6 11 16" << std::endl;
+  std::cout << "* To receive data from elinks 0 and 2 for 5 seconds: bin/testFelixClient configs/controller/felix_client.json -r 0 2 -w 5" << std::endl;
 }
 
 int main(int argc, char **argv) {

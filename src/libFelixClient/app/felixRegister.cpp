@@ -10,10 +10,15 @@ namespace {
   auto logger = logging::make_log("felixRegisters");
 
   void printHelp() {
-    std::cout << "Usage: felixRgisters HW_CONFIG REGISTER_NAME [REGISTER_VALUE] [OPTIONS...]" << std::endl;
+    std::cout << "Usage: felixRgister HW_CONFIG REGISTER_NAME [REGISTER_VALUE] [OPTIONS...]" << std::endl;
     std::cout << "  Read or write FELIX registers via the FelixController" << std::endl;
     std::cout << " -h : Show this help." << std::endl;
     std::cout << " -l LOG_CONFIG : Configuration for the logger." << std::endl;
+    std::cout << "Examples:" << std::endl;
+    std::cout << "* To read the FELIX register FIRMWARE_MODE:" << std::endl;
+    std::cout << "  bin/felixRegister configs/controller/felix_client.json FIRMWARE_MODE" << std::endl;
+    std::cout << "* To write 0xabcd to FELIX register BROADCAST_ENABLE_00:" << std::endl;
+    std::cout << "  bin/felixRegister configs/controller/felix_client.json BROADCAST_ENABLE_00 0xabcd" << std::endl;
   }
 }
 
