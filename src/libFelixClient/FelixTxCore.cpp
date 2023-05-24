@@ -60,43 +60,50 @@ bool FelixTxCore::checkChannel(FelixID_t fid) {
   return true;
 }
 
-void FelixTxCore::prepareBroadcast() {
-  auto fid_broadcast = fid_from_channel(BroadcastChn);
-
-  // Check if the broadcast fid is available
-  if (not checkChannel(fid_broadcast)) {
-    ftlog->error("Broadcast link not available.");
-    ftlog->info("At least one of the FELIX broadcast registers (BROADCAST_ENABLE_XX) need to be set to non-zero values before starting the FELIX-Star processes.");
-    throw std::runtime_error("Fail to broadcast");
-  }
-
-  // Initialize the fifo
-  m_fifo[fid_broadcast];
-
-  // Set FELIX BROADCAST_ENABLE_[00:23] based on m_enables
+/// Update FELIX BROADCAST_ENABLE_[00:23] registers based on m_enables
+void FelixTxCore::updateFelixBroadcastRegs() {
   ftlog->info("Set FELIX broadcast enable registers");
-  // Max 24 link per FELIX device
-  std::array<uint64_t, 24> broadcastRegValues;
-  for (size_t l=0; l<24; l++) broadcastRegValues[l] = 0;
+
+  std::map<unsigned, std::bitset<NBITS_BROADCAST_ENABLE>> broadcastRegValueMaps;
+  // key: link number; value: BROADCAST_ENABLE_XX value
 
   for (const auto& [fid, enable] : m_enables) {
     auto link_id = FelixTools::link_from_fid(fid);
-    assert(link_id < 24);
-
     auto elink = FelixTools::elink_from_fid(fid);
 
     if (enable) {
-      broadcastRegValues[link_id] |= (1 << elink);
+      broadcastRegValueMaps[link_id].set(elink);
+    } else {
+      broadcastRegValueMaps[link_id].reset(elink);
     }
   }
 
-  // Write the broadcast registers
-  for (size_t l=0; l<24; l++) {
+  // Write to the FELIX broadcast registers
+  for (const auto& [linkId, bRegValue] : broadcastRegValueMaps) {
     std::stringstream brdcstRegName;
-    brdcstRegName << "BROADCAST_ENABLE_" << std::setfill('0') << std::setw(2) << l;
-
-    writeFelixRegister(brdcstRegName.str(), std::to_string(broadcastRegValues[l]));
+    brdcstRegName << "BROADCAST_ENABLE_" << std::setfill('0') << std::setw(2) << linkId;
+    writeFelixRegister( brdcstRegName.str(), std::to_string(bRegValue.to_ullong()) );
   }
+}
+
+/// Set up broadcast
+void FelixTxCore::setupBroadcast() {
+  // broadcast elink fid
+  auto fid_broadcast = fid_from_channel(BroadcastChn);
+
+  // Check if the broadcast elink is available
+  if (not checkChannel(fid_broadcast)) {
+    ftlog->critical("Fail to broadcast: fid 0x{:x} not available.", fid_broadcast);
+    ftlog->warn("At least one of the FELIX broadcast registers (BROADCAST_ENABLE_XX) need to be set to non-zero values before starting the FELIX-Star processes.");
+    disableCmd();
+    return;
+  }
+
+  // Initialize the broadcast fifo
+  m_fifo[fid_broadcast];
+
+  // Update FELIX broadcast registers
+  updateFelixBroadcastRegs();
 }
 
 void FelixTxCore::setCmdEnable(uint32_t chn) {
@@ -106,13 +113,7 @@ void FelixTxCore::setCmdEnable(uint32_t chn) {
   auto fid = fid_from_channel(chn);
   enableChannel(fid);
 
-  if (m_broadcast) {
-    try {
-      prepareBroadcast();
-    } catch (std::runtime_error &e) {
-      ftlog->critical(e.what());
-    }
-  }
+  m_numEnabledChns = 1;
 }
 
 void FelixTxCore::setCmdEnable(std::vector<uint32_t> chns) {
@@ -124,12 +125,10 @@ void FelixTxCore::setCmdEnable(std::vector<uint32_t> chns) {
     enableChannel(fid);
   }
 
-  if (m_broadcast) {
-    try {
-      prepareBroadcast();
-    } catch (std::runtime_error &e) {
-      ftlog->critical(e.what());
-    }
+  m_numEnabledChns = chns.size();
+
+  if (m_broadcast and m_numEnabledChns > 1) {
+    setupBroadcast();
   }
 }
 
@@ -137,6 +136,8 @@ void FelixTxCore::disableCmd() {
   for (auto& e : m_enables) {
     disableChannel(e.first);
   }
+
+  m_numEnabledChns = 0;
 }
 
 uint32_t FelixTxCore::getCmdEnable() { // unused
@@ -159,7 +160,7 @@ bool FelixTxCore::isCmdEmpty() {
 
 void FelixTxCore::writeFifo(uint32_t value) {
 
-  if (m_broadcast) {
+  if (m_broadcast and m_numEnabledChns > 1) {
     auto fid_broadcast = fid_from_channel(BroadcastChn);
     ftlog->trace("FelixTxCore::writeFifo link=0x{:x} val=0x{:08x}", fid_broadcast, value);
     fillFifo(m_fifo[fid_broadcast], value);
@@ -217,7 +218,7 @@ void FelixTxCore::sendFifo(FelixID_t fid, std::vector<uint8_t>& fifo) {
 void FelixTxCore::releaseFifo() {
   ftlog->trace("FelixTxCore::releaseFifo");
 
-  if (m_broadcast) {
+  if (m_broadcast and m_numEnabledChns > 1) {
     auto fid_broadcast = fid_from_channel(BroadcastChn);
     sendFifo(fid_broadcast, m_fifo[fid_broadcast]);
 
@@ -333,7 +334,7 @@ void FelixTxCore::prepareTrigger(std::vector<uint8_t>& trigFifo) {
 }
 
 void FelixTxCore::prepareTrigger() {
-  if (m_broadcast) {
+  if (m_broadcast and m_numEnabledChns > 1) {
     auto fid_broadcast = fid_from_channel(BroadcastChn);
     prepareTrigger(m_trigFifo[fid_broadcast]);
 
@@ -379,14 +380,25 @@ void FelixTxCore::doTriggerTime() {
 void FelixTxCore::trigger() {
   ftlog->trace("FelixTxCore::trigger");
 
-  if (m_broadcast) {
+  if (m_broadcast and m_numEnabledChns > 1) {
     auto fid_broadcast = fid_from_channel(BroadcastChn);
+
+    ftlog->trace("TrigFIFO[{}][{}]:", fid_broadcast, m_trigFifo[fid_broadcast].size());
+    for (const auto& word : m_trigFifo[fid_broadcast]) {
+      ftlog->trace(" {:02x}", word&0xff);
+    }
+
     bool flush = false;
     fclient->send_data(fid_broadcast, m_trigFifo[fid_broadcast].data(), m_trigFifo[fid_broadcast].size(), flush);
 
   } else {
     for (auto& [chn, buffer] : m_trigFifo) {
       if (not m_enables[chn]) continue;
+
+      ftlog->trace("FIFO[{}][{}]: ", chn, buffer.size());
+      for (const auto& word : buffer) {
+        ftlog->trace(" {:02x}", word&0xff);
+      }
 
       bool flush = false;
       fclient->send_data(chn, buffer.data(), buffer.size(), flush);
@@ -426,6 +438,7 @@ void FelixTxCore::writeConfig(json& j) {
   j["connectorID"] = m_cid;
   j["protocol"] = m_protocol;
   j["flip"] = m_flip;
+  j["broadcast"] = m_broadcast;
 }
 
 void FelixTxCore::setClient(std::shared_ptr<FelixClientThread> client) {

@@ -56,8 +56,8 @@ void FelixController::loadConfig(const json &j) {
 
   try {
     auto txCfg = j["ToFLX"];
-    FelixTxCore::loadConfig(txCfg);
     FelixTxCore::setClient(client);
+    FelixTxCore::loadConfig(txCfg);
   } catch (std::runtime_error &je) {
     fclog->error("Failed to load FelixTxCore config");
     throw je;
@@ -65,8 +65,8 @@ void FelixController::loadConfig(const json &j) {
 
   try {
     auto rxCfg = j["ToHost"];
-    FelixRxCore::loadConfig(rxCfg);
     FelixRxCore::setClient(client);
+    FelixRxCore::loadConfig(rxCfg);
   } catch (std::runtime_error &je) {
     fclog->error("Failed to load FelixRxCore config");
     throw je;

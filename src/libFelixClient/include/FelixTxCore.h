@@ -47,10 +47,6 @@ public:
   bool readFelixRegister(const std::string&, uint64_t&);
   bool writeFelixRegister(const std::string&, const std::string&);
 
-  void setBroadcast(bool doBroadcast) {m_broadcast = doBroadcast;}
-  bool getBroadcast() const {return m_broadcast;}
-  void prepareBroadcast();
-
 protected:
 
   void loadConfig(const json &j); 		     // read configuration from json
@@ -67,6 +63,9 @@ protected:
   void fillFifo(std::vector<uint8_t>& fifo, uint32_t value);
   void prepareFifo(std::vector<uint8_t>& fifo);
   void sendFifo(FelixID_t fid, std::vector<uint8_t>& fifo);
+
+  void setupBroadcast();
+  void updateFelixBroadcastRegs();
 
   // Triggers
   void trigger();
@@ -95,11 +94,15 @@ protected:
   bool m_flip {false};
 
   bool m_broadcast {true};
+  uint32_t m_numEnabledChns {0};
 
   // GBT link and e-link number for broadcasting
   static constexpr unsigned BroadcastLink = 0x1f;
   static constexpr unsigned BroadcastElink = 0x3f;
-  static constexpr unsigned BroadcastChn = 0x7ff; // (0x1f << 6) | 0x3f
+  static constexpr unsigned BroadcastChn = BroadcastLink << 6 | BroadcastElink; // 0x7ff
+
+  // Number of bits for the FELIX broadcast enable registers
+  static constexpr unsigned NBITS_BROADCAST_ENABLE = 42;
 
   // For Felix ID
   FelixID_t fid_from_channel(uint32_t chn);
