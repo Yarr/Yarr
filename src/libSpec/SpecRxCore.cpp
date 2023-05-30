@@ -131,36 +131,51 @@ uint32_t SpecRxCore::getRxActiveLanes() {
 
 uint32_t SpecRxCore::setRxDelay(uint32_t lane) {
 
-    uint32_t sel_lane = ffs(lane)-1;
+    uint32_t sel_lane = 1<<lane;
 
+    
     // Select lane 
     SpecCom::writeSingle(RX_ADDR | RX_LANE_SEL, sel_lane); 
     uint32_t current_delay=SpecCom::readSingle(RX_ADDR | RX_LANE_DELAY_OUT);
     uint32_t current_status=this->getLinkStatus(); 
     uint32_t enable_mask = SpecCom::readSingle(RX_ADDR | RX_ENABLE);
-    srxlog->info("Locked onto lane {} with a delay of {} with Rx Status 0b{:b}", sel_lane, current_delay, current_status);
+    //srxlog->info("Locked onto lane {} with a delay of {} with Rx Status 0b{:b}", lane, current_delay, current_status);
 
     // Switch on manual delay
-    SpecCom::writeSingle(RX_ADDR | RX_MANUAL_DELAY, lane); 
+    uint32_t cur_manual = SpecCom::readSingle(RX_ADDR | RX_MANUAL_DELAY);
+    SpecCom::writeSingle(RX_ADDR | RX_MANUAL_DELAY, sel_lane | cur_manual); 
 
     // Increase delay by amount defined in controller config
-    uint32_t new_delay=(current_delay+SpecRxCore::m_rxDelayOffset)%32;
+    //uint32_t new_delay=(current_delay+SpecRxCore::m_rxDelayOffset)%32;
+    uint32_t new_delay=SpecRxCore::m_delay[lane];
+
     SpecCom::writeSingle(RX_ADDR | RX_LANE_DELAY, new_delay);   
     current_delay=SpecCom::readSingle(RX_ADDR | RX_LANE_DELAY_OUT);
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     current_status=this->getLinkStatus(); 
-    srxlog->info("Updated lane {} with delay {} with Rx Status 0b{:b}", sel_lane, current_delay, current_status);
-
+    srxlog->info("Updated lane {} with delay {} with Rx Status 0b{:b}", lane, current_delay, current_status);
     return SpecCom::readSingle(RX_ADDR |  RX_LANE_DELAY_OUT);
 }
 
 void SpecRxCore::checkRxSync() {
+    // Switch off manual delay unless delay is specified
+    if (SpecRxCore::m_delay.size() == 0) {
+    	SpecCom::writeSingle(RX_ADDR | RX_MANUAL_DELAY, 0); 
+    	srxlog->info("Automatic delay optimization ON");
+    } else {
+	for (auto l = 0; auto d : SpecRxCore::m_delay)
+    		srxlog->info("Delay lane {} fixed to {}", l++, d);
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
     uint32_t status = this->getLinkStatus();
     uint32_t enable_mask = SpecCom::readSingle(RX_ADDR | RX_ENABLE);
     srxlog->info("Active Rx channels: 0x{:x}", enable_mask);    
     srxlog->info("Active Rx lanes: 0x{:x}", m_rxActiveLanes);
     srxlog->info("Rx Status 0x{:x}", status);
     uint32_t numOfLanes = 0;
+    
     // Convert last digit (lanes) to int
     numOfLanes = this->getSpecIdentLaneCfg(fw_ident);
     if (numOfLanes == 0 || numOfLanes > 4) {
@@ -170,16 +185,15 @@ void SpecRxCore::checkRxSync() {
     srxlog->info("Number of lanes: {}", numOfLanes);
     uint32_t delay = 0;
     uint32_t val=0;
-    // Switch off manual delay 
-    SpecCom::writeSingle(RX_ADDR | RX_MANUAL_DELAY, 0); 
-
+    
     for (unsigned i=0; i<32; i++) {
         if ((1 << i) & enable_mask) {
             for (unsigned l=0; l<4; l++) {
                 if ((1 << l) & m_rxActiveLanes) {
+                    delay=SpecRxCore::setRxDelay(val);
+    		    status = this->getLinkStatus();
                     if (status & (1 << ((i*numOfLanes)+l))) {
                         val=status & (1 << ((i*numOfLanes)+l));
-                        delay=SpecRxCore::setRxDelay(val);
                         srxlog->info("Channel {} Lane {} synchronized with delay {}!", i, l, delay);
                     } else {
                         srxlog->error("Channel {} Lane {} not synchronized!", i, l);

@@ -119,6 +119,13 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
             if (j.contains("rxDelayOffset")) {
                 SpecRxCore::m_rxDelayOffset = j["rxDelayOffset"];
             }
+ 
+	    if (j.contains("delay")) {
+        	SpecRxCore::m_delay.clear();
+                for(auto i: j["delay"])
+            		SpecRxCore::m_delay.push_back(i);
+    	    }
+
         }
 
         void setupMode() final{
@@ -137,6 +144,7 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
         uint32_t m_syncInterval;
 
         uint32_t m_idleWord;
+
 };
 
 #endif

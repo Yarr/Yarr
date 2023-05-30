@@ -9,7 +9,7 @@
 auto logger = logging::make_log("eyeDiagram");
 
 void printHelp() {
-    std::cout << "./bin/eyeDiagram -s <int> spec number -n <int> number of lanes " << std::endl;
+    std::cout << "./bin/eyeDiagram -s <int> spec number -n <int> number of lanes -o <int> port offset" << std::endl;
 }
 
 int main(int argc, char **argv) {
@@ -28,8 +28,9 @@ int main(int argc, char **argv) {
     int specNum = 0;
     int delay = 16;
     int n_lanes= 4;
+    int port_offset = 0;
 
-    while ((c = getopt(argc, argv, "hs:")) != -1) {
+    while ((c = getopt(argc, argv, "hs:n:o:")) != -1) {
 		switch (c) {
 		case 'h':
 		    printHelp();
@@ -39,6 +40,9 @@ int main(int argc, char **argv) {
 		    break;
 		case 'n':
 		    n_lanes = std::stoi(optarg);
+		    break;	
+		case 'o':
+		    port_offset = std::stoi(optarg);
 		    break;	
 		default:
 		    logger->critical("Invalid command line parameter(s) given!");
@@ -56,7 +60,7 @@ int main(int argc, char **argv) {
     file.open("results.txt");
 
 	// Enable manual delay control
-	mySpec.writeSingle(0x2 << 14 | 0x6, 15); 
+	mySpec.writeSingle(0x2 << 14 | 0x6, 0xffff); 
 
 
 	// Write error counter stop value and mode
@@ -69,7 +73,7 @@ int main(int argc, char **argv) {
 		s+="Lane"+std::to_string(j)+"\t";
 		// Loop over delays 
 	    for (uint32_t i = 0 ; i<32; i++) {
-		    mySpec.writeSingle(0x2 << 14 | 0x4, j); 
+		    mySpec.writeSingle(0x2 << 14 | 0x4, j+port_offset); 
 		    mySpec.writeSingle(0x2 << 14 | 0x5, i); 
 
 		    uint32_t delay_en_readback = 0;

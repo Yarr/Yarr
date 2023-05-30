@@ -105,6 +105,7 @@ class SpecRxCore : virtual public RxCore, virtual public SpecCom{
     protected:
         uint32_t m_rxActiveLanes;
         uint32_t m_rxDelayOffset;
+        std::vector<uint32_t> m_delay;
 
     private:
         uint32_t getStartAddr();
