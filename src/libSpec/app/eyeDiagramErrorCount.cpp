@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <string>
+#include <iomanip>
 
 #include "SpecCom.h"
 #include "logging.h"
@@ -64,50 +65,58 @@ int main(int argc, char **argv) {
 
 
 	// Write error counter stop value and mode
-	mySpec.writeSingle(0x2 << 14 | 0x8, 10000000); 
+    uint32_t test_size = 10e6;
+	mySpec.writeSingle(0x2 << 14 | 0x8, test_size); 
 	mySpec.writeSingle(0x2 << 14 | 0x9, 0); 
 
-    std::string s = "";
-	// Loop over lanes 
-    for (uint32_t j = 0 ; j<n_lanes; j++) {
-		s+="Lane"+std::to_string(j)+"\t";
-		// Loop over delays 
-	    for (uint32_t i = 0 ; i<32; i++) {
-		    mySpec.writeSingle(0x2 << 14 | 0x4, j+port_offset); 
-		    mySpec.writeSingle(0x2 << 14 | 0x5, i); 
+    std::vector<std::vector<double> > resultVec;
+    resultVec.resize(n_lanes);
+    for (uint32_t j=0; j<n_lanes; j++)
+        resultVec[j].resize(32);
 
-		    uint32_t delay_en_readback = 0;
-		    delay_en_readback=mySpec.readSingle(0x2<<14 | 0x4);
-		    uint32_t delay_readback = 0;
-		    delay_readback=mySpec.readSingle(0x2<<14 | 0x5);
-		    logger->info("Delay value set to {} on lane {}", delay_readback, delay_en_readback);
-
-		    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-		    // Reset and restart error counter
-		    mySpec.writeSingle(0x2 << 14 | 0xa, delay_en_readback); 
-		    mySpec.writeSingle(0x2 << 14 | 0xb, 1); 
-		    mySpec.writeSingle(0x2 << 14 | 0xb, 0); 
-
+    for (uint32_t i = 0; i<32; i++) {
+        // Write delay
+        std::cout << std::setw(5) << i << " | ";
+        for (uint32_t j = 0 ; j<n_lanes; j++) {
+            mySpec.writeSingle(0x2 << 14 | 0x4, j+port_offset); 
+            mySpec.writeSingle(0x2 << 14 | 0x5, i); 
+        }
+    
+        // Wait for sync
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        
+        // Reset and restart error counter
+        mySpec.writeSingle(0x2 << 14 | 0xb, 1); 
+        mySpec.writeSingle(0x2 << 14 | 0xb, 0); 
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+        
+        for (uint32_t j = 0 ; j<n_lanes; j++) {
+		    mySpec.writeSingle(0x2 << 14 | 0xa, j+port_offset); 
 		    uint32_t errors = 0;
-		   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-		    errors=mySpec.readSingle(0x2<<14 | 0xb);
-		   if ((errors>>31)&0x1) {
-		    logger->info("RX errors for lane {} is {} ", delay_en_readback,errors&(0x7fffffff));
-		   } else {
-		    logger->info("Not enough data for RX errors for lane {}", delay_en_readback);
-		   }
-		s+=std::to_string(errors&0x7fffffff)+" ";
-    	}
-	s+="\n";
+		    errors = mySpec.readSingle(0x2<<14 | 0xb);
+            double error_rate = 0;
+            if (((errors>>31)&0x1)) {
+                error_rate = (0x7FFFFFFF & errors);
+                error_rate = (test_size-(test_size/49))/(test_size-error_rate);
+                error_rate = (error_rate - 1) *1e6;
+            }
+            resultVec[j][i] = error_rate;
+            std::cout << std::setw(7) << (0x7FFFFFFF & errors) << " | ";
+        }
+        std::cout << std::endl;
     }
 	logger->info("All done! ");
 
 	logger->info("Scan results: \n");
-    std::cout << s << std::endl;
-	file << s;
-	// Disable manual delay control
-	mySpec.writeSingle(0x2 << 14 | 0x6, 0); 
-
+    for (uint32_t i = 0 ; i<32; i++) {
+        // Write delay
+        std::cout << std::setw(5) << i << "| ";
+        for (uint32_t j = 0 ; j<n_lanes; j++) {
+            std::cout << std::setw(7) << resultVec[j][i] << " | ";
+        }
+        std::cout << std::endl;
+    }
+    
     return 0;
 }
