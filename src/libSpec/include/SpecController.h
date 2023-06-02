@@ -120,7 +120,7 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
                 SpecRxCore::m_rxDelayOffset = j["rxDelayOffset"];
             }
  
-            SpecCom::writeSingle(RX_ADDR | RX_MANUAL_DELAY, 0xFFFF); 
+            SpecCom::writeSingle(RX_ADDR | RX_MANUAL_DELAY, 0xFFFF);    
             if (j.contains("delay")) {
                 SpecRxCore::m_delay.clear();
                 unsigned n = 0;
@@ -129,8 +129,8 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
                     SpecRxCore::setRxDelay(n, i);
                     n++;
                 }
-    	    }
-
+    	    }   
+            
 
         }
 

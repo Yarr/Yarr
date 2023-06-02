@@ -74,8 +74,10 @@ int main(int argc, char **argv) {
     for (uint32_t j=0; j<n_lanes; j++)
         resultVec[j].resize(32);
 
+    std::string s = "";
     for (uint32_t i = 0; i<32; i++) {
         // Write delay
+        s+=std::to_string(i)+" | ";
         std::cout << std::setw(5) << i << " | ";
         for (uint32_t j = 0 ; j<n_lanes; j++) {
             mySpec.writeSingle(0x2 << 14 | 0x4, j+port_offset); 
@@ -103,9 +105,13 @@ int main(int argc, char **argv) {
             }
             resultVec[j][i] = error_rate;
             std::cout << std::setw(7) << (0x7FFFFFFF & errors) << " | ";
+            s+=std::to_string((0x7FFFFFFF & errors))+" | ";
+
         }
+        s+="\n";
         std::cout << std::endl;
     }
+    file << s;
 	logger->info("All done! ");
 
 	logger->info("Scan results: \n");
