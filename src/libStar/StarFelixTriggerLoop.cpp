@@ -36,9 +36,13 @@ void StarFelixTriggerLoop::init() {
   std::vector<uint32_t> config_elinks;
 
   for (uint32_t el : lcb_elinks) {
-    // FELIX Phase 2 FW spec (v1.007) Table 8.30 
-    trickle_elinks.push_back( el+1 );
-    config_elinks.push_back( el-1 );
+    // FELIX Phase 2 FW spec (v1.007)
+    // 8.5.9 ITK STRIPS LCB ENCODER
+    // Table 8.32
+    uint32_t n_link = el / 0x40;
+    uint32_t n_segment = (el - n_link*0x40) / 5;
+    config_elinks  .push_back( n_link*0x40 + n_segment*5 + 0 );
+    trickle_elinks .push_back( n_link*0x40 + n_segment*5 + 2 );
   }
 
   logger->debug("Write trigger sequence to the trickle memory");
