@@ -49,7 +49,7 @@ namespace StarPreset {
   }};
 
   std::tuple<json, std::vector<json>> createConfigStarObject(
-    StarCfg& feCfg, const std::array<HybridInfo, 14>& modules) {
+    StarCfg& feCfg, const std::array<HybridInfo, 14>& modules, bool isbarrel) {
 
     std::tuple<json, std::vector<json>> preset;
     auto& [systemCfg, chips] = preset;
@@ -77,10 +77,21 @@ namespace StarPreset {
       unsigned maskHccIn = 0;
 
       for (unsigned iABC=0; iABC<modules[i].numABCs; iABC++) {
-        // ABC chip ID
-        unsigned abcID = iABC + modules[i].offset;
         // HCC input channel
-        unsigned hccIn = feCfg.hccVersion() > 0 ? abcID : 10-abcID;
+        unsigned hccIn = iABC + modules[i].offset;
+
+        // ABC chip ID
+        unsigned abcID = hccIn;
+
+        // Flip the channel number if HCCv0
+        if (feCfg.hccVersion() == 0) {
+          hccIn = 10 - hccIn;
+        }
+
+        // ABC ID offset in case of HCCv0 for barrel modules
+        if (feCfg.hccVersion() == 0 and isbarrel) {
+          abcID -= 1;
+        }
 
         feCfg.addABCchipID(abcID, hccIn);
         maskHccIn += (1<<hccIn);
