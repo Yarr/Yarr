@@ -26,9 +26,6 @@ LIST(APPEND apps
         specComTest
 	switchLPM
         eyeDiagram
-        eyeDiagramErrorCount
-        delaySet
-	checkRxSync
         specErrorCheckDma
         specErrorCheckSingle
         specS6programFpga)

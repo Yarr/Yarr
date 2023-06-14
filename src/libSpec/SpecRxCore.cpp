@@ -129,30 +129,17 @@ uint32_t SpecRxCore::getRxActiveLanes() {
     return SpecCom::readSingle(RX_ADDR | RX_ACTIVE_LANES);
 }
 
-uint32_t SpecRxCore::setRxDelay(uint32_t lane, uint32_t val) {
-    // Select lane 
+void SpecRxCore::setRxDelay(uint32_t lane, uint32_t val) {
+    // Select lane and write delay 
     SpecCom::writeSingle(RX_ADDR | RX_LANE_SEL, lane); 
-    
-    // Write delay
     SpecCom::writeSingle(RX_ADDR | RX_LANE_DELAY, val);   
-    srxlog->info("Updated lane {} with delay {}", lane, val);
+    srxlog->info("Delay lane {} fixed to {}", lane, val);
 
-    return SpecCom::readSingle(RX_ADDR |  RX_LANE_DELAY_OUT);
 }
 
 void SpecRxCore::checkRxSync() {
 
-    // Switch off manual delay unless delay is specified
-    if (SpecRxCore::m_delay.size() == 0) {
-    	SpecCom::writeSingle(RX_ADDR | RX_MANUAL_DELAY, 0); 
-    	srxlog->info("Automatic delay optimization ON");
-    } else {
-	    for (auto l = 0; auto d : SpecRxCore::m_delay)
-    	srxlog->info("Delay lane {} fixed to {}", l++, d);
-    }
-
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
 
     uint32_t status = this->getLinkStatus();
     uint32_t enable_mask = SpecCom::readSingle(RX_ADDR | RX_ENABLE);
