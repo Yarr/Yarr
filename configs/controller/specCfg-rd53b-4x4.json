@@ -7,7 +7,6 @@
             "rxPolarity" : 65535,
             "txPolarity" : 0,
             "rxActiveLanes" : 15,
-            "rxDelayOffset" : 2,
             "pulse" : {
                 "word" : 0,
                 "interval" : 500

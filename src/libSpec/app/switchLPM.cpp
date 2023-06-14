@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
     }
 
     if (frequency < 80){
-        logger->error("Please provide a frequency > 80 kHz!");
+	logger->error("Please provide a frequency > 80 kHz!");
 	return -1;
     }
 

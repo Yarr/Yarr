@@ -150,7 +150,6 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
         uint32_t m_syncInterval;
 
         uint32_t m_idleWord;
-
 };
 
 #endif
