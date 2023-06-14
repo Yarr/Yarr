@@ -23,6 +23,7 @@ struct ScanOpts {
     std::string dbCfgPath ;
     std::string dbSiteCfgPath;
     std::string dbUserCfgPath;
+    std::string dbTag;
     bool setQCMode = false;
     bool setInteractiveMode = false;
     std::string commandLineStr;

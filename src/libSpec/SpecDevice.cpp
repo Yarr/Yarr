@@ -22,7 +22,7 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/file.h>
-#include <errno.h>
+#include <cerrno>
 #include <iostream>
 
 using namespace specDriver;
@@ -42,12 +42,13 @@ SpecDevice::SpecDevice(int number)
 	unsigned int temp = 0;
 	
 	device = number;
-	snprintf(name, sizeof(name), "/dev/spec%d", number);
+    name = "/dev/spec" + std::to_string(number);
 
-	if (stat(name, &tmp_stat) < 0)
+	if (stat(name.c_str(), &tmp_stat) < 0)
 		throw Exception( Exception::DEVICE_NOT_FOUND );
 
-	pthread_mutex_init(&mmap_mutex, NULL);
+    mmap_mutex = PTHREAD_MUTEX_INITIALIZER;
+	pthread_mutex_init(&mmap_mutex, nullptr);
 
 	handle = -1;
 
@@ -58,6 +59,9 @@ SpecDevice::SpecDevice(int number)
 		temp = (temp >> 1);
 		pagemask = (pagemask << 1)+1;
 	}
+    
+    // Init file lock
+    filelock = {F_WRLCK | F_RDLCK, SEEK_SET,   0,      0,     0 };
 }
 
 /**
@@ -102,12 +106,11 @@ void SpecDevice::open()
 	if (handle != -1)
 		return;
 
-	if ((ret = ::open(name, O_RDWR)) < 0)
+	if ((ret = ::open(name.c_str(), O_RDWR)) < 0)
 		throw Exception( Exception::OPEN_FAILED );
 		
 	handle = ret;
 
-    filelock = {F_WRLCK | F_RDLCK, SEEK_SET,   0,      0,     0 };
     if (fcntl(handle, F_GETLK, &filelock))
         throw Exception( Exception::LOCK_FAILED );
     filelock.l_type = F_RDLCK | F_WRLCK;
@@ -266,7 +269,7 @@ unsigned short SpecDevice::getSlot() const
  */
 void *SpecDevice::mapBAR(unsigned int bar)
 {
-	void *mem = NULL;
+	void *mem = nullptr;
 	pci_board_info info = {0};
 
 	if (handle == -1)
@@ -276,7 +279,7 @@ void *SpecDevice::mapBAR(unsigned int bar)
 		throw Exception(Exception::INVALID_BAR);
 
 	if (ioctl(handle, SPECDRIVER_IOC_PCI_INFO, &info) != 0)
-		return NULL;
+		return nullptr;
 
 	/* Mmap */
 	/* This is not fully safe, as a separate process can still open the device independently.
@@ -294,7 +297,7 @@ void *SpecDevice::mapBAR(unsigned int bar)
 	
 	mmap_unlock();
 
-	if ((mem == MAP_FAILED) || (mem == NULL))
+	if ((mem == MAP_FAILED) || (mem == nullptr))
 		throw Exception(Exception::MMAP_FAILED);
 
 	// check if the BAR is not page aligned. If it is not, adjust the pointer

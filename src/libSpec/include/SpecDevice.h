@@ -11,6 +11,7 @@
 
 #include <pthread.h>
 #include <fcntl.h>
+#include <string>
 
 namespace specDriver {
 
@@ -27,7 +28,7 @@ private:
 protected:
 	int handle;
 	int device;
-	char name[50];
+    std::string name;
 	pthread_mutex_t mmap_mutex;
 public:
 	SpecDevice(int number);

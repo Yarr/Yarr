@@ -34,15 +34,10 @@ StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
                                std::unique_ptr<StarCfg> regCfg,
                                unsigned hpr_period, int abc_version, int hcc_version)
   : m_rxbuffer ( rx )
-  , m_bccnt ( 0 )
-  , m_ignoreCmd ( true )
-  , m_isForABC ( false )
-  , m_startHitCount ( false )
-  , m_bc_sel ( 0 )
-  , m_starCfg (std::move(regCfg))
   , HPRPERIOD( hpr_period )
   , m_abc_version( abc_version )
   , m_hcc_version( hcc_version )
+  , m_starCfg (std::move(regCfg))
 {
   // Emulator analog FE configurations
   if (not json_emu_file_path.empty()) {
@@ -71,9 +66,9 @@ StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
 StarChipsetEmu::~StarChipsetEmu() = default;
 
 void StarChipsetEmu::sendPacket(uint8_t *byte_s, uint8_t *byte_e) {
-    int byte_length = byte_e - byte_s;
+    size_t byte_length = byte_e - byte_s;
 
-    int word_length = (byte_length + 3) / 4;
+    size_t word_length = (byte_length + 3) / 4;
 
     std::unique_ptr<RawData> data(new RawData(0, word_length));
     uint32_t *buf = data->getBuf();
@@ -122,7 +117,7 @@ std::vector<uint8_t> StarChipsetEmu::buildPhysicsPacket(
 
   ///////////////////
   // ABCStar clusters
-  for (int ichannel=0; ichannel<allClusters.size(); ++ichannel) {
+  for (size_t ichannel=0; ichannel<allClusters.size(); ++ichannel) {
     for ( uint16_t cluster : allClusters[ichannel]) {
       // cluster bits:
       // "0" + 4-bit channel number + 11-bit cluster dropping the last cluster bit
@@ -372,7 +367,7 @@ void StarChipsetEmu::execute_command_sequence() {
 
     // If cmd_abcID is '1111' i.e. broadcast address, read all ABCs
     if ((cmd_abcID & 0xf) == 0xf and m_isForABC) {
-      for (int index=1; index <= m_starCfg->numABCs(); ++index)
+      for (size_t index=1; index <= m_starCfg->numABCs(); ++index)
         readRegister(reg_addr, true, m_starCfg->getABCchipID(index));
     } else {
       readRegister(reg_addr, m_isForABC, cmd_abcID);
@@ -859,7 +854,7 @@ void StarChipsetEmu::ackPulseCmd(int pulseType, uint8_t cmdBC) {
 }
 
 void StarChipsetEmu::clearFEData() {
-  for (int i=0; i<L0BufDepth; i++)
+  for (size_t i=0; i<L0BufDepth; i++)
     m_l0buffer_lite[i].reset();
 
   for (auto& evtbuffer : m_evtbuffers_lite) {
