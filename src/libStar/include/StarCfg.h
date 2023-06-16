@@ -182,7 +182,8 @@ class StarCfg : public FrontEndCfg {
   std::shared_ptr<const AbcStarRegInfo> m_abc_info; 
   std::shared_ptr<const HccStarRegInfo> m_hcc_info; 
 
-  uint32_t m_sn=0;//serial number set by eFuse bits
+  /// HCC Fuse ID check used for communications ID for regist serial number set by eFuse bits
+  uint32_t m_fuse_id=0;
 
   int m_abc_version; 
   int m_hcc_version; 
