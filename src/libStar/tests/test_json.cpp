@@ -181,6 +181,13 @@ TEST_CASE("StarJsonMinimalABC", "[star][json]") {
 TEST_CASE("StarJsonHccRegs", "[star][json]") {
   std::string fe_name = "Star";
 
+  SECTION("With HCCv0") {
+    fe_name = "Star";
+  }
+  SECTION("With HCCv1") {
+    fe_name = "Star_vH1A1";
+  }
+
   CAPTURE (fe_name);
 
   json cfg;
@@ -188,6 +195,17 @@ TEST_CASE("StarJsonHccRegs", "[star][json]") {
   cfg["name"] = "testname";
   cfg["HCC"]["ID"] = 12;
   cfg["HCC"]["regs"]["Delay1"] = 0x12345678;
+
+  // Sub-register common to both versions
+  cfg["HCC"]["subregs"]["ICENABLE"] = 0x401;
+
+  if(fe_name == "Star") {
+    // v0 only
+    cfg["HCC"]["subregs"]["AMSW0"] = 1;
+  } else {
+    // v1 only
+    cfg["HCC"]["subregs"]["CLK_DIS_SEL"] = 1;
+  }
 
   // debugging
   // cfg.dump(4);
@@ -211,6 +229,16 @@ TEST_CASE("StarJsonHccRegs", "[star][json]") {
 
   REQUIRE(output["HCC"]["ID"] == cfg["HCC"]["ID"]);
   REQUIRE(output["HCC"]["regs"]["Delay1"] == "12345678");
+  REQUIRE(output["HCC"]["regs"]["ICenable"] == "00000401");
+
+  // Output is regs only, checking diffs from default
+  if(fe_name == "Star") {
+    // v0 only
+    REQUIRE(output["HCC"]["regs"]["ADCcfg"] == "00406700");
+  } else {
+    // v1 only
+    REQUIRE(output["HCC"]["regs"]["Cfg1"] == "10000000");
+  }
 
   bounce_check(output, fe_name);
 }
