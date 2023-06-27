@@ -24,7 +24,7 @@ constexpr const char* COLOR_GREEN = "\033[32m";
 constexpr const char* COLOR_RESET = "\033[0m";
 
 void printHelp() {
-    std::cout << "./bin/eyeDiagram -r Hardware controller JSON path" << std::endl;
+    std::cout << "./bin/eyeDiagram -r Hardware controller JSON path -c Connectivity config JSON path" << std::endl;
 }
 
 std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn, int fe_num) {
@@ -69,9 +69,7 @@ int main(int argc, char **argv) {
     logger->info("Init spec");
     int c;	
     int specNum = 0;
-    int delay = 16;
-    int n_lanes= 4;
-    int port_offset = 0;
+    int n_lanes= 16;
     std::string hw_controller_filename = "";
     std::string connectivity_filename = "";
 
@@ -105,16 +103,12 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-
     json jcontroller;
     jcontroller = ScanHelper::openJsonFile(hw_controller_filename);
     specNum=jcontroller["ctrlCfg"]["cfg"]["specNum"];
 
     SpecCom mySpec(specNum);
-
     logger->info("Scanning link quality against delay on Spec Card {}", specNum);
-
-
 
     // instantiate the hw controller
     std::unique_ptr<HwController> hw;
@@ -152,7 +146,7 @@ int main(int argc, char **argv) {
         } else {
             fe->configure();
             // Wait for fifo to be empty
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
+            std::this_thread::sleep_for(std::chrono::microseconds(10));
             while(!hw->isCmdEmpty());
         }
     }
@@ -165,7 +159,9 @@ int main(int argc, char **argv) {
 	mySpec.writeSingle(0x2 << 14 | 0x6, 0xffff); 
 
 	// Write error counter stop value and mode
-    uint32_t test_size = 10e6;
+    //uint32_t test_size = 10e6;
+    uint32_t test_size = 10e5;
+
 	mySpec.writeSingle(0x2 << 14 | 0x8, test_size); 
 	mySpec.writeSingle(0x2 << 14 | 0x9, 0); 
 
@@ -174,13 +170,13 @@ int main(int argc, char **argv) {
     for (uint32_t j=0; j<n_lanes; j++)
         resultVec[j].resize(32);
 
-    std::cout << std::fixed << std::setprecision(0);
+    std::cout << std::fixed << std::setprecision(2);
     std::string s = "";
     for (uint32_t i = 0; i<32; i++) {
         s+=std::to_string(i)+" | ";
         std::cout << std::setw(5) << i << " | ";
         for (uint32_t j = 0 ; j<n_lanes; j++) {
-            mySpec.writeSingle(0x2 << 14 | 0x4, j+port_offset); 
+            mySpec.writeSingle(0x2 << 14 | 0x4, j); 
             mySpec.writeSingle(0x2 << 14 | 0x5, i); 
         }
     
@@ -191,10 +187,10 @@ int main(int argc, char **argv) {
         mySpec.writeSingle(0x2 << 14 | 0xb, 1); 
         mySpec.writeSingle(0x2 << 14 | 0xb, 0); 
         
-        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
         
         for (uint32_t j = 0 ; j<n_lanes; j++) {
-		    mySpec.writeSingle(0x2 << 14 | 0xa, j+port_offset); 
+		    mySpec.writeSingle(0x2 << 14 | 0xa, j); 
 		    uint32_t errors = 0;
 		    errors = mySpec.readSingle(0x2<<14 | 0xb);
             double error_count = 0;
@@ -202,18 +198,19 @@ int main(int argc, char **argv) {
             double link_quality=0;
             if (((errors>>31)&0x1)) {
                 error_count = (0x7FFFFFFF & errors);
-                if (error_count==204208 || error_count==204207){ 
+                if (error_count==20421 || error_count==20420){ 
                     value = 1;
                     link_quality=1;
                 } else { 
                     value = 0; 
-                    link_quality = std::log(1 / (std::abs(error_count - 204208) / 204208))/13.0;                }
+                    link_quality = std::abs(std::log(1 / (std::abs(error_count - 20421) / 20421))/13.0);                
+                }
             }
             resultVec[j][i] = value;
             if (link_quality==1){
-                std::cout << COLOR_GREEN << std::setw(10) << error_count << COLOR_RESET << " | ";
+                std::cout << COLOR_GREEN << std::setw(4) << link_quality << COLOR_RESET << " | ";
             } else {            
-                std::cout << std::setw(10) << error_count << " | ";
+                std::cout << std::setw(4) << link_quality << " | ";
             }
             s+=std::to_string(link_quality)+" | ";
 
