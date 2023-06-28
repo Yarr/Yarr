@@ -480,7 +480,23 @@ void Rd53bDataProcessor::process_core()
 bool Rd53bDataProcessor::getNextDataBlock()
 {
     if (_curInV != nullptr && _curInV->size() > 0)
-    {
+    {      
+      for(unsigned c=0; c<_curInV->size(); c++) {
+      	RawDataPtr r = _curInV->data[c];
+      	unsigned channel = r->getAdr(); //elink number
+	std::unique_ptr<FeedbackProcessingInfo> stat(new FeedbackProcessingInfo{.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_ERROR});
+	
+      	FeedbackProcessingInfo &curStatus = *stat;
+      	RawData &curIn = *r;
+
+      	curStatus.packet_size = curIn.getSize();
+      	curStatus.trigger_tag = _tag; //is this the correct tag?
+        curStatus.bcid = _bcid;
+      	//also, set n_clusters = no. of hits in pixel?
+
+	if (statusFb != nullptr) statusFb->pushData(std::move(stat));
+      }
+
         // Cross raw data container
         if (unlikely(_rawDataIdx < 0))
         {
