@@ -1,0 +1,19 @@
+{
+  "ctrlCfg": {
+    "type": "Netio",
+    "cfg": {
+      "NetIO": {
+        "host": "127.0.0.1",
+        "txPort": 12340,
+        "rxPort": 12350,
+        "manchester": false,
+        "flip": false,
+        "extend": false,
+        "feType": "rd53b",
+	  "bufferSize": 64,
+	  "rxWaitTime": 1000000,
+	  "pixFwTrigger": true
+      }
+    }
+  }
+}
