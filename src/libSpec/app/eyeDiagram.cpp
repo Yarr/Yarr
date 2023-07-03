@@ -72,8 +72,9 @@ int main(int argc, char **argv) {
     int n_lanes= 16;
     std::string hw_controller_filename = "";
     std::string connectivity_filename = "";
+    uint32_t test_size = 10e5;
 
-    while ((c = getopt(argc, argv, "hr:c:")) != -1) {
+    while ((c = getopt(argc, argv, "hr:c:t:")) != -1) {
 		switch (c) {
 		case 'h':
 		    printHelp();
@@ -83,6 +84,9 @@ int main(int argc, char **argv) {
 		    break;
         case 'c' :
             connectivity_filename = optarg;
+            break;
+        case 't' :
+            test_size = std::stoi(optarg);
             break;
 		default:
 		    logger->critical("Invalid command line parameter(s) given!");
@@ -129,6 +133,7 @@ int main(int argc, char **argv) {
 
     auto chip_configs = jconn["chips"];
     size_t n_chips = chip_configs.size();
+    uint32_t cdrclksel = 0;
 
     for (size_t ichip = 0; ichip < n_chips; ichip++) {
         if (chip_configs[ichip]["enable"] == 0)
@@ -138,12 +143,14 @@ int main(int argc, char **argv) {
             std::cerr << "WARNING: Chip config for chip at index " << ichip << " in connectivity file does not exist, skipping (" << chip_register_file_path << ")" << std::endl;
             continue;
         }
-        
+
         auto fe = init_fe(hw, jconn, ichip);
         if(!fe) {
             std::cerr << "WARNING: Skipping chip at index " << ichip << " in connectivity file" << std::endl;
             continue;
         } else {
+            auto jchip = ScanHelper::openJsonFile(chip_register_file_path);
+            cdrclksel = jchip["RD53B"]["GlobalConfig"]["CdrClkSel"];
             fe->configure();
             // Wait for fifo to be empty
             std::this_thread::sleep_for(std::chrono::microseconds(10));
@@ -151,16 +158,23 @@ int main(int argc, char **argv) {
         }
     }
 
+    double speed=1280*10e6/(cdrclksel+1);
+
+    double time=0.0;
+    time=1/speed*66*test_size;
+    double clkcycles = 1/(40.0*10e6);
+    double count=time/clkcycles/101.0;
+    int min=std::floor(count);
+    int max=std::ceil(count);
+    int wait = time*4*10000+100;
+    std::cout << time << " " << clkcycles << " " << count << " " << min << " " << max << " " << wait << std::endl;
 
     std::ofstream file;
+    //file.open("results/results_"+std::to_string(test_size)+".txt");
     file.open("results.txt");
 
 	// Enable manual delay control
 	mySpec.writeSingle(0x2 << 14 | 0x6, 0xffff); 
-
-	// Write error counter stop value and mode
-    //uint32_t test_size = 10e6;
-    uint32_t test_size = 10e5;
 
 	mySpec.writeSingle(0x2 << 14 | 0x8, test_size); 
 	mySpec.writeSingle(0x2 << 14 | 0x9, 0); 
@@ -187,7 +201,7 @@ int main(int argc, char **argv) {
         mySpec.writeSingle(0x2 << 14 | 0xb, 1); 
         mySpec.writeSingle(0x2 << 14 | 0xb, 0); 
         
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        std::this_thread::sleep_for(std::chrono::milliseconds(wait));
         
         for (uint32_t j = 0 ; j<n_lanes; j++) {
 		    mySpec.writeSingle(0x2 << 14 | 0xa, j); 
@@ -198,12 +212,12 @@ int main(int argc, char **argv) {
             double link_quality=0;
             if (((errors>>31)&0x1)) {
                 error_count = (0x7FFFFFFF & errors);
-                if (error_count==20421 || error_count==20420){ 
+                if (error_count==min || error_count==max){ 
                     value = 1;
                     link_quality=1;
                 } else { 
                     value = 0; 
-                    link_quality = std::abs(std::log(1 / (std::abs(error_count - 20421) / 20421))/13.0);                
+                    link_quality = std::log(1 / (std::abs(error_count - count) / count))/13.0;                
                 }
             }
             resultVec[j][i] = value;
