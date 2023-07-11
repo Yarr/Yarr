@@ -30,7 +30,7 @@ StdDataLoop::StdDataLoop() : LoopActionBase(LOOP_STYLE_DATA) {
 void StdDataLoop::init() {
     m_done = false;
     auto trigAction = keeper->getTriggerAction();
-    if (trigAction != nullptr) n_triggersToReceive = trigAction->getTrigCnt() - n_triggersLostTolerance;
+    if (trigAction != nullptr) n_triggersToReceive = trigAction->getTrigCnt()*16 - n_triggersLostTolerance;
     SPDLOG_LOGGER_TRACE(sdllog, "");
 }
 
