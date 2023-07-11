@@ -75,6 +75,7 @@ private:
     inline bool getNextDataBlock();
     inline void getPreviousDataBlock();
     inline void process_core();
+    inline void getFeedback(unsigned tag, unsigned bcid);
 
     // Data stream components
     uint64_t _ccol;
