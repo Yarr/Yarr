@@ -45,7 +45,7 @@
         "algorithm": "DataArchiver",
         "config": {}
       },
-      "n_count": 5
+      "n_count": 7
     },
     "loops": [
       {
@@ -74,7 +74,8 @@
           "noInject": false,
           "time": 0,
           "edgeMode": true,
-          "edgeDuration": 20
+          "edgeDuration": 20,
+	  "zeroTot": false
         },
         "loopAction": "Rd53bTriggerLoop"
       },
