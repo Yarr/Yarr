@@ -24,7 +24,13 @@ constexpr const char* COLOR_GREEN = "\033[32m";
 constexpr const char* COLOR_RESET = "\033[0m";
 
 void printHelp() {
-    std::cout << "./bin/eyeDiagram -r Hardware controller JSON path -c Connectivity config JSON path" << std::endl;
+       std::cout << "Usage: ./bin/eyeDiagram [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-t <test_size>] [-s]\n\n"
+              << "Options:\n"
+              << "  -h                   Display this help message.\n"
+              << "  -r <hw_controller_file>   Specify hardware controller JSON path.\n"
+              << "  -c <connectivity_file>    Specify connectivity config JSON path.\n"
+              << "  -t <test_size>            Specify the error counter test size.\n"
+              << "  -s                   Update the controller condfig with the best delay values\n" ;
 }
 
 std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn, int fe_num) {
@@ -73,8 +79,9 @@ int main(int argc, char **argv) {
     std::string hw_controller_filename = "";
     std::string connectivity_filename = "";
     uint32_t test_size = 10e5;
+    bool save_delay=false;
 
-    while ((c = getopt(argc, argv, "hr:c:t:")) != -1) {
+    while ((c = getopt(argc, argv, "hr:c:t:s")) != -1) {
 		switch (c) {
 		case 'h':
 		    printHelp();
@@ -88,6 +95,9 @@ int main(int argc, char **argv) {
         case 't' :
             test_size = std::stoi(optarg);
             break;
+        case 's' :
+            save_delay = true;
+            break;    
 		default:
 		    logger->critical("Invalid command line parameter(s) given!");
 		    return -1;
@@ -269,12 +279,16 @@ int main(int argc, char **argv) {
         delayVec[i] = delay;
     }    
 
-	logger->info("Writing to controller config {}", hw_controller_filename);
-    jcontroller["ctrlCfg"]["cfg"]["delay"]=delayVec;
-    std::ofstream outputFile(hw_controller_filename);
-    outputFile << jcontroller << std::endl;
-    outputFile.close();
-	logger->info("All done! \n");
+    if (save_delay) {
+        logger->info("Writing to controller config {}", hw_controller_filename);
+        jcontroller["ctrlCfg"]["cfg"]["delay"]=delayVec;
+        std::ofstream outputFile(hw_controller_filename);
+        outputFile << jcontroller << std::endl;
+        outputFile.close();
+        logger->info("All done! \n");
+    } else {
+        logger->info("All done, without updating the controller config!");
+    }
 
     return 0;
 }
