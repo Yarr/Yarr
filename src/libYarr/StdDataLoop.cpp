@@ -30,9 +30,8 @@ StdDataLoop::StdDataLoop() : LoopActionBase(LOOP_STYLE_DATA) {
 void StdDataLoop::init() {
     m_done = false;
     auto trigAction = keeper->getTriggerAction();
-    if (trigAction != nullptr) n_triggersToReceive = trigAction->getTrigCnt()*trigAction->getTrigMulti() - n_triggersLostTolerance;
+    if (trigAction != nullptr) n_triggersToReceive = trigAction->getExpEvents() - n_triggersLostTolerance;
     SPDLOG_LOGGER_TRACE(sdllog, "");
-    SPDLOG_LOGGER_INFO(sdllog, "Number of triggers to receive={}",n_triggersToReceive);
 }
 
 void StdDataLoop::end() {
