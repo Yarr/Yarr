@@ -16,7 +16,6 @@ namespace {
 
 Rd53bTriggerLoop::Rd53bTriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) {
     setTrigCnt(50);
-    setTrigCnt(1);
     m_trigDelay = 48;
     m_calEdgeDelay = 0;
     m_trigFreq = 1e3;
@@ -126,7 +125,6 @@ void Rd53bTriggerLoop::init() {
     g_tx->setTrigWord(&m_trigWord[0], 32);
     g_tx->setTrigWordLength(m_trigWordLength);
     g_tx->setTrigTime(m_trigTime);
-    g_tx->setTrigMulti(m_trigMultiplier);
 
     g_tx->setCmdEnable(keeper->getTxMask());
     while(!g_tx->isCmdEmpty());
@@ -226,11 +224,14 @@ void Rd53bTriggerLoop::loadConfig(const json &config) {
         m_edgeDuration = config["edgeDuration"];
     if (config.contains("extTrig"))
         m_extTrig = config["extTrig"];
-    if (config.contains("trigMultiplier")){
+    if (config.contains("trigMultiplier"))
         m_trigMultiplier = config["trigMultiplier"];
-	setTrigMulti(config["trigMultiplier"]);
-    }
     if (config.contains("zeroTot"))
         m_zeroTot = config["zeroTot"];
     this->setTrigDelay(m_trigDelay, m_calEdgeDelay);
+}
+
+uint32_t Rd53bTriggerLoop::getExpEvents(){
+
+    return getTrigCnt()*m_trigMultiplier;
 }
