@@ -164,9 +164,7 @@ void SpecRxCore::checkRxSync() {
                     status = this->getLinkStatus();
                     if (status & (1 << ((i*numOfLanes)+l))) {
                         val=status & (1 << ((i*numOfLanes)+l));
-                        SpecCom::writeSingle(RX_ADDR | RX_LANE_SEL, i); 
-                        uint32_t val_set=SpecCom::readSingle(RX_ADDR |  RX_LANE_DELAY_OUT);
-                        srxlog->info("Channel {} Lane {} synchronized with delay {}!", i, l, val_set);
+                        srxlog->info("Channel {} Lane {} synchronized!", i, l);
 
                     } else {
                         srxlog->error("Channel {} Lane {} not synchronized!", i, l);
