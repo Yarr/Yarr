@@ -52,7 +52,7 @@
         "config": {
           "max": 500,
           "min": 0,
-          "step": 10,
+          "step": 5,
           "parameter":"InjVcalDiff",
           "waitTime": 10
         },
