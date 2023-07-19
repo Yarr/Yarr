@@ -114,10 +114,10 @@ void Rd53bCfg::loadConfig(const json &j) {
         m_kSenseShuntD = j["RD53B"]["Parameter"]["KSenseShuntD"];
 
     if (j.contains({"RD53B","Parameter","KShuntA"}))
-        m_kSenseShuntA = j["RD53B"]["Parameter"]["KShuntA"];
+        m_kShuntA = j["RD53B"]["Parameter"]["KShuntA"];
 
     if (j.contains({"RD53B","Parameter","KShuntD"}))
-        m_kSenseShuntD = j["RD53B"]["Parameter"]["KShuntD"];
+        m_kShuntD = j["RD53B"]["Parameter"]["KShuntD"];
     
     if (j.contains({"RD53B","Parameter","VcalPar"}))
         if (j["RD53B"]["Parameter"]["VcalPar"].size() == m_vcalPar.size()) {
@@ -125,10 +125,10 @@ void Rd53bCfg::loadConfig(const json &j) {
                 m_vcalPar[i] = j["RD53B"]["Parameter"]["VcalPar"][i];
         }
 
-    if (j.contains({"RD53B","Parameter","AdcCalPar"}))
-        if (j["RD53B"]["Parameter"]["AdcCalPar"].size() == m_adcCalPar.size()) {
+    if (j.contains({"RD53B","Parameter","ADCcalPar"}))
+        if (j["RD53B"]["Parameter"]["ADCcalPar"].size() == m_adcCalPar.size()) {
             for(unsigned  i=0;i<m_adcCalPar.size();i++)
-                m_adcCalPar[i] = j["RD53B"]["Parameter"]["AdcCalPar"][i];
+                m_adcCalPar[i] = j["RD53B"]["Parameter"]["ADCcalPar"][i];
         }
 
     if (j.contains({"RD53B","Parameter","NtcCalPar"}))

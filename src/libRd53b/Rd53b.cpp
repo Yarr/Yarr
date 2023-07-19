@@ -64,10 +64,11 @@ void Rd53b::init(HwController *core, unsigned arg_txChannel, unsigned arg_rxChan
 
 void Rd53b::resetAll() {
     logger->debug("Performing hard reset ...");
-    // Send low number of transitions for at least 10us to put chip in reset state 
+    // Send low number of transitions for at least 10us to put chip in reset state
     logger->debug(" ... asserting CMD reset via low activity");
-    for (unsigned int i=0; i<400; i++) {
-        // Pattern corresponds to approx. 0.83MHz
+    for (unsigned int i=0; i<85; i++) {
+        // Pattern corresponds to approx. 0.83MHz (192 bits @ 160 Mb/s)
+        // 85 times means sending this signal for approx. 102us, that is >> 10us
         core->writeFifo(0xFFFFFFFF);
         core->writeFifo(0xFFFFFFFF);
         core->writeFifo(0xFFFFFFFF);
@@ -454,11 +455,12 @@ itkpix_efuse_codec::EfuseData Rd53b::readEfuses() {
     //
     uint32_t efuse_data_0 = 0;
     uint32_t efuse_data_1 = 0;
-    try {
-        efuse_data_0 = readSingleRegister(&Rd53b::EfuseReadData0);
-        efuse_data_1 = readSingleRegister(&Rd53b::EfuseReadData1);
-    } catch (std::exception& e) {
-        logger->warn("Failed to readback E-fuse data for chip with {}, exception received: {}", m_chipId, e.what());
+    
+    efuse_data_0 = readSingleRegister(&Rd53b::EfuseReadData0);
+    efuse_data_1 = readSingleRegister(&Rd53b::EfuseReadData1);
+    
+    if (efuse_data_0 > 65535 || efuse_data_1 > 65535) {
+        logger->warn("Failed to readback E-fuse data for chip with {}", m_chipId);
         return itkpix_efuse_codec::EfuseData{0};
     }
     uint32_t efuse_data = ((efuse_data_1 & 0xffff) << 16) | (efuse_data_0 & 0xffff);
@@ -489,11 +491,12 @@ uint32_t Rd53b::readEfusesRaw() {
     //
     uint32_t efuse_data_0 = 0;
     uint32_t efuse_data_1 = 0;
-    try {
-        efuse_data_0 = readSingleRegister(&Rd53b::EfuseReadData0);
-        efuse_data_1 = readSingleRegister(&Rd53b::EfuseReadData1);
-    } catch (std::exception& e) {
-        logger->warn("Failed to readback E-fuse data for chip with {}, exception received: {}", m_chipId, e.what());
+    
+    efuse_data_0 = readSingleRegister(&Rd53b::EfuseReadData0);
+    efuse_data_1 = readSingleRegister(&Rd53b::EfuseReadData1);
+    
+    if (efuse_data_0 > 65535 || efuse_data_1 > 65535) {
+        logger->warn("Failed to readback E-fuse data for chip with {}", m_chipId);
         return 0;
     }
     return ((efuse_data_1 & 0xffff) << 16) | (efuse_data_0 & 0xffff);
@@ -509,8 +512,13 @@ void Rd53b::readUpdateWriteNamedReg(std::string name) {
 }
 
 void Rd53b::readUpdateWriteReg(Rd53bRegDefault Rd53bGlobalCfg::*ref) {
-	uint32_t reg = readSingleRegister(ref);
-	m_cfg[(this->*ref).addr()] = reg;
+    for (unsigned int i=0; i<5; i++){
+   		uint32_t reg = readSingleRegister(ref);
+   		if (reg < 65536) {
+     		m_cfg[(this->*ref).addr()] = reg;
+     		break;
+   		}
+    }
 }
 
 uint32_t Rd53b::readSingleRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref) {
@@ -542,7 +550,7 @@ uint32_t Rd53b::readSingleRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref) {
                 if(id == (m_chipId&0x3)) {
                     if(received_address != (this->*ref).addr()) {
                         logger->warn("readSingleRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
-                        return 0;
+                        return 65536;
                     }
                     return register_value;
                 } else {
@@ -553,7 +561,7 @@ uint32_t Rd53b::readSingleRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref) {
     }
     
     logger->warn("readSingleRegister failed, did not received register readback data from chip with chipId {}", m_chipId);
-    return 0;
+    return 65536;
 }
     
 void Rd53b::confAdc(uint16_t MONMUX, bool doCur) {

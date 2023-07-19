@@ -22,7 +22,7 @@ public:
     void executeLoop();
     
     /** When set (by EmuController) shutdown executeLoop (i.e. the thread) */
-    std::atomic<bool> run;
+    std::atomic<bool> run{};
     
 private:
 
@@ -54,8 +54,6 @@ private:
     }
 
     // BC counter
-    uint16_t m_bccnt;
-    bool m_resetbc;
     void updateBC() {
         if (m_resetbc) {
             m_bccnt = 0;
@@ -77,6 +75,9 @@ private:
     /** These are ring buffers owned by EmuController */
     EmuCom * m_txRingBuffer;  // for LCB
     EmuCom * m_txRingBuffer2; // for R3L1
+
+    uint16_t m_bccnt;
+    bool m_resetbc;
 
     std::vector< std::unique_ptr<StarChipsetEmu> > chipEmus;
 };

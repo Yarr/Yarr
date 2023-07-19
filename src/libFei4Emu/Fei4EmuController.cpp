@@ -35,8 +35,8 @@ void EmuController<Fei4, Fei4Emu>::loadConfig(const json &j) {
 //    EmuTxCore::setCom(new EmuShm(j["tx"]["id"], j["tx"]["size"], true));
 //    EmuRxCore::setCom(new EmuShm(j["rx"]["id"], j["rx"]["size"], true));
 
-  if (j.contains("rx_wait_time")) {
-    m_waitTime = std::chrono::microseconds(j["rx_wait_time"]);
+  if (j.contains("rxWaitTime")) {
+    m_waitTime = std::chrono::microseconds(j["rxWaitTime"]);
   }
 
   // Tx EmuCom

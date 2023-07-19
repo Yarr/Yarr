@@ -25,9 +25,9 @@ void Bdaq::initialize(bdaqConfig c) {
 
 	// Get DAQ (board) version
  	dv = getDaqVersion();
-	if (VERSION != dv.fwVersion) {
+	if (std::stod(VERSION) < std::stod(dv.fwVersion)) {
 		std::string error = "Firmware version " + dv.fwVersion +
-		" is different than software version " + VERSION + "! Please update.";
+		" is less then version " + VERSION + "! Please update.";
 		logger->critical(error);
 		exit(-1);
 	}

@@ -4,12 +4,12 @@
     "cfg": {
       "NetIO": {
         "host": "127.0.0.1",
-        "txport": 12340,
-        "rxport": 12350,
+        "txPort": 12340,
+        "rxPort": 12350,
         "manchester": false,
         "flip": false,
         "extend": false,
-        "fetype": "rd53a"
+        "feType": "rd53a"
       }
     }
   }

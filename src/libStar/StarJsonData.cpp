@@ -57,7 +57,7 @@ std::optional<double> StarJsonData::getValForProp(const PropName &propName, cons
        auto &splitProp = propName;
        //Getting the element in the json property structure
        auto ref = std::ref(m_jsondata);
-       for (std::string i : splitProp)
+       for (const std::string &i : splitProp)
               ref = ref.get()[i];
        ref = ref.get()["Data"];
        if (ref.get()[index].is_null()) return {};
@@ -73,7 +73,7 @@ std::string StarJsonData::getStringForProp(const PropName &propName) const
        auto &splitProp = propName;
        //Getting the element in the json property structure
        auto ref = std::ref(m_jsondata);
-       for (std::string i : splitProp)
+       for (const std::string &i : splitProp)
               ref = ref.get()[i];
        return ref.get();
 }
@@ -88,7 +88,7 @@ int StarJsonData::getNumberOfEntriesForProp(const PropName &propName) const
        auto &splitProp = propName;
        //Getting the element in the json property structure
        auto ref = std::ref(m_jsondata);
-       for (std::string i : splitProp)
+       for (const std::string &i : splitProp)
               ref = ref.get()[i];
 
        double entries = 0.;
@@ -119,7 +119,7 @@ double StarJsonData::getSumOfEntriesForProp(const PropName &propName) const
        auto &splitProp = propName;
        //Getting the element in the json property structure
        auto ref = std::ref(m_jsondata);
-       for (std::string i : splitProp)
+       for (const std::string &i : splitProp)
               ref = ref.get()[i];
 
        double sum = 0.;
@@ -150,7 +150,7 @@ double StarJsonData::getSumOfSquaredEntriesForProp(const PropName &propName) con
        auto &splitProp = propName;
        //Getting the element in the json property structure
        auto ref = std::ref(m_jsondata);
-       for (std::string i : splitProp)
+       for (const std::string &i : splitProp)
               ref = ref.get()[i];
 
        double sum = 0.;

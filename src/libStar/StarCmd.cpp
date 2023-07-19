@@ -1,11 +1,7 @@
 #include "StarCmd.h"
 
-StarCmd::StarCmd() = default;
-
-StarCmd::~StarCmd() = default;
-
 std::array<LCB::Frame, 9> StarCmd::command_sequence(int hccid, int abcid, int address, bool readNotWrite, uint32_t value, bool hccNotAbc) {
-  std::array<LCB::Frame, 9> result;
+  std::array<LCB::Frame, 9> result{};
 
   // Start is a K2 + ABC/HCC + HCC ID
   auto start = hccid&0xf;
