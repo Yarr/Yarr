@@ -439,7 +439,6 @@ void NetioTxCore::doTriggerCnt() {
       // send a single command that will start the firmware-based trigger sequence
       trigs=m_trigCnt;
       trigger();
-      std::this_thread::sleep_for(std::chrono::microseconds((int)(1e6*m_trigCnt/m_trigFreq)));      
     }
     else{ //
       for(uint32_t i=0; i<m_trigCnt; i++) {
