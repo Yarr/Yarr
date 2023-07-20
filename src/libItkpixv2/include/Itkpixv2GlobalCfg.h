@@ -138,7 +138,7 @@ class Itkpixv2GlobalCfg {
         std::map<std::string, Itkpixv2RegDefault Itkpixv2GlobalCfg::*> regMap;
         std::map<std::string, Itkpixv2RegDefault Itkpixv2GlobalCfg::*> virtRegMap;
     protected:
-        static constexpr unsigned numRegs = 138;
+        static constexpr unsigned numRegs = 156;
         std::array<uint16_t, numRegs> m_cfg;
 
         void writeConfig(json &j);
