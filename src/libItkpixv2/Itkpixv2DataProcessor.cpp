@@ -128,15 +128,6 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
         return true;
     }
 
-    // If need to check end of stream (checkEOS = true), need to protect for the corner case where end of event mark (0000000) is suppressed and there is 0 orphan bit at the end of the stream
-    if (checkEOS && (_data[0] >> 31) && _bitIdx == 1)
-    {
-        getPreviousDataBlock();
-        _bitIdx = 64; // All the bits in previous block has been processed
-        variable = 0;
-        return true;
-    }
-
     // Retrieving bits from the stream is highly non-trivial due to the varying length. There are several scenarios to cover. Using 64-bit instead of 32-bit data words can simplify the implementations
     // Check whether the bits to be retrieved are fully contained by the current 64-bit block
     if (_bitIdx + length < BLOCKSIZE)
@@ -154,6 +145,28 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
         variable = (((_bitIdx < HALFBLOCKSIZE) ? (((_data[0] & (0xFFFFFFFFUL >> _bitIdx)) << HALFBLOCKSIZE) | _data[1])
                     : (_data[1] & (0xFFFFFFFFUL >> (_bitIdx - HALFBLOCKSIZE)))) << (length + _bitIdx - BLOCKSIZE));
 
+        // Check the ES bit of the next 64-bit block
+        if ((_data[0] >> 31) & 0x1)
+        {
+            // If check end of stream is requested, roll back to previous block and return 0
+            if (checkEOS)
+            {
+                if (unlikely(variable != 0))
+                    logger->error("The ES bit is 1 while the core column number read is non-zero ({}). Data processed so far are corrupted... Last block {}{}", variable, std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+                _bitIdx = 64;
+                variable = 0;
+                return true;
+            }
+            // Otherwise throw error message, unless over-draft is expected
+            else if (!skipNSCheck)
+            {
+                logger->error("Expect unfinished stream while ES = 1: {}{}. Will start a new event...", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+                getPreviousDataBlock();
+                _status = INIT;
+                return false;
+            }
+        }
+
         // Move to the next block
         // If the block index already reaches the end of the raw data container, stop here
         if (!getNextDataBlock())
@@ -162,41 +175,13 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
             return false;
         }
 
-        // Check the NS bit of the next 64-bit block
-        if (_data[0] >> 31)
-        {
-            // If check end of stream is requested, roll back to previous block and return 0
-            if (checkEOS)
-            {
-                getPreviousDataBlock();
-                _bitIdx = 64; // All the bits in previous block has been processed
-                variable = 0;
-                return true;
-            }
-            // We are over-drafting bits and would expect non-zero probablitiy of running into the end of the stream. In this case, stop retrieving more bits and return the current value
-            else if (skipNSCheck || _bitIdx + length == BLOCKSIZE)
-            {
-                _bitIdx -= (63 - length - _chipIdShift); // Still move the bit index as if we have retrieved the overflow bits in the next block. The index will be rolled back in the process() method
-                return true;
-            }
-            // Otherwise only throw an error essage. Keep reading the next block neglecting the NS bit
-            // TODO: apply corrective action?
-            else
-            {
-                logger->error("Expect unfinished stream while NS = 1: {}{}. Will start a new event...", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
-                getPreviousDataBlock();
-                _status = INIT;
-                return false;
-            }
-        }
-
         // Retrieve the bits overflow to the next 64-bit data block. Here we need to separate the cases where the overflow bits are fully contained in the first 32-bit data word, or extend to the second 32-bit data word
         // This check is needed because the maximum number of bits retrieved could be 64 bits (reading ToT for all 16 pixels from a full hit map)
         // Can be simplified if the data word is 64 instead of 32 bits, or if the ToT is read pixel-by-pixel (in which case the maximum number of bits retrieved will always be below 32 bits)
         variable |= (((_bitIdx + length) < (HALFBLOCKSIZE + BLOCKSIZE)) ? ((_data[0] & _streamMask) >> (95 - (_bitIdx + length) - _chipIdShift)) 
                 : (((_data[0] & _streamMask) << (_bitIdx + length - 95-_chipIdShift)) | (_data[1] >> (127 - (length + _bitIdx) - _chipIdShift))));
 
-        _bitIdx -= (63 - length - _chipIdShift); // Move bit index. Note the NS bit should also be counted
+        _bitIdx -= (63 - length - _chipIdShift); // Move bit index. Note the ES bit should also be counted
     }
 
     return true;
@@ -208,13 +193,13 @@ void Itkpixv2DataProcessor::rollBack(const unsigned length)
     // Should never happen: roll-back length = 0
     if (unlikely(length == 0))
         return;
-    // After rolling back the index is still within the block. Keep in mind there is one extra bit from NS
+    // After rolling back the index is still within the block. Keep in mind there is one extra bit from ES
     if (_bitIdx >= (length + 1 + _chipIdShift))
         _bitIdx -= length;
     // Rolling back to the previous block
     else
     {                              
-        _bitIdx += (63 - length - _chipIdShift);  // Correct the bit index. Keep in mind there is NS bit
+        _bitIdx += (63 - length - _chipIdShift);  // Correct the bit index. Keep in mind there is ES bit
         getPreviousDataBlock();
     }
 }
@@ -229,14 +214,8 @@ void Itkpixv2DataProcessor::process_core()
         if (!getNextDataBlock())
             return;
 
-        // Get event tag
-        if (unlikely(!(_data[0] >> 31 & 0x1)))
-        {
-            logger->error("Expect new stream while NS = 0: {}{}. Skipping block...", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
-            return;
-        }
         _tag = (_data[0] >> (23-_chipIdShift)) & 0xFF;
-        _bitIdx = 9+_chipIdShift; // Reset bit index = NS + tag
+        _bitIdx = 9+_chipIdShift; // Reset bit index = ES + tag
 
         // Create a new event
         // TODO RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
@@ -259,20 +238,20 @@ void Itkpixv2DataProcessor::process_core()
         case CCC:
             _status = CCC;
             // End of stream is marked with 0b000000. This is ensured in software in spite of the chip orphan bit configuration
-            if (_ccol == 0)
-            {
+            if (_ccol == 0) {
+                // Check ES bit
+                if (((_data[0] >> 31) & 0x1) != 0x1) {
+                    logger->error("The ES bit is 0 while the core column number read is zero. Data processed so far are corrupted... Last block {}{}", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+                    // TODO: keep skipping data until ES = 1, and then skip one more
+                }
+                    
                 // Get data containers
-                if (!getNextDataBlock())
+                if (!getNextDataBlock()) {
+                    getPreviousDataBlock(); // Necesarry to check  for ES bit
                     return;
-
-                // Get event tag. TODO: add support of chip ID
-                if (unlikely(!(_data[0] >> 31 & 0x1)))
-                {
-                    logger->error("Expect new stream while NS = 0: {}{}. Skipping block...", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
-                    continue;
                 }
                 _tag = (_data[0] >> (23-_chipIdShift)) & 0xFF;
-                _bitIdx = 9 + _chipIdShift; // Reset bit index = NS + tag
+                _bitIdx = 9 + _chipIdShift; // Reset bit index = ES + tag
 
                 // Create a new event
                 // TODO RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
