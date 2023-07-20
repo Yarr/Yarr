@@ -153,6 +153,8 @@ class Itkpixv2GlobalCfg {
         //2
         Itkpixv2RegDefault PixRegionRow;
         //3
+        Itkpixv2RegDefault PixEnSeuCount;
+        Itkpixv2RegDefault PixHitSampleMode;
         Itkpixv2RegDefault PixBroadcast;
         Itkpixv2RegDefault PixConfMode;
         Itkpixv2RegDefault PixAutoRow;
@@ -269,60 +271,68 @@ class Itkpixv2GlobalCfg {
         //50
         Itkpixv2RegDefault SelfTrigPattern;
         //51
+        Itkpixv2RegDefault SelfTrigDeadtime;
+        //52
         Itkpixv2RegDefault DataReadDelay;
         Itkpixv2RegDefault ReadTrigLatency;
-        //52
-        Itkpixv2RegDefault TruncTimeoutConf;
         //53
+        Itkpixv2RegDefault TruncTimeoutConf;
+        //54
         Itkpixv2RegDefault InjDigEn;
         Itkpixv2RegDefault InjAnaMode;
         Itkpixv2RegDefault InjFineDelay;
-        //54
+        //55
         Itkpixv2RegDefault FineDelayClk;
         Itkpixv2RegDefault FineDelayData;
-        //55
-        Itkpixv2RegDefault InjVcalHigh;
         //56
-        Itkpixv2RegDefault InjVcalMed;
+        Itkpixv2RegDefault InjVcalHigh;
         //57
+        Itkpixv2RegDefault InjVcalMed;
+        //58
         Itkpixv2RegDefault CapMeasEnPar;
         Itkpixv2RegDefault CapMeasEn;
         Itkpixv2RegDefault InjVcalRange;
-        //58
+        //59
         Itkpixv2RegDefault CdrOverwriteLimit;
         Itkpixv2RegDefault CdrPhaseDetSel;
         Itkpixv2RegDefault CdrClkSel;
-        //59
-        Itkpixv2RegDefault ChSyncLockThr;
         //60
-        Itkpixv2RegDefault GlobalPulseConf;
+        Itkpixv2RegDefault Clk40En;
+        Itkpixv2RegDefault Clk160En;
+        Itkpixv2RegDefault ClkDataMergeEn;
+        Itkpixv2RegDefault ClkAuroraEn;
         //61
-        Itkpixv2RegDefault GlobalPulseWidth;
+        Itkpixv2RegDefault ChSyncLockThr;
         //62
+        Itkpixv2RegDefault GlobalPulseConf;
+        //63
+        Itkpixv2RegDefault GlobalPulseWidth;
+        //64
         Itkpixv2RegDefault ServiceBlockEn;
         Itkpixv2RegDefault ServiceBlockPeriod;
-        //63
+        //65
         Itkpixv2RegDefault TotEnPtot;
         Itkpixv2RegDefault TotEnPtoa;
         Itkpixv2RegDefault TotEn80;
         Itkpixv2RegDefault TotEn6b4b;
         Itkpixv2RegDefault TotPtotLatency;
-        //64
-        Itkpixv2RegDefault PtotCoreColEn3;
-        //65
-        Itkpixv2RegDefault PtotCoreColEn2;
         //66
-        Itkpixv2RegDefault PtotCoreColEn1;
+        Itkpixv2RegDefault PtotCoreColEn3;
         //67
-        Itkpixv2RegDefault PtotCoreColEn0;
+        Itkpixv2RegDefault PtotCoreColEn2;
         //68
+        Itkpixv2RegDefault PtotCoreColEn1;
+        //69
+        Itkpixv2RegDefault PtotCoreColEn0;
+        //70
         Itkpixv2RegDefault DataMergeInPol;
         Itkpixv2RegDefault EnChipId;
         Itkpixv2RegDefault DataMergeEnClkGate;
         Itkpixv2RegDefault DataMergeSelClk;
         Itkpixv2RegDefault DataMergeEn;
         Itkpixv2RegDefault DataMergeEnBond;
-        //69
+        Itkpixv2RegDefault DataMergeGpoSel;
+        //71
         Itkpixv2RegDefault DataMergeInMux3;
         Itkpixv2RegDefault DataMergeInMux2;
         Itkpixv2RegDefault DataMergeInMux1;
@@ -331,114 +341,130 @@ class Itkpixv2GlobalCfg {
         Itkpixv2RegDefault DataMergeOutMux2;
         Itkpixv2RegDefault DataMergeOutMux1;
         Itkpixv2RegDefault DataMergeOutMux0;
-        //70-73
+        //72-75
         Itkpixv2RegDefault EnCoreColCal3;
         Itkpixv2RegDefault EnCoreColCal2;
         Itkpixv2RegDefault EnCoreColCal1;
         Itkpixv2RegDefault EnCoreColCal0;
-        //74
+        //76
+        Itkpixv2RegDefault DataEnCrc;
         Itkpixv2RegDefault DataEnBcid;
         Itkpixv2RegDefault DataEnL1id;
-        Itkpixv2RegDefault DataEnEos;
         Itkpixv2RegDefault NumOfEventsInStream;
-        //75
+        //77
         Itkpixv2RegDefault DataEnBinaryRo;
         Itkpixv2RegDefault DataEnRaw;
-        Itkpixv2RegDefault DataEnHitRemoval;
         Itkpixv2RegDefault DataMaxHits;
-        Itkpixv2RegDefault DataEnIsoHitRemoval;
         Itkpixv2RegDefault DataMaxTot;
-        //76
+        //78-81
+        Itkpixv2RegDefault EnHitsRemoval3;
+        Itkpixv2RegDefault EnHitsRemoval2;
+        Itkpixv2RegDefault EnHitsRemoval1;
+        Itkpixv2RegDefault EnHitsRemoval0;
+        //82-85
+        Itkpixv2RegDefault EnIsoHitsRemoval3;
+        Itkpixv2RegDefault EnIsoHitsRemoval2;
+        Itkpixv2RegDefault EnIsoHitsRemoval1;
+        Itkpixv2RegDefault EnIsoHitsRemoval0;
+        //86
         Itkpixv2RegDefault EvenMask;
-        //77
+        //87
         Itkpixv2RegDefault OddMask;
-        //78
+        //88
         Itkpixv2RegDefault EfuseConfig;
-        //79
+        //89
         Itkpixv2RegDefault EfuseWriteData1;
-        //80
+        //90
         Itkpixv2RegDefault EfuseWriteData0;
-        //81
+        //91
+        Itkpixv2RegDefault DataMergeFixedMode;
+        Itkpixv2RegDefault DataMergeManMode;
+        Itkpixv2RegDefault DataMergeManChoice;
+        //92
+        Itkpixv2RegDefault AuroraSendAlt;
         Itkpixv2RegDefault AuroraEnPrbs;
         Itkpixv2RegDefault AuroraActiveLanes;
         Itkpixv2RegDefault AuroraCCWait;
         Itkpixv2RegDefault AuroraCCSend;
-        //82
+        //93
         Itkpixv2RegDefault AuroraCBWait1;
-        //83
+        //94
         Itkpixv2RegDefault AuroraCBWait0;
         Itkpixv2RegDefault AuroraCBSend;
-        //84
+        //95
         Itkpixv2RegDefault AuroraInitWait;
-        //85
+        //96-97
+        Itkpixv2RegDefault AuroraAltOutput0;
+        Itkpixv2RegDefault AuroraAltOutput1;
+        //98
         Itkpixv2RegDefault GpValReg;
         Itkpixv2RegDefault GpCmosEn;
         Itkpixv2RegDefault GpCmosDs;
         Itkpixv2RegDefault GpLvdsEn;
         Itkpixv2RegDefault GpLvdsBias;
-        //86
+        //99
         Itkpixv2RegDefault GpCmosRoute;
-        //87
+        //100
         Itkpixv2RegDefault GpLvdsPad3;
         Itkpixv2RegDefault GpLvdsPad2;
-        //88
+        //101
         Itkpixv2RegDefault GpLvdsPad1;
         Itkpixv2RegDefault GpLvdsPad0;
-        //89
+        //102
         Itkpixv2RegDefault CdrCp;
-        //90
+        //103
         Itkpixv2RegDefault CdrCpFd;
-        //91
+        //104
         Itkpixv2RegDefault CdrCpBuff;
-        //92
+        //105
         Itkpixv2RegDefault CdrVco;
-        //93
+        //106
         Itkpixv2RegDefault CdrVcoBuff;
-        //94
+        //107
         Itkpixv2RegDefault SerSelOut3;
         Itkpixv2RegDefault SerSelOut2;
         Itkpixv2RegDefault SerSelOut1;
         Itkpixv2RegDefault SerSelOut0;
-        //95
+        //108
         Itkpixv2RegDefault SerInvTap;
         Itkpixv2RegDefault SerEnTap;
         Itkpixv2RegDefault SerEnLane;
-        //96
+        //109
         Itkpixv2RegDefault CmlBias2;
-        //97
+        //110
         Itkpixv2RegDefault CmlBias1;
-        //98
+        //111
         Itkpixv2RegDefault CmlBias0;
-        //99
+        //112
         Itkpixv2RegDefault MonitorEnable;
         Itkpixv2RegDefault MonitorI;
         Itkpixv2RegDefault MonitorV;
-        //100
+        //113
         Itkpixv2RegDefault ErrWngMask;
-        //101
+        //114
         Itkpixv2RegDefault MonSensSldoDigEn;
         Itkpixv2RegDefault MonSensSldoDigDem;
         Itkpixv2RegDefault MonSensSldoDigSelBias;
         Itkpixv2RegDefault MonSensSldoAnaEn;
         Itkpixv2RegDefault MonSensSldoAnaDem;
         Itkpixv2RegDefault MonSensSldoAnaSelBias;
-        //102
+        //115
         Itkpixv2RegDefault MonSensAcbEn;
         Itkpixv2RegDefault MonSensAcbDem;
         Itkpixv2RegDefault MonSensAcbSelBias;
-        //103
+        //116
         Itkpixv2RegDefault VrefRsensBot;
         Itkpixv2RegDefault VrefRsensTop;
         Itkpixv2RegDefault VrefIn;
         Itkpixv2RegDefault MonAdcTrim;
-        //104
+        //117
         Itkpixv2RegDefault NtcDac;
-        //105-108
+        //118-121
         Itkpixv2RegDefault HitOrMask3;
         Itkpixv2RegDefault HitOrMask2;
         Itkpixv2RegDefault HitOrMask1;
         Itkpixv2RegDefault HitOrMask0;
-        //109-116
+        //122-129
         Itkpixv2RegDefault AutoRead0;
         Itkpixv2RegDefault AutoRead1;
         Itkpixv2RegDefault AutoRead2;
@@ -447,7 +473,7 @@ class Itkpixv2GlobalCfg {
         Itkpixv2RegDefault AutoRead5;
         Itkpixv2RegDefault AutoRead6;
         Itkpixv2RegDefault AutoRead7;
-        //117
+        //130
         Itkpixv2RegDefault RingOscBClear;
         Itkpixv2RegDefault RingOscBEnBl;
         Itkpixv2RegDefault RingOscBEnBr;
@@ -456,36 +482,46 @@ class Itkpixv2GlobalCfg {
         Itkpixv2RegDefault RingOscBEnLvt;
         Itkpixv2RegDefault RingOscAClear;
         Itkpixv2RegDefault RingOscAEn;
-        //118
+        //131
         Itkpixv2RegDefault RingOscARoute;
         Itkpixv2RegDefault RingOscBRoute;
-        //119-120
+        //133-133
         Itkpixv2RegDefault RingOscAOut;
         Itkpixv2RegDefault RingOscBOut;
-        //121-123 RO
+        //134-136 RO
         Itkpixv2RegDefault BcidCnt;
         Itkpixv2RegDefault TrigCnt;
         Itkpixv2RegDefault ReadTrigCnt;
-        //124-128
+        //137-141
         Itkpixv2RegDefault LockLossCnt;
         Itkpixv2RegDefault BitFlipWngCnt;
         Itkpixv2RegDefault BitFlipErrCnt;
         Itkpixv2RegDefault CmdErrCnt;
         Itkpixv2RegDefault RdWrFifoErrCnt;
-        //129
+        //142
         Itkpixv2RegDefault AiRegionRow;
-        //130-133
+        //143-146
         Itkpixv2RegDefault HitOrCnt3;
         Itkpixv2RegDefault HitOrCnt2;
         Itkpixv2RegDefault HitOrCnt1;
         Itkpixv2RegDefault HitOrCnt0;
-        //134
+        //147-148
+        Itkpixv2RegDefault GatedHitOrCnt1;
+        Itkpixv2RegDefault GatedHitOrCnt0;
+        //149-151
+        Itkpixv2RegDefault PixelSeuCnt;
+        Itkpixv2RegDefault GlobalConfigSeuCnt;
         Itkpixv2RegDefault SkippedTrigCnt;
-        //135-136
+        //152
+        Itkpixv2RegDefault DataDecodingValues;
+        //153-154
         Itkpixv2RegDefault EfuseReadData0;
         Itkpixv2RegDefault EfuseReadData1;
-        //137
+        //155
         Itkpixv2RegDefault MonitoringDataAdc;
+        //156
+        Itkpixv2RegDefault ChipIdSense;
+        Itkpixv2RegDefault IrefTrimSense;
         //138-201
         //SEU_notmr - not implemented, do not need to store
         //202-255
