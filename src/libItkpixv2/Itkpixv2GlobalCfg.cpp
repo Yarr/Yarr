@@ -187,9 +187,9 @@ void Itkpixv2GlobalCfg::init() {
     SelfTrigDelay.init      ( 49, &m_cfg[ 49], 5, 10, 512); regMap["SelfTrigDelay"] = &Itkpixv2GlobalCfg::SelfTrigDelay;
     SelfTrigMulti.init      ( 49, &m_cfg[ 49], 0, 5, 4); regMap["SelfTrigMulti"] = &Itkpixv2GlobalCfg::SelfTrigMulti;
     //50
-    SelfTrigPattern.init    ( 50, &m_cfg[ 50], 0, 16, 65534); regMap["SelfTrigPattern"] = &Itkpixv2GlobalCfg::SelfTrigPattern;
+    SelfTrigDeadtime.init   ( 50, &m_cfg[ 50], 0, 16, 64); regMap["SelfTrigDeadtime"] = &Itkpixv2GlobalCfg::SelfTrigDeadtime;
     //51
-    SelfTrigDeadtime.init   ( 51, &m_cfg[ 51], 0, 16, 64); regMap["SelfTrigDeadtime"] = &Itkpixv2GlobalCfg::SelfTrigDeadtime;
+    SelfTrigPattern.init    ( 51, &m_cfg[ 51], 0, 16, 65534); regMap["SelfTrigPattern"] = &Itkpixv2GlobalCfg::SelfTrigPattern;
     //52
     DataReadDelay.init      ( 52, &m_cfg[ 52], 12,  2, 0); regMap["DataReadDelay"] = &Itkpixv2GlobalCfg::DataReadDelay;
     ReadTrigLatency.init    ( 52, &m_cfg[ 52], 0, 12, 1000); regMap["ReadTrigLatency"] = &Itkpixv2GlobalCfg::ReadTrigLatency;
@@ -274,15 +274,15 @@ void Itkpixv2GlobalCfg::init() {
     DataMaxHits.init        ( 77, &m_cfg[ 77], 3,  9, 0); regMap["DataMaxHits"] = &Itkpixv2GlobalCfg::DataMaxHits;
     DataMaxTot.init         ( 77, &m_cfg[ 77], 0,  3, 0); regMap["DataMaxTot"] = &Itkpixv2GlobalCfg::DataMaxTot;
     //78-81
-    EnHitsRemoval3.init     ( 78, &m_cfg[ 78], 0,  3, 0); regMap["EnHitsRemoval3"] = &Itkpixv2GlobalCfg::EnHitsRemoval3;
-    EnHitsRemoval2.init     ( 79, &m_cfg[ 79], 0,  3, 0); regMap["EnHitsRemoval2"] = &Itkpixv2GlobalCfg::EnHitsRemoval2;
-    EnHitsRemoval1.init     ( 80, &m_cfg[ 80], 0,  3, 0); regMap["EnHitsRemoval1"] = &Itkpixv2GlobalCfg::EnHitsRemoval1;
-    EnHitsRemoval0.init     ( 81, &m_cfg[ 81], 0,  3, 0); regMap["EnHitsRemoval0"] = &Itkpixv2GlobalCfg::EnHitsRemoval0;
+    EnHitsRemoval3.init     ( 78, &m_cfg[ 78], 0,  6, 0); regMap["EnHitsRemoval3"] = &Itkpixv2GlobalCfg::EnHitsRemoval3;
+    EnHitsRemoval2.init     ( 79, &m_cfg[ 79], 0,  16, 0); regMap["EnHitsRemoval2"] = &Itkpixv2GlobalCfg::EnHitsRemoval2;
+    EnHitsRemoval1.init     ( 80, &m_cfg[ 80], 0,  16, 0); regMap["EnHitsRemoval1"] = &Itkpixv2GlobalCfg::EnHitsRemoval1;
+    EnHitsRemoval0.init     ( 81, &m_cfg[ 81], 0,  16, 0); regMap["EnHitsRemoval0"] = &Itkpixv2GlobalCfg::EnHitsRemoval0;
     //82-85
-    EnIsoHitsRemoval3.init  ( 82, &m_cfg[ 82], 0,  3, 0); regMap["EnIsoHitsRemoval3"] = &Itkpixv2GlobalCfg::EnIsoHitsRemoval3;
-    EnIsoHitsRemoval2.init  ( 83, &m_cfg[ 83], 0,  3, 0); regMap["EnIsoHitsRemoval2"] = &Itkpixv2GlobalCfg::EnIsoHitsRemoval2;
-    EnIsoHitsRemoval1.init  ( 84, &m_cfg[ 84], 0,  3, 0); regMap["EnIsoHitsRemoval1"] = &Itkpixv2GlobalCfg::EnIsoHitsRemoval1;
-    EnIsoHitsRemoval0.init  ( 85, &m_cfg[ 85], 0,  3, 0); regMap["EnIsoHitsRemoval0"] = &Itkpixv2GlobalCfg::EnIsoHitsRemoval0;
+    EnIsoHitsRemoval3.init  ( 82, &m_cfg[ 82], 0,  6, 0); regMap["EnIsoHitsRemoval3"] = &Itkpixv2GlobalCfg::EnIsoHitsRemoval3;
+    EnIsoHitsRemoval2.init  ( 83, &m_cfg[ 83], 0,  16, 0); regMap["EnIsoHitsRemoval2"] = &Itkpixv2GlobalCfg::EnIsoHitsRemoval2;
+    EnIsoHitsRemoval1.init  ( 84, &m_cfg[ 84], 0,  16, 0); regMap["EnIsoHitsRemoval1"] = &Itkpixv2GlobalCfg::EnIsoHitsRemoval1;
+    EnIsoHitsRemoval0.init  ( 85, &m_cfg[ 85], 0,  16, 0); regMap["EnIsoHitsRemoval0"] = &Itkpixv2GlobalCfg::EnIsoHitsRemoval0;
     //86
     EvenMask.init           ( 86, &m_cfg[ 86], 0, 16, 0); regMap["EvenMask"] = &Itkpixv2GlobalCfg::EvenMask;
     //87
@@ -311,8 +311,8 @@ void Itkpixv2GlobalCfg::init() {
     //95
     AuroraInitWait.init     ( 95, &m_cfg[ 95], 0, 11, 32); regMap["AuroraInitWait"] = &Itkpixv2GlobalCfg::AuroraInitWait;
     //96-97
-    AuroraAltOutput0.init   ( 96, &m_cfg[ 96], 0, 16, 0); regMap["AuroraAltOutput0"] = &Itkpixv2GlobalCfg::AuroraAltOutput0;
-    AuroraAltOutput1.init   ( 97, &m_cfg[ 97], 0, 4, 0); regMap["AuroraAltOutput1"] = &Itkpixv2GlobalCfg::AuroraAltOutput1;
+    AuroraAltOutput1.init   ( 96, &m_cfg[ 96], 0, 4, 0); regMap["AuroraAltOutput1"] = &Itkpixv2GlobalCfg::AuroraAltOutput1;
+    AuroraAltOutput0.init   ( 97, &m_cfg[ 97], 0, 16, 0); regMap["AuroraAltOutput0"] = &Itkpixv2GlobalCfg::AuroraAltOutput0;
     //98
     GpValReg.init           ( 98, &m_cfg[ 98], 9,  4, 5); regMap["GpValReg"] = &Itkpixv2GlobalCfg::GpValReg;
     GpCmosEn.init           ( 98, &m_cfg[ 98], 8,  1, 1); regMap["GpCmosEn"] = &Itkpixv2GlobalCfg::GpCmosEn;
@@ -320,7 +320,7 @@ void Itkpixv2GlobalCfg::init() {
     GpLvdsEn.init           ( 98, &m_cfg[ 98], 3,  4, 0xF); regMap["GpLvdsEn"] = &Itkpixv2GlobalCfg::GpLvdsEn;
     GpLvdsBias.init         ( 98, &m_cfg[ 98], 0,  3, 7); regMap["GpLvdsBias"] = &Itkpixv2GlobalCfg::GpLvdsBias;
     //99
-    GpCmosRoute.init        ( 99, &m_cfg[ 99], 0,  7, 34); regMap["GpCmosRoute"] = &Itkpixv2GlobalCfg::GpCmosRoute;
+    GpCmosRoute.init        ( 99, &m_cfg[ 99], 0,  6, 34); regMap["GpCmosRoute"] = &Itkpixv2GlobalCfg::GpCmosRoute;
     //100
     GpLvdsPad3.init         ( 100, &m_cfg[ 100], 6,  6, 35); regMap["GpLvdsPad3"] = &Itkpixv2GlobalCfg::GpLvdsPad3;
     GpLvdsPad2.init         ( 100, &m_cfg[ 100], 0,  6, 33); regMap["GpLvdsPad2"] = &Itkpixv2GlobalCfg::GpLvdsPad2;
@@ -382,14 +382,14 @@ void Itkpixv2GlobalCfg::init() {
     HitOrMask1.init         (120, &m_cfg[120], 0, 16, 0); regMap["HitOrMask1"] = &Itkpixv2GlobalCfg::HitOrMask1;
     HitOrMask0.init         (121, &m_cfg[121], 0, 16, 0); regMap["HitOrMask0"] = &Itkpixv2GlobalCfg::HitOrMask0;
     //122-129
-    AutoRead0.init          (122, &m_cfg[122], 0,  9, 137); regMap["AutoRead0"] = &Itkpixv2GlobalCfg::AutoRead0;
-    AutoRead1.init          (123, &m_cfg[123], 0,  9, 133); regMap["AutoRead1"] = &Itkpixv2GlobalCfg::AutoRead1;
-    AutoRead2.init          (124, &m_cfg[124], 0,  9, 121); regMap["AutoRead2"] = &Itkpixv2GlobalCfg::AutoRead2;
-    AutoRead3.init          (125, &m_cfg[125], 0,  9, 122); regMap["AutoRead3"] = &Itkpixv2GlobalCfg::AutoRead3;
-    AutoRead4.init          (126, &m_cfg[126], 0,  9, 124); regMap["AutoRead4"] = &Itkpixv2GlobalCfg::AutoRead4;
-    AutoRead5.init          (127, &m_cfg[127], 0,  9, 127); regMap["AutoRead5"] = &Itkpixv2GlobalCfg::AutoRead5;
-    AutoRead6.init          (128, &m_cfg[128], 0,  9, 126); regMap["AutoRead6"] = &Itkpixv2GlobalCfg::AutoRead6;
-    AutoRead7.init          (129, &m_cfg[129], 0,  9, 125); regMap["AutoRead7"] = &Itkpixv2GlobalCfg::AutoRead7;
+    AutoRead0.init          (122, &m_cfg[122], 0,  9, 134); regMap["AutoRead0"] = &Itkpixv2GlobalCfg::AutoRead0;
+    AutoRead1.init          (123, &m_cfg[123], 0,  9, 135); regMap["AutoRead1"] = &Itkpixv2GlobalCfg::AutoRead1;
+    AutoRead2.init          (124, &m_cfg[124], 0,  9, 137); regMap["AutoRead2"] = &Itkpixv2GlobalCfg::AutoRead2;
+    AutoRead3.init          (125, &m_cfg[125], 0,  9, 138); regMap["AutoRead3"] = &Itkpixv2GlobalCfg::AutoRead3;
+    AutoRead4.init          (126, &m_cfg[126], 0,  9, 140); regMap["AutoRead4"] = &Itkpixv2GlobalCfg::AutoRead4;
+    AutoRead5.init          (127, &m_cfg[127], 0,  9, 151); regMap["AutoRead5"] = &Itkpixv2GlobalCfg::AutoRead5;
+    AutoRead6.init          (128, &m_cfg[128], 0,  9, 152); regMap["AutoRead6"] = &Itkpixv2GlobalCfg::AutoRead6;
+    AutoRead7.init          (129, &m_cfg[129], 0,  9, 156); regMap["AutoRead7"] = &Itkpixv2GlobalCfg::AutoRead7;
     //130
     RingOscBClear.init      (130, &m_cfg[130], 14,  1, 0); regMap["RingOscBClear"] = &Itkpixv2GlobalCfg::RingOscBClear;
     RingOscBEnBl.init       (130, &m_cfg[130], 13,  1, 0); regMap["RingOscBEnBl"] = &Itkpixv2GlobalCfg::RingOscBEnBl;
