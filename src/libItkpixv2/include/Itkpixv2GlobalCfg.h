@@ -269,9 +269,9 @@ class Itkpixv2GlobalCfg {
         Itkpixv2RegDefault SelfTrigDelay;
         Itkpixv2RegDefault SelfTrigMulti;
         //50
-        Itkpixv2RegDefault SelfTrigPattern;
-        //51
         Itkpixv2RegDefault SelfTrigDeadtime;
+        //51
+        Itkpixv2RegDefault SelfTrigPattern;
         //52
         Itkpixv2RegDefault DataReadDelay;
         Itkpixv2RegDefault ReadTrigLatency;
@@ -394,8 +394,8 @@ class Itkpixv2GlobalCfg {
         //95
         Itkpixv2RegDefault AuroraInitWait;
         //96-97
-        Itkpixv2RegDefault AuroraAltOutput0;
         Itkpixv2RegDefault AuroraAltOutput1;
+        Itkpixv2RegDefault AuroraAltOutput0;
         //98
         Itkpixv2RegDefault GpValReg;
         Itkpixv2RegDefault GpCmosEn;
