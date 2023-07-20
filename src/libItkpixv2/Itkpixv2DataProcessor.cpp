@@ -31,7 +31,7 @@ namespace
 }
 
 bool itkpixv2_proc_registered =
-    StdDict::registerDataProcessor("Itkpixv2", []() { return std::unique_ptr<DataProcessor>(new Itkpixv2DataProcessor()); });
+    StdDict::registerDataProcessor("ITKPIXV2", []() { return std::unique_ptr<DataProcessor>(new Itkpixv2DataProcessor()); });
 
 Itkpixv2DataProcessor::Itkpixv2DataProcessor()
 {

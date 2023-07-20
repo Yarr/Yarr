@@ -17,7 +17,7 @@ namespace {
 }
 
 bool itkpixv2_registred =
-    StdDict::registerFrontEnd("Itkpixv2", [](){return std::unique_ptr<FrontEnd>(new Itkpixv2());});
+    StdDict::registerFrontEnd("ITKPIXV2", [](){return std::unique_ptr<FrontEnd>(new Itkpixv2());});
 
 Itkpixv2::Itkpixv2() : FrontEnd(), Itkpixv2Cfg(), Itkpixv2Cmd(){
     txChannel = 99;
