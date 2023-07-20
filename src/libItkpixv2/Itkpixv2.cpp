@@ -126,6 +126,11 @@ void Itkpixv2::configureInit() {
     std::this_thread::sleep_for(std::chrono::microseconds(100));
     // Reset register
     this->writeRegister(&Itkpixv2::GlobalPulseConf, 0);
+    
+    logger->debug(" ... set global register in writeable mode");
+    this->writeRegister(&Itkpixv2::GcrDefaultConfig, 0xAC75);
+    this->writeRegister(&Itkpixv2::GcrDefaultConfigB, 0x538A);
+    while(!core->isCmdEmpty()){;}
 
     
     // Reset Core

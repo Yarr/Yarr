@@ -40,7 +40,6 @@ class Itkpixv2TriggerLoop : public LoopActionBase, public StdTriggerAction {
         uint32_t m_edgeDuration;
         uint32_t m_pulseDuration;
         uint32_t m_trigMultiplier;
-        bool m_zeroTot;
 
         void init() override;
         void end() override;

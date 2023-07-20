@@ -26,7 +26,6 @@ Itkpixv2TriggerLoop::Itkpixv2TriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) 
     m_noInject = false;
     m_extTrig = false;
     m_trigMultiplier = 16;
-    m_zeroTot = false;
 
     m_edgeMode = false;
     m_edgeDuration = 40;
@@ -155,34 +154,6 @@ void Itkpixv2TriggerLoop::execPart2() {
     g_tx->setTrigEnable(0x0);
     dynamic_cast<HwController*>(g_tx)->setupMode();
     
-    if (m_zeroTot) {
-        // Reset ToT memories
-        Itkpixv2 *itkpixv2 = dynamic_cast<Itkpixv2*>(g_fe);
-        uint16_t latency = itkpixv2->Latency.read();
-        uint16_t injDigEn = itkpixv2->InjDigEn.read();
-        itkpixv2->writeRegister(&Itkpixv2::Latency, 500);
-        itkpixv2->writeRegister(&Itkpixv2::InjDigEn, 1);
-
-        while(!g_tx->isCmdEmpty()){;}
-
-        this->setEdgeMode(2);
-        g_tx->setTrigFreq(800000);
-        g_tx->setTrigCnt(100);
-        g_tx->setTrigWord(&m_trigWord[0], 32);
-        g_tx->setTrigWordLength(32);
-        g_tx->setTrigConfig(INT_COUNT);
-
-        g_tx->setTrigEnable(0x1);
-        std::this_thread::sleep_for(std::chrono::microseconds(10));
-        while(!g_tx->isTrigDone());
-        g_tx->setTrigEnable(0x0);
-
-        itkpixv2->writeRegister(&Itkpixv2::Latency, latency);
-        itkpixv2->writeRegister(&Itkpixv2::InjDigEn, injDigEn);
-        
-        while(!g_tx->isCmdEmpty()){;}
-    }
-    
     m_done = true;
 }
 
@@ -202,7 +173,6 @@ void Itkpixv2TriggerLoop::writeConfig(json &config) {
     config["trigMultiplier"] = m_trigMultiplier;
     config["edgeMode"] = m_edgeMode;
     config["edgeDuration"] = m_edgeDuration;
-    config["zeroTot"] = m_zeroTot;
 }
 
 void Itkpixv2TriggerLoop::loadConfig(const json &config) {
@@ -226,7 +196,5 @@ void Itkpixv2TriggerLoop::loadConfig(const json &config) {
         m_extTrig = config["extTrig"];
     if (config.contains("trigMultiplier"))
         m_trigMultiplier = config["trigMultiplier"];
-    if (config.contains("zeroTot"))
-        m_zeroTot = config["zeroTot"];
     this->setTrigDelay(m_trigDelay, m_calEdgeDelay);
 }

@@ -223,7 +223,7 @@ void Itkpixv2GlobalCfg::init() {
     //62
     GlobalPulseConf.init    ( 62, &m_cfg[ 62], 0, 16, 0); regMap["GlobalPulseConf"] = &Itkpixv2GlobalCfg::GlobalPulseConf;
     //63
-    GlobalPulseWidth.init   ( 63, &m_cfg[ 63], 0,  8, 0); regMap["GlobalPulseWidth"] = &Itkpixv2GlobalCfg::GlobalPulseWidth;
+    GlobalPulseWidth.init   ( 63, &m_cfg[ 63], 0,  9, 0); regMap["GlobalPulseWidth"] = &Itkpixv2GlobalCfg::GlobalPulseWidth;
     //64
     ServiceBlockEn.init     ( 64, &m_cfg[ 64], 8,  1, 1); regMap["ServiceBlockEn"] = &Itkpixv2GlobalCfg::ServiceBlockEn;
     ServiceBlockPeriod.init ( 64, &m_cfg[ 64], 0,  8, 50); regMap["ServiceBlockPeriod"] = &Itkpixv2GlobalCfg::ServiceBlockPeriod;
