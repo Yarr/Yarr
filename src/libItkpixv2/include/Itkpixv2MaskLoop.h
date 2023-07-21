@@ -1,5 +1,5 @@
 #ifndef ITKPIXV2MASKLOOP_H
-#define ITKPIXV2BMASKLOOP_H
+#define ITKPIXV2MASKLOOP_H
 
 // #################################
 // # Author: Timon Heim
