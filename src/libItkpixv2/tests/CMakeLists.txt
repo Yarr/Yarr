@@ -1,6 +1,6 @@
-add_executable(testRd53b
+add_executable(testItkpixv2
         ../../libUtil/tests/main.cpp
 )
-target_link_libraries(testRd53b Yarr)
-add_test(testRd53b ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/testRd53b)
-post_build_debug_executable(testRd53b)
+target_link_libraries(testItkpixv2 Yarr)
+add_test(testItkpixv2 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/testItkpixv2)
+post_build_debug_executable(testItkpixv2)
