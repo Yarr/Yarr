@@ -145,14 +145,14 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
         variable = (((_bitIdx < HALFBLOCKSIZE) ? (((_data[0] & (0xFFFFFFFFUL >> _bitIdx)) << HALFBLOCKSIZE) | _data[1])
                     : (_data[1] & (0xFFFFFFFFUL >> (_bitIdx - HALFBLOCKSIZE)))) << (length + _bitIdx - BLOCKSIZE));
 
-        // Check the ES bit of the next 64-bit block
+        // Check the ES bit of current block
         if ((_data[0] >> 31) & 0x1)
         {
             // If check end of stream is requested, roll back to previous block and return 0
             if (checkEOS)
             {
                 if (unlikely(variable != 0))
-                    logger->error("The ES bit is 1 while the core column number read is non-zero ({}). Data processed so far are corrupted... Last block {}{}", variable, std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+                    logger->error("The ES bit is 1 while the core column number read is non-zero ({}). Data processed so far are corrupted... Last block {:x}{:x}", variable, _data[0], _data[1]);
                 _bitIdx = 64;
                 variable = 0;
                 return true;
@@ -160,8 +160,7 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
             // Otherwise throw error message, unless over-draft is expected
             else if (!skipNSCheck)
             {
-                logger->error("Expect unfinished stream while ES = 1: {}{}. Will start a new event...", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
-                getPreviousDataBlock();
+                logger->error("Expect unfinished stream while ES = 1: 0x{:x}{:x}. Will start a new event...", _data[0], _data[1]);
                 _status = INIT;
                 return false;
             }
@@ -241,7 +240,7 @@ void Itkpixv2DataProcessor::process_core()
             if (_ccol == 0) {
                 // Check ES bit
                 if (((_data[0] >> 31) & 0x1) != 0x1) {
-                    logger->error("The ES bit is 0 while the core column number read is zero. Data processed so far are corrupted... Last block {}{}", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+                    logger->error("The ES bit is 0 while the core column number read is zero. Data processed so far are corrupted... Last block {:x}{:x}", _data[0], _data[1]);
                     // TODO: keep skipping data until ES = 1, and then skip one more
                 }
                     
@@ -523,6 +522,7 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
 
     // Upate the data pointer. Note the meaning of block index is the first block that is *unprocessed*
     _data = &_curInV->data[_rawDataIdx]->get(_wordIdx);
+    //logger->info("[{}] 0x{:x}{:x}", _wordIdx, _data[0], _data[1]);
 
     // Return success code
     if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
