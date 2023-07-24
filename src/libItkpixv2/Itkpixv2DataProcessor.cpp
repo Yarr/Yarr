@@ -130,7 +130,7 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
 
     // Retrieving bits from the stream is highly non-trivial due to the varying length. There are several scenarios to cover. Using 64-bit instead of 32-bit data words can simplify the implementations
     // Check whether the bits to be retrieved are fully contained by the current 64-bit block
-    if (_bitIdx + length < BLOCKSIZE)
+    if (_bitIdx + length <= BLOCKSIZE)
     {
         // Whether the bits to be retrieved are fully contained by the first half or second half of the 64-bit block (each corresponds to one 32-bit data word), or they span across the two 32-bit data words
         variable = (((_bitIdx + length) <= HALFBLOCKSIZE) || (_bitIdx >= HALFBLOCKSIZE)) ? ((_data[_bitIdx / HALFBLOCKSIZE] & (0xFFFFFFFFUL >> (_bitIdx - ((_bitIdx >> 5) << 5)))) >> ((((_bitIdx >> 5) + 1) << 5) - length - _bitIdx))
@@ -151,8 +151,9 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
             // If check end of stream is requested, roll back to previous block and return 0
             if (checkEOS)
             {
+                // End of stream
                 if (unlikely(variable != 0))
-                    logger->error("The ES bit is 1 while the core column number read is non-zero ({}). Data processed so far are corrupted... Last block {:x}{:x}", variable, _data[0], _data[1]);
+                    logger->error("The ES bit is 1 while the core column number read is non-zero ({} [{}]). Data processed so far are corrupted... Last block {:x}{:x}", variable, _bitIdx, _data[0], _data[1]);
                 _bitIdx = 64;
                 variable = 0;
                 return true;
@@ -160,7 +161,7 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
             // Otherwise throw error message, unless over-draft is expected
             else if (!skipNSCheck)
             {
-                logger->error("Expect unfinished stream while ES = 1: 0x{:x}{:x}. Will start a new event...", _data[0], _data[1]);
+                logger->error("Expected unfinished stream while ES = 1: 0x{:x}{:x} [{} - {}]. Will start a new event... ({})", _data[0], _data[1], _bitIdx, length, _status);
                 _status = INIT;
                 return false;
             }
@@ -264,7 +265,7 @@ void Itkpixv2DataProcessor::process_core()
             {
                 // Internal tag is 11-bit. So need to retrieve 5 more bits
                 uint64_t temp = 0;
-                if (!retrieve(temp, 5))
+                if (!retrieve(temp, 5, true))
                     return;
 
                 _tag = (_ccol << 5) | temp;
@@ -512,6 +513,15 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
         if (_curInV == nullptr || _curInV->size() == 0)
             return false;
 
+        // Debug output
+        /*
+        for (unsigned i=0; i < _curInV->size(); i++) {
+            for (unsigned j=0; j < _curInV->data[i]->getSize(); j+=2) {
+                logger->info("[{}][{}] {} 0x{:08x}{:08x}", i, j, _curInV->data[i]->get(j) >> 31,  _curInV->data[i]->get(j), _curInV->data[i]->get(j+1));
+            }
+        }
+        */
+
         _curOut.reset(new FrontEndData(_curInV->stat));
         _events = 0;
 
@@ -522,7 +532,7 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
 
     // Upate the data pointer. Note the meaning of block index is the first block that is *unprocessed*
     _data = &_curInV->data[_rawDataIdx]->get(_wordIdx);
-    //logger->info("[{}] 0x{:x}{:x}", _wordIdx, _data[0], _data[1]);
+    //logger->info("[{}] {} 0x{:x}{:x}", _wordIdx, _data[0]>>31, _data[0], _data[1]);
 
     // Return success code
     if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
