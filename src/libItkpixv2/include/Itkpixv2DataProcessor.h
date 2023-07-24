@@ -84,14 +84,14 @@ private:
     // Data processor status
     enum STATUS
     {
-        INIT,  // Initial run
-        CCOL,  // Reading core column
-        CCC,   // Core column check
-        ILIN,  // Reading islast/isneighbor bits
-        QROW,  // Reading quarter row
-        HMAP1, // Reading hit map step 1
-        HMAP2, // Reading hit map step 2
-        TOT    // Reading ToT
+        INIT=0,  // Initial run
+        CCOL=1,  // Reading core column
+        CCC=2,   // Core column check
+        ILIN=3,  // Reading islast/isneighbor bits
+        QROW=4,  // Reading quarter row
+        HMAP1=5, // Reading hit map step 1
+        HMAP2=6, // Reading hit map step 2
+        TOT=7    // Reading ToT
     };
 
     STATUS _status;
