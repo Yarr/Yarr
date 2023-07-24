@@ -47,7 +47,7 @@ public:
 
     void writeConfig(json &config) override;
     void loadConfig(const json &config) override;
-    double convertRingOscCntToMHz(double counter) const { return counter / (m_RingOscDur << 1) * 40; }
+    double convertRingOscCntToMHz(double counter) const { return counter / (m_RingOscDur == 0 ? 1 : m_RingOscDur) * 40; }
 
 private:
     std::vector<unsigned short> m_VoltMux;
@@ -59,7 +59,7 @@ private:
     uint16_t ReadADC(unsigned short Reg, bool doCur, Itkpixv2 *fe);
     float ReadNTCTemp(Itkpixv2 *fe, bool in_kelvin);
     float ReadTransSensor(Itkpixv2 *fe, TransSensorLocation loc, TransSensorType type, Itkpixv2Cfg::TransSensor sensor, bool in_kelvin = false);
-    float ReadResistTemp(Itkpixv2 *fe, bool in_kelvin); // Broken for ITKPIXV2. Need to be fixed
+    float ReadResistTemp(Itkpixv2 *fe, bool in_kelvin);
 
     uint16_t m_EnblRingOscA, m_EnblRingOscB, m_RingOscDur, m_RingOscRep;
 

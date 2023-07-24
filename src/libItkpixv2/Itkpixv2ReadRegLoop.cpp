@@ -45,10 +45,12 @@ float Itkpixv2ReadRegLoop::ReadResistTemp(Itkpixv2 *fe, bool in_kelvin) {
     if (fe == NULL)
         return 0;
     
+    // Read current
+    float current = fe->adcToI(this->ReadADC(9, true, fe));
+    
     // Read top sensor: toggle Vref to top
     fe->writeRegister(&Itkpixv2::VrefRsensTop, 1);
     fe->writeRegister(&Itkpixv2::VrefRsensBot, 0);
-    fe->writeRegister(&Itkpixv2::VrefIn, 0);
     while (!g_tx->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::microseconds(100));
 
@@ -57,7 +59,6 @@ float Itkpixv2ReadRegLoop::ReadResistTemp(Itkpixv2 *fe, bool in_kelvin) {
     // Read bottom sensor: toggle Vref to bottom
     fe->writeRegister(&Itkpixv2::VrefRsensTop, 0);
     fe->writeRegister(&Itkpixv2::VrefRsensBot, 1);
-    fe->writeRegister(&Itkpixv2::VrefIn, 0);
     while (!g_tx->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::microseconds(100));
 
@@ -66,9 +67,10 @@ float Itkpixv2ReadRegLoop::ReadResistTemp(Itkpixv2 *fe, bool in_kelvin) {
     // Reset the Vref configuration
     fe->writeRegister(&Itkpixv2::VrefRsensTop, 0);
     fe->writeRegister(&Itkpixv2::VrefRsensBot, 0);
-    fe->writeRegister(&Itkpixv2::VrefIn, 1);
     while (!g_tx->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::microseconds(100));
+
+    logger->info("Polyresistor Temp Sensor: Bot({} V) Top ({} V) [Iref({} A)]", voltageTop, voltageBot, current);
 
     // Convert voltage difference into temperature. The sensors at top and bottom of the chip are good for providing relative measurements, not absolute one
     // TODO: verify calibration
@@ -187,7 +189,7 @@ void Itkpixv2ReadRegLoop::execPart1()
                 if (Reg == "NTC") {
                     float TempVal = ReadNTCTemp(feItkpixv2, false);
                     logger->info("[{}][{}] MON NTC: {} C", id, feName, TempVal);
-                } else if (Reg == "Resistor") {
+                } else if (Reg == "Poly") {
                     float TempVal = ReadResistTemp(feItkpixv2, false);
                     logger->info("[{}][{}] MON poly resistor temperature sensor chip top minus bottom: {} C", id, feName, TempVal);
                 } else if (Reg == "MOS") {
