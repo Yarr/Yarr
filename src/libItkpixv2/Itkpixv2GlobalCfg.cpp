@@ -71,8 +71,8 @@ void Itkpixv2GlobalCfg::init() {
     //2
     PixRegionRow.init       (  2, &m_cfg[  2], 0, 16, 0); regMap["PixRegionRow"] = &Itkpixv2GlobalCfg::PixRegionRow;
     //3
-    PixEnSeuCount.init         (  3, &m_cfg[  3], 4, 1, 0); regMap["PixEnSeuCount"] = &Itkpixv2GlobalCfg::PixEnSeuCount;
-    PixHitSampleMode.init      (  3, &m_cfg[  3], 3, 1, 0); regMap["PixHitSampleMode"] = &Itkpixv2GlobalCfg::PixHitSampleMode;
+    PixEnSeuCount.init      (  3, &m_cfg[  3], 4, 1, 0); regMap["PixEnSeuCount"] = &Itkpixv2GlobalCfg::PixEnSeuCount;
+    PixHitSampleMode.init   (  3, &m_cfg[  3], 3, 1, 0); regMap["PixHitSampleMode"] = &Itkpixv2GlobalCfg::PixHitSampleMode;
     PixBroadcast.init       (  3, &m_cfg[  3], 2, 1, 0); regMap["PixBroadcast"] = &Itkpixv2GlobalCfg::PixBroadcast;
     PixConfMode.init        (  3, &m_cfg[  3], 1, 1, 1); regMap["PixConfMode"] = &Itkpixv2GlobalCfg::PixConfMode;
     PixAutoRow.init         (  3, &m_cfg[  3], 0, 1, 0); regMap["PixAutoRow"] = &Itkpixv2GlobalCfg::PixAutoRow;
