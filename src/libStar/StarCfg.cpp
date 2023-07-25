@@ -318,6 +318,29 @@ void StarCfg::loadConfig(const json &j) {
         }
     }
 
+    // Possible override by setting sub registers
+    if(hcc.find("subregs") != hcc.end()) {
+        auto &subregHCC = hcc["subregs"];
+
+        if(!subregHCC.is_object()) {
+          logger->error("HCC/subregs is not an object!");
+          throw std::runtime_error("HCC/subregs should be an object");
+        }
+
+        auto b = subregHCC.begin();
+        auto e = subregHCC.end();
+        for(auto i = b; i != e; i++) {
+            std::string subRegName = i.key();
+            uint32_t subRegValue = valFromJson(i.value());
+
+            auto regPre = m_hcc.getSubRegisterParentValue(subRegName);
+            m_hcc.setSubRegisterValue(subRegName, subRegValue);
+            auto retrieved = m_hcc.getSubRegisterValue(subRegName);
+            auto regPost = m_hcc.getSubRegisterParentValue(subRegName);
+            logger->trace("Load from JSON: For HCC, {} has been set to {} (check {}) {:08x} -> {:08x}", subRegName, subRegValue, retrieved, regPre, regPost);
+        } 
+    }
+
     // Clear list in case loading twice
     clearABCchipIDs();
 

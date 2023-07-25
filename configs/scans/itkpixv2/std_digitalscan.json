@@ -2,15 +2,19 @@
   "scan": {
     "analysis": {
       "0": {
-        "algorithm": "ScurveFitter"
+        "algorithm": "OccupancyAnalysis",
+        "config": {
+          "createMask": true
+        }
       },
-     "1": {
-        "algorithm": "ParameterAnalysis"
+      "1": {
+        "algorithm": "TagAnalysis"
       },
-     "2": {
-        "algorithm": "OccupancyAnalysis"
+      "2": {
+        "algorithm": "TotAnalysis",
+        "config": {}
       },
-      "n_count": 2
+      "n_count": 3
     },
     "histogrammer": {
       "0": {
@@ -30,14 +34,18 @@
         "config": {}
       },
       "4": {
-        "algorithm": "HitsPerEvent",
+        "algorithm": "TagMap",
         "config": {}
       },
       "5": {
+        "algorithm": "HitsPerEvent",
+        "config": {}
+      },
+      "6": {
         "algorithm": "DataArchiver",
         "config": {}
       },
-      "n_count": 4
+      "n_count": 5
     },
     "loops": [
       {
@@ -46,17 +54,7 @@
           "min": 0,
           "step": 1
         },
-        "loopAction": "Rd53bParMaskLoop"
-      },
-      {
-        "config": {
-          "max": 500,
-          "min": 0,
-          "step": 5,
-          "parameter":"InjVcalDiff",
-          "waitTime": 10
-        },
-        "loopAction": "StdParameterLoop"
+        "loopAction": "Itkpixv2ParMaskLoop"
       },
       {
         "config": {
@@ -65,30 +63,31 @@
           "step": 1,
           "nSteps": 5
         },
-        "loopAction": "Rd53bCoreColLoop"
+        "loopAction": "Itkpixv2CoreColLoop"
       },
       {
         "config": {
-          "count": 50,
-          "delay": 56,
+          "count": 100,
+          "delay": 58,
           "extTrigger": false,
-          "frequency": 8000,
+          "frequency": 5000,
           "noInject": false,
           "time": 0,
-          "edgeMode": false
+          "edgeMode": true,
+          "edgeDuration": 20
         },
-        "loopAction": "Rd53bTriggerLoop"
+        "loopAction": "Itkpixv2TriggerLoop"
       },
       {
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "ThresholdScan",
+    "name": "DigitalScan",
     "prescan": {
-        "InjDigEn": 0,
-        "InjVcalMed": 500,
-        "InjVcalRange": 1,
-        "Latency": 56
+        "InjVcalMed": 100,
+        "InjVcalHigh": 2000,
+        "InjDigEn": 1,
+        "Latency": 60
     }
   }
 }

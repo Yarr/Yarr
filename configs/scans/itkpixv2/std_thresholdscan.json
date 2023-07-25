@@ -46,15 +46,15 @@
           "min": 0,
           "step": 1
         },
-        "loopAction": "Rd53bParMaskLoop"
+        "loopAction": "Itkpixv2ParMaskLoop"
       },
       {
         "config": {
-          "max": 500,
+          "max": 300,
           "min": 0,
           "step": 5,
           "parameter":"InjVcalDiff",
-          "waitTime": 10
+          "waitTime": 100
         },
         "loopAction": "StdParameterLoop"
       },
@@ -65,7 +65,7 @@
           "step": 1,
           "nSteps": 5
         },
-        "loopAction": "Rd53bCoreColLoop"
+        "loopAction": "Itkpixv2CoreColLoop"
       },
       {
         "config": {
@@ -77,7 +77,7 @@
           "time": 0,
           "edgeMode": false
         },
-        "loopAction": "Rd53bTriggerLoop"
+        "loopAction": "Itkpixv2TriggerLoop"
       },
       {
         "loopAction": "StdDataLoop"

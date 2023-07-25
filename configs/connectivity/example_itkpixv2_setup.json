@@ -1,0 +1,12 @@
+{
+    "chipType" : "ITKPIXV2",
+    "chips" : [
+        {
+            "config" : "configs/itkpixv2_test.json",
+            "tx" : 0,
+            "rx" : 0,
+            "enable" : 1,
+            "locked" : 0
+        }
+    ]
+}
