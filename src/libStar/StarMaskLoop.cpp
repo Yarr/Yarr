@@ -86,7 +86,7 @@ void StarMaskLoop::init() {
     m_cur = min;
     if (m_doNmask) {
       // setupNmask called later
-    } else if (m_nEnabledStripsPerGroup) {
+    } else if (m_nEnabledStripsPerGroup != 0) {
       initMasks();
     }
 

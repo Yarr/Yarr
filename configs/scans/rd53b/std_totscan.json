@@ -1,0 +1,84 @@
+{
+    "scan": {
+        "analysis": {
+            "0": {
+                "algorithm": "TagAnalysis"
+            },
+            "1": {
+                "algorithm": "TotAnalysis",
+                "config": {}
+            },
+            "n_count": 2
+        },
+        "histogrammer": {
+            "0": {
+                "algorithm": "OccupancyMap",
+                "config": {}
+            },
+            "1": {
+                "algorithm": "TotMap",
+                "config": {}
+            },
+            "2": {
+                "algorithm": "Tot2Map",
+                "config": {}
+            },
+            "3": {
+                "algorithm": "TagDist",
+                "config": {}
+            },
+            "4": {
+                "algorithm": "TagMap",
+                "config": {}
+            },
+            "5": {
+                "algorithm": "HitsPerEvent",
+                "config": {}
+            },
+            "6": {
+                "algorithm": "DataArchiver",
+                "config": {}
+            },
+            "n_count": 5
+        },
+        "loops": [
+        {
+            "config": {
+                "max": 64,
+                "min": 0,
+                "step": 1
+            },
+            "loopAction": "Rd53bParMaskLoop"
+        },
+        {
+            "config": {
+                "max": 50,
+                "min": 0,
+                "step": 1,
+                "nSteps": 5
+            },
+            "loopAction": "Rd53bCoreColLoop"
+        },
+            {
+                "config": {
+                    "count": 100,
+                    "delay": 56,
+                    "extTrigger": false,
+                    "frequency": 5000,
+                    "noInject": false,
+                    "time": 0,
+                    "edgeMode": false
+                },
+                "loopAction": "Rd53bTriggerLoop"
+            },
+            {
+                "loopAction": "StdDataLoop"
+            }
+        ],
+        "name": "TotScan",
+        "prescan": {
+            "InjDigEn": 0,
+            "Latency": 60
+        }
+    }
+}

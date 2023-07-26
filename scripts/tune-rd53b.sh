@@ -113,7 +113,7 @@ function main {
         return 1
     fi
 
-    base_cmd="${scan_console} -r ${controller_config} -c ${connectivity_config} -o ${output_dir} -n 1"
+    base_cmd="${scan_console} -r ${controller_config} -c ${connectivity_config} -o ${output_dir}"
 
     ${base_cmd} -s ${scan_dir}/std_digitalscan.json -m 1
     ${base_cmd} -s ${scan_dir}/std_analogscan.json

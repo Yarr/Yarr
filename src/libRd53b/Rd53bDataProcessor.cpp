@@ -238,11 +238,12 @@ void Rd53bDataProcessor::process_core()
         _tag = (_data[0] >> (23-_chipIdShift)) & 0xFF;
         _bitIdx = 9+_chipIdShift; // Reset bit index = NS + tag
 
-        // Create a new event
+	// Create a new event
         // RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
         _curOut->newEvent(_tag, _l1id, _bcid);
         //logger->info("New Stream, New Event: {} ", _tag);
         _events++;
+    	getFeedback(_tag, _bcid);
     }
 
     // Start looping over data words in the current packet
@@ -274,13 +275,14 @@ void Rd53bDataProcessor::process_core()
                 _tag = (_data[0] >> (23-_chipIdShift)) & 0xFF;
                 _bitIdx = 9 + _chipIdShift; // Reset bit index = NS + tag
 
-                // Create a new event
+		// Create a new event
                 // RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
                 _curOut->newEvent(_tag, _l1id, _bcid);
                 //logger->info("New Stream, New Event: {} ", _tag);
                 _events++;
-                _status = CCOL;
-                continue;
+		_status = CCOL;
+		getFeedback(_tag, _bcid);
+		continue;
             }
             else if (_ccol >= 0x38) // Internal tag
             {
@@ -297,7 +299,8 @@ void Rd53bDataProcessor::process_core()
                 //logger->info("Same Stream, New Event: {} ", _tag);
                 _events++;
                 _status = CCOL;
-                continue;
+                getFeedback(_tag, _bcid);
+		continue;
             }
         default:
             break;
@@ -480,7 +483,7 @@ void Rd53bDataProcessor::process_core()
 bool Rd53bDataProcessor::getNextDataBlock()
 {
     if (_curInV != nullptr && _curInV->size() > 0)
-    {
+    {      
         // Cross raw data container
         if (unlikely(_rawDataIdx < 0))
         {
@@ -517,7 +520,7 @@ bool Rd53bDataProcessor::getNextDataBlock()
             // Push out data accumulated so far
             if (_events > 0)
             {
-                // logger->error("Pushing out data {} events", _events[_activeChannels[i]]);
+	        //logger->error("Pushing out data {} events", _events[_activeChannels[i]]);
                 _events = 0;
                 m_out->pushData(std::move(_curOut));
             }
@@ -531,8 +534,15 @@ bool Rd53bDataProcessor::getNextDataBlock()
 
         // Try to get data
         _curInV = m_input->popData();
-        if (_curInV == nullptr || _curInV->size() == 0)
-            return false;
+        if (_curInV == nullptr)
+	  return false;
+	if (_curInV->size() == 0){
+	   if (_curInV->stat.is_end_of_iteration) {
+	     _curOut.reset(new FrontEndData(_curInV->stat));
+	     m_out->pushData(std::move(_curOut)); 
+	   }
+	   return false;
+	}
 
         _curOut.reset(new FrontEndData(_curInV->stat));
         _events = 0;
@@ -573,4 +583,15 @@ void Rd53bDataProcessor::getPreviousDataBlock()
         getPreviousDataBlock();
     if (((_data[0] >> 29) & 0x3) != _chipId && _enChipId)
         getPreviousDataBlock();
+}
+
+void Rd53bDataProcessor::getFeedback(unsigned tag, unsigned bcid)
+{
+  std::unique_ptr<FeedbackProcessingInfo> stat(new FeedbackProcessingInfo{.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_ERROR});
+  FeedbackProcessingInfo &curStatus = *stat;
+  curStatus.trigger_tag = tag;
+  curStatus.bcid = bcid;
+  if (statusFb != nullptr) statusFb->pushData(std::move(stat));
+
+  return;
 }

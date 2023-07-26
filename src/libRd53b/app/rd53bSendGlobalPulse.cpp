@@ -1,12 +1,12 @@
 //////////////////////////////////////////////////
-// A utility to measure ring oscillator by sending
-// a global pulse to a given front-end and reading
-// ring oscillator registers without running other
-// configuration. Used for Module QC.
+// A utility to send a global pulse to
+// a given front-end without running any other
+// configuration.
+// A blatant rip of the write-register.cpp util
 //
-// Author: Kehang Bai
-// Email:  kehang.bai at cern.ch
-// Date:   March 2023
+// author: Francesco Crescioli
+// e-mail: francesco.crescioli AT cern DOT ch
+// Feb 2023
 //////////////////////////////////////////////////
 
 // std/stl
@@ -26,14 +26,11 @@ namespace fs = std::filesystem;
 #include "AllChips.h"
 #include "ScanHelper.h" // openJson
 #include "Utils.h"
-#include "storage.hpp"
-#include "logging.h"
-#include "LoggingConfig.h"
 
 void print_usage(char* argv[]) {
-    std::cerr << " ring-oscillator-scan" << std::endl;
+    std::cerr << " send-global-pulse" << std::endl;
     std::cerr << std::endl;
-    std::cerr << " Usage: " << std::endl;
+    std::cerr << " Usage: " << argv[0] << " [options] pulse-conf pulse-width" << std::endl;
     std::cerr << " Options:" << std::endl;
     std::cerr << "   -r          Hardware controller JSON file path [required]" << std::endl;
     std::cerr << "   -c          Input connectivity JSON file path [required]" << std::endl;
@@ -67,14 +64,13 @@ std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn
     return fe;
 }
 
-double convertRingOscCntToMHz(double counter, int RingOscDur) { return counter / (RingOscDur << 1) * 40; }
-
 int main(int argc, char* argv[]) {
     std::string hw_controller_filename = "";
     std::string connectivity_filename = "";
     int chip_idx = -1;
     std::string chip_name = "";
-    uint32_t pulse_width = 30;
+    uint32_t pulse_conf = 0;
+    uint32_t pulse_width = 0;
     bool use_chip_name = false;
 
     int c = 0;
@@ -106,6 +102,25 @@ int main(int argc, char* argv[]) {
                 return 1;
         } // switch
     } // while
+
+    if (optind > argc - 2) {
+        std::cerr << "ERROR: Missing positional arguments" << std::endl;
+        return 1;
+    }
+
+    try {
+        pulse_conf = std::stoi(argv[optind++]);
+    } catch (std::exception& e) {
+        std::cerr << "ERROR: Invalid value provided for pulse configuration (non-integer)" << std::endl;
+        return 1;
+    }
+
+    try {
+        pulse_width = std::stoi(argv[optind++]);
+    } catch (std::exception& e) {
+        std::cerr << "ERROR: Invalid value provided for pulse width (non-integer)" << std::endl;
+        return 1;
+    }
 
     fs::path hw_controller_path{hw_controller_filename};
     if(!fs::exists(hw_controller_path)) {
@@ -141,8 +156,6 @@ int main(int argc, char* argv[]) {
     auto chip_configs = jconn["chips"];
     size_t n_chips = chip_configs.size();
     for (size_t ichip = 0; ichip < n_chips; ichip++) {
-        if (chip_configs[ichip]["enable"] == 0)
-            continue;
         fs::path chip_register_file_path{chip_configs[ichip]["__config_path__"]};
         if(!fs::exists(chip_register_file_path)) {
             std::cerr << "WARNING: Chip config for chip at index " << ichip << " in connectivity file does not exist, skipping (" << chip_register_file_path << ")" << std::endl;
@@ -158,100 +171,27 @@ int main(int argc, char* argv[]) {
         std::string current_chip_name = cfg->getName();
         if (!use_chip_name) {
             if ( (chip_idx < 0) || (chip_idx == ichip) ) {
-                hw->setCmdEnable(cfg->getTxChannel());
+                hw->setCmdEnable(cfg->getTxChannel()); 
         	hw->setRxEnable(cfg->getRxChannel());
         	hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
             } else continue;
         } else {
             if (current_chip_name == chip_name) {
-                hw->setCmdEnable(cfg->getTxChannel());
+                hw->setCmdEnable(cfg->getTxChannel()); 
         	hw->setRxEnable(cfg->getRxChannel());
         	hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
             } else continue;
         }
-
-        // Need to run bank A and bank B separately. Global pulse can only drive one bank at a time
-        // There are 42 oscillators in total, 8 from bank A, 34 from bank B
-        std::string feName = dynamic_cast<FrontEndCfg &>(*fe).getName();
-        Rd53b& feRd53b = dynamic_cast<Rd53b&>(*fe);
-        int RingOscRep=20; // Number of measurements.
-        int RingOscDur=30; // Duration of running 
-        double RingValuesSum[42] = {0};
-        double RingValuesSumSquared[42] = {0};
-        double RingValuesFreq[42] = {0};
-
-        // Enable RingOscA
-        feRd53b.writeRegister(&Rd53b::RingOscAEn, 0xff);
-        while (!hw->isCmdEmpty()){;}
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
-
-        // Repeat measurements
-        for (unsigned i = 0; i < RingOscRep; i++)
-        {
-            // Read bank A register values: there are 8 in total
-            for (uint16_t tmpCount = 0; tmpCount < 8; tmpCount++)
-            {
-                feRd53b.writeRegister(&Rd53b::RingOscARoute, tmpCount);
-                // Reset bank A counters
-                feRd53b.writeRegister(&Rd53b::RingOscAClear, 1);
-                feRd53b.writeRegister(&Rd53b::RingOscAClear, 0);
-                while (!hw->isCmdEmpty()){;}
-                std::this_thread::sleep_for(std::chrono::microseconds(100));
-
-                // Run oscillators for some time
-                // Call Rd53b::runRingOsc(uint16_t duration, bool isBankB)
-                feRd53b.runRingOsc(RingOscDur, false);
-
-                double value = feRd53b.readSingleRegister(&Rd53b::RingOscAOut) & 0xFFF;
-                RingValuesSum[tmpCount] += value;
-            }
-        }
-
-        for (uint16_t tmpCount = 0; tmpCount < 8; tmpCount++)
-            {
-                // Calculate average
-                RingValuesSum[tmpCount] /= (double)RingOscRep;
-                RingValuesFreq[tmpCount] = convertRingOscCntToMHz(RingValuesSum[tmpCount], RingOscDur);
-            }
-               
-        // Enable RingOscB
-        feRd53b.writeRegister(&Rd53b::RingOscBEnBl,1);
-	    feRd53b.writeRegister(&Rd53b::RingOscBEnBr,1);
-	    feRd53b.writeRegister(&Rd53b::RingOscBEnCapA,1);
-	    feRd53b.writeRegister(&Rd53b::RingOscBEnFf,1);
-	    feRd53b.writeRegister(&Rd53b::RingOscBEnLvt,1);
-
-        while (!hw->isCmdEmpty()){;}
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
-        for (unsigned i = 0; i < RingOscRep; i++)
-        {
-            for (uint16_t tmpCount = 0; tmpCount < 34; tmpCount++)
-            {
-                feRd53b.writeRegister(&Rd53b::RingOscBRoute, tmpCount);
-                // Reset bank B counters
-                feRd53b.writeRegister(&Rd53b::RingOscBClear, 1);
-                feRd53b.writeRegister(&Rd53b::RingOscBClear, 0);
-                while (!hw->isCmdEmpty()){;}
-                std::this_thread::sleep_for(std::chrono::microseconds(100));
-
-                // Run oscillators for some time
-                // Call Rd53b::runRingOsc(uint16_t duration, bool isBankB)
-                feRd53b.runRingOsc(RingOscDur, true);
-
-                double value = feRd53b.readSingleRegister(&Rd53b::RingOscBOut) & 0xFFF;
-                RingValuesSum[tmpCount+8] += value;
-            }
-        }
-
-        for (uint16_t tmpCount = 8; tmpCount < 42; tmpCount++)
-        {             
-            // Calculate average
-            RingValuesSum[tmpCount] = RingValuesSum[tmpCount] / (double)RingOscRep;
-            RingValuesFreq[tmpCount] = convertRingOscCntToMHz(RingValuesSum[tmpCount], RingOscDur);
-        }
-        for(int i=0; i<42; i++) {std::cout << RingValuesFreq[i] << " ";}
-        std::cout << std::endl;
+    	fe->writeNamedRegister("GlobalPulseConf", pulse_conf);
+    	fe->writeNamedRegister("GlobalPulseWidth", pulse_width);
+    	while(!hw->isCmdEmpty()){;}
+    	dynamic_cast<Rd53b&>(*fe).sendGlobalPulse(dynamic_cast<Rd53bCfg*>(cfg)->getChipId());
+    	while(!hw->isCmdEmpty()){;}
+    	std::this_thread::sleep_for(std::chrono::microseconds(100));
+    	// Reset register
+    	fe->writeNamedRegister("GlobalPulseConf", 0);
     }
+
     std::cerr << "Done." << std::endl;
 
     return 0;

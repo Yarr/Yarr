@@ -35,8 +35,8 @@ void EmuController<Rd53a, Rd53aEmu>::loadConfig(const json &j) {
 //    EmuTxCore::setCom(new EmuShm(j["tx"]["id"], j["tx"]["size"], true));
 //    EmuRxCore::setCom(new EmuShm(j["rx"]["id"], j["rx"]["size"], true));
 
-  if (j.contains("rx_wait_time")) {
-    m_waitTime = std::chrono::microseconds(j["rx_wait_time"]);
+  if (j.contains("rxWaitTime")) {
+    m_waitTime = std::chrono::microseconds(j["rxWaitTime"]);
   }
 
   int srand_seed = time(nullptr);

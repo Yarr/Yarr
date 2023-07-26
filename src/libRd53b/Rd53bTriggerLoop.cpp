@@ -26,7 +26,7 @@ Rd53bTriggerLoop::Rd53bTriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) {
     m_noInject = false;
     m_extTrig = false;
     m_trigMultiplier = 16;
-    m_zeroTot = true;
+    m_zeroTot = false;
 
     m_edgeMode = false;
     m_edgeDuration = 40;
@@ -229,4 +229,9 @@ void Rd53bTriggerLoop::loadConfig(const json &config) {
     if (config.contains("zeroTot"))
         m_zeroTot = config["zeroTot"];
     this->setTrigDelay(m_trigDelay, m_calEdgeDelay);
+}
+
+uint32_t Rd53bTriggerLoop::getExpEvents(){
+
+    return getTrigCnt()*m_trigMultiplier;
 }

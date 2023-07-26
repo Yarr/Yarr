@@ -227,7 +227,7 @@ void StarCfg::writeConfig(json &j) {
         j["ABCs"]["common"][m.first] = m.second;
     }
 
-    auto cfg_ct = j["ABCs"]["Parameters"] = json::object();
+    auto &cfg_ct = j["ABCs"]["Parameters"] = json::object();
     m_ct.writeConfig(cfg_ct);
 }
 

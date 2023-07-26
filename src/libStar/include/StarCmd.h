@@ -17,8 +17,8 @@
  */
 class StarCmd {
  public:
-  StarCmd();
-  ~StarCmd();
+  StarCmd() = default;
+  ~StarCmd() = default;
 
   // Access Control and Status Registers (ACSR) Commands
   std::array<LCB::Frame, 9> command_sequence(int hccID = 0xf, int chipID = 0xf,

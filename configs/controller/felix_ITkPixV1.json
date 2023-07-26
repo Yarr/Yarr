@@ -9,10 +9,11 @@
         "manchester": false,
         "flip": false,
         "extend": false,
-        "feType": "star",
-        "rxWaitTime": 500
+        "feType": "rd53b",
+	"bufferSize": 64,
+	"rxWaitTime": 500,
+	"pixFwTrigger": true
       }
     }
   }
 }
-

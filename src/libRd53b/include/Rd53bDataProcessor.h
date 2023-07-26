@@ -28,6 +28,7 @@ public:
         m_input = input;
         m_out = out;
     }
+    void connect(ClipBoard<FeedbackProcessingInfo> *arg_proc_status) override {statusFb = arg_proc_status;}
 
     void init() override;
     void run() override;
@@ -51,6 +52,7 @@ private:
     std::unique_ptr<std::thread> thread_ptr;
     ClipBoard<RawDataContainer> *m_input;
     ClipBoard<EventDataBase> *m_out;
+    ClipBoard<FeedbackProcessingInfo> *statusFb = nullptr;
     Rd53bCfg *m_feCfg;
 
     unsigned _tag;
@@ -73,6 +75,7 @@ private:
     inline bool getNextDataBlock();
     inline void getPreviousDataBlock();
     inline void process_core();
+    inline void getFeedback(unsigned tag, unsigned bcid);
 
     // Data stream components
     uint64_t _ccol;

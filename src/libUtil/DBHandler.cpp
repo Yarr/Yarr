@@ -8,8 +8,11 @@
 #define DBDEBUG 0
 
 #include <functional>
+#include <chrono>
+#include <thread>
 #include "DBHandler.h"
 #include "logging.h"
+
 namespace {
     auto dlog = logging::make_log("Local DB");
 }
@@ -141,7 +144,7 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path) {
     return;
 }
 
-void DBHandler::cleanUp(std::string i_option, std::string i_dir, bool i_back, bool i_interactive) {
+void DBHandler::cleanUp(std::string i_option, std::string i_dir, bool i_back, bool i_interactive, std::string tag) {
 #if DBDEBUG
     std::cout << "DBHandler: Clean Up." << std::endl;
 #endif
@@ -177,14 +180,42 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir, bool i_back, bo
     if (this->checkCommand("upload")!=0) {
         dlog->error("Could not upload result data into Local DB");
     } else {
+
+	auto wait { 1000 };
+
+	while( true ) {
+	    std::array<char, 128> buffer;
+	    std::string result;
+
+	    auto pipe = popen( ( "ps ux | grep \"" + m_upload_command + " " + i_option + "\" | wc -l " ).c_str(), "r" );
+	    while (!feof(pipe)) {
+		if (fgets(buffer.data(), buffer.size(), pipe) != nullptr)
+		    result += buffer.data();
+	    }
+	    auto rc = pclose(pipe);
+	    
+	    if( std::atoi( result.c_str() ) <= 2 ) {
+		break;
+	    }
+	    
+	    dlog->info( ("Waiting for other uploading process to complete... (" + std::to_string( wait/1000 ) + "s)").c_str() );
+	    std::this_thread::sleep_for(std::chrono::milliseconds( wait ));
+	    wait *= 2;
+	    if( wait > 10000 ) {
+		wait = 10000;
+	    }
+	}
+	
         std::string cmd = m_upload_command + " " + i_option + " " + result_dir;;
         if (m_db_cfg_path!="")            cmd = cmd + " --database " + m_db_cfg_path;
         if (m_qc)                         cmd = cmd + " --QC";
         if (m_interactive&&i_interactive) cmd = cmd + " --interactive";
+        if (tag!="") cmd = cmd + " --tag \"" + tag + "\"";
         if (i_back) {
-            dlog->info("Uploading in the back ground. (log: ~/.yarr/localdb/log/)");
+            dlog->info("Uploading in the background. (log: ~/.yarr/localdb/log/)");
             cmd = cmd + " --log &";
         }
+	dlog->info( cmd.c_str() );
         if (system(cmd.c_str())!=0) {
             dlog->error("Unknown error");
         }

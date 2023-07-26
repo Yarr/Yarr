@@ -101,7 +101,7 @@ class LocalDb(object):
 
     def __check_connection_mongo(self):
         self.logger.info('Checking connection to DB Server: {0}/{1} ...'.format(self.url, self.name))
-        max_server_delay = 1
+        max_server_delay = 1000
         username = None
         password = None
         try:
