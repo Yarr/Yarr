@@ -561,11 +561,11 @@ std::tuple<json, std::vector<json>> StarCfg::createConfigSingleFE() {
 }
 
 std::tuple<json, std::vector<json>> StarCfg::createConfigLSStave() {
-    return StarPreset::createConfigStarObject(*this, StarPreset::lsstave);
+    return StarPreset::createConfigStarObject(*this, StarPreset::lsstave, true);
 }
 
 std::tuple<json, std::vector<json>> StarCfg::createConfigPetal() {
-    return StarPreset::createConfigStarObject(*this, StarPreset::petal);
+    return StarPreset::createConfigStarObject(*this, StarPreset::petal, false);
 }
 
 std::tuple<json, std::vector<json>> StarCfg::getPreset(const std::string& systemType) {

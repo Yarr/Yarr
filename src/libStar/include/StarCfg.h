@@ -166,6 +166,9 @@ class StarCfg : public FrontEndCfg {
 
   StarConversionTools &getStarConversion() {return m_ct;}
 
+  int abcVersion() const {return m_abc_version;}
+  int hccVersion() const {return m_hcc_version;}
+
  protected:
   AbcCfg &abcFromChipID(unsigned int chipID) {
       for(auto &abcPair : m_ABCchips) {
