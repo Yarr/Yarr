@@ -149,3 +149,26 @@ Success! No errors.
 ```
 - The firmware has to be loaded after *every* reboot or power cycle of the system!
 
+## Eye diagram and data transmission setup
+
+To establish connectionwith the chip, the correct sampling delay setting for the deserialiser has to be determined. In order to so, an eye diagram scan is available, which can be run as 
+
+```bash
+Usage: ./bin/eyeDiagram [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-t <test_size>] [-s]
+
+Options:
+  -h                   Display this help message.
+  -r <hw_controller_file>   Specify hardware controller JSON path.
+  -c <connectivity_file>    Specify connectivity config JSON path.
+  -t <test_size>            Specify the error counter test size.
+  -n                   Don't update the controller condfig with the best delay values
+```
+
+This scan has to be run before running any other scan, and it will save the best delay setting to the controller config file. A script for plotting the eye diagram is also provided (``scripts/plot_eyediagram.py``), and an example of an eye diagram is shown below. 
+
+![Example of eye diagram.](images/eye_diagram.png)
+
+
+
+
+

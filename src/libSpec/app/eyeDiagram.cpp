@@ -30,7 +30,7 @@ void printHelp() {
               << "  -r <hw_controller_file>   Specify hardware controller JSON path.\n"
               << "  -c <connectivity_file>    Specify connectivity config JSON path.\n"
               << "  -t <test_size>            Specify the error counter test size.\n"
-              << "  -s                   Update the controller condfig with the best delay values\n" ;
+              << "  -n                   Don't update the controller condfig with the best delay values\n" ;
 }
 
 std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn, int fe_num) {
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
     std::string hw_controller_filename = "";
     std::string connectivity_filename = "";
     uint32_t test_size = 10e5;
-    bool save_delay=false;
+    bool save_delay=true;
 
     while ((c = getopt(argc, argv, "hr:c:t:s")) != -1) {
 		switch (c) {
@@ -95,8 +95,8 @@ int main(int argc, char **argv) {
         case 't' :
             test_size = std::stoi(optarg);
             break;
-        case 's' :
-            save_delay = true;
+        case 'n' :
+            save_delay = false;
             break;    
 		default:
 		    logger->critical("Invalid command line parameter(s) given!");
@@ -168,11 +168,11 @@ int main(int argc, char **argv) {
         }
     }
 
-    double speed=1280*10e6/(cdrclksel+1);
+    double speed=1200*10e6/(cdrclksel+1);
 
     double time=0.0;
     time=1/speed*66*test_size;
-    double clkcycles = 1/(40.0*10e6);
+    double clkcycles = 1/(37.5*10e6);
     double count=time/clkcycles/101.0;
     int min=std::floor(count);
     int max=std::ceil(count);
@@ -232,9 +232,9 @@ int main(int argc, char **argv) {
             }
             resultVec[j][i] = value;
             if (link_quality==1){
-                std::cout << COLOR_GREEN << std::setw(4) << link_quality << COLOR_RESET << " | ";
+                std::cout << COLOR_GREEN << std::setw(4) << error_count << COLOR_RESET << " | ";
             } else {            
-                std::cout << std::setw(4) << link_quality << " | ";
+                std::cout << std::setw(4) << error_count << " | ";
             }
             s+=std::to_string(link_quality)+" | ";
 
