@@ -232,8 +232,5 @@ void Rd53bTriggerLoop::loadConfig(const json &config) {
 
 uint32_t Rd53bTriggerLoop::getExpEvents(){
 
-  if(!m_noInject)
     return getTrigCnt()*m_trigMultiplier;
-  else
-    return m_trigTime*m_trigFreq*m_trigMultiplier;
 }
