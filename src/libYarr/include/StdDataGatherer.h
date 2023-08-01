@@ -27,8 +27,6 @@ class StdDataGatherer: public LoopActionBase, public StdDataAction {
         void execPart1() override;
         void execPart2() override;
         bool killswitch;
-
-        uint32_t ntriggersToReceive = 0;
 };
 
 #endif

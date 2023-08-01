@@ -31,9 +31,7 @@ StdDataGatherer::StdDataGatherer() : LoopActionBase(LOOP_STYLE_DATA) {
 void StdDataGatherer::init() {
     m_done = false;
     killswitch = false;
-    auto trigAction = keeper->getTriggerAction();
-    if (trigAction != nullptr) ntriggersToReceive = trigAction->getExpEvents() - g_rx->getTriggersLostTolerance();
-    SPDLOG_LOGGER_TRACE(sdglog, "Number to events to expect = {}",ntriggersToReceive);
+    SPDLOG_LOGGER_TRACE(sdglog, "");
 }
 
 void StdDataGatherer::end() {
@@ -53,28 +51,10 @@ void StdDataGatherer::execPart2() {
     SPDLOG_LOGGER_TRACE(sdglog, "");
     unsigned count = 0;
     unsigned nAllRxReadIterations = 0;
-    uint32_t triggerIsDone = 0;
 
     signaled = 0;
     signal(SIGINT, [](int signum){signaled = 1;});
     signal(SIGUSR1, [](int signum){signaled = 1;});
-
-    // the RX channels that actually received data, and expect feedback                                                                                                     
-    std::set<uint32_t> activeChannels;
-
-    // the counter for the feedback from data processors                                                                                                                   
-    std::map<uint32_t, uint32_t> channelReceivedTriggersCnt;
-    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-      channelReceivedTriggersCnt[id] = 0;
-    }
-
-    // to keep track of max time for the iteration                                                                                                                          
-    std::chrono::microseconds timeElapsed;
-    std::chrono::time_point<Clock> timeStart = Clock::now();
-
-    // conditions to end the iteration: all triggers are received or out of time                                                                                            
-    bool receivedAllTriggers = true;
-    bool thereIsStillTime = false;
 
     //! initial wait before reading data
     std::this_thread::sleep_for(g_rx->getReadDelay());
@@ -103,55 +83,28 @@ void StdDataGatherer::execPart2() {
                     }
                 }
             }
+	    // Push the accumulated chunks for processing
+	    for (auto &[id, rdc] : rdcMap) {
+	      rdc->stat.is_end_of_iteration = false;
+	      keeper->getEntry(id).fe->clipRawData.pushData(std::move(rdc));
+	    }
+	    rdcMap.clear();
             // Wait a little bit to increase chance of new data having arrived
             std::this_thread::sleep_for(std::chrono::microseconds(1));
             newData =  g_rx->readData();
 	    nAllRxReadIterations++;
         }
 
-	// Push the data to the Data processor
+	// Push any remaining data for processing
         for (auto &[id, rdc] : rdcMap) {
 	  rdc->stat.is_end_of_iteration = false;
 	  keeper->getEntry(id).fe->clipRawData.pushData(std::move(rdc));
-	  activeChannels.insert(id);
         }
-
-	// check for any feedback from data processing                                                                                                                      
-	bool receivedFeedbackSomewhere = false;
-        do {
-	  receivedFeedbackSomewhere = false;
-
-	  // check the active channels for feedback                                                                                                                        
-	  for (auto& chan_id : activeChannels) {
-	    // pull all the currently available feedback from this channel                                                                                               
-	    while(bool receivedOnChan = keeper->getEntry(chan_id).fe->clipProcFeedback.waitNotEmptyOrDoneOrTimeout(g_rx->getAverageDataProcessingTime())) {
-	      receivedFeedbackSomewhere |= receivedOnChan;
-	      auto params = keeper->getEntry(chan_id).fe->clipProcFeedback.popData();
-
-	      if (params->trigger_tag >=  0) {
-		channelReceivedTriggersCnt[chan_id] += 1;
-	      }
-	    }
-	  }
-	} while (receivedFeedbackSomewhere);
-
-
-        // test whether all channels received all triggers
-	unsigned channelsWithAllTrigsN = 0;
-	uint32_t nAllReceivedTriggersSoFar = 0;
-        for (auto &[id, receivedTriggers] : channelReceivedTriggersCnt) {
-	  nAllReceivedTriggersSoFar += receivedTriggers;
-
-	  if (receivedTriggers >= ntriggersToReceive*0.95) {
-	    channelsWithAllTrigsN += 1;
-	  }
-	}
-	receivedAllTriggers = channelsWithAllTrigsN >= keeper->getNumOfEntries();
 
 	if (count == 0) {
           SPDLOG_LOGGER_INFO(sdglog, "\033[1m\033[31m--> Received {} words in {} iterations!\033[0m", count, nAllRxReadIterations);
         } else {
-          SPDLOG_LOGGER_INFO(sdglog, "--> Received {} words in {} iterations with {} events!", count, nAllRxReadIterations, nAllReceivedTriggersSoFar);
+          SPDLOG_LOGGER_INFO(sdglog, "--> Received {} words in {} iterations!", count, nAllRxReadIterations);
         }
 
         count = 0;
@@ -162,16 +115,8 @@ void StdDataGatherer::execPart2() {
 	  g_tx->toggleTrigAbort();
 	}
 
-        // test whether there is still time for this iteration                                                                                                              
-        timeElapsed = std::chrono::duration_cast<std::chrono::microseconds>(Clock::now() - timeStart);
-        thereIsStillTime = timeElapsed.count() <  g_rx->getWaitTime().count(); // up to HW controller latency
-
-        // Check if trigger is done                                                                                                                                         
-        triggerIsDone = g_tx->isTrigDone();
-
         // Whether to execute another Rx cycle:                                                                                                                             
-        receivingRxData = !triggerIsDone || (thereIsStillTime && !receivedAllTriggers);
-        SPDLOG_LOGGER_INFO(sdglog, "one more Rx cycle: {} -- trigger_is_done = {} -- still time {} = {} < {} and all trigs = {} (n channels w all trigs = {}, n trigs = {})", receivingRxData, triggerIsDone, thereIsStillTime, timeElapsed.count(), g_rx->getWaitTime().count(), receivedAllTriggers, channelsWithAllTrigsN, nAllReceivedTriggersSoFar);
+        receivingRxData = !g_tx->isTrigDone();
 
         // wait for the sampling time before the next Rx read cycle                                                                                                        
 	if (receivingRxData) std::this_thread::sleep_for(g_rx->getReadInterval());
@@ -184,6 +129,7 @@ void StdDataGatherer::execPart2() {
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
       std::unique_ptr<RawDataContainer> cIterEnd = std::make_unique<RawDataContainer>(std::move(loopStatusIterationEnd));
       keeper->getEntry(id).fe->clipRawData.pushData(std::move(cIterEnd));
+      keeper->getEntry(id).fe->clipProcFeedback.reset();
     }
 
     m_done = true;
