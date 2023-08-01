@@ -28,7 +28,7 @@ class StdDataGatherer: public LoopActionBase, public StdDataAction {
         void execPart2() override;
         bool killswitch;
 
-	std::chrono::microseconds m_dataProcessingTime{100};
+        uint32_t ntriggersToReceive = 0;
 };
 
 #endif
