@@ -365,6 +365,8 @@ void NetioTxCore::setTrigCnt(uint32_t count){
 
 void NetioTxCore::setTrigTime(double time){
   m_trigTime = time;
+  if(m_trigCfg==1)
+    setTrigCnt((float)time*(float)m_trigFreq);
 }
 
 void NetioTxCore::setTrigWordLength(uint32_t length){
@@ -463,13 +465,25 @@ void NetioTxCore::doTriggerTime() {
 
   chrono::steady_clock::time_point start = chrono::steady_clock::now();
   chrono::steady_clock::time_point cur = start;
+
+  const auto delta = std::chrono::nanoseconds((int64_t)(1e9/m_trigFreq));
+
   uint32_t trigs=0;
-  while (chrono::duration_cast<chrono::seconds>(cur-start).count() < m_trigTime) {
-    if(m_trigEnabled==false) break;
-    trigs++;
-    trigger();
-    this_thread::sleep_for(chrono::microseconds((int)(1000/m_trigFreq))); // Frequency in kHz
-    cur = chrono::steady_clock::now();
+
+  if (m_trigEnabled) {
+    if (m_pixFwTrigger){
+      trigs=m_trigCnt;
+      trigger();
+    }
+    else{
+      while (chrono::duration_cast<chrono::seconds>(cur-start).count() < m_trigTime) {
+	if(m_trigEnabled==false) break;
+	trigs++;
+	trigger();
+	cur += delta;
+	std::this_thread::sleep_until(cur);
+      }
+    }
   }
   m_trigEnabled = false;
   nlog->debug("finished trigger time");

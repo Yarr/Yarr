@@ -125,7 +125,6 @@ void Rd53bTriggerLoop::init() {
     g_tx->setTrigWord(&m_trigWord[0], 32);
     g_tx->setTrigWordLength(m_trigWordLength);
     g_tx->setTrigTime(m_trigTime);
-
     g_tx->setCmdEnable(keeper->getTxMask());
     while(!g_tx->isCmdEmpty());
     //std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -233,5 +232,8 @@ void Rd53bTriggerLoop::loadConfig(const json &config) {
 
 uint32_t Rd53bTriggerLoop::getExpEvents(){
 
+  if(!m_noInject)
     return getTrigCnt()*m_trigMultiplier;
+  else
+    return m_trigTime*m_trigFreq*m_trigMultiplier;
 }
