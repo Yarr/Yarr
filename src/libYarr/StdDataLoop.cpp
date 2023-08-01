@@ -211,6 +211,7 @@ void StdDataLoop::execPart2() {
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
         std::unique_ptr<RawDataContainer> cIterEnd = std::make_unique<RawDataContainer>(std::move(loopStatusIterationEnd));
         keeper->getEntry(id).fe->clipRawData.pushData(std::move(cIterEnd));
+	keeper->getEntry(id).fe->clipProcFeedback.reset();
     }
 
     // report the average channel occupancy data
