@@ -81,13 +81,13 @@ int main(int argc, char **argv) {
     bool save_delay=true;
 
     while ((c = getopt(argc, argv, "hr:c:t:n")) != -1) {
-		switch (c) {
-		case 'h':
-		    printHelp();
-		    return 0;
+        switch (c) {
+        case 'h':
+            printHelp();
+            return 0;
 		case 'r':
             hw_controller_filename = optarg;
-		    break;
+            break;
         case 'c' :
             connectivity_filename = optarg;
             break;
@@ -98,8 +98,8 @@ int main(int argc, char **argv) {
             save_delay = false;
             break;    
 		default:
-		    logger->critical("Invalid command line parameter(s) given!");
-		    return -1;
+            logger->critical("Invalid command line parameter(s) given!");
+            return -1;
 	    }
     }
 
@@ -139,7 +139,6 @@ int main(int argc, char **argv) {
     auto jconn = ScanHelper::openJsonFile(connectivity_filename);
 
     std::string chipType = ScanHelper::loadChipConfigs(jconn, false, Utils::dirFromPath(connectivity_filename));
-
     auto chip_configs = jconn["chips"];
     size_t n_chips = chip_configs.size();
     uint32_t cdrclksel = 0;
@@ -163,17 +162,14 @@ int main(int argc, char **argv) {
             continue;
         } else {
             auto jchip = ScanHelper::openJsonFile(chip_register_file_path);
-            fe->configure();
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
-               
+            fe->configure();          
+
+            cdrclksel = jchip[chipType]["GlobalConfig"]["CdrClkSel"];
+            serblckperiod = jchip[chipType]["GlobalConfig"]["ServiceBlockPeriod"];
+
             // Wait for fifo to be empty
             std::this_thread::sleep_for(std::chrono::microseconds(10));
             while(!hw->isCmdEmpty());
-
-            fe->readUpdateWriteNamedReg("CdrClkSel");
-            cdrclksel = fe->readNamedRegister("CdrClkSel");
-            fe->readUpdateWriteNamedReg("ServiceBlockPeriod");
-            serblckperiod = fe->readNamedRegister("ServiceBlockPeriod");
         }
     }
 
@@ -187,10 +183,8 @@ int main(int argc, char **argv) {
     int min=std::floor(count);
     int max=std::ceil(count);
     int wait = time*4*10000;
-    std::cout << time << " " << clkcycles << " " << count << " " << min << " " << max << " " << wait << std::endl;
 
     std::ofstream file;
-    //file.open("results/results_"+std::to_string(test_size)+".txt");
     file.open("results.txt");
 
 	// Enable manual delay control
@@ -242,9 +236,9 @@ int main(int argc, char **argv) {
             }
             resultVec[j][i] = value;
             if (link_quality==1){
-                std::cout << COLOR_GREEN << std::setw(4) << error_count << COLOR_RESET << " | ";
+                std::cout << COLOR_GREEN << std::setw(4) << link_quality << COLOR_RESET << " | ";
             } else {            
-                std::cout << std::setw(4) << error_count << " | ";
+                std::cout << std::setw(4) << link_quality << " | ";
             }
             s+=std::to_string(link_quality)+" | ";
 
