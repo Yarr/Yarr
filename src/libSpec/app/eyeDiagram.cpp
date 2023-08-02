@@ -13,7 +13,6 @@ namespace fs = std::filesystem;
 #include "HwController.h"
 #include "FrontEnd.h"
 #include "AllChips.h"
-#include "Rd53b.h"
 #include "ScanHelper.h"
 #include "Utils.h"
 
@@ -81,7 +80,7 @@ int main(int argc, char **argv) {
     uint32_t test_size = 10e5;
     bool save_delay=true;
 
-    while ((c = getopt(argc, argv, "hr:c:t:s")) != -1) {
+    while ((c = getopt(argc, argv, "hr:c:t:n")) != -1) {
 		switch (c) {
 		case 'h':
 		    printHelp();
@@ -144,6 +143,7 @@ int main(int argc, char **argv) {
     auto chip_configs = jconn["chips"];
     size_t n_chips = chip_configs.size();
     uint32_t cdrclksel = 0;
+    uint32_t serblckperiod = 50;
 
     for (size_t ichip = 0; ichip < n_chips; ichip++) {
         if (chip_configs[ichip]["enable"] == 0)
@@ -155,28 +155,38 @@ int main(int argc, char **argv) {
         }
 
         auto fe = init_fe(hw, jconn, ichip);
+        auto cfg = dynamic_cast<FrontEndCfg*>(fe.get());
+        std::string current_chip_name = cfg->getName();
+
         if(!fe) {
             std::cerr << "WARNING: Skipping chip at index " << ichip << " in connectivity file" << std::endl;
             continue;
         } else {
             auto jchip = ScanHelper::openJsonFile(chip_register_file_path);
-            cdrclksel = jchip["RD53B"]["GlobalConfig"]["CdrClkSel"];
             fe->configure();
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
+               
             // Wait for fifo to be empty
             std::this_thread::sleep_for(std::chrono::microseconds(10));
             while(!hw->isCmdEmpty());
+
+            fe->readUpdateWriteNamedReg("CdrClkSel");
+            cdrclksel = fe->readNamedRegister("CdrClkSel");
+            fe->readUpdateWriteNamedReg("ServiceBlockPeriod");
+            serblckperiod = fe->readNamedRegister("ServiceBlockPeriod");
         }
     }
 
-    double speed=1200*10e6/(cdrclksel+1);
-
+    double clk_speed=37.5;
+    double readout_speed=clk_speed*32*10e6/(cdrclksel+1);
+ 
     double time=0.0;
-    time=1/speed*66*test_size;
-    double clkcycles = 1/(37.5*10e6);
-    double count=time/clkcycles/101.0;
+    time=1/readout_speed*66*test_size;
+    double clkcycles = 1/(clk_speed*10e6);
+    double count=time/clkcycles/(serblckperiod*2+1);
     int min=std::floor(count);
     int max=std::ceil(count);
-    int wait = time*4*10000+100;
+    int wait = time*4*10000;
     std::cout << time << " " << clkcycles << " " << count << " " << min << " " << max << " " << wait << std::endl;
 
     std::ofstream file;
