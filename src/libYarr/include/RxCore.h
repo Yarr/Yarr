@@ -53,7 +53,7 @@ class RxCore {
         RxCore()=default;
         virtual ~RxCore()=default;
 
-        std::chrono::microseconds m_waitTime{60000000};
+        std::chrono::microseconds m_waitTime{1000000};
 	std::chrono::microseconds m_readDelay{100};
 	uint32_t m_triggersLostTolerance = 0; // allowed number of lost triggers
 	uint32_t m_maxConsecutiveRxReads = 2;
