@@ -102,9 +102,9 @@ void StdDataGatherer::execPart2() {
         }
 
 	if (count == 0) {
-          SPDLOG_LOGGER_INFO(sdglog, "\033[1m\033[31m--> Received {} words in {} iterations!\033[0m", count, nAllRxReadIterations);
+          SPDLOG_LOGGER_DEBUG(sdglog, "\033[1m\033[31m--> Received {} words in {} iterations!\033[0m", count, nAllRxReadIterations);
         } else {
-          SPDLOG_LOGGER_INFO(sdglog, "--> Received {} words in {} iterations!", count, nAllRxReadIterations);
+          SPDLOG_LOGGER_DEBUG(sdglog, "--> Received {} words in {} iterations!", count, nAllRxReadIterations);
         }
 
         count = 0;
