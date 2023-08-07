@@ -4,7 +4,6 @@
 #include <chrono>
 #include <cmath>
 
-
 #include "Bdaq.h"
 #include "logging.h"
 
@@ -102,6 +101,7 @@ void Bdaq::initialize(bdaqConfig c) {
 	//Configure the Aurora link
 	waitForPllLock();
 	setupAurora();
+        enableAutoSync();
 }
 
 daqVersion Bdaq::getDaqVersion() {

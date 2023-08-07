@@ -23,7 +23,12 @@ class BdaqTCP {
         void connect(std::string ipAdd = "192.168.10.12", int tcpPort = 24) {            
 			boost::asio::ip::tcp::endpoint tcpEndpoint(
                 boost::asio::ip::address::from_string(ipAdd), tcpPort);
+
 			tcp.connect(tcpEndpoint);
+                        
+                        boost::asio::socket_base::receive_buffer_size option(10000000);
+                        tcp.set_option(option);
+                 
         }
 
         void read(std::vector<uint8_t>& buffer) {
@@ -35,8 +40,8 @@ class BdaqTCP {
         void flush();
 
 	private:
-	    boost::asio::io_service ios;
-		boost::asio::ip::tcp::socket tcp;
+        boost::asio::io_service ios;
+        boost::asio::ip::tcp::socket tcp;
 
 };
 

@@ -16,7 +16,7 @@ std::size_t BdaqTCP::getSize() {
 
 //The number of read bytes is determined by buffer.size()
 void BdaqTCP::getData(std::vector<uint8_t>& buffer) {
-    std::size_t rSize = tcp.receive(boost::asio::buffer(buffer));
+    tcp.receive(boost::asio::buffer(buffer));
 }
 
 void BdaqTCP::flush() {
