@@ -4,7 +4,6 @@
 #include <iostream>
 #include <algorithm>
 
-
 #include "BdaqRxCore.h"
 #include "Bdaq.h"
 
@@ -28,10 +27,13 @@ namespace {
 #define TDC_ID_3         0x40000000
 #define TDC_HEADER_MASK  0xF0000000
 
+#define HEADER_ID        0x00010000
+#define NEW_STREAM_ID    0x00008000
 
 BdaqRxCore::BdaqRxCore() {
     mSetupMode = true;
 }
+
 
 void BdaqRxCore::setupMode() {
     mSetupMode = true;
@@ -40,12 +42,14 @@ void BdaqRxCore::setupMode() {
     Bdaq::setMonitorFilter(BdaqAuroraRx::filter);
 }
 
+
 void BdaqRxCore::runMode() {
     mSetupMode = false;
     logger->debug("Run Mode");
     // Disable register data monitoring
     Bdaq::setMonitorFilter(BdaqAuroraRx::block);
 }
+
 
 // val: whatever is passed in "rx"
 void BdaqRxCore::setRxEnable(uint32_t val) {
@@ -54,6 +58,7 @@ void BdaqRxCore::setRxEnable(uint32_t val) {
     activeChannels.push_back(val);
     initSortBuffer();
 }
+
 
 void BdaqRxCore::setRxEnable(std::vector<uint32_t> channels) {
     activeChannels.clear();
@@ -64,12 +69,14 @@ void BdaqRxCore::setRxEnable(std::vector<uint32_t> channels) {
     initSortBuffer();
 }
 
+
 void BdaqRxCore::maskRxEnable(uint32_t val, uint32_t mask) {
     std::stringstream d; 
     d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << val 
       << ", Mask 0x" << mask << std::dec;
     logger->debug(d.str());
 }
+
 
 void BdaqRxCore::checkRxSync() {
 	uint time = 0;
@@ -95,12 +102,11 @@ void BdaqRxCore::checkRxSync() {
 }
 
 
-// TODO this does not work, it will compile but does not do the necessary processing of the data
 std::vector<RawDataPtr> BdaqRxCore::readData() {
      uint size = fifo.getAvailableWords();
      std::vector<RawDataPtr> dataVec;
      std::vector<uint32_t> inBuf;
-     fifo.readData(inBuf, size);
+     fifo.readData(inBuf, size); 
 
      if (chipType == 0){ // it is RD53A
          if (size > 0) {
@@ -251,10 +257,11 @@ std::vector<RawDataPtr> BdaqRxCore::readData() {
                          // build Data
                          uint32_t dataWordFirstHalf;
                          uint32_t dataWordSecondHalf;
-                         uint64_t HiOne;
-                         uint64_t LoOne;
-                         uint64_t HiTwo;
-                         uint64_t LoTwo;
+                         uint32_t HiOne;
+                         uint32_t LoOne;
+                         uint32_t HiTwo;
+                         uint32_t LoTwo;
+
                          while(data_map.second.size() > 3){
                              HiOne = data_map.second.front() & 0xFFFF;
                              data_map.second.erase(data_map.second.begin());
@@ -270,15 +277,8 @@ std::vector<RawDataPtr> BdaqRxCore::readData() {
                              dataWordSecondHalf = (HiTwo << 16) | LoTwo;
                              dataMap_copy[channel].push_back(dataWordSecondHalf);
                          }
-                     }else{
-                         dataMap_copy[channel].clear();
-                         uint32_t null_dataWord = 0xFFFF0000;
-                         dataMap_copy[channel].push_back(null_dataWord);
+
                      }
-                 }else{
-                     dataMap_copy[channel].clear();
-                     uint32_t null_dataWord = 0xFFFF0000;
-                     dataMap_copy[channel].push_back(null_dataWord);
                  }
              }
 
@@ -291,13 +291,14 @@ std::vector<RawDataPtr> BdaqRxCore::readData() {
                      dataMap_copy[channelId].clear();
                  }
              }
+             dataMap_copy.clear();
+
          }else {
              return std::vector<RawDataPtr>();
          }
      }
      return dataVec;
 }
-
 
 
 void BdaqRxCore::flushBuffer() {
@@ -310,12 +311,14 @@ void BdaqRxCore::flushBuffer() {
     fifo.flushBuffer();
 }
 
+
 uint32_t BdaqRxCore::getDataRate() {
     std::stringstream d; 
     d << __PRETTY_FUNCTION__ << std::endl;
     logger->debug(d.str());
     return 0;
 }
+
 
 bool BdaqRxCore::isBridgeEmpty() {
     std::stringstream d; 
@@ -324,9 +327,11 @@ bool BdaqRxCore::isBridgeEmpty() {
     return true;
 }
 
+
 // =============================================================================
 // BDAQ Decoding
 // =============================================================================
+
 void BdaqRxCore::initSortBuffer() {
     sBuffer.clear();
     for (uint c : activeChannels) {
@@ -334,9 +339,10 @@ void BdaqRxCore::initSortBuffer() {
     }
 }
 
-// USERK Decoding ==============================================================
 
+// USERK Decoding ==============================================================
 // Extracts the data from an USERK frame (userkWordA + userkWordB) for RD53A.
+
 BdaqRxCore::userkDataT_RD53A BdaqRxCore::interpretUserkFrame_RD53A(uint64_t userkWordA,
                                                         uint64_t userkWordB) {
     uint64_t userkBlock, Data0, Data1;
@@ -361,6 +367,7 @@ BdaqRxCore::userkDataT_RD53A BdaqRxCore::interpretUserkFrame_RD53A(uint64_t user
     u.Data0_Data = (Data0 >> 0) & 0xFFFF;
     return u;
 }
+
 
 // Extracts the data from an USERK frame (userkWordA + userkWordB) for RD53B.
 BdaqRxCore::userkDataT_RD53B BdaqRxCore::interpretUserkFrame_RD53B(uint64_t userkWordA,
@@ -387,6 +394,7 @@ BdaqRxCore::userkDataT_RD53B BdaqRxCore::interpretUserkFrame_RD53B(uint64_t user
 
     return u;
 }
+
 
 // Get register data from AuroraKWord for RD53A.
 std::vector<BdaqRxCore::regDataT> BdaqRxCore::getRegData_RD53A(BdaqRxCore::userkDataT_RD53A in) {
@@ -418,6 +426,7 @@ std::vector<BdaqRxCore::regDataT> BdaqRxCore::getRegData_RD53A(BdaqRxCore::userk
     }
     return regData;
 }
+
 
 // Get register data from AuroraKWord for RD53B.
 std::vector<BdaqRxCore::regDataT> BdaqRxCore::getRegData_RD53B(BdaqRxCore::userkDataT_RD53B in) {
@@ -451,6 +460,7 @@ std::vector<BdaqRxCore::regDataT> BdaqRxCore::getRegData_RD53B(BdaqRxCore::userk
     return regData;
 }
 
+
 // Emulating the data format, expected by YARR, for a register read
 void BdaqRxCore::encodeToYarr(BdaqRxCore::regDataT in, uint32_t* out,
                                 unsigned int index) {
@@ -458,6 +468,7 @@ void BdaqRxCore::encodeToYarr(BdaqRxCore::regDataT in, uint32_t* out,
     out[index+1] = (in.Address & 0x3FF) << 16 |
                    (in.Data    & 0xFFFF);
 }
+
 
 // TDC Data Decoding ===========================================================
 
@@ -469,3 +480,4 @@ bool BdaqRxCore::checkTDC(const uint32_t& word) {
     else
         return false;
 }
+
