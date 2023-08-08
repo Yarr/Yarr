@@ -359,7 +359,7 @@ set the following configurations for all the chips:
 in addition set the following configurations:
 
 | #Chip | `ChipID` | `DataMergeInMux0/1/2/3` |  `DataMergeOutMux0/1/2/3` | `SerEnLane` | 
-| :---: | :---: | :---: | | :---: | :---: |
+| :---: | :---: | :---: | :---: | :---: |
 | Chip1(rx=2) | 12 | 0/1/2/3 | 0/0/0/0 | 4 |
 | Chip2(rx=1) | 13 | 0/1/2/3 | 0/0/0/0 | 1 |
 | Chip3(rx=0) | 14 | 0/1/2/3 | 0/0/0/0 | 8 |
