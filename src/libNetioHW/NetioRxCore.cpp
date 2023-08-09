@@ -171,9 +171,6 @@ void NetioRxCore::loadConfig(const json &j) {
   if (j["NetIO"].contains("rxWaitTime")) {
     m_waitTime = std::chrono::microseconds(j["NetIO"]["rxWaitTime"]);
   }
-  if (j["NetIO"].contains("rxReadDelay")) {
-    m_readDelay = std::chrono::microseconds(j["NetIO"]["rxReadDelay"]);
-  }
   if (j["NetIO"].contains("maxConsecutiveRxReads")) {
     m_maxConsecutiveRxReads = j["NetIO"]["maxConsecutiveRxReads"];
   }
