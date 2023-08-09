@@ -42,9 +42,6 @@ class RxCore {
         std::chrono::microseconds getAverageDataProcessingTime() {
           return m_averageDataProcessingTime;
         }
-        std::chrono::microseconds getReadInterval() {
-          return m_readInterval;
-        }
 
     protected:
         RxCore()=default;
@@ -54,7 +51,6 @@ class RxCore {
         uint32_t m_triggersLostTolerance = 0; // allowed number of lost triggers
         uint32_t m_maxConsecutiveRxReads = 2;
         std::chrono::microseconds m_averageDataProcessingTime{100};
-        std::chrono::microseconds m_readInterval{100};
 
 };
 

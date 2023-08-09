@@ -183,8 +183,5 @@ void NetioRxCore::loadConfig(const json &j) {
   if (j["NetIO"].contains("triggersLostTolerance")) {
     m_triggersLostTolerance = j["NetIO"]["triggersLostTolerance"];
   }
-  if (j["NetIO"].contains("rxReadInterval")) {
-    m_readInterval = std::chrono::microseconds(j["NetIO"]["rxReadInterval"]);
-  }
 }
 

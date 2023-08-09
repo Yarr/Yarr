@@ -72,7 +72,7 @@ void StdDataGatherer::execPart2() {
         // Read all data until buffer is empty
         while (newData.size() > 0 && count < 4096 && signaled == 0 && !killswitch) {
             if (newData.size() > 0) {
-	        for (auto &dataChunk : newData) {
+                for (auto &dataChunk : newData) {
                     count += dataChunk->getSize();
                     for (unsigned &uid : keeper->getRxToId(dataChunk->getAdr())) {
                         if (rdcMap[uid] == nullptr) {
@@ -83,25 +83,25 @@ void StdDataGatherer::execPart2() {
                     }
                 }
             }
-	    // Push the accumulated chunks for processing
-	    for (auto &[id, rdc] : rdcMap) {
-	      rdc->stat.is_end_of_iteration = false;
-	      keeper->getEntry(id).fe->clipRawData.pushData(std::move(rdc));
-	    }
-	    rdcMap.clear();
+            // Push the accumulated chunks for processing
+            for (auto &[id, rdc] : rdcMap) {
+              rdc->stat.is_end_of_iteration = false;
+              keeper->getEntry(id).fe->clipRawData.pushData(std::move(rdc));
+            }
+            rdcMap.clear();
             // Wait a little bit to increase chance of new data having arrived
             std::this_thread::sleep_for(std::chrono::microseconds(1));
             newData =  g_rx->readData();
-	    nAllRxReadIterations++;
+            nAllRxReadIterations++;
         }
 
-	// Push any remaining data for processing
+        // Push any remaining data for processing
         for (auto &[id, rdc] : rdcMap) {
-	  rdc->stat.is_end_of_iteration = false;
-	  keeper->getEntry(id).fe->clipRawData.pushData(std::move(rdc));
+          rdc->stat.is_end_of_iteration = false;
+          keeper->getEntry(id).fe->clipRawData.pushData(std::move(rdc));
         }
 
-	if (count == 0) {
+        if (count == 0) {
           SPDLOG_LOGGER_DEBUG(sdglog, "\033[1m\033[31m--> Received {} words in {} iterations!\033[0m", count, nAllRxReadIterations);
         } else {
           SPDLOG_LOGGER_DEBUG(sdglog, "--> Received {} words in {} iterations!", count, nAllRxReadIterations);
@@ -110,16 +110,13 @@ void StdDataGatherer::execPart2() {
         count = 0;
 
         if (signaled == 1 || killswitch) {
-	  SPDLOG_LOGGER_WARN(sdglog, "Caught interrupt, stopping data taking!");
-	  SPDLOG_LOGGER_WARN(sdglog, "Abort might leave data in buffers!");
-	  g_tx->toggleTrigAbort();
-	}
+          SPDLOG_LOGGER_WARN(sdglog, "Caught interrupt, stopping data taking!");
+          SPDLOG_LOGGER_WARN(sdglog, "Abort might leave data in buffers!");
+          g_tx->toggleTrigAbort();
+        }
 
         // Whether to execute another Rx cycle:                                                                                                                             
         receivingRxData = !g_tx->isTrigDone();
-
-        // wait for the sampling time before the next Rx read cycle                                                                                                        
-	if (receivingRxData) std::this_thread::sleep_for(g_rx->getReadInterval());
     }
 
     // the iteration end marker for the processing & analysis
