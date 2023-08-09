@@ -82,8 +82,14 @@ void StdDataLoop::execPart2() {
 
     //! Rx read cycle: read the data from RxCore, push to data processors, check feedback
     bool receivingRxData = true;
+    // just to make the debug printouts more useful, handle the case of empty cycles when the triggers are lost
+    // "empty" cycle is when we receive no new RawData from the RxCore, and neither new feedback from DataProcessors
+    // when some triggers are lost beyond the set tolerance, StdDataLoop will spin in empty cycles,
+    // winding down the time until the end of the iteration time
+    bool emptyRxCycle = false;
     while (receivingRxData) {
         std::vector<RawDataPtr> newData;
+        unsigned newRawDataCount = 0;
 
         // accumulate the RawData chunks per each elink from N reads from HW controller RS
         // at the end, push the RawDataContainers for processing
@@ -99,6 +105,7 @@ void StdDataLoop::execPart2() {
                     auto rxRawDataSize = dataChunk->getSize(); // variables for probing/debugging
                     auto elinkId = dataChunk->getAdr();
 
+                    newRawDataCount += rxRawDataSize;
                     allRawDataCount += rxRawDataSize;
                     for (unsigned &uid : keeper->getRxToId(elinkId)) {
                         if (rdcMap[uid] == nullptr) {
@@ -130,8 +137,11 @@ void StdDataLoop::execPart2() {
             activeChannels.insert(id);
         }
 
-        if (allRawDataCount == 0) {
-          SPDLOG_LOGGER_TRACE(sdllog, "\033[1m\033[31m--> Received {} words in {} iterations!\033[0m", allRawDataCount, nAllRxReadIterations);
+        if (newRawDataCount == 0) {
+          if (emptyRxCycle)
+            SPDLOG_LOGGER_TRACE(sdllog, "\033[1m\033[31m--> Received {} words in {} iterations up to now, but 0 new ones in this (empty) cycle!\033[0m", allRawDataCount, nAllRxReadIterations);
+          else 
+            SPDLOG_LOGGER_DEBUG(sdllog, "\033[1m\033[31m--> Received {} words in {} iterations up to now, but 0 new ones! Trying to read more...\033[0m", allRawDataCount, nAllRxReadIterations);
         } else {
           SPDLOG_LOGGER_DEBUG(sdllog, "--> Received {} words in {} iterations!", allRawDataCount, nAllRxReadIterations);
         }
@@ -174,11 +184,18 @@ void StdDataLoop::execPart2() {
             }
         } while (receivedFeedbackSomewhere);
 
-        if (iterationNtrigs!=0 || iterationNrrs !=0 || iterationNctrl!=0 || iterationNerrs!=0) {
+        bool gotNewFeedback = iterationNtrigs!=0 || iterationNrrs !=0 || iterationNctrl!=0 || iterationNerrs!=0;
+        if (gotNewFeedback) {
           SPDLOG_LOGGER_DEBUG(sdllog, "Received some feedback: {} trigs, {} RRs, {} control, {} errors.", iterationNtrigs, iterationNrrs, iterationNctrl, iterationNerrs);
         } else {
-          SPDLOG_LOGGER_TRACE(sdllog, "\033[1m\033[31mDid not receive any feedback from data processors.\033[0m");
+          if (emptyRxCycle)
+            SPDLOG_LOGGER_TRACE(sdllog, "\033[1m\033[31mDid not receive any feedback from data processors in this empty cycle.\033[0m");
+          else
+            SPDLOG_LOGGER_DEBUG(sdllog, "\033[1m\033[31mDid not receive any feedback from data processors. Trying to read more...\033[0m");
         }
+
+        // test if this was an "empty" cycle
+        emptyRxCycle = newRawDataCount==0 && !gotNewFeedback;
 
         // test whether all channels received all triggers
         unsigned channelsWithAllTrigsN = 0; // 
@@ -204,9 +221,15 @@ void StdDataLoop::execPart2() {
 
         // Whether to execute another Rx cycle:
         receivingRxData = !triggerIsDone || (thereIsStillTime && !receivedAllTriggers);
-        SPDLOG_LOGGER_TRACE(sdllog, "one more Rx cycle: {} -- still time {} = {} < {} and all trigs = {} (n channels w all trigs = {}, n trigs = {}, n rrs hprs errs = {} {} {})",
+        if (!receivingRxData || !emptyRxCycle)
+          SPDLOG_LOGGER_DEBUG(sdllog, "one more Rx cycle: {} -- still time {} = {} < {} and all trigs = {} (n channels w all trigs = {}, n trigs = {}, n trigs rrs hprs errs = {} {} {} {})",
             receivingRxData, thereIsStillTime, timeElapsed.count(), g_rx->getWaitTime().count(), receivedAllTriggers,
-            channelsWithAllTrigsN, nAllReceivedTriggersSoFar, iterationNrrs, iterationNctrl, iterationNerrs);
+            channelsWithAllTrigsN, nAllReceivedTriggersSoFar,
+            iterationNtrigs, iterationNrrs, iterationNctrl, iterationNerrs);
+        else
+          SPDLOG_LOGGER_TRACE(sdllog, "(empty) one more Rx cycle: {} -- still time {} = {} < {} and all trigs = {} (n channels w all trigs = {}, n all trigs = {})",
+            receivingRxData, thereIsStillTime, timeElapsed.count(), g_rx->getWaitTime().count(), receivedAllTriggers,
+            channelsWithAllTrigsN, nAllReceivedTriggersSoFar);
     }
 
     // the iteration end marker for the processing & analysis
