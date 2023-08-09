@@ -70,7 +70,7 @@ void StdDataGatherer::execPart2() {
         nAllRxReadIterations++;
 
         // Read all data until buffer is empty
-        while (newData.size() > 0 && count < 4096 && signaled == 0 && !killswitch) {
+        while (newData.size() > 0 && count < m_maxConsecutiveRxReads && signaled == 0 && !killswitch) {
             if (newData.size() > 0) {
                 for (auto &dataChunk : newData) {
                     count += dataChunk->getSize();
@@ -131,4 +131,11 @@ void StdDataGatherer::execPart2() {
 
     m_done = true;
     counter++;
+}
+
+void StdDataGatherer::loadConfig(const json &config) {
+    if (config.contains("maxConsecutiveRxReads")) {
+        m_maxConsecutiveRxReads = config["maxConsecutiveRxReads"];
+        SPDLOG_LOGGER_INFO(sdglog, "Configured StdDataGatherer: maxConsecutiveRxReads: {} [times]", m_maxConsecutiveRxReads);
+    }
 }
