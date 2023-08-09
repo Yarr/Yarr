@@ -16,6 +16,7 @@ class StdDataLoop: public LoopActionBase, public StdDataAction {
     public:
         StdDataLoop();
         //void connect(ClipBoard<RawDataContainer> *clipboard);
+        void loadConfig(const json &config) override;
 
     private:
         //ClipBoard<RawDataContainer> *storage;
@@ -26,6 +27,7 @@ class StdDataLoop: public LoopActionBase, public StdDataAction {
         void execPart2() override;
 
         uint32_t ntriggersToReceive = 0;
+        std::chrono::microseconds m_maxIterationTime{5000000}; // in microseconds
 };
 
 #endif

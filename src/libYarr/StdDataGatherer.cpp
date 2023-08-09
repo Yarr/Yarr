@@ -57,7 +57,7 @@ void StdDataGatherer::execPart2() {
     signal(SIGUSR1, [](int signum){signaled = 1;});
 
     //! initial wait before reading data
-    std::this_thread::sleep_for(g_rx->getReadDelay());
+    std::this_thread::sleep_for(g_rx->getWaitTime());
 
     SPDLOG_LOGGER_WARN(sdglog, "IMPORTANT! Going into endless loop unless timelimit is set, interrupt with ^c (SIGINT)!");
 

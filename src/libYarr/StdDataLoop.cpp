@@ -76,7 +76,7 @@ void StdDataLoop::execPart2() {
     bool thereIsStillTime = false;
 
     //! initial wait before reading data                                                                                                                                    
-    std::this_thread::sleep_for(g_rx->getReadDelay());
+    std::this_thread::sleep_for(g_rx->getWaitTime());
 
     SPDLOG_LOGGER_DEBUG(sdllog, "Reading Rx data...");
 
@@ -138,17 +138,17 @@ void StdDataLoop::execPart2() {
 
         // check for any feedback from data processing
         bool receivedFeedbackSomewhere = false;
-		// monitoring for debugging:
-		uint32_t iterationNrrs  = 0;
-		uint32_t iterationNhprs = 0;
-		uint32_t iterationNerrs = 0;
+        // monitoring for debugging:
+        uint32_t iterationNrrs  = 0;
+        uint32_t iterationNhprs = 0;
+        uint32_t iterationNerrs = 0;
         do {
             receivedFeedbackSomewhere = false;
 
             // check the active channels for feedback
             for (auto& chan_id : activeChannels) {
                 // pull all the currently available feedback from this channel
-	      while(bool receivedOnChan = keeper->getEntry(chan_id).fe->clipProcFeedback.waitNotEmptyOrDoneOrTimeout(g_rx->getAverageDataProcessingTime())) {
+                while(bool receivedOnChan = keeper->getEntry(chan_id).fe->clipProcFeedback.waitNotEmptyOrDoneOrTimeout(g_rx->getAverageDataProcessingTime())) {
                     receivedFeedbackSomewhere |= receivedOnChan;
                     auto params = keeper->getEntry(chan_id).fe->clipProcFeedback.popData();
 
@@ -177,7 +177,7 @@ void StdDataLoop::execPart2() {
         uint32_t nAllReceivedTriggersSoFar = 0;
         for (auto &[id, receivedTriggers] : channelReceivedTriggersCnt) {
             //SPDLOG_LOGGER_DEBUG(sdllog, "--> StdDataLoop::execPart2 : chan {} received {} triggers from {}", id, received_triggers, ntriggersToReceive);
-			nAllReceivedTriggersSoFar += receivedTriggers;
+            nAllReceivedTriggersSoFar += receivedTriggers;
 
             if (receivedTriggers >= ntriggersToReceive) {
                 //activeChannels.erase(id); // ok, don't erase a channel - it looks like we receive some random 1-2 triggers here and there
@@ -189,7 +189,7 @@ void StdDataLoop::execPart2() {
         // test whether there is still time for this iteration
         timeElapsed =
             std::chrono::duration_cast<std::chrono::microseconds>(Clock::now() - timeStart);
-        thereIsStillTime = timeElapsed.count() < g_rx->getWaitTime().count(); // up to HW controller latency
+        thereIsStillTime = timeElapsed.count() < m_maxIterationTime.count(); // the time limit for each iteration in StdDataLoop
 
         // Check if trigger is done
         triggerIsDone = g_tx->isTrigDone();
@@ -197,7 +197,7 @@ void StdDataLoop::execPart2() {
         // Whether to execute another Rx cycle:
         receivingRxData = !triggerIsDone || (thereIsStillTime && !receivedAllTriggers);
         SPDLOG_LOGGER_DEBUG(sdllog, "one more Rx cycle: {} -- still time {} = {} < {} and all trigs = {} (n channels w all trigs = {}, n trigs = {}, n rrs hprs errs = {} {} {})",
-			    receivingRxData, thereIsStillTime, timeElapsed.count(), g_rx->getWaitTime().count(), receivedAllTriggers,
+            receivingRxData, thereIsStillTime, timeElapsed.count(), g_rx->getWaitTime().count(), receivedAllTriggers,
             channelsWithAllTrigsN, nAllReceivedTriggersSoFar, iterationNrrs, iterationNhprs, iterationNerrs);
 
         // wait for the sampling time before the next Rx read cycle                                                                                                         
@@ -211,7 +211,7 @@ void StdDataLoop::execPart2() {
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
         std::unique_ptr<RawDataContainer> cIterEnd = std::make_unique<RawDataContainer>(std::move(loopStatusIterationEnd));
         keeper->getEntry(id).fe->clipRawData.pushData(std::move(cIterEnd));
-	keeper->getEntry(id).fe->clipProcFeedback.reset();
+        keeper->getEntry(id).fe->clipProcFeedback.reset();
     }
 
     // report the average channel occupancy data
@@ -223,4 +223,12 @@ void StdDataLoop::execPart2() {
 
     m_done = true;
     counter++;
+}
+
+void StdDataLoop::loadConfig(const json &config) {
+
+    if (config.contains("maxIterationTime")) {
+        m_maxIterationTime = std::chrono::microseconds(config["maxIterationTime"]);
+        SPDLOG_LOGGER_INFO(sdllog, "Configured StdDataLoop: maxIterationTime: {} [us]", m_maxIterationTime.count());
+    }
 }
