@@ -29,6 +29,7 @@ class StdDataLoop: public LoopActionBase, public StdDataAction {
         uint32_t ntriggersToReceive = 0;
         std::chrono::microseconds m_maxIterationTime{5000000}; // in microseconds
         uint32_t m_maxConsecutiveRxReads = 2; // the same logic as in StdDataGatherer: we don't want to stuck in a continuous stream of Rx Data
+        std::chrono::microseconds m_averageDataProcessingTime{100};
 };
 
 #endif

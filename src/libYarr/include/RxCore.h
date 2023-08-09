@@ -36,9 +36,6 @@ class RxCore {
         uint32_t getTriggersLostTolerance() {
           return m_triggersLostTolerance;
         }
-        std::chrono::microseconds getAverageDataProcessingTime() {
-          return m_averageDataProcessingTime;
-        }
 
     protected:
         RxCore()=default;
@@ -46,7 +43,6 @@ class RxCore {
 
         std::chrono::microseconds m_waitTime{100}; // typical latency in the HW controller RX path
         uint32_t m_triggersLostTolerance = 0; // allowed number of lost triggers
-        std::chrono::microseconds m_averageDataProcessingTime{100};
 
 };
 

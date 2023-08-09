@@ -159,7 +159,7 @@ void StdDataLoop::execPart2() {
             // check the active channels for feedback
             for (auto& chan_id : activeChannels) {
                 // pull all the currently available feedback from this channel
-                while(bool receivedOnChan = keeper->getEntry(chan_id).fe->clipProcFeedback.waitNotEmptyOrDoneOrTimeout(g_rx->getAverageDataProcessingTime())) {
+                while(bool receivedOnChan = keeper->getEntry(chan_id).fe->clipProcFeedback.waitNotEmptyOrDoneOrTimeout(m_averageDataProcessingTime)) {
                     receivedFeedbackSomewhere |= receivedOnChan;
                     auto params = keeper->getEntry(chan_id).fe->clipProcFeedback.popData();
 
@@ -259,8 +259,14 @@ void StdDataLoop::loadConfig(const json &config) {
         m_maxIterationTime = std::chrono::microseconds(config["maxIterationTime"]);
         SPDLOG_LOGGER_INFO(sdllog, "Configured StdDataLoop: maxIterationTime: {} [us]", m_maxIterationTime.count());
     }
+
     if (config.contains("maxConsecutiveRxReads")) {
         m_maxConsecutiveRxReads = config["maxConsecutiveRxReads"];
         SPDLOG_LOGGER_INFO(sdllog, "Configured StdDataLoop: maxConsecutiveRxReads: {} [times]", m_maxConsecutiveRxReads);
+    }
+
+    if (config.contains("averageDataProcessingTime")) {
+        m_averageDataProcessingTime = std::chrono::microseconds(config["averageDataProcessingTime"]);
+        SPDLOG_LOGGER_INFO(sdllog, "Configured StdDataLoop: averageDataProcessingTime: {} [us]", m_averageDataProcessingTime.count());
     }
 }

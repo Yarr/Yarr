@@ -171,9 +171,6 @@ void NetioRxCore::loadConfig(const json &j) {
   if (j["NetIO"].contains("rxWaitTime")) {
     m_waitTime = std::chrono::microseconds(j["NetIO"]["rxWaitTime"]);
   }
-  if (j["NetIO"].contains("averageDataProcessingTime")) {
-    m_averageDataProcessingTime = std::chrono::microseconds(j["NetIO"]["averageDataProcessingTime"]);
-  }
   if (j["NetIO"].contains("triggersLostTolerance")) {
     m_triggersLostTolerance = j["NetIO"]["triggersLostTolerance"];
   }
