@@ -111,7 +111,7 @@ void StdDataLoop::execPart2() {
                 }
 
                 // push the accumulated chunks for processing, if N RX reads > threshold
-                if (nReadsInCurrentRxCycle > g_rx->getMaxConsecutiveRxReads()) {
+                if (nReadsInCurrentRxCycle > m_maxConsecutiveRxReads) {
                     for (auto &[id, rdc] : rdcMap) {
                         rdc->stat.is_end_of_iteration = false;
                         keeper->getEntry(id).fe->clipRawData.pushData(std::move(rdc));
@@ -235,5 +235,9 @@ void StdDataLoop::loadConfig(const json &config) {
     if (config.contains("maxIterationTime")) {
         m_maxIterationTime = std::chrono::microseconds(config["maxIterationTime"]);
         SPDLOG_LOGGER_INFO(sdllog, "Configured StdDataLoop: maxIterationTime: {} [us]", m_maxIterationTime.count());
+    }
+    if (config.contains("maxConsecutiveRxReads")) {
+        m_maxConsecutiveRxReads = config["maxConsecutiveRxReads"];
+        SPDLOG_LOGGER_INFO(sdllog, "Configured StdDataLoop: maxConsecutiveRxReads: {} [times]", m_maxConsecutiveRxReads);
     }
 }
