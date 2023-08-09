@@ -30,7 +30,7 @@ StdDataLoop::StdDataLoop() : LoopActionBase(LOOP_STYLE_DATA) {
 void StdDataLoop::init() {
     m_done = false;
     auto trigAction = keeper->getTriggerAction();
-    if (trigAction != nullptr) ntriggersToReceive = trigAction->getExpEvents() - g_rx->getTriggersLostTolerance();
+    if (trigAction != nullptr) ntriggersToReceive = trigAction->getExpEvents() - m_triggersLostTolerance;
     SPDLOG_LOGGER_TRACE(sdllog, "");
 }
 
@@ -268,5 +268,10 @@ void StdDataLoop::loadConfig(const json &config) {
     if (config.contains("averageDataProcessingTime")) {
         m_averageDataProcessingTime = std::chrono::microseconds(config["averageDataProcessingTime"]);
         SPDLOG_LOGGER_INFO(sdllog, "Configured StdDataLoop: averageDataProcessingTime: {} [us]", m_averageDataProcessingTime.count());
+    }
+
+    if (config.contains("triggersLostTolerance")) {
+        m_triggersLostTolerance = config["triggersLostTolerance"];
+        SPDLOG_LOGGER_INFO(sdllog, "Configured StdDataLoop: triggersLostTolerance: {}", m_triggersLostTolerance);
     }
 }
