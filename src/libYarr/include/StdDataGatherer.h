@@ -19,6 +19,9 @@ class StdDataGatherer: public LoopActionBase, public StdDataAction {
         void kill() {
             killswitch = true;
         }
+
+        void loadConfig(const json &config) override;
+
     private:
         //ClipBoard<RawDataContainer> *storage;
         unsigned counter;
@@ -27,6 +30,8 @@ class StdDataGatherer: public LoopActionBase, public StdDataAction {
         void execPart1() override;
         void execPart2() override;
         bool killswitch;
+
+        uint32_t m_maxConsecutiveRxReads = 4096;
 };
 
 #endif
