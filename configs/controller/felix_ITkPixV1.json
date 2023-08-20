@@ -11,13 +11,8 @@
         "extend": false,
         "feType": "rd53b",
 	"bufferSize": 64,
-	"rxWaitTime": 60000000,
-	"pixFwTrigger": true,
-        "rxReadDelay": 100,
-        "maxConsecutiveRxReads": 2,
-        "averageDataProcessingTime": 100,
-        "triggersLostTolerance": 0,
-        "rxReadInterval": 100
+	"rxWaitTime": 500,
+	"pixFwTrigger": true
       }
     }
   }
