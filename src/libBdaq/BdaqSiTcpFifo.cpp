@@ -21,6 +21,7 @@ void BdaqSiTcpFifo::flushBuffer() {
 std::size_t BdaqSiTcpFifo::readData(uint32_t* buffer) {
 	std::size_t wCount = getAvailableWords();
 	std::vector<uint8_t> buf(wCount * 4);
+        buf.clear();
 	tcp.read(buf);
 	for (uint i=0;i<wCount;++i) {
 		buffer[i] = buf.at(i*4+0)       | buf.at(i*4+1) << 8 | 
@@ -40,3 +41,4 @@ void BdaqSiTcpFifo::readData(std::vector<uint32_t>& buffer, std::size_t size) {
 		buffer.push_back(temp);
 	}
 }
+

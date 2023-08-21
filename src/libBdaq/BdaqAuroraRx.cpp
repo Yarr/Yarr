@@ -109,3 +109,4 @@ void BdaqAuroraRx::setGtxTxMode(std::string value) {
 uint BdaqAuroraRx::getRxConfig() {
 	return (*this)["RX_LANES"];
 }
+

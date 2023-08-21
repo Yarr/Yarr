@@ -37,6 +37,7 @@ class Bookkeeper {
         ~Bookkeeper();
 
         void initGlobalFe(FrontEnd *fe) {g_fe = fe;}
+        void initGlobalFe(std::string chipType);
 
         // TODO should only add generic Fe class
         void addFe(FrontEnd *fe, unsigned txChannel, unsigned rxChannel);

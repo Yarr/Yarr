@@ -26,7 +26,7 @@
 #define PROCESSING_FEEDBACK_TRIGGER_TAG_Control -3  //!< HPRs in Strips
 #define PROCESSING_FEEDBACK_UNDEFINED_BCID -1
 
-//! \brief Information from data processors
+//! \brief RawData processing information from data processors
 typedef struct FeedbackProcessingInfo
 {
     unsigned packet_size = 0; //!< the size of the packet that the FE sent, i.e. RawData.getSize()
@@ -34,6 +34,8 @@ typedef struct FeedbackProcessingInfo
     int bcid = PROCESSING_FEEDBACK_UNDEFINED_BCID;
     unsigned n_clusters = 0;  //!< n_clusters in Strips & the number of hits in Pixels?
 } FeedbackProcessingInfo;
+
+class Bookkeeper;
 
 class FrontEnd {
     public:
@@ -53,6 +55,8 @@ class FrontEnd {
 		bool isActive() const;
 		void setActive(bool active);
         virtual void makeGlobal(){};
+        virtual std::unique_ptr<FrontEnd> getGlobal() {return nullptr;}
+        virtual void connectBookkeeper(Bookkeeper* k){};
        
         virtual void configure()=0;
         virtual int checkCom() {return 1;}

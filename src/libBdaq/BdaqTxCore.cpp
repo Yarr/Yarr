@@ -4,7 +4,6 @@
 #include "BdaqTxCore.h"
 #include "Bdaq.h"
 #include "logging.h"
-
 #include "BdaqRxCore.h"
 
 namespace {
@@ -31,7 +30,9 @@ void BdaqTxCore::writeFifo(uint32_t value) {
     // Commands are written thru RBCP (UDP) which has a maximum payload of
     // 255 bytes per packet. Thus, 4080 is the maxiumum integer multiple of 255
     // and 4 (we get 32-bit words) being less than 4096 (max buffer size).
+    // The issue has been resolved. DO NOT worry about sending large commands.
 }
+
 
 void BdaqTxCore::sendCommand() {
     if (cmdData.size() == 0) return;
@@ -66,10 +67,8 @@ void BdaqTxCore::sendCommand() {
             for (int i = 0; i < cmdDataPeriods.front(); i++) {
                 cmdDataCopy.push_back(cmdData.at(i));
             }
-
             int repetitions;
             repetitions = cmdData.size() / cmdDataPeriods.front();
-
             cmd.setData(cmdDataCopy);
             cmd.setSize(cmdDataCopy.size());
             cmd.setRepetitions(repetitions);
@@ -102,6 +101,7 @@ void BdaqTxCore::setCmdEnable(uint32_t value) {
     enMask = mask;
 }
 
+
 void BdaqTxCore::setCmdEnable(std::vector<uint32_t> channels) {
     uint32_t mask = 0;
     for (uint32_t channel : channels) {
@@ -117,12 +117,14 @@ void BdaqTxCore::setCmdEnable(std::vector<uint32_t> channels) {
     enMask = mask;
 }
 
+
 uint32_t BdaqTxCore::getCmdEnable() {
     std::stringstream d; 
     d << __PRETTY_FUNCTION__;
     logger->debug(d.str());
     return 0;
 }
+
 
 bool BdaqTxCore::isCmdEmpty() {
     std::stringstream d; 
@@ -131,7 +133,6 @@ bool BdaqTxCore::isCmdEmpty() {
     sendCommand();
     return true;
 }
-
 
 
 //==============================================================================
@@ -152,20 +153,15 @@ void BdaqTxCore::setTrigWord(uint32_t *word, uint32_t length) {
     }
 
     if (chipType == 1){ // it is RD53B (ItkpixV1)
-        for (uint i=0; i<trgData.size(); ++i) {  // it can be uncommented, but it has no effect
-            if(static_cast<int>(trgData.at(i)) == 0xAA){
-                trgData.erase(trgData.begin() + i);
-                trgData.insert(trgData.begin() + i, 0x81);
-                trgData.erase(trgData.begin() + i + 1);
-                 trgData.insert(trgData.begin() + i + 1, 0x7E);
-            }
-        }
-        for(int i=0; i<360; i++){
+        for(int i=0; i<68; i++){
             trgData.insert(trgData.begin(), 0x7E);
             trgData.insert(trgData.begin(), 0x81);
+            trgData.insert(trgData.begin(), 0xAA);
+            trgData.insert(trgData.begin(), 0xAA);
         }
     }
 }
+
 
 void BdaqTxCore::setTrigCnt(uint32_t count) {
     std::stringstream d; 
@@ -176,6 +172,7 @@ void BdaqTxCore::setTrigCnt(uint32_t count) {
     logger->debug("Trigger Count: {}", count);
 }
 
+
 void BdaqTxCore::setTrigEnable(uint32_t value) {
     std::stringstream d;
     d << __PRETTY_FUNCTION__ << " : Value 0x" << std::hex << value << std::dec;
@@ -183,6 +180,7 @@ void BdaqTxCore::setTrigEnable(uint32_t value) {
     // Emulating SPEC register
     trgEnable = value;
     // Timed Trigger (software implemented, for noise scans for example)
+
     if (timedTrigger) {
         if (value == 0x0) {
             timedTriggerThread.join();
@@ -205,13 +203,16 @@ void BdaqTxCore::setTrigEnable(uint32_t value) {
     logger->debug("Trigger Enable: {}", value);
 }
 
+
 uint32_t BdaqTxCore::getTrigEnable() {
     std::stringstream d; 
     d << __PRETTY_FUNCTION__;
     logger->debug(d.str());
     // Emulating SPEC register
+
     return trgEnable; 
 }
+
 
 void BdaqTxCore::maskTrigEnable(uint32_t value, uint32_t mask) {
     std::stringstream d; 
@@ -219,11 +220,13 @@ void BdaqTxCore::maskTrigEnable(uint32_t value, uint32_t mask) {
     logger->debug(d.str());
 }
 
+
 void BdaqTxCore::setTrigConfig(enum TRIG_CONF_VALUE cfg) {
     std::stringstream d; 
     d << __PRETTY_FUNCTION__ << " : Config 0x" << std::hex << cfg << std::dec;
     logger->debug(d.str());
 }
+
 
 void BdaqTxCore::setTrigFreq(double freq) {
     std::stringstream d; 
@@ -233,6 +236,7 @@ void BdaqTxCore::setTrigFreq(double freq) {
     // One RD53A command (16-bit) spans 4 BCs = 100 ns.
     // The idea is converting the period into NOOP commands (taking 100 ns each)
     // for the POST DELAY in the command buffer (trigger buffer).
+
     hardwareTriggerNoop = (1.0f/freq)/100e-9; // Only for hardware trigger mode.
     // For Timed trigger
     timedTriggerFreq = freq;
@@ -240,6 +244,7 @@ void BdaqTxCore::setTrigFreq(double freq) {
     logger->debug("Trigger Frequency: {}, NOOP Number: {}", freq, hardwareTriggerNoop);
 }
   
+
 void BdaqTxCore::setTrigTime(double time) {
     std::stringstream d; 
     d << __PRETTY_FUNCTION__ << " : Time " << time << " s, period " << m_clk_period <<std::endl;
@@ -254,16 +259,20 @@ void BdaqTxCore::setTrigTime(double time) {
         timedTrigger = true;
         timedTriggerTime = time;
     }
+
     logger->debug("Trigger Time: {}", time);
 }
+
 
 void BdaqTxCore::toggleTrigAbort() {
     std::stringstream d; 
     d << __PRETTY_FUNCTION__ << " : Toggling Trigger abort!";
     logger->debug(d.str());
+
     // Stop timed trigger loop
     timedTriggerAbort = true;
 }
+
 
 void BdaqTxCore::setTrigWordLength(uint32_t length) {
     std::stringstream d; 
@@ -271,10 +280,12 @@ void BdaqTxCore::setTrigWordLength(uint32_t length) {
     logger->debug(d.str());
 }
 
+
 bool BdaqTxCore::isTrigDone() {
     std::stringstream d; 
     d << __PRETTY_FUNCTION__;
     logger->debug(d.str());
+
     // Timed Trigger
     if (timedTrigger) {
         return timedTriggerDone;
@@ -283,6 +294,7 @@ bool BdaqTxCore::isTrigDone() {
         return cmd.isDone();
     }
 }
+
 
 //------------------------------------------------------------------------------
 // Hardware Trigger
@@ -298,17 +310,20 @@ void BdaqTxCore::hardwareTriggerSet() {
         std::vector<uint8_t> fixPostDelay(hardwareTriggerNoop*2, 0x69); 
         trgData.insert(trgData.end(), fixPostDelay.begin(), fixPostDelay.end());
     }
-    cmd.setData(trgData);
-    cmd.setSize(trgData.size());
-    cmd.setRepetitions(hardwareTriggerCount);
-    trgData.clear();
 }
 
 
 void BdaqTxCore::hardwareTriggerRun() {
-    cmd.start();
-    while(!cmd.isDone()); //wait for completion.
+    for(int i=0; i<hardwareTriggerCount; i++){
+        cmd.setData(trgData);
+        cmd.setSize(trgData.size());
+        cmd.setRepetitions(1);
+        cmd.start();
+        while(!cmd.isDone()); //wait for completion.
+    }
+    trgData.clear();
 }
+
 
 //------------------------------------------------------------------------------
 // Timed Trigger (software) Emulation
@@ -322,6 +337,7 @@ void BdaqTxCore::timedTriggerSet() {
     logger->debug("Timed Trigger Size (in bytes): {}", trgData.size());
     trgData.clear();
 }
+
 
 void BdaqTxCore::timedTriggerRun() {
     logger->debug("Timed Trigger Frequency (Hz) = {}", timedTriggerFreq);
