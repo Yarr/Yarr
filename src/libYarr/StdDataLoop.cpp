@@ -70,12 +70,12 @@ void StdDataLoop::execPart2() {
     // to keep track of max time for the iteration
     std::chrono::microseconds timeElapsed;
     std::chrono::time_point<Clock> timeStart = Clock::now();
-    
+
     // conditions to end the iteration: all triggers are received or out of time
     bool receivedAllTriggers = true;
     bool thereIsStillTime = false;
 
-    //! initial wait before reading data                                                                                                                                    
+    //! initial wait before reading data
     std::this_thread::sleep_for(g_rx->getWaitTime());
 
     SPDLOG_LOGGER_DEBUG(sdllog, "Reading Rx data...");
@@ -140,7 +140,7 @@ void StdDataLoop::execPart2() {
         if (newRawDataCount == 0) {
           if (emptyRxCycle)
             SPDLOG_LOGGER_TRACE(sdllog, "\033[1m\033[31m--> Received {} words in {} iterations up to now, but 0 new ones in this (empty) cycle!\033[0m", allRawDataCount, nAllRxReadIterations);
-          else 
+          else
             SPDLOG_LOGGER_DEBUG(sdllog, "\033[1m\033[31m--> Received {} words in {} iterations up to now, but 0 new ones! Trying to read more...\033[0m", allRawDataCount, nAllRxReadIterations);
         } else {
           SPDLOG_LOGGER_DEBUG(sdllog, "--> Received {} words in {} iterations!", allRawDataCount, nAllRxReadIterations);
@@ -198,7 +198,7 @@ void StdDataLoop::execPart2() {
         emptyRxCycle = newRawDataCount==0 && !gotNewFeedback;
 
         // test whether all channels received all triggers
-        unsigned channelsWithAllTrigsN = 0; // 
+        unsigned channelsWithAllTrigsN = 0; // number of channels that have received all triggers
         uint32_t nAllReceivedTriggersSoFar = 0;
         for (auto &[id, receivedTriggers] : channelReceivedTriggersCnt) {
             //SPDLOG_LOGGER_DEBUG(sdllog, "--> StdDataLoop::execPart2 : chan {} received {} triggers from {}", id, received_triggers, ntriggersToReceive);

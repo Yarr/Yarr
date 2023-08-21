@@ -27,10 +27,6 @@ StdDict::registerFrontEnd
 bool star_chips_v1_registered =
 StdDict::registerFrontEnd
   ("Star_vH0A1", []() { return std::unique_ptr<FrontEnd>(new StarChips(1, 0)); });
-// same as PPA, but this frontend has feedback data processor
-bool star_chips_feedback_registered =
-StdDict::registerFrontEnd
-  ("StarFeedback", []() { return std::unique_ptr<FrontEnd>(new StarChips(0, 0)); });
 // a.k.a PPB
 bool star_chips_v1_both_registered =
 StdDict::registerFrontEnd

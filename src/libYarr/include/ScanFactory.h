@@ -12,7 +12,6 @@
 #include "ScanBase.h"
 
 #include "FeedbackBase.h"
-#include "StdTriggerAction.h"
 #include "storage.hpp"
 #include <functional>
 

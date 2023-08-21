@@ -12,6 +12,7 @@
 #include <iostream>
 
 #include "AllStdActions.h"
+#include "StdTriggerAction.h"
 #include "ClassRegistry.h"
 
 #include "logging.h"

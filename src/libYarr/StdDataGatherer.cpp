@@ -115,7 +115,7 @@ void StdDataGatherer::execPart2() {
           g_tx->toggleTrigAbort();
         }
 
-        // Whether to execute another Rx cycle:                                                                                                                             
+        // Whether to execute another Rx cycle:
         receivingRxData = !g_tx->isTrigDone();
     }
 
