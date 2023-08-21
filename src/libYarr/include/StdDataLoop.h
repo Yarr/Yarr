@@ -26,12 +26,11 @@ class StdDataLoop: public LoopActionBase, public StdDataAction {
         void execPart1() override;
         void execPart2() override;
 
-        uint32_t n_triggersToReceive = 0;
-        uint32_t n_triggersLostTolerance = 0; // allowed number of lost triggers
-        uint32_t m_maxConsecutiveRxReads = 2;
-        std::chrono::microseconds m_totalIterationTime{5000000};
-        std::chrono::microseconds m_rxReadDelay{100};
-        std::chrono::microseconds m_dataProcessingTime{100};
+        uint32_t ntriggersToReceive = 0;
+        std::chrono::microseconds m_maxIterationTime{5000000}; // in microseconds
+        uint32_t m_maxConsecutiveRxReads = 2; // the same logic as in StdDataGatherer: we don't want to stuck in a continuous stream of Rx Data
+        std::chrono::microseconds m_averageDataProcessingTime{100};
+        uint32_t m_triggersLostTolerance = 0; // allowed number of lost triggers
 };
 
 #endif
