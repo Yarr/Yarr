@@ -224,14 +224,14 @@ void StdDataLoop::execPart2() {
         if (!receivingRxData || !emptyRxCycle)
           SPDLOG_LOGGER_DEBUG(sdllog, "one more Rx cycle: {} -- triggerIsDone={} still time={} = {} < {} and all trigs={} (n channels w all trigs = {}, n trigs = {}, n trigs rrs hprs errs = {} {} {} {})",
             receivingRxData,
-            triggerIsDone, thereIsStillTime, timeElapsed.count(), g_rx->getWaitTime().count(), receivedAllTriggers,
+            triggerIsDone, thereIsStillTime, timeElapsed.count(), m_maxIterationTime.count(), receivedAllTriggers,
             channelsWithAllTrigsN, nAllReceivedTriggersSoFar,
             iterationNtrigs, iterationNrrs, iterationNctrl, iterationNerrs);
 
         else
           SPDLOG_LOGGER_TRACE(sdllog, "(empty) one more Rx cycle: {} -- triggerIsDone={} still time={} = {} < {} and all trigs={} (n channels w all trigs = {}, n all trigs = {})",
             receivingRxData,
-            triggerIsDone, thereIsStillTime, timeElapsed.count(), g_rx->getWaitTime().count(), receivedAllTriggers,
+            triggerIsDone, thereIsStillTime, timeElapsed.count(), m_maxIterationTime.count(), receivedAllTriggers,
             channelsWithAllTrigsN, nAllReceivedTriggersSoFar);
     }
 
