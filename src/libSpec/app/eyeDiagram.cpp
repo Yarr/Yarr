@@ -13,7 +13,6 @@ namespace fs = std::filesystem;
 #include "HwController.h"
 #include "FrontEnd.h"
 #include "AllChips.h"
-#include "Rd53b.h"
 #include "ScanHelper.h"
 #include "Utils.h"
 
@@ -30,7 +29,7 @@ void printHelp() {
               << "  -r <hw_controller_file>   Specify hardware controller JSON path.\n"
               << "  -c <connectivity_file>    Specify connectivity config JSON path.\n"
               << "  -t <test_size>            Specify the error counter test size.\n"
-              << "  -s                   Update the controller condfig with the best delay values\n" ;
+              << "  -n                   Don't update the controller condfig with the best delay values\n" ;
 }
 
 std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn, int fe_num) {
@@ -79,28 +78,28 @@ int main(int argc, char **argv) {
     std::string hw_controller_filename = "";
     std::string connectivity_filename = "";
     uint32_t test_size = 10e5;
-    bool save_delay=false;
+    bool save_delay=true;
 
-    while ((c = getopt(argc, argv, "hr:c:t:s")) != -1) {
-		switch (c) {
-		case 'h':
-		    printHelp();
-		    return 0;
+    while ((c = getopt(argc, argv, "hr:c:t:n")) != -1) {
+        switch (c) {
+        case 'h':
+            printHelp();
+            return 0;
 		case 'r':
             hw_controller_filename = optarg;
-		    break;
+            break;
         case 'c' :
             connectivity_filename = optarg;
             break;
         case 't' :
             test_size = std::stoi(optarg);
             break;
-        case 's' :
-            save_delay = true;
+        case 'n' :
+            save_delay = false;
             break;    
 		default:
-		    logger->critical("Invalid command line parameter(s) given!");
-		    return -1;
+            logger->critical("Invalid command line parameter(s) given!");
+            return -1;
 	    }
     }
 
@@ -140,10 +139,10 @@ int main(int argc, char **argv) {
     auto jconn = ScanHelper::openJsonFile(connectivity_filename);
 
     std::string chipType = ScanHelper::loadChipConfigs(jconn, false, Utils::dirFromPath(connectivity_filename));
-
     auto chip_configs = jconn["chips"];
     size_t n_chips = chip_configs.size();
     uint32_t cdrclksel = 0;
+    uint32_t serblckperiod = 50;
 
     for (size_t ichip = 0; ichip < n_chips; ichip++) {
         if (chip_configs[ichip]["enable"] == 0)
@@ -155,32 +154,37 @@ int main(int argc, char **argv) {
         }
 
         auto fe = init_fe(hw, jconn, ichip);
+        auto cfg = dynamic_cast<FrontEndCfg*>(fe.get());
+        std::string current_chip_name = cfg->getName();
+
         if(!fe) {
             std::cerr << "WARNING: Skipping chip at index " << ichip << " in connectivity file" << std::endl;
             continue;
         } else {
             auto jchip = ScanHelper::openJsonFile(chip_register_file_path);
-            cdrclksel = jchip["RD53B"]["GlobalConfig"]["CdrClkSel"];
-            fe->configure();
+            fe->configure();          
+
+            cdrclksel = jchip[chipType]["GlobalConfig"]["CdrClkSel"];
+            serblckperiod = jchip[chipType]["GlobalConfig"]["ServiceBlockPeriod"];
+
             // Wait for fifo to be empty
             std::this_thread::sleep_for(std::chrono::microseconds(10));
             while(!hw->isCmdEmpty());
         }
     }
 
-    double speed=1280*10e6/(cdrclksel+1);
-
+    double clk_speed=37.5;
+    double readout_speed=clk_speed*32*10e6/(cdrclksel+1);
+ 
     double time=0.0;
-    time=1/speed*66*test_size;
-    double clkcycles = 1/(40.0*10e6);
-    double count=time/clkcycles/101.0;
+    time=1/readout_speed*66*test_size;
+    double clkcycles = 1/(clk_speed*10e6);
+    double count=time/clkcycles/(serblckperiod*2+1);
     int min=std::floor(count);
     int max=std::ceil(count);
-    int wait = time*4*10000+100;
-    std::cout << time << " " << clkcycles << " " << count << " " << min << " " << max << " " << wait << std::endl;
+    int wait = time*4*10000;
 
     std::ofstream file;
-    //file.open("results/results_"+std::to_string(test_size)+".txt");
     file.open("results.txt");
 
 	// Enable manual delay control
@@ -257,7 +261,7 @@ int main(int argc, char **argv) {
         double best_val=0;
         double best_width=0;
         for (uint32_t j = 0 ; j<32; j++) {
-            if (resultVec[i][j]==1){
+            if (resultVec[i][j]==1 && j<31){
                 if (width==0) start_val=j;
                 width+=1; 
             } else {
