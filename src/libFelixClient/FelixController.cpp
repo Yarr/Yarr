@@ -36,17 +36,15 @@ void FelixController::loadConfig(const json &j) {
     auto clientCfg = j["FelixClient"];
 
     // Properties
-    // See https://gitlab.cern.ch/atlas-tdaq-felix/felix-interface/-/blob/4.2.x/felix/felix_client_properties.h
-    fcConfig.property[FELIX_CLIENT_LOCAL_IP_OR_INTERFACE] = clientCfg["local_ip_or_interface"];
-    fcConfig.property[FELIX_CLIENT_LOG_LEVEL] = clientCfg["log_level"];
+    // See https://gitlab.cern.ch/atlas-tdaq-felix/felix-interface/-/blob/master/felix/felix_client_properties.h
+    fcConfig.property[FELIX_CLIENT_LOCAL_IP_OR_INTERFACE] = clientCfg["localIPorInterface"];
+    fcConfig.property[FELIX_CLIENT_LOG_LEVEL] = clientCfg["logLevel"];
+    fcConfig.property[FELIX_CLIENT_BUS_DIR] = clientCfg["busDir"];
+    fcConfig.property[FELIX_CLIENT_BUS_GROUP_NAME] = clientCfg["busGroupName"];
+    fcConfig.property[FELIX_CLIENT_VERBOSE_BUS] = clientCfg["verboseBus"] ? "True" : "False";
     fcConfig.property[FELIX_CLIENT_TIMEOUT] = std::to_string(unsigned(clientCfg["timeout"]));
-    fcConfig.property[FELIX_CLIENT_NETIO_PAGES] = std::to_string(unsigned(clientCfg["netio_pages"]));
-    fcConfig.property[FELIX_CLIENT_NETIO_PAGESIZE] = std::to_string(unsigned(clientCfg["netio_pagesize"]));
-    fcConfig.property[FELIX_CLIENT_BUS_INTERFACE] = clientCfg["bus_interface"];
-    fcConfig.property[FELIX_CLIENT_BUS_GROUP_NAME] = clientCfg["bus_group_name"];
-    fcConfig.property[FELIX_CLIENT_BUS_DIR] = clientCfg["bus_dir"];
-    fcConfig.property[FELIX_CLIENT_VERBOSE_BUS] = clientCfg["verbose_bus"] ? "True" : "False";
-    fcConfig.property[FELIX_CLIENT_VERBOSE_ZYRE] = clientCfg["verbose_zyre"] ? "True" : "False";
+    fcConfig.property[FELIX_CLIENT_NETIO_PAGES] = std::to_string(unsigned(clientCfg["netioPages"]));
+    fcConfig.property[FELIX_CLIENT_NETIO_PAGESIZE] = std::to_string(unsigned(clientCfg["netioPagesize"]));
 
     // Construct felix client
     client = std::make_shared<FelixClientThread>(fcConfig);
@@ -58,8 +56,8 @@ void FelixController::loadConfig(const json &j) {
 
   try {
     auto txCfg = j["ToFLX"];
-    FelixTxCore::loadConfig(txCfg);
     FelixTxCore::setClient(client);
+    FelixTxCore::loadConfig(txCfg);
   } catch (std::runtime_error &je) {
     fclog->error("Failed to load FelixTxCore config");
     throw je;
@@ -67,60 +65,12 @@ void FelixController::loadConfig(const json &j) {
 
   try {
     auto rxCfg = j["ToHost"];
-    FelixRxCore::loadConfig(rxCfg);
     FelixRxCore::setClient(client);
+    FelixRxCore::loadConfig(rxCfg);
   } catch (std::runtime_error &je) {
     fclog->error("Failed to load FelixRxCore config");
     throw je;
   }
-}
-
-bool FelixController::readFelixRegister(
-  const std::string& registerName, uint64_t& value)
-{
-  fclog->debug("Read FELIX register {}", registerName);
-
-  bool success = false;
-
-  // A dummy fid made from the correct did and cid, but arbitrary link number
-  // send_cmd will map this to the proper fid for register access
-  std::vector<uint64_t> fids = {FelixTxCore::fid_from_channel(42)};
-
-  // felix-register can potentially serve multiple devices
-  std::vector<FelixClientThread::Reply> replies;
-
-  auto status_summary = client->send_cmd(
-    fids, FelixClientThread::Cmd::GET, {registerName}, replies
-    );
-
-  if (replies.empty()) {
-    fclog->warn("Fail to read register {}. No replies. Status: {}", registerName, FelixClientThread::to_string(status_summary));
-  } else {
-    // The current setup assumes only one FELIX card
-    // replies.size() is expected to be one.
-
-    if (replies.size() > 1) {
-      fclog->warn("Received more than one replies from reading FELIX register. There are likely more than one active FELIX cards in the system. Take only the first entry for now.");
-    }
-    const auto& re = replies[0];
-
-    // check status
-    success = re.status == FelixClientThread::Status::OK;
-    if (not success) {
-      fclog->warn("Fail to read register {}. Status: {}", registerName, FelixClientThread::to_string(re.status));
-      fclog->warn(re.message);
-    } else {
-      // status OK
-      value = re.value;
-
-      fclog->trace("OK from {}", re.ctrl_fid);
-      fclog->debug("Register value = 0x{:x}", re.value);
-      if (not re.message.empty()) fclog->debug("message: {}", re.message);
-    }
-
-  } // if (replies.empty())
-
-  return success;
 }
 
 const json FelixController::getStatus() {

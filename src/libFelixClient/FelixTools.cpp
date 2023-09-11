@@ -52,3 +52,13 @@ uint64_t FelixTools::get_fid( // Version [63:60] always 0x1
 
   return fid.to_ullong();
 }
+
+unsigned FelixTools::link_from_fid(uint64_t fid) {
+  // bit [34:22]
+  return (fid >> 22) & 0x1fff;
+}
+
+unsigned FelixTools::elink_from_fid(uint64_t fid) {
+  // bit [21:16]
+  return (fid >> 16) & 0x3f;
+}

@@ -44,6 +44,9 @@ public:
   void resetTriggerLogic() override; 	// reset the trigger logic
   uint32_t getTrigInCount() override; 	// get the number of triggers in
 
+  bool readFelixRegister(const std::string&, uint64_t&);
+  bool writeFelixRegister(const std::string&, const std::string&);
+
 protected:
 
   void loadConfig(const json &j); 		     // read configuration from json
@@ -59,12 +62,21 @@ protected:
 
   void fillFifo(std::vector<uint8_t>& fifo, uint32_t value);
   void prepareFifo(std::vector<uint8_t>& fifo);
+  void sendFifo(FelixID_t fid, std::vector<uint8_t>& fifo);
+
+  void setupBroadcast();
+  void updateFelixBroadcastRegs();
 
   // Triggers
   void trigger();
   void doTriggerCnt(); // send a defined number of triggers
   void doTriggerTime(); // send triggers for a period of time
   void prepareTrigger();
+  void prepareTrigger(std::vector<uint8_t>&);
+
+  // FELIX register access
+  FelixClientThread::Reply accessFelixRegister(FelixClientThread::Cmd, const std::vector<std::string>&);
+  bool checkReply(const FelixClientThread::Reply&);
 
   std::map<FelixID_t, bool> m_enables; // enable flag for each elink
   std::map<FelixID_t, std::vector<uint8_t> > m_fifo;     // data buffer
@@ -80,6 +92,17 @@ protected:
   uint32_t m_trigWordLength {4};           // number of trigger words
 
   bool m_flip {false};
+
+  bool m_broadcast {true};
+  uint32_t m_numEnabledChns {0};
+
+  // GBT link and e-link number for broadcasting
+  static constexpr unsigned BroadcastLink = 0x1f;
+  static constexpr unsigned BroadcastElink = 0x3f;
+  static constexpr unsigned BroadcastChn = BroadcastLink << 6 | BroadcastElink; // 0x7ff
+
+  // Number of bits for the FELIX broadcast enable registers
+  static constexpr unsigned NBITS_BROADCAST_ENABLE = 42;
 
   // For Felix ID
   FelixID_t fid_from_channel(uint32_t chn);

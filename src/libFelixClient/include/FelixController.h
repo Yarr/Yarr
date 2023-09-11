@@ -18,8 +18,6 @@ public:
   void loadConfig(json const &j) override;
   const json getStatus() override;
 
-  bool readFelixRegister(const std::string&, uint64_t&);
-
 private:
 
   std::shared_ptr<FelixClientThread> client;
