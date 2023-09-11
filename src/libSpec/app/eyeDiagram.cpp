@@ -164,8 +164,15 @@ int main(int argc, char **argv) {
             auto jchip = ScanHelper::openJsonFile(chip_register_file_path);
             fe->configure();          
 
-            cdrclksel = jchip[chipType]["GlobalConfig"]["CdrClkSel"];
-            serblckperiod = jchip[chipType]["GlobalConfig"]["ServiceBlockPeriod"];
+            if (jchip.contains({chipType, "GlobalConfig", "CdrClkSel"}) &&
+                jchip.contains({chipType, "GlobalConfig", "ServiceBlockPeriod"})) {
+                cdrclksel = jchip[chipType]["GlobalConfig"]["CdrClkSel"];
+                serblckperiod = jchip[chipType]["GlobalConfig"]["ServiceBlockPeriod"];
+            } else {
+                std::cerr << "ERROR: Could not load \"CdrClkSel\" or \"ServiceBlockPeriod\" from config. Assuming defaults (0, 50)." << std::endl;
+                cdrclksel = 0;
+                serblckperiod = 50;
+            }
 
             // Wait for fifo to be empty
             std::this_thread::sleep_for(std::chrono::microseconds(10));
