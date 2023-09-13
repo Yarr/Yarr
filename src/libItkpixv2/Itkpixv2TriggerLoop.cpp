@@ -76,7 +76,7 @@ void Itkpixv2TriggerLoop::setTrigDelay(uint32_t delay, uint32_t cal_edge_delay=0
     
     // Rearm
     std::array<uint16_t, 3> armWords = Itkpixv2::genCal(16, 1, 0, 0, 0, 0);
-    m_trigWord[1] = 0xAAAA0000 | armWords[0];
+    m_trigWord[1] = ((uint32_t) Itkpixv2::genTrigger(0x1, 53)[0] << 16) | armWords[0];
     m_trigWord[0] = ((uint32_t)armWords[1]<<16) | armWords[2];
     
     logger->debug("Trigger buffer set to:");
