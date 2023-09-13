@@ -24,10 +24,11 @@ LIST(APPEND apps
         specBenchmarkDma
         specBenchmarkSingle
         specComTest
-	switchLPM
+        switchLPM
         specErrorCheckDma
         specErrorCheckSingle
-        specS6programFpga)
+        specS6programFpga
+        specSoftReset)
 
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)
