@@ -86,7 +86,7 @@
     "name": "ThresholdScan",
     "prescan": {
         "InjDigEn": 0,
-        "InjVcalMed": 500,
+        "InjVcalMed": 200,
         "InjVcalRange": 1,
         "Latency": 56
     }
