@@ -83,6 +83,7 @@
         ],
         "name": "TunePixelTreshold",
         "prescan": {
+            "InjVcalMed": 200,
             "InjVcalRange": 1,
             "InjDigEn": 0,
             "Latency": 60
