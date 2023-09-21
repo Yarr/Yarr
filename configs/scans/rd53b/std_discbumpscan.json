@@ -4,7 +4,7 @@
             "0": {
                 "algorithm": "OccupancyAnalysis",
                 "config": {
-                    "createMask": true
+                    "createMask": false
                 }
             },
             "1": {
