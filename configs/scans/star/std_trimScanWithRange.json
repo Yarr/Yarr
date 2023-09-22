@@ -44,9 +44,9 @@
           "max": 31,
           "min": 0,
           "step": 1,
-          "parameter":"TrimDAC"
+          "parameter":"TRIMs"
         },
-        "loopAction": "StarTrimDacLoop"
+        "loopAction": "StdParameterLoop"
       },
       {
         "config": {
