@@ -53,16 +53,34 @@ void StarTrimDacAnalysis::init(ScanBase *s) {
 */
 void StarTrimDacAnalysis::processHistogram(HistogramBase *h) {
     std::string hname = h->getName();
-    if (h->getName().find("JsonData_StarThresholdResult")!=0)
+    if (h->getName().find("ThresholdMap")!=0) {
+        // Looking for threshold data
         return;
+    }
 
-    //Getting the input JsonData
-    const StarJsonData* jd = new StarJsonData(*((JsonData*)h));
     // Get the scan parameter value (TrimDAC)
     unsigned parTrimRange = h->getStat().get(parTrimRange_loopindex);
     unsigned parTrimDac = h->getStat().get(parTrimDac_loopindex);
 
-    m_jDvsTrimRangeTrimDac[TrimRangeTrimDac(parTrimRange,parTrimDac)].reset(jd);
+    // Pull out the relevant threshold information here
+    auto trim_key = TrimRangeTrimDac(parTrimRange,parTrimDac);
+
+    fillOneTrimDacInfoFromThreshold(trim_key, *(Histo2d*)h);
+
+    if(!aggregated_loop_status) {
+      //Creating a new LoopStatus "agregating" the POI in order to be used in outputs
+      std::vector<unsigned> newLSstat;
+      std::vector<LoopStyle> newLSstyle;
+
+      LoopStatus lStat = h->getStat();
+      for (unsigned n=0; n<lStat.size(); n++) {
+        if (n!=parTrimRange_loopindex && n!=parTrimDac_loopindex) {
+          newLSstat.push_back( lStat.get(n) );
+          newLSstyle.push_back( (LoopStyle) lStat.getStyle(n) );
+        }
+      }
+      aggregated_loop_status = std::make_unique<LoopStatus>(std::move(newLSstat), newLSstyle);
+    }
 }
 
 
@@ -70,72 +88,58 @@ void StarTrimDacAnalysis::processHistogram(HistogramBase *h) {
 /*!
 */
 std::unique_ptr<StarJsonData> StarTrimDacAnalysis::initOutputJsonData() const {
-        //Creating a new LoopStatus "agregating" the POI in order to be used in outputs
-        std::vector<unsigned> newLSstat;
-        std::vector<LoopStyle> newLSstyle;
-        std::shared_ptr<const StarJsonData> spFirstJD = m_jDvsTrimRangeTrimDac.begin()->second;
-        const StarJsonData* firstJD = spFirstJD.get();
-        LoopStatus lStat = firstJD->getStat();
-        for (unsigned n=0; n<lStat.size(); n++)
-                if (n!=parTrimRange_loopindex && n!=parTrimDac_loopindex) {
-                        newLSstat.push_back( lStat.get(n) );
-                        newLSstyle.push_back( (LoopStyle) lStat.getStyle(n) );
-                }
-        LoopStatus newLoopStatus(std::move(newLSstat), newLSstyle);
+        //Default to empty data
+        LoopStatus newLoopStatus;
+        if(!aggregated_loop_status) {
+            alog->warn("No data arrived to make LoopStatus for StarJsonData object");
+        } else {
+            newLoopStatus = *aggregated_loop_status;
+        }
+
         alog->debug("creating StarJsonData object to store results");
-        StarJsonData * outJD = new StarJsonData("JsonData_StarTrimDACResult", newLoopStatus);
-        outJD->setJsonDataType("JsonData_StarTrimDACResult");
-        std::unique_ptr<StarJsonData> upJD;
-        upJD.reset(outJD);
+        std::unique_ptr<StarJsonData> upJD(new StarJsonData("JsonData_StarTrimDACResult", *aggregated_loop_status));
+        upJD->setJsonDataType("JsonData_StarTrimDACResult");
 
         return upJD;
 }
 
+//! Fills a map of TrimDac vs Threshold results for each channel identified as iChip * 128 + strip number
+void StarTrimDacAnalysis::fillOneTrimDacInfoFromThreshold(TrimRangeTrimDac key, Histo2d &thresh_hist) {
+  if(grTrimDacVsThresholdForChip.empty()) {
+    // Some debugging plots on the way
+    for (unsigned int iChip=0; iChip<(nCol/128); iChip++) {
+      grTrimDacVsThresholdForChip.push_back(std::make_unique<GraphErrors>("TrimDacVsThreshold_Chip" + std::to_string(iChip)));
+      grTrimDacVsThresholdForChip.back()->setXaxisTitle("Threshold");
+      grTrimDacVsThresholdForChip.back()->setYaxisTitle("TrimRange*32 + TrimDAC");
 
-//! Fills a large map of TrimDac vs Threshold results for each channel identified as iChip * 128 + strip number
-/*!
-  \param mapThresholdVsTrimDacVsChannelNumber Large output map of TrimRange/TrimDac vs Threshold result vs channel
-  \param listThresholds Output list of reached thresholds over all channels (later used to determine the range of threshold over which to look for a target threshold
-*/
-void StarTrimDacAnalysis::fillGlobalMapOfTrimDacVsThreshold(std::map<unsigned, std::map<TrimRangeTrimDac, double> > & mapThresholdVsTrimDacVsChannelNumber, std::vector<double> & listThresholds) const {
+      hDistThr.push_back(std::make_unique<Histo1d>("ThresholdDist", 120, 0, 120));
+      hDistThr.back()->setXaxisTitle("Threshold [e]");
+      hDistThr.back()->setYaxisTitle("Number of channels");
+    }
+  }
+
   //Storing all input results in big map that will later be used to search for the best TrimDac and list of potential targets
   for (unsigned int iChip=0; iChip<(nCol/128); iChip++) {
-    //Will also fill some debugging plots on the way
-    GraphErrors* grTrimDacVsThresholdForChip = new GraphErrors("TrimDacVsThreshold_Chip" + std::to_string(iChip));
-    grTrimDacVsThresholdForChip->setXaxisTitle("Threshold");
-    grTrimDacVsThresholdForChip->setYaxisTitle("TrimRange*32 + TrimDAC");
-    Histo1d *hDistThr = new Histo1d("ThresholdDist", 120, 0, 120);
-    hDistThr->setXaxisTitle("Threshold [e]");
-    hDistThr->setYaxisTitle("Number of channels");
-
     //Filling the map and the plots
-    for (auto jDvsTrimDac : m_jDvsTrimRangeTrimDac) {
-      unsigned trimRange = jDvsTrimDac.first.range();
-      unsigned trimDac   = jDvsTrimDac.first.dac();
-      for (unsigned iStrip=0; iStrip<128; iStrip++){
-        for (unsigned row=0; row<2; row++) {
-          std::shared_ptr<const StarJsonData> spJD = jDvsTrimDac.second;
-          const StarJsonData* jd = spJD.get();
-          double thr = jd->getValForProp({"ABCStar_" + std::to_string(iChip), "Threshold", "Row" + std::to_string(row)}, iStrip).value_or(-999);
-          if (thr!=-999) {
-            mapThresholdVsTrimDacVsChannelNumber[iStrip + 128*row + iChip*256][TrimRangeTrimDac(trimRange,trimDac)] = thr;
-            listThresholds.push_back(thr);
-            grTrimDacVsThresholdForChip->addPoint(thr, trimRange*32 + trimDac);
-            hDistThr->fill(thr);
-          }
-        } //end of loop over rows
-      } //end loop over strips
-    }//end of loop over trim dacs & trim ranges
-    //Dumping debugging plots
-    std::unique_ptr<GraphErrors> upgrTrimDacVsThresholdForChip;
-    upgrTrimDacVsThresholdForChip.reset(grTrimDacVsThresholdForChip);
-    output->pushData(std::move(upgrTrimDacVsThresholdForChip));
-    std::unique_ptr<Histo1d> uphDistThr;
-    uphDistThr.reset(hDistThr);
-    output->pushData(std::move(uphDistThr));
-  }//end of loop over chips to fill in the global map
-}
+    for (unsigned iStrip=0; iStrip<128; iStrip++){
+      for (unsigned row=0; row<2; row++) {
+        // auto thresh_info spJD = jDvsTrimDac.second;
 
+        int bin = thresh_hist.binNum(iChip * 128 + iStrip + 1, row + 1);
+
+        double thr = thresh_hist.getBin(bin);
+
+        mapThresholdVsTrimDacVsChannelNumber[iStrip + 128*row + iChip*256][key] = thr;
+        listThresholds.push_back(thr);
+        int trimRange = key.range();
+        int trimDac = key.dac();
+
+        grTrimDacVsThresholdForChip[iChip]->addPoint(thr, trimRange*32 + trimDac);
+        hDistThr[iChip]->fill(thr);
+      } //end of loop over rows
+    } //end loop over strips
+  }//end of loop over chips
+}
 
 //! Loops over the inputs and finds the list of used TrimRanges and returns it
 /*!
@@ -289,17 +293,20 @@ void StarTrimDacAnalysis::makeSummaryPlotsForChip(const std::map<unsigned, std::
 /*!
 */
 void StarTrimDacAnalysis::end() {
-        if (!m_jDvsTrimRangeTrimDac.size())
+        // Return if no histogram data arrived
+        if (listThresholds.empty())
                 return;
 
         //Creating a new LoopStatus "agregating" the POI in order to be used in outputs
-        std::unique_ptr<StarJsonData> upJD = initOutputJsonData();
+        std::unique_ptr<StarJsonData> upJD = std::move(initOutputJsonData());
         StarJsonData * outJD = upJD.get();
 
-        //Filling in map with all thresholds corresponding to all TrimDac values for all channels
-        std::map<unsigned, std::map<TrimRangeTrimDac, double> > mapThresholdVsTrimDacVsChannelNumber;
-        std::vector<double> listThresholds;
-        fillGlobalMapOfTrimDacVsThreshold(mapThresholdVsTrimDacVsChannelNumber, listThresholds);
+        // Send debug plots first
+        for (unsigned int iChip=0; iChip<(nCol/128); iChip++) {
+          //Dumping debugging plots
+          output->pushData(std::move(grTrimDacVsThresholdForChip[iChip]));
+          output->pushData(std::move(hDistThr[iChip]));
+        }//end of loop over chips to fill in the global map
 
         //Doing here the search for the best target Threshold looping all m_jDvsTrimDac (i.e. finding the position "threshold_max" of maximum in the distribution of Thresholds having the largest peak)
 

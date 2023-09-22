@@ -14,6 +14,9 @@
 
 #include "AnalysisAlgorithm.h"
 
+#include "GraphErrors.h"
+#include "Histo2d.h"
+
 class StarJsonData;
 
 struct TrimRangeTrimDac {
@@ -43,7 +46,14 @@ class StarTrimDacAnalysis : public AnalysisAlgorithm {
 
 
     private:
-        std::map<TrimRangeTrimDac, std::shared_ptr<const StarJsonData>> m_jDvsTrimRangeTrimDac; //!< Internal map of JsonData scan inputs identified by TrimRange/TrimDAC values
+	std::map<unsigned, std::map<TrimRangeTrimDac, double> > mapThresholdVsTrimDacVsChannelNumber;
+	std::vector<double> listThresholds;
+
+        std::unique_ptr<LoopStatus> aggregated_loop_status;
+
+        std::vector<std::unique_ptr<GraphErrors>> grTrimDacVsThresholdForChip;
+        std::vector<std::unique_ptr<Histo1d>> hDistThr;
+
 	unsigned parTrimRange_loopindex=0;                        //!< LoopStatus parameter index of TrimRange during scan
 	unsigned parTrimDac_loopindex=0;                          //!< LoopStatus parameter index of TrimDac during scan
 
@@ -51,7 +61,8 @@ class StarTrimDacAnalysis : public AnalysisAlgorithm {
 
 	std::unique_ptr<StarJsonData> initOutputJsonData() const; //!< Initializes an output JsonData object that will store the obtained TrimDAC values
 
-	void fillGlobalMapOfTrimDacVsThreshold(std::map<unsigned, std::map<TrimRangeTrimDac, double> > & mapThresholdVsTrimDacVsChannelNumber, std::vector<double> & listThresholds) const; //!< Fills a large map of TrimRange/TrimDac vs Threshold results for each channel identified as iChip * 128 + strip number
+        //! Fill info for one Trim point with Threshold results
+        void fillOneTrimDacInfoFromThreshold(TrimRangeTrimDac key, Histo2d &thresh_hist);
 
 	std::map<int, double> findTargetThresholds(const std::map<unsigned, std::map<TrimRangeTrimDac, double> > & mapThresholdVsTrimDacVsChannelNumber, const std::vector<double> & listThresholds, StarJsonData * outJD) const; //!< Loops over potential target thresholds and retains the ones leading to the maximum channel multiplicity (i.e. maximizing the number of channels able to reach such a target threshold with any value of TrimDac) for each chip or overall
 
