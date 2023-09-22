@@ -2,23 +2,19 @@
   "scan": {
     "analysis": {
       "0": {
-        "algorithm": "StarScurveFitter",
+        "algorithm": "ScurveFitter",
         "config": {
           "reverse": true,
-          "parametersOfInterest": ["ABCs_BVT"],
-          "dumpStarJsonDataResults" : true,
-          "dumpDebugScurvePlots": false
+          "parametersOfInterest": ["ABCs_BVT"]
         }
       },
       "1": {
         "algorithm": "StarTrimDacAnalysis",
         "config": {
           "parametersOfInterest": ["ABCs_BTRANGE", "TrimDAC"],
-          "skipDependencyCheck": 0,
-          "dumpStarJsonDataResults": true,
           "targetThresholdPerChip": true
         },
-        "dependOn": ["StarScurveFitter"]
+        "dependOn": ["ScurveFitter"]
       },
       "n_count": 2
     },
