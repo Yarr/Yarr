@@ -34,7 +34,7 @@ class MyAnalysis : public AnalysisAlgorithm {
 } // End anon namespace
 
 bool isPOILoop(MyAnalysis &a, LoopActionBase &l) {
-  return l.isParameterLoop() && a.isPOILoop(dynamic_cast<StdParameterLoop*>(&l));
+  return a.isPOILoop(&l);
 }
 
 /// A test that runs through the different cases is isPOILoop

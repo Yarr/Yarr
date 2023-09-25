@@ -18,7 +18,7 @@
 #include "Histo3d.h"
 #include "StdHistogrammer.h"
 #include "StdTriggerAction.h"
-#include "StdParameterLoop.h"
+#include "StdParameterAction.h"
 
 #include "lmcurve.h"
 #include "logging.h"
@@ -590,7 +590,7 @@ void ScurveFitter::init(ScanBase *s) {
     useLcap = true;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || (l->isParameterLoop() && isPOILoop(dynamic_cast<StdParameterLoop*>(l.get()))) )) {
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || isPOILoop(l.get()))) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -603,7 +603,7 @@ void ScurveFitter::init(ScanBase *s) {
             n_count = n_count*cnt;
         }
         // Vcal Loop
-        if (l->isParameterLoop() && isPOILoop(dynamic_cast<StdParameterLoop*>(l.get())) ) {
+        if (l->isParameterLoop() && isPOILoop(l.get())) {
             vcalLoop = n;
             vcalMax = l->getMax();
             vcalMin = l->getMin();
@@ -958,7 +958,7 @@ void ScurveFitter::end() {
 void NPointGain::init(ScanBase *s) {
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ( l->isParameterLoop() && isPOILoop(dynamic_cast<StdParameterLoop*>(l.get())) ) {
+        if (isPOILoop(l.get())) {
             par_loopindex = n;
             par_min = l->getMin();
             par_max = l->getMax();
@@ -1780,7 +1780,7 @@ void ParameterAnalysis::init(ScanBase *s) {
             paramMin = l->getMin();
             paramStep = l->getStep();
             paramBins = (paramMax-paramMin)/paramStep;
-            auto paramLoop = dynamic_cast<StdParameterLoop*>(l.get());
+            auto paramLoop = dynamic_cast<StdParameterAction*>(l.get());
             if(paramLoop == nullptr) {
                 alog->error("ParameterAnalysis: loop declared as parameter loop does not have a name");
             } else {
