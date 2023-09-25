@@ -16,6 +16,7 @@
 #include "FeDataProcessor.h"
 #include "FeedbackBase.h"
 #include "FrontEnd.h"
+#include "HistoDataProcessor.h"
 #include "HwController.h"
 #include "Utils.h"
 
@@ -37,7 +38,7 @@ namespace ScanHelper {
         std::string loadChipConfigs(json &j, bool createConfig=false);
         int loadConfigFile(const ScanOpts &scanOpts, bool writeConfig, json &config);
 // TODO Do not want to use the raw pointer ScanBase*
-        void buildHistogrammers( std::map<unsigned, std::unique_ptr<DataProcessor>>& histogrammers, const json &scanConfig,
+        void buildHistogrammers( std::map<unsigned, std::unique_ptr<HistoDataProcessor>>& histogrammers, const json &scanConfig,
                 Bookkeeper &bookie, ScanBase* s, std::string outputDir);
 
 // TODO would prefer not to need bookie --> deep dependency!

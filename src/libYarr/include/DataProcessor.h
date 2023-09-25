@@ -14,7 +14,6 @@
 #include <condition_variable>
 
 #include "ClipBoard.h"
-#include "EventDataBase.h"
 #include "HistogramBase.h"
 #include "ScanBase.h"
 
@@ -24,7 +23,6 @@ class DataProcessor {
         virtual ~DataProcessor() = default;;
 
         // TODO there must be a nicer way for this
-        virtual void connect(ClipBoard<EventDataBase> *arg_input, ClipBoard<HistogramBase> *arg_output) {}
         virtual void connect(ScanBase *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output) {}
         virtual void init() {}
         virtual void process() {}

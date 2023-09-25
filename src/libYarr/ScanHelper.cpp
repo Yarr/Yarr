@@ -337,7 +337,7 @@ namespace ScanHelper {
     }
 
     void buildHistogrammers( std::map<unsigned,
-            std::unique_ptr<DataProcessor>>& histogrammers,
+            std::unique_ptr<HistoDataProcessor>>& histogrammers,
             const json& scanCfg,
             Bookkeeper &bookie,
             ScanBase* s, std::string outputDir) {
