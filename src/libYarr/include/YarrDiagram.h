@@ -6,6 +6,7 @@
 
 #include "Bookkeeper.h"
 #include "DataProcessor.h"
+#include "FeDataProcessor.h"
 
 class Node;
 class Line;
@@ -19,7 +20,7 @@ class YarrDiagram {
 
     void makeDiagram(
       Bookkeeper& keeper,
-      const std::map<unsigned, std::unique_ptr<DataProcessor>>& data_procs,
+      const std::map<unsigned, std::unique_ptr<FeDataProcessor>>& data_procs,
       const std::map<unsigned, std::unique_ptr<DataProcessor>>& hist_procs,
       const std::map<unsigned, std::vector<std::unique_ptr<DataProcessor>>>& ana_procs
     );
@@ -31,7 +32,7 @@ class YarrDiagram {
 
   private:
 
-    void addProcNodes(const BookEntry&, const DataProcessor&, const DataProcessor&, const std::vector<std::unique_ptr<DataProcessor>>&);
+    void addProcNodes(const BookEntry&, const FeDataProcessor&, const DataProcessor&, const std::vector<std::unique_ptr<DataProcessor>>&);
 
     void addDataNodes(const BookEntry&);
 

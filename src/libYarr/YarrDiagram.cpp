@@ -5,7 +5,7 @@
 
 void YarrDiagram::makeDiagram(
   Bookkeeper& keeper,
-  const std::map<unsigned, std::unique_ptr<DataProcessor>>& data_procs,
+  const std::map<unsigned, std::unique_ptr<FeDataProcessor>>& data_procs,
   const std::map<unsigned, std::unique_ptr<DataProcessor>>& hist_procs,
   const std::map<unsigned, std::vector<std::unique_ptr<DataProcessor>>>& ana_procs
 ) {
@@ -43,7 +43,7 @@ void YarrDiagram::makeDiagram(
 
 void YarrDiagram::addProcNodes(
   const BookEntry& entry,
-  const DataProcessor& dataproc,
+  const FeDataProcessor& dataproc,
   const DataProcessor& histogrammer,
   const std::vector<std::unique_ptr<DataProcessor>>& analyses
 ) {

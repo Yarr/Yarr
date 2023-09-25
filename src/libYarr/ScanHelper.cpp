@@ -226,7 +226,7 @@ namespace ScanHelper {
         return chipType;
     }
 
-    void buildRawDataProcs( std::map<unsigned, std::unique_ptr<DataProcessor> > &procs,
+    void buildRawDataProcs( std::map<unsigned, std::unique_ptr<FeDataProcessor> > &procs,
             Bookkeeper &bookie,
             const std::string &chipType) {
         bhlog->info("Loading RawData processors ..");

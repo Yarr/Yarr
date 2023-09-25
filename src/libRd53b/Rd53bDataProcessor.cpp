@@ -31,7 +31,7 @@ namespace
 }
 
 bool rd53b_proc_registered =
-    StdDict::registerDataProcessor("RD53B", []() { return std::unique_ptr<DataProcessor>(new Rd53bDataProcessor()); });
+    StdDict::registerDataProcessor("RD53B", []() { return std::unique_ptr<FeDataProcessor>(new Rd53bDataProcessor()); });
 
 Rd53bDataProcessor::Rd53bDataProcessor()
 {

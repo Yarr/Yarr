@@ -22,16 +22,16 @@ void process_data(RawData &curIn,
                   const std::array<uint8_t, 11> &chip_map);
 
 bool star_proc_registered =
-  StdDict::registerDataProcessor("Star", []() { return std::unique_ptr<DataProcessor>(new StarDataProcessor());});
+  StdDict::registerDataProcessor("Star", []() { return std::unique_ptr<FeDataProcessor>(new StarDataProcessor());});
 bool star_proc_registered_0 =
-  StdDict::registerDataProcessor("Star_vH0A0", []() { return std::unique_ptr<DataProcessor>(new StarDataProcessor());});
+  StdDict::registerDataProcessor("Star_vH0A0", []() { return std::unique_ptr<FeDataProcessor>(new StarDataProcessor());});
 bool star_proc_registered_ppa =
-  StdDict::registerDataProcessor("Star_vH0A1", []() { return std::unique_ptr<DataProcessor>(new StarDataProcessor());});
+  StdDict::registerDataProcessor("Star_vH0A1", []() { return std::unique_ptr<FeDataProcessor>(new StarDataProcessor());});
 bool star_proc_registered_ppb =
-  StdDict::registerDataProcessor("Star_vH1A1", []() { return std::unique_ptr<DataProcessor>(new StarDataProcessor());});
+  StdDict::registerDataProcessor("Star_vH1A1", []() { return std::unique_ptr<FeDataProcessor>(new StarDataProcessor());});
 
 StarDataProcessor::StarDataProcessor()
-  : DataProcessor()
+  : FeDataProcessor()
 {}
 
 StarDataProcessor::~StarDataProcessor() = default;
