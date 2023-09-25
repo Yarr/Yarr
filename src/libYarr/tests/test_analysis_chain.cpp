@@ -75,7 +75,7 @@ TEST_CASE("AnalysisChainIO", "[Analysis]") {
 
 
   // Build analyses
-  std::map<unsigned, std::vector<std::unique_ptr<DataProcessor>> > analyses;
+  std::map<unsigned, std::vector<std::unique_ptr<AnalysisDataProcessor>> > analyses;
   ScanHelper::buildAnalyses(analyses, scanCfg, bookie, &scan, &fbData, -1, "./");
 
   auto& AnalysisProcessors = analyses[bookie.getId(bookie.getLastFe())];

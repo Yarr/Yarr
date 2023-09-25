@@ -11,8 +11,8 @@
 
 #include <string>
 
+#include "AnalysisDataProcessor.h"
 #include "Bookkeeper.h"
-#include "DataProcessor.h"
 #include "FeDataProcessor.h"
 #include "FeedbackBase.h"
 #include "FrontEnd.h"
@@ -46,7 +46,7 @@ namespace ScanHelper {
         void buildRawDataProcs( std::map<unsigned, std::unique_ptr<FeDataProcessor> > &procs,
                            Bookkeeper &bookie,
                            const std::string &chipType);
-        void buildAnalyses( std::map<unsigned, std::vector<std::unique_ptr<DataProcessor>> >& analyses,
+        void buildAnalyses( std::map<unsigned, std::vector<std::unique_ptr<AnalysisDataProcessor>> >& analyses,
                             const json& scanType, Bookkeeper& bookie, ScanBase* s, FeedbackClipboardMap *fbMap, int mask_opt, std::string outputDir);
         void buildAnalysisHierarchy(std::vector<std::vector<int>>& indexTiers,
                                     const json &anaCfg);

@@ -8,7 +8,7 @@
 #include "AllHwControllers.h"
 #include "AllChips.h"
 #include "Bookkeeper.h"
-#include "DataProcessor.h"
+#include "AnalysisDataProcessor.h"
 #include "HistoDataProcessor.h"
 #include "ScanFactory.h"
 #include "ScanHelper.h"
@@ -132,7 +132,7 @@ bool testScanConfig(const json &scanConfig) {
 
     // Using ScanHelper for consistency, but that needs more infrastructure
     std::map<unsigned, std::unique_ptr<HistoDataProcessor> > histogrammers;
-    std::map<unsigned, std::vector<std::unique_ptr<DataProcessor>> > analyses;
+    std::map<unsigned, std::vector<std::unique_ptr<AnalysisDataProcessor>> > analyses;
 
     std::unique_ptr<FrontEnd> fe(new MyFrontEnd());
 

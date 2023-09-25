@@ -4,7 +4,7 @@
 #include <thread>
 
 #include "Bookkeeper.h"
-#include "DataProcessor.h"
+#include "AnalysisDataProcessor.h"
 #include "FeedbackBase.h"
 #include "HistogramBase.h"
 #include "ScanBase.h"
@@ -64,7 +64,7 @@ class AnalysisAlgorithm {
 /**
  * Receive a sequence of histograms and process them using AnalysisAlgorithms.
  */
-class AnalysisProcessor : public DataProcessor {
+class AnalysisProcessor : public AnalysisDataProcessor {
     public:
         AnalysisProcessor();
         AnalysisProcessor(Bookkeeper *b, unsigned ch);

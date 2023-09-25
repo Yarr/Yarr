@@ -398,7 +398,7 @@ namespace ScanHelper {
     using AlgoTieredIndex = std::vector<std::vector<int>>;
 
     void buildAnalyses( std::map<unsigned,
-            std::vector<std::unique_ptr<DataProcessor>> >& analyses,
+            std::vector<std::unique_ptr<AnalysisDataProcessor>> >& analyses,
             const json& scanCfg, Bookkeeper& bookie,
             ScanBase* s, FeedbackClipboardMap *fbData, int mask_opt, std::string outputDir) {
         balog->info("Loading analyses ...");

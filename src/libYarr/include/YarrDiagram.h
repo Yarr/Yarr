@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 
+#include "AnalysisDataProcessor.h"
 #include "Bookkeeper.h"
-#include "DataProcessor.h"
 #include "FeDataProcessor.h"
 #include "HistoDataProcessor.h"
 
@@ -23,7 +23,7 @@ class YarrDiagram {
       Bookkeeper& keeper,
       const std::map<unsigned, std::unique_ptr<FeDataProcessor>>& data_procs,
       const std::map<unsigned, std::unique_ptr<HistoDataProcessor>>& hist_procs,
-      const std::map<unsigned, std::vector<std::unique_ptr<DataProcessor>>>& ana_procs
+      const std::map<unsigned, std::vector<std::unique_ptr<AnalysisDataProcessor>>>& ana_procs
     );
 
     void getStats();
@@ -33,7 +33,7 @@ class YarrDiagram {
 
   private:
 
-    void addProcNodes(const BookEntry&, const FeDataProcessor&, const HistoDataProcessor&, const std::vector<std::unique_ptr<DataProcessor>>&);
+    void addProcNodes(const BookEntry&, const FeDataProcessor&, const HistoDataProcessor&, const std::vector<std::unique_ptr<AnalysisDataProcessor>>&);
 
     void addDataNodes(const BookEntry&);
 
