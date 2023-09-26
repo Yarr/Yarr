@@ -70,7 +70,7 @@ class AnalysisProcessor : public AnalysisDataProcessor {
         AnalysisProcessor(Bookkeeper *b, unsigned ch);
         ~AnalysisProcessor() override;
 
-        void connect(ScanBase *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output, FeedbackClipboard *arg_fb, bool storeInput=false) {
+        void connect(ScanBase *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output, FeedbackClipboard *arg_fb, bool storeInput=false) override {
             scan = arg_s;
             input = arg_input;
             output = arg_output;
