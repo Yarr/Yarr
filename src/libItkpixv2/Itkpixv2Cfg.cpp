@@ -32,6 +32,16 @@ Itkpixv2Cfg::Itkpixv2Cfg() :
     m_kShuntD(1040)
 {}
 
+void Itkpixv2Cfg::enableAll() {
+    logger->info("Resetting enable/hitbus pixel mask to all enabled!");
+    for (unsigned int col = 0; col < n_Col; col++) {
+        for (unsigned row = 0; row < n_Row; row ++) {
+            setEn(col, row, 1);
+            setHitbus(col, row, 1);
+        }
+    }
+}
+
 double Itkpixv2Cfg::toCharge(double vcal) {
     // Q = C*V
     // Linear is good enough

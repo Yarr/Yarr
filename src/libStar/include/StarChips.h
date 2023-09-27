@@ -35,13 +35,6 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
 
   // Pixel specific?
   void setInjCharge(double, bool, bool) override {}
-  void maskPixel(unsigned col, unsigned row) override {}
-
-  unsigned getPixelEn(unsigned col, unsigned row) override {
-    return 1; // getPixelEn() was desgined for Pixels, further modification is needed for StarChip
-  }
-
-  void enableAll() override;
 
     //! configure
     //! brief configure the chip (virtual)
