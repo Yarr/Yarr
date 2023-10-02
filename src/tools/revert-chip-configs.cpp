@@ -17,8 +17,6 @@ namespace fs = std::filesystem;
 #include <memory> // unique_ptr
 
 // YARR
-#include "FrontEnd.h"
-#include "AllChips.h"
 #include "ScanHelper.h" // openJson
 #include "Utils.h"
 
@@ -94,17 +92,16 @@ int main(int argc, char* argv[]) {
     auto jconn = ScanHelper::openJsonFile(connectivity_filename);
     std::string chip_type = ScanHelper::loadChipConfigs(jconn, false, Utils::dirFromPath(connectivity_filename));
 
+    // Loop through chips in connectivity file
     auto chip_configs = jconn["chips"];
     size_t n_chips = chip_configs.size();
-    auto fe = StdDict::getFrontEnd(chip_type);
-    std::vector<std::string> fes = {};
+    bool file_replaced = false;
     for (size_t ichip = 0; ichip < n_chips; ichip++) {
         fs::path chip_register_file_path{chip_configs[ichip]["__config_path__"]};
         if(!fs::exists(chip_register_file_path)) {
             std::cerr << "WARNING: Chip config for chip at index " << ichip << " in connectivity file does not exist, skipping (" << chip_register_file_path << ")" << std::endl;
             continue;
         }
-        auto chip_register_json = ScanHelper::openJsonFile(chip_register_file_path);
  
         // Skip chips if they are not specified
         if (!use_chip_name) {
@@ -119,26 +116,27 @@ int main(int argc, char* argv[]) {
         // Search for config files in YARR scan output directory for each chip
         for (const auto & entry : fs::directory_iterator(output_yarr_dir)){
             std::string output_yarr_file = entry.path().filename().string();
-            fs::path tmp = chip_register_file_path.filename() += suffix;
             if (output_yarr_file.find(chip_register_file_path.filename() += suffix) != std::string::npos){
+
                 // Make a copy of current chip config
                 size_t found = entry.path().string().find(suffix);
                 std::string backup_file = entry.path().string().replace(found, suffix.size(), ".revert");
                 std::cout << "Writing backup: " << backup_file << std::endl;
-                std::ofstream outfile(backup_file);
-                outfile << std::setw(4) << chip_register_json;
-                outfile.close();
+                fs::copy_file(chip_register_file_path, backup_file, fs::copy_options::overwrite_existing);
 
                 // Revert chip config to previous state
                 std::cout << "Replacing " << chip_register_file_path.string() << " with " << entry.path().string() << std::endl;
                 fs::copy_file(entry, chip_register_file_path, fs::copy_options::overwrite_existing);
 
+                file_replaced = true;
                 break;
             }
         } 
-
     }
 
+    if (!file_replaced){
+        std::cout << "Did not find any chip configs with suffix " << suffix << " in the provided output YARR scan directory that correspond to the chips listed in the connectivity file. No chip configs were reverted." << std::endl;
+    }
     std::cerr << "Done." << std::endl;
 
     return 0;
