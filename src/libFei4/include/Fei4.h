@@ -58,6 +58,10 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
             chipId = 8;
         }
 
+        std::unique_ptr<FrontEnd> getGlobal() override {
+            return std::make_unique<Fei4>();
+        }
+
         void initMask(enum MASK_STAGE mask);
         void initMask(uint32_t mask);
         void shiftMask();
@@ -67,17 +71,6 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
         void writeNamedRegister(std::string name, uint16_t value) override;
         void readPixelRegister(unsigned colpr_addr, unsigned latch);
         void dummyCmd();
-
-        void maskPixel(unsigned col, unsigned row) override {
-            this->setEn(col+1, row+1, 0);
-            this->setHitbus(col+1, row+1, 1);
-        }
-
-        unsigned getPixelEn(unsigned col, unsigned row) override {
-	    return this->getEn(col, row);
-        }
-
-        void enableAll() override;
 
         void writeRegister(Fei4Register Fei4GlobalCfg::*ref, uint16_t cfgBits){
             setValue(ref, cfgBits);

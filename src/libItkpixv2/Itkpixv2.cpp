@@ -510,12 +510,9 @@ void Itkpixv2::readUpdateWriteNamedReg(std::string name) {
 }
 
 void Itkpixv2::readUpdateWriteReg(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref) {
-    for (unsigned int i=0; i<5; i++){
-   		uint32_t reg = readSingleRegister(ref);
-   		if (reg < 65536) {
-     		m_cfg[(this->*ref).addr()] = reg;
-     		break;
-   		}
+    uint32_t reg = readSingleRegister(ref);
+    if (reg < 65536) {
+        m_cfg[(this->*ref).addr()] = reg;
     }
 }
 

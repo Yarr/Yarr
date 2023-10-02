@@ -3,32 +3,31 @@
     "type": "FelixClient",
     "cfg": {
       "FelixClient": {
-        "local_ip_or_interface": "lo",
-        "log_level": "info",
-        "bus_interface": "<local_interface>",
-        "bus_dir": "./bus",
-        "bus_group_name": "FELIX",
-        "verbose_bus": false,
-        "verbose_zyre": false,
+        "localIPorInterface": "lo",
+        "logLevel": "info",
+        "busDir": "./bus",
+        "busGroupName": "FELIX",
+        "verboseBus": false,
         "timeout": 1000,
-        "netio_pages": 256,
-        "netio_pagesize": 65536
+        "netioPages": 256,
+        "netioPagesize": 65536
       },
       "ToFLX": {
-        "detector_id": 0,
-        "connector_id": 0,
+        "detectorID": 0,
+        "connectorID": 0,
         "protocol": 0,
-        "flip": false
+        "flip": false,
+        "broadcast": true
       },
       "ToHost": {
-        "detector_id": 0,
-        "connector_id": 0,
+        "detectorID": 0,
+        "connectorID": 0,
         "protocol": 0,
-        "flushTime_ms": 50,
-        "enable_monitor": true,
-        "monitor_interval_ms": 1000,
-        "queue_limit_MB": 4000,
-        "wait_time_us": 10000
+        "flushTime": 50,
+        "enableMonitor": true,
+        "monitorInterval": 1000,
+        "queueLimitMB": 4000,
+        "waitTime": 10000
       }
     }
   }

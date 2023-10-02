@@ -27,6 +27,9 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         
         void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override;
         void makeGlobal() override {m_chipId = 16;}
+        std::unique_ptr<FrontEnd> getGlobal() override {
+            return std::make_unique<Rd53b>();
+        }
 
         void resetAll() override;
         void configure() override;
@@ -38,18 +41,6 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         
         int checkCom() override;
         bool hasValidName() override;
-
-        void maskPixel(unsigned col, unsigned row) override {
-            this->setEn(col, row, 0);
-            this->setHitbus(col, row, 0);
-        }
-        
-        unsigned getPixelEn(unsigned col, unsigned row) override {
-            return this->getEn(col, row);
-        }
-
-
-        void enableAll() override;
 
         void writeRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t value);
         void readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref);

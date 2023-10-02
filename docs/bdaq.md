@@ -300,6 +300,73 @@ BDAQ has only one Command Driver, thus "tx" : 0 is always used.
 }
 ```
 
+
+## ITkpix Quad module operation:
+
+### Sample connectivity configuration file:
+
+```bash
+{
+    "chipType" : "RD53B",
+    "chips" : [
+        {
+            "config" : "configs/ITkPix_quad_DM_chip1.json",
+            "tx" : 0,
+            "rx" : 2,
+            "enable" : 1,
+            "locked" : 0
+        },
+        {
+            "config" : "configs/ITkPix_quad_DM_chip2.json",
+            "tx" : 0,
+            "rx" : 1,
+            "enable" : 1,
+            "locked" : 0
+        },
+        {
+            "config" : "configs/ITkPix_quad_DM_chip3.json",
+            "tx" : 0,
+            "rx" : 0,
+            "enable" : 1,
+            "locked" : 0
+        },
+        {
+            "config" : "configs/ITkPix_quad_DM_chip4.json",
+            "tx" : 0,
+            "rx" : 3,
+            "enable" : 1,
+            "locked" : 0
+        }
+    ]
+}
+```
+
+### chip configuration files:
+
+set the following configurations for all the chips:
+```
+"AuroraActiveLanes": 1,
+"AutoRead0": 511,
+"AutoRead1": 511,
+"AutoRead2": 511,
+"AutoRead3": 511,
+"AutoRead4": 511,
+"AutoRead5": 511,
+"AutoRead6": 511,
+"AutoRead7": 511,
+```
+
+in addition set the following configurations:
+
+| #Chip | `ChipID` | `DataMergeInMux0/1/2/3` |  `DataMergeOutMux0/1/2/3` | `SerEnLane` | 
+| :---: | :---: | :---: | :---: | :---: |
+| Chip1(rx=2) | 12 | 0/1/2/3 | 0/0/0/0 | 4 |
+| Chip2(rx=1) | 13 | 0/1/2/3 | 0/0/0/0 | 1 |
+| Chip3(rx=0) | 14 | 0/1/2/3 | 0/0/0/0 | 8 |
+| Chip4(rx=3) | 15 | 0/1/2/3 | 0/0/0/0 | 1 |
+
+for ``CdrClkSel`` register, set it to same clock used in the firmware with the following values (``0`` : 1280Mbps, ``1`` : 640Mbps, ``2`` : 320Mbps, ``3`` : 160Mbps)
+
 # BDAQ controller parameters (bdaqCfg.json)
 
 Some parameters from BDAQ controller might be configured via the hardware controller configuration file, under ***configs/controller/bdaqCfg.json***. The table below shows a brief explanation of those parameters.

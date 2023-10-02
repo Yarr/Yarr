@@ -36,6 +36,14 @@ double StarCfg::toCharge(double vcal) {
 
 double StarCfg::toCharge(double vcal, bool sCap, bool lCap) { return toCharge(vcal); }
 
+void StarCfg::enableAll() {
+    eachAbc([&](auto &abc) {
+        for(int m=0; m<8; m++) {
+          abc.setRegisterValue(ABCStarRegister::MaskInput(m), 0);
+        }
+      });
+}
+
 int StarCfg::hccChannelForABCchipID(unsigned int chipID) {
   auto itr = std::find_if(m_ABCchips.begin(), m_ABCchips.end(),
                         [this, chipID](auto &it) { return it.second.getABCchipID() == chipID; });
@@ -561,11 +569,11 @@ std::tuple<json, std::vector<json>> StarCfg::createConfigSingleFE() {
 }
 
 std::tuple<json, std::vector<json>> StarCfg::createConfigLSStave() {
-    return StarPreset::createConfigStarObject(*this, StarPreset::lsstave);
+    return StarPreset::createConfigStarObject(*this, StarPreset::lsstave, true);
 }
 
 std::tuple<json, std::vector<json>> StarCfg::createConfigPetal() {
-    return StarPreset::createConfigStarObject(*this, StarPreset::petal);
+    return StarPreset::createConfigStarObject(*this, StarPreset::petal, false);
 }
 
 std::tuple<json, std::vector<json>> StarCfg::getPreset(const std::string& systemType) {

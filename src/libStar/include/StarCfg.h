@@ -116,6 +116,12 @@ class StarCfg : public FrontEndCfg {
     return 0;
   }
 
+  void maskPixel(unsigned col, unsigned row) override {}
+  unsigned getPixelEn(unsigned col, unsigned row) override {
+    return 1; // getPixelEn() was desgined for Pixels, further modification is needed for StarChip
+  }
+  void enableAll() override;
+
   /**
    * Obtain the corresponding charge [e] from the input VCal
    */
@@ -165,6 +171,9 @@ class StarCfg : public FrontEndCfg {
   int hccChannelForABCchipID(unsigned int chipID);
 
   StarConversionTools &getStarConversion() {return m_ct;}
+
+  int abcVersion() const {return m_abc_version;}
+  int hccVersion() const {return m_hcc_version;}
 
  protected:
   AbcCfg &abcFromChipID(unsigned int chipID) {

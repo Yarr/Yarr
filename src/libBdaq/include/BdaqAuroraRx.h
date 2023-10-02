@@ -64,7 +64,7 @@ class BdaqAuroraRx : public BdaqRegister<BdaqRBCP> {
 		uint32_t getFrameCount();
 		void setGtxTxMode(std::string value);
 		uint getRxConfig();
-
+                
 	protected:
 };
 

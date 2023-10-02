@@ -86,7 +86,7 @@ void HistogramArchiver::init(ScanBase *s) {
 }
 
 void HistogramArchiver::processHistogram(HistogramBase *histo) {
-    FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
+    FrontEndCfg *feCfg = bookie->getFeCfg(id);
 
     std::string name = feCfg->getName();
 
@@ -177,7 +177,7 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
                     failed_cnt++;
                     if (make_mask&&createMask) {
                         // maskPixel starts at 0,0
-                        bookie->getFe(id)->maskPixel(col-1, row-1);
+                        bookie->getFeCfg(id)->maskPixel(col-1, row-1);
                     }
                 }
             }
@@ -324,7 +324,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
     }
 
     if (chargeVsTotMap == nullptr && hasVcalLoop) {
-        FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
+        FrontEndCfg *feCfg = bookie->getFeCfg(id);
         double chargeMin = feCfg->toCharge(vcalMin, useScap, useLcap);
         double chargeMax = feCfg->toCharge(vcalMax, useScap, useLcap);
         double chargeStep = feCfg->toCharge(vcalStep, useScap, useLcap);
@@ -337,7 +337,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
     }
 
     if (pixelTotMap == nullptr && hasVcalLoop) {
-        FrontEndCfg *feCfgp = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
+        FrontEndCfg *feCfgp = bookie->getFeCfg(id);
         double chargeMinp = feCfgp->toCharge(vcalMin, useScap, useLcap);
         double chargeMaxp = feCfgp->toCharge(vcalMax, useScap, useLcap);
         double chargeStepp = feCfgp->toCharge(vcalStep, useScap, useLcap);
@@ -403,7 +403,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
             sigmaTotDist->fill(sigma);
         }
         if (hasVcalLoop) {
-            FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
+            FrontEndCfg *feCfg = bookie->getFeCfg(id);
             double currentCharge = feCfg->toCharge(ident, useScap, useLcap);
             for (unsigned i=0; i<tempMeanTotDist->size(); i++) {
                 chargeVsTotMap->fill(currentCharge, (i+1)*0.1, tempMeanTotDist->getBin(i));
@@ -413,7 +413,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
             }
         }
 
-        alog->info("\033[1;33m[{}][{}][{}] ToT Mean = {} +- {}\033[0m", id, dynamic_cast<FrontEndCfg*>(bookie->getFe(id))->getName(), ident,  meanTotDist->getMean(), meanTotDist->getStdDev());
+        alog->info("\033[1;33m[{}][{}][{}] ToT Mean = {} +- {}\033[0m", id, bookie->getFeCfg(id)->getName(), ident,  meanTotDist->getMean(), meanTotDist->getStdDev());
 
         if (globalFb != nullptr) {
             double mean = 0;
@@ -475,7 +475,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
 
 void TotAnalysis::end() {
     if (hasVcalLoop) {
-        FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id)); //replace these with more dynamic conversions 
+        FrontEndCfg *feCfg = bookie->getFeCfg(id); //replace these with more dynamic conversions 
         double injQMin = feCfg->toCharge(vcalMin, useScap, useLcap);
         double injQMax = feCfg->toCharge(vcalMax, useScap, useLcap);
         double injQStep = feCfg->toCharge(vcalStep, useScap, useLcap);
@@ -504,7 +504,7 @@ void TotAnalysis::end() {
         std::unique_ptr<Histo2d> measQOut ( new Histo2d("measQOut", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5) );
         std::unique_ptr<Histo2d> measQRMSOut ( new Histo2d("measQRMSOut", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5) );
         for (unsigned n=0; n<nCol*nRow; n++) {
-            if (bookie->getFe(id)->getPixelEn((n/nRow), (n%nRow)) == 0) { //if pixel isn't masked
+            if (bookie->getFeCfg(id)->getPixelEn((n/nRow), (n%nRow)) == 0) { //if pixel isn't masked
                 int anyzero = 0;
                 for (unsigned k=0; k<avgTotVsCharge->size(); k++) {
                     double q = feCfg->toCharge(vcalMin+k*vcalStep, useScap, useLcap);
@@ -788,7 +788,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0 
                             && chi2 < 2.5 && chi2 > 1e-6
                             && fabs((par[2] - par[3])/injections - 1) < 0.1) {  // Add new criteria: difference between 100% baseline and 0% baseline should agree with number of injections within 10%
-                        FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
+                        FrontEndCfg *feCfg = bookie->getFeCfg(id);
                         thrMap[outerIdent]->setBin(bin, feCfg->toCharge(par[0], useScap, useLcap));
                         // Reudce effect of vcal offset on this, don't want to probe at low vcal
                         sigMap[outerIdent]->setBin(bin, feCfg->toCharge(par[0]+par[1], useScap, useLcap)-feCfg->toCharge(par[0], useScap, useLcap));
@@ -891,11 +891,17 @@ void ScurveFitter::end() {
             int rThrMean = (int)(thrMean) - (int)(thrMean)%bin_width;
             int rThrRms = (int)(thrRms) - (int)(thrRms)%bin_width;
             xlow = rThrMean-(rThrRms*5)-bin_width/2.0;
-            if (xlow < 0) xlow = -1*bin_width/2.0;
+            if (xlow < 0)
+                xlow = -1*bin_width/2.0;
             xhigh = rThrMean+(rThrRms*5)+bin_width/2.0;
             if ((xhigh-xlow)%bin_width != 0)
                 xhigh += ((xhigh-xlow)%bin_width);
+            if (xlow > xhigh) {// Something wrong, prevent
+                xhigh = xlow+bin_width;
+                alog->warn("[{}] --> xlow > xhigh, resetting boundaries, this should not happen under normal circumstances!", this->id);
+            }
             bins = (xhigh-xlow)/bin_width;
+
 
             Histo1d *hh1 = new Histo1d("ThresholdDist-" + std::to_string(i), bins, xlow, xhigh);
             hh1->setXaxisTitle("Threshold [e]");
@@ -906,10 +912,15 @@ void ScurveFitter::end() {
             int rSigMean = (int)(sigMean) - (int)(sigMean)%bin_width;
             int rSigRms = (int)(sigRms) - (int)(sigRms)%bin_width;
             xlow = rSigMean-(rSigRms*5)-bin_width/2.0;
-            if (xlow < 0) xlow = -1*bin_width/2.0;
+            if (xlow < 0) 
+                xlow = -1*bin_width/2.0;
             xhigh = rSigMean+(rSigRms*5)+bin_width/2.0;
             if ((xhigh-xlow)%bin_width != 0)
                 xhigh += ((xhigh-xlow)%bin_width);
+            if (xlow > xhigh) {// Something wrong, prevent
+                xhigh = xlow+bin_width;
+                alog->warn("[{}] --> xlow > xhigh, resetting boundaries, this should not happen under normal circumstances!", this->id);
+            }
             bins = (xhigh-xlow)/bin_width;
 
             hh1 = new Histo1d("NoiseDist-" + std::to_string(i), bins, xlow, xhigh);
@@ -1508,7 +1519,7 @@ void NoiseAnalysis::end() {
                 mask->setBin(i, 0);
                 if (make_mask&&createMask) {
                     // maskPixel starts at 0,0
-                    bookie->getFe(id)->maskPixel(col-1, row-1);
+                    bookie->getFeCfg(id)->maskPixel(col-1, row-1);
                 }
             } else {
                 mask->setBin(i, 1);

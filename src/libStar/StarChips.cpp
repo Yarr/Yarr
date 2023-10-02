@@ -5,6 +5,7 @@
 // ################################
 
 #include "StarChips.h"
+#include "StarChipsBroadcast.h"
 
 #include <chrono>
 
@@ -89,14 +90,6 @@ StarChips::StarChips(HwController *arg_core, unsigned arg_txChannel, unsigned ar
 }
 #endif
 
-void StarChips::enableAll() {
-    eachAbc([&](auto &abc) {
-        for(int m=0; m<8; m++) {
-          abc.setRegisterValue(ABCStarRegister::MaskInput(m), 0);
-        }
-      });
-}
-
 void StarChips::init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
 	logger->debug("Running init {} {} {}", (void*)arg_core, arg_txChannel, arg_rxChannel);
 	m_txcore  = arg_core;
@@ -110,6 +103,9 @@ void StarChips::init(HwController *arg_core, unsigned arg_txChannel, unsigned ar
 	geo.nCol = 128;
 }
 
+std::unique_ptr<FrontEnd>  StarChips::getGlobal() {
+  return std::make_unique<StarChipsBroadcast>(m_abc_version, m_hcc_version);
+}
 
 void StarChips::setHccId(unsigned hccID) {
   //First step will consist in setting the HCC ID (serial number might be different depending on fuse !)
