@@ -24,7 +24,8 @@ LIST(APPEND apps
         specBenchmarkDma
         specBenchmarkSingle
         specComTest
-        switchLPM
+	switchLPM
+        eyeDiagram
         specErrorCheckDma
         specErrorCheckSingle
         specS6programFpga
