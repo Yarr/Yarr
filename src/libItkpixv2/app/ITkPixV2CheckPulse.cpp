@@ -36,7 +36,7 @@ auto logger = logging::make_log("ITkPixV2CheckPulse");
 void print_usage(char* argv[]) {
     std::cerr << " send-global-pulse" << std::endl;
     std::cerr << std::endl;
-    std::cerr << " Usage: " << argv[0] << " [options] pulse-conf pulse-width" << std::endl;
+    std::cerr << " Usage: " << argv[0] << " [options] pulse-width" << std::endl;
     std::cerr << " Options:" << std::endl;
     std::cerr << "   -r          Hardware controller JSON file path [required]" << std::endl;
     std::cerr << "   -c          Input connectivity JSON file path [required]" << std::endl;
