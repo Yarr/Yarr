@@ -27,15 +27,20 @@ namespace fs = std::filesystem;
 #include "ScanHelper.h" // openJson
 #include "Utils.h"
 
+#include "logging.h"
+#include "LoggingConfig.h"
+
+auto logger = logging::make_log("ITkPixV2CheckPulse");
+
+
 void print_usage(char* argv[]) {
     std::cerr << " send-global-pulse" << std::endl;
     std::cerr << std::endl;
-    std::cerr << " Usage: " << argv[0] << " [options] pulse-conf pulse-width" << std::endl;
+    std::cerr << " Usage: " << argv[0] << " [options] pulse-width" << std::endl;
     std::cerr << " Options:" << std::endl;
     std::cerr << "   -r          Hardware controller JSON file path [required]" << std::endl;
     std::cerr << "   -c          Input connectivity JSON file path [required]" << std::endl;
     std::cerr << "   -i          Position of chip in connectivity file chips list, starting from 0 (default: all chips)" << std::endl;
-    std::cerr << "   -n          Chip name (if given will override use of chip index)" << std::endl;
     std::cerr << "   -h|--help   Print this help message and exit" << std::endl;
     std::cerr << std::endl;
 }
@@ -65,6 +70,19 @@ std::unique_ptr<FrontEnd> init_fe1(std::unique_ptr<HwController>& hw, json &jcon
 }
 
 std::unique_ptr<FrontEnd> init_fe2(std::unique_ptr<HwController>& hw, json &jconn, int fe_num) {
+    // Setup logger with some defaults
+    std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
+    spdlog::set_pattern(defaultLogPattern);
+    json j; // empty
+    j["pattern"] = defaultLogPattern;
+    j["log_config"][0]["name"] = "all";
+    j["log_config"][0]["level"] = "info";
+    logging::setupLoggers(j);
+    
+    // Init spec
+    logger->info("Init spec");
+
+
     std::string chip_type = jconn["chipType"];
     auto fe = StdDict::getFrontEnd(chip_type);
     auto cfg = dynamic_cast<FrontEndCfg*>(fe.get());
@@ -95,9 +113,10 @@ int main(int argc, char* argv[]) {
     uint32_t pulse_conf = 0;
     uint32_t pulse_width = 0;
     bool use_chip_name = false;
+    int n_idle = 0;
 
     int c = 0;
-    while (( c = getopt(argc, argv, "r:c:i:n:h")) != -1) {
+    while (( c = getopt(argc, argv, "r:c:i:h")) != -1) {
         switch (c) {
             case 'r' :
                 hw_controller_filename = optarg;
@@ -113,10 +132,6 @@ int main(int argc, char* argv[]) {
                         return 1;
                     }
                 break;
-            case 'n' :
-                    chip_name = optarg;
-                    use_chip_name = true;
-                    break;
             case 'h' :
                 print_usage(argv);
                 return 0;
@@ -126,15 +141,8 @@ int main(int argc, char* argv[]) {
         } // switch
     } // while
 
-    if (optind > argc - 2) {
+    if (optind > argc - 1) {
         std::cerr << "ERROR: Missing positional arguments" << std::endl;
-        return 1;
-    }
-
-    try {
-        pulse_conf = std::stoi(argv[optind++]);
-    } catch (std::exception& e) {
-        std::cerr << "ERROR: Invalid value provided for pulse configuration (non-integer)" << std::endl;
         return 1;
     }
 
@@ -200,28 +208,38 @@ int main(int argc, char* argv[]) {
     int fail_1=0;
     int fail_2=0;
 
-    fe1->writeNamedRegister("GlobalPulseConf", pulse_conf);
+    fe1->writeNamedRegister("GlobalPulseConf", 16);
     fe1->writeNamedRegister("GlobalPulseWidth", pulse_width);
-    fe2->writeNamedRegister("GlobalPulseConf", pulse_conf);
+    fe2->writeNamedRegister("GlobalPulseConf", 8);
     fe2->writeNamedRegister("GlobalPulseWidth", pulse_width);
 
 
     std::this_thread::sleep_for(std::chrono::microseconds(100000));
     for (int j=0; j<1000; j++){
         while(!hw->isCmdEmpty()){;}
+
+        hw->flushBuffer();
+
+        //fe1->writeNamedRegister("ClkDataMergeEn", 1);     
+
+        std::this_thread::sleep_for(std::chrono::microseconds(1000));
+
+
         //std::cout << "Sending Pulse Primary " << dynamic_cast<Itkpixv2Cfg*>(cfg1)->getChipId() << std::endl;
         dynamic_cast<Itkpixv2&>(*fe1).sendGlobalPulse(16);
-        
+
         hw->writeFifo(0xAAAAAAAA);
         hw->writeFifo(0xAAAAAAAA);
 
         while(!hw->isCmdEmpty()){;}
 
+        std::this_thread::sleep_for(std::chrono::microseconds(20));
 
-        std::this_thread::sleep_for(std::chrono::microseconds(1000));
+        hw->flushBuffer();
+
+        //std::this_thread::sleep_for(std::chrono::microseconds(1000));
          if (fe1->checkCom() != 1) {
-            std::cout << "Trying again" << std::endl;
-            std::this_thread::sleep_for(std::chrono::microseconds(1000));
+            std::cout << "Trying again Primary" << std::endl;
 
             if (fe1->checkCom() != 1) {
                 std::cout << "Failed again" << std::endl;
@@ -233,8 +251,8 @@ int main(int argc, char* argv[]) {
          } 
  
          if (fe2->checkCom() != 1) {
-            std::cout << "Trying again" << std::endl;
-            std::this_thread::sleep_for(std::chrono::microseconds(1000));
+            std::cout << "Trying again Secondary" << std::endl;                
+            //break;
 
             if (fe2->checkCom() != 1) {
                 std::cout << "Failed again" << std::endl;
