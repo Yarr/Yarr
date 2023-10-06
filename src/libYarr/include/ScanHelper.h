@@ -18,6 +18,7 @@
 #include "FrontEnd.h"
 #include "HistoDataProcessor.h"
 #include "HwController.h"
+#include "ScanLoopInfo.h"
 #include "Utils.h"
 
 #include "storage.hpp"
@@ -48,7 +49,7 @@ namespace ScanHelper {
                            Bookkeeper &bookie,
                            const std::string &chipType);
         void buildAnalyses( std::map<unsigned, std::vector<std::unique_ptr<AnalysisDataProcessor>> >& analyses,
-                            const json& scanType, Bookkeeper& bookie, ScanBase* s, FeedbackClipboardMap *fbMap, int mask_opt, std::string outputDir);
+                            const json& scanType, Bookkeeper& bookie, const ScanLoopInfo* s, FeedbackClipboardMap *fbMap, int mask_opt, std::string outputDir);
         void buildAnalysisHierarchy(std::vector<std::vector<int>>& indexTiers,
                                     const json &anaCfg);
         template <typename T>

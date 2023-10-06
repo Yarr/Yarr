@@ -396,10 +396,9 @@ namespace ScanHelper {
     // A 2D vector of int to store algorithm indices for all tiers of analyses
     using AlgoTieredIndex = std::vector<std::vector<int>>;
 
-    void buildAnalyses( std::map<unsigned,
-            std::vector<std::unique_ptr<AnalysisDataProcessor>> >& analyses,
+    void buildAnalyses( std::map<unsigned, std::vector<std::unique_ptr<AnalysisDataProcessor>> >& analyses,
             const json& scanCfg, Bookkeeper& bookie,
-            ScanBase* s, FeedbackClipboardMap *fbData, int mask_opt, std::string outputDir) {
+                        const ScanLoopInfo* s, FeedbackClipboardMap *fbData, int mask_opt, std::string outputDir) {
         balog->info("Loading analyses ...");
 
         const json &anaCfg = scanCfg["scan"]["analysis"];

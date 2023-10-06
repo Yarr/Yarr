@@ -56,7 +56,7 @@ namespace {
     MyAnalyzer() : AnalysisAlgorithm() {}
     ~MyAnalyzer() {}
 
-    void init(ScanBase *s) {
+    void init(const ScanLoopInfo *s) override {
       n_count = 1;
       for (unsigned n=0; n<s->size(); n++) {
         auto l = s->getLoop(n);
@@ -75,13 +75,13 @@ namespace {
       }
     }
 
-    void loadConfig(const json &j) {
+    void loadConfig(const json &j) override {
       for (unsigned i=0; i<j["parametersOfInterest"].size(); i++) {
         m_parametersOfInterest.push_back(j["parametersOfInterest"][i]);
       }
     }
 
-    void processHistogram(HistogramBase *h) {
+    void processHistogram(HistogramBase *h) override {
       if (h->getName() != "myHisto")
         return;
 
@@ -134,7 +134,7 @@ namespace {
     MyOtherAnalyzer() {}
     ~MyOtherAnalyzer() {}
 
-    void init(ScanBase *s) {
+    void init(const ScanLoopInfo *s) override {
       for (unsigned n=0; n<s->size(); n++) {
         auto l = s->getLoop(n);
         if ( isPOILoop(l) ) {
@@ -159,13 +159,13 @@ namespace {
       hxy.reset(new Histo2d("houtput", nbins_x, xmin, xmax, nbins_y, ymin, ymax));
     }
 
-    void loadConfig(const json &j) {
+    void loadConfig(const json &j) override {
       for (unsigned i=0; i<j["parametersOfInterest"].size(); i++) {
         m_parametersOfInterest.push_back(j["parametersOfInterest"][i]);
       }
     }
 
-    void processHistogram(HistogramBase *h) {
+    void processHistogram(HistogramBase *h) override {
       if (h->getName() != "h1") return;
 
       // Get the content of the 1-bin histogram h
@@ -178,7 +178,7 @@ namespace {
       hxy->fill(x, y, z);
     }
 
-    void end() {
+    void end() override {
       output->pushData(std::move(hxy));
     }
 

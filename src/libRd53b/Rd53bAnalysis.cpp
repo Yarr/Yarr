@@ -68,7 +68,7 @@ void FrontEndScopeAnalysis::loadConfig(const json &j) {
 
 }
 
-void FrontEndScopeAnalysis::init(ScanBase* s) {
+void FrontEndScopeAnalysis::init(const ScanLoopInfo* s) {
 
     m_n_count = 1;
     m_injections = 0;
@@ -316,7 +316,7 @@ void ToaAnalysis::loadConfig(const json &j) {
 
 }
 
-void ToaAnalysis::init(ScanBase *s) {
+void ToaAnalysis::init(const ScanLoopInfo *s) {
 
     m_n_count = 1;
     m_injections = 0;

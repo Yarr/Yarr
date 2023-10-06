@@ -63,7 +63,7 @@ AnalysisProcessor::~AnalysisProcessor() = default;
 void AnalysisProcessor::init() {
     for (unsigned i=0; i<algorithms.size(); i++) {
         algorithms[i]->connect(output, feedback);
-        algorithms[i]->init(scan);
+        algorithms[i]->init(scan_info);
     }
 }
 

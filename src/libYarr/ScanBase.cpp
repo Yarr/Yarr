@@ -23,7 +23,7 @@ const LoopActionBaseInfo *ScanBase::getLoop(unsigned n) const {
     return loops[n].get();
 }
 
-unsigned ScanBase::size() {
+unsigned ScanBase::size() const {
     return loops.size();
 }
 

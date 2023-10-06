@@ -35,9 +35,8 @@ namespace {
 //! Initializes the analysis ; mostly consists of getting the loop parameter over which data will be aggregated
 /*!
 */
-void StarStrobeDelayAnalysis::init(ScanBase *s) {
+void StarStrobeDelayAnalysis::init(const ScanLoopInfo *s) {
 
-    scan = s;
     strobeDelayLoop = 0;
     m_injections = 50;
     for (unsigned n=0; n<s->size(); n++) {

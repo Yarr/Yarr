@@ -82,7 +82,7 @@ namespace {
 
 }
 
-void HistogramArchiver::init(ScanBase *s) {
+void HistogramArchiver::init(const ScanLoopInfo *s) {
 }
 
 void HistogramArchiver::processHistogram(HistogramBase *histo) {
@@ -100,7 +100,7 @@ void HistogramArchiver::setOutputDirectory(std::string dir) {
     output_dir = dir;
 }
 
-void OccupancyAnalysis::init(ScanBase *s) {
+void OccupancyAnalysis::init(const ScanLoopInfo *s) {
     n_count = 1;
     injections = 0;
     for (unsigned n=0; n<s->size(); n++) {
@@ -232,7 +232,7 @@ void TotAnalysis::loadConfig(const json &config) {
     }
 }
 
-void TotAnalysis::init(ScanBase *s) {
+void TotAnalysis::init(const ScanLoopInfo *s) {
     useScap = true;
     useLcap = true;
     n_count = 1;
@@ -580,9 +580,8 @@ void TotAnalysis::end() {
     }
 }
 
-void ScurveFitter::init(ScanBase *s) {
+void ScurveFitter::init(const ScanLoopInfo *s) {
     fb = nullptr;
-    scan = s;
     n_count = 1;
     vcalLoop = 0;
     injections = 50;
@@ -955,7 +954,7 @@ void ScurveFitter::end() {
     }
 }
 
-void NPointGain::init(ScanBase *s) {
+void NPointGain::init(const ScanLoopInfo *s) {
     for (unsigned n=0; n<s->size(); n++) {
         auto l = s->getLoop(n);
         if (isPOILoop(l)) {
@@ -1022,7 +1021,7 @@ void NPointGain::loadConfig(const json &j) {
         m_skipDependencyCheck = j["skipDependencyCheck"];
 }
 
-void OccGlobalThresholdTune::init(ScanBase *s) {
+void OccGlobalThresholdTune::init(const ScanLoopInfo *s) {
     n_count = 1;
     for (unsigned n=0; n<s->size(); n++) {
         auto l = s->getLoop(n);
@@ -1133,7 +1132,7 @@ void OccPixelThresholdTune::loadConfig(const json &j){
         m_occHighCut=j["occHighCut"];
 }
 
-void OccPixelThresholdTune::init(ScanBase *s) {
+void OccPixelThresholdTune::init(const ScanLoopInfo *s) {
     n_count = 1;
     for (unsigned n=0; n<s->size(); n++) {
         auto l = s->getLoop(n);
@@ -1232,7 +1231,7 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
 }
 
 // TODO exclude every loop
-void L1Analysis::init(ScanBase *s) {
+void L1Analysis::init(const ScanLoopInfo *s) {
     n_count = 1;
     injections = 0;
     for (unsigned n=0; n<s->size(); n++) {
@@ -1298,7 +1297,7 @@ void L1Analysis::processHistogram(HistogramBase *h) {
 void L1Analysis::end() {
 }
 
-void TagAnalysis::init(ScanBase *s) {
+void TagAnalysis::init(const ScanLoopInfo *s) {
     n_count = 1;
     injections = 0;
     for (unsigned n=0; n<s->size(); n++) {
@@ -1392,7 +1391,7 @@ void TagAnalysis::processHistogram(HistogramBase *h) {
 void TagAnalysis::end() {
 }
 
-void TotDistPlotter::init(ScanBase *s) {
+void TotDistPlotter::init(const ScanLoopInfo *s) {
     n_count = 1;
     injections = 0;
     for (unsigned n=0; n<s->size(); n++) {
@@ -1453,7 +1452,7 @@ void TotDistPlotter::processHistogram(HistogramBase *h) {
     }
 }
 
-void NoiseAnalysis::init(ScanBase *s) {
+void NoiseAnalysis::init(const ScanLoopInfo *s) {
     // We assume the nosie scan only has one trigger and data loop
     occ.reset(new Histo2d("Occupancy", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
     occ->setXaxisTitle("Col");
@@ -1533,7 +1532,7 @@ void NoiseAnalysis::end() {
     output->pushData(std::move(mask));
 }
 
-void NoiseTuning::init(ScanBase *s) {
+void NoiseTuning::init(const ScanLoopInfo *s) {
     n_count = 1;
     pixelFb = nullptr;
     globalFb = nullptr;
@@ -1631,8 +1630,7 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
 void NoiseTuning::end() {
 }
 
-void DelayAnalysis::init(ScanBase *s) {
-    scan = s;
+void DelayAnalysis::init(const ScanLoopInfo *s) {
     n_count = nCol*nRow;
     injections = 50;
     for (unsigned n=0; n<s->size(); n++) {
@@ -1750,9 +1748,8 @@ void DelayAnalysis::end() {
 }
 
 
-void ParameterAnalysis::init(ScanBase *s) {
+void ParameterAnalysis::init(const ScanLoopInfo *s) {
     n_count = 1;
-    scan = s;
     alog->info("ParameterAnalysis init");
     for (unsigned n=0; n<s->size(); n++) {
         auto l = s->getLoop(n);
