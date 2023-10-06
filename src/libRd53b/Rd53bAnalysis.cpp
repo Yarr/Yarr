@@ -85,7 +85,7 @@ void FrontEndScopeAnalysis::init(ScanBase* s) {
             m_n_count *= cnt;
         }
         if (loop->isTriggerLoop()) {
-            auto trigger_loop = std::dynamic_pointer_cast<StdTriggerAction>(loop);
+            auto trigger_loop = dynamic_cast<const StdTriggerAction*>(loop);
             if(trigger_loop == nullptr) {
                 logger->error("FrontEndScopeAnalysis: loop declared as TriggerLoop, but does not have trigger count");
             } else {
@@ -332,7 +332,7 @@ void ToaAnalysis::init(ScanBase *s) {
             m_n_count *= cnt;
         }
         if (loop->isTriggerLoop()) {
-            auto trigger_loop = std::dynamic_pointer_cast<StdTriggerAction>(loop);
+            auto trigger_loop = dynamic_cast<const StdTriggerAction *>(loop);
             if(trigger_loop == nullptr) {
                 logger->error("ToaAnalysis: loop declared as trigger does not have a count");
             } else {

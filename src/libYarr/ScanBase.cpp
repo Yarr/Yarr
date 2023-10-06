@@ -19,12 +19,8 @@ void ScanBase::run() {
     engine.end();
 }
 
-std::shared_ptr<LoopActionBase> ScanBase::getLoop(unsigned n) {
-    return loops[n];
-}
-
-std::shared_ptr<LoopActionBase> ScanBase::operator[](unsigned n) {
-    return loops[n];
+const LoopActionBase *ScanBase::getLoop(unsigned n) const {
+    return loops[n].get();
 }
 
 unsigned ScanBase::size() {

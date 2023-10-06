@@ -56,7 +56,7 @@ class AnalysisAlgorithm {
         unsigned nCol, nRow;
 
         std::vector<std::string> m_parametersOfInterest;
-        bool isPOILoop(LoopActionBase *l);
+        bool isPOILoop(const LoopActionBase *l);
 
 };
 

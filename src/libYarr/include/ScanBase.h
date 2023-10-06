@@ -36,8 +36,8 @@ class ScanBase {
         virtual void postScan() {}
         void run();
 
-        std::shared_ptr<LoopActionBase> getLoop(unsigned n);
-        std::shared_ptr<LoopActionBase> operator[](unsigned n);
+        /// Return non-owning pointer to loop action
+        const LoopActionBase *getLoop(unsigned n) const;
         unsigned size();
         
         virtual void loadConfig(const json &cfg) {}
