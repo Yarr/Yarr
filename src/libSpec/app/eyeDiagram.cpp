@@ -268,9 +268,15 @@ int main(int argc, char **argv) {
         double best_val=0;
         double best_width=0;
         for (uint32_t j = 0 ; j<32; j++) {
-            if (resultVec[i][j]==1 && j<31){
+            if (resultVec[i][j]==1){
                 if (width==0) start_val=j;
                 width+=1; 
+                if (i==31){
+                    if(width>last_width){
+                        best_val=start_val;
+                        best_width=width;
+                    }                      
+                }
             } else {
                 if(width>last_width){
                     best_val=start_val;
