@@ -16,7 +16,7 @@ namespace {
     auto alog = logging::make_log("AnalysisAlgorithm");
 }
 
-bool AnalysisAlgorithm::isPOILoop(const LoopActionBase *l) {
+bool AnalysisAlgorithm::isPOILoop(const LoopActionBaseInfo *l) {
     // Determine if a given loop l is iterating a parameter that is in the m_parametersOfInterest
 
     if(!l->isParameterLoop()) {

@@ -19,7 +19,7 @@ void ScanBase::run() {
     engine.end();
 }
 
-const LoopActionBase *ScanBase::getLoop(unsigned n) const {
+const LoopActionBaseInfo *ScanBase::getLoop(unsigned n) const {
     return loops[n].get();
 }
 

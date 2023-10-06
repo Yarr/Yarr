@@ -37,7 +37,7 @@ class ScanBase {
         void run();
 
         /// Return non-owning pointer to loop action
-        const LoopActionBase *getLoop(unsigned n) const;
+        const LoopActionBaseInfo *getLoop(unsigned n) const;
         unsigned size();
         
         virtual void loadConfig(const json &cfg) {}
