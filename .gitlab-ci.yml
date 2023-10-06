@@ -91,8 +91,9 @@ job_build_none:
       - source /opt/rh/devtoolset-9/enable
       - mkdir build
       - cd build
-      - cmake3 .. -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD= -DYARR_FRONT_ENDS_TO_BUILD= -DYARR_ACTIVE_LOGGER_LEVEL=OFF
+      - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD= -DYARR_FRONT_ENDS_TO_BUILD= -DYARR_ACTIVE_LOGGER_LEVEL=OFF
       - make install -j4
+      - CTEST_OUTPUT_ON_FAILURE=1 make test
       - bin/scanConsole -k
 
 job_test_json_parsing:
