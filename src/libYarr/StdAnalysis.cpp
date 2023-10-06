@@ -1047,7 +1047,6 @@ void OccGlobalThresholdTune::init(ScanBase *s) {
 
         if (l->isGlobalFeedbackLoop()) {
             fb.reset(new GlobalFeedbackSender(feedback));
-            lb = (LoopActionBase*) l; 
         }
     }
 }
@@ -1099,9 +1098,6 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
 
         bool done = false;
         double sign = 0;
-        if (lb->getStep() == 1) {
-            done = true;
-        }
 
         double meanOcc = occDists[ident]->getMean()/(double)injections;
         double entries = occDists[ident]->getEntries();
