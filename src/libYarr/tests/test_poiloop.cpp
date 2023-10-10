@@ -12,6 +12,15 @@ class MyAnonParameterLoop : public LoopActionBase {
     MyAnonParameterLoop() : LoopActionBase(LOOP_STYLE_PARAMETER) { }
 };
 
+/// A parameter loop action that does have a name (via StdParameterAction)
+class MyNamedParameterAction : public LoopActionBase, public StdParameterAction {
+  public:
+    MyNamedParameterAction(const std::string &name)
+        : LoopActionBase(LOOP_STYLE_PARAMETER) {
+      parName = name;
+    }
+};
+
 /// A loop action that is not a parameter
 class MyNoopLoop : public LoopActionBase {
 
@@ -78,4 +87,30 @@ TEST_CASE("AnalysisPOILoopChecks", "[Analysis]") {
 
   CHECK (isPOILoop(aa, namedLoop1));
   CHECK (isPOILoop(aa, namedLoop2));
+
+  aa.setPOI({});
+
+  {
+    MyNamedParameterAction namedLoop1("Param1");
+    MyNamedParameterAction namedLoop2("Param2");
+
+    // Empty list
+    CHECK (isPOILoop(aa, namedLoop1));
+    CHECK (isPOILoop(aa, namedLoop2));
+
+    aa.setPOI({"OtherParam"});
+
+    // With a non-empty list find neither loop is of interest
+    CHECK (!isPOILoop(aa, namedLoop1));
+    CHECK (!isPOILoop(aa, namedLoop2));
+
+    aa.setPOI({"Param1"});
+    CHECK (isPOILoop(aa, namedLoop1));
+    CHECK (!isPOILoop(aa, namedLoop2));
+
+    aa.setPOI({"Param1", "Param2"});
+
+    CHECK (isPOILoop(aa, namedLoop1));
+    CHECK (isPOILoop(aa, namedLoop2));
+  }
 }
