@@ -9,6 +9,7 @@ add_executable(testYarr
         test_tot_dist.cpp
         test_analysis_chain.cpp
         test_analysis_poiloop.cpp
+        test_poiloop.cpp
 )
 
 target_link_libraries(testYarr Yarr)
