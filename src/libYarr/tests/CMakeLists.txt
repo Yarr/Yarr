@@ -11,6 +11,6 @@ add_executable(testYarr
         test_analysis_poiloop.cpp
 )
 
-target_link_libraries(testYarr Yarr)
+target_link_libraries(testYarr Scan Yarr)
 add_test(testYarr ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/testYarr)
 post_build_debug_executable(testYarr)
