@@ -425,8 +425,8 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
             }
             alog->info("Mean is: {}", mean);
 
-            // TODO Get this from somewhere
-            double targetTot = bookie->getTargetTot();
+            // Pull target selected via setParams
+            double targetTot = target_tot;
             int sign = 0;
             bool last = false;
             if (mean < (targetTot-0.1)) {
@@ -441,7 +441,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         }
 
         if (pixelFb != nullptr) {
-            double targetTot = bookie->getTargetTot();
+            double targetTot = target_tot;
             auto fbHisto = std::make_unique<Histo2d>("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
             for (unsigned i=0; i<meanTotMap->size(); i++) {
                 int sign = 0;
@@ -630,7 +630,6 @@ void ScurveFitter::init(const ScanLoopInfo *s) {
     cnt = 0;
     n_failedfit =0;
     prevOuter = 0;
-    thrTarget = bookie->getTargetCharge();
 }
 
 void ScurveFitter::loadConfig(const json &j) {

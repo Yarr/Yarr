@@ -27,6 +27,8 @@ class AnalysisAlgorithm {
         void setConfig (FrontEndCfg *c) { feCfg = c;}
         void setId (unsigned uid) {id = uid;}
 
+        virtual void setParams(int target_tot, int target_charge) {}
+
         void connect(ClipBoard<HistogramBase> *out, FeedbackClipboard *fb) {
             output = out;
             feedback = fb;

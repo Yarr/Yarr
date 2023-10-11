@@ -398,7 +398,8 @@ namespace ScanHelper {
 
     void buildAnalyses( std::map<unsigned, std::vector<std::unique_ptr<AnalysisDataProcessor>> >& analyses,
             const json& scanCfg, Bookkeeper& bookie,
-                        const ScanLoopInfo* s, FeedbackClipboardMap *fbData, int mask_opt, std::string outputDir) {
+                        const ScanLoopInfo* s, FeedbackClipboardMap *fbData, int mask_opt, std::string outputDir,
+                        int target_tot, int target_charge) {
         balog->info("Loading analyses ...");
 
         const json &anaCfg = scanCfg["scan"]["analysis"];
@@ -473,6 +474,7 @@ namespace ScanHelper {
                             }
 
                             analysis->setConfig(bookie.getFeCfg(id));
+                            analysis->setParams(target_tot, target_charge);
 
                             ana.addAlgorithm(std::move(analysis));
                         } else {
