@@ -24,6 +24,7 @@ class AnalysisAlgorithm {
         virtual ~AnalysisAlgorithm() = default;
         
         void setBookkeeper (Bookkeeper *b) {bookie = b;}
+        void setConfig (FrontEndCfg *c) { feCfg = c;}
         void setId (unsigned uid) {id = uid;}
 
         void connect(ClipBoard<HistogramBase> *out, FeedbackClipboard *fb) {
@@ -48,6 +49,7 @@ class AnalysisAlgorithm {
 
     protected:
         Bookkeeper *bookie;
+        FrontEndCfg *feCfg;
         unsigned id;
         ClipBoard<HistogramBase> *output;
         FeedbackClipboard *feedback;

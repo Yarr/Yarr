@@ -415,7 +415,7 @@ void ToaAnalysis::processHistogram(HistogramBase *h) {
 
     // ToA vs charge
     if(m_hasVcalLoop && h_chargeVsToaMap == NULL) {
-        auto cfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
+        auto cfg = feCfg;
         double chargeMin = cfg->toCharge(m_vcalMin);
         double chargeMax = cfg->toCharge(m_vcalMax);
         double chargeStep = cfg->toCharge(m_vcalStep);
@@ -515,7 +515,7 @@ void ToaAnalysis::processHistogram(HistogramBase *h) {
 
         // ToA vs charge
         if (m_hasVcalLoop) {
-            auto cfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
+            auto cfg = feCfg;
             double chargeAtCurrentStep = cfg->toCharge(ident);
             double bin_width = ((toa_bins_x_hi+0.5) - (toa_bins_x_lo+0.5)) / (toa_bins_n);
             for (unsigned ii = 0; ii < fineMeanPToADist->size(); ii++) {

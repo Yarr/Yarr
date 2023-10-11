@@ -472,6 +472,8 @@ namespace ScanHelper {
                                 archiver->setOutputDirectory(outputDir);
                             }
 
+                            analysis->setConfig(bookie.getFeCfg(id));
+
                             ana.addAlgorithm(std::move(analysis));
                         } else {
                             balog->error("Error, Analysis Algorithm \"{} unknown, skipping!", algo_name);
