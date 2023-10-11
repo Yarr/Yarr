@@ -53,8 +53,8 @@ bool AnalysisAlgorithm::isPOILoop(const LoopActionBaseInfo *l) {
 
 AnalysisProcessor::AnalysisProcessor() = default;
 
-AnalysisProcessor::AnalysisProcessor(Bookkeeper *b, unsigned uid)
-  : bookie(b), id(uid)
+AnalysisProcessor::AnalysisProcessor(unsigned uid)
+  : id(uid)
 {
 }
 
@@ -127,7 +127,6 @@ void AnalysisProcessor::end() {
 }
 
 void AnalysisProcessor::addAlgorithm(std::unique_ptr<AnalysisAlgorithm> a) {
-    a->setBookkeeper(bookie);
     a->setId(id);
     algorithms.push_back(std::move(a));
 }

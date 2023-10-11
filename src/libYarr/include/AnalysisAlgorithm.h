@@ -3,7 +3,6 @@
 
 #include <thread>
 
-#include "Bookkeeper.h"
 #include "AnalysisDataProcessor.h"
 #include "FeedbackBase.h"
 #include "HistogramBase.h"
@@ -23,7 +22,6 @@ class AnalysisAlgorithm {
         }
         virtual ~AnalysisAlgorithm() = default;
         
-        void setBookkeeper (Bookkeeper *b) {bookie = b;}
         void setConfig (FrontEndCfg *c) { feCfg = c;}
         void setId (unsigned uid) {id = uid;}
 
@@ -50,7 +48,6 @@ class AnalysisAlgorithm {
         void setMasking(bool val) {make_mask = val;}
 
     protected:
-        Bookkeeper *bookie;
         FrontEndCfg *feCfg;
         unsigned id;
         ClipBoard<HistogramBase> *output;
@@ -69,7 +66,7 @@ class AnalysisAlgorithm {
 class AnalysisProcessor : public AnalysisDataProcessor {
     public:
         AnalysisProcessor();
-        AnalysisProcessor(Bookkeeper *b, unsigned ch);
+        AnalysisProcessor(unsigned ch);
         ~AnalysisProcessor() override;
 
         void connect(const ScanLoopInfo *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output, FeedbackClipboard *arg_fb, bool storeInput=false) override {
@@ -105,7 +102,6 @@ class AnalysisProcessor : public AnalysisDataProcessor {
         }
 
     private:
-        Bookkeeper *bookie;
         unsigned id;
         ClipBoard<HistogramBase> *input;
         ClipBoard<HistogramBase> *output;

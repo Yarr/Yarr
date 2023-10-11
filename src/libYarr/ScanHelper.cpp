@@ -443,7 +443,7 @@ namespace ScanHelper {
                     }
 
                     // Add analysis processors
-                    analyses[id].emplace_back( new AnalysisProcessor(&bookie, id) );
+                    analyses[id].emplace_back( new AnalysisProcessor(id) );
                     auto& ana = dynamic_cast<AnalysisProcessor&>( *(analyses[id].back()) );
 
                     // Create the ClipBoard to store its output and establish connection

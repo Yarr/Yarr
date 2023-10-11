@@ -52,7 +52,7 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
     int rx_channel = 0;
 
     // This is for one FE
-    AnalysisProcessor analysis(&bookie, rx_channel);
+    AnalysisProcessor analysis(rx_channel);
 
     int nCol = 128 * chip_count;
     int nRow = 2;
