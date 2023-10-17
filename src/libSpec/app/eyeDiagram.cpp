@@ -271,7 +271,7 @@ int main(int argc, char **argv) {
             if (resultVec[i][j]==1){
                 if (width==0) start_val=j;
                 width+=1; 
-                if (i==31){
+                if (j==31){
                     if(width>last_width){
                         best_val=start_val;
                         best_width=width;
@@ -282,7 +282,7 @@ int main(int argc, char **argv) {
                     best_val=start_val;
                     best_width=width;
                 }   
-                last_width=width;
+                last_width=best_width;
                 width=0;
             }
         }    
