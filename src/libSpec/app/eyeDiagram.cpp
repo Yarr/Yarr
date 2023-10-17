@@ -28,7 +28,8 @@ void printHelp() {
               << "  -h                   Display this help message.\n"
               << "  -r <hw_controller_file>   Specify hardware controller JSON path.\n"
               << "  -c <connectivity_file>    Specify connectivity config JSON path.\n"
-              << "  -t <test_size>            Specify the error counter test size.\n"
+              << "  -t <test_size>            Specify the error counter test size. Default 1 x 10^6\n"
+              << "  -s                   Skip chip configuration.\n"
               << "  -n                   Don't update the controller condfig with the best delay values\n" ;
 }
 
@@ -77,10 +78,11 @@ int main(int argc, char **argv) {
     int n_lanes= 16;
     std::string hw_controller_filename = "";
     std::string connectivity_filename = "";
-    uint32_t test_size = 10e5;
+    uint32_t test_size = 1000000;
     bool save_delay=true;
+    bool skip_config=false;
 
-    while ((c = getopt(argc, argv, "hr:c:t:n")) != -1) {
+    while ((c = getopt(argc, argv, "hr:c:t:ns")) != -1) {
         switch (c) {
         case 'h':
             printHelp();
@@ -97,6 +99,9 @@ int main(int argc, char **argv) {
         case 'n' :
             save_delay = false;
             break;    
+        case 's' :
+            skip_config = true;
+            break;   
 		default:
             logger->critical("Invalid command line parameter(s) given!");
             return -1;
@@ -162,7 +167,9 @@ int main(int argc, char **argv) {
             continue;
         } else {
             auto jchip = ScanHelper::openJsonFile(chip_register_file_path);
-            fe->configure();          
+            if (!skip_config){
+                fe->configure();            
+            }
 
             if (jchip.contains({chipType, "GlobalConfig", "CdrClkSel"}) &&
                 jchip.contains({chipType, "GlobalConfig", "ServiceBlockPeriod"})) {
