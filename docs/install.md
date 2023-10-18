@@ -9,6 +9,41 @@ In order to setup the DAQ system the following two steps are needed:
 NB for some hardware controllers there are extra dependencies requried,
 for instance [NetIO](netio.md).
 
+## TLDR - Software installation 
+
+Just want to install the latest version of the YARR software? Follow the quick install instructions here. In case of a new machine, or if you're not sure, follow the more detailed instructions below. 
+
+Enable GCC version 9.0 or higher: 
+```bash
+# Source the setup script
+$ source /opt/rh/devtoolset-9/enable
+# Add it to your bash_profile to enable it by default
+$ echo "source /opt/rh/devtoolset-9/enable" >> ~/.bash_profile
+```
+
+Clone the YARR repository to your local machine: 
+```bash
+$ git clone https://gitlab.cern.ch/Yarr/Yarr.git Yarr
+```
+
+Compile the minimal build, for more specific compilation options (e.g. NetIO, or Rogue), see below. 
+```bash
+$ cd Yarr/
+$ mkdir build
+$ cd build
+$ cmake3 ../
+<Some text>
+$ make -j4
+<Lots of text>
+$ make install
+$ cd ..
+```
+In case of issues, please refer to the more detailed instructions below, or consult the [Troubleshooting](troubleshooting.md).
+
+**Next step:**
+- On a new machine, next install the PCIe kernel driver: [Kernel Driver Installation](kernel_driver.md)
+- On a machine which already has the PCIe kernel driver installed, proceed to [Flashing the firmware](pcie.md)
+
 ## Software installation
 
 ### Dependencies for Centos 7
@@ -73,7 +108,9 @@ This repository uses the cmake build system in its usual manner.
 
 #### Basic compilation
 
-- By default the minimal build is enabled, which builds only the Emulator and SPEC controller, if you want to run with additional controllers (e.g. NetIO, or Rogue) you have to enable them via a cmake flag (see below). For the minimal build, simply execute the following: 
+By default the minimal build is enabled, which builds only the Emulator and SPEC controller, if you want to run with additional controllers (e.g. NetIO, or Rogue) you have to enable them via a cmake flag (see below). 
+
+For the minimal build, simply execute the following: 
 
 ```bash
 $ cd Yarr/
@@ -86,6 +123,10 @@ $ make -j4
 $ make install
 $ cd ..
 ```
+
+**Next step:**
+- On a new machine, next install the PCIe kernel driver: [Kernel Driver Installation](kernel_driver.md)
+- On a machine which already has the PCIe kernel driver installed, proceed to [Flashing the firmware](pcie.md)
 
 #### Compilation with additional options
 
@@ -126,7 +167,4 @@ $ make install
 $ cd ..
 ```
 
-## Next step
-
-Install the PCIe kernel driver: [Kernel Driver Installation](kernel_driver.md)
 
