@@ -61,29 +61,34 @@ $ sudo yum install gnuplot texlive-epstopdf cmake3 elfutils-libelf-devel
 ### Initialise repository
 - Clone the repository to your local machine:
 ```bash
-$ git clone https://github.com/Yarr/Yarr.git Yarr
-```
-or
-```bash
 $ git clone https://gitlab.cern.ch/Yarr/Yarr.git Yarr
 ```
 - The master branch should contain the latest stable release, the most up-to date version can be found in the devel branch
 - A version history and description can be found [here](version.md)
+- Note, Yarr is also available in a [GitHub repository.](https://github.com/Yarr/ "GitHub repository"), but using the GitLab version is recommended and what is used for active development. 
 
 ### Compile the software
 
 This repository uses the cmake build system in its usual manner.
 
-#### Compile software with cmake
-- Generate makefile
-    - By default the minimal build is enabled, which builds only the Emulator and SPEC controller, if you want to run with additional controllers (e.g. NetIO, or Rogue) you have to enable them via a cmake flag (see below)
+#### Basic compilation
+
+- By default the minimal build is enabled, which builds only the Emulator and SPEC controller, if you want to run with additional controllers (e.g. NetIO, or Rogue) you have to enable them via a cmake flag (see below). For the minimal build, simply execute the following: 
+
 ```bash
 $ cd Yarr/
 $ mkdir build
 $ cd build
 $ cmake3 ../
 <Some text>
+$ make -j4
+<Lots of text>
+$ make install
+$ cd ..
 ```
+
+#### Compilation with additional options
+
 - In order to build with more controllers execute cmake with extra options
     - For all controllers: 
         - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=all ..``
@@ -113,7 +118,7 @@ $ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc # gcc 4.8 or higher
 $ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-gcc # ARM/Archlinux on RCE
 $ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/macos-clang # MacOS build
 ```
-- Compile the software
+- As before, finally compile the software: 
 ```bash
 $ make -j4
 <Lots of text>
