@@ -81,6 +81,8 @@ int main(int argc, char **argv) {
     uint32_t test_size = 1000000;
     bool save_delay=true;
     bool skip_config=false;
+    uint32_t cdrclksel = 0;
+    uint32_t serblckperiod = 50;
 
     while ((c = getopt(argc, argv, "hr:c:t:ns")) != -1) {
         switch (c) {
@@ -102,6 +104,9 @@ int main(int argc, char **argv) {
         case 's' :
             skip_config = true;
             break;   
+        //case 'k' :
+        //    cdrclksel = optarg;
+        //    break;   
 		default:
             logger->critical("Invalid command line parameter(s) given!");
             return -1;
@@ -146,8 +151,6 @@ int main(int argc, char **argv) {
     std::string chipType = ScanHelper::loadChipConfigs(jconn, false, Utils::dirFromPath(connectivity_filename));
     auto chip_configs = jconn["chips"];
     size_t n_chips = chip_configs.size();
-    uint32_t cdrclksel = 0;
-    uint32_t serblckperiod = 50;
 
     for (size_t ichip = 0; ichip < n_chips; ichip++) {
         if (chip_configs[ichip]["enable"] == 0)
@@ -166,20 +169,17 @@ int main(int argc, char **argv) {
             std::cerr << "WARNING: Skipping chip at index " << ichip << " in connectivity file" << std::endl;
             continue;
         } else {
-            auto jchip = ScanHelper::openJsonFile(chip_register_file_path);
             if (!skip_config){
-                fe->configure();            
-            }
-
-            if (jchip.contains({chipType, "GlobalConfig", "CdrClkSel"}) &&
-                jchip.contains({chipType, "GlobalConfig", "ServiceBlockPeriod"})) {
-                cdrclksel = jchip[chipType]["GlobalConfig"]["CdrClkSel"];
-                serblckperiod = jchip[chipType]["GlobalConfig"]["ServiceBlockPeriod"];
+                auto jchip = ScanHelper::openJsonFile(chip_register_file_path);
+                fe->configure();           
             } else {
-                std::cerr << "ERROR: Could not load \"CdrClkSel\" or \"ServiceBlockPeriod\" from config. Assuming defaults (0, 50)." << std::endl;
-                cdrclksel = 0;
-                serblckperiod = 50;
+                logger->info("Skipping configuration!");
             }
+            cdrclksel = fe->getVirtualRegister("CdrClkSel");
+            serblckperiod = fe->getVirtualRegister("ServiceBlockPeriod");
+            logger->info("Read \"CdrClkSel\" {} and \"ServiceBlockPeriod\" {} from virtual register read", cdrclksel, serblckperiod);
+
+
 
             // Wait for fifo to be empty
             std::this_thread::sleep_for(std::chrono::microseconds(10));

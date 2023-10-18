@@ -308,6 +308,16 @@ Rd53bRegDefault Rd53bGlobalCfg::*  Rd53b::getNamedRegister(std::string name) {
     return NULL;
 }
 
+void Rd53b::setVirtualRegister(std::string name, uint16_t value){
+    logger->debug("Set virtual register {} -> {}", name, value);
+    (this->*regMap[name]).write(value);
+}
+
+uint16_t Rd53b::getVirtualRegister(std::string name){
+    logger->debug("Get virtual register value {}", name);
+    return (this->*regMap[name]).read();
+}
+
 int Rd53b::checkCom() {
     if (this->ServiceBlockEn.read() == 0) {
         logger->error("Register messages not enabled, can't check communication ... proceeding blind! (Set \"ServiceBlockEn\" to 1 in the chip config)");
