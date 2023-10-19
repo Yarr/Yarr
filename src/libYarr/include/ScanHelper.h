@@ -22,6 +22,7 @@
 #include "logging.h"
 
 #include "ScanOpts.h"
+#include "ScanBase.h"
 
 namespace ScanHelper {
         /// Get a new run number, such that it's different next time
@@ -53,6 +54,7 @@ namespace ScanHelper {
         std::unique_ptr<ScanBase> buildScan( const json& scanType,
                                              Bookkeeper& bookie,
                                              FeedbackClipboardMap *fbData);
+
        std::string defaultDbUserCfgPath();
        std::string defaultDbSiteCfgPath();
        std::string defaultDbCfgPath();

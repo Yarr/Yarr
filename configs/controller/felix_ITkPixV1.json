@@ -11,10 +11,9 @@
         "extend": false,
         "feType": "rd53b",
 	"bufferSize": 64,
-	"rxWaitTime": 1000000,
+	"rxWaitTime": 500,
 	"pixFwTrigger": true
       }
     }
   }
 }
-

@@ -193,7 +193,7 @@ bool Rd53bDataProcessor::retrieve(uint64_t &variable, const unsigned length, con
         // Retrieve the bits overflow to the next 64-bit data block. Here we need to separate the cases where the overflow bits are fully contained in the first 32-bit data word, or extend to the second 32-bit data word
         // This check is needed because the maximum number of bits retrieved could be 64 bits (reading ToT for all 16 pixels from a full hit map)
         // Can be simplified if the data word is 64 instead of 32 bits, or if the ToT is read pixel-by-pixel (in which case the maximum number of bits retrieved will always be below 32 bits)
-        variable |= (((_bitIdx + length) < (HALFBLOCKSIZE + BLOCKSIZE)) ? ((_data[0] & _streamMask) >> (95 - (_bitIdx + length) - _chipIdShift)) 
+        variable |= (((_bitIdx + length) < (HALFBLOCKSIZE + BLOCKSIZE)) ? ((_data[0] & _streamMask) >> (95 - (_bitIdx + length) - _chipIdShift))
                 : (((_data[0] & _streamMask) << (_bitIdx + length - 95-_chipIdShift)) | (_data[1] >> (127 - (length + _bitIdx) - _chipIdShift))));
 
         _bitIdx -= (63 - length - _chipIdShift); // Move bit index. Note the NS bit should also be counted
@@ -213,7 +213,7 @@ void Rd53bDataProcessor::rollBack(const unsigned length)
         _bitIdx -= length;
     // Rolling back to the previous block
     else
-    {                              
+    {
         _bitIdx += (63 - length - _chipIdShift);  // Correct the bit index. Keep in mind there is NS bit
         getPreviousDataBlock();
     }
@@ -243,6 +243,7 @@ void Rd53bDataProcessor::process_core()
         _curOut->newEvent(_tag, _l1id, _bcid);
         //logger->info("New Stream, New Event: {} ", _tag);
         _events++;
+        getFeedback(_tag, _bcid);
     }
 
     // Start looping over data words in the current packet
@@ -280,6 +281,7 @@ void Rd53bDataProcessor::process_core()
                 //logger->info("New Stream, New Event: {} ", _tag);
                 _events++;
                 _status = CCOL;
+                getFeedback(_tag, _bcid);
                 continue;
             }
             else if (_ccol >= 0x38) // Internal tag
@@ -297,6 +299,7 @@ void Rd53bDataProcessor::process_core()
                 //logger->info("Same Stream, New Event: {} ", _tag);
                 _events++;
                 _status = CCOL;
+                getFeedback(_tag, _bcid);
                 continue;
             }
         default:
@@ -517,7 +520,7 @@ bool Rd53bDataProcessor::getNextDataBlock()
             // Push out data accumulated so far
             if (_events > 0)
             {
-                // logger->error("Pushing out data {} events", _events[_activeChannels[i]]);
+                //logger->error("Pushing out data {} events", _events[_activeChannels[i]]);
                 _events = 0;
                 m_out->pushData(std::move(_curOut));
             }
@@ -531,8 +534,15 @@ bool Rd53bDataProcessor::getNextDataBlock()
 
         // Try to get data
         _curInV = m_input->popData();
-        if (_curInV == nullptr || _curInV->size() == 0)
-            return false;
+        if (_curInV == nullptr)
+          return false;
+        if (_curInV->size() == 0){
+           if (_curInV->stat.is_end_of_iteration) {
+             _curOut.reset(new FrontEndData(_curInV->stat));
+             m_out->pushData(std::move(_curOut));
+           }
+           return false;
+        }
 
         _curOut.reset(new FrontEndData(_curInV->stat));
         _events = 0;
@@ -573,4 +583,15 @@ void Rd53bDataProcessor::getPreviousDataBlock()
         getPreviousDataBlock();
     if (((_data[0] >> 29) & 0x3) != _chipId && _enChipId)
         getPreviousDataBlock();
+}
+
+void Rd53bDataProcessor::getFeedback(unsigned tag, unsigned bcid)
+{
+  std::unique_ptr<FeedbackProcessingInfo> stat(new FeedbackProcessingInfo{.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_ERROR});
+  FeedbackProcessingInfo &curStatus = *stat;
+  curStatus.trigger_tag = tag;
+  curStatus.bcid = bcid;
+  if (statusFb != nullptr) statusFb->pushData(std::move(stat));
+
+  return;
 }

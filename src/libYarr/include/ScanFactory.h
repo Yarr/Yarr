@@ -14,6 +14,7 @@
 #include "FeedbackBase.h"
 #include "storage.hpp"
 #include <functional>
+
 class ScanFactory : public ScanBase {
     public:
         ScanFactory(Bookkeeper *k, FeedbackClipboardMap *fb);

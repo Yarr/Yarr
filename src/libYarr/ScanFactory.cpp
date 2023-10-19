@@ -12,6 +12,7 @@
 #include <iostream>
 
 #include "AllStdActions.h"
+#include "StdTriggerAction.h"
 #include "ClassRegistry.h"
 
 #include "logging.h"
@@ -102,6 +103,12 @@ void ScanFactory::loadConfig(const json &scanCfg) {
         if(auto *fbPixel = dynamic_cast<PixelFeedbackReceiver*>(&*action)) {
             fbPixel->connectClipboard(feedback);
         }
+
+        //if(auto *trigLoop = dynamic_cast<StdTriggerAction*>(&*action))
+        if(std::shared_ptr<StdTriggerAction> trigLoop = std::dynamic_pointer_cast<StdTriggerAction>(action)) {
+            g_bk->setTriggerAction(trigLoop);
+        }
+
         this->addLoop(action);
 
         json tCfg;

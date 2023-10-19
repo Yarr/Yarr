@@ -18,6 +18,7 @@
 #include "EventDataBase.h"
 #include "HistogramBase.h"
 #include "ScanBase.h"
+#include "FrontEnd.h"
 
 class DataProcessor {
     public:
@@ -28,6 +29,7 @@ class DataProcessor {
         virtual void connect(FrontEndCfg *feCfg, ClipBoard<RawDataContainer> *arg_input, ClipBoard<EventDataBase> *arg_output) {}
         virtual void connect(ClipBoard<EventDataBase> *arg_input, ClipBoard<HistogramBase> *arg_output) {}
         virtual void connect(ScanBase *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output) {}
+        virtual void connect(ClipBoard<FeedbackProcessingInfo> *arg_proc_status) {}
         virtual void init() {}
         virtual void process() {}
         virtual void run() = 0;
