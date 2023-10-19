@@ -222,6 +222,7 @@ void Itkpixv2DataProcessor::process_core()
         _curOut->newEvent(_tag, _l1id, _bcid);
         //logger->info("New Stream, New Event: {} ", _tag);
         _events++;
+        sendFeedback(_tag, _bcid);
     }
 
     // Start looping over data words in the current packet
@@ -258,6 +259,8 @@ void Itkpixv2DataProcessor::process_core()
                 _curOut->newEvent(_tag, _l1id, _bcid);
                 //logger->info("New Stream, New Event: {} ", _tag);
                 _events++;
+                sendFeedback(_tag, _bcid);
+
                 _status = CCOL;
                 continue;
             }
@@ -275,6 +278,8 @@ void Itkpixv2DataProcessor::process_core()
                 _curOut->newEvent(_tag, _l1id, _bcid);
                 //logger->info("Same Stream, New Event: {} ", _tag);
                 _events++;
+                sendFeedback(_tag, _bcid);
+
                 _status = CCOL;
                 continue;
             }
@@ -562,4 +567,15 @@ void Itkpixv2DataProcessor::getPreviousDataBlock()
         getPreviousDataBlock();
     if (((_data[0] >> 29) & 0x3) != _chipId && _enChipId)
         getPreviousDataBlock();
+}
+
+void Itkpixv2DataProcessor::sendFeedback(unsigned tag, unsigned bcid)
+{
+    std::unique_ptr<FeedbackProcessingInfo> stat(new FeedbackProcessingInfo{.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_ERROR});
+    FeedbackProcessingInfo &curStatus = *stat;
+    curStatus.trigger_tag = tag;
+    curStatus.bcid = bcid;
+    if (statusFb != nullptr) statusFb->pushData(std::move(stat));
+
+    return;
 }

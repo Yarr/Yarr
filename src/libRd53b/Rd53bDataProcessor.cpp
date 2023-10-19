@@ -243,7 +243,7 @@ void Rd53bDataProcessor::process_core()
         _curOut->newEvent(_tag, _l1id, _bcid);
         //logger->info("New Stream, New Event: {} ", _tag);
         _events++;
-        getFeedback(_tag, _bcid);
+        sendFeedback(_tag, _bcid);
     }
 
     // Start looping over data words in the current packet
@@ -281,7 +281,7 @@ void Rd53bDataProcessor::process_core()
                 //logger->info("New Stream, New Event: {} ", _tag);
                 _events++;
                 _status = CCOL;
-                getFeedback(_tag, _bcid);
+                sendFeedback(_tag, _bcid);
                 continue;
             }
             else if (_ccol >= 0x38) // Internal tag
@@ -299,7 +299,7 @@ void Rd53bDataProcessor::process_core()
                 //logger->info("Same Stream, New Event: {} ", _tag);
                 _events++;
                 _status = CCOL;
-                getFeedback(_tag, _bcid);
+                sendFeedback(_tag, _bcid);
                 continue;
             }
         default:
@@ -585,13 +585,13 @@ void Rd53bDataProcessor::getPreviousDataBlock()
         getPreviousDataBlock();
 }
 
-void Rd53bDataProcessor::getFeedback(unsigned tag, unsigned bcid)
+void Rd53bDataProcessor::sendFeedback(unsigned tag, unsigned bcid)
 {
-  std::unique_ptr<FeedbackProcessingInfo> stat(new FeedbackProcessingInfo{.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_ERROR});
-  FeedbackProcessingInfo &curStatus = *stat;
-  curStatus.trigger_tag = tag;
-  curStatus.bcid = bcid;
-  if (statusFb != nullptr) statusFb->pushData(std::move(stat));
+    std::unique_ptr<FeedbackProcessingInfo> stat(new FeedbackProcessingInfo{.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_ERROR});
+    FeedbackProcessingInfo &curStatus = *stat;
+    curStatus.trigger_tag = tag;
+    curStatus.bcid = bcid;
+    if (statusFb != nullptr) statusFb->pushData(std::move(stat));
 
-  return;
+    return;
 }
