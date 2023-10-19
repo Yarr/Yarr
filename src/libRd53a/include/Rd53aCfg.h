@@ -23,6 +23,17 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
     public:
         Rd53aCfg();
 
+        void maskPixel(unsigned col, unsigned row) override {
+            this->setEn(col, row, 0);
+            this->setHitbus(col, row, 0);
+        }
+
+        unsigned getPixelEn(unsigned col, unsigned row) override {
+            return this->getEn(col, row);
+        }
+
+        void enableAll() override;
+
         /**
          * Obtain the corresponding charge [e] from the input VCal
          */

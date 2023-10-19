@@ -183,11 +183,20 @@ void FelixRxCore::on_data(FelixID_t fid, const uint8_t* data, size_t size, uint8
 }
 
 void FelixRxCore::on_connect(FelixID_t fid) {
-  m_qStats[fid].connected = true;
+  try {
+    m_qStats.at(fid).connected = true;
+  } catch (std::out_of_range &e) {
+    frlog->trace("Stats of fid 0x{:x} is not tracked.");
+  }
 }
 
 void FelixRxCore::on_disconnect(FelixID_t fid) {
-  m_qStats[fid].connected = false;
+  try {
+    m_qStats.at(fid).connected = false;
+  } catch (std::out_of_range &e) {
+    // For example, this is an fid used for reading/writing FELIX registers
+    frlog->trace("Stats of fid 0x{:x} is not tracked.");
+  }
 }
 
 void FelixRxCore::setClient(std::shared_ptr<FelixClientThread> client) {
@@ -222,17 +231,17 @@ bool FelixRxCore::isBridgeEmpty() {return false;}
 void FelixRxCore::loadConfig(const json &j) {
   frlog->info("FelixRxCore:");
 
-  if (j.contains("flushTime_ms")) {
-    m_flushTime = j["flushTime_ms"];
+  if (j.contains("flushTime")) {
+    m_flushTime = j["flushTime"];
     frlog->info(" flush time = {} ms", m_flushTime);
   }
 
-  if (j.contains("detector_id")) {
-    m_did = j["detector_id"];
+  if (j.contains("detectorID")) {
+    m_did = j["detectorID"];
     frlog->info(" did = {}", m_did);
   }
-  if (j.contains("connector_id")) {
-    m_cid = j["connector_id"];
+  if (j.contains("connectorID")) {
+    m_cid = j["connectorID"];
     frlog->info(" cid = {}", m_cid);
   }
   if (j.contains("protocol")) {
@@ -240,21 +249,21 @@ void FelixRxCore::loadConfig(const json &j) {
     frlog->info(" protocol = {}", m_protocol);
   }
 
-  if (j.contains("enable_monitor")) {
-    m_runMonitor = j["enable_monitor"];
+  if (j.contains("enableMonitor")) {
+    m_runMonitor = j["enableMonitor"];
     frlog->info(" run monitor = {}", m_runMonitor);
   }
-  if (j.contains("monitor_interval_ms")) {
-    m_interval_ms = j["monitor_interval_ms"];
+  if (j.contains("monitorInterval")) {
+    m_interval_ms = j["monitorInterval"];
     frlog->info(" monitor interval = {} ms", m_interval_ms);
   }
-  if (j.contains("queue_limit_MB")) {
-    m_queue_limit = j["queue_limit_MB"];
+  if (j.contains("queueLimitMB")) {
+    m_queue_limit = j["queueLimitMB"];
     frlog->info(" queue limit = {} MB", m_queue_limit);
   }
 
-  if (j.contains("wait_time_us")) {
-    m_waitTime = std::chrono::microseconds(j["wait_time_us"]);
+  if (j.contains("waitTime")) {
+    m_waitTime = std::chrono::microseconds(j["waitTime"]);
     frlog->info(" rx wait time = {} microseconds", m_waitTime.count());
   }
 
@@ -264,13 +273,13 @@ void FelixRxCore::loadConfig(const json &j) {
 }
 
 void FelixRxCore::writeConfig(json &j) {
-  j["detector_id"] = m_did;
-  j["connector_id"] = m_cid;
+  j["detectorID"] = m_did;
+  j["connectorID"] = m_cid;
   j["protocol"] = m_protocol;
-  j["flushTime_ms"] = m_flushTime;
-  j["enable_monitor"] = m_runMonitor.load();
-  j["monitor_interval_ms"] = m_interval_ms;
-  j["queue_limit_MB"] = m_queue_limit;
+  j["flushTime"] = m_flushTime;
+  j["enableMonitor"] = m_runMonitor.load();
+  j["monitorInterval"] = m_interval_ms;
+  j["queueLimitMB"] = m_queue_limit;
 }
 
 void FelixRxCore::runMonitor(bool print_info) {

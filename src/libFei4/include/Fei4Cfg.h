@@ -32,6 +32,17 @@ class Fei4Cfg : public FrontEndCfg, public Fei4GlobalCfg, public Fei4PixelCfg {
             vcalSlope = 1.5;
         }
 
+        void maskPixel(unsigned col, unsigned row) override {
+            this->setEn(col+1, row+1, 0);
+            this->setHitbus(col+1, row+1, 1);
+        }
+
+        unsigned getPixelEn(unsigned col, unsigned row) override {
+	    return this->getEn(col, row);
+        }
+
+        void enableAll() override;
+
         double toCharge(double vcal) override {return this->toCharge(vcal, true, true);}
         double toCharge(double vcal, bool sCapOn=true, bool lCapOn=true) override {
             // Q = C*V

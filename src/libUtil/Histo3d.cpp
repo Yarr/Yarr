@@ -374,22 +374,22 @@ void Histo3d::plot(const std::string &prefix, const std::string &dir) const {
 
     std::string input;
 
-    input+="$'set terminal png size 1280, 1024;";
-    input+="set palette negative defined ( 0 \\'#D53E4F\\', 1 \\'#F46D43\\', 2 \\'#FDAE61\\', 3 \\'#FEE08B\\', 4 \\'#E6F598\\', 5 \\'#ABDDA4\\', 6 \\'#66C2A5\\', 7 \\'#3288BD\\');";
+    input+="\"set terminal png size 1280, 1024;";
+    input+="set palette negative defined ( 0 '#D53E4F', 1 '#F46D43', 2 '#FDAE61', 3 '#FEE08B', 4 '#E6F598', 5 '#ABDDA4', 6 '#66C2A5', 7 '#3288BD');";
     input+="unset key;";
-    input+="set title \""  +HistogramBase::name+"\";";
-    input+="set xlabel \""  +HistogramBase::xAxisTitle+"\";";
-    input+="set ylabel \""  +HistogramBase::yAxisTitle+"\";";
-    input+="set cblabel \""  +HistogramBase::zAxisTitle+"\";";
+    input+="set title '"  +HistogramBase::name+"';";
+    input+="set xlabel '"  +HistogramBase::xAxisTitle+"';";
+    input+="set ylabel '"  +HistogramBase::yAxisTitle+"';";
+    input+="set cblabel '"  +HistogramBase::zAxisTitle+"';";
     input+="set xrange["+ std::to_string(xlow)+ ":"+std::to_string(xhigh)+ "];";
     input+="set yrange["+ std::to_string(ylow)+ ":"+std::to_string(yhigh)+ "];";
-    input+="plot \\'-\\' matrix u (($1)*(("+std::to_string(xhigh);
+    input+="plot '-' matrix u ((\\$1)*(("+std::to_string(xhigh);
     input+="-"+std::to_string(xlow)+")/";
     input+=std::to_string(xbins)+".0)+"+std::to_string(xlow +(xhigh-xlow)/(xbins*2.0));
-    input+= "):(($2)*(("+std::to_string(yhigh);
+    input+= "):((\\$2)*(("+std::to_string(yhigh);
     input+="-"+std::to_string(ylow)+")/";
     input+=std::to_string(ybins)+".0)+"+std::to_string(ylow +(yhigh-ylow)/(ybins*2.0));
-    input+="):3 with image'";
+    input+="):3 with image\"";
     std::string cmd="gnuplot  -e "+input+" > "+output+"\n";
     FILE *gnu = popen(cmd.c_str(), "w");
     std::stringstream ss;

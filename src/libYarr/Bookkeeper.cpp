@@ -9,6 +9,7 @@
 #include <set>
 
 #include "Bookkeeper.h"
+#include "AllChips.h"
 
 #include "logging.h"
 
@@ -31,6 +32,17 @@ Bookkeeper::~Bookkeeper() {
         this->delFe(i);
     }
     delete g_fe;
+}
+
+void Bookkeeper::initGlobalFe(std::string chipType) {
+    std::unique_ptr<FrontEnd> fe_tmp = StdDict::getFrontEnd(chipType);
+
+    g_fe = fe_tmp->getGlobal().release();
+
+    g_fe->makeGlobal();
+
+    // The global FE may need to know the configuration of other FEs
+    g_fe->connectBookkeeper(this);
 }
 
 void Bookkeeper::addFe(FrontEnd *fe, unsigned txChannel, unsigned rxChannel) {

@@ -30,6 +30,13 @@ void Fei4Cfg::writeConfig(json &j) {
     Fei4GlobalCfg::writeConfig(j);
 }
 
+void Fei4Cfg::enableAll() {
+    for (unsigned int dc = 0; dc < n_DC; dc++) {
+        En(dc).setAll(1);
+        Hitbus(dc).setAll(0);
+    }
+}
+
 void Fei4Cfg::loadConfig(const json &j) {
     if (j.contains({"FE-I4B","name"}))
         name = j["FE-I4B"]["name"];

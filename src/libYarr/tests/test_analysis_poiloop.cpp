@@ -59,7 +59,7 @@ namespace {
       n_count = 1;
       for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ( not( l->getStyle()==LOOP_STYLE_NOP or (l->isParameterLoop() and isPOILoop(dynamic_cast<StdParameterLoop*>(l.get()))) ) ) {
+        if ( not( l->getStyle()==LOOP_STYLE_NOP or (isPOILoop(l.get())) ) ) {
           // outer loops
           loops.push_back(n);
           loopMax.push_back((unsigned)l->getMax());
@@ -136,7 +136,7 @@ namespace {
     void init(ScanBase *s) {
       for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ( l->isParameterLoop() and isPOILoop(dynamic_cast<StdParameterLoop*>(l.get())) ) {
+        if ( isPOILoop(l.get()) ) {
           pois_min.push_back(l->getMin());
           pois_max.push_back(l->getMax());
           pois_step.push_back(l->getStep());

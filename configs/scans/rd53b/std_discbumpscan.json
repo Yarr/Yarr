@@ -4,7 +4,7 @@
             "0": {
                 "algorithm": "OccupancyAnalysis",
                 "config": {
-                    "createMask": true
+                    "createMask": false
                 }
             },
             "1": {
@@ -54,7 +54,7 @@
 		"min": 0,
 		"step": 1,
 		"maskType": 1, 
-		"maskSize": 1, 
+		"maskSize": 0, 
 		"includedPixels": 0, 
 		"sensorType": 0
 	    },

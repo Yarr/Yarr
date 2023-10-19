@@ -933,3 +933,9 @@ std::string SpecCom::getSpecIdentChCfg(uint32_t fw_ident) {
   if (array_length(specIdentChCfg)<=index) index = 0;
   return specIdentChCfg[index];
 }
+
+uint32_t SpecCom::getSpecIdentLaneCfg(uint32_t fw_ident) {
+  unsigned index = (fw_ident)&0xF;
+  if (array_length(specIdentLaneCfg)<=index) index = 0;
+  return specIdentLaneCfg[index];
+}

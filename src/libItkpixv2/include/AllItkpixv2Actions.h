@@ -1,0 +1,8 @@
+#include "Itkpixv2TriggerLoop.h"
+#include "Itkpixv2MaskLoop.h"
+#include "Itkpixv2ParMaskLoop.h"
+#include "Itkpixv2CoreColLoop.h"
+#include "Itkpixv2ParameterLoop.h"
+#include "Itkpixv2GlobalFeedback.h"
+#include "Itkpixv2PixelFeedback.h"
+#include "Itkpixv2ReadRegLoop.h"

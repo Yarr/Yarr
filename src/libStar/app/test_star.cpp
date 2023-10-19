@@ -4,7 +4,6 @@
 #include <tuple>
 #include <set>
 
-#include "SpecController.h"
 #include "AllHwControllers.h"
 #include "StarCmd.h"
 #include "StarCfg.h"
@@ -234,24 +233,12 @@ RawDataContainer readAllData(
   return rdc;
 }
 
-void reportData(RawData &data, bool do_spec_specific=false) {
+void reportData(RawData &data) {
   logger->info(" Raw data from RxCore:");
   logger->info(" {} {:p} {}", data.getAdr(), (void*)data.getBuf(), data.getSize());
 
   for (unsigned j=0; j<data.getSize();j++) {
     auto word = data[j];
-
-    if(do_spec_specific) {
-      if((j%2) && (word == 0xd3400000)) continue;
-      if(!(j%2) && ((word&0xff) == 0xff)) continue;
-
-      if((word&0xff) == 0x5f) continue;
-
-      if(word == 0x1a0d) continue; // Idle on chan 6
-      if(word == 0x19f2) continue; // Idle on chan 6
-
-      word &= 0xffffc3ff; // Strip of channel number
-    }
 
     logger->info(" [{}] = {:08x} {:032b}", j, word, word);
   }
@@ -869,7 +856,7 @@ bool testHitCounts(HwController& hwCtrl, StarCfg& cfg) {
   return true;
 }
 
-bool testDataPacketsStatic(HwController& hwCtrl, StarCfg& cfg, bool do_spec_specific) {
+bool testDataPacketsStatic(HwController& hwCtrl, StarCfg& cfg) {
   logger->info("Read ABCStar data packets in static mode");
 
   // Static test mode first
@@ -908,7 +895,7 @@ bool testDataPacketsStatic(HwController& hwCtrl, StarCfg& cfg, bool do_spec_spec
 
   for (unsigned c = 0; c < rdc.size(); c++) {
     RawDataPtr d = rdc.data[c];
-    reportData(*d, do_spec_specific);
+    reportData(*d);
   }
 
   if (rdc.size() > 0) {
@@ -921,7 +908,7 @@ bool testDataPacketsStatic(HwController& hwCtrl, StarCfg& cfg, bool do_spec_spec
   return true;
 }
 
-bool testDataPacketsPulse(HwController& hwCtrl, StarCfg& cfg, bool do_spec_specific) {
+bool testDataPacketsPulse(HwController& hwCtrl, StarCfg& cfg) {
   logger->info("Read ABCStar data packets in test pulse mode");
 
   // Test pulse mode
@@ -982,7 +969,7 @@ bool testDataPacketsPulse(HwController& hwCtrl, StarCfg& cfg, bool do_spec_speci
 
   for (unsigned c = 0; c < rdc.size(); c++) {
     RawDataPtr d = rdc.data[c];
-    reportData(*d, do_spec_specific);
+    reportData(*d);
   }
 
   if (rdc.size() > 0) {
@@ -995,7 +982,7 @@ bool testDataPacketsPulse(HwController& hwCtrl, StarCfg& cfg, bool do_spec_speci
   return true;
 }
 
-bool readABCRegisters(HwController& hwCtrl, bool do_spec_specific=false) {
+bool readABCRegisters(HwController& hwCtrl) {
 
   bool success = false;
 
@@ -1009,7 +996,7 @@ bool readABCRegisters(HwController& hwCtrl, bool do_spec_specific=false) {
     );
   if (data_abchpr) {
     logger->info("Received an ABCStar HPR packet.");
-    reportData(*data_abchpr, do_spec_specific);
+    reportData(*data_abchpr);
     success = true;
   } else {
     logger->error("No ABCStar HPR packet received.");
@@ -1025,7 +1012,7 @@ bool readABCRegisters(HwController& hwCtrl, bool do_spec_specific=false) {
     );
   if (data_abcrr) {
     logger->info("Received an ABCStar RR packet.");
-    reportData(*data_abcrr, do_spec_specific);
+    reportData(*data_abcrr);
     success &= true;
   } else {
     logger->error("No ABCStar RR packet received.");
@@ -1171,16 +1158,6 @@ int main(int argc, char *argv[]) {
     hwCtrl->toggleTrigAbort();
     hwCtrl->setTrigEnable(0);
 
-    // In fact, mostly needed only for a specific test version of Spec FW
-    bool do_spec_specific = controllerType == "spec";
-
-    if(do_spec_specific) {
-      //Send IO config to active FMC
-      SpecController &s = *dynamic_cast<SpecController*>(&*hwCtrl);
-      s.writeSingle(0x6<<14 | 0x0, 0x9ce730);
-      s.writeSingle(0x6<<14 | 0x1, 0xF);
-    }
-
     // Enable Tx channels
     hwCtrl->setCmdEnable(txChannels);
 
@@ -1221,8 +1198,8 @@ int main(int argc, char *argv[]) {
       success &= testHitCounts(*hwCtrl, starCfg);
 
       // Read ABC data packets
-      success &= testDataPacketsStatic(*hwCtrl, starCfg, controllerType=="spec");
-      success &= testDataPacketsPulse(*hwCtrl, starCfg, controllerType=="spec");
+      success &= testDataPacketsStatic(*hwCtrl, starCfg);
+      success &= testDataPacketsPulse(*hwCtrl, starCfg);
     }
 
     /*
@@ -1262,8 +1239,8 @@ int main(int argc, char *argv[]) {
       configureABC(*hwCtrl, starCfg, doResets);
 
       // Read ABC data packets
-      success &= testDataPacketsStatic(*hwCtrl, starCfg, controllerType=="spec");
-      success &= testDataPacketsPulse(*hwCtrl, starCfg, controllerType=="spec");
+      success &= testDataPacketsStatic(*hwCtrl, starCfg);
+      success &= testDataPacketsPulse(*hwCtrl, starCfg);
     }
 
     /*
@@ -1296,10 +1273,11 @@ int main(int argc, char *argv[]) {
       configureABC(*hwCtrl, starCfg, doResets);
 
       // read and print some ABC registers
-      success = readABCRegisters(*hwCtrl, controllerType=="spec");
+      success = readABCRegisters(*hwCtrl);
 
       // read and print some data packets
-      success &= testDataPacketsStatic(*hwCtrl, starCfg, controllerType=="spec");
+      success &= testDataPacketsStatic(*hwCtrl, starCfg
+);
     }
 
     /*
@@ -1310,10 +1288,10 @@ int main(int argc, char *argv[]) {
       configureABC(*hwCtrl, starCfg, doResets);
 
       // read and print some ABC registers
-      success = readABCRegisters(*hwCtrl, controllerType=="spec");
+      success = readABCRegisters(*hwCtrl);
 
       // read and print some data packets
-      success &= testDataPacketsStatic(*hwCtrl, starCfg, controllerType=="spec");
+      success &= testDataPacketsStatic(*hwCtrl, starCfg);
 
       /*
       // try reading everything for 1 seconds

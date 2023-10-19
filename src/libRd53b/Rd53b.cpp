@@ -98,16 +98,6 @@ void Rd53b::configure() {
     this->configurePixels();
 }
 
-void Rd53b::enableAll() {
-    logger->info("Resetting enable/hitbus pixel mask to all enabled!");
-    for (unsigned int col = 0; col < n_Col; col++) {
-        for (unsigned row = 0; row < n_Row; row ++) {
-            setEn(col, row, 1);
-            setHitbus(col, row, 1);
-        }
-    }
-}
-
 void Rd53b::configureInit() {
     logger->debug("Initiliasing chip ...");
     

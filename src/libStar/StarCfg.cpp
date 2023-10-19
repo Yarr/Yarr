@@ -36,6 +36,14 @@ double StarCfg::toCharge(double vcal) {
 
 double StarCfg::toCharge(double vcal, bool sCap, bool lCap) { return toCharge(vcal); }
 
+void StarCfg::enableAll() {
+    eachAbc([&](auto &abc) {
+        for(int m=0; m<8; m++) {
+          abc.setRegisterValue(ABCStarRegister::MaskInput(m), 0);
+        }
+      });
+}
+
 int StarCfg::hccChannelForABCchipID(unsigned int chipID) {
   auto itr = std::find_if(m_ABCchips.begin(), m_ABCchips.end(),
                         [this, chipID](auto &it) { return it.second.getABCchipID() == chipID; });
@@ -318,6 +326,29 @@ void StarCfg::loadConfig(const json &j) {
         }
     }
 
+    // Possible override by setting sub registers
+    if(hcc.find("subregs") != hcc.end()) {
+        auto &subregHCC = hcc["subregs"];
+
+        if(!subregHCC.is_object()) {
+          logger->error("HCC/subregs is not an object!");
+          throw std::runtime_error("HCC/subregs should be an object");
+        }
+
+        auto b = subregHCC.begin();
+        auto e = subregHCC.end();
+        for(auto i = b; i != e; i++) {
+            std::string subRegName = i.key();
+            uint32_t subRegValue = valFromJson(i.value());
+
+            auto regPre = m_hcc.getSubRegisterParentValue(subRegName);
+            m_hcc.setSubRegisterValue(subRegName, subRegValue);
+            auto retrieved = m_hcc.getSubRegisterValue(subRegName);
+            auto regPost = m_hcc.getSubRegisterParentValue(subRegName);
+            logger->trace("Load from JSON: For HCC, {} has been set to {} (check {}) {:08x} -> {:08x}", subRegName, subRegValue, retrieved, regPre, regPost);
+        } 
+    }
+
     // Clear list in case loading twice
     clearABCchipIDs();
 
@@ -538,11 +569,11 @@ std::tuple<json, std::vector<json>> StarCfg::createConfigSingleFE() {
 }
 
 std::tuple<json, std::vector<json>> StarCfg::createConfigLSStave() {
-    return StarPreset::createConfigStarObject(*this, StarPreset::lsstave);
+    return StarPreset::createConfigStarObject(*this, StarPreset::lsstave, true);
 }
 
 std::tuple<json, std::vector<json>> StarCfg::createConfigPetal() {
-    return StarPreset::createConfigStarObject(*this, StarPreset::petal);
+    return StarPreset::createConfigStarObject(*this, StarPreset::petal, false);
 }
 
 std::tuple<json, std::vector<json>> StarCfg::getPreset(const std::string& systemType) {

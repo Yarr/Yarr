@@ -52,7 +52,7 @@
         "config": {
           "max": 500,
           "min": 0,
-          "step": 10,
+          "step": 5,
           "parameter":"InjVcalDiff",
           "waitTime": 10
         },
@@ -86,7 +86,7 @@
     "name": "ThresholdScan",
     "prescan": {
         "InjDigEn": 0,
-        "InjVcalMed": 500,
+        "InjVcalMed": 200,
         "InjVcalRange": 1,
         "Latency": 56
     }
