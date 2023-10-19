@@ -190,6 +190,16 @@ void Rd53a::writeNamedRegister(std::string name, uint16_t value) {
         writeRegister(regMap[name], value);
 }
 
+void Rd53a::setRegisterValue(std::string name, uint16_t value){
+    logger->debug("Set virtual register {} -> {}", name, value);
+    (this->*regMap[name]).write(value);
+}
+
+uint16_t Rd53a::getRegisterValue(std::string name){
+    logger->debug("Get virtual register value {}", name);
+    return (this->*regMap[name]).read();
+}
+
 // TODO remove magic numbers
 // Move to config part
 void Rd53a::enableCalCol(unsigned col) {

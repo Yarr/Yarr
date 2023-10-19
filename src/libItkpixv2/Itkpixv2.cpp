@@ -305,12 +305,12 @@ uint16_t Itkpixv2::readNamedRegister(std::string name) {
     return 0;
 }
 
-void Itkpixv2::setVirtualRegister(std::string name, uint16_t value){
+void Itkpixv2::setRegisterValue(std::string name, uint16_t value){
     logger->debug("Set virtual register {} -> {}", name, value);
     (this->*regMap[name]).write(value);
 }
 
-uint16_t Itkpixv2::getVirtualRegister(std::string name){
+uint16_t Itkpixv2::getRegisterValue(std::string name){
     logger->debug("Get virtual register value {}", name);
     return (this->*regMap[name]).read();
 }

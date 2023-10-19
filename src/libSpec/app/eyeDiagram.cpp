@@ -175,8 +175,8 @@ int main(int argc, char **argv) {
             } else {
                 logger->info("Skipping configuration!");
             }
-            cdrclksel = fe->getVirtualRegister("CdrClkSel");
-            serblckperiod = fe->getVirtualRegister("ServiceBlockPeriod");
+            cdrclksel = fe->getRegisterValue("CdrClkSel");
+            serblckperiod = fe->getRegisterValue("ServiceBlockPeriod");
             logger->info("Read \"CdrClkSel\" {} and \"ServiceBlockPeriod\" {} from virtual register read", cdrclksel, serblckperiod);
 
 

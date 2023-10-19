@@ -308,12 +308,12 @@ Rd53bRegDefault Rd53bGlobalCfg::*  Rd53b::getNamedRegister(std::string name) {
     return NULL;
 }
 
-void Rd53b::setVirtualRegister(std::string name, uint16_t value){
+void Rd53b::setRegisterValue(std::string name, uint16_t value){
     logger->debug("Set virtual register {} -> {}", name, value);
     (this->*regMap[name]).write(value);
 }
 
-uint16_t Rd53b::getVirtualRegister(std::string name){
+uint16_t Rd53b::getRegisterValue(std::string name){
     logger->debug("Get virtual register value {}", name);
     return (this->*regMap[name]).read();
 }
