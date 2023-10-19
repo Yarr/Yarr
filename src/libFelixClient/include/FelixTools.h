@@ -11,6 +11,9 @@ namespace FelixTools {
 
   FelixID_t get_fid(uint8_t detectorID, uint16_t connectorID, bool is_virtual, uint16_t linkID, uint8_t elink, bool to_felix, uint8_t protocol, uint8_t streamID);
 
+  unsigned link_from_fid(FelixID_t);
+  unsigned elink_from_fid(FelixID_t);
+
   struct QueueStatistics {
 
     std::atomic<uint64_t> messages_received {0}; // number of messages received

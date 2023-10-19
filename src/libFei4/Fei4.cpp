@@ -117,14 +117,6 @@ void Fei4::configurePixels(unsigned lsb, unsigned msb) {
     writeRegister(&Fei4::Vthin_Coarse);
 }
 
-void Fei4::enableAll() {
-    flog->info("Resetting enable/hitbus pixel mask to all enabled!");
-    for (unsigned int dc = 0; dc < n_DC; dc++) {
-        En(dc).setAll(1);
-        Hitbus(dc).setAll(0);
-    }
-}
-
 void Fei4::initMask(enum MASK_STAGE mask) {
     uint32_t bitstream[21];
     for(unsigned i=0; i<21; i++)

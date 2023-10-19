@@ -1,0 +1,94 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "TotAnalysis"
+      },
+      "1": {
+        "algorithm": "OccupancyAnalysis",
+        "config": {
+          "createMask": false
+        }
+      },
+      "2": {
+        "algorithm": "L1Analysis"
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "1": {
+        "algorithm": "TotMap",
+        "config": {}
+      },
+      "2": {
+        "algorithm": "Tot2Map",
+        "config": {}
+      },
+      "3": {
+        "algorithm": "L1Dist",
+        "config": {}
+      },
+      "4": {
+        "algorithm": "HitsPerEvent",
+        "config": {}
+      },
+      "n_count": 5
+    },
+    "loops": [
+      { "config": {
+          "max": 128,
+          "min": 0,
+          "step": 32,
+          "parameter": "DiffVff",
+          "pixelReg": 0,
+          "rstPixelReg": false
+        },
+        "loopAction": "Itkpixv2GlobalFeedback"
+      },
+      {
+        "config": {
+          "max": 64,
+          "min": 0,
+          "step": 8
+        },
+        "loopAction": "Itkpixv2ParMaskLoop"
+      },
+      {
+        "config": {
+          "max": 50,
+          "min": 0,
+          "step": 1,
+          "nSteps": 5
+        },
+        "loopAction": "Itkpixv2CoreColLoop"
+      },
+      {
+        "config": {
+            "count": 100,
+            "delay": 56,
+            "extTrigger": false,
+            "frequency": 5000,
+            "noInject": false,
+            "time": 0,
+            "edgeMode": false
+        },
+        "loopAction": "Itkpixv2TriggerLoop"
+      },
+      {
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "GlobalPreampTune",
+    "prescan": {
+            "InjVcalRange": 1,
+            "InjVcalMed": 200,
+            "InjVcalHigh": 3000,
+            "InjDigEn": 0,
+            "Latency": 60
+    }
+  }
+}

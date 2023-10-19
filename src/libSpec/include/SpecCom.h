@@ -56,6 +56,7 @@ const static std::string specIdentChip[] = {"undefined", "FE-I4", "FE65-P2", "RD
 const static std::string specIdentFmc[] = {"undefined", "Creotech 32Ch LVDS (VHDCI)", "Ohio Card (Display Port)"};
 const static std::string specIdentSpeed[] = {"undefined", "160Mbps", "320Mbps", "640Mbps", "1280Mbps"};
 const static std::string specIdentChCfg[] = {"undefined", "4x4", "16x1", "8x4", "32x1", "3x4 TLU", "3x4 Ext Trig", "12x1 TLU", "12x1 Ext Trig"};
+const static uint32_t specIdentLaneCfg[] = {0, 4, 1, 4, 1, 4, 4, 1, 1};
 
 static std::map<uint16_t, std::string> specIdentFw = {{0x4256c32, "v1.3.1"},{0x2779a56, "v1.3"}, {0x4d9ff6d, "v1.2.1"}, {0x1493b73, "v1.1.1"}};
 
@@ -113,6 +114,7 @@ class SpecCom {
         std::string getSpecIdentFmc  (uint32_t fw_ident);
         std::string getSpecIdentSpeed(uint32_t fw_ident);
         std::string getSpecIdentChCfg(uint32_t fw_ident);
+        uint32_t getSpecIdentLaneCfg(uint32_t fw_ident);
    
     private:
         unsigned int specId;

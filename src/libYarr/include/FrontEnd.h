@@ -44,13 +44,6 @@ class FrontEnd {
         
         virtual void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel)=0;
 
-        // col/row starting at 0,0
-        virtual void maskPixel(unsigned col, unsigned row) = 0;
-
-        virtual unsigned getPixelEn(unsigned col, unsigned row) = 0;
-        /// Enable (disable mask) for all pixels
-        virtual void enableAll() = 0;
-
         bool getActive() const;
 		bool isActive() const;
 		void setActive(bool active);
@@ -105,6 +98,12 @@ class FrontEndCfg {
         virtual double toCharge(double, bool, bool)=0;
         virtual void writeConfig(json &) =0;
         virtual void loadConfig(const json &)=0;
+
+        virtual unsigned getPixelEn(unsigned col, unsigned row) = 0;
+        // col/row starting at 0,0
+        virtual void maskPixel(unsigned col, unsigned row) = 0;
+        /// Enable (disable mask) for all pixels
+        virtual void enableAll() = 0;
 
         virtual std::tuple<json, std::vector<json>> getPreset(const std::string& systemType="SingleChip");
 

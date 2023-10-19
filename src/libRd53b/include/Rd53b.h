@@ -42,18 +42,6 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         int checkCom() override;
         bool hasValidName() override;
 
-        void maskPixel(unsigned col, unsigned row) override {
-            this->setEn(col, row, 0);
-            this->setHitbus(col, row, 0);
-        }
-        
-        unsigned getPixelEn(unsigned col, unsigned row) override {
-            return this->getEn(col, row);
-        }
-
-
-        void enableAll() override;
-
         void writeRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t value);
         void readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref);
         void writeNamedRegister(std::string name, uint16_t value) override;

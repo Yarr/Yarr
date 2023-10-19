@@ -129,26 +129,43 @@ uint32_t SpecRxCore::getRxActiveLanes() {
     return SpecCom::readSingle(RX_ADDR | RX_ACTIVE_LANES);
 }
 
+void SpecRxCore::setRxDelay(uint32_t lane, uint32_t val) {
+    // Select lane and write delay 
+    SpecCom::writeSingle(RX_ADDR | RX_LANE_SEL, lane); 
+    SpecCom::writeSingle(RX_ADDR | RX_LANE_DELAY, val);   
+    srxlog->info("Delay lane {} fixed to {}", lane, val);
+
+}
+
 void SpecRxCore::checkRxSync() {
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
     uint32_t status = this->getLinkStatus();
     uint32_t enable_mask = SpecCom::readSingle(RX_ADDR | RX_ENABLE);
     srxlog->info("Active Rx channels: 0x{:x}", enable_mask);    
     srxlog->info("Active Rx lanes: 0x{:x}", m_rxActiveLanes);
     srxlog->info("Rx Status 0x{:x}", status);
     uint32_t numOfLanes = 0;
+    
     // Convert last digit (lanes) to int
-    numOfLanes = this->getSpecIdentChCfg(fw_ident).back() - 48;
+    numOfLanes = this->getSpecIdentLaneCfg(fw_ident);
     if (numOfLanes == 0 || numOfLanes > 4) {
         srxlog->error("Number of Lanes not acceptable: {}", numOfLanes);
         return;
     }
     srxlog->info("Number of lanes: {}", numOfLanes);
+    uint32_t val=0;
+    
     for (unsigned i=0; i<32; i++) {
         if ((1 << i) & enable_mask) {
             for (unsigned l=0; l<4; l++) {
                 if ((1 << l) & m_rxActiveLanes) {
+                    status = this->getLinkStatus();
                     if (status & (1 << ((i*numOfLanes)+l))) {
+                        val=status & (1 << ((i*numOfLanes)+l));
                         srxlog->info("Channel {} Lane {} synchronized!", i, l);
+
                     } else {
                         srxlog->error("Channel {} Lane {} not synchronized!", i, l);
                     }
@@ -156,5 +173,7 @@ void SpecRxCore::checkRxSync() {
             }
         }
     }
+
+
 }
 

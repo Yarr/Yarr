@@ -413,7 +413,7 @@ void NetioTxCore::prepareTrigger(){
       writeFifo(&m_trigFifo[it.first],calinj_char);
     }
     else{
-      if (m_feType == "rd53a")
+      if (m_feType == "rd53a" || m_feType == "rd53b")
         writeFifo(&m_trigFifo[it.first],0x817e817e);    
 
       for(int32_t j=m_trigWords.size()-1; j>=0;j--){
