@@ -49,9 +49,9 @@ class FrontEnd {
         /// Reads a named register and returns the value of it
         virtual uint16_t readNamedRegister(std::string name) {return 0;}
         /// Write register value to the local object memory (does not write to the actual chip) 
-        virtual void setVirtualRegister(std::string name, uint16_t value) = 0;
+        virtual void setRegisterValue(std::string name, uint16_t value) {};
         /// Reads a named register from the local object memory (does not write to the actual chip) 
-        virtual uint16_t getVirtualRegister(std::string name) {return 0;}
+        virtual uint16_t getRegisterValue(std::string name) {return 0;}
 
         /// Configures ADC
         virtual void confAdc(uint16_t MONMUX, bool doCur) {}
