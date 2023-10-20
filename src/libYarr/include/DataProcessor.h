@@ -9,14 +9,11 @@
 // # Comment: Operates on data from the clipboard
 // ################################
 
-#include "FrontEnd.h"
-
 class DataProcessor {
     public:
         DataProcessor();
         virtual ~DataProcessor() = default;;
 
-        virtual void connect(ClipBoard<FeedbackProcessingInfo> *arg_proc_status) {}
         virtual void init() {}
         virtual void process() {}
         virtual void run() = 0;
