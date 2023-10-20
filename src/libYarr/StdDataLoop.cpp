@@ -221,18 +221,27 @@ void StdDataLoop::execPart2() {
 
         // Whether to execute another Rx cycle:
         receivingRxData = !triggerIsDone || (thereIsStillTime && !receivedAllTriggers);
-        if (!receivingRxData || !emptyRxCycle)
-          SPDLOG_LOGGER_DEBUG(sdllog, "one more Rx cycle: {} -- triggerIsDone={} still time={} = {} < {} and all trigs={} (n channels w all trigs = {}, n trigs = {}, n trigs rrs hprs errs = {} {} {} {})",
-            receivingRxData,
-            triggerIsDone, thereIsStillTime, timeElapsed.count(), m_maxIterationTime.count(), receivedAllTriggers,
-            channelsWithAllTrigsN, nAllReceivedTriggersSoFar,
-            iterationNtrigs, iterationNrrs, iterationNctrl, iterationNerrs);
+        
+        if (!thereIsStillTime) {
+            for (auto &[id, receivedTriggers] : channelReceivedTriggersCnt) {
+                if (receivedTriggers < ntriggersToReceive)
+                    SPDLOG_LOGGER_ERROR(sdllog, "Data taking loop timed out, only received {} of {} events for channel with id {}!", receivedTriggers, ntriggersToReceive, id);
+            }
+        }
+        
+        if (!receivingRxData || !emptyRxCycle) {
+            SPDLOG_LOGGER_DEBUG(sdllog, "one more Rx cycle: {} -- triggerIsDone={} still time={} = {} < {} and all trigs={} (n channels w all trigs = {}, n trigs = {}, n trigs rrs hprs errs = {} {} {} {})",
+                    receivingRxData,
+                    triggerIsDone, thereIsStillTime, timeElapsed.count(), m_maxIterationTime.count(), receivedAllTriggers,
+                    channelsWithAllTrigsN, nAllReceivedTriggersSoFar,
+                    iterationNtrigs, iterationNrrs, iterationNctrl, iterationNerrs);
 
-        else
-          SPDLOG_LOGGER_TRACE(sdllog, "(empty) one more Rx cycle: {} -- triggerIsDone={} still time={} = {} < {} and all trigs={} (n channels w all trigs = {}, n all trigs = {})",
-            receivingRxData,
-            triggerIsDone, thereIsStillTime, timeElapsed.count(), m_maxIterationTime.count(), receivedAllTriggers,
-            channelsWithAllTrigsN, nAllReceivedTriggersSoFar);
+        } else {
+            SPDLOG_LOGGER_DEBUG(sdllog, "(empty) one more Rx cycle: {} -- triggerIsDone={} still time={} = {} < {} and all trigs={} (n channels w all trigs = {}, n all trigs = {})",
+                    receivingRxData,
+                    triggerIsDone, thereIsStillTime, timeElapsed.count(), m_maxIterationTime.count(), receivedAllTriggers,
+                    channelsWithAllTrigsN, nAllReceivedTriggersSoFar);
+        }
     }
 
     // the iteration end marker for the processing & analysis

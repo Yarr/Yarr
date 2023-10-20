@@ -535,16 +535,16 @@ bool Rd53bDataProcessor::getNextDataBlock()
         // Try to get data
         _curInV = m_input->popData();
         if (_curInV == nullptr)
-          return false;
+            return false;
         if (_curInV->size() == 0){
-           if (_curInV->stat.is_end_of_iteration) {
-             _curOut.reset(new FrontEndData(_curInV->stat));
-             m_out->pushData(std::move(_curOut));
-           }
-           return false;
+            if (_curInV->stat.is_end_of_iteration) {
+                _curOut = std::make_unique<FrontEndData>(_curInV->stat);
+                m_out->pushData(std::move(_curOut));
+            }
+            return false;
         }
 
-        _curOut.reset(new FrontEndData(_curInV->stat));
+        _curOut = std::make_unique<FrontEndData>(_curInV->stat);
         _events = 0;
 
         // Increase word count
