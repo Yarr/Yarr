@@ -21,11 +21,11 @@ namespace AllStdActionsRegistry {
   bool data_loop_registered =
     registerLoopAction("StdDataLoop",
                        []() { return std::unique_ptr<LoopActionBase>(new StdDataLoop); });
-  
+
   bool data_gatherer_registered =
     registerLoopAction("StdDataGatherer",
                        []() { return std::unique_ptr<LoopActionBase>(new StdDataGatherer); });
-  
+
   bool repeater_registered =
     registerLoopAction("StdRepeater",
                        []() { return std::unique_ptr<LoopActionBase>(new StdRepeater); });
@@ -33,7 +33,6 @@ namespace AllStdActionsRegistry {
   bool param_loop_registered =
     registerLoopAction("StdParameterLoop",
                        []() { return std::unique_ptr<LoopActionBase>(new StdParameterLoop); });
-  
 }
 
 namespace StdDict {

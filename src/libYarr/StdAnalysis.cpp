@@ -18,7 +18,7 @@
 #include "Histo3d.h"
 #include "StdHistogrammer.h"
 #include "StdTriggerAction.h"
-#include "StdParameterLoop.h"
+#include "StdParameterAction.h"
 
 #include "lmcurve.h"
 #include "logging.h"
@@ -86,7 +86,7 @@ void HistogramArchiver::init(ScanBase *s) {
 }
 
 void HistogramArchiver::processHistogram(HistogramBase *histo) {
-    FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
+    FrontEndCfg *feCfg = bookie->getFeCfg(id);
 
     std::string name = feCfg->getName();
 
@@ -177,7 +177,7 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
                     failed_cnt++;
                     if (make_mask&&createMask) {
                         // maskPixel starts at 0,0
-                        bookie->getFe(id)->maskPixel(col-1, row-1);
+                        bookie->getFeCfg(id)->maskPixel(col-1, row-1);
                     }
                 }
             }
@@ -324,7 +324,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
     }
 
     if (chargeVsTotMap == nullptr && hasVcalLoop) {
-        FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
+        FrontEndCfg *feCfg = bookie->getFeCfg(id);
         double chargeMin = feCfg->toCharge(vcalMin, useScap, useLcap);
         double chargeMax = feCfg->toCharge(vcalMax, useScap, useLcap);
         double chargeStep = feCfg->toCharge(vcalStep, useScap, useLcap);
@@ -337,7 +337,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
     }
 
     if (pixelTotMap == nullptr && hasVcalLoop) {
-        FrontEndCfg *feCfgp = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
+        FrontEndCfg *feCfgp = bookie->getFeCfg(id);
         double chargeMinp = feCfgp->toCharge(vcalMin, useScap, useLcap);
         double chargeMaxp = feCfgp->toCharge(vcalMax, useScap, useLcap);
         double chargeStepp = feCfgp->toCharge(vcalStep, useScap, useLcap);
@@ -403,7 +403,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
             sigmaTotDist->fill(sigma);
         }
         if (hasVcalLoop) {
-            FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
+            FrontEndCfg *feCfg = bookie->getFeCfg(id);
             double currentCharge = feCfg->toCharge(ident, useScap, useLcap);
             for (unsigned i=0; i<tempMeanTotDist->size(); i++) {
                 chargeVsTotMap->fill(currentCharge, (i+1)*0.1, tempMeanTotDist->getBin(i));
@@ -413,7 +413,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
             }
         }
 
-        alog->info("\033[1;33m[{}][{}][{}] ToT Mean = {} +- {}\033[0m", id, dynamic_cast<FrontEndCfg*>(bookie->getFe(id))->getName(), ident,  meanTotDist->getMean(), meanTotDist->getStdDev());
+        alog->info("\033[1;33m[{}][{}][{}] ToT Mean = {} +- {}\033[0m", id, bookie->getFeCfg(id)->getName(), ident,  meanTotDist->getMean(), meanTotDist->getStdDev());
 
         if (globalFb != nullptr) {
             double mean = 0;
@@ -475,7 +475,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
 
 void TotAnalysis::end() {
     if (hasVcalLoop) {
-        FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id)); //replace these with more dynamic conversions 
+        FrontEndCfg *feCfg = bookie->getFeCfg(id); //replace these with more dynamic conversions 
         double injQMin = feCfg->toCharge(vcalMin, useScap, useLcap);
         double injQMax = feCfg->toCharge(vcalMax, useScap, useLcap);
         double injQStep = feCfg->toCharge(vcalStep, useScap, useLcap);
@@ -504,7 +504,7 @@ void TotAnalysis::end() {
         std::unique_ptr<Histo2d> measQOut ( new Histo2d("measQOut", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5) );
         std::unique_ptr<Histo2d> measQRMSOut ( new Histo2d("measQRMSOut", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5) );
         for (unsigned n=0; n<nCol*nRow; n++) {
-            if (bookie->getFe(id)->getPixelEn((n/nRow), (n%nRow)) == 0) { //if pixel isn't masked
+            if (bookie->getFeCfg(id)->getPixelEn((n/nRow), (n%nRow)) == 0) { //if pixel isn't masked
                 int anyzero = 0;
                 for (unsigned k=0; k<avgTotVsCharge->size(); k++) {
                     double q = feCfg->toCharge(vcalMin+k*vcalStep, useScap, useLcap);
@@ -590,7 +590,7 @@ void ScurveFitter::init(ScanBase *s) {
     useLcap = true;
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || (l->isParameterLoop() && isPOILoop(dynamic_cast<StdParameterLoop*>(l.get()))) )) {
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || isPOILoop(l.get()))) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -603,7 +603,7 @@ void ScurveFitter::init(ScanBase *s) {
             n_count = n_count*cnt;
         }
         // Vcal Loop
-        if (l->isParameterLoop() && isPOILoop(dynamic_cast<StdParameterLoop*>(l.get())) ) {
+        if (l->isParameterLoop() && isPOILoop(l.get())) {
             vcalLoop = n;
             vcalMax = l->getMax();
             vcalMin = l->getMin();
@@ -788,7 +788,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0 
                             && chi2 < 2.5 && chi2 > 1e-6
                             && fabs((par[2] - par[3])/injections - 1) < 0.1) {  // Add new criteria: difference between 100% baseline and 0% baseline should agree with number of injections within 10%
-                        FrontEndCfg *feCfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
+                        FrontEndCfg *feCfg = bookie->getFeCfg(id);
                         thrMap[outerIdent]->setBin(bin, feCfg->toCharge(par[0], useScap, useLcap));
                         // Reudce effect of vcal offset on this, don't want to probe at low vcal
                         sigMap[outerIdent]->setBin(bin, feCfg->toCharge(par[0]+par[1], useScap, useLcap)-feCfg->toCharge(par[0], useScap, useLcap));
@@ -958,7 +958,7 @@ void ScurveFitter::end() {
 void NPointGain::init(ScanBase *s) {
     for (unsigned n=0; n<s->size(); n++) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ( l->isParameterLoop() && isPOILoop(dynamic_cast<StdParameterLoop*>(l.get())) ) {
+        if (isPOILoop(l.get())) {
             par_loopindex = n;
             par_min = l->getMin();
             par_max = l->getMax();
@@ -1519,7 +1519,7 @@ void NoiseAnalysis::end() {
                 mask->setBin(i, 0);
                 if (make_mask&&createMask) {
                     // maskPixel starts at 0,0
-                    bookie->getFe(id)->maskPixel(col-1, row-1);
+                    bookie->getFeCfg(id)->maskPixel(col-1, row-1);
                 }
             } else {
                 mask->setBin(i, 1);
@@ -1780,7 +1780,7 @@ void ParameterAnalysis::init(ScanBase *s) {
             paramMin = l->getMin();
             paramStep = l->getStep();
             paramBins = (paramMax-paramMin)/paramStep;
-            auto paramLoop = dynamic_cast<StdParameterLoop*>(l.get());
+            auto paramLoop = dynamic_cast<StdParameterAction*>(l.get());
             if(paramLoop == nullptr) {
                 alog->error("ParameterAnalysis: loop declared as parameter loop does not have a name");
             } else {

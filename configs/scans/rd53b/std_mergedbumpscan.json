@@ -4,7 +4,9 @@
             "0": {
                 "algorithm": "OccupancyAnalysis",
                 "config": {
-                    "createMask": false
+                    "createMask": false,
+                    "LowThr": 0,
+                    "HighThr" : 1
                 }
             },
             "1": {
@@ -54,7 +56,7 @@
 		"min": 0,
 		"step": 1,
 		"maskType": 1, 
-		"maskSize": 0, 
+		"maskSize": 1, 
 		"includedPixels": 0, 
 		"sensorType": 0
 	    },
@@ -85,10 +87,9 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "DiscBumpScan",
+    "name": "MergedBumpScan",
     "prescan": {
-        "InjVcalMed": 100,
-        "InjVcalHigh": 4000,
+        "InjVcalDiff": 200,
         "InjDigEn": 0,
         "Latency": 60
     }

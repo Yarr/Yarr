@@ -80,6 +80,7 @@ class HistogrammerProcessor : public HistoDataProcessor {
         std::unique_ptr<std::thread> thread_ptr;
 
         std::vector<std::unique_ptr<HistogramAlgorithm>> algorithms;
+        bool is_new_iteration = true;
 };
 
 #endif

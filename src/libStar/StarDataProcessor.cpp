@@ -19,6 +19,7 @@ namespace {
 
 void process_data(RawData &curIn,
                   FrontEndData &curOut,
+                  FeedbackProcessingInfo &curStatus,
                   const std::array<uint8_t, 11> &chip_map);
 
 bool star_proc_registered =
@@ -99,7 +100,9 @@ void StarDataProcessor::process_core() {
         for(unsigned c=0; c<size; c++) {
             RawDataPtr r = curInV->data[c];
             unsigned channel = r->getAdr(); //elink number
-            process_data(*r, *curOut, chip_map);
+            std::unique_ptr<FeedbackProcessingInfo> stat(new FeedbackProcessingInfo{.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_ERROR});
+            process_data(*r, *curOut, *stat, chip_map);
+            if (statusFb != nullptr) statusFb->pushData(std::move(stat));
         }
 
         output->pushData(std::move(curOut));
@@ -109,8 +112,10 @@ void StarDataProcessor::process_core() {
 
 void process_data(RawData &curIn,
                   FrontEndData &curOut,
+                  FeedbackProcessingInfo &curStatus,
                   const std::array<uint8_t, 11> &chip_map) {
     StarChipPacket packet;
+    curStatus.packet_size = curIn.getSize();
 
     packet.add_word(0x13C); //add SOP, only to make decoder happy
     for(unsigned iw=0; iw<curIn.getSize(); iw++) {
@@ -133,13 +138,16 @@ void process_data(RawData &curIn,
 
     PacketType packetType = packet.getType();
     if(packetType == TYP_LP || packetType == TYP_PR){
-        if (packet.n_clusters()==0) return; //empty packet
-
-        int tag = packet.l0id;
+        auto l0id = packet.l0id;
         auto l1id = packet.l0id;
         auto bcid = packet.bcid;
 
-        curOut.newEvent(tag, l1id, bcid);
+        curStatus.trigger_tag = l0id;
+        curStatus.n_clusters  = packet.n_clusters();
+        curStatus.bcid        = bcid;
+        if (packet.n_clusters()==0) return; //empty packet
+
+        curOut.newEvent(l0id, l1id, bcid);
 
         for(unsigned  ithCluster=0; ithCluster < packet.clusters.size(); ++ithCluster){
             Cluster cluster = packet.clusters.at(ithCluster);
@@ -181,6 +189,8 @@ void process_data(RawData &curIn,
         }
     } else if(packetType == TYP_ABC_RR || packetType == TYP_HCC_RR) {
         //Assume we don't want to see hit counter reads but want to see other RR's
+        curStatus.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_RR;
+
         if(logger->should_log(spdlog::level::debug) || packet.address < 0x80 || packet.address > 0xbf) {
             packet.print_more(std::cout);
         }
@@ -201,6 +211,7 @@ void process_data(RawData &curIn,
             }
         }
     } else if (packetType == TYP_ABC_HPR || packetType == TYP_HCC_HPR) {
+        curStatus.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_Control;
         if(logger->should_log(spdlog::level::trace)) {
             std::stringstream os;
             packet.print_clusters(os);

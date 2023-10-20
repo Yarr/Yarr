@@ -32,6 +32,16 @@ Rd53bCfg::Rd53bCfg() :
     m_kShuntD(1040)
 {}
 
+void Rd53bCfg::enableAll() {
+    logger->info("Resetting enable/hitbus pixel mask to all enabled!");
+    for (unsigned int col = 0; col < n_Col; col++) {
+        for (unsigned row = 0; row < n_Row; row ++) {
+            setEn(col, row, 1);
+            setHitbus(col, row, 1);
+        }
+    }
+}
+
 double Rd53bCfg::toCharge(double vcal) {
     // Q = C*V
     // Linear is good enough

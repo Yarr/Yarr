@@ -249,7 +249,8 @@ int ScanConsoleImpl::configure() {
     if (scanOpts.mask_opt == 1) {
         for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
             FrontEnd *fe = bookie->getEntry(id).fe;
-            fe->enableAll();
+            auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
+            feCfg->enableAll();
         }
     }
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
@@ -408,7 +409,8 @@ int ScanConsoleImpl::initHardware() {
     if (scanOpts.mask_opt == 1) {
         for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
             FrontEnd *fe = bookie->getEntry(id).fe;
-            fe->enableAll();
+            auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
+            feCfg->enableAll();
         }
     }
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {

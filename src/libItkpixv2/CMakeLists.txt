@@ -21,8 +21,8 @@ target_include_directories(Itkpixv2 PRIVATE ../libUtil/include)
 target_include_directories(Itkpixv2 PUBLIC ./include)
 target_link_libraries(Itkpixv2 Scan)
 
-#LIST(APPEND apps
-#        rd53bSendGlobalPulse)
+LIST(APPEND apps
+        ITkPixV2CheckPulse)
 
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)

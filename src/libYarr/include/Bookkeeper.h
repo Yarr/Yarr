@@ -20,6 +20,7 @@
 #include "FrontEnd.h"
 #include "TxCore.h"
 #include "RxCore.h"
+#include "StdTriggerAction.h"
 
 struct BookEntry {
     FrontEnd *fe = nullptr;
@@ -78,12 +79,16 @@ class Bookkeeper {
 
         std::vector<unsigned> &getRxToId(unsigned rx);
 
+        void setTriggerAction(std::shared_ptr<StdTriggerAction> trigLoop) {m_trigLoop = trigLoop;};
+        std::shared_ptr<StdTriggerAction> getTriggerAction() {return m_trigLoop;};
+
     private:
         
         // Index of vector is UID 
         std::vector<BookEntry> bookEntries;
         std::map<FrontEnd* , unsigned> idMap;
         std::map<unsigned, std::vector<unsigned>> rxToIdMap;
+        std::shared_ptr<StdTriggerAction> m_trigLoop = nullptr;
 
 
         int target_tot;

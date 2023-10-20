@@ -27,6 +27,8 @@ class Rd53bTriggerLoop : public LoopActionBase, public StdTriggerAction {
         void writeConfig(json &config) override;
         void loadConfig(const json &config) override;
 
+	uint32_t getExpEvents() override;
+
     private:
         uint32_t m_trigDelay;
         uint32_t m_calEdgeDelay;

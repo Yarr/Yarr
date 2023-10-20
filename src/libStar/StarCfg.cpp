@@ -36,6 +36,14 @@ double StarCfg::toCharge(double vcal) {
 
 double StarCfg::toCharge(double vcal, bool sCap, bool lCap) { return toCharge(vcal); }
 
+void StarCfg::enableAll() {
+    eachAbc([&](auto &abc) {
+        for(int m=0; m<8; m++) {
+          abc.setRegisterValue(ABCStarRegister::MaskInput(m), 0);
+        }
+      });
+}
+
 int StarCfg::hccChannelForABCchipID(unsigned int chipID) {
   auto itr = std::find_if(m_ABCchips.begin(), m_ABCchips.end(),
                         [this, chipID](auto &it) { return it.second.getABCchipID() == chipID; });
