@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
     double count=time/clkcycles/(serblckperiod*2+1);
     int min=std::floor(count);
     int max=std::ceil(count);
-    int wait = time*4*10000;
+    int wait = time*10000000;
 
     std::ofstream file;
     file.open("results.txt");
@@ -212,6 +212,11 @@ int main(int argc, char **argv) {
     for (uint32_t j=0; j<n_lanes; j++)
         resultVec[j].resize(32);
 
+    if (!skip_config){
+        // Wait for sync
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    }
+
     std::cout << std::fixed << std::setprecision(2);
     std::string s = "";
     for (uint32_t i = 0; i<32; i++) {
@@ -221,15 +226,12 @@ int main(int argc, char **argv) {
             mySpec.writeSingle(0x2 << 14 | 0x4, j); 
             mySpec.writeSingle(0x2 << 14 | 0x5, i); 
         }
-    
-        // Wait for sync
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        
+            
         // Reset and restart error counter
         mySpec.writeSingle(0x2 << 14 | 0xb, 1); 
         mySpec.writeSingle(0x2 << 14 | 0xb, 0); 
         
-        std::this_thread::sleep_for(std::chrono::milliseconds(wait));
+        std::this_thread::sleep_for(std::chrono::microseconds(wait));
         
         for (uint32_t j = 0 ; j<n_lanes; j++) {
 		    mySpec.writeSingle(0x2 << 14 | 0xa, j); 
