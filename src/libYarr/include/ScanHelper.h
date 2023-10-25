@@ -28,6 +28,9 @@
 #include "ScanBase.h"
 
 namespace ScanHelper {
+        // A 2D vector of int to store algorithm indices for all tiers of analyses
+        using AlgoTieredIndex = std::vector<std::vector<int>>;
+
         /// Get a new run number, such that it's different next time
         unsigned newRunCounter();
 
@@ -51,7 +54,7 @@ namespace ScanHelper {
         void buildAnalyses( std::map<unsigned, std::vector<std::unique_ptr<AnalysisDataProcessor>> >& analyses,
                             const json& scanType, Bookkeeper& bookie, const ScanLoopInfo* s, FeedbackClipboardMap *fbMap, int mask_opt, std::string outputDir,
                             int target_tot, int target_charge);
-        void buildAnalysisHierarchy(std::vector<std::vector<int>>& indexTiers,
+        void buildAnalysisHierarchy(AlgoTieredIndex& indexTiers,
                                     const json &anaCfg);
         template <typename T>
             std::string toString(T value,int digitsCount);

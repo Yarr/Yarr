@@ -393,9 +393,6 @@ namespace ScanHelper {
         bhlog->info("... done!");
     }
 
-    // A 2D vector of int to store algorithm indices for all tiers of analyses
-    using AlgoTieredIndex = std::vector<std::vector<int>>;
-
     void buildAnalyses( std::map<unsigned, std::vector<std::unique_ptr<AnalysisDataProcessor>> >& analyses,
             const json& scanCfg, Bookkeeper& bookie,
                         const ScanLoopInfo* s, FeedbackClipboardMap *fbData, int mask_opt, std::string outputDir,
