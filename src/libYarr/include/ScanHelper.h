@@ -40,7 +40,7 @@ namespace ScanHelper {
         int loadConfigFile(const ScanOpts &scanOpts, bool writeConfig, json &config);
 // TODO Do not want to use the raw pointer ScanBase*
         void buildHistogrammers( std::map<unsigned, std::unique_ptr<HistoDataProcessor>>& histogrammers, const json &scanConfig,
-                Bookkeeper &bookie, ScanBase* s, std::string outputDir);
+                                 Bookkeeper &bookie, std::string outputDir);
 
 // TODO would prefer not to need bookie --> deep dependency!
 // TODO Do not want to use the raw pointer ScanBase*

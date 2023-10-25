@@ -142,7 +142,7 @@ bool testScanConfig(const json &scanConfig) {
     // This is run by ScanHelper, but doesn't depend on config
     // ScanHelper::buildRawDataProcs(procs, bookie, chipType);
     ScanHelper::buildHistogrammers(histogrammers, scanConfig,
-                                   b, &s, "no_dir");
+                                   b, "no_dir");
     int mask_opt = 0;
     ScanHelper::buildAnalyses(analyses, scanConfig, b, &s,
                               feedbackMap, mask_opt, "no_dir");

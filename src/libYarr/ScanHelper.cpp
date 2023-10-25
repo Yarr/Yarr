@@ -336,11 +336,10 @@ namespace ScanHelper {
         return 0;
     }
 
-    void buildHistogrammers( std::map<unsigned,
-            std::unique_ptr<HistoDataProcessor>>& histogrammers,
-            const json& scanCfg,
-            Bookkeeper &bookie,
-            ScanBase* s, std::string outputDir) {
+    void buildHistogrammers( std::map<unsigned, std::unique_ptr<HistoDataProcessor>>& histogrammers,
+                             const json& scanCfg,
+                             Bookkeeper &bookie,
+                             std::string outputDir) {
         bhlog->info("Loading histogrammer ...");
 
         const json &histoCfg = scanCfg["scan"]["histogrammer"];
