@@ -25,6 +25,9 @@ public:
 
    virtual  ~HistogramBase() = default;
 
+    /// Read histogram from json file, based on appropriate type
+    static std::unique_ptr<HistogramBase> fromJson(const json &j);
+
     const std::string &getName() const {
         return name;
     }

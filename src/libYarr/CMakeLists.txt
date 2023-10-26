@@ -26,6 +26,7 @@ add_library(Scan SHARED
         FeedbackBase.cpp
         FrontEnd.cpp
         HistogramAlgorithm.cpp
+        HistogramBase.cpp
 	JsonData.cpp
         LoopActionBase.cpp
         LoopEngine.cpp
