@@ -66,7 +66,7 @@ class AnalysisConsoleImpl {
 
     int loadConfigFile(const AnalysisOpts &anOpts, bool writeConfig, json &config);
 
-    void setupAnalysis();
+    int setupAnalysis();
     void pushHisto(std::unique_ptr<HistogramBase> h);
     void run();
     void saveAndPlot();
@@ -87,7 +87,7 @@ int AnalysisConsole::loadConfig()
 
 void AnalysisConsole::setupAnalysis()
 {
-    pimpl->setupAnalysis();
+  (void)    pimpl->setupAnalysis();
 }
 
 void AnalysisConsole::run() {
@@ -116,7 +116,7 @@ int AnalysisConsole::parseOptions(int argc, char *argv[], AnalysisOpts &anOpts) 
     int c;
     while (true) {
         int opt_index=0;
-        c = getopt_long(argc, argv, "hn:s:n:m:c:t:pgo:W:y:d:u:i:l:QIz", long_options, &opt_index);
+        c = getopt_long(argc, argv, "hs:y:m:c:t:po:W:d:u:i:l:QIz", long_options, &opt_index);
         int count = 0;
         if(c == -1) break;
         switch (c) {
@@ -124,8 +124,10 @@ int AnalysisConsole::parseOptions(int argc, char *argv[], AnalysisOpts &anOpts) 
             printHelp();
             return 0;
         case 's':
-            // anOpts.scan_config_provided = true;
             anOpts.scanFile = std::string(optarg);
+            break;
+        case 'l': // Logger config file
+            anOpts.logCfgPath = std::string(optarg);
             break;
         case 'y':
             anOpts.chipType = std::string(optarg);
@@ -165,18 +167,25 @@ int AnalysisConsole::parseOptions(int argc, char *argv[], AnalysisOpts &anOpts) 
         case '?':
             if (optopt == 's') {
                 spdlog::error("Option {} requires a parameter! (Proceeding with default)", (char) optopt);
-            } else if (optopt == 'g' || optopt == 'c') {
-                spdlog::error("Option {} requires a parameter! Aborting... ", (char) optopt);
-                return -1;
             } else {
                 spdlog::error("Unknown parameter: {}", (char) optopt);
             }
             break;
         default:
-            spdlog::critical("Error while parsing command line parameters!");
+            spdlog::critical("Error while parsing command line parameters! {}", c);
             std::cout << "Rerun with --help for more information\n";
             return -1;
         }
+    }
+
+    if (optind >= argc) {
+      logger->error("Expected list of histogram files after other options");
+      return 1;
+    }
+
+    for(int i=optind; i<argc; i++) {
+      logger->info("Will process histo file {}", argv[i]);
+      anOpts.histogramFiles.push_back(argv[i]);
     }
 
     if(anOpts.chipConfigPath.empty()) {
@@ -189,7 +198,6 @@ int AnalysisConsole::parseOptions(int argc, char *argv[], AnalysisOpts &anOpts) 
         spdlog::critical("Error: no FE config file given, please specify config file name under -c option, even if file does not exist!");
         std::cout << "Rerun with --help for more information\n";
         return -1;
-        //      = std::string(optarg);
     }
 
     return 1;
@@ -201,10 +209,22 @@ AnalysisConsoleImpl::AnalysisConsoleImpl(const AnalysisOpts &opts)
 }
 
 void AnalysisConsoleImpl::loadHistograms() {
+    if (options.histogramFiles.empty()) {
+        logger->warn("No histograms provided nothing to analyse");
+    }
+
     // Now processor is running, so we can push histograms
     for(auto &h: options.histogramFiles) {
-        auto histo = HistogramBase::fromJson(h);
-        pushHisto(std::move(histo));
+        logger->info("Loading histogram from {}", h);
+        try {
+            auto histoJson = ScanHelper::openJsonFile(h);
+            auto histo = HistogramBase::fromJson(histoJson);
+            pushHisto(std::move(histo));
+        } catch (std::runtime_error &e) {
+            logger->critical("#ERROR# opening histogram file ({}): {}",
+                             h, e.what());
+            abort();
+        }
     }
 }
 
@@ -251,25 +271,7 @@ void BasicScanInfo::loadScanConfg(const json &scanCfg) {
             action->loadConfig(scanCfg["scan"]["loops"][i]["config"]);
         }
 
-        // if(auto *fbGlobal = dynamic_cast<GlobalFeedbackReceiver*>(&*action)) {
-        //     fbGlobal->connectClipboard(feedback);
-        // }
-        // if(auto *fbPixel = dynamic_cast<PixelFeedbackReceiver*>(&*action)) {
-        //     fbPixel->connectClipboard(feedback);
-        // }
-
         loops.push_back(std::move(action));
-
-        // json tCfg;
-        // action->writeConfig(tCfg);
-        // if (!tCfg.empty()) {
-        //     std::stringstream ss;
-        //     ss << tCfg;
-        //     std::string line;
-        //     while (std::getline(ss, line)) logger->info("~~~ {}", line); //yes overkill, i know ..
-        // } else {
-        //     logger->warn("~~~ Config empty.");
-        // }
     }
 }
 
@@ -278,7 +280,7 @@ int AnalysisConsoleImpl::loadConfigFile(const AnalysisOpts &anOpts, bool writeCo
     // Compared to ScanHelper version, skip controller config completely
 
     // load single FE config
-    json chipConfig=json::array();
+    json chipConfig;
 
     try {
         chipConfig = ScanHelper::openJsonFile(anOpts.chipConfigPath);
@@ -331,8 +333,21 @@ void AnalysisConsoleImpl::buildAnalyses(std::vector<std::unique_ptr<DataProcesso
                                         int target_tot, int target_charge)
 {
     logger->info("Loading analyses ...");
+    logger->error("Check error log works...");
+
+    if(!scanCfg.contains("scan")) {
+        logger->error("Scan config has no 'scan' property!");
+        throw std::runtime_error("buildAnalyses failure");
+    }
+
+    if(!scanCfg["scan"].contains("analysis")) {
+        logger->error("Scan config has no 'analysis' property in 'scan' property!");
+        throw std::runtime_error("buildAnalyses failure");
+    }
 
     const json &anaCfg = scanCfg["scan"]["analysis"];
+
+    logger->error("Reading analysis configs...");
 
     // Parse scan config and build analysis hierarchy
     // Use a 2D vector to hold algorithm indices for all tiers of analysis processors
@@ -341,7 +356,7 @@ void AnalysisConsoleImpl::buildAnalyses(std::vector<std::unique_ptr<DataProcesso
         ScanHelper::buildAnalysisHierarchy(algoIndexTiers, anaCfg);
     } catch (std::runtime_error &e) {
         logger->error("Building analysis hierarchy: {}", e.what());
-        throw(std::runtime_error("buildAnalyses failure"));
+        throw std::runtime_error("buildAnalyses failure");
     }
 
     bool indexed;
@@ -361,7 +376,6 @@ void AnalysisConsoleImpl::buildAnalyses(std::vector<std::unique_ptr<DataProcesso
         }
     };
 
-    // FrontEnd *fe = bookie.getEntry(id).fe;
     for (unsigned t=0; t<algoIndexTiers.size(); t++) {
         // Before adding new analyses
         bool hasUpstreamAnalyses = false;
@@ -394,16 +408,9 @@ void AnalysisConsoleImpl::buildAnalyses(std::vector<std::unique_ptr<DataProcesso
                 // If it requires dependency
                 if (analysis->requireDependency() and not hasUpstreamAnalyses) {
                     logger->error("Analysis {} requires outputs from other analyses", algo_name);
-                    throw("buildAnalyses failure");
+                    throw std::runtime_error("buildAnalyses failure");
+                    // throw("buildAnalyses failure");
                 }
-
-                logger->debug(" connecting feedback (if required)");
-
-                // No point as it's just writing out again?
-                // if(algo_name == "HistogramArchiver") {
-                //     auto archiver = dynamic_cast<HistogramArchiver*>(analysis.get());
-                //     archiver->setOutputDirectory(outputDir);
-                // }
 
                 // TODO, pass in correct FrontEnd to allow writing changes
                 // analysis->setConfig(bookie.getFeCfg(id));
@@ -434,18 +441,27 @@ void AnalysisConsoleImpl::buildAnalyses(std::vector<std::unique_ptr<DataProcesso
     }
 }
 
-void AnalysisConsoleImpl::setupAnalysis()
+int AnalysisConsoleImpl::setupAnalysis()
 {
     json scanCfg;
 
     BasicScanInfo scanInfo;
 
-    buildAnalyses(analysisProcessors,
-                  clipHistoInput,
-                  clipResultOutput,
-                  scanCfg, scanInfo,
-                  options.mask_opt, options.outputDir,
-                  options.target_tot, options.target_charge);
+    try {
+        scanCfg = ScanHelper::openJsonFile(options.scanFile);
+    } catch (std::runtime_error &e) {
+        logger->critical("#ERROR# opening chip configs ({}): {}",
+                         options.scanFile, e.what());
+        return -1;
+    }
+
+    try {
+        buildAnalyses(analysisProcessors,
+                      clipHistoInput,
+                      clipResultOutput,
+                      scanCfg, scanInfo,
+                      options.mask_opt, options.outputDir,
+                      options.target_tot, options.target_charge);
 
     // Run from downstream to upstream
     logger->info("Starting analysis threads:");
@@ -456,7 +472,11 @@ void AnalysisConsoleImpl::setupAnalysis()
 
     logger->info(" .. started threads");
 
-    return;
+    } catch (std::exception &e) {
+        logger->error("Building analyses failed: {}", e.what());
+        throw std::runtime_error("buildAnalyses failure");
+    }
+    return 0;
 }
 
 void AnalysisConsoleImpl::pushHisto(std::unique_ptr<HistogramBase> h) {
@@ -527,14 +547,14 @@ void AnalysisConsoleImpl::saveAndPlot() {
 }
 
 void printHelp() {
-    std::cout << "Help:\n";
+    std::cout << "Analysis console help:\n";
     std::cout << " -h: Shows this help.\n";
     std::cout << " -s <scan_type> : Scan config\n";
-    std::cout << " -c fe_config.json : Provide front end configuration\n";
+    std::cout << " -c fe_config.json : Provide initial front end configuration\n";
     std::cout << " -y fe_type : FrontEnd config type\n";
     std::cout << " -t <target_charge> [<tot_target>] : Set target values for threshold/charge (and tot).\n";
     std::cout << " -p: Enable plotting of results.\n";
-    std::cout << " -o <dir> : Output directory. (Default ./data/)\n";
+    std::cout << " -o <dir> : Output directory. (Default ./data/reanalysis)\n";
     std::cout << " -m <int> : 0 = pixel masking disabled, 1 = start with fresh pixel mask, default = pixel masking enabled\n";
     std::cout << " -l <log_cfg.json> : Provide logger configuration.\n";
 }

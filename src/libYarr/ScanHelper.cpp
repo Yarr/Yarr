@@ -829,7 +829,7 @@ namespace ScanHelper {
         int c;
         while (true) {
             int opt_index=0;
-            c = getopt_long(argc, argv, "hn:ks:n:m:r:c:t:pgo:W:d:u:i:l:QIz", long_options, &opt_index);
+            c = getopt_long(argc, argv, "hn:ks:m:r:c:t:pgo:W:d:u:i:l:QIz", long_options, &opt_index);
             int count = 0;
             if(c == -1) break;
             switch (c) {
