@@ -1,6 +1,7 @@
 site_name: YARR Docks
 nav:
     - Home: index.md
+    - Hardware/PC guide: hw_guide.md
     - SW Installation: install.md
     - Kernel Driver: kernel_driver.md
     - PCIe Firmware: pcie.md
