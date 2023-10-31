@@ -28,6 +28,7 @@ class Fei4DataProcessor : public DataProcessor {
             input = arg_input;
             output = arg_output;
         }
+        void connect(ClipBoard<FeedbackProcessingInfo> *arg_proc_status) override {statusFb = arg_proc_status;}
     
         void init() override;
         void run() override;
@@ -39,6 +40,7 @@ class Fei4DataProcessor : public DataProcessor {
         std::unique_ptr<std::thread> thread_ptr;
         ClipBoard<RawDataContainer> *input;
         ClipBoard<EventDataBase> *output;
+        ClipBoard<FeedbackProcessingInfo> *statusFb = nullptr;
         unsigned hitDiscCfg;
         std::array<std::array<unsigned, 16>, 3> totCode;
         unsigned tag;
@@ -46,6 +48,7 @@ class Fei4DataProcessor : public DataProcessor {
         unsigned bcid;
         unsigned wordCount;
         unsigned hits;        
+        inline void sendFeedback(unsigned tag, unsigned bcid);
 };
 
 #endif
