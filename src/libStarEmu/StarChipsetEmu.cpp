@@ -32,13 +32,18 @@ auto logger = logging::make_log("StarChipsetEmu");
 StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
                                const std::string& json_emu_file_path,
                                std::unique_ptr<StarCfg> regCfg,
-                               unsigned hpr_period, int abc_version, int hcc_version)
+                               unsigned hpr_period, int abc_version, int hcc_version, bool addressing_mode_dynamic)
   : m_rxbuffer ( rx )
   , HPRPERIOD( hpr_period )
   , m_abc_version( abc_version )
   , m_hcc_version( hcc_version )
+  , m_addressing_mode_dynamic( addressing_mode_dynamic )
   , m_starCfg (std::move(regCfg))
 {
+  if (m_addressing_mode_dynamic) { // then set the default hccID in the config
+    m_starCfg->setHCCChipId(0b1111);
+  }
+
   // Emulator analog FE configurations
   if (not json_emu_file_path.empty()) {
     json jEmu;
