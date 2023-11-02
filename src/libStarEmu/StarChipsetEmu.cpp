@@ -283,7 +283,7 @@ void StarChipsetEmu::writeRegister(const uint32_t data, const uint8_t address,
         address == HCCStarRegister::HPR) {
       logger->warn("A register write command is received for a read-only HCCStar register 0x{:x}. Skip writing.", address);
       return;
-    } else if (address == HCCStarRegister::Addressing) {
+    } else if (address == HCCStarRegister::Addressing && m_addressing_mode_dynamic) {
       // special case for dynamic addressing
       // only the top 4 bits are read-write bits and are used as HCC ID
       uint32_t hccid_cur = m_starCfg->getHCCRegister(HCCStarRegister::Addressing);
