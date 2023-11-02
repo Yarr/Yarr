@@ -287,6 +287,7 @@ void StarCfg::loadConfig(const json &j) {
     if (hcc.contains("fuse_id")) {
       std::string str_fuse = hcc["fuse_id"];
       m_fuse_id = std::stol(str_fuse, nullptr, 16);
+      m_hcc.setHCCfuseID(m_fuse_id);
       logger->info("Reading configuration for chip with serial number=0x{:05x}", m_fuse_id);
     }
 
