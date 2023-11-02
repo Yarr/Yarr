@@ -86,6 +86,68 @@ TEST_CASE("StarEmulatorParsing", "[star][emulator]") {
   checkData(emu.get(), expected);
 }
 
+// Test changing the hccID
+TEST_CASE("StarEmulatorID", "[star][emulator]") {
+  std::shared_ptr<HwController> emu = StdDict::getHwController("emu_Star");
+
+  REQUIRE (emu);
+
+  json cfg = json::object();
+  emu->loadConfig(cfg); // default emulator config is dynamic addressing = true
+
+  StarCmd star;
+
+  // What data to expect, and how to mask the comparison
+  typedef std::string PacketCompare;
+  std::map<uint32_t, std::deque<PacketCompare>> expected; // RX elinkID (=1) -> deque of replies
+
+  // read current Addressing register content
+  // it must be 0xf0 00 00 00 : hccID=f fuseID=0
+  uint32_t default_hccID = 0xf;
+  sendCommand(*emu, star.read_hcc_register(17, default_hccID));
+  // 17 in hex = 0x11
+  expected[1].push_back("Packet type TYP_HCC_RR, ABC 0, Address 11, Value f0000000\n");
+
+  // read any HCC register
+  // default value is: HCCStarRegister::OPmode]->setValue(0x00020001)
+  // OPmode reg is 41 (in hex = 0x29)
+  sendCommand(*emu, star.read_hcc_register(HCCStarRegister::OPmode, default_hccID));
+  expected[1].push_back("Packet type TYP_HCC_RR, ABC 0, Address 29, Value 00020001\n");
+
+  // change hccID
+  uint32_t new_hccID = 0x1;
+  uint32_t new_hcc_addressing = (new_hccID << 28) | 0x0;
+  sendCommand(*emu, star.write_hcc_register(17, new_hcc_addressing));
+
+  // try to read with the old hccID
+  // m_registerMap[HCCStarRegister::ExtRst]->setValue(0x00710003);
+  // ExtRst 45 (= 0x2d)
+  sendCommand(*emu, star.read_hcc_register(HCCStarRegister::ExtRst, default_hccID));
+  // this does not fail, because default ID = 0xf = broadcast ID
+  expected[1].push_back("Packet type TYP_HCC_RR, ABC 0, Address 2d, Value 00710003\n");
+
+  uint32_t wrong_hccID = 2;
+  sendCommand(*emu, star.read_hcc_register(HCCStarRegister::ExtRst, wrong_hccID));
+  // this must return no reply
+
+  // new hccID:
+  // m_registerMap[HCCStarRegister::ADCcfg]->setValue(0x00406600)
+  // ADCcfg is 48 (hex = 0x30)
+  sendCommand(*emu, star.read_hcc_register(HCCStarRegister::ADCcfg, new_hccID));
+  expected[1].push_back("Packet type TYP_HCC_RR, ABC 0, Address 30, Value 00406600\n");
+
+  // new hccID, test the addressing register (17) again
+  sendCommand(*emu, star.read_hcc_register(HCCStarRegister::Addressing, new_hccID));
+  expected[1].push_back("Packet type TYP_HCC_RR, ABC 0, Address 11, Value 10000000\n");
+
+  emu->releaseFifo();
+
+  while(!emu->isCmdEmpty())
+    ;
+
+  checkData(emu.get(), expected);
+}
+
 TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
   std::shared_ptr<HwController> emu = StdDict::getHwController("emu_Star");
 
