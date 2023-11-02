@@ -51,6 +51,9 @@ class StarCfg : public FrontEndCfg {
   unsigned int getHCCchipID(){ return m_hcc.getHCCchipID(); }
   void setHCCChipId(unsigned hccID){ m_hcc.setHCCChipId(hccID); }
 
+  const uint32_t getHCCfuseID() const{return m_fuse_id;}
+  void setHCCfuseID(uint32_t fuseID) { m_fuse_id = fuseID; }
+
   const unsigned int getABCchipID(unsigned int chipIndex) { return abcFromIndex(chipIndex).getABCchipID(); }
 
   void addABCchipID(unsigned int chipID) {
