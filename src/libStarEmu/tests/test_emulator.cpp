@@ -41,7 +41,11 @@ TEST_CASE("StarEmulatorParsing", "[star][emulator]") {
 
   REQUIRE (emu);
 
-  json cfg;
+  json cfg = json::object();
+  cfg["ctrlCfg"] = json::object();
+  cfg["ctrlCfg"]["type"] = "emu_Star";
+  cfg["ctrlCfg"]["cfg"]  = json::object();
+  cfg["ctrlCfg"]["cfg"]["addressingModeDynamic"] = false;
   emu->loadConfig(cfg);
 
   StarCmd star;
