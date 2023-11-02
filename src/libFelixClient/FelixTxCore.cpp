@@ -71,6 +71,9 @@ void FelixTxCore::updateFelixBroadcastRegs() {
     auto link_id = FelixTools::link_from_fid(fid);
     auto elink = FelixTools::elink_from_fid(fid);
 
+    // skip if broadcast virtual elink
+    if (link_id == BroadcastLink and elink == BroadcastElink) continue;
+
     if (enable) {
       broadcastRegValueMaps[link_id].set(elink);
     } else {
