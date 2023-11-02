@@ -108,6 +108,7 @@ class HccStarRegInfo {
 /// Configuration for an individual HCCStar
 class HccCfg {
         unsigned m_hccID;
+        uint32_t m_fuseID = 0;
 
         //This is a map from address to register (pointers into register set)
         std::map<unsigned, Register*> m_registerMap;
@@ -134,6 +135,9 @@ class HccCfg {
         void setHCCChipId(unsigned hccID){
             m_hccID = hccID;
         }
+
+        const uint32_t getHCCfuseID() const{return m_fuseID;}
+        void setHCCfuseID(uint32_t fuseID) { m_fuseID = fuseID; }
 
         void setSubRegisterValue(std::string subRegName, uint32_t value) {
             auto info = m_info->subRegByName(subRegName);

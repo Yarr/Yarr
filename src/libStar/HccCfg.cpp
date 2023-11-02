@@ -261,6 +261,12 @@ std::array<uint8_t, HCC_INPUT_CHANNEL_COUNT> HccCfg::histoChipMap() const {
 void HccCfg::setDefaults(int version) {
   // NB version 1 only adds status registers
 
+  // HCC docs:
+  // The serial number (=fuseID) is the 24 least significant bits of the Addressing register (read-only)
+  // the 4 most significant bits are writeable hccID for the dynamic addressing
+  uint32_t addressing_value = ((m_hccID & 0xf) << 28) | (m_fuseID & 0xffffff);
+  m_registerMap[HCCStarRegister::Addressing]->setValue(addressing_value);
+
   ////  Register* this_Reg = registerMap[0][addr];
   m_registerMap[HCCStarRegister::Pulse]->setValue(0x00000000);
   m_registerMap[HCCStarRegister::Delay1]->setValue(0x00000000);
