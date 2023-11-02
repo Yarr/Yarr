@@ -42,10 +42,7 @@ TEST_CASE("StarEmulatorParsing", "[star][emulator]") {
   REQUIRE (emu);
 
   json cfg = json::object();
-  cfg["ctrlCfg"] = json::object();
-  cfg["ctrlCfg"]["type"] = "emu_Star";
-  cfg["ctrlCfg"]["cfg"]  = json::object();
-  cfg["ctrlCfg"]["cfg"]["addressingModeDynamic"] = false;
+  cfg["addressingModeDynamic"] = false;
   emu->loadConfig(cfg);
 
   StarCmd star;
@@ -489,6 +486,7 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
   // EmuController config
   json cfg;
   cfg["chipCfg"] = tmpChipFname;
+  cfg["addressingModeDynamic"] = false;
   emu->loadConfig(cfg);
 
   // Clean up
@@ -828,7 +826,10 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
 
   // Load emulator configuration
   json cfg;
-  cfg["chipCfg"] = tmpFileName;
+  cfg["type"] = "emu_Star";
+  cfg["cfg"]  = json::object();
+  cfg["cfg"]["chipCfg"] = tmpFileName;
+  cfg["cfg"]["addressingModeDynamic"] = false;
 
   staremu->loadConfig(cfg);
 
