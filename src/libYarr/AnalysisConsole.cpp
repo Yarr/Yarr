@@ -35,6 +35,22 @@ class BasicScanInfo : public ScanLoopInfo {
         }
 
         void loadScanConfg(const json &scanCfg);
+
+        void addLoop(std::unique_ptr<LoopActionBaseInfo> action) {
+            loops.push_back(std::move(action));
+        }
+
+        LoopStatus loopTemplate() {
+           std::vector<LoopStyle> styleVec;
+           std::vector<unsigned> statVec;
+           for (unsigned int i=0; i<loops.size(); i++) {
+               styleVec.push_back((LoopStyle)loops[i]->getStyle());
+               // Template, so use 0
+               statVec.push_back(0);
+           }
+
+           return {std::move(statVec), styleVec};
+        }
 };
 
 class AnalysisConsoleImpl {
@@ -47,6 +63,8 @@ class AnalysisConsoleImpl {
 
     std::vector<std::unique_ptr<DataProcessor>> analysisProcessors;
 
+    LoopStatus loopTemplate;
+
   public:
     AnalysisConsoleImpl(const AnalysisOpts &opts);
 
@@ -55,6 +73,8 @@ class AnalysisConsoleImpl {
     int loadConfig();
 
     void loadHistograms();
+
+    const LoopStatus &loopStatus() const { return loopTemplate; }
 
     void buildAnalyses(std::vector<std::unique_ptr<DataProcessor>> &analyses,
                        ClipBoard<HistogramBase> &input,
@@ -218,7 +238,7 @@ void AnalysisConsoleImpl::loadHistograms() {
         logger->info("Loading histogram from {}", h);
         try {
             auto histoJson = ScanHelper::openJsonFile(h);
-            auto histo = HistogramBase::fromJson(histoJson);
+            auto histo = HistogramBase::fromJson(histoJson, loopTemplate);
             pushHisto(std::move(histo));
         } catch (std::runtime_error &e) {
             logger->critical("#ERROR# opening histogram file ({}): {}",
@@ -271,7 +291,7 @@ void BasicScanInfo::loadScanConfg(const json &scanCfg) {
             action->loadConfig(scanCfg["scan"]["loops"][i]["config"]);
         }
 
-        loops.push_back(std::move(action));
+        addLoop(std::move(action));
     }
 }
 
@@ -328,7 +348,7 @@ void AnalysisConsoleImpl::buildAnalyses(std::vector<std::unique_ptr<DataProcesso
                                         ClipBoard<HistogramBase> &input,
                                         std::vector<std::unique_ptr<ClipBoard<HistogramBase>>> &output_vector,
                                         const json& scanCfg,
-                                        const ScanLoopInfo &s,
+                                        const ScanLoopInfo &scanInfo,
                                         int mask_opt, std::string outputDir,
                                         int target_tot, int target_charge)
 {
@@ -393,9 +413,9 @@ void AnalysisConsoleImpl::buildAnalyses(std::vector<std::unique_ptr<DataProcesso
         // Create the ClipBoard to store its output and establish connection
         output_vector.emplace_back(new ClipBoard<HistogramBase>());
         if (t==0) {
-            ana.connect(&s, &input, (output_vector.back()).get(), nullptr);
+            ana.connect(&scanInfo, &input, (output_vector.back()).get(), nullptr);
         } else {
-            ana.connect(&s, (*(output_vector.rbegin()+1)).get(),
+            ana.connect(&scanInfo, (*(output_vector.rbegin()+1)).get(),
                         (*(output_vector.rbegin())).get(),
                         nullptr, true);
         }
@@ -454,6 +474,9 @@ int AnalysisConsoleImpl::setupAnalysis()
                          options.scanFile, e.what());
         return -1;
     }
+
+    scanInfo.loadScanConfg(scanCfg);
+    loopTemplate = scanInfo.loopTemplate();
 
     try {
         buildAnalyses(analysisProcessors,
