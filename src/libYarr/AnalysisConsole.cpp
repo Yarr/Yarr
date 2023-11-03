@@ -473,6 +473,14 @@ void AnalysisConsoleImpl::buildAnalyses(std::vector<std::unique_ptr<DataProcesso
         // Add all AnalysisAlgorithms of the t-th tier
         for (int aIndex : algoIndexTiers[t]) {
             std::string algo_name = get_algorithm(aIndex)["algorithm"];
+
+            if(algo_name == "HistogramArchiver") {
+                // If we're re-using a scan config that had HistogramArchiver to generate files,
+                // don't just write them out again
+                logger->info("Skipping HistogramArchiver to avoid duplication");
+                continue;
+            }
+
             json algo_config = get_algorithm(aIndex)["config"];
             add_analysis(algo_name, algo_config);
         }
