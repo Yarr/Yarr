@@ -412,8 +412,9 @@ void AnalysisConsoleImpl::buildAnalyses(std::vector<std::unique_ptr<DataProcesso
                     // throw("buildAnalyses failure");
                 }
 
-                // TODO, pass in correct FrontEnd to allow writing changes
-                // analysis->setConfig(bookie.getFeCfg(id));
+                // Pass in FrontEnd to allow writing changes
+                auto *feCfg = dynamic_cast<FrontEndCfg*>(frontEnd.get());
+                analysis->setConfig(feCfg);
                 analysis->setParams(target_tot, target_charge);
 
                 ana.addAlgorithm(std::move(analysis));
@@ -435,8 +436,7 @@ void AnalysisConsoleImpl::buildAnalyses(std::vector<std::unique_ptr<DataProcesso
             ana.setMasking(false);
         }
 
-        // From the frontend
-        FrontEndGeometry geo{100, 100};
+        FrontEndGeometry geo = frontEnd->geo;
         ana.setMapSize(geo.nCol, geo.nRow);
     }
 }
