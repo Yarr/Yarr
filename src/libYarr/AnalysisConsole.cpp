@@ -329,6 +329,28 @@ int AnalysisConsoleImpl::loadConfigFile(const AnalysisOpts &anOpts, bool writeCo
     return 0;
 }
 
+void createOutputDirectory(const std::string &scanType, std::string &outputDir) {
+    // Generate output directory path
+    std::size_t pathPos = scanType.find_last_of('/');
+    std::size_t suffixPos = scanType.find_last_of('.');
+    std::string strippedScan;
+
+    if (pathPos != std::string::npos && suffixPos != std::string::npos) {
+        strippedScan = scanType.substr(pathPos + 1, suffixPos - pathPos - 1);
+    } else {
+        strippedScan = scanType;
+    }
+
+    outputDir += (strippedScan + "/");
+    logger->info("Creating output dir: {}", outputDir);
+    std::string cmdStr = "mkdir -p "; //I am not proud of this ):
+    cmdStr += outputDir;
+    int sysExSt = system(cmdStr.c_str());
+    if (sysExSt != 0) {
+        logger->error("Error creating output directory - plots might not be saved!");
+    }
+}
+
 int AnalysisConsoleImpl::loadConfig()
 {
     json scanConsoleConfig;
@@ -340,6 +362,11 @@ int AnalysisConsoleImpl::loadConfig()
     }
 
     std::cout << scanConsoleConfig << std::endl;
+
+    if(options.doOutput || options.doPlots) {
+      logger->info("Creating output dir for plots: {}", options.outputDir);
+      createOutputDirectory(options.scanFile, options.outputDir);
+    }
 
     return 0;
 }
