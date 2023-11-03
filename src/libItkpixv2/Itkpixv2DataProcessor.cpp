@@ -222,6 +222,7 @@ void Itkpixv2DataProcessor::process_core()
         _curOut->newEvent(_tag, _l1id, _bcid);
         //logger->info("New Stream, New Event: {} ", _tag);
         _events++;
+        sendFeedback(_tag, _bcid);
     }
 
     // Start looping over data words in the current packet
@@ -258,6 +259,8 @@ void Itkpixv2DataProcessor::process_core()
                 _curOut->newEvent(_tag, _l1id, _bcid);
                 //logger->info("New Stream, New Event: {} ", _tag);
                 _events++;
+                sendFeedback(_tag, _bcid);
+
                 _status = CCOL;
                 continue;
             }
@@ -275,6 +278,8 @@ void Itkpixv2DataProcessor::process_core()
                 _curOut->newEvent(_tag, _l1id, _bcid);
                 //logger->info("Same Stream, New Event: {} ", _tag);
                 _events++;
+                sendFeedback(_tag, _bcid);
+
                 _status = CCOL;
                 continue;
             }
@@ -510,8 +515,15 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
 
         // Try to get data
         _curInV = m_input->popData();
-        if (_curInV == nullptr || _curInV->size() == 0)
+        if (_curInV == nullptr)
             return false;
+        if (_curInV->size() == 0){
+            if (_curInV->stat.is_end_of_iteration) {
+                _curOut = std::make_unique<FrontEndData>(_curInV->stat);
+                m_out->pushData(std::move(_curOut));
+            }
+            return false;
+        }
 
         // Debug output
         /*
@@ -522,7 +534,7 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
         }
         */
 
-        _curOut.reset(new FrontEndData(_curInV->stat));
+        _curOut = std::make_unique<FrontEndData>(_curInV->stat);
         _events = 0;
 
         // Increase word count
@@ -562,4 +574,15 @@ void Itkpixv2DataProcessor::getPreviousDataBlock()
         getPreviousDataBlock();
     if (((_data[0] >> 29) & 0x3) != _chipId && _enChipId)
         getPreviousDataBlock();
+}
+
+void Itkpixv2DataProcessor::sendFeedback(unsigned tag, unsigned bcid)
+{
+    std::unique_ptr<FeedbackProcessingInfo> stat(new FeedbackProcessingInfo{.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_ERROR});
+    FeedbackProcessingInfo &curStatus = *stat;
+    curStatus.trigger_tag = tag;
+    curStatus.bcid = bcid;
+    if (statusFb != nullptr) statusFb->pushData(std::move(stat));
+
+    return;
 }

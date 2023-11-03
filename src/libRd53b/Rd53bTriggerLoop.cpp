@@ -231,6 +231,5 @@ void Rd53bTriggerLoop::loadConfig(const json &config) {
 }
 
 uint32_t Rd53bTriggerLoop::getExpEvents(){
-
     return getTrigCnt()*m_trigMultiplier;
 }
