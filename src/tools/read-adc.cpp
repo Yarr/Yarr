@@ -33,6 +33,7 @@ void print_usage(char* argv[]) {
     std::cerr << "   -c          Input connectivity JSON file path [required]" << std::endl;
     std::cerr << "   -i          Position of chip in connectivity file chips list, starting from 0 (default: all chips)" << std::endl;
     std::cerr << "   -n          Chip name (if given will override use of chip index)" << std::endl;
+    std::cerr << "   -s          Assume FE's have shared vmux, and set MonitorV register to this value (high-Z) on all FE's when not reading" << std::endl;
     std::cerr << "   -I          Measure current through vmux pad" << std::endl;
     std::cerr << "   -R          Return raw ADC count" << std::endl;
     std::cerr << "   -h|--help   Print this help message and exit" << std::endl;
@@ -72,9 +73,11 @@ int main(int argc, char* argv[]) {
     bool use_chip_name = false;
     bool meas_curr = false;
     bool return_count = false;
+    int high_z = -1;
+    bool shared_vmux = false;
 
     int c = 0;
-    while (( c = getopt(argc, argv, "r:c:i:n:IRh")) != -1) {
+    while (( c = getopt(argc, argv, "r:c:i:n:s:IRh")) != -1) {
         switch (c) {
             case 'r' :
                 hw_controller_filename = optarg;
@@ -93,6 +96,15 @@ int main(int argc, char* argv[]) {
             case 'n' :
                 chip_name = optarg;
                 use_chip_name = true;
+                break;
+            case 's':
+                shared_vmux = true;
+                try {
+                    high_z = std::stoi(optarg);
+                } catch (std::exception& e) {
+                    std::cerr << "ERROR: High-z register value must be an integer value (you provided: " << optarg << ")" << std::endl;
+                    return 1;
+                }
                 break;
             case 'h' :
                 print_usage(argv);
@@ -151,9 +163,13 @@ int main(int argc, char* argv[]) {
     auto jconn = ScanHelper::openJsonFile(connectivity_filename);
     
     std::string chipType = ScanHelper::loadChipConfigs(jconn, false, Utils::dirFromPath(connectivity_filename));
-    
+   
+    std::vector<std::pair<int, std::unique_ptr<FrontEnd>>> fes = {};
+ 
     auto chip_configs = jconn["chips"];
     size_t n_chips = chip_configs.size();
+
+    // Record fe's and set to high-z if shared vmux
     for (size_t ichip = 0; ichip < n_chips; ichip++) {
         if (chip_configs[ichip]["enable"] == 0)
             continue;
@@ -168,6 +184,21 @@ int main(int argc, char* argv[]) {
             std::cerr << "WARNING: Skipping chip at index " << ichip << " in connectivity file" << std::endl;
             continue;
         }
+        
+        if (shared_vmux){
+            auto cfg = dynamic_cast<FrontEndCfg*>(fe.get());
+            hw->setCmdEnable(cfg->getTxChannel()); 
+            hw->setRxEnable(cfg->getRxChannel());
+            hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
+            fe->readUpdateWriteNamedReg("MonitorV");
+            fe->writeNamedRegister("MonitorV", high_z);
+        }
+        fes.push_back(std::make_pair(ichip, std::move(fe)));
+    }
+
+    for (auto& felist : fes) {
+        int ichip = felist.first;
+        auto& fe = felist.second;
         auto cfg = dynamic_cast<FrontEndCfg*>(fe.get());
         std::string current_chip_name = cfg->getName();
         if (!use_chip_name) {

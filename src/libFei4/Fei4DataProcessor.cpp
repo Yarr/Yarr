@@ -76,6 +76,13 @@ void Fei4DataProcessor::process_core() {
         int events = 0;
 
         unsigned size = curInV->size();
+        // Special case for empty events, could be end of loop
+        if (size == 0 && curInV->stat.is_end_of_iteration) {
+                curOut = std::make_unique<FrontEndData>(curInV->stat);
+                output->pushData(std::move(curOut));
+                continue;
+        }
+
         //if (size == 0)
         //std::cout << "Empty!" << std::endl;
         for(unsigned c=0; c<size; c++) {
@@ -103,6 +110,7 @@ void Fei4DataProcessor::process_core() {
                         l1id = (value & 0x7c00) >> 10;
                         bcid = (value & 0x03FF);
                         curOut->newEvent(tag, l1id, bcid);
+                        sendFeedback(l1id, bcid);
 
                         events++;
                     } else if (header == 0xef) {
@@ -150,4 +158,15 @@ void Fei4DataProcessor::process_core() {
         //Cleanup
         dataCnt++;
     }
+}
+
+void Fei4DataProcessor::sendFeedback(unsigned tag, unsigned bcid)
+{
+    std::unique_ptr<FeedbackProcessingInfo> stat(new FeedbackProcessingInfo{.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_ERROR});
+    FeedbackProcessingInfo &curStatus = *stat;
+    curStatus.trigger_tag = tag;
+    curStatus.bcid = bcid;
+    if (statusFb != nullptr) statusFb->pushData(std::move(stat));
+
+    return;
 }

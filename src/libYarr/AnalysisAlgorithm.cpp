@@ -10,34 +10,44 @@
 
 #include "logging.h"
 
+#include "StdParameterAction.h"
+
 namespace {
     auto alog = logging::make_log("AnalysisAlgorithm");
 }
 
-bool AnalysisAlgorithm::isPOILoop(StdParameterLoop *l) {
+bool AnalysisAlgorithm::isPOILoop(LoopActionBase *l) {
     // Determine if a given loop l is iterating a parameter that is in the m_parametersOfInterest
-    // m_parametersOfInterest is set in AnalysisAlgorithm::loadConfig
 
-    if (l) {
-        if ( m_parametersOfInterest.empty() ) {
-            // m_parametersOfInterest is not set, treat any parameter loop as POI loop
-            return true;
-        } else {
-            for (const auto& poi : m_parametersOfInterest) {
-                if (l->getParName() == poi)
-                    return true;
-            }
-
-            // The parameter is this loop is not a parameter of interest
-            return false;
-        }
+    if(!l->isParameterLoop()) {
+        return false;
     }
-    else {
-        // FIXME
+
+    auto spl = dynamic_cast<StdParameterAction*>(l);
+    if(!spl) {
         // Not a StdParameterLoop loop
-        // Could be other parameter loops that do not derive from StdParameterLoop
+        // Other parameter loops do not derive from StdParameterLoop.
+
+        // This basically indicates that the parameter of interest search
+        // is not needed, so all loops are of interest.
         // For now, just return true and let the decision be made elsewhere
         return true;
+    }
+
+    auto loop_name = spl->getParName();
+
+    // m_parametersOfInterest is set in AnalysisAlgorithm::loadConfig
+    if ( m_parametersOfInterest.empty() ) {
+        // m_parametersOfInterest is not set, treat any parameter loop as POI loop
+        return true;
+    } else {
+        for (const auto& poi : m_parametersOfInterest) {
+            if (loop_name == poi)
+                return true;
+        }
+
+        // The parameter is this loop is not a parameter of interest
+        return false;
     }
 }
 

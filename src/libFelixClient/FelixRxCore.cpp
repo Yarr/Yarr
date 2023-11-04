@@ -170,9 +170,7 @@ void FelixRxCore::on_data(FelixID_t fid, const uint8_t* data, size_t size, uint8
 
   // for now:
   // channel number consists of 6-bit elink, 13-bit link ID, 1-bit is_virtual
-  // and also the lowest 12 bits of ConnectorID to fill up the 32 bits
-  // fid[47:16]
-  uint32_t mychn = (fid >> 16) & 0xffffffff;
+  uint32_t mychn = (fid >> 16) & 0x000fffff;
 
   auto rd = std::make_unique<RawData>(mychn, numWords);
 

@@ -8,7 +8,6 @@
 #include "FeedbackBase.h"
 #include "HistogramBase.h"
 #include "ScanBase.h"
-#include "StdParameterLoop.h"
 
 /**
  * Process sequence of histograms.
@@ -57,7 +56,7 @@ class AnalysisAlgorithm {
         unsigned nCol, nRow;
 
         std::vector<std::string> m_parametersOfInterest;
-        bool isPOILoop(StdParameterLoop *l);
+        bool isPOILoop(LoopActionBase *l);
 
 };
 

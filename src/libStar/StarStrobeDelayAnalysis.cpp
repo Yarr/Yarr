@@ -12,7 +12,7 @@
 #include "Histo2d.h"
 #include "StdHistogrammer.h"
 #include "StdTriggerAction.h"
-#include "StdParameterLoop.h"
+
 // NB if we don't include this, it compiles, but we get a linker error,
 // presumably because it picks up names from C rather than C++
 #include <cmath>
@@ -44,7 +44,7 @@ void StarStrobeDelayAnalysis::init(ScanBase *s) {
         std::shared_ptr<LoopActionBase> l = s->getLoop(n);
 
         // Strobe delay Loop
-        if (l->isParameterLoop() && isPOILoop(dynamic_cast<StdParameterLoop*>(l.get())) ) {
+        if (isPOILoop(l.get())) {
             strobeDelayLoop = n;
             m_strobeDelayMax = l->getMax();
             m_strobeDelayMin = l->getMin();

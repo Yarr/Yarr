@@ -76,6 +76,14 @@ void Rd53aDataProcessor::process_core() {
         int events = 0;
 
         unsigned size = curInV->size();
+        
+        // Forward empty end of loop event
+        if (size == 0 && curInV->stat.is_end_of_iteration) {
+                curOut = std::make_unique<FrontEndData>(curInV->stat);
+                m_output->pushData(std::move(curOut));
+                continue;
+        }
+        
         for(unsigned c=0; c<size; c++) {
             RawDataPtr curIn = curInV->data[c];
             // Process
@@ -98,6 +106,7 @@ void Rd53aDataProcessor::process_core() {
                         // Create new event
                         curOut->newEvent(tag, l1id, bcid);
                         events++;
+                        sendFeedback(tag, bcid);
                         //logger->debug("[Header] : L1ID({}) TAG({}) BCID({})", l1id[channel], tag[channel], bcid[channel]);
                     } else { // is hit data
                         unsigned core_col = 0x3F & (data >> 26);
@@ -153,4 +162,15 @@ void Rd53aDataProcessor::process_core() {
         }
     }
 
+}
+
+void Rd53aDataProcessor::sendFeedback(unsigned tag, unsigned bcid)
+{
+    std::unique_ptr<FeedbackProcessingInfo> stat(new FeedbackProcessingInfo{.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_ERROR});
+    FeedbackProcessingInfo &curStatus = *stat;
+    curStatus.trigger_tag = tag;
+    curStatus.bcid = bcid;
+    if (statusFb != nullptr) statusFb->pushData(std::move(stat));
+
+    return;
 }

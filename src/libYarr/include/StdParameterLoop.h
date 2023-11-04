@@ -8,18 +8,16 @@
 // ################################
 
 #include "LoopActionBase.h"
-#include "FrontEnd.h"
+#include "StdParameterAction.h"
 
-class StdParameterLoop : public LoopActionBase {
+class StdParameterLoop : public LoopActionBase, public StdParameterAction {
     public:
         StdParameterLoop();
 
         void writeConfig(json &j) override;
         void loadConfig(const json &j) override;
-        std::string getParName() {return parName;}
 
     private:
-        std::string parName;
         void writePar();
 
         void init() override;

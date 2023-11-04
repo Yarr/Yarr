@@ -33,12 +33,12 @@ class RxCore {
         std::chrono::microseconds getWaitTime() {
             return m_waitTime;
         }
-        
+
     protected:
         RxCore()=default;
         virtual ~RxCore()=default;
 
-        std::chrono::microseconds m_waitTime{500};
+        std::chrono::microseconds m_waitTime{100}; // typical latency in the HW controller RX path
 };
 
 #endif

@@ -89,6 +89,7 @@
     ],
     "name": "MergedBumpScan",
     "prescan": {
+        "InjVcalDiff": 200,
         "InjDigEn": 0,
         "Latency": 60
     }
