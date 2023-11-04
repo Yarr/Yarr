@@ -21,6 +21,7 @@ target_include_directories(Spec PUBLIC ./include)
 
 LIST(APPEND apps
         config-GBT-FMC
+        connectivityScanner
         specBenchmarkDma
         specBenchmarkSingle
         specComTest

@@ -66,6 +66,8 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         // the readback of the E-fuse data
         itkpix_efuse_codec::EfuseData readEfuses();
         uint32_t readEfusesRaw();
+        uint32_t getEfuses();
+        uint8_t getChipId();
 
         void runRingOsc(uint16_t duration, bool isBankB);
         void confAdc(uint16_t MONMUX, bool doCur = false) override;

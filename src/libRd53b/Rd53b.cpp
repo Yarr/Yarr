@@ -408,6 +408,35 @@ bool Rd53b::hasValidName() {
     return true;
 }
 
+
+uint32_t Rd53b::getEfuses() {
+    // Rd53b stores serial numbers in on-chip registers, so service blocks be
+    // enabled in order to query them
+    if (this->ServiceBlockEn.read() == 0) {
+        logger->error("Register messages not enabled, can't check chip id (set \"ServiceBlockEn\" to 1 in chip config");
+        return false;
+    }
+
+    // if user is requested to enforce that the chip id be in the FrontEnd "name"
+    // field, then readback the E-fuses to get the actual chip's ID
+    uint32_t efuse_data_raw = this->readEfusesRaw();
+
+    itkpix_efuse_codec::EfuseData efuse_data = itkpix_efuse_codec::EfuseData{itkpix_efuse_codec::decode(efuse_data_raw)};
+    itkpix_efuse_codec::EfuseData efuse_data_old = itkpix_efuse_codec::EfuseData{itkpix_efuse_codec::decodeOldFormat(efuse_data_raw)};
+
+    uint32_t chip_sn = efuse_data.chip_sn();
+    uint32_t chip_sn_old = efuse_data_old.chip_sn();
+
+    //https://gitlab.cern.ch/YARR/YARR/-/issues/166
+    if (chip_sn > 0x16000) {
+        logger->info("Chip serial number obtained from e-fuse data: 0x{:x}", chip_sn );
+        return chip_sn;    
+    } else {
+        logger->info("Chip serial number decoded with old format from e-fuse data: 0x{:x}", chip_sn_old);
+        return chip_sn_old;
+    }
+}
+
 std::pair<uint32_t, uint32_t> Rd53b::decodeSingleRegRead(uint32_t higher, uint32_t lower) {
     std::pair<uint32_t, uint32_t> output = std::make_pair(999, 666);
     if ((higher & 0x55000000) == 0x55000000) {
@@ -560,10 +589,43 @@ uint32_t Rd53b::readSingleRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref) {
         }
     }
     
-    logger->warn("readSingleRegister failed, did not received register readback data from chip with chipId {}", m_chipId);
+    logger->warn("readSingleRegister failed, did not receive register readback data from chip with chipId {}", m_chipId);
     return 65536;
 }
-    
+
+uint8_t Rd53b::getChipId() {
+   
+    m_rxcore->flushBuffer();
+    // send a read register command to the chip so that it
+    // sends back the current value of the register
+    this->sendRdReg(m_chipId, (this->EfuseReadData0).addr());
+    while(!core->isCmdEmpty()) {}
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    // go through the incoming data stream and get the register read data
+    std::vector<RawDataPtr> dataVec = m_rxcore->readData();
+    RawDataPtr data;
+    if (dataVec.size() > 0) {
+        for(auto const &v : dataVec) {
+            // Find raw data for this address
+            if (rxChannel != v->getAdr())
+                continue;
+
+            if (v->get(0) != 0xffffdead) {
+                data = v;
+                if(!(data->getSize() >= 2)) {
+                    logger->warn("readSingleRegister failed, received wrong number of words ({}) for FE with chipId {}", data->getSize(), m_chipId);
+                    continue;
+                }
+                auto [id, received_address, register_value] = Rd53b::decodeSingleRegReadID(data->get(0), data->get(1));
+                logger->info("readSingleRegister 0x{:x} 0x{:x} -> ID {} - {}, addr 0x{:x} val 0x{:x}", data->get(0), data->get(1), id, m_chipId&0x3, received_address, register_value);
+                return (uint8_t)id;
+            }
+        }
+    }
+    return 255;
+}
+
 void Rd53b::confAdc(uint16_t MONMUX, bool doCur) {
     //This only works for voltage MUX values.
     uint16_t OriginalGlobalRT = this->GlobalPulseConf.read();
