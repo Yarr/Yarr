@@ -356,13 +356,15 @@ TEST_CASE("StarCfgLoadConfig", "[star][config]") {
   unsigned int hccID = 0x2;
   uint32_t    fuseID = 0x40086d;
   cfg["HCC"]["ID"]  = hccID;
-  cfg["HCC"]["fuse_id"] = fuseID;
+  cfg["HCC"]["fuse_id"] = std::to_string(fuseID);
 
-  //test_config.loadConfig(cfg);
-  // when I add fuse_id it crashes:
-  //   {Unknown expression after the reported line}
-  // due to unexpected exception with message:
-  //   std::get: wrong index for variant
+// now it fails like this:
+//  CHECK( test_config.getHCCfuseID() == fuseID )
+//with expansion:
+//  68772961 (0x4196461) == 4196461 (0x40086d)
+
+
+  test_config.loadConfig(cfg);
 
   CHECK (test_config.getHCCchipID() == hccID);
   CHECK (test_config.getHCCfuseID() == fuseID);
