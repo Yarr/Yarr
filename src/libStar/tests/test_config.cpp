@@ -339,3 +339,31 @@ TEST_CASE("Star_HccRegInfo", "[star][config]") {
     CHECK (rm.second != nullptr);
   }
 }
+
+// test that loadConfig loads basic info
+TEST_CASE("StarCfgLoadConfig", "[star][config]") {
+  int abc_version = 2;
+  int hcc_version = 0;
+  StarCfg test_config(abc_version, hcc_version);
+
+  CHECK (test_config.getHCCchipID() == 0);
+  CHECK (test_config.getHCCfuseID() == 0);
+
+  json cfg;
+  cfg["name"] = "Barrel_Hybrid_Example";
+  cfg["HCC"]  = json::object();
+  
+  unsigned int hccID = 0x2;
+  uint32_t    fuseID = 0x40086d;
+  cfg["HCC"]["ID"]  = hccID;
+  cfg["HCC"]["fuse_id"] = fuseID;
+
+  //test_config.loadConfig(cfg);
+  // when I add fuse_id it crashes:
+  //   {Unknown expression after the reported line}
+  // due to unexpected exception with message:
+  //   std::get: wrong index for variant
+
+  CHECK (test_config.getHCCchipID() == hccID);
+  CHECK (test_config.getHCCfuseID() == fuseID);
+}
