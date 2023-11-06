@@ -32,18 +32,13 @@ auto logger = logging::make_log("StarChipsetEmu");
 StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
                                const std::string& json_emu_file_path,
                                std::unique_ptr<StarCfg> regCfg,
-                               unsigned hpr_period, int abc_version, int hcc_version, bool addressing_mode_dynamic)
+                               unsigned hpr_period, int abc_version, int hcc_version)
   : m_rxbuffer ( rx )
   , HPRPERIOD( hpr_period )
   , m_abc_version( abc_version )
   , m_hcc_version( hcc_version )
-  , m_addressing_mode_dynamic( addressing_mode_dynamic )
   , m_starCfg (std::move(regCfg))
 {
-  if (m_addressing_mode_dynamic) { // then set the default hccID in the config
-    m_starCfg->setHCCChipId(0b1111);
-  }
-
   // set the Addressing register
   // HCC docs:
   // The serial number (=fuseID) is the 24 least significant bits of the Addressing register (read-only)
@@ -283,7 +278,7 @@ void StarChipsetEmu::writeRegister(const uint32_t data, const uint8_t address,
         address == HCCStarRegister::HPR) {
       logger->warn("A register write command is received for a read-only HCCStar register 0x{:x}. Skip writing.", address);
       return;
-    } else if (address == HCCStarRegister::Addressing && m_addressing_mode_dynamic) {
+    } else if (address == HCCStarRegister::Addressing) {
       // special case for dynamic addressing
       // only the top 4 bits are read-write bits and are used as HCC ID
       uint32_t hccid_cur = m_starCfg->getHCCRegister(HCCStarRegister::Addressing);

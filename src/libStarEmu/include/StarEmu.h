@@ -15,7 +15,7 @@ public:
     StarEmu(std::vector<ClipBoard<RawData>*> &rx, EmuCom * tx, EmuCom * tx2,
             const std::string& json_emu_file_path,
             const std::vector<std::string>& json_chip_file_path,
-            unsigned hpr_period, int abc_version, int hcc_version, bool addressing_mode_dynamic);
+            unsigned hpr_period, int abc_version, int hcc_version);
     ~StarEmu();
 
     // the main loop which recieves commands from yarr

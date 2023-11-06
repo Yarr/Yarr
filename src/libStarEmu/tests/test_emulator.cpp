@@ -42,7 +42,6 @@ TEST_CASE("StarEmulatorParsing", "[star][emulator]") {
   REQUIRE (emu);
 
   json cfg = json::object();
-  cfg["addressingModeDynamic"] = false;
   emu->loadConfig(cfg);
 
   StarCmd star;
@@ -86,8 +85,8 @@ TEST_CASE("StarEmulatorParsing", "[star][emulator]") {
   checkData(emu.get(), expected);
 }
 
-// Test changing the hccID with the dynamic addressing mode
-TEST_CASE("StarEmulatorDynamicID", "[star][emulator]") {
+// Test the default hccID and change it
+TEST_CASE("StarEmulatorID", "[star][emulator]") {
   std::shared_ptr<HwController> emu = StdDict::getHwController("emu_Star");
 
   REQUIRE (emu);
@@ -102,11 +101,12 @@ TEST_CASE("StarEmulatorDynamicID", "[star][emulator]") {
   std::map<uint32_t, std::deque<PacketCompare>> expected; // RX elinkID (=1) -> deque of replies
 
   // read current Addressing register content
-  // it must be 0xf0 00 00 00 : hccID=f fuseID=0
+  // it contains HCC cfg on construction, without loadConfig(json)
+  // it must be 0x00 00 00 00 : hccID=0 fuseID=0
   uint32_t default_hccID = 0xf;
   sendCommand(*emu, star.read_hcc_register(17, default_hccID));
   // 17 in hex = 0x11
-  expected[1].push_back("Packet type TYP_HCC_RR, ABC 0, Address 11, Value f0000000\n");
+  expected[1].push_back("Packet type TYP_HCC_RR, ABC 0, Address 11, Value 00000000\n");
 
   // read any HCC register
   // default value is: HCCStarRegister::OPmode]->setValue(0x00020001)
@@ -139,64 +139,6 @@ TEST_CASE("StarEmulatorDynamicID", "[star][emulator]") {
   // new hccID, test the addressing register (17) again
   sendCommand(*emu, star.read_hcc_register(HCCStarRegister::Addressing, new_hccID));
   expected[1].push_back("Packet type TYP_HCC_RR, ABC 0, Address 11, Value 10000000\n");
-
-  emu->releaseFifo();
-
-  while(!emu->isCmdEmpty())
-    ;
-
-  checkData(emu.get(), expected);
-}
-
-// Test changing the hccID with the bonds addressing mode
-TEST_CASE("StarEmulatorBondsID", "[star][emulator]") {
-  std::shared_ptr<HwController> emu = StdDict::getHwController("emu_Star");
-
-  REQUIRE (emu);
-
-  json cfg = json::object();
-  cfg["addressingModeDynamic"] = false;
-  emu->loadConfig(cfg); // now the emulator works with the bonds ID, which is taken from the config file
-  // if there is no file, like here, the HccCfg::m_hccID = 0 by default
-
-  StarCmd star;
-
-  // What data to expect, and how to mask the comparison
-  typedef std::string PacketCompare;
-  std::map<uint32_t, std::deque<PacketCompare>> expected; // RX elinkID (=1) -> deque of replies
-
-  // read current Addressing register content
-  // it must be 0x00 00 00 00 : hccID=0 fuseID=0
-  uint32_t broadcast_hccID = 0xf;
-  sendCommand(*emu, star.read_hcc_register(17, broadcast_hccID));
-  // 17 in hex = 0x11
-  expected[1].push_back("Packet type TYP_HCC_RR, ABC 0, Address 11, Value 00000000\n");
-
-  // read any HCC register
-  // default value is: HCCStarRegister::OPmode]->setValue(0x00020001)
-  // OPmode reg is 41 (in hex = 0x29)
-  sendCommand(*emu, star.read_hcc_register(HCCStarRegister::OPmode, broadcast_hccID));
-  expected[1].push_back("Packet type TYP_HCC_RR, ABC 0, Address 29, Value 00020001\n");
-
-  // and read it with the current ID
-  uint32_t default_bonds_hccID = 0;
-  sendCommand(*emu, star.read_hcc_register(HCCStarRegister::OPmode, default_bonds_hccID));
-  expected[1].push_back("Packet type TYP_HCC_RR, ABC 0, Address 29, Value 00020001\n");
-
-  // change hccID
-  uint32_t new_hccID = 0x1;
-  uint32_t new_hcc_addressing = (new_hccID << 28) | 0x0;
-  sendCommand(*emu, star.write_hcc_register(17, new_hcc_addressing));
-
-  // try to read with the broadcast and old hccID
-  sendCommand(*emu, star.read_hcc_register(HCCStarRegister::ExtRst, broadcast_hccID));
-  expected[1].push_back("Packet type TYP_HCC_RR, ABC 0, Address 2d, Value 00710003\n");
-  sendCommand(*emu, star.read_hcc_register(HCCStarRegister::ExtRst, default_bonds_hccID));
-  expected[1].push_back("Packet type TYP_HCC_RR, ABC 0, Address 2d, Value 00710003\n");
-
-  // try the new ID
-  sendCommand(*emu, star.read_hcc_register(HCCStarRegister::ExtRst, new_hccID));
-  // this must return no reply
 
   emu->releaseFifo();
 
@@ -606,7 +548,6 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
   // EmuController config
   json cfg;
   cfg["chipCfg"] = tmpChipFname;
-  cfg["addressingModeDynamic"] = false;
   emu->loadConfig(cfg);
 
   // Clean up
@@ -949,7 +890,6 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
   cfg["type"] = "emu_Star";
   cfg["cfg"]  = json::object();
   cfg["cfg"]["chipCfg"] = tmpFileName;
-  cfg["cfg"]["addressingModeDynamic"] = false;
 
   staremu->loadConfig(cfg);
 

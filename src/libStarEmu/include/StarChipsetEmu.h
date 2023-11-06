@@ -24,7 +24,7 @@ public:
 
   StarChipsetEmu(ClipBoard<RawData>* rx, const std::string& json_emu_file_path,
                  std::unique_ptr<StarCfg> regCfg, unsigned hpr_period,
-                 int abc_version, int hcc_version, bool addressing_mode_dynamic);
+                 int abc_version, int hcc_version);
   ~StarChipsetEmu();
 
   void doL0A(bool, uint8_t, uint8_t);
@@ -162,7 +162,6 @@ private:
 
   int m_abc_version;
   int m_hcc_version;
-  bool m_addressing_mode_dynamic = true;
 
   ////////////////////////////////////////
   // HCCStar and ABCStar configurations

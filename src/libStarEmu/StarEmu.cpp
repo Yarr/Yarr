@@ -21,7 +21,7 @@ auto logger = logging::make_log("StarEmu");
 StarEmu::StarEmu(std::vector<ClipBoard<RawData>*> &rx, EmuCom * tx, EmuCom * tx2,
                  const std::string& json_emu_file_path,
                  const std::vector<std::string>& json_chip_file_paths,
-                 unsigned hpr_period, int abc_version, int hcc_version, bool addressing_mode_dynamic)
+                 unsigned hpr_period, int abc_version, int hcc_version)
     : m_txRingBuffer ( tx )
     , m_txRingBuffer2 ( tx2 )
     , m_bccnt ( 0 )
@@ -31,7 +31,7 @@ StarEmu::StarEmu(std::vector<ClipBoard<RawData>*> &rx, EmuCom * tx, EmuCom * tx2
 
     // HCCStar and ABCStar chip configurations
     assert(rx.size()==json_chip_file_paths.size());
-    logger->debug("Making star configs with A{} H{} M{}", abc_version, hcc_version, addressing_mode_dynamic);
+    logger->debug("Making star configs with A{} H{}", abc_version, hcc_version);
     for (unsigned i=0; i<json_chip_file_paths.size(); i++) {
         // Set up the chip configuration and load it to the emulator
         const std::string& regCfgFile = json_chip_file_paths[i];
@@ -52,7 +52,7 @@ StarEmu::StarEmu(std::vector<ClipBoard<RawData>*> &rx, EmuCom * tx, EmuCom * tx2
             regCfg->addABCchipID(15);
         }
 
-        chipEmus.emplace_back( new StarChipsetEmu(rx[i], json_emu_file_path, std::move(regCfg), hpr_period, abc_version, hcc_version, addressing_mode_dynamic) );
+        chipEmus.emplace_back( new StarChipsetEmu(rx[i], json_emu_file_path, std::move(regCfg), hpr_period, abc_version, hcc_version) );
     }
 }
 
@@ -369,7 +369,6 @@ void EmuController<StarChips, StarEmu>::loadConfig(const json &j) {
 
   unsigned abc_version = 0;
   unsigned hcc_version = 0;
-  bool addressing_mode_dynamic = true;
 
   if (j.contains("abcVersion")) {
     abc_version = j["abcVersion"];
@@ -380,11 +379,6 @@ void EmuController<StarChips, StarEmu>::loadConfig(const json &j) {
     hcc_version = j["hccVersion"];
     logger->debug("HCC Version set to {}", hcc_version);
   }
-
-  if (j.contains("addressingModeDynamic")) {
-    addressing_mode_dynamic = j["addressingModeDynamic"];
-  }
-  logger->debug("HCC dynamic addressing mode is set to {}", addressing_mode_dynamic);
 
   json chipCfg;
   if (j.contains("chipCfg")) {
@@ -476,7 +470,7 @@ void EmuController<StarChips, StarEmu>::loadConfig(const json &j) {
 
     std::vector<ClipBoard<RawData>*>& rx = rxMap[chn.first];
 
-    emus.emplace_back(new StarEmu(rx, tx, tx2, emuCfgFile, chn.second, hprperiod, abc_version, hcc_version, addressing_mode_dynamic));
+    emus.emplace_back(new StarEmu(rx, tx, tx2, emuCfgFile, chn.second, hprperiod, abc_version, hcc_version));
     emuThreads.push_back(std::thread(&StarEmu::executeLoop, emus.back().get()));
   }
 }

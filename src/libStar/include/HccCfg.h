@@ -107,7 +107,7 @@ class HccStarRegInfo {
 
 /// Configuration for an individual HCCStar
 class HccCfg {
-        unsigned m_hccID = 0;
+        unsigned m_hccID;
 
         //This is a map from address to register (pointers into register set)
         std::map<unsigned, Register*> m_registerMap;
