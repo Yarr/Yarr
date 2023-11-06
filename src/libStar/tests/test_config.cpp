@@ -354,15 +354,12 @@ TEST_CASE("StarCfgLoadConfig", "[star][config]") {
   cfg["HCC"]  = json::object();
   
   unsigned int hccID = 0x2;
-  uint32_t    fuseID = 0x40086d;
   cfg["HCC"]["ID"]  = hccID;
-  cfg["HCC"]["fuse_id"] = std::to_string(fuseID);
 
-// now it fails like this:
-//  CHECK( test_config.getHCCfuseID() == fuseID )
-//with expansion:
-//  68772961 (0x4196461) == 4196461 (0x40086d)
-
+  uint32_t    fuseID = 0x40086d;
+  std::stringstream stream;
+  stream << std::hex << fuseID;
+  cfg["HCC"]["fuse_id"] = stream.str();
 
   test_config.loadConfig(cfg);
 
