@@ -8,6 +8,7 @@
 #include "Histo2d.h"
 #include "FeedbackBase.h"
 
+#include "EmptyFrontEnd.h"
 #include "EmptyHw.h"
 
 namespace {
@@ -209,15 +210,14 @@ TEST_CASE("AnalysisPOILoops", "[Analysis]") {
   Bookkeeper bookie(&hwCtrl, &hwCtrl);
 
   // Add one FE
-  auto fe = StdDict::getFrontEnd("Star");
+  auto fe = std::make_unique<EmptyFrontEnd>();
   fe->setActive(true);
   unsigned channel = 42;
   bookie.addFe(fe.get(), channel);
   unsigned uid = bookie.getId(fe.release());
 
   // Global FE for scan
-  auto g_fe = StdDict::getFrontEnd("Star");
-  g_fe->makeGlobal();
+  auto g_fe = std::make_unique<EmptyFrontEnd>();
   g_fe->init(&hwCtrl, 0, 0);
   bookie.initGlobalFe(g_fe.release());
 

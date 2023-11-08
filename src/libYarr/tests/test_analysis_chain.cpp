@@ -5,6 +5,7 @@
 #include "ScanFactory.h"
 
 #include "EmptyHw.h"
+#include "EmptyFrontEnd.h"
 
 TEST_CASE("AnalysisHierarchy", "[Analysis]") {
 
@@ -47,9 +48,13 @@ TEST_CASE("AnalysisChainIO", "[Analysis]") {
   FeedbackClipboardMap fbData;
   ScanFactory scan(&bookie, &fbData);
 
-  // Add one FE
-  auto fe = StdDict::getFrontEnd("FEI4B");
+  // Add one FE, with large enough histogram for testing hit
+  auto fe = std::make_unique<EmptyFrontEnd>(FrontEndGeometry{10, 10});
   fe->setActive(true);
+
+  REQUIRE ( fe );
+
+  REQUIRE ( fe->isActive() );
 
   unsigned channel = 42;
   bookie.addFe(fe.release(), channel);
@@ -123,6 +128,9 @@ TEST_CASE("AnalysisChainIO", "[Analysis]") {
     if (result->getName() == "OccupancyMap") {
       auto h2d = dynamic_cast<Histo2d*>(result.get());
       REQUIRE (h2d);
+
+      CHECK (h2d->getOverflow() < 1e-9);
+      CHECK (h2d->getUnderflow() < 1e-9);
 
       // Check its content
       REQUIRE (h2d->getBin(1) == 43);   
