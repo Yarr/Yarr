@@ -4,6 +4,7 @@ nav:
     - SW Installation: install.md
     - Kernel Driver: kernel_driver.md
     - PCIe Firmware: pcie.md
+    - Updating to 1.28 Gbps: updating_firmware.md
     - External PCIe: pcie_ext.md
     - ScanConsole: scanconsole.md
     - FE-I4: fei4.md
