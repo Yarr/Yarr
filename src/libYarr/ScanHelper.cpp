@@ -225,7 +225,7 @@ namespace ScanHelper {
         return chipType;
     }
 
-    void buildRawDataProcs( std::map<unsigned, std::unique_ptr<DataProcessor> > &procs,
+    void buildRawDataProcs( std::map<unsigned, std::unique_ptr<FeDataProcessor> > &procs,
             Bookkeeper &bookie,
             const std::string &chipType) {
         bhlog->info("Loading RawData processors ..");
@@ -337,7 +337,7 @@ namespace ScanHelper {
     }
 
     void buildHistogrammers( std::map<unsigned,
-            std::unique_ptr<DataProcessor>>& histogrammers,
+            std::unique_ptr<HistoDataProcessor>>& histogrammers,
             const json& scanCfg,
             Bookkeeper &bookie,
             ScanBase* s, std::string outputDir) {
@@ -398,7 +398,7 @@ namespace ScanHelper {
     using AlgoTieredIndex = std::vector<std::vector<int>>;
 
     void buildAnalyses( std::map<unsigned,
-            std::vector<std::unique_ptr<DataProcessor>> >& analyses,
+            std::vector<std::unique_ptr<AnalysisDataProcessor>> >& analyses,
             const json& scanCfg, Bookkeeper& bookie,
             ScanBase* s, FeedbackClipboardMap *fbData, int mask_opt, std::string outputDir) {
         balog->info("Loading analyses ...");

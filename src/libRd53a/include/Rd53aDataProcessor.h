@@ -13,12 +13,12 @@
 #include <array>
 #include <map>
 
-#include "DataProcessor.h"
+#include "FeDataProcessor.h"
 #include "ClipBoard.h"
 #include "RawData.h"
 #include "Rd53a.h"
 
-class Rd53aDataProcessor : public DataProcessor {
+class Rd53aDataProcessor : public FeDataProcessor {
     public:
         Rd53aDataProcessor();
         ~Rd53aDataProcessor() override;

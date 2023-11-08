@@ -4,7 +4,7 @@
 #include <thread>
 
 #include "Bookkeeper.h"
-#include "DataProcessor.h"
+#include "AnalysisDataProcessor.h"
 #include "FeedbackBase.h"
 #include "HistogramBase.h"
 #include "ScanBase.h"
@@ -63,13 +63,13 @@ class AnalysisAlgorithm {
 /**
  * Receive a sequence of histograms and process them using AnalysisAlgorithms.
  */
-class AnalysisProcessor : public DataProcessor {
+class AnalysisProcessor : public AnalysisDataProcessor {
     public:
         AnalysisProcessor();
         AnalysisProcessor(Bookkeeper *b, unsigned ch);
         ~AnalysisProcessor() override;
 
-        void connect(ScanBase *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output, FeedbackClipboard *arg_fb, bool storeInput=false) {
+        void connect(ScanBase *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output, FeedbackClipboard *arg_fb, bool storeInput=false) override {
             scan = arg_s;
             input = arg_input;
             output = arg_output;

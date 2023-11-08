@@ -5,9 +5,9 @@
 
 void YarrDiagram::makeDiagram(
   Bookkeeper& keeper,
-  const std::map<unsigned, std::unique_ptr<DataProcessor>>& data_procs,
-  const std::map<unsigned, std::unique_ptr<DataProcessor>>& hist_procs,
-  const std::map<unsigned, std::vector<std::unique_ptr<DataProcessor>>>& ana_procs
+  const std::map<unsigned, std::unique_ptr<FeDataProcessor>>& data_procs,
+  const std::map<unsigned, std::unique_ptr<HistoDataProcessor>>& hist_procs,
+  const std::map<unsigned, std::vector<std::unique_ptr<AnalysisDataProcessor>>>& ana_procs
 ) {
   // Loop over front ends
   for (unsigned id = 0; id < keeper.getNumOfEntries(); id++) {
@@ -43,9 +43,9 @@ void YarrDiagram::makeDiagram(
 
 void YarrDiagram::addProcNodes(
   const BookEntry& entry,
-  const DataProcessor& dataproc,
-  const DataProcessor& histogrammer,
-  const std::vector<std::unique_ptr<DataProcessor>>& analyses
+  const FeDataProcessor& dataproc,
+  const HistoDataProcessor& histogrammer,
+  const std::vector<std::unique_ptr<AnalysisDataProcessor>>& analyses
 ) {
   // Add front end node
   procFE.push_back(std::make_unique<Box>());

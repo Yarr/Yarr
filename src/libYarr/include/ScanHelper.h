@@ -11,10 +11,12 @@
 
 #include <string>
 
+#include "AnalysisDataProcessor.h"
 #include "Bookkeeper.h"
-#include "DataProcessor.h"
+#include "FeDataProcessor.h"
 #include "FeedbackBase.h"
 #include "FrontEnd.h"
+#include "HistoDataProcessor.h"
 #include "HwController.h"
 #include "Utils.h"
 
@@ -37,15 +39,15 @@ namespace ScanHelper {
         std::string loadChipConfigs(json &j, bool createConfig=false);
         int loadConfigFile(const ScanOpts &scanOpts, bool writeConfig, json &config);
 // TODO Do not want to use the raw pointer ScanBase*
-        void buildHistogrammers( std::map<unsigned, std::unique_ptr<DataProcessor>>& histogrammers, const json &scanConfig,
+        void buildHistogrammers( std::map<unsigned, std::unique_ptr<HistoDataProcessor>>& histogrammers, const json &scanConfig,
                 Bookkeeper &bookie, ScanBase* s, std::string outputDir);
 
 // TODO would prefer not to need bookie --> deep dependency!
 // TODO Do not want to use the raw pointer ScanBase*
-        void buildRawDataProcs( std::map<unsigned, std::unique_ptr<DataProcessor> > &procs,
+        void buildRawDataProcs( std::map<unsigned, std::unique_ptr<FeDataProcessor> > &procs,
                            Bookkeeper &bookie,
                            const std::string &chipType);
-        void buildAnalyses( std::map<unsigned, std::vector<std::unique_ptr<DataProcessor>> >& analyses,
+        void buildAnalyses( std::map<unsigned, std::vector<std::unique_ptr<AnalysisDataProcessor>> >& analyses,
                             const json& scanType, Bookkeeper& bookie, ScanBase* s, FeedbackClipboardMap *fbMap, int mask_opt, std::string outputDir);
         void buildAnalysisHierarchy(std::vector<std::vector<int>>& indexTiers,
                                     const json &anaCfg);
