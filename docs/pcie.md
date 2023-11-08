@@ -1,5 +1,7 @@
 # FPGA Setup & PCIe Firmware 
 
+Note: For switching to from the v1.3.1 to the 1.4.1 firmware, please refer to the [Guide for Updating Firmware](updating_firmware.md)
+
 For the YARR readout, most commonly Series 7 FPGAs are used - specifically the TEF1001 is the recommended FPGA, and XpressK7 and KC705 are also supported. If in doubt of what you have, see the following picture for identification: 
 
 ![Supported PCIe cards](images/pcie_cards.png)
@@ -67,12 +69,12 @@ void SpecCom::init() -> Mapped BAR0 at 0x0x7f075e4b2000 with size 0x100000
 void SpecCom::init() -> Mmap failed
 void SpecCom::init() -> Could not map BAR4, this might be OK!
 Starting DMA write/read test ...
-... writing 8192 byte.
+... writing 8192 byte.g
 ... read 8192 byte.
 Success! No errors.
 ```
 
-- Your system is now ready to use
+- Your system is now **ready to use**
 
 ## Adapter Cards
 
