@@ -30,7 +30,9 @@ void printHelp() {
               << "  -c <connectivity_file>    Specify connectivity config JSON path.\n"
               << "  -t <test_size>            Specify the error counter test size. Default 1 x 10^6\n"
               << "  -s                   Skip chip configuration.\n"
-              << "  -n                   Don't update the controller condfig with the best delay values\n" ;
+              << "  -n                   Don't update the controller condfig with the best delay values\n" 
+              << "  -v                   Print out and store raw error counter values.\n"; 
+            
 }
 
 std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn, int fe_num) {
@@ -81,10 +83,12 @@ int main(int argc, char **argv) {
     uint32_t test_size = 1000000;
     bool save_delay=true;
     bool skip_config=false;
+    bool print_raw_value=false;
+
     uint32_t cdrclksel = 0;
     uint32_t serblckperiod = 50;
 
-    while ((c = getopt(argc, argv, "hr:c:t:ns")) != -1) {
+    while ((c = getopt(argc, argv, "hr:c:t:nsv")) != -1) {
         switch (c) {
         case 'h':
             printHelp();
@@ -104,9 +108,9 @@ int main(int argc, char **argv) {
         case 's' :
             skip_config = true;
             break;   
-        //case 'k' :
-        //    cdrclksel = optarg;
-        //    break;   
+        case 'v' :
+            print_raw_value = true;
+            break;   
 		default:
             logger->critical("Invalid command line parameter(s) given!");
             return -1;
@@ -242,22 +246,33 @@ int main(int argc, char **argv) {
             double link_quality=0;
             if (((errors>>31)&0x1)) {
                 error_count = (0x7FFFFFFF & errors);
-                if (error_count==min || error_count==max){ 
+                if (error_count>=min && error_count<=max+1 ){ 
                     value = 1;
                     link_quality=1;
                 } else { 
                     value = 0; 
-                    link_quality = std::log(1 / (std::abs(error_count - count) / count))/13.0;                
+                    link_quality = std::abs(std::log(1 / (std::abs(error_count - count) / count)))/13.0;                
                 }
             }
             resultVec[j][i] = value;
             if (link_quality==1){
-                std::cout << COLOR_GREEN << std::setw(4) << link_quality << COLOR_RESET << " | ";
+                if (print_raw_value){
+                    std::cout << COLOR_GREEN << std::setw(4) << error_count << COLOR_RESET << " | ";
+                } else {
+                    std::cout << COLOR_GREEN << std::setw(4) << link_quality << COLOR_RESET << " | ";
+                }
             } else {            
-                std::cout << std::setw(4) << link_quality << " | ";
+                if (print_raw_value){
+                    std::cout << std::setw(4) << error_count << " | ";
+                } else {
+                    std::cout << std::setw(4) << link_quality << " | ";
+                }
             }
-            s+=std::to_string(link_quality)+" | ";
-
+            if (print_raw_value){
+                s+=std::to_string(error_count)+" | ";
+            } else {
+                s+=std::to_string(link_quality)+" | ";
+            }
         }
         s+="\n";
         std::cout << std::endl;
