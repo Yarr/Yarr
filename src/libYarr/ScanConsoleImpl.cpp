@@ -272,7 +272,7 @@ int ScanConsoleImpl::configure() {
 
     // send global/broadcast reset command to all frontends
     if(scanOpts.doResetBeforeScan) {
-        bookie->getGlobalFe()->resetAll();
+        bookie->getGlobalFe()->resetAllHard();
     }
 
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
