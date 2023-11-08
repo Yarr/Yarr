@@ -311,12 +311,6 @@ int main(int argc, char **argv) {
         std::cout << cfg->getName() << std::endl;
         auto jchip = ScanHelper::openJsonFile(chip_register_file_path);
 
-        int cmlbias0 = jchip["RD53B"]["GlobalConfig"]["CmlBias0"];
-        int cmlbias1 = jchip["RD53B"]["GlobalConfig"]["CmlBias1"];
-        int vdda_trim = jchip["RD53B"]["GlobalConfig"]["SldoTrimA"];
-        int vddd_trim = jchip["RD53B"]["GlobalConfig"]["SldoTrimD"];
-
-
         if(!fe) {
             std::cerr << "WARNING: Skipping chip at index " << ichip << " in connectivity file" << std::endl;
             continue;
@@ -329,81 +323,62 @@ int main(int argc, char **argv) {
             std::this_thread::sleep_for(std::chrono::microseconds(10));
             while(!hw->isCmdEmpty());
 
-            if (!skip_config){
-                // Wait for sync
-                std::this_thread::sleep_for(std::chrono::milliseconds(200));
-            }
-
-            std::ofstream file;
-            file.open("new_results_"+cfg->getName()+".txt");
             int chip_id=jchip["RD53B"]["Parameter"]["ChipId"];
 
-            for (int a=0; a<16; a++){   
-                fe->writeNamedRegister("SldoTrimA", a);
-                fe->writeNamedRegister("ServiceBlockEn", 1);
-                if (chip_id==12){
-                    fe->writeNamedRegister("SerSelOut1", 1);
-                } else if (chip_id==13){
-                    fe->writeNamedRegister("SerSelOut2", 1);
-                } else if (chip_id==14){
-                    fe->writeNamedRegister("SerSelOut2", 1);
-                }
+            fe->writeNamedRegister("ServiceBlockEn", 1);
+            if (chip_id==12){
+                fe->writeNamedRegister("SerSelOut1", 1);
+            } else if (chip_id==13){
+                fe->writeNamedRegister("SerSelOut2", 1);
+            } else if (chip_id==14){
+                fe->writeNamedRegister("SerSelOut2", 1);
+            }
 
 
 
-                for (int d=0; d<16; d++){
-                    fe->writeNamedRegister("SldoTrimD", d);             
-                    while(!hw->isCmdEmpty()){;}
+            while(!hw->isCmdEmpty()){;}
 
-                    std::this_thread::sleep_for(std::chrono::microseconds(200));
+            std::this_thread::sleep_for(std::chrono::microseconds(200));
 
-                    hw->flushBuffer();
-                    std::this_thread::sleep_for(std::chrono::microseconds(10000));
+            hw->flushBuffer();
+            std::this_thread::sleep_for(std::chrono::microseconds(10000));
 
-                    // Enable manual delay control
-                    mySpec.writeSingle(0x2 << 14 | 0x6, 0xffff); 
+            // Enable manual delay control
+            mySpec.writeSingle(0x2 << 14 | 0x6, 0xffff); 
 
-                    mySpec.writeSingle(0x2 << 14 | 0x8, test_size); 
-                    mySpec.writeSingle(0x2 << 14 | 0x9, 0); 
+            mySpec.writeSingle(0x2 << 14 | 0x8, test_size); 
+            mySpec.writeSingle(0x2 << 14 | 0x9, 0); 
 
-                    std::cout << std::fixed << std::setprecision(2);
-                    std::cout << std::setw(5) << 16 << " | ";
-                    mySpec.writeSingle(0x2 << 14 | 0x4, lane); 
-                    mySpec.writeSingle(0x2 << 14 | 0x5, delay);            
-                    // Reset and restart error counter
-                    mySpec.writeSingle(0x2 << 14 | 0xb, 1); 
-                    mySpec.writeSingle(0x2 << 14 | 0xb, 0); 
-                    
-                    std::this_thread::sleep_for(std::chrono::microseconds(wait));
-                    
-                    mySpec.writeSingle(0x2 << 14 | 0xa, lane); 
-                    uint32_t errors = 0;
-                    errors = mySpec.readSingle(0x2<<14 | 0xb);
-                    double error_count = 0;
-                    double value=0;
-                    double link_quality=0;
-                    if (((errors>>31)&0x1)) {
-                        error_count = (0x7FFFFFFF & errors);
-                        if (error_count==min || error_count==max){ 
-                            value = 1;
-                            link_quality=1;
-                        } else { 
-                            value = 0; 
-                            link_quality = std::log(1 / (std::abs(error_count - count) / count))/13.0;                
-                        }
-                    }
-                    std::cout << a << "\t" << d << "\t" << error_count << std::endl;
-                    s+=std::to_string(a)+"\t"+std::to_string(d)+"\t"+std::to_string(error_count);
-
-                    s+="\n";
+            std::cout << std::fixed << std::setprecision(2);
+            std::cout << std::setw(5) << 16 << " | ";
+            mySpec.writeSingle(0x2 << 14 | 0x4, lane); 
+            mySpec.writeSingle(0x2 << 14 | 0x5, delay);            
+            // Reset and restart error counter
+            mySpec.writeSingle(0x2 << 14 | 0xb, 1); 
+            mySpec.writeSingle(0x2 << 14 | 0xb, 0); 
+            
+            std::this_thread::sleep_for(std::chrono::microseconds(wait));
+            
+            mySpec.writeSingle(0x2 << 14 | 0xa, lane); 
+            uint32_t errors = 0;
+            errors = mySpec.readSingle(0x2<<14 | 0xb);
+            double error_count = 0;
+            double value=0;
+            double link_quality=0;
+            if (((errors>>31)&0x1)) {
+                error_count = (0x7FFFFFFF & errors);
+                if (error_count==min || error_count==max){ 
+                    value = 1;
+                    link_quality=1;
+                } else { 
+                    value = 0; 
+                    link_quality = std::log(1 / (std::abs(error_count - count) / count))/13.0;                
                 }
             }
-            file << s;
-
+            std::cout << chip_id << "  " << error_count << std::endl;
+                
         }
         fe->writeNamedRegister("ServiceBlockEn", 0);
-        fe->writeNamedRegister("SldoTrimD", vddd_trim);
-        fe->writeNamedRegister("SldoTrimA", vdda_trim);
         fe->writeNamedRegister("SerSelOut0", 3);
         fe->writeNamedRegister("SerSelOut1", 3);
         fe->writeNamedRegister("SerSelOut2", 3);
