@@ -92,6 +92,19 @@ void Rd53b::resetAllHard() {
 
 }
 
+void Rd53b::resetAllSoft() {
+    logger->info("Performing soft reset ...");
+
+    this->writeRegister(&Rd53b::GlobalPulseConf, 0x490);
+    this->writeRegister(&Rd53b::GlobalPulseWidth, 10);
+    while(!core->isCmdEmpty()){;}
+
+    this->sendGlobalPulse(m_chipId);
+    while(!core->isCmdEmpty()){;}
+    std::this_thread::sleep_for(std::chrono::microseconds(100));
+
+}
+
 void Rd53b::configure() {
     this->configureInit();
     this->configureGlobal();

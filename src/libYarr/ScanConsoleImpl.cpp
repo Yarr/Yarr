@@ -317,6 +317,10 @@ int ScanConsoleImpl::configure() {
         logger->info("... success!");
     }
 
+    hwCtrl->setCmdEnable(bookie->getTxMaskUnique());
+    // send global/broadcast soft reset post config
+    bookie->getGlobalFe()->resetAllSoft();
+    
     // at this point, if we're not running a scan we should just exit
     if(!scanOpts.scan_config_provided) {
         return 1;
@@ -328,6 +332,7 @@ int ScanConsoleImpl::configure() {
     for (uint32_t channel : bookie->getTxMask()) {
         logger->info("Enabling Tx channel {}", channel);
     }
+
     logger->info("Enabling Rx channels");
     hwCtrl->setRxEnable(bookie->getRxMask());
     for (uint32_t channel : bookie->getRxMask()) {

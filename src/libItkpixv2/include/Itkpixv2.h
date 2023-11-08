@@ -31,6 +31,7 @@ class Itkpixv2 : public FrontEnd, public Itkpixv2Cfg, public Itkpixv2Cmd{
         }
 
         void resetAllHard() override;
+        void resetAllSoft() override;
         void configure() override;
         void configureInit();
         void configureGlobal();

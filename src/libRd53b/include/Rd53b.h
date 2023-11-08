@@ -32,6 +32,7 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         }
 
         void resetAllHard() override;
+        void resetAllSoft() override;
         void configure() override;
         void configureInit();
         void configureGlobal();
