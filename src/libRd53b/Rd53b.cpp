@@ -62,7 +62,7 @@ void Rd53b::init(HwController *core, unsigned arg_txChannel, unsigned arg_rxChan
     core->setClkPeriod(6.25e-9);
 }
 
-void Rd53b::resetAll() {
+void Rd53b::resetAllHard() {
     logger->debug("Performing hard reset ...");
     // Send low number of transitions for at least 10us to put chip in reset state
     logger->debug(" ... asserting CMD reset via low activity");

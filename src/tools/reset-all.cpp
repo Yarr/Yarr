@@ -102,7 +102,7 @@ int main(int argc, char* argv[]) {
     bookie->getGlobalFe()->makeGlobal();
     bookie->getGlobalFe()->init(&*hw, 0, 0);
     hw->setCmdEnable(bookie->getTxMaskUnique());
-    bookie->getGlobalFe()->resetAll();
+    bookie->getGlobalFe()->resetAllHard();
 
     return 0;
 }

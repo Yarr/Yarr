@@ -37,7 +37,7 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
             return std::make_unique<Rd53a>();
         }
 
-        void resetAll() override;
+        void resetAllHard() override;
         void configure() override;
         void configureInit();
         void configureGlobal();

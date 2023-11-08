@@ -14,8 +14,8 @@ StarChipsBroadcast::StarChipsBroadcast(int abc_version, int hcc_version)
   addABCchipID(0xf, 0);
 }
 
-void StarChipsBroadcast::resetAll() {
-  StarChips::resetAll();
+void StarChipsBroadcast::resetAllHard() {
+  StarChips::resetAllHard();
   // Move reset functions in StarChips here?
 }
 

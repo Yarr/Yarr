@@ -9,7 +9,7 @@ class StarChipsBroadcast : public StarChips {
 
     StarChipsBroadcast(int abc_version, int hcc_version);
 
-    void resetAll() override;
+    void resetAllHard() override;
 
     void configure() override;
 

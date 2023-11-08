@@ -142,7 +142,7 @@ void StarChips::resetABCStars() {
 	// sendCmd(LCB::fast_command(LCB::ABC_SEU_RESET, delay) );
 }
 
-void StarChips::resetAll(){
+void StarChips::resetAllHard(){
 	logger->info("Global reseting all HCC and ABC on the same LCB control segment");
 
     logger->debug("Sending fast command #{} LOGIC_RESET", LCB::LOGIC_RESET);

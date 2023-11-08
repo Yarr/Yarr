@@ -48,7 +48,7 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
 
   void resetHCCStars();
   void resetABCStars();
-  void resetAll() override;
+  void resetAllHard() override;
   void sendCmd(std::array<uint16_t, 9> cmd);
   void sendCmd(uint16_t cmd);
 

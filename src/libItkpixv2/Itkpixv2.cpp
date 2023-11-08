@@ -61,7 +61,7 @@ void Itkpixv2::init(HwController *core, unsigned arg_txChannel, unsigned arg_rxC
     core->setClkPeriod(6.25e-9);
 }
 
-void Itkpixv2::resetAll() {
+void Itkpixv2::resetAllHard() {
     logger->debug("Performing hard reset ...");
     // Send low number of transitions for at least 10us to put chip in reset state
     logger->debug(" ... asserting CMD reset via low activity");
