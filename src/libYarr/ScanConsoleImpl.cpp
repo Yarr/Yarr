@@ -291,6 +291,9 @@ int ScanConsoleImpl::configure() {
     logger->info("Sent configuration to all FEs in {} ms!",
                  std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count());
 
+    hwCtrl->setCmdEnable(bookie->getTxMaskUnique());
+    // send global/broadcast soft reset post config
+    bookie->getGlobalFe()->resetAllSoft();
     // Wait for rx to sync with FE stream
     // TODO Check RX sync
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
@@ -316,10 +319,6 @@ int ScanConsoleImpl::configure() {
 
         logger->info("... success!");
     }
-
-    hwCtrl->setCmdEnable(bookie->getTxMaskUnique());
-    // send global/broadcast soft reset post config
-    bookie->getGlobalFe()->resetAllSoft();
     
     // at this point, if we're not running a scan we should just exit
     if(!scanOpts.scan_config_provided) {
