@@ -28,8 +28,11 @@ void printHelp() {
               << "  -h                   Display this help message.\n"
               << "  -r <hw_controller_file>   Specify hardware controller JSON path.\n"
               << "  -c <connectivity_file>    Specify connectivity config JSON path.\n"
-              << "  -t <test_size>            Specify the error counter test size.\n"
-              << "  -n                   Don't update the controller condfig with the best delay values\n" ;
+              << "  -t <test_size>            Specify the error counter test size. Default 1 x 10^6\n"
+              << "  -s                   Skip chip configuration.\n"
+              << "  -n                   Don't update the controller condfig with the best delay values\n" 
+              << "  -v                   Print out and store raw error counter values.\n"; 
+            
 }
 
 std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn, int fe_num) {
@@ -77,10 +80,15 @@ int main(int argc, char **argv) {
     int n_lanes= 16;
     std::string hw_controller_filename = "";
     std::string connectivity_filename = "";
-    uint32_t test_size = 10e5;
+    uint32_t test_size = 1000000;
     bool save_delay=true;
+    bool skip_config=false;
+    bool print_raw_value=false;
 
-    while ((c = getopt(argc, argv, "hr:c:t:n")) != -1) {
+    uint32_t cdrclksel = 0;
+    uint32_t serblckperiod = 50;
+
+    while ((c = getopt(argc, argv, "hr:c:t:nsv")) != -1) {
         switch (c) {
         case 'h':
             printHelp();
@@ -97,6 +105,12 @@ int main(int argc, char **argv) {
         case 'n' :
             save_delay = false;
             break;    
+        case 's' :
+            skip_config = true;
+            break;   
+        case 'v' :
+            print_raw_value = true;
+            break;   
 		default:
             logger->critical("Invalid command line parameter(s) given!");
             return -1;
@@ -141,8 +155,6 @@ int main(int argc, char **argv) {
     std::string chipType = ScanHelper::loadChipConfigs(jconn, false, Utils::dirFromPath(connectivity_filename));
     auto chip_configs = jconn["chips"];
     size_t n_chips = chip_configs.size();
-    uint32_t cdrclksel = 0;
-    uint32_t serblckperiod = 50;
 
     for (size_t ichip = 0; ichip < n_chips; ichip++) {
         if (chip_configs[ichip]["enable"] == 0)
@@ -161,18 +173,17 @@ int main(int argc, char **argv) {
             std::cerr << "WARNING: Skipping chip at index " << ichip << " in connectivity file" << std::endl;
             continue;
         } else {
-            auto jchip = ScanHelper::openJsonFile(chip_register_file_path);
-            fe->configure();          
-
-            if (jchip.contains({chipType, "GlobalConfig", "CdrClkSel"}) &&
-                jchip.contains({chipType, "GlobalConfig", "ServiceBlockPeriod"})) {
-                cdrclksel = jchip[chipType]["GlobalConfig"]["CdrClkSel"];
-                serblckperiod = jchip[chipType]["GlobalConfig"]["ServiceBlockPeriod"];
+            if (!skip_config){
+                auto jchip = ScanHelper::openJsonFile(chip_register_file_path);
+                fe->configure();           
             } else {
-                std::cerr << "ERROR: Could not load \"CdrClkSel\" or \"ServiceBlockPeriod\" from config. Assuming defaults (0, 50)." << std::endl;
-                cdrclksel = 0;
-                serblckperiod = 50;
+                logger->info("Skipping configuration!");
             }
+            cdrclksel = fe->getRegisterValue("CdrClkSel");
+            serblckperiod = fe->getRegisterValue("ServiceBlockPeriod");
+            logger->info("Read \"CdrClkSel\" {} and \"ServiceBlockPeriod\" {} from virtual register read", cdrclksel, serblckperiod);
+
+
 
             // Wait for fifo to be empty
             std::this_thread::sleep_for(std::chrono::microseconds(10));
@@ -189,7 +200,7 @@ int main(int argc, char **argv) {
     double count=time/clkcycles/(serblckperiod*2+1);
     int min=std::floor(count);
     int max=std::ceil(count);
-    int wait = time*4*10000;
+    int wait = time*10000000;
 
     std::ofstream file;
     file.open("results.txt");
@@ -205,6 +216,11 @@ int main(int argc, char **argv) {
     for (uint32_t j=0; j<n_lanes; j++)
         resultVec[j].resize(32);
 
+    if (!skip_config){
+        // Wait for sync
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    }
+
     std::cout << std::fixed << std::setprecision(2);
     std::string s = "";
     for (uint32_t i = 0; i<32; i++) {
@@ -214,15 +230,12 @@ int main(int argc, char **argv) {
             mySpec.writeSingle(0x2 << 14 | 0x4, j); 
             mySpec.writeSingle(0x2 << 14 | 0x5, i); 
         }
-    
-        // Wait for sync
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        
+            
         // Reset and restart error counter
         mySpec.writeSingle(0x2 << 14 | 0xb, 1); 
         mySpec.writeSingle(0x2 << 14 | 0xb, 0); 
         
-        std::this_thread::sleep_for(std::chrono::milliseconds(wait));
+        std::this_thread::sleep_for(std::chrono::microseconds(wait));
         
         for (uint32_t j = 0 ; j<n_lanes; j++) {
 		    mySpec.writeSingle(0x2 << 14 | 0xa, j); 
@@ -233,22 +246,33 @@ int main(int argc, char **argv) {
             double link_quality=0;
             if (((errors>>31)&0x1)) {
                 error_count = (0x7FFFFFFF & errors);
-                if (error_count==min || error_count==max){ 
+                if (error_count>=min && error_count<=max+1 ){ 
                     value = 1;
                     link_quality=1;
                 } else { 
                     value = 0; 
-                    link_quality = std::log(1 / (std::abs(error_count - count) / count))/13.0;                
+                    link_quality = std::abs(std::log(1 / (std::abs(error_count - count) / count)))/13.0;                
                 }
             }
             resultVec[j][i] = value;
             if (link_quality==1){
-                std::cout << COLOR_GREEN << std::setw(4) << link_quality << COLOR_RESET << " | ";
+                if (print_raw_value){
+                    std::cout << COLOR_GREEN << std::setw(4) << error_count << COLOR_RESET << " | ";
+                } else {
+                    std::cout << COLOR_GREEN << std::setw(4) << link_quality << COLOR_RESET << " | ";
+                }
             } else {            
-                std::cout << std::setw(4) << link_quality << " | ";
+                if (print_raw_value){
+                    std::cout << std::setw(4) << error_count << " | ";
+                } else {
+                    std::cout << std::setw(4) << link_quality << " | ";
+                }
             }
-            s+=std::to_string(link_quality)+" | ";
-
+            if (print_raw_value){
+                s+=std::to_string(error_count)+" | ";
+            } else {
+                s+=std::to_string(link_quality)+" | ";
+            }
         }
         s+="\n";
         std::cout << std::endl;
@@ -271,7 +295,7 @@ int main(int argc, char **argv) {
             if (resultVec[i][j]==1){
                 if (width==0) start_val=j;
                 width+=1; 
-                if (i==31){
+                if (j==31){
                     if(width>last_width){
                         best_val=start_val;
                         best_width=width;
@@ -282,7 +306,7 @@ int main(int argc, char **argv) {
                     best_val=start_val;
                     best_width=width;
                 }   
-                last_width=width;
+                last_width=best_width;
                 width=0;
             }
         }    

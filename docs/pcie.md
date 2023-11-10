@@ -1,21 +1,19 @@
-# PCIe FPGA card Installation and Setup
+# FPGA Setup & PCIe Firmware 
 
-Two kinds of setups have to be distinguished, those that use Series 7 FPGAs (XpressK7, KC705, TEF1001) and those that use the Spartan 6 (CERN SPEC). If in doubt see picture below for identification:
+Note: For switching to from the v1.3.1 to the 1.4.1 firmware, please refer to the [Guide for Updating Firmware](updating_firmware.md)
+
+For the YARR readout, most commonly Series 7 FPGAs are used - specifically the TEF1001 is the recommended FPGA, and XpressK7 and KC705 are also supported. If in doubt of what you have, see the following picture for identification: 
 
 ![Supported PCIe cards](images/pcie_cards.png)
 
-## Series 7 FPGA
-
-The FPGA programming for the Series 7 FPGAs is somewhat more complicated, as in this case the FPGA is directly attached to the PCIe bus. This might also lead to some issues discussed at the end of this section.
-
-### Prerequisites
+## Prerequisites
 
 * Xilinx Vivado Design Suite 2019.2 or latest Vivado Lab Solutions
 * A JTAG programmer attached to the JTAG port to the PCIe card
   * I can recommend the [Digilent JTAG HS3](https://www.digikey.com/product-detail/en/digilent-inc/210-299/1286-1047-ND/5015666)
 * Install the Xilinx cable driver, refer to [UG973](https://www.xilinx.com/support/documentation/sw_manuals/xilinx2016_4/ug973-vivado-release-notes-install-license.pdf)
 
-### Setting up the Xilinx environment
+## Setting up the Xilinx environment and flashing the firmware 
 
 Execute the following command to setup the Xilinx environment:
 - For Vivado Design Suite
@@ -28,8 +26,6 @@ source /opt/Xilinx/Vivado_Lab/2019.2/settings64.sh
 ```
 - This is the default install path, if the path is not correct you need to point it to your installation.
 
-### Flashing the Firmware
-
 In order to flash the firmware, download the following script: [flash.sh](http://yarr.web.cern.ch/yarr/firmware/flash.sh)
 
 ```bash
@@ -38,11 +34,22 @@ $ <text>
 $ ./flash.sh
 ```
 
-Please check the [FW Guide](fw_guide.md) for more information for your specific card!
+The script can be used in two ways:
 
-Once you have flashed the firmware reboot your PC.
+1. Run it by itself (without an argument) and it will ask some questions about what kind of configuration you desire. It will then download the latest firmware and proceed to flash the firmware to the FPGA and PROM.
+2. Run it with an already downloaded bit-file as an argument and it will proceed to flash this firmware to the FPGA card. It will still ask what FPGA card you have as this specifies how to flash the firmware exactly.
 
-### Check the PCIe Status
+Largely, case 1 should be applicable for getting the latest official firmware release. Specifically, the script will ask for: 
+- FPGA card: TEF1001 and XpressK7 are supported in the official releases 
+- Chip type: YARR is now almost exclusively used for reading out RD53 chips 
+- FMC card: FMC adapter card attached to the FPGA, most commonly the Ohio card is used 
+- Readout speed: 1280 Mbps, 640 Mbps and 160 Mbps are supported, and 1280 Mpbs is the baseline readout speed 
+
+Please check the [FW Guide](fw_guide.md) for more information!
+
+Once you have flashed the firmware **reboot your PC**.
+
+## Check the PCIe Status
 
 - After the system has booted again check that firmware is loaded correctly.
   1. Check that the card appears in ``lspci``
@@ -62,16 +69,16 @@ void SpecCom::init() -> Mapped BAR0 at 0x0x7f075e4b2000 with size 0x100000
 void SpecCom::init() -> Mmap failed
 void SpecCom::init() -> Could not map BAR4, this might be OK!
 Starting DMA write/read test ...
-... writing 8192 byte.
+... writing 8192 byte.g
 ... read 8192 byte.
 Success! No errors.
 ```
 
-- Your system is now ready to use
+- Your system is now **ready to use**
 
 ## Adapter Cards
 
-### Ohio RD53A Multi Module Adapter
+### Ohio Multi Module Adapter
 
 - In order to power correctly the adapter card, a jumper needs to be added to **3V PCI** pin, as shown on picture below.
 

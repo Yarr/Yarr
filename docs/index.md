@@ -16,7 +16,8 @@ The currently supported readout chips are:
 * FE-I4B
 * FE65-P2
 * RD53A
-* RD53B (ITkPixV1)
+* ITkPixV1 (RD53B)
+* ITkPixV2 (RD53C)
 * ABC/HCC STAR
 
 There is very preliminary support for Star chips (strips).

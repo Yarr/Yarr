@@ -57,7 +57,9 @@ class Itkpixv2 : public FrontEnd, public Itkpixv2Cfg, public Itkpixv2Cmd{
         void readRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref);
         void writeNamedRegister(std::string name, uint16_t value) override;
         uint16_t readNamedRegister(std::string name) override;
-        
+        void setRegisterValue(std::string name, uint16_t value) override;
+        uint16_t getRegisterValue(std::string name) override;
+
         Itkpixv2RegDefault Itkpixv2GlobalCfg::* getNamedRegister(std::string name);
 
         void setInjCharge(double charge, bool sCap=true, bool lCap=true) override {
