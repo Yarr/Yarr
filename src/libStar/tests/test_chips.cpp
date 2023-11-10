@@ -149,7 +149,7 @@ TEST_CASE("StarBasicConfig", "[star][chips]") {
 
   REQUIRE (tx.buffers.empty());
 
-  star_fe->resetAll();
+  star_fe->resetAllHard();
 
   star_fe->configure();
 

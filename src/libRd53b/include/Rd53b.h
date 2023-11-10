@@ -31,7 +31,8 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
             return std::make_unique<Rd53b>();
         }
 
-        void resetAll() override;
+        void resetAllHard() override;
+        void resetAllSoft() override;
         void configure() override;
         void configureInit();
         void configureGlobal();

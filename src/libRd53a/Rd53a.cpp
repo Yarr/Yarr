@@ -78,7 +78,7 @@ void Rd53a::enableAll() {
     }
 }
 
-void Rd53a::resetAll() {
+void Rd53a::resetAllHard() {
     this->configureInit();
 }
 

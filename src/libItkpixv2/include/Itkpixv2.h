@@ -30,7 +30,8 @@ class Itkpixv2 : public FrontEnd, public Itkpixv2Cfg, public Itkpixv2Cmd{
             return std::make_unique<Itkpixv2>();
         }
 
-        void resetAll() override;
+        void resetAllHard() override;
+        void resetAllSoft() override;
         void configure() override;
         void configureInit();
         void configureGlobal();

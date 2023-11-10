@@ -61,8 +61,8 @@ void Itkpixv2::init(HwController *core, unsigned arg_txChannel, unsigned arg_rxC
     core->setClkPeriod(6.25e-9);
 }
 
-void Itkpixv2::resetAll() {
-    logger->debug("Performing hard reset ...");
+void Itkpixv2::resetAllHard() {
+    logger->info("Performing hard reset ...");
     // Send low number of transitions for at least 10us to put chip in reset state
     logger->debug(" ... asserting CMD reset via low activity");
     for (unsigned int i=0; i<85; i++) {
@@ -88,6 +88,19 @@ void Itkpixv2::resetAll() {
         core->writeFifo(0x817E817E);
     core->releaseFifo();
     while(!core->isCmdEmpty()){;}
+
+}
+
+void Itkpixv2::resetAllSoft() {
+    logger->info("Performing soft reset ...");
+
+    this->writeRegister(&Itkpixv2::GlobalPulseConf, 0x018);
+    this->writeRegister(&Itkpixv2::GlobalPulseWidth, 10);
+    while(!core->isCmdEmpty()){;}
+
+    this->sendGlobalPulse(m_chipId);
+    while(!core->isCmdEmpty()){;}
+    std::this_thread::sleep_for(std::chrono::microseconds(100));
 
 }
 
