@@ -47,9 +47,9 @@ Preferred mode for testing should be LDO mode.
 
 ## DAQ specifics for RD53B
 
-## Data transmission configuration 
+## Data transmission 
 
-Before running any other scans (from firmware release 1.4.1 onwards), it is necessary to set the correct sampling delay setting for the deserialiser to ensure good data transmission. This is done using an eye diagram measurement, which can also quantify the data transmission quality. The scan is run as: 
+Before running any other scans (from firmware release 1.4.0 onwards), it is necessary to set the correct sampling delay setting for the deserialiser to ensure good data transmission. A detailed description can be found in [Guide for Updating Firmware](updating_firmware.md). This is done using an eye diagram measurement, which can also quantify the data transmission quality. The scan is run as: 
 
 ```bash
 Usage: ./bin/eyeDiagram [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-t <test_size>] [-s]

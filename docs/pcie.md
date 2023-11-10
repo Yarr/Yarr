@@ -1,6 +1,6 @@
 # FPGA Setup & PCIe Firmware 
 
-Note: For switching to from the v1.3.1 to the 1.4.1 firmware, please refer to the [Guide for Updating Firmware](updating_firmware.md)
+Note: For instructions for switching to the 1.28 Gbps firmware, please refer to the [Guide for Updating Firmware](updating_firmware.md)
 
 For the YARR readout, most commonly Series 7 FPGAs are used - specifically the TEF1001 is the recommended FPGA, and XpressK7 and KC705 are also supported. If in doubt of what you have, see the following picture for identification: 
 
