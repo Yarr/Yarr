@@ -85,7 +85,7 @@ The readout speed that the chip is confgured to has to match the readout speed o
 - ``2`` : 320Mbps
 - ``3`` : 160Mbps
 
-Recommended is 640Mbps.
+Recommended is 1.28 Gbps.
 
 ### Number Data Lanes
 
