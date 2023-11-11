@@ -35,16 +35,15 @@ namespace {
 //! Initializes the analysis ; mostly consists of getting the loop parameter over which data will be aggregated
 /*!
 */
-void StarStrobeDelayAnalysis::init(ScanBase *s) {
+void StarStrobeDelayAnalysis::init(const ScanLoopInfo *s) {
 
-    scan = s;
     strobeDelayLoop = 0;
     m_injections = 50;
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        auto l = s->getLoop(n);
 
         // Strobe delay Loop
-        if (isPOILoop(l.get())) {
+        if (isPOILoop(l)) {
             strobeDelayLoop = n;
             m_strobeDelayMax = l->getMax();
             m_strobeDelayMin = l->getMin();
@@ -53,7 +52,7 @@ void StarStrobeDelayAnalysis::init(ScanBase *s) {
         }
 
         if (l->isTriggerLoop()) {
-            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            auto trigLoop = dynamic_cast<const StdTriggerAction*>(l);
             if(trigLoop == nullptr) {
                 alog->error("StarStrobeDelayAnalysis: loop declared as trigger loop, does not have a trigger count");
             } else {

@@ -82,7 +82,7 @@ namespace {
 
 }
 
-void HistogramArchiver::init(ScanBase *s) {
+void HistogramArchiver::init(const ScanLoopInfo *s) {
 }
 
 void HistogramArchiver::processHistogram(HistogramBase *histo) {
@@ -100,11 +100,11 @@ void HistogramArchiver::setOutputDirectory(std::string dir) {
     output_dir = dir;
 }
 
-void OccupancyAnalysis::init(ScanBase *s) {
+void OccupancyAnalysis::init(const ScanLoopInfo *s) {
     n_count = 1;
     injections = 0;
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        auto l = s->getLoop(n);
         if (!(l->isMaskLoop() || l->isTriggerLoop() || l->isDataLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -115,7 +115,7 @@ void OccupancyAnalysis::init(ScanBase *s) {
             n_count = n_count*cnt;
         }
         if (l->isTriggerLoop()) {
-            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            auto trigLoop = dynamic_cast<const StdTriggerAction*>(l);
             if(trigLoop == nullptr) {
                 alog->error("OccupancyAnalysis: loop declared as trigger loop, does not have a trigger count");
             } else {
@@ -232,7 +232,7 @@ void TotAnalysis::loadConfig(const json &config) {
     }
 }
 
-void TotAnalysis::init(ScanBase *s) {
+void TotAnalysis::init(const ScanLoopInfo *s) {
     useScap = true;
     useLcap = true;
     n_count = 1;
@@ -242,7 +242,7 @@ void TotAnalysis::init(ScanBase *s) {
     hasVcalLoop = false;
 
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        auto l = s->getLoop(n);
         if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -254,7 +254,7 @@ void TotAnalysis::init(ScanBase *s) {
         }
 
         if (l->isTriggerLoop()) {
-            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            auto trigLoop = dynamic_cast<const StdTriggerAction*>(l);
             if(trigLoop == nullptr) {
                 alog->error("TotAnalysis: loop declared as trigger loop, does not have a trigger count");
             } else {
@@ -580,17 +580,16 @@ void TotAnalysis::end() {
     }
 }
 
-void ScurveFitter::init(ScanBase *s) {
+void ScurveFitter::init(const ScanLoopInfo *s) {
     fb = nullptr;
-    scan = s;
     n_count = 1;
     vcalLoop = 0;
     injections = 50;
     useScap = true;
     useLcap = true;
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || isPOILoop(l.get()))) {
+        auto l = s->getLoop(n);
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || isPOILoop(l))) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -603,7 +602,7 @@ void ScurveFitter::init(ScanBase *s) {
             n_count = n_count*cnt;
         }
         // Vcal Loop
-        if (l->isParameterLoop() && isPOILoop(l.get())) {
+        if (isPOILoop(l)) {
             vcalLoop = n;
             vcalMax = l->getMax();
             vcalMin = l->getMin();
@@ -612,7 +611,7 @@ void ScurveFitter::init(ScanBase *s) {
         }
 
         if (l->isTriggerLoop()) {
-            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            auto trigLoop = dynamic_cast<const StdTriggerAction*>(l);
             if(trigLoop == nullptr) {
                 alog->error("ScurveFitter: loop declared as trigger loop, does not have a trigger count");
             } else {
@@ -955,10 +954,10 @@ void ScurveFitter::end() {
     }
 }
 
-void NPointGain::init(ScanBase *s) {
+void NPointGain::init(const ScanLoopInfo *s) {
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if (isPOILoop(l.get())) {
+        auto l = s->getLoop(n);
+        if (isPOILoop(l)) {
             par_loopindex = n;
             par_min = l->getMin();
             par_max = l->getMax();
@@ -1022,10 +1021,10 @@ void NPointGain::loadConfig(const json &j) {
         m_skipDependencyCheck = j["skipDependencyCheck"];
 }
 
-void OccGlobalThresholdTune::init(ScanBase *s) {
+void OccGlobalThresholdTune::init(const ScanLoopInfo *s) {
     n_count = 1;
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        auto l = s->getLoop(n);
         if (!(l->isDataLoop() || l->isTriggerLoop() || l->isMaskLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -1037,7 +1036,7 @@ void OccGlobalThresholdTune::init(ScanBase *s) {
         }
 
         if (l->isTriggerLoop()) {
-            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            auto trigLoop = dynamic_cast<const StdTriggerAction*>(l);
             if(trigLoop == nullptr) {
                 alog->error("OccGlobalThresholdTune: loop declared as trigger does not have a count");
             } else {
@@ -1047,7 +1046,6 @@ void OccGlobalThresholdTune::init(ScanBase *s) {
 
         if (l->isGlobalFeedbackLoop()) {
             fb.reset(new GlobalFeedbackSender(feedback));
-            lb = (LoopActionBase*) l.get(); 
         }
     }
 }
@@ -1099,9 +1097,6 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
 
         bool done = false;
         double sign = 0;
-        if (lb->getStep() == 1) {
-            done = true;
-        }
 
         double meanOcc = occDists[ident]->getMean()/(double)injections;
         double entries = occDists[ident]->getEntries();
@@ -1137,10 +1132,10 @@ void OccPixelThresholdTune::loadConfig(const json &j){
         m_occHighCut=j["occHighCut"];
 }
 
-void OccPixelThresholdTune::init(ScanBase *s) {
+void OccPixelThresholdTune::init(const ScanLoopInfo *s) {
     n_count = 1;
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        auto l = s->getLoop(n);
         if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -1152,7 +1147,7 @@ void OccPixelThresholdTune::init(ScanBase *s) {
         }
 
         if (l->isTriggerLoop()) {
-            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            auto trigLoop = dynamic_cast<const StdTriggerAction*>(l);
             if(trigLoop == nullptr) {
                 alog->error("OccPixelThresholdTune: loop declared as trigger does not have a count");
             } else {
@@ -1236,11 +1231,11 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
 }
 
 // TODO exclude every loop
-void L1Analysis::init(ScanBase *s) {
+void L1Analysis::init(const ScanLoopInfo *s) {
     n_count = 1;
     injections = 0;
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        auto l = s->getLoop(n);
         if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -1252,7 +1247,7 @@ void L1Analysis::init(ScanBase *s) {
         }
 
         if (l->isTriggerLoop()) {
-            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            auto trigLoop = dynamic_cast<const StdTriggerAction*>(l);
             if(trigLoop == nullptr) {
                 alog->error("L1Analysis: loop declared as trigger does not have a count");
             } else {
@@ -1302,11 +1297,11 @@ void L1Analysis::processHistogram(HistogramBase *h) {
 void L1Analysis::end() {
 }
 
-void TagAnalysis::init(ScanBase *s) {
+void TagAnalysis::init(const ScanLoopInfo *s) {
     n_count = 1;
     injections = 0;
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        auto l = s->getLoop(n);
         if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -1396,11 +1391,11 @@ void TagAnalysis::processHistogram(HistogramBase *h) {
 void TagAnalysis::end() {
 }
 
-void TotDistPlotter::init(ScanBase *s) {
+void TotDistPlotter::init(const ScanLoopInfo *s) {
     n_count = 1;
     injections = 0;
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        auto l = s->getLoop(n);
         if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || l->isParameterLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -1411,7 +1406,7 @@ void TotDistPlotter::init(ScanBase *s) {
             n_count = n_count*cnt;
         }
         if (l->isTriggerLoop()) {
-            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            auto trigLoop = dynamic_cast<const StdTriggerAction*>(l);
             if(trigLoop == nullptr) {
                 alog->error("TotDistPlotter: loop declared as trigger does not have a count");
             } else {
@@ -1457,7 +1452,7 @@ void TotDistPlotter::processHistogram(HistogramBase *h) {
     }
 }
 
-void NoiseAnalysis::init(ScanBase *s) {
+void NoiseAnalysis::init(const ScanLoopInfo *s) {
     // We assume the nosie scan only has one trigger and data loop
     occ.reset(new Histo2d("Occupancy", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
     occ->setXaxisTitle("Col");
@@ -1537,12 +1532,12 @@ void NoiseAnalysis::end() {
     output->pushData(std::move(mask));
 }
 
-void NoiseTuning::init(ScanBase *s) {
+void NoiseTuning::init(const ScanLoopInfo *s) {
     n_count = 1;
     pixelFb = nullptr;
     globalFb = nullptr;
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        auto l = s->getLoop(n);
         if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -1635,12 +1630,11 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
 void NoiseTuning::end() {
 }
 
-void DelayAnalysis::init(ScanBase *s) {
-    scan = s;
+void DelayAnalysis::init(const ScanLoopInfo *s) {
     n_count = nCol*nRow;
     injections = 50;
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        auto l = s->getLoop(n);
         if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || l->isParameterLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -1660,7 +1654,7 @@ void DelayAnalysis::init(ScanBase *s) {
         }
 
         if (l->isTriggerLoop()) {
-            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            auto trigLoop = dynamic_cast<const StdTriggerAction*>(l);
             if(trigLoop == nullptr) {
                 alog->error("DelayAnalysis: loop declared as trigger does not have a count");
             } else {
@@ -1754,12 +1748,11 @@ void DelayAnalysis::end() {
 }
 
 
-void ParameterAnalysis::init(ScanBase *s) {
+void ParameterAnalysis::init(const ScanLoopInfo *s) {
     n_count = 1;
-    scan = s;
     alog->info("ParameterAnalysis init");
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        auto l = s->getLoop(n);
         if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || l->isParameterLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -1780,7 +1773,7 @@ void ParameterAnalysis::init(ScanBase *s) {
             paramMin = l->getMin();
             paramStep = l->getStep();
             paramBins = (paramMax-paramMin)/paramStep;
-            auto paramLoop = dynamic_cast<StdParameterAction*>(l.get());
+            auto paramLoop = dynamic_cast<const StdParameterAction*>(l);
             if(paramLoop == nullptr) {
                 alog->error("ParameterAnalysis: loop declared as parameter loop does not have a name");
             } else {
@@ -1789,7 +1782,7 @@ void ParameterAnalysis::init(ScanBase *s) {
         }
 
         if (l->isTriggerLoop()) {
-            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            auto trigLoop = dynamic_cast<const StdTriggerAction*>(l);
             if(trigLoop == nullptr) {
                 alog->error("ParameterAnalysis: loop declared as trigger does not have a count");
             } else {

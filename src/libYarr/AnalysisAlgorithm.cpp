@@ -16,14 +16,14 @@ namespace {
     auto alog = logging::make_log("AnalysisAlgorithm");
 }
 
-bool AnalysisAlgorithm::isPOILoop(LoopActionBase *l) {
+bool AnalysisAlgorithm::isPOILoop(const LoopActionBaseInfo *l) {
     // Determine if a given loop l is iterating a parameter that is in the m_parametersOfInterest
 
     if(!l->isParameterLoop()) {
         return false;
     }
 
-    auto spl = dynamic_cast<StdParameterAction*>(l);
+    auto spl = dynamic_cast<const StdParameterAction*>(l);
     if(!spl) {
         // Not a StdParameterLoop loop
         // Other parameter loops do not derive from StdParameterLoop.
@@ -63,7 +63,7 @@ AnalysisProcessor::~AnalysisProcessor() = default;
 void AnalysisProcessor::init() {
     for (unsigned i=0; i<algorithms.size(); i++) {
         algorithms[i]->connect(output, feedback);
-        algorithms[i]->init(scan);
+        algorithms[i]->init(scan_info);
     }
 }
 

@@ -7,7 +7,7 @@
 #include "AnalysisDataProcessor.h"
 #include "FeedbackBase.h"
 #include "HistogramBase.h"
-#include "ScanBase.h"
+#include "ScanLoopInfo.h"
 
 /**
  * Process sequence of histograms.
@@ -30,7 +30,7 @@ class AnalysisAlgorithm {
             output = out;
             feedback = fb;
         }
-        virtual void init(ScanBase *s) {}
+        virtual void init(const ScanLoopInfo *s) {}
         virtual void loadConfig(const json &config){}
         virtual void processHistogram(HistogramBase *h) {}
         virtual void end() {}
@@ -49,14 +49,13 @@ class AnalysisAlgorithm {
     protected:
         Bookkeeper *bookie;
         unsigned id;
-        ScanBase *scan;
         ClipBoard<HistogramBase> *output;
         FeedbackClipboard *feedback;
         bool make_mask;
         unsigned nCol, nRow;
 
         std::vector<std::string> m_parametersOfInterest;
-        bool isPOILoop(LoopActionBase *l);
+        bool isPOILoop(const LoopActionBaseInfo *l);
 
 };
 
@@ -69,8 +68,8 @@ class AnalysisProcessor : public AnalysisDataProcessor {
         AnalysisProcessor(Bookkeeper *b, unsigned ch);
         ~AnalysisProcessor() override;
 
-        void connect(ScanBase *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output, FeedbackClipboard *arg_fb, bool storeInput=false) override {
-            scan = arg_s;
+        void connect(const ScanLoopInfo *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output, FeedbackClipboard *arg_fb, bool storeInput=false) override {
+            scan_info = arg_s;
             input = arg_input;
             output = arg_output;
             feedback = arg_fb;
@@ -107,7 +106,7 @@ class AnalysisProcessor : public AnalysisDataProcessor {
         ClipBoard<HistogramBase> *input;
         ClipBoard<HistogramBase> *output;
         FeedbackClipboard *feedback;
-        ScanBase *scan;
+        const ScanLoopInfo *scan_info;
         std::unique_ptr<std::thread> thread_ptr;
         bool storeInputHisto;
         

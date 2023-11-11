@@ -22,7 +22,7 @@ class OccupancyAnalysis : public AnalysisAlgorithm {
         OccupancyAnalysis() : AnalysisAlgorithm() {createMask = true; LowThr = 0.0; HighThr = 0.0;}
         ~OccupancyAnalysis() override = default;
 
-        void init(ScanBase *s) override;
+        void init(const ScanLoopInfo *s) override;
         void processHistogram(HistogramBase *h) override;
         void end() override {}
         void loadConfig(const json &config) override;
@@ -42,7 +42,7 @@ class HistogramArchiver : public AnalysisAlgorithm {
         HistogramArchiver() = default;
         ~HistogramArchiver() override = default;
 
-        void init(ScanBase *s) override;
+        void init(const ScanLoopInfo *s) override;
         void processHistogram(HistogramBase *h) override;
         void end() override {}
         void loadConfig(const json &config) override;
@@ -65,7 +65,7 @@ class TotAnalysis : public AnalysisAlgorithm {
         }
         ~TotAnalysis() override = default;
 
-        void init(ScanBase *s) override;
+        void init(const ScanLoopInfo *s) override;
         void processHistogram(HistogramBase *h) override;
         void end() override;
         void loadConfig(const json &config) override;
@@ -111,7 +111,7 @@ class NPointGain : public AnalysisAlgorithm {
         NPointGain() : AnalysisAlgorithm() {}
         ~NPointGain() override = default;
 
-        void init(ScanBase *s) override;
+        void init(const ScanLoopInfo *s) override;
         void processHistogram(HistogramBase *h) override;
         void end() override;
         void loadConfig(const json& config) override;
@@ -139,7 +139,7 @@ class ScurveFitter : public AnalysisAlgorithm {
         ScurveFitter() : AnalysisAlgorithm() {}
         ~ScurveFitter() override = default;
 
-        void init(ScanBase *s) override;
+        void init(const ScanLoopInfo *s) override;
         void processHistogram(HistogramBase *h) override;
         void end() override;
         void loadConfig(const json &config) override;
@@ -191,7 +191,7 @@ class OccGlobalThresholdTune : public AnalysisAlgorithm {
         OccGlobalThresholdTune() : AnalysisAlgorithm()  {}
         ~OccGlobalThresholdTune() override = default;
 
-        void init(ScanBase *s) override;
+        void init(const ScanLoopInfo *s) override;
         void processHistogram(HistogramBase *h) override;
         void end() override {}
         void loadConfig(const json &config) override{}
@@ -204,8 +204,6 @@ class OccGlobalThresholdTune : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> innerCnt;
         unsigned injections;
         std::unique_ptr<GlobalFeedbackSender> fb;
-        LoopActionBase *lb;
-
 };
 
 class GlobalPreampTune : public AnalysisAlgorithm {
@@ -213,7 +211,7 @@ class GlobalPreampTune : public AnalysisAlgorithm {
         GlobalPreampTune() : AnalysisAlgorithm()  {}
         ~GlobalPreampTune() override = default;
 
-        void init(ScanBase *s) override;
+        void init(const ScanLoopInfo *s) override;
         void processHistogram(HistogramBase *h) override;
         void end() override {}
         void loadConfig(const json &config) override{}
@@ -239,7 +237,7 @@ class OccPixelThresholdTune : public AnalysisAlgorithm {
         }
         ~OccPixelThresholdTune() override = default;
 
-        void init(ScanBase *s) override;
+        void init(const ScanLoopInfo *s) override;
         void processHistogram(HistogramBase *h) override;
         void end() override {}
         void loadConfig(const json &config) override;
@@ -262,7 +260,7 @@ class L1Analysis : public AnalysisAlgorithm {
         L1Analysis() : AnalysisAlgorithm() {}
         ~L1Analysis() override = default;
 
-        void init(ScanBase *s) override;
+        void init(const ScanLoopInfo *s) override;
         void processHistogram(HistogramBase *h) override;
         void end() override;
         void loadConfig(const json &config) override{}
@@ -281,7 +279,7 @@ class TagAnalysis : public AnalysisAlgorithm {
         TagAnalysis() : AnalysisAlgorithm() {}
         ~TagAnalysis() override = default;
 
-        void init(ScanBase *s) override;
+        void init(const ScanLoopInfo *s) override;
         void processHistogram(HistogramBase *h) override;
         void end() override;
         void loadConfig(const json &config) override{}
@@ -304,7 +302,7 @@ class TotDistPlotter : public AnalysisAlgorithm {
         TotDistPlotter() : AnalysisAlgorithm() {}
         ~TotDistPlotter() override = default;
 
-        void init(ScanBase *s) override;
+        void init(const ScanLoopInfo *s) override;
         void processHistogram(HistogramBase *h) override;
         void end() override {}
         void loadConfig(const json &config) override{}
@@ -325,7 +323,7 @@ class NoiseAnalysis : public AnalysisAlgorithm {
         }
         ~NoiseAnalysis() override = default;
 
-        void init(ScanBase *s) override;
+        void init(const ScanLoopInfo *s) override;
         void processHistogram(HistogramBase *h) override;
         void end() override;
         void loadConfig(const json &config) override;
@@ -342,7 +340,7 @@ class NoiseTuning : public AnalysisAlgorithm {
         NoiseTuning() : AnalysisAlgorithm() {}
         ~NoiseTuning() override = default;
 
-        void init(ScanBase *s) override;
+        void init(const ScanLoopInfo *s) override;
         void processHistogram(HistogramBase *h) override;
         void end() override;
         void loadConfig(const json &config) override{}
@@ -361,7 +359,7 @@ class DelayAnalysis : public AnalysisAlgorithm {
         DelayAnalysis() : AnalysisAlgorithm() {}
         ~DelayAnalysis() override = default;
 
-        void init(ScanBase *s) override;
+        void init(const ScanLoopInfo *s) override;
         void processHistogram(HistogramBase *h) override;
         void end() override;
         void loadConfig(const json &config) override{}
@@ -390,7 +388,7 @@ class ParameterAnalysis : public AnalysisAlgorithm {
         ParameterAnalysis() : AnalysisAlgorithm() {};
         ~ParameterAnalysis() override = default;;
 
-        void init(ScanBase *s) override;
+        void init(const ScanLoopInfo *s) override;
         void processHistogram(HistogramBase *h) override;
         void end() override;
 	void loadConfig(const json &config) override {}
