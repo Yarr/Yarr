@@ -1,8 +1,8 @@
-# Guide for updating to 1.28 Gbps readout (Firmware version v1.3.1 -> v1.4.1)
+# Guide for updating to 1.28 Gbps readout
 
 ## Introduction 
 
-Firmware release 1.4.1 includes some major changes to the testing workflow. Firmware release 1.4.1 now also allows to run at a readout speed of 1.28 Gbps, which now is the baseline, replacing the previous baseline readout speed of 640Mbps. Specifically, the firmware includes an update to the deserialiser, which allows the deserialiser sampling delay to be set manually to ensure good data transmission. In order to find the ideal delay setting, an eye diagram has to be run. 
+Firmware after release 1.4.0 includes some major changes to the testing workflow. The latest firmware allows to run at a readout speed of 1.28 Gbps, which now is the baseline, replacing the previous baseline readout speed of 640Mbps. Specifically, the firmware includes an update to the deserialiser, which allows the deserialiser sampling delay to be set manually to ensure good data transmission. In order to find the ideal delay setting, an eye diagram has to be run. 
 
 The eye diagram counts the number of non-idle frames over a certain time period, and compares it to the number of expected non-idle frames from the number of service blocks. The link quality is then determined as:
 
@@ -32,9 +32,9 @@ After flashing the firmware, reboot the PC and run
 ```bash
 ./bin/specComTest -s <specNum>
 ```
-to ensure firmware has been correctly flashed. You should see `Firmware version: 1.4.1` and the new firmware is now ready to use. 
+to ensure firmware has been correctly flashed and you see the firmware version expected in the log. 
 
-Next, the software needs to be updated. Check out tag `1.4.6` or later, and recompile. 
+Next, the software needs to be updated. Check out the latest tag (`1.4.6` or higher), and recompile. 
 
 Finally, the exisiting chip configs need to be updated to from 640Mbps to 1.28 Gbps. A dedicated script is provided for taking care of this automatically, simply run: 
 
@@ -52,13 +52,13 @@ The scan will print the eye diagram in the terminal, with an example shown below
 
 ![Example of eye diagram scan output.](images/eye_diagram_screenshot.png)
 
-The eye diagram script then saves the best delay settings to the controller config. The eye diagram should find good settings for all of the lanes that are expected based on the setup (i.e. 4 for a working quad). If this is not the case, consult the FAQ section below. 
+The eye diagram script then saves the best delay settings to the controller config. The eye diagram should find good settings for all of the lanes that are expected based on the setup (i.e. 4 for a working quad). If this is not the case, consult the troubleshooting section below. 
 
 The delay setting will depend on the chip, as well as specifics of the setup, such as FPGA, cable lengths, etc, so it has to be run every time something changes in the setup, and specifically each time a new module is plugged in. 
 
 In summary, there are four steps to switching to 1.28 Gbps: 
 1. Flash the new firmware using the `flash.sh` script & reboot the PC
-2. Check out software tag `1.4.6` (or above) and recompile 
+2. Check out the latest software tag (`1.4.6` or above) and recompile 
 3. For each module: Update the chip configs using the `scripts/update_config.py`
 4. For each module: Before running any other scans, run an eye diagram
 

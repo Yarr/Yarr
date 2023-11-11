@@ -41,7 +41,9 @@ $ cd ..
 In case of issues, please refer to the more detailed instructions below, or consult the [Troubleshooting](troubleshooting.md).
 
 **Next step:**
+
 - On a new machine, next install the PCIe kernel driver: [Kernel Driver Installation](kernel_driver.md)
+
 - On a machine which already has the PCIe kernel driver installed, proceed to [Flashing the firmware](pcie.md)
 
 ## Software installation
