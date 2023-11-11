@@ -9,9 +9,9 @@ In order to setup the DAQ system the following two steps are needed:
 NB for some hardware controllers there are extra dependencies requried,
 for instance [NetIO](netio.md).
 
-## TLDR - Software installation 
+## Quick guide: Software installation 
 
-Just want to install the latest version of the YARR software? Follow the quick install instructions here. In case of a new machine, or if you're not sure, follow the more detailed instructions below. 
+For quick instructions to install the latest YARR software on an existing YARR machine, follow the quick install guide here. In case of a new machine, or if in doubt, follow the more detailed instructions below. 
 
 Enable GCC version 9.0 or higher: 
 ```bash
@@ -41,7 +41,9 @@ $ cd ..
 In case of issues, please refer to the more detailed instructions below, or consult the [Troubleshooting](troubleshooting.md).
 
 **Next step:**
+
 - On a new machine, next install the PCIe kernel driver: [Kernel Driver Installation](kernel_driver.md)
+
 - On a machine which already has the PCIe kernel driver installed, proceed to [Flashing the firmware](pcie.md)
 
 ## Software installation
