@@ -37,7 +37,7 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
             return std::make_unique<Rd53a>();
         }
 
-        void resetAll() override;
+        void resetAllHard() override;
         void configure() override;
         void configureInit();
         void configureGlobal();
@@ -72,6 +72,10 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
 
         void writeNamedRegister(std::string name, uint16_t value) override;
         
+        void setRegisterValue(std::string name, uint16_t value) override;
+        uint16_t getRegisterValue(std::string name) override;
+
+
         void setInjCharge(double charge, bool sCap=true, bool lCap=true) override {
             this->writeRegister((Rd53Reg Rd53aGlobalCfg::*)&Rd53aGlobalCfg::InjVcalDiff, this->toVcal(charge));
         }

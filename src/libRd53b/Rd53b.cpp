@@ -62,7 +62,7 @@ void Rd53b::init(HwController *core, unsigned arg_txChannel, unsigned arg_rxChan
     core->setClkPeriod(6.25e-9);
 }
 
-void Rd53b::resetAll() {
+void Rd53b::resetAllHard() {
     logger->debug("Performing hard reset ...");
     // Send low number of transitions for at least 10us to put chip in reset state
     logger->debug(" ... asserting CMD reset via low activity");
@@ -89,6 +89,19 @@ void Rd53b::resetAll() {
         core->writeFifo(0x817E817E);
     core->releaseFifo();
     while(!core->isCmdEmpty()){;}
+
+}
+
+void Rd53b::resetAllSoft() {
+    logger->info("Performing soft reset ...");
+
+    this->writeRegister(&Rd53b::GlobalPulseConf, 0x490);
+    this->writeRegister(&Rd53b::GlobalPulseWidth, 10);
+    while(!core->isCmdEmpty()){;}
+
+    this->sendGlobalPulse(m_chipId);
+    while(!core->isCmdEmpty()){;}
+    std::this_thread::sleep_for(std::chrono::microseconds(100));
 
 }
 
@@ -306,6 +319,16 @@ Rd53bRegDefault Rd53bGlobalCfg::*  Rd53b::getNamedRegister(std::string name) {
         logger->error("Trying to get named register, register not found: {}", name);
     }
     return NULL;
+}
+
+void Rd53b::setRegisterValue(std::string name, uint16_t value){
+    logger->debug("Set virtual register {} -> {}", name, value);
+    (this->*regMap[name]).write(value);
+}
+
+uint16_t Rd53b::getRegisterValue(std::string name){
+    logger->debug("Get virtual register value {}", name);
+    return (this->*regMap[name]).read();
 }
 
 int Rd53b::checkCom() {

@@ -209,7 +209,7 @@ void Rd53bGlobalCfg::init() {
     //58
     CdrOverwriteLimit.init  ( 58, &m_cfg[ 58], 4,  1, 0); regMap["CdrOverwriteLimit"] = &Rd53bGlobalCfg::CdrOverwriteLimit;
     CdrPhaseDetSel.init     ( 58, &m_cfg[ 58], 3,  1, 0); regMap["CdrPhaseDetSel"] = &Rd53bGlobalCfg::CdrPhaseDetSel;
-    CdrClkSel.init          ( 58, &m_cfg[ 58], 0,  3, 1); regMap["CdrClkSel"] = &Rd53bGlobalCfg::CdrClkSel;
+    CdrClkSel.init          ( 58, &m_cfg[ 58], 0,  3, 0); regMap["CdrClkSel"] = &Rd53bGlobalCfg::CdrClkSel;
     //59
     ChSyncLockThr.init      ( 59, &m_cfg[ 59], 0,  5, 31); regMap["ChSyncLockThr"] = &Rd53bGlobalCfg::ChSyncLockThr;
     //60

@@ -61,8 +61,8 @@ void Itkpixv2::init(HwController *core, unsigned arg_txChannel, unsigned arg_rxC
     core->setClkPeriod(6.25e-9);
 }
 
-void Itkpixv2::resetAll() {
-    logger->debug("Performing hard reset ...");
+void Itkpixv2::resetAllHard() {
+    logger->info("Performing hard reset ...");
     // Send low number of transitions for at least 10us to put chip in reset state
     logger->debug(" ... asserting CMD reset via low activity");
     for (unsigned int i=0; i<85; i++) {
@@ -88,6 +88,19 @@ void Itkpixv2::resetAll() {
         core->writeFifo(0x817E817E);
     core->releaseFifo();
     while(!core->isCmdEmpty()){;}
+
+}
+
+void Itkpixv2::resetAllSoft() {
+    logger->info("Performing soft reset ...");
+
+    this->writeRegister(&Itkpixv2::GlobalPulseConf, 0x018);
+    this->writeRegister(&Itkpixv2::GlobalPulseWidth, 10);
+    while(!core->isCmdEmpty()){;}
+
+    this->sendGlobalPulse(m_chipId);
+    while(!core->isCmdEmpty()){;}
+    std::this_thread::sleep_for(std::chrono::microseconds(100));
 
 }
 
@@ -304,6 +317,17 @@ uint16_t Itkpixv2::readNamedRegister(std::string name) {
     }
     return 0;
 }
+
+void Itkpixv2::setRegisterValue(std::string name, uint16_t value){
+    logger->debug("Set virtual register {} -> {}", name, value);
+    (this->*regMap[name]).write(value);
+}
+
+uint16_t Itkpixv2::getRegisterValue(std::string name){
+    logger->debug("Get virtual register value {}", name);
+    return (this->*regMap[name]).read();
+}
+
 
 Itkpixv2RegDefault Itkpixv2GlobalCfg::*  Itkpixv2::getNamedRegister(std::string name) {
     if(regMap.find(name) != regMap.end()) {

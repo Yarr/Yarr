@@ -9,6 +9,43 @@ In order to setup the DAQ system the following two steps are needed:
 NB for some hardware controllers there are extra dependencies requried,
 for instance [NetIO](netio.md).
 
+## Quick guide: Software installation 
+
+For quick instructions to install the latest YARR software on an existing YARR machine, follow the quick install guide here. In case of a new machine, or if in doubt, follow the more detailed instructions below. 
+
+Enable GCC version 9.0 or higher: 
+```bash
+# Source the setup script
+$ source /opt/rh/devtoolset-9/enable
+# Add it to your bash_profile to enable it by default
+$ echo "source /opt/rh/devtoolset-9/enable" >> ~/.bash_profile
+```
+
+Clone the YARR repository to your local machine: 
+```bash
+$ git clone https://gitlab.cern.ch/Yarr/Yarr.git Yarr
+```
+
+Compile the minimal build, for more specific compilation options (e.g. NetIO, or Rogue), see below. 
+```bash
+$ cd Yarr/
+$ mkdir build
+$ cd build
+$ cmake3 ../
+<Some text>
+$ make -j4
+<Lots of text>
+$ make install
+$ cd ..
+```
+In case of issues, please refer to the more detailed instructions below, or consult the [Troubleshooting](troubleshooting.md).
+
+**Next step:**
+
+- On a new machine, next install the PCIe kernel driver: [Kernel Driver Installation](kernel_driver.md)
+
+- On a machine which already has the PCIe kernel driver installed, proceed to [Flashing the firmware](pcie.md)
+
 ## Software installation
 
 ### Dependencies for Centos 7
@@ -61,29 +98,40 @@ $ sudo yum install gnuplot texlive-epstopdf cmake3 elfutils-libelf-devel
 ### Initialise repository
 - Clone the repository to your local machine:
 ```bash
-$ git clone https://github.com/Yarr/Yarr.git Yarr
-```
-or
-```bash
 $ git clone https://gitlab.cern.ch/Yarr/Yarr.git Yarr
 ```
 - The master branch should contain the latest stable release, the most up-to date version can be found in the devel branch
 - A version history and description can be found [here](version.md)
+- Note, Yarr is also available in a [GitHub repository.](https://github.com/Yarr/ "GitHub repository"), but using the GitLab version is recommended and what is used for active development. 
 
 ### Compile the software
 
 This repository uses the cmake build system in its usual manner.
 
-#### Compile software with cmake
-- Generate makefile
-    - By default the minimal build is enabled, which builds only the Emulator and SPEC controller, if you want to run with additional controllers (e.g. NetIO, or Rogue) you have to enable them via a cmake flag (see below)
+#### Basic compilation
+
+By default the minimal build is enabled, which builds only the Emulator and SPEC controller, if you want to run with additional controllers (e.g. NetIO, or Rogue) you have to enable them via a cmake flag (see below). 
+
+For the minimal build, simply execute the following: 
+
 ```bash
 $ cd Yarr/
 $ mkdir build
 $ cd build
 $ cmake3 ../
 <Some text>
+$ make -j4
+<Lots of text>
+$ make install
+$ cd ..
 ```
+
+**Next step:**
+- On a new machine, next install the PCIe kernel driver: [Kernel Driver Installation](kernel_driver.md)
+- On a machine which already has the PCIe kernel driver installed, proceed to [Flashing the firmware](pcie.md)
+
+#### Compilation with additional options
+
 - In order to build with more controllers execute cmake with extra options
     - For all controllers: 
         - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=all ..``
@@ -113,7 +161,7 @@ $ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc # gcc 4.8 or higher
 $ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-gcc # ARM/Archlinux on RCE
 $ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/macos-clang # MacOS build
 ```
-- Compile the software
+- As before, finally compile the software: 
 ```bash
 $ make -j4
 <Lots of text>
@@ -121,7 +169,4 @@ $ make install
 $ cd ..
 ```
 
-## Next step
-
-Install the PCIe kernel driver: [Kernel Driver Installation](kernel_driver.md)
 

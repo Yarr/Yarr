@@ -30,7 +30,8 @@ class Itkpixv2 : public FrontEnd, public Itkpixv2Cfg, public Itkpixv2Cmd{
             return std::make_unique<Itkpixv2>();
         }
 
-        void resetAll() override;
+        void resetAllHard() override;
+        void resetAllSoft() override;
         void configure() override;
         void configureInit();
         void configureGlobal();
@@ -57,7 +58,9 @@ class Itkpixv2 : public FrontEnd, public Itkpixv2Cfg, public Itkpixv2Cmd{
         void readRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref);
         void writeNamedRegister(std::string name, uint16_t value) override;
         uint16_t readNamedRegister(std::string name) override;
-        
+        void setRegisterValue(std::string name, uint16_t value) override;
+        uint16_t getRegisterValue(std::string name) override;
+
         Itkpixv2RegDefault Itkpixv2GlobalCfg::* getNamedRegister(std::string name);
 
         void setInjCharge(double charge, bool sCap=true, bool lCap=true) override {

@@ -78,7 +78,7 @@ void Rd53a::enableAll() {
     }
 }
 
-void Rd53a::resetAll() {
+void Rd53a::resetAllHard() {
     this->configureInit();
 }
 
@@ -188,6 +188,16 @@ void Rd53a::writeNamedRegister(std::string name, uint16_t value) {
     logger->info("Write named register: {} -> {}", name, value);
     if (regMap.find(name) != regMap.end())
         writeRegister(regMap[name], value);
+}
+
+void Rd53a::setRegisterValue(std::string name, uint16_t value){
+    logger->debug("Set virtual register {} -> {}", name, value);
+    (this->*regMap[name]).write(value);
+}
+
+uint16_t Rd53a::getRegisterValue(std::string name){
+    logger->debug("Get virtual register value {}", name);
+    return (this->*regMap[name]).read();
 }
 
 // TODO remove magic numbers

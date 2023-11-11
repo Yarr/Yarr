@@ -40,7 +40,10 @@ class FrontEnd {
         virtual int checkCom() {return 1;}
         virtual bool hasValidName() { return true; }
 
-        virtual void resetAll() {}
+        // A parallel reset that undos any configuration
+        virtual void resetAllHard() {}
+        // A parallel reset that keeps configuration but reset counters/datapath
+        virtual void resetAllSoft() {}
 
         /// Reads the named register and writes it to the local object memory
         virtual void readUpdateWriteNamedReg(std::string name) {}
@@ -48,6 +51,11 @@ class FrontEnd {
         virtual void writeNamedRegister(std::string name, uint16_t value) = 0;
         /// Reads a named register and returns the value of it
         virtual uint16_t readNamedRegister(std::string name) {return 0;}
+        /// Write register value to the local object memory (does not write to the actual chip) 
+        virtual void setRegisterValue(std::string name, uint16_t value) {};
+        /// Reads a named register from the local object memory (does not write to the actual chip) 
+        virtual uint16_t getRegisterValue(std::string name) {return 0;}
+
         /// Configures ADC
         virtual void confAdc(uint16_t MONMUX, bool doCur) {}
 

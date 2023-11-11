@@ -31,7 +31,8 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
             return std::make_unique<Rd53b>();
         }
 
-        void resetAll() override;
+        void resetAllHard() override;
+        void resetAllSoft() override;
         void configure() override;
         void configureInit();
         void configureGlobal();
@@ -46,7 +47,9 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         void readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref);
         void writeNamedRegister(std::string name, uint16_t value) override;
         uint16_t readNamedRegister(std::string name) override;
-        
+        void setRegisterValue(std::string name, uint16_t value) override;
+        uint16_t getRegisterValue(std::string name) override;
+
         Rd53bRegDefault Rd53bGlobalCfg::* getNamedRegister(std::string name);
 
         void setInjCharge(double charge, bool sCap=true, bool lCap=true) override {
