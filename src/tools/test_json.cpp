@@ -145,7 +145,8 @@ bool testScanConfig(const json &scanConfig) {
                                    b, "no_dir");
     int mask_opt = 0;
     ScanHelper::buildAnalyses(analyses, scanConfig, b, &s,
-                              feedbackMap, mask_opt, "no_dir");
+                              feedbackMap, mask_opt, "no_dir", 
+                              -1, -1);
 
     return true;
   } catch(std::runtime_error &te) {

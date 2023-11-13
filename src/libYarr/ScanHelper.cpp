@@ -398,7 +398,8 @@ namespace ScanHelper {
 
     void buildAnalyses( std::map<unsigned, std::vector<std::unique_ptr<AnalysisDataProcessor>> >& analyses,
             const json& scanCfg, Bookkeeper& bookie,
-                        const ScanLoopInfo* s, FeedbackClipboardMap *fbData, int mask_opt, std::string outputDir) {
+                        const ScanLoopInfo* s, FeedbackClipboardMap *fbData, int mask_opt, std::string outputDir,
+                        int target_tot, int target_charge) {
         balog->info("Loading analyses ...");
 
         const json &anaCfg = scanCfg["scan"]["analysis"];
@@ -442,7 +443,7 @@ namespace ScanHelper {
                     }
 
                     // Add analysis processors
-                    analyses[id].emplace_back( new AnalysisProcessor(&bookie, id) );
+                    analyses[id].emplace_back( new AnalysisProcessor(id) );
                     auto& ana = dynamic_cast<AnalysisProcessor&>( *(analyses[id].back()) );
 
                     // Create the ClipBoard to store its output and establish connection
@@ -471,6 +472,9 @@ namespace ScanHelper {
                                 auto archiver = dynamic_cast<HistogramArchiver*>(analysis.get());
                                 archiver->setOutputDirectory(outputDir);
                             }
+
+                            analysis->setConfig(bookie.getFeCfg(id));
+                            analysis->setParams(target_tot, target_charge);
 
                             ana.addAlgorithm(std::move(analysis));
                         } else {

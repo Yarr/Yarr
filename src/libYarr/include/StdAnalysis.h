@@ -69,6 +69,7 @@ class TotAnalysis : public AnalysisAlgorithm {
         void processHistogram(HistogramBase *h) override;
         void end() override;
         void loadConfig(const json &config) override;
+        void setParams(int tot, int _charge) override { target_tot = tot; }
 
     private:
         std::vector<unsigned> loops;
@@ -90,6 +91,9 @@ class TotAnalysis : public AnalysisAlgorithm {
         unsigned vcalMax;
         unsigned vcalStep;
         unsigned vcalBins;
+
+        int target_tot;
+
         std::unique_ptr<Histo2d> chargeVsTotMap;
 	std::unique_ptr<Histo2d> pixelTotMap;
 	std::unique_ptr<Histo1d> RMSTotVsCharge;
@@ -143,6 +147,11 @@ class ScurveFitter : public AnalysisAlgorithm {
         void processHistogram(HistogramBase *h) override;
         void end() override;
         void loadConfig(const json &config) override;
+
+        void setParams(int _tot, int charge) override {
+            thrTarget = charge;
+        }
+
     private:
         unsigned vcalLoop;
         unsigned vcalMin;

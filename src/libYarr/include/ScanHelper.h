@@ -49,7 +49,8 @@ namespace ScanHelper {
                            Bookkeeper &bookie,
                            const std::string &chipType);
         void buildAnalyses( std::map<unsigned, std::vector<std::unique_ptr<AnalysisDataProcessor>> >& analyses,
-                            const json& scanType, Bookkeeper& bookie, const ScanLoopInfo* s, FeedbackClipboardMap *fbMap, int mask_opt, std::string outputDir);
+                            const json& scanType, Bookkeeper& bookie, const ScanLoopInfo* s, FeedbackClipboardMap *fbMap, int mask_opt, std::string outputDir,
+                            int target_tot, int target_charge);
         void buildAnalysisHierarchy(std::vector<std::vector<int>>& indexTiers,
                                     const json &anaCfg);
         template <typename T>

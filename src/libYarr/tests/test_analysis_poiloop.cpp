@@ -274,7 +274,7 @@ TEST_CASE("AnalysisPOILoops", "[Analysis]") {
   std::vector<std::unique_ptr<AnalysisProcessor>> analyses;
 
   // First tier: MyAnalyzer
-  analyses.emplace_back(new AnalysisProcessor(&bookie, uid));
+  analyses.emplace_back(new AnalysisProcessor(uid));
 
   // Create ClipBoard for its output and make connections
   bookie.getEntry(uid).fe->clipResult.emplace_back(new ClipBoard<HistogramBase>());
@@ -286,7 +286,7 @@ TEST_CASE("AnalysisPOILoops", "[Analysis]") {
   analyses[0]->addAlgorithm(std::move(algo1));
 
   // Second tier: MyOtherAnalyzer
-  analyses.emplace_back(new AnalysisProcessor(&bookie, uid));
+  analyses.emplace_back(new AnalysisProcessor(uid));
 
   // Create and connect result ClipBoard
   bookie.getEntry(uid).fe->clipResult.emplace_back(new ClipBoard<HistogramBase>());
