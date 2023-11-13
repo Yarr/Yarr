@@ -324,10 +324,26 @@ uint32_t FelixTxCore::getTrigInCount() {
 void FelixTxCore::prepareTrigger(std::vector<uint8_t>& trigFifo) {
   trigFifo.clear();
 
-  // Need to send the last word in m_trigWords first
-  // (Because of the way TriggerLoop sets up the trigger words)
-  for (int j=m_trigWords.size()-1; j>=0; j--) {
-    fillFifo(trigFifo, m_trigWords[j]);
+  //For ITk pixel RM 5.0 firmware
+  if(m_pixFwTrigger){ //special 16b character in the F/W = {1110, #iteration (7b), frequency(5b)
+    uint32_t trigFreq_ratio = (40000000/m_trigFreq)/256; //40 Mhz/m_trigFreq(Hz) and /256 as F/W can in/decrease frequency only in multiple of 128
+
+    if(trigFreq_ratio > 31) {std::cerr<<"m_trigFreq "<<m_trigFreq<<" not supported by the F/W. Supported frequency is >= 9.8 kHz"<<std::endl; exit(1);} //9.8 is wrong
+    if(trigFreq_ratio == 0) {std::cerr<<"m_trigFreq "<<m_trigFreq<<" not supported by the F/W. Supported frequency is <~ 156 kHz"<<std::endl; exit(1);}
+    if(m_trigCnt > 127)     {std::cerr<<"m_trigCnt "<<m_trigCnt<<" not supported by the F/W. Supported range is 1 to 127"<<std::endl; exit(1);}
+    
+    uint32_t calinj_char = 0x817e<<16 | (0xE<<12 & 0xF000) | (m_trigCnt<<5 & 0xFE0) | (trigFreq_ratio & 0x1F);
+    fillFifo(trigFifo,calinj_char);
+  }
+  else{
+    fillFifo(trigFifo,0x817e817e);    
+
+    // Need to send the last word in m_trigWords first
+    // (Because of the way TriggerLoop sets up the trigger words)
+    for (int j=m_trigWords.size()-1; j>=0; j--) {
+      fillFifo(trigFifo, m_trigWords[j]);
+      //      std::cout<<"FelixTxCore:: m_trigWords["<<j<<"]="<<m_trigWords[j]<<std::hex<<std::endl;
+    }
   }
 
    prepareFifo(trigFifo);
@@ -347,15 +363,33 @@ void FelixTxCore::prepareTrigger() {
 }
 
 void FelixTxCore::doTriggerCnt() {
+
   prepareTrigger();
 
-  uint32_t trigs = 0;
-  for (uint32_t i=0; i<m_trigCnt; i++) {
-    if (not m_trigEnabled) break;
-    trigs++;
-    trigger();
-    std::this_thread::sleep_for(std::chrono::microseconds((int)(1e6/m_trigFreq))); // Frequency in Hz
+  using clk = std::chrono::steady_clock;
+
+  clk::time_point last_trigger = clk::now();
+
+  const auto delta = std::chrono::nanoseconds((int64_t)(1e9/m_trigFreq));
+
+  uint32_t trigs=0;
+  if (m_trigEnabled) {
+    if (m_pixFwTrigger){
+      // send a single command that will start the firmware-based trigger sequence
+      trigs=m_trigCnt;
+      trigger();
+    }
+    else{ //
+      for(uint32_t i=0; i<m_trigCnt; i++) {
+	if(m_trigEnabled==false) break;
+	trigs++;
+	trigger();
+	last_trigger += delta;
+	std::this_thread::sleep_until(last_trigger);
+      }
+    }
   }
+
   m_trigEnabled = false;
   ftlog->debug("Finished trigger count {}/{}", trigs, m_trigCnt);
 }
@@ -431,6 +465,11 @@ void FelixTxCore::loadConfig(const json &j) {
     m_broadcast = j["broadcast"];
     ftlog->info(" broadcast = {}", m_broadcast);
   }
+
+  if (j.contains("pixFwTrigger")) {
+    m_pixFwTrigger = j["pixFwTrigger"];
+    ftlog->info(" pixFwTrigger = {}", m_pixFwTrigger);
+  }
 }
 
 void FelixTxCore::writeConfig(json& j) {
@@ -439,6 +478,7 @@ void FelixTxCore::writeConfig(json& j) {
   j["protocol"] = m_protocol;
   j["flip"] = m_flip;
   j["broadcast"] = m_broadcast;
+  j["pixFwTrigger"] = m_pixFwTrigger;
 }
 
 void FelixTxCore::setClient(std::shared_ptr<FelixClientThread> client) {

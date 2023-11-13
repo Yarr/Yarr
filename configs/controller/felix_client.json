@@ -5,29 +5,30 @@
       "FelixClient": {
         "localIPorInterface": "lo",
         "logLevel": "info",
-        "busDir": "./bus",
+        "busDir": "/home/arastogi/FELIX_Apr2023/felix-distribution/bus",
         "busGroupName": "FELIX",
         "verboseBus": false,
         "timeout": 1000,
-        "netioPages": 256,
-        "netioPagesize": 65536
+        "netioPages": 1024,
+        "netioPagesize": 1000000
       },
       "ToFLX": {
         "detectorID": 0,
         "connectorID": 0,
         "protocol": 0,
         "flip": false,
-        "broadcast": true
+        "broadcast": false,
+	"pixFwTrigger": true
       },
       "ToHost": {
         "detectorID": 0,
         "connectorID": 0,
         "protocol": 0,
-        "flushTime": 50,
-        "enableMonitor": true,
-        "monitorInterval": 1000,
+        "flushTime": 1,
+        "enableMonitor": false,
+        "monitorInterval": 1,
         "queueLimitMB": 4000,
-        "waitTime": 10000
+        "waitTime": 500
       }
     }
   }

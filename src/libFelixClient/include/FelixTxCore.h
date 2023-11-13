@@ -92,6 +92,7 @@ protected:
   uint32_t m_trigWordLength {4};           // number of trigger words
 
   bool m_flip {false};
+  bool m_pixFwTrigger{false};
 
   bool m_broadcast {true};
   uint32_t m_numEnabledChns {0};
