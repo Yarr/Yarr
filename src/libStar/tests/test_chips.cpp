@@ -42,6 +42,14 @@ public:
     return (buffer[offset] >> (16*side)) & 0xffff;
   }
 
+  /**
+   * Check recorded data for register value.
+   *
+   * @param buff_id Record number to read (separated by releaseFifo)
+   * @param reg The id of the register write packet 
+   * @param value The register value written
+   * @param other Other info in the packet (eg communication IDs)
+   */
   void getRegValueForBuffer(int buff_id,
                             uint8_t &reg, uint32_t &value,
                             uint32_t &other) const {
@@ -172,14 +180,23 @@ TEST_CASE("StarBasicConfig", "[star][chips]") {
   }
 #endif
 
+  // Check we write the HCC communication address
+  bool seenAddress = false;
+
   // This just checks that the above code can parse the commands sent
   for(int i=0; i<buf_count; i++) {
     uint8_t reg = 0xff;
     uint32_t value;
     uint32_t flags = 0xffffffff;
     tx.getRegValueForBuffer(i, reg, value, flags);
+    if(reg == 17) {
+      l->info(" 16 reg from {:3}: {:3} {:08x} {:08x}", i, reg, value, flags);
+      seenAddress = true;
+    }
     l->debug(" reg from {:3}: {:3} {:08x} {:08x}", i, reg, value, flags);
   }
+
+  REQUIRE (seenAddress);
 }
 
 TEST_CASE("StarChipsNamedConfig", "[star][chips]") {

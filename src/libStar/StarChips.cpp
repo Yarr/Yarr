@@ -115,9 +115,12 @@ void StarChips::setHccId(unsigned hccID) {
     return;
   }
 
-  sendCmd(write_hcc_register(16, 0x5, 0xf));
-  //Let's reset the HCC ID with a broadcast write of the HCCID+SN on reg 17
-  uint32_t newReg17val = (hccID<<28) | m_sn;
+  // Before writing the ID, make sure the fuse ID is loaded
+  sendCmd(write_hcc_register(16, 0x4, 0xf));
+
+  //Let's reset the HCC communications ID.
+  //  Use a broadcast write of the required ID+fuse on reg 17
+  uint32_t newReg17val = (hccID<<28) | m_fuse_id;
   sendCmd(write_hcc_register(17, newReg17val, 0xf));
   logger->info("Set HCC ID to {} (sent on reg17 0x{:08x})", hccID, newReg17val);
 }
@@ -176,7 +179,7 @@ void StarChips::resetAllHard(){
 void StarChips::configure() {
 
 	//Set the HCC ID
-        if (m_sn) this->setHccId(getHCCchipID());
+        if (m_fuse_id) this->setHccId(getHCCchipID());
 
 	logger->info("Sending registers configuration...");
 
