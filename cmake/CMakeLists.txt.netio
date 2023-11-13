@@ -29,7 +29,7 @@ include_directories(${PROJECT_BINARY_DIR}/../netio4)
 include_directories(${PROJECT_BINARY_DIR}/../../../include)
 link_directories(${PROJECT_BINARY_DIR}/../../../../lib)
 include_directories(${CMAKE_BINARY_DIR})
-include_directories(${CMAKE_BINARY_DIR}/../../../../external/src//tbb_2020/include/)
+include_directories(${CMAKE_BINARY_DIR}/../../../../external/src//tbb_2021/include/)
 
 set(NETIO_SOURCES src/netio.cpp src/serialization.cpp src/posix.cpp  src/sockcfg.cpp src/endpoint.cpp
 	src/message.cpp src/eventloop.cpp src/backend.cpp src/sockets.cpp src/context.cpp src/buffer.cpp)
