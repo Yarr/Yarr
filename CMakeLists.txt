@@ -75,7 +75,7 @@ set(CONTROLLERS "")
 
 # only build those controllers specified in YARR_CONTROLLERS_TO_BUILD
 if(YARR_CONTROLLERS_TO_BUILD STREQUAL "all")
-   set(CONTROLLERS "Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Bdaq;Rogue;NetioHW;FelixClient;ItsdaqFW")
+   set(CONTROLLERS "Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Bdaq;FelixClient;ItsdaqFW")
 else()
   foreach(ctrl IN LISTS YARR_CONTROLLERS_TO_BUILD )
     if(NOT ${ctrl} IN_LIST CONTROLLERS)
