@@ -23,6 +23,8 @@ namespace {
     auto logger = logging::make_log("AnalysisTest");
 }
 
+using clk = std::chrono::steady_clock;
+
 void printHelp();
 
 /// Trivial implementation providing enough scan info for analysis
@@ -66,6 +68,12 @@ class AnalysisConsoleImpl {
 
     LoopStatus loopTemplate;
 
+    clk::time_point start_time;
+    clk::time_point config_load;
+    clk::time_point histogram_load;
+    std::vector<clk::time_point> tier_done;
+    clk::time_point all_done;
+
   public:
     AnalysisConsoleImpl(const AnalysisOpts &opts);
 
@@ -91,6 +99,8 @@ class AnalysisConsoleImpl {
     void pushHisto(std::unique_ptr<HistogramBase> h);
     void run();
     void saveAndPlot();
+
+    void reportTimings() const;
 };
 
 AnalysisConsole::AnalysisConsole(const AnalysisOpts &opts)
@@ -247,6 +257,8 @@ void AnalysisConsoleImpl::loadHistograms() {
             abort();
         }
     }
+
+    histogram_load = clk::now();
 }
 
 // Based on ScanHelper::buildChips
@@ -369,6 +381,8 @@ int AnalysisConsoleImpl::loadConfig()
       createOutputDirectory(options.scanFile, options.outputDir);
     }
 
+    config_load = clk::now();
+
     return 0;
 }
 
@@ -477,37 +491,18 @@ void AnalysisConsoleImpl::pushHisto(std::unique_ptr<HistogramBase> h) {
 void AnalysisConsoleImpl::run() {
     ScanHelper::banner(logger,"Run Analysis");
 
-    // scan_start = std::chrono::steady_clock::now();
-
     // Join from upstream to downstream.
     clipHistoInput.finish();
 
-    // scan_done = std::chrono::steady_clock::now();
     for (unsigned i=0; i<analysisProcessors.size(); i++) {
       logger->info("Waiting for analysis level to finish ...");
 
       // First level is taking from input
       analysisProcessors[i]->join();
+      tier_done.push_back(clk::now());
+
       clipResultOutput[i]->finish();
     }
-
-    // all_done = std::chrono::steady_clock::now();
-    logger->info("All done!");
-
-    // Joining is done.
-    // ScanHelper::banner(logger,"Timing");
-    // logger->info("-> Configuration: {} ms", std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count());
-    // logger->info("-> Scan:          {} ms", std::chrono::duration_cast<std::chrono::milliseconds>(scan_done-scan_start).count());
-    // logger->info("-> Processing:    {} ms", std::chrono::duration_cast<std::chrono::milliseconds>(processor_done-scan_done).count());
-    // logger->info("-> Analysis:      {} ms", std::chrono::duration_cast<std::chrono::milliseconds>(all_done-processor_done).count());
-
-    // scanLog["stopwatch"]["config"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count();
-    // scanLog["stopwatch"]["scan"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(scan_done-scan_start).count();
-    // scanLog["stopwatch"]["processing"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(processor_done-scan_done).count();
-    // scanLog["stopwatch"]["analysis"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(all_done-processor_done).count();
-
-    // scanLog["finishTime"] = (int)std::time(nullptr);
-
 }
 
 void AnalysisConsoleImpl::saveAndPlot() {
@@ -535,6 +530,44 @@ void AnalysisConsoleImpl::saveAndPlot() {
         // always dump the data
         histo->toFile(name, options.outputDir);
     } // end while
+
+    all_done = clk::now();
+    logger->info("All done!");
+
+    reportTimings();
+}
+
+void AnalysisConsoleImpl::reportTimings() const {
+    auto to_ms = [](auto tt) {
+      return std::chrono::duration_cast<std::chrono::milliseconds>(tt).count();
+    };
+
+    // Joining is done.
+    ScanHelper::banner(logger,"Timing report");
+    auto config_time = config_load-start_time;
+    auto config_ms_count = to_ms(config_time);
+    logger->info("-> Configuration: {} ms", config_ms_count);
+
+    auto load_time = histogram_load-config_load;
+    auto load_ms_count = to_ms(load_time);
+    logger->info("-> Load histograms: {} ms", load_ms_count);
+
+    auto prev_time = histogram_load;
+
+    for(auto &td: tier_done) {
+        auto tier_time = td-prev_time;
+        auto tier_ms_count = to_ms(tier_time);
+        if(tier_done.size() == 1) {
+            logger->info("-> Analysis: {} ms", tier_ms_count);
+        } else {
+            logger->info("-> Analysis tier: {} ms", tier_ms_count);
+        }
+        prev_time = td;
+    }
+
+    auto plot_time = all_done - prev_time;
+    auto plot_ms_count = to_ms(plot_time);
+    logger->info("-> Plotting: {} ms", plot_ms_count);
 }
 
 void printHelp() {
@@ -551,6 +584,8 @@ void printHelp() {
 }
 
 int AnalysisConsoleImpl::init() {
+    start_time = clk::now();
+
     json loggerConfig;
 
     if(!options.logCfgPath.empty()) {
