@@ -20,6 +20,7 @@ nav:
     - NetIO: netio.md
     - BDAQ Hardware: bdaq.md
     - ITSDAQ FW: itsdaq.md
+    - AnalysisConsole: analysisconsole.md
     - Troubleshooting: troubleshooting.md
     - Emulator: emulator.md
     - Version Log: version.md
