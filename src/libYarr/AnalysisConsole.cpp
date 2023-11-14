@@ -25,6 +25,7 @@ namespace {
 
 void printHelp();
 
+/// Trivial implementation providing enough scan info for analysis
 class BasicScanInfo : public ScanLoopInfo {
         std::vector<std::unique_ptr<LoopActionBaseInfo>> loops;
 
@@ -61,7 +62,7 @@ class AnalysisConsoleImpl {
     ClipBoard<HistogramBase> clipHistoInput;
     std::vector<std::unique_ptr<ClipBoard<HistogramBase>> > clipResultOutput;
 
-    std::vector<std::unique_ptr<DataProcessor>> analysisProcessors;
+    std::vector<std::unique_ptr<AnalysisDataProcessor>> analysisProcessors;
 
     LoopStatus loopTemplate;
 
@@ -76,12 +77,12 @@ class AnalysisConsoleImpl {
 
     const LoopStatus &loopStatus() const { return loopTemplate; }
 
-    void buildAnalyses(std::vector<std::unique_ptr<DataProcessor>> &analyses,
+    void buildAnalyses(std::vector<std::unique_ptr<AnalysisDataProcessor>> &analyses,
                        ClipBoard<HistogramBase> &input,
                        std::vector<std::unique_ptr<ClipBoard<HistogramBase>>> &output_vector,
                        const json& scanCfg,
                        const ScanLoopInfo &s,
-                       int mask_opt, std::string outputDir,
+                       int mask_opt,
                        int target_tot, int target_charge);
 
     int loadConfigFile(const AnalysisOpts &anOpts, bool writeConfig, json &config);
@@ -371,12 +372,12 @@ int AnalysisConsoleImpl::loadConfig()
     return 0;
 }
 
-void AnalysisConsoleImpl::buildAnalyses(std::vector<std::unique_ptr<DataProcessor>> &analyses,
+void AnalysisConsoleImpl::buildAnalyses(std::vector<std::unique_ptr<AnalysisDataProcessor>> &analyses,
                                         ClipBoard<HistogramBase> &input,
                                         std::vector<std::unique_ptr<ClipBoard<HistogramBase>>> &output_vector,
                                         const json& scanCfg,
                                         const ScanLoopInfo &scanInfo,
-                                        int mask_opt, std::string outputDir,
+                                        int mask_opt,
                                         int target_tot, int target_charge)
 {
     logger->info("Loading analyses ...");
@@ -406,94 +407,26 @@ void AnalysisConsoleImpl::buildAnalyses(std::vector<std::unique_ptr<DataProcesso
         throw std::runtime_error("buildAnalyses failure");
     }
 
-    bool indexed;
+    // Tell analysis to skip HistogramArchiver
+    std::string emptyDir = "";
 
-    // Is this an array of objects, or "n_count" + indexed by string "0"
-    if (anaCfg.contains("n_count")) {
-        indexed = true;
-    } else {
-        indexed = false;
-    }
-
-    auto get_algorithm = [indexed, &anaCfg](int index) {
-        if(indexed) {
-            return anaCfg[std::to_string(index)];
-        } else {
-            return anaCfg[index];
-        }
-    };
-
-    for (unsigned t=0; t<algoIndexTiers.size(); t++) {
-        // Before adding new analyses
-        bool hasUpstreamAnalyses = false;
-        if (t > 0) { // ie. not analyses[fe].empty()
-            auto& ana_prev = dynamic_cast<AnalysisProcessor&>( *(analyses.back()) );
-            hasUpstreamAnalyses = not ana_prev.empty();
-        }
-
-        // Should be ignored?
-        int test_id = 0;
-        // Add analysis processors
-        analyses.emplace_back( new AnalysisProcessor(test_id) );
-        auto& ana = dynamic_cast<AnalysisProcessor&>( *(analyses.back()) );
-
-        // Create the ClipBoard to store its output and establish connection
-        output_vector.emplace_back(new ClipBoard<HistogramBase>());
-        if (t==0) {
-            ana.connect(&scanInfo, &input, (output_vector.back()).get(), nullptr);
-        } else {
-            ana.connect(&scanInfo, (*(output_vector.rbegin()+1)).get(),
-                        (*(output_vector.rbegin())).get(),
-                        nullptr, true);
-        }
-
-        auto add_analysis = [&](std::string algo_name, json& j) {
-            auto analysis = StdDict::getAnalysis(algo_name);
-            if(analysis) {
-                logger->debug("  ... adding {}", algo_name);
-                analysis->loadConfig(j);
-                // If it requires dependency
-                if (analysis->requireDependency() and not hasUpstreamAnalyses) {
-                    logger->error("Analysis {} requires outputs from other analyses", algo_name);
-                    throw std::runtime_error("buildAnalyses failure");
-                    // throw("buildAnalyses failure");
-                }
-
-                // Pass in FrontEnd to allow writing changes
-                auto *feCfg = dynamic_cast<FrontEndCfg*>(frontEnd.get());
-                analysis->setConfig(feCfg);
-                analysis->setParams(target_tot, target_charge);
-
-                ana.addAlgorithm(std::move(analysis));
-            } else {
-              logger->error("Error, Analysis Algorithm \"{} unknown, skipping!", algo_name);
-            }
-        };
-
-        // Add all AnalysisAlgorithms of the t-th tier
-        for (int aIndex : algoIndexTiers[t]) {
-            std::string algo_name = get_algorithm(aIndex)["algorithm"];
-
-            if(algo_name == "HistogramArchiver") {
-                // If we're re-using a scan config that had HistogramArchiver to generate files,
-                // don't just write them out again
-                logger->info("Skipping HistogramArchiver to avoid duplication");
-                continue;
-            }
-
-            json algo_config = get_algorithm(aIndex)["config"];
-            add_analysis(algo_name, algo_config);
-        }
-
-        // Disable masking of pixels
-        if(mask_opt == 0) {
-            logger->info("Disabling masking for this scan!");
-            ana.setMasking(false);
-        }
-
-        FrontEndGeometry geo = frontEnd->geo;
-        ana.setMapSize(geo.nCol, geo.nRow);
-    }
+    // ID should be ignored?
+    int test_id = 0;
+    ScanHelper::buildAnalysisForFrontEnd
+        (analyses,
+         test_id,
+         dynamic_cast<FrontEndCfg*>(frontEnd.get()),
+         anaCfg,
+         frontEnd->geo,
+         algoIndexTiers,
+         nullptr, // No feedback
+         output_vector,
+         input,
+         &scanInfo,
+         mask_opt,
+         emptyDir,
+         target_tot,
+         target_charge);
 }
 
 int AnalysisConsoleImpl::setupAnalysis()
@@ -518,7 +451,7 @@ int AnalysisConsoleImpl::setupAnalysis()
                       clipHistoInput,
                       clipResultOutput,
                       scanCfg, scanInfo,
-                      options.mask_opt, options.outputDir,
+                      options.mask_opt,
                       options.target_tot, options.target_charge);
 
     // Run from downstream to upstream

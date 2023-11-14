@@ -393,6 +393,108 @@ namespace ScanHelper {
         bhlog->info("... done!");
     }
 
+    // For one front end (also used by AnalysisConsole)
+    void buildAnalysisForFrontEnd(std::vector<std::unique_ptr<AnalysisDataProcessor>> &analyses,
+                                  unsigned feId,
+                                  FrontEndCfg *feCfg,
+                                  const json &anaCfg,
+                                  FrontEndGeometry &geo,
+                                  const AlgoTieredIndex &algoIndexTiers,
+                                  FeedbackClipboard *fbData,
+                                  std::vector<std::unique_ptr<ClipBoard<HistogramBase>>> &clipResults,
+                                  ClipBoard<HistogramBase> &clipHisto,
+                                  const ScanLoopInfo *scanInfo,
+                                  int mask_opt,
+                                  const std::string &outputDir,
+                                  int target_tot, int target_charge) {
+        bool indexed;
+
+        // Is this an array of objects, or "n_count" + indexed by string "0"
+        if (anaCfg.contains("n_count")) {
+            indexed = true;
+        } else {
+            indexed = false;
+        }
+
+        auto get_algorithm = [indexed, &anaCfg](int index) {
+            if(indexed) {
+                return anaCfg[std::to_string(index)];
+            } else {
+                return anaCfg[index];
+            }
+        };
+
+        for (unsigned t=0; t<algoIndexTiers.size(); t++) {
+            // Before adding new analyses
+            bool hasUpstreamAnalyses = false;
+            if (t > 0) { // ie. not analyses[fe].empty()
+                auto& ana_prev = dynamic_cast<AnalysisProcessor&>( *(analyses.back()) );
+                hasUpstreamAnalyses = not ana_prev.empty();
+            }
+
+            // Add analysis processors
+            analyses.emplace_back( new AnalysisProcessor(feId) );
+            auto& ana = dynamic_cast<AnalysisProcessor&>( *(analyses.back()) );
+
+            // Create the ClipBoard to store its output and establish connection
+            clipResults.emplace_back(new ClipBoard<HistogramBase>());
+            if (t==0) {
+                ana.connect(scanInfo, &clipHisto, (clipResults.back()).get(), fbData);
+            } else {
+                ana.connect(scanInfo, (*(clipResults.rbegin()+1)).get(),
+                            (*(clipResults.rbegin())).get(),
+                            fbData, true);
+            }
+
+            auto add_analysis = [&](std::string algo_name, json& j) {
+                auto analysis = StdDict::getAnalysis(algo_name);
+                if(analysis) {
+                    balog->debug("  ... adding {}", algo_name);
+                    analysis->loadConfig(j);
+                    // If it requires dependency
+                    if (analysis->requireDependency() and not hasUpstreamAnalyses) {
+                        balog->error("Analysis {} requires outputs from other analyses", algo_name);
+                        throw std::runtime_error("buildAnalyses failure");
+                    }
+
+                    if(algo_name == "HistogramArchiver") {
+                        if(outputDir.empty()) {
+                            balog->debug("Skip HistogramArchiver to empty dir");
+                            // Return from add_analysis without adding
+                            return;
+                        }
+
+                        auto archiver = dynamic_cast<HistogramArchiver*>(analysis.get());
+                        balog->info("Connecting HistogramArchiver to {}", outputDir);
+                        archiver->setOutputDirectory(outputDir);
+                    }
+
+                    analysis->setConfig(feCfg);
+                    analysis->setParams(target_tot, target_charge);
+
+                    ana.addAlgorithm(std::move(analysis));
+                } else {
+                    balog->error("Error, Analysis Algorithm \"{} unknown, skipping!", algo_name);
+                }
+            };
+
+            // Add all AnalysisAlgorithms of the t-th tier
+            for (int aIndex : algoIndexTiers[t]) {
+                std::string algo_name = get_algorithm(aIndex)["algorithm"];
+                // Skip HistogramArchiver???
+                json algo_config = get_algorithm(aIndex)["config"];
+                add_analysis(algo_name, algo_config);
+            }
+
+            // Disable masking of pixels
+            if(mask_opt == 0) {
+                balog->info("Disabling masking for this scan!");
+                ana.setMasking(false);
+            }
+            ana.setMapSize(geo.nCol, geo.nRow);
+        } // for (unsigned t=0; t<algoIndexTiers.size(); t++)
+    }
+
     void buildAnalyses( std::map<unsigned, std::vector<std::unique_ptr<AnalysisDataProcessor>> >& analyses,
             const json& scanCfg, Bookkeeper& bookie,
                         const ScanLoopInfo* s, FeedbackClipboardMap *fbData, int mask_opt, std::string outputDir,
@@ -431,69 +533,20 @@ namespace ScanHelper {
         for (unsigned id=0; id<bookie.getNumOfEntries(); id++ ) {
             FrontEnd *fe = bookie.getEntry(id).fe;
             if (fe->isActive()) {
-                for (unsigned t=0; t<algoIndexTiers.size(); t++) {
-                    // Before adding new analyses
-                    bool hasUpstreamAnalyses = false;
-                    if (t > 0) { // ie. not analyses[fe].empty()
-                        auto& ana_prev = dynamic_cast<AnalysisProcessor&>( *(analyses[id].back()) );
-                        hasUpstreamAnalyses = not ana_prev.empty();
-                    }
-
-                    // Add analysis processors
-                    analyses[id].emplace_back( new AnalysisProcessor(id) );
-                    auto& ana = dynamic_cast<AnalysisProcessor&>( *(analyses[id].back()) );
-
-                    // Create the ClipBoard to store its output and establish connection
-                    fe->clipResult.emplace_back(new ClipBoard<HistogramBase>());
-                    if (t==0) {
-                        ana.connect(s, &fe->clipHisto, (fe->clipResult.back()).get(), &((*fbData)[id]) );
-                    } else {
-                        ana.connect(s, (*(fe->clipResult.rbegin()+1)).get(),
-                                (*(fe->clipResult.rbegin())).get(),
-                                &((*fbData)[id]), true);
-                    }
-
-                    auto add_analysis = [&](std::string algo_name, json& j) {
-                        auto analysis = StdDict::getAnalysis(algo_name);
-                        if(analysis) {
-                            balog->debug("  ... adding {}", algo_name);
-                            analysis->loadConfig(j);
-                            // If it requires dependency
-                            if (analysis->requireDependency() and not hasUpstreamAnalyses) {
-                                balog->error("Analysis {} requires outputs from other analyses", algo_name);
-                                throw("buildAnalyses failure");
-                            }
-
-                            balog->debug(" connecting feedback (if required)");
-                            if(algo_name == "HistogramArchiver") {
-                                auto archiver = dynamic_cast<HistogramArchiver*>(analysis.get());
-                                archiver->setOutputDirectory(outputDir);
-                            }
-
-                            analysis->setConfig(bookie.getFeCfg(id));
-                            analysis->setParams(target_tot, target_charge);
-
-                            ana.addAlgorithm(std::move(analysis));
-                        } else {
-                            balog->error("Error, Analysis Algorithm \"{} unknown, skipping!", algo_name);
-                        }
-                    };
-
-
-                    // Add all AnalysisAlgorithms of the t-th tier
-                    for (int aIndex : algoIndexTiers[t]) {
-                        std::string algo_name = get_algorithm(aIndex)["algorithm"];
-                        json algo_config = get_algorithm(aIndex)["config"];
-                        add_analysis(algo_name, algo_config);
-                    }
-
-                    // Disable masking of pixels
-                    if(mask_opt == 0) {
-                        balog->info("Disabling masking for this scan!");
-                        ana.setMasking(false);
-                    }
-                    ana.setMapSize(fe->geo.nCol, fe->geo.nRow);
-                } // for (unsigned t=0; t<algoIndexTiers.size(); t++)
+                buildAnalysisForFrontEnd(analyses[id],
+                                         id,
+                                         bookie.getFeCfg(id),
+                                         anaCfg,
+                                         fe->geo,
+                                         algoIndexTiers,
+                                         &(*fbData)[id],
+                                         fe->clipResult,
+                                         fe->clipHisto,
+                                         s,
+                                         mask_opt,
+                                         outputDir,
+                                         target_tot,
+                                         target_charge);
             } // if (fe->isActive())
         } // for
     }

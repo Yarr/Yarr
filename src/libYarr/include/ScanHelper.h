@@ -51,6 +51,37 @@ namespace ScanHelper {
         void buildRawDataProcs( std::map<unsigned, std::unique_ptr<FeDataProcessor> > &procs,
                            Bookkeeper &bookie,
                            const std::string &chipType);
+
+        /// Setup analysis for one front end
+        /**
+           @param analyses Vector of data processors for analysis tiers.
+           @param feCfg FrontEndCfg object to be modified by analysis.
+           @param anaCfg Configuration of analysis algorithms.
+           @param geo Geometry for output histograms.
+           @param algoIndexTiers Dependency information between tiers.
+           @param fbData Feedback connection to scan engine.
+           @param clipResults ClipBoard for histograms between tiers.
+           @param clipHisto ClipBoard for input histograms.
+           @param scanInfo Information about scan loops.
+           @param mask_opt Do mask flag.
+           @param outputDir Directory for HistogramArchiver (skip if empty).
+           @param target_tot ToT target.
+           @param target_charge Charge target.
+         */
+        void buildAnalysisForFrontEnd(std::vector<std::unique_ptr<AnalysisDataProcessor>> &analyses,
+                                  unsigned feId,
+                                  FrontEndCfg *feCfg,
+                                  const json &anaCfg,
+                                  FrontEndGeometry &geo,
+                                  const AlgoTieredIndex &algoIndexTiers,
+                                  FeedbackClipboard *fbData,
+                                  std::vector<std::unique_ptr<ClipBoard<HistogramBase>>> &clipResults,
+                                  ClipBoard<HistogramBase> &clipHisto,
+                                  const ScanLoopInfo *scanInfo,
+                                  int mask_opt,
+                                  const std::string &outputDir,
+                                  int target_tot, int target_charge);
+
         void buildAnalyses( std::map<unsigned, std::vector<std::unique_ptr<AnalysisDataProcessor>> >& analyses,
                             const json& scanType, Bookkeeper& bookie, const ScanLoopInfo* s, FeedbackClipboardMap *fbMap, int mask_opt, std::string outputDir,
                             int target_tot, int target_charge);
