@@ -1,9 +1,12 @@
 #include "FelixTxCore.h"
+#include "felix/felix_client_exception.hpp"
 
 #include "logging.h"
 
 #include <sstream>
 #include <iomanip>
+
+#define WAIT_MS_ON_FelixClientResourceNotAvailableException 500
 
 namespace {
   auto ftlog = logging::make_log("FelixTxCore");
@@ -51,7 +54,13 @@ bool FelixTxCore::checkChannel(FelixID_t fid) {
   ftlog->debug("Try sending data to Tx link: 0x{:x}",fid);
   try {
     std::string empty;
-    fclient->send_data(fid, (const uint8_t*)empty.c_str(), 1, true);
+    // try{
+    //   fclient->send_data(fid, (const uint8_t*)empty.c_str(), 1, true);
+    // } catch (FelixClientResourceNotAvailableException& err) {
+    //   // wait and retry                                                                                                                               
+    //   std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_MS_ON_FelixClientResourceNotAvailableException));
+    //   fclient->send_data(fid, (const uint8_t*)empty.c_str(), 1, true);
+    // }
   } catch (std::runtime_error& e) {
     ftlog->warn("Fail to send to Tx link 0x{:x}: {}", fid, e.what());
     return false;
@@ -207,9 +216,17 @@ void FelixTxCore::sendFifo(FelixID_t fid, std::vector<uint8_t>& fifo) {
     ftlog->trace(" {:02x}", word&0xff);
   }
 
-  bool flush = false;
+  bool flush = true;
   //fclient->init_send_data(fid);
-  fclient->send_data(fid, fifo.data(), fifo.size(), flush);
+
+  try{
+    fclient->send_data(fid, fifo.data(), fifo.size(), flush);
+  }
+  catch (FelixClientResourceNotAvailableException& err){
+    // wait and retry
+    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_MS_ON_FelixClientResourceNotAvailableException));
+    fclient->send_data(fid, fifo.data(), fifo.size(), flush);
+  }
 
   // clear the fifo
   fifo.clear();
@@ -422,7 +439,7 @@ void FelixTxCore::trigger() {
       ftlog->trace(" {:02x}", word&0xff);
     }
 
-    bool flush = false;
+    bool flush = true;
     fclient->send_data(fid_broadcast, m_trigFifo[fid_broadcast].data(), m_trigFifo[fid_broadcast].size(), flush);
 
   } else {
@@ -434,7 +451,7 @@ void FelixTxCore::trigger() {
         ftlog->trace(" {:02x}", word&0xff);
       }
 
-      bool flush = false;
+      bool flush = true;
       fclient->send_data(chn, buffer.data(), buffer.size(), flush);
     }
   }
