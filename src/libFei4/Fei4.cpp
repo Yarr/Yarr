@@ -20,53 +20,17 @@ StdDict::registerFrontEnd("FEI4B",
         []() { return std::unique_ptr<FrontEnd>(new Fei4());});
 
 Fei4::Fei4() : Fei4Cfg(), Fei4Cmd(), FrontEnd() {
-    txChannel = 99;
-    rxChannel = 99;
     active = false;
-    geo.nRow = 336;
-    geo.nCol = 80;
-}
-
-Fei4::Fei4(HwController *core) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
-    m_rxcore = core;
-    txChannel = 99;
-    rxChannel = 99;
-    //histogrammer = NULL;
-    //ana = NULL;
-    active = true;
-    geo.nRow = 336;
-    geo.nCol = 80;
-}
-
-Fei4::Fei4(HwController *core, unsigned arg_channel) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
-    m_rxcore = core;
-    txChannel = arg_channel;
-    rxChannel = arg_channel;
-    //histogrammer = NULL;
-    //ana = NULL;
-    active = true;
-    geo.nRow = 336;
-    geo.nCol = 80;
-}
-
-Fei4::Fei4(HwController *core, unsigned arg_txChannel, unsigned arg_rxChannel) : Fei4Cfg(), Fei4Cmd(core), FrontEnd() {
-    m_rxcore = core;
-    txChannel = arg_txChannel;
-    rxChannel = arg_rxChannel;
-    //histogrammer = NULL;
-    //ana = NULL;
-    active = true;
     geo.nRow = 336;
     geo.nCol = 80;
 }
 
 Fei4::~Fei4() = default;
 
-void Fei4::init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
+void Fei4::init(HwController *arg_core, const FrontEndConnectivity& fe_cfg) {
     this->setCore(arg_core);
     m_rxcore = arg_core;
-    txChannel = arg_txChannel;
-    rxChannel = arg_rxChannel;
+    initFeConnectivity(fe_cfg);
     active = true;
 }
 

@@ -100,7 +100,7 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<Bookkeeper> bookie = std::make_unique<Bookkeeper>(&*hw, &*hw);
     bookie->initGlobalFe(StdDict::getFrontEnd(chipType).release());
     bookie->getGlobalFe()->makeGlobal();
-    bookie->getGlobalFe()->init(&*hw, 0, 0);
+    bookie->getGlobalFe()->init(&*hw, FrontEndConnectivity(0,0));
     hw->setCmdEnable(bookie->getTxMaskUnique());
     bookie->getGlobalFe()->resetAllHard();
 

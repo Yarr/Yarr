@@ -30,7 +30,7 @@ enum class ConfigType {
 /// Minimal FrontEnd needed, otherwise scan config not checked
 class MyFrontEnd : public FrontEnd {
 public:
-  void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {}
+  void init(HwController *arg_core, const FrontEndConnectivity& fe_cfg) {}
   void maskPixel(unsigned col, unsigned row) {}
   unsigned getPixelEn(unsigned col, unsigned row) { return 1; }
   void enableAll() {}
@@ -137,7 +137,7 @@ bool testScanConfig(const json &scanConfig) {
     std::unique_ptr<FrontEnd> fe(new MyFrontEnd());
 
     // If we don't add a front-end the info isn't checked...
-    b.addFe(fe.release(), 12, 12);
+    b.addFe(fe.release(), FrontEndConnectivity(12,12));
 
     // This is run by ScanHelper, but doesn't depend on config
     // ScanHelper::buildRawDataProcs(procs, bookie, chipType);

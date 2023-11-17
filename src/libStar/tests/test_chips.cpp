@@ -152,8 +152,7 @@ TEST_CASE("StarBasicConfig", "[star][chips]") {
   auto gen_fe = StdDict::getFrontEnd(fe_name);
   auto star_fe = dynamic_cast<StarChips*> (&*gen_fe);
   REQUIRE(star_fe);
-
-  star_fe->init(&hw, 0, 0);
+  star_fe->init(&hw, FrontEndConnectivity(0,0));
 
   REQUIRE (tx.buffers.empty());
 
@@ -208,8 +207,7 @@ TEST_CASE("StarChipsNamedConfig", "[star][chips]") {
   auto gen_fe = StdDict::getFrontEnd("Star");
   auto star_fe = dynamic_cast<StarChips*> (&*gen_fe);
   REQUIRE(star_fe);
-
-  star_fe->init(&hw, 0, 0);
+  star_fe->init(&hw, FrontEndConnectivity(0,0));
 
   REQUIRE (tx.buffers.empty());
 

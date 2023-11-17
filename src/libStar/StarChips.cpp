@@ -36,9 +36,6 @@ StarChips::StarChips(int abc_version, int hcc_version)
   : StarCfg(abc_version, hcc_version), StarCmd(), FrontEnd()
 {
 	m_txcore  = nullptr;
-
-	txChannel = 99;
-	rxChannel = 99;
 	active = false;
 	geo.nRow = 2;
 	geo.nCol = 128;
@@ -49,58 +46,12 @@ StarChips::StarChips(int abc_version, int hcc_version)
 	addABCchipID(0xf, 0);
 }
 
-#if 0
-StarChips::StarChips(HwController *arg_core)
-: StarCmd(), FrontEnd()
-{
+void StarChips::init(HwController *arg_core, const FrontEndConnectivity& fe_cfg) {
+  logger->debug("Running init {} {} {}", (void*)arg_core, fe_cfg.getTxChannel(), fe_cfg.getRxChannel());
 	m_txcore  = arg_core;
 	m_rxcore = arg_core;
-	txChannel = 99;
-	rxChannel = 99;
+	initFeConnectivity(fe_cfg);
 	active = true;
-	geo.nRow = 2;
-	geo.nCol = 128;
-
-}
-
-StarChips::StarChips(HwController *arg_core, unsigned arg_channel)
-: StarCmd(), FrontEnd()
-{
-	m_txcore  = arg_core;
-	m_rxcore = arg_core;
-	txChannel = arg_channel;
-	rxChannel = arg_channel;
-
-	active = true;
-	geo.nRow = 2;
-	geo.nCol = 128;
-}
-
-StarChips::StarChips(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel)
-: StarCmd(), FrontEnd()
-{
-	m_txcore  = arg_core;
-	m_rxcore = arg_core;
-	txChannel = arg_txChannel;
-	rxChannel = arg_rxChannel;
-
-	active = true;
-	geo.nRow = 2;
-	geo.nCol = 128;
-}
-#endif
-
-void StarChips::init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
-	logger->debug("Running init {} {} {}", (void*)arg_core, arg_txChannel, arg_rxChannel);
-	m_txcore  = arg_core;
-	m_rxcore = arg_core;
-	txChannel = arg_txChannel;
-	rxChannel = arg_rxChannel;
-	active = true;
-
-	active = true;
-	geo.nRow = 2;
-	geo.nCol = 128;
 }
 
 std::unique_ptr<FrontEnd>  StarChips::getGlobal() {

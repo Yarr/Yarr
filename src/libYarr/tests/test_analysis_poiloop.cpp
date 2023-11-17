@@ -218,7 +218,7 @@ TEST_CASE("AnalysisPOILoops", "[Analysis]") {
 
   // Global FE for scan
   auto g_fe = std::make_unique<EmptyFrontEnd>();
-  g_fe->init(&hwCtrl, 0, 0);
+  g_fe->init(&hwCtrl, FrontEndConnectivity(0,0));
   bookie.initGlobalFe(g_fe.release());
 
   MyScan scan(&bookie, nullptr);
