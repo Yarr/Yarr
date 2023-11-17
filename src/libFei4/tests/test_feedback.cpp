@@ -29,7 +29,7 @@ TEST_CASE("FeedbackTestEmpty", "[Feedback]") {
 
     auto g_fe = StdDict::getFrontEnd("FEI4B");
     g_fe->makeGlobal();
-    g_fe->init(&empty, 0, 0);
+    g_fe->init(&empty, FrontEndConnectivity(0,0));
     bookie.initGlobalFe(g_fe.release());
 
     json js;
@@ -58,14 +58,14 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
     fe->setActive(true);
 
     unsigned rx_channel = 0;
-
-    fe->init(&empty, 0, 0);
-    bookie.addFe(fe, 0, rx_channel);
+    FrontEndConnectivity fe_conn(0,rx_channel);
+    fe->init(&empty, fe_conn);
+    bookie.addFe(fe, fe_conn);
     unsigned feUid = bookie.getId(fe);
 
     auto g_fe = StdDict::getFrontEnd("FEI4B");
     g_fe->makeGlobal();
-    g_fe->init(&empty, 0, 0);
+    g_fe->init(&empty, FrontEndConnectivity(0,0));
     bookie.initGlobalFe(g_fe.release());
 
     json js;
@@ -135,13 +135,14 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
 
     FrontEnd* fe = StdDict::getFrontEnd("FEI4B").release();
     fe->setActive(true);
-    fe->init(&empty, 0, 0);
-    bookie.addFe(fe, 0, rx_channel);
+    FrontEndConnectivity fe_conn(0,rx_channel);
+    fe->init(&empty, fe_conn);
+    bookie.addFe(fe, fe_conn);
     unsigned feUid = bookie.getId(fe);
 
     auto g_fe = StdDict::getFrontEnd("FEI4B");
     g_fe->makeGlobal();
-    g_fe->init(&empty, 0, 0);
+    g_fe->init(&empty, FrontEndConnectivity(0,0));
     bookie.initGlobalFe(g_fe.release());
 
     json js;

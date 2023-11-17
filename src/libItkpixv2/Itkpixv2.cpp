@@ -20,44 +20,16 @@ bool itkpixv2_registred =
     StdDict::registerFrontEnd("ITKPIXV2", [](){return std::unique_ptr<FrontEnd>(new Itkpixv2());});
 
 Itkpixv2::Itkpixv2() : FrontEnd(), Itkpixv2Cfg(), Itkpixv2Cmd(){
-    txChannel = 99;
-    rxChannel = 99;
     enforceChipIdInName = true;
     active = true;
     geo.nRow = 384;
     geo.nCol = 400;
 }
 
-Itkpixv2::Itkpixv2(HwController *core) : FrontEnd(), Itkpixv2Cfg(), Itkpixv2Cmd(core) {
-    m_rxcore = core;
-    txChannel = 99;
-    rxChannel = 99;
-    enforceChipIdInName = true;
-    active = true;
-    geo.nRow = 384;
-    geo.nCol = 400;
-    core->setClkPeriod(6.25e-9);
-}
-
-Itkpixv2::Itkpixv2(HwController *core, unsigned arg_channel) : FrontEnd(), Itkpixv2Cfg(), Itkpixv2Cmd(core){
-    m_rxcore = core;
-    txChannel = arg_channel;
-    rxChannel = arg_channel;
-    enforceChipIdInName = true;
-    active = true;
-    geo.nRow = 384;
-    geo.nCol = 400;
-    core->setClkPeriod(6.25e-9);
-}
-
-void Itkpixv2::init(HwController *core, unsigned arg_txChannel, unsigned arg_rxChannel) {
+void Itkpixv2::init(HwController *core, const FrontEndConnectivity& fe_cfg) {
     this->setCore(core);
     m_rxcore = core;
-    txChannel = arg_txChannel;
-    rxChannel = arg_rxChannel;
-    enforceChipIdInName = true;
-    geo.nRow = 384;
-    geo.nCol = 400;
+    initFeConnectivity(fe_cfg);
     core->setClkPeriod(6.25e-9);
 }
 

@@ -31,7 +31,7 @@ class EmptyFrontEnd : public FrontEnd, public EmptyFrontEndCfg {
 
         virtual ~EmptyFrontEnd() = default;
         
-        void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override { m_rxcore = arg_core; }
+        void init(HwController *arg_core, const FrontEndConnectivity& fe_cfg) override { m_rxcore = arg_core; }
 
         void configure() override {}
 

@@ -253,9 +253,9 @@ namespace ScanHelper {
                 continue;
             }
             std::string chipConfigPath = chip["__config_path__"];
-            bookie.addFe(StdDict::getFrontEnd(chipType).release(), chip["tx"], chip["rx"]);
-            bookie.getLastFe()->init(hwCtrl, chip["tx"], chip["rx"]);
-            bookie.getLastFe()->init(hwCtrl, chip["tx"], chip["rx"]);
+            FrontEndConnectivity fe_conn((unsigned)chip["tx"], (unsigned)chip["rx"]);
+            bookie.addFe(StdDict::getFrontEnd(chipType).release(), fe_conn);
+            bookie.getLastFe()->init(hwCtrl, fe_conn);
             auto *feCfg = dynamic_cast<FrontEndCfg*>(bookie.getLastFe());
             const json &cfg=chip["__config_data__"];
             feCfg->loadConfig(cfg);

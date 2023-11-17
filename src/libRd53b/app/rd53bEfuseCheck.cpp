@@ -53,7 +53,7 @@ std::shared_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, std::string
         throw std::runtime_error(e.str());
     }
     auto chip_config = chip_configs[fe_num];
-    fe->init(&*hw, chip_config["tx"], chip_config["rx"]);
+    fe->init(&*hw, FrontEndConnectivity(chip_config["tx"], chip_config["rx"]));
     auto chip_register_file_path = chip_config["config"];
     fs::path pconfig{chip_register_file_path};
     if(!fs::exists(pconfig)) {

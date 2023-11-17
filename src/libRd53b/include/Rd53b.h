@@ -21,11 +21,8 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
     public:
 
         Rd53b();
-        Rd53b(HwController *arg_core);
-        Rd53b(HwController *arg_core, unsigned arg_channel);
-        Rd53b(HwController *arg_core, unsigned arg_txchannel, unsigned arg_rxchannel);
         
-        void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override;
+        void init(HwController *arg_core, const FrontEndConnectivity& fe_cfg) override;
         void makeGlobal() override {m_chipId = 16;}
         std::unique_ptr<FrontEnd> getGlobal() override {
             return std::make_unique<Rd53b>();
