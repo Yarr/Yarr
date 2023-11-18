@@ -27,21 +27,33 @@ def update_config(connectivity_file):
     # a dictionary
     data = json.load(f)
     chip_type=data["chipType"]
-    print(chip_type)
+    dir_path=os.path.split(connectivity_file)[0]
     for j in range(0,len(data["chips"])):
-        chip_config=data["chips"][j]['config']
-        print("Updating chip config %s"%(data["chips"][j]['config']))
+        chip=data["chips"][j]
+        if ("path" in chip.keys()):
+            if (chip["path"] == "relToExec"): 
+                chipConfigPath = chip["config"]
+            elif (chip["path"] == "relToCon"): 
+                chipConfigPath = dir_path + "/" + chip["config"]
+            elif (chip["path"] == "abs"):
+                chipConfigPath = chip["config"]
+            elif (chip["path"] == "relToYarrPath"): 
+                yarr_path = os.getcwd()
+                chipConfigPath = yarr_path + "/" + chip["config"]
+        else: 
+            chipConfigPath = chip["config"]
 
-        f_chip=open(chip_config)
+
+        print("Updating chip config %s"%(chipConfigPath))
+        f_chip=open(chipConfigPath)
         data_chip=json.load(f_chip)
         data_chip[chip_type]["GlobalConfig"]["CdrClkSel"]=0
         data_chip[chip_type]["GlobalConfig"]["CmlBias0"]=800
         data_chip[chip_type]["GlobalConfig"]["CmlBias1"]=400
         data_chip[chip_type]["GlobalConfig"]["MonitorV"]=32
-
         data_chip[chip_type]["GlobalConfig"]["MonitorEnable"]=1
 
-        with open(chip_config,'w') as outfile:
+        with open(chipConfigPath,'w') as outfile:
             outfile.write(json.dumps(data_chip, sort_keys=True, indent=4))
         outfile.close()
 
