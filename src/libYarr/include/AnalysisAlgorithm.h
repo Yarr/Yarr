@@ -3,11 +3,10 @@
 
 #include <thread>
 
-#include "Bookkeeper.h"
-#include "DataProcessor.h"
+#include "AnalysisDataProcessor.h"
 #include "FeedbackBase.h"
 #include "HistogramBase.h"
-#include "ScanBase.h"
+#include "ScanLoopInfo.h"
 
 /**
  * Process sequence of histograms.
@@ -23,14 +22,16 @@ class AnalysisAlgorithm {
         }
         virtual ~AnalysisAlgorithm() = default;
         
-        void setBookkeeper (Bookkeeper *b) {bookie = b;}
+        void setConfig (FrontEndCfg *c) { feCfg = c;}
         void setId (unsigned uid) {id = uid;}
+
+        virtual void setParams(int target_tot, int target_charge) {}
 
         void connect(ClipBoard<HistogramBase> *out, FeedbackClipboard *fb) {
             output = out;
             feedback = fb;
         }
-        virtual void init(ScanBase *s) {}
+        virtual void init(const ScanLoopInfo *s) {}
         virtual void loadConfig(const json &config){}
         virtual void processHistogram(HistogramBase *h) {}
         virtual void end() {}
@@ -47,30 +48,29 @@ class AnalysisAlgorithm {
         void setMasking(bool val) {make_mask = val;}
 
     protected:
-        Bookkeeper *bookie;
+        FrontEndCfg *feCfg;
         unsigned id;
-        ScanBase *scan;
         ClipBoard<HistogramBase> *output;
         FeedbackClipboard *feedback;
         bool make_mask;
         unsigned nCol, nRow;
 
         std::vector<std::string> m_parametersOfInterest;
-        bool isPOILoop(LoopActionBase *l);
+        bool isPOILoop(const LoopActionBaseInfo *l);
 
 };
 
 /**
  * Receive a sequence of histograms and process them using AnalysisAlgorithms.
  */
-class AnalysisProcessor : public DataProcessor {
+class AnalysisProcessor : public AnalysisDataProcessor {
     public:
         AnalysisProcessor();
-        AnalysisProcessor(Bookkeeper *b, unsigned ch);
+        AnalysisProcessor(unsigned ch);
         ~AnalysisProcessor() override;
 
-        void connect(ScanBase *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output, FeedbackClipboard *arg_fb, bool storeInput=false) {
-            scan = arg_s;
+        void connect(const ScanLoopInfo *arg_s, ClipBoard<HistogramBase> *arg_input, ClipBoard<HistogramBase> *arg_output, FeedbackClipboard *arg_fb, bool storeInput=false) override {
+            scan_info = arg_s;
             input = arg_input;
             output = arg_output;
             feedback = arg_fb;
@@ -102,12 +102,11 @@ class AnalysisProcessor : public DataProcessor {
         }
 
     private:
-        Bookkeeper *bookie;
         unsigned id;
         ClipBoard<HistogramBase> *input;
         ClipBoard<HistogramBase> *output;
         FeedbackClipboard *feedback;
-        ScanBase *scan;
+        const ScanLoopInfo *scan_info;
         std::unique_ptr<std::thread> thread_ptr;
         bool storeInputHisto;
         

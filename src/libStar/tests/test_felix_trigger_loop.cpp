@@ -365,7 +365,7 @@ TEST_CASE("StarFelixTriggerLoopTest", "[star][trigger_loop]") {
   // Add a dummy front end with tx = 1 and rx = 0
   uint32_t lcbChn = 1;
   uint32_t rxChn = 0;
-  bk.addFe(nullptr, lcbChn, rxChn);
+  bk.addFe(nullptr, FrontEndConnectivity(lcbChn,rxChn));
 
   action->setup(&ls, &bk);
   action->execute();

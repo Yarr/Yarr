@@ -12,7 +12,7 @@
 #include "rd53b_test_truth.h"
 
 TEST_CASE("Rd53bDataProcessor", "[rd53b][data_processor]") {
-  std::shared_ptr<DataProcessor> proc = StdDict::getDataProcessor("RD53B");
+  std::shared_ptr<FeDataProcessor> proc = StdDict::getDataProcessor("RD53B");
 
   REQUIRE (proc);
 

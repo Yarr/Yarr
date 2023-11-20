@@ -212,7 +212,7 @@ void Itkpixv2GlobalCfg::init() {
     InjVcalRange.init       ( 58, &m_cfg[ 58], 0,  1, 1); regMap["InjVcalRange"] = &Itkpixv2GlobalCfg::InjVcalRange;
     //59
     CdrPhaseDetSel.init     ( 59, &m_cfg[ 59], 3,  1, 0); regMap["CdrPhaseDetSel"] = &Itkpixv2GlobalCfg::CdrPhaseDetSel;
-    CdrClkSel.init          ( 59, &m_cfg[ 59], 0,  3, 1); regMap["CdrClkSel"] = &Itkpixv2GlobalCfg::CdrClkSel;
+    CdrClkSel.init          ( 59, &m_cfg[ 59], 0,  3, 0); regMap["CdrClkSel"] = &Itkpixv2GlobalCfg::CdrClkSel;
     //60
     Clk40En.init            ( 60, &m_cfg[ 60], 9,  3, 7); regMap["Clk40En"] = &Itkpixv2GlobalCfg::Clk40En;
     Clk160En.init           ( 60, &m_cfg[ 60], 6,  3, 7); regMap["Clk160En"] = &Itkpixv2GlobalCfg::Clk160En;

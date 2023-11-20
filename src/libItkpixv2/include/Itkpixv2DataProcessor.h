@@ -6,7 +6,7 @@
 #include <map>
 #include <thread>
 
-#include "DataProcessor.h"
+#include "FeDataProcessor.h"
 #include "ClipBoard.h"
 #include "RawData.h"
 #include "EventData.h"
@@ -16,7 +16,7 @@
 #define BLOCKSIZE 64
 #define HALFBLOCKSIZE 32
 
-class Itkpixv2DataProcessor : public DataProcessor
+class Itkpixv2DataProcessor : public FeDataProcessor
 {
 public:
     Itkpixv2DataProcessor();
@@ -28,6 +28,7 @@ public:
         m_input = input;
         m_out = out;
     }
+    void connect(ClipBoard<FeedbackProcessingInfo> *arg_proc_status) override {statusFb = arg_proc_status;}
 
     void init() override;
     void run() override;
@@ -51,6 +52,7 @@ private:
     std::unique_ptr<std::thread> thread_ptr;
     ClipBoard<RawDataContainer> *m_input;
     ClipBoard<EventDataBase> *m_out;
+    ClipBoard<FeedbackProcessingInfo> *statusFb = nullptr;
     Itkpixv2Cfg *m_feCfg;
 
     unsigned _tag;
@@ -73,6 +75,7 @@ private:
     inline bool getNextDataBlock();
     inline void getPreviousDataBlock();
     inline void process_core();
+    inline void sendFeedback(unsigned tag, unsigned bcid);
 
     // Data stream components
     uint64_t _ccol;

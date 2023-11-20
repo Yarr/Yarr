@@ -6,7 +6,7 @@
 #include <map>
 #include <thread>
 
-#include "DataProcessor.h"
+#include "FeDataProcessor.h"
 #include "ClipBoard.h"
 #include "RawData.h"
 #include "EventData.h"
@@ -16,7 +16,7 @@
 #define BLOCKSIZE 64
 #define HALFBLOCKSIZE 32
 
-class Rd53bDataProcessor : public DataProcessor
+class Rd53bDataProcessor : public FeDataProcessor
 {
 public:
     Rd53bDataProcessor();
@@ -75,7 +75,7 @@ private:
     inline bool getNextDataBlock();
     inline void getPreviousDataBlock();
     inline void process_core();
-    inline void getFeedback(unsigned tag, unsigned bcid);
+    inline void sendFeedback(unsigned tag, unsigned bcid);
 
     // Data stream components
     uint64_t _ccol;

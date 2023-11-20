@@ -139,8 +139,9 @@ std::unique_ptr<MyTxCore> runWithConfig(json &j) {
   }
 
   fe->setActive(true);
-  fe->init(&*hw, 0, 0);
-  bk.addFe(fe, 0, 0);
+  FrontEndConnectivity fe_conn(0,0);
+  fe->init(&*hw, fe_conn);
+  bk.addFe(fe, fe_conn);
 
   // Normally registered by LoopEngine
   ls.init(1);

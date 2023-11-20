@@ -36,13 +36,14 @@ typedef struct FeedbackProcessingInfo
 } FeedbackProcessingInfo;
 
 class Bookkeeper;
+class FrontEndConnectivity;
 
 class FrontEnd {
     public:
         FrontEnd() = default;
         virtual ~FrontEnd() = default;
         
-        virtual void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel)=0;
+        virtual void init(HwController *arg_core, const FrontEndConnectivity& fe_cfg)=0;
 
         bool getActive() const;
 		bool isActive() const;
@@ -55,7 +56,10 @@ class FrontEnd {
         virtual int checkCom() {return 1;}
         virtual bool hasValidName() { return true; }
 
-        virtual void resetAll() {}
+        // A parallel reset that undos any configuration
+        virtual void resetAllHard() {}
+        // A parallel reset that keeps configuration but reset counters/datapath
+        virtual void resetAllSoft() {}
 
         /// Reads the named register and writes it to the local object memory
         virtual void readUpdateWriteNamedReg(std::string name) {}
@@ -63,6 +67,11 @@ class FrontEnd {
         virtual void writeNamedRegister(std::string name, uint16_t value) = 0;
         /// Reads a named register and returns the value of it
         virtual uint16_t readNamedRegister(std::string name) {return 0;}
+        /// Write register value to the local object memory (does not write to the actual chip) 
+        virtual void setRegisterValue(std::string name, uint16_t value) {};
+        /// Reads a named register from the local object memory (does not write to the actual chip) 
+        virtual uint16_t getRegisterValue(std::string name) {return 0;}
+
         /// Configures ADC
         virtual void confAdc(uint16_t MONMUX, bool doCur) {}
 
@@ -82,18 +91,72 @@ class FrontEnd {
         RxCore *m_rxcore;
 };
 
-class FrontEndCfg {
+class FrontEndConnectivity {
     public:
-        FrontEndCfg() {
+        FrontEndConnectivity() {
+            initFeConnectivity(99, 99);
+        }
+
+        FrontEndConnectivity(unsigned arg_channel) {
+            initFeConnectivity(arg_channel);
+        }
+
+        FrontEndConnectivity(unsigned arg_txChannel, unsigned arg_rxChannel) {
+            initFeConnectivity(arg_txChannel, arg_rxChannel);
+        }
+
+        FrontEndConnectivity(const FrontEndConnectivity& cfg) {
+            initFeConnectivity(cfg.getTxChannel(), cfg.getRxChannel());
+        }
+
+        virtual void initFeConnectivity(const FrontEndConnectivity& cfg) {
+            initFeConnectivity(cfg.getTxChannel(), cfg.getRxChannel());
+        }
+
+	virtual void initFeConnectivity(unsigned arg_txChannel, unsigned arg_rxChannel){
+	    txChannel = arg_txChannel;
+	    rxChannel = arg_rxChannel;
+	    lockCfg = false;
+	}
+
+	virtual void initFeConnectivity(unsigned arg_channel){
+	    initFeConnectivity(arg_channel, arg_channel);
+	}
+
+	virtual ~FrontEndConnectivity()= default;
+
+        unsigned getChannel() const {return rxChannel;}
+		unsigned getTxChannel() const {return txChannel;}
+		unsigned getRxChannel() const {return rxChannel;}
+
+        void setChannel(unsigned channel) {txChannel = channel; rxChannel = channel;}
+		void setChannel(unsigned arg_txChannel, unsigned arg_rxChannel) {txChannel = arg_txChannel; rxChannel = arg_rxChannel;}
+        void setChannel(const FrontEndConnectivity &cfg) {setChannel(cfg.getTxChannel(), cfg.getRxChannel());}
+
+        bool isLocked() const {return lockCfg;}
+        void setLocked(bool v) {lockCfg = v;}
+
+    protected:
+        unsigned txChannel;
+        unsigned rxChannel;
+        bool lockCfg;
+
+};
+
+class FrontEndCfg : public FrontEndConnectivity {
+    public:
+        FrontEndCfg() : FrontEndConnectivity() {
             name = "JohnDoe";
-            txChannel = 99;
-            rxChannel = 99;
-            lockCfg = false;
             enforceChipIdInName = false;
         }
+
+	    FrontEndCfg(FrontEndCfg& cfg) : FrontEndConnectivity(cfg) {
+	        name = cfg.getName();
+	        enforceChipIdInName = cfg.checkChipIdInName();
+	    }
+
         virtual ~FrontEndCfg()= default;
         
-
         virtual double toCharge(double)=0;
         virtual double toCharge(double, bool, bool)=0;
         virtual void writeConfig(json &) =0;
@@ -107,26 +170,16 @@ class FrontEndCfg {
 
         virtual std::tuple<json, std::vector<json>> getPreset(const std::string& systemType="SingleChip");
 
-        unsigned getChannel() const {return rxChannel;}
-		unsigned getTxChannel() const {return txChannel;}
-		unsigned getRxChannel() const {return rxChannel;}
         std::string getName() {return name;}
         bool checkChipIdInName() { return enforceChipIdInName; }
 
         // Returns converted ADC counts (float) and unit (string)
-	virtual std::pair<float, std::string> convertAdc(uint16_t ADC, bool meas_curr) {return std::make_pair(0.0, "None");} 
+	    virtual std::pair<float, std::string> convertAdc(uint16_t ADC, bool meas_curr) {return std::make_pair(0.0, "None");} 
         
-        void setChannel(unsigned channel) {txChannel = channel; rxChannel = channel;}
-		void setChannel(unsigned arg_txChannel, unsigned arg_rxChannel) {txChannel = arg_txChannel; rxChannel = arg_rxChannel;}
         void setName(std::string arg_name) {name = std::move(arg_name);}
     
-        bool isLocked() const {return lockCfg;}
-        void setLocked(bool v) {lockCfg = v;}
     protected:
         std::string name;
-        unsigned txChannel;
-        unsigned rxChannel;
-        bool lockCfg;
         bool enforceChipIdInName;
 };
 

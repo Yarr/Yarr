@@ -192,3 +192,7 @@ void Rd53aTriggerLoop::loadConfig(const json &config) {
     if (config.contains("sendEcr"))
         m_sendEcr = config["sendEcr"];
 }
+
+uint32_t Rd53aTriggerLoop::getExpEvents(){
+    return getTrigCnt()*m_trigMultiplier;
+}

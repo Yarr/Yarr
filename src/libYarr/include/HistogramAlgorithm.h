@@ -4,7 +4,7 @@
 #include <memory>
 #include <thread>
 
-#include "DataProcessor.h"
+#include "HistoDataProcessor.h"
 #include "HistogramBase.h"
 #include "LoopStatus.h"
 
@@ -43,7 +43,7 @@ class HistogramAlgorithm {
 /**
  * Process a stream of events using registered HistogramAlgorithm.
  */
-class HistogrammerProcessor : public DataProcessor {
+class HistogrammerProcessor : public HistoDataProcessor {
     public:
         HistogrammerProcessor();
         ~HistogrammerProcessor() override;

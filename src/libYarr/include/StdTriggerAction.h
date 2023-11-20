@@ -8,7 +8,7 @@
  */
 class StdTriggerAction {
     public:
-        virtual uint32_t getTrigCnt() { return m_trigCnt; }
+        virtual uint32_t getTrigCnt() const { return m_trigCnt; }
         void setTrigCnt(uint32_t cnt) { m_trigCnt = cnt; }
 
         virtual uint32_t getExpEvents() { return getTrigCnt(); }

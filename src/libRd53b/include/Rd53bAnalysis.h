@@ -5,7 +5,7 @@
 #include <vector>
 
 // yarr
-#include "ScanBase.h"
+#include "ScanLoopInfo.h"
 #include "AllStdActions.h"
 #include "AnalysisAlgorithm.h"
 #include "Histo1d.h"
@@ -19,7 +19,7 @@ class FrontEndScopeAnalysis : public AnalysisAlgorithm {
         ~FrontEndScopeAnalysis() override = default;
 
         void loadConfig(const json &config) override;
-        void init(ScanBase* s) override;
+        void init(const ScanLoopInfo* s) override;
         void processHistogram(HistogramBase* h) override;
         void end() override;
 
@@ -63,7 +63,7 @@ class ToaAnalysis : public AnalysisAlgorithm {
         ToaAnalysis() : AnalysisAlgorithm() {};
         ~ToaAnalysis() override = default;;
 
-        void init(ScanBase *s) override;
+        void init(const ScanLoopInfo *s) override;
         void processHistogram(HistogramBase* h) override;
         void end() override;
         void loadConfig(const json &config) override;

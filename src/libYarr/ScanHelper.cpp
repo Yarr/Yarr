@@ -225,7 +225,7 @@ namespace ScanHelper {
         return chipType;
     }
 
-    void buildRawDataProcs( std::map<unsigned, std::unique_ptr<DataProcessor> > &procs,
+    void buildRawDataProcs( std::map<unsigned, std::unique_ptr<FeDataProcessor> > &procs,
             Bookkeeper &bookie,
             const std::string &chipType) {
         bhlog->info("Loading RawData processors ..");
@@ -253,9 +253,9 @@ namespace ScanHelper {
                 continue;
             }
             std::string chipConfigPath = chip["__config_path__"];
-            bookie.addFe(StdDict::getFrontEnd(chipType).release(), chip["tx"], chip["rx"]);
-            bookie.getLastFe()->init(hwCtrl, chip["tx"], chip["rx"]);
-            bookie.getLastFe()->init(hwCtrl, chip["tx"], chip["rx"]);
+            FrontEndConnectivity fe_conn((unsigned)chip["tx"], (unsigned)chip["rx"]);
+            bookie.addFe(StdDict::getFrontEnd(chipType).release(), fe_conn);
+            bookie.getLastFe()->init(hwCtrl, fe_conn);
             auto *feCfg = dynamic_cast<FrontEndCfg*>(bookie.getLastFe());
             const json &cfg=chip["__config_data__"];
             feCfg->loadConfig(cfg);
@@ -336,11 +336,10 @@ namespace ScanHelper {
         return 0;
     }
 
-    void buildHistogrammers( std::map<unsigned,
-            std::unique_ptr<DataProcessor>>& histogrammers,
-            const json& scanCfg,
-            Bookkeeper &bookie,
-            ScanBase* s, std::string outputDir) {
+    void buildHistogrammers( std::map<unsigned, std::unique_ptr<HistoDataProcessor>>& histogrammers,
+                             const json& scanCfg,
+                             Bookkeeper &bookie,
+                             std::string outputDir) {
         bhlog->info("Loading histogrammer ...");
 
         const json &histoCfg = scanCfg["scan"]["histogrammer"];
@@ -397,10 +396,10 @@ namespace ScanHelper {
     // A 2D vector of int to store algorithm indices for all tiers of analyses
     using AlgoTieredIndex = std::vector<std::vector<int>>;
 
-    void buildAnalyses( std::map<unsigned,
-            std::vector<std::unique_ptr<DataProcessor>> >& analyses,
+    void buildAnalyses( std::map<unsigned, std::vector<std::unique_ptr<AnalysisDataProcessor>> >& analyses,
             const json& scanCfg, Bookkeeper& bookie,
-            ScanBase* s, FeedbackClipboardMap *fbData, int mask_opt, std::string outputDir) {
+                        const ScanLoopInfo* s, FeedbackClipboardMap *fbData, int mask_opt, std::string outputDir,
+                        int target_tot, int target_charge) {
         balog->info("Loading analyses ...");
 
         const json &anaCfg = scanCfg["scan"]["analysis"];
@@ -444,7 +443,7 @@ namespace ScanHelper {
                     }
 
                     // Add analysis processors
-                    analyses[id].emplace_back( new AnalysisProcessor(&bookie, id) );
+                    analyses[id].emplace_back( new AnalysisProcessor(id) );
                     auto& ana = dynamic_cast<AnalysisProcessor&>( *(analyses[id].back()) );
 
                     // Create the ClipBoard to store its output and establish connection
@@ -473,6 +472,9 @@ namespace ScanHelper {
                                 auto archiver = dynamic_cast<HistogramArchiver*>(analysis.get());
                                 archiver->setOutputDirectory(outputDir);
                             }
+
+                            analysis->setConfig(bookie.getFeCfg(id));
+                            analysis->setParams(target_tot, target_charge);
 
                             ana.addAlgorithm(std::move(analysis));
                         } else {

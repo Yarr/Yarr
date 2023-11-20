@@ -39,6 +39,15 @@ StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
   , m_hcc_version( hcc_version )
   , m_starCfg (std::move(regCfg))
 {
+  // set the Addressing register
+  // HCC docs:
+  // The serial number (=fuseID) is the 24 least significant bits of the Addressing register (read-only)
+  // the 4 most significant bits are writeable hccID for the dynamic addressing
+  uint32_t hccID  = m_starCfg->getHCCchipID();
+  uint32_t fuseID = m_starCfg->getHCCfuseID();
+  uint32_t addressing_value = ((hccID & 0xf) << 28) | (fuseID & 0xffffff);
+  m_starCfg->setHCCRegister(HCCStarRegister::Addressing, addressing_value);
+
   // Emulator analog FE configurations
   if (not json_emu_file_path.empty()) {
     json jEmu;
@@ -273,13 +282,13 @@ void StarChipsetEmu::writeRegister(const uint32_t data, const uint8_t address,
       // special case for dynamic addressing
       // only the top 4 bits are read-write bits and are used as HCC ID
       uint32_t hccid_cur = m_starCfg->getHCCRegister(HCCStarRegister::Addressing);
-      if ((data & 0xfff) == (hccid_cur & 0xfff)) {
+      if ((data & 0xffffff) == (hccid_cur & 0xffffff)) {
         // update the top 4 bits and the HCC ID only if the bottom 24
         // bits from the write command match the bottom 24 bits of the
-        // Addressing register
-        uint32_t hccid_new = (data & 0xf000) | (hccid_cur & 0x0fff);
+        // Addressing register = 4 bits of hccID | 4 unused bits | 24 bits of fuseID
+        uint32_t hccid_new = data;
         m_starCfg->setHCCRegister(address, hccid_new);
-        m_starCfg->setHCCChipId(data>>24);
+        m_starCfg->setHCCChipId(data>>28); // the 4 most significant bits = hccID
       }
     } else {
       try {

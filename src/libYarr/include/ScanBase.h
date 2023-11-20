@@ -26,7 +26,9 @@
 
 #include "storage.hpp"
 
-class ScanBase {
+#include "ScanLoopInfo.h"
+
+class ScanBase : public ScanLoopInfo {
     public:
         ScanBase(Bookkeeper *k);
         virtual ~ScanBase() = default;
@@ -36,9 +38,9 @@ class ScanBase {
         virtual void postScan() {}
         void run();
 
-        std::shared_ptr<LoopActionBase> getLoop(unsigned n);
-        std::shared_ptr<LoopActionBase> operator[](unsigned n);
-        unsigned size();
+        /// Return non-owning pointer to loop action
+        const LoopActionBaseInfo *getLoop(unsigned n) const override;
+        unsigned size() const override;
         
         virtual void loadConfig(const json &cfg) {}
 

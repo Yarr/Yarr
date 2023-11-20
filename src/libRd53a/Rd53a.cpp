@@ -21,50 +21,15 @@ bool rd53a_registred =
     StdDict::registerFrontEnd("RD53A", [](){return std::unique_ptr<FrontEnd>(new Rd53a());});
 
 Rd53a::Rd53a() : FrontEnd(), Rd53aCfg(), Rd53aCmd() {
-    txChannel = 99;
-    rxChannel = 99;
     active = true;
     geo.nRow = 192;
     geo.nCol = 400;
 }
 
-Rd53a::Rd53a(HwController *core) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
-    m_rxcore = core;
-    txChannel = 99;
-    rxChannel = 99;
-    active = true;
-    geo.nRow = 192;
-    geo.nCol = 400;
-    core->setClkPeriod(6.25e-9);
-}
-
-Rd53a::Rd53a(HwController *core, unsigned arg_channel) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
-    m_rxcore = core;
-    txChannel = arg_channel;
-    rxChannel = arg_channel;
-    active = true;
-    geo.nRow = 192;
-    geo.nCol = 400;
-    core->setClkPeriod(6.25e-9);
-}
-
-Rd53a::Rd53a(HwController *core, unsigned arg_txChannel, unsigned arg_rxChannel) : FrontEnd(), Rd53aCfg(), Rd53aCmd(core) {
-    m_rxcore = core;
-    txChannel = arg_txChannel;
-    rxChannel = arg_rxChannel;
-    active = true;
-    geo.nRow = 192;
-    geo.nCol = 400;
-    core->setClkPeriod(6.25e-9);
-}
-
-void Rd53a::init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {
+void Rd53a::init(HwController *arg_core, const FrontEndConnectivity& fe_cfg) {
     this->setCore(arg_core);
     m_rxcore = arg_core;
-    txChannel = arg_txChannel;
-    rxChannel = arg_rxChannel;
-    geo.nRow = 192;
-    geo.nCol = 400;
+    initFeConnectivity(fe_cfg);
     core->setClkPeriod(6.25e-9);
 }
 
@@ -78,7 +43,7 @@ void Rd53a::enableAll() {
     }
 }
 
-void Rd53a::resetAll() {
+void Rd53a::resetAllHard() {
     this->configureInit();
 }
 
@@ -188,6 +153,16 @@ void Rd53a::writeNamedRegister(std::string name, uint16_t value) {
     logger->info("Write named register: {} -> {}", name, value);
     if (regMap.find(name) != regMap.end())
         writeRegister(regMap[name], value);
+}
+
+void Rd53a::setRegisterValue(std::string name, uint16_t value){
+    logger->debug("Set virtual register {} -> {}", name, value);
+    (this->*regMap[name]).write(value);
+}
+
+uint16_t Rd53a::getRegisterValue(std::string name){
+    logger->debug("Get virtual register value {}", name);
+    return (this->*regMap[name]).read();
 }
 
 // TODO remove magic numbers

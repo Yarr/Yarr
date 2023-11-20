@@ -14,12 +14,12 @@
 #include <map>
 #include <thread>
 
-#include "DataProcessor.h"
+#include "FeDataProcessor.h"
 #include "ClipBoard.h"
 #include "RawData.h"
 #include "HccCfg.h"
 
-class StarDataProcessor : public DataProcessor {
+class StarDataProcessor : public FeDataProcessor {
     public:
         StarDataProcessor();
         ~StarDataProcessor() override;

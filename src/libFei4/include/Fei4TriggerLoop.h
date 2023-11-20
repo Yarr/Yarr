@@ -32,6 +32,8 @@ class Fei4TriggerLoop: public LoopActionBase, public StdTriggerAction {
 
         void writeConfig(json &config) override;
         void loadConfig(const json &config) override;
+        
+        uint32_t getExpEvents() override;
     private:
         unsigned m_trigDelay;
         float m_trigFreq;

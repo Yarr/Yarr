@@ -353,6 +353,11 @@ void Fei4Emu::handleTrigger() {
             }
         }
     }
+
+    for (unsigned i=1; i< m_feCfg->getValue(&Fei4Cfg::Trig_Count); i++) {
+        this->addDataHeader(false);    // empty headers
+    }
+        
 }
 
 void Fei4Emu::pushOutput(uint32_t value) const {

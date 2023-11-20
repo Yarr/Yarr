@@ -9,7 +9,7 @@
 #include <memory>
 
 TEST_CASE("StarDataProcessor", "[star][data_processor]") {
-  std::shared_ptr<DataProcessor> proc;
+  std::shared_ptr<FeDataProcessor> proc;
 
   SECTION("Star") {
     proc = StdDict::getDataProcessor("Star");

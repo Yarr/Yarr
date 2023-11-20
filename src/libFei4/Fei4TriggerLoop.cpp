@@ -169,3 +169,7 @@ void Fei4TriggerLoop::setTrigWord(uint32_t word[4]) {
     m_trigWord[2] = word[2];
     m_trigWord[3] = word[3];
 }
+
+uint32_t Fei4TriggerLoop::getExpEvents(){
+    return getTrigCnt()*keeper->globalFe<Fei4>()->readRegister(&Fei4::Trig_Count);
+}

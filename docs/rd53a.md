@@ -92,6 +92,34 @@ If you have a 1-display port adaptor card, the correct controller configuration 
 - `OutputActiveLanes`: 1 instead of 15 because now only lane0 is connected on the readout adapter card
 (- `CmlEn`: 1 instead of 15)
 
+## Data transmission 
+
+Before running any other scans (from firmware release 1.4.0 onwards), it is necessary to set the correct sampling delay setting for the deserialiser to ensure good data transmission. A detailed description can be found in [Guide for Updating Firmware](updating_firmware.md). This is done using an eye diagram measurement, which can also quantify te data transmission quality. The scan is run as: 
+
+```bash
+Usage: ./bin/eyeDiagram [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-t <test_size>] [-s]
+
+Options:
+  -h                   Display this help message.
+  -r <hw_controller_file>   Specify hardware controller JSON path.
+  -c <connectivity_file>    Specify connectivity config JSON path.
+  -t <test_size>            Specify the error counter test size.
+  -s                   Skip chip configuration.
+  -n                   Don't update the controller condfig with the best delay values
+  -v                   Print out and store raw error counter values.
+```
+
+For example: 
+```bash
+/bin/eyeDiagram -r configs/controller/specCfg-rd53b-4x4.json -c configs/connectivity/example_rd53b_setup.json 
+```
+
+This scan has to be run before running any other scan, and it will save the best delay setting to the controller config file. A script for plotting the eye diagram is also provided (``scripts/plot_eyediagram.py``), and an example of an eye diagram is shown below. 
+
+![Example of eye diagram.](images/eye_diagram.png)
+
+No data transmission errors within the given test period are indicated in yellow and marked by an "X", and the center of the eye is chosen as the sampling delay setting. The best setting will depend on the chip, as well as specifics of the setup, such as FPGA, cable lengths, etc, so it has to be run every time something changes in the setup. 
+
 
 ## Readout Speed
 
