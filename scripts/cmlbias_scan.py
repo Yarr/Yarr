@@ -17,12 +17,34 @@ import os
 import json
 import argparse
 
+def get_chip_config_path( chip_info, dir_path ):
+    if ("path" in chip_info.keys()):
+        if (chip_info["path"] == "relToExec"): 
+            chipConfigPath = chip_info["config"]
+        elif (chip_info["path"] == "relToCon"): 
+            chipConfigPath = dir_path + "/" + chip_info["config"]
+        elif (chip_info["path"] == "abs"):
+            chipConfigPath = chip_info["config"]
+        elif (chip_info["path"] == "relToYarrPath"): 
+            yarr_path = os.getcwd()
+            chipConfigPath = yarr_path + "/" + chip_info["config"]
+        else: 
+            # Otherwise assume chip configs live in "YARR/configs/"
+            config_path=dir_path.split("configs/")[0]
+            chipConfigPath = config_path+chip_info["config"]
+            
+        return chipConfigPath
+        
+
 def scan_cmlbias(connectivity_file, controller_file, directory):
     print(connectivity_file)
     with open(connectivity_file) as f:
         data = json.load(f)
     chip_type=data["chipType"]
     dir_path=os.path.split(connectivity_file)[0]
+    
+    cmlbias0_original = None
+    cmlbias1_original = None
 
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -35,25 +57,15 @@ def scan_cmlbias(connectivity_file, controller_file, directory):
                 print("Editing configs...")
                 for j in range(0,len(data["chips"])):
                     chip=data["chips"][j]
-                    if ("path" in chip.keys()):
-                        if (chip["path"] == "relToExec"): 
-                            chipConfigPath = chip["config"]
-                        elif (chip["path"] == "relToCon"): 
-                            chipConfigPath = dir_path + "/" + chip["config"]
-                        elif (chip["path"] == "abs"):
-                            chipConfigPath = chip["config"]
-                        elif (chip["path"] == "relToYarrPath"): 
-                            yarr_path = os.getcwd()
-                            chipConfigPath = yarr_path + "/" + chip["config"]
-                    else: 
-                        # Otherwise assume chip configs live in "YARR/configs/"
-                        config_path=dir_path.split("configs/")[0]
-                        chipConfigPath = config_path+chip["config"]
-
-
+                    chipConfigPath = get_chip_config_path( chip, dir_path )
                     print("Updating chip config %s"%(chipConfigPath))
                     f_chip=open(chipConfigPath)
                     data_chip=json.load(f_chip)
+                    
+                    if not cmlbias0_original:
+                        cmlbias0_original = data_chip[chip_type]["GlobalConfig"]["CmlBias0"]
+                    if not cmlbias1_original:
+                        cmlbias1_original = data_chip[chip_type]["GlobalConfig"]["CmlBias1"]
 
                     data_chip[chip_type]["GlobalConfig"]["CmlBias0"] = cmlbias0
 
@@ -68,18 +80,20 @@ def scan_cmlbias(connectivity_file, controller_file, directory):
 
                 print("Running eye diagram...")
                 print("./bin/eyeDiagram -r %s -c %s -n" % (controller_file, connectivity_file))
-                os.system("./bin/eyeDiagram -r %s -c %s -n" % (controller_file, connectivity_file))
+                this_dir = os.path.dirname( os.path.abspath(__file__) )
+                os.system("%s/../bin/eyeDiagram -r %s -c %s -n" % (this_dir, controller_file, connectivity_file))
                 os.system("cp results.txt %s/results_%s_%s.txt" % (directory, cmlbias0, cmlbias1))
 
     # Reset to defaults
     for j in range(0,len(data["chips"])):
-        chip_config = data["chips"][j]['config']
-        with open(chip_config) as f_chip:
+        chip=data["chips"][j]
+        chipConfigPath = get_chip_config_path( chip, dir_path )
+        with open(chipConfigPath) as f_chip:
             data_chip = json.load(f_chip)
         data_chip[chip_type]["GlobalConfig"]["SerEnTap"] = 1
-        data_chip[chip_type]["GlobalConfig"]["CmlBias0"] = cmlbias0
-        data_chip[chip_type]["GlobalConfig"]["CmlBias1"] = cmlbias1
-        with open(chip_config, 'w') as outfile:
+        data_chip[chip_type]["GlobalConfig"]["CmlBias0"] = cmlbias0_original
+        data_chip[chip_type]["GlobalConfig"]["CmlBias1"] = cmlbias1_original
+        with open(chipConfigPath, 'w') as outfile:
             outfile.write(json.dumps(data_chip, sort_keys=True, indent=4))
 
 
