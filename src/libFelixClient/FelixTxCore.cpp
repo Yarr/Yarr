@@ -238,17 +238,24 @@ void FelixTxCore::sendFifo(FelixID_t fid, std::vector<uint8_t>& fifo) {
 void FelixTxCore::releaseFifo() {
   ftlog->trace("FelixTxCore::releaseFifo");
 
+  int buffer_size = 0;
+
   if (m_broadcast and m_numEnabledChns > 1) {
     auto fid_broadcast = fid_from_channel(BroadcastChn);
-    sendFifo(fid_broadcast, m_fifo[fid_broadcast]);
-
+    buffer_size += m_fifo[fid_broadcast].size();
+    if(buffer_size > m_bufferSize){
+      sendFifo(fid_broadcast, m_fifo[fid_broadcast]);
+    }
   } else {
     for (auto& [chn, buffer] : m_fifo) {
       // skip disabled channels
       if (not m_enables[chn])
         continue;
 
-      sendFifo(chn, buffer);
+      buffer_size += buffer.size();
+      if(buffer_size > m_bufferSize){
+	sendFifo(chn, buffer);
+      }
     }
   }
 
@@ -490,6 +497,12 @@ void FelixTxCore::loadConfig(const json &j) {
     m_pixFwTrigger = j["pixFwTrigger"];
     ftlog->info(" pixFwTrigger = {}", m_pixFwTrigger);
   }
+
+  if (j.contains("bufferSize")) {
+    m_bufferSize = j["bufferSize"];
+    ftlog->info(" bufferSize = {}", m_bufferSize);
+  }
+
 }
 
 void FelixTxCore::writeConfig(json& j) {
@@ -499,6 +512,7 @@ void FelixTxCore::writeConfig(json& j) {
   j["flip"] = m_flip;
   j["broadcast"] = m_broadcast;
   j["pixFwTrigger"] = m_pixFwTrigger;
+  j["bufferSize"] = m_bufferSize;
 }
 
 void FelixTxCore::setClient(std::shared_ptr<FelixClientThread> client) {

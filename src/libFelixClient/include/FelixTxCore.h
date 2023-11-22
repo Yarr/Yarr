@@ -93,7 +93,7 @@ protected:
 
   bool m_flip {false};
   bool m_pixFwTrigger{false};
-
+  int m_bufferSize {0};
   bool m_broadcast {true};
   uint32_t m_numEnabledChns {0};
 
