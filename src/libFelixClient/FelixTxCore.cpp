@@ -157,16 +157,20 @@ uint32_t FelixTxCore::getCmdEnable() { // unused
 }
 
 bool FelixTxCore::isCmdEmpty() {
+
+  bool is_buffer_empty = true;
   for (const auto& [chn, buffer] : m_fifo) {
     // consider only enabled channels
     if (not m_enables[chn])
       continue;
 
-    if (not buffer.empty())
-      return false;
+    if (not buffer.empty()){
+      is_buffer_empty = false;
+      sendFifo(chn, m_fifo[chn]);
+    }
   }
 
-  return true;
+  return is_buffer_empty;
   // Is there a way to check this from FelixClient?
 }
 
@@ -238,12 +242,9 @@ void FelixTxCore::sendFifo(FelixID_t fid, std::vector<uint8_t>& fifo) {
 void FelixTxCore::releaseFifo() {
   ftlog->trace("FelixTxCore::releaseFifo");
 
-  int buffer_size = 0;
-
   if (m_broadcast and m_numEnabledChns > 1) {
     auto fid_broadcast = fid_from_channel(BroadcastChn);
-    buffer_size += m_fifo[fid_broadcast].size();
-    if(buffer_size > m_bufferSize){
+    if(m_fifo[fid_broadcast].size() > m_bufferSize){
       sendFifo(fid_broadcast, m_fifo[fid_broadcast]);
     }
   } else {
@@ -252,8 +253,7 @@ void FelixTxCore::releaseFifo() {
       if (not m_enables[chn])
         continue;
 
-      buffer_size += buffer.size();
-      if(buffer_size > m_bufferSize){
+      if(buffer.size() > m_bufferSize){
 	sendFifo(chn, buffer);
       }
     }
