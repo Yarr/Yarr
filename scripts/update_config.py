@@ -28,6 +28,7 @@ def update_config(connectivity_file):
     data = json.load(f)
     chip_type=data["chipType"]
     dir_path=os.path.split(connectivity_file)[0]
+    print(dir_path)
     for j in range(0,len(data["chips"])):
         chip=data["chips"][j]
         if ("path" in chip.keys()):
@@ -41,7 +42,9 @@ def update_config(connectivity_file):
                 yarr_path = os.getcwd()
                 chipConfigPath = yarr_path + "/" + chip["config"]
         else: 
-            chipConfigPath = chip["config"]
+            # Otherwise assume chip configs live in "YARR/configs/"
+            config_path=dir_path.split("configs/")[0]
+            chipConfigPath = config_path+chip["config"]
 
 
         print("Updating chip config %s"%(chipConfigPath))
