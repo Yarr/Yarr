@@ -46,15 +46,17 @@ def scan_cmlbias(connectivity_file, controller_file, directory):
     cmlbias0_original = None
     cmlbias1_original = None
 
+    this_dir = os.path.dirname( os.path.abspath(__file__) )
+    
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-    for cmlbias0 in [500, 600, 700, 800, 900, 1000]:
-        for cmlbias1 in [0, 200, 400, 600, 800]:                
+    for cmlbias0 in range( 500, 1000, 100 ):
+        for cmlbias1 in range( 0, 800, 100 ):
             if cmlbias1 >= cmlbias0:
                 continue
             else:
-                print("Editing configs...")
+                print(f"Editing configs: CmlBias[0,1] = [{cmlbias0}, {cmlbias1}]")
                 for j in range(0,len(data["chips"])):
                     chip=data["chips"][j]
                     chipConfigPath = get_chip_config_path( chip, dir_path )
@@ -80,9 +82,8 @@ def scan_cmlbias(connectivity_file, controller_file, directory):
 
                 print("Running eye diagram...")
                 print("./bin/eyeDiagram -r %s -c %s -n" % (controller_file, connectivity_file))
-                this_dir = os.path.dirname( os.path.abspath(__file__) )
-                os.system("%s/../bin/eyeDiagram -r %s -c %s -n" % (this_dir, controller_file, connectivity_file))
-                os.system("cp results.txt %s/results_%s_%s.txt" % (directory, cmlbias0, cmlbias1))
+                os.system("%s/../bin/eyeDiagram -r %s -c %s -n | grep -v eyeDiagram | grep -i -v spec | grep -v ScanHelper" % (this_dir, controller_file, connectivity_file))
+                os.system("mv results.txt %s/results_%s_%s.txt" % (directory, cmlbias0, cmlbias1))
 
     # Reset to defaults
     for j in range(0,len(data["chips"])):
@@ -97,6 +98,10 @@ def scan_cmlbias(connectivity_file, controller_file, directory):
             outfile.write(json.dumps(data_chip, sort_keys=True, indent=4))
 
 
+    # Re-optimize Delays in the end!
+    os.system("%s/../bin/eyeDiagram -r %s -c %s -n" % (this_dir, controller_file, connectivity_file))
+    os.system("rm -f results.txt")
+    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
