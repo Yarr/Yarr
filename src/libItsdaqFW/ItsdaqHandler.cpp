@@ -195,6 +195,7 @@ void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
           // Control byte
           if(byte == 0xdc) {
             size_t n_words = (buf_off+3)/4;
+            data->resize(n_words);
             rawData.pushData(std::move(data));
             logger->trace("QueueData: {} words (to {}) {}", n_words, i,
                           (void*)(buf));
@@ -227,6 +228,7 @@ void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
     if(buf_off > 0) {
       size_t n_words = (buf_off+3)/4;
       logger->warn("QueueData: Extra (no EOP) {} words ({} from {} to {}) (ptr {})", n_words, buf_off, startOffset, i, (void*)(buf));
+     data->resize(n_words);
       rawData.pushData(std::move(data));
     }
 
