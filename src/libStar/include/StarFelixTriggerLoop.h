@@ -45,11 +45,15 @@ private:
   bool m_useHitCount {true};
 
   unsigned m_nTrigsTrickle; // number of triggers stored in the trickle memory
+  unsigned m_nPulse; // number of times to iterate over the trickle memory
+
+  // Sequence of bytes to be written to the trickle memory
+  std::vector<uint8_t> m_trickleSeq;
 
   std::tuple<std::vector<uint8_t>, unsigned> getTriggerSegment(unsigned max_trigs = -1);
   void addChargeInjection(std::vector<uint8_t>&);
   std::vector<uint8_t> getHitCounterSegment();
-  std::vector<uint8_t> makeTrickleSequence();
+  void makeTrickleSequence();
 
   void init() override;
   void end() override;
