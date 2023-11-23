@@ -28,12 +28,12 @@ def get_chip_config_path( chip_info, dir_path ):
         elif (chip_info["path"] == "relToYarrPath"): 
             yarr_path = os.getcwd()
             chipConfigPath = yarr_path + "/" + chip_info["config"]
-        else: 
-            # Otherwise assume chip configs live in "YARR/configs/"
-            config_path=dir_path.split("configs/")[0]
-            chipConfigPath = config_path+chip_info["config"]
-            
-        return chipConfigPath
+    else: 
+        # Otherwise assume chip configs live in "YARR/configs/"
+        config_path=dir_path.split("configs/")[0]
+        chipConfigPath = config_path+chip_info["config"]
+
+    return chipConfigPath
         
 
 def scan_cmlbias(connectivity_file, controller_file, directory):
@@ -51,8 +51,8 @@ def scan_cmlbias(connectivity_file, controller_file, directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-    for cmlbias0 in range( 500, 1000, 100 ):
-        for cmlbias1 in range( 0, 800, 100 ):
+    for cmlbias0 in range( 500, 1100, 100 ):
+        for cmlbias1 in range( 0, 900, 100 ):
             if cmlbias1 >= cmlbias0:
                 continue
             else:

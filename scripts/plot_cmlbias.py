@@ -86,7 +86,6 @@ def plot_cmlbias(directory,n_lanes):
 	plt.yticks(rotation=0) 
 	plt.tight_layout()
 	plt.savefig("CmlBiasScan.png",dpi=200)
-	plt.show()
 
 	fig = plt.figure(figsize=(8,6))
 	spec = gridspec.GridSpec(ncols=2, nrows=2)
@@ -108,7 +107,6 @@ def plot_cmlbias(directory,n_lanes):
 	fig.suptitle("Mean Eye Width per Lane", fontsize=13)
 	plt.tight_layout()
 	plt.savefig("CmlBiasScan_Mean.png",dpi=200)
-	plt.show()
 
 
 
