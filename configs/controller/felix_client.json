@@ -18,7 +18,8 @@
         "protocol": 0,
         "flip": false,
         "broadcast": false,
-	"pixFwTrigger": true
+	"pixFwTrigger": true,
+	"bufferSize": 1024
       },
       "ToHost": {
         "detectorID": 0,
