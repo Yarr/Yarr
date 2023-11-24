@@ -21,6 +21,7 @@
 #include "StdParameterAction.h"
 
 #include "lmcurve.h"
+#include "scurvegauss.h"
 #include "logging.h"
 
 namespace {
@@ -635,6 +636,9 @@ void ScurveFitter::loadConfig(const json &j) {
     if (j.contains("reverse")) {
         reverse = j["reverse"];
     }
+    if (j.contains("scurvegauss")) {
+        use_scurvegauss = j["scurvegauss"];
+    }
     if (j.contains("dumpDebugScurvePlots")) {
         m_dumpDebugScurvePlots = j["dumpDebugScurvePlots"];
     }
@@ -727,7 +731,12 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     std::chrono::high_resolution_clock::time_point start;
                     std::chrono::high_resolution_clock::time_point end;
                     start = std::chrono::high_resolution_clock::now();
-                    if (reverse) {
+                    
+                    if (use_scurvegauss) {
+                        // mean and sigma calculated rather than fitted
+                        scurvegauss(par, vcalBins, &x[0], histos[ident]->getData());
+                    }
+                    else if (reverse) {
                         lmcurve(n_par, par, vcalBins, &x[0], histos[ident]->getData(), reverseScurveFct, &control, &status);
                     } else {
                         lmcurve(n_par, par, vcalBins, &x[0], histos[ident]->getData(), scurveFct, &control, &status);
@@ -777,6 +786,9 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     }
 
                     double chi2= status.fnorm/(double)(vcalBins - n_par);
+                    
+                    //override the following chi2 check if using scurvegauss (no fit involved)
+                    if (use_scurvegauss) chi2 = 1.;
 
                     if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0 
                             && chi2 < 2.5 && chi2 > 1e-6

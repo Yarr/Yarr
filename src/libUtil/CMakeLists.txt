@@ -8,6 +8,7 @@ add_library(Util SHARED
         Histo3d.cpp
         lmcurve.cpp
         lmmin.cpp
+        scurvegauss.cpp
         LoggingConfig.cpp
         SerialCom.cpp
         )
