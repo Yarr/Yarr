@@ -733,7 +733,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     start = std::chrono::high_resolution_clock::now();
                     
                     if (use_scurvegauss) {
-                        // mean and sigma calculated rather than fitted
+                        // mean and sigma calculated rather than fitted, implementation libUtil/scurvegauss.cpp
                         scurvegauss(par, vcalBins, &x[0], histos[ident]->getData());
                     }
                     else if (reverse) {
