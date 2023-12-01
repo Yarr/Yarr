@@ -9,32 +9,34 @@ workflow:
           when: never
         - if: '$CI_COMMIT_BRANCH'
 
-image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_build
+image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_cc7_build
 
-job_build_and_test:
+stages:
+    - build
+    - test
+    - deploy
+
+###############
+# Build Stage #
+###############
+
+job_build_all:
     stage: build
+    artifacts:
+        paths:
+          - bin
+          - build
+          - lib
+          - python
     script:
       - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
       - cd build
-      - CXXFLAGS=-Werror cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DENABLE_PYTHON=On
+      - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DENABLE_PYTHON=On
       - make install -j4
       - CTEST_OUTPUT_ON_FAILURE=1 make test
-      - export USER=test
-      - echo $USER
-      - /bin/pwd
-      - cd ../
-      - bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p -l configs/logging/trace_all.json
-      - ls
-      - ls ./data/
-      - ls ./data/000001_std_digitalscan/
-      - cat ./data/000001_std_digitalscan/*_OccupancyMap.json
-      - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
-      - if [ "$NUM100" != "26880" ]; then exit 2; fi
       - bin/scanConsole -k
-      - bin/test_star configs/controller/emuCfg_star.json -r 0 -t 0
-      - PYTHONPATH=$PWD/lib python3 python/scan_cli_logger.py -r configs/controller/emuCfg_rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json
-
+      - cd ..
 
 job_build_and_test_out_of_source:
     stage: build
@@ -44,32 +46,7 @@ job_build_and_test_out_of_source:
       - cmake3 --build /tmp/build -j4
       - cmake3 --install /tmp/build
       - CTEST_OUTPUT_ON_FAILURE=1 cmake3 --build /tmp/build --target test
-      - export USER=test
-      - echo $USER
-      - /bin/pwd
-      - /tmp/build/bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p -l configs/logging/trace_all.json
-      - ls
-      - ls ./data/
-      - ls ./data/000001_std_digitalscan/
-      - cat ./data/000001_std_digitalscan/*_OccupancyMap.json
-      - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
-      - if [ "$NUM100" != "26880" ]; then exit 2; fi
       - /tmp/build/bin/scanConsole -k
-
-job_build_all:
-    stage: build
-    artifacts:
-        paths:
-          - bin
-          - build
-          - lib
-    script:
-      - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-      - mkdir  build
-      - cd build
-      - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DENABLE_PYTHON=On
-      - make install -j4
-      - bin/scanConsole -k
 
 job_build_clang:
     stage: build
@@ -96,31 +73,15 @@ job_build_none:
       - CTEST_OUTPUT_ON_FAILURE=1 make test
       - bin/scanConsole -k
 
-job_test_json_parsing:
-    stage: test
-    needs: ["job_build_all"]
-    script:
-      # Check schema by loading configs in turn
-      - (for file in $(find configs/defaults -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t FRONT_END || exit; done)
-      - (for file in $(find configs/connectivity -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t CONNECTIVITY || exit; done)
-      - (for file in $(find configs/controller -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t CONTROLLER || exit; done)
-      - (for file in $(find configs/scans/* -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t SCAN_CONFIG || exit; done)
-
-      - cd build
-      - CTEST_OUTPUT_ON_FAILURE=1 make test
-
-job_test_json:
-    stage: build
-    script:
-      - source scl_source enable rh-nodejs6 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-      - npm install jsonlint -g
-      - for file in $(find configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
-
-job_test_code_coverage:
+job_build_code_coverage:
     stage: build
     artifacts:
         paths:
+          - bin
+          - build
+          - lib
           - cc_tests
+          - scripts
     script:
       - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
@@ -129,20 +90,6 @@ job_test_code_coverage:
       - make install -j4
       - /bin/pwd
       - cd ../
-      - scripts/cc_tool.sh
-
-job_test_netio:
-    stage: test
-    needs: ["job_build_all"]
-    script:
-      # Launch netio_bridge to connect an emulator to NetIO
-      - bin/netio_bridge -p 12340 -q 12350 -f configs/controller/emuCfg_star.json & pid_bridge=($!)
-      - sleep 1
-      # Run scans with the NetIO controller
-      - bin/scanConsole -r configs/controller/felix_strips.json -c configs/connectivity/example_star_setup.json -s configs/scans/star/std_regDump.json
-      - bin/scanConsole -r configs/controller/felix_strips.json -c configs/connectivity/example_star_setup.json -s configs/scans/star/std_latencyScan.json -p
-      # Terminate netio_bridge
-      - kill ${pid_bridge}
 
 job_run_codechecker:
     stage: build
@@ -162,19 +109,7 @@ job_run_codechecker:
         reports:
             codequality: gl-code-quality-report.json
 
-deploy_coverage:
-    stage: deploy
-    dependencies: ["job_test_code_coverage"]
-    only:
-        - devel@YARR/YARR
-    variables:
-        "EOS_PATH" : "/eos/user/t/theim/www/yarr/devel/coverage"
-        "CI_OUTPUT_DIR" : "cc_tests/"
-    image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
-    script:
-        - deploy-eos
-
-doxygen:
+job_build_doxygen:
     stage: build
     before_script:
         - yum install -y doxygen graphviz
@@ -196,19 +131,91 @@ build_docs:
         paths:
             - site
 
-deploy_devel_doxygen:
-    stage: deploy
-    dependencies: ["doxygen"]
-    only:
-        - devel@YARR/YARR
-    variables:
-        "EOS_PATH" : "/eos/user/t/theim/www/yarr/doxygen/devel/"
-        "CI_OUTPUT_DIR" : "doxygen/html/"
-    image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
-    script:
-        - mkdir -p /eos/user/t/theim/www/yarr/doxygen/devel/
-        - deploy-eos
+###############
+# Test Stage #
+###############
 
+job_test_pixel:
+    stage: test
+    needs: ["job_build_all"]
+    script:
+      - bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p -l configs/logging/trace_all.json
+      - ls
+      - ls ./data/
+      - ls ./data/000001_std_digitalscan/
+      - cat ./data/000001_std_digitalscan/*_OccupancyMap.json
+      - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
+      - if [ "$NUM100" != "26880" ]; then exit 2; fi
+      - bin/scanConsole  -r configs/controller/emuCfg_rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json
+      - ls
+      - ls ./data/
+      - ls ./data/000002_std_digitalscan/
+      - cat ./data/000002_std_digitalscan/*_OccupancyMap.json
+      - NUM100=`cat ./data/000002_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
+      - if [ "$NUM100" != "76800" ]; then exit 2; fi
+
+job_test_strips:
+    stage: test
+    needs: ["job_build_all"]
+    script:
+      - bin/test_star configs/controller/emuCfg_star.json -r 0 -t 0
+
+job_test_python:
+    stage: test
+    needs: ["job_build_all"]
+    script:
+      - PYTHONPATH=$PWD/lib python3 python/scan_cli_logger.py -r configs/controller/emuCfg_rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json
+
+job_test_unit:
+    stage: test
+    needs: ["job_build_all"]
+    script:
+      - cd build
+      - CTEST_OUTPUT_ON_FAILURE=1 make test
+
+job_test_json_parsing:
+    stage: test
+    needs: ["job_build_all"]
+    script:
+      # Check schema by loading configs in turn
+      - (for file in $(find configs/defaults -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t FRONT_END || exit; done)
+      - (for file in $(find configs/connectivity -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t CONNECTIVITY || exit; done)
+      - (for file in $(find configs/controller -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t CONTROLLER || exit; done)
+      - (for file in $(find configs/scans/* -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t SCAN_CONFIG || exit; done)
+
+job_test_netio:
+    stage: test
+    needs: ["job_build_all"]
+    script:
+      # Launch netio_bridge to connect an emulator to NetIO
+      - bin/netio_bridge -p 12340 -q 12350 -f configs/controller/emuCfg_star.json & pid_bridge=($!)
+      - sleep 1
+      # Run scans with the NetIO controller
+      - bin/scanConsole -r configs/controller/felix_strips.json -c configs/connectivity/example_star_setup.json -s configs/scans/star/std_regDump.json
+      - bin/scanConsole -r configs/controller/felix_strips.json -c configs/connectivity/example_star_setup.json -s configs/scans/star/std_latencyScan.json -p
+      # Terminate netio_bridge
+      - kill ${pid_bridge}
+
+job_test_code_coverage:
+    stage: test
+    needs: ["job_build_code_coverage"]
+    artifacts:
+        paths:
+          - cc_tests
+    script:
+      - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+      - scripts/cc_tool.sh
+
+job_test_json:
+    stage: test
+    script:
+      - source scl_source enable rh-nodejs6 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+      - npm install jsonlint -g
+      - for file in $(find configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
+
+################
+# Deploy Stage #
+################
 
 deploy_master:
     stage: deploy
@@ -230,6 +237,31 @@ deploy_devel:
     variables:
         "EOS_PATH" : "/eos/user/t/theim/www/yarr/devel"
         "CI_OUTPUT_DIR" : "site/"
+    image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
+    script:
+        - deploy-eos
+
+deploy_devel_doxygen:
+    stage: deploy
+    dependencies: ["job_build_doxygen"]
+    only:
+        - devel@YARR/YARR
+    variables:
+        "EOS_PATH" : "/eos/user/t/theim/www/yarr/doxygen/devel/"
+        "CI_OUTPUT_DIR" : "doxygen/html/"
+    image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
+    script:
+        - mkdir -p /eos/user/t/theim/www/yarr/doxygen/devel/
+        - deploy-eos
+
+deploy_coverage:
+    stage: deploy
+    dependencies: ["job_test_code_coverage"]
+    only:
+        - devel@YARR/YARR
+    variables:
+        "EOS_PATH" : "/eos/user/t/theim/www/yarr/devel/coverage"
+        "CI_OUTPUT_DIR" : "cc_tests/"
     image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
     script:
         - deploy-eos
