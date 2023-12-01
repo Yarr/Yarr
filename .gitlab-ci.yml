@@ -9,11 +9,6 @@ workflow:
           when: never
         - if: '$CI_COMMIT_BRANCH'
 
-parallel:
-    matrix:
-        - ARCH: ['cc7', 'alma9']
-
-
 stages:
     - build
     - test
@@ -25,6 +20,9 @@ stages:
 
 job_build_all:
     image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     stage: build
     artifacts:
         paths:
@@ -44,6 +42,9 @@ job_build_all:
 
 job_build_and_test_out_of_source:
     image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     stage: build
     script:
       - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
@@ -55,6 +56,9 @@ job_build_and_test_out_of_source:
 
 job_build_clang:
     image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     stage: build
     script:
       - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
@@ -70,6 +74,9 @@ job_build_clang:
 job_build_none:
     stage: build
     image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     script:
       - scl enable devtoolset-9 bash
       - source /opt/rh/devtoolset-9/enable
@@ -83,6 +90,9 @@ job_build_none:
 job_build_code_coverage:
     stage: build
     image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     artifacts:
         paths:
           - bin
@@ -102,6 +112,9 @@ job_build_code_coverage:
 job_run_codechecker:
     stage: build
     image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     timeout: 3 hours
     only:
         - merge_requests
@@ -120,6 +133,9 @@ job_run_codechecker:
 
 job_build_doxygen:
     image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     stage: build
     before_script:
         - yum install -y doxygen graphviz
@@ -131,6 +147,9 @@ job_build_doxygen:
 
 build_docs:
     image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     stage: build
     before_script:
         - pip install mkdocs
@@ -148,6 +167,9 @@ build_docs:
 
 job_test_pixel:
     image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     stage: test
     needs: ["job_build_all"]
     script:
@@ -168,6 +190,9 @@ job_test_pixel:
 
 job_test_strips:
     image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     stage: test
     needs: ["job_build_all"]
     script:
@@ -175,6 +200,9 @@ job_test_strips:
 
 job_test_python:
     image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     stage: test
     needs: ["job_build_all"]
     script:
@@ -182,6 +210,9 @@ job_test_python:
 
 job_test_unit:
     image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     stage: test
     needs: ["job_build_all"]
     script:
@@ -190,6 +221,9 @@ job_test_unit:
 
 job_test_json_parsing:
     image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     stage: test
     needs: ["job_build_all"]
     script:
@@ -201,6 +235,9 @@ job_test_json_parsing:
 
 job_test_netio:
     image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     stage: test
     needs: ["job_build_all"]
     script:
@@ -215,6 +252,9 @@ job_test_netio:
 
 job_test_code_coverage:
     image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     stage: test
     needs: ["job_build_code_coverage"]
     artifacts:
@@ -226,6 +266,9 @@ job_test_code_coverage:
 
 job_test_json:
     image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     stage: test
     script:
       - source scl_source enable rh-nodejs6 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
@@ -238,6 +281,9 @@ job_test_json:
 
 deploy_master:
     image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_alma9_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     stage: deploy
     dependencies: ["build_docs"]
     only:
@@ -251,6 +297,9 @@ deploy_master:
 
 deploy_devel:
     image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_alma9_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     stage: deploy
     dependencies: ["build_docs"]
     only:
@@ -264,6 +313,9 @@ deploy_devel:
 
 deploy_devel_doxygen:
     image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_alma9_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     stage: deploy
     dependencies: ["job_build_doxygen"]
     only:
@@ -278,6 +330,9 @@ deploy_devel_doxygen:
 
 deploy_coverage:
     image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_alma9_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     stage: deploy
     dependencies: ["job_test_code_coverage"]
     only:
