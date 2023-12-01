@@ -9,7 +9,10 @@ workflow:
           when: never
         - if: '$CI_COMMIT_BRANCH'
 
-image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_cc7_build
+parallel:
+    matrix:
+        - ARCH: ['cc7', 'alma9']
+
 
 stages:
     - build
@@ -21,6 +24,7 @@ stages:
 ###############
 
 job_build_all:
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     stage: build
     artifacts:
         paths:
@@ -39,6 +43,7 @@ job_build_all:
       - cd ..
 
 job_build_and_test_out_of_source:
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     stage: build
     script:
       - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
@@ -49,6 +54,7 @@ job_build_and_test_out_of_source:
       - /tmp/build/bin/scanConsole -k
 
 job_build_clang:
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     stage: build
     script:
       - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
@@ -63,6 +69,7 @@ job_build_clang:
 
 job_build_none:
     stage: build
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     script:
       - scl enable devtoolset-9 bash
       - source /opt/rh/devtoolset-9/enable
@@ -75,6 +82,7 @@ job_build_none:
 
 job_build_code_coverage:
     stage: build
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     artifacts:
         paths:
           - bin
@@ -93,6 +101,7 @@ job_build_code_coverage:
 
 job_run_codechecker:
     stage: build
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     timeout: 3 hours
     only:
         - merge_requests
@@ -110,6 +119,7 @@ job_run_codechecker:
             codequality: gl-code-quality-report.json
 
 job_build_doxygen:
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     stage: build
     before_script:
         - yum install -y doxygen graphviz
@@ -120,6 +130,7 @@ job_build_doxygen:
             - doxygen/html
 
 build_docs:
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     stage: build
     before_script:
         - pip install mkdocs
@@ -136,6 +147,7 @@ build_docs:
 ###############
 
 job_test_pixel:
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     stage: test
     needs: ["job_build_all"]
     script:
@@ -155,18 +167,21 @@ job_test_pixel:
       - if [ "$NUM100" != "76800" ]; then exit 2; fi
 
 job_test_strips:
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     stage: test
     needs: ["job_build_all"]
     script:
       - bin/test_star configs/controller/emuCfg_star.json -r 0 -t 0
 
 job_test_python:
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     stage: test
     needs: ["job_build_all"]
     script:
       - PYTHONPATH=$PWD/lib python3 python/scan_cli_logger.py -r configs/controller/emuCfg_rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json
 
 job_test_unit:
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     stage: test
     needs: ["job_build_all"]
     script:
@@ -174,6 +189,7 @@ job_test_unit:
       - CTEST_OUTPUT_ON_FAILURE=1 make test
 
 job_test_json_parsing:
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     stage: test
     needs: ["job_build_all"]
     script:
@@ -184,6 +200,7 @@ job_test_json_parsing:
       - (for file in $(find configs/scans/* -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t SCAN_CONFIG || exit; done)
 
 job_test_netio:
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     stage: test
     needs: ["job_build_all"]
     script:
@@ -197,6 +214,7 @@ job_test_netio:
       - kill ${pid_bridge}
 
 job_test_code_coverage:
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     stage: test
     needs: ["job_build_code_coverage"]
     artifacts:
@@ -207,6 +225,7 @@ job_test_code_coverage:
       - scripts/cc_tool.sh
 
 job_test_json:
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     stage: test
     script:
       - source scl_source enable rh-nodejs6 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
@@ -218,6 +237,7 @@ job_test_json:
 ################
 
 deploy_master:
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_alma9_build
     stage: deploy
     dependencies: ["build_docs"]
     only:
@@ -230,6 +250,7 @@ deploy_master:
         - deploy-eos
 
 deploy_devel:
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_alma9_build
     stage: deploy
     dependencies: ["build_docs"]
     only:
@@ -242,6 +263,7 @@ deploy_devel:
         - deploy-eos
 
 deploy_devel_doxygen:
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_alma9_build
     stage: deploy
     dependencies: ["job_build_doxygen"]
     only:
@@ -255,6 +277,7 @@ deploy_devel_doxygen:
         - deploy-eos
 
 deploy_coverage:
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_alma9_build
     stage: deploy
     dependencies: ["job_test_code_coverage"]
     only:
