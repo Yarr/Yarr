@@ -14,20 +14,22 @@ endfunction()
 
 # TBB
 function(YARR_ADD_TBB)
-    if (TARGET tbb_2021)
+    if (TARGET tbb_2020)
         return()
     endif()
 
     ExternalProject_Add (
-        tbb_2021
+        tbb_2020
         GIT_REPOSITORY https://github.com/intel/tbb.git
-        GIT_TAG v2021.10.0
-        CMAKE_ARGS "-DTBB_TEST=OFF"
-        INSTALL_COMMAND ""
+        GIT_TAG 2020_U2
+        UPDATE_COMMAND ""
+        INSTALL_COMMAND ${PROJECT_SOURCE_DIR}/scripts/install_tbb.sh ${CMAKE_CURRENT_BINARY_DIR}  ${CMAKE_CURRENT_BINARY_DIR}
+        BUILD_COMMAND cd ${CMAKE_CURRENT_BINARY_DIR}/external/src/tbb_2020 &&  make -j4 ${TBB_COMP} ${TBB_ARCH} extra_inc=big_iron.inc
+        CONFIGURE_COMMAND ""
         PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
         )
-    link_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/tbb_2021-build)
-    include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/tbb_2021/include)
+    link_directories(${CMAKE_CURRENT_BINARY_DIR}/lib)
+    include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/tbb_2020/include)
 endfunction()
 
 function(YARR_ADD_NETIO)
@@ -45,7 +47,7 @@ function(YARR_ADD_NETIO)
         INSTALL_COMMAND ""
         PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
         CMAKE_ARGS "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}" -DCMAKE_CXX_FLAGS=-fPIC
-        DEPENDS tbb_2021
+        DEPENDS tbb_2020
         )
 
     include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/netio4)
