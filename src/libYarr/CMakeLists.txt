@@ -7,6 +7,7 @@ target_include_directories(Yarr PUBLIC ./include)
 target_link_libraries(Yarr ${CONTROLLERS})
 target_link_libraries(Yarr ${FRONT_ENDS})
 target_link_options(Yarr PUBLIC -Wl,--no-as-needed)
+add_dependencies(Yarr git_hash)
 
 post_build_debug_library(Yarr)
 
