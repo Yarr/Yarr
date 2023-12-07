@@ -248,7 +248,7 @@ job_test_netio:
         - job: job_build_all
           parallel:
               matrix:
-                  - ARCH: ${ARCH}
+                  - ARCH: ['cc7', 'alma9']
     script:
       # Launch netio_bridge to connect an emulator to NetIO
       - bin/netio_bridge -p 12340 -q 12350 -f configs/controller/emuCfg_star.json & pid_bridge=($!)
