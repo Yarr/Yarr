@@ -14,6 +14,7 @@ stages:
     - test
     - deploy
 
+# Baseline is ALMA9 image
 image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_alma9_build
 
 ###############
@@ -151,16 +152,13 @@ build_docs:
 ###############
 
 job_test_pixel:
-    parallel:
-        matrix:
-            - ARCH: ['cc7', 'alma9']
-    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     stage: test
     needs: 
         - job: job_build_all
           parallel:
               matrix:
                   - ARCH: ['cc7', 'alma9']
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     script:
       - bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p -l configs/logging/trace_all.json
       - ls
@@ -178,59 +176,47 @@ job_test_pixel:
       - if [ "$NUM100" != "76800" ]; then exit 2; fi
 
 job_test_strips:
-    parallel:
-        matrix:
-            - ARCH: ['cc7', 'alma9']
-    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     stage: test
     needs: 
         - job: job_build_all
           parallel:
               matrix:
                   - ARCH: ['cc7', 'alma9']
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     script:
       - bin/test_star configs/controller/emuCfg_star.json -r 0 -t 0
 
 job_test_python:
-    parallel:
-        matrix:
-            - ARCH: ['cc7', 'alma9']
-    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     stage: test
     needs: 
         - job: job_build_all
           parallel:
               matrix:
                   - ARCH: ['cc7', 'alma9']
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     script:
       - PYTHONPATH=$PWD/lib python3 python/scan_cli_logger.py -r configs/controller/emuCfg_rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json
 
 job_test_unit:
-    parallel:
-        matrix:
-            - ARCH: ['cc7', 'alma9']
-    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     stage: test
     needs: 
         - job: job_build_all
           parallel:
               matrix:
                   - ARCH: ['cc7', 'alma9']
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     script:
       - cd build
       - CTEST_OUTPUT_ON_FAILURE=1 make test
 
 job_test_json_parsing:
-    parallel:
-        matrix:
-            - ARCH: ['cc7', 'alma9']
-    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     stage: test
     needs: 
         - job: job_build_all
           parallel:
               matrix:
                   - ARCH: ['cc7', 'alma9']
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     script:
       # Check schema by loading configs in turn
       - (for file in $(find configs/defaults -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t FRONT_END || exit; done)
@@ -239,16 +225,13 @@ job_test_json_parsing:
       - (for file in $(find configs/scans/* -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t SCAN_CONFIG || exit; done)
 
 job_test_netio:
-    parallel:
-        matrix:
-            - ARCH: ['cc7', 'alma9']
-    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     stage: test
     needs: 
         - job: job_build_all
           parallel:
               matrix:
                   - ARCH: ['cc7', 'alma9']
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
     script:
       # Launch netio_bridge to connect an emulator to NetIO
       - bin/netio_bridge -p 12340 -q 12350 -f configs/controller/emuCfg_star.json & pid_bridge=($!)
