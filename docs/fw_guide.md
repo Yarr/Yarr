@@ -45,7 +45,7 @@ Largely, case 1 should be applicable for getting the latest official firmware re
 - FMC card: FMC adapter card attached to the FPGA, most commonly the Ohio card is used
 - Readout speed: 1280 Mbps, 640 Mbps and 160 Mbps are supported, and 1280 Mpbs is the baseline readout speed
 
-Please check the [PCIe Hardware Guide](pcie.md) for more information!
+Please check the [FPGA board types](#fpga-board-type) for more information!
 
 Once you have flashed the firmware **reboot your PC**.
 
@@ -76,7 +76,7 @@ Success! No errors.
 
 - Your system is now **ready to use**
 
-For further information for the questionnaire see [PCIe Hardware Guide](pcie.md) for more information!
+For further information for the questionnaire see the section below for more information!
 
 ## Further information for Questionaire
 
