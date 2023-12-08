@@ -158,7 +158,9 @@ job_test_pixel:
           parallel:
               matrix:
                   - ARCH: ['cc7', 'alma9']
-    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+    inherit:
+        job_build_all:
+            - image
     script:
       - bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p -l configs/logging/trace_all.json
       - ls
@@ -182,7 +184,9 @@ job_test_strips:
           parallel:
               matrix:
                   - ARCH: ['cc7', 'alma9']
-    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+    inherit:
+        job_build_all:
+            - image
     script:
       - bin/test_star configs/controller/emuCfg_star.json -r 0 -t 0
 
@@ -193,7 +197,9 @@ job_test_python:
           parallel:
               matrix:
                   - ARCH: ['cc7', 'alma9']
-    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+    inherit:
+        job_build_all:
+            - image
     script:
       - PYTHONPATH=$PWD/lib python3 python/scan_cli_logger.py -r configs/controller/emuCfg_rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json
 
