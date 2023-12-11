@@ -20,7 +20,7 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
 
 ### Software:
 
-- CentOS 7/8 or Ubuntu 20.04 LTS
+- CentOS 7/8, Alma 9
 - cmake 3.14 or higher
 - GCC version 9
     - for example from devtoolset-9
