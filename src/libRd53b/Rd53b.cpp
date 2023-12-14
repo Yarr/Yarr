@@ -427,7 +427,7 @@ uint32_t Rd53b::getEfuses() {
     uint32_t chip_sn = efuse_data.chip_sn();
     uint32_t chip_sn_old = efuse_data_old.chip_sn();
 
-    //https://gitlab.cern.ch/YARR/YARR/-/issues/166
+    // https://gitlab.cern.ch/YARR/YARR/-/issues/166
     if (chip_sn > 0x16000) {
         logger->info("Chip serial number obtained from e-fuse data: 0x{:x}", chip_sn );
         return chip_sn;    
@@ -452,9 +452,10 @@ std::pair<uint32_t, uint32_t> Rd53b::decodeSingleRegRead(uint32_t higher, uint32
 
 std::tuple<uint8_t, uint32_t, uint32_t> Rd53b::decodeSingleRegReadID(uint32_t higher, uint32_t lower) {
     std::tuple<uint8_t, uint32_t, uint32_t> output = std::make_tuple(16, 999, 666);
-    if ((higher & 0xFF000000) == 0x55000000) {
+    // only the 2 LSB of the chip ID are sent by the chip. Ref manual 10.2 Aurora and RD53B Data
+    if ((higher & 0xFF000000) == 0x55000000) { // register address 136 which is EfuseReadData0
         output = std::make_tuple((higher>>22)&0x3, (lower>>16)&0x3FF, lower&0xFFFF);
-    } else if ((higher & 0xFF000000) == 0x99000000) {
+    } else if ((higher & 0xFF000000) == 0x99000000) { // register address 135 which is EfuseReadData1
         output = std::make_tuple((higher>>22)&0x3, (higher>>10)&0x3FF, ((lower>>26)&0x3F)+((higher&0x3FF)<<6));
     } else {
         logger->error("Could not decode reg read!");
@@ -598,7 +599,7 @@ uint8_t Rd53b::getChipId() {
     m_rxcore->flushBuffer();
     // send a read register command to the chip so that it
     // sends back the current value of the register
-    this->sendRdReg(m_chipId, (this->EfuseReadData0).addr());
+    this->sendRdReg(m_chipId, (this->EfuseReadData0).addr()); // from readSingleRegister which uses addresses 135 and 136 which is EfuseReadData1 and EfuseReadData0
     while(!core->isCmdEmpty()) {}
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
