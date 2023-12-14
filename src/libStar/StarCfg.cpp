@@ -292,6 +292,12 @@ void StarCfg::loadConfig(const json &j) {
         throw std::runtime_error("Missing ID in config file");
     }
 
+    if (hcc.contains("fuse_id")) {
+      std::string str_fuse = hcc["fuse_id"];
+      m_fuse_id = std::stol(str_fuse, nullptr, 16);
+      logger->info("Reading configuration for chip with serial number=0x{:05x}", m_fuse_id);
+    }
+
     m_hcc.setDefaults(m_hcc_version);
 
     if (hcc.contains("regs")) {
@@ -374,6 +380,20 @@ void StarCfg::loadConfig(const json &j) {
         }
     }
 
+    if (abcs.contains("fuse_ids")) {
+        auto &ids = abcs["fuse_ids"];
+        abc_arr_length = ids.size();
+        for (int iABC = 0; iABC < ids.size(); iABC++) {
+            auto &id = ids[iABC];
+            if (id.is_null())
+                continue;
+            std::string str_fuse = id;
+            uint32_t abc_fuse_id = std::stol(str_fuse, nullptr, 16);
+            logger->info("Reading configuration for ABC chip with serial number=0x{:05x}", abc_fuse_id);
+
+            // TODO: Use for checking against expectation
+        }
+    }
 
     auto abc_count = numABCs();
 

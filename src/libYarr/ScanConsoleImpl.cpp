@@ -185,9 +185,10 @@ int ScanConsoleImpl::setupScan() {
     // TODO not to use the raw pointer!
     try {
         ScanHelper::buildRawDataProcs(procs, *bookie, chipType);
-        ScanHelper::buildHistogrammers(histogrammers, scanCfg, *bookie, scanBase.get(), scanOpts.outputDir);
+        ScanHelper::buildHistogrammers(histogrammers, scanCfg, *bookie, scanOpts.outputDir);
         ScanHelper::buildAnalyses(analyses, scanCfg, *bookie, scanBase.get(),
-                                  &fbData, scanOpts.mask_opt, scanOpts.outputDir);
+                                  &fbData, scanOpts.mask_opt, scanOpts.outputDir,
+                                  scanOpts.target_tot, scanOpts.target_charge);
     } catch (const char *msg) {
         logger->error("{}", msg);
         return -1;
@@ -260,7 +261,7 @@ int ScanConsoleImpl::configure() {
             ScanHelper::writeFeConfig(feCfg, scanOpts.outputDir + feCfgMap.at(id)[1] + ".before");
     }
     bookie->initGlobalFe(chipType);
-    bookie->getGlobalFe()->init(&*hwCtrl, 0, 0);
+    bookie->getGlobalFe()->init(&*hwCtrl, FrontEndConnectivity(0,0));
 
     ScanHelper::banner(logger,"Configure FEs");
 
@@ -272,7 +273,7 @@ int ScanConsoleImpl::configure() {
 
     // send global/broadcast reset command to all frontends
     if(scanOpts.doResetBeforeScan) {
-        bookie->getGlobalFe()->resetAll();
+        bookie->getGlobalFe()->resetAllHard();
     }
 
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
@@ -291,6 +292,9 @@ int ScanConsoleImpl::configure() {
     logger->info("Sent configuration to all FEs in {} ms!",
                  std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count());
 
+    hwCtrl->setCmdEnable(bookie->getTxMaskUnique());
+    // send global/broadcast soft reset post config
+    bookie->getGlobalFe()->resetAllSoft();
     // Wait for rx to sync with FE stream
     // TODO Check RX sync
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
@@ -316,7 +320,7 @@ int ScanConsoleImpl::configure() {
 
         logger->info("... success!");
     }
-
+    
     // at this point, if we're not running a scan we should just exit
     if(!scanOpts.scan_config_provided) {
         return 1;
@@ -328,6 +332,7 @@ int ScanConsoleImpl::configure() {
     for (uint32_t channel : bookie->getTxMask()) {
         logger->info("Enabling Tx channel {}", channel);
     }
+
     logger->info("Enabling Rx channels");
     hwCtrl->setRxEnable(bookie->getRxMask());
     for (uint32_t channel : bookie->getRxMask()) {
@@ -420,7 +425,7 @@ int ScanConsoleImpl::initHardware() {
             ScanHelper::writeFeConfig(feCfg, scanOpts.outputDir + feCfgMap.at(id)[1] + ".before");
     }
     bookie->initGlobalFe(chipType);
-    bookie->getGlobalFe()->init(&*hwCtrl, 0, 0);
+    bookie->getGlobalFe()->init(&*hwCtrl, FrontEndConnectivity(0,0));
     return 0;
 }
 

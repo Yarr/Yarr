@@ -14,11 +14,11 @@
 #include <thread>
 #include <vector>
 
-#include "DataProcessor.h"
+#include "FeDataProcessor.h"
 #include "ClipBoard.h"
 #include "RawData.h"
 
-class Fei4DataProcessor : public DataProcessor {
+class Fei4DataProcessor : public FeDataProcessor {
     public:
         // TODO processor should receive whole chip config seperatly
         Fei4DataProcessor(unsigned arg_hitDiscCfg=0);

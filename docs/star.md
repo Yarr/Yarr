@@ -16,13 +16,13 @@ bin/star_test
 Or by specifying a config for communication with felix_core:
 
 ```bash
-bin/star_test config/controller/netio.json
+bin/test_star configs/controller/netio.json
 ```
 
 For comparison purposes, a barebones interface to the itsdaq FW is provided:
 
 ```bash
-bin/star_test config/controller/itsdaq.json
+bin/test_star configs/controller/itsdaq.json
 ```
 
 The emulator version can be run as follows:

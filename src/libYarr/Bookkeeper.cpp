@@ -45,26 +45,26 @@ void Bookkeeper::initGlobalFe(std::string chipType) {
     g_fe->connectBookkeeper(this);
 }
 
-void Bookkeeper::addFe(FrontEnd *fe, unsigned txChannel, unsigned rxChannel) {
+void Bookkeeper::addFe(FrontEnd *fe, const FrontEndConnectivity& cfg) {
     // Create new entry
     bookEntries.emplace_back();
     bookEntries.back().fe = fe;
     idMap[fe] = bookEntries.size()-1;
     bookEntries.back().active = true;
-    bookEntries.back().txChannel = txChannel;
-    bookEntries.back().rxChannel = rxChannel;
+    bookEntries.back().txChannel = cfg.getTxChannel();
+    bookEntries.back().rxChannel = cfg.getRxChannel();
 
-    FrontEndCfg *cfg = dynamic_cast<FrontEndCfg*>(fe);
-    if(cfg) cfg->setChannel(txChannel, rxChannel);
+    FrontEndCfg *fe_cfg = dynamic_cast<FrontEndCfg*>(fe);
+    if(fe_cfg) fe_cfg->setChannel(cfg);
 
-    rxToIdMap[rxChannel].emplace_back(idMap[fe]);
+    rxToIdMap[cfg.getRxChannel()].emplace_back(idMap[fe]);
 
     // Using macro includes file/line info
-    SPDLOG_LOGGER_INFO(blog, "Added FE: Tx({}), Rx({}) under ID {}", txChannel, rxChannel, idMap[fe]);
+    SPDLOG_LOGGER_INFO(blog, "Added FE: Tx({}), Rx({}) under ID {}", cfg.getTxChannel(), cfg.getRxChannel(), idMap[fe]);
 }
 
 void Bookkeeper::addFe(FrontEnd *fe, unsigned channel) {
-    this->addFe(fe, channel, channel);
+    this->addFe(fe, FrontEndConnectivity(channel,channel));
 }
 
 void Bookkeeper::delFe(unsigned id) {

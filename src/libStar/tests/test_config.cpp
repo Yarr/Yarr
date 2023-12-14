@@ -339,3 +339,30 @@ TEST_CASE("Star_HccRegInfo", "[star][config]") {
     CHECK (rm.second != nullptr);
   }
 }
+
+// test that loadConfig loads basic info
+TEST_CASE("StarCfgLoadConfig", "[star][config]") {
+  int abc_version = 2;
+  int hcc_version = 0;
+  StarCfg test_config(abc_version, hcc_version);
+
+  CHECK (test_config.getHCCchipID() == 0);
+  CHECK (test_config.getHCCfuseID() == 0);
+
+  json cfg;
+  cfg["name"] = "Barrel_Hybrid_Example";
+  cfg["HCC"]  = json::object();
+  
+  unsigned int hccID = 0x2;
+  cfg["HCC"]["ID"]  = hccID;
+
+  uint32_t    fuseID = 0x40086d;
+  std::stringstream stream;
+  stream << std::hex << fuseID;
+  cfg["HCC"]["fuse_id"] = stream.str();
+
+  test_config.loadConfig(cfg);
+
+  CHECK (test_config.getHCCchipID() == hccID);
+  CHECK (test_config.getHCCfuseID() == fuseID);
+}

@@ -13,7 +13,8 @@ namespace {
 }
 
 LoopActionBase::LoopActionBase(LoopStyle l)
-  : m_style(l), loopType(typeid(void))
+  : LoopActionBaseInfo(l),
+    loopType(typeid(void))
 {
     g_fe = nullptr;
     g_tx = nullptr;
@@ -55,18 +56,6 @@ void LoopActionBase::run() {
     this->init();
     while(!this->done()) this->execStep();
     this->end();
-}
-
-unsigned LoopActionBase::getMin() const {
-    return min;
-}
-
-unsigned LoopActionBase::getMax() const {
-    return max;
-}
-
-unsigned LoopActionBase::getStep() const {
-    return step;
 }
 
 void LoopActionBase::setMax(unsigned v) {

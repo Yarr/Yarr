@@ -12,9 +12,9 @@ namespace {
 }
 
 bool fei4_proc_registered =
-    StdDict::registerDataProcessor("FEI4B", []() { return std::unique_ptr<DataProcessor>(new Fei4DataProcessor());});
+    StdDict::registerDataProcessor("FEI4B", []() { return std::unique_ptr<FeDataProcessor>(new Fei4DataProcessor());});
 
-Fei4DataProcessor::Fei4DataProcessor(unsigned arg_hitDiscCfg) : DataProcessor(){
+Fei4DataProcessor::Fei4DataProcessor(unsigned arg_hitDiscCfg) : FeDataProcessor(){
     SPDLOG_LOGGER_TRACE(flog, "");
     input = NULL;
     hitDiscCfg = arg_hitDiscCfg;

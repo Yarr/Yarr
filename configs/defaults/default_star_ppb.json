@@ -2,6 +2,7 @@
     "name": "Barrel_Hybrid_PPB",
     "HCC": {
         "ID": 2,
+        "fuse_id": "123abc",
 
         "regs": {
             "Delay1": "02800003",
@@ -26,6 +27,8 @@
     },
     "ABCs": {
         "IDs": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+
+        "fuse_ids": ["ab001", "ab002", "ab003", "ab004", "ab005", "ab006", "ab007", "ab008", "ab009"],
 
         "common": {
             "ADCS1": "00d035ed",

@@ -38,11 +38,8 @@ enum DC_MODE {
 class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
     public:
         Fei4();
-        Fei4(HwController *arg_core);
-        Fei4(HwController *arg_core, unsigned arg_channel);
-        Fei4(HwController *arg_core, unsigned arg_txchannel, unsigned arg_rxchannel);
 
-        void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override;
+        void init(HwController *arg_core, const FrontEndConnectivity& fe_cfg) override;
 
         ~Fei4() override;
 

@@ -6,7 +6,7 @@
 #include <map>
 #include <thread>
 
-#include "DataProcessor.h"
+#include "FeDataProcessor.h"
 #include "ClipBoard.h"
 #include "RawData.h"
 #include "EventData.h"
@@ -16,7 +16,7 @@
 #define BLOCKSIZE 64
 #define HALFBLOCKSIZE 32
 
-class Itkpixv2DataProcessor : public DataProcessor
+class Itkpixv2DataProcessor : public FeDataProcessor
 {
 public:
     Itkpixv2DataProcessor();

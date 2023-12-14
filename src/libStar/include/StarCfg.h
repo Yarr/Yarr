@@ -51,6 +51,9 @@ class StarCfg : public FrontEndCfg {
   unsigned int getHCCchipID(){ return m_hcc.getHCCchipID(); }
   void setHCCChipId(unsigned hccID){ m_hcc.setHCCChipId(hccID); }
 
+  const uint32_t getHCCfuseID() const{return m_fuse_id;}
+  void setHCCfuseID(uint32_t fuseID) { m_fuse_id = fuseID; }
+
   const unsigned int getABCchipID(unsigned int chipIndex) { return abcFromIndex(chipIndex).getABCchipID(); }
 
   void addABCchipID(unsigned int chipID) {
@@ -188,7 +191,8 @@ class StarCfg : public FrontEndCfg {
   std::shared_ptr<const AbcStarRegInfo> m_abc_info; 
   std::shared_ptr<const HccStarRegInfo> m_hcc_info; 
 
-  uint32_t m_sn=0;//serial number set by eFuse bits
+  /// HCC Fuse ID check used for communications ID for regist serial number set by eFuse bits
+  uint32_t m_fuse_id=0;
 
   int m_abc_version; 
   int m_hcc_version; 
