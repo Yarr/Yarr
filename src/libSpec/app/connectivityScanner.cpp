@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
     if(getenv("HOME")) {
 	home = getenv("HOME");
     } else {
-	shlog->error("HOME not set, using local directory for configuration");
+	logger->error("HOME not set, using local directory for configuration");
 	home = ".";
     }
 
