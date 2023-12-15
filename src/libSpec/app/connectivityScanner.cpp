@@ -130,6 +130,17 @@ int main(int argc, char **argv) {
     hw_controller_filename += fe_type + "-" + channel_cfg + ".json";
     std::cout<<hw_controller_filename<<std::endl;
 
+    if ( !connectivity_filename.find(".json") or connectivity_filename.find_last_of('/') != connectivity_filename.length() ) {
+	connectivity_filename += fe_type+"_setup.json";
+    }
+
+    std::string mkdir_command = "mkdir -p " + chip_config_path;
+    if (system(mkdir_command.c_str()) < 0) {
+	logger->error("Failed to create chip config directory: {}!", chip_config_path);
+    }
+
+
+    // jsons
     json jcontroller;
     jcontroller = ScanHelper::openJsonFile(hw_controller_filename);
     // instantiate the hw controller
@@ -141,6 +152,11 @@ int main(int argc, char **argv) {
         std::cerr << "ERROR: Unable to load controller from provided config, exception caught: " << e.what() << std::endl;
         return 1;
     }
+
+    json jconnectivity;
+    jconnectivity["chipType"] = fe_type_upper;
+    jconnectivity["chips"] = json::array(); // declare an empty list
+
 
     for (int _tx = 0; _tx < ntx; _tx++) {
 	// TODO
@@ -216,10 +232,20 @@ int main(int argc, char **argv) {
 
 	    ////// Write default to file
 	    //fe.writeConfig(cfg); // fills in all the missing values with default
-	    std::ofstream newCfgFile("configs/20UPGFC"+chip_sn.str()+".json"); // or save as chip_name.json?
+	    std::string chip_config_filename = chip_config_path+"/20UPGFC"+chip_sn.str()+".json";
+	    std::ofstream newCfgFile(chip_config_filename); // or save as chip_name.json?
 	    newCfgFile << std::setw(4) << cfg;
 	    newCfgFile.close();
 
+	    json jchipconnectivity;
+	    jchipconnectivity["config"] = chip_config_filename;
+	    jchipconnectivity["path"] = "relToCon";
+	    jchipconnectivity["tx"] = _tx;
+	    jchipconnectivity["rx"] = _rx;
+	    jchipconnectivity["enable"] = 1;
+	    jchipconnectivity["locked"] = 0;
+
+	    jconnectivity["chips"].push_back(jchipconnectivity);
 
 	    //read firmware to determine hardware type, speed, FE chip type
 	    // what if firmware is wrong? --> user
@@ -229,5 +255,9 @@ int main(int argc, char **argv) {
 	    hw->disableRx();
 	    }
 	}
+
+	std::ofstream newConnectivityFile(connectivity_filename);
+	newConnectivityFile << std::setw(4) << jconnectivity;
+	newConnectivityFile.close();
 	return 0;
 }
