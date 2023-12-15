@@ -195,7 +195,7 @@ int main(int argc, char **argv) {
 		cfg["RD53B"]["Parameter"]["ChipId"] = chipId;
 		fe.loadConfig(cfg);
 
-		logger->info("Configure chip again...");
+		logger->info("Configure chip again..."); // have to do this again in order to be able to read out efuses
 		fe.configureInit();
 		fe.configureGlobal();
 		std::this_thread::sleep_for(std::chrono::microseconds(10));
