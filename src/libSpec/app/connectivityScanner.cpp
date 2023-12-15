@@ -41,6 +41,11 @@ void printHelp() {
               << "  -o <config_path>          Output chip config JSON path.\n" ;
 }
 
+bool endswith(const std::string &str, const std::string &suffix) {
+    return str.size() >= suffix.size() &&
+           str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
 //std::shared_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, int tx, int rx) {
 
     ////std::string chip_type = jconn["chipType"];
@@ -77,9 +82,10 @@ int main(int argc, char **argv) {
     int c;
     std::string hw_controller_filename = "";
     std::string connectivity_filename = "";
-    std::string chip_config_path = "configs/";
+    std::string chip_config_path = "configs/"; // path to create chip configs
+    std::string chip_config_filename = chip_config_path; // path/filename for the connectivity config
 
-    while ((c = getopt(argc, argv, "hr:c:o")) != -1) {
+    while ((c = getopt(argc, argv, "hr:c:o:")) != -1) {
         switch (c) {
 	    case 'h':
 		printHelp();
@@ -92,6 +98,7 @@ int main(int argc, char **argv) {
 		break;
 	    case 'o' :
 		chip_config_path = optarg;
+		chip_config_filename = chip_config_path;
 		break;
 	    default:
 		logger->critical("Invalid command line parameter(s) given!");
@@ -130,13 +137,40 @@ int main(int argc, char **argv) {
     hw_controller_filename += fe_type + "-" + channel_cfg + ".json";
     std::cout<<hw_controller_filename<<std::endl;
 
-    if ( !connectivity_filename.find(".json") or connectivity_filename.find_last_of('/') != connectivity_filename.length() ) {
-	connectivity_filename += fe_type+"_setup.json";
+    // if no ".json" in file name assume it's a directory
+    if ( connectivity_filename.find(".json") == std::string::npos ) { // "find" returns the position of the first character of the first match. If no matches were found, the function returns string::npos.
+	// if connectivity and chip configs are in the same directory then the chip config path in the connectivity file should be one layer higher
+	if ( endswith(connectivity_filename, "/") ) {
+	    connectivity_filename = connectivity_filename.substr(0, connectivity_filename.find_last_of("/"));
+	}
+	if ( endswith(chip_config_path, "/") ) {
+	    chip_config_path = chip_config_path.substr(0, chip_config_path.find_last_of("/"));
+	    chip_config_filename = chip_config_path;
+	}
+	if (connectivity_filename == chip_config_path) {
+	    if ( connectivity_filename.find_last_of("/") != std::string::npos ) {
+		chip_config_filename.substr(chip_config_filename.find_last_of("/"), std::string::npos);
+	    } else {
+		chip_config_filename = "";
+	    }
+	}
+
+	connectivity_filename += "/" + fe_type+"_connectivity.json";
+	logger->info("Did not find connectivity file extension, creating connectivity file {}.", connectivity_filename);
     }
 
-    std::string mkdir_command = "mkdir -p " + chip_config_path;
-    if (system(mkdir_command.c_str()) < 0) {
-	logger->error("Failed to create chip config directory: {}!", chip_config_path);
+    // if finds a connectivity path
+    if ( connectivity_filename.find_last_of("/") != std::string::npos ) {
+	std::string connectivity_path = connectivity_filename.substr(0, connectivity_filename.find_last_of("/"));
+	if ( !std::filesystem::exists(connectivity_path) ) {
+	    logger->info("Connectivity config directory {} doesn't exist, creating...", connectivity_path);
+	    std::filesystem::create_directories(connectivity_path);
+	}
+    }
+
+    if ( chip_config_path != "" && !std::filesystem::exists(chip_config_path) ) {
+	logger->info("Chip config directory {} doesn't exist, creating...", chip_config_path);
+	std::filesystem::create_directories(chip_config_path);
     }
 
 
@@ -232,13 +266,15 @@ int main(int argc, char **argv) {
 
 	    ////// Write default to file
 	    //fe.writeConfig(cfg); // fills in all the missing values with default
-	    std::string chip_config_filename = chip_config_path+"/20UPGFC"+chip_sn.str()+".json";
-	    std::ofstream newCfgFile(chip_config_filename); // or save as chip_name.json?
+	    std::string filename = "20UPGFC"+chip_sn.str()+".json"; // or save as chip_name.json?
+	    std::ofstream newCfgFile(chip_config_path+"/"+filename);
 	    newCfgFile << std::setw(4) << cfg;
 	    newCfgFile.close();
 
+	    if (chip_config_filename != "") filename = chip_config_filename + "/" + filename;
+
 	    json jchipconnectivity;
-	    jchipconnectivity["config"] = chip_config_filename;
+	    jchipconnectivity["config"] = filename;
 	    jchipconnectivity["path"] = "relToCon";
 	    jchipconnectivity["tx"] = _tx;
 	    jchipconnectivity["rx"] = _rx;
