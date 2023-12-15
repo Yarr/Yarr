@@ -103,7 +103,8 @@ int main(int argc, char **argv) {
     // Init spec
     logger->info("Init spec");
     int specNum = 0;
-    std::string hw_controller_filename = "/home/captain/Yarr/configs/controller/specCfg-"; // use absolute path here, "~/Yarr" doesn't work
+    // temporary
+    hw_controller_filename = "/home/captain/Yarr/configs/controller/specCfg-"; // use absolute path here, "~/Yarr" doesn't work
 
     SpecCom mySpec(specNum);
     json specStatus = mySpec.getStatus();
@@ -179,7 +180,7 @@ int main(int argc, char **argv) {
 	    logger->info("Configure chip ...");
 	    fe.configureInit();
 	    fe.configureGlobal();
-	    std::this_thread::sleep_for(std::chrono::microseconds(1));
+	    std::this_thread::sleep_for(std::chrono::microseconds(10));
 
 	    logger->info("Enable Rx{}", _rx);
 	    hw->setRxEnable(_rx);
@@ -197,7 +198,7 @@ int main(int argc, char **argv) {
 		logger->info("Configure chip again...");
 		fe.configureInit();
 		fe.configureGlobal();
-		std::this_thread::sleep_for(std::chrono::microseconds(1));
+		std::this_thread::sleep_for(std::chrono::microseconds(10));
 	    }
 
 	    // https://gitlab.cern.ch/YARR/YARR/-/issues/166
