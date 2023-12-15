@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
 
 	    //----
 	    Rd53b fe;
-	    fe.init(&*hw, FrontEndConnectivity(0, _rx));
+	    fe.init(&*hw, FrontEndConnectivity(_tx, _rx));
 
 	    //auto fe = init_fe(hw, 0, 0);
 	    //auto feCfg = dynamic_cast<FrontEndCfg*>(fe.get());
