@@ -32,15 +32,14 @@ namespace fs = std::filesystem;
 
 auto logger = logging::make_log("connectivityScanner");
 
-//void printHelp() {
-       //std::cout << "Usage: ./bin/connectivityScanner [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-t <test_size>] [-s]\n\n"
-              //<< "Options:\n"
-              //<< "  -h                   Display this help message.\n"
-              //<< "  -r <hw_controller_file>   Specify hardware controller JSON path.\n"
-              //<< "  -c <connectivity_file>    Specify connectivity config JSON path.\n"
-              //<< "  -t <test_size>            Specify the error counter test size.\n"
-              //<< "  -o                   Output connectivity file name\n" ;
-//}
+void printHelp() {
+       std::cout << "Usage: ./bin/connectivityScanner [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-o <output_path>]\n\n"
+              << "Options:\n"
+              << "  -h                        Display this help message.\n"
+              << "  -r <hw_controller_file>   Specify hardware controller JSON path.\n"
+              << "  -c <connectivity_file>    Specify connectivity config JSON path.\n"
+              << "  -o <config_path>          Output chip config JSON path.\n" ;
+}
 
 //std::shared_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, int tx, int rx) {
 
@@ -64,6 +63,41 @@ int main(int argc, char **argv) {
     j["log_config"][0]["name"] = "all";
     j["log_config"][0]["level"] = "info";
     logging::setupLoggers(j);
+
+    // home path
+    std::string home;
+    if(getenv("HOME")) {
+	home = getenv("HOME");
+    } else {
+	shlog->error("HOME not set, using local directory for configuration");
+	home = ".";
+    }
+
+    // args
+    int c;
+    std::string hw_controller_filename = "";
+    std::string connectivity_filename = "";
+    std::string chip_config_path = "configs/";
+
+    while ((c = getopt(argc, argv, "hr:c:o")) != -1) {
+        switch (c) {
+	    case 'h':
+		printHelp();
+		return 0;
+	    case 'r':
+		hw_controller_filename = optarg;
+		break;
+	    case 'c' :
+		connectivity_filename = optarg;
+		break;
+	    case 'o' :
+		 chip_config_path = optarg;
+		break;
+	    default:
+		logger->critical("Invalid command line parameter(s) given!");
+		return -1;
+	}
+    }
 
     // TODO: also scann through different spec IDs?
     // Init spec
