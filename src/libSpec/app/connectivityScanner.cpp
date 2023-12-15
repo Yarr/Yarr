@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
 		connectivity_filename = optarg;
 		break;
 	    case 'o' :
-		 chip_config_path = optarg;
+		chip_config_path = optarg;
 		break;
 	    default:
 		logger->critical("Invalid command line parameter(s) given!");
@@ -103,11 +103,11 @@ int main(int argc, char **argv) {
     // Init spec
     logger->info("Init spec");
     int specNum = 0;
-    // temporary
-    hw_controller_filename = "/home/captain/Yarr/configs/controller/specCfg-"; // use absolute path here, "~/Yarr" doesn't work
 
     SpecCom mySpec(specNum);
     json specStatus = mySpec.getStatus();
+    //std::cout<<specStatus<<std::endl; // this works
+    // TODO: need a map?
 
     std::string rx_speed = specStatus["rx_speed"]; // gives e.g. 1280Mbps
     std::string channel_cfg = specStatus["channel_configuration"]; // gives e.g. 16x1
@@ -118,11 +118,15 @@ int main(int argc, char **argv) {
     int nrx = std::stoi(channel_cfg.substr(0, channel_cfg.find('x'))); // get 16 from 16x1 or 4 from 4x4
     int ntx = 4;
 
-    // TODO: need a map?
-    std::string fe_type = specStatus["fe_chip_type"];
-    //std::cout<<specStatus<<std::endl; // this works
+    std::string fe_type = specStatus["fe_chip_type"]; // what todo with this?
     logger->info("fe_type: {}", fe_type);
     fe_type = "rd53b";
+    std::string fe_type_upper = fe_type;
+    std::transform( fe_type_upper.begin(), fe_type_upper.end(), fe_type_upper.begin(), ::toupper );
+
+    // directory and file names
+    // temporary
+    hw_controller_filename = "/home/captain/Yarr/configs/controller/specCfg-"; // use absolute path here, "~/Yarr" doesn't work
     hw_controller_filename += fe_type + "-" + channel_cfg + ".json";
     std::cout<<hw_controller_filename<<std::endl;
 
@@ -146,7 +150,6 @@ int main(int argc, char **argv) {
 
 	for (int _rx = 0; _rx < nrx; _rx++) {
 
-	    //----
 	    Rd53b fe;
 	    fe.init(&*hw, FrontEndConnectivity(_tx, _rx));
 
