@@ -112,6 +112,7 @@ int main(int argc, char **argv) {
     int specNum = 0;
 
     SpecCom mySpec(specNum);
+    logger->info("Scanning connectivity on Spec Card {}", specNum);
     json specStatus = mySpec.getStatus();
     //std::cout<<specStatus<<std::endl; // this works
     // TODO: need a map?
@@ -132,10 +133,11 @@ int main(int argc, char **argv) {
     std::transform( fe_type_upper.begin(), fe_type_upper.end(), fe_type_upper.begin(), ::toupper );
 
     // directory and file names
-    // temporary
-    hw_controller_filename = "/home/captain/Yarr/configs/controller/specCfg-"; // use absolute path here, "~/Yarr" doesn't work
-    hw_controller_filename += fe_type + "-" + channel_cfg + ".json";
-    std::cout<<hw_controller_filename<<std::endl;
+    if (hw_controller_filename == "") {
+	hw_controller_filename = "configs/controller/specCfg-"; // use absolute path here, "~/Yarr" doesn't work
+	hw_controller_filename += fe_type + "-" + channel_cfg + ".json";
+    }
+    logger->info(hw_controller_filename);
 
     // if no ".json" in file name assume it's a directory
     if ( connectivity_filename.find(".json") == std::string::npos ) { // "find" returns the position of the first character of the first match. If no matches were found, the function returns string::npos.
@@ -197,6 +199,7 @@ int main(int argc, char **argv) {
 	hw->setupMode(); //?
 	hw->setTrigEnable(0); //?
 	hw->setCmdEnable(_tx); //?
+	hw->disableRx();
 
 	for (int _rx = 0; _rx < nrx; _rx++) {
 
