@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
 
     int readout_speed = std::stoi(rx_speed.substr(0, rx_speed.find('M'))); // extract from e.g. 1280Mbps string position 0 with a length up to M
     int cdrclksel = std::log2(1280/readout_speed); // get exponent of the clock divider 2^x
-    int activelanes = std::stoi(channel_cfg.substr(channel_cfg.find('x')+1, 1)); // get 1 from 16x1 or 4 from 4x4
+    int nlanes = std::stoi(channel_cfg.substr(channel_cfg.find('x')+1, 1)); // get 1 from 16x1 or 4 from 4x4
     int nrx = std::stoi(channel_cfg.substr(0, channel_cfg.find('x'))); // get 16 from 16x1 or 4 from 4x4
     int ntx = 4;
 
@@ -213,7 +213,7 @@ int main(int argc, char **argv) {
 	    json cfg;
 	    cfg["RD53B"]["Parameter"]["ChipId"] = 16; // set chip ID to 16 to broadcast
 	    cfg["RD53B"]["GlobalConfig"]["CdrClkSel"] = cdrclksel; // set clock divider
-	    cfg["RD53B"]["GlobalConfig"]["AuroraActiveLanes"] = activelanes; //aurora active lanes
+	    cfg["RD53B"]["GlobalConfig"]["AuroraActiveLanes"] = (1 << nlanes)-1; //aurora active lanes = (2^nlanes)-1
 	    cfg["RD53B"]["GlobalConfig"]["SerEnLane"] = 15; // depends on the chip ID TODO
 
 	    cfg["RD53B"]["GlobalConfig"]["CmlBias0"] = 800; // update default?
