@@ -214,7 +214,7 @@ int main(int argc, char **argv) {
 	    cfg["RD53B"]["Parameter"]["ChipId"] = 16; // set chip ID to 16 to broadcast
 	    cfg["RD53B"]["GlobalConfig"]["CdrClkSel"] = cdrclksel; // set clock divider
 	    cfg["RD53B"]["GlobalConfig"]["AuroraActiveLanes"] = (1 << nlanes)-1; //aurora active lanes = (2^nlanes)-1
-	    cfg["RD53B"]["GlobalConfig"]["SerEnLane"] = 15; // depends on the chip ID TODO
+	    //cfg["RD53B"]["GlobalConfig"]["SerEnLane"] = 15; // depends on the chip ID TODO? works without
 
 	    cfg["RD53B"]["GlobalConfig"]["CmlBias0"] = 800; // update default?
 	    cfg["RD53B"]["GlobalConfig"]["CmlBias1"] = 400; // update default?
