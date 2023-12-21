@@ -4,8 +4,8 @@
             "0": {
                 "algorithm": "OccPixelThresholdTune",
                 "config": {
-                    "occCutLow": 0.2,
-                    "occCutHigh": 0.8
+                    "occLowCut": 0.2,
+                    "occHighCut": 0.8
                 }
             },
             "n_count": 1
@@ -38,7 +38,7 @@
             "n_count": 4
         },
         "loops": [
-        { 
+        {
             "config": {
                 "max": 15,
                 "min": -15,
