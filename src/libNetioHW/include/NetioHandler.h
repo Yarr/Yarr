@@ -10,7 +10,7 @@
  * Date: November 2017
  *********************************/
 
-#include "netio/netio.hpp"
+#include "netio.hpp"
 
 #include "RawData.h"
 #include "ClipBoard.h"
