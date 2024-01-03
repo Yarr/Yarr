@@ -4,7 +4,7 @@ nav:
     - Hardware/PC guide: hw_guide.md
     - SW Installation: install.md
     - Kernel Driver: kernel_driver.md
-    - PCIe Firmware: pcie.md
+    - PCIe Firmware/Hardware: fw_guide.md
     - Updating to 1.28 Gbps: updating_firmware.md
     - External PCIe: pcie_ext.md
     - ScanConsole: scanconsole.md
@@ -16,7 +16,6 @@ nav:
     - Local DB: localdb.md
     - Plotting Tools: plotting.md
     - Logging configuration: logging.md
-    - Firmware Guide: fw_guide.md
     - NetIO: netio.md
     - BDAQ Hardware: bdaq.md
     - ITSDAQ FW: itsdaq.md
