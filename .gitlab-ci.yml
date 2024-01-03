@@ -157,10 +157,7 @@ job_test_pixel:
         - job: job_build_all
           parallel:
               matrix:
-                  - ARCH: ['cc7', 'alma9']
-    inherit:
-        job_build_all:
-            - image
+                  - ARCH: ['alma9']
     script:
       - bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p -l configs/logging/trace_all.json
       - ls
@@ -183,7 +180,7 @@ job_test_strips:
         - job: job_build_all
           parallel:
               matrix:
-                  - ARCH: ['cc7', 'alma9']
+                  - ARCH: ['alma9']
     inherit:
         job_build_all:
             - image
@@ -196,7 +193,7 @@ job_test_python:
         - job: job_build_all
           parallel:
               matrix:
-                  - ARCH: ['cc7', 'alma9']
+                  - ARCH: ['alma9']
     inherit:
         job_build_all:
             - image
@@ -209,8 +206,7 @@ job_test_unit:
         - job: job_build_all
           parallel:
               matrix:
-                  - ARCH: ['cc7', 'alma9']
-    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+                  - ARCH: ['alma9']
     script:
       - cd build
       - CTEST_OUTPUT_ON_FAILURE=1 make test
@@ -221,8 +217,7 @@ job_test_json_parsing:
         - job: job_build_all
           parallel:
               matrix:
-                  - ARCH: ['cc7', 'alma9']
-    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+                  - ARCH: ['alma9']
     script:
       # Check schema by loading configs in turn
       - (for file in $(find configs/defaults -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t FRONT_END || exit; done)
@@ -236,8 +231,8 @@ job_test_netio:
         - job: job_build_all
           parallel:
               matrix:
-                  - ARCH: ['cc7', 'alma9']
-    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+                  - ARCH: ['cc7']
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_cc7_build
     script:
       # Launch netio_bridge to connect an emulator to NetIO
       - bin/netio_bridge -p 12340 -q 12350 -f configs/controller/emuCfg_star.json & pid_bridge=($!)
