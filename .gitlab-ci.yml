@@ -181,9 +181,6 @@ job_test_strips:
           parallel:
               matrix:
                   - ARCH: ['alma9']
-    inherit:
-        job_build_all:
-            - image
     script:
       - bin/test_star configs/controller/emuCfg_star.json -r 0 -t 0
 
@@ -194,9 +191,6 @@ job_test_python:
           parallel:
               matrix:
                   - ARCH: ['alma9']
-    inherit:
-        job_build_all:
-            - image
     script:
       - PYTHONPATH=$PWD/lib python3 python/scan_cli_logger.py -r configs/controller/emuCfg_rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json
 
