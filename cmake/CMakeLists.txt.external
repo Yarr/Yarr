@@ -14,20 +14,38 @@ endfunction()
 
 # TBB
 function(YARR_ADD_TBB)
-    if (TARGET tbb_2021)
+    if (TARGET tbb_2020)
         return()
     endif()
 
+    # Architecture
+    if ("${TARGET_ARCH}" STREQUAL "arm")
+        set(TBB_ARCH "arch=arm")
+    else()
+        if ("${TARGET_ARCH}" STREQUAL "arm64")
+            set(TBB_ARCH "arch=arm64")
+        else()
+            set(TBB_ARCH "")
+        endif()
+    endif()
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        set(TBB_COMP compiler=clang)
+    else()
+        set(TBB_COMP CXX=${CMAKE_CXX_COMPILER})
+    endif()
+
     ExternalProject_Add (
-        tbb_2021
+        tbb_2020
         GIT_REPOSITORY https://github.com/intel/tbb.git
-        GIT_TAG v2021.10.0
-        CMAKE_ARGS "-DTBB_TEST=OFF"
-        INSTALL_COMMAND ""
+        GIT_TAG 2020_U2
+        UPDATE_COMMAND ""
+        INSTALL_COMMAND ${PROJECT_SOURCE_DIR}/scripts/install_tbb.sh ${CMAKE_CURRENT_BINARY_DIR}  ${CMAKE_CURRENT_BINARY_DIR}
+        BUILD_COMMAND cd ${CMAKE_CURRENT_BINARY_DIR}/external/src/tbb_2020 &&  make -j4 ${TBB_COMP} ${TBB_ARCH} extra_inc=big_iron.inc
+        CONFIGURE_COMMAND ""
         PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
         )
-    link_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/tbb_2021-build)
-    include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/tbb_2021/include)
+    link_directories(${CMAKE_CURRENT_BINARY_DIR}/lib)
+    include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/tbb_2020/include)
 endfunction()
 
 function(YARR_ADD_NETIO)
@@ -39,16 +57,16 @@ function(YARR_ADD_NETIO)
     ExternalProject_Add (
         netio4
         GIT_REPOSITORY https://:@gitlab.cern.ch:8443/atlas-tdaq-felix/netio.git
-        GIT_TAG netio-11-01-00
+        GIT_TAG felix-4.0.x
         UPDATE_COMMAND ""
         PATCH_COMMAND cp ${PROJECT_SOURCE_DIR}/cmake/CMakeLists.txt.netio ${CMAKE_CURRENT_BINARY_DIR}/external/src/netio4/CMakeLists.txt
         INSTALL_COMMAND ""
         PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
         CMAKE_ARGS "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}" -DCMAKE_CXX_FLAGS=-fPIC
-        DEPENDS tbb_2021
+        DEPENDS tbb_2020
         )
 
-    include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/netio4)
+    include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/netio4/netio)
     link_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/netio4-build)
 endfunction()
 
@@ -72,6 +90,36 @@ function(YARR_ADD_FELIX)
         )
 
     include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/felixbase4)
+endfunction()
+
+function(YARR_ADD_NETIO_FELIXBASE_PREBUILT)
+    # FELIX software release 
+    if (DEFINED ENV{FELIX_ROOT})
+        set(FELIX_RELEASE "$ENV{FELIX_ROOT}")
+    else()
+        set(FELIX_RELEASE "/cvmfs/atlas-online-nightlies.cern.ch/felix/releases/felix-05-00-02-rm5-stand-alone/x86_64-centos9-gcc11-opt")
+    endif()
+
+    find_library(NETIO_LIB
+        netio
+        HINTS ${FELIX_RELEASE} ENV FELIX_ROOT
+        PATH_SUFFIXES lib
+        REQUIRED
+    )
+
+    find_library(FELIXBASE_LIB
+        felixbase
+        HINTS ${FELIX_RELEASE} ENV FELIX_ROOT
+        PATH_SUFFIXES lib
+        REQUIRED
+    )
+
+    find_path(FELIX_INCLUDE
+        felixbase
+        HINTS ${FELIX_RELEASE} ENV FELIX_ROOT
+        PATH_SUFFIXES include
+        REQUIRED
+    )
 endfunction()
 
 function(YARR_ADD_FELIX_CLIENT)

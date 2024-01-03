@@ -12,7 +12,7 @@
 #include "storage.hpp"
 
 #include "felixbase/client.hpp"
-#include "netio/netio.hpp"
+#include "netio.hpp"
 
 auto logger = logging::make_log("netio_bridge");
 

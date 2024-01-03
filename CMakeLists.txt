@@ -75,7 +75,7 @@ set(CONTROLLERS "")
 
 # only build those controllers specified in YARR_CONTROLLERS_TO_BUILD
 if(YARR_CONTROLLERS_TO_BUILD STREQUAL "all")
-   set(CONTROLLERS "Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Bdaq;FelixClient;ItsdaqFW")
+   set(CONTROLLERS "Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Bdaq;NetioHW;FelixClient;ItsdaqFW")
 else()
   foreach(ctrl IN LISTS YARR_CONTROLLERS_TO_BUILD )
     if(NOT ${ctrl} IN_LIST CONTROLLERS)
@@ -138,6 +138,16 @@ function(post_build_debug_executable name)
     DESTINATION ${TARGET_INSTALL_AREA}/bin
     )
 endfunction(post_build_debug_executable)
+
+# Check Linux Distribution
+find_program(LSB_RELEASE_EXEC lsb_release)
+if (LSB_RELEASE_EXEC)
+    execute_process(COMMAND ${LSB_RELEASE_EXEC} -sir
+        OUTPUT_VARIABLE LSB_RELEASE_ID_SHORT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+endif()
+message(DEBUG "${LSB_RELEASE_ID_SHORT}")
 
 include(cmake/CMakeLists.txt.external)
 add_subdirectory(src)

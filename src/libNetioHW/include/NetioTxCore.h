@@ -11,7 +11,7 @@
 
 #include "TxCore.h"
 
-#include "netio/netio.hpp"
+#include "netio.hpp"
 #include "felixbase/client.hpp"
 
 #include <cstdint>
