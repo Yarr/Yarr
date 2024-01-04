@@ -175,8 +175,8 @@ class ScurveFitter : public AnalysisAlgorithm {
         std::map<unsigned, std::unique_ptr<Histo1d>> chiDist;
         std::map<unsigned, std::unique_ptr<Histo1d>> timeDist;
 
-        std::map<unsigned, std::unique_ptr<Histo2d>> chi2Map;   
-        std::map<unsigned, std::unique_ptr<Histo2d>> statusMap; 
+        std::map<unsigned, std::unique_ptr<Histo2d>> chi2Map;
+        std::map<unsigned, std::unique_ptr<Histo2d>> statusMap;
         std::map<unsigned, std::unique_ptr<Histo1d>> statusDist;
 
         std::unique_ptr<PixelFeedbackSender> fb;
@@ -241,8 +241,8 @@ class GlobalPreampTune : public AnalysisAlgorithm {
 class OccPixelThresholdTune : public AnalysisAlgorithm {
     public:
         OccPixelThresholdTune() : AnalysisAlgorithm()  {
-            m_occLowCut = 0.3; 
-            m_occHighCut = 0.7;
+            m_occLowCut = {0.3f};
+            m_occHighCut = {0.7f};
         }
         ~OccPixelThresholdTune() override = default;
 
@@ -255,8 +255,9 @@ class OccPixelThresholdTune : public AnalysisAlgorithm {
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         unsigned n_count;
-        float m_occLowCut;
-        float m_occHighCut;
+        std::vector<float> m_occLowCut;
+        std::vector<float> m_occHighCut;
+        unsigned int occ_count = 0;
         std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
         std::map<unsigned, unsigned> innerCnt;
         unsigned injections;
@@ -339,7 +340,7 @@ class NoiseAnalysis : public AnalysisAlgorithm {
     private:
         unsigned n_trigger;
         std::unique_ptr<Histo2d> occ, tot;
-        std::unique_ptr<Histo1d> tag;      
+        std::unique_ptr<Histo1d> tag;
         bool createMask;
         double noiseThr;
 };
