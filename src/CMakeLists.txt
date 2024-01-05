@@ -7,7 +7,7 @@ add_subdirectory(libUtil)
 add_subdirectory(libYarr)
 # controllers
 foreach(controller IN LISTS CONTROLLERS)
-   if(controller MATCHES "NetioHW" AND NOT LSB_RELEASE_ID_SHORT MATCHES "AlmaLinux 9")
+   if(controller MATCHES "NetioHW")
       YARR_ADD_TBB()
    endif()
    message(STATUS "Building controller ${controller}" )

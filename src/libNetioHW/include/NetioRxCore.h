@@ -12,7 +12,7 @@
 #include "RxCore.h"
 #include "RawData.h"
 #include "NetioHandler.h"
-#include "netio.hpp"
+#include "netio/netio.hpp"
 
 #include <cstdint>
 #include <chrono>
