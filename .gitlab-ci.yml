@@ -246,6 +246,7 @@ job_test_code_coverage:
     script:
       - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - scripts/cc_tool.sh
+    coverage: '/  lines......: \d+(?:\.\d+)?/'
 
 job_test_json:
     stage: test
