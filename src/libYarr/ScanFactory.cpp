@@ -32,7 +32,7 @@ void ScanFactory::init() {
 void ScanFactory::preScan() {
     sflog->info("Entering pre scan phase ...");
     for (unsigned id=0; id<g_bk->getNumOfEntries(); id ++) {
-        FrontEnd *fe = g_bk->getEntry(id).fe;
+        FrontEnd *fe = g_bk->getFe(id);
         fe->clipRawData.reset();
     }
 
@@ -47,7 +47,7 @@ void ScanFactory::preScan() {
 
     if (g_bk->getTargetCharge() > 0) {
         for (unsigned id=0; id<g_bk->getNumOfEntries(); id ++) {
-            FrontEnd *fe = g_bk->getEntry(id).fe;
+            FrontEnd *fe = g_bk->getFe(id);
             if(fe->getActive()) {
                 // Enable single channel
                 g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());

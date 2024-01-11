@@ -98,7 +98,7 @@ void Itkpixv2MaskLoop::init() {
 
 
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
         Itkpixv2 *itkpixv2 = dynamic_cast<Itkpixv2*>(fe);
         g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         // Save current version of the pix regs to transferred back into the config at the end
@@ -122,7 +122,7 @@ void Itkpixv2MaskLoop::execPart1() {
 
     unsigned counter = 0;
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
         g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         std::vector<std::pair<unsigned, unsigned>> modPixels;
 
@@ -225,7 +225,7 @@ void Itkpixv2MaskLoop::execPart2() {
     if (m_maskType == CrossTalkMask or m_maskType == CrossTalkMaskv2 ){
 
         for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-            FrontEnd *fe = keeper->getEntry(id).fe;
+            auto fe = keeper->getFe(id);
             g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
 
             Itkpixv2* itkpixv2 = dynamic_cast<Itkpixv2*>(fe);
@@ -261,7 +261,7 @@ void Itkpixv2MaskLoop::execPart2() {
 
 void Itkpixv2MaskLoop::end() {
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
         // Copy original registers back
         // TODO need to make sure analysis modifies the right config
         // TODO not thread safe, in case analysis modifies them to early

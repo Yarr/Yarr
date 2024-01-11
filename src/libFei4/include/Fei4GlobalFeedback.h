@@ -75,7 +75,7 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
         cur = 0;
         // Init all maps:
         for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-            FrontEnd *fe = keeper->getEntry(id).fe;
+            auto fe = keeper->getFe(id);
             if(fe->getActive()) {
                 ChannelInfo &info = chanInfo[id];
                 info.localStep = step;
@@ -89,7 +89,7 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
 
     void end() override {
         for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-            FrontEnd *fe = keeper->getEntry(id).fe;
+            auto fe = keeper->getFe(id);
             if(fe->getActive()) {	
                 logger().info(" --> Final parameter of Fe {} is {}", id, chanInfo[id].values);
             }
@@ -104,7 +104,7 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
     void execPart2() override {
         // Wait for mutexes to be unlocked by feedback
         for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-            FrontEnd *fe = keeper->getEntry(id).fe;
+            auto fe = keeper->getFe(id);
             if(fe->getActive()) {
                 waitForFeedback(id);
                 logger().info(" --> Received Feedback on ID {} with value: {}",
@@ -121,7 +121,7 @@ class Fei4GlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver 
             parPtr = keeper->globalFe<Fei4>()->regMap[parName];
         }
         for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-            Fei4 *fe = dynamic_cast<Fei4*>(keeper->getEntry(id).fe);
+            Fei4 *fe = dynamic_cast<Fei4*>(keeper->getFe(id));
             if(fe->getActive()) {
                 auto fe_cfg = dynamic_cast<FrontEndCfg*>(fe);
                 auto tx_channel = fe_cfg->getTxChannel();
