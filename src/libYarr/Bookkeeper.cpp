@@ -26,10 +26,10 @@ Bookkeeper::Bookkeeper(TxCore *arg_tx, RxCore *arg_rx) {
     target_threshold = 3000;
 }
 
-void Bookkeeper::initGlobalFe(std::string chipType) {
+void Bookkeeper::initGlobalFe(const std::string& chipType) {
     std::unique_ptr<FrontEnd> fe_tmp = StdDict::getFrontEnd(chipType);
 
-    g_fe = std::move(fe_tmp->getGlobal());
+    g_fe = fe_tmp->getGlobal();
 
     g_fe->makeGlobal();
 
@@ -47,7 +47,7 @@ void Bookkeeper::addFe(std::unique_ptr<FrontEnd> fe, const FrontEndConnectivity&
     bookEntries.back().txChannel = cfg.getTxChannel();
     bookEntries.back().rxChannel = cfg.getRxChannel();
 
-    FrontEndCfg *fe_cfg = dynamic_cast<FrontEndCfg*>(fe.get());
+    auto fe_cfg = dynamic_cast<FrontEndCfg*>(fe.get());
     if(fe_cfg) fe_cfg->setChannel(cfg);
 
     rxToIdMap[cfg.getRxChannel()].emplace_back(uid);

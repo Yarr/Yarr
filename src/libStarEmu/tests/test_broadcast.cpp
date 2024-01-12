@@ -145,7 +145,7 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
   bk.initGlobalFe("Star");
 
   /* The following initialization of global Fe would fail the test. */
-  //bk.initGlobalFe(std::move(StdDict::getFrontEnd("Star")));
+  //bk.initGlobalFe(StdDict::getFrontEnd("Star"));
   //bk.getGlobalFe()->makeGlobal();
 
   bk.getGlobalFe()->init(emu.get(), FrontEndConnectivity(0,0));

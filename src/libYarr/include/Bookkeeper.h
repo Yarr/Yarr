@@ -38,7 +38,7 @@ class Bookkeeper {
         ~Bookkeeper() = default;
 
         void initGlobalFe(std::unique_ptr<FrontEnd> fe) {g_fe = std::move(fe);}
-        void initGlobalFe(std::string chipType);
+        void initGlobalFe(const std::string& chipType);
 
         // Bookkeeper always takes the ownership of the FrontEnd object
         void addFe(std::unique_ptr<FrontEnd> fe, const FrontEndConnectivity& cfg);

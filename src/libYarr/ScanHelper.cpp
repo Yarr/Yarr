@@ -254,7 +254,7 @@ namespace ScanHelper {
             }
             std::string chipConfigPath = chip["__config_path__"];
             FrontEndConnectivity fe_conn((unsigned)chip["tx"], (unsigned)chip["rx"]);
-            bookie.addFe(std::move(StdDict::getFrontEnd(chipType)), fe_conn);
+            bookie.addFe(StdDict::getFrontEnd(chipType), fe_conn);
             bookie.getLastFe()->init(hwCtrl, fe_conn);
             auto *feCfg = dynamic_cast<FrontEndCfg*>(bookie.getLastFe());
             const json &cfg=chip["__config_data__"];
