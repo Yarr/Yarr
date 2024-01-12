@@ -110,7 +110,7 @@ void Rd53aGlobalFeedback::feedbackStep(unsigned channel, double sign, bool last)
 
 void Rd53aGlobalFeedback::writePar() {
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
         if(fe->getActive()) {
             auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
             // Enable single channel
@@ -131,7 +131,7 @@ void Rd53aGlobalFeedback::init() {
     parPtr = keeper->globalFe<Rd53a>()->regMap[parName];
     // Init maps
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
         if (fe->getActive()) {
             m_localStep[id] = step;
             m_values[id] = max;
@@ -142,7 +142,7 @@ void Rd53aGlobalFeedback::init() {
     this->writePar();
 
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
         if (fe->getActive()) {
             Rd53a *rd53a = dynamic_cast<Rd53a*>(fe);
             g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
@@ -213,7 +213,7 @@ void Rd53aGlobalFeedback::execPart1() {
 void Rd53aGlobalFeedback::execPart2() {
     // Wait for mutexes to be unlocked by feedback
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
         if (fe->getActive()) {
             waitForFeedback(id);
             logger->info(" --> Received Feedback on ID {} with value: {}", id, m_values[id]);
@@ -226,7 +226,7 @@ void Rd53aGlobalFeedback::execPart2() {
 
 void Rd53aGlobalFeedback::end() {
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
         if (fe->getActive()) {
             logger->info(" --> Final parameter for Id {} is {}", id, m_values[id]);
         }

@@ -230,10 +230,10 @@ namespace ScanHelper {
             const std::string &chipType) {
         bhlog->info("Loading RawData processors ..");
         for (unsigned id = 0; id<bookie.getNumOfEntries(); id++) {
-            FrontEnd *fe = bookie.getEntry(id).fe;
+            auto fe = bookie.getFe(id);
             procs[id] = StdDict::getDataProcessor(chipType);
-            procs[id]->connect(dynamic_cast<FrontEndCfg*>(fe), &bookie.getEntry(id).fe->clipRawData, &bookie.getEntry(id).fe->clipData);
-            procs[id]->connect(&bookie.getEntry(id).fe->clipProcFeedback);
+            procs[id]->connect(dynamic_cast<FrontEndCfg*>(fe), &bookie.getFe(id)->clipRawData, &bookie.getFe(id)->clipData);
+            procs[id]->connect(&bookie.getFe(id)->clipProcFeedback);
             // TODO load global processor config
             // TODO load chip specific config
         }
@@ -254,7 +254,7 @@ namespace ScanHelper {
             }
             std::string chipConfigPath = chip["__config_path__"];
             FrontEndConnectivity fe_conn((unsigned)chip["tx"], (unsigned)chip["rx"]);
-            bookie.addFe(StdDict::getFrontEnd(chipType).release(), fe_conn);
+            bookie.addFe(StdDict::getFrontEnd(chipType), fe_conn);
             bookie.getLastFe()->init(hwCtrl, fe_conn);
             auto *feCfg = dynamic_cast<FrontEndCfg*>(bookie.getLastFe());
             const json &cfg=chip["__config_data__"];
@@ -346,7 +346,7 @@ namespace ScanHelper {
         const json &anaCfg = scanCfg["scan"]["analysis"];
 
         for (unsigned id=0; id<bookie.getNumOfEntries(); id++) {
-            FrontEnd *fe = bookie.getEntry(id).fe;
+            auto fe = bookie.getFe(id);
             if (fe->isActive()) {
                 // Load histogrammer
                 histogrammers[id] = std::make_unique<HistogrammerProcessor>( );
@@ -531,7 +531,7 @@ namespace ScanHelper {
         };
 
         for (unsigned id=0; id<bookie.getNumOfEntries(); id++ ) {
-            FrontEnd *fe = bookie.getEntry(id).fe;
+            auto fe = bookie.getFe(id);
             if (fe->isActive()) {
                 buildAnalysisForFrontEnd(analyses[id],
                                          id,

@@ -213,13 +213,13 @@ TEST_CASE("AnalysisPOILoops", "[Analysis]") {
   auto fe = std::make_unique<EmptyFrontEnd>();
   fe->setActive(true);
   unsigned channel = 42;
-  bookie.addFe(fe.get(), channel);
-  unsigned uid = bookie.getId(fe.release());
+  bookie.addFe(std::move(fe), channel);
+  unsigned uid = bookie.getId(bookie.getLastFe());
 
   // Global FE for scan
   auto g_fe = std::make_unique<EmptyFrontEnd>();
   g_fe->init(&hwCtrl, FrontEndConnectivity(0,0));
-  bookie.initGlobalFe(g_fe.release());
+  bookie.initGlobalFe(std::move(g_fe));
 
   MyScan scan(&bookie, nullptr);
 

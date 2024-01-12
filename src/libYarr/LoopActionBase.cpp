@@ -26,7 +26,7 @@ LoopActionBase::LoopActionBase(LoopStyle l)
 void LoopActionBase::setup(LoopStatusMaster *stat, Bookkeeper *k) {
     SPDLOG_LOGGER_DEBUG(llog, "");
     g_stat = stat;
-    g_fe = k->g_fe;
+    g_fe = k->getGlobalFe();
     g_tx = k->tx;
     g_rx = k->rx;
 	keeper = k;

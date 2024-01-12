@@ -30,7 +30,7 @@ TEST_CASE("FeedbackTestEmpty", "[Feedback]") {
     auto g_fe = StdDict::getFrontEnd("FEI4B");
     g_fe->makeGlobal();
     g_fe->init(&empty, FrontEndConnectivity(0,0));
-    bookie.initGlobalFe(g_fe.release());
+    bookie.initGlobalFe(std::move(g_fe));
 
     json js;
     js["scan"]["name"] = "TestScan";
@@ -54,19 +54,19 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
     FeedbackClipboardMap fb;
     ScanFactory scan(&bookie, &fb);
 
-    auto fe = StdDict::getFrontEnd("FEI4B").release();
+    auto fe = StdDict::getFrontEnd("FEI4B");
     fe->setActive(true);
 
     unsigned rx_channel = 0;
     FrontEndConnectivity fe_conn(0,rx_channel);
     fe->init(&empty, fe_conn);
-    bookie.addFe(fe, fe_conn);
-    unsigned feUid = bookie.getId(fe);
+    bookie.addFe(std::move(fe), fe_conn);
+    unsigned feUid = bookie.getId(bookie.getLastFe());
 
     auto g_fe = StdDict::getFrontEnd("FEI4B");
     g_fe->makeGlobal();
     g_fe->init(&empty, FrontEndConnectivity(0,0));
-    bookie.initGlobalFe(g_fe.release());
+    bookie.initGlobalFe(std::move(g_fe));
 
     json js;
     js["scan"]["name"] = "TestScan";
@@ -133,17 +133,17 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
 
     unsigned rx_channel = 0;
 
-    FrontEnd* fe = StdDict::getFrontEnd("FEI4B").release();
+    auto fe = StdDict::getFrontEnd("FEI4B");
     fe->setActive(true);
     FrontEndConnectivity fe_conn(0,rx_channel);
     fe->init(&empty, fe_conn);
-    bookie.addFe(fe, fe_conn);
-    unsigned feUid = bookie.getId(fe);
+    bookie.addFe(std::move(fe), fe_conn);
+    unsigned feUid = bookie.getId(bookie.getLastFe());
 
     auto g_fe = StdDict::getFrontEnd("FEI4B");
     g_fe->makeGlobal();
     g_fe->init(&empty, FrontEndConnectivity(0,0));
-    bookie.initGlobalFe(g_fe.release());
+    bookie.initGlobalFe(std::move(g_fe));
 
     json js;
     js["scan"]["name"] = "TestScan";

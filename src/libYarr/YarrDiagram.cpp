@@ -49,9 +49,9 @@ void YarrDiagram::addProcNodes(
 ) {
   // Add front end node
   procFE.push_back(std::make_unique<Box>());
-  procFE.back()->label = typeid(*entry.fe).name();
+  procFE.back()->label = typeid(entry.fe.get()).name();
   procFE.back()->label_left = "tx="+std::to_string(entry.txChannel)+"\n"+"rx="+std::to_string(entry.rxChannel);
-  procFE.back()->objPtr = entry.fe;
+  procFE.back()->objPtr = entry.fe.get();
   if (procFE.back()->width > maxCellWidth)
     maxCellWidth = procFE.back()->width;
 
