@@ -6,6 +6,7 @@ list(APPEND tools
         makeRd53aPixelModelCfg
         replot
         scan_cli
+        analysis_test
         scurve_test
         test_json
         dumpRawDataToText

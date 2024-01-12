@@ -576,6 +576,15 @@ void StarCfg::loadConfig(const json &j) {
     if (abcs.contains("Parameters")) {
         m_ct.loadConfig(abcs["Parameters"]);
     }
+
+    // FrontEnd stores the geometry, so have to update it there
+    // Doing it here means it's correct even if configure is not
+    // called, eg if analysis runs on it's own.
+    auto fe = dynamic_cast<FrontEnd*>(this);
+    if(fe) {
+      // Make histo size match number of configured ABCs
+      fe->geo.nCol = 128 * numABCs();
+    }    
 }
 
 StarCfg::configFuncMap StarCfg::createConfigs = {
