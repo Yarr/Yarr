@@ -72,11 +72,11 @@ namespace {
         StdDict::registerAnalysis("NPointGain",
                 []() { return std::unique_ptr<AnalysisAlgorithm>(new NPointGain());});
 
-    bool param_registered = 
+    bool param_registered =
         StdDict::registerAnalysis("ParameterAnalysis",
                 []() { return std::unique_ptr<AnalysisAlgorithm>(new ParameterAnalysis());});
 
-    bool archiver_registered = 
+    bool archiver_registered =
         StdDict::registerAnalysis("HistogramArchiver",
                 []() { return std::unique_ptr<AnalysisAlgorithm>(new HistogramArchiver());});
 
@@ -417,7 +417,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
                 if (occMaps[ident]->getBin(i) == injections) {
                     mean += meanTotMap->getBin(i);
                     entries++;
-                } 
+                }
             }
             if (entries > 0) {
                 mean = mean/entries;
@@ -470,7 +470,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
 
 void TotAnalysis::end() {
     if (hasVcalLoop) {
-        //replace these (the following?) with more dynamic conversions 
+        //replace these (the following?) with more dynamic conversions
         double injQMin = feCfg->toCharge(vcalMin, useScap, useLcap);
         double injQMax = feCfg->toCharge(vcalMax, useScap, useLcap);
         double injQStep = feCfg->toCharge(vcalStep, useScap, useLcap);
@@ -478,13 +478,13 @@ void TotAnalysis::end() {
         avgTotVsCharge->setXaxisTitle("Injected Charge [e]");
         avgTotVsCharge->setYaxisTitle("avg ToT");
 
-        for (unsigned k=0; k<avgTotVsCharge->size(); k++) {  
-            double injQ = feCfg->toCharge(vcalMin+k*vcalStep, useScap, useLcap); 
+        for (unsigned k=0; k<avgTotVsCharge->size(); k++) {
+            double injQ = feCfg->toCharge(vcalMin+k*vcalStep, useScap, useLcap);
             double sum = 0;
             double entries = 0;
             for (float measToT=0.0; measToT<=16.0; measToT+=0.1) {
                 int n = chargeVsTotMap->binNum(injQ, measToT);
-                sum += (chargeVsTotMap->getBin(n))*(measToT); 
+                sum += (chargeVsTotMap->getBin(n))*(measToT);
                 entries += chargeVsTotMap->getBin(n);
             }
             double averageToT = sum/entries;
@@ -492,7 +492,7 @@ void TotAnalysis::end() {
         }
 
         //extracting ToT-to-charge data now
-        std::unique_ptr<Histo3d> measQtemp ( new Histo3d("measQtemp", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5, vcalBins+1,  injQMin-injQStep/2.0, injQMax+injQStep/2.0) ); 
+        std::unique_ptr<Histo3d> measQtemp ( new Histo3d("measQtemp", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5, vcalBins+1,  injQMin-injQStep/2.0, injQMax+injQStep/2.0) );
 
         int Nmessage = 0;  //boolean to be used for a message to user; in presence of middle holes, user may wish to use finer injQ steps.
 
@@ -506,11 +506,11 @@ void TotAnalysis::end() {
                     double avgTot = pixelTotMap->getBin(pixelTotMap->binNum(n, q));
                     double frac = fmod(avgTot,1);
                     double tot = avgTot - fmod(avgTot,1);
-                    measQtemp->fill(n, tot, q, 100*(1-frac)); 
+                    measQtemp->fill(n, tot, q, 100*(1-frac));
                     if (frac != 0.0) { measQtemp->fill(n, tot+1, q, 100*(frac)); }
                 }
-                for (unsigned tot = 0; tot < 16; tot++) { 
-                    double mean = 0; 
+                for (unsigned tot = 0; tot < 16; tot++) {
+                    double mean = 0;
                     double count = 0;
                     double meanSq = 0;
                     for(unsigned k=0; k<avgTotVsCharge->size(); k++) {
@@ -520,18 +520,18 @@ void TotAnalysis::end() {
                         meanSq += measQtemp->getBin(binNum)*q*q;
                         count += measQtemp->getBin(binNum);
                     }
-                    if (count!=0) { 
-                        mean = mean/count; 
+                    if (count!=0) {
+                        mean = mean/count;
                         meanSq = meanSq/count;
-                        meanSq = std::sqrt(std::fabs(mean*mean - meanSq)); 
+                        meanSq = std::sqrt(std::fabs(mean*mean - meanSq));
                     }
-                    measQOut->fill(n, tot, mean); 
+                    measQOut->fill(n, tot, mean);
                     measQRMSOut->fill(n,tot, meanSq);
                 }
 
                 bool message = false;  //boolean to be used for a message to user; in presence of middle holes, user may wish to use finer injQ steps.
                 for (unsigned tot = 1; tot < 16; tot++) {  //Extrapolation starts here
-                    int binNum = measQOut->binNum(n, tot);  
+                    int binNum = measQOut->binNum(n, tot);
                     double measQ = measQOut->getBin(binNum);
                     unsigned tmaxIndex=tot;
                     unsigned tminIndex=tot;
@@ -546,11 +546,11 @@ void TotAnalysis::end() {
                         while (tminMeasQ == 0.0 && tminIndex > 1) {
                             tminIndex -= 1;
                             int tempBinNum = measQOut->binNum(n, tminIndex);
-                            tminMeasQ = measQOut->getBin(tempBinNum); 
+                            tminMeasQ = measQOut->getBin(tempBinNum);
                         }
-                        if (tmaxIndex == 15 && tmaxMeasQ == 0.0) { 
+                        if (tmaxIndex == 15 && tmaxMeasQ == 0.0) {
                             measQOut->fill(n, tot, tminMeasQ);
-                            measQRMSOut->fill(n, tot, -1); 
+                            measQRMSOut->fill(n, tot, -1);
                         } else {
                             double stepMeasQ = (tmaxMeasQ - tminMeasQ)/(tmaxIndex - tminIndex);
                             measQOut->fill(n, tot, tminMeasQ + stepMeasQ);
@@ -560,7 +560,7 @@ void TotAnalysis::end() {
                 } //end of extrapolation code
                 if (message) {Nmessage += 1;}
             } //end of that specific pixel loop
-        } //end of VCal = true test.  
+        } //end of VCal = true test.
         if (Nmessage != 0) {
             alog->info("Used linear extrapolation to fill missing measured charge values for middle ToT values.");
             alog->info("User may wish to use finer injection charge steps");
@@ -757,7 +757,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         hh2->setXaxisTitle("Column");
                         hh2->setYaxisTitle("Row");
                         hh2->setZaxisTitle("Chi2");
-                        chi2Map[outerIdent].reset(hh2);     
+                        chi2Map[outerIdent].reset(hh2);
 
                         hh2 = new Histo2d("StatusMap-"+std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
                         hh2->setXaxisTitle("Column");
@@ -778,7 +778,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 
                     double chi2= status.fnorm/(double)(vcalBins - n_par);
 
-                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0 
+                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0
                             && chi2 < 2.5 && chi2 > 1e-6
                             && fabs((par[2] - par[3])/injections - 1) < 0.1) {  // Add new criteria: difference between 100% baseline and 0% baseline should agree with number of injections within 10%
                         thrMap[outerIdent]->setBin(bin, feCfg->toCharge(par[0], useScap, useLcap));
@@ -851,7 +851,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                             step[outerIdent]->setBin(bin, step[prevOuter]->getBin(bin)*-1);
                         }
                     }
-                } 
+                }
                 deltaThr[outerIdent]->setBin(bin, thrTarget - thrMap[outerIdent]->getBin(bin));
             }
         }
@@ -904,7 +904,7 @@ void ScurveFitter::end() {
             int rSigMean = (int)(sigMean) - (int)(sigMean)%bin_width;
             int rSigRms = (int)(sigRms) - (int)(sigRms)%bin_width;
             xlow = rSigMean-(rSigRms*5)-bin_width/2.0;
-            if (xlow < 0) 
+            if (xlow < 0)
                 xlow = -1*bin_width/2.0;
             xhigh = rSigMean+(rSigRms*5)+bin_width/2.0;
             if ((xhigh-xlow)%bin_width != 0)
@@ -1119,10 +1119,16 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
 }
 
 void OccPixelThresholdTune::loadConfig(const json &j){
-    if (j.contains("occLowCut"))
-        m_occLowCut=j["occLowCut"];
-    if (j.contains("occHighCut"))
-        m_occHighCut=j["occHighCut"];
+    if (j.contains("occLowCut")) {
+        m_occLowCut.clear();
+        for(auto i: j["occLowCut"])
+            m_occLowCut.push_back(i);
+    }
+    if (j.contains("occHighCut")) {
+        m_occHighCut.clear();
+        for(auto i: j["occHighCut"])
+            m_occHighCut.push_back(i);
+    }
 }
 
 void OccPixelThresholdTune::init(const ScanLoopInfo *s) {
@@ -1199,9 +1205,9 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
 
         for (unsigned i=0; i<fbHisto->size(); i++) {
             double occ = occMaps[ident]->getBin(i);
-            if ((occ/(double)injections) > m_occHighCut) {
+            if ((occ/(double)injections) > m_occHighCut[occ_count]) {
                 fbHisto->setBin(i, -1);
-            } else if ((occ/(double)injections) < m_occLowCut) {
+            } else if ((occ/(double)injections) < m_occLowCut[occ_count]) {
                 fbHisto->setBin(i, +1);
             } else {
                 fbHisto->setBin(i, 0);
@@ -1209,7 +1215,7 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
             mean += occMaps[ident]->getBin(i);
             occDist->fill(occMaps[ident]->getBin(i));
         }
-        
+
         alog->info("[{}] Mean Occupancy = {}", id, mean/(nCol*nRow*(double)injections));
         alog->info("[{}] RMS = {}", id, occDist->getStdDev());
 
@@ -1217,6 +1223,9 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
         output->pushData(std::move(occMaps[ident]));
         output->pushData(std::move(occDist));
         innerCnt[ident] = 0;
+        if (occ_count < std::min(m_occLowCut.size(), m_occHighCut.size())) {
+            occ_count++;
+        }
         //delete occMaps[ident];
         occMaps[ident] = nullptr;
     }
@@ -1457,7 +1466,7 @@ void NoiseAnalysis::init(const ScanLoopInfo *s) {
     tot.reset(new Histo2d("TotMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
     tot->setXaxisTitle("Col");
     tot->setYaxisTitle("Row");
-    tot->setZaxisTitle("Averaged ToT");        
+    tot->setZaxisTitle("Averaged ToT");
     n_trigger = 0;
 }
 
@@ -1467,12 +1476,12 @@ void NoiseAnalysis::processHistogram(HistogramBase *h) {
     }
     else if (h->getName() == TotMap::outputName()) {
         tot->add(*(Histo2d*)h);
-    }    
+    }
     else if (h->getName() == TagDist::outputName()) {
         tag->add(*(Histo1d*)h);
-    }     
+    }
     else if (h->getName() == HitsPerEvent::outputName()) {
-        n_trigger += ((Histo1d*)h)->getEntries();       
+        n_trigger += ((Histo1d*)h)->getEntries();
     }
 }
 
@@ -1499,7 +1508,7 @@ void NoiseAnalysis::end() {
     noiseOcc->add(&*occ);
     noiseOcc->scale(1.0/(double)n_trigger);
     alog->info("[{}] Received {} total trigger!", id, n_trigger);
- 
+
     for(unsigned col=1; col<=nCol; col++) {
         for (unsigned row=1; row<=nRow; row++) {
             unsigned i = noiseOcc->binNum(col, row);
