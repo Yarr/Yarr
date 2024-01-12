@@ -4,6 +4,7 @@
 // Register Layer Helper Class.
 
 #include <functional>
+#include <cstdint>
 
 class BdaqRegisterProxy {
 	public:

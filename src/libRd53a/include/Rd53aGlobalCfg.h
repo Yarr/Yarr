@@ -13,8 +13,9 @@
 #include <string>
 #include <map>
 #include <cmath>
-#include <Rd53Reg.h>
+#include <array>
 
+#include "Rd53Reg.h"
 #include "storage.hpp"
 
 class Rd53aRegDefault : public Rd53Reg {

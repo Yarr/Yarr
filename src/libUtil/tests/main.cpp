@@ -12,7 +12,7 @@ int main( int argc, char* argv[] )
   std::string logging_config;
   
   // Build a new parser on top of Catch's
-  using namespace Catch::clara;
+  using namespace Catch::Clara;
   auto cli 
     = session.cli() // Get Catch's composite command line parser
     | Opt(known_loggers)

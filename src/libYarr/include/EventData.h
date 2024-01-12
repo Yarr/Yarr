@@ -13,6 +13,7 @@
 #include <vector>
 #include <iostream>
 #include <unistd.h> // this is needed for magical unknown reasons
+#include <stdint.h>
 
 // YARR
 #include "EventDataBase.h"

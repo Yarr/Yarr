@@ -1,6 +1,7 @@
 #ifndef STARFELIXTRIGGERLOOP_H
 #define STARFELIXTRIGGERLOOP_H
 
+#include <array>
 #include "LoopActionBase.h"
 #include "StdTriggerAction.h"
 
