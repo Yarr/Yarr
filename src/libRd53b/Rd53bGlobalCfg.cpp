@@ -318,19 +318,19 @@ void Rd53bGlobalCfg::init() {
     SerSelOut1.init         ( 94, &m_cfg[ 94], 2,  2, 1); regMap["SerSelOut1"] = &Rd53bGlobalCfg::SerSelOut1;
     SerSelOut0.init         ( 94, &m_cfg[ 94], 0,  2, 1); regMap["SerSelOut0"] = &Rd53bGlobalCfg::SerSelOut0;
     //95
-    SerInvTap.init          ( 95, &m_cfg[ 95], 6,  2, 0); regMap["SerInvTap"] = &Rd53bGlobalCfg::SerInvTap;
-    SerEnTap.init           ( 95, &m_cfg[ 95], 4,  2, 0); regMap["SerEnTap"] = &Rd53bGlobalCfg::SerEnTap;
+    SerInvTap.init          ( 95, &m_cfg[ 95], 6,  2, 1); regMap["SerInvTap"] = &Rd53bGlobalCfg::SerInvTap;
+    SerEnTap.init           ( 95, &m_cfg[ 95], 4,  2, 1); regMap["SerEnTap"] = &Rd53bGlobalCfg::SerEnTap;
     SerEnLane.init          ( 95, &m_cfg[ 95], 0,  4, 15); regMap["SerEnLane"] = &Rd53bGlobalCfg::SerEnLane;
     //96
     CmlBias2.init           ( 96, &m_cfg[ 96], 0, 10, 0); regMap["CmlBias2"] = &Rd53bGlobalCfg::CmlBias2;
     //97
-    CmlBias1.init           ( 97, &m_cfg[ 97], 0, 10, 0); regMap["CmlBias1"] = &Rd53bGlobalCfg::CmlBias1;
+    CmlBias1.init           ( 97, &m_cfg[ 97], 0, 10, 400); regMap["CmlBias1"] = &Rd53bGlobalCfg::CmlBias1;
     //98
-    CmlBias0.init           ( 98, &m_cfg[ 98], 0, 10, 500); regMap["CmlBias0"] = &Rd53bGlobalCfg::CmlBias0;
+    CmlBias0.init           ( 98, &m_cfg[ 98], 0, 10, 800); regMap["CmlBias0"] = &Rd53bGlobalCfg::CmlBias0;
     //99
-    MonitorEnable.init      ( 99, &m_cfg[ 99], 12,  1, 0); regMap["MonitorEnable"] = &Rd53bGlobalCfg::MonitorEnable;
+    MonitorEnable.init      ( 99, &m_cfg[ 99], 12,  1, 1); regMap["MonitorEnable"] = &Rd53bGlobalCfg::MonitorEnable;
     MonitorI.init           ( 99, &m_cfg[ 99], 6,  6, 63); regMap["MonitorI"] = &Rd53bGlobalCfg::MonitorI;
-    MonitorV.init           ( 99, &m_cfg[ 99], 0,  6, 63); regMap["MonitorV"] = &Rd53bGlobalCfg::MonitorV;
+    MonitorV.init           ( 99, &m_cfg[ 99], 0,  6, 32); regMap["MonitorV"] = &Rd53bGlobalCfg::MonitorV;
     //100
     ErrWngMask.init         (100, &m_cfg[100], 0,  8, 0); regMap["ErrWngMask"] = &Rd53bGlobalCfg::ErrWngMask;
     //101

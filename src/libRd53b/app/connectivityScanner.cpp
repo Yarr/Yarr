@@ -210,25 +210,13 @@ int main(int argc, char **argv) {
 	    //auto feCfg = dynamic_cast<FrontEndCfg*>(fe.get());
 	    //std::string current_chip_name = cfg->getName();
 
+
+	    // assuming RD53b quads (can be made more generic for triplets?) and 1.28GHz
 	    json cfg;
 	    cfg["RD53B"]["Parameter"]["ChipId"] = 16; // set chip ID to 16 to broadcast
-	    cfg["RD53B"]["GlobalConfig"]["CdrClkSel"] = cdrclksel; // set clock divider
+
+	    // lane setting needed hmmmmmmmmm
 	    cfg["RD53B"]["GlobalConfig"]["AuroraActiveLanes"] = (1 << nlanes)-1; //aurora active lanes = (2^nlanes)-1
-	    //cfg["RD53B"]["GlobalConfig"]["SerEnLane"] = 15; // depends on the chip ID TODO? works without
-
-	    cfg["RD53B"]["GlobalConfig"]["CmlBias0"] = 800; // update default?
-	    cfg["RD53B"]["GlobalConfig"]["CmlBias1"] = 400; // update default?
-	    cfg["RD53B"]["GlobalConfig"]["CmlBias2"] = 0; // update default?
-
-	    cfg["RD53B"]["GlobalConfig"]["SerEnTap"] = 1; // update default?
-	    cfg["RD53B"]["GlobalConfig"]["SerInvTap"] = 1; //  update default?
-
-	    // not needed for this
-	    //cfg["RD53B"]["GlobalConfig"]["MonitorEnable"] = 1; // update default?
-	    //cfg["RD53B"]["GlobalConfig"]["MonitorI"] = 63; // is default
-	    //cfg["RD53B"]["GlobalConfig"]["MonitorV"] = 32; // update default?
-	    //cfg["RD53B"]["GlobalConfig"]["ServiceBlockEn"] = 1; // update default?
-	    //cfg["RD53B"]["GlobalConfig"]["ServiceBlockPeriod"] = 50; // update default?
 
 	    fe.loadConfig(cfg);
 
