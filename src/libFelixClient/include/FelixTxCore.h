@@ -105,6 +105,9 @@ protected:
   // Number of bits for the FELIX broadcast enable registers
   static constexpr unsigned NBITS_BROADCAST_ENABLE = 42;
 
+  //idle words
+  static constexpr uint8_t idle_word[2] = {0xAA, 0xAA};
+
   // For Felix ID
   FelixID_t fid_from_channel(uint32_t chn);
   uint8_t m_did {0};  // detector ID; 0x00 reserved for local IDs

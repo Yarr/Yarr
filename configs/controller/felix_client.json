@@ -8,9 +8,9 @@
         "busDir": "/home/arastogi/FELIX_Apr2023/felix-distribution/bus",
         "busGroupName": "FELIX",
         "verboseBus": false,
-        "timeout": 1000,
-        "netioPages": 1024,
-        "netioPagesize": 1000000
+	"timeout": 1000,
+        "netioPages": 256,
+        "netioPagesize": 65536
       },
       "ToFLX": {
         "detectorID": 0,

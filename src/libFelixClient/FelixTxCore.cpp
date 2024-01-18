@@ -53,14 +53,7 @@ FelixTxCore::FelixID_t FelixTxCore::fid_from_channel(uint32_t chn) {
 bool FelixTxCore::checkChannel(FelixID_t fid) {
   ftlog->debug("Try sending data to Tx link: 0x{:x}",fid);
   try {
-    std::string empty;
-    // try{
-    //   fclient->send_data(fid, (const uint8_t*)empty.c_str(), 1, true);
-    // } catch (FelixClientResourceNotAvailableException& err) {
-    //   // wait and retry                                                                                                                               
-    //   std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_MS_ON_FelixClientResourceNotAvailableException));
-    //   fclient->send_data(fid, (const uint8_t*)empty.c_str(), 1, true);
-    // }
+    fclient->send_data(fid, idle_word, 2, true); 
   } catch (std::runtime_error& e) {
     ftlog->warn("Fail to send to Tx link 0x{:x}: {}", fid, e.what());
     return false;
@@ -223,17 +216,9 @@ void FelixTxCore::sendFifo(FelixID_t fid, std::vector<uint8_t>& fifo) {
     ftlog->trace(" {:02x}", word&0xff);
   }
 
-  bool flush = true;
+  bool flush = false;
   //fclient->init_send_data(fid);
-
-  try{
-    fclient->send_data(fid, fifo.data(), fifo.size(), flush);
-  }
-  catch (FelixClientResourceNotAvailableException& err){
-    // wait and retry
-    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_MS_ON_FelixClientResourceNotAvailableException));
-    fclient->send_data(fid, fifo.data(), fifo.size(), flush);
-  }
+  fclient->send_data(fid, fifo.data(), fifo.size(), flush);
 
   // clear the fifo
   fifo.clear();
@@ -449,7 +434,7 @@ void FelixTxCore::trigger() {
       ftlog->trace(" {:02x}", word&0xff);
     }
 
-    bool flush = true;
+    bool flush = false;
     fclient->send_data(fid_broadcast, m_trigFifo[fid_broadcast].data(), m_trigFifo[fid_broadcast].size(), flush);
 
   } else {
@@ -461,7 +446,7 @@ void FelixTxCore::trigger() {
         ftlog->trace(" {:02x}", word&0xff);
       }
 
-      bool flush = true;
+      bool flush = false;
       fclient->send_data(chn, buffer.data(), buffer.size(), flush);
     }
   }
