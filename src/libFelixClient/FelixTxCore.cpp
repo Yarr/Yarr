@@ -216,7 +216,7 @@ void FelixTxCore::sendFifo(FelixID_t fid, std::vector<uint8_t>& fifo) {
     ftlog->trace(" {:02x}", word&0xff);
   }
 
-  bool flush = false;
+  bool flush = true;
   //fclient->init_send_data(fid);
   fclient->send_data(fid, fifo.data(), fifo.size(), flush);
 
@@ -434,7 +434,7 @@ void FelixTxCore::trigger() {
       ftlog->trace(" {:02x}", word&0xff);
     }
 
-    bool flush = false;
+    bool flush = true;
     fclient->send_data(fid_broadcast, m_trigFifo[fid_broadcast].data(), m_trigFifo[fid_broadcast].size(), flush);
 
   } else {
@@ -446,7 +446,7 @@ void FelixTxCore::trigger() {
         ftlog->trace(" {:02x}", word&0xff);
       }
 
-      bool flush = false;
+      bool flush = true;
       fclient->send_data(chn, buffer.data(), buffer.size(), flush);
     }
   }
