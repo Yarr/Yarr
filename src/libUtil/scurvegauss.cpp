@@ -13,7 +13,7 @@ void scurvegauss(double* par, const int n_points, const double* x, const double 
     double var   = 0.;
     double norm  = 0.;
 
-    for (unsigned i = 0; i < n_points - 1; i++){
+    for (int i = 0; i < n_points - 1; i++){
         const double diff = y[i + 1] - y[i];
         mean  += (x[i] + 0.5) * diff;
         var   += (x[i] + 0.5) * (x[i] + 0.5) * diff;
