@@ -77,15 +77,6 @@ int main(int argc, char **argv) {
     j["log_config"][3]["level"] = "debug";
     logging::setupLoggers(j);
 
-    // home path
-    std::string home;
-    if(getenv("HOME")) {
-	home = getenv("HOME");
-    } else {
-	logger->error("HOME not set, using local directory for configuration");
-	home = ".";
-    }
-
     // args
     int c;
     std::string hw_controller_filename = "";
@@ -145,7 +136,6 @@ int main(int argc, char **argv) {
     logger->info("Scanning connectivity on Spec Card {}", specNum);
     json specStatus = mySpec.getStatus();
     //std::cout<<specStatus<<std::endl; // this works
-    // TODO: need a map?
 
     std::string rx_speed = specStatus["rx_speed"]; // gives e.g. 1280Mbps
     std::string channel_cfg = specStatus["channel_configuration"]; // gives e.g. 16x1
