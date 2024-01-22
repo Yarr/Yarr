@@ -36,9 +36,10 @@ void printHelp() {
        std::cout << "Usage: ./bin/connectivityScanner [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-o <output_path>]\n\n"
               << "Options:\n"
               << "  -h                        Display this help message.\n"
-              << "  -r <hw_controller_file>   Specify hardware controller JSON path.\n"
-              << "  -c <connectivity_file>    Specify connectivity config JSON path.\n"
-              << "  -o <config_path>          Output chip config JSON path.\n" ;
+              << "  -r <hw_controller_file>   Specify hardware controller JSON path (required).\n"
+              << "  -c <connectivity_file>    Specify connectivity config JSON path. Default is \"configs/connectivity/auto_rd53b_setup.json\"\n"
+              << "  -o <config_path>          Specify directory path for chip configs. Default is \"configs/\"\n" ;
+              //<< "  -p <option>               Path relation, e.g. choose from 'relToExec' (default), 'relToCon' or 'abs' .\n"; // TODO?
 }
 
 bool endswith(const std::string &str, const std::string &suffix) {
@@ -88,11 +89,13 @@ int main(int argc, char **argv) {
     // args
     int c;
     std::string hw_controller_filename = "";
-    std::string connectivity_filename = "";
+    std::string connectivity_filename = "configs/connectivity/auto_rd53b_setup.json";
     std::string chip_config_path = "configs/"; // path to create chip configs
     std::string chip_config_filename = chip_config_path; // path/filename for the connectivity config
+    std::string path_relation = "relToExec"; // path relation
+    int sleep = 1000;
 
-    while ((c = getopt(argc, argv, "hr:c:o:")) != -1) {
+    while ((c = getopt(argc, argv, "hr:c:o:p:t:")) != -1) {
         switch (c) {
 	    case 'h':
 		printHelp();
@@ -104,8 +107,14 @@ int main(int argc, char **argv) {
 		connectivity_filename = optarg;
 		break;
 	    case 'o' :
-		chip_config_path = optarg;
-		chip_config_filename = chip_config_path;
+		chip_config_path = optarg; // used to store the configs
+		chip_config_filename = chip_config_path; // used as link in connectivity config
+		break;
+	    case 'p':
+		path_relation = optarg; // TODO
+		break;
+	    case 't':
+		sleep = atoi(optarg); // TODO
 		break;
 	    default:
 		logger->critical("Invalid command line parameter(s) given!");
@@ -113,7 +122,21 @@ int main(int argc, char **argv) {
 	}
     }
 
-    // TODO: also scann through different spec IDs?
+    // check controller config
+    if(hw_controller_filename.empty()) {
+	logger->critical("Controller config required (-r)");
+	std::cout << "Rerun with -h for more information\n";
+	return -1;
+    }
+    fs::path hw_controller_path{hw_controller_filename};
+    if(!fs::exists(hw_controller_path)) {
+        std::cerr << "ERROR: Provided hw controller file (=" << hw_controller_filename << ") does not exist" << std::endl;
+        return 1;
+    }
+
+    logger->debug("{} {} {}", hw_controller_filename, connectivity_filename, chip_config_path);
+
+    // TODO: generic hardware controller
     // Init spec
     logger->info("Init spec");
     int specNum = 0;
@@ -139,30 +162,32 @@ int main(int argc, char **argv) {
     std::string fe_type_upper = fe_type;
     std::transform( fe_type_upper.begin(), fe_type_upper.end(), fe_type_upper.begin(), ::toupper );
 
-    // directory and file names
-    if (hw_controller_filename == "") {
-	hw_controller_filename = "configs/controller/specCfg-"; // use absolute path here, "~/Yarr" doesn't work
-	hw_controller_filename += fe_type + "-" + channel_cfg + ".json";
+    //// directory and file names
+    if ( !std::filesystem::exists(chip_config_path) ) {
+	logger->info("Chip config directory \"{}\" doesn't exist, creating...", chip_config_path);
+	std::filesystem::create_directories(chip_config_path);
     }
-    logger->info(hw_controller_filename);
+
+    if ( endswith(chip_config_path, "/") ) {
+	chip_config_path = chip_config_path.substr(0, chip_config_path.find_last_of("/"));
+	chip_config_filename = chip_config_path;
+    }
 
     // if no ".json" in file name assume it's a directory
     if ( connectivity_filename.find(".json") == std::string::npos ) { // "find" returns the position of the first character of the first match. If no matches were found, the function returns string::npos.
-	// if connectivity and chip configs are in the same directory then the chip config path in the connectivity file should be one layer higher
+	// strip last "/" if existing
 	if ( endswith(connectivity_filename, "/") ) {
 	    connectivity_filename = connectivity_filename.substr(0, connectivity_filename.find_last_of("/"));
 	}
-	if ( endswith(chip_config_path, "/") ) {
-	    chip_config_path = chip_config_path.substr(0, chip_config_path.find_last_of("/"));
-	    chip_config_filename = chip_config_path;
-	}
-	if (connectivity_filename == chip_config_path) {
-	    if ( connectivity_filename.find_last_of("/") != std::string::npos ) {
-		chip_config_filename.substr(chip_config_filename.find_last_of("/"), std::string::npos);
-	    } else {
-		chip_config_filename = "";
-	    }
-	}
+
+	// if connectivity and chip configs are in the same directory (e.g. -c test -o test) then the chip config path in the connectivity file should be one layer higher
+	//if (connectivity_filename == chip_config_path) {
+	    //if ( connectivity_filename.find_last_of("/") != std::string::npos ) {
+		//chip_config_filename.substr(chip_config_filename.find_last_of("/"), std::string::npos);
+	    //} else {
+		//chip_config_filename = "";
+	    //}
+	//}
 
 	connectivity_filename += "/" + fe_type+"_connectivity.json";
 	logger->info("Creating connectivity file '{}'", connectivity_filename);
@@ -179,12 +204,6 @@ int main(int argc, char **argv) {
 	    std::filesystem::create_directories(connectivity_path);
 	}
     }
-
-    if ( chip_config_path != "" && !std::filesystem::exists(chip_config_path) ) {
-	logger->info("Chip config directory {} doesn't exist, creating...", chip_config_path);
-	std::filesystem::create_directories(chip_config_path);
-    }
-
 
     // jsons
     json jcontroller;
@@ -271,7 +290,7 @@ int main(int argc, char **argv) {
 
 	    json jchipconnectivity;
 	    jchipconnectivity["config"] = filename;
-	    jchipconnectivity["path"] = "relToCon";
+	    jchipconnectivity["path"] = path_relation; // TODO default is "relToExec"
 	    jchipconnectivity["tx"] = _tx;
 	    jchipconnectivity["rx"] = _rx;
 	    jchipconnectivity["enable"] = 1;
