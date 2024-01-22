@@ -349,47 +349,22 @@ int Rd53b::checkCom() {
 }
 
 bool Rd53b::hasValidName() {
-
     // return true if no check is requested
     if(auto cfg = dynamic_cast<Rd53bCfg*>(this); !cfg->checkChipIdInName()) {
         return true;
     }
 
-    // Rd53b stores serial numbers in on-chip registers, so service blocks be
-    // enabled in order to query them
-    if (this->ServiceBlockEn.read() == 0) {
-        logger->error("Register messages not enabled, can't check chip id (set \"ServiceBlockEn\" to 1 in chip config");
-        return false;
-    }
-
-    // if user is requested to enforce that the chip id be in the FrontEnd "name"
-    // field, then readback the E-fuses to get the actual chip's ID
-    //itkpix_efuse_codec::EfuseData efuse_data = this->readEfuses();
-    uint32_t efuse_data_raw = this->readEfusesRaw();
-
-    itkpix_efuse_codec::EfuseData efuse_data = itkpix_efuse_codec::EfuseData{itkpix_efuse_codec::decode(efuse_data_raw)};
-    itkpix_efuse_codec::EfuseData efuse_data_old = itkpix_efuse_codec::EfuseData{itkpix_efuse_codec::decodeOldFormat(efuse_data_raw)};
-
+    uint32_t efuse = this->getEfuses();
     std::stringstream id_from_efuse;
-    id_from_efuse << std::hex << efuse_data.chip_sn();
+    id_from_efuse << std::hex << efuse;
 
-    std::stringstream id_from_efuse_old;
-    id_from_efuse_old << std::hex << efuse_data_old.chip_sn();
-
-    logger->info("Chip serial number obtained from e-fuse data (raw): 0x{:x}", efuse_data_raw);
     bool id_in_name = name.find(id_from_efuse.str()) != std::string::npos;
-    bool id_in_name_old = name.find(id_from_efuse_old.str()) != std::string::npos;
+
     if(!id_in_name) {
-        logger->error("Chip serial number decoded from e-fuse data (0x{:x}) does not appear in Chip \"name\" field (\"{}\") in loaded configuration  for chip with ChipId = {}", efuse_data.chip_sn(), name, m_chipId);
-	if (id_in_name_old) {
-    		logger->info("Chip serial number decoded with old format from e-fuse data: 0x{:x}", efuse_data_old.chip_sn());
-    		return true;
-	} else {
-        	logger->error("Chip serial number decoded with old format from e-fuse data (0x{:x}) does not appear in Chip \"name\" field (\"{}\") in loaded configuration  for chip with ChipId = {}", efuse_data_old.chip_sn(), name, m_chipId);
-        	return false;
-	}
+        logger->error("Chip serial number decoded from e-fuse data (0x{:x}) does not appear in Chip \"name\" field (\"{}\") in loaded configuration  for chip with ChipId = {}", efuse, name, m_chipId);
+       	return false;
     }
-    logger->info("Chip serial number obtained from e-fuse data: 0x{:x}", efuse_data.chip_sn() );
+    logger->info("Chip serial number obtained from e-fuse data: 0x{:x}", efuse );
     return true;
 }
 
@@ -405,6 +380,7 @@ uint32_t Rd53b::getEfuses() {
     // if user is requested to enforce that the chip id be in the FrontEnd "name"
     // field, then readback the E-fuses to get the actual chip's ID
     uint32_t efuse_data_raw = this->readEfusesRaw();
+    logger->info("Chip serial number obtained from e-fuse data (raw): 0x{:x}", efuse_data_raw);
 
     itkpix_efuse_codec::EfuseData efuse_data = itkpix_efuse_codec::EfuseData{itkpix_efuse_codec::decode(efuse_data_raw)};
     itkpix_efuse_codec::EfuseData efuse_data_old = itkpix_efuse_codec::EfuseData{itkpix_efuse_codec::decodeOldFormat(efuse_data_raw)};
@@ -415,7 +391,7 @@ uint32_t Rd53b::getEfuses() {
     // https://gitlab.cern.ch/YARR/YARR/-/issues/166
     if (chip_sn > 0x16000) {
         logger->info("Chip serial number obtained from e-fuse data: 0x{:x}", chip_sn );
-        return chip_sn;    
+        return chip_sn;
     } else {
         logger->info("Chip serial number decoded with old format from e-fuse data: 0x{:x}", chip_sn_old);
         return chip_sn_old;
