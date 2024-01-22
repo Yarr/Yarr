@@ -30,7 +30,7 @@ namespace fs = std::filesystem;
 #include "Rd53b.h"
 
 
-auto logger = logging::make_log("connectivityScanner");
+auto logger = logging::make_log("Rd53bConnectivityScan");
 
 void printHelp() {
        std::cout << "Usage: ./bin/connectivityScanner [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-o <output_path>]\n\n"
@@ -67,6 +67,13 @@ int main(int argc, char **argv) {
     j["pattern"] = defaultLogPattern;
     j["log_config"][0]["name"] = "all";
     j["log_config"][0]["level"] = "info";
+    // switch this logger off due to always using default global config
+    j["log_config"][1]["name"] = "Rd53bGlobalCfg";
+    j["log_config"][1]["level"] = "critical";
+    j["log_config"][2]["name"] = "Rd53bPixelCfg";
+    j["log_config"][2]["level"] = "critical";
+    j["log_config"][3]["name"] = "Rd53bConnectivityScan";
+    j["log_config"][3]["level"] = "debug";
     logging::setupLoggers(j);
 
     // home path
@@ -158,14 +165,17 @@ int main(int argc, char **argv) {
 	}
 
 	connectivity_filename += "/" + fe_type+"_connectivity.json";
-	logger->info("Did not find connectivity file extension, creating connectivity file {}.", connectivity_filename);
+	logger->info("Creating connectivity file '{}'", connectivity_filename);
     }
+
+    logger->debug("chip_config_path: {}", chip_config_path);
+    logger->debug("chip_config_filename: {}", chip_config_filename);
 
     // if finds a connectivity path
     if ( connectivity_filename.find_last_of("/") != std::string::npos ) {
 	std::string connectivity_path = connectivity_filename.substr(0, connectivity_filename.find_last_of("/"));
 	if ( !std::filesystem::exists(connectivity_path) ) {
-	    logger->info("Connectivity config directory {} doesn't exist, creating...", connectivity_path);
+	    logger->info("Connectivity config directory \"{}\" doesn't exist, creating...", connectivity_path);
 	    std::filesystem::create_directories(connectivity_path);
 	}
     }
@@ -221,17 +231,12 @@ int main(int argc, char **argv) {
 	    fe.loadConfig(cfg);
 
 	    // configure chip with the correct readout speed and other registers
-	    logger->info("Configure chip ...");
-	    fe.configureInit();
-	    fe.configureGlobal();
-	    std::this_thread::sleep_for(std::chrono::microseconds(10));
-
-	    logger->info("Enable Rx{}", _rx);
+	    logger->info("Poking Tx {}, Rx{}......", _tx, _rx);
 	    hw->setRxEnable(_rx);
 	    hw->checkRxSync();
 
 	    uint8_t chipId = fe.getChipId();
-	    logger->info("Get 2-LSB chip ID: {}", chipId);
+	    logger->debug("Get 2-LSB chip ID: {}", chipId);
 	    if(chipId == 255) continue;
 
 	    if(channel_cfg == "16x1") {
@@ -251,8 +256,8 @@ int main(int argc, char **argv) {
 	    std::stringstream chip_sn;
 	    chip_name << "0x" << std::hex << efuse;
 	    chip_sn << std::setw(7) << std::setfill('0') << efuse;
-	    //logger->info("getEfuses: {}", chip_name.str());
-	    //logger->info("20UPGFC"+chip_sn.str());
+	    logger->debug("getEfuses: {}", chip_name.str());
+	    logger->debug("chip SN {}", "20UPGFC"+chip_sn.str());
 	    cfg["RD53B"]["Parameter"]["Name"] = chip_name.str();
 
 	    ////// Write default to file
