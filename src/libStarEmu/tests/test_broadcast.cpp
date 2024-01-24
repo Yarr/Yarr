@@ -123,8 +123,9 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
   // Add the first FE
   unsigned tx0 = connectivity["chips"][0]["tx"];
   unsigned rx0 = connectivity["chips"][0]["rx"];
-  bk.addFe(StdDict::getFrontEnd("Star").release(), tx0, rx0);
-  bk.getLastFe()->init(emu.get(), tx0, rx0);
+  FrontEndConnectivity fe_conn0(tx0,rx0);
+  bk.addFe(StdDict::getFrontEnd("Star"), fe_conn0);
+  bk.getLastFe()->init(emu.get(), fe_conn0);
   auto star1 = dynamic_cast<StarChips*>(bk.getLastFe());
   REQUIRE(star1);
   star1->loadConfig(chipCfg1);
@@ -132,8 +133,9 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
   // Add the second FE
   unsigned tx1 = connectivity["chips"][1]["tx"];
   unsigned rx1 = connectivity["chips"][1]["rx"];
-  bk.addFe(StdDict::getFrontEnd("Star").release(), tx1, rx1);
-  bk.getLastFe()->init(emu.get(), tx1, rx1);
+  FrontEndConnectivity fe_conn1(tx1,rx1);
+  bk.addFe(StdDict::getFrontEnd("Star"), fe_conn1);
+  bk.getLastFe()->init(emu.get(), fe_conn1);
   auto star2 = dynamic_cast<StarChips*>(bk.getLastFe());
   REQUIRE(star2);
   star2->loadConfig(chipCfg2);
@@ -143,10 +145,10 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
   bk.initGlobalFe("Star");
 
   /* The following initialization of global Fe would fail the test. */
-  //bk.initGlobalFe(StdDict::getFrontEnd("Star").release());
+  //bk.initGlobalFe(StdDict::getFrontEnd("Star"));
   //bk.getGlobalFe()->makeGlobal();
 
-  bk.getGlobalFe()->init(emu.get(), 0, 0);
+  bk.getGlobalFe()->init(emu.get(), FrontEndConnectivity(0,0));
 
   // Use the global FE to update a sub-register "BCAL" of all FEs
   // BCAL is in the same register as STR_DEL

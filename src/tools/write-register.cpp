@@ -32,8 +32,8 @@ void print_usage(char* argv[]) {
     std::cerr << " Options:" << std::endl;
     std::cerr << "   -r          Hardware controller JSON file path [required]" << std::endl;
     std::cerr << "   -c          Input connectivity JSON file path [required]" << std::endl;
-    std::cerr << "   -i          Position of chip in connectivity file chips list, starting from 0 (default: all chips)" << std::endl;
-    std::cerr << "   -n          Chip name (if given will override use of chip index)" << std::endl;
+    std::cerr << "   -i          Position of chip in connectivity file chips list, starting from 0 (default: all chips). Can take multiple chip positions, and results will always be returned in order of the chips in the connectivity file" << std::endl;
+    std::cerr << "   -n          Chip name (if given will override use of chip index). Can take multiple chip names, and results will always be returned in order of the chips in the connectivity file." << std::endl;
     std::cerr << "   -h|--help   Print this help message and exit" << std::endl;
     std::cerr << std::endl;
 }
@@ -49,7 +49,7 @@ std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn
         throw std::runtime_error(e.str());
     }
     auto chip_config = chip_configs[fe_num];
-    fe->init(&*hw, chip_config["tx"], chip_config["rx"]);
+    fe->init(&*hw, FrontEndConnectivity(chip_config["tx"], chip_config["rx"]));
     auto chip_register_file_path = chip_config["__config_path__"];
     fs::path pconfig{chip_register_file_path};
     if(!fs::exists(pconfig)) {
@@ -65,8 +65,8 @@ std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn
 int main(int argc, char* argv[]) {
     std::string hw_controller_filename = "";
     std::string connectivity_filename = "";
-    int chip_idx = -1;
-    std::string chip_name = "";
+    std::vector<int> chip_idx;
+    std::vector<std::string> chip_name;
     std::string register_name = "";
     uint32_t register_value = 0;
     bool use_chip_name = false;
@@ -82,14 +82,14 @@ int main(int argc, char* argv[]) {
                 break;
             case 'i' :
                     try {
-                        chip_idx = std::stoi(optarg);
+                        chip_idx.push_back(std::stoi(optarg));
                     } catch (std::exception& e) {
                         std::cerr << "ERROR: Chip index must be an integer value (you provided: " << optarg << ")" << std::endl;
                         return 1;
                     }
                 break;
             case 'n' :
-                    chip_name = optarg;
+                    chip_name.push_back(optarg);
                     use_chip_name = true;
                     break;
             case 'h' :
@@ -164,7 +164,7 @@ int main(int argc, char* argv[]) {
         auto cfg = dynamic_cast<FrontEndCfg*>(fe.get());
         std::string current_chip_name = cfg->getName();
         if (!use_chip_name) {
-            if ( (chip_idx < 0) || (chip_idx == ichip) ) {
+            if ( chip_idx.size() == 0 || (std::find(chip_idx.begin(), chip_idx.end(), ichip)!= chip_idx.end()) ) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
         	hw->setRxEnable(cfg->getRxChannel());
         	hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
@@ -172,7 +172,7 @@ int main(int argc, char* argv[]) {
                 fe->writeNamedRegister(register_name, register_value);
             }
         } else {
-            if (current_chip_name == chip_name) {
+            if (std::find(chip_name.begin(), chip_name.end(), current_chip_name) != chip_name.end()) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
         	hw->setRxEnable(cfg->getRxChannel());
         	hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().

@@ -7,7 +7,7 @@ namespace {
     auto aplog = logging::make_log("ProcRegistry");
 }
 
-typedef ClassRegistry<DataProcessor> OurRegistry;
+typedef ClassRegistry<FeDataProcessor> OurRegistry;
 
 static OurRegistry &registry() {
     static OurRegistry instance;
@@ -16,12 +16,12 @@ static OurRegistry &registry() {
 
 namespace StdDict {
     bool registerDataProcessor(std::string name,
-                              std::function<std::unique_ptr<DataProcessor>()> f)
+                              std::function<std::unique_ptr<FeDataProcessor>()> f)
     {
         return registry().registerClass(name, f);
     }
 
-    std::unique_ptr<DataProcessor> getDataProcessor(std::string name) {
+    std::unique_ptr<FeDataProcessor> getDataProcessor(std::string name) {
         auto result = registry().makeClass(name);
         if(result == nullptr) {
             SPDLOG_LOGGER_ERROR(aplog, "No DataProcessor matching '{}' found!", name);

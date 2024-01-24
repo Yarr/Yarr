@@ -98,9 +98,9 @@ int main(int argc, char* argv[]) {
 
     // set up the global FE and perform the reset as in scanConsole
     std::unique_ptr<Bookkeeper> bookie = std::make_unique<Bookkeeper>(&*hw, &*hw);
-    bookie->initGlobalFe(StdDict::getFrontEnd(chipType).release());
+    bookie->initGlobalFe(StdDict::getFrontEnd(chipType));
     bookie->getGlobalFe()->makeGlobal();
-    bookie->getGlobalFe()->init(&*hw, 0, 0);
+    bookie->getGlobalFe()->init(&*hw, FrontEndConnectivity(0,0));
     hw->setCmdEnable(bookie->getTxMaskUnique());
     bookie->getGlobalFe()->resetAllHard();
 

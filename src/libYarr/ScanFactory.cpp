@@ -12,6 +12,7 @@
 #include <iostream>
 
 #include "AllStdActions.h"
+#include "StdTriggerAction.h"
 #include "ClassRegistry.h"
 
 #include "logging.h"
@@ -31,7 +32,7 @@ void ScanFactory::init() {
 void ScanFactory::preScan() {
     sflog->info("Entering pre scan phase ...");
     for (unsigned id=0; id<g_bk->getNumOfEntries(); id ++) {
-        FrontEnd *fe = g_bk->getEntry(id).fe;
+        FrontEnd *fe = g_bk->getFe(id);
         fe->clipRawData.reset();
     }
 
@@ -46,7 +47,7 @@ void ScanFactory::preScan() {
 
     if (g_bk->getTargetCharge() > 0) {
         for (unsigned id=0; id<g_bk->getNumOfEntries(); id ++) {
-            FrontEnd *fe = g_bk->getEntry(id).fe;
+            FrontEnd *fe = g_bk->getFe(id);
             if(fe->getActive()) {
                 // Enable single channel
                 g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
@@ -102,6 +103,12 @@ void ScanFactory::loadConfig(const json &scanCfg) {
         if(auto *fbPixel = dynamic_cast<PixelFeedbackReceiver*>(&*action)) {
             fbPixel->connectClipboard(feedback);
         }
+
+        //if(auto *trigLoop = dynamic_cast<StdTriggerAction*>(&*action))
+        if(std::shared_ptr<StdTriggerAction> trigLoop = std::dynamic_pointer_cast<StdTriggerAction>(action)) {
+            g_bk->setTriggerAction(trigLoop);
+        }
+
         this->addLoop(action);
 
         json tCfg;

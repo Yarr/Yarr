@@ -9,6 +9,8 @@
 // # Date: 07/2023
 // ################################
 
+#include <array>
+
 #include "LoopActionBase.h"
 
 class Itkpixv2CoreColLoop : public LoopActionBase {

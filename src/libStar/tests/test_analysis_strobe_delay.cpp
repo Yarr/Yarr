@@ -52,7 +52,7 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
     int rx_channel = 0;
 
     // This is for one FE
-    AnalysisProcessor analysis(&bookie, rx_channel);
+    AnalysisProcessor analysis(rx_channel);
 
     int nCol = 128 * chip_count;
     int nRow = 2;
@@ -160,13 +160,13 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
             // clang finds the overload resolution ambigous if compare
             // variant with Approx directly
             double chip_0_opt_sd = j_out["ABCStar_0"]["OptimalStrobeDelay"]["Data"][0];
-            CHECK (chip_0_opt_sd == Approx(5.0));
+            CHECK (chip_0_opt_sd == Catch::Approx(5.0));
             if(chip_count > 1) {
                 REQUIRE (j_out.contains("ABCStar_1"));
                 REQUIRE (j_out.contains({"ABCStar_1", "OptimalStrobeDelay"}));
                 REQUIRE (j_out.contains({"ABCStar_1", "OptimalStrobeDelay", "Data"}));
                 double chip_1_opt_sd = j_out["ABCStar_1"]["OptimalStrobeDelay"]["Data"][0];
-                CHECK (chip_1_opt_sd == Approx(5.0));
+                CHECK (chip_1_opt_sd == Catch::Approx(5.0));
             }
 
             REQUIRE (j_out.contains({"ABCStar_0", "LeftEdge"}));

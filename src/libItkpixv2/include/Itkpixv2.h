@@ -20,11 +20,8 @@ class Itkpixv2 : public FrontEnd, public Itkpixv2Cfg, public Itkpixv2Cmd{
     public:
 
         Itkpixv2();
-        Itkpixv2(HwController *arg_core);
-        Itkpixv2(HwController *arg_core, unsigned arg_channel);
-        Itkpixv2(HwController *arg_core, unsigned arg_txchannel, unsigned arg_rxchannel);
         
-        void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override;
+        void init(HwController *arg_core, const FrontEndConnectivity& fe_cfg) override;
         void makeGlobal() override {m_chipId = 16;}
         std::unique_ptr<FrontEnd> getGlobal() override {
             return std::make_unique<Itkpixv2>();

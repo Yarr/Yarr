@@ -25,6 +25,16 @@ public:
 
    virtual  ~HistogramBase() = default;
 
+    /// Read histogram from json file, based on appropriate type
+    static std::unique_ptr<HistogramBase> fromJson(const json &j);
+
+    /// Read histogram from json file, with loop status
+    /**
+     * Use loop status template for loop types.
+     * If loopStatus field present in json, use this to fill in position.
+     */
+    static std::unique_ptr<HistogramBase> fromJson(const json &j, const LoopStatus &ltemplate);
+
     const std::string &getName() const {
         return name;
     }

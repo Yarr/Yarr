@@ -6,7 +6,7 @@
 
 TEST_CASE("HistogramL13D", "[Histogrammer][L13D]") {
     // This is for one FE
-    std::unique_ptr<DataProcessor> histo(new HistogrammerProcessor);
+    std::unique_ptr<HistoDataProcessor> histo(new HistogrammerProcessor);
     auto& histogrammer = static_cast<HistogrammerProcessor&>(*histo);
 
     ClipBoard<EventDataBase> input;

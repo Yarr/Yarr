@@ -8,7 +8,7 @@
 #include "ScanFactory.h"
 
 #include "logging.h"
-auto logger = logging::make_log("test_feedback");
+auto test_logger = logging::make_log("test_feedback");
 
 #include "EmptyHw.h"
 
@@ -29,8 +29,8 @@ TEST_CASE("FeedbackTestEmpty", "[Feedback]") {
 
     auto g_fe = StdDict::getFrontEnd("FEI4B");
     g_fe->makeGlobal();
-    g_fe->init(&empty, 0, 0);
-    bookie.initGlobalFe(g_fe.release());
+    g_fe->init(&empty, FrontEndConnectivity(0,0));
+    bookie.initGlobalFe(std::move(g_fe));
 
     json js;
     js["scan"]["name"] = "TestScan";
@@ -54,19 +54,19 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
     FeedbackClipboardMap fb;
     ScanFactory scan(&bookie, &fb);
 
-    auto fe = StdDict::getFrontEnd("FEI4B").release();
+    auto fe = StdDict::getFrontEnd("FEI4B");
     fe->setActive(true);
 
     unsigned rx_channel = 0;
-
-    fe->init(&empty, 0, 0);
-    bookie.addFe(fe, 0, rx_channel);
-    unsigned feUid = bookie.getId(fe);
+    FrontEndConnectivity fe_conn(0,rx_channel);
+    fe->init(&empty, fe_conn);
+    bookie.addFe(std::move(fe), fe_conn);
+    unsigned feUid = bookie.getId(bookie.getLastFe());
 
     auto g_fe = StdDict::getFrontEnd("FEI4B");
     g_fe->makeGlobal();
-    g_fe->init(&empty, 0, 0);
-    bookie.initGlobalFe(g_fe.release());
+    g_fe->init(&empty, FrontEndConnectivity(0,0));
+    bookie.initGlobalFe(std::move(g_fe));
 
     json js;
     js["scan"]["name"] = "TestScan";
@@ -91,23 +91,23 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
         int loop_count = 0;
         while(feedback_count < 2) {
           std::shared_ptr<RawDataContainer> data = std::make_shared<RawDataContainer>(LoopStatus({1, 1, 2}, {LOOP_STYLE_DATA, LOOP_STYLE_TRIGGER, LOOP_STYLE_GLOBAL_FEEDBACK}));
-          logger->debug("Received data");
+          test_logger->debug("Received data");
 
           const LoopStatus &stat = data->stat;
 
           REQUIRE (stat.size() == 3);
-          logger->trace("Current loop status: {} {} {}",
+          test_logger->trace("Current loop status: {} {} {}",
                         stat.get(0), stat.get(1), stat.get(2));
 
           // As there's no inner loop, send feedback as soon as data arrives
           send.feedbackBinary(feUid, 1, true);
           feedback_count ++;
 
-          logger->debug("Sent feedback at iteration {}", loop_count);
+          test_logger->debug("Sent feedback at iteration {}", loop_count);
           loop_count ++;
 
         }
-        logger->warn("Finish unlocking thread after {} loop", max_loops);
+        test_logger->warn("Finish unlocking thread after {} loop", max_loops);
         thread_failure = false;
 
       });
@@ -133,16 +133,17 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
 
     unsigned rx_channel = 0;
 
-    FrontEnd* fe = StdDict::getFrontEnd("FEI4B").release();
+    auto fe = StdDict::getFrontEnd("FEI4B");
     fe->setActive(true);
-    fe->init(&empty, 0, 0);
-    bookie.addFe(fe, 0, rx_channel);
-    unsigned feUid = bookie.getId(fe);
+    FrontEndConnectivity fe_conn(0,rx_channel);
+    fe->init(&empty, fe_conn);
+    bookie.addFe(std::move(fe), fe_conn);
+    unsigned feUid = bookie.getId(bookie.getLastFe());
 
     auto g_fe = StdDict::getFrontEnd("FEI4B");
     g_fe->makeGlobal();
-    g_fe->init(&empty, 0, 0);
-    bookie.initGlobalFe(g_fe.release());
+    g_fe->init(&empty, FrontEndConnectivity(0,0));
+    bookie.initGlobalFe(std::move(g_fe));
 
     json js;
     js["scan"]["name"] = "TestScan";
@@ -169,12 +170,12 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
         while(feedback_count<4) {
           std::shared_ptr<RawDataContainer> data = std::make_shared<RawDataContainer>(LoopStatus({1, 1, 4}, {LOOP_STYLE_DATA, LOOP_STYLE_TRIGGER, LOOP_STYLE_PIXEL_FEEDBACK}));
 
-          logger->debug("Received data");
+          test_logger->debug("Received data");
 
           const LoopStatus &stat = data->stat;
 
           REQUIRE (stat.size() == 3);
-          logger->trace("Current loop status: {} {} {}",
+          test_logger->trace("Current loop status: {} {} {}",
                         stat.get(0), stat.get(1), stat.get(2));
 
           // As there's no inner loop, send feedback as soon as data arrives
@@ -182,11 +183,11 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
           send.feedback(feUid, std::move(h));
           feedback_count ++;
 
-          logger->debug("Sent feedback at iteration {}", loop_count);
+          test_logger->debug("Sent feedback at iteration {}", loop_count);
           loop_count ++;
 
         }
-        logger->warn("Finish unlocking thread after {} loop", max_loops);
+        test_logger->warn("Finish unlocking thread after {} loop", max_loops);
         thread_failure = false;
         return;
       });

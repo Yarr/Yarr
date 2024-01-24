@@ -8,7 +8,8 @@
 #include "AllHwControllers.h"
 #include "AllChips.h"
 #include "Bookkeeper.h"
-#include "DataProcessor.h"
+#include "AnalysisDataProcessor.h"
+#include "HistoDataProcessor.h"
 #include "ScanFactory.h"
 #include "ScanHelper.h"
 
@@ -29,7 +30,7 @@ enum class ConfigType {
 /// Minimal FrontEnd needed, otherwise scan config not checked
 class MyFrontEnd : public FrontEnd {
 public:
-  void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) {}
+  void init(HwController *arg_core, const FrontEndConnectivity& fe_cfg) {}
   void maskPixel(unsigned col, unsigned row) {}
   unsigned getPixelEn(unsigned col, unsigned row) { return 1; }
   void enableAll() {}
@@ -130,21 +131,20 @@ bool testScanConfig(const json &scanConfig) {
     s.loadConfig(scanConfig);
 
     // Using ScanHelper for consistency, but that needs more infrastructure
-    std::map<unsigned, std::unique_ptr<DataProcessor> > histogrammers;
-    std::map<unsigned, std::vector<std::unique_ptr<DataProcessor>> > analyses;
-
-    std::unique_ptr<FrontEnd> fe(new MyFrontEnd());
+    std::map<unsigned, std::unique_ptr<HistoDataProcessor> > histogrammers;
+    std::map<unsigned, std::vector<std::unique_ptr<AnalysisDataProcessor>> > analyses;
 
     // If we don't add a front-end the info isn't checked...
-    b.addFe(fe.release(), 12, 12);
+    b.addFe(std::make_unique<MyFrontEnd>(), FrontEndConnectivity(12,12));
 
     // This is run by ScanHelper, but doesn't depend on config
     // ScanHelper::buildRawDataProcs(procs, bookie, chipType);
     ScanHelper::buildHistogrammers(histogrammers, scanConfig,
-                                   b, &s, "no_dir");
+                                   b, "no_dir");
     int mask_opt = 0;
     ScanHelper::buildAnalyses(analyses, scanConfig, b, &s,
-                              feedbackMap, mask_opt, "no_dir");
+                              feedbackMap, mask_opt, "no_dir", 
+                              -1, -1);
 
     return true;
   } catch(std::runtime_error &te) {

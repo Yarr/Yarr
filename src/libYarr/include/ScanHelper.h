@@ -11,19 +11,26 @@
 
 #include <string>
 
+#include "AnalysisDataProcessor.h"
 #include "Bookkeeper.h"
-#include "DataProcessor.h"
+#include "FeDataProcessor.h"
 #include "FeedbackBase.h"
 #include "FrontEnd.h"
+#include "HistoDataProcessor.h"
 #include "HwController.h"
+#include "ScanLoopInfo.h"
 #include "Utils.h"
 
 #include "storage.hpp"
 #include "logging.h"
 
 #include "ScanOpts.h"
+#include "ScanBase.h"
 
 namespace ScanHelper {
+        // A 2D vector of int to store algorithm indices for all tiers of analyses
+        using AlgoTieredIndex = std::vector<std::vector<int>>;
+
         /// Get a new run number, such that it's different next time
         unsigned newRunCounter();
 
@@ -36,23 +43,56 @@ namespace ScanHelper {
         std::string loadChipConfigs(json &j, bool createConfig=false);
         int loadConfigFile(const ScanOpts &scanOpts, bool writeConfig, json &config);
 // TODO Do not want to use the raw pointer ScanBase*
-        void buildHistogrammers( std::map<unsigned, std::unique_ptr<DataProcessor>>& histogrammers, const json &scanConfig,
-                Bookkeeper &bookie, ScanBase* s, std::string outputDir);
+        void buildHistogrammers( std::map<unsigned, std::unique_ptr<HistoDataProcessor>>& histogrammers, const json &scanConfig,
+                                 Bookkeeper &bookie, std::string outputDir);
 
 // TODO would prefer not to need bookie --> deep dependency!
 // TODO Do not want to use the raw pointer ScanBase*
-        void buildRawDataProcs( std::map<unsigned, std::unique_ptr<DataProcessor> > &procs,
+        void buildRawDataProcs( std::map<unsigned, std::unique_ptr<FeDataProcessor> > &procs,
                            Bookkeeper &bookie,
                            const std::string &chipType);
-        void buildAnalyses( std::map<unsigned, std::vector<std::unique_ptr<DataProcessor>> >& analyses,
-                            const json& scanType, Bookkeeper& bookie, ScanBase* s, FeedbackClipboardMap *fbMap, int mask_opt, std::string outputDir);
-        void buildAnalysisHierarchy(std::vector<std::vector<int>>& indexTiers,
+
+        /// Setup analysis for one front end
+        /**
+           @param analyses Vector of data processors for analysis tiers.
+           @param feCfg FrontEndCfg object to be modified by analysis.
+           @param anaCfg Configuration of analysis algorithms.
+           @param geo Geometry for output histograms.
+           @param algoIndexTiers Dependency information between tiers.
+           @param fbData Feedback connection to scan engine.
+           @param clipResults ClipBoard for histograms between tiers.
+           @param clipHisto ClipBoard for input histograms.
+           @param scanInfo Information about scan loops.
+           @param mask_opt Do mask flag.
+           @param outputDir Directory for HistogramArchiver (skip if empty).
+           @param target_tot ToT target.
+           @param target_charge Charge target.
+         */
+        void buildAnalysisForFrontEnd(std::vector<std::unique_ptr<AnalysisDataProcessor>> &analyses,
+                                  unsigned feId,
+                                  FrontEndCfg *feCfg,
+                                  const json &anaCfg,
+                                  FrontEndGeometry &geo,
+                                  const AlgoTieredIndex &algoIndexTiers,
+                                  FeedbackClipboard *fbData,
+                                  std::vector<std::unique_ptr<ClipBoard<HistogramBase>>> &clipResults,
+                                  ClipBoard<HistogramBase> &clipHisto,
+                                  const ScanLoopInfo *scanInfo,
+                                  int mask_opt,
+                                  const std::string &outputDir,
+                                  int target_tot, int target_charge);
+
+        void buildAnalyses( std::map<unsigned, std::vector<std::unique_ptr<AnalysisDataProcessor>> >& analyses,
+                            const json& scanType, Bookkeeper& bookie, const ScanLoopInfo* s, FeedbackClipboardMap *fbMap, int mask_opt, std::string outputDir,
+                            int target_tot, int target_charge);
+        void buildAnalysisHierarchy(AlgoTieredIndex& indexTiers,
                                     const json &anaCfg);
         template <typename T>
             std::string toString(T value,int digitsCount);
         std::unique_ptr<ScanBase> buildScan( const json& scanType,
                                              Bookkeeper& bookie,
                                              FeedbackClipboardMap *fbData);
+
        std::string defaultDbUserCfgPath();
        std::string defaultDbSiteCfgPath();
        std::string defaultDbCfgPath();

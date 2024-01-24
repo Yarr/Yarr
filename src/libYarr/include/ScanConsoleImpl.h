@@ -9,12 +9,12 @@
 #include <vector>
 #include <map>
 
+#include "AnalysisDataProcessor.h"
 #include "ScanOpts.h"
 #include "ScanBase.h"
 #include "HwController.h"
 #include "Bookkeeper.h"
 #include "FeedbackBase.h"
-#include "DataProcessor.h"
 #include "DBHandler.h"
 #include "YarrDiagram.h"
 
@@ -55,9 +55,9 @@ private:
     std::unique_ptr<Bookkeeper> bookie{};
     std::map<unsigned, std::array<std::string, 2>> feCfgMap;
     std::unique_ptr<ScanBase> scanBase{};
-    std::map<unsigned, std::unique_ptr<DataProcessor> > procs{};
-    std::map<unsigned, std::unique_ptr<DataProcessor> > histogrammers{};
-    std::map<unsigned, std::vector<std::unique_ptr<DataProcessor>> > analyses{};
+    std::map<unsigned, std::unique_ptr<FeDataProcessor> > procs{};
+    std::map<unsigned, std::unique_ptr<HistoDataProcessor> > histogrammers{};
+    std::map<unsigned, std::vector<std::unique_ptr<AnalysisDataProcessor>> > analyses{};
     FeedbackClipboardMap fbData;
     std::string chipType{};
     std::string timestampStr{};

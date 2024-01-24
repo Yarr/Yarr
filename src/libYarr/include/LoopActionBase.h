@@ -11,18 +11,19 @@
 #include <typeinfo>
 #include <typeindex>
 #include <string>
+#include <array>
 
 #include "TxCore.h"
 #include "RxCore.h"
 #include "LoopStatus.h"
 #include "Bookkeeper.h"
-
+#include "LoopActionBaseInfo.h"
 
 #include "storage.hpp"
 
 using std::shared_ptr;
 
-class LoopActionBase {
+class LoopActionBase : public LoopActionBaseInfo {
     public:
         explicit LoopActionBase(LoopStyle s);
         virtual ~LoopActionBase() = default;
@@ -35,37 +36,6 @@ class LoopActionBase {
             return loopType;
         }
 
-        bool isParameterLoop() {
-            return m_style == LOOP_STYLE_PARAMETER;
-        }
-
-        bool isMaskLoop() {
-            return m_style == LOOP_STYLE_MASK;
-        }
-
-        bool isDataLoop() {
-            return m_style == LOOP_STYLE_DATA;
-        }
-
-        bool isTriggerLoop() {
-            return m_style == LOOP_STYLE_TRIGGER;
-        }
-
-        bool isPixelFeedbackLoop() {
-            return m_style == LOOP_STYLE_PIXEL_FEEDBACK;
-        }
-
-        bool isGlobalFeedbackLoop() {
-            return m_style == LOOP_STYLE_GLOBAL_FEEDBACK;
-        }
-
-        LoopStyle getStyle() {
-            return m_style;
-        }
-
-        unsigned getMin() const;
-        unsigned getMax() const;
-        unsigned getStep() const;
         void setMin(unsigned v);
         void setMax(unsigned v);
         void setStep(unsigned v);
@@ -82,10 +52,6 @@ class LoopActionBase {
 
         bool m_done;
 
-        int min;
-        int max;
-        unsigned step;
-
         double progress;
 
         LoopStatusMaster *g_stat;
@@ -94,7 +60,6 @@ class LoopActionBase {
         RxCore *g_rx;
 		Bookkeeper *keeper;
 
-        LoopStyle m_style;
         std::type_index loopType;
 
     private:

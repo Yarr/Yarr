@@ -20,24 +20,16 @@ namespace {
 Bookkeeper::Bookkeeper(TxCore *arg_tx, RxCore *arg_rx) {
     tx = arg_tx;
     rx = arg_rx;
-    g_fe = NULL; //Type not yet known
+    g_fe.reset();
     target_tot = 10;
     target_charge = 16000;
     target_threshold = 3000;
 }
 
-// Delete all leftover data, Bookkeeper should be deleted last
-Bookkeeper::~Bookkeeper() {
-    for (unsigned i=0; i<bookEntries.size(); i++) {
-        this->delFe(i);
-    }
-    delete g_fe;
-}
-
-void Bookkeeper::initGlobalFe(std::string chipType) {
+void Bookkeeper::initGlobalFe(const std::string& chipType) {
     std::unique_ptr<FrontEnd> fe_tmp = StdDict::getFrontEnd(chipType);
 
-    g_fe = fe_tmp->getGlobal().release();
+    g_fe = fe_tmp->getGlobal();
 
     g_fe->makeGlobal();
 
@@ -45,26 +37,27 @@ void Bookkeeper::initGlobalFe(std::string chipType) {
     g_fe->connectBookkeeper(this);
 }
 
-void Bookkeeper::addFe(FrontEnd *fe, unsigned txChannel, unsigned rxChannel) {
+void Bookkeeper::addFe(std::unique_ptr<FrontEnd> fe, const FrontEndConnectivity& cfg) {
     // Create new entry
     bookEntries.emplace_back();
-    bookEntries.back().fe = fe;
-    idMap[fe] = bookEntries.size()-1;
+    bookEntries.back().fe = std::move(fe);
+    unsigned uid = bookEntries.size()-1;
+    idMap[bookEntries.back().fe.get()] = uid;
     bookEntries.back().active = true;
-    bookEntries.back().txChannel = txChannel;
-    bookEntries.back().rxChannel = rxChannel;
+    bookEntries.back().txChannel = cfg.getTxChannel();
+    bookEntries.back().rxChannel = cfg.getRxChannel();
 
-    FrontEndCfg *cfg = dynamic_cast<FrontEndCfg*>(fe);
-    if(cfg) cfg->setChannel(txChannel, rxChannel);
+    auto fe_cfg = dynamic_cast<FrontEndCfg*>(fe.get());
+    if(fe_cfg) fe_cfg->setChannel(cfg);
 
-    rxToIdMap[rxChannel].emplace_back(idMap[fe]);
+    rxToIdMap[cfg.getRxChannel()].emplace_back(uid);
 
     // Using macro includes file/line info
-    SPDLOG_LOGGER_INFO(blog, "Added FE: Tx({}), Rx({}) under ID {}", txChannel, rxChannel, idMap[fe]);
+    SPDLOG_LOGGER_INFO(blog, "Added FE: Tx({}), Rx({}) under ID {}", cfg.getTxChannel(), cfg.getRxChannel(), uid);
 }
 
-void Bookkeeper::addFe(FrontEnd *fe, unsigned channel) {
-    this->addFe(fe, channel, channel);
+void Bookkeeper::addFe(std::unique_ptr<FrontEnd> fe, unsigned channel) {
+    this->addFe(std::move(fe), FrontEndConnectivity(channel,channel));
 }
 
 void Bookkeeper::delFe(unsigned id) {
@@ -72,14 +65,13 @@ void Bookkeeper::delFe(unsigned id) {
         SPDLOG_LOGGER_ERROR(blog, "Id not in use, can not delete FE!");
     } else {
         SPDLOG_LOGGER_DEBUG(blog, "Removed FE: Tx({}), Rx({})", bookEntries[id].txChannel, bookEntries[id].rxChannel);
-        delete bookEntries[id].fe;
         unsigned rx = bookEntries[id].rxChannel;
         rxToIdMap[rx].erase(std::remove(rxToIdMap[rx].begin(), rxToIdMap[rx].end(), id), rxToIdMap[rx].end());
         bookEntries.erase(bookEntries.begin() + id);
     }
     // Remap everything
     for (unsigned i=0; i<bookEntries.size(); i++) {
-        idMap[bookEntries[i].fe] = i;
+        idMap[bookEntries[i].fe.get()] = i;
     }
 }
 
@@ -92,7 +84,7 @@ FrontEnd* Bookkeeper::getFe(unsigned id) {
         SPDLOG_LOGGER_ERROR(blog, "Id not in use, can not find FE!");
         return nullptr;
     } else {
-        return bookEntries[id].fe;
+        return bookEntries[id].fe.get();
     }
 }
 
@@ -101,12 +93,12 @@ FrontEndCfg* Bookkeeper::getFeCfg(unsigned id) {
         SPDLOG_LOGGER_ERROR(blog, "Id not in use, can not find FE!");
         return nullptr;
     } else {
-        return dynamic_cast<FrontEndCfg*>(bookEntries[id].fe);
+        return dynamic_cast<FrontEndCfg*>(bookEntries[id].fe.get());
     }
 }
 
 FrontEnd* Bookkeeper::getLastFe() {
-    return bookEntries.back().fe;
+    return bookEntries.back().fe.get();
 }
 
 std::vector<uint32_t> Bookkeeper::getTxMask() {
