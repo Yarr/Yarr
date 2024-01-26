@@ -200,5 +200,5 @@ void Itkpixv2TriggerLoop::loadConfig(const json &config) {
 }
 
 uint32_t Itkpixv2TriggerLoop::getExpEvents(){
-    return getTrigCnt()*m_trigMultiplier;
+    return getTrigCnt()*(m_trigMultiplier+(m_edgeMode?0:1));
 }
