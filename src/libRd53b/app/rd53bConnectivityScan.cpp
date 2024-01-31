@@ -34,15 +34,15 @@ auto logger = logging::make_log("Rd53bConnectivityScan");
 void printHelp() {
     std::cout << "Usage: ./bin/connectivityScanner [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-o <output_path>]\n\n"
 	  << "Options:\n"
-	  << "  -h/--help                 Display this help message.\n"
-	  << "  -r       <hw_controller_file>   Specify hardware controller JSON path (required).\n"
-	  << "  -c       <connectivity_file>    Specify connectivity config directory or JSON path. Default is \"configs/connectivity/auto_rd53b_setup.json\"\n"
-	  << "  -o       <config_path>          Specify directory path for chip configs. Default is \"configs/\"\n"
-	  << "  -p        <option>               Path relation, e.g. choose from 'relToExec' (default), 'relToCon' or 'abs' .\n" // TODO?
-	  << "  -s       <integer>               Specify the sleep time in microseconds after configuration. Default is 1000us.\n"
-	  << "  --tx     <integer>               Specify the number of tx (command). Default depends on the controller.\n"
-	  << "  --rx     <integer>               Specify the number of rx (data). Default depends on the controller.\n"
-	  << "  --nlanes <integer>               Specify the number of lanes per chip. Default is 1.\n";
+	  << "  -h/--help                         Display this help message.\n"
+	  << "  -r         <hw_controller_file>   Specify hardware controller JSON path (required).\n"
+	  << "  -c         <connectivity_file>    Specify connectivity config directory or JSON path. Default is \"configs/connectivity/auto_rd53b_setup.json\"\n"
+	  << "  -o         <config_path>          Specify directory path for chip configs. Default is \"configs/\"\n"
+	  << "  -p         <string>               Path relation, e.g. choose from 'relToExec' (default), 'relToCon' or 'abs' .\n" // TODO?
+	  << "  -s         <integer>              Specify the sleep time in microseconds after configuration. Default is 1000us.\n"
+	  << "  --tx       <integer>              Specify the number of tx (command). Default depends on the controller.\n"
+	  << "  --rx       <integer>              Specify the number of rx (data). Default depends on the controller.\n"
+	  << "  --nlanes   <integer>              Specify the number of lanes per chip. Default is 1.\n";
 }
 
 bool endswith(const std::string &str, const std::string &suffix) {
@@ -72,8 +72,8 @@ int main(int argc, char **argv) {
     j["log_config"][1]["level"] = "critical";
     j["log_config"][2]["name"] = "Rd53bPixelCfg";
     j["log_config"][2]["level"] = "critical";
-    j["log_config"][3]["name"] = "Rd53bConnectivityScan";
-    j["log_config"][3]["level"] = "debug";
+    //j["log_config"][3]["name"] = "Rd53bConnectivityScan";
+    //j["log_config"][3]["level"] = "debug";
     logging::setupLoggers(j);
 
     // args
@@ -162,9 +162,9 @@ int main(int argc, char **argv) {
     logger->debug("{} {} {}", hw_controller_filename, connectivity_filename, chip_config_path);
 
     logger->debug("chips");
-    ScanHelper::listChips();
+    //ScanHelper::listChips(); // DEBUG
     logger->debug("controllers");
-    ScanHelper::listControllers();
+    //ScanHelper::listControllers(); // DEBUG
 
     // instantiate the hw controller
     std::unique_ptr<HwController> hw;
@@ -178,11 +178,12 @@ int main(int argc, char **argv) {
     }
 
     //// controller json
-    json hwStatus = hw->getStatus();
-    std::cout<<hwStatus<<std::endl; // std::out works, using logger doesn't work.
+    //json hwStatus = hw->getStatus(); // DEBUG
+    //std::cout<<hwStatus<<std::endl; // DEBUG; std::out works, using logger doesn't work.
 
     // set number of lanes, number of rx and number of tx depending on the controller type // TODO
-    std::cout<<jcontroller["ctrlCfg"]["type"]<<std::endl;
+    //std::cout<<jcontroller["ctrlCfg"]["type"]<<std::endl; // DEBUG
+
     // check if values are their originally initiated values
     if (jcontroller["ctrlCfg"]["type"] == "spec") {
 	if (nlanes == -1) nlanes = 1;
@@ -361,5 +362,7 @@ int main(int argc, char **argv) {
 	std::ofstream newConnectivityFile(connectivity_filename);
 	newConnectivityFile << std::setw(4) << jconnectivity;
 	newConnectivityFile.close();
+	logger->info("Connectivity file saved in \"{}\".", connectivity_filename);
+	logger->info("Chip configs saved in \"{}\".", chip_config_path);
 	return 0;
 }
