@@ -1,6 +1,3 @@
-// speccontroller: what is setup mode and what is run mode? pulse word different
-
-
 // #################################
 // # Author: Lingxin Meng
 // # Email: lmeng at cern.ch
@@ -130,6 +127,7 @@ int main(int argc, char **argv) {
 	}
     }
 
+    logger->debug("ntx {}", ntx);
     // check controller config
     if(hw_controller_filename.empty()) {
 	logger->critical("Controller config required (-r)");
@@ -217,6 +215,7 @@ int main(int argc, char **argv) {
 	    connectivity_filename = connectivity_filename.substr(0, connectivity_filename.find_last_of("/"));
 	}
 
+	// TODO if differen path options used, e.g. relToCon (default for module QC tools)
 	// if connectivity and chip configs are in the same directory (e.g. -c test -o test) then the chip config path in the connectivity file should be one layer higher
 	//if (connectivity_filename == chip_config_path) {
 	    //if ( connectivity_filename.find_last_of("/") != std::string::npos ) {
@@ -322,7 +321,8 @@ int main(int argc, char **argv) {
 
 	    ////// Write default to file
 	    //fe.writeConfig(cfg); // fills in all the missing values with default
-	    std::string filename = "20UPGFC"+chip_sn.str()+".json"; // or save as chip_name.json?
+	    //std::string filename = "20UPGFC"+chip_sn.str()+".json"; // or save as chip_name.json?
+	    std::string filename = chip_name.str()+".json"; // or save as serialNumber.json?
 	    std::ofstream newCfgFile(chip_config_path+"/"+filename);
 	    newCfgFile << std::setw(4) << cfg;
 	    newCfgFile.close();
@@ -339,11 +339,6 @@ int main(int argc, char **argv) {
 
 	    jconnectivity["chips"].push_back(jchipconnectivity);
 
-	    //read firmware to determine hardware type, speed, FE chip type
-	    // what if firmware is wrong? --> user
-	    // scan through spec
-	    // scan through polarities
-	    // broadcast individual lanes
 	    hw->disableRx();
 	    }
 	}
