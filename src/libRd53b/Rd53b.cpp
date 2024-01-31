@@ -374,7 +374,7 @@ uint32_t Rd53b::getEfuses() {
     // enabled in order to query them
     if (this->ServiceBlockEn.read() == 0) {
         logger->error("Register messages not enabled, can't check chip id (set \"ServiceBlockEn\" to 1 in chip config");
-        return false;
+        return 0;
     }
 
     // if user is requested to enforce that the chip id be in the FrontEnd "name"
@@ -396,6 +396,7 @@ uint32_t Rd53b::getEfuses() {
         logger->info("Chip serial number decoded with old format from e-fuse data: 0x{:x}", chip_sn_old);
         return chip_sn_old;
     }
+    return 0;
 }
 
 std::pair<uint32_t, uint32_t> Rd53b::decodeSingleRegRead(uint32_t higher, uint32_t lower) {
