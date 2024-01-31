@@ -15,7 +15,9 @@ add_library(Rd53b SHARED
         Rd53bPixelCfg.cpp
         Rd53bPixelFeedback.cpp
         Rd53bReadRegLoop.cpp
-        Rd53bTriggerLoop.cpp)
+        Rd53bTriggerLoop.cpp
+        Rd53bChipMap.cpp
+        Rd53bEncodingTool.cpp)
 
 post_build_debug_library(Rd53b)
 target_include_directories(Rd53b PRIVATE ../libYarr/include)
@@ -32,7 +34,8 @@ LIST(APPEND apps
         rd53bEfuseCheck
         rd53bSendGlobalPulse
         rd53bDataMergingCheck_4to1
-        rd53bDataMergingCheck_2to1)
+        rd53bDataMergingCheck_2to1
+        rd53bGenEncode)
 
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)
