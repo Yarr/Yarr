@@ -226,23 +226,44 @@ int main(int argc, char **argv) {
 	    hw->setRxEnable(_rx);
 	    hw->checkRxSync();
 
+	    // if configured only once first chip often fails (e.g. no chip ID read) also with 1s sleep
+	    // configuring twice works
+	    fe.configureInit();
+	    fe.configureGlobal();
+	    std::this_thread::sleep_for(std::chrono::microseconds(sleep));
+	    fe.configureGlobal();
+	    std::this_thread::sleep_for(std::chrono::microseconds(sleep));
+
 	    uint8_t chipId = fe.getChipId();
 	    logger->debug("Get 2-LSB chip ID: {}", chipId);
 	    if(chipId == 255) continue;
 
-	    if(channel_cfg == "16x1") {
-		chipId += 12; // only for 16x1 FW, assuming quad
-		cfg["RD53B"]["Parameter"]["ChipId"] = chipId;
-		fe.loadConfig(cfg);
-
-		logger->info("Configure chip again..."); // have to do this again in order to be able to read out efuses
-		fe.configureInit();
-		fe.configureGlobal();
-		std::this_thread::sleep_for(std::chrono::microseconds(10));
-	    }
+	    // try establish com assuming quad chip ID
+	    chipId += 12; // assuming quad to be the majority
+	    logger->info("Configure chip again with chipId = {}", chipId); // have to do this again in order to be able to read out efuses
+	    cfg["RD53B"]["Parameter"]["ChipId"] = chipId;
+	    fe.loadConfig(cfg);
+	    fe.configureGlobal();
+	    std::this_thread::sleep_for(std::chrono::microseconds(sleep));
 
 	    // https://gitlab.cern.ch/YARR/YARR/-/issues/166
-	    uint32_t efuse = fe.getEfuses();
+	    uint32_t efuse = fe.getEfuses(); // TODO try/except
+
+	    logger->debug("efuse {}", efuse);
+
+	    // if cannot read out efuse, try triplet chip ID
+	    if ( !efuse ) {
+		chipId -= 12; // triplet chip ID
+		logger->warn("Can't read efuse, try triplet chip ID {}", chipId);
+		cfg["RD53B"]["Parameter"]["ChipId"] = chipId;
+		fe.loadConfig(cfg);
+		fe.configureGlobal();
+		std::this_thread::sleep_for(std::chrono::microseconds(sleep));
+		efuse = fe.getEfuses();
+		logger->debug("efuse again {}", efuse);
+	    }
+
+	    //-------------
 	    std::stringstream chip_name;
 	    std::stringstream chip_sn;
 	    chip_name << "0x" << std::hex << efuse;
