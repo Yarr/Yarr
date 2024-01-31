@@ -24,7 +24,7 @@ target_include_directories(Rd53b PUBLIC ./include)
 target_link_libraries(Rd53b Scan)
 
 LIST(APPEND apps
-        connectivityScanner
+        rd53bConnectivityScan
         rd53bComTest
         rd53bDecodeTool
         rd53bReadRingosc
