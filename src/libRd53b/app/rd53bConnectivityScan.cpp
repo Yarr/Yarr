@@ -2,9 +2,9 @@
 // # Author: Lingxin Meng
 // # Email: lmeng at cern.ch
 // # Project: Yarr
-// # Description: scans...
+// # Description: scans through all tx and rx, broadcasts config, reads back chip ID + efuse and writes connectivity and chip configs
 // # Date: Nov. 2023
-// ################################
+// #################################
 
 #include <cstdint>
 #include <string>
