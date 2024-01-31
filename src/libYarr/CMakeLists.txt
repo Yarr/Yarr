@@ -19,7 +19,7 @@ add_library(Scan SHARED
         AllProcessors.cpp
         AllStdActions.cpp
         AnalysisAlgorithm.cpp
-        AnalysisAlgorithm.cpp
+        AnalysisConsole.cpp
         Bookkeeper.cpp
         Clipboard.cpp
         DataProcessor.cpp

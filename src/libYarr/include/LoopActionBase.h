@@ -11,6 +11,7 @@
 #include <typeinfo>
 #include <typeindex>
 #include <string>
+#include <array>
 
 #include "TxCore.h"
 #include "RxCore.h"

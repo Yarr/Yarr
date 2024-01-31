@@ -10,6 +10,7 @@
 // ################################
 
 #include <mutex>
+#include <memory>
 
 #include "RawData.h"
 #include "EventDataBase.h"
@@ -23,7 +24,7 @@
 #include "StdTriggerAction.h"
 
 struct BookEntry {
-    FrontEnd *fe = nullptr;
+    std::unique_ptr<FrontEnd> fe;
 
     bool active = false;
     
@@ -34,14 +35,14 @@ struct BookEntry {
 class Bookkeeper {
     public:
         Bookkeeper(TxCore *arg_tx, RxCore *arg_rx);
-        ~Bookkeeper();
+        ~Bookkeeper() = default;
 
-        void initGlobalFe(FrontEnd *fe) {g_fe = fe;}
-        void initGlobalFe(std::string chipType);
+        void initGlobalFe(std::unique_ptr<FrontEnd> fe) {g_fe = std::move(fe);}
+        void initGlobalFe(const std::string& chipType);
 
-        // TODO should only add generic Fe class
-        void addFe(FrontEnd *fe, const FrontEndConnectivity& cfg);
-	void addFe(FrontEnd *fe, unsigned channel);
+        // Bookkeeper always takes the ownership of the FrontEnd object
+        void addFe(std::unique_ptr<FrontEnd> fe, const FrontEndConnectivity& cfg);
+        void addFe(std::unique_ptr<FrontEnd> fe, unsigned channel);
 	
         void delFe(unsigned id);
 		void delFe(FrontEnd *fe);
@@ -50,7 +51,7 @@ class Bookkeeper {
 		FrontEndCfg* getFeCfg(unsigned id);
         FrontEnd* getLastFe();
         FrontEnd* getGlobalFe() const {
-            return g_fe;
+            return g_fe.get();
         }
 
         // Construct mask of active channels
@@ -67,9 +68,8 @@ class Bookkeeper {
         void setTargetCharge(int v) {target_charge = v;}
         int getTargetCharge() const {return target_charge;}
 
-        template<typename T> T* globalFe() {return dynamic_cast<T*>(g_fe);}
+        template<typename T> T* globalFe() {return dynamic_cast<T*>(g_fe.get());}
         // TODO make private, not nice like that
-        FrontEnd *g_fe;
         TxCore *tx;
         RxCore *rx;
 
@@ -83,13 +83,14 @@ class Bookkeeper {
         std::shared_ptr<StdTriggerAction> getTriggerAction() {return m_trigLoop;};
 
     private:
-        
+
+        std::unique_ptr<FrontEnd> g_fe;
+
         // Index of vector is UID 
         std::vector<BookEntry> bookEntries;
         std::map<FrontEnd* , unsigned> idMap;
         std::map<unsigned, std::vector<unsigned>> rxToIdMap;
         std::shared_ptr<StdTriggerAction> m_trigLoop = nullptr;
-
 
         int target_tot;
         int target_threshold;

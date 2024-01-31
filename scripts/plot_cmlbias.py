@@ -15,11 +15,19 @@ optional arguments:
 '''
 
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib import gridspec
 import json 
 import re, os, sys
 import argparse
 from plot_eyediagram import plot_eyediagram
+
+def find_mean_total(dataset):
+	width = []
+	for lane in ["0", "1", "2", "3"]:
+		summed = sum(1 for xvar in range(29) if dataset[lane][xvar] == 1.0)
+		width.append(summed / 2)
+	return width
 
 
 def plot_cmlbias(directory,n_lanes):
@@ -42,15 +50,29 @@ def plot_cmlbias(directory,n_lanes):
 	fig = plt.figure(figsize=(14,n_lanes+16/n_lanes))
 	spec = gridspec.GridSpec(ncols=n_cols, nrows=n_rows)
 
+	eye_widths = [[] for _ in range(n_lanes)]
+	eye_label = [[] for _ in range(n_lanes)]
+
 	for i in range(0, len(cmlbiases1)):
+		for m in range(n_lanes):
+			eye_widths[m].append([])
+			eye_label[m].append([])
+
 		for j in range(0, len(cmlbiases0)):
 			if cmlbiases1[i]>=cmlbiases0[j]:
 				if n_cols*i+j==n_cols:
 					ax = fig.add_subplot(spec[n_cols*i+j])
 					plt.axis('off')
+				for m in range(n_lanes):
+					eye_widths[m][i].append(0)
+					eye_label[m][i].append("-")
 			else: 			
 				ax = fig.add_subplot(spec[n_cols*i+j])
 				ax,im,data,labels = plot_eyediagram("%s/results_%s_%s.txt"%(directory,cmlbiases0[j],cmlbiases1[i]),n_lanes,ax)
+				total = find_mean_total(data)
+				for m in range(n_lanes):
+					eye_widths[m][i].append(total[m])
+					eye_label[m][i].append(str(round(total[m], 1)))
 				for m in range(n_lanes):
 					for k, value in enumerate(data["0"]):
 						text = ax.text(k, m, labels[m][k], ha="center", va="center", color="black",fontsize=5)
@@ -64,7 +86,27 @@ def plot_cmlbias(directory,n_lanes):
 	plt.yticks(rotation=0) 
 	plt.tight_layout()
 	plt.savefig("CmlBiasScan.png",dpi=200)
-	plt.show()
+
+	fig = plt.figure(figsize=(8,6))
+	spec = gridspec.GridSpec(ncols=2, nrows=2)
+
+	for lane in range(0,4):
+		ax = fig.add_subplot(spec[lane])
+		plot_map=np.array(eye_widths[lane])
+		plot_label=eye_label[lane]
+		im = ax.imshow(plot_map,aspect='auto',vmin=0, vmax=np.max(eye_widths))
+		ax.set_xticks(range(0,len(cmlbiases0),1))
+		ax.set_xticklabels(labels=cmlbiases0,fontsize=10)
+		ax.set_yticks(range(0,len(cmlbiases1),1))
+		cbar = fig.colorbar(im, ax=ax)
+		ax.set_yticklabels(labels=cmlbiases1,fontsize=10, rotation=0)
+		ax.set_xlabel("CmlBias0", fontsize=10)
+		ax.set_ylabel("CmlBias1", fontsize=10)
+		ax.set_title("Lane %s"%lane)
+
+	fig.suptitle("Mean Eye Width per Lane", fontsize=13)
+	plt.tight_layout()
+	plt.savefig("CmlBiasScan_Mean.png",dpi=200)
 
 
 

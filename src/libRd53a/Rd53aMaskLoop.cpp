@@ -96,7 +96,7 @@ void Rd53aMaskLoop::init() {
     m_done = false;
     m_cur = min;
     for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
         auto rd53a = dynamic_cast<Rd53a*>(fe);
         // Make copy of pixRegs
         m_pixRegs[fe] = rd53a->pixRegs;
@@ -120,7 +120,7 @@ void Rd53aMaskLoop::execPart1() {
 
     // Loop over FrontEnds
     for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
         g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
         std::vector<std::pair<unsigned, unsigned>> modPixels;
 
@@ -203,7 +203,7 @@ void Rd53aMaskLoop::execPart2() {
     // Loop over FrontEnds to clean it up
     if (m_maskType == CrossTalkMask or m_maskType == CrossTalkMaskv2 ){
         for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-            FrontEnd *fe = keeper->getEntry(id).fe;
+            auto fe = keeper->getFe(id);
             g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
 
             auto rd53a = dynamic_cast<Rd53a*>(fe);
@@ -243,7 +243,7 @@ void Rd53aMaskLoop::end() {
     SPDLOG_LOGGER_TRACE(logger, "");
 
     for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
         // Copy original registers back
         // TODO need to make sure analysis modifies the right config
         // TODO not thread safe

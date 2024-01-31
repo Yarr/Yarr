@@ -139,7 +139,7 @@ void Rd53aReadRegLoop::execPart1() {
     //Currently for RD53A, each board needs to be configured alone due to a bug with the read out of the rd53a. This can be changed in rd53b. 
     
     for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
         if(fe->getActive()) {
             std::string feName = dynamic_cast<FrontEndCfg*>(fe)->getName();
             Rd53a *feRd53a = dynamic_cast<Rd53a*>(fe);

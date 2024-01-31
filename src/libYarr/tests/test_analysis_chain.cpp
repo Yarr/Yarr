@@ -57,7 +57,7 @@ TEST_CASE("AnalysisChainIO", "[Analysis]") {
   REQUIRE ( fe->isActive() );
 
   unsigned channel = 42;
-  bookie.addFe(fe.release(), channel);
+  bookie.addFe(std::move(fe), channel);
 
   // Create a dummy scan config with known analyses to test IO connections
   // The dependency here is for test only and is arbitrary and meaningless

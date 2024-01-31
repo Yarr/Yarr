@@ -1,14 +1,17 @@
 {
     "scan": {
-        "analysis": {
-            "0": {
-                "algorithm": "OccPixelThresholdTune",
-                "config": {
-                    "occLowCut": 0.2,
-                    "occHighCut": 0.8
-                }
-            },
-            "n_count": 1
+      "analysis": {
+        "0": {
+          "algorithm": "ScurveFitter"
+        },
+       "1": {
+          "algorithm": "ParameterAnalysis"
+        },
+       "2": {
+          "algorithm": "OccupancyAnalysis"
+        },
+        "n_count": 2
+
         },
         "histogrammer": {
             "0": {
@@ -38,34 +41,42 @@
             "n_count": 4
         },
         "loops": [
-        { 
+        {
             "config": {
                 "max": 15,
                 "min": -15,
-                "steps": [8,4,2,1,1,1,1],
+                "steps": [1,1,1],
                 "pixelReg": 0,
                 "rstPixelReg": true
             },
-            "loopAction": "Rd53bPixelFeedback"
+            "loopAction": "Itkpixv2PixelFeedback"
         },
         {
             "config": {
-                "max": 768,
+                "max": 64,
                 "min": 0,
-                "step": 1,
-                "maskType": 3
+                "step": 1
             },
-            "loopAction": "Rd53bMaskLoop"
+            "loopAction": "Itkpixv2ParMaskLoop"
         },
+        {
+                "config": {
+                  "max": 300,
+                  "min": 0,
+                  "step": 5,
+                  "parameter":"InjVcalDiff",
+                  "waitTime": 100
+                },
+                "loopAction": "StdParameterLoop"
+              },
         {
             "config": {
                 "max": 50,
                 "min": 0,
                 "step": 1,
-                "nSteps": 2,
-                "usePToT": true
+                "nSteps": 5
             },
-            "loopAction": "Rd53bCoreColLoop"
+            "loopAction": "Itkpixv2CoreColLoop"
         },
             {
                 "config": {
@@ -77,7 +88,7 @@
                     "time": 0,
                     "edgeMode": false
                 },
-                "loopAction": "Rd53bTriggerLoop"
+                "loopAction": "Itkpixv2TriggerLoop"
             },
             {
                 "loopAction": "StdDataLoop"
@@ -87,10 +98,7 @@
         "prescan": {
             "InjVcalRange": 1,
             "InjDigEn": 0,
-            "Latency": 60,
-            "TotEnPtot": 1,
-            "TotEnPtoa": 1,
-            "TotPtotLatency": 0
+            "Latency": 60
         }
     }
 }

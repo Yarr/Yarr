@@ -10,6 +10,7 @@ add_library(Util SHARED
         lmmin.cpp
         LoggingConfig.cpp
         SerialCom.cpp
+        catch_amalgamated.cpp
         )
 
 post_build_debug_library(Util)

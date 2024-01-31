@@ -153,7 +153,7 @@ void Itkpixv2ReadRegLoop::execPart1()
 {
     //Scan chip by chip.
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
         if (fe->getActive()) {
             g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
             std::string feName = dynamic_cast<FrontEndCfg *>(fe)->getName();

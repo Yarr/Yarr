@@ -1,6 +1,6 @@
 # Hardware Setup and Software Installation
 
-In order to setup the DAQ system the following two steps are needed:
+In order to setup the DAQ system the following steps are needed:
 
 1. Install the YARR SW package
 2. Install the custom PCIe kernel driver
@@ -96,13 +96,40 @@ $ sudo yum install gnuplot texlive-epstopdf cmake3 elfutils-libelf-devel
 ```
 
 ### Initialise repository
-- Clone the repository to your local machine:
+If you want to install the software in a new machine or want to make a new installation, then clone the repository to your local machine:
 ```bash
 $ git clone https://gitlab.cern.ch/Yarr/Yarr.git Yarr
 ```
-- The master branch should contain the latest stable release, the most up-to date version can be found in the devel branch
+This will get the default master branch which contains the latest stable release. Use
+
+```bash
+$ cd Yarr
+$ git tag
+```
+to list all available tagged versions. To use a specific tagged version from the list, do
+```bash
+$ cd Yarr
+$ git checkout <tagged version>
+```
+The most up-to date development can be found in the devel branch.
+
 - A version history and description can be found [here](version.md)
-- Note, Yarr is also available in a [GitHub repository.](https://github.com/Yarr/ "GitHub repository"), but using the GitLab version is recommended and what is used for active development. 
+- Note, Yarr is also available in a [GitHub repository.](https://github.com/Yarr/ "GitHub repository"), but using the GitLab version is recommended as it is used for active development.
+
+### Update the software version
+If you already have an installed YARR version on your local machine, then just fetch the latest version to update it:
+
+```bash
+$ git fetch --all
+$ git checkout <tagged version>
+```
+Clean all files from the `build` folder using
+```bash
+$ cd build
+$ rm -rf *
+```
+then continue the installation using `cmake3` as detailled below.
+
 
 ### Compile the software
 

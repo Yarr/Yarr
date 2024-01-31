@@ -99,7 +99,7 @@ void Rd53aPixelFeedback::init() {
     }
     if (m_resetTdac) {
         for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-            FrontEnd *fe = keeper->getEntry(id).fe;
+            auto fe = keeper->getFe(id);
             if (fe->getActive()) {
                 auto rd53a = dynamic_cast<Rd53a*>(fe);
                 m_fb[id] = NULL;
@@ -126,7 +126,7 @@ void Rd53aPixelFeedback::execPart1() {
     g_stat->set(this, m_cur);
     // Lock all mutexes
     for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
         if (fe->getActive()) {
             this->writePixelCfg(dynamic_cast<Rd53a*>(fe));
         }
@@ -137,7 +137,7 @@ void Rd53aPixelFeedback::execPart1() {
 void Rd53aPixelFeedback::execPart2() {
     // Wait for mutexes to be unlocked by feedback
     for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
         if (fe->getActive()) {
             waitForFeedback(id);
         }
@@ -155,7 +155,7 @@ void Rd53aPixelFeedback::execPart2() {
 void Rd53aPixelFeedback::end() {
     /*
     for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
             keeper->mutexMap[id].lock();
             this->writePixelCfg(dynamic_cast<Rd53a*>(fe));
         }

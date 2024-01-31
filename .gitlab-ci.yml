@@ -9,18 +9,23 @@ workflow:
           when: never
         - if: '$CI_COMMIT_BRANCH'
 
-image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_cc7_build
-
 stages:
     - build
     - test
     - deploy
+
+# Baseline is ALMA9 image
+image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_alma9_build
 
 ###############
 # Build Stage #
 ###############
 
 job_build_all:
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     stage: build
     artifacts:
         paths:
@@ -39,6 +44,10 @@ job_build_all:
       - cd ..
 
 job_build_and_test_out_of_source:
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     stage: build
     script:
       - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
@@ -49,6 +58,10 @@ job_build_and_test_out_of_source:
       - /tmp/build/bin/scanConsole -k
 
 job_build_clang:
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     stage: build
     script:
       - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
@@ -63,9 +76,12 @@ job_build_clang:
 
 job_build_none:
     stage: build
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+    parallel:
+        matrix:
+            - ARCH: ['cc7', 'alma9']
     script:
-      - scl enable devtoolset-9 bash
-      - source /opt/rh/devtoolset-9/enable
+      - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir build
       - cd build
       - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD= -DYARR_FRONT_ENDS_TO_BUILD= -DYARR_ACTIVE_LOGGER_LEVEL=OFF
@@ -137,7 +153,11 @@ build_docs:
 
 job_test_pixel:
     stage: test
-    needs: ["job_build_all"]
+    needs: 
+        - job: job_build_all
+          parallel:
+              matrix:
+                  - ARCH: ['alma9']
     script:
       - bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p -l configs/logging/trace_all.json
       - ls
@@ -156,26 +176,42 @@ job_test_pixel:
 
 job_test_strips:
     stage: test
-    needs: ["job_build_all"]
+    needs: 
+        - job: job_build_all
+          parallel:
+              matrix:
+                  - ARCH: ['alma9']
     script:
       - bin/test_star configs/controller/emuCfg_star.json -r 0 -t 0
 
 job_test_python:
     stage: test
-    needs: ["job_build_all"]
+    needs: 
+        - job: job_build_all
+          parallel:
+              matrix:
+                  - ARCH: ['alma9']
     script:
       - PYTHONPATH=$PWD/lib python3 python/scan_cli_logger.py -r configs/controller/emuCfg_rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json
 
 job_test_unit:
     stage: test
-    needs: ["job_build_all"]
+    needs: 
+        - job: job_build_all
+          parallel:
+              matrix:
+                  - ARCH: ['alma9']
     script:
       - cd build
       - CTEST_OUTPUT_ON_FAILURE=1 make test
 
 job_test_json_parsing:
     stage: test
-    needs: ["job_build_all"]
+    needs: 
+        - job: job_build_all
+          parallel:
+              matrix:
+                  - ARCH: ['alma9']
     script:
       # Check schema by loading configs in turn
       - (for file in $(find configs/defaults -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t FRONT_END || exit; done)
@@ -185,7 +221,12 @@ job_test_json_parsing:
 
 job_test_netio:
     stage: test
-    needs: ["job_build_all"]
+    needs: 
+        - job: job_build_all
+          parallel:
+              matrix:
+                  - ARCH: ['cc7']
+    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_cc7_build
     script:
       # Launch netio_bridge to connect an emulator to NetIO
       - bin/netio_bridge -p 12340 -q 12350 -f configs/controller/emuCfg_star.json & pid_bridge=($!)
@@ -205,6 +246,7 @@ job_test_code_coverage:
     script:
       - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - scripts/cc_tool.sh
+    coverage: '/  lines......: \d+(?:\.\d+)?/'
 
 job_test_json:
     stage: test
