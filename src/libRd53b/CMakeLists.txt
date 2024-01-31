@@ -34,8 +34,7 @@ LIST(APPEND apps
         rd53bEfuseCheck
         rd53bSendGlobalPulse
         rd53bDataMergingCheck_4to1
-        rd53bDataMergingCheck_2to1
-        rd53bGenEncode)
+        rd53bDataMergingCheck_2to1)
 
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)

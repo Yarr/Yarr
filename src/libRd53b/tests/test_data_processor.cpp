@@ -19,9 +19,9 @@ TEST_CASE("Rd53bDataProcessor", "[rd53b][data_processor]") {
   //number of events per stream and generate desired number of events
 
   std::unique_ptr<Rd53bEncodingTool> encoder(new Rd53bEncodingTool());
-  encoder->setSeed(0);
+  encoder->setSeed(Catch::rngSeed());
   encoder->setEventsPerStream(16);
-  encoder->generate(28);
+  encoder->generate(28, 1e-2, 5, 1);
 
   //Retrieve the truth hits and the encoded words
 
@@ -29,7 +29,6 @@ TEST_CASE("Rd53bDataProcessor", "[rd53b][data_processor]") {
   std::vector<uint32_t> words = encoder->getWords();
   int nWords = words.size();
   
-  std::cout << "RD53b processor test\n";
   std::shared_ptr<FeDataProcessor> proc = StdDict::getDataProcessor("RD53B");
 
   REQUIRE (proc);
@@ -72,7 +71,6 @@ TEST_CASE("Rd53bDataProcessor", "[rd53b][data_processor]") {
 
   for (int ievt = 0; ievt < rawData.events.size(); ievt++){
 	  for(int ihit = 0; ihit < rawData.events[ievt].hits.size(); ihit++){
-      std::cout << "Attempt " << ihit << "\n";
 		  REQUIRE(rawData.events[ievt].hits[ihit].col == truth.events[ievt].hits[ihit].col);
 		  REQUIRE(rawData.events[ievt].hits[ihit].row == truth.events[ievt].hits[ihit].row);
 		  REQUIRE(rawData.events[ievt].hits[ihit].tot == truth.events[ievt].hits[ihit].tot);

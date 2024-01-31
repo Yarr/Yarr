@@ -155,6 +155,7 @@ Rd53bEncodingTool::StatusCode Rd53bEncodingTool::createStream(Rd53bChipMap &chip
 
       int el = 0;
       bool is_first = true;
+      std::vector<FrontEndHit> feHits;
       for (int phi = min_phi; phi <= max_phi; phi++)
       {
         for (int eta = min_eta; eta <= max_eta; eta++)
@@ -176,11 +177,17 @@ Rd53bEncodingTool::StatusCode Rd53bEncodingTool::createStream(Rd53bChipMap &chip
           feHit.col = eta + 1;
           feHit.row = phi + 1;
           feHit.tot = tots.at(el - 1) - 1;
-          m_truthData->curEvent->addHit(feHit);
+          feHits.emplace_back(feHit);
+          //m_truthData->curEvent->addHit(feHit);
           processed_hits++;
         }
       }
+      
+      //the hits in each qcore in the decoder output are reversed wrt. the encoding pattern,
+      //reverting them also here
 
+      for (int ihit = feHits.size()-1; ihit >= 0; ihit--) m_truthData->curEvent->addHit(feHits[ihit]);
+      
       // -- STEP 2) Add the tags
       // now you need the ccol, qrow tags + islast_isneighbour:
       // 1) add 2 bits for islast and isneighbour bits
