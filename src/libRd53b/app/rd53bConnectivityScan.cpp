@@ -12,7 +12,7 @@
 #include <cstdint>
 #include <string>
 #include <iomanip>
-
+#include <getopt.h>
 #include <filesystem>
 namespace fs = std::filesystem;
 
@@ -35,11 +35,15 @@ auto logger = logging::make_log("Rd53bConnectivityScan");
 void printHelp() {
        std::cout << "Usage: ./bin/connectivityScanner [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-o <output_path>]\n\n"
               << "Options:\n"
-              << "  -h                        Display this help message.\n"
-              << "  -r <hw_controller_file>   Specify hardware controller JSON path (required).\n"
-              << "  -c <connectivity_file>    Specify connectivity config JSON path. Default is \"configs/connectivity/auto_rd53b_setup.json\"\n"
-              << "  -o <config_path>          Specify directory path for chip configs. Default is \"configs/\"\n" ;
-              //<< "  -p <option>               Path relation, e.g. choose from 'relToExec' (default), 'relToCon' or 'abs' .\n"; // TODO?
+              << "  -h/--help                 Display this help message.\n"
+              << "  -r       <hw_controller_file>   Specify hardware controller JSON path (required).\n"
+              << "  -c       <connectivity_file>    Specify connectivity config directory or JSON path. Default is \"configs/connectivity/auto_rd53b_setup.json\"\n"
+              << "  -o       <config_path>          Specify directory path for chip configs. Default is \"configs/\"\n"
+              //<< "  -p        <option>               Path relation, e.g. choose from 'relToExec' (default), 'relToCon' or 'abs' .\n"; // TODO?
+              << "  -s       <integer>               Specify the sleep time in microseconds after configuration. Default is 1000us.\n"
+              << "  --tx     <integer>               Specify the number of tx (command). Default depends on the controller.\n"
+	      << "  --rx     <integer>               Specify the number of rx (data). Default depends on the controller.\n"
+              << "  --nlanes <integer>               Specify the number of lanes per chip. Default is 1.\n";
 }
 
 bool endswith(const std::string &str, const std::string &suffix) {
@@ -72,8 +76,25 @@ int main(int argc, char **argv) {
     std::string chip_config_filename = chip_config_path; // path/filename for the connectivity config
     std::string path_relation = "relToExec"; // path relation
     int sleep = 1000;
+    // TODO: override default values if entered on commandline // bool override = false;
+    int nlanes = -1; // e.g. 1 from 16x1 or 4 from 4x4
+    int nrx = -1; // e.g. 16 from 16x1 or 4 from 4x4
+    int ntx = -1;
+    bool override = false;
 
-    while ((c = getopt(argc, argv, "hr:c:o:p:t:")) != -1) {
+    const char* const short_opts = "hr:c:o:p:t:d:u:n:"; // have to include the short forms of all long options
+    // https://www.ibm.com/docs/en/zos/3.1.0?topic=functions-getopt-long-command-long-option-parsing
+    const option long_opts[] = {
+            {"help", no_argument, nullptr, 'h'},
+	    {"tx", required_argument, nullptr, 'd'}, //Downlink
+            {"rx", required_argument, nullptr, 'u'}, //Uplink
+            {"nlanes", required_argument, nullptr, 'n'},
+            {nullptr, no_argument, nullptr, 0}
+	};
+
+
+    //while ((c = getopt(argc, argv, )) != -1) {
+    while ((c = getopt_long(argc, argv, short_opts, long_opts, nullptr)) != -1) {
         switch (c) {
 	    case 'h':
 		printHelp();
@@ -91,8 +112,17 @@ int main(int argc, char **argv) {
 	    case 'p':
 		path_relation = optarg; // TODO
 		break;
-	    case 't':
+	    case 's':
 		sleep = atoi(optarg); // TODO
+		break;
+	    case 'd':
+		ntx = atoi(optarg);
+		break;
+	    case 'u':
+		nrx = atoi(optarg);
+		break;
+	    case 'n':
+		nlanes = atoi(optarg);
 		break;
 	    default:
 		logger->critical("Invalid command line parameter(s) given!");
@@ -114,28 +144,58 @@ int main(int argc, char **argv) {
 
     logger->debug("{} {} {}", hw_controller_filename, connectivity_filename, chip_config_path);
 
-    // TODO: generic hardware controller
-    // Init spec
-    logger->info("Init spec");
-    int specNum = 0;
+    logger->debug("chips");
+    ScanHelper::listChips();
+    logger->debug("controllers");
+    ScanHelper::listControllers();
 
-    SpecCom mySpec(specNum);
-    logger->info("Scanning connectivity on Spec Card {}", specNum);
-    json specStatus = mySpec.getStatus();
-    //std::cout<<specStatus<<std::endl; // this works
+    // instantiate the hw controller
+    std::unique_ptr<HwController> hw;
+    json jcontroller;
+    try {
+        jcontroller = ScanHelper::openJsonFile(hw_controller_filename);
+        hw = ScanHelper::loadController(jcontroller);
+    } catch (std::exception& e) {
+        std::cerr << "ERROR: Unable to load controller from provided config, exception caught: " << e.what() << std::endl;
+        return 1;
+    }
 
-    std::string rx_speed = specStatus["rx_speed"]; // gives e.g. 1280Mbps
-    std::string channel_cfg = specStatus["channel_configuration"]; // gives e.g. 16x1
+    // controller json
+    json hwStatus = hw->getStatus();
+    std::cout<<hwStatus<<std::endl; // std::out works, using logger doesn't work.
 
-    int readout_speed = std::stoi(rx_speed.substr(0, rx_speed.find('M'))); // extract from e.g. 1280Mbps string position 0 with a length up to M
-    int cdrclksel = std::log2(1280/readout_speed); // get exponent of the clock divider 2^x
-    int nlanes = std::stoi(channel_cfg.substr(channel_cfg.find('x')+1, 1)); // get 1 from 16x1 or 4 from 4x4
-    int nrx = std::stoi(channel_cfg.substr(0, channel_cfg.find('x'))); // get 16 from 16x1 or 4 from 4x4
-    int ntx = 4;
+    // set number of lanes, number of rx and number of tx depending on the controller type // TODO
+    std::cout<<jcontroller["ctrlCfg"]["type"]<<std::endl;
+    // check if values are their originally initiated values
+    if (jcontroller["ctrlCfg"]["type"] == "spec") {
+	if (nlanes == -1) nlanes = 1;
+	if (nrx == -1) nrx = 16;
+	if (ntx == -1) ntx = 4;
+    } else if (jcontroller["ctrlCfg"]["type"] == "bdaq") {
+	// TODO
+    } else if (jcontroller["ctrlCfg"]["type"] == "emu") {
+	// TODO
+    } else if (jcontroller["ctrlCfg"]["type"] == "emu_Rd53a") {
+	// TODO
+    } else if (jcontroller["ctrlCfg"]["type"] == "emu_Star") {
+	// TODO
+    } else if (jcontroller["ctrlCfg"]["type"] == "FelixClient") {
+	// TODO
+    } else if (jcontroller["ctrlCfg"]["type"] == "Netio") {
+	// TODO
+    } else if (jcontroller["ctrlCfg"]["type"] == "Itsdaq") {
+	// TODO
+    } else if (jcontroller["ctrlCfg"]["type"] == "ku040") {
+	// TODO
+    } else if (jcontroller["ctrlCfg"]["type"] == "rce") {
+	// TODO
+    }
 
-    std::string fe_type = specStatus["fe_chip_type"]; // what todo with this?
-    logger->info("fe_type: {}", fe_type);
-    fe_type = "rd53b";
+    logger->info("Will scan through {}(Tx) * {}(Rx) = {} channels at 1.28GHz!", ntx, nrx, ntx*nrx);
+
+    //std::string fe_type = hwStatus["fe_chip_type"]; // only works for spec
+    //logger->info("fe_type: {}", fe_type);
+    std::string fe_type = "rd53b";
     std::string fe_type_upper = fe_type;
     std::transform( fe_type_upper.begin(), fe_type_upper.end(), fe_type_upper.begin(), ::toupper );
 
@@ -182,19 +242,7 @@ int main(int argc, char **argv) {
 	}
     }
 
-    // jsons
-    json jcontroller;
-    jcontroller = ScanHelper::openJsonFile(hw_controller_filename);
-    // instantiate the hw controller
-    std::unique_ptr<HwController> hw;
-    try {
-        jcontroller = ScanHelper::openJsonFile(hw_controller_filename);
-        hw = ScanHelper::loadController(jcontroller);
-    } catch (std::exception& e) {
-        std::cerr << "ERROR: Unable to load controller from provided config, exception caught: " << e.what() << std::endl;
-        return 1;
-    }
-
+    // connectivity json
     json jconnectivity;
     jconnectivity["chipType"] = fe_type_upper;
     jconnectivity["chips"] = json::array(); // declare an empty list
