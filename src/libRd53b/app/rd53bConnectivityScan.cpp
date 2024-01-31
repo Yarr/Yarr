@@ -9,6 +9,8 @@
 #include <cstdint>
 #include <string>
 #include <iomanip>
+#include <list>
+#include <algorithm>
 #include <getopt.h>
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -30,23 +32,32 @@ namespace fs = std::filesystem;
 auto logger = logging::make_log("Rd53bConnectivityScan");
 
 void printHelp() {
-       std::cout << "Usage: ./bin/connectivityScanner [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-o <output_path>]\n\n"
-              << "Options:\n"
-              << "  -h/--help                 Display this help message.\n"
-              << "  -r       <hw_controller_file>   Specify hardware controller JSON path (required).\n"
-              << "  -c       <connectivity_file>    Specify connectivity config directory or JSON path. Default is \"configs/connectivity/auto_rd53b_setup.json\"\n"
-              << "  -o       <config_path>          Specify directory path for chip configs. Default is \"configs/\"\n"
-              //<< "  -p        <option>               Path relation, e.g. choose from 'relToExec' (default), 'relToCon' or 'abs' .\n"; // TODO?
-              << "  -s       <integer>               Specify the sleep time in microseconds after configuration. Default is 1000us.\n"
-              << "  --tx     <integer>               Specify the number of tx (command). Default depends on the controller.\n"
-	      << "  --rx     <integer>               Specify the number of rx (data). Default depends on the controller.\n"
-              << "  --nlanes <integer>               Specify the number of lanes per chip. Default is 1.\n";
+    std::cout << "Usage: ./bin/connectivityScanner [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-o <output_path>]\n\n"
+	  << "Options:\n"
+	  << "  -h/--help                 Display this help message.\n"
+	  << "  -r       <hw_controller_file>   Specify hardware controller JSON path (required).\n"
+	  << "  -c       <connectivity_file>    Specify connectivity config directory or JSON path. Default is \"configs/connectivity/auto_rd53b_setup.json\"\n"
+	  << "  -o       <config_path>          Specify directory path for chip configs. Default is \"configs/\"\n"
+	  << "  -p        <option>               Path relation, e.g. choose from 'relToExec' (default), 'relToCon' or 'abs' .\n" // TODO?
+	  << "  -s       <integer>               Specify the sleep time in microseconds after configuration. Default is 1000us.\n"
+	  << "  --tx     <integer>               Specify the number of tx (command). Default depends on the controller.\n"
+	  << "  --rx     <integer>               Specify the number of rx (data). Default depends on the controller.\n"
+	  << "  --nlanes <integer>               Specify the number of lanes per chip. Default is 1.\n";
 }
 
 bool endswith(const std::string &str, const std::string &suffix) {
     return str.size() >= suffix.size() &&
            str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
+
+// works on list or vector etc
+auto container_printer =  [](auto const & l) {
+        std::string r;
+        for(auto const& i: l) r += i+", ";
+        r.pop_back();
+        r.pop_back();
+        return r;
+    };
 
 int main(int argc, char **argv) {
     // Setup logger with some defaults
@@ -68,18 +79,18 @@ int main(int argc, char **argv) {
     // args
     int c;
     std::string hw_controller_filename = "";
+    std::string connectivity_path = ".";
     std::string connectivity_filename = "configs/connectivity/auto_rd53b_setup.json";
     std::string chip_config_path = "configs/"; // path to create chip configs
     std::string chip_config_filename = chip_config_path; // path/filename for the connectivity config
-    std::string path_relation = "relToExec"; // path relation
+    std::string path_relation = ""; // path relation
     int sleep = 1000;
     // TODO: override default values if entered on commandline // bool override = false;
     int nlanes = -1; // e.g. 1 from 16x1 or 4 from 4x4
     int nrx = -1; // e.g. 16 from 16x1 or 4 from 4x4
     int ntx = -1;
-    bool override = false;
 
-    const char* const short_opts = "hr:c:o:p:t:d:u:n:"; // have to include the short forms of all long options
+    const char* const short_opts = "hr:c:o:p:s:d:u:n:"; // have to include the short forms of all long options
     // https://www.ibm.com/docs/en/zos/3.1.0?topic=functions-getopt-long-command-long-option-parsing
     const option long_opts[] = {
             {"help", no_argument, nullptr, 'h'},
@@ -88,7 +99,6 @@ int main(int argc, char **argv) {
             {"nlanes", required_argument, nullptr, 'n'},
             {nullptr, no_argument, nullptr, 0}
 	};
-
 
     //while ((c = getopt(argc, argv, )) != -1) {
     while ((c = getopt_long(argc, argv, short_opts, long_opts, nullptr)) != -1) {
@@ -127,8 +137,8 @@ int main(int argc, char **argv) {
 	}
     }
 
-    logger->debug("ntx {}", ntx);
-    // check controller config
+    // check validity of inputs
+    // controller config
     if(hw_controller_filename.empty()) {
 	logger->critical("Controller config required (-r)");
 	std::cout << "Rerun with -h for more information\n";
@@ -139,6 +149,15 @@ int main(int argc, char **argv) {
         std::cerr << "ERROR: Provided hw controller file (=" << hw_controller_filename << ") does not exist" << std::endl;
         return 1;
     }
+
+    // path relation
+    std::list<std::string> paths {"relToExec", "relToCon", "abs"};
+    logger->debug("input path_relation: {}", path_relation);
+    if ( path_relation != "" && std::find(paths.begin(), paths.end(), path_relation) == paths.end() ) {
+	logger->critical("Invalid path relation given {}! Must be from {}", path_relation, container_printer(paths));
+	return -1;
+    }
+    if ( path_relation == "" ) path_relation = "relToExec";
 
     logger->debug("{} {} {}", hw_controller_filename, connectivity_filename, chip_config_path);
 
@@ -158,7 +177,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    // controller json
+    //// controller json
     json hwStatus = hw->getStatus();
     std::cout<<hwStatus<<std::endl; // std::out works, using logger doesn't work.
 
@@ -198,60 +217,58 @@ int main(int argc, char **argv) {
     std::transform( fe_type_upper.begin(), fe_type_upper.end(), fe_type_upper.begin(), ::toupper );
 
     //// directory and file names
-    if ( !std::filesystem::exists(chip_config_path) ) {
-	logger->info("Chip config directory \"{}\" doesn't exist, creating...", chip_config_path);
-	std::filesystem::create_directories(chip_config_path);
-    }
-
-    if ( endswith(chip_config_path, "/") ) {
-	chip_config_path = chip_config_path.substr(0, chip_config_path.find_last_of("/"));
-	chip_config_filename = chip_config_path;
-    }
-
+    // connectivity
     // if no ".json" in file name assume it's a directory
     if ( connectivity_filename.find(".json") == std::string::npos ) { // "find" returns the position of the first character of the first match. If no matches were found, the function returns string::npos.
 	// strip last "/" if existing
 	if ( endswith(connectivity_filename, "/") ) {
 	    connectivity_filename = connectivity_filename.substr(0, connectivity_filename.find_last_of("/"));
 	}
-
-	// TODO if differen path options used, e.g. relToCon (default for module QC tools)
-	// if connectivity and chip configs are in the same directory (e.g. -c test -o test) then the chip config path in the connectivity file should be one layer higher
-	//if (connectivity_filename == chip_config_path) {
-	    //if ( connectivity_filename.find_last_of("/") != std::string::npos ) {
-		//chip_config_filename.substr(chip_config_filename.find_last_of("/"), std::string::npos);
-	    //} else {
-		//chip_config_filename = "";
-	    //}
-	//}
-
 	connectivity_filename += "/" + fe_type+"_connectivity.json";
 	logger->info("Creating connectivity file '{}'", connectivity_filename);
     }
 
-    logger->debug("chip_config_path: {}", chip_config_path);
-    logger->debug("chip_config_filename: {}", chip_config_filename);
-
-    // if finds a connectivity path
+    // if finds a connectivity path (with or without .json)
     if ( connectivity_filename.find_last_of("/") != std::string::npos ) {
-	std::string connectivity_path = connectivity_filename.substr(0, connectivity_filename.find_last_of("/"));
+	connectivity_path = connectivity_filename.substr(0, connectivity_filename.find_last_of("/"));
 	if ( !std::filesystem::exists(connectivity_path) ) {
 	    logger->info("Connectivity config directory \"{}\" doesn't exist, creating...", connectivity_path);
 	    std::filesystem::create_directories(connectivity_path);
 	}
     }
 
+    logger->debug("connectivity_path {}", connectivity_path);
+    logger->debug("connectivity_filename {}", connectivity_filename);
+
+    // chip configs
+    // needed?
+    if ( endswith(chip_config_path, "/") ) {
+	chip_config_path = chip_config_path.substr(0, chip_config_path.find_last_of("/"));
+	chip_config_filename = chip_config_path;
+    }
+
+    if (path_relation == "relToCon") {
+	chip_config_path = connectivity_path + "/" + chip_config_path;
+    }
+
+    if ( !std::filesystem::exists(chip_config_path) ) {
+	logger->info("Chip config directory \"{}\" doesn't exist, creating...", chip_config_path);
+	std::filesystem::create_directories(chip_config_path);
+    }
+
+    logger->debug("chip_config_path: {}", chip_config_path);
+    logger->debug("chip_config_filename: {}", chip_config_filename);
+
     // connectivity json
     json jconnectivity;
     jconnectivity["chipType"] = fe_type_upper;
     jconnectivity["chips"] = json::array(); // declare an empty list
 
-
     for (int _tx = 0; _tx < ntx; _tx++) {
-	// TODO
-	hw->setupMode(); //?
-	hw->setTrigEnable(0); //?
-	hw->setCmdEnable(_tx); //?
+	// TODO: check if all correct
+	hw->setupMode(); // ?
+	hw->setTrigEnable(0); // ?
+	hw->setCmdEnable(_tx); // ?
 	hw->disableRx();
 
 	for (int _rx = 0; _rx < nrx; _rx++) {
@@ -262,7 +279,6 @@ int main(int argc, char **argv) {
 	    // assuming RD53b quads (can be made more generic for triplets?) and 1.28GHz
 	    json cfg;
 	    cfg["RD53B"]["Parameter"]["ChipId"] = 16; // set chip ID to 16 to broadcast
-
 	    // lane setting needed hmmmmmmmmm
 	    cfg["RD53B"]["GlobalConfig"]["AuroraActiveLanes"] = (1 << nlanes)-1; //aurora active lanes = (2^nlanes)-1
 
@@ -310,7 +326,6 @@ int main(int argc, char **argv) {
 		logger->debug("efuse again {}", efuse);
 	    }
 
-	    //-------------
 	    std::stringstream chip_name;
 	    std::stringstream chip_sn;
 	    chip_name << "0x" << std::hex << efuse;
@@ -331,7 +346,7 @@ int main(int argc, char **argv) {
 
 	    json jchipconnectivity;
 	    jchipconnectivity["config"] = filename;
-	    jchipconnectivity["path"] = path_relation; // TODO default is "relToExec"
+	    jchipconnectivity["path"] = path_relation;
 	    jchipconnectivity["tx"] = _tx;
 	    jchipconnectivity["rx"] = _rx;
 	    jchipconnectivity["enable"] = 1;
