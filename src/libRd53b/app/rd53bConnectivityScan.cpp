@@ -47,19 +47,6 @@ bool endswith(const std::string &str, const std::string &suffix) {
            str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
-//std::shared_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, int tx, int rx) {
-
-    ////std::string chip_type = jconn["chipType"];
-    //auto fe = StdDict::getFrontEnd("RD53B");
-    //auto cfg = dynamic_cast<FrontEndCfg*>(fe.get());
-    
-    //// insert tx and rx loop here
-    //fe->init(&*hw, cfg);
-    //// use auto conf?
-    //cfg->loadConfig("");
-    //return fe;
-//}
-
 int main(int argc, char **argv) {
     // Setup logger with some defaults
     std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
@@ -224,11 +211,6 @@ int main(int argc, char **argv) {
 
 	    Rd53b fe;
 	    fe.init(&*hw, FrontEndConnectivity(_tx, _rx));
-
-	    //auto fe = init_fe(hw, 0, 0);
-	    //auto feCfg = dynamic_cast<FrontEndCfg*>(fe.get());
-	    //std::string current_chip_name = cfg->getName();
-
 
 	    // assuming RD53b quads (can be made more generic for triplets?) and 1.28GHz
 	    json cfg;
