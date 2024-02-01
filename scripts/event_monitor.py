@@ -138,12 +138,9 @@ class dataThread(threading.Thread):
         if start is None or start < 0:
             self.log.info("Finding EOF")
             idx = find_file_end(self.file)
-            if start is not None:
-                self.file.seek(start, 1)
-                self.align()
         else:
+            log.warning("Seek index {} may not align with binary file!".format(start))
             self.file.seek(start)
-            self.align()
         
     
     def align(self, start_byte=b'\x9a\x02\x9a\x02'):
@@ -174,11 +171,11 @@ class dataThread(threading.Thread):
                 self.timeinfo.fill([[time.time(), self.file.tell(), 1]])
                 continue
             
-            if not ((header['l1id'] == 666).all() and (header['bcid']==666).all()):                
-                self.log.debug("seeking {} to {}".format(idx, idx - 10))
-                self.timeinfo.fill([[time.time(), self.file.tell(), 2]])
-                self.file.seek(-10, 1)
-                n_hits = [1]
+            # if not ((header['l1id'] == 666).all() and (header['bcid']==666).all()):                
+            #     self.log.debug("seeking {} to {}".format(idx, idx - 10))
+            #     self.timeinfo.fill([[time.time(), self.file.tell(), 2]])
+            #     self.file.seek(-10, 1)
+            #     n_hits = [1]
                 # raise Exception("Failed at index: {} : {}".format(self.file.tell(), header))
             else:
                 n_hits = header['t_hits']
