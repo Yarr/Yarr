@@ -1,4 +1,5 @@
 #include "Itkpixv2Encoder.h"
+#include "Itkpixv2QCoreEncodingLUT.h"
 #include <bitset>
 #include <string>
 
@@ -46,6 +47,9 @@ void Itkpixv2Encoder::addBits64(uint64_t value, uint8_t length){
         m_currBlock = 0;
         m_currBit   = 0;
 
+        //debug
+        std::cout << word1 << word2 << "\n";
+
         //What are we left with?
         uint8_t leftoverBits = length - remainingBits;
 
@@ -55,14 +59,144 @@ void Itkpixv2Encoder::addBits64(uint64_t value, uint8_t length){
     }
 }
 
+void Itkpixv2Encoder::encodeQCore(uint nCCol, uint nQRow){
+    //produce hit map and ToTs
+    //First, get the top-left pixel in the QCore
+    uint m_col = nCCol * m_nColInCCol;
+    uint m_row = nQRow * m_nRowInQRow;
+
+    //now loop, store ToTs, and build index of the
+    //compressed hit map in the LUT
+    uint16_t lutIndex = 0x0000;
+    std::vector<uint16_t> tots;
+    tots.reserve(16);
+    int pix = 0;
+    for (uint pixRow = m_row; pixRow < m_row + m_nRowInQRow; pixRow++){
+        for (uint pixCol = m_col; pixCol < m_col + m_nColInCCol; pixCol++){
+            if (m_hitMap[pixCol][pixRow]){
+                lutIndex |= 0x1 << pix;
+                tots.push_back(m_hitMap[pixCol][pixRow] - 1);
+            }
+        }
+    }
+
+    //now add the binary-tree encoded & compressed map
+    //from the LUT to the stream
+    addBits64(Itkpixv2Encoding::Itkpixv2QCoreEncodingLUT_Tree[lutIndex], Itkpixv2Encoding::Itkpixv2QCoreEncodingLUT_Length[lutIndex]);
+
+    //and add the four-bit ToT information for each hit
+    for (auto& tot : tots) addBits64(tot, 4);
+}
+
+bool Itkpixv2Encoder::hitInQCore(uint CCol, uint QRow){
+
+    uint m_col = CCol * m_nColInCCol;
+    uint m_row = QRow * m_nRowInQRow;
+
+    for (uint pixRow = m_row; pixRow < m_row + m_nRowInQRow; pixRow++){
+        for (uint pixCol = m_col; pixCol < m_col + m_nColInCCol; pixCol++){
+            if (m_hitMap[pixCol][pixRow]) return true;
+        }
+    }
+
+    return false;
+}
+
+void Itkpixv2Encoder::scanHitMap(){
+    //Fill in a helper map of hit QCores and a vector of last qrow in each ccol
+    m_hitQCores = std::vector<std::vector<bool>>(m_nCCol, std::vector<bool>(m_nQRow, false));
+    m_lastQRow  = std::vector<uint>(m_nCCol, 0);
+
+    for (uint CCol = 0; CCol < m_nCCol; CCol++){
+        for (uint QRow = 0; QRow < m_nQRow; QRow++){
+            //if there's a hit in the qcore, flag the helper map
+            m_hitQCores[CCol][QRow] = hitInQCore(CCol, QRow);
+            
+            //and keep track of the last qrow in each CCol, so that we can
+            //easily set the isLast bit
+            if (m_hitQCores[CCol][QRow]) m_lastQRow[CCol]++;
+        }
+    }
+
+}
+
 void Itkpixv2Encoder::encodeEvent(){
-    //This produces the bits for one event. Loop over CCols, keep track of position within current block.
-    
+    //This produces the bits for one event.
+    //First, scan the map and produce helpers
+    scanHitMap();
+
+    for (uint CCol = 0; CCol < m_nCCol; CCol++){
+        //if there are no hits in this CCol, continue
+        if (m_lastQRow[CCol] == 0) continue;
+        
+        int previousQRow = -666;
+        for (uint QRow = 0; QRow < m_nQRow; QRow++){
+            //if there's no hit in this row, continue
+            if (!m_hitQCores[CCol][QRow]) continue;
+
+            //add the 6-bit (CCol + 1) address
+            //debug
+            std::bitset<6> bsCCol(CCol+1);
+            std::cout << "Adding " << bsCCol.to_string() << " for CCol address\n";
+            //debug
+            addBits64(CCol + 1, 6);    
+            
+            //add the isLast bit
+            //debug
+            std::cout << "Adding " << (QRow == m_lastQRow[CCol] ? 1 : 0) << " for isLast\n";
+            //debug
+
+            QRow == m_lastQRow[CCol] ? addBits64(0x1, 1) : addBits64(0x0, 1);
+
+            //add the isNeighbor bit. If false, add the QRow address as well.
+            //debug
+            std::cout << "Adding " << (QRow == previousQRow + 1 ? 1 : 0) << " for isNeighbor\n";
+            //debug
+
+            if (QRow == previousQRow + 1){
+                addBits64(0x1, 1);
+            }
+            else {
+                std::bitset<8> bsQRow(QRow+1);
+                std::cout << "Adding " << bsQRow.to_string() << " for QRow " << QRow + 1 << "\n";
+                addBits64(0x0, 1);
+                addBits64(QRow + 1, 8);
+            };
+
+            //add the map and ToT
+            encodeQCore(CCol, QRow);
+
+            //update the previous QRow
+            previousQRow = QRow;
+        }
+    }    
 
 }
 
 void Itkpixv2Encoder::test(){
 
+    randomHitMap(0.1, 0);
+    encodeEvent();
+
+    std::cout << "First QCore is:\n";
+
+    uint m_col = 0;
+    uint m_row = 0;
+
+    for (uint pixRow = m_row; pixRow < m_row + m_nRowInQRow; pixRow++){
+        for (uint pixCol = m_col; pixCol < m_col + m_nColInCCol; pixCol++){
+            std::cout << m_hitMap[pixCol][pixRow];
+        }
+        std::cout << "\n";
+    }
+
+    std::cout << "First few words are:\n";
+    for (uint w = 0; w < 5; w++){
+        std::bitset<32> bw(m_words[w]);
+        std::cout << bw.to_string() << "\n";
+    }
+
+/*
     for (uint i = 0; i < 10; i++){
         std::string s = "1010101010";
         std::bitset<10> bs(s);
@@ -79,7 +213,7 @@ void Itkpixv2Encoder::test(){
         std::cout << bsOut.to_string() << "\n";
         std::cout << "Output size " << m_words.size() << "\n";
     }
-
+*/
 }
 
 
