@@ -179,7 +179,7 @@ void Rd53aGlobalCfg::init() {
     //61
     OutputDataReadDelay.init(61, &m_cfg[61], 7, 2, 0); regMap["OutputDataReadDelay"] = (Rd53Reg Rd53aGlobalCfg::*) &Rd53aGlobalCfg::OutputDataReadDelay;
     OutputSerType.init(61, &m_cfg[61], 6, 1, 0); regMap["OutputSerType"] = (Rd53Reg Rd53aGlobalCfg::*) &Rd53aGlobalCfg::OutputSerType;
-    OutputActiveLanes.init(61, &m_cfg[61], 2, 4, 0xF); regMap["OutputActiveLanes"] = (Rd53Reg Rd53aGlobalCfg::*) &Rd53aGlobalCfg::OutputActiveLanes;
+    OutputActiveLanes.init(61, &m_cfg[61], 2, 4, 0x1); regMap["OutputActiveLanes"] = (Rd53Reg Rd53aGlobalCfg::*) &Rd53aGlobalCfg::OutputActiveLanes;
     OutputFmt.init(61, &m_cfg[61], 0, 2, 0); regMap["OutputFmt"] = (Rd53Reg Rd53aGlobalCfg::*) &Rd53aGlobalCfg::OutputFmt;
     //62
     OutPadConfig.init(62, &m_cfg[62], 0, 13, 0x1404); regMap["OutPadConfig"] = (Rd53Reg Rd53aGlobalCfg::*) &Rd53aGlobalCfg::OutPadConfig;
@@ -206,7 +206,7 @@ void Rd53aGlobalCfg::init() {
     //69
     CmlInvTap.init(69, &m_cfg[69], 6, 2, 0x1); regMap["CmlInvTap"] = (Rd53Reg Rd53aGlobalCfg::*) &Rd53aGlobalCfg::CmlInvTap;
     CmlEnTap.init(69, &m_cfg[69], 4, 2, 0x1); regMap["CmlEnTap"] = (Rd53Reg Rd53aGlobalCfg::*) &Rd53aGlobalCfg::CmlEnTap;
-    CmlEn.init(69, &m_cfg[69], 0, 4, 0xF); regMap["CmlEn"] = (Rd53Reg Rd53aGlobalCfg::*) &Rd53aGlobalCfg::CmlEn;
+    CmlEn.init(69, &m_cfg[69], 0, 4, 0x1); regMap["CmlEn"] = (Rd53Reg Rd53aGlobalCfg::*) &Rd53aGlobalCfg::CmlEn;
     //70-72
     CmlTapBias0.init(70, &m_cfg[70], 0, 10, 600); regMap["CmlTapBias0"] = (Rd53Reg Rd53aGlobalCfg::*) &Rd53aGlobalCfg::CmlTapBias0;
     CmlTapBias1.init(71, &m_cfg[71], 0, 10, 100); regMap["CmlTapBias1"] = (Rd53Reg Rd53aGlobalCfg::*) &Rd53aGlobalCfg::CmlTapBias1;
