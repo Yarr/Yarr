@@ -16,8 +16,8 @@ void checkHisto(const Histo1d &hh, const HistoInfo &hi) {
 
   CHECK (hh.size() == hi.s);
   CHECK (hh.getEntries() == hi.e);
-  CHECK (hh.getMean() == Approx(hi.m));
-  CHECK (hh.getStdDev() == Approx(hi.sd));
+  CHECK (hh.getMean() == Catch::Approx(hi.m));
+  CHECK (hh.getStdDev() == Catch::Approx(hi.sd));
   CHECK (hh.getUnderflow() == hi.u);
   CHECK (hh.getOverflow() == hi.o);
 }

@@ -198,3 +198,7 @@ void Itkpixv2TriggerLoop::loadConfig(const json &config) {
         m_trigMultiplier = config["trigMultiplier"];
     this->setTrigDelay(m_trigDelay, m_calEdgeDelay);
 }
+
+uint32_t Itkpixv2TriggerLoop::getExpEvents(){
+    return getTrigCnt()*(m_trigMultiplier+(m_edgeMode?0:1));
+}

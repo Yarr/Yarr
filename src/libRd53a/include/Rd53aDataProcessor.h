@@ -13,12 +13,12 @@
 #include <array>
 #include <map>
 
-#include "DataProcessor.h"
+#include "FeDataProcessor.h"
 #include "ClipBoard.h"
 #include "RawData.h"
 #include "Rd53a.h"
 
-class Rd53aDataProcessor : public DataProcessor {
+class Rd53aDataProcessor : public FeDataProcessor {
     public:
         Rd53aDataProcessor();
         ~Rd53aDataProcessor() override;
@@ -27,6 +27,7 @@ class Rd53aDataProcessor : public DataProcessor {
             m_input = input;
             m_output = output;
         }
+        void connect(ClipBoard<FeedbackProcessingInfo> *arg_proc_status) override {statusFb = arg_proc_status;}
 
         void init()    override;
         void run()     override;
@@ -37,6 +38,7 @@ class Rd53aDataProcessor : public DataProcessor {
         std::unique_ptr<std::thread> thread_ptr;
         ClipBoard<RawDataContainer> *m_input;
         ClipBoard<EventDataBase> *m_output;
+        ClipBoard<FeedbackProcessingInfo> *statusFb = nullptr;
         
         unsigned tag;
         unsigned l1id;
@@ -45,6 +47,7 @@ class Rd53aDataProcessor : public DataProcessor {
         unsigned hits;
 
         void process_core();
+        inline void sendFeedback(unsigned tag, unsigned bcid);
     
 };
 

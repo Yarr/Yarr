@@ -12,7 +12,7 @@
 #include <cmath>
 
 #include "AllAnalyses.h"
-#include "Bookkeeper.h"
+#include "FrontEnd.h"
 #include "Histo1d.h"
 #include "Histo2d.h"
 #include "Histo3d.h"
@@ -21,6 +21,7 @@
 #include "StdParameterAction.h"
 
 #include "lmcurve.h"
+#include "scurvegauss.h"
 #include "logging.h"
 
 namespace {
@@ -72,22 +73,20 @@ namespace {
         StdDict::registerAnalysis("NPointGain",
                 []() { return std::unique_ptr<AnalysisAlgorithm>(new NPointGain());});
 
-    bool param_registered = 
+    bool param_registered =
         StdDict::registerAnalysis("ParameterAnalysis",
                 []() { return std::unique_ptr<AnalysisAlgorithm>(new ParameterAnalysis());});
 
-    bool archiver_registered = 
+    bool archiver_registered =
         StdDict::registerAnalysis("HistogramArchiver",
                 []() { return std::unique_ptr<AnalysisAlgorithm>(new HistogramArchiver());});
 
 }
 
-void HistogramArchiver::init(ScanBase *s) {
+void HistogramArchiver::init(const ScanLoopInfo *s) {
 }
 
 void HistogramArchiver::processHistogram(HistogramBase *histo) {
-    FrontEndCfg *feCfg = bookie->getFeCfg(id);
-
     std::string name = feCfg->getName();
 
     histo->toFile(name, output_dir);
@@ -100,11 +99,11 @@ void HistogramArchiver::setOutputDirectory(std::string dir) {
     output_dir = dir;
 }
 
-void OccupancyAnalysis::init(ScanBase *s) {
+void OccupancyAnalysis::init(const ScanLoopInfo *s) {
     n_count = 1;
     injections = 0;
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        auto l = s->getLoop(n);
         if (!(l->isMaskLoop() || l->isTriggerLoop() || l->isDataLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -115,7 +114,7 @@ void OccupancyAnalysis::init(ScanBase *s) {
             n_count = n_count*cnt;
         }
         if (l->isTriggerLoop()) {
-            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            auto trigLoop = dynamic_cast<const StdTriggerAction*>(l);
             if(trigLoop == nullptr) {
                 alog->error("OccupancyAnalysis: loop declared as trigger loop, does not have a trigger count");
             } else {
@@ -177,13 +176,13 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
                     failed_cnt++;
                     if (make_mask&&createMask) {
                         // maskPixel starts at 0,0
-                        bookie->getFeCfg(id)->maskPixel(col-1, row-1);
+                        feCfg->maskPixel(col-1, row-1);
                     }
                 }
             }
         }
 
-        alog->info("\033[1m\033[31m[{}][{}] Total number of failing pixels: {}\033[0m", id, bookie->getFeCfg(id)->getName(), failed_cnt);
+        alog->info("\033[1m\033[31m[{}][{}] Total number of failing pixels: {}\033[0m", id, feCfg->getName(), failed_cnt);
         output->pushData(std::move(mask)); // TODO push this mask to the specific configuration
         output->pushData(std::move(occMaps[ident]));
 
@@ -232,7 +231,7 @@ void TotAnalysis::loadConfig(const json &config) {
     }
 }
 
-void TotAnalysis::init(ScanBase *s) {
+void TotAnalysis::init(const ScanLoopInfo *s) {
     useScap = true;
     useLcap = true;
     n_count = 1;
@@ -242,7 +241,7 @@ void TotAnalysis::init(ScanBase *s) {
     hasVcalLoop = false;
 
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        auto l = s->getLoop(n);
         if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -254,7 +253,7 @@ void TotAnalysis::init(ScanBase *s) {
         }
 
         if (l->isTriggerLoop()) {
-            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            auto trigLoop = dynamic_cast<const StdTriggerAction*>(l);
             if(trigLoop == nullptr) {
                 alog->error("TotAnalysis: loop declared as trigger loop, does not have a trigger count");
             } else {
@@ -324,7 +323,6 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
     }
 
     if (chargeVsTotMap == nullptr && hasVcalLoop) {
-        FrontEndCfg *feCfg = bookie->getFeCfg(id);
         double chargeMin = feCfg->toCharge(vcalMin, useScap, useLcap);
         double chargeMax = feCfg->toCharge(vcalMax, useScap, useLcap);
         double chargeStep = feCfg->toCharge(vcalStep, useScap, useLcap);
@@ -337,10 +335,9 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
     }
 
     if (pixelTotMap == nullptr && hasVcalLoop) {
-        FrontEndCfg *feCfgp = bookie->getFeCfg(id);
-        double chargeMinp = feCfgp->toCharge(vcalMin, useScap, useLcap);
-        double chargeMaxp = feCfgp->toCharge(vcalMax, useScap, useLcap);
-        double chargeStepp = feCfgp->toCharge(vcalStep, useScap, useLcap);
+        double chargeMinp = feCfg->toCharge(vcalMin, useScap, useLcap);
+        double chargeMaxp = feCfg->toCharge(vcalMax, useScap, useLcap);
+        double chargeStepp = feCfg->toCharge(vcalStep, useScap, useLcap);
 
         Histo2d *pp2 = new Histo2d("PixelTotMap", nCol*nRow, 0, nCol*nRow, vcalBins+1, chargeMinp-chargeStepp/2, chargeMaxp+chargeStepp/2);
         pp2->setXaxisTitle("Pixels");
@@ -403,7 +400,6 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
             sigmaTotDist->fill(sigma);
         }
         if (hasVcalLoop) {
-            FrontEndCfg *feCfg = bookie->getFeCfg(id);
             double currentCharge = feCfg->toCharge(ident, useScap, useLcap);
             for (unsigned i=0; i<tempMeanTotDist->size(); i++) {
                 chargeVsTotMap->fill(currentCharge, (i+1)*0.1, tempMeanTotDist->getBin(i));
@@ -413,7 +409,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
             }
         }
 
-        alog->info("\033[1;33m[{}][{}][{}] ToT Mean = {} +- {}\033[0m", id, bookie->getFeCfg(id)->getName(), ident,  meanTotDist->getMean(), meanTotDist->getStdDev());
+        alog->info("\033[1;33m[{}][{}][{}] ToT Mean = {} +- {}\033[0m", id, feCfg->getName(), ident,  meanTotDist->getMean(), meanTotDist->getStdDev());
 
         if (globalFb != nullptr) {
             double mean = 0;
@@ -422,15 +418,15 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
                 if (occMaps[ident]->getBin(i) == injections) {
                     mean += meanTotMap->getBin(i);
                     entries++;
-                } 
+                }
             }
             if (entries > 0) {
                 mean = mean/entries;
             }
             alog->info("Mean is: {}", mean);
 
-            // TODO Get this from somewhere
-            double targetTot = bookie->getTargetTot();
+            // Pull target selected via setParams
+            double targetTot = target_tot;
             int sign = 0;
             bool last = false;
             if (mean < (targetTot-0.1)) {
@@ -445,7 +441,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         }
 
         if (pixelFb != nullptr) {
-            double targetTot = bookie->getTargetTot();
+            double targetTot = target_tot;
             auto fbHisto = std::make_unique<Histo2d>("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
             for (unsigned i=0; i<meanTotMap->size(); i++) {
                 int sign = 0;
@@ -475,7 +471,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
 
 void TotAnalysis::end() {
     if (hasVcalLoop) {
-        FrontEndCfg *feCfg = bookie->getFeCfg(id); //replace these with more dynamic conversions 
+        //replace these (the following?) with more dynamic conversions
         double injQMin = feCfg->toCharge(vcalMin, useScap, useLcap);
         double injQMax = feCfg->toCharge(vcalMax, useScap, useLcap);
         double injQStep = feCfg->toCharge(vcalStep, useScap, useLcap);
@@ -483,13 +479,13 @@ void TotAnalysis::end() {
         avgTotVsCharge->setXaxisTitle("Injected Charge [e]");
         avgTotVsCharge->setYaxisTitle("avg ToT");
 
-        for (unsigned k=0; k<avgTotVsCharge->size(); k++) {  
-            double injQ = feCfg->toCharge(vcalMin+k*vcalStep, useScap, useLcap); 
+        for (unsigned k=0; k<avgTotVsCharge->size(); k++) {
+            double injQ = feCfg->toCharge(vcalMin+k*vcalStep, useScap, useLcap);
             double sum = 0;
             double entries = 0;
             for (float measToT=0.0; measToT<=16.0; measToT+=0.1) {
                 int n = chargeVsTotMap->binNum(injQ, measToT);
-                sum += (chargeVsTotMap->getBin(n))*(measToT); 
+                sum += (chargeVsTotMap->getBin(n))*(measToT);
                 entries += chargeVsTotMap->getBin(n);
             }
             double averageToT = sum/entries;
@@ -497,25 +493,25 @@ void TotAnalysis::end() {
         }
 
         //extracting ToT-to-charge data now
-        std::unique_ptr<Histo3d> measQtemp ( new Histo3d("measQtemp", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5, vcalBins+1,  injQMin-injQStep/2.0, injQMax+injQStep/2.0) ); 
+        std::unique_ptr<Histo3d> measQtemp ( new Histo3d("measQtemp", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5, vcalBins+1,  injQMin-injQStep/2.0, injQMax+injQStep/2.0) );
 
         int Nmessage = 0;  //boolean to be used for a message to user; in presence of middle holes, user may wish to use finer injQ steps.
 
         std::unique_ptr<Histo2d> measQOut ( new Histo2d("measQOut", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5) );
         std::unique_ptr<Histo2d> measQRMSOut ( new Histo2d("measQRMSOut", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5) );
         for (unsigned n=0; n<nCol*nRow; n++) {
-            if (bookie->getFeCfg(id)->getPixelEn((n/nRow), (n%nRow)) == 0) { //if pixel isn't masked
+            if (feCfg->getPixelEn((n/nRow), (n%nRow)) == 0) { //if pixel isn't masked
                 int anyzero = 0;
                 for (unsigned k=0; k<avgTotVsCharge->size(); k++) {
                     double q = feCfg->toCharge(vcalMin+k*vcalStep, useScap, useLcap);
                     double avgTot = pixelTotMap->getBin(pixelTotMap->binNum(n, q));
                     double frac = fmod(avgTot,1);
                     double tot = avgTot - fmod(avgTot,1);
-                    measQtemp->fill(n, tot, q, 100*(1-frac)); 
+                    measQtemp->fill(n, tot, q, 100*(1-frac));
                     if (frac != 0.0) { measQtemp->fill(n, tot+1, q, 100*(frac)); }
                 }
-                for (unsigned tot = 0; tot < 16; tot++) { 
-                    double mean = 0; 
+                for (unsigned tot = 0; tot < 16; tot++) {
+                    double mean = 0;
                     double count = 0;
                     double meanSq = 0;
                     for(unsigned k=0; k<avgTotVsCharge->size(); k++) {
@@ -525,18 +521,18 @@ void TotAnalysis::end() {
                         meanSq += measQtemp->getBin(binNum)*q*q;
                         count += measQtemp->getBin(binNum);
                     }
-                    if (count!=0) { 
-                        mean = mean/count; 
+                    if (count!=0) {
+                        mean = mean/count;
                         meanSq = meanSq/count;
-                        meanSq = std::sqrt(std::fabs(mean*mean - meanSq)); 
+                        meanSq = std::sqrt(std::fabs(mean*mean - meanSq));
                     }
-                    measQOut->fill(n, tot, mean); 
+                    measQOut->fill(n, tot, mean);
                     measQRMSOut->fill(n,tot, meanSq);
                 }
 
                 bool message = false;  //boolean to be used for a message to user; in presence of middle holes, user may wish to use finer injQ steps.
                 for (unsigned tot = 1; tot < 16; tot++) {  //Extrapolation starts here
-                    int binNum = measQOut->binNum(n, tot);  
+                    int binNum = measQOut->binNum(n, tot);
                     double measQ = measQOut->getBin(binNum);
                     unsigned tmaxIndex=tot;
                     unsigned tminIndex=tot;
@@ -551,11 +547,11 @@ void TotAnalysis::end() {
                         while (tminMeasQ == 0.0 && tminIndex > 1) {
                             tminIndex -= 1;
                             int tempBinNum = measQOut->binNum(n, tminIndex);
-                            tminMeasQ = measQOut->getBin(tempBinNum); 
+                            tminMeasQ = measQOut->getBin(tempBinNum);
                         }
-                        if (tmaxIndex == 15 && tmaxMeasQ == 0.0) { 
+                        if (tmaxIndex == 15 && tmaxMeasQ == 0.0) {
                             measQOut->fill(n, tot, tminMeasQ);
-                            measQRMSOut->fill(n, tot, -1); 
+                            measQRMSOut->fill(n, tot, -1);
                         } else {
                             double stepMeasQ = (tmaxMeasQ - tminMeasQ)/(tmaxIndex - tminIndex);
                             measQOut->fill(n, tot, tminMeasQ + stepMeasQ);
@@ -565,7 +561,7 @@ void TotAnalysis::end() {
                 } //end of extrapolation code
                 if (message) {Nmessage += 1;}
             } //end of that specific pixel loop
-        } //end of VCal = true test.  
+        } //end of VCal = true test.
         if (Nmessage != 0) {
             alog->info("Used linear extrapolation to fill missing measured charge values for middle ToT values.");
             alog->info("User may wish to use finer injection charge steps");
@@ -580,17 +576,16 @@ void TotAnalysis::end() {
     }
 }
 
-void ScurveFitter::init(ScanBase *s) {
+void ScurveFitter::init(const ScanLoopInfo *s) {
     fb = nullptr;
-    scan = s;
     n_count = 1;
     vcalLoop = 0;
     injections = 50;
     useScap = true;
     useLcap = true;
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || isPOILoop(l.get()))) {
+        auto l = s->getLoop(n);
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || isPOILoop(l))) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
         } else {
@@ -603,7 +598,7 @@ void ScurveFitter::init(ScanBase *s) {
             n_count = n_count*cnt;
         }
         // Vcal Loop
-        if (l->isParameterLoop() && isPOILoop(l.get())) {
+        if (isPOILoop(l)) {
             vcalLoop = n;
             vcalMax = l->getMax();
             vcalMin = l->getMin();
@@ -612,7 +607,7 @@ void ScurveFitter::init(ScanBase *s) {
         }
 
         if (l->isTriggerLoop()) {
-            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            auto trigLoop = dynamic_cast<const StdTriggerAction*>(l);
             if(trigLoop == nullptr) {
                 alog->error("ScurveFitter: loop declared as trigger loop, does not have a trigger count");
             } else {
@@ -635,12 +630,14 @@ void ScurveFitter::init(ScanBase *s) {
     cnt = 0;
     n_failedfit =0;
     prevOuter = 0;
-    thrTarget = bookie->getTargetCharge();
 }
 
 void ScurveFitter::loadConfig(const json &j) {
     if (j.contains("reverse")) {
         reverse = j["reverse"];
+    }
+    if (j.contains("scurvegauss")) {
+        use_scurvegauss = j["scurvegauss"];
     }
     if (j.contains("dumpDebugScurvePlots")) {
         m_dumpDebugScurvePlots = j["dumpDebugScurvePlots"];
@@ -734,7 +731,12 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     std::chrono::high_resolution_clock::time_point start;
                     std::chrono::high_resolution_clock::time_point end;
                     start = std::chrono::high_resolution_clock::now();
-                    if (reverse) {
+                    
+                    if (use_scurvegauss) {
+                        // mean and sigma calculated rather than fitted, implementation libUtil/scurvegauss.cpp
+                        scurvegauss(par, vcalBins, &x[0], histos[ident]->getData());
+                    }
+                    else if (reverse) {
                         lmcurve(n_par, par, vcalBins, &x[0], histos[ident]->getData(), reverseScurveFct, &control, &status);
                     } else {
                         lmcurve(n_par, par, vcalBins, &x[0], histos[ident]->getData(), scurveFct, &control, &status);
@@ -764,7 +766,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                         hh2->setXaxisTitle("Column");
                         hh2->setYaxisTitle("Row");
                         hh2->setZaxisTitle("Chi2");
-                        chi2Map[outerIdent].reset(hh2);     
+                        chi2Map[outerIdent].reset(hh2);
 
                         hh2 = new Histo2d("StatusMap-"+std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
                         hh2->setXaxisTitle("Column");
@@ -784,11 +786,13 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     }
 
                     double chi2= status.fnorm/(double)(vcalBins - n_par);
+                    
+                    //override the following chi2 check if using scurvegauss (no fit involved)
+                    if (use_scurvegauss) chi2 = 1.;
 
-                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0 
+                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0
                             && chi2 < 2.5 && chi2 > 1e-6
                             && fabs((par[2] - par[3])/injections - 1) < 0.1) {  // Add new criteria: difference between 100% baseline and 0% baseline should agree with number of injections within 10%
-                        FrontEndCfg *feCfg = bookie->getFeCfg(id);
                         thrMap[outerIdent]->setBin(bin, feCfg->toCharge(par[0], useScap, useLcap));
                         // Reudce effect of vcal offset on this, don't want to probe at low vcal
                         sigMap[outerIdent]->setBin(bin, feCfg->toCharge(par[0]+par[1], useScap, useLcap)-feCfg->toCharge(par[0], useScap, useLcap));
@@ -800,7 +804,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 
                     } else {
                         n_failedfit++;
-                        alog->debug("[{}] [{}] Failed fit Col({}) Row({}) Threshold({}) Chi2({}) Status({}) Entries({}) Mean({})", id, bookie->getFeCfg(id)->getName(), col, row, thrMap[outerIdent]->getBin(bin), chi2, status.outcome, histos[ident]->getEntries(), histos[ident]->getMean());
+                        alog->debug("[{}] [{}] Failed fit Col({}) Row({}) Threshold({}) Chi2({}) Status({}) Entries({}) Mean({})", id, feCfg->getName(), col, row, thrMap[outerIdent]->getBin(bin), chi2, status.outcome, histos[ident]->getEntries(), histos[ident]->getMean());
                     }
                     if (m_dumpDebugScurvePlots && row == nRow/2 && col%10 == 0) {
                         output->pushData(std::move(histos[ident]));
@@ -859,7 +863,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                             step[outerIdent]->setBin(bin, step[prevOuter]->getBin(bin)*-1);
                         }
                     }
-                } 
+                }
                 deltaThr[outerIdent]->setBin(bin, thrTarget - thrMap[outerIdent]->getBin(bin));
             }
         }
@@ -912,7 +916,7 @@ void ScurveFitter::end() {
             int rSigMean = (int)(sigMean) - (int)(sigMean)%bin_width;
             int rSigRms = (int)(sigRms) - (int)(sigRms)%bin_width;
             xlow = rSigMean-(rSigRms*5)-bin_width/2.0;
-            if (xlow < 0) 
+            if (xlow < 0)
                 xlow = -1*bin_width/2.0;
             xhigh = rSigMean+(rSigRms*5)+bin_width/2.0;
             if ((xhigh-xlow)%bin_width != 0)
@@ -936,9 +940,9 @@ void ScurveFitter::end() {
             }
 
             // Before moving data to clipboard
-            alog->info("\033[1;33m[{}][{}][{}] Threshold Mean = {} +- {}\033[0m", id, bookie->getFeCfg(id)->getName(), i, thrMap[i]->getMean(), thrMap[i]->getStdDev());
-            alog->info("\033[1;33m[{}][{}][{}] Noise Mean = {} +- {}\033[0m", id, bookie->getFeCfg(id)->getName(), i, sigMap[i]->getMean(), sigMap[i]->getStdDev());
-            alog->info("\033[1;33m[{}][{}][{}] Number of failed fits = {}\033[0m", id, bookie->getFeCfg(id)->getName(), i, n_failedfit);
+            alog->info("\033[1;33m[{}][{}][{}] Threshold Mean = {} +- {}\033[0m", id, feCfg->getName(), i, thrMap[i]->getMean(), thrMap[i]->getStdDev());
+            alog->info("\033[1;33m[{}][{}][{}] Noise Mean = {} +- {}\033[0m", id, feCfg->getName(), i, sigMap[i]->getMean(), sigMap[i]->getStdDev());
+            alog->info("\033[1;33m[{}][{}][{}] Number of failed fits = {}\033[0m", id, feCfg->getName(), i, n_failedfit);
             output->pushData(std::move(thrDist[i]));
             output->pushData(std::move(thrMap[i]));
             output->pushData(std::move(sigDist[i]));
@@ -955,10 +959,10 @@ void ScurveFitter::end() {
     }
 }
 
-void NPointGain::init(ScanBase *s) {
+void NPointGain::init(const ScanLoopInfo *s) {
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if (isPOILoop(l.get())) {
+        auto l = s->getLoop(n);
+        if (isPOILoop(l)) {
             par_loopindex = n;
             par_min = l->getMin();
             par_max = l->getMax();
@@ -1022,10 +1026,10 @@ void NPointGain::loadConfig(const json &j) {
         m_skipDependencyCheck = j["skipDependencyCheck"];
 }
 
-void OccGlobalThresholdTune::init(ScanBase *s) {
+void OccGlobalThresholdTune::init(const ScanLoopInfo *s) {
     n_count = 1;
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        auto l = s->getLoop(n);
         if (!(l->isDataLoop() || l->isTriggerLoop() || l->isMaskLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -1037,7 +1041,7 @@ void OccGlobalThresholdTune::init(ScanBase *s) {
         }
 
         if (l->isTriggerLoop()) {
-            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            auto trigLoop = dynamic_cast<const StdTriggerAction*>(l);
             if(trigLoop == nullptr) {
                 alog->error("OccGlobalThresholdTune: loop declared as trigger does not have a count");
             } else {
@@ -1047,7 +1051,6 @@ void OccGlobalThresholdTune::init(ScanBase *s) {
 
         if (l->isGlobalFeedbackLoop()) {
             fb.reset(new GlobalFeedbackSender(feedback));
-            lb = (LoopActionBase*) l.get(); 
         }
     }
 }
@@ -1099,9 +1102,6 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
 
         bool done = false;
         double sign = 0;
-        if (lb->getStep() == 1) {
-            done = true;
-        }
 
         double meanOcc = occDists[ident]->getMean()/(double)injections;
         double entries = occDists[ident]->getEntries();
@@ -1131,16 +1131,22 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
 }
 
 void OccPixelThresholdTune::loadConfig(const json &j){
-    if (j.contains("occLowCut"))
-        m_occLowCut=j["occLowCut"];
-    if (j.contains("occHighCut"))
-        m_occHighCut=j["occHighCut"];
+    if (j.contains("occLowCut")) {
+        m_occLowCut.clear();
+        for(auto i: j["occLowCut"])
+            m_occLowCut.push_back(i);
+    }
+    if (j.contains("occHighCut")) {
+        m_occHighCut.clear();
+        for(auto i: j["occHighCut"])
+            m_occHighCut.push_back(i);
+    }
 }
 
-void OccPixelThresholdTune::init(ScanBase *s) {
+void OccPixelThresholdTune::init(const ScanLoopInfo *s) {
     n_count = 1;
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        auto l = s->getLoop(n);
         if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -1152,7 +1158,7 @@ void OccPixelThresholdTune::init(ScanBase *s) {
         }
 
         if (l->isTriggerLoop()) {
-            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            auto trigLoop = dynamic_cast<const StdTriggerAction*>(l);
             if(trigLoop == nullptr) {
                 alog->error("OccPixelThresholdTune: loop declared as trigger does not have a count");
             } else {
@@ -1211,9 +1217,9 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
 
         for (unsigned i=0; i<fbHisto->size(); i++) {
             double occ = occMaps[ident]->getBin(i);
-            if ((occ/(double)injections) > m_occHighCut) {
+            if ((occ/(double)injections) > m_occHighCut[occ_count]) {
                 fbHisto->setBin(i, -1);
-            } else if ((occ/(double)injections) < m_occLowCut) {
+            } else if ((occ/(double)injections) < m_occLowCut[occ_count]) {
                 fbHisto->setBin(i, +1);
             } else {
                 fbHisto->setBin(i, 0);
@@ -1221,7 +1227,7 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
             mean += occMaps[ident]->getBin(i);
             occDist->fill(occMaps[ident]->getBin(i));
         }
-        
+
         alog->info("[{}] Mean Occupancy = {}", id, mean/(nCol*nRow*(double)injections));
         alog->info("[{}] RMS = {}", id, occDist->getStdDev());
 
@@ -1229,6 +1235,9 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
         output->pushData(std::move(occMaps[ident]));
         output->pushData(std::move(occDist));
         innerCnt[ident] = 0;
+        if (occ_count < std::min(m_occLowCut.size(), m_occHighCut.size())) {
+            occ_count++;
+        }
         //delete occMaps[ident];
         occMaps[ident] = nullptr;
     }
@@ -1236,11 +1245,11 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
 }
 
 // TODO exclude every loop
-void L1Analysis::init(ScanBase *s) {
+void L1Analysis::init(const ScanLoopInfo *s) {
     n_count = 1;
     injections = 0;
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        auto l = s->getLoop(n);
         if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -1252,7 +1261,7 @@ void L1Analysis::init(ScanBase *s) {
         }
 
         if (l->isTriggerLoop()) {
-            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            auto trigLoop = dynamic_cast<const StdTriggerAction*>(l);
             if(trigLoop == nullptr) {
                 alog->error("L1Analysis: loop declared as trigger does not have a count");
             } else {
@@ -1302,11 +1311,11 @@ void L1Analysis::processHistogram(HistogramBase *h) {
 void L1Analysis::end() {
 }
 
-void TagAnalysis::init(ScanBase *s) {
+void TagAnalysis::init(const ScanLoopInfo *s) {
     n_count = 1;
     injections = 0;
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        auto l = s->getLoop(n);
         if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -1396,11 +1405,11 @@ void TagAnalysis::processHistogram(HistogramBase *h) {
 void TagAnalysis::end() {
 }
 
-void TotDistPlotter::init(ScanBase *s) {
+void TotDistPlotter::init(const ScanLoopInfo *s) {
     n_count = 1;
     injections = 0;
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        auto l = s->getLoop(n);
         if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || l->isParameterLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -1411,7 +1420,7 @@ void TotDistPlotter::init(ScanBase *s) {
             n_count = n_count*cnt;
         }
         if (l->isTriggerLoop()) {
-            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            auto trigLoop = dynamic_cast<const StdTriggerAction*>(l);
             if(trigLoop == nullptr) {
                 alog->error("TotDistPlotter: loop declared as trigger does not have a count");
             } else {
@@ -1457,7 +1466,7 @@ void TotDistPlotter::processHistogram(HistogramBase *h) {
     }
 }
 
-void NoiseAnalysis::init(ScanBase *s) {
+void NoiseAnalysis::init(const ScanLoopInfo *s) {
     // We assume the nosie scan only has one trigger and data loop
     occ.reset(new Histo2d("Occupancy", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
     occ->setXaxisTitle("Col");
@@ -1469,7 +1478,7 @@ void NoiseAnalysis::init(ScanBase *s) {
     tot.reset(new Histo2d("TotMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
     tot->setXaxisTitle("Col");
     tot->setYaxisTitle("Row");
-    tot->setZaxisTitle("Averaged ToT");        
+    tot->setZaxisTitle("Averaged ToT");
     n_trigger = 0;
 }
 
@@ -1479,12 +1488,12 @@ void NoiseAnalysis::processHistogram(HistogramBase *h) {
     }
     else if (h->getName() == TotMap::outputName()) {
         tot->add(*(Histo2d*)h);
-    }    
+    }
     else if (h->getName() == TagDist::outputName()) {
         tag->add(*(Histo1d*)h);
-    }     
+    }
     else if (h->getName() == HitsPerEvent::outputName()) {
-        n_trigger += ((Histo1d*)h)->getEntries();       
+        n_trigger += ((Histo1d*)h)->getEntries();
     }
 }
 
@@ -1511,7 +1520,7 @@ void NoiseAnalysis::end() {
     noiseOcc->add(&*occ);
     noiseOcc->scale(1.0/(double)n_trigger);
     alog->info("[{}] Received {} total trigger!", id, n_trigger);
- 
+
     for(unsigned col=1; col<=nCol; col++) {
         for (unsigned row=1; row<=nRow; row++) {
             unsigned i = noiseOcc->binNum(col, row);
@@ -1519,7 +1528,7 @@ void NoiseAnalysis::end() {
                 mask->setBin(i, 0);
                 if (make_mask&&createMask) {
                     // maskPixel starts at 0,0
-                    bookie->getFeCfg(id)->maskPixel(col-1, row-1);
+                    feCfg->maskPixel(col-1, row-1);
                 }
             } else {
                 mask->setBin(i, 1);
@@ -1537,12 +1546,12 @@ void NoiseAnalysis::end() {
     output->pushData(std::move(mask));
 }
 
-void NoiseTuning::init(ScanBase *s) {
+void NoiseTuning::init(const ScanLoopInfo *s) {
     n_count = 1;
     pixelFb = nullptr;
     globalFb = nullptr;
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        auto l = s->getLoop(n);
         if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -1635,12 +1644,11 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
 void NoiseTuning::end() {
 }
 
-void DelayAnalysis::init(ScanBase *s) {
-    scan = s;
+void DelayAnalysis::init(const ScanLoopInfo *s) {
     n_count = nCol*nRow;
     injections = 50;
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        auto l = s->getLoop(n);
         if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || l->isParameterLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -1660,7 +1668,7 @@ void DelayAnalysis::init(ScanBase *s) {
         }
 
         if (l->isTriggerLoop()) {
-            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            auto trigLoop = dynamic_cast<const StdTriggerAction*>(l);
             if(trigLoop == nullptr) {
                 alog->error("DelayAnalysis: loop declared as trigger does not have a count");
             } else {
@@ -1754,12 +1762,11 @@ void DelayAnalysis::end() {
 }
 
 
-void ParameterAnalysis::init(ScanBase *s) {
+void ParameterAnalysis::init(const ScanLoopInfo *s) {
     n_count = 1;
-    scan = s;
     alog->info("ParameterAnalysis init");
     for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+        auto l = s->getLoop(n);
         if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || l->isParameterLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
@@ -1780,7 +1787,7 @@ void ParameterAnalysis::init(ScanBase *s) {
             paramMin = l->getMin();
             paramStep = l->getStep();
             paramBins = (paramMax-paramMin)/paramStep;
-            auto paramLoop = dynamic_cast<StdParameterAction*>(l.get());
+            auto paramLoop = dynamic_cast<const StdParameterAction*>(l);
             if(paramLoop == nullptr) {
                 alog->error("ParameterAnalysis: loop declared as parameter loop does not have a name");
             } else {
@@ -1789,7 +1796,7 @@ void ParameterAnalysis::init(ScanBase *s) {
         }
 
         if (l->isTriggerLoop()) {
-            auto trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+            auto trigLoop = dynamic_cast<const StdTriggerAction*>(l);
             if(trigLoop == nullptr) {
                 alog->error("ParameterAnalysis: loop declared as trigger does not have a count");
             } else {

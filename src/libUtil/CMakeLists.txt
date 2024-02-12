@@ -8,8 +8,10 @@ add_library(Util SHARED
         Histo3d.cpp
         lmcurve.cpp
         lmmin.cpp
+        scurvegauss.cpp
         LoggingConfig.cpp
         SerialCom.cpp
+        catch_amalgamated.cpp
         )
 
 post_build_debug_library(Util)

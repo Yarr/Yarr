@@ -7,6 +7,7 @@ target_include_directories(Yarr PUBLIC ./include)
 target_link_libraries(Yarr ${CONTROLLERS})
 target_link_libraries(Yarr ${FRONT_ENDS})
 target_link_options(Yarr PUBLIC -Wl,--no-as-needed)
+add_dependencies(Yarr git_hash)
 
 post_build_debug_library(Yarr)
 
@@ -18,7 +19,7 @@ add_library(Scan SHARED
         AllProcessors.cpp
         AllStdActions.cpp
         AnalysisAlgorithm.cpp
-        AnalysisAlgorithm.cpp
+        AnalysisConsole.cpp
         Bookkeeper.cpp
         Clipboard.cpp
         DataProcessor.cpp
@@ -26,6 +27,7 @@ add_library(Scan SHARED
         FeedbackBase.cpp
         FrontEnd.cpp
         HistogramAlgorithm.cpp
+        HistogramBase.cpp
 	JsonData.cpp
         LoopActionBase.cpp
         LoopEngine.cpp

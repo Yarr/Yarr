@@ -20,15 +20,10 @@ class RxCore;
 class StarChips : public StarCfg, public StarCmd, public FrontEnd {
  public:
   StarChips(int abc_version, int hcc_version);
-#if 0
-  StarChips(HwController *arg_core);
-  StarChips(HwController *arg_core, unsigned arg_channel);
-  StarChips(HwController *arg_core, unsigned arg_txchannel, unsigned arg_rxchannel);
-#endif
 
   ~StarChips() override = default;
 
-    void init(HwController *arg_core, unsigned arg_txChannel, unsigned arg_rxChannel) override;
+  void init(HwController *arg_core, const FrontEndConnectivity& fe_cfg) override;
 
   //Will write value for setting name for the HCC if name starts with "HCC_" otherwise will write the setting for all ABCs if name starts with "ABCs_"
   void writeNamedRegister(std::string name, uint16_t value) override;

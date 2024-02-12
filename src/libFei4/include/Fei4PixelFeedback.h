@@ -83,7 +83,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
 
             // Loop over active FEs
             for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-                FrontEnd *fe = keeper->getEntry(id).fe;
+                auto fe = keeper->getFe(id);
                 if(fe->getActive()) {
                     // Init Maps
                     fbHistoMap[id].reset();
@@ -108,7 +108,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
             g_stat->set(this, cur);
          
             for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-                FrontEnd *fe = keeper->getEntry(id).fe;
+                auto fe = keeper->getFe(id);
                 if(fe->getActive()) {
                     // Write config
                     this->writePixelCfg(dynamic_cast<Fei4*>(fe));
@@ -118,7 +118,7 @@ class Fei4PixelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
 
         void execPart2() override {
             for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-                FrontEnd *fe = keeper->getEntry(id).fe;
+                auto fe = keeper->getFe(id);
                 if(fe->getActive()) {
                     waitForFeedback(id);
 

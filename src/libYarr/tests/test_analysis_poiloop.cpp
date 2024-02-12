@@ -8,6 +8,7 @@
 #include "Histo2d.h"
 #include "FeedbackBase.h"
 
+#include "EmptyFrontEnd.h"
 #include "EmptyHw.h"
 
 namespace {
@@ -55,11 +56,11 @@ namespace {
     MyAnalyzer() : AnalysisAlgorithm() {}
     ~MyAnalyzer() {}
 
-    void init(ScanBase *s) {
+    void init(const ScanLoopInfo *s) override {
       n_count = 1;
       for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ( not( l->getStyle()==LOOP_STYLE_NOP or (isPOILoop(l.get())) ) ) {
+        auto l = s->getLoop(n);
+        if ( not( l->getStyle()==LOOP_STYLE_NOP or isPOILoop(l) ) ) {
           // outer loops
           loops.push_back(n);
           loopMax.push_back((unsigned)l->getMax());
@@ -74,13 +75,13 @@ namespace {
       }
     }
 
-    void loadConfig(const json &j) {
+    void loadConfig(const json &j) override {
       for (unsigned i=0; i<j["parametersOfInterest"].size(); i++) {
         m_parametersOfInterest.push_back(j["parametersOfInterest"][i]);
       }
     }
 
-    void processHistogram(HistogramBase *h) {
+    void processHistogram(HistogramBase *h) override {
       if (h->getName() != "myHisto")
         return;
 
@@ -133,10 +134,10 @@ namespace {
     MyOtherAnalyzer() {}
     ~MyOtherAnalyzer() {}
 
-    void init(ScanBase *s) {
+    void init(const ScanLoopInfo *s) override {
       for (unsigned n=0; n<s->size(); n++) {
-        std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-        if ( isPOILoop(l.get()) ) {
+        auto l = s->getLoop(n);
+        if ( isPOILoop(l) ) {
           pois_min.push_back(l->getMin());
           pois_max.push_back(l->getMax());
           pois_step.push_back(l->getStep());
@@ -158,13 +159,13 @@ namespace {
       hxy.reset(new Histo2d("houtput", nbins_x, xmin, xmax, nbins_y, ymin, ymax));
     }
 
-    void loadConfig(const json &j) {
+    void loadConfig(const json &j) override {
       for (unsigned i=0; i<j["parametersOfInterest"].size(); i++) {
         m_parametersOfInterest.push_back(j["parametersOfInterest"][i]);
       }
     }
 
-    void processHistogram(HistogramBase *h) {
+    void processHistogram(HistogramBase *h) override {
       if (h->getName() != "h1") return;
 
       // Get the content of the 1-bin histogram h
@@ -177,7 +178,7 @@ namespace {
       hxy->fill(x, y, z);
     }
 
-    void end() {
+    void end() override {
       output->pushData(std::move(hxy));
     }
 
@@ -209,17 +210,16 @@ TEST_CASE("AnalysisPOILoops", "[Analysis]") {
   Bookkeeper bookie(&hwCtrl, &hwCtrl);
 
   // Add one FE
-  auto fe = StdDict::getFrontEnd("Star");
+  auto fe = std::make_unique<EmptyFrontEnd>();
   fe->setActive(true);
   unsigned channel = 42;
-  bookie.addFe(fe.get(), channel);
-  unsigned uid = bookie.getId(fe.release());
+  bookie.addFe(std::move(fe), channel);
+  unsigned uid = bookie.getId(bookie.getLastFe());
 
   // Global FE for scan
-  auto g_fe = StdDict::getFrontEnd("Star");
-  g_fe->makeGlobal();
-  g_fe->init(&hwCtrl, 0, 0);
-  bookie.initGlobalFe(g_fe.release());
+  auto g_fe = std::make_unique<EmptyFrontEnd>();
+  g_fe->init(&hwCtrl, FrontEndConnectivity(0,0));
+  bookie.initGlobalFe(std::move(g_fe));
 
   MyScan scan(&bookie, nullptr);
 
@@ -274,7 +274,7 @@ TEST_CASE("AnalysisPOILoops", "[Analysis]") {
   std::vector<std::unique_ptr<AnalysisProcessor>> analyses;
 
   // First tier: MyAnalyzer
-  analyses.emplace_back(new AnalysisProcessor(&bookie, uid));
+  analyses.emplace_back(new AnalysisProcessor(uid));
 
   // Create ClipBoard for its output and make connections
   bookie.getEntry(uid).fe->clipResult.emplace_back(new ClipBoard<HistogramBase>());
@@ -286,7 +286,7 @@ TEST_CASE("AnalysisPOILoops", "[Analysis]") {
   analyses[0]->addAlgorithm(std::move(algo1));
 
   // Second tier: MyOtherAnalyzer
-  analyses.emplace_back(new AnalysisProcessor(&bookie, uid));
+  analyses.emplace_back(new AnalysisProcessor(uid));
 
   // Create and connect result ClipBoard
   bookie.getEntry(uid).fe->clipResult.emplace_back(new ClipBoard<HistogramBase>());

@@ -68,7 +68,7 @@ void FrontEndScopeAnalysis::loadConfig(const json &j) {
 
 }
 
-void FrontEndScopeAnalysis::init(ScanBase* s) {
+void FrontEndScopeAnalysis::init(const ScanLoopInfo* s) {
 
     m_n_count = 1;
     m_injections = 0;
@@ -85,7 +85,7 @@ void FrontEndScopeAnalysis::init(ScanBase* s) {
             m_n_count *= cnt;
         }
         if (loop->isTriggerLoop()) {
-            auto trigger_loop = std::dynamic_pointer_cast<StdTriggerAction>(loop);
+            auto trigger_loop = dynamic_cast<const StdTriggerAction*>(loop);
             if(trigger_loop == nullptr) {
                 logger->error("FrontEndScopeAnalysis: loop declared as TriggerLoop, but does not have trigger count");
             } else {
@@ -316,7 +316,7 @@ void ToaAnalysis::loadConfig(const json &j) {
 
 }
 
-void ToaAnalysis::init(ScanBase *s) {
+void ToaAnalysis::init(const ScanLoopInfo *s) {
 
     m_n_count = 1;
     m_injections = 0;
@@ -332,7 +332,7 @@ void ToaAnalysis::init(ScanBase *s) {
             m_n_count *= cnt;
         }
         if (loop->isTriggerLoop()) {
-            auto trigger_loop = std::dynamic_pointer_cast<StdTriggerAction>(loop);
+            auto trigger_loop = dynamic_cast<const StdTriggerAction *>(loop);
             if(trigger_loop == nullptr) {
                 logger->error("ToaAnalysis: loop declared as trigger does not have a count");
             } else {
@@ -415,7 +415,7 @@ void ToaAnalysis::processHistogram(HistogramBase *h) {
 
     // ToA vs charge
     if(m_hasVcalLoop && h_chargeVsToaMap == NULL) {
-        auto cfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
+        auto cfg = feCfg;
         double chargeMin = cfg->toCharge(m_vcalMin);
         double chargeMax = cfg->toCharge(m_vcalMax);
         double chargeStep = cfg->toCharge(m_vcalStep);
@@ -515,7 +515,7 @@ void ToaAnalysis::processHistogram(HistogramBase *h) {
 
         // ToA vs charge
         if (m_hasVcalLoop) {
-            auto cfg = dynamic_cast<FrontEndCfg*>(bookie->getFe(id));
+            auto cfg = feCfg;
             double chargeAtCurrentStep = cfg->toCharge(ident);
             double bin_width = ((toa_bins_x_hi+0.5) - (toa_bins_x_lo+0.5)) / (toa_bins_n);
             for (unsigned ii = 0; ii < fineMeanPToADist->size(); ii++) {

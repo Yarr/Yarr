@@ -22,7 +22,7 @@ class StarStrobeDelayAnalysis : public AnalysisAlgorithm {
         StarStrobeDelayAnalysis() : AnalysisAlgorithm() {}  //!< Default constructor
         ~StarStrobeDelayAnalysis() override = default;      //!< Default constructor
 
-        void init(ScanBase *s) override;                  //!< Initializes the analysis ; mostly consists of getting the loop parameter over which data will be aggregated
+        void init(const ScanLoopInfo *s) override;        //!< Initializes the analysis ; mostly consists of getting the loop parameter over which data will be aggregated
         void processHistogram(HistogramBase *h) override; //!< Fits the left and right edge of strobe delay pulse for each channel and stores them for further analysis
         void end() override;                              //!< Once all scans inputs have been collected, find highest left edge and lowest right edge to define optimal strobe delay as 57% between the two. Also dump results in StarJsonData file and plots.
         void loadConfig(const json &config) override;     //!< Loads the analysis configuration from a json object

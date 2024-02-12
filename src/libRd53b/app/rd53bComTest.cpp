@@ -133,7 +133,7 @@ int main (int argc, char *argv[]) {
     logger->info("\033[1;31m###################\033[0m");
 
     Rd53b rd53b;
-    rd53b.init(&*hwCtrl, 0, 0);
+    rd53b.init(&*hwCtrl, FrontEndConnectivity(0,0));
 
     std::ifstream cfgFile(cfgFilePath);
     if (cfgFile) {

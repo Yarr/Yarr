@@ -108,7 +108,7 @@ void Rd53bGlobalFeedback::feedbackStep(unsigned channel, double sign, bool last)
 
 void Rd53bGlobalFeedback::writePar() {
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
         if(fe->getActive()) {
             auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
             // Enable single channel
@@ -129,7 +129,7 @@ void Rd53bGlobalFeedback::init() {
     parPtr = keeper->globalFe<Rd53b>()->getNamedRegister(parName);
     // Init maps
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
         if (fe->getActive()) {
             m_localStep[id] = step;
             m_values[id] = max;
@@ -141,7 +141,7 @@ void Rd53bGlobalFeedback::init() {
 
     if (m_rstPixelReg) {
         for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-            FrontEnd *fe = keeper->getEntry(id).fe;
+            auto fe = keeper->getFe(id);
             if (fe->getActive()) {
                 Rd53b *rd53b = dynamic_cast<Rd53b*>(fe);
                 g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
@@ -164,7 +164,7 @@ void Rd53bGlobalFeedback::execPart1() {
 void Rd53bGlobalFeedback::execPart2() {
     // Wait for mutexes to be unlocked by feedback
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
         if (fe->getActive()) {
             waitForFeedback(id);
             logger->info(" --> Received Feedback on ID {} with value: {}", id, m_values[id]);
@@ -177,7 +177,7 @@ void Rd53bGlobalFeedback::execPart2() {
 
 void Rd53bGlobalFeedback::end() {
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
         if (fe->getActive()) {
             logger->info(" --> Final parameter for ID {} is {}", id, m_values[id]);
         }

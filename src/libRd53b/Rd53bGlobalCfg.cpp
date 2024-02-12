@@ -278,7 +278,7 @@ void Rd53bGlobalCfg::init() {
     EfuseWriteData0.init    ( 80, &m_cfg[ 80], 0, 16, 0); regMap["EfuseWriteData0"] = &Rd53bGlobalCfg::EfuseWriteData0;
     //81
     AuroraEnPrbs.init       ( 81, &m_cfg[ 81], 12,  1, 0); regMap["AuroraEnPrbs"] = &Rd53bGlobalCfg::AuroraEnPrbs;
-    AuroraActiveLanes.init  ( 81, &m_cfg[ 81], 8,  4, 15); regMap["AuroraActiveLanes"] = &Rd53bGlobalCfg::AuroraActiveLanes;
+    AuroraActiveLanes.init  ( 81, &m_cfg[ 81], 8,  4, 1); regMap["AuroraActiveLanes"] = &Rd53bGlobalCfg::AuroraActiveLanes;
     AuroraCCWait.init       ( 81, &m_cfg[ 81], 2,  6, 25); regMap["AuroraCCWait"] = &Rd53bGlobalCfg::AuroraCCWait;
     AuroraCCSend.init       ( 81, &m_cfg[ 81], 0,  2, 3); regMap["AuroraCCSend"] = &Rd53bGlobalCfg::AuroraCCSend;
     //82
@@ -318,15 +318,15 @@ void Rd53bGlobalCfg::init() {
     SerSelOut1.init         ( 94, &m_cfg[ 94], 2,  2, 1); regMap["SerSelOut1"] = &Rd53bGlobalCfg::SerSelOut1;
     SerSelOut0.init         ( 94, &m_cfg[ 94], 0,  2, 1); regMap["SerSelOut0"] = &Rd53bGlobalCfg::SerSelOut0;
     //95
-    SerInvTap.init          ( 95, &m_cfg[ 95], 6,  2, 0); regMap["SerInvTap"] = &Rd53bGlobalCfg::SerInvTap;
-    SerEnTap.init           ( 95, &m_cfg[ 95], 4,  2, 0); regMap["SerEnTap"] = &Rd53bGlobalCfg::SerEnTap;
-    SerEnLane.init          ( 95, &m_cfg[ 95], 0,  4, 15); regMap["SerEnLane"] = &Rd53bGlobalCfg::SerEnLane;
+    SerInvTap.init          ( 95, &m_cfg[ 95], 6,  2, 1); regMap["SerInvTap"] = &Rd53bGlobalCfg::SerInvTap;
+    SerEnTap.init           ( 95, &m_cfg[ 95], 4,  2, 1); regMap["SerEnTap"] = &Rd53bGlobalCfg::SerEnTap;
+    SerEnLane.init          ( 95, &m_cfg[ 95], 0,  4, 8); regMap["SerEnLane"] = &Rd53bGlobalCfg::SerEnLane;
     //96
     CmlBias2.init           ( 96, &m_cfg[ 96], 0, 10, 0); regMap["CmlBias2"] = &Rd53bGlobalCfg::CmlBias2;
     //97
-    CmlBias1.init           ( 97, &m_cfg[ 97], 0, 10, 0); regMap["CmlBias1"] = &Rd53bGlobalCfg::CmlBias1;
+    CmlBias1.init           ( 97, &m_cfg[ 97], 0, 10, 400); regMap["CmlBias1"] = &Rd53bGlobalCfg::CmlBias1;
     //98
-    CmlBias0.init           ( 98, &m_cfg[ 98], 0, 10, 500); regMap["CmlBias0"] = &Rd53bGlobalCfg::CmlBias0;
+    CmlBias0.init           ( 98, &m_cfg[ 98], 0, 10, 800); regMap["CmlBias0"] = &Rd53bGlobalCfg::CmlBias0;
     //99
     MonitorEnable.init      ( 99, &m_cfg[ 99], 12,  1, 0); regMap["MonitorEnable"] = &Rd53bGlobalCfg::MonitorEnable;
     MonitorI.init           ( 99, &m_cfg[ 99], 6,  6, 63); regMap["MonitorI"] = &Rd53bGlobalCfg::MonitorI;

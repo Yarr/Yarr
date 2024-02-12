@@ -185,9 +185,10 @@ int ScanConsoleImpl::setupScan() {
     // TODO not to use the raw pointer!
     try {
         ScanHelper::buildRawDataProcs(procs, *bookie, chipType);
-        ScanHelper::buildHistogrammers(histogrammers, scanCfg, *bookie, scanBase.get(), scanOpts.outputDir);
+        ScanHelper::buildHistogrammers(histogrammers, scanCfg, *bookie, scanOpts.outputDir);
         ScanHelper::buildAnalyses(analyses, scanCfg, *bookie, scanBase.get(),
-                                  &fbData, scanOpts.mask_opt, scanOpts.outputDir);
+                                  &fbData, scanOpts.mask_opt, scanOpts.outputDir,
+                                  scanOpts.target_tot, scanOpts.target_charge);
     } catch (const char *msg) {
         logger->error("{}", msg);
         return -1;
@@ -205,8 +206,7 @@ int ScanConsoleImpl::setupScan() {
     // Run from downstream to upstream
     logger->info("Starting histogrammer and analysis threads:");
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
-        FrontEnd *fe = bookie->getEntry(id).fe;
-        if (!fe->isActive()) continue;
+        if (!(bookie->getFe(id)->isActive())) continue;
         for (auto& ana : analyses[id]) {
             ana->init();
             ana->run();
@@ -248,19 +248,17 @@ int ScanConsoleImpl::configure() {
     // Reset masks
     if (scanOpts.mask_opt == 1) {
         for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
-            FrontEnd *fe = bookie->getEntry(id).fe;
-            auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
+            auto feCfg = bookie->getFeCfg(id);
             feCfg->enableAll();
         }
     }
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
-        FrontEnd *fe = bookie->getEntry(id).fe;
-        auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
+        auto feCfg = bookie->getFeCfg(id);
         if(scanOpts.doOutput)
             ScanHelper::writeFeConfig(feCfg, scanOpts.outputDir + feCfgMap.at(id)[1] + ".before");
     }
     bookie->initGlobalFe(chipType);
-    bookie->getGlobalFe()->init(&*hwCtrl, 0, 0);
+    bookie->getGlobalFe()->init(&*hwCtrl, FrontEndConnectivity(0,0));
 
     ScanHelper::banner(logger,"Configure FEs");
 
@@ -276,13 +274,12 @@ int ScanConsoleImpl::configure() {
     }
 
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
-        FrontEnd *fe = bookie->getEntry(id).fe;
-        auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
+        auto feCfg = bookie->getFeCfg(id);
         logger->info("Configuring {}", feCfg->getName());
         // Select correct channel
         hwCtrl->setCmdEnable(feCfg->getTxChannel());
         // Configure
-        fe->configure();
+        bookie->getFe(id)->configure();
         // Wait for fifo to be empty
         std::this_thread::sleep_for(std::chrono::microseconds(100));
         while(!hwCtrl->isCmdEmpty());
@@ -299,8 +296,8 @@ int ScanConsoleImpl::configure() {
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
     hwCtrl->flushBuffer();
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
-        FrontEnd *fe = bookie->getEntry(id).fe;
-        auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
+        auto fe = bookie->getFe(id);
+        auto feCfg = bookie->getFeCfg(id);
         logger->info("Checking com {}", feCfg->getName());
         // Select correct channel
         hwCtrl->setCmdEnable(feCfg->getTxChannel());
@@ -412,19 +409,17 @@ int ScanConsoleImpl::initHardware() {
     // Reset masks
     if (scanOpts.mask_opt == 1) {
         for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
-            FrontEnd *fe = bookie->getEntry(id).fe;
-            auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
+            auto feCfg = bookie->getFeCfg(id);
             feCfg->enableAll();
         }
     }
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
-        FrontEnd *fe = bookie->getEntry(id).fe;
-        auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
+        auto feCfg = bookie->getFeCfg(id);
         if(scanOpts.doOutput)
             ScanHelper::writeFeConfig(feCfg, scanOpts.outputDir + feCfgMap.at(id)[1] + ".before");
     }
     bookie->initGlobalFe(chipType);
-    bookie->getGlobalFe()->init(&*hwCtrl, 0, 0);
+    bookie->getGlobalFe()->init(&*hwCtrl, FrontEndConnectivity(0,0));
     return 0;
 }
 
@@ -436,9 +431,9 @@ void ScanConsoleImpl::cleanup() {
     // Cleanup
     //delete scanBase;
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
-        FrontEnd *fe = bookie->getEntry(id).fe;
+        auto fe = bookie->getFe(id);
         if(!fe->isActive()) continue;
-        auto feCfg = dynamic_cast<FrontEndCfg*>(fe);
+        auto feCfg = bookie->getFeCfg(id);
 
         // Save config
         if (!feCfg->isLocked() && scanOpts.doOutput) {
@@ -503,7 +498,7 @@ std::string ScanConsoleImpl::getResults() {
 void ScanConsoleImpl::getResults(json &result) {
     json frontends;
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
-        FrontEnd *fe = bookie->getEntry(id).fe;
+        auto fe = bookie->getFe(id);
         if (fe->isActive()) {
             auto feCfg = dynamic_cast<FrontEndCfg *>(fe);
             std::string name = feCfg->getName();
@@ -535,7 +530,7 @@ void ScanConsoleImpl::run() {
 
     // Join from upstream to downstream.
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
-        FrontEnd *fe = bookie->getEntry(id).fe;
+        auto fe = bookie->getFe(id);
         if (fe->isActive()) {
           fe->clipRawData.finish();
         }
@@ -551,7 +546,7 @@ void ScanConsoleImpl::run() {
     logger->info("Processor done, waiting for histogrammer ...");
 
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
-        FrontEnd *fe = bookie->getEntry(id).fe;
+        auto fe = bookie->getFe(id);
         if (fe->isActive()) {
           fe->clipData.finish();
         }
@@ -565,7 +560,7 @@ void ScanConsoleImpl::run() {
     logger->info("Processor done, waiting for analysis ...");
 
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
-        FrontEnd *fe = bookie->getEntry(id).fe;
+        auto fe = bookie->getFe(id);
         if (fe->isActive()) {
           fe->clipHisto.finish();
         }
@@ -573,7 +568,7 @@ void ScanConsoleImpl::run() {
 
     // Join analyses
     for( auto& ana : analyses ) {
-      FrontEnd *fe = bookie->getEntry(ana.first).fe;
+      auto fe = bookie->getFe(ana.first);
       for (unsigned i=0; i<ana.second.size(); i++) {
         ana.second[i]->join();
         // Also declare done for its output ClipBoard
