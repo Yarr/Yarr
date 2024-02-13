@@ -73,7 +73,7 @@ void StarCounterLoop::execPart1() {
     // configuration architecture.
 
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
         SPDLOG_LOGGER_DEBUG(logger, fe->isActive());
         if (!fe->isActive()) {continue;}
         ((StarChips*) fe)->setAndWriteABCSubRegister("ENCOUNT", 1, 0xf);
@@ -97,7 +97,7 @@ void StarCounterLoop::execPart2() {
     g_tx->setTrigEnable(0x0);
 
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
         if (!fe->isActive()) {continue;}
 
         ((StarChips*) fe)->sendCmd(LCB::fast_command(LCB::FastCmdType::ABC_HIT_COUNT_STOP,4));

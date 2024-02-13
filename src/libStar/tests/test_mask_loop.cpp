@@ -131,9 +131,9 @@ std::unique_ptr<MyTxCore> runWithConfig(json &j) {
 
   MyTxCore &tx = *hw;
 
-  auto fe = StdDict::getFrontEnd("Star").release();
+  auto fe = StdDict::getFrontEnd("Star");
   {
-    auto sfe = dynamic_cast<StarCfg*> (&*fe);
+    auto sfe = dynamic_cast<StarCfg*> (fe.get());
     REQUIRE(sfe);
     sfe->addABCchipID(3);
   }
@@ -141,7 +141,7 @@ std::unique_ptr<MyTxCore> runWithConfig(json &j) {
   fe->setActive(true);
   FrontEndConnectivity fe_conn(0,0);
   fe->init(&*hw, fe_conn);
-  bk.addFe(fe, fe_conn);
+  bk.addFe(std::move(fe), fe_conn);
 
   // Normally registered by LoopEngine
   ls.init(1);

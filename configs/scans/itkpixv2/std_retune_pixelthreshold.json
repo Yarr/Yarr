@@ -1,0 +1,90 @@
+{
+    "scan": {
+        "analysis": {
+            "0": {
+                "algorithm": "OccPixelThresholdTune",
+                "config": {
+                    "occLowCut": [0.2, 0.2],
+                    "occHighCut": [0.8, 0.8]
+                }
+            },
+            "n_count": 1
+        },
+        "histogrammer": {
+            "0": {
+                "algorithm": "OccupancyMap",
+                "config": {}
+            },
+            "1": {
+                "algorithm": "TotMap",
+                "config": {}
+            },
+            "2": {
+                "algorithm": "Tot2Map",
+                "config": {}
+            },
+            "3": {
+                "algorithm": "TagDist",
+                "config": {}
+            },
+            "4": {
+                "algorithm": "HitsPerEvent",
+                "config": {}
+            },
+            "5": {
+                "algorithm": "DataArchiver",
+                "config": {}
+            },
+            "n_count": 4
+        },
+        "loops": [
+        {
+            "config": {
+                "max": 15,
+                "min": -15,
+                "steps": [8,4,2,1,1,1,1],
+                "rstPixelReg": false
+            },
+            "loopAction": "Itkpixv2PixelFeedback"
+        },
+        {
+            "config": {
+                "max": 64,
+                "min": 0,
+                "step": 1
+            },
+            "loopAction": "Itkpixv2ParMaskLoop"
+        },
+        {
+            "config": {
+                "max": 50,
+                "min": 0,
+                "step": 1,
+                "nSteps": 5
+            },
+            "loopAction": "Itkpixv2CoreColLoop"
+        },
+            {
+                "config": {
+                    "count": 50,
+                    "delay": 56,
+                    "extTrigger": false,
+                    "frequency": 5000,
+                    "noInject": false,
+                    "time": 0,
+                    "edgeMode": false
+                },
+                "loopAction": "Itkpixv2TriggerLoop"
+            },
+            {
+                "loopAction": "StdDataLoop"
+            }
+        ],
+        "name": "TunePixelTreshold",
+        "prescan": {
+            "InjVcalRange": 1,
+            "InjDigEn": 0,
+            "Latency": 60
+        }
+    }
+}

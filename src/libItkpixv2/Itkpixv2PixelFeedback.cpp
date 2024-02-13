@@ -90,7 +90,7 @@ void Itkpixv2PixelFeedback::init() {
     }
     if (m_rstPixelReg) {
         for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-            FrontEnd *fe = keeper->getEntry(id).fe;
+            auto fe = keeper->getFe(id);
             if (fe->getActive()) {
                 auto itkpix = dynamic_cast<Itkpixv2*>(fe);
                 m_fb[id] = NULL;
@@ -109,7 +109,7 @@ void Itkpixv2PixelFeedback::execPart1() {
     g_stat->set(this, m_cur);
     // Lock all mutexes
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
         if (fe->getActive()) {
             this->writePixelCfg(dynamic_cast<Itkpixv2*>(fe));
         }
@@ -120,7 +120,7 @@ void Itkpixv2PixelFeedback::execPart1() {
 void Itkpixv2PixelFeedback::execPart2() {
     // Wait for mutexes to be unlocked by feedback
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        FrontEnd *fe = keeper->getEntry(id).fe;
+        auto fe = keeper->getFe(id);
         if (fe->getActive()) {
             waitForFeedback(id);
         }

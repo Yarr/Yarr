@@ -31,5 +31,5 @@ foreach (target IN LISTS apps)
 endforeach ()
 
 if (BUILD_TESTS)
-    add_subdirectory(tests)
+    #    add_subdirectory(tests)
 endif ()

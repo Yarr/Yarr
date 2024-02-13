@@ -15,6 +15,7 @@
 #include <string>
 #include <cmath>
 #include <utility>
+#include <array>
 
 #include "storage.hpp"
 #include "Rd53Reg.h"

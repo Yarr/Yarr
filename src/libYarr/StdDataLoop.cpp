@@ -121,7 +121,7 @@ void StdDataLoop::execPart2() {
                 if (nReadsInCurrentRxCycle > m_maxConsecutiveRxReads) {
                     for (auto &[id, rdc] : rdcMap) {
                         rdc->stat.is_end_of_iteration = false;
-                        keeper->getEntry(id).fe->clipRawData.pushData(std::move(rdc));
+                        keeper->getFe(id)->clipRawData.pushData(std::move(rdc));
                         activeChannels.insert(id);
                     }
                     nReadsInCurrentRxCycle = 0; rdcMap.clear();
@@ -133,7 +133,7 @@ void StdDataLoop::execPart2() {
         // if there is anything left to process -- push it
         for (auto &[id, rdc] : rdcMap) {
             rdc->stat.is_end_of_iteration = false;
-            keeper->getEntry(id).fe->clipRawData.pushData(std::move(rdc));
+            keeper->getFe(id)->clipRawData.pushData(std::move(rdc));
             activeChannels.insert(id);
         }
 
@@ -250,8 +250,8 @@ void StdDataLoop::execPart2() {
     loopStatusIterationEnd.is_end_of_iteration = true;
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
         std::unique_ptr<RawDataContainer> cIterEnd = std::make_unique<RawDataContainer>(std::move(loopStatusIterationEnd));
-        keeper->getEntry(id).fe->clipRawData.pushData(std::move(cIterEnd));
-        keeper->getEntry(id).fe->clipProcFeedback.reset();
+        keeper->getFe(id)->clipRawData.pushData(std::move(cIterEnd));
+        keeper->getFe(id)->clipProcFeedback.reset();
     }
 
     // report the average channel occupancy data

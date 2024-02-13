@@ -117,7 +117,7 @@ void StarMaskLoop::execPart1() {
   }
 
   for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-    FrontEnd *fe = keeper->getEntry(id).fe;
+    auto fe = keeper->getFe(id);
     if (!fe->isActive()) {continue;}
 
     auto masks = m_maskedChannelsRing.readMask(offset);

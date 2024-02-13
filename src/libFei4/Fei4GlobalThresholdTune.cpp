@@ -80,7 +80,7 @@ void Fei4GlobalThresholdTune::preScan() {
         ;
 
     for (unsigned id=0; id<g_bk->getNumOfEntries(); id++) {
-        Fei4 *fe = dynamic_cast<Fei4*>(g_bk->getEntry(id).fe);
+        Fei4 *fe = dynamic_cast<Fei4*>(g_bk->getFe(id));
         // Set to single channel tx
         g_tx->setCmdEnable(fe->getTxChannel());
         // Set specific pulser DAC

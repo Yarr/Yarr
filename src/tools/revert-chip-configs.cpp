@@ -97,6 +97,8 @@ int main(int argc, char* argv[]) {
     size_t n_chips = chip_configs.size();
     bool file_replaced = false;
     for (size_t ichip = 0; ichip < n_chips; ichip++) {
+        if (chip_configs[ichip]["enable"] == 0)
+            continue;
         fs::path chip_register_file_path{chip_configs[ichip]["__config_path__"]};
         if(!fs::exists(chip_register_file_path)) {
             std::cerr << "WARNING: Chip config for chip at index " << ichip << " in connectivity file does not exist, skipping (" << chip_register_file_path << ")" << std::endl;

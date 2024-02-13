@@ -7,7 +7,7 @@ Firmware after release 1.4.0 includes some major changes to the testing workflow
 The eye diagram counts the number of non-idle frames over a certain time period, and compares it to the number of expected non-idle frames from the number of service blocks. The link quality is then determined as:
 
 ```
-LinkQuality = log( 1/(|count  - expected_count|/count))/13.0
+LinkQuality = log( 1/(|count  - expected_count|/expected_count))/13.0
 ```
 
 This link quality factor goes to infinity when the measured count and expected count of non-idle frames match exactly, in which case the link quality factor is set to 1. The eye diagram measures the link quality factor for each deserialiser delay settings. An example of an eye diagram for 4 lanes can be seen here: 
@@ -57,9 +57,13 @@ The eye diagram script then saves the best delay settings to the controller conf
 The delay setting will depend on the chip, as well as specifics of the setup, such as FPGA, cable lengths, etc, so it has to be run every time something changes in the setup, and specifically each time a new module is plugged in. 
 
 In summary, there are four steps to switching to 1.28 Gbps: 
+
 1. Flash the new firmware using the `flash.sh` script & reboot the PC
+
 2. Check out the latest software tag (`1.4.6` or above) and recompile 
+
 3. For each module: Update the chip configs using the `scripts/update_config.py`
+
 4. For each module: Before running any other scans, run an eye diagram
 
 ## Troubleshooting
