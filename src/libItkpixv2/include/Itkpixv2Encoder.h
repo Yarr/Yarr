@@ -8,17 +8,26 @@
 class Itkpixv2Encoder{
     public:
         Itkpixv2Encoder(uint nCol = 400, uint nRow = 384, uint nColInCCol = 8, uint nRowInQRow = 2);
+        
         std::vector<uint32_t> getWords(){return m_words;};
+        
         void randomHitMap(float occupancy = 1e-3, int seed = 0);
-        void addBits64(uint64_t value, uint8_t length);
+        
+        void addBits64(const uint64_t value, const uint8_t length);
 
-        void encodeQCore(uint nCCol, uint nQRow);
+        void pushWords32();
+
+        void encodeQCore(const uint nCCol, const uint nQRow);
         
         void encodeEvent();
 
+        void intTag(const uint16_t nEvt);
+
+        void endStream();
+
         void scanHitMap();
 
-        bool hitInQCore(uint CCol, uint QRow);
+        bool hitInQCore(const uint CCol, const uint QRow);
 
         void test();
 

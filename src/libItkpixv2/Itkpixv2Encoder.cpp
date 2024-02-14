@@ -10,7 +10,7 @@ Itkpixv2Encoder::Itkpixv2Encoder(uint nCol, uint nRow, uint nColInCCol, uint nRo
     m_nQRow = nRow/m_nRowInQRow;
 }
 
-void Itkpixv2Encoder::addBits64(uint64_t value, uint8_t length){
+void Itkpixv2Encoder::addBits64(const uint64_t value, const uint8_t length){
     //This adds 'length' lowest bits to the current block. If the current
     //block gets filled, push it to the output and start a new block with
     //the rest of the bits that didn't make it. Need to keep track of the
@@ -40,15 +40,7 @@ void Itkpixv2Encoder::addBits64(uint64_t value, uint8_t length){
 
         //Push the current block to the output and reset it and the current
         //bit counter. The block needs to be split in 32-bit halves before the output
-        uint32_t word1 = m_currBlock >> 32;
-        uint32_t word2 = m_currBlock & 0xFFFFFFFF;
-        m_words.push_back(word1);
-        m_words.push_back(word2);
-        m_currBlock = 0;
-        m_currBit   = 0;
-
-        //debug
-        std::cout << word1 << word2 << "\n";
+        pushWords32();
 
         //What are we left with?
         uint8_t leftoverBits = length - remainingBits;
@@ -59,7 +51,19 @@ void Itkpixv2Encoder::addBits64(uint64_t value, uint8_t length){
     }
 }
 
-void Itkpixv2Encoder::encodeQCore(uint nCCol, uint nQRow){
+void Itkpixv2Encoder::pushWords32(){
+    //whenever the current block is ready for output,
+    //split it into two 32-bit words and push them to
+    //the output container. Reset the current bloc/bit
+    uint32_t word1 = m_currBlock >> 32;
+    uint32_t word2 = m_currBlock & 0xFFFFFFFF;
+    m_words.push_back(word1);
+    m_words.push_back(word2);
+    m_currBlock = 0;
+    m_currBit   = 0;
+}
+
+void Itkpixv2Encoder::encodeQCore(const uint nCCol, const uint nQRow){
     //produce hit map and ToTs
     //First, get the top-left pixel in the QCore
     uint m_col = nCCol * m_nColInCCol;
@@ -77,18 +81,25 @@ void Itkpixv2Encoder::encodeQCore(uint nCCol, uint nQRow){
                 lutIndex |= 0x1 << pix;
                 tots.push_back(m_hitMap[pixCol][pixRow] - 1);
             }
+            pix++;
         }
     }
 
     //now add the binary-tree encoded & compressed map
     //from the LUT to the stream
+    std::bitset<16> bsLUTIndex(lutIndex);
+    std::cout << "The LUT index is " << bsLUTIndex.to_string() << "\n";
     addBits64(Itkpixv2Encoding::Itkpixv2QCoreEncodingLUT_Tree[lutIndex], Itkpixv2Encoding::Itkpixv2QCoreEncodingLUT_Length[lutIndex]);
 
     //and add the four-bit ToT information for each hit
-    for (auto& tot : tots) addBits64(tot, 4);
+    for (auto& tot : tots){
+        std::bitset<4> bstot(tot);
+        std::cout << "Adding ToT " << bstot << "\n";
+        addBits64(tot, 4);
+    }
 }
 
-bool Itkpixv2Encoder::hitInQCore(uint CCol, uint QRow){
+bool Itkpixv2Encoder::hitInQCore(const uint CCol, const uint QRow){
 
     uint m_col = CCol * m_nColInCCol;
     uint m_row = QRow * m_nRowInQRow;
@@ -173,10 +184,48 @@ void Itkpixv2Encoder::encodeEvent(){
 
 }
 
+void Itkpixv2Encoder::intTag(const uint16_t nEvt){
+    //this adds 11 bits of interal tagging between events.
+    //does the tag always need to start with 111?
+    uint16_t tag = nEvt | (0xf << 8);
+    addBits64(tag, 11);
+}
+
+void Itkpixv2Encoder::endStream(){
+    m_currBlock |= 0x1;
+    pushWords32();
+}
+
 void Itkpixv2Encoder::test(){
 
-    randomHitMap(0.1, 0);
-    encodeEvent();
+    int nTot = 1;
+    int nEventsPerStream = 1;
+
+    for (int i = 0; i < nTot; i++){
+        //randomHitMap(0.01, i);
+        m_hitMap = std::vector<std::vector<uint16_t>>(m_nCol, std::vector<uint16_t>(m_nRow, 0));
+        m_hitMap[0][0] = 5;
+        encodeEvent();
+        if (nEventsPerStream != 1) intTag(i);
+        if ((nTot == 1) || i != 0 && (i % nEventsPerStream == 0)) endStream();
+    }
+    
+    /*
+    m_hitMap = std::vector<std::vector<uint16_t>>(m_nCol, std::vector<uint16_t>(m_nRow, 0));
+    m_hitMap[2][0] = 5;
+    m_hitMap[7][1] = 9;
+    
+    m_hitMap[5][2] = 3;
+    m_hitMap[10][50] = 5;
+    m_hitMap[37][71] = 9;
+    
+    m_hitMap[65][92] = 3;
+    m_hitMap[28][0] = 5;
+    m_hitMap[74][15] = 9;
+    
+    m_hitMap[56][22] = 3;
+    */
+    
 
     std::cout << "First QCore is:\n";
 
@@ -191,7 +240,15 @@ void Itkpixv2Encoder::test(){
     }
 
     std::cout << "First few words are:\n";
+    std::cout << m_words.size() << "\n";
     for (uint w = 0; w < 5; w++){
+        std::bitset<32> bw(m_words[w]);
+        std::cout << bw.to_string() << "\n";
+    }
+
+    std::cout << "Last few words are:\n";
+    std::cout << m_words.size() << "\n";
+    for (uint w = m_words.size() - 1; w > m_words.size() - 5; w--){
         std::bitset<32> bw(m_words[w]);
         std::cout << bw.to_string() << "\n";
     }
