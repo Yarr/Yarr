@@ -190,7 +190,8 @@ class ScurveFitter : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> vcalCnt;
         bool useScap;
         bool useLcap;
-        bool reverse = false;
+        bool reverse         = false;
+        bool use_scurvegauss = false;
 
         bool m_dumpDebugScurvePlots=false;
 };

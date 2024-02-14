@@ -278,7 +278,7 @@ void Rd53bGlobalCfg::init() {
     EfuseWriteData0.init    ( 80, &m_cfg[ 80], 0, 16, 0); regMap["EfuseWriteData0"] = &Rd53bGlobalCfg::EfuseWriteData0;
     //81
     AuroraEnPrbs.init       ( 81, &m_cfg[ 81], 12,  1, 0); regMap["AuroraEnPrbs"] = &Rd53bGlobalCfg::AuroraEnPrbs;
-    AuroraActiveLanes.init  ( 81, &m_cfg[ 81], 8,  4, 15); regMap["AuroraActiveLanes"] = &Rd53bGlobalCfg::AuroraActiveLanes;
+    AuroraActiveLanes.init  ( 81, &m_cfg[ 81], 8,  4, 1); regMap["AuroraActiveLanes"] = &Rd53bGlobalCfg::AuroraActiveLanes;
     AuroraCCWait.init       ( 81, &m_cfg[ 81], 2,  6, 25); regMap["AuroraCCWait"] = &Rd53bGlobalCfg::AuroraCCWait;
     AuroraCCSend.init       ( 81, &m_cfg[ 81], 0,  2, 3); regMap["AuroraCCSend"] = &Rd53bGlobalCfg::AuroraCCSend;
     //82

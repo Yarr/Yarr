@@ -300,7 +300,7 @@ void Itkpixv2GlobalCfg::init() {
     //92
     AuroraSendAlt.init      ( 92, &m_cfg[ 92], 13,  1, 0); regMap["AuroraSendAlt"] = &Itkpixv2GlobalCfg::AuroraSendAlt;
     AuroraEnPrbs.init       ( 92, &m_cfg[ 92], 12,  1, 0); regMap["AuroraEnPrbs"] = &Itkpixv2GlobalCfg::AuroraEnPrbs;
-    AuroraActiveLanes.init  ( 92, &m_cfg[ 92], 8,  4, 15); regMap["AuroraActiveLanes"] = &Itkpixv2GlobalCfg::AuroraActiveLanes;
+    AuroraActiveLanes.init  ( 92, &m_cfg[ 92], 8,  4, 1); regMap["AuroraActiveLanes"] = &Itkpixv2GlobalCfg::AuroraActiveLanes;
     AuroraCCWait.init       ( 92, &m_cfg[ 92], 2,  6, 25); regMap["AuroraCCWait"] = &Itkpixv2GlobalCfg::AuroraCCWait;
     AuroraCCSend.init       ( 92, &m_cfg[ 92], 0,  2, 3); regMap["AuroraCCSend"] = &Itkpixv2GlobalCfg::AuroraCCSend;
     //93
@@ -343,15 +343,15 @@ void Itkpixv2GlobalCfg::init() {
     SerSelOut1.init         ( 107, &m_cfg[ 107], 2,  2, 1); regMap["SerSelOut1"] = &Itkpixv2GlobalCfg::SerSelOut1;
     SerSelOut0.init         ( 107, &m_cfg[ 107], 0,  2, 1); regMap["SerSelOut0"] = &Itkpixv2GlobalCfg::SerSelOut0;
     //108
-    SerInvTap.init          ( 108, &m_cfg[ 108], 6,  2, 0); regMap["SerInvTap"] = &Itkpixv2GlobalCfg::SerInvTap;
-    SerEnTap.init           ( 108, &m_cfg[ 108], 4,  2, 0); regMap["SerEnTap"] = &Itkpixv2GlobalCfg::SerEnTap;
-    SerEnLane.init          ( 108, &m_cfg[ 108], 0,  4, 15); regMap["SerEnLane"] = &Itkpixv2GlobalCfg::SerEnLane;
+    SerInvTap.init          ( 108, &m_cfg[ 108], 6,  2, 1); regMap["SerInvTap"] = &Itkpixv2GlobalCfg::SerInvTap;
+    SerEnTap.init           ( 108, &m_cfg[ 108], 4,  2, 1); regMap["SerEnTap"] = &Itkpixv2GlobalCfg::SerEnTap;
+    SerEnLane.init          ( 108, &m_cfg[ 108], 0,  4, 8); regMap["SerEnLane"] = &Itkpixv2GlobalCfg::SerEnLane;
     //109
     CmlBias2.init           ( 109, &m_cfg[ 109], 0, 10, 0); regMap["CmlBias2"] = &Itkpixv2GlobalCfg::CmlBias2;
     //110
-    CmlBias1.init           ( 110, &m_cfg[ 110], 0, 10, 0); regMap["CmlBias1"] = &Itkpixv2GlobalCfg::CmlBias1;
+    CmlBias1.init           ( 110, &m_cfg[ 110], 0, 10, 400); regMap["CmlBias1"] = &Itkpixv2GlobalCfg::CmlBias1;
     //111
-    CmlBias0.init           ( 111, &m_cfg[ 111], 0, 10, 500); regMap["CmlBias0"] = &Itkpixv2GlobalCfg::CmlBias0;
+    CmlBias0.init           ( 111, &m_cfg[ 111], 0, 10, 800); regMap["CmlBias0"] = &Itkpixv2GlobalCfg::CmlBias0;
     //112
     MonitorEnable.init      ( 112, &m_cfg[ 112], 12,  1, 0); regMap["MonitorEnable"] = &Itkpixv2GlobalCfg::MonitorEnable;
     MonitorI.init           ( 112, &m_cfg[ 112], 6,  6, 63); regMap["MonitorI"] = &Itkpixv2GlobalCfg::MonitorI;
