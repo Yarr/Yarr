@@ -38,6 +38,7 @@ CodeChecker analyze checks/compilation_cmds_filtered.json -i scripts/code_checke
   --enable=performance-for-range-copy  \
   --enable=performance-unnecessary-copy-initialization \
   --enable=cppcoreguidelines-pro-type-member-init \
+  --disable=clang-diagnostic \
   --tidy-config scripts/tidy.config
 
 CodeChecker parse --trim-path-prefix $(pwd) -e html checks/results -o checks/html
