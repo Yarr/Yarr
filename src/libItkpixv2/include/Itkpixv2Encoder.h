@@ -21,6 +21,8 @@ class Itkpixv2Encoder{
         
         void encodeEvent();
 
+        void streamTag(const uint8_t nStream);
+
         void intTag(const uint16_t nEvt);
 
         void endStream();

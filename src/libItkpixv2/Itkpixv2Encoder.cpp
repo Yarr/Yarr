@@ -15,14 +15,14 @@ void Itkpixv2Encoder::addBits64(const uint64_t value, const uint8_t length){
     //block gets filled, push it to the output and start a new block with
     //the rest of the bits that didn't make it. Need to keep track of the
     //remaining space in the current word. Also, we only have 63 bits for
-    //the added data, as the last bit is EoS.
-
+    //the added data, as the first bit is EoS.
     //Case 1: there's enough space for the entire information to be added
-    if (length < (63 - m_currBit)){
+    if (length <= (63 - m_currBit)){
         
         //The position at which the new bits should be inserted into the block
-        //is (length of the block) - (currently last bit) - (length)
-        m_currBlock |= (value << (64 - m_currBit - length));
+        //is (length of the block - 1) - (currently last bit) - (length)
+        //We need to keep the first bit for EoS, hence the -1
+        m_currBlock |= (value << (63 - m_currBit - length));
         m_currBit += length;
         return;
     }
@@ -34,9 +34,8 @@ void Itkpixv2Encoder::addBits64(const uint64_t value, const uint8_t length){
         //How much space do we have?
         uint8_t remainingBits = 63 - m_currBit;
 
-        //Add that many bits, keeping the last one zero. We'll add the EoS
-        //bit at the end of stream processing
-        m_currBlock |= ((value >> (length - remainingBits - 1)) & (0xFFFFFFFFFFFFFFFF - 1));
+        //Add that many bits
+        m_currBlock |= ((value >> (length - remainingBits)));
 
         //Push the current block to the output and reset it and the current
         //bit counter. The block needs to be split in 32-bit halves before the output
@@ -46,7 +45,10 @@ void Itkpixv2Encoder::addBits64(const uint64_t value, const uint8_t length){
         uint8_t leftoverBits = length - remainingBits;
 
         //Now we can add the remainder
-        addBits64(value, leftoverBits);
+        //Make sure that the remainder we're adding is really only the bits we've not yet
+        //added, otherwise there can be a rogue "1" in the EoS bit, which was already added
+        //in the previous block
+        addBits64((value & (0xFFFFFFFFFFFFFFFF >> (64 - leftoverBits))), leftoverBits);
         
     }
 }
@@ -59,7 +61,7 @@ void Itkpixv2Encoder::pushWords32(){
     uint32_t word2 = m_currBlock & 0xFFFFFFFF;
     m_words.push_back(word1);
     m_words.push_back(word2);
-    m_currBlock = 0;
+    m_currBlock = 0x0ULL;
     m_currBit   = 0;
 }
 
@@ -124,8 +126,10 @@ void Itkpixv2Encoder::scanHitMap(){
             m_hitQCores[CCol][QRow] = hitInQCore(CCol, QRow);
             
             //and keep track of the last qrow in each CCol, so that we can
-            //easily set the isLast bit
-            if (m_hitQCores[CCol][QRow]) m_lastQRow[CCol]++;
+            //easily set the isLast bit. Numbering starts at 1, in order to
+            //keep the m_lastQRow[CCol] == 0 case denoting "no hit" in the CCol
+            //to save some looping/ifs later on
+            if (m_hitQCores[CCol][QRow]) m_lastQRow[CCol] = QRow + 1;
         }
     }
 
@@ -139,25 +143,23 @@ void Itkpixv2Encoder::encodeEvent(){
     for (uint CCol = 0; CCol < m_nCCol; CCol++){
         //if there are no hits in this CCol, continue
         if (m_lastQRow[CCol] == 0) continue;
-        
+        //add the 6-bit (CCol + 1) address
+        //debug
+        std::bitset<6> bsCCol(CCol+1);
+        std::cout << "Adding " << bsCCol.to_string() << " for CCol address\n";
+        //debug
+        addBits64(CCol + 1, 6);    
+
         int previousQRow = -666;
         for (uint QRow = 0; QRow < m_nQRow; QRow++){
             //if there's no hit in this row, continue
-            if (!m_hitQCores[CCol][QRow]) continue;
-
-            //add the 6-bit (CCol + 1) address
-            //debug
-            std::bitset<6> bsCCol(CCol+1);
-            std::cout << "Adding " << bsCCol.to_string() << " for CCol address\n";
-            //debug
-            addBits64(CCol + 1, 6);    
-            
+            if (!m_hitQCores[CCol][QRow]) continue;            
             //add the isLast bit
             //debug
-            std::cout << "Adding " << (QRow == m_lastQRow[CCol] ? 1 : 0) << " for isLast\n";
+            std::cout << "Adding " << (QRow + 1 == m_lastQRow[CCol] ? 1 : 0) << " for isLast\n";
             //debug
-
-            QRow == m_lastQRow[CCol] ? addBits64(0x1, 1) : addBits64(0x0, 1);
+            std::cout << "QRow = " << QRow << ", last = " << m_lastQRow[CCol] << "\n";
+            QRow + 1 == m_lastQRow[CCol] ? addBits64(0x1, 1) : addBits64(0x0, 1);
 
             //add the isNeighbor bit. If false, add the QRow address as well.
             //debug
@@ -168,10 +170,10 @@ void Itkpixv2Encoder::encodeEvent(){
                 addBits64(0x1, 1);
             }
             else {
-                std::bitset<8> bsQRow(QRow+1);
-                std::cout << "Adding " << bsQRow.to_string() << " for QRow " << QRow + 1 << "\n";
+                std::bitset<8> bsQRow(QRow);
+                std::cout << "Adding " << bsQRow.to_string() << " for QRow " << QRow << "\n";
                 addBits64(0x0, 1);
-                addBits64(QRow + 1, 8);
+                addBits64(QRow, 8);
             };
 
             //add the map and ToT
@@ -184,6 +186,11 @@ void Itkpixv2Encoder::encodeEvent(){
 
 }
 
+void Itkpixv2Encoder::streamTag(const uint8_t nStream){
+    //this adds the 8-bit 'global' stream tag
+    addBits64(nStream, 8);
+}
+
 void Itkpixv2Encoder::intTag(const uint16_t nEvt){
     //this adds 11 bits of interal tagging between events.
     //does the tag always need to start with 111?
@@ -192,22 +199,34 @@ void Itkpixv2Encoder::intTag(const uint16_t nEvt){
 }
 
 void Itkpixv2Encoder::endStream(){
-    m_currBlock |= 0x1;
+    m_currBlock |= (0x1ULL << 63);
     pushWords32();
 }
 
 void Itkpixv2Encoder::test(){
 
-    int nTot = 1;
-    int nEventsPerStream = 1;
+    int nTot = 10;
+    int nEventsPerStream = 2;
+
+    int nStream = 1;
+    int nTag = 1;
 
     for (int i = 0; i < nTot; i++){
-        //randomHitMap(0.01, i);
-        m_hitMap = std::vector<std::vector<uint16_t>>(m_nCol, std::vector<uint16_t>(m_nRow, 0));
-        m_hitMap[0][0] = 5;
+        randomHitMap(0.01, i);
+        //m_hitMap = std::vector<std::vector<uint16_t>>(m_nCol, std::vector<uint16_t>(m_nRow, 0));
+        //m_hitMap[0][0] = 5; //single hit in the top-left pixel
+        //m_hitMap[0][4] = 5; //second hit in the event, same CCol
+        //m_hitMap[0][6] = 5; //hit in isNeighbor = true QCore
+        //m_hitMap[16][35] = 8;
+        //m_hitMap[17][35] = 7;
+        //m_hitMap[16][34] = 9; //three hits in the same QCore
+        //m_hitMap[328][291] = 14;
+        //m_hitMap[157][82] = 11;
+        //m_hitMap[236][132] = 10; //three completely random hits to make the event span many words
+        if (i % nEventsPerStream == 0) streamTag(nStream++);
         encodeEvent();
-        if (nEventsPerStream != 1) intTag(i);
-        if ((nTot == 1) || i != 0 && (i % nEventsPerStream == 0)) endStream();
+        if (nEventsPerStream != 1 && i % nEventsPerStream != nEventsPerStream - 1) intTag(nTag++);
+        if (i % nEventsPerStream == nEventsPerStream - 1) endStream();
     }
     
     /*
