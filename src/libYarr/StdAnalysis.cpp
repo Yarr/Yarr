@@ -1134,8 +1134,8 @@ void OccPixelThresholdTune::loadConfig(const json &j){
     if (j.contains("occLowCut")) {
         m_occLowCut.clear();
         for(auto i: j["occLowCut"]){
-	  m_occLowCut.push_back(i);
-	}
+            m_occLowCut.push_back(i);
+        }
     }
     if (j.contains("occHighCut")) {
         m_occHighCut.clear();
@@ -1236,7 +1236,7 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
         output->pushData(std::move(occMaps[ident]));
         output->pushData(std::move(occDist));
         innerCnt[ident] = 0;
-        if (m_cutIndex < std::min(m_occLowCut.size(), m_occHighCut.size())) {
+        if (m_cutIndex < std::min(m_occLowCut.size(), m_occHighCut.size()-1)) {
             m_cutIndex++;
         }
         //delete occMaps[ident];
