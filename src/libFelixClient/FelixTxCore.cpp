@@ -220,6 +220,8 @@ void FelixTxCore::sendFifo(FelixID_t fid, std::vector<uint8_t>& fifo) {
   //fclient->init_send_data(fid);
   fclient->send_data(fid, fifo.data(), fifo.size(), flush);
 
+  std::this_thread::sleep_for(std::chrono::microseconds(200));
+
   // clear the fifo
   fifo.clear();
 }
