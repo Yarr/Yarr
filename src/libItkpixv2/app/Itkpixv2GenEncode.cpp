@@ -54,16 +54,17 @@ int main(){
     rd_cp.finish();
     std::cout << "9\n";
 
-    //proc->join();
-    //std::cout << "10\n";
+    proc->join();
+    std::cout << "10\n";
     auto data = em_cp.popData();
     FrontEndData &rawData = *(FrontEndData*)data.get();
-    std::cout << "10\n";
+    std::cout << "11\n";
 
     int truthNHits = 0;
     int rawNHits = 0;
 
     for (int ievt = 0; ievt < rawData.events.size(); ievt++){
+        std::cout << "EVENT TAG = " << rawData.events[ievt].tag << "\n";
 	    for(int ihit = 0; ihit < rawData.events[ievt].hits.size(); ihit++){
 		    std::cout << rawData.events[ievt].hits[ihit].col << " " << rawData.events[ievt].hits[ihit].row << " " << rawData.events[ievt].hits[ihit].tot << "\n";
             rawNHits++;
