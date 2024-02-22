@@ -205,8 +205,8 @@ void Itkpixv2Encoder::endStream(){
 
 void Itkpixv2Encoder::test(){
 
-    int nTot = 10;
-    int nEventsPerStream = 2;
+    int nTot = 27;
+    int nEventsPerStream = 5;
 
     int nStream = 1;
     int nTag = 1;
@@ -226,7 +226,7 @@ void Itkpixv2Encoder::test(){
         if (i % nEventsPerStream == 0) streamTag(nStream++);
         encodeEvent();
         if (nEventsPerStream != 1 && i % nEventsPerStream != nEventsPerStream - 1) intTag(nTag++);
-        if (i % nEventsPerStream == nEventsPerStream - 1) endStream();
+        if (i % nEventsPerStream == nEventsPerStream - 1 || i == nTot - 1) endStream();
     }
     
     /*
