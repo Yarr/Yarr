@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import json
- 
+
 # Opening JSON file
 f = open('checks/compilation_cmds.json')
  
@@ -17,4 +17,3 @@ for unit in data:
         units.append(unit)
     
 print(json.dumps(units, indent=4))
-
