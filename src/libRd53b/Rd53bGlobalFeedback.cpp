@@ -150,6 +150,7 @@ void Rd53bGlobalFeedback::init() {
                         rd53b->setTDAC(col, row, m_pixelReg);
                     }
                 }
+                rd53b->configurePixels();
             }
             while(!g_tx->isCmdEmpty()){}
         }
