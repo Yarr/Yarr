@@ -1133,13 +1133,15 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
 void OccPixelThresholdTune::loadConfig(const json &j){
     if (j.contains("occLowCut")) {
         m_occLowCut.clear();
-        for(auto i: j["occLowCut"])
+        for(auto i: j["occLowCut"]){
             m_occLowCut.push_back(i);
+        }
     }
     if (j.contains("occHighCut")) {
         m_occHighCut.clear();
-        for(auto i: j["occHighCut"])
-            m_occHighCut.push_back(i);
+        for(auto i: j["occHighCut"]){
+          m_occHighCut.push_back(i);
+        }
     }
 }
 
@@ -1214,12 +1216,11 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
         std::unique_ptr<Histo1d> occDist(new Histo1d(name2, injections-1, 0.5, injections-0.5));
         occDist->setXaxisTitle("Occupancy");
         occDist->setYaxisTitle("Number of Pixels");
-
         for (unsigned i=0; i<fbHisto->size(); i++) {
             double occ = occMaps[ident]->getBin(i);
-            if ((occ/(double)injections) > m_occHighCut[occ_count]) {
+            if ((occ/(double)injections) > m_occHighCut.at(m_cutIndex)) {
                 fbHisto->setBin(i, -1);
-            } else if ((occ/(double)injections) < m_occLowCut[occ_count]) {
+            } else if ((occ/(double)injections) < m_occLowCut.at(m_cutIndex)) {
                 fbHisto->setBin(i, +1);
             } else {
                 fbHisto->setBin(i, 0);
@@ -1235,8 +1236,8 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
         output->pushData(std::move(occMaps[ident]));
         output->pushData(std::move(occDist));
         innerCnt[ident] = 0;
-        if (occ_count < std::min(m_occLowCut.size(), m_occHighCut.size())) {
-            occ_count++;
+        if (m_cutIndex < std::min(m_occLowCut.size(), m_occHighCut.size()-1)) {
+            m_cutIndex++;
         }
         //delete occMaps[ident];
         occMaps[ident] = nullptr;
