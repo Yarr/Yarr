@@ -1,13 +1,19 @@
+/*
+* Author: Ondra Kovanda, ondrej.kovanda at cern.ch
+* Date: 02/2024
+* Description: ITkPix* encoding
+*/
+
 #include "Itkpixv2Encoder.h"
 #include "Itkpixv2QCoreEncodingLUT.h"
-#include <bitset>
-#include <string>
 
 //Constructor sets up the geometry for all future loops
 
-Itkpixv2Encoder::Itkpixv2Encoder(uint nCol, uint nRow, uint nColInCCol, uint nRowInQRow): m_nCol(nCol), m_nRow(nRow), m_nColInCCol(nColInCCol), m_nRowInQRow(nRowInQRow){
+Itkpixv2Encoder::Itkpixv2Encoder(const uint nCol, const uint nRow, const uint nColInCCol, const uint nRowInQRow, const uint nEventsPerStream, const bool plainHitMap, const bool dropToT): m_nCol(nCol), m_nRow(nRow), m_nColInCCol(nColInCCol), m_nRowInQRow(nRowInQRow), m_nEventsPerStream(nEventsPerStream), m_plainHitMap(plainHitMap), m_dropToT(dropToT){
     m_nCCol = nCol/m_nColInCCol;
     m_nQRow = nRow/m_nRowInQRow;
+    m_currEvent  = 0;
+    m_currStream = 0;
 }
 
 void Itkpixv2Encoder::addBits64(const uint64_t value, const uint8_t length){
@@ -88,15 +94,17 @@ void Itkpixv2Encoder::encodeQCore(const uint nCCol, const uint nQRow){
     }
 
     //now add the binary-tree encoded & compressed map
-    //from the LUT to the stream
-    std::bitset<16> bsLUTIndex(lutIndex);
-    std::cout << "The LUT index is " << bsLUTIndex.to_string() << "\n";
-    addBits64(Itkpixv2Encoding::Itkpixv2QCoreEncodingLUT_Tree[lutIndex], Itkpixv2Encoding::Itkpixv2QCoreEncodingLUT_Length[lutIndex]);
+    //from the LUT to the stream. If, instead, the plain
+    //hit map is requested, add the index (which is the
+    //plain hit map in fact)
+    
+    m_plainHitMap ? addBits64(lutIndex, 16) : addBits64(Itkpixv2Encoding::Itkpixv2QCoreEncodingLUT_Tree[lutIndex], Itkpixv2Encoding::Itkpixv2QCoreEncodingLUT_Length[lutIndex]);
+
+    //if dropToT is requested, we can return here
+    if (m_dropToT) return;
 
     //and add the four-bit ToT information for each hit
     for (auto& tot : tots){
-        std::bitset<4> bstot(tot);
-        std::cout << "Adding ToT " << bstot << "\n";
         addBits64(tot, 4);
     }
 }
@@ -144,34 +152,21 @@ void Itkpixv2Encoder::encodeEvent(){
         //if there are no hits in this CCol, continue
         if (m_lastQRow[CCol] == 0) continue;
         //add the 6-bit (CCol + 1) address
-        //debug
-        std::bitset<6> bsCCol(CCol+1);
-        std::cout << "Adding " << bsCCol.to_string() << " for CCol address\n";
-        //debug
         addBits64(CCol + 1, 6);    
 
         int previousQRow = -666;
         for (uint QRow = 0; QRow < m_nQRow; QRow++){
             //if there's no hit in this row, continue
             if (!m_hitQCores[CCol][QRow]) continue;            
+            
             //add the isLast bit
-            //debug
-            std::cout << "Adding " << (QRow + 1 == m_lastQRow[CCol] ? 1 : 0) << " for isLast\n";
-            //debug
-            std::cout << "QRow = " << QRow << ", last = " << m_lastQRow[CCol] << "\n";
             QRow + 1 == m_lastQRow[CCol] ? addBits64(0x1, 1) : addBits64(0x0, 1);
 
             //add the isNeighbor bit. If false, add the QRow address as well.
-            //debug
-            std::cout << "Adding " << (QRow == previousQRow + 1 ? 1 : 0) << " for isNeighbor\n";
-            //debug
-
             if (QRow == previousQRow + 1){
                 addBits64(0x1, 1);
             }
             else {
-                std::bitset<8> bsQRow(QRow);
-                std::cout << "Adding " << bsQRow.to_string() << " for QRow " << QRow << "\n";
                 addBits64(0x0, 1);
                 addBits64(QRow, 8);
             };
@@ -183,7 +178,6 @@ void Itkpixv2Encoder::encodeEvent(){
             previousQRow = QRow;
         }
     }    
-
 }
 
 void Itkpixv2Encoder::streamTag(const uint8_t nStream){
@@ -203,122 +197,29 @@ void Itkpixv2Encoder::endStream(){
     pushWords32();
 }
 
-void Itkpixv2Encoder::test(){
-
-    int nTot = 27;
-    int nEventsPerStream = 5;
-
-    int nStream = 1;
-    int nTag = 1;
-
-    for (int i = 0; i < nTot; i++){
-        randomHitMap(0.01, i);
-        //m_hitMap = std::vector<std::vector<uint16_t>>(m_nCol, std::vector<uint16_t>(m_nRow, 0));
-        //m_hitMap[0][0] = 5; //single hit in the top-left pixel
-        //m_hitMap[0][4] = 5; //second hit in the event, same CCol
-        //m_hitMap[0][6] = 5; //hit in isNeighbor = true QCore
-        //m_hitMap[16][35] = 8;
-        //m_hitMap[17][35] = 7;
-        //m_hitMap[16][34] = 9; //three hits in the same QCore
-        //m_hitMap[328][291] = 14;
-        //m_hitMap[157][82] = 11;
-        //m_hitMap[236][132] = 10; //three completely random hits to make the event span many words
-        if (i % nEventsPerStream == 0) streamTag(nStream++);
-        encodeEvent();
-        if (nEventsPerStream != 1 && i % nEventsPerStream != nEventsPerStream - 1) intTag(nTag++);
-        if (i % nEventsPerStream == nEventsPerStream - 1 || i == nTot - 1) endStream();
+void Itkpixv2Encoder::addToStream(const HitMap& hitMap){
+    //This is a high-level interface function that can take care of
+    //adding an event into the current stream, this can be called
+    //easily from the outside, and automatically tags/ends streams
+    //and events based on internal vars only
+    
+    //If this is the first event, start a new stream
+    if (m_currEvent == 0){
+        streamTag(m_currStream);
+        m_currStream++;
     }
     
-    /*
-    m_hitMap = std::vector<std::vector<uint16_t>>(m_nCol, std::vector<uint16_t>(m_nRow, 0));
-    m_hitMap[2][0] = 5;
-    m_hitMap[7][1] = 9;
-    
-    m_hitMap[5][2] = 3;
-    m_hitMap[10][50] = 5;
-    m_hitMap[37][71] = 9;
-    
-    m_hitMap[65][92] = 3;
-    m_hitMap[28][0] = 5;
-    m_hitMap[74][15] = 9;
-    
-    m_hitMap[56][22] = 3;
-    */
-    
+    //Then add the actual encoded event information
+    setHitMap(hitMap);
+    encodeEvent();
+    m_currEvent++;
 
-    std::cout << "First QCore is:\n";
-
-    uint m_col = 0;
-    uint m_row = 0;
-
-    for (uint pixRow = m_row; pixRow < m_row + m_nRowInQRow; pixRow++){
-        for (uint pixCol = m_col; pixCol < m_col + m_nColInCCol; pixCol++){
-            std::cout << m_hitMap[pixCol][pixRow];
-        }
-        std::cout << "\n";
+    //If this is not the last event in the stream, add an internal tag.
+    //If it is the last event, end the stream
+    if (m_currEvent != m_nEventsPerStream) intTag(m_currEvent);
+    else {
+        endStream();
+        m_currEvent = 0;
     }
 
-    std::cout << "First few words are:\n";
-    std::cout << m_words.size() << "\n";
-    for (uint w = 0; w < 5; w++){
-        std::bitset<32> bw(m_words[w]);
-        std::cout << bw.to_string() << "\n";
-    }
-
-    std::cout << "Last few words are:\n";
-    std::cout << m_words.size() << "\n";
-    for (uint w = m_words.size() - 1; w > m_words.size() - 5; w--){
-        std::bitset<32> bw(m_words[w]);
-        std::cout << bw.to_string() << "\n";
-    }
-
-/*
-    for (uint i = 0; i < 10; i++){
-        std::string s = "1010101010";
-        std::bitset<10> bs(s);
-        uint64_t toAdd = bs.to_ullong();
-        std::bitset<64> bsAdd(toAdd);
-        std::cout << "Adding\n";
-        std::cout << bsAdd.to_string() << "\n";
-        std::cout << "to\n";
-        std::bitset<64> bsCurr(m_currBlock);
-        std::cout << bsCurr.to_string() << "\n";
-        addBits64(toAdd, 10);
-        std::cout << "result\n";
-        std::bitset<64> bsOut(m_currBlock);
-        std::cout << bsOut.to_string() << "\n";
-        std::cout << "Output size " << m_words.size() << "\n";
-    }
-*/
-}
-
-
-
-void Itkpixv2Encoder::randomHitMap(float occupancy, int seed){
-    //Generate random hit map for dev/testing purposes. Otherwise the actual generation
-    //will happen in another tool/class.
-
-    //Set the generator seed, create the neccessary pdfs
-
-    generator.seed(seed);
-    std::uniform_real_distribution<float> hitProb(0., 1.);
-    std::uniform_int_distribution<uint> totProb(1, 15);
-
-
-    //initialize the hit map with all zeros
-
-    m_hitMap = std::vector<std::vector<uint16_t>>(m_nCol, std::vector<uint16_t>(m_nRow, 0));
-
-    //Loop over the hit map and fill random tot values
-
-    for (uint col = 0; col < m_nCol; col++){
-        for (uint row = 0; row < m_nRow; row++){
-
-            //Did the pixel get a hit?
-            if (hitProb(generator) < occupancy){
-                //Then give it a tot!
-                m_hitMap[col][row] = totProb(generator);
-            }
-        }
-    }
 }

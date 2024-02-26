@@ -1,3 +1,9 @@
+/*
+* Author: Ondra Kovanda, ondrej.kovanda at cern.ch
+* Date: 02/2024
+* Description: ITkPix* encoding
+*/
+
 #ifndef ITKPIXV2ENCODER_H
 #define ITHPIXV2ENCODER_H
 
@@ -5,13 +11,13 @@
 #include <iostream>
 #include <random>
 
+
 class Itkpixv2Encoder{
+    typedef std::vector<std::vector<uint16_t>> HitMap;
     public:
-        Itkpixv2Encoder(uint nCol = 400, uint nRow = 384, uint nColInCCol = 8, uint nRowInQRow = 2);
+        Itkpixv2Encoder(const uint nCol = 400, const uint nRow = 384, const uint nColInCCol = 8, const uint nRowInQRow = 2, const uint nEventsPerStream = 16, const bool plainHitMap = false, const bool dropToT = false);
         
-        std::vector<uint32_t> getWords(){return m_words;};
-        
-        void randomHitMap(float occupancy = 1e-3, int seed = 0);
+        std::vector<uint32_t>& getWords(){return m_words;}
         
         void addBits64(const uint64_t value, const uint8_t length);
 
@@ -31,13 +37,18 @@ class Itkpixv2Encoder{
 
         bool hitInQCore(const uint CCol, const uint QRow);
 
-        void test();
+        void setHitMap(const HitMap& hitMap){m_hitMap = hitMap;}
+
+        void setEventsPerStream(const uint nEventsPerStream = 16){m_nEventsPerStream = nEventsPerStream;}
+
+        void addToStream(const HitMap& hitMap);
 
     
     private:
         // Output
         std::vector<uint32_t> m_words;
-        uint m_nEventsPerStream, m_currCCol, m_currQRow;//, m_lastQRow;
+        uint m_nEventsPerStream, m_currCCol, m_currQRow, m_currEvent;//, m_lastQRow;
+        uint8_t m_currStream;
 
         // Encoding machinery
         uint64_t m_currBlock;
@@ -48,9 +59,11 @@ class Itkpixv2Encoder{
         // Chip geometry
         uint m_nCol, m_nRow, m_nCCol, m_nQRow, m_nColInCCol, m_nRowInQRow;
 
-        // Testing
+        //Globals - could be replace with compile-time conditioning instead of run-time if performance is critical
+        bool m_plainHitMap, m_dropToT;
+
+        // Input
         std::vector<std::vector<uint16_t>> m_hitMap;
-        std::mt19937 generator;
 
 
 };
