@@ -4,7 +4,6 @@ RUN dnf config-manager --set-enabled crb
 RUN dnf -y install epel-release
 RUN dnf -y install make cmake gnuplot git zeromq-devel root python3-devel boost-devel
 			
-ENV PATH=/opt/rh/devtoolset-9/root/usr/bin:$PATH
 ARG branch=devel
 RUN gcc --version
 RUN git clone   --depth 1 --branch ${branch}  https://:@gitlab.cern.ch:8443/YARR/YARR.git
