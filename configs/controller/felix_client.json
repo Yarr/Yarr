@@ -5,7 +5,7 @@
       "FelixClient": {
         "localIPorInterface": "lo",
         "logLevel": "info",
-        "busDir": "/home/arastogi/FELIX_Apr2023/felix-distribution/bus",
+        "busDir": "/tmp/bus",
         "busGroupName": "FELIX",
         "verboseBus": false,
 	"timeout": 1000,
