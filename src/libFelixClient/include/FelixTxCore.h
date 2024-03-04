@@ -96,6 +96,7 @@ protected:
   int m_bufferSize {0};
   bool m_broadcast {true};
   uint32_t m_numEnabledChns {0};
+  std::string empty;
 
   // GBT link and e-link number for broadcasting
   static constexpr unsigned BroadcastLink = 0x1f;
