@@ -52,12 +52,38 @@ FelixTxCore::FelixID_t FelixTxCore::fid_from_channel(uint32_t chn) {
 
 bool FelixTxCore::checkChannel(FelixID_t fid) {
   ftlog->debug("Try sending data to Tx link: 0x{:x}",fid);
-  try {
-    fclient->send_data(fid, idle_word, 2, true); 
-  } catch (std::runtime_error& e) {
-    ftlog->warn("Fail to send to Tx link 0x{:x}: {}", fid, e.what());
-    return false;
+
+  static int counter = 0;
+  static uint64_t m_fwMode = 0;
+
+  if(counter==0){
+    readFelixRegister("FIRMWARE_MODE", m_fwMode);
+    counter++;
   }
+      
+  static std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+  if(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now()-start).count() >= 5000000){ //TO DO: CHECK 5S TIMEOUT OF FELIX_CLIENT SUBSCRIPTION
+    start = std::chrono::steady_clock::now();
+  }    
+  
+  if(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now()-start).count() < 500){
+    try {
+      if(m_fwMode == 4){ //ITk Pixel firmware
+	fclient->send_data(fid, idle_word, 2, true); 
+      }
+      else if(m_fwMode == 5){ //ITk Strip firmware
+	fclient->send_data(fid, (const uint8_t*)empty.c_str(), 1, true);
+      }
+      else{
+	ftlog->info("FELIX firmware version not supported in YARR. Try again...");
+	return false;
+      }
+    } catch (std::runtime_error& e) {
+      ftlog->warn("Fail to send to Tx link 0x{:x}: {}", fid, e.what());
+      return false;
+    }
+  }
+
 
   return true;
 }
@@ -160,7 +186,7 @@ bool FelixTxCore::isCmdEmpty() {
     if (not buffer.empty()){
       is_buffer_empty = false;
       sendFifo(chn, m_fifo[chn]);
-      std::this_thread::sleep_for(std::chrono::microseconds(200));
+      std::this_thread::sleep_for(std::chrono::microseconds(500));
     }
   }
 
