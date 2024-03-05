@@ -12,6 +12,20 @@
 #include <thread>
 #include <atomic>
 
+enum FELIX_FW_MODE {
+  GBT_mode = 0,
+  FULL_mode = 1,
+  LTDB_mode = 2,
+  FEI4_mode = 3,
+  ITK_Pixel = 4,
+  ITK_Strip = 5,
+  FELIG = 6,
+  FULL_mode_emulator = 7,
+  FELIX_MROD_mode = 8,
+  lpGBT_mode = 9,
+  Interlaken_25G = 10
+};
+
 class FelixTxCore : virtual public TxCore {
 
 public:
@@ -96,7 +110,8 @@ protected:
   int m_bufferSize {0};
   bool m_broadcast {true};
   uint32_t m_numEnabledChns {0};
-  std::string empty;
+  uint64_t m_regValue;
+  enum FELIX_FW_MODE m_fwMode;
 
   // GBT link and e-link number for broadcasting
   static constexpr unsigned BroadcastLink = 0x1f;
@@ -106,8 +121,9 @@ protected:
   // Number of bits for the FELIX broadcast enable registers
   static constexpr unsigned NBITS_BROADCAST_ENABLE = 42;
 
-  //idle words
-  static constexpr uint8_t idle_word[2] = {0xAA, 0xAA};
+  //idle words for checkChannel() to be sent to keep the felix_client subscription alive
+  std::string m_itkStripWord; //for strips
+  static constexpr uint8_t m_itkPixWord[2] = {0xAA, 0xAA}; //for pixels
 
   // For Felix ID
   FelixID_t fid_from_channel(uint32_t chn);
