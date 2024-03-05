@@ -6,8 +6,6 @@
 #include <sstream>
 #include <iomanip>
 
-#define WAIT_MS_ON_FelixClientResourceNotAvailableException 500
-
 namespace {
   auto ftlog = logging::make_log("FelixTxCore");
 }
@@ -54,10 +52,10 @@ bool FelixTxCore::checkChannel(FelixID_t fid) {
   ftlog->debug("Try sending data to Tx link: 0x{:x}",fid);
 
   static int counter = 0;
-  static uint64_t m_fwMode = 0;
 
   if(counter==0){
-    readFelixRegister("FIRMWARE_MODE", m_fwMode);
+    readFelixRegister("FIRMWARE_MODE", m_regValue);
+    m_fwMode = (FELIX_FW_MODE)m_regValue;
     counter++;
   }
       
@@ -68,22 +66,22 @@ bool FelixTxCore::checkChannel(FelixID_t fid) {
   
   if(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now()-start).count() < 500){
     try {
-      if(m_fwMode == 4){ //ITk Pixel firmware
-	fclient->send_data(fid, idle_word, 2, true); 
-      }
-      else if(m_fwMode == 5){ //ITk Strip firmware
-	fclient->send_data(fid, (const uint8_t*)empty.c_str(), 1, true);
-      }
-      else{
-	ftlog->info("FELIX firmware version not supported in YARR. Try again...");
-	return false;
+      switch(m_fwMode){
+      case ITK_Pixel: //ITk Pixel firmware
+	fclient->send_data(fid, m_itkPixWord, sizeof(m_itkPixWord), true); 
+	break;
+      case ITK_Strip: //ITk Strip firmware
+	fclient->send_data(fid, (const uint8_t*)m_itkStripWord.c_str(), 1, true);
+	break;
+      default:
+	ftlog->error("FELIX firmware version not supported in YARR. Try again...");
+	exit(1);
       }
     } catch (std::runtime_error& e) {
       ftlog->warn("Fail to send to Tx link 0x{:x}: {}", fid, e.what());
       return false;
     }
   }
-
 
   return true;
 }
@@ -363,26 +361,41 @@ uint32_t FelixTxCore::getTrigInCount() {
 void FelixTxCore::prepareTrigger(std::vector<uint8_t>& trigFifo) {
   trigFifo.clear();
 
-  //For ITk pixel RM 5.0 firmware
-  if(m_pixFwTrigger){ //special 16b character in the F/W = {1110, #iteration (7b), frequency(5b)
-    uint32_t trigFreq_ratio = (40000000/m_trigFreq)/256; //40 Mhz/m_trigFreq(Hz) and /256 as F/W can in/decrease frequency only in multiple of 128
 
-    if(trigFreq_ratio > 31) {std::cerr<<"m_trigFreq "<<m_trigFreq<<" not supported by the F/W. Supported frequency is >= 9.8 kHz"<<std::endl; exit(1);} //9.8 is wrong
-    if(trigFreq_ratio == 0) {std::cerr<<"m_trigFreq "<<m_trigFreq<<" not supported by the F/W. Supported frequency is <~ 156 kHz"<<std::endl; exit(1);}
-    if(m_trigCnt > 127)     {std::cerr<<"m_trigCnt "<<m_trigCnt<<" not supported by the F/W. Supported range is 1 to 127"<<std::endl; exit(1);}
+  switch(m_fwMode){
+  case ITK_Pixel: //For ITk pixel RM 5.0 firmware
+    if(m_pixFwTrigger){ //FW-based triggers with special 16b character in the F/W = {1110, #iteration (7b), frequency(5b)
+      uint32_t trigFreq_ratio = (40000000/m_trigFreq)/256; //40 Mhz/m_trigFreq(Hz) and /256 as F/W can in/decrease frequency only in multiple of 128
+
+      if(trigFreq_ratio > 31) {std::cerr<<"m_trigFreq "<<m_trigFreq<<" not supported by the F/W. Supported frequency is >= 9.8 kHz"<<std::endl; exit(1);} //9.8 is wrong
+      if(trigFreq_ratio == 0) {std::cerr<<"m_trigFreq "<<m_trigFreq<<" not supported by the F/W. Supported frequency is <~ 156 kHz"<<std::endl; exit(1);}
+      if(m_trigCnt > 127)     {std::cerr<<"m_trigCnt "<<m_trigCnt<<" not supported by the F/W. Supported range is 1 to 127"<<std::endl; exit(1);}
     
-    uint32_t calinj_char = 0x817e<<16 | (0xE<<12 & 0xF000) | (m_trigCnt<<5 & 0xFE0) | (trigFreq_ratio & 0x1F);
-    fillFifo(trigFifo,calinj_char);
-  }
-  else{
-    fillFifo(trigFifo,0x817e817e);    
+      uint32_t calinj_char = 0x817e<<16 | (0xE<<12 & 0xF000) | (m_trigCnt<<5 & 0xFE0) | (trigFreq_ratio & 0x1F);
+      fillFifo(trigFifo,calinj_char);
+    }
+    else{ //SW-based triggers
+      fillFifo(trigFifo,0x817e817e);    
 
+      // Need to send the last word in m_trigWords first
+      // (Because of the way TriggerLoop sets up the trigger words)
+      for (int j=m_trigWords.size()-1; j>=0; j--) {
+	fillFifo(trigFifo, m_trigWords[j]);
+      }
+    }
+  break;
+ 
+  case ITK_Strip: //For ITk strips firmware
     // Need to send the last word in m_trigWords first
     // (Because of the way TriggerLoop sets up the trigger words)
     for (int j=m_trigWords.size()-1; j>=0; j--) {
       fillFifo(trigFifo, m_trigWords[j]);
-      //      std::cout<<"FelixTxCore:: m_trigWords["<<j<<"]="<<m_trigWords[j]<<std::hex<<std::endl;
     }
+    break;
+  
+  default:
+    std::cerr<<"FELIX firmware version not supported in YARR. Try again..."<<std::endl;
+    exit(1);
   }
 
    prepareFifo(trigFifo);
@@ -413,12 +426,25 @@ void FelixTxCore::doTriggerCnt() {
 
   uint32_t trigs=0;
   if (m_trigEnabled) {
-    if (m_pixFwTrigger){
-      // send a single command that will start the firmware-based trigger sequence
-      trigs=m_trigCnt;
-      trigger();
-    }
-    else{ //
+    switch(m_fwMode){
+    case ITK_Pixel:
+      if (m_pixFwTrigger){
+	// send a single command that will start the firmware-based trigger sequence for ITk pixel
+	trigs=m_trigCnt;
+	trigger();
+      }
+      else{ //software-based trigger sequence for ITk pixel
+	for(uint32_t i=0; i<m_trigCnt; i++) {
+	  if(m_trigEnabled==false) break;
+	  trigs++;
+	  trigger();
+	  last_trigger += delta;
+	  std::this_thread::sleep_until(last_trigger);
+	}
+      }
+      break;
+
+    case ITK_Strip:
       for(uint32_t i=0; i<m_trigCnt; i++) {
 	if(m_trigEnabled==false) break;
 	trigs++;
@@ -426,6 +452,7 @@ void FelixTxCore::doTriggerCnt() {
 	last_trigger += delta;
 	std::this_thread::sleep_until(last_trigger);
       }
+      break;
     }
   }
 
