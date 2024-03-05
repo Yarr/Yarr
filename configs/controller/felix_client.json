@@ -18,7 +18,7 @@
         "protocol": 0,
         "flip": false,
         "broadcast": false,
-	"pixFwTrigger": true,
+	"pixFwTrigger": false,
 	"bufferSize": 1024
       },
       "ToHost": {
@@ -27,7 +27,7 @@
         "protocol": 0,
         "flushTime": 1,
         "enableMonitor": false,
-        "monitorInterval": 1,
+        "monitorInterval": 1000,
         "queueLimitMB": 4000,
         "waitTime": 500
       }
