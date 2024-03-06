@@ -1,5 +1,4 @@
 #include "FelixTxCore.h"
-#include "felix/felix_client_exception.hpp"
 
 #include "logging.h"
 
@@ -60,7 +59,7 @@ bool FelixTxCore::checkChannel(FelixID_t fid) {
   }
       
   static std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-  if(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now()-start).count() >= 5000000){ //TO DO: CHECK 5S TIMEOUT OF FELIX_CLIENT SUBSCRIPTION
+  if(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now()-start).count() >= 5000000){ //FIXME LATER: CONNECTION TIMEOUT OF THE NETIO SOCKET
     start = std::chrono::steady_clock::now();
   }    
   
