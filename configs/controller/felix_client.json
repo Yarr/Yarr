@@ -25,7 +25,7 @@
         "detectorID": 0,
         "connectorID": 0,
         "protocol": 0,
-        "flushTime": 1,
+        "flushWaitTime": 1,
         "enableMonitor": false,
         "monitorInterval": 1000,
         "queueLimitMB": 4000,
