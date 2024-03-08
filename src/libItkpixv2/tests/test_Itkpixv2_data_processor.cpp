@@ -15,7 +15,7 @@
 
 
 
-int main(){
+TEST_CASE("Itkpixv2DataProcessor", "[itkpixv2][data_processor]") {
     FrontEndData truth;
     
     std::unique_ptr<HitMapGenerator> generator(new HitMapGenerator());

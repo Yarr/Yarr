@@ -41,7 +41,7 @@ class Itkpixv2Encoder{
 
         void setEventsPerStream(const uint nEventsPerStream = 16){m_nEventsPerStream = nEventsPerStream;}
 
-        void addToStream(const HitMap& hitMap);
+        void addToStream(const HitMap& hitMap, bool last = false);
 
     
     private:
