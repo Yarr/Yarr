@@ -33,6 +33,8 @@ class Itkpixv2Encoder{
 
         void endStream();
 
+        void startStream();
+
         void scanHitMap();
 
         bool hitInQCore(const uint CCol, const uint QRow);
@@ -41,7 +43,9 @@ class Itkpixv2Encoder{
 
         void setEventsPerStream(const uint nEventsPerStream = 16){m_nEventsPerStream = nEventsPerStream;}
 
-        void addToStream(const HitMap& hitMap, bool last = false);
+        void addOrphans();
+
+        void addToStream(const HitMap& hitMap, bool last = false, bool rd53b = false);
 
     
     private:

@@ -36,7 +36,7 @@ class HitMapGenerator{
         //generation machinery
         std::mt19937 generator;
         std::uniform_real_distribution<float> m_hitProb;
-        std::uniform_int_distribution<uint>   m_totProb;
+        std::uniform_int_distribution<uint16_t>   m_totProb;
 
 
         //geometry and config

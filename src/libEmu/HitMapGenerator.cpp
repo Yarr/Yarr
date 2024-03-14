@@ -6,9 +6,10 @@
 #include "HitMapGenerator.h"
 
 HitMapGenerator::HitMapGenerator(const uint nCol, const uint nRow, const uint nColInCCol, const uint nRowInQRow, const uint seed): m_nCol(nCol), m_nRow(nRow), m_nColInCCol(nColInCCol), m_nRowInQRow(nRowInQRow), m_seed(seed){
-    //initialize the pdfs
+    //initialize the pdfs for assigning a hit and for
+    //the ToT value of that hit
     m_hitProb = std::uniform_real_distribution<float>(0., 1.);
-    m_totProb = std::uniform_int_distribution<uint>(1, 15); 
+    m_totProb = std::uniform_int_distribution<uint16_t>(1, 15); 
 
     m_nCCol = nCol/m_nColInCCol;
     m_nQRow = nRow/m_nRowInQRow;

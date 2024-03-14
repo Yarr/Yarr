@@ -12,6 +12,8 @@
 Itkpixv2Encoder::Itkpixv2Encoder(const uint nCol, const uint nRow, const uint nColInCCol, const uint nRowInQRow, const uint nEventsPerStream, const bool plainHitMap, const bool dropToT): m_nCol(nCol), m_nRow(nRow), m_nColInCCol(nColInCCol), m_nRowInQRow(nRowInQRow), m_nEventsPerStream(nEventsPerStream), m_plainHitMap(plainHitMap), m_dropToT(dropToT){
     m_nCCol = nCol/m_nColInCCol;
     m_nQRow = nRow/m_nRowInQRow;
+    m_currBlock  = 0x0ULL;
+    m_currBit    = 0;
     m_currEvent  = 0;
     m_currStream = 0;
 }
@@ -188,7 +190,7 @@ void Itkpixv2Encoder::streamTag(const uint8_t nStream){
 void Itkpixv2Encoder::intTag(const uint16_t nEvt){
     //this adds 11 bits of interal tagging between events.
     //does the tag always need to start with 111?
-    uint16_t tag = nEvt | (0xf << 8);
+    uint16_t tag = nEvt | (0b111 << 8);
     addBits64(tag, 11);
 }
 
@@ -197,7 +199,13 @@ void Itkpixv2Encoder::endStream(){
     pushWords32();
 }
 
-void Itkpixv2Encoder::addToStream(const HitMap& hitMap, bool last){
+void Itkpixv2Encoder::startStream(){
+    //RD53B functionality, can be replaced by separate by separate
+    //instance of low-level class
+    m_currBlock |= (0x1ULL << 63);
+}
+
+void Itkpixv2Encoder::addToStream(const HitMap& hitMap, bool last, bool rd53b){
     //This is a high-level interface function that can take care of
     //adding an event into the current stream, this can be called
     //easily from the outside, and automatically tags/ends streams
@@ -206,6 +214,7 @@ void Itkpixv2Encoder::addToStream(const HitMap& hitMap, bool last){
     //If this is the first event, start a new stream. Otherwise, add an
     //internal tag
     if (m_currEvent == 0){
+        if (rd53b) startStream();
         streamTag(m_currStream);
         m_currStream++;
     }
@@ -222,8 +231,25 @@ void Itkpixv2Encoder::addToStream(const HitMap& hitMap, bool last){
     //want to end the stream (i. e. total number of generated events
     //is not a multiple of nEventsPerStream), end the stream
     if (m_currEvent == m_nEventsPerStream || last){
-        endStream();
+        rd53b ? addOrphans() : endStream();
         m_currEvent = 0;
     }
 
+}
+
+void Itkpixv2Encoder::addOrphans(){
+    //RD53B functionality, can be replaced by separate
+    //instance of low-level class
+
+    //where is currently the bit counter in the current block?
+    if (63 - m_currBit >= 6){
+        //Enough orphans are there in the current word to end the stream
+        pushWords32();
+    }
+    else {
+        //There's not enough orphans in the current word, so we need
+        //to add a whole new word full of 0s
+        pushWords32();
+        pushWords32();
+    }
 }
