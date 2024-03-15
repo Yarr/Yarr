@@ -12,6 +12,9 @@
 #include <thread>
 #include <atomic>
 
+
+//Enum for declaring various FELIX firmware flavors as defined in section 2.1 of https://edms.cern.ch/ui/file/2681548/1/FELIX_Phase2_firmware_specs.pdf
+//Firmware flavor determined by "FIRMWARE_MODE" FELIX register
 enum FELIX_FW_MODE {
   GBT_mode = 0,
   FULL_mode = 1,
@@ -122,8 +125,7 @@ protected:
   static constexpr unsigned NBITS_BROADCAST_ENABLE = 42;
 
   //idle words for checkChannel() to be sent to keep the felix_client subscription alive
-  std::string m_itkStripWord; //for strips
-  static constexpr uint8_t m_itkPixWord[2] = {0xAA, 0xAA}; //for pixels
+  std::vector<const uint8_t*> m_idleWords;
 
   // For Felix ID
   FelixID_t fid_from_channel(uint32_t chn);
