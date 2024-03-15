@@ -125,7 +125,7 @@ protected:
   static constexpr unsigned NBITS_BROADCAST_ENABLE = 42;
 
   //idle words for checkChannel() to be sent to keep the felix_client subscription alive
-  std::vector<const uint8_t*> m_idleWords;
+  std::vector<uint8_t> m_idleWords;
 
   // For Felix ID
   FelixID_t fid_from_channel(uint32_t chn);

@@ -68,8 +68,9 @@ bool FelixTxCore::checkChannel(FelixID_t fid) {
   if((clk::now()-start) < std::chrono::microseconds(500)){
     try {
       switch(m_fwMode){
-      case ITK_Pixel + ITK_Strip: //ITk Pixel or ITk Strip firmware
-	fclient->send_data(fid, *(&m_idleWords[0]), m_idleWords.size(), true); 
+      case ITK_Pixel: //ITk Pixel firmware
+      case ITK_Strip: //ITk Strip firmware
+	fclient->send_data(fid, static_cast<const unsigned char*>(&(m_idleWords[0])), m_idleWords.size(), true); 
 	break;
       default:
 	ftlog->error("FELIX firmware version not supported in YARR. Try again...");
@@ -545,12 +546,13 @@ void FelixTxCore::loadConfig(const json &j) {
   }
 
   if (j.contains("idleWords")) {
-    std::ostringstream ss;
     for(int i=0; i<(int)j["idleWords"].size(); i++){
-      ss << "0x" << std::hex << (int)j["idleWords"][i];
-      std::string word = ss.str();
-      m_idleWords.push_back(const_cast<unsigned char*>((uint8_t*)word.c_str()));
-      ss.str("");
+      if((int)j["idleWords"][i]>255){
+	ftlog->error("Incorrect idle word, shouldn't be greater than a byte. Please check controller config and try again...");
+	exit(1);
+      }
+      uint8_t word = (int)j["idleWords"][i];
+      m_idleWords.push_back(word);
       ftlog->info(" idleWords[{}] = {}", i, m_idleWords[i]);
     }
   }
