@@ -68,11 +68,8 @@ bool FelixTxCore::checkChannel(FelixID_t fid) {
   if((clk::now()-start) < std::chrono::microseconds(500)){
     try {
       switch(m_fwMode){
-      case ITK_Pixel: //ITk Pixel firmware
+      case ITK_Pixel + ITK_Strip: //ITk Pixel or ITk Strip firmware
 	fclient->send_data(fid, *(&m_idleWords[0]), m_idleWords.size(), true); 
-	break;
-      case ITK_Strip: //ITk Strip firmware
-	fclient->send_data(fid, *(&m_idleWords[0]), m_idleWords.size(), true);
 	break;
       default:
 	ftlog->error("FELIX firmware version not supported in YARR. Try again...");
