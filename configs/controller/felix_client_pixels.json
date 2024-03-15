@@ -19,7 +19,8 @@
         "flip": false,
         "broadcast": false,
 	"pixFwTrigger": false,
-	"bufferSize": 1024
+	"bufferSize": 1024,
+	"idleWords": [170,170]
       },
       "ToHost": {
         "detectorID": 0,
