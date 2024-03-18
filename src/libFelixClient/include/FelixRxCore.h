@@ -54,7 +54,7 @@ protected:
   std::map<FelixID_t, bool> m_enables; // enable flag for each elink
 
   std::atomic<bool> m_doFlushBuffer {false};
-  unsigned m_flushTime {50}; // in milliseconds
+  unsigned m_flushWaitTime {50}; // in milliseconds
 
   // For Felix ID
   FelixID_t fid_from_channel(uint32_t chn);

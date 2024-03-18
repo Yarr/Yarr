@@ -1132,12 +1132,20 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
 
 void OccPixelThresholdTune::loadConfig(const json &j){
     if (j.contains("occLowCut")) {
+        if (!j["occLowCut"].is_array()) {
+            alog->error("Could not load \"occLowCut\" from config!");
+            return;
+        }
         m_occLowCut.clear();
         for(auto i: j["occLowCut"]){
             m_occLowCut.push_back(i);
         }
     }
     if (j.contains("occHighCut")) {
+        if (!j["occHighCut"].is_array()) {
+            alog->error("Could not load \"occHighCut\" from config!");
+            return;
+        }
         m_occHighCut.clear();
         for(auto i: j["occHighCut"]){
           m_occHighCut.push_back(i);

@@ -5,10 +5,10 @@
       "FelixClient": {
         "localIPorInterface": "lo",
         "logLevel": "info",
-        "busDir": "./bus",
+        "busDir": "/tmp/bus",
         "busGroupName": "FELIX",
         "verboseBus": false,
-        "timeout": 1000,
+	"timeout": 1000,
         "netioPages": 256,
         "netioPagesize": 65536
       },
@@ -17,17 +17,20 @@
         "connectorID": 0,
         "protocol": 0,
         "flip": false,
-        "broadcast": true
+        "broadcast": false,
+	"pixFwTrigger": false,
+	"bufferSize": 1024,
+	"idleWords": [170,170]
       },
       "ToHost": {
         "detectorID": 0,
         "connectorID": 0,
         "protocol": 0,
-        "flushTime": 50,
-        "enableMonitor": true,
+        "flushWaitTime": 1,
+        "enableMonitor": false,
         "monitorInterval": 1000,
         "queueLimitMB": 4000,
-        "waitTime": 10000
+        "waitTime": 500
       }
     }
   }
