@@ -108,7 +108,7 @@ void FelixRxCore::maskRxEnable(uint32_t val, uint32_t mask) {
 void FelixRxCore::flushBuffer() {
   // Flush the receiver queue
   m_doFlushBuffer = true;
-  std::this_thread::sleep_for(std::chrono::milliseconds(m_flushTime));
+  std::this_thread::sleep_for(std::chrono::milliseconds(m_flushWaitTime));
   m_doFlushBuffer = false;
 }
 
@@ -229,9 +229,9 @@ bool FelixRxCore::isBridgeEmpty() {return false;}
 void FelixRxCore::loadConfig(const json &j) {
   frlog->info("FelixRxCore:");
 
-  if (j.contains("flushTime")) {
-    m_flushTime = j["flushTime"];
-    frlog->info(" flush time = {} ms", m_flushTime);
+  if (j.contains("flushWaitTime")) {
+    m_flushWaitTime = j["flushWaitTime"];
+    frlog->info(" flush wait time = {} ms", m_flushWaitTime);
   }
 
   if (j.contains("detectorID")) {
@@ -274,7 +274,7 @@ void FelixRxCore::writeConfig(json &j) {
   j["detectorID"] = m_did;
   j["connectorID"] = m_cid;
   j["protocol"] = m_protocol;
-  j["flushTime"] = m_flushTime;
+  j["flushWaitTime"] = m_flushWaitTime;
   j["enableMonitor"] = m_runMonitor.load();
   j["monitorInterval"] = m_interval_ms;
   j["queueLimitMB"] = m_queue_limit;
