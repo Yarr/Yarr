@@ -8,7 +8,9 @@
 
 #include "Rd53bCfg.h"
 
-#include "Rd53bEncodingTool.h"
+//#include "Rd53bEncodingTool.h"
+#include "HitMapGenerator.h"
+#include "Rd53bEncoder.h"
 
 //#include "rd53b_test_stream.h"
 //#include "rd53b_test_truth.h"
@@ -17,7 +19,7 @@ TEST_CASE("Rd53bDataProcessor", "[rd53b][data_processor]") {
   
   //Initialize the Rd53b generator/encoder, give it the random seed,
   //number of events per stream and generate desired number of events
-
+  /*
   std::unique_ptr<Rd53bEncodingTool> encoder(new Rd53bEncodingTool());
   encoder->setSeed(Catch::rngSeed());
   encoder->setEventsPerStream(16);
@@ -26,6 +28,24 @@ TEST_CASE("Rd53bDataProcessor", "[rd53b][data_processor]") {
   //Retrieve the truth hits and the encoded words
 
   FrontEndData          truth    = encoder->getTruthData();
+  */
+
+  FrontEndData truth;
+
+  std::unique_ptr<HitMapGenerator> generator(new HitMapGenerator());
+  int nEvents = 1;
+  int nEventsPerStream = 21;
+  generator->setSeed(Catch::rngSeed());
+  
+  std::unique_ptr<Rd53bEncoder> encoder(new Rd53bEncoder());
+  encoder->setEventsPerStream(nEventsPerStream);
+  for (int evt = 0; evt < nEvents; evt++){
+      generator->randomHitMap(1e-4);
+      truth.events.push_back(generator->outTruth());
+      if   (evt != nEvents - 1) encoder->addToStream(generator->outHits());
+      else                      encoder->addToStream(generator->outHits(), true); //make sure the stream is ended with the last added event
+  }
+  
   std::vector<uint32_t> words = encoder->getWords();
   int nWords = words.size();
   
