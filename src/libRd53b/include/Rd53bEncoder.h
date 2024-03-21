@@ -12,13 +12,15 @@
 #include <random>
 #include "ItkpixEncoder.h"
 
-class Itkpixv2Encoder : public ItkpixEncoder {
+class Rd53bEncoder : public ItkpixEncoder {
     
     public:
         
-        void endStream();
+        void startStream();
         
-        void addToStream(const HitMap& hitMap, bool last = false, bool rd53b = false);
+        void addOrphans();
+        
+        void addToStream(const HitMap& hitMap, bool last = false);
 };
 
 #endif

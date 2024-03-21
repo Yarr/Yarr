@@ -4,6 +4,7 @@ add_library(Emu SHARED
         Rd53aLinPixelModel.cpp
         Rd53aSyncPixelModel.cpp
         StripModel.cpp
+        ItkpixEncoder.cpp
         HitMapGenerator.cpp)
 
 post_build_debug_library(Emu)
