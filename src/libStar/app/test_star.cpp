@@ -14,6 +14,8 @@
 #include "logging.h"
 #include "LoopStatus.h"
 
+#include <getopt.h>
+
 namespace {
   auto logger = logging::make_log("test_star");
 
@@ -1041,8 +1043,13 @@ int main(int argc, char *argv[]) {
     // logger config path
     std::string logCfgPath = "";
 
+    const struct option long_options[] =
+      {
+        {"help", no_argument, 0, 'h'},
+        {0, 0, 0, 0}};
+
     int c;
-    while ((c = getopt(argc, argv, "hl:r:t:dRs:c:V:")) != -1) {
+    while ((c = getopt_long(argc, argv, "hl:r:t:dRs:c:V:", long_options, nullptr)) != -1) {
       switch(c) {
       case 'h':
         printHelp();
@@ -1153,6 +1160,11 @@ int main(int argc, char *argv[]) {
         logger->error("Opening controller config: {}", e.what());
         return 1;
       }
+    }
+
+    if(!hwCtrl) {
+      std::cout << "Failed to select valid HwController aborting\n";
+      return 1;
     }
 
     hwCtrl->toggleTrigAbort();
