@@ -1100,25 +1100,25 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
         for(unsigned i=0; i<occMaps[ident]->size(); i++)
             occDists[ident]->fill(occMaps[ident]->getBin(i));
 
-        bool done = false;
-        double sign = 0;
+        m_entries = occDists[ident]->getEntries();
 
-        double meanOcc = occDists[ident]->getMean()/(double)injections;
-        double entries = occDists[ident]->getEntries();
-        alog->info("[{}] Mean Occupancy = {}", id, meanOcc);
-
-        if (entries < (nCol*nRow)*0.005) { // Want at least 1% of all pixels to fire
-            sign = -1;
-        } else if ((meanOcc > 0.51) && !done) {
-            sign = +1;
-        } else if ((meanOcc < 0.49) && !done) {
-            sign = -1;
+        if (m_entries < (nCol*nRow)*0.005) { // Want at least 0.5% of all pixels to fire
+            m_sign = -1;
+        } else if (m_entries > m_oldEntries && !m_done) {
+            m_sign = -1;
+        } else if (m_entries < m_oldEntries && !m_done) {
+            m_sign = +1;
         } else {
-            sign = 0;
-            done = true;
+            m_sign = 0;
+            m_done = true;
         }
 
-        fb->feedback(this->id, sign, done);
+        alog->info("[{}] Number of Entries = {}", id, m_entries);
+        alog->info("[{}] Old Number of Entries = {}", id, m_oldEntries);
+        alog->info("[{}] Sign = {}", id, m_sign);
+        m_oldEntries = m_entries;
+
+        fb->feedback(this->id, m_sign, m_done);
         output->pushData(std::move(occMaps[ident]));
         output->pushData(std::move(occDists[ident]));
         innerCnt[ident] = 0;

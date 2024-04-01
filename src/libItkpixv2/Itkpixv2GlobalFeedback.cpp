@@ -64,11 +64,13 @@ void Itkpixv2GlobalFeedback::loadConfig(const json &j) {
 
 void Itkpixv2GlobalFeedback::feedback(unsigned channel, double sign, bool last) {
     // Calculate new step and val
-    logger->debug("[{}] Received feedback {} (old: {})", channel, sign, m_oldSign[channel]);    
+    logger->debug("[{}] Received feedback {} (old: {})", channel, sign, m_oldSign[channel]);
+    double oldStep = m_localStep[channel];
     if (sign != m_oldSign[channel]) {
-        m_oldSign[channel] = 0;
+        m_oldSign[channel] = sign;
         m_localStep[channel] = m_localStep[channel]/2;
     }
+    logger->info({"Step size changed from {} to {}"}, oldStep, m_localStep[channel]);
     int val = (m_values[channel]+(m_localStep[channel]*sign));
     if (val > (int)max) val = max;
     if (val < min) val = min;
