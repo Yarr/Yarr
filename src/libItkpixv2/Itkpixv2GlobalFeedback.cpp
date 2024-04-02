@@ -68,17 +68,18 @@ void Itkpixv2GlobalFeedback::feedback(unsigned channel, double sign, bool last) 
     double oldStep = m_localStep[channel];
     if (sign != m_oldSign[channel]) {
         m_oldSign[channel] = sign;
-        m_localStep[channel] = 2*m_localStep[channel]/5;
+        m_localStep[channel] = m_localStep[channel]/2;
     }
+    logger->info({"Current feedback value: {}"}, m_values[channel]);
     logger->info({"Step size changed from {} to {}"}, oldStep, m_localStep[channel]);
     int val = (m_values[channel]+(m_localStep[channel]*sign));
     if (val > (int)max) val = max;
     if (val < min) val = min;
     m_values[channel] = val;
-    fbDoneMap[channel] |= last;
 
-    if (m_localStep[channel] == 0 || val == min) {
+    if (m_localStep[channel] == 0) {
         fbDoneMap[channel] = true;
+        m_values[channel] = m_values[channel] + sign; //end condition overshoots by 1 step. Add sign because sign has already flipped when step -> 0
     }
 
     // Abort if we are getting to low
