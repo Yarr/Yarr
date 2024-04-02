@@ -33,8 +33,8 @@ TEST_CASE("Rd53bDataProcessor", "[rd53b][data_processor]") {
   FrontEndData truth;
 
   std::unique_ptr<HitMapGenerator> generator(new HitMapGenerator());
-  int nEvents = 1;
-  int nEventsPerStream = 21;
+  int nEvents = 18;
+  int nEventsPerStream = 16;
   generator->setSeed(Catch::rngSeed());
   
   std::unique_ptr<Rd53bEncoder> encoder(new Rd53bEncoder());
@@ -97,7 +97,6 @@ TEST_CASE("Rd53bDataProcessor", "[rd53b][data_processor]") {
       rawNHits++;
 	  }
     truthNHits += truth.events[ievt].nHits;
-    ievt++;
   }
 
   REQUIRE (rawNHits == truthNHits);

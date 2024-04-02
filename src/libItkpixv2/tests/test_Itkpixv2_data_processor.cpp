@@ -20,7 +20,7 @@ TEST_CASE("Itkpixv2DataProcessor", "[itkpixv2][data_processor]") {
     FrontEndData truth;
     
     std::unique_ptr<HitMapGenerator> generator(new HitMapGenerator());
-    int nEvents = 2;
+    int nEvents = 18;
     int nEventsPerStream = 16;
     generator->setSeed(Catch::rngSeed());
     
@@ -28,14 +28,14 @@ TEST_CASE("Itkpixv2DataProcessor", "[itkpixv2][data_processor]") {
     encoder->setEventsPerStream(nEventsPerStream);
 
     for (int evt = 0; evt < nEvents; evt++){
-        generator->randomHitMap(1e-2);
+        generator->randomHitMap(1e-4);
         truth.events.push_back(generator->outTruth());
         if   (evt != nEvents - 1) encoder->addToStream(generator->outHits());
         else                      encoder->addToStream(generator->outHits(), true); //make sure the stream is ended with the last added event
     }
     
-
     std::vector<uint32_t> words = encoder->getWords();
+
 
     int nWords = words.size();
 
@@ -71,8 +71,17 @@ TEST_CASE("Itkpixv2DataProcessor", "[itkpixv2][data_processor]") {
     int truthNHits = 0;
     int rawNHits = 0;
 
-
-    #if 1
+    #if 1 //by default, compile a non-verbose version. A verbose version was useful for the development of this test.
+    for (int ievt = 0; ievt < rawData.events.size(); ievt++){
+	    for(int ihit = 0; ihit < rawData.events[ievt].hits.size(); ihit++){
+            REQUIRE(rawData.events[ievt].hits[ihit].col == truth.events[ievt].hits[ihit].col);
+		    REQUIRE(rawData.events[ievt].hits[ihit].row == truth.events[ievt].hits[ihit].row);
+		    REQUIRE(rawData.events[ievt].hits[ihit].tot == truth.events[ievt].hits[ihit].tot);
+            rawNHits++;
+	    }
+        truthNHits += truth.events[ievt].nHits;
+    }
+    #else
     for (int ievt = 0; ievt < rawData.events.size(); ievt++){
         std::cout << "TRUTH EVENT WITH " << truth.events[ievt].hits.size() << " HITS\n";
 	    for(int ihit = 0; ihit < rawData.events[ievt].hits.size(); ihit++){
@@ -83,43 +92,13 @@ TEST_CASE("Itkpixv2DataProcessor", "[itkpixv2][data_processor]") {
             REQUIRE(rawData.events[ievt].hits[ihit].col == truth.events[ievt].hits[ihit].col);
 		    REQUIRE(rawData.events[ievt].hits[ihit].row == truth.events[ievt].hits[ihit].row);
 		    REQUIRE(rawData.events[ievt].hits[ihit].tot == truth.events[ievt].hits[ihit].tot);
-            if (rawData.events[ievt].hits[ihit].tot != truth.events[ievt].hits[ihit].tot){std::cout << "fuuuck\n"; break;}
             rawNHits++;
 	    }
-        if (rawData.events[ievt].hits.size() != truth.events[ievt].hits.size()){
-            std::cout << "Undecoded hit: truth col = " << truth.events[ievt].hits[rawData.events[ievt].hits.size()].col << "\n";
-		    std::cout << "Undecoded hit: truth row = " << truth.events[ievt].hits[rawData.events[ievt].hits.size()].row << "\n";
-		    std::cout << "Undecoded hit: truth tot = " << truth.events[ievt].hits[rawData.events[ievt].hits.size()].tot << "\n";
-            std::cout << "few last words:\n";
-            for (auto& w : words){//(int i = words.size() - 5; i < words.size(); i++){
-                std::bitset<32> bw(w);
-                std::cout << bw.to_string() << "\n";
-            }
-        }
         truthNHits += truth.events[ievt].nHits;
     }
-
-            //for (auto& w : words){//(int i = words.size() - 5; i < words.size(); i++){
-            //    std::bitset<32> bw(w);
-            //    std::cout << bw.to_string() << "\n";
-            //}
-
+    #endif
 
     REQUIRE(rawNHits == truthNHits);
-    #endif
-    #if 0 //enable to see the truth vs. decoded comparison
-    for (int ievt = 0; ievt < rawData.events.size(); ievt++){
-        std::cout << "EVENT TAG = " << rawData.events[ievt].bcid << "\n";
-	    for(int ihit = 0; ihit < rawData.events[ievt].hits.size(); ihit++){
-            std::cout << "HIT " << ihit << ":\n";
-            std::cout << "Dec col = " << rawData.events[ievt].hits[ihit].col << "   truth col = " << truth.events[ievt].hits[ihit].col << "\n";
-		    std::cout << "Dec row = " << rawData.events[ievt].hits[ihit].row << "   truth row = " << truth.events[ievt].hits[ihit].row << "\n";
-		    std::cout << "Dec tot = " << rawData.events[ievt].hits[ihit].tot << "   truth tot = " << truth.events[ievt].hits[ihit].tot << "\n";
-            if (rawData.events[ievt].hits[ihit].tot != truth.events[ievt].hits[ihit].tot){std::cout << "fuuuck\n"; break;}
-            rawNHits++;
-	    }
-    }
-    #endif
 
 }
 
