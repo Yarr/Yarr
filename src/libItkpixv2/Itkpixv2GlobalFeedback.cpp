@@ -68,7 +68,7 @@ void Itkpixv2GlobalFeedback::feedback(unsigned channel, double sign, bool last) 
     double oldStep = m_localStep[channel];
     if (sign != m_oldSign[channel]) {
         m_oldSign[channel] = sign;
-        m_localStep[channel] = m_localStep[channel]/2;
+        m_localStep[channel] = 2*m_localStep[channel]/5;
     }
     logger->info({"Step size changed from {} to {}"}, oldStep, m_localStep[channel]);
     int val = (m_values[channel]+(m_localStep[channel]*sign));
@@ -77,7 +77,7 @@ void Itkpixv2GlobalFeedback::feedback(unsigned channel, double sign, bool last) 
     m_values[channel] = val;
     fbDoneMap[channel] |= last;
 
-    if (m_localStep[channel] == 1 || val == min) {
+    if (m_localStep[channel] == 0 || val == min) {
         fbDoneMap[channel] = true;
     }
 
