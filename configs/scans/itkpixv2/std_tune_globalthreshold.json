@@ -31,9 +31,9 @@
     },
     "loops": [
       { "config": {
-          "max": 200,
+          "max": 350,
           "min": 0,
-          "step": 16,
+          "step": 32,
           "parameter": "DiffTh1",
           "pixelReg": 0,
           "rstPixelReg": true

@@ -70,8 +70,6 @@ void Itkpixv2GlobalFeedback::feedback(unsigned channel, double sign, bool last) 
         m_oldSign[channel] = sign;
         m_localStep[channel] = m_localStep[channel]/2;
     }
-    logger->info({"Current feedback value: {}"}, m_values[channel]);
-    logger->info({"Step size changed from {} to {}"}, oldStep, m_localStep[channel]);
     int val = (m_values[channel]+(m_localStep[channel]*sign));
     if (val > (int)max) val = max;
     if (val < min) val = min;
