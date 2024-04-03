@@ -133,9 +133,13 @@ class SpecTxCore : virtual public TxCore, virtual public SpecCom{
             SpecCom::writeSingle(TRIG_LOGIC_ADR | 0xFF, 0x1);
         }
 
-	void setTriggerEncoderMultiplier(uint32_t interval) {
-	    SpecCom::writeSingle(TX_ADDR | TRIG_EXTEND_INTERVAL, interval);
-	}
+        void setTriggerEncoderMultiplier(uint32_t interval) {
+            // n_trigs to BC conversion: 4*(N - 1) + 1
+            if(interval > 0)
+                interval = 4*(interval - 1) + 1;
+
+            SpecCom::writeSingle(TX_ADDR | TRIG_EXTEND_INTERVAL, interval);
+        }
 
 	void setTriggerEncoderEnable(uint32_t value) {
 	    SpecCom::writeSingle(TX_ADDR | TRIG_ENCODER_ENABLE, value);
