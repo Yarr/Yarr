@@ -40,6 +40,7 @@ The script can be used in two ways:
 2. Run it with an already downloaded bit-file as an argument and it will proceed to flash this firmware to the FPGA card. It will still ask what FPGA card you have as this specifies how to flash the firmware exactly.
 
 Largely, case 1 should be applicable for getting the latest official firmware release. Specifically, the script will ask for:
+
 - FPGA card: TEF1001 and XpressK7 are supported in the official releases
 - Chip type: YARR is now almost exclusively used for reading out RD53 chips
 - FMC card: FMC adapter card attached to the FPGA, most commonly the Ohio card is used
