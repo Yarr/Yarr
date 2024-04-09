@@ -13,6 +13,7 @@ add_library(Star SHARED
         StarJsonData.cpp
         StarMaskLoop.cpp
         StarRegDump.cpp
+        StarSeqGenerator.cpp
         StarStrobeDelayAnalysis.cpp
         StarFelixTriggerLoop.cpp
         StarTriggerLoop.cpp)
