@@ -327,7 +327,8 @@ void Histo3dT<DataT>::toFile(const std::string &prefix, const std::string &dir, 
              file << std::setw(4) << j;
     } else {
 	// Header
-	file << "Histo3dT " <<  std::endl;
+        // TODO: in principle we could include something about DataT here?
+        file << "Histo3d " <<  std::endl;
         file << name << std::endl;
         file << xAxisTitle << std::endl;
         file << yAxisTitle << std::endl; 
