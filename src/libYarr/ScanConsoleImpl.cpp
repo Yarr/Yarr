@@ -471,6 +471,8 @@ void ScanConsoleImpl::cleanup() {
             // always dump the data
             histo->toFile(name, scanOpts.outputDir);
         } // while
+
+        fe->joinClipboardMonitors();
     } // i
     logger->info("Finishing run: {}", runCounter);
     // Register test info into database

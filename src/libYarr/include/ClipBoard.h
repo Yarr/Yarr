@@ -17,8 +17,14 @@
 #include <chrono>
 
 #include "RawData.h"
+#include "logging.h"
 
 #include <typeinfo>
+
+namespace
+{
+    auto clipboardLogger = logging::make_log("ClipboardDebug");
+}
 
 template <class T>
 class ClipBoard {
@@ -35,6 +41,33 @@ class ClipBoard {
         ClipBoard(const ClipBoard &o) = delete;
         ClipBoard& operator=(const ClipBoard &l) = delete;
         ClipBoard& operator=(const ClipBoard &&l) = delete;
+
+        void startMonitor(std::string arg_name, unsigned arg_monitorCycleTime = 10000) {
+            name = arg_name; // clipboard monitor name
+            monitorCycleTime = arg_monitorCycleTime; // microseconds
+
+            runMonitor = true;
+            thread_ptr.reset(new std::thread(&ClipBoard::sizeMonitor, this));
+        }
+
+        void joinMonitor() {
+            if(runMonitor) {
+                runMonitor = false;
+                thread_ptr->join();
+            }
+        }
+
+        void sizeMonitor() {
+            clipboardLogger->info("{}: Started custom clipboard monitor thread", name);
+            int n_until_done = 500; // five seconds
+
+            while(runMonitor) 
+            {
+                clipboardLogger->info("{}: In: {} Out: {} Size: {}", name, numDataIn, numDataOut, dataQueue.size());
+                std::this_thread::sleep_for(std::chrono::microseconds(monitorCycleTime)); // microseconds  
+            }
+            clipboardLogger->info("{}: Ended custom clipboard monitor thread", name);
+        }
 
         void pushData(std::unique_ptr<T> data) {
             queueMutex.lock();
@@ -119,6 +152,11 @@ class ClipBoard {
         std::atomic<bool> doneFlag;
         std::atomic<unsigned> numDataIn;
         std::atomic<unsigned> numDataOut;
+
+        std::string name;
+        std::unique_ptr<std::thread> thread_ptr;
+        unsigned monitorCycleTime;
+        bool runMonitor;
 };
 
 template class ClipBoard<RawData>;

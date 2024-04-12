@@ -261,6 +261,19 @@ namespace ScanHelper {
             feCfg->loadConfig(cfg);
             if (chip.contains("locked"))
                 feCfg->setLocked((int)chip["locked"]);
+            
+            // Check for hidden clipboard monitor parameter, and start them if true
+            if (chip.contains("clipboardMonitor")) {
+                if(chip["clipboardMonitor"]) {
+                    unsigned monitorCycleTime;
+                    if(chip.contains("clipboardMonitorCycleTime"))
+                        monitorCycleTime = (unsigned)chip["clipboardMonitorCycleTime"];
+                    else
+                        monitorCycleTime = 10000; // microseconds, 0.01 seconds default
+                    bookie.getLastFe()->startClipboardMonitors(feCfg->getName(), monitorCycleTime);
+                }
+            }
+
             std::size_t botDirPos = chipConfigPath.find_last_of('/');
             std::string  cfgFile=chipConfigPath.substr(botDirPos, chipConfigPath.length());
             feCfgMap[bookie.getId(bookie.getLastFe())] = {chipConfigPath, cfgFile};

@@ -76,6 +76,10 @@ class FrontEnd {
         virtual void confAdc(uint16_t MONMUX, bool doCur) {}
 
         virtual void setInjCharge(double, bool, bool) = 0;
+        
+        /// Start/join clipboard monitoring threads
+        void startClipboardMonitors(std::string arg_feName, unsigned arg_monitorCycleTime);
+        void joinClipboardMonitors();
 
         // Clipboards to buffer data
         ClipBoard<RawDataContainer> clipRawData;
