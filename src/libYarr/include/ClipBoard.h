@@ -135,8 +135,6 @@ class ClipBoard {
             doneFlag = false;
             numDataIn = 0;
             numDataOut = 0;
-            sizeDataIn = 0;
-            sizeDataOut = 0;
         };
 
     private:
