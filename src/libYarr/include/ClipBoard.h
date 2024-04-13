@@ -58,19 +58,18 @@ class ClipBoard {
         }
 
         void sizeMonitor() {
-            clipboardLogger->info("{}: Started custom clipboard monitor thread", name);
+            clipboardLogger->info("| {:^24} | Started clipboard monitor thread", name);
             while(runMonitor) 
             {
-                clipboardLogger->info("| {:^24} | InCount:{:<8} OutCount:{:<8} QueueSize:{:<8} InSize:{:<12} OutSize:{:<12}", name, numDataIn, numDataOut, dataQueue.size(), sizeDataIn, sizeDataOut);
+                clipboardLogger->info("| {:^24} | InCount:{:<8} OutCount:{:<8} QueueSize:{:<8}", name, numDataIn, numDataOut, dataQueue.size());
                 std::this_thread::sleep_for(std::chrono::microseconds(monitorCycleTime)); // microseconds  
             }
-            clipboardLogger->info("{}: Ended custom clipboard monitor thread", name);
+            clipboardLogger->info("| {:^24} | Ended custom clipboard monitor thread", name);
         }
 
         void pushData(std::unique_ptr<T> data) {
             queueMutex.lock();
             if (data != NULL) {
-                sizeDataIn += sizeof(*data);
                 dataQueue.push_back(std::move(data));
                 numDataIn++;
             }
@@ -87,7 +86,6 @@ class ClipBoard {
             if(!dataQueue.empty()) {
                 tmp = std::move(dataQueue.front());
                 dataQueue.pop_front();
-                sizeDataOut += sizeof(*tmp);
                 numDataOut++;
             }
             queueMutex.unlock();
@@ -154,9 +152,6 @@ class ClipBoard {
         std::atomic<bool> doneFlag;
         std::atomic<unsigned> numDataIn;
         std::atomic<unsigned> numDataOut;
-
-        std::atomic<unsigned> sizeDataIn;
-        std::atomic<unsigned> sizeDataOut;
 
         std::string name;
         std::unique_ptr<std::thread> thread_ptr;
