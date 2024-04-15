@@ -265,12 +265,7 @@ namespace ScanHelper {
             // Check for hidden clipboard monitor parameter, and start them if true
             if (chip.contains("clipboardMonitor")) {
                 if(chip["clipboardMonitor"]) {
-                    unsigned monitorCycleTime;
-                    if(chip.contains("clipboardMonitorCycleTime"))
-                        monitorCycleTime = (unsigned)chip["clipboardMonitorCycleTime"];
-                    else
-                        monitorCycleTime = 10000; // microseconds, 0.01 seconds default
-                    bookie.getLastFe()->startClipboardMonitors(feCfg->getName(), monitorCycleTime);
+                    bookie.addFeClipboardMonitor(i, feCfg->getName());
                 }
             }
 
@@ -278,6 +273,13 @@ namespace ScanHelper {
             std::string  cfgFile=chipConfigPath.substr(botDirPos, chipConfigPath.length());
             feCfgMap[bookie.getId(bookie.getLastFe())] = {chipConfigPath, cfgFile};
         }
+        
+        // Check for hidden config-level parameter clipboardMonitorRefreshTime
+        if(config.contains("clipboardMonitorRefreshTime"))
+            bookie.setFeClipboardMonitorRefreshTime((unsigned)config["clipboardMonitorRefreshTime"]);
+        else
+            bookie.setFeClipboardMonitorRefreshTime(10000); // 0.01 seconds default
+
         return chipType;
     }
 
