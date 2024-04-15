@@ -17,14 +17,7 @@
 #include <chrono>
 
 #include "RawData.h"
-#include "logging.h"
-
 #include <typeinfo>
-
-namespace
-{
-    auto clipboardLogger = logging::make_log("ClipboardDebug");
-}
 
 template <class T>
 class ClipBoard {
@@ -41,16 +34,6 @@ class ClipBoard {
         ClipBoard(const ClipBoard &o) = delete;
         ClipBoard& operator=(const ClipBoard &l) = delete;
         ClipBoard& operator=(const ClipBoard &&l) = delete;
-
-        // void sizeMonitor() {
-        //     clipboardLogger->info("| {:^24} | Started clipboard monitor thread", name);
-        //     while(runMonitor) 
-        //     {
-        //         clipboardLogger->info("| {:^24} | InCount:{:<8} OutCount:{:<8} QueueSize:{:<8}", name, numDataIn, numDataOut, dataQueue.size());
-        //         std::this_thread::sleep_for(std::chrono::microseconds(monitorCycleTime)); // microseconds  
-        //     }
-        //     clipboardLogger->info("| {:^24} | Ended custom clipboard monitor thread", name);
-        // }
 
         void pushData(std::unique_ptr<T> data) {
             queueMutex.lock();

@@ -79,14 +79,12 @@ class FrontEndEvent {
             nHits = 0;
             nClusters = 0;
         }
-        FrontEndEvent(unsigned arg_tag, unsigned arg_l1id, unsigned arg_bcid, unsigned arg_n_reserved_hits = 2) {
+        FrontEndEvent(unsigned arg_tag, unsigned arg_l1id, unsigned arg_bcid) {
             tag = arg_tag;
             l1id = arg_l1id;
             bcid = arg_bcid;
             nHits = 0;
             nClusters = 0;
-            hits.reserve(arg_n_reserved_hits);
-
         }
         ~FrontEndEvent() = default;;
         void addEvent(const FrontEndEvent& event) {

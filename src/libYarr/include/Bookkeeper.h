@@ -11,6 +11,7 @@
 
 #include <mutex>
 #include <memory>
+#include <thread>
 
 #include "RawData.h"
 #include "EventDataBase.h"
