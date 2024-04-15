@@ -191,19 +191,19 @@ void Bookkeeper::feClipboardMonitor() {
     if(clipboardMonitorFeIDs.size() == 0)
         return;
     for(unsigned i = 0; i < clipboardMonitorFeIDs.size(); i++)
-        SPDLOG_LOGGER_INFO(blog, "[ [{}] : {:^8} : Info ] Started clipboard monitor thread", clipboardMonitorFeIDs[i], clipboardMonitorFeNames[i]);
+        SPDLOG_LOGGER_INFO(blog, "[ ClipboardMonitor : {:^8} [{}] : Info ] Started clipboard monitor thread",  clipboardMonitorFeNames[i], clipboardMonitorFeIDs[i]);
     while(runClipboardMonitor) {
         for(unsigned i = 0; i < clipboardMonitorFeIDs.size(); i++) {
             SPDLOG_LOGGER_INFO(
-                blog, "[ [{}] : {:^8} : RawData  ] InCount:{:<8} OutCount:{:<8} QueueSize:{:<8}", 
-                clipboardMonitorFeIDs[i], clipboardMonitorFeNames[i],
+                blog, "[ ClipboardMonitor : {:^8} [{}] : RawData  ] InCount:{:<8} OutCount:{:<8} QueueSize:{:<8}", 
+                clipboardMonitorFeNames[i], clipboardMonitorFeIDs[i],
                 bookEntries[clipboardMonitorFeIDs[i]].fe->clipRawData.getNumDataIn(),
                 bookEntries[clipboardMonitorFeIDs[i]].fe->clipRawData.getNumDataOut(),
                 bookEntries[clipboardMonitorFeIDs[i]].fe->clipRawData.size()
             );
             SPDLOG_LOGGER_INFO(
-                blog, "[ [{}] : {:^8} : ProcData ] InCount:{:<8} OutCount:{:<8} QueueSize:{:<8}", 
-                clipboardMonitorFeIDs[i], clipboardMonitorFeNames[i],
+                blog, "[ ClipboardMonitor : {:^8} [{}] : ProcData ] InCount:{:<8} OutCount:{:<8} QueueSize:{:<8}", 
+                clipboardMonitorFeNames[i], clipboardMonitorFeIDs[i],
                 bookEntries[clipboardMonitorFeIDs[i]].fe->clipData.getNumDataIn(),
                 bookEntries[clipboardMonitorFeIDs[i]].fe->clipData.getNumDataOut(),
                 bookEntries[clipboardMonitorFeIDs[i]].fe->clipData.size()
@@ -211,5 +211,5 @@ void Bookkeeper::feClipboardMonitor() {
         }
         std::this_thread::sleep_for(std::chrono::microseconds(clipboardMonitorRefreshTime)); // microseconds  
     }
-    SPDLOG_LOGGER_INFO(blog, "Joined Clipboard monitor thread");
+    SPDLOG_LOGGER_INFO(blog, "Joined clipboard monitor thread");
 }
