@@ -132,6 +132,7 @@ protected:
   uint8_t m_did {0};  // detector ID; 0x00 reserved for local IDs
   uint16_t m_cid {0}; // connector ID; 0x0000 reserved for local IDs
   uint8_t m_protocol {0}; // protocol ID
+  unsigned m_isCmdEmptyWaitTime {100}; // in milliseconds
 
   std::shared_ptr<FelixClientThread> fclient;
 };

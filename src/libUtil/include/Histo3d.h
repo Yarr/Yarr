@@ -16,41 +16,42 @@
 #include "HistogramBase.h"
 #include "ResultBase.h"
 
-class Histo3d : public HistogramBase {
+template<typename DataT>
+class Histo3dT : public HistogramBase {
     public:
-        Histo3d(const std::string &arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh,
+        Histo3dT(const std::string &arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh,
                 unsigned arg_ybins, double arg_ylow, double arg_yhigh,
                 unsigned arg_zbins, double arg_zlow, double arg_zhigh);
-        Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
+        Histo3dT(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
                 unsigned arg_ybins, double arg_ylow, double arg_yhigh, 
                 unsigned arg_zbins, double arg_zlow, double arg_zhigh, 
                 const LoopStatus &stat);
-        Histo3d(Histo3d *h);
-        ~Histo3d() override;
+        Histo3dT(Histo3dT *h);
+        ~Histo3dT() override;
         
         unsigned size() const;
         unsigned numOfEntries() const;
 
-        void fill(double x, double y, double z, double v=1);
-        void setAll(double v = 1);
+        void fill(double x, double y, double z, DataT v=1);
+        void setAll(DataT v = 1);
         
-        void add(const Histo3d &h);
-        void subtract(const Histo3d &h);
-        void multiply(const Histo3d &h);
-        void divide(const Histo3d &h);
+        void add(const Histo3dT &h);
+        void subtract(const Histo3dT &h);
+        void multiply(const Histo3dT &h);
+        void divide(const Histo3dT &h);
         void scale(const double s);
-        void setBin(unsigned n, double v);
+        void setBin(unsigned n, DataT v);
 
-        double getMean();
-        double getStdDev();
+        double getMean() const;
+        double getStdDev() const;
         
         double getBin(unsigned n) const;
         int binNum(double x, double y, double z) const;
 
 	bool isFilled(unsigned n) const;
         
-        double getUnderflow() const {return underflow;}
-        double getOverflow() const {return overflow;}
+        DataT getUnderflow() const {return underflow;}
+        DataT getOverflow() const {return overflow;}
         unsigned getXbins() const {return xbins;}
         double getXlow() const {return xlow;}
         double getXhigh() const {return xhigh;}
@@ -63,9 +64,9 @@ class Histo3d : public HistogramBase {
         double getZlow() const {return zlow;}
         double getZhigh() const {return zhigh;}
         double getZbinWidth() const {return zbinWidth;}
-        double getMax() const {return max;}
-        double getMin() const {return min;}
-        double getNumOfEntries() const {return entries;}
+        DataT getMax() const {return max;}
+        DataT getMin() const {return min;}
+        unsigned getNumOfEntries() const {return entries;}
 
         
         void toFile(const std::string &filename, const std::string &dir = "", bool header= true) const override;
@@ -73,15 +74,14 @@ class Histo3d : public HistogramBase {
         bool fromJson(const json &jfile);
         void plot(const std::string &filename, const std::string &dir = "") const override;
 
-    void toStream(std::ostream &out) const override;
-
-    void toJson(json &j) const override;
+        void toStream(std::ostream &out) const override;
+        void toJson(json &j) const override;
 
 private:
-        std::vector<uint16_t > data;
+        std::vector<DataT> data;
 
-        double underflow;
-        double overflow;
+        DataT underflow;
+        DataT overflow;
 
         unsigned xbins;
         double xlow;
@@ -98,11 +98,13 @@ private:
         double zhigh;
         double zbinWidth;
 
-        double max;
-        double min;
+        DataT max;
+        DataT min;
         unsigned entries;
 
-        std::map<unsigned, bool> m_isFilled;
+        std::vector<bool> m_isFilled;
 };
+
+using Histo3d = Histo3dT<uint16_t>;
 
 #endif

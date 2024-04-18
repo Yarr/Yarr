@@ -183,7 +183,7 @@ bool FelixTxCore::isCmdEmpty() {
     if (not buffer.empty()){
       is_buffer_empty = false;
       sendFifo(chn, m_fifo[chn]);
-      std::this_thread::sleep_for(std::chrono::microseconds(500));
+      std::this_thread::sleep_for(std::chrono::microseconds(m_isCmdEmptyWaitTime));
     }
   }
 
@@ -557,6 +557,10 @@ void FelixTxCore::loadConfig(const json &j) {
     }
   }
 
+  if (j.contains("isCmdEmptyWaitTime")) {
+    m_isCmdEmptyWaitTime = j["isCmdEmptyWaitTime"];
+    ftlog->info(" isCmdEmpty() wait time = {} ms", m_isCmdEmptyWaitTime);
+  }
 }
 
 void FelixTxCore::writeConfig(json& j) {
@@ -567,6 +571,7 @@ void FelixTxCore::writeConfig(json& j) {
   j["broadcast"] = m_broadcast;
   j["pixFwTrigger"] = m_pixFwTrigger;
   j["bufferSize"] = m_bufferSize;
+  j["isCmdEmptyWaitTime"] = m_isCmdEmptyWaitTime;
 }
 
 void FelixTxCore::setClient(std::shared_ptr<FelixClientThread> client) {
