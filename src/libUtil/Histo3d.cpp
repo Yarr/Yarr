@@ -16,9 +16,11 @@
 #include "logging.h"
 
 namespace {
-    auto hlog = logging::make_log("Histo3d");
+    auto hlog = logging::make_log("Histo3dT");
 }
-Histo3d::Histo3d(const std::string &arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh,
+
+template<typename DataT>
+Histo3dT<DataT>::Histo3dT(const std::string &arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh,
                  unsigned arg_ybins, double arg_ylow, double arg_yhigh,
                  unsigned arg_zbins, double arg_zlow, double arg_zhigh)
   : HistogramBase(arg_name)
@@ -42,13 +44,14 @@ Histo3d::Histo3d(const std::string &arg_name, unsigned arg_xbins, double arg_xlo
     max = 0;
     underflow = 0;
     overflow = 0;
-    data = std::vector<uint16_t>(xbins*ybins*zbins,0);
+    data = std::vector<DataT>(xbins*ybins*zbins,0);
+    m_isFilled = std::vector<bool>(xbins*ybins*zbins, false);
 
     entries = 0;
-
 }
 
-Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
+template<typename DataT>
+Histo3dT<DataT>::Histo3dT(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
         unsigned arg_ybins, double arg_ylow, double arg_yhigh, 
         unsigned arg_zbins, double arg_zlow, double arg_zhigh, 
         const LoopStatus &stat)
@@ -63,7 +66,7 @@ Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     ylow = arg_ylow;
     yhigh = arg_yhigh;
     ybinWidth = (yhigh - ylow)/ybins;
-
+    
     zbins = arg_zbins;
     zlow = arg_zlow;
     zhigh = arg_zhigh;
@@ -73,11 +76,14 @@ Histo3d::Histo3d(std::string arg_name, unsigned arg_xbins, double arg_xlow, doub
     max = 0;
     underflow = 0;
     overflow = 0;
-    data = std::vector< uint16_t>(xbins*ybins*zbins,0);
+    data = std::vector<DataT>(xbins*ybins*zbins,0);
+    m_isFilled = std::vector<bool>(xbins*ybins*zbins, false);
+
     entries = 0;
 }
 
-Histo3d::Histo3d(Histo3d *h) : HistogramBase(h->getName()) {
+template<typename DataT>
+Histo3dT<DataT>::Histo3dT(Histo3dT *h) : HistogramBase(h->getName()) {
     xbins = h->getXbins();
     xlow = h->getXlow();
     xhigh = h->getXhigh();
@@ -99,24 +105,28 @@ Histo3d::Histo3d(Histo3d *h) : HistogramBase(h->getName()) {
     underflow = h->getUnderflow();
     overflow = h->getOverflow();
 
-    data = std::vector<uint16_t>( xbins*ybins*zbins);
+    data = std::vector<DataT>( xbins*ybins*zbins);
     for(unsigned i=0; i<xbins*ybins*zbins; i++)
         data[i] = h->getBin(i);
     entries = h->getNumOfEntries();
     lStat = h->getStat();
 }
 
-Histo3d::~Histo3d() = default;
+template<typename DataT>
+Histo3dT<DataT>::~Histo3dT() = default;
 
-unsigned Histo3d::size() const {
+template<typename DataT>
+unsigned Histo3dT<DataT>::size() const {
     return xbins*ybins*zbins;
 }
 
-unsigned Histo3d::numOfEntries() const {
+template<typename DataT>
+unsigned Histo3dT<DataT>::numOfEntries() const {
     return entries;
 }
 
-void Histo3d::fill(double x, double y, double z, double v) {
+template<typename DataT>
+void Histo3dT<DataT>::fill(double x, double y, double z, DataT v) {
     if (x < xlow || y < ylow || z < zlow) {
         //std::cout << "Underflow " << x << " " << y << std::endl;
         underflow += v;
@@ -137,7 +147,8 @@ void Histo3d::fill(double x, double y, double z, double v) {
     entries++;
 }
 
-void Histo3d::setAll(double v) {
+template<typename DataT>
+void Histo3dT<DataT>::setAll(DataT v) {
     for (unsigned int i=0; i<ybins; i++) {
         for (unsigned int j=0; j<xbins; j++) {
             for (unsigned int k=0; k<zbins; k++) {
@@ -148,18 +159,20 @@ void Histo3d::setAll(double v) {
     }
 }
 
-void Histo3d::add(const Histo3d &h) {
+template<typename DataT>
+void Histo3dT<DataT>::add(const Histo3dT &h) {
     if (this->size() != h.size())
         return;
     for (unsigned int i=0; i<(xbins*ybins*zbins); i++) {
         data[i] += h.getBin(i);
-        if (h.isFilled(i))
-                m_isFilled[i] = true;
+        m_isFilled[i] = m_isFilled[i] || h.isFilled(i);
+        max = std::max(data[i], max);
     }
     entries += h.numOfEntries();
 }
 
-void Histo3d::divide(const Histo3d &h) {
+template<typename DataT>
+void Histo3dT<DataT>::divide(const Histo3dT &h) {
     if (this->size() != h.size())
         return;
     for (unsigned int i=0; i<(xbins*ybins*zbins); i++) {
@@ -172,7 +185,8 @@ void Histo3d::divide(const Histo3d &h) {
     entries += h.numOfEntries();
 }
 
-void Histo3d::multiply(const Histo3d &h) {
+template<typename DataT>
+void Histo3dT<DataT>::multiply(const Histo3dT &h) {
     if (this->size() != h.size())
         return;
     for (unsigned int i=0; i<(xbins*ybins*zbins); i++) {
@@ -181,13 +195,15 @@ void Histo3d::multiply(const Histo3d &h) {
     entries += h.numOfEntries();
 }
 
-void Histo3d::scale(const double s) {
+template<typename DataT>
+void Histo3dT<DataT>::scale(const double s) {
     for (unsigned int i=0; i<(xbins*ybins*zbins); i++) {
         data[i] = data[i]*s;
     }
 }
 
-double Histo3d::getMean() {
+template<typename DataT>
+double Histo3dT<DataT>::getMean() const {
     double sum = 0;
     double entries = 0;
     for (unsigned int i=0; i<(xbins*ybins*zbins); i++) {
@@ -200,7 +216,8 @@ double Histo3d::getMean() {
     return sum/entries;
 }
 
-double Histo3d::getStdDev() {
+template<typename DataT>
+double Histo3dT<DataT>::getStdDev() const {
     double mean = this->getMean();
     double mu = 0;
     double entries = 0;
@@ -214,13 +231,13 @@ double Histo3d::getStdDev() {
     return sqrt(mu/(double)(entries-1));
 }
 
-
-bool Histo3d::isFilled(unsigned n) const {
-    return (m_isFilled.size()>=n && m_isFilled.at(n));
+template<typename DataT>
+bool Histo3dT<DataT>::isFilled(unsigned n) const {
+    return (m_isFilled.size()>=n && m_isFilled[n]);
 }
 
-
-double Histo3d::getBin(unsigned n) const {
+template<typename DataT>
+double Histo3dT<DataT>::getBin(unsigned n) const {
     if (n < this->size()) {
         return data[n];
     } else {
@@ -228,14 +245,15 @@ double Histo3d::getBin(unsigned n) const {
     }
 }
 
-void Histo3d::setBin(unsigned n, double v) {
+template<typename DataT>
+void Histo3dT<DataT>::setBin(unsigned n, DataT v) {
     if (n < this->size()) {
         data[n] = v;
     }
 }
 
-
-int Histo3d::binNum(double x, double y, double z) const {
+template<typename DataT>
+int Histo3dT<DataT>::binNum(double x, double y, double z) const {
     if (x < xlow || y < ylow || z < zlow) {
         //std::cout << "Underflow " << x << " " << y << std::endl;
         return -1;
@@ -250,12 +268,14 @@ int Histo3d::binNum(double x, double y, double z) const {
     }
 }
 
-void Histo3d::toStream(std::ostream &out) const{
+template<typename DataT>
+void Histo3dT<DataT>::toStream(std::ostream &out) const{
 
 }
 
-void Histo3d::toJson(json &j) const {
-    j["Type"] = "Histo2d";
+template<typename DataT>
+void Histo3dT<DataT>::toJson(json &j) const {
+    j["Type"] = "Histo3dT";
     j["Name"] = name;
 
     j["x"]["AxisTitle"] = xAxisTitle;
@@ -284,13 +304,14 @@ void Histo3d::toJson(json &j) const {
     for (unsigned int z=0; z<zbins; z++) {
 	for (unsigned int y=0; y<ybins; y++) {
         	for (unsigned int x=0; x<xbins; x++) {
-            		j["Data"][x][y][z] = data[ (y+(x*ybins))*zbins + z ] ;
+            		j["Data"][x][y][z] = data[ (y+(x*ybins))*zbins + z ];
         	}
-	}
+        }
     }
 }
 
-void Histo3d::toFile(const std::string &prefix, const std::string &dir, bool jsonType) const {
+template<typename DataT>
+void Histo3dT<DataT>::toFile(const std::string &prefix, const std::string &dir, bool jsonType) const {
     std::string filename = dir + prefix + "_" + name + ".dat";
     std::fstream file(filename, std::fstream::out | std::fstream::trunc);
 
@@ -306,7 +327,7 @@ void Histo3d::toFile(const std::string &prefix, const std::string &dir, bool jso
              file << std::setw(4) << j;
     } else {
 	// Header
-	file << "Histo3d " <<  std::endl;
+	file << "Histo3dT " <<  std::endl;
         file << name << std::endl;
         file << xAxisTitle << std::endl;
         file << yAxisTitle << std::endl; 
@@ -328,12 +349,13 @@ void Histo3d::toFile(const std::string &prefix, const std::string &dir, bool jso
     file.close();
 }
 
-bool Histo3d::fromFile(const std::string &filename) {
+template<typename DataT>
+bool Histo3dT<DataT>::fromFile(const std::string &filename) {
     std::fstream file(filename, std::fstream::in);
     // Check for header
     std::string line;
     std::getline(file, line);
-    if (line.find("Histo3d") == std::string::npos) {
+    if (line.find("Histo3dT") == std::string::npos) {
         std::cerr << "ERROR: Tried loading 3d Histogram from file " << filename << ", but file has non or incorrect header" << std::endl;
         file.close();
         return false;
@@ -349,7 +371,7 @@ bool Histo3d::fromFile(const std::string &filename) {
     }
     // Data
 
-    data =  std::vector<uint16_t>(xbins*ybins*zbins);
+    data =  std::vector<DataT>(xbins*ybins*zbins);
     for (unsigned int i=0; i<ybins; i++) {
         for (unsigned int j=0; j<xbins; j++) {
             for (unsigned int k=0; k<zbins; k++) {
@@ -361,7 +383,8 @@ bool Histo3d::fromFile(const std::string &filename) {
     return true;
 }
 
-void Histo3d::plot(const std::string &prefix, const std::string &dir) const {
+template<typename DataT>
+void Histo3dT<DataT>::plot(const std::string &prefix, const std::string &dir) const {
     hlog->info("Plotting {}", HistogramBase::name);
     // Put raw histo data in tmp file
     std::string tmp_name = std::string(getenv("USER")) + "/tmp_yarr_histo2d_" + prefix;
@@ -397,3 +420,61 @@ void Histo3d::plot(const std::string &prefix, const std::string &dir) const {
     fprintf(gnu,"%s",ss.str().c_str());
     pclose(gnu);
 }
+
+template<typename DataT>
+bool Histo3dT<DataT>::fromJson(const json &j) {
+    // Check for type
+    if (!j.contains("Type")) {
+        hlog->error("ERROR this does not seem to be a histogram file, could not parse.");
+        return false;
+    } else {
+        if (j["Type"] != "Histo3d") {
+            hlog->error("ERROR File contains the wrong type: {}", std::string(j["Type"]));
+            return false;
+        }
+
+        name = j["Name"];
+        xAxisTitle = j["x"]["AxisTitle"];
+        yAxisTitle = j["y"]["AxisTitle"];
+        zAxisTitle = j["z"]["AxisTitle"];
+
+        xbins = j["x"]["Bins"];
+        xlow = j["x"]["Low"];
+        xhigh = j["x"]["High"];
+
+        ybins = j["y"]["Bins"];
+        ylow = j["y"]["Low"];
+        yhigh = j["y"]["High"];
+
+        zbins = j["z"]["Bins"];
+        zlow = j["z"]["Low"];
+        zhigh = j["z"]["High"];
+        
+        underflow = j["Underflow"];
+        overflow = j["Overflow"];
+
+        entries = j["Entries"];
+
+        data = std::vector<DataT>(xbins*ybins*zbins);
+        m_isFilled = std::vector<bool>(xbins*ybins*zbins, false);
+        for (unsigned int y=0; y<ybins; y++) {
+            for (unsigned int x=0; x<xbins; x++) {
+                for (unsigned int z=0; z<zbins; z++) {
+                    auto index = (y+(x*ybins))*zbins+z;
+                    DataT d = j["Data"][x][y][z];
+                    data[index] = d;
+                    if (d > 0) {
+                        m_isFilled[index] = true;
+                        max = std::max(d, max);
+                    }
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
+// manually instantiate templates that will be used
+template class Histo3dT<uint16_t>;
+template class Histo3dT<float>;
