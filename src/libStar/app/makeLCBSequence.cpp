@@ -21,10 +21,14 @@ namespace {
     std::cout << "    \"firmware\": false," << std::endl;
     std::cout << "    \"output\": \"path/to/output/file.txt\"" << std::endl;
     std::cout << "  }" << std::endl;
-    std::cout << " -c 'LCB CMD1' 'LCB CMD2' ... : A list of commands. Overwrite the field \"commands\" of the json config file if provided. Use arbitrary string to see recognized command strings." << std::endl;
     std::cout << " -f : Generate the byte stream for the trickle memory of FELIX firmware. Overwrite the field \"firmware\" of the json config file if provided." << std::endl;
     std::cout << " -o : Output file path. Overwrite the field \"output\" of the json config file if provided. If there is no output path specified, the generate byte stream is printed to screen." << std::endl;
+    std::cout << " -c 'LCB CMD1' 'LCB CMD2' ... : A list of commands. Overwrite the field \"commands\" of the json config file if provided." << std::endl;
     std::cout << std::endl;
+
+    std::cout << "Recognized commands:" << std::endl;
+    StarSeqGenerator::printCommandFormat(std::cout, true);
+    std::cout << std::endl << std::endl;
   }
 } // end of unnamed namespace
 

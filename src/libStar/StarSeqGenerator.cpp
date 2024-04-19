@@ -27,7 +27,7 @@ void StarSeqGenerator::printCommandFormat(std::ostream &os, bool verbose) {
   if (verbose) {
     os << " Examples:\n";
     os << "  l0 0011 4\n";
-    os << "  l0 1000 +14 BCR\n";
+    os << "  l0 1000 14 BCR\n";
   }
 
   // Fast commmand
@@ -40,9 +40,9 @@ void StarSeqGenerator::printCommandFormat(std::ostream &os, bool verbose) {
 
   // Register command
   os << "Register read command: \"reg <abc|hcc> read <address> [hccID] [abcID]\"\n";
-  os << "Register write command: \"reg <abc|hcc> write <address> [value] [hccID] [abcID]\"\n";
+  os << "Register write command: \"reg <abc|hcc> write <address> <value> [hccID] [abcID]\"\n";
   if (verbose) {
-    os << " Example:\n";
+    os << " Examples:\n";
     os << "  reg hcc read 17\n";
     os << "  reg hcc read 17 1\n";
     os << "  reg hcc write 40 0x000001ff\n";
