@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <cstdint>
 
 /// @brief LCB command sequence generator
 class StarSeqGenerator {
