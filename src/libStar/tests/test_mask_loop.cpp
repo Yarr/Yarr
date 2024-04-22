@@ -373,7 +373,7 @@ TEST_CASE("StarMaskLoopNmask", "[star][mask_loop]") {
   int max = j["max"];
   int step = j["step"];
 
-  bool mask_only = !j.contains({"maskOnly"})
+  bool mask_only = !j.contains("maskOnly")
     ?false
     :(bool)j["maskOnly"];
 

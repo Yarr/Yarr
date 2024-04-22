@@ -43,7 +43,7 @@ void StarJsonData::initialiseStarChannelsDataAtProp(const PropName &propName, co
        json lastLevel;
        lastLevel["Data"] = json::array();
        for (unsigned int i=0; i<nbVals; i++) 
-              lastLevel["Data"].push_back(json::Type::null);
+              lastLevel["Data"].push_back(nullptr);
        level.get() = lastLevel;
 }
 
