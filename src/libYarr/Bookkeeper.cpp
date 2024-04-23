@@ -208,6 +208,20 @@ void Bookkeeper::feClipboardMonitor() {
                 bookEntries[clipboardMonitorFeIDs[i]].fe->clipData.getNumDataOut(),
                 bookEntries[clipboardMonitorFeIDs[i]].fe->clipData.size()
             );
+            SPDLOG_LOGGER_INFO(
+                blog, "[ ClipboardMonitor : {:^8} [{}] : HistData ] InCount:{:<8} OutCount:{:<8} QueueSize:{:<8}", 
+                clipboardMonitorFeNames[i], clipboardMonitorFeIDs[i],
+                bookEntries[clipboardMonitorFeIDs[i]].fe->clipHisto.getNumDataIn(),
+                bookEntries[clipboardMonitorFeIDs[i]].fe->clipHisto.getNumDataOut(),
+                bookEntries[clipboardMonitorFeIDs[i]].fe->clipHisto.size()
+            );
+            SPDLOG_LOGGER_INFO(
+                blog, "[ ClipboardMonitor : {:^8} [{}] : Feedback ] InCount:{:<8} OutCount:{:<8} QueueSize:{:<8}", 
+                clipboardMonitorFeNames[i], clipboardMonitorFeIDs[i],
+                bookEntries[clipboardMonitorFeIDs[i]].fe->clipProcFeedback.getNumDataIn(),
+                bookEntries[clipboardMonitorFeIDs[i]].fe->clipProcFeedback.getNumDataOut(),
+                bookEntries[clipboardMonitorFeIDs[i]].fe->clipProcFeedback.size()
+            );
         }
         std::this_thread::sleep_for(std::chrono::microseconds(clipboardMonitorRefreshTime)); // microseconds  
     }
