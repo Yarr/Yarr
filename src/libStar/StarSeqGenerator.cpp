@@ -1,6 +1,8 @@
 #include <sstream>
+#include <string>
 #include <iterator>
 #include <stdexcept>
+#include <fstream>
 
 #include "StarSeqGenerator.h"
 #include "LCBUtils.h"
@@ -270,4 +272,48 @@ bool StarSeqGenerator::parseCommandSequence(const std::vector<std::string>& comm
   }
 
   return success;
+}
+
+void StarSeqGenerator::dump(std::ostream &os) {
+  // tag
+  if (m_fw) {
+    os << StarSeqGenerator::FWTAG << std::endl;
+  } else {
+    os << StarSeqGenerator::SWTAG << std::endl;
+  }
+  // hex format
+  os << std::hex;
+  for (const auto& cmd : m_sequence) {
+    os << +cmd << std::endl;
+  }
+}
+
+void StarSeqGenerator::dump(const std::string& filepath) {
+  std::ofstream foutput(filepath);
+  this->dump(foutput);
+  foutput.close();
+}
+
+void StarSeqGenerator::load(std::istream &is, bool reset) {
+  if (reset) clear();
+
+  std::string line;
+  while (std::getline(is, line)) {
+    if (line == StarSeqGenerator::FWTAG) {
+      m_fw = true;
+      continue;
+    } else if (line == StarSeqGenerator::SWTAG) {
+      m_fw = false;
+      continue;
+    }
+
+    // hex
+    m_sequence.push_back(std::stoi(line, nullptr, 16));
+  }
+}
+
+void StarSeqGenerator::load(const std::string& filepath, bool reset) {
+  std::ifstream finput(filepath);
+  this->load(finput, reset);
+  finput.close();
 }

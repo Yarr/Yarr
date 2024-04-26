@@ -107,40 +107,24 @@ int main(int argc, char *argv[]) {
   StarSeqGenerator seqGen(isFELIXFW);
   bool success = seqGen.parseCommandSequence(commands);
   if (success) {
-    auto cmds = seqGen.getSequence();
 
     if (outputPath.empty()) {
       // Print to cout
-      if (seqGen.isFW()) {
-        std::cout << "# Trickle" << std::endl;
-      } else {
-        std::cout << "# LCB" << std::endl;
-      }
-      std::cout << std::hex;
-      for (const auto& cmd : cmds) {
-        std::cout << +cmd << " ";
-      }
-      std::cout << std::endl;
+      seqGen.dump(std::cout);
     } else {
       // Write to file
-      std::ofstream foutput(outputPath);
-      if (seqGen.isFW()) {
-        foutput << "# Trickle" << std::endl;
-      } else {
-        foutput << "# LCB" << std::endl;
-      }
-      foutput << std::hex;
-      for (const auto& cmd : cmds) {
-        foutput << +cmd << std::endl;
-      }
-      foutput.close();
+      seqGen.dump(outputPath);
     }
+
     return 0;
+
   } else {
+
     std::cerr << "Failed to parse commands" << std::endl;
     std::cout << "Recognized commands:" << std::endl;
     StarSeqGenerator::printCommandFormat(std::cout, true);
     std::cout << std::endl;
+
     return 1;
   }
 }

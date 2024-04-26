@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <string>
+#include <ostream>
+#include <istream>
 #include <cstdint>
 
 /// @brief LCB command sequence generator
@@ -37,11 +39,33 @@ public:
   /// @brief Remove all command sequence bytes
   void clear() {m_sequence.clear();}
 
+  /// @brief Check if the internal sequence is empty
+  /// @return true if m_sequence has no elements, false otherwise
+  bool empty() {return m_sequence.empty();}
+
   /// @brief Get the LCB command byte sequence
   const std::vector<uint8_t>& getSequence() const {return m_sequence;}
 
   /// @brief Get the flag if or not the commands are for the FELIX firmware LCB encoder
   bool isFW() const {return m_fw;}
+
+  /// @brief Dump the command sequence to output stream
+  /// @param os Output stream. Can be for example std::cout or a std::ofstream object.
+  void dump(std::ostream &os);
+
+  /// @brief Dump the command sequence to output file
+  /// @param filepath Path of the output file
+  void dump(const std::string& filepath);
+
+  /// @brief Load the command sequence bytes from input stream
+  /// @param is Input stream. Can be for example a std::ifstream object
+  /// @param reset If true, overwrite the existing sequence, otherwise append the new one to the existing one
+  void load(std::istream &is, bool reset=true);
+
+  /// @brief Load the command sequence bytes from a input file
+  /// @param filepath Input file path.
+  /// @param reset If true, overwrite the existing sequence, otherwise append the new one to the existing one.
+  void load(const std::string& filepath, bool reset=true);
 
 private:
 
@@ -63,6 +87,9 @@ private:
   std::vector<uint8_t> m_sequence;
 
   bool m_fw {false};
+
+  inline static const std::string SWTAG = "# LCB";
+  inline static const std::string FWTAG = "# Trickle";
 
 };
 
