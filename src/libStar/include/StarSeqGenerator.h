@@ -40,6 +40,9 @@ public:
   /// @brief Get the LCB command byte sequence
   const std::vector<uint8_t>& getSequence() const {return m_sequence;}
 
+  /// @brief Get the flag if or not the commands are for the FELIX firmware LCB encoder
+  bool isFW() const {return m_fw;}
+
 private:
 
   void addIdle(unsigned nframes);
