@@ -290,8 +290,12 @@ void StarSeqGenerator::dump(std::ostream &os) {
 
 void StarSeqGenerator::dump(const std::string& filepath) {
   std::ofstream foutput(filepath);
-  this->dump(foutput);
-  foutput.close();
+  if (foutput.is_open()) {
+    this->dump(foutput);
+    foutput.close();
+  } else {
+    sglog->error("Failed to dump sequence to file {}", filepath);
+  }
 }
 
 void StarSeqGenerator::load(std::istream &is, bool reset) {
@@ -314,6 +318,11 @@ void StarSeqGenerator::load(std::istream &is, bool reset) {
 
 void StarSeqGenerator::load(const std::string& filepath, bool reset) {
   std::ifstream finput(filepath);
-  this->load(finput, reset);
-  finput.close();
+  if (finput.is_open()) {
+    this->load(finput, reset);
+    finput.close();
+  } else {
+    sglog->error("Failed to load sequence from file {}", filepath);
+    this->clear();
+  }
 }
