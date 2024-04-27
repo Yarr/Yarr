@@ -12,6 +12,7 @@
 #include "LoopActionBase.h"
 #include "StdTriggerAction.h"
 #include "StarChips.h"
+#include "StarSeqGenerator.h"
 
 class StarTriggerLoop: public LoopActionBase, public StdTriggerAction {
     public:
@@ -31,6 +32,7 @@ class StarTriggerLoop: public LoopActionBase, public StdTriggerAction {
 
         void setNoInject();
         void setTrigWord();
+        void setTrigWordFromFile();
 
         void writeConfig(json &config) override;
         void loadConfig(const json &config) override;
@@ -43,10 +45,13 @@ class StarTriggerLoop: public LoopActionBase, public StdTriggerAction {
         // How many words of pattern buffer to use
         uint32_t m_trigWordLength;
         // This matches the pattern buffer in TxCore
-        std::array<uint32_t, 32> m_trigWord;
+        std::vector<uint32_t> m_trigWord;
 
         bool m_noInject;
         bool m_digital;
+
+        std::string m_fpathSeq;
+        StarSeqGenerator m_seqGen{false};
 
         void init() override;
         void end() override;

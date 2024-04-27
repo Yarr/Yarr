@@ -30,15 +30,18 @@ void StarTriggerLoop::init() {
 	m_done = false;
 	SPDLOG_LOGGER_DEBUG(logger, "init");
 	// Setup Trigger
-	this->setTrigWord();
+	if (not m_seqGen.empty()) {
+		this->setTrigWordFromFile();
+	} else if (m_noInject) {
+		this->setNoInject();
+	} else {
+		this->setTrigWord();
+	}
 
 	if (getTrigCnt() > 0) {
 		g_tx->setTrigConfig(INT_COUNT); //use internal charge injection
 	} else {
 		g_tx->setTrigConfig(INT_TIME);  //external trigger
-	}
-	if (m_noInject) {
-		setNoInject();
 	}
 
 	g_tx->setTrigFreq(m_trigFreq);
@@ -46,10 +49,6 @@ void StarTriggerLoop::init() {
         g_tx->setTrigWord(&m_trigWord[0], m_trigWordLength);
         g_tx->setTrigWordLength(m_trigWordLength);
 	g_tx->setTrigTime(m_trigTime);
-
-	if (m_noInject) {
-		setNoInject();
-	}
 
         g_tx->setCmdEnable(keeper->getTxMask());
 
@@ -89,11 +88,17 @@ void StarTriggerLoop::end() {
 void StarTriggerLoop::setTrigWord() {
 // latency (unit::1 BC),   1 LCB::frame (16 bits) covers 4 BCs, 1 trigWord (32 bits) covers 8 BCs
 
+	unsigned int full_words = m_trigDelay / 8;
+
+	// Words of delay + trigger and pulse
+	m_trigWordLength = full_words+2;
+
+	m_trigWord.resize(m_trigWordLength);
+
 	// Last 32-bit word goes first in buffer.
 	// High 16 bits are sent before the low 16 bits.
 	m_trigWord[0] = (LCB::l0a_mask(1, 0, false) << 16) + LCB::IDLE;
 
-	unsigned int full_words = m_trigDelay / 8;
 	if(full_words > m_trigWord.size() - 2) {
 		std::cerr << __PRETTY_FUNCTION__ << " : Trigger delay is either too large for pattern buffer!\n";
 	}
@@ -119,19 +124,53 @@ void StarTriggerLoop::setTrigWord() {
 		m_trigWord[full_words + 1] = (cmd_word << 16) | LCB::IDLE;
 	}
 
-	// Words of delay + trigger and pulse
-	m_trigWordLength = full_words+2;
-
 }
 
 void StarTriggerLoop::setNoInject() {
+	m_trigWordLength = 4;
+	m_trigWord.resize(m_trigWordLength);
 	m_trigWord[0] = (LCB::IDLE << 16) + LCB::IDLE;
 	m_trigWord[1] = (LCB::IDLE << 16) + LCB::IDLE;
 	m_trigWord[2] = (LCB::IDLE << 16) + LCB::IDLE;
 	m_trigWord[3] = (LCB::l0a_mask(4, 10, false) << 16) | LCB::IDLE;
-	m_trigWordLength = 4;
 }
 
+void StarTriggerLoop::setTrigWordFromFile() {
+	std::vector<uint8_t> commands = m_seqGen.getSequence();
+	// The first byte is sent out first
+
+	// The commands are expected to be of even size
+	if (commands.size() % 2) {
+		std::stringstream seq_ss;
+		m_seqGen.dump(seq_ss);
+		logger->error("The command sequence loaded from file are not of even number of bytes: {}", seq_ss.str());
+		logger->error("No trigger will be sent!");
+		m_trigWord.clear();
+		m_trigWordLength = 0;
+		return;
+	} else {
+		// Number of 32-bit words
+		m_trigWordLength = (commands.size() + 3 ) / 4;
+
+		// Resize m_trigWord with IDLEs
+		m_trigWord.resize(m_trigWordLength);
+	}
+
+	// Last 32-bit word goes first in buffer.
+	// High 16 bits are sent before the low 16 bits.
+	for (size_t i = 0; i < m_trigWordLength; i++) {
+		// Form 16-bit LCB frame from two bytes of commands at a time
+		uint16_t frame1 = (commands[4*i] << 8) + commands[4*i+1];
+
+		uint16_t frame2 = LCB::IDLE;
+		if (4*i+3 < commands.size()) {
+			frame2 = (commands[4*i+2] << 8) + commands[4*i+3];
+		}
+
+		size_t w = m_trigWordLength - 1 - i; // index of m_trigWord
+		m_trigWord[w] = frame1 << 16 + frame2;
+	}
+}
 
 void StarTriggerLoop::writeConfig(json &config) {
 	config["trig_count"] = getTrigCnt();
@@ -140,6 +179,7 @@ void StarTriggerLoop::writeConfig(json &config) {
 	config["l0_latency"] = m_trigDelay;
 	config["noInject"] = m_noInject;
 	config["digital"] = m_digital;
+	config["fpath_sequence"] = m_fpathSeq;
 }
 
 void StarTriggerLoop::loadConfig(const json &config) {
@@ -161,6 +201,13 @@ void StarTriggerLoop::loadConfig(const json &config) {
 
 	if (config.contains("digital"))
 		m_digital = config["digital"];
+
+	if (config.contains("fpath_sequence")) {
+		m_fpathSeq = config["fpath_sequence"];
+		if (not m_fpathSeq.empty()) {
+			m_seqGen.load(m_fpathSeq);
+		}
+	}
 
 	logger->info("Configured trigger loop: trig_count: {} trig_frequency: {} l0_delay: {}",
                       getTrigCnt(), m_trigFreq, m_trigDelay);
