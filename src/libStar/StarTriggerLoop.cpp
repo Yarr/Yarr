@@ -168,7 +168,7 @@ void StarTriggerLoop::setTrigWordFromFile() {
 		}
 
 		size_t w = m_trigWordLength - 1 - i; // index of m_trigWord
-		m_trigWord[w] = frame1 << 16 + frame2;
+		m_trigWord[w] = (frame1 << 16) + frame2;
 	}
 }
 
