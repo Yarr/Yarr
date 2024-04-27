@@ -3,6 +3,7 @@
 #include <iterator>
 #include <stdexcept>
 #include <fstream>
+#include <bitset>
 
 #include "StarSeqGenerator.h"
 #include "LCBUtils.h"
@@ -325,4 +326,51 @@ void StarSeqGenerator::load(const std::string& filepath, bool reset) {
     sglog->error("Failed to load sequence from file {}", filepath);
     this->clear();
   }
+}
+
+unsigned StarSeqGenerator::count_l0a() {
+  unsigned nL0As = 0;
+
+  if (m_fw) {
+    // loop over bytes and look for LCB_FELIX::L0A
+    for (const uint8_t& cmd : m_sequence) {
+      if (cmd == LCB_FELIX::L0A) nL0As++;
+    }
+  } else {
+    // loop over two bytes i.e. one LCB frame at a time
+    for (size_t b = 0; b+1 < m_sequence.size(); b+=2) {
+      uint16_t frame = (m_sequence[b] << 8) + m_sequence[b+1];
+      if (LCB::is_l0a_bcr(frame)) nL0As++;
+    }
+  }
+
+  return nL0As;
+}
+
+unsigned StarSeqGenerator::count_triggers() {
+  unsigned ntrigs = 0;
+
+  if (m_fw) {
+    // loop over bytes and look for LCB_FELIX::L0A
+    for (size_t b = 0; b < m_sequence.size(); b++) {
+      if (m_sequence[b] == LCB_FELIX::L0A) {
+        // The next byte should contain the l0 mask
+        std::bitset<4> l0mask{ m_sequence[b+1] & 0xf }; // lowest 4 bits
+        ntrigs += l0mask.count();
+        // skip the next two bytes because an L0A is three bytes
+        b += 2;
+      }
+    }
+  } else {
+    // loop over two bytes i.e. one LCB frame at a time
+    for (size_t b = 0; b+1 < m_sequence.size(); b+=2) {
+      uint16_t frame = (m_sequence[b] << 8) + m_sequence[b+1];
+      if (LCB::is_l0a_bcr(frame)) {
+        std::bitset<4> l0mask{ LCB::get_l0_mask(frame) };
+        ntrigs += l0mask.count();
+      }
+    }
+  }
+
+  return ntrigs;
 }

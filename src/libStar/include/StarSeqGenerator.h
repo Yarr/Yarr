@@ -67,6 +67,14 @@ public:
   /// @param reset If true, overwrite the existing sequence, otherwise append the new one to the existing one.
   void load(const std::string& filepath, bool reset=true);
 
+  /// @brief Count the number of L0A frames in the sequence
+  /// @return The number of L0A frames
+  unsigned count_l0a();
+
+  /// @brief Count the number of triggers in the sequence
+  /// @return The number of triggers
+  unsigned count_triggers();
+
 private:
 
   void addIdle(unsigned nframes);
