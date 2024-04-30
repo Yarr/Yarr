@@ -355,7 +355,7 @@ unsigned StarSeqGenerator::count_triggers() {
     for (size_t b = 0; b < m_sequence.size(); b++) {
       if (m_sequence[b] == LCB_FELIX::L0A) {
         // The next byte should contain the l0 mask
-        std::bitset<4> l0mask{ m_sequence[b+1] & 0xf }; // lowest 4 bits
+        std::bitset<4> l0mask( m_sequence[b+1] & 0xf ); // lowest 4 bits
         ntrigs += l0mask.count();
         // skip the next two bytes because an L0A is three bytes
         b += 2;
@@ -366,7 +366,7 @@ unsigned StarSeqGenerator::count_triggers() {
     for (size_t b = 0; b+1 < m_sequence.size(); b+=2) {
       uint16_t frame = (m_sequence[b] << 8) + m_sequence[b+1];
       if (LCB::is_l0a_bcr(frame)) {
-        std::bitset<4> l0mask{ LCB::get_l0_mask(frame) };
+        std::bitset<4> l0mask( LCB::get_l0_mask(frame) );
         ntrigs += l0mask.count();
       }
     }
