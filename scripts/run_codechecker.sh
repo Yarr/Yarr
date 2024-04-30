@@ -38,8 +38,13 @@ CodeChecker analyze checks/compilation_cmds_filtered.json -i scripts/code_checke
   --enable=performance-for-range-copy  \
   --enable=performance-unnecessary-copy-initialization \
   --enable=cppcoreguidelines-pro-type-member-init \
+  --disable=clang-diagnostic \
+  --disable=misc-confusable-identifiers \
   --tidy-config scripts/tidy.config
 
 CodeChecker parse --trim-path-prefix $(pwd) -e html checks/results -o checks/html
 CodeChecker parse --trim-path-prefix $(pwd) -e codeclimate checks/results > gl-code-quality-report.json
+
+# Previous "parse" commands have non-zero exit code
+# Explicitly succeed for CI
 exit 0

@@ -11,7 +11,7 @@ for instance [NetIO](netio.md).
 
 ## TLDR - Software installation 
 
-Just want to install the latest version of the YARR software? Follow the quick install instructions here. In case of a new machine, or if you're not sure, follow the more detailed instructions below. 
+Just want to install the latest version of the YARR software? Follow the quick install instructions here. In case of a new machine, or if you're not sure, follow the more detailed instructions below.
 
 Enable GCC version 9.0 or higher: 
 ```bash
@@ -26,7 +26,7 @@ Clone the YARR repository to your local machine:
 $ git clone https://gitlab.cern.ch/Yarr/Yarr.git Yarr
 ```
 
-Compile the minimal build, for more specific compilation options (e.g. NetIO, or Rogue), see below. 
+Compile the minimal build, for more specific compilation options (e.g. NetIO), see below.
 ```bash
 $ cd Yarr/
 $ mkdir build
@@ -137,7 +137,7 @@ This repository uses the cmake build system in its usual manner.
 
 #### Basic compilation
 
-By default the minimal build is enabled, which builds only the Emulator and SPEC controller, if you want to run with additional controllers (e.g. NetIO, or Rogue) you have to enable them via a cmake flag (see below). 
+By default the minimal build is enabled, which builds only the Emulator and SPEC controller, if you want to run with additional controllers (e.g. NetIO) you have to enable them via a cmake flag (see below).
 
 For the minimal build, simply execute the following: 
 
@@ -164,8 +164,6 @@ $ cd ..
         - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=all ..``
     - For NetIO:
         - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;NetioHW``
-    - For Rogue:
-        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;Rogue``
 
 - In order to specify specific hardware controller and/or front-end libraries to build,
 one can provide an OR'ed chain of their names to the `SELECT_LIBS` CMake variable. For example, if the default list of hardware controllers is `YARR_CONTROLLERS_TO_BUILD=Spec;Emu;NetioHW` and the default list of front-ends to build is `YARR_FRONT_ENDS_TO_BUILD=Fei4;Star;Rd53a;Rd53b` one can specify that only the `Spec` hardware controller and `Rd53b` front-end libraries are built by doing:
@@ -185,7 +183,6 @@ one can provide an OR'ed chain of their names to the `SELECT_LIBS` CMake variabl
 ```bash
 $ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang # requires clang installed on Linux
 $ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc # gcc 4.8 or higher
-$ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-gcc # ARM/Archlinux on RCE
 $ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/macos-clang # MacOS build
 ```
 - As before, finally compile the software: 

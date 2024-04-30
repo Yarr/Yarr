@@ -200,6 +200,7 @@ void Rd53aGlobalFeedback::init() {
                 default:
                     break;
             }
+            rd53a->configurePixels();
         }
         while(!g_tx->isCmdEmpty()){}
     }

@@ -190,7 +190,8 @@ class ScurveFitter : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> vcalCnt;
         bool useScap;
         bool useLcap;
-        bool reverse = false;
+        bool reverse         = false;
+        bool use_scurvegauss = false;
 
         bool m_dumpDebugScurvePlots=false;
 };
@@ -257,7 +258,7 @@ class OccPixelThresholdTune : public AnalysisAlgorithm {
         unsigned n_count;
         std::vector<float> m_occLowCut;
         std::vector<float> m_occHighCut;
-        unsigned int occ_count = 0;
+        unsigned int m_cutIndex = 0;
         std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
         std::map<unsigned, unsigned> innerCnt;
         unsigned injections;

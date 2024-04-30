@@ -27,7 +27,7 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
 - Some misc packages (can be installed via yum):
     - gnuplot
     - texlive-epstopdf
-    - zeromq, zeromq-devel (for rogue and netio controller)
+    - zeromq, zeromq-devel (for netio controller)
     - boost-devel for BDAQ
     - ROOT for plotting tools
 
@@ -53,8 +53,6 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
         - ``-DYARR_CONTROLLERS_TO_BUILD=all``
     - For NetIO:
         - ``-DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;NetioHW"``
-    - For Rogue:
-        - ``-DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;Rogue"``
 
 While developing, it might be useful to run some unit tests. These are run
 by default in the CI on gitlab, but can also be run locally:
