@@ -5,19 +5,23 @@ The topics in this section are ordered in increasing complexity. If a problem oc
 
 ## Firmware Troubleshooting
 
-If you encounter errors concerning permissions, e.g. 
+### `no hw_target`
+
+**Symptom:** If you encounter errors concerning permissions, e.g.
+
 ```
 # open_hw_target
 ERROR: [Labtoolstcl 44-469] There is no current hw_target.
 ```
-try installing cable drivers:
+
+**Resolve by:**
+- Try installing cable drivers:
 
 ```
 cd /opt/Xilinx/Vivado/2020.1/data/xicom/cable_drivers/lin64/install_script/install_drivers/
 sudo ./install_drivers
 ```
-
-Alternatively you might have to add a ``udev`` rule. Run ``lsusb`` and identify your JTAG cable, e.g. ``Bus 001 Device 007: ID 0403:6014``.
+- In addition, you might have to add a ``udev`` rule. Run ``lsusb`` and identify your JTAG cable, e.g. ``Bus 001 Device 007: ID 0403:6014``.
 Open ``/etc/udev/rules.d/99-usb.rules`` and add the line
 ```
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6014", MODE:="0666"
@@ -27,12 +31,33 @@ with the correct vendor and product ID from ``lsusb``. Reload ``udev`` rules wit
 sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
 
+
+### Couldn't load "librdi_commontasks.so": libtinfo.so.5
+
+**Occurrence:** CentOS 8, Alma 9
+
+**Symptom:**
+
+```
+application-specific initialization failed: couldn't load file "librdi_commontasks.so": libtinfo.so.5: cannot open shared object file: No such file or directory
+```
+
+**Resolve by:**
+- In ``/usr/lib64`` make a symblink ``sudo ln -s libtinfo.so.6 libtinfo.so.5``.
+- Or ``sudo yum install ncurses-compat-libs``.
+
+
 ### Centos 8
 
 #### Kernel driver does not load on start up
+
+**Resolve by:**
 In ``/etc/modules-load.d/`` add a line to a config file (or create one if none existing) e.g. ``modules.conf`` with ``specDriver``
 
 #### Installing Vivado
+
+**Symptom:**
+
 ```
 No protocol specified
 No protocol specified
@@ -52,15 +77,8 @@ java.lang.NoClassDefFoundError: Could not initialize class java.awt.GraphicsEnvi
 	at com.xilinx.installer.api.InstallerLauncher.main(Unknown Source)
 ```
 
+**Resolve by:**
 Execute ``xhost +``.
-
-#### Couldn't load "librdi_commontasks.so": libtinfo.so.5
-
-```
-application-specific initialization failed: couldn't load file "librdi_commontasks.so": libtinfo.so.5: cannot open shared object file: No such file or directory
-```
-
-In ``/usr/lib64`` make a symblink ``sudo ln -s libtinfo.so.6 libtinfo.so.5``.
 
 
 ## PCIe Card Troubleshooting
@@ -79,7 +97,7 @@ $ lspci
 <Possibly more text>
 ```
 
-    - For the CERN SPEC card
+- For the CERN SPEC card
 
 ```bash
 $ lspci
