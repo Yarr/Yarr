@@ -1109,9 +1109,7 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
             m_sign *= -1;
         }
 
-        alog->info("[{}] Number of Entries = {}", id, m_entries);
-        alog->info("[{}] Old Number of Entries = {}", id, m_oldEntries);
-        alog->info("[{}] Sign = {}", id, m_sign);
+        alog->info("[{}] Total Entries = {}. Previous Total Entries = {}. Sign = {}.", id, m_entries, m_oldEntries, m_sign);
 
         m_oldEntries = m_entries;
 
