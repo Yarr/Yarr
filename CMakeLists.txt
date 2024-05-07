@@ -27,7 +27,8 @@ add_custom_target(git_hash ALL
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-
+# Export compile commands JSON
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Build dirs
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
