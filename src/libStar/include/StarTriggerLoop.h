@@ -41,6 +41,7 @@ class StarTriggerLoop: public LoopActionBase, public StdTriggerAction {
         uint32_t m_trigDelay;
         double m_trigFreq;
         double m_trigTime;
+        uint32_t m_cmdCnt{0}; // number of times to send the command sequence
 
         // How many words of pattern buffer to use
         uint32_t m_trigWordLength;

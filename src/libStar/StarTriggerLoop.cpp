@@ -38,14 +38,14 @@ void StarTriggerLoop::init() {
 		this->setTrigWord();
 	}
 
-	if (getTrigCnt() > 0) {
+	if (m_cmdCnt > 0) {
 		g_tx->setTrigConfig(INT_COUNT); //use internal charge injection
 	} else {
 		g_tx->setTrigConfig(INT_TIME);  //external trigger
 	}
 
 	g_tx->setTrigFreq(m_trigFreq);
-	g_tx->setTrigCnt(getTrigCnt());
+	g_tx->setTrigCnt(m_cmdCnt);
         g_tx->setTrigWord(&m_trigWord[0], m_trigWordLength);
         g_tx->setTrigWordLength(m_trigWordLength);
 	g_tx->setTrigTime(m_trigTime);
@@ -173,7 +173,7 @@ void StarTriggerLoop::setTrigWordFromFile() {
 }
 
 void StarTriggerLoop::writeConfig(json &config) {
-	config["trig_count"] = getTrigCnt();
+	config["trig_count"] = m_cmdCnt;
 	config["trig_frequency"] = m_trigFreq;
 	config["trig_time"] = m_trigTime;
 	config["l0_latency"] = m_trigDelay;
@@ -185,7 +185,7 @@ void StarTriggerLoop::writeConfig(json &config) {
 void StarTriggerLoop::loadConfig(const json &config) {
 
 	if (config.contains("trig_count"))
-		setTrigCnt(config["trig_count"]);
+		m_cmdCnt = config["trig_count"];
 
 	if (config.contains("trig_frequency"))
 		m_trigFreq = config["trig_frequency"];
@@ -209,8 +209,16 @@ void StarTriggerLoop::loadConfig(const json &config) {
 		}
 	}
 
+	// Set the expected number of triggers for analysis:
+	// number of times to send the trigger sequence * number of triggers in the sequence
+	uint32_t ntrigs_per_seq = 1;
+	if (not m_seqGen.empty()) {
+		ntrigs_per_seq = m_seqGen.count_triggers();
+	}
+	this->setTrigCnt(m_cmdCnt * ntrigs_per_seq);
+
 	logger->info("Configured trigger loop: trig_count: {} trig_frequency: {} l0_delay: {}",
-                      getTrigCnt(), m_trigFreq, m_trigDelay);
+                      getTrigCnt(), ntrigs_per_seq, m_trigFreq, m_trigDelay);
 }
 
 
