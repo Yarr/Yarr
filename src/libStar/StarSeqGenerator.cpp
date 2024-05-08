@@ -158,14 +158,14 @@ void StarSeqGenerator::addRegCmd(const std::vector<std::string>& cmd_tokens) {
   // reg <abc|hcc> read <address> [hccID] [abcID]
   // reg <abc|hcc> write <address> <value> [hccID] [abcID]
   //assert(cmd_tokens.at(0) == "reg")
-  std::string chip = cmd_tokens.at(1);
+  const std::string& chip = cmd_tokens.at(1);
   bool isABC = chip=="abc" or chip=="ABC";
   bool isHCC = chip=="hcc" or chip=="HCC";
   if (not isABC xor isHCC) {
     throw std::invalid_argument("Unknown chip type for register command: "+chip);
   }
 
-  std::string access = cmd_tokens.at(2);
+  const std::string& access = cmd_tokens.at(2);
   bool isWrite = access=="write";
   if (access != "read" and access != "write") {
     throw std::invalid_argument("Unknown access type for register command: "+access);
