@@ -14,6 +14,8 @@
 #include "logging.h"
 #include "LoopStatus.h"
 
+#include <getopt.h>
+
 namespace {
   auto logger = logging::make_log("test_star");
 
@@ -35,7 +37,7 @@ void printHelp() {
   std::cout << " -l <log_config> : Configure loggers.\n";
   std::cout << " -d : Modify HCCStar IDs when probing.\n";
   std::cout << " -R : Send reset commands.\n";
-  std::cout << " -s <test_preset> : Type of test sequence to run. Possible options are: Full, Register, DataPacket, Probe, PacketTransp, FullTransp. Default: Full\n";
+  std::cout << " -s <test_preset> : Type of test (lower case), or sequence (UpperCase) to run, use bad to list. Default: Full\n";
   std::cout << " -c <input channel> : HCC input channel. Only used if HCCs are set to full transparent mode.\n";
   std::cout << " -V <chip_version> : Versions of the HCCStar and ABCStar chips. Possible options are: Star, Star_vH0A0, Star_vH0A1, Star_vH1A1. Default: Star (equivalent to Star_vH0A0)\n";
 }
@@ -1022,6 +1024,24 @@ bool readABCRegisters(HwController& hwCtrl) {
   return success;
 }
 
+bool diagnosticsReport(HwController &hwCtrl) {
+  // try reading everything for 1 seconds
+  auto rdc = readAllData(
+        hwCtrl,
+        [](RawData& d) {return true;}, // no filter on data packet type
+        1000 // ms
+        );
+
+  for (unsigned c = 0; c < rdc.size(); c++) {
+    RawDataPtr d = rdc.data[c];
+    reportData(*d);
+  }
+
+  logger->info("Complete report on {} packets", rdc.size());
+
+  return true;
+}
+
 } // end of unnamed namespace
 
 //////////
@@ -1041,8 +1061,13 @@ int main(int argc, char *argv[]) {
     // logger config path
     std::string logCfgPath = "";
 
+    const struct option long_options[] =
+      {
+        {"help", no_argument, 0, 'h'},
+        {0, 0, 0, 0}};
+
     int c;
-    while ((c = getopt(argc, argv, "hl:r:t:dRs:c:V:")) != -1) {
+    while ((c = getopt_long(argc, argv, "hl:r:t:dRs:c:V:", long_options, nullptr)) != -1) {
       switch(c) {
       case 'h':
         printHelp();
@@ -1155,6 +1180,11 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    if(!hwCtrl) {
+      std::cout << "Failed to select valid HwController aborting\n";
+      return 1;
+    }
+
     hwCtrl->toggleTrigAbort();
     hwCtrl->setTrigEnable(0);
 
@@ -1166,152 +1196,140 @@ int main(int argc, char *argv[]) {
     hwCtrl->setRxEnable(rxChannels);
 
     // Tests
-    bool success = false;
+    bool success = true;
 
     std::vector<Hybrid> hccStars;
-    /*
-      Full test sequence
-    */
-    if (testSequence == "Full") {
+
+    std::map<std::string, std::function<bool (HwController&)>>
+      tests = {
       // Read HCCStar HPRs
-      success = checkHPRs(*hwCtrl, rxChannels, doResets);
-
+      {"checkHPRs", [&](auto &h) {return checkHPRs(h, rxChannels, doResets);}},
       // Probe HCCs
-      success &= probeHCCs(*hwCtrl, hccStars, txChannels, rxChannels, setHccId);
-
+      {"probeHCCs", [&](auto &h) {return probeHCCs(h, hccStars, txChannels, rxChannels, setHccId);}},
       // Test HCCStar register read and write
-      success &= testHCCRegisterAccess(*hwCtrl, hccStars);
+      {"testHCCRegister", [&](auto &h) {return testHCCRegisterAccess(h, hccStars);}},
 
       // Configure HCCs to enable communications with ABCs
-      configureHCC(*hwCtrl, starCfg, doResets);
+      {"configureHCC", [&](auto &h) {configureHCC(h, starCfg, doResets); return true;}},
+      {"configureHCCIfReset", [&](auto &h) {if(doResets) configureHCC(h, starCfg, doResets); return true;}},
+      // configure HCC into the Packet Transparent mode
+      {"configureHCCForPacketTransp", [&](auto &h) {configureHCC_PacketTransp(*hwCtrl, starCfg, doResets); return true; }},
+      {"configureHCCForFullTransp", [&](auto &h) {configureHCC_FullTransp(*hwCtrl, starCfg, doResets, inChannel); return true; }},
 
       // Probe ABCStars via reading ABCStar HPRs
-      success &= probeABCs(*hwCtrl, starCfg, hccStars, doResets);
-
+      {"probeABCs", [&](auto &h) {return probeABCs(h, starCfg, hccStars, doResets);}},
       // Test ABCStar register read and write
-      success &= testABCRegisterAccess(*hwCtrl, starCfg, hccStars);
+      {"testABCRegister", [&](auto &h) {return testABCRegisterAccess(h, starCfg, hccStars);}},
 
       // Configure ABCs
-      configureABC(*hwCtrl, starCfg, doResets);
+      {"configureABC", [&](auto &h) {configureABC(h, starCfg, doResets); return true;}},
 
       // Read ABC hit counters
-      success &= testHitCounts(*hwCtrl, starCfg);
+      {"testHitCounts", [&](auto &h) {return testHitCounts(h, starCfg);}},
 
       // Read ABC data packets
-      success &= testDataPacketsStatic(*hwCtrl, starCfg);
-      success &= testDataPacketsPulse(*hwCtrl, starCfg);
-    }
+      {"testDataPacketsStatic", [&](auto &h) {return testDataPacketsStatic(h, starCfg);}},
+      {"testDataPacketsPulse", [&](auto &h) {return testDataPacketsPulse(h, starCfg);}},
 
-    /*
-      Test register read and write
-    */
-    else if (testSequence == "Register") {
-      // Probe HCCs
-      success = probeHCCs(*hwCtrl, hccStars, txChannels, rxChannels, setHccId);
+      {"diagnosticsReport", [&](auto &h) {return diagnosticsReport(h);}},
+    };
 
-      // Test HCCStar register read and write
-      success &= testHCCRegisterAccess(*hwCtrl, hccStars);
-
-      // Configure HCCs to enable communications with ABCs
-      configureHCC(*hwCtrl, starCfg, doResets);
-
-      // Check ABCStars
-      success &= probeABCs(*hwCtrl, starCfg, hccStars, doResets);
-
-      // Test ABCStar register read and write
-      success &= testABCRegisterAccess(*hwCtrl, starCfg, hccStars);
-    }
-
-    /*
-      Test reading data packets
-    */
-    else if (testSequence == "DataPacket") {
-      // Probe HCCs
-      success = probeHCCs(*hwCtrl, hccStars, txChannels, rxChannels, setHccId);
-
-      // Configure HCCs to enable communications with ABCs
-      configureHCC(*hwCtrl, starCfg, doResets);
-
-      // Check ABCStars
-      success &= probeABCs(*hwCtrl, starCfg, hccStars, doResets);
-
-      // Configure ABCs
-      configureABC(*hwCtrl, starCfg, doResets);
-
-      // Read ABC data packets
-      success &= testDataPacketsStatic(*hwCtrl, starCfg);
-      success &= testDataPacketsPulse(*hwCtrl, starCfg);
-    }
-
-    /*
-      Probe the front end ASICs
-    */
-    else if (testSequence == "Probe") {
-      // Read HCCStar HPRs
-      success = checkHPRs(*hwCtrl, rxChannels, doResets);
-
-      // Probe HCCs
-      success &= probeHCCs(*hwCtrl, hccStars, txChannels, rxChannels, setHccId);
-
-      if (doResets) {
-        // In case resets were sent, HCCs need to be reconfigured to talk to ABCs
-        configureHCC(*hwCtrl, starCfg, doResets);
-      }
-
-      // Probe ABCStars via reading ABCStar HPRs
-      success &= probeABCs(*hwCtrl, starCfg, hccStars, doResets);
-    }
-
-    /*
-      Run some tests in packet transparent mode
-    */
-    else if (testSequence == "PacketTransp") {
-      // configure HCC into the Packet Transparent mode
-      configureHCC_PacketTransp(*hwCtrl, starCfg, doResets);
-
-      // configure ABCs
-      configureABC(*hwCtrl, starCfg, doResets);
-
-      // read and print some ABC registers
-      success = readABCRegisters(*hwCtrl);
-
-      // read and print some data packets
-      success &= testDataPacketsStatic(*hwCtrl, starCfg
-);
-    }
-
-    /*
-      Run some tests in full transparent mode
-    */
-    else if (testSequence == "FullTransp") {
-      configureHCC_FullTransp(*hwCtrl, starCfg, doResets, inChannel);
-      configureABC(*hwCtrl, starCfg, doResets);
-
-      // read and print some ABC registers
-      success = readABCRegisters(*hwCtrl);
-
-      // read and print some data packets
-      success &= testDataPacketsStatic(*hwCtrl, starCfg);
+    std::map<std::string, std::vector<std::string>> sequences = {
+      {"Full", {
+          "checkHPRs", "probeHCCs", "testHCCRegister",
+          "configureHCC",
+          "probeABCs", "testABCRegister",
+          "configureABC",
+          "testHitCounts",
+          "testDataPacketsStatic",
+          "testDataPacketsPulse",
+        }},
 
       /*
-      // try reading everything for 1 seconds
-      auto rdc = readAllData(
-        *hwCtrl,
-        [](RawData& d) {return true;}, // no filter on data packet type
-        1000 // ms
-        );
-
-      for (unsigned c = 0; c < rdc.size(); c++) {
-        RawData d(rdc.adr[c], rdc.buf[c], rdc.words[c]);
-        reportData(d);
-      }
+        Just test register read and write
       */
-    }
+      {"Register", {
+          "probeHCCs", "testHCCRegister",
+          "configureHCC",
+          "probeABCs", "testABCRegister",
+        }},
 
-    else {
-      logger->error("Unknown test sequence: {}", testSequence);
-      logger->info("Available test presets are: Full, Register, DataPacket, Probe, PacketTransp, FullTransp");
-      success = false;
+      /*
+        Test reading data packets
+      */
+      {"DataPacket", {
+          "probeHCCs", "configureHCC",
+          "probeABCs", "configureABC",
+          "testDataPacketsStatic",
+          "testDataPacketsPulse",
+        }},
+
+      /*
+        Probe the front end ASICs
+      */
+      {"Probe", {
+          "checkHPRs", "probeHCCs",
+          // In case resets were sent, HCCs need to be reconfigured to talk to ABCs
+          "configureHCCIfReset", // only if doResets set
+          "probeABCs",
+        }},
+
+      /*
+        Run some tests in packet transparent mode
+      */
+      {"PacketTransp", {
+          "configureHCCForPacketTransp",
+          "configureABC",
+          "readABCRegisters",
+          "testDataPacketsStatic",
+        }},
+
+      /*
+        Run some tests in full transparent mode
+      */
+      {"FullTransp", {
+          "configureHCCForFullTransp",
+          "configureABC",
+          "readABCRegisters",
+          "testDataPacketsStatic",
+
+          // "diagnosticsReport",
+        }},
+    };
+
+    if(isupper(testSequence[0])) {
+      if(sequences.find(testSequence) != sequences.end()) {
+        logger->info("Running test sequence {}", testSequence);
+        for(auto &t: sequences[testSequence]) {
+          logger->info("Running test {}", t);
+          success &= tests[t](*hwCtrl);
+        }
+      } else {
+        logger->error("Unknown test sequence: {}", testSequence);
+
+        logger->info("Available preset test sequences:");
+
+        for(auto &s: sequences) {
+          logger->info("  {}", s.first);
+        }
+
+        success = false;
+      }
+    } else {
+      if(tests.find(testSequence) != tests.end()) {
+        logger->info("Running test {}", testSequence);
+        success &= tests[testSequence](*hwCtrl);
+      } else {
+        logger->error("Unknown test: {}", testSequence);
+
+        logger->info("Available test presets:");
+
+        for(auto &s: tests) {
+          logger->info("  {}", s.first);
+        }
+
+        success = false;
+      }
     }
 
     hwCtrl->disableRx();

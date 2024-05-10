@@ -18,7 +18,8 @@
         "protocol": 0,
         "flip": false,
         "broadcast": true,
-	"idleWords": [0]
+	"idleWords": [0],
+	"isCmdEmptyWaitTime": 500
       },
       "ToHost": {
         "detectorID": 0,

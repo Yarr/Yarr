@@ -43,7 +43,7 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
                 this->setTxPolarity(j["txPolarity"]);
             }
             
-            // Configure trigger logic
+            // Configure trigger logic (disable trigger encoder by default)
             if (j.contains("trigConfig")) {
                 if(j.contains({"trigConfig","mask"}))
                     this->setTriggerLogicMask(j["trigConfig"]["mask"]);
@@ -66,10 +66,23 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
                 }
                 if(j.contains({"trigConfig","deadtime"}))
                     this->setTriggerDeadtime(j["trigConfig"]["deadtime"]);
-                if(j.contains({"trigConfig","triggerEncoderMultiplier"}))
+                if(j.contains({"trigConfig","triggerEncoderMultiplier"})) {
                     this->setTriggerEncoderMultiplier(j["trigConfig"]["triggerEncoderMultiplier"]);
-                if(j.contains({"trigConfig","triggerEncoderEnable"}))
+                }
+                else {
+                    this->setTriggerEncoderMultiplier(0);
+                }
+                if(j.contains({"trigConfig","triggerEncoderEnable"})) {
                     this->setTriggerEncoderEnable(j["trigConfig"]["triggerEncoderEnable"]);
+                }
+                else {
+                    this->setTriggerEncoderEnable(0);
+                }
+            }
+            else {
+                // Turn off trigger encoder by default
+                this->setTriggerEncoderEnable(0);
+                this->setTriggerEncoderMultiplier(0);
             }
 
             // Configure pulse logic
