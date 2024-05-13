@@ -11,7 +11,7 @@ void Itkpixv2Encoder::endStream(){
     pushWords32();
 }
 
-void Itkpixv2Encoder::addToStream(const HitMap& hitMap, bool last, bool rd53b){
+void Itkpixv2Encoder::addToStream(const HitMap& hitMap, bool last){
     //This is a high-level interface function that can take care of
     //adding an event into the current stream, this can be called
     //easily from the outside, and automatically tags/ends streams

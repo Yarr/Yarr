@@ -6,6 +6,9 @@
 *              ITkPix* chips with a 'physically' motivated (col, row) access
 */
 
+#ifndef ITKPIXLAYOUT_H
+#define ITKPIXLAYOUT_H
+
 #include <array>
 #include <cstdint>
 
@@ -13,16 +16,16 @@ template<class T> class ItkpixLayout{
 
     public:
 
-        ItkpixLayout();
+        ItkpixLayout(){};
 
-        T& ItkpixLayout::operator()(const uint16_t col, const uint16_t row){
+        T& operator()(const uint16_t col, const uint16_t row){
 
             //Columns are stored after one another
             return pixels[ col * 384 + row ];
 
         }
 
-        T ItkpixLayout::operator()(const uint16_t col, const uint16_t row) const {
+        T operator()(const uint16_t col, const uint16_t row) const {
 
             //Columns are stored after one another
             return pixels[ col * 384 + row ];
@@ -32,6 +35,8 @@ template<class T> class ItkpixLayout{
     private:
 
         //All chips will allways have 400*384 pixels
-        std::array<T, 153600> pixels;
+        std::array<T, 153600> pixels = {};
 
 };
+
+#endif
