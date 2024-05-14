@@ -126,7 +126,7 @@ void StdDataGatherer::execPart2() {
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
       std::unique_ptr<RawDataContainer> cIterEnd = std::make_unique<RawDataContainer>(std::move(loopStatusIterationEnd));
       keeper->getFe(id)->clipRawData.pushData(std::move(cIterEnd));
-      keeper->getFe(id)->clipProcFeedback.reset();
+      keeper->getFe(id)->clipProcFeedback.clearData();
     }
 
     m_done = true;
