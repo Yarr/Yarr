@@ -101,6 +101,11 @@ void StdDataGatherer::execPart2() {
           keeper->getFe(id)->clipRawData.pushData(std::move(rdc));
         }
 
+        // Clear feedback for all frontends
+        for (int id = 0; id < keeper->getNumOfEntries(); id++) {
+            keeper->getFe(id)->clipProcFeedback.clearData();
+        }
+
         if (count == 0) {
           SPDLOG_LOGGER_DEBUG(sdglog, "\033[1m\033[31m--> Received {} words in {} iterations!\033[0m", count, nAllRxReadIterations);
         } else {
