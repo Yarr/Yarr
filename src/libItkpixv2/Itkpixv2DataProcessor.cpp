@@ -503,7 +503,13 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
             {
                 // logger->error("Pushing out data {} events", _events[_activeChannels[i]]);
                 _events = 0;
+
+                // Propogate current status and push out data
+                auto pushedStat = _curInV->stat;
                 m_out->pushData(std::move(_curOut));
+
+                // Reinitalize _curOut buffer
+                _curOut = std::make_unique<FrontEndData>(pushedStat);
             }
             else
             {
@@ -519,8 +525,8 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
             return false;
         if (_curInV->size() == 0){
             if (_curInV->stat.is_end_of_iteration) {
-                _curOut = std::make_unique<FrontEndData>(_curInV->stat);
-                m_out->pushData(std::move(_curOut));
+                auto endOut = std::make_unique<FrontEndData>(_curInV->stat);
+                m_out->pushData(std::move(endOut));
             }
             return false;
         }
@@ -534,8 +540,10 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
         }
         */
 
-        _curOut = std::make_unique<FrontEndData>(_curInV->stat);
-        _events = 0;
+        if(_curOut == nullptr) {
+            _curOut = std::make_unique<FrontEndData>(_curInV->stat);
+            _events = 0;
+        }
 
         // Increase word count
         for (unsigned c = 0; c < _curInV->size(); c++)

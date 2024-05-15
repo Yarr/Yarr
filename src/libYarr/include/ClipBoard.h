@@ -61,6 +61,13 @@ class ClipBoard {
             return tmp;
         }
 
+        void clearData() {
+            queueMutex.lock();
+            std::deque<std::unique_ptr<T>> emptyQueue;
+            std::swap(dataQueue, emptyQueue);
+            queueMutex.unlock();
+        }
+
         int size() const {
           return dataQueue.size();
         }
