@@ -12,14 +12,17 @@ namespace {
     auto logger = logging::make_log("StarTriggerLoop");
 }
 
-StarTriggerLoop::StarTriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) {
-
+StarTriggerLoop::StarTriggerLoop()
+  : LoopActionBase(LOOP_STYLE_TRIGGER),
+	m_trigDelay(45), // L0_delay 34
+	m_trigFreq(1e3), // 1kHz
+	m_trigTime(10), // 10s
+	m_noInject(false),
+	m_digital(false),
+	m_trigWordLength(0),
+	m_trigWord{}
+{
 	setTrigCnt(50); // Maximum number of triggers to send
-	m_trigDelay = 45; // L0_delay 34
-	m_trigFreq = 1e3; // 1kHz
-	m_trigTime = 10; // 10s
-	m_noInject = false;
-        m_digital = false;
 	min = 0;
 	max = 0;
 	step = 1;
@@ -43,8 +46,8 @@ void StarTriggerLoop::init() {
 
 	g_tx->setTrigFreq(m_trigFreq);
 	g_tx->setTrigCnt(getTrigCnt());
-        g_tx->setTrigWord(&m_trigWord[0], m_trigWordLength);
-        g_tx->setTrigWordLength(m_trigWordLength);
+	g_tx->setTrigWord(m_trigWord.data(), m_trigWordLength);
+	g_tx->setTrigWordLength(m_trigWordLength);
 	g_tx->setTrigTime(m_trigTime);
 
 	if (m_noInject) {

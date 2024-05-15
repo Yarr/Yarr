@@ -13,13 +13,17 @@ namespace {
   auto logger = logging::make_log("StarFelixTriggerLoop");
 }
 
-StarFelixTriggerLoop::StarFelixTriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) {
+StarFelixTriggerLoop::StarFelixTriggerLoop()
+  : LoopActionBase(LOOP_STYLE_TRIGGER),
+    m_nTrigsTrickle(0),
+    m_trigWordLength(0),
+    m_trigWord{}
+{
   setTrigCnt(50); // Maximum number of triggers to send
   min = 0;
   max = 0;
   step = 1;
   loopType = typeid(this);
-  m_nTrigsTrickle = 0;
 }
 
 void StarFelixTriggerLoop::init() {
@@ -56,7 +60,7 @@ void StarFelixTriggerLoop::init() {
   setTrigWord();
 
   logger->debug("Configure TxCore");
-  g_tx->setTrigWord(&m_trigWord[0], m_trigWordLength);
+  g_tx->setTrigWord(m_trigWord.data(), m_trigWordLength);
   g_tx->setTrigWordLength(m_trigWordLength);
 
   // Frequency to send trickle pulse
@@ -290,7 +294,7 @@ void StarFelixTriggerLoop::addChargeInjection(std::vector<uint8_t>& trig_segment
   assert(trig_segment[index_l0a] == LCB_FELIX::L0A);
 
   // Charge injection command
-  std::array<uint8_t, 2> inj;
+  std::array<uint8_t, 2> inj{};
   uint8_t bcsel = 3 - (m_trigDelay % 4);
 
   if (m_digital) {
