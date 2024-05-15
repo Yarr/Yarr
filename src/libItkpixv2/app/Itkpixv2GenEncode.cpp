@@ -12,6 +12,7 @@
 #include "HitMapGenerator.h"
 
 #include "Itkpixv2Cfg.h"
+#include "Rd53bCfg.h"
 
 
 
@@ -19,7 +20,7 @@ int main(){
     FrontEndData truth;
     
     std::unique_ptr<HitMapGenerator> generator(new HitMapGenerator());
-    int nEvents = 2;
+    int nEvents = 1;
     int nEventsPerStream = 5;
     
     std::unique_ptr<Itkpixv2Encoder> encoder(new Itkpixv2Encoder());
@@ -28,27 +29,29 @@ int main(){
     for (int evt = 0; evt < nEvents; evt++){
         generator->randomHitMap();
         truth.events.push_back(generator->outTruth());
-        if   (evt != nEvents - 1) encoder->addToStream(generator->outHits());
+        if   (evt != nEvents - 1) encoder->addToStream(generator->outHits(), false);
         else                      encoder->addToStream(generator->outHits(), true); //make sure the stream is ended with the last added event
     }
     
 
     std::vector<uint32_t> words = encoder->getWords();
 
-    //for (auto& w : words){
-    //    std::bitset<32> bw(w);
-    //    std::cout << bw << "\n";
-    //}
-    //
+    for (auto& w : words){
+        std::bitset<32> bw(w);
+        std::cout << bw << "\n";
+    }
+    
     
     int nWords = words.size();
-
-    std::shared_ptr<FeDataProcessor> proc = StdDict::getDataProcessor("ITKPIXV2");
+    std::cout << "Helo\n";
+    //std::shared_ptr<FeDataProcessor> proc = StdDict::getDataProcessor("ITKPIXV2");
+    std::shared_ptr<FeDataProcessor> proc = StdDict::getDataProcessor("RD53B");
 
     ClipBoard<RawDataContainer> rd_cp;
     ClipBoard<EventDataBase> em_cp;
 
-    Itkpixv2Cfg cfg;  
+    //Itkpixv2Cfg cfg;  
+    Rd53bCfg cfg;
     proc->connect(&cfg, &rd_cp, &em_cp );
 
     proc->init();

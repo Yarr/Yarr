@@ -166,7 +166,7 @@ void ItkpixEncoder::encodeEvent(){
             QRow + 1 == m_lastQRow[CCol] ? addBits64(0x1, 1) : addBits64(0x0, 1);
 
             //add the isNeighbor bit. If false, add the QRow address as well.
-            if (QRow == previousQRow + 1){
+            if (QRow == (uint)previousQRow + 1){
                 addBits64(0x1, 1);
             }
             else {
