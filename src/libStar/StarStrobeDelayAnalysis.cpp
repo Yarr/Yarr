@@ -334,7 +334,8 @@ std::vector<double> StarStrobeDelayAnalysis::fitScurveForSD(const Histo1d &h_in,
   control = lm_control_float;
   control.verbosity = 0;
   // Guess initial parameters
-  unsigned p0initial_bin; double p0initial; std::array<double, FIT_N_PAR> par;
+  unsigned p0initial_bin; double p0initial;
+  std::array<double, FIT_N_PAR> par{};
   auto n_par = par.size();
   if (leftEdge){
     p0initial_bin = findBinPassingThreshold(h_in, 0.5, true, false);
@@ -346,7 +347,7 @@ std::vector<double> StarStrobeDelayAnalysis::fitScurveForSD(const Histo1d &h_in,
   }
   par[0] = p0initial; par[1] = 0.05 * p0initial; par[2] = (double)m_injections; par[3] = 0.;
   // Do the fit
-  lmcurve(n_par, par.data(), nBins, &strobeDelayVec[0], &occVec[0],
+  lmcurve(n_par, par.data(), nBins, strobeDelayVec.data(), occVec.data(),
           leftEdge?scurveFct:reverseScurveFct,
           &control, &status);
 

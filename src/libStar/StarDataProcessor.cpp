@@ -32,20 +32,21 @@ bool star_proc_registered_ppb =
   StdDict::registerDataProcessor("Star_vH1A1", []() { return std::unique_ptr<FeDataProcessor>(new StarDataProcessor());});
 
 StarDataProcessor::StarDataProcessor()
-  : FeDataProcessor()
+  : FeDataProcessor(),
+    input(nullptr),
+    output(nullptr),
+    chip_map{}
 {}
 
 StarDataProcessor::~StarDataProcessor() = default;
 
-void StarDataProcessor::init() {
-
-}
+void StarDataProcessor::init() {}
 
 void StarDataProcessor::connect(FrontEndCfg *feCfg, ClipBoard<RawDataContainer> *arg_input, ClipBoard<EventDataBase> *arg_output) {
   if(feCfg == nullptr) {
     throw std::runtime_error("StarDataProcessor::connect given null config");
   }
-  StarCfg *cfg = dynamic_cast<StarCfg*>(feCfg);
+  auto cfg = dynamic_cast<StarCfg*>(feCfg);
   if(cfg == nullptr) {
     throw std::runtime_error("StarDataProcessor::connect given bad config (not StarCfg");
   }
