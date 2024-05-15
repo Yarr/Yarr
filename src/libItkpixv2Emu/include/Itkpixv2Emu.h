@@ -1,7 +1,7 @@
 /*
 * Author: Ondra Kovanda, ondrej.kovanda at cern.ch
 * Date: 05/2024
-* Description: Controller for ITkPixV2 emulator
+* Description: Core functionality of the ITkPixV2 emulator
 */
 
 #ifndef ITKPIXV2EMU_H
@@ -22,4 +22,4 @@ class Itkpixv2Emu {
         ItkpixLayout<uint16_t> ToT_map; //just a dummy
 };
 
-#endif ITKPIXV2EMU_H
+#endif
