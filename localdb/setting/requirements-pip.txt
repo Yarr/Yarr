@@ -10,4 +10,4 @@ numpy
 requests
 tzlocal
 pandas
-module-qc-database-tools
+module-qc-database-tools>=2.2.8
