@@ -5,7 +5,7 @@ Mainly targeted at moduleQC
 Author: Maria Mironova (maria.mironova@cern.ch)
         Laura Nosler (laura.clare.nosler@cern.ch)
 
-usage: scripts/update_config.py [-h] [-c CONFIG_FILE] [-r CONTROLLER_FILE] [-t CHIP_TYPE]
+usage: scripts/update_config.py [-h] [-c CONFIG_FILE] [-r CONTROLLER_FILE]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -27,6 +27,18 @@ def get_setup_type(current_tx,occurrence):
         return "quad"
     else:
         return "ERROR"
+def get_quad_order(current_SerEnLane):
+    if current_SerEnLane == 1:
+        return 0
+    elif current_SerEnLane == 2:
+        return 1
+    elif current_SerEnLane == 4:
+        return 2
+    elif current_SerEnLane == 8:
+        return 3
+    else:
+        return -1
+
 
 def update_config(connectivity_file,controller_file):
     # Get controller type
@@ -34,7 +46,7 @@ def update_config(connectivity_file,controller_file):
     data_hw = json.load(hw)
     hw_type = data_hw["ctrlCfg"]["type"]
     if (hw_type != "spec" and hw_type != "FelixClient"):
-        print("ERROR: Invalid controller file - only spec or FelixClient controllers supported")
+        sys.exit("ERROR: Invalid controller file - only spec or FelixClient controllers supported")
     else:
         print("Updating config to",hw_type,"specifications")
 
@@ -44,21 +56,23 @@ def update_config(connectivity_file,controller_file):
     # a dictionary
     data = json.load(f)
     chip_type=data["chipType"]
+    if (chip_type != "RD53B" and chip_type != "ITKPIXV2"):
+        sys.exit("ERROR: Invalid chip type - only RD53B or ITKPIXV2 supported")
     dir_path=os.path.split(connectivity_file)[0]
 
     # identify the setup types (SCC vs quad)
-    tx = []
+    tx_list = []
     for j in range(0,len(data["chips"])):
         chip=data["chips"][j]
-        tx.append(chip["tx"])
-    occurrence = {item: tx.count(item) for item in tx} # 1 for SCC, 4 for quad
+        tx_list.append(chip["tx"])
+    occurrence = {item: tx_list.count(item) for item in tx_list} # 1 for SCC, 4 for quad
 
     for j in range(0,len(data["chips"])):
-        current_type = get_setup_type(tx[j],occurrence)
+        current_type = get_setup_type(tx_list[j],occurrence)
         if (current_type == "ERROR"):
-            print("Unsupported type - only SCC or Quad Module supported")
+            print("Unsupported type - only SCC or Quad Module supported, continuing to next chip")
             continue
-        
+    
         chip=data["chips"][j]
         if ("path" in chip.keys()):
             if (chip["path"] == "relToExec"): 
@@ -79,6 +93,7 @@ def update_config(connectivity_file,controller_file):
         print("Updating chip config %s"%(chipConfigPath))
         f_chip=open(chipConfigPath)
         data_chip=json.load(f_chip)
+
         if (hw_type == "spec"):
             data_chip[chip_type]["GlobalConfig"]["CdrClkSel"]=0
             data_chip[chip_type]["GlobalConfig"]["CmlBias0"]=800
@@ -90,14 +105,39 @@ def update_config(connectivity_file,controller_file):
             data_chip[chip_type]["GlobalConfig"]["CdrClkSel"]=0
             data_chip[chip_type]["GlobalConfig"]["CmlBias0"]=800
             data_chip[chip_type]["GlobalConfig"]["CmlBias1"]=0
+            data_chip[chip_type]["GlobalConfig"]["SerEnTap"]=0
+            data_chip[chip_type]["GlobalConfig"]["SerInvTap"]=0
             data_chip[chip_type]["GlobalConfig"]["ServiceBlockEn"]=0
             data_chip[chip_type]["Parameter"]["EnforceNameIdCheck"] = False
+            if (current_type== "quad"):
+                #only the lane corresponding to the chip should be enabled
+                #first set all to 3, then find which one to enable to 1
+                data_chip[chip_type]["GlobalConfig"]["SerSelOut0"]=3
+                data_chip[chip_type]["GlobalConfig"]["SerSelOut1"]=3
+                data_chip[chip_type]["GlobalConfig"]["SerSelOut2"]=3
+                data_chip[chip_type]["GlobalConfig"]["SerSelOut3"]=3
+                
+                # find chip order
+                current_SerEnLane = data_chip[chip_type]["GlobalConfig"]["SerEnLane"]
+                chip_order = get_quad_order(current_SerEnLane)
+                if (chip_order == -1):
+                    print("ERROR: SerEnLane value for quad module not supported (allowed values: 1,2,4,8)")
+                    continue
+                SerSelOutName = "SerSelOut"+str(chip_order)
+                data_chip[chip_type]["GlobalConfig"][SerSelOutName] = 1
+
             if (current_type=="SCC"):
+                data_chip[chip_type]["GlobalConfig"]["AuroraActiveLanes"]=1
                 data_chip[chip_type]["GlobalConfig"]["DataMergeOutMux0"]=0
                 data_chip[chip_type]["GlobalConfig"]["DataMergeOutMux1"]=0
                 data_chip[chip_type]["GlobalConfig"]["DataMergeOutMux2"]=0
                 data_chip[chip_type]["GlobalConfig"]["DataMergeOutMux3"]=0
                 data_chip[chip_type]["GlobalConfig"]["SerEnLane"]=15
+                data_chip[chip_type]["GlobalConfig"]["SerSelOut0"]=1
+                data_chip[chip_type]["GlobalConfig"]["SerSelOut1"]=1
+                data_chip[chip_type]["GlobalConfig"]["SerSelOut2"]=1
+                data_chip[chip_type]["GlobalConfig"]["SerSelOut3"]=1
+
                 
         with open(chipConfigPath,'w') as outfile:
             outfile.write(json.dumps(data_chip, sort_keys=True, indent=4))
