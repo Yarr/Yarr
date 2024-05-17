@@ -534,9 +534,9 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
   tmpChipCfg["chips"] = json::array();
   // Three front ends share the same tx channel 33
   // The first two FEs share the same rx channel 44
-  int rx_fe1 = 44, rx_fe2 = 44;
+  unsigned int rx_fe1 = 44, rx_fe2 = 44;
   // The third one uses a separate rx channel 55
-  int rx_fe3 = 55;
+  unsigned int rx_fe3 = 55;
   tmpChipCfg["chips"][0] = {{"tx",33}, {"rx",rx_fe1}, {"config","test_star_1.json"}};
   tmpChipCfg["chips"][1] = {{"tx",33}, {"rx",rx_fe2}, {"config","test_star_2.json"}};
   tmpChipCfg["chips"][2] = {{"tx",33}, {"rx",rx_fe3}, {"config","test_star_3.json"}};
