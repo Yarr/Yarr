@@ -15,11 +15,12 @@
 #include <thread>
 #include <future>
 #include <memory>
+#include <random>
 
 class Itkpixv2Emu {
     public:
         
-        Itkpixv2Emu(EmuCom* tx, EmuCom* rx);
+        Itkpixv2Emu(EmuCom* tx, EmuCom* rx, int seed = 0);
         ~Itkpixv2Emu();
 
         void executeLoop();
@@ -34,20 +35,28 @@ class Itkpixv2Emu {
         //Read the command from tx into the buffer
         void readCommand();
 
+        //Initialize random (but fixed over time) pixel thresholds
+        //and noise levels
+        void initPixels(int seed = 0);
+
         //internal pointers to the virtual tx and rx lanes,
         //aka the virtual chip's virtual pads to virtually connect
         //the virtual cables
-        EmuCom* m_tx;
-        EmuCom* m_rx;
+        EmuCom* m_tx = 0;
+        EmuCom* m_rx = 0;
 
         //Buffer for commands received from tx
         std::deque<uint16_t> m_commandStream;
 
         //Pixel representations
-        ItkpixLayout<uint16_t> m_ToT_map; //just a dummy
+        ItkpixLayout<float> m_thresholds;
 
         //Utilities
         std::chrono::nanoseconds m_ns10 = std::chrono::nanoseconds(10);
+
+        //Randomization
+        std::mt19937 generator;
+
 };
 
 #endif

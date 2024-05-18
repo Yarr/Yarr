@@ -13,13 +13,13 @@ namespace {
 
 
 //The constructor needs to attach the virtual tx and rx cables
-Itkpixv2Emu::Itkpixv2Emu(EmuCom* tx, EmuCom* rx): m_tx(tx), m_rx(rx) {
-    
-    //Connect the cables to the virtual pads
-    //m_tx = tx;
-    //m_rx = rx;
+Itkpixv2Emu::Itkpixv2Emu(EmuCom* tx, EmuCom* rx, int seed): m_tx(tx), m_rx(rx) {
+
+    //Switch on    
     run  = true;
-    std::cout << "Tx address in Itkpixv2Emu " << &(*m_tx) << " passed is " << &(*tx) << "\n";
+
+    //Initialize pixels
+    initPixels(seed);
 
 }
 
@@ -38,7 +38,7 @@ void Itkpixv2Emu::executeLoop(){
     //Once the commands arrive, read them in
     readCommand();
 
-    rlog->info("Received command {}", m_commandStream.front());
+    //rlog->info("Received command {}", m_commandStream.front());
 
 }
 
@@ -53,6 +53,26 @@ void Itkpixv2Emu::readCommand(){
 }
 
 void Itkpixv2Emu::outputLoop(){
+
+}
+
+void Itkpixv2Emu::initPixels(int seed){
+
+    //We need to initialize all pixels with slightly
+    //Randomized threshold to reflect real chip behaviour
+    //The PixelLayout called m_thresholds will hold
+    //a deviation from 1, where 1 would be exactly the desired
+    //set threshold. For the time being, setting the deviation
+    //to 5 %.
+    
+    std::mt19937 gen(seed);
+    std::normal_distribution gauss(1., 0.05);
+
+    for (uint col = 0; col < 400; col++){
+        for (uint row = 0; row < 384; row++){
+            m_thresholds(col, row) = gauss(gen);
+        }
+    }
 
 }
 

@@ -56,10 +56,8 @@ void EmuController<Itkpixv2, Itkpixv2Emu>::loadConfig(const json &j) {
   rx_coms.emplace_back(new RingBuffer());
   EmuRxCore<Itkpixv2>::setCom(0, rx_coms.back().get());
 
-  auto tx = EmuTxCore<Itkpixv2>::getCom(0);
-  auto rx = EmuRxCore<Itkpixv2>::getCom(0);
-
-  std::cout << "Tx address in Itkpixv2EmuController " << &(*tx) << "\n";
+  EmuCom* tx = EmuTxCore<Itkpixv2>::getCom(0);
+  EmuCom* rx = EmuRxCore<Itkpixv2>::getCom(0);
 
   //TODO make nice
   logger->info("Starting Itkpixv2 Emulator" + infotoken);
@@ -69,6 +67,6 @@ void EmuController<Itkpixv2, Itkpixv2Emu>::loadConfig(const json &j) {
   //generate in each instance with fixed seed, avoiding this huge file. That way we can
   //also have this scalable to multiple emulated FEs.
   //const json &emuCfg = j["__feCfg_data__"];
-  emus.emplace_back(new Itkpixv2Emu(rx, tx));
+  emus.emplace_back(new Itkpixv2Emu(tx, rx, 5));
   emuThreads.push_back(std::thread(&Itkpixv2Emu::executeLoop, emus.back().get()));
 }
