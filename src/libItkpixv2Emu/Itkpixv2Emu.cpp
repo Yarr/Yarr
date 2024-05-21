@@ -21,6 +21,9 @@ Itkpixv2Emu::Itkpixv2Emu(EmuCom* tx, EmuCom* rx, int seed): m_tx(tx), m_rx(rx) {
     //Initialize pixels
     initPixels(seed);
 
+    //Initialize the FE registers
+    m_itkpixv2Cfg = std::make_unique<Itkpixv2Cfg>();
+
 }
 
 void Itkpixv2Emu::executeLoop(){
@@ -29,7 +32,7 @@ void Itkpixv2Emu::executeLoop(){
 
     //Check for commands in tx
     if (m_tx->isEmpty()){
-        //std::cout << "waiting\n";
+
         //if none, wait a bit and repeat the loop
         std::this_thread::sleep_for(m_ns10);
         executeLoop();
@@ -38,7 +41,10 @@ void Itkpixv2Emu::executeLoop(){
     //Once the commands arrive, read them in
     readCommand();
 
-    //rlog->info("Received command {}", m_commandStream.front());
+    while (!m_commandStream.empty()){
+        rlog->info("Received command {}", m_commandStream.front());
+        m_commandStream.pop_front();
+    }
 
 }
 

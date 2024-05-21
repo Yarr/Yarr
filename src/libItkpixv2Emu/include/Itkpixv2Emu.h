@@ -9,7 +9,10 @@
 
 #include "ItkpixLayout.h"
 #include "EmuCom.h"
+#include "Itkpixv2Cfg.h"
 #include "logging.h"
+#include "Itkpixv2EmuCommandInterpreter.h"
+#include "Itkpixv2EmuCommandExe.h"
 #include <atomic>
 #include <chrono>
 #include <thread>
@@ -35,7 +38,7 @@ class Itkpixv2Emu {
         //Read the command from tx into the buffer
         void readCommand();
 
-        //Initialize random (but fixed over time) pixel thresholds
+        //Initialize random (but fixed over time/instances) pixel thresholds
         //and noise levels
         void initPixels(int seed = 0);
 
@@ -45,11 +48,18 @@ class Itkpixv2Emu {
         EmuCom* m_tx = 0;
         EmuCom* m_rx = 0;
 
-        //Buffer for commands received from tx
+        //Buffer for commands received from tx...
+        //Legacy of Rd53aEmu, is this really needed?
+        //We've got a ring buffer in tx...
         std::deque<uint16_t> m_commandStream;
+
+        //Representation of all the chip registers. The uniqueness of this
+        //pointer is a legacy of Rd53a emu, but probably doesn't hurt here
+        std::unique_ptr<Itkpixv2Cfg> m_itkpixv2Cfg;
 
         //Pixel representations
         ItkpixLayout<float> m_thresholds;
+        ItkpixLayout<uint16_t> m_tots;
 
         //Utilities
         std::chrono::nanoseconds m_ns10 = std::chrono::nanoseconds(10);
