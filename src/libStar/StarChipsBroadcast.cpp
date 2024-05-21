@@ -7,7 +7,8 @@ namespace {
 }
 
 StarChipsBroadcast::StarChipsBroadcast(int abc_version, int hcc_version) 
-  : StarChips(abc_version, hcc_version)
+  : StarChips(abc_version, hcc_version),
+    keeper(nullptr)
 {
   // Dummy configuration for globalFe in preScan routines
   setHCCChipId(0xf);

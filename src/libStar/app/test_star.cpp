@@ -160,7 +160,7 @@ RawDataPtr readData(
 
     if (not dataVec.empty()) {
       nodata = false;
-      for (auto d : dataVec) {
+      for (const auto& d : dataVec) {
         logger->trace("Use data: {}", (void*)d->getBuf());
 
         // check if it is the type of data we want
@@ -1063,8 +1063,8 @@ int main(int argc, char *argv[]) {
 
     const struct option long_options[] =
       {
-        {"help", no_argument, 0, 'h'},
-        {0, 0, 0, 0}};
+        {"help", no_argument, nullptr, 'h'},
+        {nullptr, 0, nullptr, 0}};
 
     int c;
     while ((c = getopt_long(argc, argv, "hl:r:t:dRs:c:V:", long_options, nullptr)) != -1) {

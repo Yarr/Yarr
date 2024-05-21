@@ -38,6 +38,7 @@ StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
   , m_abc_version( abc_version )
   , m_hcc_version( hcc_version )
   , m_starCfg (std::move(regCfg))
+  , m_ndata_l0buf(0)
 {
   // set the Addressing register
   // HCC docs:
