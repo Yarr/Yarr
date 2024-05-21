@@ -24,27 +24,28 @@ Itkpixv2Emu::Itkpixv2Emu(EmuCom* tx, EmuCom* rx, int seed): m_tx(tx), m_rx(rx) {
     //Initialize the FE registers
     m_itkpixv2Cfg = std::make_unique<Itkpixv2Cfg>();
 
+    //Initialize the command interpreter and exe
+    m_cmdInterpreter = std::make_unique<Itkpixv2EmuCommandInterpreter>();
+    m_cmdExe         = std::make_unique<Itkpixv2EmuCommandExe>();
+
 }
 
 void Itkpixv2Emu::executeLoop(){
     //This loop should only run if the chip is turned on
     if (!run) return;
 
-    //Check for commands in tx
+    //Check for commands in tx. This check has to stay here because
+    //of the overall run flag. Can think of moving that flag to the
+    //interpreter class somehow...
     if (m_tx->isEmpty()){
 
-        //if none, wait a bit and repeat the loop
-        std::this_thread::sleep_for(m_ns10);
+        //If none, wait a bit and repeat the loop
+        std::this_thread::sleep_for(Itkpixv2EmuUtils::m_ns10);
         executeLoop();
     }
 
-    //Once the commands arrive, read them in
-    readCommand();
-
-    while (!m_commandStream.empty()){
-        rlog->info("Received command {}", m_commandStream.front());
-        m_commandStream.pop_front();
-    }
+    //Once the commands arrive, the interpreter should kick in
+    Itkpixv2EmuUtils::Cmd cmd = m_cmdInterpreter->readCommand(m_tx);
 
 }
 

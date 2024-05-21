@@ -8,6 +8,7 @@
 #define ITKPIXV2EMUUTILS_H
 
 #include <cstdint>
+#include <chrono>
 
 namespace Itkpixv2EmuUtils {
 
@@ -21,6 +22,16 @@ namespace Itkpixv2EmuUtils {
         WrReg       = 0b01100110,
         RdReg       = 0b01100101,
     };
+
+    //Constant time interval
+    static const std::chrono::nanoseconds m_ns10 = std::chrono::nanoseconds(10);
+
+    //give the passed command/payload a human-readable interface
+    struct Cmd {
+        uint16_t header  = 0;
+        uint64_t payload = 0;
+    };
+
 
 
 }

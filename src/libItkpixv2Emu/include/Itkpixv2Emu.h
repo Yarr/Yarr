@@ -57,12 +57,17 @@ class Itkpixv2Emu {
         //pointer is a legacy of Rd53a emu, but probably doesn't hurt here
         std::unique_ptr<Itkpixv2Cfg> m_itkpixv2Cfg;
 
+        //Utility class for preparation of the commands that arrive
+        //through tx
+        std::unique_ptr<Itkpixv2EmuCommandInterpreter> m_cmdInterpreter;
+
+        //Utility class that takes care of executing the commands fetched
+        //by command interpreter
+        std::unique_ptr<Itkpixv2EmuCommandExe> m_cmdExe;
+
         //Pixel representations
         ItkpixLayout<float> m_thresholds;
         ItkpixLayout<uint16_t> m_tots;
-
-        //Utilities
-        std::chrono::nanoseconds m_ns10 = std::chrono::nanoseconds(10);
 
         //Randomization
         std::mt19937 generator;

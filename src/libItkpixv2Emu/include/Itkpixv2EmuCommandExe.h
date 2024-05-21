@@ -4,18 +4,18 @@
 * Description: Core functionality of the ITkPixV2 emulator
 */
 
-#ifndef ITKPIXV2COMMANDEXE_H
-#define ITKPIXV2COMMANDEXE_H
+#ifndef ITKPIXV2EMUCOMMANDEXE_H
+#define ITKPIXV2EMUCOMMANDEXE_H
 
 #include "Itkpixv2Cfg.h"
 #include "Itkpixv2EmuUtils.h"
 #include <map>
 
-class Itkpixv2CommandExe {
+class Itkpixv2EmuCommandExe {
 
     public:
 
-        Itkpixv2CommandExe();
+        Itkpixv2EmuCommandExe();
 
         void exe(const uint16_t command, const uint64_t payload = 0);
 

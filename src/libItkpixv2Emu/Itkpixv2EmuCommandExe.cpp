@@ -6,40 +6,40 @@
 
 #include "Itkpixv2EmuCommandExe.h"
 
-Itkpixv2CommandExe::Itkpixv2CommandExe(){
+Itkpixv2EmuCommandExe::Itkpixv2EmuCommandExe(){
 
 
 }
 
-void Itkpixv2CommandExe::exe(const uint16_t command, const uint64_t payload){
+void Itkpixv2EmuCommandExe::exe(const uint16_t command, const uint64_t payload){
 
 
 }
 
-void Itkpixv2CommandExe::doSync(){
+void Itkpixv2EmuCommandExe::doSync(){
 
 }
 
-void Itkpixv2CommandExe::doPLLlock(){
+void Itkpixv2EmuCommandExe::doPLLlock(){
 
 }
 
-void Itkpixv2CommandExe::doClear(){
+void Itkpixv2EmuCommandExe::doClear(){
 
 }
 
-void Itkpixv2CommandExe::doGlobalPulse(){
+void Itkpixv2EmuCommandExe::doGlobalPulse(){
 
 }
 
-void Itkpixv2CommandExe::doCal(){
+void Itkpixv2EmuCommandExe::doCal(){
 
 }
 
-void Itkpixv2CommandExe::doWrReg(){
+void Itkpixv2EmuCommandExe::doWrReg(){
 
 }
 
-void Itkpixv2CommandExe::doRdReg(){
+void Itkpixv2EmuCommandExe::doRdReg(){
 
 }
