@@ -75,6 +75,8 @@ class Itkpixv2 : public FrontEnd, public Itkpixv2Cfg, public Itkpixv2Cmd{
         // the readback of the E-fuse data
         itkpix_efuse_codec::EfuseData readEfuses();
         uint32_t readEfusesRaw();
+        uint32_t getEfuses();
+        uint8_t getChipId();
 
         void runRingOsc(uint16_t duration, bool isBankB);
         void confAdc(uint16_t MONMUX, bool doCur = false) override;
