@@ -9,10 +9,18 @@
 
 #include "Itkpixv2EmuUtils.h"
 #include "EmuCom.h"
-#include <utility>
+#include "logging.h"
 #include <thread>
+#include <queue>
 
 class Itkpixv2EmuCommandInterpreter {
+
+    //Nomenclature: command unit is 8 bits long
+    //              command frame is the 16-bit building block of a command
+    //              command word is the 32-bit word that arrives through tx
+    //              command header is the first 8 bits
+    //              command tag/FE ID is the second 8-bit of the first command frame
+    //              payload is what follows the command block in long commands
     
     public:
         Itkpixv2EmuCommandInterpreter();
@@ -23,10 +31,16 @@ class Itkpixv2EmuCommandInterpreter {
 
 
     private:
-        //The potential leftover 16-bits after reading first half
-        //of the 32-bit word
-        uint16_t m_overflow = 0;
+        //8-bit buffer for the command blocks. All attempts to avoid the
+        //additional buffer structure led to hugely complicated sorting
+        //of the command streams.
+        const uint8_t m_commandUnitBufferMaxSize = 50;
+        const uint8_t m_commandUnitBufferMinSize = 20;
+        std::queue<uint8_t> m_commandUnitBuffer;
+        void bufferCommandUnits(EmuCom* tx);
 
+        //Decode several units into a certain variable
+        void addDecodedUnits(uint8_t unitCount, uint32_t &var);
 };
 
 

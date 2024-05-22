@@ -35,9 +35,6 @@ class Itkpixv2Emu {
 
     private:
 
-        //Read the command from tx into the buffer
-        void readCommand();
-
         //Initialize random (but fixed over time/instances) pixel thresholds
         //and noise levels
         void initPixels(int seed = 0);

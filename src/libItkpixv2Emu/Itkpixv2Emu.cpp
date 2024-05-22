@@ -6,6 +6,7 @@
 
 #include "Itkpixv2Emu.h"
 #include <iostream>
+#include <bitset>
 
 namespace {
     auto rlog = logging::make_log("emu_itkpixv2");
@@ -46,17 +47,13 @@ void Itkpixv2Emu::executeLoop(){
 
     //Once the commands arrive, the interpreter should kick in
     Itkpixv2EmuUtils::Cmd cmd = m_cmdInterpreter->readCommand(m_tx);
+    //if (cmd.header == Itkpixv2EmuUtils::Commands::WrReg){
+    //    std::bitset<32> d(cmd.data);
+    //    rlog->info("WrReg command to address {} with data {}", cmd.address, d.to_string());
+    //}
 
-}
 
-void Itkpixv2Emu::readCommand(){
-
-    //pop the 32-bit word that arrived
-    uint32_t w = m_tx->read32();
-
-    //split it into two 16-bit commands to be buffered
-    m_commandStream.push_back((w >> 16) & 0x0000FFFF);
-    m_commandStream.push_back(w & 0x0000FFFF);
+    executeLoop();
 }
 
 void Itkpixv2Emu::outputLoop(){

@@ -2,6 +2,8 @@ add_library(Itkpixv2Emu SHARED
         Itkpixv2Emu.cpp
         Itkpixv2EmuController.cpp
         Itkpixv2EmuTxCore.cpp
+        Itkpixv2EmuCommandInterpreter.cpp
+        Itkpixv2EmuCommandExe.cpp
 )
 
 post_build_debug_library(Itkpixv2Emu)
