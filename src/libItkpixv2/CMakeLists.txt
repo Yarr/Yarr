@@ -22,7 +22,7 @@ target_include_directories(Itkpixv2 PUBLIC ./include)
 target_link_libraries(Itkpixv2 Scan)
 
 LIST(APPEND apps
-        ITkPixV2CheckPulse
+        Itkpixv2CheckPulse
         Itkpixv2ReadRingosc)
 
 foreach (target IN LISTS apps)
