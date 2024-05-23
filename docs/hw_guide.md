@@ -10,12 +10,24 @@ Not working are AMD systems and most Dell or HP computers.
 
 Some example setups that have been tested working and in use:
 
+- [a more recent build](https://uk.pcpartpicker.com/list/DVkkyg)
 - [System 1](https://pcpartpicker.com/list/ZVmZRk)
 - [System 2](https://pcpartpicker.com/list/m7ZhrV)
 - [Mini version](https://pcpartpicker.com/list/MrXM3F)
 
 ### Example Main Components
 
+#### A more recent build (2024)
+- CPU: Intel Core i5-14600K 3.5 GHz 14-Core Processor  (£289.99 @ Amazon UK)
+- CPU Cooler: Noctua NH-D15S 82.52 CFM CPU Cooler  (£89.95 @ Amazon UK)
+- Motherboard: Asus PRIME H770-PLUS ATX LGA1700 Motherboard  (£194.99 @ AWD-IT)
+- Memory: Corsair Vengeance RGB 32 GB (2 x 16 GB) DDR5-5600 CL36 Memory  (£114.00 @ Amazon UK)
+- Storage: Kingston NV2 1 TB M.2-2280 PCIe 4.0 X4 NVME Solid State Drive  (£57.99 @ Ebuyer)
+- Case: Fractal Design Pop Air ATX Mid Tower Case  (£76.60 @ CCL Computers)
+- Power Supply: be quiet! System Power 10 850 W 80+ Gold Certified ATX Power Supply  (£86.15 @ NeoComputers)
+- Total: £909.67
+
+#### An older example
 - Motherboard ASUS 90MB0WG0-M0EAY0 (140 CHF)
 - CPU Intel Core i5-8400 (6X2.8) BOXED 1151v2 (200 CHF)
 - CPU fan NH-L9I (50 CHF)

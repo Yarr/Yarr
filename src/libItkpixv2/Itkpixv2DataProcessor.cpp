@@ -316,9 +316,9 @@ void Itkpixv2DataProcessor::process_core()
                 // logger->warn("Read hitmap 1");
                 // ############ Step 2. read hit map ############
                 // The hit map decoding is based on look-up table
+                //_hitmap = 0;
                 if (!retrieve(_hitmap, 16, false, true))
                     return;
-
             case HMAP2:
                 // logger->warn("Read hitmap 2");
                 _status = HMAP2;
@@ -438,7 +438,7 @@ void Itkpixv2DataProcessor::process_core()
                         // First pixel is 1,1, last pixel is 400,384
                         const uint16_t pix_col = ((_ccol - 1) * 8) + (_LUT_PlainHMap_To_ColRow[_hitmap][ihit] >> 4) + 1;
                         const uint16_t pix_row = ((_qrow[_ccol])*2) + (_LUT_PlainHMap_To_ColRow[_hitmap][ihit] & 0xF) + 1;
-
+                     
                         // For now fill in _events without checking whether the addresses are valid
                         if (_events == 0)
                         {
@@ -488,6 +488,10 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
     // Cannot get more data: return failure code
     if (_curInV == nullptr || _curInV->size() == 0 || _rawDataIdx >= _curInV->size())
     {
+        //Do not perform a cleanup and decoding termination if we are in the hitmap retrieval step.
+        //This protects the edge case when we would hit the end of the stream while retrieving the
+        //16 bits of the last qcore hitmap, which leads to the last hit being dropped from the output.
+        if (_status == HMAP1) return true;
         // Reset raw data index and word index
         _rawDataIdx = 0;
         _wordIdx = 0;
@@ -503,7 +507,13 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
             {
                 // logger->error("Pushing out data {} events", _events[_activeChannels[i]]);
                 _events = 0;
+
+                // Propogate current status and push out data
+                auto pushedStat = _curInV->stat;
                 m_out->pushData(std::move(_curOut));
+
+                // Reinitalize _curOut buffer
+                _curOut = std::make_unique<FrontEndData>(pushedStat);
             }
             else
             {
@@ -519,8 +529,8 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
             return false;
         if (_curInV->size() == 0){
             if (_curInV->stat.is_end_of_iteration) {
-                _curOut = std::make_unique<FrontEndData>(_curInV->stat);
-                m_out->pushData(std::move(_curOut));
+                auto endOut = std::make_unique<FrontEndData>(_curInV->stat);
+                m_out->pushData(std::move(endOut));
             }
             return false;
         }
@@ -534,8 +544,10 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
         }
         */
 
-        _curOut = std::make_unique<FrontEndData>(_curInV->stat);
-        _events = 0;
+        if(_curOut == nullptr) {
+            _curOut = std::make_unique<FrontEndData>(_curInV->stat);
+            _events = 0;
+        }
 
         // Increase word count
         for (unsigned c = 0; c < _curInV->size(); c++)
