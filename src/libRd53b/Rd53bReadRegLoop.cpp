@@ -157,7 +157,7 @@ void Rd53bReadRegLoop::execPart1()
             std::string feName = dynamic_cast<FrontEndCfg *>(fe)->getName();
             Rd53b *feRd53b = dynamic_cast<Rd53b *>(fe);
 
-            logger->info("Measuring for FE {} on Rx {}", feName, id);
+            logger->info("Measuring for FE {} on Rx {}", feName, dynamic_cast<FrontEndCfg*>(fe)->getRegRxChannel());
 
             // Reading Standard Registers
             for (auto Reg : m_STDReg) {

@@ -516,36 +516,60 @@ uint32_t Rd53b::readSingleRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref) {
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     // go through the incoming data stream and get the register read data
-    std::vector<RawDataPtr> dataVec = m_rxcore->readData();
+    std::vector<RawDataPtr> dataVec;
     RawDataPtr data;
-    if (dataVec.size() > 0) {
+    bool found = false;
+    double check_seconds = 0.;
+
+    logger->debug("Reading register data for chip ID {} on channel {}", m_chipId, regRxChannel);
+    std::chrono::steady_clock::time_point comm_t0 = std::chrono::steady_clock::now();
+
+    do{
+      dataVec = m_rxcore->readData();
+      if (dataVec.size() > 0) {
         for(auto const &v : dataVec) {
-            // Find raw data for this address
-            if (rxChannel != v->getAdr())
-                continue;
+	  // Find raw data for this address
+	  if (regRxChannel != v->getAdr()){
+	    logger->debug("Data doesn't belong to the regRx channel {}, instead comes from channel {}", regRxChannel, v->getAdr());
+	    continue;
+	  }
 
-            if (v->get(0) != 0xffffdead) {
-                data = v;
-                if(!(data->getSize() >= 2)) {
-                    logger->warn("readSingleRegister failed, received wrong number of words ({}) for FE with chipId {}", data->getSize(), m_chipId);
-                    continue;
-                }
+	  if (v->get(0) != 0xffffdead) {
+	    data = v;
+	    if(!(data->getSize() >= 2)) {
+	      logger->warn("readSingleRegister failed, received wrong number of words ({}) for FE with chipId {}", data->getSize(), m_chipId);
+	      continue;
+	    }
 
-                auto [id, received_address, register_value] = Rd53b::decodeSingleRegReadID(data->get(0), data->get(1));
-                if(id == (m_chipId&0x3)) {
-                    if(received_address != (this->*ref).addr()) {
-                        logger->warn("readSingleRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
-                        return 65536;
-                    }
-                    return register_value;
-                } else {
-                    logger->info("readSingleRegister 0x{:x} 0x{:x} -> ID {} - {}, addr 0x{:x} val 0x{:x}", data->get(0), data->get(1), id, m_chipId&0x3, received_address, register_value);
-                }
-            }
+	    auto [id, received_address, register_value] = Rd53b::decodeSingleRegReadID(data->get(0), data->get(1));
+	    if(id == (m_chipId&0x3)) {
+	      if(received_address != (this->*ref).addr()) {
+		logger->warn("readSingleRegister failed, returned data {} is for unexpected register address (received address: {}, expected address {})", register_value, received_address, (this->*ref).addr());
+		found = false;
+		return 65536;
+	      }
+	      logger->debug("readSingleRegister successful for register address {} with value {} from chip with chipId {}", (this->*ref).addr(), register_value, m_chipId);
+	      found = true;
+	      return register_value;
+	    } else {
+	      logger->error("readSingleRegister 0x{:x} 0x{:x} -> ID {} - {}, addr 0x{:x} val 0x{:x}", data->get(0), data->get(1), id, m_chipId&0x3, received_address, register_value);
+	      found = false;
+	      continue;
+	    }
+	  }
         }
-    }
+      }
+      else{
+	logger->debug("No raw data received.");
+      }
+
+      std::chrono::steady_clock::time_point comm_t1 = std::chrono::steady_clock::now();
+      check_seconds = std::chrono::duration_cast<std::chrono::seconds>(comm_t1 - comm_t0).count();
+      if(!found)
+	std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }while(!found && check_seconds<10.);
     
-    logger->warn("readSingleRegister failed, did not received register readback data from chip with chipId {}", m_chipId);
+    logger->error("readSingleRegister failed, did not received register readback data for address {} from chip with chipId {}", (this->*ref).addr(), m_chipId);
     return 65536;
 }
     
