@@ -54,9 +54,9 @@ int main(int argc, char *argv[]) {
   mySpec.setCmdEnable(0x1);
 
   Fei4 fe;
-  fe.init(&mySpec, FrontEndConnectivity(0,0));
+  fe.init(&mySpec, FrontEndConnectivity(0,0,0));
   Fei4 dummy;
-  dummy.init(&mySpec, FrontEndConnectivity(8,8));
+  dummy.init(&mySpec, FrontEndConnectivity(8,8,8));
 
   // Read config file
   std::ifstream cfgFile;
