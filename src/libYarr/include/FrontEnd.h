@@ -113,15 +113,11 @@ class FrontEndConnectivity {
             initFeConnectivity(cfg.getTxChannel(), cfg.getRxChannel());
         }
 
-        virtual void initFeConnectivity(const FrontEndConnectivity& cfg) {
-            initFeConnectivity(cfg.getTxChannel(), cfg.getRxChannel());
-        }
-
 	virtual void initFeConnectivity(const FrontEndConnectivity& cfg) {
 	    initFeConnectivity(cfg.getTxChannel(), cfg.getRxChannel(), cfg.getRegRxChannel());
         }
 
-	virtual void initFeConnectivity(unsigned arg_txChannel, unsigned arg_rxChannel){
+	virtual void initFeConnectivity(unsigned arg_txChannel, unsigned arg_rxChannel, unsigned arg_regRxChannel){
 	    txChannel = arg_txChannel;
 	    rxChannel = arg_rxChannel;
 	    regRxChannel = arg_regRxChannel;
