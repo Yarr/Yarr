@@ -258,7 +258,7 @@ int ScanConsoleImpl::configure() {
             ScanHelper::writeFeConfig(feCfg, scanOpts.outputDir + feCfgMap.at(id)[1] + ".before");
     }
     bookie->initGlobalFe(chipType);
-    bookie->getGlobalFe()->init(&*hwCtrl, FrontEndConnectivity(0,0));
+    bookie->getGlobalFe()->init(&*hwCtrl, FrontEndConnectivity(0,0,0));
 
     ScanHelper::banner(logger,"Configure FEs");
 
@@ -301,7 +301,7 @@ int ScanConsoleImpl::configure() {
         logger->info("Checking com {}", feCfg->getName());
         // Select correct channel
         hwCtrl->setCmdEnable(feCfg->getTxChannel());
-        hwCtrl->setRxEnable(feCfg->getRxChannel());
+        hwCtrl->setRxEnable({feCfg->getRxChannel(),feCfg->getRegRxChannel()});
         hwCtrl->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
         // Configure
         if (fe->checkCom() != 1) {
@@ -419,7 +419,7 @@ int ScanConsoleImpl::initHardware() {
             ScanHelper::writeFeConfig(feCfg, scanOpts.outputDir + feCfgMap.at(id)[1] + ".before");
     }
     bookie->initGlobalFe(chipType);
-    bookie->getGlobalFe()->init(&*hwCtrl, FrontEndConnectivity(0,0));
+    bookie->getGlobalFe()->init(&*hwCtrl, FrontEndConnectivity(0,0,0));
     return 0;
 }
 

@@ -46,18 +46,20 @@ void Bookkeeper::addFe(std::unique_ptr<FrontEnd> fe, const FrontEndConnectivity&
     bookEntries.back().active = true;
     bookEntries.back().txChannel = cfg.getTxChannel();
     bookEntries.back().rxChannel = cfg.getRxChannel();
+    bookEntries.back().regRxChannel = cfg.getRegRxChannel();
 
     auto fe_cfg = dynamic_cast<FrontEndCfg*>(fe.get());
     if(fe_cfg) fe_cfg->setChannel(cfg);
 
     rxToIdMap[cfg.getRxChannel()].emplace_back(uid);
+    rxToIdMap[cfg.getRegRxChannel()].emplace_back(idMap[fe]);
 
     // Using macro includes file/line info
-    SPDLOG_LOGGER_INFO(blog, "Added FE: Tx({}), Rx({}) under ID {}", cfg.getTxChannel(), cfg.getRxChannel(), uid);
+    SPDLOG_LOGGER_INFO(blog, "Added FE: Tx({}), Rx({}), RegRx({}) under ID {}", cfg.getTxChannel(), cfg.getRxChannel(), cfg.getRegRxChannel(), uid);
 }
 
 void Bookkeeper::addFe(std::unique_ptr<FrontEnd> fe, unsigned channel) {
-    this->addFe(std::move(fe), FrontEndConnectivity(channel,channel));
+  this->addFe(std::move(fe), FrontEndConnectivity(channel,channel,channel));
 }
 
 void Bookkeeper::delFe(unsigned id) {
@@ -113,8 +115,11 @@ std::vector<uint32_t> Bookkeeper::getTxMask() {
 std::vector<uint32_t> Bookkeeper::getRxMask() {
     std::vector<uint32_t> activeChannels;
     for (BookEntry &entry : bookEntries) {
-        if (entry.active)
+      if (entry.active){
             activeChannels.push_back(entry.rxChannel);
+	    if (entry.regRxChannel)
+	      activeChannels.push_back(entry.regRxChannel);
+      }
     }
     return activeChannels;
 }
