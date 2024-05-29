@@ -24,8 +24,9 @@ target_include_directories(Itkpixv2 PUBLIC ./include)
 target_link_libraries(Itkpixv2 Scan)
 
 LIST(APPEND apps
-        ITkPixV2CheckPulse
-        Itkpixv2GenEncode)
+        Itkpixv2CheckPulse
+        Itkpixv2GenEncode
+        Itkpixv2ReadRingosc)
 
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)
