@@ -127,6 +127,7 @@ class FrontEndConnectivity {
         virtual void initFeConnectivity(unsigned arg_txChannel, unsigned arg_rxChannel){
 	  txChannel = arg_txChannel;
 	  rxChannel = arg_rxChannel;
+	  regRxChannel = arg_rxChannel;
 	  lockCfg = false;
         }
 
