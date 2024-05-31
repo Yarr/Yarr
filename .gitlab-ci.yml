@@ -30,7 +30,6 @@ job_build_all:
     artifacts:
         paths:
           - bin
-          - build
           - lib
           - python
     script:
@@ -94,7 +93,6 @@ job_build_code_coverage:
     artifacts:
         paths:
           - bin
-          - build
           - lib
           - cc_tests
           - scripts
