@@ -261,10 +261,25 @@ namespace ScanHelper {
             feCfg->loadConfig(cfg);
             if (chip.contains("locked"))
                 feCfg->setLocked((int)chip["locked"]);
+            
+            // Check for hidden clipboard monitor parameter, and start them if true
+            if (chip.contains("clipboardMonitor")) {
+                if(chip["clipboardMonitor"]) {
+                    bookie.addFeClipboardMonitor(i, feCfg->getName());
+                }
+            }
+
             std::size_t botDirPos = chipConfigPath.find_last_of('/');
             std::string  cfgFile=chipConfigPath.substr(botDirPos, chipConfigPath.length());
             feCfgMap[bookie.getId(bookie.getLastFe())] = {chipConfigPath, cfgFile};
         }
+        
+        // Check for hidden config-level parameter clipboardMonitorRefreshTime
+        if(config.contains("clipboardMonitorRefreshTime"))
+            bookie.setFeClipboardMonitorRefreshTime((unsigned)config["clipboardMonitorRefreshTime"]);
+        else
+            bookie.setFeClipboardMonitorRefreshTime(10000); // 0.01 seconds default
+
         return chipType;
     }
 
