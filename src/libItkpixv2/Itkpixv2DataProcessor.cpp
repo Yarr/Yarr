@@ -491,7 +491,7 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
         //Do not perform a cleanup and decoding termination if we are in the hitmap retrieval step.
         //This protects the edge case when we would hit the end of the stream while retrieving the
         //16 bits of the last qcore hitmap, which leads to the last hit being dropped from the output.
-        // if (_status == HMAP1) return true;
+        if (_status == HMAP1) return true;
 
         // Reset raw data index and word index
         _rawDataIdx = 0;
