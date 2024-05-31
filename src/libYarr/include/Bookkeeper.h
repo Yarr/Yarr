@@ -11,6 +11,7 @@
 
 #include <mutex>
 #include <memory>
+#include <thread>
 
 #include "RawData.h"
 #include "EventDataBase.h"
@@ -82,7 +83,13 @@ class Bookkeeper {
         void setTriggerAction(std::shared_ptr<StdTriggerAction> trigLoop) {m_trigLoop = trigLoop;};
         std::shared_ptr<StdTriggerAction> getTriggerAction() {return m_trigLoop;};
 
+        void startFeClipboardMonitor();
+        void joinFeClipboardMonitor();
+        void setFeClipboardMonitorRefreshTime(unsigned arg_clipboardMonitorRefreshTime);
+        void addFeClipboardMonitor(unsigned arg_id, std::string arg_name);
+
     private:
+        void feClipboardMonitor();
 
         std::unique_ptr<FrontEnd> g_fe;
 
@@ -95,6 +102,14 @@ class Bookkeeper {
         int target_tot;
         int target_threshold;
         int target_charge;
+
+        // Clipboard monitoring thread/variables
+        unsigned clipboardMonitorRefreshTime;
+        bool runClipboardMonitor;
+
+        std::unique_ptr<std::thread> clipboardMonitorThread_ptr;
+        std::vector<unsigned> clipboardMonitorFeIDs;
+        std::vector<std::string> clipboardMonitorFeNames;
 };
 
 #endif

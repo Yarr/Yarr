@@ -165,3 +165,65 @@ std::vector<unsigned>& Bookkeeper::getRxToId(unsigned rx) {
     // Construct empty if does not exist ok!
     return rxToIdMap[rx];
 }
+
+void Bookkeeper::startFeClipboardMonitor() {
+
+    // start clipboard monitoring thread
+    runClipboardMonitor = true;
+    clipboardMonitorThread_ptr.reset(new std::thread(&Bookkeeper::feClipboardMonitor, this));
+}
+
+void Bookkeeper::setFeClipboardMonitorRefreshTime(unsigned arg_clipboardMonitorRefreshTime) {
+    clipboardMonitorRefreshTime = arg_clipboardMonitorRefreshTime;
+}
+
+void Bookkeeper::joinFeClipboardMonitor() {
+    runClipboardMonitor = false;
+    clipboardMonitorThread_ptr->join();
+}
+
+void Bookkeeper::addFeClipboardMonitor(unsigned arg_id, std::string arg_name) {
+    clipboardMonitorFeIDs.push_back(arg_id);
+    clipboardMonitorFeNames.push_back(arg_name);
+}
+
+void Bookkeeper::feClipboardMonitor() {
+    if(clipboardMonitorFeIDs.size() == 0)
+        return;
+    for(unsigned i = 0; i < clipboardMonitorFeIDs.size(); i++)
+        SPDLOG_LOGGER_INFO(blog, "[ ClipboardMonitor : {:^8} [{}] : Info ] Started clipboard monitor thread",  clipboardMonitorFeNames[i], clipboardMonitorFeIDs[i]);
+    while(runClipboardMonitor) {
+        for(unsigned i = 0; i < clipboardMonitorFeIDs.size(); i++) {
+            SPDLOG_LOGGER_INFO(
+                blog, "[ ClipboardMonitor : {:^8} [{}] : RawData  ] InCount:{:<8} OutCount:{:<8} QueueSize:{:<8}", 
+                clipboardMonitorFeNames[i], clipboardMonitorFeIDs[i],
+                bookEntries[clipboardMonitorFeIDs[i]].fe->clipRawData.getNumDataIn(),
+                bookEntries[clipboardMonitorFeIDs[i]].fe->clipRawData.getNumDataOut(),
+                bookEntries[clipboardMonitorFeIDs[i]].fe->clipRawData.size()
+            );
+            SPDLOG_LOGGER_INFO(
+                blog, "[ ClipboardMonitor : {:^8} [{}] : ProcData ] InCount:{:<8} OutCount:{:<8} QueueSize:{:<8}", 
+                clipboardMonitorFeNames[i], clipboardMonitorFeIDs[i],
+                bookEntries[clipboardMonitorFeIDs[i]].fe->clipData.getNumDataIn(),
+                bookEntries[clipboardMonitorFeIDs[i]].fe->clipData.getNumDataOut(),
+                bookEntries[clipboardMonitorFeIDs[i]].fe->clipData.size()
+            );
+            SPDLOG_LOGGER_INFO(
+                blog, "[ ClipboardMonitor : {:^8} [{}] : HistData ] InCount:{:<8} OutCount:{:<8} QueueSize:{:<8}", 
+                clipboardMonitorFeNames[i], clipboardMonitorFeIDs[i],
+                bookEntries[clipboardMonitorFeIDs[i]].fe->clipHisto.getNumDataIn(),
+                bookEntries[clipboardMonitorFeIDs[i]].fe->clipHisto.getNumDataOut(),
+                bookEntries[clipboardMonitorFeIDs[i]].fe->clipHisto.size()
+            );
+            SPDLOG_LOGGER_INFO(
+                blog, "[ ClipboardMonitor : {:^8} [{}] : Feedback ] InCount:{:<8} OutCount:{:<8} QueueSize:{:<8}", 
+                clipboardMonitorFeNames[i], clipboardMonitorFeIDs[i],
+                bookEntries[clipboardMonitorFeIDs[i]].fe->clipProcFeedback.getNumDataIn(),
+                bookEntries[clipboardMonitorFeIDs[i]].fe->clipProcFeedback.getNumDataOut(),
+                bookEntries[clipboardMonitorFeIDs[i]].fe->clipProcFeedback.size()
+            );
+        }
+        std::this_thread::sleep_for(std::chrono::microseconds(clipboardMonitorRefreshTime)); // microseconds  
+    }
+    SPDLOG_LOGGER_INFO(blog, "Joined clipboard monitor thread");
+}
