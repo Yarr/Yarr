@@ -174,12 +174,12 @@ $ cd ..
     - For all controllers: 
         - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=all ..``
     - For NetIO:
-        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;NetioHW``
+        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;NetioHW"``
 
 - In order to specify specific hardware controller and/or front-end libraries to build,
-one can provide an OR'ed chain of their names to the `SELECT_LIBS` CMake variable. For example, if the default list of hardware controllers is `YARR_CONTROLLERS_TO_BUILD=Spec;Emu;NetioHW` and the default list of front-ends to build is `YARR_FRONT_ENDS_TO_BUILD=Fei4;Star;Rd53a;Rd53b` one can specify that only the `Spec` hardware controller and `Rd53b` front-end libraries are built by doing:
+one can provide an OR'ed chain of their names to the `SELECT_LIBS` CMake variable. For example, if the default list of hardware controllers is `YARR_CONTROLLERS_TO_BUILD="Spec;Emu;NetioHW"` and the default list of front-ends to build is `YARR_FRONT_ENDS_TO_BUILD="Fei4;Star;Rd53a;Rd53b"` one can specify that only the `Spec` hardware controller and `Rd53b` front-end libraries are built by doing:
 ```
-    $ cmake3 -DSELECT_LIBS=Spec|Rd53b ..
+    $ cmake3 -DSELECT_LIBS="Spec|Rd53b" ..
 ```
 - In order to specify a subset of executables to be built, one can provide an OR'ed chain of the names of the executables to be built with the `SELECT_TOOLS` CMake variable. For example, to only build the `scanConsole` executable one can do:
 ```
