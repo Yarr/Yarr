@@ -88,14 +88,11 @@ job_build_none:
       - CTEST_OUTPUT_ON_FAILURE=1 make test
       - bin/scanConsole -k
 
-job_build_code_coverage:
+job_code_coverage:
     stage: build
     artifacts:
         paths:
-          - bin
-          - lib
           - cc_tests
-          - scripts
     script:
       - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
       - mkdir  build
@@ -104,6 +101,9 @@ job_build_code_coverage:
       - make install -j4
       - /bin/pwd
       - cd ../
+      - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+      - scripts/cc_tool.sh
+    coverage: '/  lines......: \d+(?:\.\d+)?/'
 
 job_run_codechecker:
     stage: build
@@ -224,17 +224,6 @@ job_test_netio:
       # Terminate netio_bridge
       - kill ${pid_bridge}
 
-job_test_code_coverage:
-    stage: test
-    needs: ["job_build_code_coverage"]
-    artifacts:
-        paths:
-          - cc_tests
-    script:
-      - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-      - scripts/cc_tool.sh
-    coverage: '/  lines......: \d+(?:\.\d+)?/'
-
 job_test_json:
     stage: test
     script:
@@ -285,7 +274,7 @@ deploy_devel_doxygen:
 
 deploy_coverage:
     stage: deploy
-    dependencies: ["job_test_code_coverage"]
+    dependencies: ["job_code_coverage"]
     only:
         - devel@YARR/YARR
     variables:
