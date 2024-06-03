@@ -334,8 +334,9 @@ bool Histo2d::fromJson(const json &j) {
         hlog->error("ERROR this does not seem to be a histogram file, could not parse.");
         return false;
     } else {
-        if (j["Type"] != "Histo2d") {
-            hlog->error("ERROR File contains the wrong type: {}", std::string(j["Type"]));
+        std::string read_type = j["Type"];
+        if (read_type != "Histo2d") {
+            hlog->error("ERROR File contains the wrong type: {}", read_type);
             return false;
         }
 

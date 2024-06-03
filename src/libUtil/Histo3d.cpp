@@ -275,7 +275,7 @@ void Histo3dT<DataT>::toStream(std::ostream &out) const{
 
 template<typename DataT>
 void Histo3dT<DataT>::toJson(json &j) const {
-    j["Type"] = "Histo3dT";
+    j["Type"] = "Histo3d";
     j["Name"] = name;
 
     j["x"]["AxisTitle"] = xAxisTitle;
@@ -327,7 +327,8 @@ void Histo3dT<DataT>::toFile(const std::string &prefix, const std::string &dir, 
              file << std::setw(4) << j;
     } else {
 	// Header
-	file << "Histo3dT " <<  std::endl;
+        // TODO: in principle we could include something about DataT here?
+        file << "Histo3d " <<  std::endl;
         file << name << std::endl;
         file << xAxisTitle << std::endl;
         file << yAxisTitle << std::endl; 
@@ -355,7 +356,7 @@ bool Histo3dT<DataT>::fromFile(const std::string &filename) {
     // Check for header
     std::string line;
     std::getline(file, line);
-    if (line.find("Histo3dT") == std::string::npos) {
+    if (line.find("Histo3d") == std::string::npos) {
         std::cerr << "ERROR: Tried loading 3d Histogram from file " << filename << ", but file has non or incorrect header" << std::endl;
         file.close();
         return false;
@@ -428,8 +429,9 @@ bool Histo3dT<DataT>::fromJson(const json &j) {
         hlog->error("ERROR this does not seem to be a histogram file, could not parse.");
         return false;
     } else {
-        if (j["Type"] != "Histo3d") {
-            hlog->error("ERROR File contains the wrong type: {}", std::string(j["Type"]));
+        std::string read_type = j["Type"];
+        if (read_type != "Histo3d") {
+            hlog->error("ERROR File contains the wrong type: {}", read_type);
             return false;
         }
 
