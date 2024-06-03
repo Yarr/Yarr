@@ -3,6 +3,7 @@
 #include "HistogramBase.h"
 #include "Histo1d.h"
 #include "Histo2d.h"
+#include "Histo3d.h"
 
 namespace tests {
 namespace HistogramLoading {
@@ -47,6 +48,29 @@ void checkHisto1D(const Histo1d &hh, const HistoInfo &hi) {
 }
 
 void checkHisto2D(const Histo2d &hh, const HistoInfo &hi) {
+  CAPTURE (hi.n, hi.s, hi.e, hi.ls);
+
+  CHECK (hh.getName() == hi.n);
+  CHECK (hh.size() == hi.s);
+  CHECK (hh.getNumOfEntries() == hi.e);
+
+  CHECK (hh.getXaxisTitle() == hi.ax);
+  CHECK (hh.getYaxisTitle() == hi.ay);
+  CHECK (hh.getZaxisTitle() == hi.az);
+
+  if(!hi.ls.empty()) {
+    auto &ls = hh.getStat();
+    CHECK (ls.size() == hi.ls.size());
+    for(size_t i = 0; i<ls.size(); i++) {
+      CAPTURE (i);
+      CHECK (ls.get(i) == hi.ls[i]);
+    }
+  } else {
+    CHECK (hh.getStat().size() == hi.ls.size());
+  }
+}
+
+void checkHisto3D(const Histo3d &hh, const HistoInfo &hi) {
   CAPTURE (hi.n, hi.s, hi.e, hi.ls);
 
   CHECK (hh.getName() == hi.n);
@@ -152,6 +176,45 @@ void testSaveLoad2D(const Histo2d &hh, const HistoInfo &hi) {
   checkHisto2D(*out_histo2, hi);
 }
 
+void testSaveLoad3D(const Histo3d &hh, const HistoInfo &hi) {
+  checkHisto3D(hh, hi);
+
+  json j;
+  hh.toJson(j);
+
+  // For debugging
+  std::string json_output;
+  j.dump(json_output);
+  CAPTURE (json_output);
+
+  std::unique_ptr<HistogramBase> out_histo;
+
+  if(hi.ls.empty()) {
+    out_histo = HistogramBase::fromJson(j);
+  } else {
+    // Make a template LoopStatus
+    std::vector<LoopStyle> styleVec;
+    std::vector<unsigned> statVec;
+
+    for(size_t i=0; i<hi.ls.size(); i++) {
+      styleVec.push_back(LoopStyle::LOOP_STYLE_NOP);
+      statVec.push_back(0);
+    }
+
+    LoopStatus ls{std::move(statVec), styleVec};
+
+    out_histo = HistogramBase::fromJson(j, ls);
+  }
+
+  auto out_histo3 = dynamic_cast<Histo3d*>(out_histo.get());
+
+  // Should get a Histo3d out
+  CHECK (out_histo3 != nullptr);
+
+  // Check the loaded histogram looks the same
+  checkHisto3D(*out_histo3, hi);
+}
+
 }} // Close namespace
 
 using namespace tests::HistogramLoading;
@@ -239,4 +302,50 @@ TEST_CASE("Histogram_2D_loading", "[Histo2d][HistogramBase][HistogramLoad]") {
   }
 
   testSaveLoad2D(*histo, info);
+}
+
+TEST_CASE("Histogram_3D_loading", "[Histo3d][HistogramBase][HistogramLoad]") {
+  std::unique_ptr<Histo3d> histo = std::make_unique<Histo3d>("TestHisto3", 3, 0, 3, 3, 0, 3, 3, 0, 3);
+
+  HistoInfo info{"TestHisto3", 27, 0, {}};
+
+  // NB Most of Histo3d::fromJson has been tested in libUtil
+  // So this is mainly testing extras
+
+  SECTION("Default") {
+  }
+
+  SECTION("Small") {
+    histo = std::make_unique<Histo3d>("TestHisto3", 4, 0, 4, 2, 0, 2, 2, 0, 2);
+    info.s = 16;
+
+    histo->setXaxisTitle("XX");
+    histo->setYaxisTitle("YY");
+    histo->setZaxisTitle("ZZ");
+    info.ax = "XX";
+    info.ay = "YY";
+    info.az = "ZZ";
+  }
+
+  SECTION("SmallLoopStatus") {
+    std::vector<LoopStyle> styleVec;
+    styleVec.push_back(LoopStyle::LOOP_STYLE_DATA);
+    styleVec.push_back(LoopStyle::LOOP_STYLE_PARAMETER);
+    styleVec.push_back(LoopStyle::LOOP_STYLE_PARAMETER);
+
+    std::vector<unsigned> statVec{4, 5, 6};
+
+    LoopStatus ls{std::move(statVec), styleVec};
+
+    histo = std::make_unique<Histo3d>("TestHisto3LS",
+                                      4, 0, 4,
+                                      6, 0, 6,
+                                      2, 0, 2,
+                                      ls);
+    info.n = "TestHisto3LS";
+    info.s = 48;
+    info.ls = statVec;
+  }
+
+  testSaveLoad3D(*histo, info);
 }

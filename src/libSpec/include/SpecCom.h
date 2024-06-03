@@ -51,8 +51,8 @@ enum SPEC_DMA_STATUS {
 #define SPEC_GREG_FWIDENT 0x7
 
 const static std::string specIdentHw[] = {"undefined", "Trenz TEF1001_R1", "Trenz TEF1001_R2",
-    "PLDA XpressK7 160", "PLDA XpressK7 325", "Xilinx KC705", "CERN SPEC S6"};
-const static std::string specIdentChip[] = {"undefined", "FE-I4", "FE65-P2", "RD53A/B", "ABC/HCCStar"};
+    "PLDA XpressK7 160", "PLDA XpressK7 325", "Xilinx KC705", "Numato Nereid K7-160"};
+const static std::string specIdentChip[] = {"undefined", "FE-I4", "FE65-P2", "RD53A/B/C", "ABC/HCCStar"};
 const static std::string specIdentFmc[] = {"undefined", "Creotech 32Ch LVDS (VHDCI)", "Ohio Card (Display Port)"};
 const static std::string specIdentSpeed[] = {"undefined", "160Mbps", "320Mbps", "640Mbps", "1280Mbps"};
 const static std::string specIdentChCfg[] = {"undefined", "4x4", "16x1", "8x4", "32x1", "3x4 TLU", "3x4 Ext Trig", "12x1 TLU", "12x1 Ext Trig"};
