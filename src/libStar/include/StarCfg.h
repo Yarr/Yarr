@@ -146,8 +146,6 @@ class StarCfg : public FrontEndCfg {
   void writeConfig(json &j) override;
   void loadConfig(const json &j) override;
 
-  using configFuncMap = std::unordered_map<std::string, std::tuple<json, std::vector<json>>(StarCfg::*)(void)>;
-  static configFuncMap createConfigs;
   std::tuple<json, std::vector<json>> getPreset(const std::string& systemType) override;
 
   size_t numABCs() { return m_ABCchips.size(); }
@@ -216,10 +214,6 @@ class StarCfg : public FrontEndCfg {
     assert(abcAtIndex(chipIndex));
     return m_ABCchips.at(chipIndex-1);
   }
-
-  std::tuple<json, std::vector<json>> createConfigSingleFE();
-  std::tuple<json, std::vector<json>> createConfigLSStave();
-  std::tuple<json, std::vector<json>> createConfigPetal();
 
   StarConversionTools m_ct;
 };

@@ -492,6 +492,7 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
         //This protects the edge case when we would hit the end of the stream while retrieving the
         //16 bits of the last qcore hitmap, which leads to the last hit being dropped from the output.
         if (_status == HMAP1) return true;
+
         // Reset raw data index and word index
         _rawDataIdx = 0;
         _wordIdx = 0;
@@ -529,8 +530,15 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
             return false;
         if (_curInV->size() == 0){
             if (_curInV->stat.is_end_of_iteration) {
-                auto endOut = std::make_unique<FrontEndData>(_curInV->stat);
-                m_out->pushData(std::move(endOut));
+                // push any remaining _curOut data
+                if(likely(_curOut!=nullptr)) {
+                    m_out->pushData(std::move(_curOut));
+                }
+                // re-initalize object with end-of-iteration marker
+                _curOut = std::make_unique<FrontEndData>(_curInV->stat);
+                // push end-of-iteration marker along
+                m_out->pushData(std::move(_curOut));
+
             }
             return false;
         }

@@ -587,38 +587,8 @@ void StarCfg::loadConfig(const json &j) {
     }    
 }
 
-StarCfg::configFuncMap StarCfg::createConfigs = {
-    {"SingleChip", &StarCfg::createConfigSingleFE},
-    {"StripLSStave", &StarCfg::createConfigLSStave},
-    {"StripPetal", &StarCfg::createConfigPetal}
-};
-
-std::tuple<json, std::vector<json>> StarCfg::createConfigSingleFE() {
-    return StarPreset::createConfigSingleStar(*this);
-}
-
-std::tuple<json, std::vector<json>> StarCfg::createConfigLSStave() {
-    return StarPreset::createConfigStarObject(*this, StarPreset::lsstave, true);
-}
-
-std::tuple<json, std::vector<json>> StarCfg::createConfigPetal() {
-    return StarPreset::createConfigStarObject(*this, StarPreset::petal, false);
-}
-
 std::tuple<json, std::vector<json>> StarCfg::getPreset(const std::string& systemType) {
     // Return a json object for connectivity configuration and
     // a vector of json objects for chip configurations
-    try {
-        auto preset = (this->*createConfigs.at(systemType))();
-        return preset;
-    } catch (std::out_of_range &oor) {
-        logger->error("Unknown system type: {}", systemType);
-        std::string knowntypes;
-        for (const auto& f : StarCfg::createConfigs)
-            knowntypes += f.first+" ";
-        logger->info("Known system types are: {}", knowntypes);
-        throw;
-    } catch (...) {
-        throw;
-    }
+    return StarPreset::createConfigStar(*this, systemType);
 }
