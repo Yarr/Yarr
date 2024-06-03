@@ -24,6 +24,8 @@ namespace fs = std::filesystem;
 #include "AllChips.h"
 #include "ScanHelper.h" // openJson
 #include "Utils.h"
+#include "logging.h"
+#include "LoggingConfig.h"
 
 void print_usage(char* argv[]) {
     std::cerr << " write-register" << std::endl;
@@ -169,18 +171,22 @@ int main(int argc, char* argv[]) {
         if (!use_chip_name) {
             if ( chip_idx.size() == 0 || (std::find(chip_idx.begin(), chip_idx.end(), ichip)!= chip_idx.end()) ) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
-        	hw->setRxEnable(cfg->getRxChannel());
+        	hw->setRxEnable(cfg->getRegRxChannel());
         	hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
                 fe->readUpdateWriteNamedReg(register_name);
+		hw->isCmdEmpty();
                 fe->writeNamedRegister(register_name, register_value);
+		hw->isCmdEmpty();
             }
         } else {
             if (std::find(chip_name.begin(), chip_name.end(), current_chip_name) != chip_name.end()) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
-        	hw->setRxEnable(cfg->getRxChannel());
+        	hw->setRxEnable(cfg->getRegRxChannel());
         	hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
                 fe->readUpdateWriteNamedReg(register_name);
+                hw->isCmdEmpty();
                 fe->writeNamedRegister(register_name, register_value);
+                hw->isCmdEmpty();
             }
         }
     }

@@ -175,13 +175,13 @@ int main(int argc, char* argv[]) {
         if (!use_chip_name) {
             if ( (chip_idx < 0) || (chip_idx == ichip) ) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
-        	hw->setRxEnable(cfg->getRxChannel());
+        	hw->setRxEnable(cfg->getRegRxChannel());
         	hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
             } else continue;
         } else {
             if (current_chip_name == chip_name) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
-        	hw->setRxEnable(cfg->getRxChannel());
+        	hw->setRxEnable(cfg->getRegRxChannel());
         	hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
             } else continue;
         }

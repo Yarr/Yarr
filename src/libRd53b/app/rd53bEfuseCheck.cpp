@@ -145,7 +145,7 @@ int main(int argc, char* argv[]) {
         
         auto feCfg = std::dynamic_pointer_cast<FrontEndCfg>(fe);
         hw->setCmdEnable(feCfg->getTxChannel());
-        hw->setRxEnable(feCfg->getRxChannel());
+        hw->setRxEnable(feCfg->getRegRxChannel());
         logger->info("Reading efuse of chip: {}", feCfg->getName()); 
 
         if (!fe->hasValidName()) {

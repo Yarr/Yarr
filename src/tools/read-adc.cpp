@@ -191,10 +191,12 @@ int main(int argc, char* argv[]) {
         if (shared_vmux){
             auto cfg = dynamic_cast<FrontEndCfg*>(fe.get());
             hw->setCmdEnable(cfg->getTxChannel()); 
-            hw->setRxEnable(cfg->getRxChannel());
+            hw->setRxEnable(cfg->getRegRxChannel());
             hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
             fe->readUpdateWriteNamedReg("MonitorV");
+	    hw->isCmdEmpty();
             fe->writeNamedRegister("MonitorV", high_z);
+	    hw->isCmdEmpty();
         }
         fes.push_back(std::make_pair(ichip, std::move(fe)));
     }
@@ -207,10 +209,12 @@ int main(int argc, char* argv[]) {
         if (!use_chip_name) {
             if ( chip_idx.size() == 0 || (std::find(chip_idx.begin(), chip_idx.end(), ichip)!= chip_idx.end()) ) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
-                hw->setRxEnable(cfg->getRxChannel());
+                hw->setRxEnable(cfg->getRegRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
                 fe->confAdc(monitorV, meas_curr);
+                hw->isCmdEmpty();
                 fe->readUpdateWriteNamedReg("MonitoringDataAdc");
+                hw->isCmdEmpty();
                 uint16_t res = fe->readNamedRegister("MonitoringDataAdc");
 		if (return_count) std::cout << res << std::endl;
                 else{
@@ -221,10 +225,12 @@ int main(int argc, char* argv[]) {
         } else {
             if (std::find(chip_name.begin(), chip_name.end(), current_chip_name) != chip_name.end()) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
-                hw->setRxEnable(cfg->getRxChannel());
+                hw->setRxEnable(cfg->getRegRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
                 fe->confAdc(monitorV, meas_curr);
+                hw->isCmdEmpty();
                 fe->readUpdateWriteNamedReg("MonitoringDataAdc");
+                hw->isCmdEmpty();
                 uint16_t res = fe->readNamedRegister("MonitoringDataAdc");
 		if (return_count) std::cout << res << std::endl;
                 else{
