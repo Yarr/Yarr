@@ -25,7 +25,6 @@ target_link_libraries(Itkpixv2 Scan)
 
 LIST(APPEND apps
         Itkpixv2CheckPulse
-        Itkpixv2GenEncode
         Itkpixv2ReadRingosc)
 
 foreach (target IN LISTS apps)
