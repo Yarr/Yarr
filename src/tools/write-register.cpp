@@ -24,8 +24,6 @@ namespace fs = std::filesystem;
 #include "AllChips.h"
 #include "ScanHelper.h" // openJson
 #include "Utils.h"
-#include "logging.h"
-#include "LoggingConfig.h"
 
 void print_usage(char* argv[]) {
     std::cerr << " write-register" << std::endl;
