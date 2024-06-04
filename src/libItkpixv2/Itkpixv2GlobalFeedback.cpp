@@ -150,6 +150,7 @@ void Itkpixv2GlobalFeedback::init() {
                         itkpixv2->setTDAC(col, row, m_pixelReg);
                     }
                 }
+                itkpixv2->configurePixels();
             }
             while(!g_tx->isCmdEmpty()){}
         }

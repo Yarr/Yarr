@@ -13,17 +13,22 @@ add_library(Itkpixv2 SHARED
         Itkpixv2PixelCfg.cpp
         Itkpixv2PixelFeedback.cpp
         Itkpixv2ReadRegLoop.cpp
-        Itkpixv2TriggerLoop.cpp)
+        Itkpixv2TriggerLoop.cpp
+        Itkpixv2Encoder.cpp)
 
 post_build_debug_library(Itkpixv2)
 target_include_directories(Itkpixv2 PRIVATE ../libYarr/include)
 target_include_directories(Itkpixv2 PRIVATE ../libUtil/include)
+target_include_directories(Itkpixv2 PRIVATE ../libEmu/include)
 target_include_directories(Itkpixv2 PUBLIC ./include)
 target_link_libraries(Itkpixv2 Scan)
 
 LIST(APPEND apps
-        ITkPixV2CheckPulse
-        Itkpixv2ConnectivityScan)
+        Itkpixv2CheckPulse
+        Itkpixv2ConnectivityScan
+        Itkpixv2GenEncode
+        Itkpixv2ReadRingosc
+        )
 
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)
@@ -32,5 +37,5 @@ foreach (target IN LISTS apps)
 endforeach ()
 
 if (BUILD_TESTS)
-    #    add_subdirectory(tests)
+    add_subdirectory(tests)
 endif ()

@@ -17,7 +17,6 @@
 #include <chrono>
 
 #include "RawData.h"
-
 #include <typeinfo>
 
 template <class T>
@@ -59,6 +58,13 @@ class ClipBoard {
             }
             queueMutex.unlock();
             return tmp;
+        }
+
+        void clearData() {
+            queueMutex.lock();
+            std::deque<std::unique_ptr<T>> emptyQueue;
+            std::swap(dataQueue, emptyQueue);
+            queueMutex.unlock();
         }
 
         int size() const {

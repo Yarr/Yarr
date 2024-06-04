@@ -258,7 +258,7 @@ class OccPixelThresholdTune : public AnalysisAlgorithm {
         unsigned n_count;
         std::vector<float> m_occLowCut;
         std::vector<float> m_occHighCut;
-        unsigned int occ_count = 0;
+        unsigned int m_cutIndex = 0;
         std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
         std::map<unsigned, unsigned> innerCnt;
         unsigned injections;

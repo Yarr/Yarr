@@ -239,8 +239,9 @@ bool Histo1d::fromJson(const json &j) {
         return false;
     }
 
-    if (j["Type"] != "Histo1d") {
-        hlog->error("Tried loading 1d Histogram from json, but file has incorrect Type: {}", std::string(j["Type"]));
+    std::string read_type = j["Type"];
+    if (read_type != "Histo1d") {
+        hlog->error("Tried loading 1d Histogram from json, but file has incorrect Type: {}", read_type);
         return false;
     }
 

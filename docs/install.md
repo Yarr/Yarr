@@ -11,22 +11,24 @@ for instance [NetIO](netio.md).
 
 ## TLDR - Software installation 
 
-Just want to install the latest version of the YARR software? Follow the quick install instructions here. In case of a new machine, or if you're not sure, follow the more detailed instructions below. 
+Just want to install the latest version of the YARR software? Follow the quick install instructions here. In case of a new machine, or if you're not sure, follow the more detailed instructions below.
 
-Enable GCC version 9.0 or higher: 
+<details> <summary> If using CentOS 7 or 8, enable GCC version 9.0 or higher</summary>:
+
 ```bash
 # Source the setup script
 $ source /opt/rh/devtoolset-9/enable
 # Add it to your bash_profile to enable it by default
 $ echo "source /opt/rh/devtoolset-9/enable" >> ~/.bash_profile
 ```
+</details>
 
 Clone the YARR repository to your local machine: 
 ```bash
 $ git clone https://gitlab.cern.ch/Yarr/Yarr.git Yarr
 ```
 
-Compile the minimal build, for more specific compilation options (e.g. NetIO, or Rogue), see below. 
+Compile the minimal build, for more specific compilation options (e.g. NetIO), see below.
 ```bash
 $ cd Yarr/
 $ mkdir build
@@ -95,6 +97,14 @@ $ sudo yum install gnuplot texlive-epstopdf cmake3 zeromq zeromq-devel
 $ sudo yum install gnuplot texlive-epstopdf cmake3 elfutils-libelf-devel
 ```
 
+
+### Dependencies for Alma 9
+- If not installed before, you need some standard packages:
+```bash
+$ sudo yum install gnuplot texlive-epstopdf cmake
+```
+
+
 ### Initialise repository
 If you want to install the software in a new machine or want to make a new installation, then clone the repository to your local machine:
 ```bash
@@ -115,6 +125,7 @@ The most up-to date development can be found in the devel branch.
 
 - A version history and description can be found [here](version.md)
 - Note, Yarr is also available in a [GitHub repository.](https://github.com/Yarr/ "GitHub repository"), but using the GitLab version is recommended as it is used for active development.
+
 
 ### Update the software version
 If you already have an installed YARR version on your local machine, then just fetch the latest version to update it:
@@ -137,7 +148,7 @@ This repository uses the cmake build system in its usual manner.
 
 #### Basic compilation
 
-By default the minimal build is enabled, which builds only the Emulator and SPEC controller, if you want to run with additional controllers (e.g. NetIO, or Rogue) you have to enable them via a cmake flag (see below). 
+By default the minimal build is enabled, which builds only the Emulator and SPEC controller, if you want to run with additional controllers (e.g. NetIO) you have to enable them via a cmake flag (see below).
 
 For the minimal build, simply execute the following: 
 
@@ -163,14 +174,12 @@ $ cd ..
     - For all controllers: 
         - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=all ..``
     - For NetIO:
-        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;NetioHW``
-    - For Rogue:
-        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;Rogue``
+        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;NetioHW"``
 
 - In order to specify specific hardware controller and/or front-end libraries to build,
-one can provide an OR'ed chain of their names to the `SELECT_LIBS` CMake variable. For example, if the default list of hardware controllers is `YARR_CONTROLLERS_TO_BUILD=Spec;Emu;NetioHW` and the default list of front-ends to build is `YARR_FRONT_ENDS_TO_BUILD=Fei4;Star;Rd53a;Rd53b` one can specify that only the `Spec` hardware controller and `Rd53b` front-end libraries are built by doing:
+one can provide an OR'ed chain of their names to the `SELECT_LIBS` CMake variable. For example, if the default list of hardware controllers is `YARR_CONTROLLERS_TO_BUILD="Spec;Emu;NetioHW"` and the default list of front-ends to build is `YARR_FRONT_ENDS_TO_BUILD="Fei4;Star;Rd53a;Rd53b"` one can specify that only the `Spec` hardware controller and `Rd53b` front-end libraries are built by doing:
 ```
-    $ cmake3 -DSELECT_LIBS=Spec|Rd53b ..
+    $ cmake3 -DSELECT_LIBS="Spec|Rd53b" ..
 ```
 - In order to specify a subset of executables to be built, one can provide an OR'ed chain of the names of the executables to be built with the `SELECT_TOOLS` CMake variable. For example, to only build the `scanConsole` executable one can do:
 ```
@@ -185,7 +194,6 @@ one can provide an OR'ed chain of their names to the `SELECT_LIBS` CMake variabl
 ```bash
 $ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang # requires clang installed on Linux
 $ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc # gcc 4.8 or higher
-$ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/rce-gcc # ARM/Archlinux on RCE
 $ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/macos-clang # MacOS build
 ```
 - As before, finally compile the software: 

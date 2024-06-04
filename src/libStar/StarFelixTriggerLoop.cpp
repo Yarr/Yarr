@@ -13,13 +13,17 @@ namespace {
   auto logger = logging::make_log("StarFelixTriggerLoop");
 }
 
-StarFelixTriggerLoop::StarFelixTriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) {
+StarFelixTriggerLoop::StarFelixTriggerLoop()
+  : LoopActionBase(LOOP_STYLE_TRIGGER),
+    m_nTrigsTrickle(0),
+    m_trigWordLength(0),
+    m_trigWord{}
+{
   setTrigCnt(50); // Maximum number of triggers to send
   min = 0;
   max = 0;
   step = 1;
   loopType = typeid(this);
-  m_nTrigsTrickle = 0;
 }
 
 void StarFelixTriggerLoop::init() {
@@ -50,36 +54,20 @@ void StarFelixTriggerLoop::init() {
     *g_tx,
     config_elinks,
     trickle_elinks,
-    makeTrickleSequence()
+    m_trickleSeq
     );
 
   setTrigWord();
 
   logger->debug("Configure TxCore");
-  g_tx->setTrigWord(&m_trigWord[0], m_trigWordLength);
+  g_tx->setTrigWord(m_trigWord.data(), m_trigWordLength);
   g_tx->setTrigWordLength(m_trigWordLength);
 
   // Frequency to send trickle pulse
   g_tx->setTrigFreq(m_trickleFreq);
 
   // The TrigCnt of g_tx is the number of time to loop over the trickle memory
-  // round up
-  uint32_t nPulse = std::ceil(static_cast<float>(getTrigCnt()) / m_nTrigsTrickle);
-  g_tx->setTrigCnt(nPulse);
-  logger->debug("nPulse = {}", nPulse);
-
-  // The total number of triggers that are actually sent out.
-  unsigned nTotalTrigs = nPulse * m_nTrigsTrickle;
-
-  // This is always equal to or greater than what is requested.
-  // (Otherwise, have to compute and change the read address of the trickle
-  // memory for the last iteration in order to send the exact number of triggers)
-
-  if (nTotalTrigs != getTrigCnt()) {
-    // Update the trigger counts to what is actually sent for analysis later
-    setTrigCnt(nTotalTrigs);
-    logger->warn("The actual number of triggers sent is {}", nTotalTrigs);
-  }
+  g_tx->setTrigCnt(m_nPulse);
 
   g_tx->setTrigTime(m_trigTime);
 
@@ -162,6 +150,9 @@ void StarFelixTriggerLoop::loadConfig(const json &config) {
 
   if (config.contains("trickle_frequency"))
     m_trickleFreq = config["trickle_frequency"];
+
+  // make trickle sequence
+  makeTrickleSequence();
 
   logger->info("Configured trigger loop: trig_count: {} trig_frequency: {} l0_delay: {}", getTrigCnt(), m_trigFreq, m_trigDelay);
 }
@@ -290,7 +281,7 @@ void StarFelixTriggerLoop::addChargeInjection(std::vector<uint8_t>& trig_segment
   assert(trig_segment[index_l0a] == LCB_FELIX::L0A);
 
   // Charge injection command
-  std::array<uint8_t, 2> inj;
+  std::array<uint8_t, 2> inj{};
   uint8_t bcsel = 3 - (m_trigDelay % 4);
 
   if (m_digital) {
@@ -351,9 +342,16 @@ std::vector<uint8_t> StarFelixTriggerLoop::getHitCounterSegment() {
   return readHitCounts;
 }
 
-std::vector<uint8_t> StarFelixTriggerLoop::makeTrickleSequence() {
+/*
+Compute and set the trickle sequence m_trickleSeq based on the number of triggers and trigger frequency
+Also computed or modified are:
+  m_nTrigsTrickle
+  m_nPulse
+  m_trigFreq
+*/
+void StarFelixTriggerLoop::makeTrickleSequence() {
 
-  std::vector<uint8_t> trickleSeq;
+  m_trickleSeq.clear();
 
   //////
   // Commands to be sent before starting to send tiggers
@@ -423,9 +421,11 @@ std::vector<uint8_t> StarFelixTriggerLoop::makeTrickleSequence() {
     logger->warn("No trigger will be sent");
 
     m_nTrigsTrickle = 0;
+    m_nPulse = 0;
     m_trigFreq = -1; // set to some invalid value
+    setTrigCnt(0);
 
-    return trickleSeq; // empty vector
+    return;
 
   } else if (nMaxSeg_by_size < 2) {
     logger->warn("Only one trigger segment is written into the trickle memory! The trigger frequency will not be accurate.");
@@ -484,13 +484,13 @@ std::vector<uint8_t> StarFelixTriggerLoop::makeTrickleSequence() {
   logger->debug("nBurst = {}", nBurst);
 
   // Put everything together
-  trickleSeq.insert(trickleSeq.end(), trickleSeq_pre.begin(), trickleSeq_pre.end());
+  m_trickleSeq.insert(m_trickleSeq.end(), trickleSeq_pre.begin(), trickleSeq_pre.end());
 
   for (unsigned i=0; i<nBurst; i++) {
-    trickleSeq.insert(trickleSeq.end(), trickleSeq_burst.begin(), trickleSeq_burst.end());
+    m_trickleSeq.insert(m_trickleSeq.end(), trickleSeq_burst.begin(), trickleSeq_burst.end());
   }
 
-  trickleSeq.insert(trickleSeq.end(), trickleSeq_post.begin(), trickleSeq_post.end());
+  m_trickleSeq.insert(m_trickleSeq.end(), trickleSeq_post.begin(), trickleSeq_post.end());
 
   //////
   // Total number of triggers in the trickle memory
@@ -498,10 +498,27 @@ std::vector<uint8_t> StarFelixTriggerLoop::makeTrickleSequence() {
 
   logger->debug("m_nTrigsTrickle = {}", m_nTrigsTrickle);
 
-  logger->debug("trickleSeq.size = {}", trickleSeq.size());
-  for (auto seq : trickleSeq) {
+  logger->debug("trickleSeq.size = {}", m_trickleSeq.size());
+  for (auto seq : m_trickleSeq) {
     logger->trace("{:x}", seq);
   }
 
-  return trickleSeq;
+  //////
+  // Set the number of times to iterator over the trickle memory in order to send at least the requested number of triggers
+  // round up
+  unsigned nTrigs_req = getTrigCnt(); // requested number of triggers
+  m_nPulse = std::ceil(static_cast<float>(nTrigs_req) / m_nTrigsTrickle);
+  logger->debug("nPulse = {}", m_nPulse);
+
+  // The total number of triggers that are actually sent out
+  unsigned nTotalTrigs = m_nPulse * m_nTrigsTrickle;
+  // This is always equal to or greater than what is requested.
+  // (Otherwise, have to compute and change the read address of the trickle
+  // memory for the last iteration in order to send the exact number of triggers)
+
+  // Update the total trigger counts that are in the analyses later
+  if (nTotalTrigs != nTrigs_req) {
+    logger->warn("The actual number of triggers sent is {}", nTotalTrigs);
+    setTrigCnt(nTotalTrigs);
+  }
 }

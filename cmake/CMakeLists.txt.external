@@ -96,26 +96,6 @@ function(YARR_ADD_FELIX_CLIENT)
 
 endfunction()
 
-function(YARR_ADD_ROGUE)
-    if (TARGET rogue)
-        return()
-    endif()
-
-    # Rogue
-    ExternalProject_Add (
-        rogue
-        GIT_REPOSITORY https://github.com/slaclab/rogue.git
-        GIT_TAG v5.13.0
-        UPDATE_COMMAND ""
-        INSTALL_COMMAND make install
-        PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
-        CMAKE_ARGS "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}" "-DNO_PYTHON=1" "-DSTATIC_LIB=1" "-DCMAKE_POSITION_INDEPENDENT_CODE=ON" "-DCMAKE_INSTALL_LIBDIR=${TARGET_INSTALL_AREA}/lib"
-        )
-
-    link_directories(${TARGET_INSTALL_AREA}/lib)
-    include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/rogue/include)
-endfunction()
-
 function(YARR_ADD_EXTERNAL_DEPS)
     # Variant
     FetchContent_Declare(
@@ -154,7 +134,6 @@ function(YARR_ADD_PYBIND11)
 endfunction()
 
 # Plotting Tools
-if (NOT "${TARGET_ARCH}" MATCHES "arm*")
 if (NOT DISABLE_PLOTTING_TOOLS)
 set(CMAKE_MESSAGE_LOG_LEVEL "ERROR")
 find_package(ROOT COMPONENTS Hist Graf)
@@ -166,5 +145,4 @@ if (${ROOT_FOUND})
 else (${ROOT_FOUND})
     MESSAGE(STATUS "Could not locate ROOT. Will not compile plotting tools!")
 endif (${ROOT_FOUND})
-endif ()
 endif ()

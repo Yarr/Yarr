@@ -16,7 +16,9 @@
 
 class Histo1d;
 class Histo2d;
-class Histo3d;
+template<typename T>
+class Histo3dT;
+using Histo3d = Histo3dT<uint16_t>;
 class LoopStatus;
 
 class DataArchiver : public HistogramAlgorithm {

@@ -4,7 +4,6 @@
 YARR is a readout system based around the concept of moving intelligence from the FPGA firmware into the host computer software. The role of the FPGA is the one of a reconfigurable I/O interface and not anymore the one of a hardware accelerator. YARR supports multiple types of FPGA platforms:
 
 * COTS PCIe FPGA cards: CERN SPEC, XpressK7, Trenz TEF1001, and Xilinx KC705
-* SLAC's HSIO2/RCE
 * FELIX + NETIO
 * FELIX-STAR + NETIO-NEXT
 * ATLAS IBL BOC
@@ -50,7 +49,6 @@ Support for YARR can be found in the [YARR Matter Most channel.](https://matterm
     |-- libFelixClient: FELIX driver for felix-star and NetIO-next
     |-- libRce : HSIO2 hw driver
     |-- libRd53a: RD53a implementation
-    |-- libRogue: Rogue HW controller
     |-- libSpec : PCIe hw driver
     |-- libUtil : Suppert library
     |-- libYarr : YARR core libraries 

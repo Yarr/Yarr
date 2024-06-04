@@ -20,7 +20,7 @@ std::shared_ptr<const AbcStarRegInfo> AbcStarRegInfo::instance(int version) {
 }
 
 //Register enums definitions
-typedef std::tuple<ABCStarSubRegister, unsigned int, unsigned int, unsigned int> abcsubregdef;
+using abcsubregdef = std::tuple<ABCStarSubRegister, unsigned int, unsigned int, unsigned int>;
 const std::vector<abcsubregdef> s_abcsubregdefs_v0 = {
   {ABCStarSubRegister::RRFORCE			,0	,0	,1}	,
   {ABCStarSubRegister::WRITEDISABLE		,0	,1	,1}	,
@@ -243,7 +243,8 @@ AbcStarRegInfo::AbcStarRegInfo(int version) {
 }
 
 AbcCfg::AbcCfg(int version)
-  : m_registerMap{},
+  : m_abcID(0),
+    m_registerMap{},
     m_registerSet{},
     m_info(AbcStarRegInfo::instance(version))
 {
