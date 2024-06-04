@@ -219,7 +219,7 @@ int ScanConsoleImpl::setupScan() {
      
         logger->info(" .. started threads of Fe {}", id);
     }
-
+    bookie->startFeClipboardMonitor();
     return 0;
 }
 
@@ -472,6 +472,7 @@ void ScanConsoleImpl::cleanup() {
             histo->toFile(name, scanOpts.outputDir);
         } // while
     } // i
+
     logger->info("Finishing run: {}", runCounter);
     // Register test info into database
     if (scanOpts.dbUse) {
@@ -575,6 +576,8 @@ void ScanConsoleImpl::run() {
         fe->clipResult.at(i)->finish();
       }
     }
+    // join clipboard monitor
+    bookie->joinFeClipboardMonitor();
 
     all_done = std::chrono::steady_clock::now();
     logger->info("All done!");

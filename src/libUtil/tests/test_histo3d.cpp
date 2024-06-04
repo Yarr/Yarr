@@ -45,7 +45,7 @@ void testSaveLoad(const Histo3dT<DataT> &hh, const HistoInfo<DataT> &hi) {
   json j;
   hh.toJson(j);
 
-  Histo3dT<float> out_histo{j["Name"],
+  Histo3dT<DataT> out_histo{j["Name"],
                     j["x"]["Bins"], j["x"]["Low"], j["x"]["High"],
                     j["y"]["Bins"], j["y"]["Low"], j["y"]["High"],
                     j["z"]["Bins"], j["z"]["Low"], j["z"]["High"]};
@@ -135,6 +135,76 @@ TEST_CASE("Histogram3dOK", "[Histo3d]") {
 
     info.e = 5;
     info.u = 8.0;
+  }
+
+  testSaveLoad(histo, info);
+}
+
+TEST_CASE("Histogram3dUint16OK", "[Histo3d]") {
+  Histo3dT<uint16_t> histo("TestHisto", 3, 0, 3, 3, 0, 3, 3, 0, 3);
+
+  HistoInfo<uint16_t> info{27, 0, 0.0, 0.0, 0, 0, 0, 0};
+
+  SECTION("Default") {
+  }
+
+  SECTION("One Entry") {
+    histo.fill(1, 1, 1);
+    info.e ++;
+    info.m = 1;
+    info.mx = 1;
+  }
+
+  SECTION("Two Entries") {
+    histo.fill(1, 1, 1);
+    histo.fill(2, 1, 1);
+    info.e += 2;
+    info.m = 1;
+    info.sd = 0;
+    info.mx = 1;
+  }
+
+  SECTION("Two unequal entries") {
+    histo.fill(1, 1, 0);
+    histo.fill(2, 2, 0, 4);
+    info.e += 2;
+    info.m = 2.5;
+    info.sd = sqrt(1.5 * 1.5 + 1.5 * 1.5);
+    info.mx = 4;
+  }
+
+  // TODO: setBin doesn't add to entries, or max?
+
+  SECTION("Two Entries via add") {
+    histo.fill(1, 1, 1);
+    Histo3dT<uint16_t> histo_to_add("TestHistoAdd", 3, 0, 3, 3, 0, 3, 3, 0, 3);
+    histo_to_add.fill(2, 2, 2, 3);
+    histo.add(histo_to_add);
+    info.e += 2;
+    info.m = 2;
+    info.sd = sqrt(2);
+    info.mx = 3;
+  }
+
+  SECTION("Overflow") {
+    histo.fill(10, 1, 1);
+    histo.fill(1, 10, 1, 2);
+    histo.fill(10, 10, 10);
+
+    info.e = 3;
+    info.o = 4;
+  }
+
+  SECTION("Underflow") {
+    histo.fill(-10, 1, 1);
+    histo.fill(1, -10, 1, 2);
+    histo.fill(-10, -10, -10);
+    // Underflow has precedence over overflow
+    histo.fill(10, -10, 10);
+    histo.fill(-10, 10, 10, 3);
+
+    info.e = 5;
+    info.u = 8;
   }
 
   testSaveLoad(histo, info);

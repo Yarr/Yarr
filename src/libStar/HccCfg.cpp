@@ -19,7 +19,7 @@ std::shared_ptr<const HccStarRegInfo> HccStarRegInfo::instance(int version) {
   return instance_var[version];
 }
 
-typedef std::tuple<HCCStarSubRegister, unsigned int, unsigned int, unsigned int> hccsubregdef;
+using hccsubregdef = std::tuple<HCCStarSubRegister, unsigned int, unsigned int, unsigned int>;
 const std::vector<hccsubregdef> s_hccsubregdefs_common = {
   {HCCStarSubRegister::STOPHPR			,16	,0	,1}	,
   {HCCStarSubRegister::TESTHPR			,16	,1	,1}	,
