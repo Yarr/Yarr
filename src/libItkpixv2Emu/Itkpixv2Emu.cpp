@@ -47,10 +47,10 @@ void Itkpixv2Emu::executeLoop(){
 
     //Once the commands arrive, the interpreter should kick in
     Itkpixv2EmuUtils::Cmd cmd = m_cmdInterpreter->readCommand(m_tx);
-    //if (cmd.header == Itkpixv2EmuUtils::Commands::WrReg){
-    //    std::bitset<32> d(cmd.data);
-    //    rlog->info("WrReg command to address {} with data {}", cmd.address, d.to_string());
-    //}
+    if (cmd.header == Itkpixv2EmuUtils::Commands::WrReg){
+        std::bitset<32> d(cmd.data);
+        rlog->info("WrReg command to address {} with data {}", cmd.address, cmd.data);
+    }
 
 
     executeLoop();
