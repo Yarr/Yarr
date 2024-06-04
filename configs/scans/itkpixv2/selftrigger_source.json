@@ -1,0 +1,68 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "NoiseAnalysis",
+	  "config": {
+              "createMask": false
+	  }
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "1": {
+        "algorithm": "DataArchiver",
+        "config": {}
+      },
+      "2": {
+        "algorithm": "TotMap",
+        "config": {}
+      },
+      "3": {
+        "algorithm": "Tot2Map",
+        "config": {}
+      },
+      "4": {
+        "algorithm": "TagDist",
+        "config": {}
+      },
+      "5": {
+        "algorithm": "HitsPerEvent",
+        "config": {}
+      },
+      "n_count": 2
+    },
+    "loops": [
+      {
+        "config": {
+          "count": 0,
+          "delay": 56,
+          "extTrigger": false,
+          "frequency": 0,
+          "noInject": true,
+          "time": 300,
+          "edgeMode": false
+        },
+        "loopAction": "Itkpixv2TriggerLoop"
+      },
+      {
+        "loopAction": "StdDataGatherer"
+      }
+    ],
+    "name": "Selftrigger",
+    "prescan": {
+        "InjVcalDiff": 0,
+        "InjDigEn": 0,
+        "Latency": 57,
+	"SelfTrigEn": 1,
+	"SelfTrigDigThrEn": 1,
+	"SelfTrigDigThr": 1,
+	"SelfTrigMulti": 4,
+	"SelfTrigDelay": 45
+    }
+  }
+}
