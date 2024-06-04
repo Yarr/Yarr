@@ -37,10 +37,7 @@ private:
 
   double m_trickleFreq {10}; // frequency to send trickle pulse
 
-  // How many words of pattern buffer to use
-  uint32_t m_trigWordLength;
-  // This matches the pattern buffer in TxCore
-  std::array<uint32_t, 32> m_trigWord;
+  std::vector<uint32_t> m_trigWord;
 
   bool m_noInject {true};
   bool m_digital {false};

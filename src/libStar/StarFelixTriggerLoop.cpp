@@ -16,7 +16,6 @@ namespace {
 StarFelixTriggerLoop::StarFelixTriggerLoop()
   : LoopActionBase(LOOP_STYLE_TRIGGER),
     m_nTrigsTrickle(0),
-    m_trigWordLength(0),
     m_trigWord{}
 {
   setTrigCnt(50); // Maximum number of triggers to send
@@ -60,8 +59,8 @@ void StarFelixTriggerLoop::init() {
   setTrigWord();
 
   logger->debug("Configure TxCore");
-  g_tx->setTrigWord(m_trigWord.data(), m_trigWordLength);
-  g_tx->setTrigWordLength(m_trigWordLength);
+  g_tx->setTrigWord(m_trigWord.data(), m_trigWord.size());
+  g_tx->setTrigWordLength(m_trigWord.size());
 
   // Frequency to send trickle pulse
   g_tx->setTrigFreq(m_trickleFreq);
@@ -110,8 +109,8 @@ void StarFelixTriggerLoop::end() {
 void StarFelixTriggerLoop::setTrigWord() {
   // The LCB trigger commands are stored in the trickle memory
   // What will be sent from TxCore is the TRICKLE_TRIGGER_PULSE
+  m_trigWord.resize(1);
   m_trigWord[0] = LCB_FELIX::config_command(LCB_FELIX::TRICKLE_TRIGGER_PULSE, 1);
-  m_trigWordLength = 1;
 }
 
 void StarFelixTriggerLoop::writeConfig(json &config) {

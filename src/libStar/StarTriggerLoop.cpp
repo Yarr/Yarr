@@ -19,7 +19,6 @@ StarTriggerLoop::StarTriggerLoop()
 	m_trigTime(10), // 10s
 	m_noInject(false),
 	m_digital(false),
-	m_trigWordLength(0),
 	m_trigWord{}
 {
 	setTrigCnt(50); // Maximum number of triggers to send
@@ -49,15 +48,15 @@ void StarTriggerLoop::init() {
 
 	g_tx->setTrigFreq(m_trigFreq);
 	g_tx->setTrigCnt(m_cmdCnt);
-	g_tx->setTrigWord(m_trigWord.data(), m_trigWordLength);
-	g_tx->setTrigWordLength(m_trigWordLength);
+	g_tx->setTrigWord(m_trigWord.data(), m_trigWord.size());
+	g_tx->setTrigWordLength(m_trigWord.size());
 	g_tx->setTrigTime(m_trigTime);
 
         g_tx->setCmdEnable(keeper->getTxMask());
 
-	logger->trace("Built trigger words {}:", m_trigWordLength);
+	logger->trace("Built trigger words {}:", m_trigWord.size());
         if(logger->should_log(spdlog::level::trace)) {
-          for(size_t i=0; i<m_trigWordLength; i++) {
+          for(size_t i=0; i<m_trigWord.size(); i++) {
             logger->trace("{:08x}", m_trigWord[i]);
           }
         }
@@ -94,9 +93,7 @@ void StarTriggerLoop::setTrigWord() {
 	unsigned int full_words = m_trigDelay / 8;
 
 	// Words of delay + trigger and pulse
-	m_trigWordLength = full_words+2;
-
-	m_trigWord.resize(m_trigWordLength);
+	m_trigWord.resize(full_words+2);
 
 	// Last 32-bit word goes first in buffer.
 	// High 16 bits are sent before the low 16 bits.
@@ -130,8 +127,7 @@ void StarTriggerLoop::setTrigWord() {
 }
 
 void StarTriggerLoop::setNoInject() {
-	m_trigWordLength = 4;
-	m_trigWord.resize(m_trigWordLength);
+	m_trigWord.resize(4);
 	m_trigWord[0] = (LCB::IDLE << 16) + LCB::IDLE;
 	m_trigWord[1] = (LCB::IDLE << 16) + LCB::IDLE;
 	m_trigWord[2] = (LCB::IDLE << 16) + LCB::IDLE;
@@ -149,19 +145,16 @@ void StarTriggerLoop::setTrigWordFromFile() {
 		logger->error("The command sequence loaded from file are not of even number of bytes: {}", seq_ss.str());
 		logger->error("No trigger will be sent!");
 		m_trigWord.clear();
-		m_trigWordLength = 0;
 		return;
 	} else {
 		// Number of 32-bit words
-		m_trigWordLength = (commands.size() + 3 ) / 4;
-
 		// Resize m_trigWord with IDLEs
-		m_trigWord.resize(m_trigWordLength);
+		m_trigWord.resize((commands.size() + 3 ) / 4);
 	}
 
 	// Last 32-bit word goes first in buffer.
 	// High 16 bits are sent before the low 16 bits.
-	for (size_t i = 0; i < m_trigWordLength; i++) {
+	for (size_t i = 0; i < m_trigWord.size(); i++) {
 		// Form 16-bit LCB frame from two bytes of commands at a time
 		uint16_t frame1 = (commands[4*i] << 8) + commands[4*i+1];
 
@@ -170,7 +163,7 @@ void StarTriggerLoop::setTrigWordFromFile() {
 			frame2 = (commands[4*i+2] << 8) + commands[4*i+3];
 		}
 
-		size_t w = m_trigWordLength - 1 - i; // index of m_trigWord
+		size_t w = m_trigWord.size() - 1 - i; // index of m_trigWord
 		m_trigWord[w] = (frame1 << 16) + frame2;
 	}
 }

@@ -43,9 +43,6 @@ class StarTriggerLoop: public LoopActionBase, public StdTriggerAction {
         double m_trigTime;
         uint32_t m_cmdCnt{0}; // number of times to send the command sequence
 
-        // How many words of pattern buffer to use
-        uint32_t m_trigWordLength;
-        // This matches the pattern buffer in TxCore
         std::vector<uint32_t> m_trigWord;
 
         bool m_noInject;
