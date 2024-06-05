@@ -354,7 +354,26 @@ TEST_CASE("StarFelixTriggerLoopTest", "[star][trigger_loop]") {
     j["useHitCount"] = false;
   }
 
+  std::string tmpfilename("ext_sequence_fw.txt");
+  SECTION("External sequence") {
+    // Trigger sequence loaded from external file
+    StarSeqGenerator seqGen(true);
+
+    std::vector<std::string> commands = {"l0 1010 0", "l0 1010 1"}; // 4 triggers
+
+    REQUIRE ( seqGen.parseCommandSequence(commands) );
+    seqGen.dump(tmpfilename);
+    j["fpath_sequence"] = tmpfilename;
+
+    j["trig_count"] = 10; // send 10 times
+    j["trig_frequency"] = 20e6; // Hz
+    j["noInject"] = true;
+  }
+
   action->loadConfig(j);
+
+  // Clean up
+  remove(tmpfilename.c_str());
 
   LoopStatusMaster ls;
 
