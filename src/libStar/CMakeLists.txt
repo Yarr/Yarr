@@ -10,11 +10,12 @@ add_library(Star SHARED
         StarConversionTools.cpp
         StarCounterLoop.cpp
         StarDataProcessor.cpp
+        StarFelixTriggerLoop.cpp
         StarJsonData.cpp
         StarMaskLoop.cpp
+        StarNPointGainAnalysis.cpp
         StarRegDump.cpp
         StarStrobeDelayAnalysis.cpp
-        StarFelixTriggerLoop.cpp
         StarTriggerLoop.cpp)
 
 post_build_debug_library(Star)

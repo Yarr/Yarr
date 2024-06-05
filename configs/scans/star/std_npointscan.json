@@ -9,7 +9,7 @@
         }
       },
       "1": {
-        "algorithm": "NPointGain",
+        "algorithm": "StarNPointGainAnalysis",
         "config": {
           "parametersOfInterest": ["ABCs_BCAL"]
         },
