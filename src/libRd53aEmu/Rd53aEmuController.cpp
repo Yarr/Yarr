@@ -41,7 +41,7 @@ void EmuController<Rd53a, Rd53aEmu>::loadConfig(const json &j) {
 
   int srand_seed = time(nullptr);
   std::string infotoken = "";
-  if (j["seed"] == "fixed") {
+  if (j.contains("seed") && j["seed"] == "fixed") {
     srand_seed = 1;
     infotoken = " Random Seed Fixed";
   }

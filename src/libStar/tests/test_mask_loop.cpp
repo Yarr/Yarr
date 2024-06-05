@@ -303,7 +303,7 @@ TEST_CASE("StarMaskLoop", "[star][mask_loop]") {
     j["max"] = 32;
     j["min"] = 0;
     j["step"] = 1;
-    j["parameter"] = 1;
+    j["parameter"] = true;
     first_mask = {3, 0, 3, 0, 3, 0, 3, 0};
     second_mask = {0xc, 0, 0xc, 0, 0xc, 0, 0xc, 0};
   }
