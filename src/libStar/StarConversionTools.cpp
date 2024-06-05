@@ -132,7 +132,7 @@ void StarConversionTools::loadConfig(const json& j) {
     for (auto& params : j["ResponseFitParams"]) {
       // check number of parameters
       if (params.size() != m_fitFuncNPars) {
-        alog->error("Fucntion \"{}\" requires {} parameters, but {} parameters are provided for chip in input {}.", m_fitFuncName, m_fitFuncNPars, params.size(), ichip);
+        alog->error("Function \"{}\" requires {} parameters, but {} parameters are provided for chip in input {}.", m_fitFuncName, m_fitFuncNPars, params.size(), ichip);
         continue;
       }
 
@@ -199,18 +199,18 @@ void StarConversionTools::writeConfig(json& j) const {
 
     j["ResponseFitParams"] = json::array();
     for (const auto& [hccChn, params]: m_fitParams) {
-      j["ResponseFitParams"][hccChn] = params;
+      j["ResponseFitParams"][hccChn] = std::vector<float>(params.begin(), params.end());
     }
   }
 }
 
 std::pair<float, float> StarConversionTools::convertBVTtomVwithError(float thrDAC, float err_thrDAC) const {
 
-  int thrBin = (int) thrDAC;
+  auto thrBin = static_cast<int>(thrDAC);
   float thrConverted = -1., err_thrConverted = -1.;
   if((thrBin >= 0) && (thrBin < 256)){
     if(convertBVTtomV(thrBin) > -1.){
-      float remainder = (float)(thrDAC - thrBin);
+      auto remainder = static_cast<float>(thrDAC - thrBin);
       thrConverted = convertBVTtomV(thrBin) + (convertBVTtomV(thrBin+1) - convertBVTtomV(thrBin)) * remainder;
       if(thrBin < 128){
         err_thrConverted = err_thrDAC * (convertBVTtomV(thrBin+1) - convertBVTtomV(thrBin));
@@ -280,6 +280,7 @@ void StarConversionTools::setResponseFunction(const std::string& functionName) {
   try {
     m_fitFunction = responseFunctions.at(functionName);
     m_fitFunction_inv =  responseFunctions_inv.at(functionName);
+    m_gainConvFunction = gainConvFunctions.at(functionName);
     m_fitFuncNPars = funcNParams.at(functionName);
     m_fitFuncName = functionName;
     alog->debug("Set response fit function to {}", functionName);
@@ -290,7 +291,26 @@ void StarConversionTools::setResponseFunction(const std::string& functionName) {
   }
 }
 
-void StarConversionTools::setResponseParameters(const std::string& functionName, const std::vector<float>& params, unsigned hccChannel) {
+void StarConversionTools::setResponseParameters(const std::vector<float>& params, unsigned hccChannel) {
+  if (params.size() != m_fitFuncNPars) {
+    alog->error("Failed to set the function parameters: the required number of parameters is {}, but {} are provided.", m_fitFuncNPars, params.size());
+    return;
+  }
+
+  m_fitParams[hccChannel] = params;
+}
+
+void StarConversionTools::setResponseParameters(const std::vector<double>& params, unsigned hccChannel) {
+  if (params.size() != m_fitFuncNPars) {
+    alog->error("Failed to set the function parameters: the required number of parameters is {}, but {} are provided.", m_fitFuncNPars, params.size());
+    return;
+  }
+
+  std::vector<float> fitParamsFloat(params.begin(), params.end());
+  m_fitParams[hccChannel] = fitParamsFloat;
+}
+
+void StarConversionTools::setResponseFunctionAndParameters(const std::string& functionName, const std::vector<float>& params, unsigned hccChannel) {
   if (functionName != m_fitFuncName) {
     try {
       setResponseFunction(functionName);
@@ -301,12 +321,7 @@ void StarConversionTools::setResponseParameters(const std::string& functionName,
   }
 
   // Check if the number of parameters matches the function requirement
-  if (params.size() != m_fitFuncNPars) {
-    alog->error("Failed to set the function parameters: the required number of parameters is {}, but {} are provided.", m_fitFuncNPars, params.size());
-    return;
-  }
-
-  m_fitParams[hccChannel] = params;
+  setResponseParameters(params, hccChannel);
 }
 
 const std::map<std::string, StarConversionTools::RespFuncT> StarConversionTools::responseFunctions {
@@ -319,6 +334,12 @@ const std::map<std::string, StarConversionTools::RespFuncT> StarConversionTools:
   {"linear", &StarFitFunction::linFct_inv},
   {"polynomial", &StarFitFunction::polyFct_inv},
   {"exponential", &StarFitFunction::expFct_inv}
+};
+
+const std::map<std::string, StarConversionTools::RespFuncT> StarConversionTools::gainConvFunctions {
+  {"linear", &StarFitFunction::linGainFct},
+  {"polynomial", &StarFitFunction::polyGainFct},
+  {"exponential", &StarFitFunction::expGainFct}
 };
 
 const std::map<std::string, unsigned> StarConversionTools::funcNParams {
