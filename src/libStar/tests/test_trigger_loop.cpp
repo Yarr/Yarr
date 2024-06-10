@@ -4,6 +4,7 @@
 #include "AllStdActions.h"
 #include "LCBUtils.h"
 #include "Utils.h"
+#include "StarSeqGenerator.h"
 
 #include "EmptyHw.h"
 
@@ -105,6 +106,59 @@ TEST_CASE("StarTriggerLoopDelay", "[star][trigger_loop]") {
     expected_l0_mask = 4;
   }
 
+  // Trigger sequence loaded from external file
+  std::string tmpfilename("ext_sequence.txt");
+  SECTION("External sequence") {
+    StarSeqGenerator seqGen(false);
+
+    std::vector<std::string> commands;
+
+    SECTION("Zero latency") {
+      commands = {"idle 1", "fast 5 3", "l0 0001 0"};
+
+      pulse_index = 1;
+      trigger_index = 2;
+      expected_bc_slot = 3;
+    }
+
+    SECTION("Latency = 1") {
+      commands = {"idle 1", "fast 5 2", "l0 0001 0"};
+
+      pulse_index = 1;
+      trigger_index = 2;
+      expected_bc_slot = 2;
+    }
+
+    SECTION("Latency = 4") {
+      commands = {"fast 5 3", "idle 1", "l0 0001 0"};
+
+      pulse_index = 0;
+      trigger_index = 2;
+      expected_bc_slot = 3;
+    }
+
+    SECTION("Latency = 7") {
+      commands = {"fast 5 0", "idle 1", "l0 0001 0"};
+
+      pulse_index = 0;
+      trigger_index = 2;
+      expected_bc_slot = 0;
+    }
+
+    SECTION("Latency = 10") {
+      commands = {"idle 1", "fast 5 1", "idle 2", "l0 0001 0"};
+
+      pulse_index = 1;
+      trigger_index = 4;
+      expected_bc_slot = 1;
+    }
+
+    REQUIRE ( seqGen.parseCommandSequence(commands) );
+    seqGen.dump(tmpfilename);
+
+    j["fpath_sequence"] = tmpfilename;
+  }
+
   // Calculate delay based on used slots
   int delay = 3-expected_bc_slot;
   delay += (trigger_index - pulse_index) * 4;
@@ -118,6 +172,9 @@ TEST_CASE("StarTriggerLoopDelay", "[star][trigger_loop]") {
   }
 
   action->loadConfig(j);
+
+  // Clean up
+  remove(tmpfilename.c_str());
 
   LoopStatusMaster ls;
 
@@ -183,4 +240,58 @@ TEST_CASE("StarTriggerLoopDelay", "[star][trigger_loop]") {
   REQUIRE ( !LCB::is_bcr(trigger_frame) );
 
   REQUIRE ( LCB::get_l0_mask(trigger_frame) == expected_l0_mask );
+}
+
+TEST_CASE("StarTriggerLoopCount", "[star][trigger_loop]") {
+  std::shared_ptr<LoopActionBase> action = StdDict::getLoopAction("StarTriggerLoop");
+
+  REQUIRE (action);
+
+  json j;
+
+  unsigned ntotal_trigs;
+
+  j["trig_count"] = 10;
+
+  SECTION("Default") {
+    ntotal_trigs = j["trig_count"];
+  }
+
+  // Trigger sequence loaded from external file
+  std::string tmpfilename("ext_sequence.txt");
+  SECTION("External sequence") {
+    StarSeqGenerator seqGen(false);
+
+    std::vector<std::string> commands = {"l0 1010 0", "l0 0010 1"}; // 3 triggers
+    ntotal_trigs = 10 * 3;
+
+    REQUIRE ( seqGen.parseCommandSequence(commands) );
+    seqGen.dump(tmpfilename);
+
+    j["fpath_sequence"] = tmpfilename;
+  }
+
+  action->loadConfig(j);
+
+  // Clean up
+  remove(tmpfilename.c_str());
+
+  LoopStatusMaster ls;
+
+  MyTxCore tx;
+  EmptyRxCore rx;
+  Bookkeeper bk(&tx, &rx);
+
+  action->setup(&ls, &bk);
+  action->execute();
+
+  auto trigloop = dynamic_cast<StdTriggerAction*>(action.get());
+  REQUIRE (trigloop);
+
+  unsigned nexp = trigloop->getExpEvents();
+
+  CAPTURE (ntotal_trigs);
+  CAPTURE (nexp);
+
+  REQUIRE (nexp == ntotal_trigs);
 }
