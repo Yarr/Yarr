@@ -65,6 +65,7 @@ BETTER_ENUM(ABCStarSubRegister, int,
             READOUT_TIMEOUT_ENABLE
 )
 
+/// Representation of the address of an ABCStar register
 class ABCStarRegister : public ABCStarRegs {
   public:
     ABCStarRegister(const ABCStarRegs & other) : ABCStarRegs::ABCStarRegs(other) {}
@@ -150,36 +151,46 @@ class AbcCfg {
         AbcCfg &operator =(AbcCfg &&) = delete;
         AbcCfg(AbcCfg &&other) = delete;
 
+        /// Set default register values for version 0 or 1
         void setDefaults(int version);
 
+        /// Get the ID used to communicate with this ABC
         unsigned int getABCchipID() const { return m_abcID;}
+
+        /// Set the ID used to communicate with this ABC
         void setABCChipId(unsigned abcID){
             m_abcID = abcID;
         }
 
+        /// Set the value of a register field for this ABC
         void setSubRegisterValue(std::string subRegName, uint32_t value) {
             auto info = m_info->subRegByName(subRegName);
             auto &reg = getRegister(info->m_regAddress);
             reg.getSubRegister(info).updateValue(value);
         }
 
+        /// Get the value of a register field for this ABC
         uint32_t getSubRegisterValue(std::string subRegName) const {
             auto info = m_info->subRegByName(subRegName);
             auto &reg = getRegister(info->m_regAddress);
             return reg.getSubRegister(info).getValue();
         }
 
+        /// Lookup the register address for a named register field
         int getSubRegisterParentAddr(std::string subRegName) const {
             return m_info->getSubRegisterParentAddr(subRegName);
         }
 
+        /// Find the full register contents for a named register field
         uint32_t getSubRegisterParentValue(std::string subRegName) const {
             auto info = m_info->subRegByName(subRegName);
             return getRegister(info->m_regAddress).getValue();
         }
 
+        /// Find the full register contents for a register address
         uint32_t getRegisterValue(ABCStarRegister addr) const;
 
+        /// Set register contents
         void setRegisterValue(ABCStarRegister addr, uint32_t val);
 
         /// Set trim DAC for particular channel (as calculated by StarCfg)

@@ -14,6 +14,11 @@
 #include "StarChips.h"
 #include "StarSeqGenerator.h"
 
+/**
+   Loop action for Star triggers.
+
+   Trigger loop with implementation of charge injection for Strips front-end.
+ */
 class StarTriggerLoop: public LoopActionBase, public StdTriggerAction {
     public:
         StarTriggerLoop();

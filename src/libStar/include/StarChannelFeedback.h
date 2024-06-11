@@ -16,13 +16,20 @@
 #include "FeedbackBase.h"
 #include "StarChips.h"
 
+/**
+   Feedback loop action to configure trims from analysis.
+ */
 class StarChannelFeedback : public LoopActionBase, public PixelFeedbackReceiver {
     public:
         StarChannelFeedback();
 
+        /// Store configuration
         void writeConfig(json &j) override;
+
+        /// Load configuration
         void loadConfig(const json &j) override;
 
+        /// Update trims for FrontEnd corresponding to channel
         void feedback(unsigned channel, std::unique_ptr<Histo2d> h) override;
 
     private:
