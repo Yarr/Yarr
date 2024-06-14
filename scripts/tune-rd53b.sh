@@ -14,10 +14,10 @@ function print_usage {
     echo " Tune Rd53b"
     echo ""
     echo " Usage:"
-    echo "  $ ${1}  --t <threshold> -r <controller> -c <connectivity>"
+    echo "  $ ${1}  -t <threshold> -r <controller> -c <connectivity>"
     echo ""
     echo " Options:"
-    echo "  --t         Threshold the chip will be tuned to [default: 1000e]."
+    echo "  -t         Threshold the chip will be tuned to [default: 1000e]."
     echo "  -r          Path to JSON YARR controller [REQUIRED]."
     echo "  -c          Path to JSON YARR connectivity [REQUIRED]."
     echo "  -o          Output directory [default: ./data/]."
@@ -45,16 +45,16 @@ function main {
                 print_usage $0
                 return 0
                 ;;
-            --t)
+            -t)
                 first_threshold=${2}
                 shift
                 ;;
             -r)
-                controller_config=${2}
+                controller=${2}
                 shift
                 ;;
             -c)
-                connectivity_config=${2}
+                connectivity=${2}
                 shift
                 ;;
             -o)
