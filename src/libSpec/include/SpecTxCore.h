@@ -54,6 +54,7 @@
 #define TRIG_LOGIC_EDGE 0x3
 #define TRIG_LOGIC_DELAY 0x4 // And the next 3 addresses up to 0x7
 #define TRIG_LOGIC_DEADTIME 0x8
+#define TRIG_LOGIC_EUDET_SIMPLE 0x9 // use simple eudet mode
 
 #define NCHANNELS 4
 

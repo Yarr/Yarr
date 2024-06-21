@@ -10,12 +10,13 @@ namespace fs = std::filesystem;
 
 
 void print_help() {
-    std::cout << "Usage: ./bin/specSoftReset [-h] [-r <hw_controller_file>] [-w] [-o <register_option>]\n \n"
+    std::cout << "Usage: ./bin/specReadWriteReg [-h] [-r <hw_controller_file>] [-w] [-o <register_option>]\n \n"
               << "Options:\n"
               << " -h                         Display help messages.\n"
               << " -r <hw_controller_file>    Specify hardware controller JSON path.\n"
               << " -w                         Whether to read (default) or write (-w)\n"
               << " -o <reg_addr>              Specify HW register address.\n"
+              << " -b <base_addr>             Specify HW base register address (default TX_ADDR = " << TX_ADDR << ", consider TRIG_LOGIC_ADR = " << TRIG_LOGIC_ADR << ")\n"
               << " -v <value>                 Specify HW register write value (default 1).\n"
               << "                               -- TX_FIFO 0x0 = " << 0x0 << "\n"
               << "                               -- TX_ENABLE 0x1 = " << 0x1 << "\n"
@@ -38,8 +39,7 @@ void print_help() {
               << "                               -- TX_SYNC_INTERVAL 0x12 = " << 0x12 << "\n"
               << "                               -- TX_IDLE_WORD 0x13 = " << 0x13 << "\n"
               << "                               -- TRIG_EXTEND_INTERVAL 0x14 = " << 0x14 << "\n"
-              << "                               -- TRIG_ENCODER_ENABLE 0x15 = " << 0x15 << "\n"
-              << "                               -- TRIG_TLU_SIMPLE_MODE 0x16 = " << 0x16 << "\n";
+              << "                               -- TRIG_ENCODER_ENABLE 0x15 = " << 0x15 << "\n";
 }
 
 int main(int argc, char **argv) {
@@ -47,10 +47,11 @@ int main(int argc, char **argv) {
     int specNum = 0;
     uint32_t regOption = 0;
     uint32_t regValue = 0;
+    uint32_t baseAddr = TX_ADDR;
     std::string hw_controller_filename = "";
     bool read=true;
 
-    while ((c = getopt(argc, argv, "hwr:o:v:")) != -1) {
+    while ((c = getopt(argc, argv, "hwr:o:v:b:")) != -1) {
         switch (c) {
             case 'h':
                 print_help();
@@ -67,6 +68,9 @@ int main(int argc, char **argv) {
             case 'v':
                 regValue = std::atoi(optarg);
                 break;
+            case 'b': 
+                baseAddr = std::atoi(optarg);
+                break; 
             default:
                 print_help();
                 return -1;
@@ -88,11 +92,11 @@ int main(int argc, char **argv) {
     SpecCom mySpec(specNum);
 
     if(read) {
-        uint32_t rValue = mySpec.readSingle(TX_ADDR | regOption);
+        uint32_t rValue = mySpec.readSingle(baseAddr | regOption);
         std::cout << "Register " << regOption << " value: " << rValue << std::endl;
     }
     else {
-        mySpec.writeSingle(TX_ADDR | regOption, regValue);
+        mySpec.writeSingle(baseAddr | regOption, regValue);
         std::cout << "Wrote register " << regOption << " with value: " << regValue << std::endl;
     }
     return 0;
