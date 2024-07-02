@@ -64,19 +64,20 @@ void Rd53bGlobalFeedback::loadConfig(const json &j) {
 
 void Rd53bGlobalFeedback::feedback(unsigned channel, double sign, bool last) {
     // Calculate new step and val
-    logger->debug("[{}] Received feedback {} (old: {})", channel, sign, m_oldSign[channel]);    
+    logger->debug("[{}] Received feedback {} (old: {})", channel, sign, m_oldSign[channel]);
+    double oldStep = m_localStep[channel];
     if (sign != m_oldSign[channel]) {
-        m_oldSign[channel] = 0;
+        m_oldSign[channel] = sign;
         m_localStep[channel] = m_localStep[channel]/2;
     }
     int val = (m_values[channel]+(m_localStep[channel]*sign));
     if (val > (int)max) val = max;
     if (val < min) val = min;
     m_values[channel] = val;
-    fbDoneMap[channel] |= last;
 
-    if (m_localStep[channel] == 1 || val == min) {
+    if (m_localStep[channel] == 0) {
         fbDoneMap[channel] = true;
+        m_values[channel] = m_values[channel] + sign; //end condition overshoots by 1 step. Add sign because sign has already flipped when step -> 0
     }
 
     // Abort if we are getting to low
