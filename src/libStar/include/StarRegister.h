@@ -106,6 +106,12 @@ private:
         std::map<std::string, std::shared_ptr<const SubRegisterInfo>> subRegisterMap;
 };
 
+/**
+   A register on Star front-end chip.
+
+   Stores the register value, and refers to the description of register
+   fields via RegisterInfo.
+*/
 class Register {
     public:
         Register(std::shared_ptr<const RegisterInfo> info, uint32_t value)
@@ -121,23 +127,33 @@ class Register {
 
         ~Register() = default;
 
+        /// Return address of register
         int addr() const { return m_info->m_regAddress;}
-        const uint32_t getValue() const { return m_regValue;}
+
+        /// Return value of register
+        uint32_t getValue() const { return m_regValue;}
+
+        /// Set value of register
         void setValue(uint32_t value) {m_regValue = value;}
+
+        /// Set value of named sub-field
         void setMySubRegisterValue(std::string subRegName, uint32_t value){
             auto info = m_info->getSubRegister(subRegName);
             SubRegister(&m_regValue, info).updateValue(value);
         }
 
-        const unsigned getMySubRegisterValue(std::string subRegName){
+        /// Set value of named sub-field
+        unsigned getMySubRegisterValue(std::string subRegName){
             auto info = m_info->getSubRegister(subRegName);
             return SubRegister(&m_regValue, info).getValue();
         }
 
+        /// Get sub-field by info (caller is responsible for this being valid)
         ConstSubRegister getSubRegister(std::shared_ptr<const SubRegisterInfo> info) const {
             return ConstSubRegister(&m_regValue, info);
         }
 
+        /// Get updateable sub-field by info (caller is responsible for this being valid)
         SubRegister getSubRegister(std::shared_ptr<const SubRegisterInfo> info) {
           return SubRegister(&m_regValue, info);
         }

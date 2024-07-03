@@ -8,6 +8,8 @@
 // # Description: Analysis Base class
 // ################################
 
+#include <cmath>
+#include <functional>
 #include <vector>
 
 #include "AnalysisAlgorithm.h"
@@ -110,34 +112,6 @@ class TotAnalysis : public AnalysisAlgorithm {
         float tot_sigma_bins_x_hi;
 };
 
-class NPointGain : public AnalysisAlgorithm {
-    public:
-        NPointGain() : AnalysisAlgorithm() {}
-        ~NPointGain() override = default;
-
-        void init(const ScanLoopInfo *s) override;
-        void processHistogram(HistogramBase *h) override;
-        void end() override;
-        void loadConfig(const json& config) override;
-
-        bool requireDependency() override {return !m_skipDependencyCheck;}
-
-    private:
-        std::unique_ptr<Histo1d> respCurve;
-
-        std::vector<double> inj;
-        std::vector<double> inj_err;
-        std::vector<double> thr;
-        std::vector<double> thr_err;
-
-        unsigned par_loopindex;
-        unsigned par_min;
-        unsigned par_max;
-        unsigned par_step;
-
-	bool m_skipDependencyCheck=false;
-};
-
 class ScurveFitter : public AnalysisAlgorithm {
     public:
         ScurveFitter() : AnalysisAlgorithm() {}
@@ -153,6 +127,10 @@ class ScurveFitter : public AnalysisAlgorithm {
         }
 
     private:
+        const static unsigned n_fit_params = 4;
+        bool fitSuccess(const double (&fit_params)[n_fit_params], const double &chi2) const;
+        void createFitResultHistograms(const unsigned long& outerIdent, const LoopStatus& loopStatus);
+
         unsigned vcalLoop;
         unsigned vcalMin;
         unsigned vcalMax;
@@ -162,6 +140,9 @@ class ScurveFitter : public AnalysisAlgorithm {
         unsigned injections;
         unsigned cnt;
         unsigned n_failedfit;
+        double chi2Min = 1e-6;
+        double chi2Max = 2.5;
+        double maxBaselineDifference = 0.1;
 
         std::vector<double> x;
         std::vector<unsigned> loops;
@@ -194,6 +175,65 @@ class ScurveFitter : public AnalysisAlgorithm {
         bool use_scurvegauss = false;
 
         bool m_dumpDebugScurvePlots=false;
+};
+
+class NPointGain : public AnalysisAlgorithm {
+    public:
+        NPointGain() : AnalysisAlgorithm() {}
+        ~NPointGain() override = default;
+
+        virtual void init(const ScanLoopInfo *s) override;
+        virtual void processHistogram(HistogramBase *h) override;
+        virtual void end() override;
+        virtual void loadConfig(const json &config) override;
+
+        bool requireDependency() override {return !m_skipDependencyCheck;}
+
+    protected:
+        // indicates which scan loop is our injection loop
+        unsigned m_injectionLoopIndex;
+
+        // stores (converted) parameter values for each injection
+        std::vector<double> m_injections;
+
+        // response function and associated parameters
+        using NPGRespFuncT = double (*)(double, const double *);
+        NPGRespFuncT m_respFunc;
+        NPGRespFuncT m_gainConvFunc;
+        int m_respFuncNParams;
+        std::string m_respFuncName;
+        std::map<std::string, NPGRespFuncT> m_respFuncMap = { // response functions
+            {"linear", [](double x, const double *par){return par[0] + x*par[1];}},
+            {"polynomial", [](double x, const double *par){return par[0] + x*(par[1]+(par[2]*x));}},
+            {"exponential", [](double x, const double *par){return par[2] + par[0] / (1 + exp(-x / par[1]));}}
+        };
+        std::map<std::string, int> m_respFuncNParamsMap = { // number of parameters for each response function
+            {"linear", 2},
+            {"polynomial", 3},
+            {"exponential", 3}
+        };
+        std::map<std::string, NPGRespFuncT> m_gainConvFuncMap = { // gain conversion functions (d/dx response function)
+            {"linear", [](double x, const double*par){return par[1];}},
+            {"polynomial", [](double x, const double*par){return par[1] + 2*par[2]*x;}},
+            {"exponential", [](double x, const double*par){return (par[0] * exp(-1 * x / par[1])) / (par[1] * pow(1 + exp(-1 * x / par[1]), 2));}}
+        };
+
+        // maps of 2d vectors, one for each injection + channel
+        typedef std::map<double,std::vector<std::vector<double>>> InjectionDataMap;
+        InjectionDataMap m_thresholdMap;
+        InjectionDataMap m_inputNoiseMap;
+
+        // conversion functions for injection and threshold units
+        virtual double convertInjectionUnit(double inj) { return inj; }
+        virtual double convertThresholdUnit(double thr) { return thr; }
+
+        // fitting and related functions
+        virtual std::vector<double> createResponseCurve(unsigned col, unsigned row);
+        virtual std::vector<double> guessInitialFitParams(const std::vector<double>& thresholds);
+        virtual void fitResponseCurve(const std::vector<double>& thresholds, std::vector<double>& fitParams);
+
+    private:
+        bool m_skipDependencyCheck = false;
 };
 
 class OccGlobalThresholdTune : public AnalysisAlgorithm {

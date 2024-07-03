@@ -34,6 +34,21 @@ namespace StarFitFunction {
   inline float expFct_inv(float y, const float *par){
     return -par[1] * std::log( par[0]/(y - par[2]) - 1);
   }
+
+  inline float linGainFct(float x, const float *par) {
+    return par[1];
+  }
+
+  inline float polyGainFct(float x, const float *par) {
+    return (2 * par[2] * x) + par[1];
+  }
+
+  inline float expGainFct(float x, const float *par) {
+    float ex = exp(-1. * x / par[1]);
+    float num = par[0] * ex;
+    float den = par[1] * pow(1+ex, 2);
+    return num / den;
+  }
 }
 
 /// @brief A class to handle the configuration of Star chip calibration parameters
@@ -41,6 +56,10 @@ class StarConversionTools {
 public:
   StarConversionTools() = default;
   ~StarConversionTools() = default;
+  StarConversionTools(const StarConversionTools&) = delete;
+  StarConversionTools& operator=(const StarConversionTools&) = delete;
+
+  using RespFuncT = std::function<float(float, const float *)>;
 
   /// Load from json configurations
   void loadConfig(const json& cfg);
@@ -86,11 +105,30 @@ public:
   /// @brief Return the name of the current response function
   std::string getResponseFunctionName() const {return m_fitFuncName;}
 
+  /// @brief Return a pointer to the current response function
+  RespFuncT getResponseFunction() {return m_fitFunction;}
+
+  /// @brief Return a pointer to the current gain conversion function
+  RespFuncT getGainConversionFunction() {return m_gainConvFunction;}
+
+  /// @brief Return the number of parameters for the current response function
+  int getResponseFunctionNParams() {return m_fitFuncNPars;}
+
+  /// @brief Set the response curve fit parameters for an ABCStar
+  /// @param params A std::vector<float> containing fit parameters
+  /// @param hccChannel ABC chip index
+  void setResponseParameters(const std::vector<float>& params, unsigned hccChannel);
+
+  /// @brief Set the response curve fit parameters for an ABCStar
+  /// @param params A std::vector<double> containing fit parameters
+  /// @param hccChannel ABC chip index
+  void setResponseParameters(const std::vector<double>& params, unsigned hccChannel);
+
   /// @brief Set the response function and its parameters for an ABCStar
   /// @param functionName Name of the function to set
   /// @param params A vector of the function parameters
   /// @param hccChannel ABC chip index
-  void setResponseParameters(const std::string& functionName, const std::vector<float>& params, unsigned hccChannel);
+  void setResponseFunctionAndParameters(const std::string& functionName, const std::vector<float>& params, unsigned hccChannel);
 
   /// @brief Get the response function name and its parameters
   /// @param hccChannel ABC chip index for getting the corresponding parameters
@@ -131,13 +169,14 @@ public:
     return m_trimTargets.at(BCAL);
   }
 
-  using RespFuncT = std::function<float(float, const float *)>;
-
   /// @brief A map that stores the response fit functions
   static const std::map<std::string, RespFuncT> responseFunctions;
 
   /// @brief A map that stores the inverse of the response fit function
   static const std::map<std::string, RespFuncT> responseFunctions_inv;
+
+  /// @brief A map that stores the gain conversion functions
+  static const std::map<std::string, RespFuncT> gainConvFunctions;
 
   /// @brief A map that stores the required number of parameters for the response functions
   static const std::map<std::string, unsigned> funcNParams;
@@ -183,6 +222,9 @@ private:
 
   /// Number of the required function parameters
   unsigned m_fitFuncNPars;
+
+  // Gain conversion function (gets slope of response curve at point)
+  RespFuncT m_gainConvFunction;
 
   /// A map that stores the response function parameters for each ABCStar.
   /// The key is the HCCStar input channel number following the same indexing convention as StarCfg::m_ABCchips.

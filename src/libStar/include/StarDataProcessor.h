@@ -19,6 +19,20 @@
 #include "RawData.h"
 #include "HccCfg.h"
 
+/**
+   Process Star front-end data to generate hits.
+
+   Receive blocks of front end data for one link. Parse packets and
+   generate hit data.
+
+   LP and PR packets are decoded as expected. Mapping from input channels
+   to channel number is according to the configuration.
+
+   Counter registers are decoded to generate the appropriate number of
+   hits to reconstruct the occupancy (FIXME).
+
+   Other registers, and HPRs are ignored (FIXME).
+ */
 class StarDataProcessor : public FeDataProcessor {
     public:
         StarDataProcessor();

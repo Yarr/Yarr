@@ -4,11 +4,6 @@
 /* Class: StarMaskLoop 
 Author: O. Arnaez <Olivier.Arnaez@cern.ch>
 Date: October 2019
-
-Applies some pattern of masked/enabled channels during scans.
-Two modes are available: 
-  1) reading masks/cal.enable register values from StarMaskCal_En.cpp if nEnabledStripsPerGroup is set to 0 in the configuration. In this case the values between indices min and max from this file are read every "step" entries.
-  2) applying patterns corresponding to groups of nEnabledStripsPerGroup (nMaskedStripsPerGroup) strips in a row that are shifted N="max" times for the pattern applied to CAL ENABLE registers (resp. masked channels) ; in this case the two patterns applied to enabled/masked channels are shifted by EnabledMaskedShift channels.
 */
 
 #include <iostream>
@@ -17,12 +12,21 @@ Two modes are available:
 #include "StarChips.h"
 #include "LoopActionBase.h"
 
+/// Representation of ABCStar mask registers
 typedef std::array<uint32_t, 8> MaskType;
 
-//"Ring" of channels ordered in the "physical" order
-//Can return 32 bits sets ordered such as for:
-//- the masks (1st column in 1st row, 1st column in 2nd row, 2nd column in 1st row, 2nd column in 2nd row, 3rd column in 1st row, 3rd column in 2nd row, 4th column in 1st row, 4th column in 2nd row,..., 127th column in 1st row, 127th column in 2nd row)
-//- or as in "CAL ENABLE" registers is like 1st row 1st col, 1st row 2nd col, 2nd row 1st col, 2nd row 2nd col,...
+/**
+   "Ring" of channels ordered in the "physical" order.
+
+   ABCStar registers have different orderings of mask bits. This class
+   provides for a conversion between them.
+
+   A hit pattern is loaded using the hit order (reported in output packets).
+
+   Provides access to the corresponding register orders:
+   * Mask registers: 1st column in 1st row, 1st column in 2nd row, 2nd column in 1st row, 2nd column in 2nd row, 3rd column in 1st row, 3rd column in 2nd row, 4th column in 1st row, 4th column in 2nd row,..., 127th column in 1st row, 127th column in 2nd row
+   * Calibration mask registers ("CAL ENABLE"): 1st row 1st col, 1st row 2nd col, 2nd row 1st col, 2nd row 2nd col,...
+*/
 class ChannelRing {
  public:
   ChannelRing() : pos(0), bits(0) {}
@@ -38,8 +42,10 @@ class ChannelRing {
     bits[pos++] = newBit;
   }
 
+  /// Is the ring full
   bool full() const { return pos >= 256; }
 
+  /// Print ring contents to cout (binary)
   void printRing() const { std::cout << "Ring content: " << bits << ".\n";}
 
   /// Extract register settings for the mask register
@@ -80,8 +86,23 @@ class ChannelRing {
   std::bitset<256> bits;
 };
 
+/**
+   Loop action to iterate over mask patterns on Star front-end.
 
+   If "maskOnly" is not set, change the calibration injection mask as well.
 
+   Provides for various different loop types.
+
+   * if "doNmask": Loop over the number of channels masked.
+   * if "nEnabledStripsPerGroup" == 0: Decide how many groups based on min/max
+     and step, and iterate over them. The values between indices min and max
+     from this file are read every "step" entries.
+   * The pattern corresponds to groups of nEnabledStripsPerGroup
+     (nMaskedStripsPerGroup) strips in a row that are shifted N="max" times
+     for the pattern applied to CAL ENABLE registers (resp. masked channels).
+     In this case the two patterns applied to enabled/masked channels are
+     shifted by EnabledMaskedShift channels.
+*/
 class StarMaskLoop : public LoopActionBase {
  public:
   StarMaskLoop();

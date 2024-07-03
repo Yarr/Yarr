@@ -16,7 +16,6 @@ namespace {
 StarFelixTriggerLoop::StarFelixTriggerLoop()
   : LoopActionBase(LOOP_STYLE_TRIGGER),
     m_nTrigsTrickle(0),
-    m_trigWordLength(0),
     m_trigWord{}
 {
   setTrigCnt(50); // Maximum number of triggers to send
@@ -60,8 +59,8 @@ void StarFelixTriggerLoop::init() {
   setTrigWord();
 
   logger->debug("Configure TxCore");
-  g_tx->setTrigWord(m_trigWord.data(), m_trigWordLength);
-  g_tx->setTrigWordLength(m_trigWordLength);
+  g_tx->setTrigWord(m_trigWord.data(), m_trigWord.size());
+  g_tx->setTrigWordLength(m_trigWord.size());
 
   // Frequency to send trickle pulse
   g_tx->setTrigFreq(m_trickleFreq);
@@ -110,8 +109,8 @@ void StarFelixTriggerLoop::end() {
 void StarFelixTriggerLoop::setTrigWord() {
   // The LCB trigger commands are stored in the trickle memory
   // What will be sent from TxCore is the TRICKLE_TRIGGER_PULSE
+  m_trigWord.resize(1);
   m_trigWord[0] = LCB_FELIX::config_command(LCB_FELIX::TRICKLE_TRIGGER_PULSE, 1);
-  m_trigWordLength = 1;
 }
 
 void StarFelixTriggerLoop::writeConfig(json &config) {
@@ -123,6 +122,7 @@ void StarFelixTriggerLoop::writeConfig(json &config) {
   config["digital"] = m_digital;
   config["useHitCount"] = m_useHitCount;
   config["trickle_frequency"] = m_trickleFreq;
+  config["fpath_sequence"] = m_fpathSeq;
 }
 
 void StarFelixTriggerLoop::loadConfig(const json &config) {
@@ -151,8 +151,19 @@ void StarFelixTriggerLoop::loadConfig(const json &config) {
   if (config.contains("trickle_frequency"))
     m_trickleFreq = config["trickle_frequency"];
 
+  if (config.contains("fpath_sequence")) {
+    m_fpathSeq = config["fpath_sequence"];
+    if (not m_fpathSeq.empty()) {
+      m_seqGen.load(m_fpathSeq);
+    }
+  }
+
   // make trickle sequence
-  makeTrickleSequence();
+  if (not m_seqGen.empty()) {
+    makeTrickleSequenceFromFile();
+  } else {
+    makeTrickleSequence();
+  }
 
   logger->info("Configured trigger loop: trig_count: {} trig_frequency: {} l0_delay: {}", getTrigCnt(), m_trigFreq, m_trigDelay);
 }
@@ -521,4 +532,23 @@ void StarFelixTriggerLoop::makeTrickleSequence() {
     logger->warn("The actual number of triggers sent is {}", nTotalTrigs);
     setTrigCnt(nTotalTrigs);
   }
+}
+
+void StarFelixTriggerLoop::makeTrickleSequenceFromFile() {
+  if (m_seqGen.empty()) {
+    logger->warn("No trickle sequence to load.");
+    return;
+  }
+
+  m_trickleSeq = m_seqGen.getSequence();
+
+  m_nTrigsTrickle = m_seqGen.count_triggers();
+  logger->debug("m_nTrigsTrickle = {}", m_nTrigsTrickle);
+
+  m_nPulse = getTrigCnt();
+  logger->debug("nPulse = {}", m_nPulse);
+
+  // Update the expected number of triggers for analysis
+  unsigned nTotalTrigs = m_nPulse * m_nTrigsTrickle;
+  setTrigCnt(nTotalTrigs);
 }
