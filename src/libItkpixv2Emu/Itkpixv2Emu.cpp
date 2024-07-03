@@ -47,11 +47,48 @@ void Itkpixv2Emu::executeLoop(){
 
     //Once the commands arrive, the interpreter should kick in
     Itkpixv2EmuUtils::Cmd cmd = m_cmdInterpreter->readCommand(m_tx);
-    if (cmd.header == Itkpixv2EmuUtils::Commands::WrReg){
-        std::bitset<32> d(cmd.data);
-        rlog->info("WrReg command to address {} with data {}", cmd.address, cmd.data);
-    }
+    
+    //debug
+    
+    switch (cmd.header){
+        case Itkpixv2EmuUtils::Commands::Sync          :{
+            rlog->info("Sync command with tag {}", cmd.tag);
+            break;
+        }
+        case Itkpixv2EmuUtils::Commands::PLLlock       :{
+            rlog->info("PLLlock command with tag {}", cmd.tag);
+            break;
+        }
+        case Itkpixv2EmuUtils::Commands::Clear         :{
+            rlog->info("Clear command with id {}", cmd.id);
+            break;
+        }
+        case Itkpixv2EmuUtils::Commands::GlobalPulse   :{
+            rlog->info("GlobalPulse command with id {}", cmd.id);
+            break;
+        }
+        case Itkpixv2EmuUtils::Commands::Cal           :{
+            rlog->info("Cal command with id {} with data {}", cmd.id, cmd.data);
+            break;
+        }
+        case Itkpixv2EmuUtils::Commands::WrReg                   :{
+            rlog->info("WrReg command to address {} with data {}", cmd.address, cmd.data);
+            break;
+        }
+        case Itkpixv2EmuUtils::Commands::RdReg                   :{
+            rlog->info("RdReg command to address {} with data {}", cmd.address, cmd.data);
+            break;
+        }
 
+        default : {
+            if (Itkpixv2EmuUtils::triggerCommands.find(cmd.header) != Itkpixv2EmuUtils::triggerCommands.end()) rlog->info("Trigger command {} with counter {}", cmd.header, cmd.id);
+            else rlog->info("Unknown command with header {} and tag {}", cmd.header, cmd.tag);
+            break;
+        }
+        
+
+
+    }
 
     executeLoop();
 }

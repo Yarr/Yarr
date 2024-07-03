@@ -84,7 +84,7 @@ Itkpixv2EmuUtils::Cmd Itkpixv2EmuCommandInterpreter::readCommand(EmuCom* tx){
             addDecodedUnits(4, cmd.data);
             return cmd;
         }
-        case Itkpixv2EmuUtils::WrReg                   :{
+        case Itkpixv2EmuUtils::Commands::WrReg                   :{
             cmd.id  = Itkpixv2EmuUtils::lut8to5[m_commandUnitBuffer.front()];
             m_commandUnitBuffer.pop();
 
@@ -95,7 +95,7 @@ Itkpixv2EmuUtils::Cmd Itkpixv2EmuCommandInterpreter::readCommand(EmuCom* tx){
             cmd.data >>= 4;
             return cmd;
         }
-        case Itkpixv2EmuUtils::RdReg                   :{
+        case Itkpixv2EmuUtils::Commands::RdReg                   :{
             cmd.id  = Itkpixv2EmuUtils::lut8to5[m_commandUnitBuffer.front()];
             m_commandUnitBuffer.pop();
 
