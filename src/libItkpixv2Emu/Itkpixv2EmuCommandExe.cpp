@@ -51,14 +51,14 @@ void Itkpixv2EmuCommandExe::doCal(const Itkpixv2EmuUtils::Cmd& cmd){
 void Itkpixv2EmuCommandExe::doWrReg(const Itkpixv2EmuUtils::Cmd& cmd){
     
     //Can be either to pixel portal (register 0) or a global register
-    //switch (cmd.address){
-    //    case 0 :
-    //        //Registers PixRegionRow and PixRegionCol decide which of the pixel pairs the portal portals to
-    //        m_cfg->pixRegs[m_cfg->PixRegionCol.read()][m_cfg->PixRegionRow.read()] = (cmd.data & 0xFFFF);
-//
-    //    default:
-    //        (*m_cfg)[cmd.address] = (cmd.data & 0xFFFF);
-    //}
+    switch (cmd.address){
+        case 0 :
+            //Registers PixRegionRow and PixRegionCol decide which of the pixel pairs the portal portals to
+            m_cfg->pixRegs[m_cfg->PixRegionCol.read()][m_cfg->PixRegionRow.read()] = (cmd.data & 0xFFFF);
+
+        default:
+            (*m_cfg)[cmd.address] = (cmd.data & 0xFFFF);
+    }
 
 }
 
