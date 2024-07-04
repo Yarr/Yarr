@@ -73,13 +73,14 @@ void Itkpixv2Emu::executeLoop(){
         }
         case Itkpixv2EmuUtils::Commands::WrReg                   :{
             rlog->info("WrReg command to address {} with data {}", cmd.address, cmd.data);
+            std::cout << &(*m_cmdExe.get()) << "\n";
+            m_cmdExe->exe(cmd);
             break;
         }
         case Itkpixv2EmuUtils::Commands::RdReg                   :{
             rlog->info("RdReg command to address {} with data {}", cmd.address, cmd.data);
             break;
         }
-
         default : {
             if (Itkpixv2EmuUtils::triggerCommands.find(cmd.header) != Itkpixv2EmuUtils::triggerCommands.end()) rlog->info("Trigger command {} with counter {}", cmd.header, cmd.id);
             else rlog->info("Unknown command with header {} and tag {}", cmd.header, cmd.tag);

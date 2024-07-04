@@ -20,7 +20,7 @@ class Itkpixv2EmuCommandExe {
 
         Itkpixv2EmuCommandExe(EmuCom* rx, std::shared_ptr<Itkpixv2Cfg>& cfg);
 
-        void exe(const Itkpixv2EmuUtils::Cmd& cmd);
+        void exe(const Itkpixv2EmuUtils::Cmd cmd);
 
     private:
 

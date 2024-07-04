@@ -6,6 +6,7 @@
 
 #include "Itkpixv2EmuCommandInterpreter.h"
 #include <bitset>
+#include <iostream>
 
 
 namespace {
