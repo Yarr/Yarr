@@ -22,19 +22,19 @@ Itkpixv2Emu::Itkpixv2Emu(EmuCom* tx, EmuCom* rx, int seed): m_tx(tx), m_rx(rx) {
     //Initialize pixels
     initPixels(seed);
 
-    //Initialize the FE registers
-    m_itkpixv2Cfg = std::make_unique<Itkpixv2Cfg>();
+    //Initialize the FE registers. This is needed to be accessible both here for setting up the pixels
+    //and in the command exe
+    m_itkpixv2Cfg = std::make_shared<Itkpixv2Cfg>();
 
     //Initialize the command interpreter and exe
     m_cmdInterpreter = std::make_unique<Itkpixv2EmuCommandInterpreter>();
-    m_cmdExe         = std::make_unique<Itkpixv2EmuCommandExe>();
+    m_cmdExe         = std::make_unique<Itkpixv2EmuCommandExe>(m_rx, m_itkpixv2Cfg);
 
 }
 
 void Itkpixv2Emu::executeLoop(){
     //This loop should only run if the chip is turned on
     if (!run) return;
-
     //Check for commands in tx. This check has to stay here because
     //of the overall run flag. Can think of moving that flag to the
     //interpreter class somehow...

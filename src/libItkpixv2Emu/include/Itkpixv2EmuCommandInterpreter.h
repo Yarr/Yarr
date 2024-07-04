@@ -8,8 +8,8 @@
 #define ITKPIXV2EMUCOMMANDINTERPRETER_H
 
 #include "Itkpixv2EmuUtils.h"
-#include "EmuCom.h"
 #include "logging.h"
+#include "EmuCom.h"
 #include <thread>
 #include <queue>
 
@@ -34,8 +34,8 @@ class Itkpixv2EmuCommandInterpreter {
         //8-bit buffer for the command blocks. All attempts to avoid the
         //additional buffer structure led to hugely complicated sorting
         //of the command streams.
-        const uint8_t m_commandUnitBufferMaxSize = 50;
-        const uint8_t m_commandUnitBufferMinSize = 20;
+        const uint8_t m_commandUnitBufferMaxSize = 8;
+        const uint8_t m_commandUnitBufferMinSize = 8;
         std::queue<uint8_t> m_commandUnitBuffer;
         void bufferCommandUnits(EmuCom* tx);
 

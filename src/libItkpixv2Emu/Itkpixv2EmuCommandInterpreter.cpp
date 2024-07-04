@@ -34,7 +34,7 @@ void Itkpixv2EmuCommandInterpreter::addDecodedUnits(uint8_t unitCount, uint32_t 
 
 Itkpixv2EmuUtils::Cmd Itkpixv2EmuCommandInterpreter::readCommand(EmuCom* tx){
     //Third attempt on a decent implementation. Previous attempts
-    //avoidign the intermediate buffer were extremely complicated.
+    //avoiding the intermediate buffer were extremely complicated.
 
     //Buffer the commands if there are any in tx, and if there's
     //crittically low number of units in the buffer

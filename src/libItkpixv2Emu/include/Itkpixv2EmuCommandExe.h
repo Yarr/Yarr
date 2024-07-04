@@ -9,43 +9,52 @@
 
 #include "Itkpixv2Cfg.h"
 #include "Itkpixv2EmuUtils.h"
+#include "EmuCom.h"
+#include <memory>
 #include <map>
+
 
 class Itkpixv2EmuCommandExe {
 
     public:
 
-        Itkpixv2EmuCommandExe();
+        Itkpixv2EmuCommandExe(EmuCom* rx, std::shared_ptr<Itkpixv2Cfg>& cfg);
 
-        void exe(const uint16_t command, const uint64_t payload = 0);
+        void exe(const Itkpixv2EmuUtils::Cmd& cmd);
 
     private:
 
-        static void doSync();
+        void doSync(const Itkpixv2EmuUtils::Cmd& cmd);
 
-        static void doPLLlock();
+        void doPLLlock(const Itkpixv2EmuUtils::Cmd& cmd);
 
-        static void doClear();
+        void doClear(const Itkpixv2EmuUtils::Cmd& cmd);
 
-        static void doGlobalPulse();
+        void doGlobalPulse(const Itkpixv2EmuUtils::Cmd& cmd);
 
-        static void doCal();
+        void doCal(const Itkpixv2EmuUtils::Cmd& cmd);
 
-        static void doWrReg();
+        void doWrReg(const Itkpixv2EmuUtils::Cmd& cmd);
 
-        static void doRdReg();
+        void doRdReg(const Itkpixv2EmuUtils::Cmd& cmd);
 
         //Mapping from command tags to the actual functions
-        const std::map<uint8_t, void (*)()> commandMap {
-            {Itkpixv2EmuUtils::Commands::Sync       , &doSync       },
-            {Itkpixv2EmuUtils::Commands::PLLlock    , &doPLLlock    },
-            {Itkpixv2EmuUtils::Commands::Clear      , &doClear      },
-            {Itkpixv2EmuUtils::Commands::GlobalPulse, &doGlobalPulse},
-            {Itkpixv2EmuUtils::Commands::Cal        , &doCal        },
-            {Itkpixv2EmuUtils::Commands::WrReg      , &doWrReg      },
-            {Itkpixv2EmuUtils::Commands::RdReg      , &doRdReg      }
+        std::map<uint8_t, void (Itkpixv2EmuCommandExe::*)(const Itkpixv2EmuUtils::Cmd& cmd)> commandMap =  {
+            {Itkpixv2EmuUtils::Commands::Sync       , &Itkpixv2EmuCommandExe::doSync       },
+            {Itkpixv2EmuUtils::Commands::PLLlock    , &Itkpixv2EmuCommandExe::doPLLlock    },
+            {Itkpixv2EmuUtils::Commands::Clear      , &Itkpixv2EmuCommandExe::doClear      },
+            {Itkpixv2EmuUtils::Commands::GlobalPulse, &Itkpixv2EmuCommandExe::doGlobalPulse},
+            {Itkpixv2EmuUtils::Commands::Cal        , &Itkpixv2EmuCommandExe::doCal        },
+            {Itkpixv2EmuUtils::Commands::WrReg      , &Itkpixv2EmuCommandExe::doWrReg      },
+            {Itkpixv2EmuUtils::Commands::RdReg      , &Itkpixv2EmuCommandExe::doRdReg      }
         };
 
+
+        //Output pipeline pointer
+        EmuCom* m_rx;
+
+        //Register map pointer
+        std::shared_ptr<Itkpixv2Cfg> m_cfg;
 
 };
 

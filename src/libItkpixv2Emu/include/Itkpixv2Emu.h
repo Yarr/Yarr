@@ -50,9 +50,9 @@ class Itkpixv2Emu {
         //We've got a ring buffer in tx...
         std::deque<uint16_t> m_commandStream;
 
-        //Representation of all the chip registers. The uniqueness of this
-        //pointer is a legacy of Rd53a emu, but probably doesn't hurt here
-        std::unique_ptr<Itkpixv2Cfg> m_itkpixv2Cfg;
+        //Representation of all the chip registers. Shared, so that
+        //it can be used by both the Itkpixv2Emu and the sub-classes
+        std::shared_ptr<Itkpixv2Cfg> m_itkpixv2Cfg;
 
         //Utility class for preparation of the commands that arrive
         //through tx
