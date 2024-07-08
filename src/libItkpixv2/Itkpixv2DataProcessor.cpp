@@ -471,6 +471,7 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
             _rawDataIdx = 0;
             _wordIdx = 0;
             _data = &_curInV->data[0]->get(0);
+
             if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
                  return getNextDataBlock();
             if (((_data[0] >> 29) & 0x3) != _chipId && _enChipId)
@@ -478,6 +479,10 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
             return true;
         }
         _wordIdx += 2; // Increase block index
+        if(unlikely(_rawDataIdx >= _curInV->data.size())) {
+            // segfault is going to happen
+            logger->error("Reached V2 segfault case!: _rawDataIdx: {} | _curInV->data.size(): {} | _status: {} | 0x{:x}{:x}", _rawDataIdx, _curInV->data.size(), _status, _data[0], _data[1]);
+        }
         if (_wordIdx >= _curInV->data[_rawDataIdx]->getSize())
         {
             _rawDataIdx++;
@@ -492,8 +497,8 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
         //This protects the edge case when we would hit the end of the stream while retrieving the
         //16 bits of the last qcore hitmap, which leads to the last hit being dropped from the output.
         if (_status == HMAP1) {
-            logger->warn("Reached end of stream during hitmap status - dropping last hit!");
-            // return true;
+            logger->warn("Reached end of stream during hitmap status!  0x{:x}{:x}", _data[0], _data[1]);
+            return true;
         }
 
         // Reset raw data index and word index
@@ -531,6 +536,12 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
         _curInV = m_input->popData();
         if (_curInV == nullptr)
             return false;
+        // for(int ii = 0; ii < _curInV->data.size(); ii++) {
+        //     for(int jj = 0; jj < (int)_curInV->data[ii]->getSize(); jj++) {
+        //         std::cout << (_curInV->data[ii]->get((size_t)jj)) << std::endl;
+        //     }
+        // }
+        // std::cout << std::endl;
         if (_curInV->size() == 0){
             if (_curInV->stat.is_end_of_iteration) {
                 // push any remaining _curOut data
@@ -567,6 +578,7 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
 
     // Upate the data pointer. Note the meaning of block index is the first block that is *unprocessed*
     _data = &_curInV->data[_rawDataIdx]->get(_wordIdx);
+
     //logger->info("[{}] {} 0x{:x}{:x}", _wordIdx, _data[0]>>31, _data[0], _data[1]);
 
     // Return success code

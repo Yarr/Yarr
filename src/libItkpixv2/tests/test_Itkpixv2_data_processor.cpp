@@ -102,3 +102,80 @@ TEST_CASE("Itkpixv2DataProcessor", "[itkpixv2][data_processor]") {
 
 }
 
+TEST_CASE("Itkpixv2DataProcessor", "[itkpixv2][data_processor_edge_case]") {
+    FrontEndData truth;
+    std::cout << "ITKPixV2DataProcessor EDGE CASE" << std::endl;
+    
+    std::unique_ptr<HitMapGenerator> generator(new HitMapGenerator());
+    int nEvents = 18;
+    int nEventsPerStream = 1;
+    generator->setSeed(Catch::rngSeed());
+    
+    std::unique_ptr<Itkpixv2Encoder> encoder(new Itkpixv2Encoder());
+    encoder->setEventsPerStream(nEventsPerStream);
+
+    for (int evt = 0; evt < nEvents; evt++){
+        generator->randomHitMap(1e-4);
+        truth.events.push_back(generator->outTruth());
+        if   (evt != nEvents - 1) encoder->addToStream(generator->outHits());
+        else                      encoder->addToStream(generator->outHits(), true); //make sure the stream is ended with the last added event
+    }
+    
+    std::vector<uint32_t> words = {
+        // 0,
+        // 4242473892, // this one also works
+        // 171971904,
+        // 4250599616,
+        // 77605504,
+        // 4253024256,
+        // 0,
+        2117946280, 
+        390140437, 
+        939820180,
+        3791787155
+    };
+
+    // minimal (ish) example block: 
+    // 0x7E3D4BA817411215
+    // 0x38048494E2021493
+    //
+    // 32 bit blocks:
+    // 01111110001111010100101110101000
+    // 00010111010000010001001000010101
+    // 00111000000001001000010010010100
+    // 11100010000000100001010010010011
+
+    int nWords = words.size();
+
+    std::shared_ptr<FeDataProcessor> proc = StdDict::getDataProcessor("ITKPIXV2");
+    REQUIRE (proc);
+
+    ClipBoard<RawDataContainer> rd_cp;
+    ClipBoard<EventDataBase> em_cp;
+
+    Itkpixv2Cfg cfg;  
+    proc->connect(&cfg, &rd_cp, &em_cp );
+
+    proc->init();
+    proc->run();
+    RawDataPtr rd = std::make_shared<RawData>(0, nWords);
+    uint32_t *buffer = rd->getBuf();
+    buffer[nWords-1] = 0;
+
+    std::copy(words.data(), words.data()+nWords, buffer);
+    std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(LoopStatus()));
+
+    rdc->add(std::move(rd));
+
+    rd_cp.pushData(std::move(rdc));
+
+    rd_cp.finish();
+
+    proc->join();
+    REQUIRE (!em_cp.empty());
+
+    auto data = em_cp.popData();
+    FrontEndData &rawData = *(FrontEndData*)data.get();
+    
+}
+
