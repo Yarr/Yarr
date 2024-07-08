@@ -1,5 +1,6 @@
 #include "YarrDiagram.h"
 
+#include <fstream>
 #include <typeinfo>
 #include <iomanip>
 

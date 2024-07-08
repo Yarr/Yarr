@@ -93,18 +93,19 @@ void Itkpixv2PixelCfg::writeConfig(json &j) {
 
 // TODO add failsaife
 void Itkpixv2PixelCfg::loadConfig(const json &j) {
-    if (j.contains({"ITKPIXV2","PixelConfig"})) {
-		for (unsigned col=0; col<n_Col; col++) {
-			for (unsigned row=0; row<n_Row; row++) {
-				this->setEn(col, row, j["ITKPIXV2"]["PixelConfig"][col]["Enable"][row]);
-				this->setHitbus(col, row, j["ITKPIXV2"]["PixelConfig"][col]["Hitbus"][row]);
-				this->setInjEn(col, row, j["ITKPIXV2"]["PixelConfig"][col]["InjEn"][row]);
-				this->setTDAC(col, row, j["ITKPIXV2"]["PixelConfig"][col]["TDAC"][row]);
-			}
-		}
-	} else {
-		logger->error("Could not find pixel registers, using default!");
-	}
+    if (j.contains("ITKPIXV2") && j["ITKPIXV2"].contains("PixelConfig")) {
+        auto &jconfig = j["ITKPIXV2"]["PixelConfig"];
+        for (unsigned col=0; col<n_Col; col++) {
+            for (unsigned row=0; row<n_Row; row++) {
+                this->setEn(col, row, jconfig[col]["Enable"][row]);
+                this->setHitbus(col, row, jconfig[col]["Hitbus"][row]);
+                this->setInjEn(col, row, jconfig[col]["InjEn"][row]);
+                this->setTDAC(col, row, jconfig[col]["TDAC"][row]);
+            }
+        }
+    } else {
+        logger->error("Could not find pixel registers, using default!");
+    }
 }
 
 uint16_t Itkpixv2PixelCfg::getPixelBit(PixelArray &input, unsigned col, unsigned row, unsigned bit){

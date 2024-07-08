@@ -4,6 +4,7 @@
 
 #include <sstream>
 #include <iomanip>
+#include <iostream>
 
 namespace {
   auto ftlog = logging::make_log("FelixTxCore");

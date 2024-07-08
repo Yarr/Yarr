@@ -106,8 +106,7 @@ void testSaveLoad1D(const Histo1d &hh, const HistoInfo &hi) {
   hh.toJson(j);
 
   // For debugging
-  std::string json_output;
-  j.dump(json_output);
+  std::string json_output = j.dump();
   CAPTURE (json_output);
 
   std::unique_ptr<HistogramBase> out_histo;
@@ -144,8 +143,7 @@ void testSaveLoad2D(const Histo2d &hh, const HistoInfo &hi) {
   hh.toJson(j);
 
   // For debugging
-  std::string json_output;
-  j.dump(json_output);
+  std::string json_output = j.dump();
   CAPTURE (json_output);
 
   std::unique_ptr<HistogramBase> out_histo;
@@ -183,8 +181,7 @@ void testSaveLoad3D(const Histo3d &hh, const HistoInfo &hi) {
   hh.toJson(j);
 
   // For debugging
-  std::string json_output;
-  j.dump(json_output);
+  std::string json_output = j.dump();
   CAPTURE (json_output);
 
   std::unique_ptr<HistogramBase> out_histo;

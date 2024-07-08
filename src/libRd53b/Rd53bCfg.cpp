@@ -87,65 +87,73 @@ void Rd53bCfg::writeConfig(json &j) {
 }
 
 void Rd53bCfg::loadConfig(const json &j) {
-    if (j.contains({"RD53B","Parameter","Name"}))
-        name = j["RD53B"]["Parameter"]["Name"];
+    if (j.contains("RD53B") && j["RD53B"].contains("Parameter")) {
+        auto &jconfig = j["RD53B"]["Parameter"];
+        if(jconfig.contains("Name"))
+            name = jconfig["Name"];
     
-    if (j.contains({"RD53B","Parameter","ChipId"}))
-        m_chipId = j["RD53B"]["Parameter"]["ChipId"];
+        if (jconfig.contains("ChipId"))
+            m_chipId = jconfig["ChipId"];
     
-    if (j.contains({"RD53B","Parameter","InjCap"}))
-        m_injCap = j["RD53B"]["Parameter"]["InjCap"];
+        if (jconfig.contains("InjCap"))
+            m_injCap = jconfig["InjCap"];
    
-    if (j.contains({"RD53B", "Parameter","EnforceNameIdCheck"}))
-        enforceChipIdInName = j["RD53B"]["Parameter"]["EnforceNameIdCheck"];
+        if (jconfig.contains("EnforceNameIdCheck"))
+            enforceChipIdInName = jconfig["EnforceNameIdCheck"];
     
-    if (j.contains({"RD53B","Parameter","NfDSLDO"}))
-        m_nf[0] = j["RD53B"]["Parameter"]["NfDSLDO"];
+        if (jconfig.contains("NfDSLDO"))
+            m_nf[0] = jconfig["NfDSLDO"];
 
-    if (j.contains({"RD53B","Parameter","NfASLDO"}))
-        m_nf[1] = j["RD53B"]["Parameter"]["NfASLDO"];
+        if (jconfig.contains("NfASLDO"))
+            m_nf[1] = jconfig["NfASLDO"];
 
-    if (j.contains({"RD53B","Parameter","NfACB"}))
-        m_nf[2] = j["RD53B"]["Parameter"]["NfACB"];
+        if (jconfig.contains("NfACB"))
+            m_nf[2] = jconfig["NfACB"];
 
-    if (j.contains({"RD53B","Parameter","IrefTrim"}))
-        m_irefTrim = j["RD53B"]["Parameter"]["IrefTrim"];
+        if (jconfig.contains("IrefTrim"))
+            m_irefTrim = jconfig["IrefTrim"];
 
-    if (j.contains({"RD53B","Parameter","KSenseInA"}))
-        m_kSenseInA = j["RD53B"]["Parameter"]["KSenseInA"];
+        if (jconfig.contains("KSenseInA"))
+            m_kSenseInA = jconfig["KSenseInA"];
 
-    if (j.contains({"RD53B","Parameter","KSenseInD"}))
-        m_kSenseInD = j["RD53B"]["Parameter"]["KSenseInD"];
+        if (jconfig.contains("KSenseInD"))
+            m_kSenseInD = jconfig["KSenseInD"];
 
-    if (j.contains({"RD53B","Parameter","KSenseShuntA"}))
-        m_kSenseShuntA = j["RD53B"]["Parameter"]["KSenseShuntA"];
+        if (jconfig.contains("KSenseShuntA"))
+            m_kSenseShuntA = jconfig["KSenseShuntA"];
 
-    if (j.contains({"RD53B","Parameter","KSenseShuntD"}))
-        m_kSenseShuntD = j["RD53B"]["Parameter"]["KSenseShuntD"];
+        if (jconfig.contains("KSenseShuntD"))
+            m_kSenseShuntD = jconfig["KSenseShuntD"];
 
-    if (j.contains({"RD53B","Parameter","KShuntA"}))
-        m_kShuntA = j["RD53B"]["Parameter"]["KShuntA"];
+        if (jconfig.contains("KShuntA"))
+            m_kShuntA = jconfig["KShuntA"];
 
-    if (j.contains({"RD53B","Parameter","KShuntD"}))
-        m_kShuntD = j["RD53B"]["Parameter"]["KShuntD"];
+        if (jconfig.contains("KShuntD"))
+            m_kShuntD = jconfig["KShuntD"];
     
-    if (j.contains({"RD53B","Parameter","VcalPar"}))
-        if (j["RD53B"]["Parameter"]["VcalPar"].size() == m_vcalPar.size()) {
-            for(unsigned  i=0;i<m_vcalPar.size();i++)
-                m_vcalPar[i] = j["RD53B"]["Parameter"]["VcalPar"][i];
+        if (jconfig.contains("VcalPar")) {
+            if (jconfig["VcalPar"].size() == m_vcalPar.size()) {
+                for(unsigned  i=0;i<m_vcalPar.size();i++)
+                    m_vcalPar[i] = jconfig["VcalPar"][i];
+            }
         }
 
-    if (j.contains({"RD53B","Parameter","ADCcalPar"}))
-        if (j["RD53B"]["Parameter"]["ADCcalPar"].size() == m_adcCalPar.size()) {
-            for(unsigned  i=0;i<m_adcCalPar.size();i++)
-                m_adcCalPar[i] = j["RD53B"]["Parameter"]["ADCcalPar"][i];
+        if (jconfig.contains("ADCcalPar")) {
+            if (jconfig["ADCcalPar"].size() == m_adcCalPar.size()) {
+                for(unsigned  i=0;i<m_adcCalPar.size();i++) {
+                    m_adcCalPar[i] = jconfig["ADCcalPar"][i];
+                }
+            }
         }
 
-    if (j.contains({"RD53B","Parameter","NtcCalPar"}))
-        if (j["RD53B"]["Parameter"]["NtcCalPar"].size() == m_ntcCalPar.size()) {
-            for (unsigned i = 0; i < m_ntcCalPar.size(); i++)
-                m_ntcCalPar[i] = j["RD53B"]["Parameter"]["NtcCalPar"][i];
+        if (jconfig.contains("NtcCalPar")) {
+            if (jconfig["NtcCalPar"].size() == m_ntcCalPar.size()) {
+                for (unsigned i = 0; i < m_ntcCalPar.size(); i++) {
+                    m_ntcCalPar[i] = jconfig["NtcCalPar"][i];
+                }
+            }
         }
+    }
 
     Rd53bGlobalCfg::loadConfig(j);
     Rd53bPixelCfg::loadConfig(j);
