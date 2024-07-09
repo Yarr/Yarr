@@ -169,6 +169,8 @@ int main(int argc, char* argv[]) {
     auto chip_configs = jconn["chips"];
     size_t n_chips = chip_configs.size();
 
+    unsigned error_cnt = 0;
+
     // Record fe's and set to high-z if shared vmux
     for (size_t ichip = 0; ichip < n_chips; ichip++) {
         if (chip_configs[ichip]["enable"] == 0)
@@ -192,6 +194,7 @@ int main(int argc, char* argv[]) {
             hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
             if (fe->readUpdateWriteNamedRegister("MonitorV", high_z) != yarrSuccess) {
                 std::cerr << "ERROR: failed to readUpdateWrite register for " << ichip << "!" << std::endl;
+                error_cnt++;
             }
         }
         fes.push_back(std::make_pair(ichip, std::move(fe)));
@@ -211,6 +214,7 @@ int main(int argc, char* argv[]) {
                 uint16_t res = 0;
                 if (fe->readNamedRegister("MonitoringDataAdc", res) != yarrSuccess) {
                     std::cerr << "ERROR: failed to read register for " << current_chip_name << "!" << std::endl;
+                    error_cnt++;
                 }
                 if (return_count) std::cout << res << std::endl;
                 else{
@@ -227,6 +231,7 @@ int main(int argc, char* argv[]) {
                 uint16_t res = 0;
                 if (fe->readNamedRegister("MonitoringDataAdc", res) != yarrSuccess) {
                     std::cerr << "ERROR: failed to read register for " << current_chip_name << "!" << std::endl;
+                    error_cnt++;
                 }
                 if (return_count) std::cout << res << std::endl;
                 else{
@@ -239,5 +244,5 @@ int main(int argc, char* argv[]) {
 
     std::cerr << "Done." << std::endl;
 
-    return 0;
+    return error_cnt;
 }

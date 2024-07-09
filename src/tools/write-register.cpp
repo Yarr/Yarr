@@ -145,6 +145,8 @@ int main(int argc, char* argv[]) {
 
     std::string chipType = ScanHelper::loadChipConfigs(jconn, false, Utils::dirFromPath(connectivity_filename));
 
+    unsigned error_cnt = 0;
+
     auto chip_configs = jconn["chips"];
     size_t n_chips = chip_configs.size();
     for (size_t ichip = 0; ichip < n_chips; ichip++) {
@@ -170,6 +172,7 @@ int main(int argc, char* argv[]) {
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
                 if (fe->readUpdateWriteNamedRegister(register_name, register_value) != yarrSuccess) {
                     std::cerr << "ERROR: failed to readUpdateWrite register for " << current_chip_name << "!" << std::endl;
+                    error_cnt++;
                 }
             }
         } else {
@@ -179,6 +182,7 @@ int main(int argc, char* argv[]) {
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
                 if (fe->readUpdateWriteNamedRegister(register_name, register_value) != yarrSuccess) {
                     std::cerr << "ERROR: failed to readUpdateWrite register for " << current_chip_name << "!" << std::endl;
+                    error_cnt++;
                 }
             }
         }
@@ -186,5 +190,5 @@ int main(int argc, char* argv[]) {
 
     std::cerr << "Done." << std::endl;
 
-    return 0;
+    return error_cnt;
 }
