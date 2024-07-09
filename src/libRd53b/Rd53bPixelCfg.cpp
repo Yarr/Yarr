@@ -93,7 +93,7 @@ void Rd53bPixelCfg::writeConfig(json &j) {
 
 // TODO add failsaife
 void Rd53bPixelCfg::loadConfig(const json &j) {
-    if (!j.contains("RD53B") || j["RD53B"].contains("PixelConfig")) {
+    if (!j.contains("RD53B") || !j["RD53B"].contains("PixelConfig")) {
         logger->error("Could not find pixel registers config, using default!");
         return;
     }
@@ -103,10 +103,10 @@ void Rd53bPixelCfg::loadConfig(const json &j) {
     for (unsigned col=0; col<n_Col; col++) {
         auto jrow = jconfig[col];
         for (unsigned row=0; row<n_Row; row++) {
-            this->setEn(col, row, j["Enable"][row]);
-            this->setHitbus(col, row, j["Hitbus"][row]);
-            this->setInjEn(col, row, j["InjEn"][row]);
-            this->setTDAC(col, row, j["TDAC"][row]);
+            this->setEn(col, row, jrow["Enable"][row]);
+            this->setHitbus(col, row, jrow["Hitbus"][row]);
+            this->setInjEn(col, row, jrow["InjEn"][row]);
+            this->setTDAC(col, row, jrow["TDAC"][row]);
         }
     }
 }

@@ -266,8 +266,7 @@ namespace ScanHelper {
             const json &cfg=chip["__config_data__"];
             feCfg->loadConfig(cfg);
             if (chip.contains("locked")) {
-                bool locked = chip["locked"];
-                feCfg->setLocked(locked);
+                feCfg->setLocked((int)chip["locked"]);
             }
             
             // Check for hidden clipboard monitor parameter, and start them if true
