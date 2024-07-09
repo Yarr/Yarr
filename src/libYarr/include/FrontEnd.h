@@ -59,7 +59,7 @@ class FrontEnd {
         virtual void connectBookkeeper(Bookkeeper* k){};
        
         virtual void configure()=0;
-        virtual yarrStatus checkCom() {return yarrFailure;}
+        virtual yarrStatus checkCom() {return yarrSuccess;}
         virtual yarrStatus hasValidName() { return yarrSuccess; }
 
         // A parallel reset that undos any configuration
