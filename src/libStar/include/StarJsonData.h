@@ -46,7 +46,13 @@
 #include <string>
 #include <optional>
 
-/*! Actual implementation for reading input data from json file on disk, implements methods to do summing of (star) channels */
+/**
+   Store generic information for Star in json style format.
+
+   Originally implementated for reading input data from json file on disk.
+
+   Implements methods to do summing of (star) channels.
+*/
 class StarJsonData : public JsonData
 {
 public:

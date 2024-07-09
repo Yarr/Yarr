@@ -14,6 +14,7 @@ namespace SixEight {
     return (2*count_bits(d))-6;
   }
 
+  /// Encode 6-bit data into 8-bit code
   inline uint8_t encode(uint8_t data6) {
     int d = disparity(data6);
     switch(d) {
@@ -48,6 +49,7 @@ namespace SixEight {
     return 0xff;
   }
 
+  /// Return 8-bit code of a k-character
   inline uint8_t kcode(int k) {
     switch(k) {
     case 0: case 56: return 0x78;
@@ -58,6 +60,12 @@ namespace SixEight {
     return 0xff;
   }
 
+  /**
+     Decode 8-bit code to 6-bit data.
+
+     K-characters are decoded with bit 7 set.
+     Invalid codes are not detected.
+  */
   inline uint8_t decode(uint8_t data8) {
     switch(data8) {
       // K chars
@@ -97,6 +105,7 @@ namespace SixEight {
     return 0xff;
   }
 
+  /// Return true if 8-bit code corresponds to valid data (or K-char)
   inline bool is_valid(uint8_t data8) {
     switch(data8) {
       // K chars
@@ -141,6 +150,7 @@ namespace SixEight {
     return false;
   }
 
+  /// Return true if 8-bit code corresponds to valid K-char
   inline bool is_kcode(uint8_t data8) {
     return data8 == kcode(0) || data8 == kcode(1)
         || data8 == kcode(2) || data8 == kcode(3);
@@ -149,6 +159,7 @@ namespace SixEight {
 
 namespace LCB {
 
+  /// Represents a 16-bit LCB frame
   typedef uint16_t Frame;
 
   const uint8_t K0 = SixEight::kcode(0);
@@ -156,6 +167,7 @@ namespace LCB {
   const uint8_t K2 = SixEight::kcode(2);
   const uint8_t K3 = SixEight::kcode(3);
 
+  /// Codes for fast commands
   enum FastCmdType {
     NONE = 0,
     RESVD = 1,
@@ -175,11 +187,12 @@ namespace LCB {
     HCC_START_PRLP = 15
   };
 
-
+  /// Join two 8b codes into 16-bit frame
   constexpr Frame build_pair(uint8_t f, uint8_t s) {
     return (f << 8) | s;
   }
 
+  /// Split 16-bit frame into two 8-bit codes
   inline std::tuple<uint8_t, uint8_t> split_pair(Frame f) {
     return {(f>>8)&0xff, f&0xff};
   }
@@ -187,6 +200,7 @@ namespace LCB {
   /// Idle frame
   const Frame IDLE = build_pair(K0, K1);
 
+  /// Encode bit pattern into frame (internal)
   inline Frame raw_bits(uint16_t bits) {
     return (SixEight::encode((bits>>6) & 0x3f) << 8) | SixEight::encode(bits&0x3f);
   }

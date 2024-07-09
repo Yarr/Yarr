@@ -2,6 +2,7 @@
 #include <chrono>
 #include <unistd.h>
 #include <bitset>
+#include <fstream>
 #include <iomanip>
 #include <random>
 #include <queue>

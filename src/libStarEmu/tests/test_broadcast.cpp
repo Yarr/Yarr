@@ -1,5 +1,7 @@
 #include "catch.hpp"
 
+#include <fstream>
+
 #include "AllHwControllers.h"
 #include "AllChips.h"
 #include "Bookkeeper.h"

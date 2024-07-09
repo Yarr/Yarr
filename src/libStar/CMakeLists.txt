@@ -10,11 +10,13 @@ add_library(Star SHARED
         StarConversionTools.cpp
         StarCounterLoop.cpp
         StarDataProcessor.cpp
+        StarFelixTriggerLoop.cpp
         StarJsonData.cpp
         StarMaskLoop.cpp
+        StarNPointGainAnalysis.cpp
         StarRegDump.cpp
+        StarSeqGenerator.cpp
         StarStrobeDelayAnalysis.cpp
-        StarFelixTriggerLoop.cpp
         StarTriggerLoop.cpp)
 
 post_build_debug_library(Star)
@@ -22,7 +24,7 @@ target_include_directories(Star PRIVATE ../libYarr/include)
 target_include_directories(Star PUBLIC ./include)
 target_link_libraries(Star Scan)
 
-LIST(APPEND apps test_star)
+LIST(APPEND apps test_star makeLCBSequence)
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)
     target_link_libraries(${target} Yarr)

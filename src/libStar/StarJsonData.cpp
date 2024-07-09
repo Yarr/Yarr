@@ -34,7 +34,7 @@ void StarJsonData::initialiseStarChannelsDataAtProp(const PropName &propName, co
        auto level = std::ref(m_jsondata);
        for (unsigned int iPropLev=0; iPropLev<splitProp.size(); iPropLev++)
        {
-              std::string strLev = splitProp[iPropLev];
+              const std::string& strLev = splitProp[iPropLev];
               if (level.get()[strLev].empty())
                      level.get()[strLev] = json::object();
               level = level.get()[strLev];
@@ -43,7 +43,7 @@ void StarJsonData::initialiseStarChannelsDataAtProp(const PropName &propName, co
        json lastLevel;
        lastLevel["Data"] = json::array();
        for (unsigned int i=0; i<nbVals; i++) 
-              lastLevel["Data"].push_back(json::Type::null);
+              lastLevel["Data"].push_back(nullptr);
        level.get() = lastLevel;
 }
 

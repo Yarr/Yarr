@@ -4,6 +4,7 @@
 #include <array>
 #include "LoopActionBase.h"
 #include "StdTriggerAction.h"
+#include "StarSeqGenerator.h"
 
 class StarFelixTriggerLoop: public LoopActionBase, public StdTriggerAction {
 
@@ -36,14 +37,14 @@ private:
 
   double m_trickleFreq {10}; // frequency to send trickle pulse
 
-  // How many words of pattern buffer to use
-  uint32_t m_trigWordLength;
-  // This matches the pattern buffer in TxCore
-  std::array<uint32_t, 32> m_trigWord;
+  std::vector<uint32_t> m_trigWord;
 
   bool m_noInject {true};
   bool m_digital {false};
   bool m_useHitCount {true};
+
+  std::string m_fpathSeq;
+  StarSeqGenerator m_seqGen{true};
 
   unsigned m_nTrigsTrickle; // number of triggers stored in the trickle memory
   unsigned m_nPulse; // number of times to iterate over the trickle memory
@@ -55,6 +56,7 @@ private:
   void addChargeInjection(std::vector<uint8_t>&);
   std::vector<uint8_t> getHitCounterSegment();
   void makeTrickleSequence();
+  void makeTrickleSequenceFromFile();
 
   void init() override;
   void end() override;

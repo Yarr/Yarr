@@ -48,6 +48,7 @@ All config parameters are optional, see defaults:
 - trig_count ``<int>``: number of injections, if 0 will run for specified time (trig_time) (default 50)
 - trig_frequency ``<int>``: trigger(/injection)frequency in Hz (default 1000)
 - trig_time ``<int>``: time in seconds, if count is set to 0 will run for this amount of time (default 10)
+- fpath_sequence ``<string>``: path to the file containing a pre-computed sequence of bytes for setting trigger words
 
 ### StarMaskLoop
 

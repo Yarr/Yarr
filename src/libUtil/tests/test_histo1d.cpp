@@ -37,8 +37,7 @@ void testSaveLoad(const Histo1d &hh, const HistoInfo &hi) {
 
   out_histo.fromJson(j);
 
-  std::string json_output;
-  j.dump(json_output);
+  std::string json_output = j.dump();
 
   CAPTURE (json_output);
 

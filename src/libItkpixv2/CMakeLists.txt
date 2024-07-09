@@ -19,14 +19,12 @@ add_library(Itkpixv2 SHARED
 post_build_debug_library(Itkpixv2)
 target_include_directories(Itkpixv2 PRIVATE ../libYarr/include)
 target_include_directories(Itkpixv2 PRIVATE ../libUtil/include)
-target_include_directories(Itkpixv2 PRIVATE ../libEmu/include)
 target_include_directories(Itkpixv2 PUBLIC ./include)
 target_link_libraries(Itkpixv2 Scan)
 
 LIST(APPEND apps
         Itkpixv2CheckPulse
         Itkpixv2ConnectivityScan
-        Itkpixv2GenEncode
         Itkpixv2ReadRingosc
         )
 

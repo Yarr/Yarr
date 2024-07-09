@@ -138,7 +138,7 @@ namespace LCB_FELIX {
     return (cmd[0] << 24) + (cmd[1] << 16) + (cmd[2] << 8) + cmd[3];
   }
 
-  void write_trickle_memory(
+  inline void write_trickle_memory(
     TxCore& tx,
     const std::vector<uint32_t>& elinks_config,
     const std::vector<uint32_t>& elinks_trickle,

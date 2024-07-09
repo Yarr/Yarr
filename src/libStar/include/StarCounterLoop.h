@@ -13,6 +13,11 @@
 #include "StdTriggerAction.h"
 #include "StarChips.h"
 
+/**
+   Loop action to run sequence of triggers using counter readout.
+
+   This is a StdTriggerAction meaning it has a trigger count.
+ */
 class StarCounterLoop: public LoopActionBase, public StdTriggerAction {
     public:
         StarCounterLoop();

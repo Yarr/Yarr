@@ -96,23 +96,29 @@ void Rd53aCfg::writeConfig(json &j) {
 }
 
 void Rd53aCfg::loadConfig(const json &j) {
-    if (j.contains({"RD53A","Parameter","Name"}))
-        name = j["RD53A"]["Parameter"]["Name"];
-    if (j.contains({"RD53A","Parameter","ChipId"}))
-        m_chipId = j["RD53A"]["Parameter"]["ChipId"];
-    if (j.contains({"RD53A","Parameter","InjCap"}))
-        m_injCap = j["RD53A"]["Parameter"]["InjCap"];
-    if (j.contains({"RD53A","Parameter","VcalPar"}))
-        for(unsigned  i=0;i<4;i++)  m_vcalPar[i] = j["RD53A"]["Parameter"]["VcalPar"][i];
+    if (j.contains("RD53A") && j["RD53A"].contains("Parameter")) {
+        auto &jparams = j["RD53A"]["Parameter"];
+        if(jparams.contains("Name")) {
+            name = jparams["Name"];
+        }
+        if (jparams.contains("ChipId"))
+            m_chipId = jparams["ChipId"];
+        if (jparams.contains("InjCap"))
+            m_injCap = jparams["InjCap"];
+        if (jparams.contains("VcalPar"))
+            for(unsigned  i=0;i<4;i++)  m_vcalPar[i] = jparams["VcalPar"][i];
 
-    if (j.contains({"RD53A","Parameter","ADCcalPar"}))
-        for(unsigned  i=0;i<2;i++)  m_ADCcalPar[i] = j["RD53A"]["Parameter"]["ADCcalPar"][i];
+        if (jparams.contains("ADCcalPar"))
+            for(unsigned  i=0;i<2;i++)  m_ADCcalPar[i] = jparams["ADCcalPar"][i];
 
-    for(unsigned  sens=0;sens<4;sens++) {
-        if (j.contains({"RD53A","Parameter","TempSen"+std::to_string(sens)+"Par"}))
-            for(unsigned  i=0;i<2;i++)  m_TempSenPar[sens][i] = j["RD53A"]["Parameter"]["TempSen"+std::to_string(sens)+"Par"][i];
-        if (j.contains({"RD53A","Parameter","RadSen"+std::to_string(sens)+"Par"}))
-            for(unsigned  i=0;i<2;i++)  m_RadSenPar[sens][i] = j["RD53A"]["Parameter"]["RadSen"+std::to_string(sens)+"Par"][i];
+        for(unsigned  sens=0;sens<4;sens++) {
+            if (jparams.contains("TempSen"+std::to_string(sens)+"Par")) {
+                for(unsigned  i=0;i<2;i++)  m_TempSenPar[sens][i] = jparams["TempSen"+std::to_string(sens)+"Par"][i];
+            }
+            if (jparams.contains("RadSen"+std::to_string(sens)+"Par")) {
+                for(unsigned  i=0;i<2;i++)  m_RadSenPar[sens][i] = jparams["RadSen"+std::to_string(sens)+"Par"][i];
+            }
+        }
     }
 
     Rd53aGlobalCfg::loadConfig(j);

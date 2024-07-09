@@ -181,10 +181,14 @@ void Fei4GlobalCfg::writeConfig(json &j) {
 }
 
 void Fei4GlobalCfg::loadConfig(const json &j) {
+    if (!j.contains("FE-I4B") || !j["FE-I4B"].contains("GlobalConfig")) {
+        return;
+    }
     typedef std::map<std::string, Fei4Register Fei4GlobalCfg::*>::iterator it_type;
+    auto &jconfig = j["FE-I4B"]["GlobalConfig"];
     for(it_type iterator = regMap.begin(); iterator != regMap.end(); iterator++) {
-        if (j.contains({"FE-I4B","GlobalConfig",iterator->first}))
-            (this->*iterator->second).write((uint16_t) j["FE-I4B"]["GlobalConfig"][iterator->first]);
+        if (jconfig.contains(iterator->first))
+            (this->*iterator->second).write((uint16_t) jconfig[iterator->first]);
     }
 
 }

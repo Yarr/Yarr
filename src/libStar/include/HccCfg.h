@@ -130,35 +130,52 @@ class HccCfg {
 
         void setDefaults(int version);
 
+        /// Get communications ID for this HCC
         const unsigned int getHCCchipID() const{return m_hccID;}
+        /// Set communications ID for this HCC
         void setHCCChipId(unsigned hccID){
             m_hccID = hccID;
         }
 
+        /// Set value of named register field
         void setSubRegisterValue(std::string subRegName, uint32_t value) {
             auto info = m_info->subRegByName(subRegName);
             m_registerMap.at(info->m_regAddress)->getSubRegister(info).updateValue(value);
         }
 
+        /// Get value of named register field
         uint32_t getSubRegisterValue(std::string subRegName) const {
             auto info = m_info->subRegByName(subRegName);
             return m_registerMap.at(info->m_regAddress)->getSubRegister(info).getValue();
         }
 
+        /// Retrieve address of register corresponding to named register field
         int getSubRegisterParentAddr(std::string subRegName) const {
             auto info = m_info->subRegByName(subRegName);
             return info->getRegAddress();
         }
 
+        /// Retrieve full value of register containing named register field
         uint32_t getSubRegisterParentValue(std::string subRegName) const {
             auto info = m_info->subRegByName(subRegName);
             return m_registerMap.at(info->m_regAddress)->getValue();
         }
 
+        /// Get configured value of register address
         uint32_t getRegisterValue(HCCStarRegister addr) const;
 
+        /// Set configured value of register address
         void setRegisterValue(HCCStarRegister addr, uint32_t val);
 
+        /**
+           Map from input channels to histogram location.
+
+           This is used by StarDataProcessor to put hits corresponding to
+           a particular ABC into the correct location in the histogram.
+
+           This is not configurable directly, but is calculated based on
+           the HCC version and the contents of the chip enables register.
+        */
         std::array<uint8_t, HCC_INPUT_CHANNEL_COUNT> histoChipMap() const;
 
     private:

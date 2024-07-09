@@ -99,25 +99,31 @@ namespace ScanHelper {
 
         shlog->info("Loading controller ...");
 
+        if (!ctrlCfg.contains("ctrlCfg")) {
+            shlog->critical("Controller config not supplied!");
+            throw (std::runtime_error("loadController failure"));
+        }
+
+        auto &cc = ctrlCfg["ctrlCfg"];
         // Open controller config file
-        if (!ctrlCfg.contains({"ctrlCfg", "type"})) {
+        if (!cc.contains("type")) {
             shlog->critical("Controller type not specified!");
             throw (std::runtime_error("loadController failure"));
         }
 
-        std::string controller = ctrlCfg["ctrlCfg"]["type"];
+        std::string controller = cc["type"];
 
         hwCtrl = StdDict::getHwController(controller);
 
         if(hwCtrl) {
             shlog->info("Found controller of type: {}", controller);
-            if (!ctrlCfg.contains({"ctrlCfg", "cfg"})) {
+            if (!cc.contains("cfg")) {
                 shlog->error("Could not find cfg for controller, skipping!");
             } else {
-                hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
+                hwCtrl->loadConfig(cc["cfg"]);
             }
             shlog->info("Loaded controller config:");
-            json cfg = ctrlCfg["ctrlCfg"]["cfg"];
+            json cfg = cc["cfg"];
             if(cfg.contains("__feCfg_data__")) cfg.erase("__feCfg_data__");
             std::stringstream ss;
             ss << cfg;
@@ -125,7 +131,7 @@ namespace ScanHelper {
             while (std::getline(ss, line)) shlog->info("~~~ {}", line);
 
         } else {
-            shlog->critical("Unknown config type: {}",  std::string(ctrlCfg["ctrlCfg"]["type"]));
+            shlog->critical("Unknown config type: {}",  std::string(cc["type"]));
             shlog->warn("Known HW controllers:");
             for(auto &h: StdDict::listHwControllers()) {
                 shlog->warn("  {}", h);
@@ -259,8 +265,10 @@ namespace ScanHelper {
             auto *feCfg = dynamic_cast<FrontEndCfg*>(bookie.getLastFe());
             const json &cfg=chip["__config_data__"];
             feCfg->loadConfig(cfg);
-            if (chip.contains("locked"))
-                feCfg->setLocked((int)chip["locked"]);
+            if (chip.contains("locked")) {
+                bool locked = chip["locked"];
+                feCfg->setLocked(locked);
+            }
             
             // Check for hidden clipboard monitor parameter, and start them if true
             if (chip.contains("clipboardMonitor")) {
@@ -295,11 +303,18 @@ namespace ScanHelper {
             throw (std::runtime_error("loadConfigFile failure"));
         }
 
-        if(!ctrlCfg.contains({"ctrlCfg", "cfg"})) {
+        if(!ctrlCfg.contains("ctrlCfg")) {
+            shlog->critical("#ERROR# missing controller config");
+            return -1;
+        }
+
+        auto &cc = ctrlCfg["ctrlCfg"];
+
+        if(!cc.contains("cfg")) {
             shlog->critical("#ERROR# invalid controller config");
             return -1;
         }
-        json &cfg=ctrlCfg["ctrlCfg"]["cfg"];
+        json &cfg=cc["cfg"];
 
         // Emulator specific case
         if(cfg.contains("feCfg")) {
@@ -724,8 +739,12 @@ namespace ScanHelper {
     }
 
     void writeScanLog(json scanLog, const std::string &filename) {
-        if (scanLog.contains({"ctrlCfg", "ctrlCfg", "cfg", "__feCfg_data__"}))
+        if (scanLog.contains("ctrlCfg")
+          && scanLog["ctrlCfg"].contains("ctrlCfg")
+          && scanLog["ctrlCfg"]["ctrlCfg"].contains("cfg")
+          && scanLog["ctrlCfg"]["ctrlCfg"]["cfg"].contains("__feCfg_data__")) {
             scanLog["ctrlCfg"]["ctrlCfg"]["cfg"].erase("__feCfg_data__");
+        }
         for (std::size_t i = 0; i < scanLog["connectivity"].size(); i++) {
             json &cfg = scanLog["connectivity"][i];
             for (std::size_t j = 0; j < cfg["chips"].size(); j++) {

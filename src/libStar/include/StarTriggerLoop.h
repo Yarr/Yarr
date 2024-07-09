@@ -12,7 +12,13 @@
 #include "LoopActionBase.h"
 #include "StdTriggerAction.h"
 #include "StarChips.h"
+#include "StarSeqGenerator.h"
 
+/**
+   Loop action for Star triggers.
+
+   Trigger loop with implementation of charge injection for Strips front-end.
+ */
 class StarTriggerLoop: public LoopActionBase, public StdTriggerAction {
     public:
         StarTriggerLoop();
@@ -31,6 +37,7 @@ class StarTriggerLoop: public LoopActionBase, public StdTriggerAction {
 
         void setNoInject();
         void setTrigWord();
+        void setTrigWordFromFile();
 
         void writeConfig(json &config) override;
         void loadConfig(const json &config) override;
@@ -39,14 +46,15 @@ class StarTriggerLoop: public LoopActionBase, public StdTriggerAction {
         uint32_t m_trigDelay;
         double m_trigFreq;
         double m_trigTime;
+        uint32_t m_cmdCnt{0}; // number of times to send the command sequence
 
-        // How many words of pattern buffer to use
-        uint32_t m_trigWordLength;
-        // This matches the pattern buffer in TxCore
-        std::array<uint32_t, 32> m_trigWord;
+        std::vector<uint32_t> m_trigWord;
 
         bool m_noInject;
         bool m_digital;
+
+        std::string m_fpathSeq;
+        StarSeqGenerator m_seqGen{false};
 
         void init() override;
         void end() override;
