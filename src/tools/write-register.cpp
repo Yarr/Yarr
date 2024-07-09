@@ -34,6 +34,7 @@ void print_usage(char* argv[]) {
     std::cerr << "   -c          Input connectivity JSON file path [required]" << std::endl;
     std::cerr << "   -i          Position of chip in connectivity file chips list, starting from 0 (default: all chips). Can take multiple chip positions, and results will always be returned in order of the chips in the connectivity file" << std::endl;
     std::cerr << "   -n          Chip name (if given will override use of chip index). Can take multiple chip names, and results will always be returned in order of the chips in the connectivity file." << std::endl;
+    std::cerr << "   -f          Force write even if register cannot be read." << std::endl;
     std::cerr << "   -h|--help   Print this help message and exit" << std::endl;
     std::cerr << std::endl;
 }
@@ -70,9 +71,10 @@ int main(int argc, char* argv[]) {
     std::string register_name = "";
     uint32_t register_value = 0;
     bool use_chip_name = false;
+    bool force = false;
 
     int c = 0;
-    while (( c = getopt(argc, argv, "r:c:i:n:h")) != -1) {
+    while (( c = getopt(argc, argv, "r:c:i:n:fh")) != -1) {
         switch (c) {
             case 'r' :
                 hw_controller_filename = optarg;
@@ -95,6 +97,9 @@ int main(int argc, char* argv[]) {
             case 'h' :
                 print_usage(argv);
                 return 0;
+            case 'f' :
+                force = true;
+                break;
             default :
                 std::cerr << "Invalid option '" << c << "' supplied, aborting" << std::endl;
                 return 1;
@@ -172,6 +177,10 @@ int main(int argc, char* argv[]) {
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
                 if (fe->readUpdateWriteNamedRegister(register_name, register_value) != yarrSuccess) {
                     std::cerr << "ERROR: failed to readUpdateWrite register for " << current_chip_name << "!" << std::endl;
+                    if (force) {
+                        std::cout << "Trying to force overwrite register without update!" << std::endl;
+                        fe->writeNamedRegister(register_name, register_value);
+                    }
                     error_cnt++;
                 }
             }
@@ -182,6 +191,10 @@ int main(int argc, char* argv[]) {
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
                 if (fe->readUpdateWriteNamedRegister(register_name, register_value) != yarrSuccess) {
                     std::cerr << "ERROR: failed to readUpdateWrite register for " << current_chip_name << "!" << std::endl;
+                    if (force) {
+                        std::cout << "Trying to force overwrite register without update!" << std::endl;
+                        fe->writeNamedRegister(register_name, register_value);
+                    }
                     error_cnt++;
                 }
             }
