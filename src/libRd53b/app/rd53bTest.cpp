@@ -144,30 +144,10 @@ int main (int argc, char *argv[]) {
     std::this_thread::sleep_for(std::chrono::seconds(1));
     hwCtrl->setRxEnable(0);
 
-    rd53b.readRegister(&Rd53b::DiffPreampM);
+    uint16_t diffPreampM = 0;
+    rd53b.readRegister(&Rd53b::DiffPreampM, diffPreampM);
+    logger->info("DiffPreampM: {}", diffPreampM);
 
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-
-    
-    std::vector<RawDataPtr> dataVec = hwCtrl->readData();
-    RawDataPtr data;
-    while (dataVec.size() > 0 ) {
-        if  (dataVec.size() > 0) {
-            data = dataVec[0];
-            for (unsigned i=0; i<data->getSize();i++)
-                logger->info("[{}] = {:X}", i, data->get(i));
-
-            logger->info("Read {} words", data->getSize());
-            std::pair<uint32_t, uint32_t> answer = rd53bTest::decodeSingleRegRead(data->get(0), data->get(1));
-            logger->info("Answer: {} {}", answer.first, answer.second);
-            if (data->getSize()>2) {
-                answer = rd53bTest::decodeSingleRegRead(data->get(2), data->get(3));
-                logger->info("Answer: {} {}", answer.first, answer.second);
-            }
-        }
-        dataVec = hwCtrl->readData();
-    }
-    
 
     logger->info("... done! bye!");
     hwCtrl->disableRx();

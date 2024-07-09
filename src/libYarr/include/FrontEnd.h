@@ -20,6 +20,12 @@
 
 #include "storage.hpp"
 
+// Status enum
+enum yarrStatus {
+    yarrSuccess = 0,
+    yarrFailure = -1,
+};
+
 //! extra int trigger tags to pass more feedback from the data processors
 #define PROCESSING_FEEDBACK_TRIGGER_TAG_ERROR  -10
 #define PROCESSING_FEEDBACK_TRIGGER_TAG_RR      -2
@@ -53,24 +59,24 @@ class FrontEnd {
         virtual void connectBookkeeper(Bookkeeper* k){};
        
         virtual void configure()=0;
-        virtual int checkCom() {return 1;}
-        virtual bool hasValidName() { return true; }
+        virtual yarrStatus checkCom() {return yarrFailure;}
+        virtual yarrStatus hasValidName() { return yarrSuccess; }
 
         // A parallel reset that undos any configuration
         virtual void resetAllHard() {}
         // A parallel reset that keeps configuration but reset counters/datapath
         virtual void resetAllSoft() {}
 
-        /// Reads the named register and writes it to the local object memory
-        virtual void readUpdateWriteNamedReg(std::string name) {}
-        /// Write to a register using a string name (most likely from json)
-        virtual void writeNamedRegister(std::string name, uint16_t value) = 0;
-        /// Reads a named register and returns the value of it
-        virtual uint16_t readNamedRegister(std::string name) {return 0;}
-        /// Write register value to the local object memory (does not write to the actual chip) 
-        virtual void setRegisterValue(std::string name, uint16_t value) {};
-        /// Reads a named register from the local object memory (does not write to the actual chip) 
-        virtual uint16_t getRegisterValue(std::string name) {return 0;}
+        // Set/Get Register in memory only
+        virtual yarrStatus setNamedRegister(std::string name, const uint16_t value) {return yarrFailure;};
+        virtual yarrStatus getNamedRegister(std::string name, uint16_t &value) {return yarrFailure;};
+    
+        // Write register to memory and chip
+        virtual yarrStatus writeNamedRegister(std::string name, const uint16_t value) = 0;
+        // Read register from chip to memory and return value through reference
+        virtual yarrStatus readNamedRegister(std::string name, uint16_t &value) {return yarrFailure;};
+        // Read register from chip to memory, write register to memory, and then to chip
+        virtual yarrStatus readUpdateWriteNamedRegister(std::string name, const uint16_t value) {return yarrFailure;};
 
         /// Configures ADC
         virtual void confAdc(uint16_t MONMUX, bool doCur) {}

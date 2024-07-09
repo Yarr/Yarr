@@ -127,7 +127,7 @@ void Itkpixv2GlobalFeedback::init() {
     logger->debug("init");
     m_done = false;
     m_cur = 0;
-    parPtr = keeper->globalFe<Itkpixv2>()->getNamedRegister(parName);
+    parPtr = keeper->globalFe<Itkpixv2>()->getNamedRegisterObject(parName);
     // Init maps
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
         auto fe = keeper->getFe(id);

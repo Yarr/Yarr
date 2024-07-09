@@ -65,7 +65,7 @@ class Fei4 : public Fei4Cfg, public Fei4Cmd, public FrontEnd {
         void loadIntoShiftReg(unsigned pixel_latch);
         void loadIntoPixel(unsigned pixel_latch);
         void shiftByOne();
-        void writeNamedRegister(std::string name, uint16_t value) override;
+        yarrStatus writeNamedRegister(std::string name, const uint16_t value) override;
         void readPixelRegister(unsigned colpr_addr, unsigned latch);
         void dummyCmd();
 

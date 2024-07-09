@@ -36,8 +36,8 @@ class Itkpixv2 : public FrontEnd, public Itkpixv2Cfg, public Itkpixv2Cmd{
         void configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels);
         void configurePixelMaskParallel();
         
-        int checkCom() override;
-        bool hasValidName() override;
+        yarrStatus checkCom() override;
+        yarrStatus hasValidName() override;
 
         void maskPixel(unsigned col, unsigned row) override {
             this->setEn(col, row, 0);
@@ -51,14 +51,18 @@ class Itkpixv2 : public FrontEnd, public Itkpixv2Cfg, public Itkpixv2Cmd{
 
         void enableAll() override;
 
-        void writeRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, uint16_t value);
-        void readRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref);
-        void writeNamedRegister(std::string name, uint16_t value) override;
-        uint16_t readNamedRegister(std::string name) override;
-        void setRegisterValue(std::string name, uint16_t value) override;
-        uint16_t getRegisterValue(std::string name) override;
+        yarrStatus setNamedRegister(std::string name, const uint16_t value) override;
+        yarrStatus getNamedRegister(std::string name, uint16_t &value) override;
+        
+        yarrStatus writeRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, const uint16_t value);
+        yarrStatus readRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, uint16_t &value);
+        yarrStatus readUpdateWriteRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, const uint16_t value);
 
-        Itkpixv2RegDefault Itkpixv2GlobalCfg::* getNamedRegister(std::string name);
+        yarrStatus writeNamedRegister(std::string name, const uint16_t value) override;
+        yarrStatus readNamedRegister(std::string name, uint16_t &value) override;
+        yarrStatus readUpdateWriteNamedRegister(std::string name, const uint16_t value) override;
+
+        Itkpixv2RegDefault Itkpixv2GlobalCfg::* getNamedRegisterObject(std::string name);
 
         void setInjCharge(double charge, bool sCap=true, bool lCap=true) override {
             this->writeRegister((Itkpixv2RegDefault Itkpixv2GlobalCfg::*)&Itkpixv2GlobalCfg::InjVcalDiff, this->toVcal(charge));
@@ -66,10 +70,6 @@ class Itkpixv2 : public FrontEnd, public Itkpixv2Cfg, public Itkpixv2Cmd{
         
         static std::pair<uint32_t, uint32_t> decodeSingleRegRead(uint32_t higher, uint32_t lower);
         static std::tuple<uint8_t, uint32_t, uint32_t> decodeSingleRegReadID(uint32_t higher, uint32_t lower);
-
-	void readUpdateWriteNamedReg(std::string name) override;
-	void readUpdateWriteReg(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref);
-        uint32_t readSingleRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref);
         
         // perform the necessary steps to program the E-fuse circuitry and perform
         // the readback of the E-fuse data

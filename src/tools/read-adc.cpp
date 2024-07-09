@@ -110,10 +110,10 @@ int main(int argc, char* argv[]) {
                 print_usage(argv);
                 return 0;
             case 'I' :
-		meas_curr = true;
+                meas_curr = true;
                 break;
             case 'R' :
-		return_count = true;
+                return_count = true;
                 break;
             default :
                 std::cerr << "Invalid option '" << c << "' supplied, aborting" << std::endl;
@@ -161,11 +161,11 @@ int main(int argc, char* argv[]) {
 
     // open up the connectivity config to get the list of front-ends
     auto jconn = ScanHelper::openJsonFile(connectivity_filename);
-    
+
     std::string chipType = ScanHelper::loadChipConfigs(jconn, false, Utils::dirFromPath(connectivity_filename));
-   
+
     std::vector<std::pair<int, std::unique_ptr<FrontEnd>>> fes = {};
- 
+
     auto chip_configs = jconn["chips"];
     size_t n_chips = chip_configs.size();
 
@@ -184,14 +184,15 @@ int main(int argc, char* argv[]) {
             std::cerr << "WARNING: Skipping chip at index " << ichip << " in connectivity file" << std::endl;
             continue;
         }
-        
+
         if (shared_vmux){
             auto cfg = dynamic_cast<FrontEndCfg*>(fe.get());
             hw->setCmdEnable(cfg->getTxChannel()); 
             hw->setRxEnable(cfg->getRxChannel());
             hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-            fe->readUpdateWriteNamedReg("MonitorV");
-            fe->writeNamedRegister("MonitorV", high_z);
+            if (fe->readUpdateWriteNamedRegister("MonitorV", high_z) != yarrSuccess) {
+                std::cerr << "ERROR: failed to readUpdateWrite register for " << ichip << "!" << std::endl;
+            }
         }
         fes.push_back(std::make_pair(ichip, std::move(fe)));
     }
@@ -207,12 +208,14 @@ int main(int argc, char* argv[]) {
                 hw->setRxEnable(cfg->getRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
                 fe->confAdc(monitorV, meas_curr);
-                fe->readUpdateWriteNamedReg("MonitoringDataAdc");
-                uint16_t res = fe->readNamedRegister("MonitoringDataAdc");
-		if (return_count) std::cout << res << std::endl;
+                uint16_t res = 0;
+                if (fe->readNamedRegister("MonitoringDataAdc", res) != yarrSuccess) {
+                    std::cerr << "ERROR: failed to read register for " << current_chip_name << "!" << std::endl;
+                }
+                if (return_count) std::cout << res << std::endl;
                 else{
-                  std::pair<float, std::string> convertedAdc = cfg->convertAdc(res, meas_curr);
-		  std::cout << convertedAdc.first << " " << convertedAdc.second << std::endl;
+                    std::pair<float, std::string> convertedAdc = cfg->convertAdc(res, meas_curr);
+                    std::cout << convertedAdc.first << " " << convertedAdc.second << std::endl;
                 }
             }
         } else {
@@ -221,12 +224,14 @@ int main(int argc, char* argv[]) {
                 hw->setRxEnable(cfg->getRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
                 fe->confAdc(monitorV, meas_curr);
-                fe->readUpdateWriteNamedReg("MonitoringDataAdc");
-                uint16_t res = fe->readNamedRegister("MonitoringDataAdc");
-		if (return_count) std::cout << res << std::endl;
+                uint16_t res = 0;
+                if (fe->readNamedRegister("MonitoringDataAdc", res) != yarrSuccess) {
+                    std::cerr << "ERROR: failed to read register for " << current_chip_name << "!" << std::endl;
+                }
+                if (return_count) std::cout << res << std::endl;
                 else{
-                  std::pair<float, std::string> convertedAdc = cfg->convertAdc(res, meas_curr);
-		  std::cout << convertedAdc.first << " " << convertedAdc.second << std::endl;
+                    std::pair<float, std::string> convertedAdc = cfg->convertAdc(res, meas_curr);
+                    std::cout << convertedAdc.first << " " << convertedAdc.second << std::endl;
                 }
             }
         }

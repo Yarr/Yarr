@@ -202,7 +202,9 @@ int main(int argc, char* argv[]) {
                 // Call Itkpixv2::runRingOsc(uint16_t duration, bool isBankB)
                 feItkpixv2.runRingOsc(RingOscDur, false);
 
-                double value = feItkpixv2.readSingleRegister(&Itkpixv2::RingOscAOut) & 0xFFF;
+                uint16_t count = 0;
+                feItkpixv2.readRegister(&Itkpixv2::RingOscAOut, count);
+                double value = count & 0xFFF;
                 RingValuesSum[tmpCount] += value;
             }
         }
@@ -238,7 +240,9 @@ int main(int argc, char* argv[]) {
                 // Call Itkpixv2::runRingOsc(uint16_t duration, bool isBankB)
                 feItkpixv2.runRingOsc(RingOscDur, true);
 
-                double value = feItkpixv2.readSingleRegister(&Itkpixv2::RingOscBOut) & 0xFFF;
+                uint16_t count = 0;
+                feItkpixv2.readRegister(&Itkpixv2::RingOscBOut, count);
+                double value = count & 0xFFF;
                 RingValuesSum[tmpCount+8] += value;
             }
         }

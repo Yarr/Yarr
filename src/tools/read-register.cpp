@@ -162,8 +162,10 @@ int main(int argc, char* argv[]) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
                 hw->setRxEnable(cfg->getRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-                fe->readUpdateWriteNamedReg(register_name);
-                uint16_t res = fe->readNamedRegister(register_name);
+                uint16_t res = 0;
+                if (fe->readNamedRegister(register_name, res) != yarrSuccess) {
+                    std::cerr << "ERROR failed to register of " << current_chip_name << "!" << std::endl;
+                }
                 std::cout << res << std::endl;
             }
         } else {
@@ -171,8 +173,10 @@ int main(int argc, char* argv[]) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
                 hw->setRxEnable(cfg->getRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-                fe->readUpdateWriteNamedReg(register_name);
-                uint16_t res = fe->readNamedRegister(register_name);
+                uint16_t res = 0;
+                if (fe->readNamedRegister(register_name, res) != yarrSuccess) {
+                    std::cerr << "ERROR failed to register of " << current_chip_name << "!" << std::endl;
+                }
                 std::cout << res << std::endl;
             }
         }

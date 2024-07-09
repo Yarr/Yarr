@@ -23,8 +23,9 @@ uint16_t Rd53bReadRegLoop::ReadADC(unsigned short Reg, bool doCur, Rd53b *fe) {
 
     fe->confAdc(Reg, doCur);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    uint16_t regVal = fe->readSingleRegister(&Rd53b::MonitoringDataAdc);
-    regVal = fe->readSingleRegister(&Rd53b::MonitoringDataAdc);
+    uint16_t regVal = 0;
+    fe->readRegister(&Rd53b::MonitoringDataAdc, regVal);
+    fe->readRegister(&Rd53b::MonitoringDataAdc, regVal);
 
     return regVal;
 }
@@ -162,10 +163,13 @@ void Rd53bReadRegLoop::execPart1()
             // Reading Standard Registers
             for (auto Reg : m_STDReg) {
                 if (feRd53b->regMap.find(Reg) != feRd53b->regMap.end()) {
-                    uint16_t RegisterVal = (feRd53b->*(feRd53b->regMap[Reg])).applyMask(feRd53b->readSingleRegister(feRd53b->regMap[Reg]));
+                    uint16_t StoredVal = (feRd53b->*(feRd53b->regMap[Reg])).read();
+                    
+                    uint16_t RegisterVal = 0;
+                    
+                    feRd53b->readRegister(feRd53b->regMap[Reg], RegisterVal);
                     logger->info("[{}][{}] REG: {}, Value: {}", id, feName, Reg, RegisterVal);
 
-                    uint16_t StoredVal = (feRd53b->*(feRd53b->regMap[Reg])).read();
 
                     // Compare the Register with the stored value, it's a safety mechanism.
                     if (StoredVal != RegisterVal) {
@@ -245,7 +249,10 @@ void Rd53bReadRegLoop::execPart1()
                     // Run oscillators for some time
                     feRd53b->runRingOsc(m_RingOscDur, false);
 
-                    double value = feRd53b->readSingleRegister(&Rd53b::RingOscAOut) & 0xFFF;
+                    uint16_t count = 0;
+                    feRd53b->readRegister(&Rd53b::RingOscAOut, count);
+                    double value = count & 0xFFF;
+
                     RingValuesSumA[tmpCount] += value;
                     RingValuesSumSquaredA[tmpCount] += pow(value, 2);
                 }
@@ -306,7 +313,10 @@ void Rd53bReadRegLoop::execPart1()
                     // Run oscillators for some time
                     feRd53b->runRingOsc(m_RingOscDur, true);
 
-                    double value = feRd53b->readSingleRegister(&Rd53b::RingOscBOut) & 0xFFF;
+                    uint16_t count = 0;
+                    feRd53b->readRegister(&Rd53b::RingOscBOut, count);
+                    double value = count & 0xFFF;
+                    
                     RingValuesSumB[tmpCount] += value;
                     RingValuesSumSquaredB[tmpCount] += pow(value, 2);
                 }

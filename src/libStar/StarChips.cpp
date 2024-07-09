@@ -239,13 +239,14 @@ bool StarChips::writeRegisters(){
 }
 
 //Will write value for setting name for the HCC if name starts with "HCC_" otherwise will write the setting for all ABCs if name starts with "ABCs_"
-void StarChips::writeNamedRegister(std::string name, uint16_t reg_value) {
+yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_value) {
   std::string strPrefix = name.substr (0,4);
   //if we deal with a setting for the HCC, look up in register map.
   if (strPrefix=="HCC_") {
     auto subRegName = name.substr(4);
     if(!HCCStarSubRegister::_is_valid(subRegName.c_str())) {
       logger->error(" --> Error: Could not find HCC sub-register \"{}\"", subRegName);
+      return yarrFailure;
     } else {
       setAndWriteHCCSubRegister(subRegName, reg_value);
     }
@@ -265,6 +266,7 @@ void StarChips::writeNamedRegister(std::string name, uint16_t reg_value) {
         });
     } else if(!ABCStarSubRegister::_is_valid(subRegName.c_str())) {
       logger->error(" --> Error: Could not find ABC sub-register \"{}\"", subRegName);
+      return yarrFailure;
     } else {
       logger->trace("Writing {} on setting '{}' for all ABCStar chips.", reg_value, name);
       eachAbc([&](auto &cfg) {
@@ -272,6 +274,7 @@ void StarChips::writeNamedRegister(std::string name, uint16_t reg_value) {
         });
     }
   }
+  return yarrSuccess;
 }
 
 

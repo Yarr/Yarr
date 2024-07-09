@@ -41,16 +41,16 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
         void configurePixels();
         void configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels);
 
-        int checkCom() override;
+        yarrStatus checkCom() override;
 
         void maskPixel(unsigned col, unsigned row) override {
             this->setEn(col, row, 0);
             this->setHitbus(col, row, 0);
         }
 
-	unsigned getPixelEn(unsigned col, unsigned row) override {
-	    return this->getEn(col, row);
-	}
+        unsigned getPixelEn(unsigned col, unsigned row) override {
+            return this->getEn(col, row);
+        }
 
         void enableAll() override;
 
@@ -67,10 +67,10 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
         }
 
 
-        void writeNamedRegister(std::string name, uint16_t value) override;
+        yarrStatus writeNamedRegister(std::string name, const uint16_t value) override;
         
-        void setRegisterValue(std::string name, uint16_t value) override;
-        uint16_t getRegisterValue(std::string name) override;
+        yarrStatus setNamedRegister(std::string name, const uint16_t value) override;
+        yarrStatus getNamedRegister(std::string name, uint16_t &value) override;
 
 
         void setInjCharge(double charge, bool sCap=true, bool lCap=true) override {
