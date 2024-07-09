@@ -3,9 +3,7 @@ add_library(Emu SHARED
         Rd53aDiffPixelModel.cpp
         Rd53aLinPixelModel.cpp
         Rd53aSyncPixelModel.cpp
-        StripModel.cpp
-        ItkpixEncoder.cpp
-        HitMapGenerator.cpp)
+        StripModel.cpp)
 
 post_build_debug_library(Emu)
 target_include_directories(Emu PRIVATE ../libYarr/include)
