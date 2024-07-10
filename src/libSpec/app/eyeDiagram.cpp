@@ -326,7 +326,7 @@ int main(int argc, char **argv) {
         logger->info("Writing to controller config {}", hw_controller_filename);
         jcontroller["ctrlCfg"]["cfg"]["delay"]=delayVec;
         std::ofstream outputFile(hw_controller_filename);
-        outputFile << jcontroller << std::endl;
+        outputFile << std::setw(4) << jcontroller << std::endl;
         outputFile.close();
         logger->info("All done! \n");
     } else {

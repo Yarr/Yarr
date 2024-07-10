@@ -126,7 +126,7 @@ namespace ScanHelper {
             json cfg = cc["cfg"];
             if(cfg.contains("__feCfg_data__")) cfg.erase("__feCfg_data__");
             std::stringstream ss;
-            ss << cfg;
+            ss << std::setw(4) << cfg;
             std::string line;
             while (std::getline(ss, line)) shlog->info("~~~ {}", line);
 
