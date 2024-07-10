@@ -266,7 +266,11 @@ namespace ScanHelper {
             const json &cfg=chip["__config_data__"];
             feCfg->loadConfig(cfg);
             if (chip.contains("locked")) {
-                bool locked = chip["locked"];
+                bool locked = false;
+                if (chip["locked"].is_boolean())
+                    locked = chip["locked"];
+                if (chip["locked"].is_number())
+                    locked = (int)chip["locked"];
                 feCfg->setLocked(locked);
             }
             
