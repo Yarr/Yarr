@@ -129,21 +129,20 @@ TEST_CASE("Itkpixv2DataProcessor", "[itkpixv2][data_processor_edge_case]") {
         // 77605504,
         // 4253024256,
         // 0,
-        2117946280, 
-        390140437, 
-        939820180,
-        3791787155
+        2117946280, 390140437, 
+        939820180, 3791787155
     };
 
     // minimal (ish) example block: 
     // 0x7E3D4BA817411215
     // 0x38048494E2021493
     //
-    // 32 bit blocks:
-    // 01111110001111010100101110101000
-    // 00010111010000010001001000010101
-    // 00111000000001001000010010010100
-    // 11100010000000100001010010010011
+    // 64 bit blocks:
+    // 0 11111100 011110 10 10010111 01 10 10 01 0000 101110 1 0 00001000 10 01 10 01 0010 101                  // 0 11111100 011110 1 0 10010111 0 10100000010111010000010001001000010101
+    //   ^ 252    ^30    LN ^151     single hit  tot0 ^46    L N ^8       single hit tot 2 
+
+    // 0 011 1 0 00000001 01 01 10 01 0010 010010 1 0 01110001 01 01 01 01 0001 000010 1 0 01001001 1
+    //ES ^43 L N ^ 1      single hit  tot2 ^18    L N ^113   single hit    tot1 ^2     L N ^73      ^ this is removing a segfault
 
     int nWords = words.size();
 
@@ -160,7 +159,7 @@ TEST_CASE("Itkpixv2DataProcessor", "[itkpixv2][data_processor_edge_case]") {
     proc->run();
     RawDataPtr rd = std::make_shared<RawData>(0, nWords);
     uint32_t *buffer = rd->getBuf();
-    buffer[nWords-1] = 0;
+    // buffer[nWords-1] = 0;
 
     std::copy(words.data(), words.data()+nWords, buffer);
     std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(LoopStatus()));
