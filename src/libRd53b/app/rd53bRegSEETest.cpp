@@ -413,13 +413,13 @@ int main(int argc, char *argv[])
                     // logger->info("Row {}", row);
                     rd53b.writeRegister(&Rd53b::PixRegionCol, dc);
                     rd53b.writeRegister(&Rd53b::PixRegionRow, row);
-                    rd53b.readRegister(&Rd53b::PixPortal);
+                    rd53b.sendRdReg(rd53b.getChipId(), rd53b.PixPortal.addr());
                     while (!hwCtrl->isCmdEmpty())
                         ;
-                    rd53b.readRegister(&Rd53b::PixRegionCol);
+                    rd53b.sendRdReg(rd53b.getChipId(), rd53b.PixRegionCol.addr());
                     while (!hwCtrl->isCmdEmpty())
                         ;
-                    rd53b.readRegister(&Rd53b::PixRegionRow);
+                    rd53b.sendRdReg(rd53b.getChipId(), rd53b.PixRegionRow.addr());
                     while (!hwCtrl->isCmdEmpty())
                         ;
 

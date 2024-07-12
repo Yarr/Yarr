@@ -23,8 +23,9 @@ uint16_t Itkpixv2ReadRegLoop::ReadADC(unsigned short Reg, bool doCur, Itkpixv2 *
 
     fe->confAdc(Reg, doCur);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    uint16_t regVal = fe->readSingleRegister(&Itkpixv2::MonitoringDataAdc);
-    regVal = fe->readSingleRegister(&Itkpixv2::MonitoringDataAdc);
+    uint16_t regVal = 0;
+    fe->readRegister(&Itkpixv2::MonitoringDataAdc, regVal);
+    fe->readRegister(&Itkpixv2::MonitoringDataAdc, regVal);
 
     return regVal;
 }
@@ -164,10 +165,11 @@ void Itkpixv2ReadRegLoop::execPart1()
             // Reading Standard Registers
             for (auto Reg : m_STDReg) {
                 if (feItkpixv2->regMap.find(Reg) != feItkpixv2->regMap.end()) {
-                    uint16_t RegisterVal = (feItkpixv2->*(feItkpixv2->regMap[Reg])).applyMask(feItkpixv2->readSingleRegister(feItkpixv2->regMap[Reg]));
+                    uint16_t StoredVal = (feItkpixv2->*(feItkpixv2->regMap[Reg])).read();
+                    uint16_t RegisterVal = 0;
+                    feItkpixv2->readRegister(feItkpixv2->regMap[Reg], RegisterVal);
                     logger->info("[{}][{}] REG: {}, Value: {}", id, feName, Reg, RegisterVal);
 
-                    uint16_t StoredVal = (feItkpixv2->*(feItkpixv2->regMap[Reg])).read();
 
                     // Compare the Register with the stored value, it's a safety mechanism.
                     if (StoredVal != RegisterVal) {
@@ -247,7 +249,9 @@ void Itkpixv2ReadRegLoop::execPart1()
                     // Run oscillators for some time
                     feItkpixv2->runRingOsc(m_RingOscDur, false);
 
-                    double value = feItkpixv2->readSingleRegister(&Itkpixv2::RingOscAOut) & 0xFFF;
+                    uint16_t count = 0;
+                    feItkpixv2->readRegister(&Itkpixv2::RingOscAOut, count);
+                    double value = count & 0xFFF;
                     RingValuesSumA[tmpCount] += value;
                     RingValuesSumSquaredA[tmpCount] += pow(value, 2);
                 }
@@ -308,7 +312,9 @@ void Itkpixv2ReadRegLoop::execPart1()
                     // Run oscillators for some time
                     feItkpixv2->runRingOsc(m_RingOscDur, true);
 
-                    double value = feItkpixv2->readSingleRegister(&Itkpixv2::RingOscBOut) & 0xFFF;
+                    uint16_t count = 0;
+                    feItkpixv2->readRegister(&Itkpixv2::RingOscBOut, count);
+                    double value = count & 0xFFF;
                     RingValuesSumB[tmpCount] += value;
                     RingValuesSumSquaredB[tmpCount] += pow(value, 2);
                 }

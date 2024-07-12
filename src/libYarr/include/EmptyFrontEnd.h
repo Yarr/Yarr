@@ -35,7 +35,7 @@ class EmptyFrontEnd : public FrontEnd, public EmptyFrontEndCfg {
 
         void configure() override {}
 
-        void writeNamedRegister(std::string name, uint16_t value) override {}
+        yarrStatus writeNamedRegister(std::string name, const uint16_t value) override {return yarrSuccess;}
         void setInjCharge(double, bool, bool) override {}
 };
 

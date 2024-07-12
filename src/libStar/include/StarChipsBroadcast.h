@@ -15,7 +15,7 @@ class StarChipsBroadcast : public StarChips {
 
     void enableAll() override;
 
-    void writeNamedRegister(std::string name, uint16_t value) override;
+    yarrStatus writeNamedRegister(std::string name, const uint16_t value) override;
 
     void connectBookkeeper(Bookkeeper* k) override {keeper = k;}
 

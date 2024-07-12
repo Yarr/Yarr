@@ -127,7 +127,7 @@ void Rd53bGlobalFeedback::init() {
     logger->debug("init");
     m_done = false;
     m_cur = 0;
-    parPtr = keeper->globalFe<Rd53b>()->getNamedRegister(parName);
+    parPtr = keeper->globalFe<Rd53b>()->getNamedRegisterObject(parName);
     // Init maps
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
         auto fe = keeper->getFe(id);
