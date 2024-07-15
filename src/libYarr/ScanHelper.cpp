@@ -126,7 +126,7 @@ namespace ScanHelper {
             json cfg = cc["cfg"];
             if(cfg.contains("__feCfg_data__")) cfg.erase("__feCfg_data__");
             std::stringstream ss;
-            ss << cfg;
+            ss << std::setw(4) << cfg;
             std::string line;
             while (std::getline(ss, line)) shlog->info("~~~ {}", line);
 
@@ -266,7 +266,11 @@ namespace ScanHelper {
             const json &cfg=chip["__config_data__"];
             feCfg->loadConfig(cfg);
             if (chip.contains("locked")) {
-                bool locked = chip["locked"];
+                bool locked = false;
+                if (chip["locked"].is_boolean())
+                    locked = chip["locked"];
+                if (chip["locked"].is_number())
+                    locked = (int)chip["locked"];
                 feCfg->setLocked(locked);
             }
             

@@ -87,8 +87,8 @@ int main(int argc, char **argv) {
     bool skip_config=false;
     bool print_raw_value=false;
 
-    uint32_t cdrclksel = 0;
-    uint32_t serblckperiod = 50;
+    uint16_t cdrclksel = 0;
+    uint16_t serblckperiod = 50;
 
     while ((c = getopt(argc, argv, "hr:c:t:nsv")) != -1) {
         switch (c) {
@@ -181,8 +181,8 @@ int main(int argc, char **argv) {
             } else {
                 logger->info("Skipping configuration!");
             }
-            cdrclksel = fe->getRegisterValue("CdrClkSel");
-            serblckperiod = fe->getRegisterValue("ServiceBlockPeriod");
+            fe->getNamedRegister("CdrClkSel", cdrclksel);
+            fe->getNamedRegister("ServiceBlockPeriod", serblckperiod);
             logger->info("Read \"CdrClkSel\" {} and \"ServiceBlockPeriod\" {} from virtual register read", cdrclksel, serblckperiod);
 
 
@@ -326,7 +326,7 @@ int main(int argc, char **argv) {
         logger->info("Writing to controller config {}", hw_controller_filename);
         jcontroller["ctrlCfg"]["cfg"]["delay"]=delayVec;
         std::ofstream outputFile(hw_controller_filename);
-        outputFile << jcontroller << std::endl;
+        outputFile << std::setw(4) << jcontroller << std::endl;
         outputFile.close();
         logger->info("All done! \n");
     } else {

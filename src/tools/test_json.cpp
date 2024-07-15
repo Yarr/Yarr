@@ -35,7 +35,7 @@ public:
   unsigned getPixelEn(unsigned col, unsigned row) { return 1; }
   void enableAll() {}
   void configure() {}
-  void writeNamedRegister(std::string name, uint16_t value) {}
+  yarrStatus writeNamedRegister(std::string name, uint16_t value) {return yarrSuccess;}
   void setInjCharge(double, bool, bool) {}
 };
 

@@ -102,3 +102,79 @@ TEST_CASE("Itkpixv2DataProcessor", "[itkpixv2][data_processor]") {
 
 }
 
+TEST_CASE("Itkpixv2DataProcessor", "[itkpixv2][data_processor_edge_case]") {
+    FrontEndData truth;
+    std::cout << "ITKPixV2DataProcessor EDGE CASE" << std::endl;
+    
+    std::unique_ptr<HitMapGenerator> generator(new HitMapGenerator());
+    int nEvents = 18;
+    int nEventsPerStream = 1;
+    generator->setSeed(Catch::rngSeed());
+    
+    std::unique_ptr<Itkpixv2Encoder> encoder(new Itkpixv2Encoder());
+    encoder->setEventsPerStream(nEventsPerStream);
+
+    for (int evt = 0; evt < nEvents; evt++){
+        generator->randomHitMap(1e-4);
+        truth.events.push_back(generator->outTruth());
+        if   (evt != nEvents - 1) encoder->addToStream(generator->outHits());
+        else                      encoder->addToStream(generator->outHits(), true); //make sure the stream is ended with the last added event
+    }
+    
+    std::vector<uint32_t> words = {
+        // 0,
+        // 4242473892, // this one also works
+        // 171971904,
+        // 4250599616,
+        // 77605504,
+        // 4253024256,
+        // 0,
+        2117946280, 390140437, 
+        939820180, 3791787155
+    };
+
+    // minimal (ish) example block: 
+    // 0x7E3D4BA817411215
+    // 0x38048494E2021493
+    //
+    // 64 bit blocks:
+    // 0 11111100 011110 10 10010111 01 10 10 01 0000 101110 1 0 00001000 10 01 10 01 0010 101                  // 0 11111100 011110 1 0 10010111 0 10100000010111010000010001001000010101
+    //   ^ 252    ^30    LN ^151     single hit  tot0 ^46    L N ^8       single hit tot 2 
+
+    // 0 011 1 0 00000001 01 01 10 01 0010 010010 1 0 01110001 01 01 01 01 0001 000010 1 0 01001001 1
+    //ES ^43 L N ^ 1      single hit  tot2 ^18    L N ^113   single hit    tot1 ^2     L N ^73      ^ this is removing a segfault
+
+    int nWords = words.size();
+
+    std::shared_ptr<FeDataProcessor> proc = StdDict::getDataProcessor("ITKPIXV2");
+    REQUIRE (proc);
+
+    ClipBoard<RawDataContainer> rd_cp;
+    ClipBoard<EventDataBase> em_cp;
+
+    Itkpixv2Cfg cfg;  
+    proc->connect(&cfg, &rd_cp, &em_cp );
+
+    proc->init();
+    proc->run();
+    RawDataPtr rd = std::make_shared<RawData>(0, nWords);
+    uint32_t *buffer = rd->getBuf();
+    // buffer[nWords-1] = 0;
+
+    std::copy(words.data(), words.data()+nWords, buffer);
+    std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(LoopStatus()));
+
+    rdc->add(std::move(rd));
+
+    rd_cp.pushData(std::move(rdc));
+
+    rd_cp.finish();
+
+    proc->join();
+    REQUIRE (!em_cp.empty());
+
+    auto data = em_cp.popData();
+    FrontEndData &rawData = *(FrontEndData*)data.get();
+    
+}
+

@@ -256,66 +256,180 @@ void Itkpixv2::configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixel
     while(!core->isCmdEmpty()){;}
 }
 
-void Itkpixv2::writeRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, uint16_t value) {
+yarrStatus Itkpixv2::writeRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, uint16_t value) {
     (this->*ref).write(value);
     logger->debug("Writing register {} with {}", (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
     this->sendWrReg(m_chipId, (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
+    return yarrSuccess;
 }
 
-void Itkpixv2::readRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref) {
+yarrStatus Itkpixv2::readRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, uint16_t &value, uint8_t &chipId) {
     logger->debug("Reading register {}", (this->*ref).addr());
+
+    m_rxcore->flushBuffer();
+    // send a read register command to the chip so that it
+    // sends back the current value of the register
     this->sendRdReg(m_chipId, (this->*ref).addr());
+    while(!core->isCmdEmpty()) {}
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    // go through the incoming data stream and get the register read data
+    std::vector<RawDataPtr> dataVec = m_rxcore->readData();
+    RawDataPtr data;
+    if (dataVec.size() > 0) {
+        for(auto const &v : dataVec) {
+            // Find raw data for this address
+            if (rxChannel != v->getAdr())
+                continue;
+
+            if (v->get(0) != 0xffffdead) {
+                data = v;
+                if(!(data->getSize() >= 2)) {
+                    logger->error("readRegister failed, received wrong number of words ({}) for FE with chipId {}", data->getSize(), m_chipId);
+                    continue;
+                }
+
+                auto [id, received_address, register_value] = Itkpixv2::decodeSingleRegReadID(data->get(0), data->get(1));
+                chipId = id; // chipId is read from the chip wirebonded ID, m_chipId is set in the chip config file
+                if(id == (m_chipId&0x3)) {
+                    if(received_address != (this->*ref).addr()) {
+                        logger->error("readRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
+                        return yarrFailure;
+                    }
+                    // Update memory
+                    m_cfg[(this->*ref).addr()] = register_value;
+                    // Return value
+                    value = (this->*ref).read();
+                    return yarrSuccess;
+                } else {
+                    logger->info("readRegister 0x{:x} 0x{:x} -> ID {} {}, addr 0x{:x} val 0x{:x}", data->get(0), data->get(1), id, m_chipId&0x3, received_address, register_value);
+                }
+            }
+        }
+    }
+
+    logger->error("readRegister failed, did not received register readback data from chip with chipId {}", m_chipId);
+    return yarrFailure;
 }
 
-void Itkpixv2::writeNamedRegister(std::string name, uint16_t value) {
+yarrStatus Itkpixv2::readRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, uint16_t &value) {
+  uint8_t _ = 0;
+  return readRegister(ref, value, _);
+}
+
+yarrStatus Itkpixv2::writeNamedRegister(std::string name, const uint16_t value) {
     if(regMap.find(name) != regMap.end()) {
         logger->debug("Write named register {} -> {}", name, value);
         this->writeRegister(regMap[name], value);
-    } else if(virtRegMap.find(name) != virtRegMap.end()) {
+        return yarrSuccess;
+    }
+
+    if(virtRegMap.find(name) != virtRegMap.end()) {
         logger->debug("Write named virtual register {} -> {}", name, value);
         this->writeRegister(virtRegMap[name], value);
-    } else {
-        logger->error("Trying to write named register, register not found: {}", name);
+        return yarrSuccess;
     }
+    
+    logger->error("Trying to write named register, register not found: {}", name);
+    return yarrFailure;
+    
 }
 
-uint16_t Itkpixv2::readNamedRegister(std::string name) {
+yarrStatus Itkpixv2::readNamedRegister(std::string name, uint16_t &value) {
     if(regMap.find(name) != regMap.end()) {
         logger->debug("Read named register {}", name);
-        this->readUpdateWriteReg(regMap[name]);
-        return (this->*regMap[name]).read();
-    } else {
-        logger->error("Trying to read named register, register not found: {}", name);
+        uint16_t tmp;
+        if (this->readRegister(regMap[name], tmp) != yarrSuccess) {
+            logger->error("Trying to update named register {} failed!", name);
+            return yarrFailure;
+        }
+        value = (this->*regMap[name]).read();
+        return yarrSuccess;
     }
-    return 0;
+
+    logger->error("Trying to read named register, register not found: {}", name);
+    return yarrFailure;
 }
 
-void Itkpixv2::setRegisterValue(std::string name, uint16_t value){
+yarrStatus Itkpixv2::readUpdateWriteRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, const uint16_t value) {
+   	uint16_t tmp;    
+    // Update reg in memory
+    if  (readRegister(ref, tmp) != yarrSuccess) {
+        logger->error("Failed to read update register!");
+        return yarrFailure;
+    }
+    // Write register 
+    if (writeRegister(ref, value) != yarrSuccess) {
+        logger->error("Failed to write register after updating!");
+        return yarrFailure;
+    }
+
+    return yarrSuccess;
+}
+
+yarrStatus Itkpixv2::setNamedRegister(std::string name, const uint16_t value){
     logger->debug("Set virtual register {} -> {}", name, value);
-    (this->*regMap[name]).write(value);
+    if(regMap.find(name) != regMap.end()) {
+        (this->*regMap[name]).write(value);
+        return yarrSuccess;
+    }
+    
+    if(virtRegMap.find(name) != virtRegMap.end()) {
+        (this->*virtRegMap[name]).write(value);
+        return yarrSuccess;
+    }
+    
+    logger->error("Trying to set named register, register not found: {}", name);
+    return yarrFailure;
 }
 
-uint16_t Itkpixv2::getRegisterValue(std::string name){
+yarrStatus Itkpixv2::getNamedRegister(std::string name, uint16_t &value){
     logger->debug("Get virtual register value {}", name);
-    return (this->*regMap[name]).read();
+    
+    if(regMap.find(name) != regMap.end()) {
+        value = (this->*regMap[name]).read();
+        return yarrSuccess;
+    }
+    
+    if(virtRegMap.find(name) != virtRegMap.end()) {
+        value = (this->*virtRegMap[name]).read();
+        return yarrSuccess;
+    }
+    
+    logger->error("Trying to set named register, register not found: {}", name);
+    return yarrFailure; 
+}
+
+yarrStatus Itkpixv2::readUpdateWriteNamedRegister(std::string name, const uint16_t value) {
+    if(regMap.find(name) != regMap.end()) {
+        logger->debug("Local update named register {} with {}", name, value);
+        if (this->readUpdateWriteRegister(regMap[name], value) != yarrSuccess) {
+            logger->error("Failed to read update write named register {}", name);
+            return yarrFailure;
+        }
+        return yarrSuccess;
+    } 
+    
+    logger->error("Trying to local update named register, register not found: {}", name);
+    return yarrFailure;
 }
 
 
-Itkpixv2RegDefault Itkpixv2GlobalCfg::*  Itkpixv2::getNamedRegister(std::string name) {
+Itkpixv2RegDefault Itkpixv2GlobalCfg::*  Itkpixv2::getNamedRegisterObject(std::string name) {
     if(regMap.find(name) != regMap.end()) {
         return regMap[name];
     } else if(virtRegMap.find(name) != virtRegMap.end()) {
         return virtRegMap[name];
     } else {
-        logger->error("Trying to get named register, register not found: {}", name);
+        logger->error("Trying to get named register object, register not found: {}", name);
     }
     return NULL;
 }
 
-int Itkpixv2::checkCom() {
+yarrStatus Itkpixv2::checkCom() {
     if (this->ServiceBlockEn.read() == 0) {
         logger->error("Register messages not enabled, can't check communication ... proceeding blind! (Set \"ServiceBlockEn\" to 1 in the chip config)");
-        return 1;
+        return yarrSuccess;
     }
     
     logger->debug("Checking communication for {} by reading a register ...", this->name);
@@ -337,7 +451,7 @@ int Itkpixv2::checkCom() {
         unsigned size = data->getSize();       
         if (!(size == 2 || size == 4 || size == 8 || size == 12 || size == 6)) {
             logger->error("Received wrong number of words ({}) for {}", data->getSize(), this->name);
-            return 0;
+            return yarrFailure;
         }
         std::pair<uint32_t, uint32_t> answer = decodeSingleRegRead(data->get(0), data->get(1));
         logger->debug("Addr ({}) Value({})", answer.first, answer.second);
@@ -346,22 +460,22 @@ int Itkpixv2::checkCom() {
             logger->error("Received data was not as expected:");
             logger->error("    Received Addr: {} (expected {})", answer.first, regAddr);
             logger->error("    Received Value: {} (expected {})", answer.second, regValue);
-            return 0;
+            return yarrFailure;
         }
 
         logger->debug("... success");
-        return 1;
+        return yarrSuccess;
     } else {
         logger->error("Did not receive any data for {}", this->name);
-        return 0;
+        return yarrFailure;
     }
 }
 
-bool Itkpixv2::hasValidName() {
+yarrStatus Itkpixv2::hasValidName() {
 
     // return true if no check is requested
     if(auto cfg = dynamic_cast<Itkpixv2Cfg*>(this); !cfg->checkChipIdInName()) {
-        return true;
+        return yarrSuccess;
     }
 
     uint32_t efuse = this->getEfuses();
@@ -372,10 +486,10 @@ bool Itkpixv2::hasValidName() {
 
     if(!id_in_name) {
         logger->error("Chip serial number decoded from e-fuse data (0x{:x}) does not appear in Chip \"name\" field (\"{}\") in loaded configuration  for chip with ChipId = {}", efuse, name, m_chipId);
-       	return false;
+       	return yarrFailure;
     }
     logger->info("Chip serial number obtained from e-fuse data: 0x{:x}", efuse );
-    return true;
+    return yarrSuccess;
 }
 
 
@@ -384,7 +498,7 @@ uint32_t Itkpixv2::getEfuses() {
     // enabled in order to query them
     if (this->ServiceBlockEn.read() == 0) {
         logger->error("Register messages not enabled, can't check chip id (set \"ServiceBlockEn\" to 1 in chip config");
-        return 0;
+        return yarrFailure;
     }
 
     // if user is requested to enforce that the chip id be in the FrontEnd "name"
@@ -406,7 +520,7 @@ uint32_t Itkpixv2::getEfuses() {
         logger->info("Chip serial number decoded with old format from e-fuse data: 0x{:x}", chip_sn_old);
         return chip_sn_old;
     }
-    return 0;
+    return yarrFailure;
 }
 
 std::pair<uint32_t, uint32_t> Itkpixv2::decodeSingleRegRead(uint32_t higher, uint32_t lower) {
@@ -454,16 +568,19 @@ itkpix_efuse_codec::EfuseData Itkpixv2::readEfuses() {
     //
     // read back the E-fuse registers
     //
-    uint32_t efuse_data_0 = 0;
-    uint32_t efuse_data_1 = 0;
+    uint16_t efuse_data_0 = 0;
+    uint16_t efuse_data_1 = 0;
     
-    efuse_data_0 = readSingleRegister(&Itkpixv2::EfuseReadData0);
-    efuse_data_1 = readSingleRegister(&Itkpixv2::EfuseReadData1);
-    
-    if (efuse_data_0 > 65535 || efuse_data_1 > 65535) {
-        logger->warn("Failed to readback E-fuse data for chip with {}", m_chipId);
+    if (readRegister(&Itkpixv2::EfuseReadData0, efuse_data_0) != yarrSuccess) {
+        logger->warn("Failed to readback E-fuse 0 data for chip with {}", m_chipId);
         return itkpix_efuse_codec::EfuseData{0};
     }
+
+    if (readRegister(&Itkpixv2::EfuseReadData1, efuse_data_1) != yarrSuccess) {
+        logger->warn("Failed to readback E-fuse 1 data for chip with {}", m_chipId);
+        return itkpix_efuse_codec::EfuseData{0};
+    }
+
     uint32_t efuse_data = ((efuse_data_1 & 0xffff) << 16) | (efuse_data_0 & 0xffff);
 
     // decode the e-fuse data (performs single-bit error-correction)
@@ -490,112 +607,31 @@ uint32_t Itkpixv2::readEfusesRaw() {
     //
     // read back the E-fuse registers
     //
-    uint32_t efuse_data_0 = 0;
-    uint32_t efuse_data_1 = 0;
+    uint16_t efuse_data_0 = 0;
+    uint16_t efuse_data_1 = 0;
     
-    efuse_data_0 = readSingleRegister(&Itkpixv2::EfuseReadData0);
-    efuse_data_1 = readSingleRegister(&Itkpixv2::EfuseReadData1);
-    
-    if (efuse_data_0 > 65535 || efuse_data_1 > 65535) {
-        logger->warn("Failed to readback E-fuse data for chip with {}", m_chipId);
+    if (readRegister(&Itkpixv2::EfuseReadData0, efuse_data_0) != yarrSuccess) {
+        logger->warn("Failed to readback E-fuse 0 data for chip with {}", m_chipId);
         return 0;
     }
-    return ((efuse_data_1 & 0xffff) << 16) | (efuse_data_0 & 0xffff);
-}
 
-void Itkpixv2::readUpdateWriteNamedReg(std::string name) {
-    if(regMap.find(name) != regMap.end()) {
-        logger->debug("Local update named register {}", name);
-        this->readUpdateWriteReg(regMap[name]);
-    } else {
-        logger->error("Trying to local update named register, register not found: {}", name);
-    }
-}
-
-void Itkpixv2::readUpdateWriteReg(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref) {
-    uint32_t reg = readSingleRegister(ref);
-    if (reg < 65536) {
-        m_cfg[(this->*ref).addr()] = reg;
-    }
-}
-
-uint32_t Itkpixv2::readSingleRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref) {
-    
-    m_rxcore->flushBuffer();
-    // send a read register command to the chip so that it
-    // sends back the current value of the register
-    this->sendRdReg(m_chipId, (this->*ref).addr());
-    while(!core->isCmdEmpty()) {}
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-    // go through the incoming data stream and get the register read data
-    std::vector<RawDataPtr> dataVec = m_rxcore->readData();
-    RawDataPtr data;
-    if (dataVec.size() > 0) {
-        for(auto const &v : dataVec) {
-            // Find raw data for this address
-            if (rxChannel != v->getAdr())
-                continue;
-
-            if (v->get(0) != 0xffffdead) {
-                data = v;
-                if(!(data->getSize() >= 2)) {
-                    logger->warn("readSingleRegister failed, received wrong number of words ({}) for FE with chipId {}", data->getSize(), m_chipId);
-                    continue;
-                }
-
-                auto [id, received_address, register_value] = Itkpixv2::decodeSingleRegReadID(data->get(0), data->get(1));
-                if(id == (m_chipId&0x3)) {
-                    if(received_address != (this->*ref).addr()) {
-                        logger->warn("readSingleRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
-                        return 65536;
-                    }
-                    return register_value;
-                } else {
-                    logger->info("readSingleRegister 0x{:x} 0x{:x} -> ID {} - {}, addr 0x{:x} val 0x{:x}", data->get(0), data->get(1), id, m_chipId&0x3, received_address, register_value);
-                }
-            }
-        }
+    if (readRegister(&Itkpixv2::EfuseReadData1, efuse_data_1) != yarrSuccess) {
+        logger->warn("Failed to readback E-fuse 1 data for chip with {}", m_chipId);
+        return 0;
     }
     
-    logger->warn("readSingleRegister failed, did not received register readback data from chip with chipId {}", m_chipId);
-    return 65536;
+    return (((uint32_t)efuse_data_1 & 0xffff) << 16) | ((uint32_t)efuse_data_0 & 0xffff);
 }
 
-
-uint8_t Itkpixv2::getChipId() {
-   
-    m_rxcore->flushBuffer();
-    // send a read register command to the chip so that it
-    // sends back the current value of the register
-    this->sendRdReg(m_chipId, (this->EfuseReadData0).addr()); // from readSingleRegister which uses addresses 135 and 136 which is EfuseReadData1 and EfuseReadData0
-    while(!core->isCmdEmpty()) {}
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-    // go through the incoming data stream and get the register read data
-    std::vector<RawDataPtr> dataVec = m_rxcore->readData();
-    RawDataPtr data;
-    if (dataVec.size() > 0) {
-        for(auto const &v : dataVec) {
-            // Find raw data for this address
-            if (rxChannel != v->getAdr())
-                continue;
-
-            if (v->get(0) != 0xffffdead) {
-                data = v;
-                if(!(data->getSize() >= 2)) {
-                    logger->warn("readSingleRegister failed, received wrong number of words ({}) for FE with chipId {}", data->getSize(), m_chipId);
-                    continue;
-                }
-                auto [id, received_address, register_value] = Itkpixv2::decodeSingleRegReadID(data->get(0), data->get(1));
-                logger->info("readSingleRegister 0x{:x} 0x{:x} -> ID {} - {}, addr 0x{:x} val 0x{:x}", data->get(0), data->get(1), id, m_chipId&0x3, received_address, register_value);
-                return (uint8_t)id;
-            }
-        }
+uint8_t Itkpixv2::readChipId() {
+    uint16_t _ = 0;
+    uint8_t id = 15;
+    if (readRegister(&Itkpixv2::EfuseReadData0, _, id) != yarrSuccess) {
+        logger->warn("Failed to readback E-fuse 0 data for chip with {}", m_chipId);
+        return yarrFailure;
     }
-    return 255;
+    return id;
 }
-
 
 void Itkpixv2::confAdc(uint16_t MONMUX, bool doCur) {
     //This only works for voltage MUX values.

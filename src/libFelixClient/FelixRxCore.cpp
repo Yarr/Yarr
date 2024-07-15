@@ -135,11 +135,18 @@ void FelixRxCore::on_data(FelixID_t fid, const uint8_t* data, size_t size, uint8
 
   frlog->trace("Received message from 0x{:x}", fid);
 
-  frlog->trace(" message size: {}", size);
-  for (size_t b=0; b < size; b++) {
-    frlog->trace(" 0x{:x}", data[b]);
+  if (frlog->should_log(spdlog::level::trace)){
+    frlog->trace(" message size: {}", size);
+    for (size_t b=0; b < size; b++) {
+      frlog->trace(" 0x{:x}", data[b]);
+    }
+    frlog->trace(" status: 0x{:x}", status);
   }
-  frlog->trace(" status: 0x{:x}", status);
+
+  if (m_maxMessageSize > 0 && size > m_maxMessageSize) {
+    frlog->error("dropping the message, because the size is larger than the allowed maximum: {} > {}", size, m_maxMessageSize);
+    return;
+  }
 
   // stats
   m_qStats[fid].messages_received += 1;
@@ -258,6 +265,11 @@ void FelixRxCore::loadConfig(const json &j) {
   if (j.contains("queueLimitMB")) {
     m_queue_limit = j["queueLimitMB"];
     frlog->info(" queue limit = {} MB", m_queue_limit);
+  }
+  if (j.contains("maxMessageSize")) {
+    m_maxMessageSize = j["maxMessageSize"];
+    if (m_maxMessageSize>0) frlog->info(" message size limit = {} B", m_maxMessageSize);
+    else frlog->info(" message size limit = unlimited");
   }
 
   if (j.contains("waitTime")) {

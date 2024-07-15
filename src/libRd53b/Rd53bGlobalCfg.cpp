@@ -419,7 +419,7 @@ void Rd53bGlobalCfg::writeConfig(json &j) {
 }
 
 void Rd53bGlobalCfg::loadConfig(json const &j) {
-    if (!j.contains("RD53B") || j["RD53B"].contains("GlobalConfig")) {
+    if (!j.contains("RD53B") || !j["RD53B"].contains("GlobalConfig")) {
         logger->error("Could not find global register config, using default!");
         return;
     }

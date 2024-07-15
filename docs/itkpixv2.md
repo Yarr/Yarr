@@ -1,6 +1,7 @@
-# RD53B testing with the Single Chip Card
+# ITkPixV2 testing with the Single Chip Card
 
 More details and schematics can be found here: [Single Chip Card](https://twiki.cern.ch/twiki/bin/viewauth/RD53/RD53BTesting#RD53B_Single_Chip_Card_SCC)
+TODO update for itkpixv2? ^
 
 The information presented here is in addition to the information in the [Chip Manual](https://cds.cern.ch/record/2665301). So please refer to the manual for further details on the chip operation.
 
@@ -45,7 +46,7 @@ Preferred mode for testing should be LDO mode.
     - Crosscheck value of ``R_EXTA``, ``R_EXTD``, ``R_IOFS``, and ``R_IOFS_LB`` to be according to your operational needs (read manual for further info).
     - Supply current fitting your offset and slope choice, optimal voltage across the module is around 1.6V
 
-## DAQ specifics for RD53B
+## DAQ specifics for ITkPixV2
 
 ## Data transmission 
 
@@ -66,7 +67,7 @@ Options:
 
 For example: 
 ```bash
-./bin/eyeDiagram -r configs/controller/specCfg-rd53b-16x1.json -c configs/connectivity/example_rd53b_setup.json 
+./bin/eyeDiagram -r configs/controller/specCfg-itkpixv2-16x1.json -c configs/connectivity/example_itkpixv2_setup.json 
 ```
 
 This scan has to be run before running any other scan, and it will save the best delay setting to the controller config file. A script for plotting the eye diagram is also provided (``scripts/plot_eyediagram.py``), and an example of an eye diagram is shown below. 
@@ -92,35 +93,17 @@ Recommended is 1.28 Gbps.
 Choose the number of active data lanes according to your setup and firmware. This can be chosen via the ``AuroraActiveLanes`` register where each bit represents one lane.
 Typically 16x1 firmware uses one lane ``AuroraActiveLanes = 1`` and 4x4 firmware uses ``AuroraActiveLanes = 15``.
 
-## Scan Console for RD53B
+## Scan Console for ITkPixV2
 
 The general structure of the scanConsole command is:
 ```bash
-./bin/scanConsole -r configs/controller/specCfg-rd53b.json -c configs/connectivity/example_rd53b_setup.json -s configs/scans/rd53b/<type of scan>.json -p
+./bin/scanConsole -r configs/controller/specCfg-itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/<type of scan>.json -p
 ```
 
 which specifies the controller (`-r`), the chip list and chip type (`-c`), and the scan (`-s`). The option `-p` selects plotting so plots are produced after the scans.
 If you run a scan for the first time, it will create a default configuration for the chip along with running the scan.
 
 ## Start-up
-
-### ITkPixV1.0
-
-ITkPixV1 contains a bug which leads to large current on the digital rail caused by wrongly designed ToT latch. It is not desireable to leave the chip in this high current state for too long without at least passive cooling of some sort. The current can be reduced either by running a ``std_digitalscan`` or the ``clear_tot_mem`` routine (``clear_tot_mem`` might need to be run two times``). Once the current has been reduced it should stay in this mode until fully power cycled.
-
-#### Current
-
-Expected current draw at start-up:
-
-- Digital: typical 1.5A, up to 2.5A
-- Analog: 80-100mA
-
-After ``std_digitalscan``:
-
-- Digital: around 600mA
-- Analog: around 750mA (depending on config)
-
-### ITkPixV1.1
 
 #### Current
 
@@ -166,28 +149,13 @@ Please note that the number of active lanes might also need to be specified in t
 
 TODO
 
-# Testing with ITkPixV1.0 and ITkPixV1.1 Quad Modules
+# Testing with ITkPixV2 Quad Modules
 
-The design files for the quad PCB [Common Quad v2.4](https://gitlab.cern.ch/itk-pixel-hybrid/itkpixv1_quad/-/tree/RD53B_ITKPixV1_QuadHybrid_Rev2.4)
+TODO
 
-Due to an issue in the SW you can only read out ONE chip at a time.
+## Testing with ITkPixV2
 
-## Testing with ITkPixV1.0
-
-Since one can read only ONE chip at the time, at the begining of each scan the reset should be avoided, MR is here https://gitlab.cern.ch/YARR/YARR/-/merge_requests/482 
-
-Tunning routine should use precision ToT scans:
-- ptot_digitalscan
-- ptot_analogscan
-- ptot_tune_globalthreshold (target 1000e)
-- ptot_tune_pixelthreshold (target 1000e)
-- ptot_thresholdscan
-
-## Testing with ITkPixV1.1
-
-Since one can read only ONE chip at the time, at the begining of each scan the reset should be avoided, MR is here https://gitlab.cern.ch/YARR/YARR/-/merge_requests/482 
-
-Tunning routine:
+Tuning routine:
 - std_digitalscan
 - std_analogscan
 - std_tune_globalthreshold (target 1000e)
@@ -203,34 +171,34 @@ The DisplayPort is connected to Port A of the Ohio cars. Note that DisplayPort p
 - pins 7,9 to channel 2
 - pins 10,12 to channel 3
 
-Connectifvity file when DisplayPort cable is connected to Port A of the Ohio card
+Connectivity file when DisplayPort cable is connected to Port A of the Ohio card
 
 ```bash
-"chipType" : "RD53B",
+"chipType" : "ITKPIXV2",
 "chips" : [
     {
-        "config" : "configs/rd53b_1DPQuad04_Chip1.json",
+        "config" : "configs/itkpixv2_1DPQuad04_Chip1.json",
         "tx" : 0,
         "rx" : 2,
         "enable" : 1,
         "locked" : 0
     },
     {
-        "config" : "configs/rd53b_1DPQuad04_Chip2.json",
+        "config" : "configs/itkpixv2_1DPQuad04_Chip2.json",
         "tx" : 0,
         "rx" : 1,
         "enable" : 0,
         "locked" : 0
     },
     {
-        "config" : "configs/rd53b_1DPQuad04_Chip3.json",
+        "config" : "configs/itkpixv2_1DPQuad04_Chip3.json",
         "tx" : 0,
         "rx" : 0,
         "enable" : 0,
         "locked" : 0
     },
     {
-        "config" : "configs/rd53b_1DPQuad04_Chip4.json",
+        "config" : "configs/itkpixv2_1DPQuad04_Chip4.json",
         "tx" : 0,
         "rx" : 3,
         "enable" : 0,

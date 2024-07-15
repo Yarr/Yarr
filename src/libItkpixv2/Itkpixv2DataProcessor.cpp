@@ -153,7 +153,7 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
             {
                 // End of stream
                 if (unlikely(variable != 0))
-                    logger->error("The ES bit is 1 while the core column number read is non-zero ({} [{}]). Data processed so far are corrupted... Last block {:x}{:x}", variable, _bitIdx, _data[0], _data[1]);
+                    logger->error("[{}] The ES bit is 1 while the core column number read is non-zero ({} [{}]). Data processed so far are corrupted... Last block {:x}{:x} (status {})", m_feCfg->getName(), variable, _bitIdx, _data[0], _data[1], _status);
                 _bitIdx = 64;
                 variable = 0;
                 return true;
@@ -161,7 +161,7 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
             // Otherwise throw error message, unless over-draft is expected
             else if (!skipNSCheck)
             {
-                logger->error("Expected unfinished stream while ES = 1: 0x{:x}{:x} [{} - {}]. Will start a new event... ({})", _data[0], _data[1], _bitIdx, length, _status);
+                logger->error("[{}] Expected unfinished stream while ES = 1: 0x{:x}{:x} [{} - {}]. Will start a new event... (status {})", m_feCfg->getName(), _data[0], _data[1], _bitIdx, length, _status);
                 _status = INIT;
                 return false;
             }
@@ -217,6 +217,7 @@ void Itkpixv2DataProcessor::process_core()
         _tag = (_data[0] >> (23-_chipIdShift)) & 0xFF;
         _bitIdx = 9+_chipIdShift; // Reset bit index = ES + tag
 
+        // logger->error("Got tag {}", _tag);
         // Create a new event
         // TODO RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
         _curOut->newEvent(_tag, _l1id, _bcid);
@@ -236,13 +237,15 @@ void Itkpixv2DataProcessor::process_core()
             // This is also the ONLY place where we check end-of-stream. In other places we simply assuming continuation of stream, and will throw an error message if the end of stream is somehow reached.
             if (!retrieve(_ccol, 6, true))
                 return;
+            // logger->error("Read ccol {}", _ccol);
         case CCC:
             _status = CCC;
+            // logger->error("Read CCC");
             // End of stream is marked with 0b000000. This is ensured in software in spite of the chip orphan bit configuration
             if (_ccol == 0) {
                 // Check ES bit
                 if (((_data[0] >> 31) & 0x1) != 0x1) {
-                    logger->error("The ES bit is 0 while the core column number read is zero. Data processed so far are corrupted... Last block {:x}{:x}", _data[0], _data[1]);
+                    logger->error("[{}] The ES bit is 0 while the core column number read is zero. Data processed so far are corrupted... Last block {:x}{:x}", m_feCfg->getName(), _data[0], _data[1]);
                     // TODO: keep skipping data until ES = 1, and then skip one more
                 }
                     
@@ -294,16 +297,16 @@ void Itkpixv2DataProcessor::process_core()
             case CCC:
             case ILIN:
                 _status = ILIN;
-                // logger->warn("Read islast/isneighbor");
                 // ###### Step 1. read islast, isneighbor, and qrow ######
                 // Read islast, isneighbor
                 // Note the qrow index will be absent if isneighbor = 1
                 if (!retrieve(_islast_isneighbor, 2))
                     return;
+                // logger->error("Read islast/isneighbor {}", _islast_isneighbor);
+                
 
             case QROW:
                 _status = QROW;
-                // logger->warn("Read qrow");
                 // If isneighbor = 1, aggregate qrow
                 if (_islast_isneighbor & 0x1)
                     ++_qrow[_ccol];
@@ -311,16 +314,17 @@ void Itkpixv2DataProcessor::process_core()
                 // Otherwise read the qrow value
                 else if (!retrieve(_qrow[_ccol], 8))
                     return;
+                // logger->error("Read qrow {}", _qrow[_ccol]);
             case HMAP1:
                 _status = HMAP1;
-                // logger->warn("Read hitmap 1");
                 // ############ Step 2. read hit map ############
                 // The hit map decoding is based on look-up table
                 //_hitmap = 0;
                 if (!retrieve(_hitmap, 16, false, true))
                     return;
+                // logger->error("Read hitmap 1 {}", _hitmap);
+                
             case HMAP2:
-                // logger->warn("Read hitmap 2");
                 _status = HMAP2;
                 // Compressed hit map
                 if (_isCompressedHitmap)
@@ -358,8 +362,9 @@ void Itkpixv2DataProcessor::process_core()
                         rollBack((_LUT_BinaryTreeHitMap[hitmap_raw] & 0xFF0000) >> 16);
                     }
                 }
+                // logger->error("Read hitmap 2 {}", _hitmap);
+
             case TOT:
-                // logger->warn("Read ToT");
                 _status = TOT;
                 // ############ Step 3. read ToT ############
                 // Check whether it is precision ToT (PToT) data. PToT data is indicated by unphysical qrow index 196, and it should not be aggregated by the isnext bit
@@ -452,6 +457,8 @@ void Itkpixv2DataProcessor::process_core()
                         _hits++;
                     }
                 }
+                // logger->error("Read ToT {}", _ToT);
+
             default:
                 break;
             }
@@ -463,6 +470,8 @@ void Itkpixv2DataProcessor::process_core()
 
 bool Itkpixv2DataProcessor::getNextDataBlock()
 {
+    // logger->error("Entered getNextDataBlock with status {}", _status);
+
     if (_curInV != nullptr && _curInV->size() > 0)
     {
         // Cross raw data container
@@ -471,6 +480,7 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
             _rawDataIdx = 0;
             _wordIdx = 0;
             _data = &_curInV->data[0]->get(0);
+
             if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
                  return getNextDataBlock();
             if (((_data[0] >> 29) & 0x3) != _chipId && _enChipId)
@@ -478,24 +488,45 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
             return true;
         }
         _wordIdx += 2; // Increase block index
+        
+        // if(unlikely(_rawDataIdx >= _curInV->data.size())) {
+        //     // segfault is going to happen
+        //     logger->error("Reached V2 segfault case!: _rawDataIdx: {} | _curInV->data.size(): {} | _status: {} | 0x{:x}{:x}", _rawDataIdx, _curInV->data.size(), _status, _data[0], _data[1]);
+        // }
+
         if (_wordIdx >= _curInV->data[_rawDataIdx]->getSize())
         {
             _rawDataIdx++;
             _wordIdx = 0;
         }
+
     }
 
     // Cannot get more data: return failure code
     if (_curInV == nullptr || _curInV->size() == 0 || _rawDataIdx >= _curInV->size())
     {
+
         //Do not perform a cleanup and decoding termination if we are in the hitmap retrieval step.
         //This protects the edge case when we would hit the end of the stream while retrieving the
         //16 bits of the last qcore hitmap, which leads to the last hit being dropped from the output.
-        if (_status == HMAP1) return true;
+        if (_status == HMAP1) {
+            // 8 bits is minimum for a hit with compression: 0000 0001
+            // If we have 8 or more bits, process the hit accordingly.
+            if(likely(BLOCKSIZE - _bitIdx > 7)) {
+                return true;
+            }
+            // Otherwise print an error
+            else {
+                uint32_t _es = (_data[0] >> 31) & 0x1;
+                logger->error("[{}] Requested out-of-range bits while ES={}, at position {} in stream. Flushing remainder of data block 0x{:x}{:x}", m_feCfg->getName(), _es, _bitIdx, _data[0], _data[1]);
+                // TODO: if _ES is 0, then clearly we have lost a data block. Need to do desynchronization
+            }
+        }
 
         // Reset raw data index and word index
         _rawDataIdx = 0;
         _wordIdx = 0;
+
 
         // Keep track of last block
         if (_curInV != nullptr && _curInV->size() > 0)
@@ -528,6 +559,12 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
         _curInV = m_input->popData();
         if (_curInV == nullptr)
             return false;
+        // for(int ii = 0; ii < _curInV->data.size(); ii++) {
+        //     for(int jj = 0; jj < (int)_curInV->data[ii]->getSize(); jj++) {
+        //         std::cout << (_curInV->data[ii]->get((size_t)jj)) << std::endl;
+        //     }
+        // }
+        // std::cout << std::endl;
         if (_curInV->size() == 0){
             if (_curInV->stat.is_end_of_iteration) {
                 // push any remaining _curOut data
@@ -564,13 +601,14 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
 
     // Upate the data pointer. Note the meaning of block index is the first block that is *unprocessed*
     _data = &_curInV->data[_rawDataIdx]->get(_wordIdx);
+
     //logger->info("[{}] {} 0x{:x}{:x}", _wordIdx, _data[0]>>31, _data[0], _data[1]);
 
     // Return success code
     if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
-         return getNextDataBlock();
+        return getNextDataBlock();
     if (((_data[0] >> 29) & 0x3) != _chipId && _enChipId)
-         return getNextDataBlock();
+        return getNextDataBlock();
     return true;
 }
 

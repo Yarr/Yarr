@@ -248,41 +248,129 @@ void Rd53b::configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels) 
     while(!core->isCmdEmpty()){;}
 }
 
-void Rd53b::writeRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t value) {
+yarrStatus Rd53b::writeRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t value) {
     (this->*ref).write(value);
     logger->debug("Writing register {} with {}", (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
     this->sendWrReg(m_chipId, (this->*ref).addr(), m_cfg[(this->*ref).addr()]);
+    return yarrSuccess;
 }
 
-void Rd53b::readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref) {
-    logger->debug("Reading register {}", (this->*ref).addr());
+yarrStatus Rd53b::readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t &value, uint8_t &chipId) {
+    m_rxcore->flushBuffer();
+    // send a read register command to the chip so that it
+    // sends back the current value of the register
     this->sendRdReg(m_chipId, (this->*ref).addr());
+    while(!core->isCmdEmpty()) {}
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    // go through the incoming data stream and get the register read data
+    std::vector<RawDataPtr> dataVec = m_rxcore->readData();
+    RawDataPtr data;
+    if (dataVec.size() > 0) {
+        for(auto const &v : dataVec) {
+            // Find raw data for this address
+            if (rxChannel != v->getAdr())
+                continue;
+
+            if (v->get(0) != 0xffffdead) {
+                data = v;
+                if(!(data->getSize() >= 2)) {
+                    logger->error("readRegister failed, received wrong number of words ({}) for FE with chipId {}", data->getSize(), m_chipId);
+                    continue;
+                }
+
+                auto [id, received_address, register_value] = Rd53b::decodeSingleRegReadID(data->get(0), data->get(1));
+                chipId = id; // chipId is read from the chip wirebonded ID, m_chipId is set in the chip config file
+                if(id == (m_chipId&0x3)) {
+                    if(received_address != (this->*ref).addr()) {
+                        logger->error("readRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
+                        return yarrFailure;
+                    }
+                    // Update memory
+                    m_cfg[(this->*ref).addr()] = register_value;
+                    // Return value
+                    value = (this->*ref).read();
+                    return yarrSuccess;
+                } else {
+                    logger->info("readRegister 0x{:x} 0x{:x} -> ID {} - {}, addr 0x{:x} val 0x{:x}", data->get(0), data->get(1), id, m_chipId&0x3, received_address, register_value);
+                }
+            }
+        }
+    }
+    
+    logger->warn("readRegister failed, did not received register readback data from chip with chipId {}", m_chipId);
+    return yarrFailure;
 }
 
-void Rd53b::writeNamedRegister(std::string name, uint16_t value) {
+yarrStatus Rd53b::readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t &value) {
+  uint8_t _ = 0;
+  return readRegister(ref, value, _);
+}
+
+yarrStatus Rd53b::readUpdateWriteRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, const uint16_t value) {
+   	uint16_t tmp;    
+    // Update reg in memory
+    if  (readRegister(ref, tmp) != yarrSuccess) {
+        logger->error("Failed to read update register!");
+        return yarrFailure;
+    }
+    // Write register 
+    if (writeRegister(ref, value) != yarrSuccess) {
+        logger->error("Failed to write register after updating!");
+        return yarrFailure;
+    }
+
+    return yarrSuccess;
+}
+    
+
+yarrStatus Rd53b::writeNamedRegister(std::string name, const uint16_t value) {
     if(regMap.find(name) != regMap.end()) {
         logger->debug("Write named register {} -> {}", name, value);
         this->writeRegister(regMap[name], value);
-    } else if(virtRegMap.find(name) != virtRegMap.end()) {
+        return yarrSuccess;
+    }
+    
+    if(virtRegMap.find(name) != virtRegMap.end()) {
         logger->debug("Write named virtual register {} -> {}", name, value);
         this->writeRegister(virtRegMap[name], value);
-    } else {
-        logger->error("Trying to write named register, register not found: {}", name);
-    }
+        return yarrSuccess;
+    } 
+
+    logger->error("Trying to write named register, register not found: {}", name);
+    return yarrFailure;
 }
 
-uint16_t Rd53b::readNamedRegister(std::string name) {
+yarrStatus Rd53b::readNamedRegister(std::string name, uint16_t &value) {
     if(regMap.find(name) != regMap.end()) {
         logger->debug("Read named register {}", name);
-        this->readUpdateWriteReg(regMap[name]);
-        return (this->*regMap[name]).read();
-    } else {
-        logger->error("Trying to read named register, register not found: {}", name);
+        if (this->readRegister(regMap[name], value) != yarrSuccess) {
+            logger->error("Failed to read register {}", name);
+            return yarrFailure; 
+        }
+        return yarrSuccess;
     }
-    return 0;
+    
+    logger->error("Trying to read named register, register not found: {}", name);
+    return yarrFailure;
 }
 
-Rd53bRegDefault Rd53bGlobalCfg::*  Rd53b::getNamedRegister(std::string name) {
+yarrStatus Rd53b::readUpdateWriteNamedRegister(std::string name, const uint16_t value) {
+    if(regMap.find(name) != regMap.end()) {
+        logger->debug("Local update named register {} with {}", name, value);
+        if (this->readUpdateWriteRegister(regMap[name], value) != yarrSuccess) {
+            logger->error("Failed to read update write named register {}", name);
+            return yarrFailure;
+        }
+        return yarrSuccess;
+    } 
+    
+    logger->error("Trying to local update named register, register not found: {}", name);
+    return yarrFailure;
+}
+
+
+Rd53bRegDefault Rd53bGlobalCfg::*  Rd53b::getNamedRegisterObject(std::string name) {
     if(regMap.find(name) != regMap.end()) {
         return regMap[name];
     } else if(virtRegMap.find(name) != virtRegMap.end()) {
@@ -293,20 +381,30 @@ Rd53bRegDefault Rd53bGlobalCfg::*  Rd53b::getNamedRegister(std::string name) {
     return NULL;
 }
 
-void Rd53b::setRegisterValue(std::string name, uint16_t value){
+yarrStatus Rd53b::setNamedRegister(std::string name, const uint16_t value){
     logger->debug("Set virtual register {} -> {}", name, value);
-    (this->*regMap[name]).write(value);
+    if(regMap.find(name) != regMap.end()) {
+        (this->*regMap[name]).write(value);
+        return yarrSuccess;
+    }
+    logger->error("Trying to set named register, register not found: {}", name);
+    return yarrFailure;
 }
 
-uint16_t Rd53b::getRegisterValue(std::string name){
+yarrStatus Rd53b::getNamedRegister(std::string name, uint16_t &value){
     logger->debug("Get virtual register value {}", name);
-    return (this->*regMap[name]).read();
+    if(regMap.find(name) != regMap.end()) {
+        value = (this->*regMap[name]).read();
+        return yarrSuccess;
+    }
+    logger->error("Trying to get named register, register not found: {}", name);
+    return yarrFailure;
 }
 
-int Rd53b::checkCom() {
+yarrStatus Rd53b::checkCom() {
     if (this->ServiceBlockEn.read() == 0) {
         logger->error("Register messages not enabled, can't check communication ... proceeding blind! (Set \"ServiceBlockEn\" to 1 in the chip config)");
-        return 1;
+        return yarrSuccess;
     }
     
     logger->debug("Checking communication for {} by reading a register ...", this->name);
@@ -328,7 +426,7 @@ int Rd53b::checkCom() {
         unsigned size = data->getSize();       
         if (!(size == 2 || size == 4 || size == 8 || size == 12 || size == 6)) {
             logger->error("Received wrong number of words ({}) for {}", data->getSize(), this->name);
-            return 0;
+            return yarrFailure;
         }
         std::pair<uint32_t, uint32_t> answer = decodeSingleRegRead(data->get(0), data->get(1));
         logger->debug("Addr ({}) Value({})", answer.first, answer.second);
@@ -337,21 +435,21 @@ int Rd53b::checkCom() {
             logger->error("Received data was not as expected:");
             logger->error("    Received Addr: {} (expected {})", answer.first, regAddr);
             logger->error("    Received Value: {} (expected {})", answer.second, regValue);
-            return 0;
+            return yarrFailure;
         }
 
         logger->debug("... success");
-        return 1;
+        return yarrSuccess;
     } else {
         logger->error("Did not receive any data for {}", this->name);
-        return 0;
+        return yarrFailure;
     }
 }
 
-bool Rd53b::hasValidName() {
+yarrStatus Rd53b::hasValidName() {
     // return true if no check is requested
     if(auto cfg = dynamic_cast<Rd53bCfg*>(this); !cfg->checkChipIdInName()) {
-        return true;
+        return yarrSuccess;
     }
 
     uint32_t efuse = this->getEfuses();
@@ -362,10 +460,10 @@ bool Rd53b::hasValidName() {
 
     if(!id_in_name) {
         logger->error("Chip serial number decoded from e-fuse data (0x{:x}) does not appear in Chip \"name\" field (\"{}\") in loaded configuration  for chip with ChipId = {}", efuse, name, m_chipId);
-       	return false;
+       	return yarrFailure;
     }
     logger->info("Chip serial number obtained from e-fuse data: 0x{:x}", efuse );
-    return true;
+    return yarrSuccess;
 }
 
 
@@ -374,7 +472,7 @@ uint32_t Rd53b::getEfuses() {
     // enabled in order to query them
     if (this->ServiceBlockEn.read() == 0) {
         logger->error("Register messages not enabled, can't check chip id (set \"ServiceBlockEn\" to 1 in chip config");
-        return 0;
+        return yarrFailure;
     }
 
     // if user is requested to enforce that the chip id be in the FrontEnd "name"
@@ -396,7 +494,7 @@ uint32_t Rd53b::getEfuses() {
         logger->info("Chip serial number decoded with old format from e-fuse data: 0x{:x}", chip_sn_old);
         return chip_sn_old;
     }
-    return 0;
+    return yarrFailure;
 }
 
 std::pair<uint32_t, uint32_t> Rd53b::decodeSingleRegRead(uint32_t higher, uint32_t lower) {
@@ -445,17 +543,20 @@ itkpix_efuse_codec::EfuseData Rd53b::readEfuses() {
     //
     // read back the E-fuse registers
     //
-    uint32_t efuse_data_0 = 0;
-    uint32_t efuse_data_1 = 0;
+    uint16_t efuse_data_0 = 0;
+    uint16_t efuse_data_1 = 0;
     
-    efuse_data_0 = readSingleRegister(&Rd53b::EfuseReadData0);
-    efuse_data_1 = readSingleRegister(&Rd53b::EfuseReadData1);
-    
-    if (efuse_data_0 > 65535 || efuse_data_1 > 65535) {
-        logger->warn("Failed to readback E-fuse data for chip with {}", m_chipId);
+    if (readRegister(&Rd53b::EfuseReadData0, efuse_data_0) != yarrSuccess) {
+        logger->warn("Failed to readback E-fuse 0 data for chip with {}", m_chipId);
         return itkpix_efuse_codec::EfuseData{0};
     }
-    uint32_t efuse_data = ((efuse_data_1 & 0xffff) << 16) | (efuse_data_0 & 0xffff);
+
+    if (readRegister(&Rd53b::EfuseReadData1, efuse_data_1) != yarrSuccess) {
+        logger->warn("Failed to readback E-fuse 1 data for chip with {}", m_chipId);
+        return itkpix_efuse_codec::EfuseData{0};
+    }
+    
+    uint32_t efuse_data = (((uint32_t)efuse_data_1 & 0xffff) << 16) | ((uint32_t)efuse_data_0 & 0xffff);
 
     // decode the e-fuse data (performs single-bit error-correction)
     std::string decoded_efuse_binary_str = itkpix_efuse_codec::decode(efuse_data);
@@ -481,112 +582,29 @@ uint32_t Rd53b::readEfusesRaw() {
     //
     // read back the E-fuse registers
     //
-    uint32_t efuse_data_0 = 0;
-    uint32_t efuse_data_1 = 0;
+    uint16_t efuse_data_0 = 0;
+    uint16_t efuse_data_1 = 0;
     
-    efuse_data_0 = readSingleRegister(&Rd53b::EfuseReadData0);
-    efuse_data_1 = readSingleRegister(&Rd53b::EfuseReadData1);
-    
-    if (efuse_data_0 > 65535 || efuse_data_1 > 65535) {
-        logger->warn("Failed to readback E-fuse data for chip with {}", m_chipId);
+    if (readRegister(&Rd53b::EfuseReadData0, efuse_data_0) != yarrSuccess) {
+        logger->warn("Failed to readback E-fuse 0 data for chip with {}", m_chipId);
         return 0;
     }
-    return ((efuse_data_1 & 0xffff) << 16) | (efuse_data_0 & 0xffff);
+
+    if (readRegister(&Rd53b::EfuseReadData1, efuse_data_1) != yarrSuccess) {
+        logger->warn("Failed to readback E-fuse 1 data for chip with {}", m_chipId);
+        return 0;
+    }
+    return (((uint32_t)efuse_data_1 & 0xffff) << 16) | ((uint32_t)efuse_data_0 & 0xffff);
 }
 
-void Rd53b::readUpdateWriteNamedReg(std::string name) {
-    if(regMap.find(name) != regMap.end()) {
-        logger->debug("Local update named register {}", name);
-        this->readUpdateWriteReg(regMap[name]);
-    } else {
-        logger->error("Trying to local update named register, register not found: {}", name);
+uint8_t Rd53b::readChipId() {
+    uint16_t _ = 0;
+    uint8_t id = 15;
+    if (readRegister(&Rd53b::EfuseReadData0, _, id) != yarrSuccess) {
+        logger->warn("Failed to readback E-fuse 1 data for chip with {}", m_chipId);
+        return yarrFailure;
     }
-}
-
-void Rd53b::readUpdateWriteReg(Rd53bRegDefault Rd53bGlobalCfg::*ref) {
-    for (unsigned int i=0; i<5; i++){
-   		uint32_t reg = readSingleRegister(ref);
-   		if (reg < 65536) {
-     		m_cfg[(this->*ref).addr()] = reg;
-     		break;
-   		}
-    }
-}
-
-uint32_t Rd53b::readSingleRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref) {
-    
-    m_rxcore->flushBuffer();
-    // send a read register command to the chip so that it
-    // sends back the current value of the register
-    this->sendRdReg(m_chipId, (this->*ref).addr());
-    while(!core->isCmdEmpty()) {}
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-    // go through the incoming data stream and get the register read data
-    std::vector<RawDataPtr> dataVec = m_rxcore->readData();
-    RawDataPtr data;
-    if (dataVec.size() > 0) {
-        for(auto const &v : dataVec) {
-            // Find raw data for this address
-            if (rxChannel != v->getAdr())
-                continue;
-
-            if (v->get(0) != 0xffffdead) {
-                data = v;
-                if(!(data->getSize() >= 2)) {
-                    logger->warn("readSingleRegister failed, received wrong number of words ({}) for FE with chipId {}", data->getSize(), m_chipId);
-                    continue;
-                }
-
-                auto [id, received_address, register_value] = Rd53b::decodeSingleRegReadID(data->get(0), data->get(1));
-                if(id == (m_chipId&0x3)) {
-                    if(received_address != (this->*ref).addr()) {
-                        logger->warn("readSingleRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
-                        return 65536;
-                    }
-                    return register_value;
-                } else {
-                    logger->info("readSingleRegister 0x{:x} 0x{:x} -> ID {} - {}, addr 0x{:x} val 0x{:x}", data->get(0), data->get(1), id, m_chipId&0x3, received_address, register_value);
-                }
-            }
-        }
-    }
-    
-    logger->warn("readSingleRegister failed, did not receive register readback data from chip with chipId {}", m_chipId);
-    return 65536;
-}
-
-uint8_t Rd53b::getChipId() {
-   
-    m_rxcore->flushBuffer();
-    // send a read register command to the chip so that it
-    // sends back the current value of the register
-    this->sendRdReg(m_chipId, (this->EfuseReadData0).addr()); // from readSingleRegister which uses addresses 135 and 136 which is EfuseReadData1 and EfuseReadData0
-    while(!core->isCmdEmpty()) {}
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-    // go through the incoming data stream and get the register read data
-    std::vector<RawDataPtr> dataVec = m_rxcore->readData();
-    RawDataPtr data;
-    if (dataVec.size() > 0) {
-        for(auto const &v : dataVec) {
-            // Find raw data for this address
-            if (rxChannel != v->getAdr())
-                continue;
-
-            if (v->get(0) != 0xffffdead) {
-                data = v;
-                if(!(data->getSize() >= 2)) {
-                    logger->warn("readSingleRegister failed, received wrong number of words ({}) for FE with chipId {}", data->getSize(), m_chipId);
-                    continue;
-                }
-                auto [id, received_address, register_value] = Rd53b::decodeSingleRegReadID(data->get(0), data->get(1));
-                logger->info("readSingleRegister 0x{:x} 0x{:x} -> ID {} - {}, addr 0x{:x} val 0x{:x}", data->get(0), data->get(1), id, m_chipId&0x3, received_address, register_value);
-                return (uint8_t)id;
-            }
-        }
-    }
-    return 255;
+    return id;
 }
 
 void Rd53b::confAdc(uint16_t MONMUX, bool doCur) {
