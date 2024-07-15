@@ -28,7 +28,7 @@ bool emu_registered_Itkpixv2 = StdDict::registerHwController("emu_Itkpixv2", mak
 //define the EmuController::loadConfig FE-specific method
 template<>
 void EmuController<Itkpixv2, Itkpixv2Emu>::loadConfig(const json &j) {
-
+  logger->info("in loadConfig");
   //Leaving this in for the time being - not sure if Itkpixv2 has this; from here
   if (j.contains("rxWaitTime")) {
     m_waitTime = std::chrono::microseconds(j["rxWaitTime"]);
@@ -36,11 +36,11 @@ void EmuController<Itkpixv2, Itkpixv2Emu>::loadConfig(const json &j) {
 
   int srand_seed = time(nullptr);
   std::string infotoken = "";
-  if (j["seed"] == "fixed") {
+  if (j.contains("seed") && j["seed"] == "fixed") {
     srand_seed = 1;
     infotoken = " Random Seed Fixed";
   }
-
+  logger->info("in loadConfig 2");
   //till here
 
   // Tx EmuCom - create the actual pipeline for commands (RingBuffer)
