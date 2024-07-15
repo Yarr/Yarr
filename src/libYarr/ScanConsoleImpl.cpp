@@ -47,10 +47,9 @@ std::string ScanConsoleImpl::parseConfig(const std::vector<std::string> &args) {
             result["status"] = "ok";
         }
     }
-    std::string str;
     result["config"] = scanConsoleConfig;
     result["runCounter"] = ScanHelper::newRunCounter();
-    result.dump(str);
+    std::string str = result.dump();
     return str;
 }
 
@@ -142,8 +141,7 @@ int ScanConsoleImpl::loadConfig(const char *config){
     loggerConfig["outputDir"]="";
     spdlog::info("Configuring logger ...");
     logging::setupLoggers(loggerConfig);
-    json j;
-    json::parse(config,j);
+    json j = json::parse(config);
     json scanConsoleConfig = j["config"];
     runCounter=j["runCounter"];
     ctrlCfg=scanConsoleConfig["ctrlConfig"];
@@ -304,12 +302,12 @@ int ScanConsoleImpl::configure() {
         hwCtrl->setRxEnable(feCfg->getRxChannel());
         hwCtrl->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
         // Configure
-        if (fe->checkCom() != 1) {
+        if (fe->checkCom() != yarrSuccess) {
             logger->critical("Can't establish communication, aborting!");
             return -1;
         }
         // check that the current FE name is valid
-        if (!fe->hasValidName()) {
+        if (fe->hasValidName() != yarrSuccess) {
             logger->critical("Invalid chip name, aborting!");
             return -1;
         }
@@ -489,10 +487,9 @@ void ScanConsoleImpl::cleanup() {
 }
 
 std::string ScanConsoleImpl::getResults() {
-    std::string str;
     json result;
     getResults(result);
-    result.dump(str);
+    std::string str = result.dump();
     return str;
 }
 
@@ -512,7 +509,8 @@ void ScanConsoleImpl::getResults(json &result) {
                 json h;
                 auto histo = output.popData();
                 histo->toJson(h);
-                histos[h["Name"]]=h;
+                std::string name = h["Name"];
+                histos[name]=h;
             }
             frontends[name]["histos"] = histos;
         }
@@ -614,7 +612,7 @@ void ScanConsoleImpl::setupLogger(const char *config) {
     loggerConfig["outputDir"] = "";
     if (config) {
         try {
-            json::parse(config, loggerConfig);
+            loggerConfig = json::parse(config);
         } catch (...) {}
     }
     logging::setupLoggers(loggerConfig);

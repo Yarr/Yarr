@@ -149,20 +149,33 @@ void Rd53a::configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels) 
     while(!core->isCmdEmpty()){;}
 }
 
-void Rd53a::writeNamedRegister(std::string name, uint16_t value) {
+yarrStatus Rd53a::writeNamedRegister(std::string name, const uint16_t value) {
     logger->info("Write named register: {} -> {}", name, value);
-    if (regMap.find(name) != regMap.end())
+    if (regMap.find(name) != regMap.end()) {
         writeRegister(regMap[name], value);
+        return yarrSuccess;
+    }
+    return yarrFailure;
 }
 
-void Rd53a::setRegisterValue(std::string name, uint16_t value){
+yarrStatus Rd53a::setNamedRegister(std::string name, const uint16_t value){
     logger->debug("Set virtual register {} -> {}", name, value);
-    (this->*regMap[name]).write(value);
+    if (regMap.find(name) != regMap.end()) {
+        (this->*regMap[name]).write(value);
+        return yarrSuccess;
+    }
+    logger->error("Trying to set register, but could not find register {}", name);
+    return yarrFailure;
 }
 
-uint16_t Rd53a::getRegisterValue(std::string name){
+yarrStatus Rd53a::getNamedRegister(std::string name, uint16_t &value){
     logger->debug("Get virtual register value {}", name);
-    return (this->*regMap[name]).read();
+    if (regMap.find(name) != regMap.end()) {
+        value = (this->*regMap[name]).read();
+        return yarrSuccess;
+    }
+    logger->error("Trying to get register, but could not find register {}", name);
+    return yarrFailure;
 }
 
 // TODO remove magic numbers
@@ -235,7 +248,7 @@ void Rd53a::disableCalCol(unsigned col) {
     }
 }
 
-int Rd53a::checkCom() {
+yarrStatus Rd53a::checkCom() {
     logger->debug("Checking communication for {} by reading a register ...", this->name);
     uint32_t regAddr = 21;
     uint32_t regValue = m_cfg[regAddr];
@@ -254,7 +267,7 @@ int Rd53a::checkCom() {
     if (data != NULL) {
         if (!(data->getSize() == 2 || data->getSize() == 4 || data->getSize() == 8 || data->getSize() == 12 || data->getSize() == 6)) {
             logger->error("Received wrong number of words ({}) for {}", data->getSize(), this->name);
-            return 0;
+            return yarrFailure;
         }
         std::pair<uint32_t, uint32_t> answer = decodeSingleRegRead(data->get(0), data->get(1));
         logger->debug("Addr ({}) Value({})", answer.first, answer.second);
@@ -263,14 +276,14 @@ int Rd53a::checkCom() {
             logger->error("Received data was not as expected:");
             logger->error("    Received Addr: {} (expected {})", answer.first, regAddr);
             logger->error("    Received Value: {} (expected {})", answer.second, regValue);
-            return 0;
+            return yarrFailure;
         }
 
         logger->debug("... success");
-        return 1;
+        return yarrSuccess;
     } else {
         logger->error("Did not receive any data for {}", this->name);
-        return 0;
+        return yarrFailure;
     }
 }
 

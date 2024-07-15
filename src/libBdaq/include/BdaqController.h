@@ -53,22 +53,22 @@ class BdaqController : public HwController, public BdaqTxCore, public BdaqRxCore
                 softwareAZ = true;
             // RX Module Address
             if (j.contains("rxAddr"))
-                c.rxAddr = std::stoi(j["rxAddr"], nullptr, 16);
+                c.rxAddr = std::stoi((std::string)j["rxAddr"], nullptr, 16);
             else
                 c.rxAddr = 0x6000;
             // 2c Module Address
             if (j.contains("i2cAddr"))
-                c.i2cAddr = std::stoi(j["i2cAddr"], nullptr, 16);
+                c.i2cAddr = std::stoi((std::string)j["i2cAddr"], nullptr, 16);
             else
                 c.i2cAddr = 0x1000;
             // cmd_rd53 Module Address
             if (j.contains("cmdAddr"))
-                c.cmdAddr = std::stoi(j["cmdAddr"], nullptr, 16);
+                c.cmdAddr = std::stoi((std::string)j["cmdAddr"], nullptr, 16);
             else
                 c.cmdAddr = 0x9000;
             // GPIO Module Address
             if (j.contains("gpioAddr"))
-                c.controlAddr = std::stoi(j["controlAddr"], nullptr, 16);
+                c.controlAddr = std::stoi((std::string)j["controlAddr"], nullptr, 16);
             else
                 c.controlAddr = 0x2100;
             // Chip Type

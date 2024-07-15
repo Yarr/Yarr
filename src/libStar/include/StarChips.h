@@ -38,7 +38,7 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
   void init(HwController *arg_core, const FrontEndConnectivity& fe_cfg) override;
 
   //Will write value for setting name for the HCC if name starts with "HCC_" otherwise will write the setting for all ABCs if name starts with "ABCs_"
-  void writeNamedRegister(std::string name, uint16_t value) override;
+  yarrStatus writeNamedRegister(std::string name, const uint16_t value) override;
 
   // Pixel specific?
   void setInjCharge(double, bool, bool) override {}

@@ -116,7 +116,6 @@ As this card is not produced anymore by PLDA and you require more information, r
 ![Nereid](images/nereid.jpg)
 
 * A jumper has to be placed at the 1V8 pins on the J3 header.
-* Note: currently it looks like the board "loses configuration" whenever it loses power, e.g. when switching off the PC. The reason is being investigated. When this happens one can solve the issue by re-flashing the firmware and rebooting the PC.
 
 More info can be found [here](https://numato.com/product/nereid-kintex-7-pci-express-fpga-development-board/).
 

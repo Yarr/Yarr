@@ -419,9 +419,14 @@ void Rd53bGlobalCfg::writeConfig(json &j) {
 }
 
 void Rd53bGlobalCfg::loadConfig(json const &j) {
+    if (!j.contains("RD53B") || !j["RD53B"].contains("GlobalConfig")) {
+        logger->error("Could not find global register config, using default!");
+        return;
+    }
+    auto &jconfig = j["RD53B"]["GlobalConfig"];
     for (auto it : regMap) {
-        if (j.contains({"RD53B","GlobalConfig",it.first})) {
-            (this->*it.second).write(j["RD53B"]["GlobalConfig"][it.first]);
+        if (jconfig.contains(it.first)) {
+            (this->*it.second).write(jconfig[it.first]);
         } else {
             logger->error("Could not find register \"{}\" using default!", it.first);
         }

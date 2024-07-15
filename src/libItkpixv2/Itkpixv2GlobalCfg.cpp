@@ -453,9 +453,14 @@ void Itkpixv2GlobalCfg::writeConfig(json &j) {
 }
 
 void Itkpixv2GlobalCfg::loadConfig(json const &j) {
+    if (!j.contains("ITKPIXV2") || !j["ITKPIXV2"].contains("GlobalConfig")) {
+        logger->error("Could not find global register config!");
+        return;
+    }
+    auto &jconfig = j["ITKPIXV2"]["GlobalConfig"];
     for (auto it : regMap) {
-        if (j.contains({"ITKPIXV2","GlobalConfig",it.first})) {
-            (this->*it.second).write(j["ITKPIXV2"]["GlobalConfig"][it.first]);
+        if (jconfig.contains(it.first)) {
+            (this->*it.second).write(jconfig[it.first]);
         } else {
             logger->error("Could not find register \"{}\" using default!", it.first);
         }

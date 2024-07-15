@@ -254,6 +254,11 @@ class OccGlobalThresholdTune : public AnalysisAlgorithm {
         std::map<unsigned, unsigned> innerCnt;
         unsigned injections;
         std::unique_ptr<GlobalFeedbackSender> fb;
+
+        bool m_done = false;
+        double m_sign = -1;
+        double m_entries = 0;
+        double m_oldEntries = -1;
 };
 
 class GlobalPreampTune : public AnalysisAlgorithm {

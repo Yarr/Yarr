@@ -202,7 +202,9 @@ int main(int argc, char* argv[]) {
                 // Call Rd53b::runRingOsc(uint16_t duration, bool isBankB)
                 feRd53b.runRingOsc(RingOscDur, false);
 
-                double value = feRd53b.readSingleRegister(&Rd53b::RingOscAOut) & 0xFFF;
+                uint16_t count = 0;
+                feRd53b.readRegister(&Rd53b::RingOscAOut, count);
+                double value = count & 0xFFF;
                 RingValuesSum[tmpCount] += value;
             }
         }
@@ -238,7 +240,9 @@ int main(int argc, char* argv[]) {
                 // Call Rd53b::runRingOsc(uint16_t duration, bool isBankB)
                 feRd53b.runRingOsc(RingOscDur, true);
 
-                double value = feRd53b.readSingleRegister(&Rd53b::RingOscBOut) & 0xFFF;
+                uint16_t count = 0;
+                feRd53b.readRegister(&Rd53b::RingOscBOut, count);
+                double value = count & 0xFFF;
                 RingValuesSum[tmpCount+8] += value;
             }
         }

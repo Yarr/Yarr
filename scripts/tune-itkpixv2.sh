@@ -11,7 +11,9 @@
 
 function print_usage {
     echo "---------------------------------------------------"
-    echo " Tune Rd53b"
+    echo " Tune ITkPixV2"
+    echo ""
+    echo "This is not a finalized tuning proceedure"
     echo ""
     echo " Usage:"
     echo "  $ ${1}  -t <threshold> -r <controller> -c <connectivity>"
@@ -102,7 +104,7 @@ function main {
         return 1
     fi
 
-    scan_dir="./configs/scans/rd53b"
+    scan_dir="./configs/scans/itkpixv2"
     if [ ! -d ${scan_dir} ]; then
         echo "ERROR Scan configuration directory (=${scan_dir}) not found in current working directory"
         return 1
@@ -112,9 +114,10 @@ function main {
 
     base_cmd="${scan_console} -r ${controller} -c ${connectivity} -o ${output_dir}"
     
-
     # threshold tuning
+    ${base_cmd} -s ${scan_dir}/std_tune_globalpreamp.json -m 1 -t 6000 7
     ${base_cmd} -s ${scan_dir}/std_tune_globalthreshold.json -t ${threshold}
+    ${base_cmd} -s ${scan_dir}/std_tune_globalpreamp.json -m 1 -t 6000 7
     ${base_cmd} -s ${scan_dir}/std_tune_pixelthreshold.json -t ${threshold}
 
     # after-tuning threshold distribution

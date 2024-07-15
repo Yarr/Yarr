@@ -12,7 +12,8 @@ add_library(Util SHARED
         LoggingConfig.cpp
         SerialCom.cpp
         catch_amalgamated.cpp
-        )
+        ItkpixEncoder.cpp
+        HitMapGenerator.cpp)
 
 post_build_debug_library(Util)
 target_include_directories(Util PRIVATE ../libYarr/include)
