@@ -301,7 +301,7 @@ int main(int argc, char **argv) {
 
 	    uint8_t chipId = fe.readChipId();
 	    logger->debug("Get 2-LSB chip ID: {}", chipId);
-	    if(chipId == yarrFailure) continue;
+	    if(chipId == 255) continue;
 
 	    // try establish com assuming quad chip ID
 	    chipId += 12; // assuming quad to be the majority

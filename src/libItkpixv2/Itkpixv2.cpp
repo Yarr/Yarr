@@ -628,7 +628,7 @@ uint8_t Itkpixv2::readChipId() {
     uint8_t id = 15;
     if (readRegister(&Itkpixv2::EfuseReadData0, _, id) != yarrSuccess) {
         logger->warn("Failed to readback E-fuse 0 data for chip with {}", m_chipId);
-        return yarrFailure;
+        return 255;
     }
     return id;
 }

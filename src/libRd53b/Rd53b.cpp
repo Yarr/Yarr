@@ -602,7 +602,7 @@ uint8_t Rd53b::readChipId() {
     uint8_t id = 15;
     if (readRegister(&Rd53b::EfuseReadData0, _, id) != yarrSuccess) {
         logger->warn("Failed to readback E-fuse 1 data for chip with {}", m_chipId);
-        return yarrFailure;
+        return 255;
     }
     return id;
 }
