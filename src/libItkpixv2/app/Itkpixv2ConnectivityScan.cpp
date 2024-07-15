@@ -299,9 +299,9 @@ int main(int argc, char **argv) {
 	    fe.configureGlobal();
 	    std::this_thread::sleep_for(std::chrono::microseconds(sleep));
 
-	    uint8_t chipId = fe.getChipId();
+	    uint8_t chipId = fe.readChipId();
 	    logger->debug("Get 2-LSB chip ID: {}", chipId);
-	    if(chipId == 255) continue;
+	    if(chipId == yarrFailure) continue;
 
 	    // try establish com assuming quad chip ID
 	    chipId += 12; // assuming quad to be the majority
