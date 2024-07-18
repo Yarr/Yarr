@@ -30,11 +30,8 @@ namespace Itkpixv2EmuUtils {
 
     //give the passed command/payload a human-readable interface
     struct Cmd {
-        uint8_t header  = 0;
-        union {
-            uint8_t tag;
-            uint8_t id ;
-        };
+        uint8_t header   = 0;
+        uint8_t id       = 0;
         //The address here is 32 bit although only 9 will be used.
         //This way we don't need to overload the function filling these.
         uint32_t address = 0;

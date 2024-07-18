@@ -17,6 +17,10 @@ Itkpixv2EmuCommandInterpreter::Itkpixv2EmuCommandInterpreter(){
     
 }
 
+std::shared_ptr<std::queue<Itkpixv2EmuUtils::Cmd>> Itkpixv2EmuCommandInterpreter::getBuffer(){
+    return std::make_shared<std::queue<Itkpixv2EmuUtils::Cmd>>(m_commandsOut);
+}
+
 void Itkpixv2EmuCommandInterpreter::bufferCommandUnits(EmuCom* tx){
     //Read the 32-bit word from tx
     const uint32_t commandWord = tx->read32();
@@ -33,7 +37,7 @@ void Itkpixv2EmuCommandInterpreter::addDecodedUnits(uint8_t unitCount, uint32_t 
     }
 }
 
-Itkpixv2EmuUtils::Cmd Itkpixv2EmuCommandInterpreter::readCommand(EmuCom* tx){
+void Itkpixv2EmuCommandInterpreter::readCommand(EmuCom* tx){
     //Third attempt on a decent implementation. Previous attempts
     //avoiding the intermediate buffer were extremely complicated.
 
@@ -49,7 +53,7 @@ Itkpixv2EmuUtils::Cmd Itkpixv2EmuCommandInterpreter::readCommand(EmuCom* tx){
     Itkpixv2EmuUtils::Cmd cmd;
 
     //If the buffer is empty, return an empty cmd
-    if (m_commandUnitBuffer.empty()) return cmd;
+    if (m_commandUnitBuffer.empty()) return;
 
     cmd.header = m_commandUnitBuffer.front();
     m_commandUnitBuffer.pop();
@@ -57,24 +61,32 @@ Itkpixv2EmuUtils::Cmd Itkpixv2EmuCommandInterpreter::readCommand(EmuCom* tx){
     //Now decide what command are we dealing with
     switch (cmd.header){
         case Itkpixv2EmuUtils::Commands::Sync          :{
-            cmd.tag = m_commandUnitBuffer.front();
+            cmd.id = m_commandUnitBuffer.front();
             m_commandUnitBuffer.pop();
-            return cmd;
+            //return cmd;
+            m_commandsOut.push(cmd);
+            break;
         }
         case Itkpixv2EmuUtils::Commands::PLLlock       :{
-            cmd.tag = m_commandUnitBuffer.front();
+            cmd.id = m_commandUnitBuffer.front();
             m_commandUnitBuffer.pop();
-            return cmd;
+            //return cmd;
+            m_commandsOut.push(cmd);
+            break;
         }
         case Itkpixv2EmuUtils::Commands::Clear         :{
             cmd.id  = Itkpixv2EmuUtils::lut8to5[m_commandUnitBuffer.front()];
             m_commandUnitBuffer.pop();
-            return cmd;
+            //return cmd;
+            m_commandsOut.push(cmd);
+            break;
         }
         case Itkpixv2EmuUtils::Commands::GlobalPulse   :{
             cmd.id  = Itkpixv2EmuUtils::lut8to5[m_commandUnitBuffer.front()];
             m_commandUnitBuffer.pop();
-            return cmd;
+            //return cmd;
+            m_commandsOut.push(cmd);
+            break;
         }
         case Itkpixv2EmuUtils::Commands::Cal           :{
             cmd.id  = Itkpixv2EmuUtils::lut8to5[m_commandUnitBuffer.front()];
@@ -83,18 +95,53 @@ Itkpixv2EmuUtils::Cmd Itkpixv2EmuCommandInterpreter::readCommand(EmuCom* tx){
             //Besides the ID, we need 4 blocks of data (8-5 encoded)
             cmd.data = 0;
             addDecodedUnits(4, cmd.data);
-            return cmd;
+            //return cmd;
+            m_commandsOut.push(cmd);
+            break;
         }
         case Itkpixv2EmuUtils::Commands::WrReg                   :{
             cmd.id  = Itkpixv2EmuUtils::lut8to5[m_commandUnitBuffer.front()];
             m_commandUnitBuffer.pop();
 
-            //Here we need 2 blocks of address and 4 blocks of data
-            addDecodedUnits(2, cmd.address);
-            addDecodedUnits(4, cmd.data);
-            //The data are padded with four 0s, need to shift by those
-            cmd.data >>= 4;
-            return cmd;
+            //the first bit of address decides between single and multiple write
+            switch (m_commandUnitBuffer.front() >> 7){
+                //if it's zero, produce single WrReg command
+                case 0:{
+                    //Here we need 2 blocks of address and 4 blocks of data
+                    addDecodedUnits(2, cmd.address);
+                    addDecodedUnits(4, cmd.data);
+                    //The data are padded with four 0s, need to shift by those
+                    cmd.data >>= 4;
+                    //return cmd;
+                    rlog->info("WrReg command to address {} with data {}", cmd.address, cmd.data);
+                    m_commandsOut.push(cmd);
+                    break;
+                }
+                //if one, we need to produce multiple single-WrReg commands to fake the
+                //multiple write
+                case 1:{
+                    //pop the two blocks of address, it's 0 anyway
+                    m_commandUnitBuffer.pop();
+                    m_commandUnitBuffer.pop();
+                    cmd.address = 0;
+                    //keep adding the payloads until we see another command header
+                    while (true){
+                        if (m_commandUnitBuffer.front() == Itkpixv2EmuUtils::Commands::Sync       ) break;
+                        if (m_commandUnitBuffer.front() == Itkpixv2EmuUtils::Commands::PLLlock    ) break;
+                        if (m_commandUnitBuffer.front() == Itkpixv2EmuUtils::Commands::Clear      ) break;
+                        if (m_commandUnitBuffer.front() == Itkpixv2EmuUtils::Commands::GlobalPulse) break;
+                        if (m_commandUnitBuffer.front() == Itkpixv2EmuUtils::Commands::Cal        ) break;
+                        if (m_commandUnitBuffer.front() == Itkpixv2EmuUtils::Commands::WrReg      ) break;
+                        if (m_commandUnitBuffer.front() == Itkpixv2EmuUtils::Commands::RdReg      ) break;
+                        addDecodedUnits(2, cmd.data);
+                        m_commandsOut.push(Itkpixv2EmuUtils::Cmd(cmd));
+                        cmd.data = 0x00000000;
+                    }
+
+                    break;
+                }
+            }
+            break;
         }
         case Itkpixv2EmuUtils::Commands::RdReg                   :{
             cmd.id  = Itkpixv2EmuUtils::lut8to5[m_commandUnitBuffer.front()];
@@ -102,7 +149,9 @@ Itkpixv2EmuUtils::Cmd Itkpixv2EmuCommandInterpreter::readCommand(EmuCom* tx){
 
             //Here we need 2 blocks of address
             addDecodedUnits(2, cmd.address);
-            return cmd;
+            //return cmd;
+            m_commandsOut.push(cmd);
+            break;
         }
 
         default : {
@@ -111,7 +160,9 @@ Itkpixv2EmuUtils::Cmd Itkpixv2EmuCommandInterpreter::readCommand(EmuCom* tx){
 
             cmd.id = m_commandUnitBuffer.front();
             m_commandUnitBuffer.pop();
-            return cmd;
+            //return cmd;
+            m_commandsOut.push(cmd);
+            break;
         }
         
 

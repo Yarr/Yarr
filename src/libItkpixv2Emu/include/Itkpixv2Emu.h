@@ -23,7 +23,7 @@
 class Itkpixv2Emu {
     public:
         
-        Itkpixv2Emu(EmuCom* tx, EmuCom* rx, int seed = 0);
+        Itkpixv2Emu(EmuCom* tx, EmuCom* rx, int id = 0xF, int seed = 0);
         ~Itkpixv2Emu();
 
         void executeLoop();
@@ -57,6 +57,7 @@ class Itkpixv2Emu {
         //Utility class for preparation of the commands that arrive
         //through tx
         std::unique_ptr<Itkpixv2EmuCommandInterpreter> m_cmdInterpreter;
+        std::shared_ptr<std::queue<Itkpixv2EmuUtils::Cmd>> m_commandBuffer;
 
         //Utility class that takes care of executing the commands fetched
         //by command interpreter

@@ -14,7 +14,7 @@ namespace {
 
 
 //The constructor needs to attach the virtual tx and rx cables
-Itkpixv2Emu::Itkpixv2Emu(EmuCom* tx, EmuCom* rx, int seed): m_tx(tx), m_rx(rx) {
+Itkpixv2Emu::Itkpixv2Emu(EmuCom* tx, EmuCom* rx, int id, int seed): m_tx(tx), m_rx(rx) {
 
     //Switch on    
     run  = true;
@@ -25,9 +25,11 @@ Itkpixv2Emu::Itkpixv2Emu(EmuCom* tx, EmuCom* rx, int seed): m_tx(tx), m_rx(rx) {
     //Initialize the FE registers. This is needed to be accessible both here for setting up the pixels
     //and in the command exe
     m_itkpixv2Cfg = std::make_shared<Itkpixv2Cfg>();
+    m_itkpixv2Cfg->setChipId(id);
 
     //Initialize the command interpreter and exe
     m_cmdInterpreter = std::make_unique<Itkpixv2EmuCommandInterpreter>();
+    m_commandBuffer = m_cmdInterpreter->getBuffer();
     m_cmdExe         = std::make_unique<Itkpixv2EmuCommandExe>(m_rx, m_itkpixv2Cfg);
 
 }
@@ -46,50 +48,56 @@ void Itkpixv2Emu::executeLoop(){
     }
 
     //Once the commands arrive, the interpreter should kick in
-    Itkpixv2EmuUtils::Cmd cmd = m_cmdInterpreter->readCommand(m_tx);
+    m_cmdInterpreter->readCommand(m_tx);
     
     //debug
     
-    switch (cmd.header){
-        case Itkpixv2EmuUtils::Commands::Sync          :{
-            rlog->info("Sync command with tag {}", cmd.tag);
-            break;
-        }
-        case Itkpixv2EmuUtils::Commands::PLLlock       :{
-            rlog->info("PLLlock command with tag {}", cmd.tag);
-            break;
-        }
-        case Itkpixv2EmuUtils::Commands::Clear         :{
-            rlog->info("Clear command with id {}", cmd.id);
-            break;
-        }
-        case Itkpixv2EmuUtils::Commands::GlobalPulse   :{
-            rlog->info("GlobalPulse command with id {}", cmd.id);
-            break;
-        }
-        case Itkpixv2EmuUtils::Commands::Cal           :{
-            rlog->info("Cal command with id {} with data {}", cmd.id, cmd.data);
-            break;
-        }
-        case Itkpixv2EmuUtils::Commands::WrReg                   :{
-            rlog->info("WrReg command to address {} with data {}", cmd.address, cmd.data);
-            std::cout << &(*m_cmdExe.get()) << "\n";
-            m_cmdExe->exe(cmd);
-            break;
-        }
-        case Itkpixv2EmuUtils::Commands::RdReg                   :{
-            rlog->info("RdReg command to address {} with data {}", cmd.address, cmd.data);
-            break;
-        }
-        default : {
-            if (Itkpixv2EmuUtils::triggerCommands.find(cmd.header) != Itkpixv2EmuUtils::triggerCommands.end()) rlog->info("Trigger command {} with counter {}", cmd.header, cmd.id);
-            else rlog->info("Unknown command with header {} and tag {}", cmd.header, cmd.tag);
-            break;
-        }
+    while (m_commandBuffer->size()){
         
+        Itkpixv2EmuUtils::Cmd cmd = m_commandBuffer->front();
+        rlog->info("Buffer size = {}", m_commandBuffer->size());
 
+        switch (cmd.header){
+            case Itkpixv2EmuUtils::Commands::Sync          :{
+                //rlog->info("Sync command with tag {}", cmd.tag);
+                break;
+            }
+            case Itkpixv2EmuUtils::Commands::PLLlock       :{
+                //rlog->info("PLLlock command with tag {}", cmd.tag);
+                break;
+            }
+            case Itkpixv2EmuUtils::Commands::Clear         :{
+                rlog->info("Clear command with id {}", cmd.id);
+                break;
+            }
+            case Itkpixv2EmuUtils::Commands::GlobalPulse   :{
+                rlog->info("GlobalPulse command with id {}", cmd.id);
+                break;
+            }
+            case Itkpixv2EmuUtils::Commands::Cal           :{
+                rlog->info("Cal command with id {} with data {}", cmd.id, cmd.data);
+                break;
+            }
+            case Itkpixv2EmuUtils::Commands::WrReg                   :{
+                rlog->info("WrReg command to address {} with data {}", cmd.address, cmd.data);
+                m_cmdExe->exe(cmd);
+                break;
+            }
+            case Itkpixv2EmuUtils::Commands::RdReg                   :{
+                rlog->info("RdReg command to address {} with data {}", cmd.address, cmd.data);
+                m_cmdExe->exe(cmd);
+                break;
+            }
+            default : {
+                if (Itkpixv2EmuUtils::triggerCommands.find(cmd.header) != Itkpixv2EmuUtils::triggerCommands.end()) rlog->info("Trigger command {} with counter {}", cmd.header, cmd.id);
+                //else rlog->info("Unknown command with header {} and tag {}", cmd.header, cmd.tag);
+                break;
+            }
 
+        }
+        m_commandBuffer->pop();
     }
+
 
     executeLoop();
 }

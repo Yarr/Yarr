@@ -67,6 +67,6 @@ void EmuController<Itkpixv2, Itkpixv2Emu>::loadConfig(const json &j) {
   //generate in each instance with fixed seed, avoiding this huge file. That way we can
   //also have this scalable to multiple emulated FEs.
   //const json &emuCfg = j["__feCfg_data__"];
-  emus.emplace_back(new Itkpixv2Emu(tx, rx, 5));
+  emus.emplace_back(new Itkpixv2Emu(tx, rx, 0xF, 5));
   emuThreads.push_back(std::thread(&Itkpixv2Emu::executeLoop, emus.back().get()));
 }
