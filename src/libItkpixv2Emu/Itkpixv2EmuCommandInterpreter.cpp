@@ -18,7 +18,7 @@ Itkpixv2EmuCommandInterpreter::Itkpixv2EmuCommandInterpreter(){
 }
 
 std::shared_ptr<std::queue<Itkpixv2EmuUtils::Cmd>> Itkpixv2EmuCommandInterpreter::getBuffer(){
-    return std::make_shared<std::queue<Itkpixv2EmuUtils::Cmd>>(m_commandsOut);
+    return std::shared_ptr<std::queue<Itkpixv2EmuUtils::Cmd>>(&m_commandsOut);
 }
 
 void Itkpixv2EmuCommandInterpreter::bufferCommandUnits(EmuCom* tx){
@@ -113,7 +113,6 @@ void Itkpixv2EmuCommandInterpreter::readCommand(EmuCom* tx){
                     //The data are padded with four 0s, need to shift by those
                     cmd.data >>= 4;
                     //return cmd;
-                    rlog->info("WrReg command to address {} with data {}", cmd.address, cmd.data);
                     m_commandsOut.push(cmd);
                     break;
                 }
@@ -121,11 +120,18 @@ void Itkpixv2EmuCommandInterpreter::readCommand(EmuCom* tx){
                 //multiple write
                 case 1:{
                     //pop the two blocks of address, it's 0 anyway
+                    rlog->info("WrReg(1) command!!!");
                     m_commandUnitBuffer.pop();
                     m_commandUnitBuffer.pop();
-                    cmd.address = 0;
+                    //keep track of the multiple-write mode in the 10-th bit
+                    cmd.address = 0x200;
                     //keep adding the payloads until we see another command header
                     while (true){
+                        rlog->info("Incoming command buffer unit size {}", m_commandUnitBuffer.size());
+                        //ensure that there are enough pre-bufferred command units.
+                        //For we'll always need at least 2 to be present. For the time being,
+                        //assume that there is something in the tx.
+                        if (m_commandUnitBuffer.size() < 2) bufferCommandUnits(tx);
                         if (m_commandUnitBuffer.front() == Itkpixv2EmuUtils::Commands::Sync       ) break;
                         if (m_commandUnitBuffer.front() == Itkpixv2EmuUtils::Commands::PLLlock    ) break;
                         if (m_commandUnitBuffer.front() == Itkpixv2EmuUtils::Commands::Clear      ) break;

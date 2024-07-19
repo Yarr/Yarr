@@ -55,7 +55,6 @@ void Itkpixv2Emu::executeLoop(){
     while (m_commandBuffer->size()){
         
         Itkpixv2EmuUtils::Cmd cmd = m_commandBuffer->front();
-        rlog->info("Buffer size = {}", m_commandBuffer->size());
 
         switch (cmd.header){
             case Itkpixv2EmuUtils::Commands::Sync          :{
