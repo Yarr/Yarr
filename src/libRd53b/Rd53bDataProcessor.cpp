@@ -61,6 +61,13 @@ Rd53bDataProcessor::Rd53bDataProcessor()
 
     // Status
     _status = INIT;
+
+    // Debug buffer
+#if USE_DEBUG_BUFFER==1
+    _debugBuffer.resize(DEBUG_BUFFERSIZE);
+    _debugIdx = 0;
+#endif
+
 }
 
 Rd53bDataProcessor::~Rd53bDataProcessor()= default;
@@ -497,6 +504,30 @@ bool Rd53bDataProcessor::getNextDataBlock()
             return true;
         }
         _wordIdx += 2; // Increase block index
+
+
+#if USE_DEBUG_BUFFER==1
+        // Segfault will happen at the next line, print circular buffer results
+        if (_curInV->data.size() <= _rawDataIdx) {
+            logger->error("[{}] DataProcessor is entering segfault case. Dumping last {} data blocks, in hex:", m_feCfg->getName(), DEBUG_BUFFERSIZE);
+            logger->error(
+                "[{}] wordIdx={}, bitIdx={}, rawDataIdx={}, wordCount={}, tag={}, ccol={}, qrow={}, islast_isneighbor={}, hitmap={}",
+                m_feCfg->getName(), _wordIdx, _bitIdx, _rawDataIdx, _wordCount, _tag, _ccol, _qrow[_ccol], _islast_isneighbor, _hitmap
+            );
+            logger->error("[{}]", m_feCfg->getName());
+
+            for (int i = _debugIdx; i < _debugIdx + _debugBuffer.size(); i++) {
+                if(i%2 == 0) {
+                    logger->error("[{}] NS={}: {}", m_feCfg->getName(), ((debugBuffer[_debugIdx % DEBUG_BUFFERSIZE] >> 31) & 0x1), debugBuffer[_debugIdx % DEBUG_BUFFERSIZE]);
+                }
+                else {
+                    logger->error("[{}]       {}", m_feCfg->getName(), ((debugBuffer[_debugIdx % DEBUG_BUFFERSIZE] >> 31) & 0x1), debugBuffer[_debugIdx % DEBUG_BUFFERSIZE]);
+                }
+            }
+            logger->error("[{}]", m_feCfg->getName());
+        }
+#endif
+        
         if (_wordIdx >= _curInV->data[_rawDataIdx]->getSize())
         {
             _rawDataIdx++;
@@ -586,6 +617,13 @@ bool Rd53bDataProcessor::getNextDataBlock()
 
     // Upate the data pointer. Note the meaning of block index is the first block that is *unprocessed*
     _data = &_curInV->data[_rawDataIdx]->get(_wordIdx);
+
+#if USE_DEBUG_BUFFER==1
+    _debugBuffer[_debugIdx] = _data[0];
+    _debugIdx = (_debugIdx + 1) % DEBUG_BUFFERSIZE;
+    _debugBuffer[_debugIdx] = _data[1];
+    _debugIdx = (_debugIdx + 1) % DEBUG_BUFFERSIZE;
+#endif
 
     // Return success code
     if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)

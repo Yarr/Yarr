@@ -15,6 +15,8 @@
 #define BINARYTREE_DEPTH 4
 #define BLOCKSIZE 64
 #define HALFBLOCKSIZE 32
+#define USE_DEBUG_BUFFER 1
+#define DEBUG_BUFFERSIZE 12
 
 class Rd53bDataProcessor : public FeDataProcessor
 {
@@ -67,6 +69,9 @@ private:
     unsigned _chipIdShift;
     unsigned _chipId;
     unsigned long _streamMask;
+
+    std::vector<uint32_t> _debugBuffer;
+    unsigned _debugIdx; // position in debug buffer
 
     // Inline functions frequently used
     inline bool retrieve(uint64_t &variable, const unsigned length, const bool checkEOS = false, const bool skipNSCheck = false);	// Retrieve bit string with length
