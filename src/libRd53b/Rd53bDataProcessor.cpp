@@ -63,11 +63,8 @@ Rd53bDataProcessor::Rd53bDataProcessor()
     _status = INIT;
 
     // Debug buffer
-#if USE_DEBUG_BUFFER==1
     _debugBuffer.resize(DEBUG_BUFFERSIZE);
     _debugIdx = 0;
-#endif
-
 }
 
 Rd53bDataProcessor::~Rd53bDataProcessor()= default;
@@ -207,6 +204,26 @@ bool Rd53bDataProcessor::retrieve(uint64_t &variable, const unsigned length, con
     }
 
     return true;
+}
+
+// Debug function
+void Rd53bDataProcessor::dumpDebugBuffer() {
+    logger->error("[{}] Dumping last {} data blocks, in hex:", m_feCfg->getName(), DEBUG_BUFFERSIZE);
+    logger->error(
+        "[{}] wordIdx={}, bitIdx={}, rawDataIdx={}, wordCount={}, tag={}, ccol={}, qrow={}, islast_isneighbor={}, hitmap={}",
+        m_feCfg->getName(), _wordIdx, _bitIdx, _rawDataIdx, _wordCount, _tag, _ccol, _qrow[_ccol], _islast_isneighbor, _hitmap
+    );
+    logger->error("[{}]", m_feCfg->getName());
+
+    for (int i = _debugIdx; i < _debugIdx + _debugBuffer.size(); i++) {
+        if(i%2 == 0) {
+            logger->error("[{}] NS={}: {}", m_feCfg->getName(), ((debugBuffer[_debugIdx % DEBUG_BUFFERSIZE] >> 31) & 0x1), debugBuffer[_debugIdx % DEBUG_BUFFERSIZE]);
+        }
+        else {
+            logger->error("[{}]       {}", m_feCfg->getName(), ((debugBuffer[_debugIdx % DEBUG_BUFFERSIZE] >> 31) & 0x1), debugBuffer[_debugIdx % DEBUG_BUFFERSIZE]);
+        }
+    }
+    logger->error("[{}]", m_feCfg->getName());
 }
 
 // Method for rolling back bit index
@@ -509,22 +526,8 @@ bool Rd53bDataProcessor::getNextDataBlock()
 #if USE_DEBUG_BUFFER==1
         // Segfault will happen at the next line, print circular buffer results
         if (_curInV->data.size() <= _rawDataIdx) {
-            logger->error("[{}] DataProcessor is entering segfault case. Dumping last {} data blocks, in hex:", m_feCfg->getName(), DEBUG_BUFFERSIZE);
-            logger->error(
-                "[{}] wordIdx={}, bitIdx={}, rawDataIdx={}, wordCount={}, tag={}, ccol={}, qrow={}, islast_isneighbor={}, hitmap={}",
-                m_feCfg->getName(), _wordIdx, _bitIdx, _rawDataIdx, _wordCount, _tag, _ccol, _qrow[_ccol], _islast_isneighbor, _hitmap
-            );
-            logger->error("[{}]", m_feCfg->getName());
-
-            for (int i = _debugIdx; i < _debugIdx + _debugBuffer.size(); i++) {
-                if(i%2 == 0) {
-                    logger->error("[{}] NS={}: {}", m_feCfg->getName(), ((debugBuffer[_debugIdx % DEBUG_BUFFERSIZE] >> 31) & 0x1), debugBuffer[_debugIdx % DEBUG_BUFFERSIZE]);
-                }
-                else {
-                    logger->error("[{}]       {}", m_feCfg->getName(), ((debugBuffer[_debugIdx % DEBUG_BUFFERSIZE] >> 31) & 0x1), debugBuffer[_debugIdx % DEBUG_BUFFERSIZE]);
-                }
-            }
-            logger->error("[{}]", m_feCfg->getName());
+            logger->error("[{}] DataProcessor is entering segfault case.", m_feCfg->getName());
+            dumpDebugBuffer();
         }
 #endif
         
@@ -552,6 +555,11 @@ bool Rd53bDataProcessor::getNextDataBlock()
             else {
                 uint32_t _ns = (_data[0] >> 31) & 0x1;
                 logger->error("[{}] Requested out-of-range bits while NS={}, at position {} in stream. Flushing remainder of data block 0x{:x}{:x}", m_feCfg->getName(), _ns, _bitIdx, _data[0], _data[1]);
+
+#if USE_DEBUG_BUFFER==1
+                dumpDebugBuffer();
+#endif
+
             }
         }
         
