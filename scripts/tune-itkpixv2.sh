@@ -115,9 +115,9 @@ function main {
     base_cmd="${scan_console} -r ${controller} -c ${connectivity} -o ${output_dir}"
     
     # threshold tuning
+    ${base_cmd} -s ${scan_dir}/std_tune_globalthreshold.json -t $(( ${threshold} + 200))
     ${base_cmd} -s ${scan_dir}/std_tune_globalpreamp.json -m 1 -t 6000 7
-    ${base_cmd} -s ${scan_dir}/std_tune_globalthreshold.json -t ${threshold}
-    ${base_cmd} -s ${scan_dir}/std_tune_globalpreamp.json -m 1 -t 6000 7
+    ${base_cmd} -s ${scan_dir}/std_tune_globalthreshold.json -t $(( ${threshold} + 200))
     ${base_cmd} -s ${scan_dir}/std_tune_pixelthreshold.json -t ${threshold}
 
     # after-tuning threshold distribution
@@ -126,6 +126,7 @@ function main {
 
     # analog scan currently a bit buggy, so -t 5000
     ${base_cmd} -s ${scan_dir}/std_analogscan.json -t 5000
+    ./bin/plotFromDir -i data/last_scan/ -p png -P
 }
 
 #______________________________________
