@@ -121,8 +121,10 @@ After ``std_digitalscan`` (depends on exact config):
 
 We recommend the following tuning routine:
 
-1. Tune global threshold to 1000e
-2. Tune pixel threshold to 1000e
+1. Tune global threshold to 1200e
+2. Tune global preamp to 7 ToT @ 6000e
+3. Tune global threshold to 1200e
+4. Tune pixel threshold to 1000e
 
 ## Active Lanes
 
@@ -158,9 +160,12 @@ TODO
 Tuning routine:
 - std_digitalscan
 - std_analogscan
-- std_tune_globalthreshold (target 1000e)
+- std_tune_globalthreshold (target 1200e)
+- std_tune_globalpreamp (target 7 ToT at 6000e)
+- std_tune_globalthreshold (target 1200e)
 - std_tune_pixelthreshold (target 1000e)
 - std_thresholdscan
+- std_totscan (target 6000e)
 
 
 ## Configuration files with 1-DisplayPort Data Adapter Card
