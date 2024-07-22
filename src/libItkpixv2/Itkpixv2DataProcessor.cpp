@@ -549,26 +549,26 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
     if (_curInV == nullptr || _curInV->size() == 0 || _rawDataIdx >= _curInV->size())
     {
 
-        //Do not perform a cleanup and decoding termination if we are in the hitmap retrieval step.
-        //This protects the edge case when we would hit the end of the stream while retrieving the
-        //16 bits of the last qcore hitmap, which leads to the last hit being dropped from the output.
-//         if (_status == HMAP1) {
-//             // 8 bits is minimum for a hit with compression: 0000 0001
-//             // If we have 8 or more bits, process the hit accordingly.
-//             if(likely(BLOCKSIZE - _bitIdx > 7)) {
-//                 return true;
-//             }
-//             // Otherwise print an error
-//             else {
-//                 uint32_t _es = (_data[0] >> 31) & 0x1;
-//                 logger->error("[{}] Requested out-of-range bits while ES={}, at position {} in stream. Flushing remainder of data block 0x{:x}{:x}", m_feCfg->getName(), _es, _bitIdx, _data[0], _data[1]);
-//                 // TODO: if _ES is 0, then clearly we have lost a data block. Need to do desynchronization
+        // Do not perform a cleanup and decoding termination if we are in the hitmap retrieval step.
+        // This protects the edge case when we would hit the end of the stream while retrieving the
+        // 16 bits of the last qcore hitmap, which leads to the last hit being dropped from the output.
+        if (_status == HMAP1) {
+            // 8 bits is minimum for a hit with compression: 0000 0001
+            // If we have 8 or more bits, process the hit accordingly.
+            if(likely(BLOCKSIZE - _bitIdx > 7)) {
+                return true;
+            }
+            // Otherwise print an error
+            else {
+                uint32_t _es = (_data[0] >> 31) & 0x1;
+                logger->error("[{}] Requested out-of-range bits while ES={}, at position {} in stream. Flushing remainder of data block 0x{:x}{:x}", m_feCfg->getName(), _es, _bitIdx, _data[0], _data[1]);
+                // TODO: if _ES is 0, then clearly we have lost a data block. Need to do desynchronization
 
-// #if USE_DEBUG_BUFFER==1
-//                 dumpDebugBuffer();
-// #endif
-//             }
-//         }
+#if USE_DEBUG_BUFFER==1
+                dumpDebugBuffer();
+#endif
+            }
+        }
 
         // Reset raw data index and word index
         _rawDataIdx = 0;
