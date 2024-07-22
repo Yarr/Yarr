@@ -15,6 +15,8 @@
 #define BINARYTREE_DEPTH 4
 #define BLOCKSIZE 64
 #define HALFBLOCKSIZE 32
+#define USE_DEBUG_BUFFER 1
+#define DEBUG_BUFFERSIZE 12
 
 class Itkpixv2DataProcessor : public FeDataProcessor
 {
@@ -68,6 +70,9 @@ private:
     unsigned _chipId;
     unsigned long _streamMask;
 
+    std::vector<uint32_t> _debugBuffer;
+    unsigned _debugIdx; // position in debug buffer
+
     // Inline functions frequently used
     inline bool retrieve(uint64_t &variable, const unsigned length, const bool checkEOS = false, const bool skipNSCheck = false);	// Retrieve bit string with length
     inline void rollBack(const unsigned length);									// Roll back bit index
@@ -76,6 +81,7 @@ private:
     inline void getPreviousDataBlock();
     inline void process_core();
     inline void sendFeedback(unsigned tag, unsigned bcid);
+    void dumpDebugBuffer();
 
     // Data stream components
     uint64_t _ccol;

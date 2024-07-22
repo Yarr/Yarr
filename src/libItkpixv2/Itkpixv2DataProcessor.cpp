@@ -61,6 +61,10 @@ Itkpixv2DataProcessor::Itkpixv2DataProcessor()
 
     // Status
     _status = INIT;
+
+    // Debug buffer
+    _debugBuffer.resize(DEBUG_BUFFERSIZE);
+    _debugIdx = 0;
 }
 
 Itkpixv2DataProcessor::~Itkpixv2DataProcessor()= default;
@@ -152,8 +156,12 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
             if (checkEOS)
             {
                 // End of stream
-                if (unlikely(variable != 0))
+                if (unlikely(variable != 0)) {
                     logger->error("[{}] The ES bit is 1 while the core column number read is non-zero ({} [{}]). Data processed so far are corrupted... Last block {:x}{:x} (status {})", m_feCfg->getName(), variable, _bitIdx, _data[0], _data[1], _status);
+#if USE_DEBUG_BUFFER==1
+                    dumpDebugBuffer();
+#endif
+                }
                 _bitIdx = 64;
                 variable = 0;
                 return true;
@@ -162,6 +170,10 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
             else if (!skipNSCheck)
             {
                 logger->error("[{}] Expected unfinished stream while ES = 1: 0x{:x}{:x} [{} - {}]. Will start a new event... (status {})", m_feCfg->getName(), _data[0], _data[1], _bitIdx, length, _status);
+
+#if USE_DEBUG_BUFFER==1
+                dumpDebugBuffer();
+#endif
                 _status = INIT;
                 return false;
             }
@@ -185,6 +197,26 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
     }
 
     return true;
+}
+
+// Debug function
+void Itkpixv2DataProcessor::dumpDebugBuffer() {
+    logger->error("[{}] Dumping last {} data blocks, in hex:", m_feCfg->getName(), DEBUG_BUFFERSIZE);
+    logger->error(
+        "[{}] wordIdx={}, bitIdx={}, rawDataIdx={}, wordCount={}, tag={}, ccol={}, qrow={}, islast_isneighbor={}, hitmap={}",
+        m_feCfg->getName(), _wordIdx, _bitIdx, _rawDataIdx, _wordCount, _tag, _ccol, _qrow[_ccol], _islast_isneighbor, _hitmap
+    );
+    logger->error("[{}]", m_feCfg->getName());
+
+    for (int i = _debugIdx; i < _debugIdx + _debugBuffer.size(); i++) {
+        if(i%2 == 0) {
+            logger->error("[{}] ES={}: 0x{:x}", m_feCfg->getName(), ((_debugBuffer[i % DEBUG_BUFFERSIZE] >> 31) & 0x1), _debugBuffer[i % DEBUG_BUFFERSIZE]);
+        }
+        else {
+            logger->error("[{}]       0x{:x}", m_feCfg->getName(), _debugBuffer[i % DEBUG_BUFFERSIZE]);
+        }
+    }
+    logger->error("[{}]", m_feCfg->getName());
 }
 
 // Method for rolling back bit index
@@ -246,6 +278,9 @@ void Itkpixv2DataProcessor::process_core()
                 // Check ES bit
                 if (((_data[0] >> 31) & 0x1) != 0x1) {
                     logger->error("[{}] The ES bit is 0 while the core column number read is zero. Data processed so far are corrupted... Last block {:x}{:x}", m_feCfg->getName(), _data[0], _data[1]);
+#if USE_DEBUG_BUFFER==1
+                    dumpDebugBuffer();
+#endif
                     // TODO: keep skipping data until ES = 1, and then skip one more
                 }
                     
@@ -480,7 +515,12 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
             _rawDataIdx = 0;
             _wordIdx = 0;
             _data = &_curInV->data[0]->get(0);
-
+#if USE_DEBUG_BUFFER==1
+            _debugBuffer[_debugIdx] = _data[0];
+            _debugIdx = (_debugIdx + 1) % DEBUG_BUFFERSIZE;
+            _debugBuffer[_debugIdx] = _data[1];
+            _debugIdx = (_debugIdx + 1) % DEBUG_BUFFERSIZE;
+#endif
             if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
                  return getNextDataBlock();
             if (((_data[0] >> 29) & 0x3) != _chipId && _enChipId)
@@ -488,11 +528,14 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
             return true;
         }
         _wordIdx += 2; // Increase block index
-        
-        // if(unlikely(_rawDataIdx >= _curInV->data.size())) {
-        //     // segfault is going to happen
-        //     logger->error("Reached V2 segfault case!: _rawDataIdx: {} | _curInV->data.size(): {} | _status: {} | 0x{:x}{:x}", _rawDataIdx, _curInV->data.size(), _status, _data[0], _data[1]);
-        // }
+
+#if USE_DEBUG_BUFFER==1
+        // Segfault will happen at the next line, print circular buffer results
+        if (unlikely(_curInV->data.size() <= _rawDataIdx)) {
+            logger->error("[{}] DataProcessor is entering segfault case.", m_feCfg->getName());
+            dumpDebugBuffer();
+        }
+#endif
 
         if (_wordIdx >= _curInV->data[_rawDataIdx]->getSize())
         {
@@ -509,19 +552,23 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
         //Do not perform a cleanup and decoding termination if we are in the hitmap retrieval step.
         //This protects the edge case when we would hit the end of the stream while retrieving the
         //16 bits of the last qcore hitmap, which leads to the last hit being dropped from the output.
-        if (_status == HMAP1) {
-            // 8 bits is minimum for a hit with compression: 0000 0001
-            // If we have 8 or more bits, process the hit accordingly.
-            if(likely(BLOCKSIZE - _bitIdx > 7)) {
-                return true;
-            }
-            // Otherwise print an error
-            else {
-                uint32_t _es = (_data[0] >> 31) & 0x1;
-                logger->error("[{}] Requested out-of-range bits while ES={}, at position {} in stream. Flushing remainder of data block 0x{:x}{:x}", m_feCfg->getName(), _es, _bitIdx, _data[0], _data[1]);
-                // TODO: if _ES is 0, then clearly we have lost a data block. Need to do desynchronization
-            }
-        }
+//         if (_status == HMAP1) {
+//             // 8 bits is minimum for a hit with compression: 0000 0001
+//             // If we have 8 or more bits, process the hit accordingly.
+//             if(likely(BLOCKSIZE - _bitIdx > 7)) {
+//                 return true;
+//             }
+//             // Otherwise print an error
+//             else {
+//                 uint32_t _es = (_data[0] >> 31) & 0x1;
+//                 logger->error("[{}] Requested out-of-range bits while ES={}, at position {} in stream. Flushing remainder of data block 0x{:x}{:x}", m_feCfg->getName(), _es, _bitIdx, _data[0], _data[1]);
+//                 // TODO: if _ES is 0, then clearly we have lost a data block. Need to do desynchronization
+
+// #if USE_DEBUG_BUFFER==1
+//                 dumpDebugBuffer();
+// #endif
+//             }
+//         }
 
         // Reset raw data index and word index
         _rawDataIdx = 0;
@@ -602,6 +649,12 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
     // Upate the data pointer. Note the meaning of block index is the first block that is *unprocessed*
     _data = &_curInV->data[_rawDataIdx]->get(_wordIdx);
 
+#if USE_DEBUG_BUFFER==1
+    _debugBuffer[_debugIdx] = _data[0];
+    _debugIdx = (_debugIdx + 1) % DEBUG_BUFFERSIZE;
+    _debugBuffer[_debugIdx] = _data[1];
+    _debugIdx = (_debugIdx + 1) % DEBUG_BUFFERSIZE;
+#endif
     //logger->info("[{}] {} 0x{:x}{:x}", _wordIdx, _data[0]>>31, _data[0], _data[1]);
 
     // Return success code
@@ -622,11 +675,23 @@ void Itkpixv2DataProcessor::getPreviousDataBlock()
         if (--_rawDataIdx < 0)
         {
             _data = _data_pre;
+#if USE_DEBUG_BUFFER==1
+            _debugBuffer[_debugIdx] = _data[0];
+            _debugIdx = (_debugIdx + 1) % DEBUG_BUFFERSIZE;
+            _debugBuffer[_debugIdx] = _data[1];
+            _debugIdx = (_debugIdx + 1) % DEBUG_BUFFERSIZE;
+#endif
             return;
         }
         _wordIdx = _curInV->data[_rawDataIdx]->getSize() - 2;
     }
     _data = &_curInV->data[_rawDataIdx]->get(_wordIdx); // Also roll back the block index and data word pointer
+#if USE_DEBUG_BUFFER==1
+    _debugBuffer[_debugIdx] = _data[0];
+    _debugIdx = (_debugIdx + 1) % DEBUG_BUFFERSIZE;
+    _debugBuffer[_debugIdx] = _data[1];
+    _debugIdx = (_debugIdx + 1) % DEBUG_BUFFERSIZE;
+#endif
 
     if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
         getPreviousDataBlock();

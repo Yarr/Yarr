@@ -188,6 +188,9 @@ bool Rd53bDataProcessor::retrieve(uint64_t &variable, const unsigned length, con
             else
             {
                 logger->error("[{}] Expect unfinished stream while NS = 1: {}{}. Will start a new event...", m_feCfg->getName(), std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+#if USE_DEBUG_BUFFER==1
+                dumpDebugBuffer();
+#endif
                 getPreviousDataBlock();
                 _status = INIT;
                 return false;
@@ -217,10 +220,10 @@ void Rd53bDataProcessor::dumpDebugBuffer() {
 
     for (int i = _debugIdx; i < _debugIdx + _debugBuffer.size(); i++) {
         if(i%2 == 0) {
-            logger->error("[{}] NS={}: {}", m_feCfg->getName(), ((debugBuffer[_debugIdx % DEBUG_BUFFERSIZE] >> 31) & 0x1), debugBuffer[_debugIdx % DEBUG_BUFFERSIZE]);
+            logger->error("[{}] NS={}: 0x{:x}", m_feCfg->getName(), ((_debugBuffer[i % DEBUG_BUFFERSIZE] >> 31) & 0x1), _debugBuffer[i % DEBUG_BUFFERSIZE]);
         }
         else {
-            logger->error("[{}]       {}", m_feCfg->getName(), ((debugBuffer[_debugIdx % DEBUG_BUFFERSIZE] >> 31) & 0x1), debugBuffer[_debugIdx % DEBUG_BUFFERSIZE]);
+            logger->error("[{}]       0x{:x}", m_feCfg->getName(), _debugBuffer[i % DEBUG_BUFFERSIZE]);
         }
     }
     logger->error("[{}]", m_feCfg->getName());
@@ -257,6 +260,9 @@ void Rd53bDataProcessor::process_core()
         if (unlikely(!(_data[0] >> 31 & 0x1)))
         {
             logger->error("[{}] Expect new stream while NS = 0: {}{}. Skipping block...", m_feCfg->getName(), std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+#if USE_DEBUG_BUFFER==1
+            dumpDebugBuffer();
+#endif
             return;
         }
         _tag = (_data[0] >> (23-_chipIdShift)) & 0xFF;
@@ -294,6 +300,9 @@ void Rd53bDataProcessor::process_core()
                 if (unlikely(!(_data[0] >> 31 & 0x1)))
                 {
                     logger->error("[{}] Expect new stream while NS = 0: {}{}. Skipping block...", m_feCfg->getName(), std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+#if USE_DEBUG_BUFFER==1
+                    dumpDebugBuffer();
+#endif
                     continue;
                 }
                 _tag = (_data[0] >> (23-_chipIdShift)) & 0xFF;
