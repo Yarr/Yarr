@@ -267,7 +267,7 @@ void Itkpixv2GlobalCfg::init() {
     DataEnCrc.init          ( 76, &m_cfg[ 76], 10,  1, 0); regMap["DataEnCrc"] = &Itkpixv2GlobalCfg::DataEnCrc;
     DataEnBcid.init         ( 76, &m_cfg[ 76], 9,  1, 0); regMap["DataEnBcid"] = &Itkpixv2GlobalCfg::DataEnBcid;
     DataEnL1id.init         ( 76, &m_cfg[ 76], 8,  1, 0); regMap["DataEnL1id"] = &Itkpixv2GlobalCfg::DataEnL1id;
-    NumOfEventsInStream.init( 76, &m_cfg[ 76], 0,  8, 1); regMap["NumOfEventsInStream"] = &Itkpixv2GlobalCfg::NumOfEventsInStream;
+    NumOfEventsInStream.init( 76, &m_cfg[ 76], 0,  8, 0); regMap["NumOfEventsInStream"] = &Itkpixv2GlobalCfg::NumOfEventsInStream;
     //77
     DataEnBinaryRo.init     ( 77, &m_cfg[ 77], 13,  1, 0); regMap["DataEnBinaryRo"] = &Itkpixv2GlobalCfg::DataEnBinaryRo;
     DataEnRaw.init          ( 77, &m_cfg[ 77], 12,  1, 0); regMap["DataEnRaw"] = &Itkpixv2GlobalCfg::DataEnRaw;
