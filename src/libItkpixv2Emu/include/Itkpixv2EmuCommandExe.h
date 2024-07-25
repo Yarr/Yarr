@@ -10,8 +10,10 @@
 #include "Itkpixv2Cfg.h"
 #include "Itkpixv2EmuUtils.h"
 #include "EmuCom.h"
+#include "Itkpixv2Encoder.h"
 #include <memory>
 #include <map>
+#include <set>
 
 
 class Itkpixv2EmuCommandExe {
@@ -55,6 +57,13 @@ class Itkpixv2EmuCommandExe {
 
         //Register map pointer
         std::shared_ptr<Itkpixv2Cfg> m_cfg;
+
+        //Bookkeeping enabled pixel coordinates. The (col, row) coordinates
+        //are flattened in the same manner as the ItkpixLayout indexing: col * 384 + row
+        std::set<uint32_t> m_activePixels;
+
+        //encoder
+        std::shared_ptr<Itkpixv2Encoder> m_encoder;
 
 };
 

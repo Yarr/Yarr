@@ -127,7 +127,6 @@ void Itkpixv2EmuCommandInterpreter::readCommand(EmuCom* tx){
                     cmd.address = 0x200;
                     //keep adding the payloads until we see another command header
                     while (true){
-                        rlog->info("Incoming command buffer unit size {}", m_commandUnitBuffer.size());
                         //ensure that there are enough pre-bufferred command units.
                         //For we'll always need at least 2 to be present. For the time being,
                         //assume that there is something in the tx.
@@ -162,7 +161,7 @@ void Itkpixv2EmuCommandInterpreter::readCommand(EmuCom* tx){
 
         default : {
             //Even the unknown command will have the second unit
-            if (Itkpixv2EmuUtils::triggerCommands.find(cmd.header) != Itkpixv2EmuUtils::triggerCommands.end()) rlog->info("It's a trigger!!!");
+            //if (Itkpixv2EmuUtils::triggerCommands.find(cmd.header) != Itkpixv2EmuUtils::triggerCommands.end()) rlog->info("It's a trigger!!!");
 
             cmd.id = m_commandUnitBuffer.front();
             m_commandUnitBuffer.pop();

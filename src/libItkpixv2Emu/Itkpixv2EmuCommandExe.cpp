@@ -5,11 +5,11 @@
 */
 
 #include "Itkpixv2EmuCommandExe.h"
-//#include "logging.h"
+#include "logging.h"
 
-//namespace {
-//    auto rlog = logging::make_log("Itkpixv2EmuCommandExe");
-//}
+namespace {
+    auto rlog = logging::make_log("Itkpixv2EmuCommandExe");
+}
 
 
 Itkpixv2EmuCommandExe::Itkpixv2EmuCommandExe(EmuCom* rx, std::shared_ptr<Itkpixv2Cfg>& cfg){
@@ -19,6 +19,9 @@ Itkpixv2EmuCommandExe::Itkpixv2EmuCommandExe(EmuCom* rx, std::shared_ptr<Itkpixv
 
     //link the registers
     m_cfg = cfg;
+
+    //initialize the encoder
+    m_encoder = std::make_shared<Itkpixv2Encoder>();
 
 }
 
@@ -49,39 +52,62 @@ void Itkpixv2EmuCommandExe::doCal(const Itkpixv2EmuUtils::Cmd& cmd){
 }
 
 void Itkpixv2EmuCommandExe::doWrReg(const Itkpixv2EmuUtils::Cmd& cmd){
+    rlog->info("Active pixels: {}", m_activePixels.size());
     
     //Can be either to pixel portal (register 0) or a global register.
     //Technically, only 9 bits represent the address, the 10-th bit
     //keeps track of the multiple-write mode
     switch (cmd.address & 0x1FF){
-        case 0 :
+        case 0 : {
+            rlog->info("Writing pixel register, address 0x{:x}", cmd.address);
+
+            //Registers PixRegionRow and PixRegionCol decide which of the pixel pairs the portal portals to
+            uint16_t& val = m_cfg->pixRegs[m_cfg->PixRegionCol.read()][m_cfg->PixRegionRow.read()];
+            
             //The pixel register has the following structure:
             //left pixel (16 bits): [TDAC sign, TDAC (4 bits), HitBus, Injection Enable, Enable] + right pixel analogously
             //different treatment of single and multiple write,
             //distinguished by the 10-th bit (0x200)
-            switch (cmd.address & 0x200){
+            switch ((cmd.address & 0x200) >> 9){
                 //if 0, perform a single-write style of all 16 bits
-                case 0:
-                    //Registers PixRegionRow and PixRegionCol decide which of the pixel pairs the portal portals to
-                    m_cfg->pixRegs[m_cfg->PixRegionCol.read()][m_cfg->PixRegionRow.read()] = (cmd.data & 0xFFFF);
+                case 0: {
+                    val = (cmd.data & 0xFFFF);
+                    //bookkeeping
+                    //left pixel
+                    uint32_t coordinate = (m_cfg->PixRegionCol.read() * 2) * 384 + m_cfg->PixRegionRow.read();
+                    (val & 0x0100) ? (void)m_activePixels.insert(coordinate) : (void)m_activePixels.erase(coordinate);
+                    //right pixel
+                    coordinate += 384;
+                    (val & 0x0001) ? (void)m_activePixels.insert(coordinate) : (void)m_activePixels.erase(coordinate);
                     break;
+                }
                 //if it's 1, perform multiple-write style of either
                 //TDAC or enable bits
-                case 1:
+                case 1: {
                     //Depending on the value of the writing mode register,
                     //write as requested
-                    uint16_t& val = m_cfg->pixRegs[m_cfg->PixRegionCol.read()][m_cfg->PixRegionRow.read()];
-                    
                     switch (m_cfg->PixConfMode.read()){
-                        case 0:
-                            //Write mask information, it comes in the 10 bits of payload as (p. 46 of the RD53C manual)
-                            //last 10 bits of cmd.data = unused[9:8], right-pixel-mask[7:5], unused[4:3], left-pixel-mask[2:0]
-                            //left pixel:
-                            val = (val & 0xF8FF) | ((cmd.data << 4) & 0x0700);
-                            //right pixel:
-                            val = (val & 0xFFF8) | (cmd.data & 0x0007);
+                        case 0: {
+                            //Write & bookkeep mask information, it comes in the 10 bits of payload as (p. 46 of the RD53C manual)
+                            //last 10 bits of cmd.data = unused[9:8], right-pixel-mask[7:5], unused[4:3], left-pixel-mask[2:0].
+                            //Keep in mind that the masking can be broadcasted to all core columns.
+                            //If we're parallel-masking, we'll write all CCols (50) in one go, i. e. repeat the current pixel pair
+                            //masking information with periodicity 4 double columns
+                            int colsToWrite = m_cfg->PixBroadcast.read() ? 50 : 1;
+                            for (int ccol = 0; ccol < colsToWrite; ccol++){
+                                val = m_cfg->pixRegs[m_cfg->PixRegionCol.read() + ccol * 4][m_cfg->PixRegionRow.read()];
+                                //left pixel:
+                                val = (val & 0xF8FF) | ((cmd.data << 3) & 0x0700);
+                                uint32_t coordinate = ((m_cfg->PixRegionCol.read() + ccol * 4) * 2) * 384 + m_cfg->PixRegionRow.read();
+                                (val & 0x0100) ? (void)m_activePixels.insert(coordinate) : (void)m_activePixels.erase(coordinate);
+                                //right pixel:
+                                val = (val & 0xFFF8) | (cmd.data & 0x0007);
+                                coordinate += 384;
+                                (val & 0x0001) ? (void)m_activePixels.insert(coordinate) : (void)m_activePixels.erase(coordinate);
+                            }
                             break;
-                        case 1:
+                        }
+                        case 1: {
                             //Write TDAC information
                             //last 10 bits of cmd.data = right-pixel-TDAC[9:5], left-pixel-TDAC[4:0]
                             //left pixel:
@@ -89,12 +115,15 @@ void Itkpixv2EmuCommandExe::doWrReg(const Itkpixv2EmuUtils::Cmd& cmd){
                             //right pixel:
                             val = (val & 0xFF07) | ((cmd.data << 3) & 0x00F8);
                             break;
+                        }
                     }
                     break;
+                }
             }
             //if AutoRow is enabled, increase the current row
             if (m_cfg->PixAutoRow.read()) m_cfg->PixRegionRow.write(m_cfg->PixRegionRow.read() + 1);
             break;
+        }
 
         default:
             (*m_cfg)[cmd.address] = (cmd.data & 0xFFFF);

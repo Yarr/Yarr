@@ -78,7 +78,7 @@ void Itkpixv2Emu::executeLoop(){
                 break;
             }
             case Itkpixv2EmuUtils::Commands::WrReg                   :{
-                rlog->info("WrReg command to address {} with data {}", cmd.address, cmd.data);
+                rlog->info("WrReg command to address 0x{:x} with data 0x{:x}", cmd.address, cmd.data);
                 m_cmdExe->exe(cmd);
                 break;
             }
@@ -88,7 +88,7 @@ void Itkpixv2Emu::executeLoop(){
                 break;
             }
             default : {
-                if (Itkpixv2EmuUtils::triggerCommands.find(cmd.header) != Itkpixv2EmuUtils::triggerCommands.end()) rlog->info("Trigger command {} with counter {}", cmd.header, cmd.id);
+                //if (Itkpixv2EmuUtils::triggerCommands.find(cmd.header) != Itkpixv2EmuUtils::triggerCommands.end()) rlog->info("Trigger command {} with counter {}", cmd.header, cmd.id);
                 //else rlog->info("Unknown command with header {} and tag {}", cmd.header, cmd.tag);
                 break;
             }
