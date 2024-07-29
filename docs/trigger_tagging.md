@@ -4,7 +4,7 @@
 
 ## When to use trigger tagging
 
-Some types of scans require that trigger tagging be disabled, and others benefit from it. Including trigger tagging can greatly improve the maximum rate, L0 timing distribution, and frequency of dropped events at high rate.
+Some types of scans require that trigger tagging be disabled, and others benefit from it. Including trigger tagging can greatly improve the maximum rate, L0 timing distribution, and frequency of dropped events at high rate. 
 
 ### Correct Usage
 - Noisescans
@@ -22,21 +22,11 @@ Some types of scans require that trigger tagging be disabled, and others benefit
 
 ### 1. Firmware
 
-First you need to flash a version of the firmware which includes trigger tagging. Four versions with 1280Gbps are provided here, including `tef1001_R1/2` and both `4x4` and `16x1` versions. They are available on CERNBox here: [**trigger tagging firmware downloads**](https://cernbox.cern.ch/s/jrMjF7fJ6wbaOdX). 
-
-To flash the firmware, download the above bitfile and refer to the [PCIe Firmware and Hardware Guide](fw_guide.md). In summary:
-- Attach a JTAG to the target PC
-- Download the following script to the target PC: [flash.sh](http://yarr.web.cern.ch/yarr/firmware/flash.sh)
-- Download one of the above bitfiles to the target PC
-- Use the script to flash the bitfile, i.e.
-```bash
-$ ./flash.sh rd53_ohio_4x4_1280Mbps_tef1001_R2.bit
-```
-- Restart the PC
+To flash the firmware, refer to the [PCIe Firmware and Hardware Guide](fw_guide.md). Remember to restart the PC.
 
 ### 2. Software
 
-To enable trigger tagging, navigate to the `Spec` card controller config you are using. It is typically advisable to make a copy of the configuration file with the suffix `_trigtag` to indicate that it has trigger tagging enabled, as it is easy to forget to switch on/off the trigger tagging functionality.
+To enable trigger tagging, navigate to the `Spec` card controller config you are using. It is typically advisable to make a copy of the configuration file with the suffix `_trigtag` to indicate that it has trigger tagging enabled, as it is easy to forget to switch on/off the trigger tagging functionality. Trigger tagging is disabled by default.
 
 Once it is enabled, you must add the key-value pair `"triggerEncoderEnable": 1` to the `trigConfig` section of your controller config. 
 
