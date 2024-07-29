@@ -276,8 +276,8 @@ namespace ScanHelper {
             
             // Check for hidden clipboard monitor parameter, and start them if true
             if (chip.contains("clipboardMonitor")) {
-                if(chip["clipboardMonitor"]) {
-                    bookie.addFeClipboardMonitor(i, feCfg->getName());
+                if(chip["clipboardMonitor"] > 0) {
+                    bookie.addFeClipboardMonitor((unsigned)bookie.getNumOfEntries() - 1, feCfg->getName());
                 }
             }
 
