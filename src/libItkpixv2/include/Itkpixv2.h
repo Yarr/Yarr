@@ -55,6 +55,7 @@ class Itkpixv2 : public FrontEnd, public Itkpixv2Cfg, public Itkpixv2Cmd{
         yarrStatus getNamedRegister(std::string name, uint16_t &value) override;
         
         yarrStatus writeRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, const uint16_t value);
+        yarrStatus readRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, uint16_t &value, uint8_t &chipId);
         yarrStatus readRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, uint16_t &value);
         yarrStatus readUpdateWriteRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, const uint16_t value);
 
@@ -75,6 +76,8 @@ class Itkpixv2 : public FrontEnd, public Itkpixv2Cfg, public Itkpixv2Cmd{
         // the readback of the E-fuse data
         itkpix_efuse_codec::EfuseData readEfuses();
         uint32_t readEfusesRaw();
+        uint32_t getEfuses();
+        uint8_t readChipId();
 
         void runRingOsc(uint16_t duration, bool isBankB);
         void confAdc(uint16_t MONMUX, bool doCur = false) override;
