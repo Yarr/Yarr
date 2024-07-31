@@ -86,6 +86,10 @@ void Itkpixv2DataProcessor::init()
     _chipIdShift = (m_feCfg->EnChipId.read() == 1 ? 2 : 0);
     _chipId = m_feCfg->getChipId() & 0x3;
     _streamMask = (_enChipId ? 0x1FFFFFFF : 0x7FFFFFFF);
+    
+    // Initalize counters
+    _resync_counter = 0;
+    _resync_iteration_counter = 0;
 }
 
 void Itkpixv2DataProcessor::run()
@@ -157,7 +161,7 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
             {
                 // End of stream
                 if (unlikely(variable != 0)) {
-                    logger->error("[{}] The ES bit is 1 while the core column number read is non-zero ({} [{}]). Data processed so far are corrupted... Last block {:x}{:x} (status {})", m_feCfg->getName(), variable, _bitIdx, _data[0], _data[1], _status);
+                    logger->error("[{}] The ES bit is 1 while the core column number read is non-zero ({} [{}]). Data processed so far are corrupted... Last block 0x{:x} 0x{:x} (status {})", m_feCfg->getName(), variable, _bitIdx, _data[0], _data[1], _status);
 #if USE_DEBUG_BUFFER==1
                     dumpDebugBuffer();
 #endif
@@ -169,7 +173,7 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
             // Otherwise throw error message, unless over-draft is expected
             else if (!skipNSCheck)
             {
-                logger->error("[{}] Expected unfinished stream while ES = 1: 0x{:x}{:x} [{} - {}]. Will start a new event... (status {})", m_feCfg->getName(), _data[0], _data[1], _bitIdx, length, _status);
+                logger->error("[{}] Expected unfinished stream while ES = 1: 0x{:x} 0x{:x} [{} - {}]. Will start a new event... (status {})", m_feCfg->getName(), _data[0], _data[1], _bitIdx, length, _status);
 
 #if USE_DEBUG_BUFFER==1
                 dumpDebugBuffer();
@@ -237,13 +241,14 @@ void Itkpixv2DataProcessor::rollBack(const unsigned length)
 }
 
 void Itkpixv2DataProcessor::process_core()
-{
+{   
     if (m_input->empty())
         return;
     if (_status == INIT)
     {
         // Get data containers
         if (!getNextDataBlock())
+            // logger->info("No data block found");
             return;
 
         _tag = (_data[0] >> (23-_chipIdShift)) & 0xFF;
@@ -253,7 +258,7 @@ void Itkpixv2DataProcessor::process_core()
         // Create a new event
         // TODO RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
         _curOut->newEvent(_tag, _l1id, _bcid);
-        //logger->info("New Stream, New Event: {} ", _tag);
+        // logger->info("New Stream, New Event: {} ", _tag);
         _events++;
         sendFeedback(_tag, _bcid);
     }
@@ -269,19 +274,21 @@ void Itkpixv2DataProcessor::process_core()
             // This is also the ONLY place where we check end-of-stream. In other places we simply assuming continuation of stream, and will throw an error message if the end of stream is somehow reached.
             if (!retrieve(_ccol, 6, true))
                 return;
-            // logger->error("Read ccol {}", _ccol);
+            // logger->info("Read ccol {}", _ccol);            
         case CCC:
             _status = CCC;
-            // logger->error("Read CCC");
+            // logger->info("Read CCC");
             // End of stream is marked with 0b000000. This is ensured in software in spite of the chip orphan bit configuration
             if (_ccol == 0) {
                 // Check ES bit
                 if (((_data[0] >> 31) & 0x1) != 0x1) {
-                    logger->error("[{}] The ES bit is 0 while the core column number read is zero. Data processed so far are corrupted... Last block {:x}{:x}", m_feCfg->getName(), _data[0], _data[1]);
+                    logger->error("[{}] The ES bit is 0 while the core column number read is zero. Data processed so far are corrupted... Last block 0x{:x} 0x{:x}", m_feCfg->getName(), _data[0], _data[1]);
 #if USE_DEBUG_BUFFER==1
                     dumpDebugBuffer();
 #endif
-                    // TODO: keep skipping data until ES = 1, and then skip one more
+                    _status = RESYNC;
+                    _resync_iteration_counter = 0;
+                    return;
                 }
                     
                 // Get data containers
@@ -295,7 +302,7 @@ void Itkpixv2DataProcessor::process_core()
                 // Create a new event
                 // TODO RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
                 _curOut->newEvent(_tag, _l1id, _bcid);
-                //logger->info("New Stream, New Event: {} ", _tag);
+                // logger->info("New Stream, New Event: {} ", _tag);
                 _events++;
                 sendFeedback(_tag, _bcid);
 
@@ -314,13 +321,34 @@ void Itkpixv2DataProcessor::process_core()
                 // Create a new event
                 // There is no L1ID and BCID in RD53B data stream. Currently put dummy values
                 _curOut->newEvent(_tag, _l1id, _bcid);
-                //logger->info("Same Stream, New Event: {} ", _tag);
+                // logger->info("Same Stream, New Event: {} ", _tag);
                 _events++;
                 sendFeedback(_tag, _bcid);
 
                 _status = CCOL;
                 continue;
             }
+            break;
+        case RESYNC:
+            // Try to get next data block. Return if failed
+            if(!getNextDataBlock()) {
+                return;
+            }
+            logger->error("[{}] Skip block {}: 0x{:x} 0x{:x} (ES = {})",  m_feCfg->getName(), _resync_iteration_counter, _data[0], _data[1], (_data[0] >> 31));
+            _resync_iteration_counter++;
+            // If it worked, check if ES bit is 1. Return if it isn't
+            if(((_data[0] >> 31) & 0x1) != 0x1) {
+                return;
+            }
+            _resync_counter++;
+            logger->error(
+                "[{}] Reached resync fix point {}, data stream has been corrected by skipping {} data blocks to last block with hex 0x{:x} 0x{:x}", 
+                m_feCfg->getName(), _resync_counter, _resync_iteration_counter, _data[0], _data[1]);
+            
+            // If we make it here, we have both ES=1 and correct data block. 
+            // Now we need to go back to INIT, where one more block will be skipped and we can reset.
+            _status = INIT;
+            return;
         default:
             break;
         }
@@ -403,14 +431,19 @@ void Itkpixv2DataProcessor::process_core()
                 _status = TOT;
                 // ############ Step 3. read ToT ############
                 // Check whether it is precision ToT (PToT) data. PToT data is indicated by unphysical qrow index 196, and it should not be aggregated by the isnext bit
+                // logger->error("Entered ToT block with _ccol {}, _qrow {}, _islast {}", _ccol, _qrow[_ccol], _islast_isneighbor);
                 if (_qrow[_ccol] == 196 && !(_islast_isneighbor & 0x1))
                 {
+                    // logger->error("Entered pToT block");
                     if (!retrieve(_ToT, _LUT_PlainHMap_To_ColRow_ArrSize[_hitmap] << 2))
+                        // logger->error("Failed to retrieve pToT");
                         return;
 
                     int idx = 0;
                     for (unsigned ibus = 0; ibus < 4; ibus++)
                     {
+                        // logger->error("pTot loop {}", ibus);
+
                         uint8_t hitsub = (_hitmap >> (ibus << 2)) & 0xF;
                         if (hitsub)
                         {
@@ -552,23 +585,23 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
         // Do not perform a cleanup and decoding termination if we are in the hitmap retrieval step.
         // This protects the edge case when we would hit the end of the stream while retrieving the
         // 16 bits of the last qcore hitmap, which leads to the last hit being dropped from the output.
-        if (_status == HMAP1) {
-            // 8 bits is minimum for a hit with compression: 0000 0001
-            // If we have 8 or more bits, process the hit accordingly.
-            if(likely(BLOCKSIZE - _bitIdx > 7)) {
-                return true;
-            }
-            // Otherwise print an error
-            else {
-                uint32_t _es = (_data[0] >> 31) & 0x1;
-                logger->error("[{}] Requested out-of-range bits while ES={}, at position {} in stream. Flushing remainder of data block 0x{:x}{:x}", m_feCfg->getName(), _es, _bitIdx, _data[0], _data[1]);
-                // TODO: if _ES is 0, then clearly we have lost a data block. Need to do desynchronization
+//         if (_status == HMAP1) {
+//             // 8 bits is minimum for a hit with compression: 0000 0001
+//             // If we have 8 or more bits, process the hit accordingly.
+//             if(likely(BLOCKSIZE - _bitIdx > 7)) {
+//                 return true;
+//             }
+//             // Otherwise print an error
+//             else {
+//                 uint32_t _es = (_data[0] >> 31) & 0x1;
+//                 logger->error("[{}] Requested out-of-range bits while ES={}, at position {} in stream. Flushing remainder of data block 0x{:x}{:x}", m_feCfg->getName(), _es, _bitIdx, _data[0], _data[1]);
+//                 // TODO: if _ES is 0, then clearly we have lost a data block. Need to do desynchronization
 
-#if USE_DEBUG_BUFFER==1
-                dumpDebugBuffer();
-#endif
-            }
-        }
+// #if USE_DEBUG_BUFFER==1
+//                 dumpDebugBuffer();
+// #endif
+//             }
+//         }
 
         // Reset raw data index and word index
         _rawDataIdx = 0;

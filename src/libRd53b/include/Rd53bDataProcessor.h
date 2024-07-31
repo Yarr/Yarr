@@ -15,8 +15,8 @@
 #define BINARYTREE_DEPTH 4
 #define BLOCKSIZE 64
 #define HALFBLOCKSIZE 32
-#define USE_DEBUG_BUFFER 1
-#define DEBUG_BUFFERSIZE 12
+#define USE_DEBUG_BUFFER 1 // 0: off, 1: just segfault, 2: all errors
+#define DEBUG_BUFFERSIZE 20
 
 class Rd53bDataProcessor : public FeDataProcessor
 {
