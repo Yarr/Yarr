@@ -48,7 +48,7 @@ function main {
                 return 0
                 ;;
             -t)
-                first_threshold=${2}
+                threshold=${2}
                 shift
                 ;;
             -r)
