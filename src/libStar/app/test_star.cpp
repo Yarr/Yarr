@@ -28,6 +28,84 @@ namespace {
     std::map<uint32_t,uint32_t> abcs; // key: channel; value: chipID
   };
 
+  /**
+     Map of sequences to lists of tests.
+
+     Sequences (upper case first letter) are made up of tests (lower case
+     first letter).
+
+     NB this is where printHelp gets it's list from. There is a
+     cross-verification later that checks that all the known tests are
+     part of a sequence (and that sequences are made up of known tests.
+  */
+  std::map<std::string, std::vector<std::string>> sequenceMap = {
+      {"Full", {
+          "checkHPRs", "probeHCCs", "testHCCRegister",
+          "configureHCC",
+          "probeABCs", "testABCRegister",
+          "configureABC",
+          "testHitCounts",
+          "testDataPacketsStatic",
+          "testDataPacketsPulse",
+        }},
+
+      /*
+        Just test register read and write
+      */
+      {"Register", {
+          "probeHCCs", "testHCCRegister",
+          "configureHCC",
+          "probeABCs", "testABCRegister",
+        }},
+
+      /*
+        Test reading data packets
+      */
+      {"DataPacket", {
+          "probeHCCs", "configureHCC",
+          "probeABCs", "configureABC",
+          "testDataPacketsStatic",
+          "testDataPacketsPulse",
+        }},
+
+      /*
+        Probe the front end ASICs
+      */
+      {"Probe", {
+          "checkHPRs", "probeHCCs",
+          // In case resets were sent, HCCs need to be reconfigured to talk to ABCs
+          "configureHCCIfReset", // only if doResets set
+          "probeABCs",
+        }},
+
+      /*
+        Run some tests in packet transparent mode
+      */
+      {"PacketTransp", {
+          "configureHCCForPacketTransp",
+          "configureABC",
+          "readABCRegisters",
+          "testDataPacketsStatic",
+        }},
+
+      /*
+        Run some tests in full transparent mode
+      */
+      {"FullTransp", {
+          "configureHCCForFullTransp",
+          "configureABC",
+          "readABCRegisters",
+          "testDataPacketsStatic",
+
+          // "diagnosticsReport",
+        }},
+
+      // Read all data (partly here so diagnosticsReport has somewhere to live)
+      {"ReadData", {
+          "diagnosticsReport",
+        }},
+    };
+
 void printHelp() {
   std::cout << "Usage: test_star HW_CONFIG [OPTIONS] ... \n";
   std::cout << "   Run Star FE tests with HardwareController configuration from HW_CONFIG\n";
@@ -40,6 +118,20 @@ void printHelp() {
   std::cout << " -s <test_preset> : Type of test (lower case), or sequence (UpperCase) to run, use bad to list. Default: Full\n";
   std::cout << " -c <input channel> : HCC input channel. Only used if HCCs are set to full transparent mode.\n";
   std::cout << " -V <chip_version> : Versions of the HCCStar and ABCStar chips. Possible options are: Star, Star_vH0A0, Star_vH0A1, Star_vH1A1. Default: Star (equivalent to Star_vH0A0)\n";
+
+  std::set<std::string> allSequenceTestNames;
+  std::cout << "Available sequences\n";
+  for(auto &ss: sequenceMap) {
+    std::cout << "  " << ss.first << "\n";
+    for(auto &tn: ss.second) {
+      allSequenceTestNames.insert(tn);
+    }
+  }
+
+  std::cout << "Available tests\n";
+  for(auto &ss: allSequenceTestNames) {
+    std::cout << "  " << ss << "\n";
+  }
 }
 
 // Utilities
@@ -1079,14 +1171,24 @@ int main(int argc, char *argv[]) {
         rxChannels.clear();
         optind -= 1;
         for (; optind < argc && *argv[optind] != '-'; optind += 1) {
-          rxChannels.push_back( atoi(argv[optind]) );
+          try {
+            // Try parsing as number and throw if not
+            rxChannels.push_back( std::stoi(argv[optind]) );
+          } catch(std::exception &e) {
+            break;
+          }
         }
         break;
       case 't':
         txChannels.clear();
         optind -= 1;
         for (; optind < argc && *argv[optind] != '-'; optind += 1) {
-          txChannels.push_back( atoi(argv[optind]) );
+          try {
+            // Try parsing as number and throw if not
+            txChannels.push_back( std::stoi(argv[optind]) );
+          } catch(std::exception &e) {
+            break;
+          }
         }
         break;
       case 'd':
@@ -1164,9 +1266,8 @@ int main(int argc, char *argv[]) {
 
     std::unique_ptr<HwController> hwCtrl = nullptr;
     if(controller.empty()) {
-	controllerType = "spec";
-        hwCtrl = StdDict::getHwController(controllerType);
-        // hwCtrl->init(0);
+      logger->error("No controller specified");
+      return 1;
     } else {
       try {
         logger->info("Using controller from {}", controller);
@@ -1228,79 +1329,51 @@ int main(int argc, char *argv[]) {
       {"testHitCounts", [&](auto &h) {return testHitCounts(h, starCfg);}},
 
       // Read ABC data packets
+      {"readABCRegisters", readABCRegisters},
+
+      // More involved tests, put FrontEnd in mode and check response
       {"testDataPacketsStatic", [&](auto &h) {return testDataPacketsStatic(h, starCfg);}},
       {"testDataPacketsPulse", [&](auto &h) {return testDataPacketsPulse(h, starCfg);}},
 
       {"diagnosticsReport", [&](auto &h) {return diagnosticsReport(h);}},
     };
 
-    std::map<std::string, std::vector<std::string>> sequences = {
-      {"Full", {
-          "checkHPRs", "probeHCCs", "testHCCRegister",
-          "configureHCC",
-          "probeABCs", "testABCRegister",
-          "configureABC",
-          "testHitCounts",
-          "testDataPacketsStatic",
-          "testDataPacketsPulse",
-        }},
+    // Cross-validation between tests and sequenceMap
+    // Mostly here so we can be sure the list from printHelp is accurate
+    std::set<std::string> allTestNames;
+    for(auto &tt: tests) {
+      allTestNames.insert(tt.first);
+    }
 
-      /*
-        Just test register read and write
-      */
-      {"Register", {
-          "probeHCCs", "testHCCRegister",
-          "configureHCC",
-          "probeABCs", "testABCRegister",
-        }},
+    std::set<std::string> allSequenceTestNames;
+    for(auto &ss: sequenceMap) {
+      for(auto &tn: ss.second) {
+        allSequenceTestNames.insert(tn);
+      }
+    }
 
-      /*
-        Test reading data packets
-      */
-      {"DataPacket", {
-          "probeHCCs", "configureHCC",
-          "probeABCs", "configureABC",
-          "testDataPacketsStatic",
-          "testDataPacketsPulse",
-        }},
-
-      /*
-        Probe the front end ASICs
-      */
-      {"Probe", {
-          "checkHPRs", "probeHCCs",
-          // In case resets were sent, HCCs need to be reconfigured to talk to ABCs
-          "configureHCCIfReset", // only if doResets set
-          "probeABCs",
-        }},
-
-      /*
-        Run some tests in packet transparent mode
-      */
-      {"PacketTransp", {
-          "configureHCCForPacketTransp",
-          "configureABC",
-          "readABCRegisters",
-          "testDataPacketsStatic",
-        }},
-
-      /*
-        Run some tests in full transparent mode
-      */
-      {"FullTransp", {
-          "configureHCCForFullTransp",
-          "configureABC",
-          "readABCRegisters",
-          "testDataPacketsStatic",
-
-          // "diagnosticsReport",
-        }},
-    };
+    if(allTestNames != allSequenceTestNames) {
+      std::cout << "Internal error, list of tests does not match list of tests in sequences\n";
+      for(auto &tt: allTestNames) {
+        std::cout << " " << tt;
+        if(allSequenceTestNames.find(tt) == allSequenceTestNames.end()) {
+          std::cout << " (only in tests)\n";
+        }
+        std::cout << "\n";
+      }
+      for(auto &tt: allSequenceTestNames) {
+        if(allTestNames.find(tt) != allTestNames.end()) {
+          continue;
+        }
+        std::cout << " " << tt << " (only in sequence tests)\n";
+      }
+      return 1;
+    }
 
     if(isupper(testSequence[0])) {
-      if(sequences.find(testSequence) != sequences.end()) {
+      if(sequenceMap.find(testSequence) != sequenceMap.end()) {
         logger->info("Running test sequence {}", testSequence);
-        for(auto &t: sequences[testSequence]) {
+        for(auto &t: sequenceMap[testSequence]) {
           logger->info("Running test {}", t);
           success &= tests[t](*hwCtrl);
         }
@@ -1309,7 +1382,7 @@ int main(int argc, char *argv[]) {
 
         logger->info("Available preset test sequences:");
 
-        for(auto &s: sequences) {
+        for(auto &s: sequenceMap) {
           logger->info("  {}", s.first);
         }
 

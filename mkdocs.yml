@@ -18,6 +18,7 @@ nav:
     - Local DB: localdb.md
     - Plotting Tools: plotting.md
     - Logging configuration: logging.md
+    - FelixClient: felixclient.md
     - NetIO: netio.md
     - BDAQ Hardware: bdaq.md
     - ITSDAQ FW: itsdaq.md
