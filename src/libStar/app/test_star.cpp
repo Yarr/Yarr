@@ -1079,14 +1079,24 @@ int main(int argc, char *argv[]) {
         rxChannels.clear();
         optind -= 1;
         for (; optind < argc && *argv[optind] != '-'; optind += 1) {
-          rxChannels.push_back( atoi(argv[optind]) );
+          try {
+            // Try parsing as number and throw if not
+            rxChannels.push_back( std::stoi(argv[optind]) );
+          } catch(std::exception &e) {
+            break;
+          }
         }
         break;
       case 't':
         txChannels.clear();
         optind -= 1;
         for (; optind < argc && *argv[optind] != '-'; optind += 1) {
-          txChannels.push_back( atoi(argv[optind]) );
+          try {
+            // Try parsing as number and throw if not
+            txChannels.push_back( std::stoi(argv[optind]) );
+          } catch(std::exception &e) {
+            break;
+          }
         }
         break;
       case 'd':
