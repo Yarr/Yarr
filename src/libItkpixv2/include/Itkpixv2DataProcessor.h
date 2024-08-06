@@ -15,8 +15,8 @@
 #define BINARYTREE_DEPTH 4
 #define BLOCKSIZE 64
 #define HALFBLOCKSIZE 32
-#define USE_DEBUG_BUFFER 1
-#define DEBUG_BUFFERSIZE 50
+#define USE_DEBUG_BUFFER 0
+#define DEBUG_BUFFERSIZE 20
 
 class Itkpixv2DataProcessor : public FeDataProcessor
 {
@@ -90,10 +90,6 @@ private:
     uint64_t _hitmap;
     uint64_t _ToT;
 
-    // counters
-    int _resync_counter = 0;
-    int _resync_iteration_counter; 
-
     // Data processor status
     enum STATUS
     {
@@ -104,8 +100,7 @@ private:
         QROW=4,  // Reading quarter row
         HMAP1=5, // Reading hit map step 1
         HMAP2=6, // Reading hit map step 2
-        TOT=7,   // Reading ToT
-        RESYNC=8 // Resynchronizing from CCOL=0
+        TOT=7   // Reading ToT
     };
 
     STATUS _status;

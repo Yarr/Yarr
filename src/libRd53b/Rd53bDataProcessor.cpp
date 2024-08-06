@@ -532,7 +532,7 @@ bool Rd53bDataProcessor::getNextDataBlock()
         _wordIdx += 2; // Increase block index
 
 
-#if USE_DEBUG_BUFFER==1
+#if USE_DEBUG_BUFFER > 0
         // Segfault will happen at the next line, print circular buffer results
         if (_curInV->data.size() <= _rawDataIdx) {
             logger->error("[{}] DataProcessor is entering segfault case.", m_feCfg->getName());
