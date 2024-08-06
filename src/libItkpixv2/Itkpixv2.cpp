@@ -263,7 +263,7 @@ yarrStatus Itkpixv2::writeRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, u
     return yarrSuccess;
 }
 
-yarrStatus Itkpixv2::readRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, uint16_t &value) {
+yarrStatus Itkpixv2::readRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, uint16_t &value, uint8_t &chipId) {
     logger->debug("Reading register {}", (this->*ref).addr());
 
     m_rxcore->flushBuffer();
@@ -290,6 +290,7 @@ yarrStatus Itkpixv2::readRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, ui
                 }
 
                 auto [id, received_address, register_value] = Itkpixv2::decodeSingleRegReadID(data->get(0), data->get(1));
+                chipId = id; // chipId is read from the chip wirebonded ID, m_chipId is set in the chip config file
                 if(id == (m_chipId&0x3)) {
                     if(received_address != (this->*ref).addr()) {
                         logger->error("readRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
@@ -309,6 +310,11 @@ yarrStatus Itkpixv2::readRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, ui
 
     logger->error("readRegister failed, did not received register readback data from chip with chipId {}", m_chipId);
     return yarrFailure;
+}
+
+yarrStatus Itkpixv2::readRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, uint16_t &value) {
+  uint8_t _ = 0;
+  return readRegister(ref, value, _);
 }
 
 yarrStatus Itkpixv2::writeNamedRegister(std::string name, const uint16_t value) {
@@ -472,6 +478,22 @@ yarrStatus Itkpixv2::hasValidName() {
         return yarrSuccess;
     }
 
+    uint32_t efuse = this->getEfuses();
+    std::stringstream id_from_efuse;
+    id_from_efuse << std::hex << efuse;
+
+    bool id_in_name = name.find(id_from_efuse.str()) != std::string::npos;
+
+    if(!id_in_name) {
+        logger->error("Chip serial number decoded from e-fuse data (0x{:x}) does not appear in Chip \"name\" field (\"{}\") in loaded configuration  for chip with ChipId = {}", efuse, name, m_chipId);
+       	return yarrFailure;
+    }
+    logger->info("Chip serial number obtained from e-fuse data: 0x{:x}", efuse );
+    return yarrSuccess;
+}
+
+
+uint32_t Itkpixv2::getEfuses() {
     // Itkpixv2 stores serial numbers in on-chip registers, so service blocks be
     // enabled in order to query them
     if (this->ServiceBlockEn.read() == 0) {
@@ -481,33 +503,24 @@ yarrStatus Itkpixv2::hasValidName() {
 
     // if user is requested to enforce that the chip id be in the FrontEnd "name"
     // field, then readback the E-fuses to get the actual chip's ID
-    //itkpix_efuse_codec::EfuseData efuse_data = this->readEfuses();
     uint32_t efuse_data_raw = this->readEfusesRaw();
+    logger->info("Chip serial number obtained from e-fuse data (raw): 0x{:x}", efuse_data_raw);
 
     itkpix_efuse_codec::EfuseData efuse_data = itkpix_efuse_codec::EfuseData{itkpix_efuse_codec::decode(efuse_data_raw)};
     itkpix_efuse_codec::EfuseData efuse_data_old = itkpix_efuse_codec::EfuseData{itkpix_efuse_codec::decodeOldFormat(efuse_data_raw)};
 
-    std::stringstream id_from_efuse;
-    id_from_efuse << std::hex << efuse_data.chip_sn();
+    uint32_t chip_sn = efuse_data.chip_sn();
+    uint32_t chip_sn_old = efuse_data_old.chip_sn();
 
-    std::stringstream id_from_efuse_old;
-    id_from_efuse_old << std::hex << efuse_data_old.chip_sn();
-
-    logger->info("Chip serial number obtained from e-fuse data (raw): 0x{:x}", efuse_data_raw);
-    bool id_in_name = name.find(id_from_efuse.str()) != std::string::npos;
-    bool id_in_name_old = name.find(id_from_efuse_old.str()) != std::string::npos;
-    if(!id_in_name) {
-        logger->error("Chip serial number decoded from e-fuse data (0x{:x}) does not appear in Chip \"name\" field (\"{}\") in loaded configuration  for chip with ChipId = {}", efuse_data.chip_sn(), name, m_chipId);
-	if (id_in_name_old) {
-    		logger->info("Chip serial number decoded with old format from e-fuse data: 0x{:x}", efuse_data_old.chip_sn());
-    		return yarrSuccess;
-	} else {
-        	logger->error("Chip serial number decoded with old format from e-fuse data (0x{:x}) does not appear in Chip \"name\" field (\"{}\") in loaded configuration  for chip with ChipId = {}", efuse_data_old.chip_sn(), name, m_chipId);
-        	return yarrFailure;
-	}
+    // https://gitlab.cern.ch/YARR/YARR/-/issues/166
+    if (chip_sn > 0x16000) {
+        logger->info("Chip serial number obtained from e-fuse data: 0x{:x}", chip_sn );
+        return chip_sn;
+    } else {
+        logger->info("Chip serial number decoded with old format from e-fuse data: 0x{:x}", chip_sn_old);
+        return chip_sn_old;
     }
-    logger->info("Chip serial number obtained from e-fuse data: 0x{:x}", efuse_data.chip_sn() );
-    return yarrSuccess;
+    return yarrFailure;
 }
 
 std::pair<uint32_t, uint32_t> Itkpixv2::decodeSingleRegRead(uint32_t higher, uint32_t lower) {
@@ -610,7 +623,16 @@ uint32_t Itkpixv2::readEfusesRaw() {
     return (((uint32_t)efuse_data_1 & 0xffff) << 16) | ((uint32_t)efuse_data_0 & 0xffff);
 }
 
-    
+uint8_t Itkpixv2::readChipId() {
+    uint16_t _ = 0;
+    uint8_t id = 15;
+    if (readRegister(&Itkpixv2::EfuseReadData0, _, id) != yarrSuccess) {
+        logger->warn("Failed to readback E-fuse 0 data for chip with {}", m_chipId);
+        return 255;
+    }
+    return id;
+}
+
 void Itkpixv2::confAdc(uint16_t MONMUX, bool doCur) {
     //This only works for voltage MUX values.
     uint16_t OriginalGlobalRT = this->GlobalPulseConf.read();

@@ -42,6 +42,7 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
 
         // Memory and chip register operation based on object
         yarrStatus writeRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, const uint16_t value);
+        yarrStatus readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t &value, uint8_t &chipId);
         yarrStatus readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t &value);
         yarrStatus readUpdateWriteRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, const uint16_t value);
         
@@ -68,6 +69,8 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         // the readback of the E-fuse data
         itkpix_efuse_codec::EfuseData readEfuses();
         uint32_t readEfusesRaw();
+        uint32_t getEfuses();
+        uint8_t readChipId();
 
         void runRingOsc(uint16_t duration, bool isBankB);
         void confAdc(uint16_t MONMUX, bool doCur = false) override;
