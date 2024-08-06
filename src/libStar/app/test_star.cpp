@@ -1266,9 +1266,8 @@ int main(int argc, char *argv[]) {
 
     std::unique_ptr<HwController> hwCtrl = nullptr;
     if(controller.empty()) {
-	controllerType = "spec";
-        hwCtrl = StdDict::getHwController(controllerType);
-        // hwCtrl->init(0);
+      logger->error("No controller specified");
+      return 1;
     } else {
       try {
         logger->info("Using controller from {}", controller);
