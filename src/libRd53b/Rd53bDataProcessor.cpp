@@ -162,22 +162,6 @@ bool Rd53bDataProcessor::retrieve(uint64_t &variable, const unsigned length, con
         // If the block index already reaches the end of the raw data container, stop here
         if (!getNextDataBlock())
         {
-            // Case where we could have some hit in the stuff we did end up getting
-            if(unlikely((_status == HMAP1))) {
-                if(((int)BLOCKSIZE - (int)_bitIdx >= 8)) {
-                    // Too small for 1 hit + ToT (minimum size)
-                    logger->error("[{}] Returning true from edge-case hit at position {}, block 0x{:x} 0x{:x}",  m_feCfg->getName(), _bitIdx, _data[0], _data[1]);
-                    
-    #if USE_DEBUG_BUFFER==2
-                    dumpDebugBuffer();
-    #endif
-                    return true;
-                }
-                else{
-                    logger->info("[{}] Returning false from edge-case hit at position {}, block 0x{:x} 0x{:x}",  m_feCfg->getName(), _bitIdx, _data[0], _data[1]);
-                }
-            }
-
             getPreviousDataBlock();
             return false;
         }
@@ -567,29 +551,31 @@ bool Rd53bDataProcessor::getNextDataBlock()
     if (_curInV == nullptr || _curInV->size() == 0 || _rawDataIdx >= _curInV->size())
     {
 
+        // REMOVE HMAP1 decoding termination skip! This causes poorly understood errors at high rate still.
+
         //Do not perform a cleanup and decoding termination if we are in the hitmap retrieval step.
         //This protects the edge case when we would hit the end of the stream while retrieving the
         //16 bits of the last qcore hitmap, which leads to the last hit being dropped from the output.
-        if (_status == HMAP1) {
-            return false;
-        }
-//         if (_status == HMAP1) {
-//             // 8 bits is minimum for a hit with compression: 0000 0001
-//             // If we have 8 or more bits, process the hit accordingly.
-//             if(likely(BLOCKSIZE - _bitIdx > 7)) {
-//                 return true;
-//             }
-//             // Otherwise print an error
-//             else {
-//                 uint32_t _ns = (_data[0] >> 31) & 0x1;
-//                 logger->error("[{}] Requested out-of-range bits while NS={}, at position {} in stream. Flushing remainder of data block 0x{:x}{:x}", m_feCfg->getName(), _ns, _bitIdx, _data[0], _data[1]);
+        // if (_status == HMAP1) {
+        //     return false;
+        // }
+        // if (_status == HMAP1) {
+        //     // 8 bits is minimum for a hit with compression: 0000 0001
+        //     // If we have 8 or more bits, process the hit accordingly.
+        //     if(likely(BLOCKSIZE - _bitIdx > 7)) {
+        //         return true;
+        //     }
+        //     // Otherwise print an error
+        //     else {
+        //         uint32_t _ns = (_data[0] >> 31) & 0x1;
+        //         logger->error("[{}] Requested out-of-range bits while NS={}, at position {} in stream. Flushing remainder of data block 0x{:x}{:x}", m_feCfg->getName(), _ns, _bitIdx, _data[0], _data[1]);
 
 // #if USE_DEBUG_BUFFER==2
 //                 dumpDebugBuffer();
 // #endif
 
-//             }
-//         }
+        //     }
+        // }
         
         // Reset raw data index and word index
         _rawDataIdx = 0;
@@ -654,7 +640,7 @@ bool Rd53bDataProcessor::getNextDataBlock()
     // Upate the data pointer. Note the meaning of block index is the first block that is *unprocessed*
     _data = &_curInV->data[_rawDataIdx]->get(_wordIdx);
 
-#if USE_DEBUG_BUFFER==2
+#if USE_DEBUG_BUFFER > 0
     _debugBuffer[_debugIdx] = _data[0];
     _debugIdx = (_debugIdx + 1) % DEBUG_BUFFERSIZE;
     _debugBuffer[_debugIdx] = _data[1];
