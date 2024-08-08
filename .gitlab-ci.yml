@@ -100,8 +100,7 @@ job_build_none:
     - CTEST_OUTPUT_ON_FAILURE=1 make test
     - bin/scanConsole -k
 
-
-job_build_felix:
+.build_felix:
   stage: build
   image: gitlab-registry.cern.ch/atlas-tdaq-felix/gitlab_ci_runner:el9-netboot-dev
   tags:
@@ -117,9 +116,16 @@ job_build_felix:
     - cmake --build build -j4
     - cmake --install build
     - cp -r Dockerfile bin lib python installed/
+
+job_build_felix:
+  extends: .build_felix
   only:
     - devel
     - tags
+
+job_build_felix_check:
+  extends: [.build_felix, .rules]
+
 
 .job_code_coverage:
   extends: .build
