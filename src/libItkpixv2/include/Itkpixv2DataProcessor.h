@@ -45,6 +45,9 @@ public:
     std::unique_ptr<FrontEndData> _curOut; // Output data container
     int _events;                           // Output number of events    
 
+    int _chipTagBitFlipCnt; // Number of tags with value 216-219 (chip tag bit flip detected)
+    int _chipTagErrorCnt; // Number of tags with value 220-223 (chip tag unreadable)
+
     void setCompressedHitmap(bool flag) { _isCompressedHitmap = flag; }
     void setDropToT(bool flag){_dropToT = flag;}
 

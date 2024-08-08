@@ -177,4 +177,3 @@ TEST_CASE("Itkpixv2DataProcessor", "[itkpixv2][data_processor_edge_case]") {
     FrontEndData &rawData = *(FrontEndData*)data.get();
     
 }
-

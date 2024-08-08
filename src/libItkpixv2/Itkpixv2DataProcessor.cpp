@@ -75,6 +75,10 @@ void Itkpixv2DataProcessor::init()
     _wordCount = 0;
     _hits = 0;
 
+    // Set counters to zero
+    _chipTagBitFlipCnt = 0;
+    _chipTagErrorCnt = 0;
+
     // Load decoder specific bits
     _isCompressedHitmap = (m_feCfg->DataEnRaw.read() == 0 ? true : false);
     _dropToT = (m_feCfg->DataEnBinaryRo.read() == 1 ? true : false);
@@ -256,11 +260,25 @@ void Itkpixv2DataProcessor::process_core()
                 }
                 _tag = (_data[0] >> (23-_chipIdShift)) & 0xFF;
                 _bitIdx = 9 + _chipIdShift; // Reset bit index = ES + tag
+                
+                // RD53C Error Tags (according to Raoberto Beccherle)
+                // - 216-219: Single big flip in trigger tag
+                // - 220-223: Fully unrecognized trigger tag
+                if(unlikely((_tag >> 3) == 27)) {
+                    if((_tag >> 2) == 54) {
+                        logger->error("[{}] Recieved chip error tag {}, corresponding to a single bit flip in trigger symbol. Data blocks {:x} {:x}", m_feCfg->getName(), _tag, _data[0], _data[1]);
+                        _chipTagBitFlipCnt++;
+                    }
+                    else {
+                        logger->error("[{}] Recieved chip error tag {}, corresponding to a totally unrecognized trigger symbol. Data blocks {:x} {:x}", m_feCfg->getName(), _tag, _data[0], _data[1]);
+                        _chipTagErrorCnt++;
+                    }
+                }
 
                 // Create a new event
                 // TODO RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
                 _curOut->newEvent(_tag, _l1id, _bcid);
-                //logger->info("New Stream, New Event: {} ", _tag);
+                logger->error("New Stream, New Event: {} ", _tag);
                 _events++;
                 sendFeedback(_tag, _bcid);
 
