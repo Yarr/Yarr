@@ -21,11 +21,6 @@ image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_alma9_build
 .build:
   extends: .rules
   stage: build
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
-      when: never
-    - if: '$CI_COMMIT_BRANCH'
 
 .build_matrix:
   extends: .build
