@@ -47,6 +47,10 @@ public:
 
     int _chipTagBitFlipCnt; // Number of tags with value 216-219 (chip tag bit flip detected)
     int _chipTagErrorCnt; // Number of tags with value 220-223 (chip tag unreadable)
+    int _unfinishedStreamErrorCnt; // Number of "expect unfinished stream while ES=1" (without check EOS on)
+    int _unfinishedStreamEOSErrorCnt; // Number of "expect unfinished stream while ES=1" (with check EOS on)
+    int _corruptStreamErrorCnt; // Number of ES=0, but CCOL=0 instances (implies corrupted stream)
+    int _outOfRangeBitsCnt; // Number of times we requested past EOS for hitmap
 
     void setCompressedHitmap(bool flag) { _isCompressedHitmap = flag; }
     void setDropToT(bool flag){_dropToT = flag;}

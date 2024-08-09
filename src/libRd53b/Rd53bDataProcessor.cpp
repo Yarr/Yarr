@@ -75,6 +75,11 @@ void Rd53bDataProcessor::init()
     _wordCount = 0;
     _hits = 0;
 
+    // Set error counters to zero
+    _unfinishedStreamErrorCnt = 0;
+    _expectNewStreamErrorCnt = 0;
+    _outOfRangeBitsCnt = 0;
+
     // Load decoder specific bits
     _isCompressedHitmap = (m_feCfg->DataEnRaw.read() == 0 ? true : false);
     _dropToT = (m_feCfg->DataEnBinaryRo.read() == 1 ? true : false);
@@ -98,7 +103,7 @@ void Rd53bDataProcessor::join()
 
 void Rd53bDataProcessor::process()
 {
-    logger->info("Started raw data processor thread for {}.", m_feCfg->getName());
+    logger->info("[{}] Started raw data processor thread", m_feCfg->getName());
     while (true)
     {
         m_input->waitNotEmptyOrDone();
@@ -115,7 +120,11 @@ void Rd53bDataProcessor::process()
     }
 
     process_core();
-    logger->info("Finished raw data processor thread for {}.", m_feCfg->getName());
+
+    logger->info("[{}] Finished raw data processor thread", m_feCfg->getName());
+    logger->info("[{}]   Unfinished streams (no EOS): {}", m_feCfg->getName(), _unfinishedStreamErrorCnt);
+    logger->info("[{}]   Expect new stream with NS=0: {}", m_feCfg->getName(), _expectNewStreamErrorCnt);
+    logger->info("[{}]     Out-of-range bit requests: {}", m_feCfg->getName(), _outOfRangeBitsCnt);
 }
 
 // Method for retrieving bits from data
@@ -124,7 +133,7 @@ bool Rd53bDataProcessor::retrieve(uint64_t &variable, const unsigned length, con
     // Should never happen: reading 0 bit
     if (unlikely(length == 0))
     {
-        logger->warn("Retrieving 0 length from data stream");
+        logger->warn("[{}] Retrieving 0 length from data stream", m_feCfg->getName());
         return true;
     }
 
@@ -184,6 +193,7 @@ bool Rd53bDataProcessor::retrieve(uint64_t &variable, const unsigned length, con
             else
             {
                 logger->error("[{}] Expect unfinished stream while NS = 1: {}{}. Will start a new event...", m_feCfg->getName(), std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+                _unfinishedStreamErrorCnt++;
                 getPreviousDataBlock();
                 _status = INIT;
                 return false;
@@ -233,6 +243,7 @@ void Rd53bDataProcessor::process_core()
         if (unlikely(!(_data[0] >> 31 & 0x1)))
         {
             logger->error("[{}] Expect new stream while NS = 0: {}{}. Skipping block...", m_feCfg->getName(), std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+            _expectNewStreamErrorCnt++;
             return;
         }
         _tag = (_data[0] >> (23-_chipIdShift)) & 0xFF;
@@ -270,6 +281,7 @@ void Rd53bDataProcessor::process_core()
                 if (unlikely(!(_data[0] >> 31 & 0x1)))
                 {
                     logger->error("[{}] Expect new stream while NS = 0: {}{}. Skipping block...", m_feCfg->getName(), std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+                    _expectNewStreamErrorCnt++;
                     continue;
                 }
                 _tag = (_data[0] >> (23-_chipIdShift)) & 0xFF;
@@ -521,6 +533,7 @@ bool Rd53bDataProcessor::getNextDataBlock()
             else {
                 uint32_t _ns = (_data[0] >> 31) & 0x1;
                 logger->error("[{}] Requested out-of-range bits while NS={}, at position {} in stream. Flushing remainder of data block 0x{:x}{:x}", m_feCfg->getName(), _ns, _bitIdx, _data[0], _data[1]);
+                _outOfRangeBitsCnt++;
             }
         }
         

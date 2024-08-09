@@ -78,6 +78,10 @@ void Itkpixv2DataProcessor::init()
     // Set counters to zero
     _chipTagBitFlipCnt = 0;
     _chipTagErrorCnt = 0;
+    _unfinishedStreamErrorCnt = 0;
+    _unfinishedStreamEOSErrorCnt = 0;
+    _corruptStreamErrorCnt = 0;
+    _outOfRangeBitsCnt = 0;
 
     // Load decoder specific bits
     _isCompressedHitmap = (m_feCfg->DataEnRaw.read() == 0 ? true : false);
@@ -102,7 +106,7 @@ void Itkpixv2DataProcessor::join()
 
 void Itkpixv2DataProcessor::process()
 {
-    logger->info("Started raw data processor thread for {}.", m_feCfg->getName());
+    logger->info("[{}] Started raw data processor thread", m_feCfg->getName());
     while (true)
     {
         m_input->waitNotEmptyOrDone();
@@ -119,7 +123,13 @@ void Itkpixv2DataProcessor::process()
     }
 
     process_core();
-    logger->info("Finished raw data processor thread for {}.", m_feCfg->getName());
+    logger->info("[{}] Finished raw data processor thread", m_feCfg->getName());
+    logger->info("[{}]             Chip tag bitflips: {}", m_feCfg->getName(), _chipTagBitFlipCnt);
+    logger->info("[{}]        Chip unrecognized tags: {}", m_feCfg->getName(), _chipTagErrorCnt);
+    logger->info("[{}]   Unfinished streams (no EOS): {}", m_feCfg->getName(), _unfinishedStreamErrorCnt);
+    logger->info("[{}]   Unfinished streams (w/ EOS): {}", m_feCfg->getName(), _unfinishedStreamEOSErrorCnt);
+    logger->info("[{}]               Corrupt streams: {}", m_feCfg->getName(), _corruptStreamErrorCnt);
+    logger->info("[{}]     Out-of-range bit requests: {}", m_feCfg->getName(), _outOfRangeBitsCnt);
 }
 
 // Method for retrieving bits from data
@@ -156,8 +166,10 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
             if (checkEOS)
             {
                 // End of stream
-                if (unlikely(variable != 0))
+                if (unlikely(variable != 0)) {
                     logger->error("[{}] The ES bit is 1 while the core column number read is non-zero ({} [{}]). Data processed so far are corrupted... Last block {:x}{:x} (status {})", m_feCfg->getName(), variable, _bitIdx, _data[0], _data[1], _status);
+                    _unfinishedStreamEOSErrorCnt++;
+                }
                 _bitIdx = 64;
                 variable = 0;
                 return true;
@@ -166,6 +178,7 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
             else if (!skipNSCheck)
             {
                 logger->error("[{}] Expected unfinished stream while ES = 1: 0x{:x}{:x} [{} - {}]. Will start a new event... (status {})", m_feCfg->getName(), _data[0], _data[1], _bitIdx, length, _status);
+                _unfinishedStreamErrorCnt++;
                 _status = INIT;
                 return false;
             }
@@ -250,6 +263,7 @@ void Itkpixv2DataProcessor::process_core()
                 // Check ES bit
                 if (((_data[0] >> 31) & 0x1) != 0x1) {
                     logger->error("[{}] The ES bit is 0 while the core column number read is zero. Data processed so far are corrupted... Last block {:x}{:x}", m_feCfg->getName(), _data[0], _data[1]);
+                    _corruptStreamErrorCnt++;
                     // TODO: keep skipping data until ES = 1, and then skip one more
                 }
                     
@@ -537,6 +551,7 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
             else {
                 uint32_t _es = (_data[0] >> 31) & 0x1;
                 logger->error("[{}] Requested out-of-range bits while ES={}, at position {} in stream. Flushing remainder of data block 0x{:x}{:x}", m_feCfg->getName(), _es, _bitIdx, _data[0], _data[1]);
+                _outOfRangeBitsCnt++;
                 // TODO: if _ES is 0, then clearly we have lost a data block. Need to do desynchronization
             }
         }
