@@ -266,11 +266,11 @@ void Itkpixv2DataProcessor::process_core()
                 // - 220-223: Fully unrecognized trigger tag
                 if(unlikely((_tag >> 3) == 27)) {
                     if((_tag >> 2) == 54) {
-                        logger->error("[{}] Recieved chip error tag {}, corresponding to a single bit flip in trigger symbol. Data blocks {:x} {:x}", m_feCfg->getName(), _tag, _data[0], _data[1]);
+                        logger->error("[{}] Recieved chip error tag {}, corresponding to a single bit flip in trigger symbol. Data block 0x{:x} 0x{:x}", m_feCfg->getName(), _tag, _data[0], _data[1]);
                         _chipTagBitFlipCnt++;
                     }
                     else {
-                        logger->error("[{}] Recieved chip error tag {}, corresponding to a totally unrecognized trigger symbol. Data blocks {:x} {:x}", m_feCfg->getName(), _tag, _data[0], _data[1]);
+                        logger->error("[{}] Recieved chip error tag {}, corresponding to a totally unrecognized trigger symbol. Data block 0x{:x} 0x{:x}", m_feCfg->getName(), _tag, _data[0], _data[1]);
                         _chipTagErrorCnt++;
                     }
                 }
