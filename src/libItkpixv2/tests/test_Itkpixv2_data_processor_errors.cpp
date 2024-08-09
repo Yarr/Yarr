@@ -19,7 +19,7 @@ TEST_CASE("Itkpixv2DataProcessor", "[itkpixv2][error_tags]") {
     FrontEndData truth;
     
     std::unique_ptr<HitMapGenerator> generator(new HitMapGenerator());
-    int nEvents = 30;
+    int nEvents = 250;
     int nEventsPerStream = 1;
     generator->setSeed(Catch::rngSeed());
     
@@ -29,8 +29,6 @@ TEST_CASE("Itkpixv2DataProcessor", "[itkpixv2][error_tags]") {
     for (int evt = 0; evt < nEvents; evt++){
         generator->randomHitMap(1e-4);
         truth.events.push_back(generator->outTruth());
-        truth.events.back().tag = 212 + evt;
-
         if   (evt != nEvents - 1) encoder->addToStream(generator->outHits());
         else                      encoder->addToStream(generator->outHits(), true); //make sure the stream is ended with the last added event
     }
@@ -85,6 +83,7 @@ TEST_CASE("Itkpixv2DataProcessor", "[itkpixv2][error_tags]") {
 
     Itkpixv2DataProcessor* proc_raw = dynamic_cast<Itkpixv2DataProcessor*>(proc.get());
     REQUIRE(rawNHits == truthNHits);
-    // REQUIRE(bitFlipCnt == proc_raw->_chipTagBitFlipCnt);
-    // REQUIRE(errorTagCnt == proc_raw->_chipTagErrorCnt);
+
+    REQUIRE(bitFlipCnt == proc_raw->_chipTagBitFlipCnt);
+    REQUIRE(errorTagCnt == proc_raw->_chipTagErrorCnt);
 }

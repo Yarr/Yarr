@@ -278,7 +278,7 @@ void Itkpixv2DataProcessor::process_core()
                 // Create a new event
                 // TODO RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
                 _curOut->newEvent(_tag, _l1id, _bcid);
-                logger->error("New Stream, New Event: {} ", _tag);
+                // logger->error("New Stream, New Event: {} ", _tag);
                 _events++;
                 sendFeedback(_tag, _bcid);
 
