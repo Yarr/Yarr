@@ -38,19 +38,22 @@ void Fei4Cfg::enableAll() {
 }
 
 void Fei4Cfg::loadConfig(const json &j) {
-    if (j.contains({"FE-I4B","name"}))
+    if (j.contains("FE-I4B") && j["FE-I4B"].contains("name"))
         name = j["FE-I4B"]["name"];
 
-    if (j.contains({"FE-I4B","Parameter","chipId"}))
-        chipId = j["FE-I4B"]["Parameter"]["chipId"];
-    if (j.contains({"FE-I4B","Parameter","sCap"}))
-        sCap = j["FE-I4B"]["Parameter"]["sCap"];
-    if (j.contains({"FE-I4B","Parameter","lCap"}))
-        lCap = j["FE-I4B"]["Parameter"]["lCap"];
-    if (j.contains({"FE-I4B","Parameter","vcalOffset"}))
-        vcalOffset = j["FE-I4B"]["Parameter"]["vcalOffset"];
-    if (j.contains({"FE-I4B","Parameter","vcalSlope"}))
-        vcalSlope = j["FE-I4B"]["Parameter"]["vcalSlope"];
+    if (j.contains("FE-I4B") && j["FE-I4B"].contains("Parameter")) {
+        auto &jparams = j["FE-I4B"]["Parameter"];
+        if (jparams.contains("chipId"))
+            chipId = jparams["chipId"];
+        if (jparams.contains("sCap"))
+            sCap = jparams["sCap"];
+        if (jparams.contains("lCap"))
+            lCap = jparams["lCap"];
+        if (jparams.contains("vcalOffset"))
+            vcalOffset = jparams["vcalOffset"];
+        if (jparams.contains("vcalSlope"))
+            vcalSlope = jparams["vcalSlope"];
+    }
 
     Fei4PixelCfg::loadConfig(j);
     Fei4GlobalCfg::loadConfig(j);

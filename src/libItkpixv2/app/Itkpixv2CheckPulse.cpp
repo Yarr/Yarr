@@ -244,10 +244,10 @@ int main(int argc, char* argv[]) {
         hw->flushBuffer();
 
         //std::this_thread::sleep_for(std::chrono::microseconds(1000));
-         if (fe1->checkCom() != 1) {
+         if (fe1->checkCom() != yarrSuccess) {
             std::cout << "Trying again Primary" << std::endl;
 
-            if (fe1->checkCom() != 1) {
+            if (fe1->checkCom() != yarrSuccess) {
                 std::cout << "Failed again" << std::endl;
                 fail_1++;
                 
@@ -256,11 +256,11 @@ int main(int argc, char* argv[]) {
             }
          } 
  
-         if (fe2->checkCom() != 1) {
+         if (fe2->checkCom() != yarrSuccess) {
             std::cout << "Trying again Secondary" << std::endl;                
             //break;
 
-            if (fe2->checkCom() != 1) {
+            if (fe2->checkCom() != yarrSuccess) {
                 std::cout << "Failed again" << std::endl;
                 fail_2++;
                 //std::cout << j << "Secondary Can't establish communication, aborting!" << std::endl;

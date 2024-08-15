@@ -44,6 +44,7 @@ Support for YARR can be found in the [YARR Matter Most channel.](https://matterm
     |-- libEmu : FE Emulator hw driver
     |-- libFe65p2 : FE65p2 implementation
     |-- libFei4 : FE-I4B implementation
+    |-- libStar : Strips Star implementation
     |-- libKU040 : KU040 hw driver
     |-- libNetioHW : FELIX driver
     |-- libFelixClient: FELIX driver for felix-star and NetIO-next

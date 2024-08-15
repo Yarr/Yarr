@@ -37,17 +37,25 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         void configurePixels(std::vector<std::pair<unsigned, unsigned>> &pixels);
         void configurePixelMaskParallel();
         
-        int checkCom() override;
-        bool hasValidName() override;
+        yarrStatus checkCom() override;
+        yarrStatus hasValidName() override;
 
-        void writeRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t value);
-        void readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref);
-        void writeNamedRegister(std::string name, uint16_t value) override;
-        uint16_t readNamedRegister(std::string name) override;
-        void setRegisterValue(std::string name, uint16_t value) override;
-        uint16_t getRegisterValue(std::string name) override;
+        // Memory and chip register operation based on object
+        yarrStatus writeRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, const uint16_t value);
+        yarrStatus readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t &value, uint8_t &chipId);
+        yarrStatus readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t &value);
+        yarrStatus readUpdateWriteRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, const uint16_t value);
+        
+        // Memory only register operations
+        yarrStatus getNamedRegister(std::string name, uint16_t &value) override;
+        yarrStatus setNamedRegister(std::string name, const uint16_t value) override;
+        
+        // Memory and chip register operations based on name
+        yarrStatus writeNamedRegister(std::string name, const uint16_t value) override;
+        yarrStatus readNamedRegister(std::string name, uint16_t &value) override;
+        yarrStatus readUpdateWriteNamedRegister(std::string name, const uint16_t value) override;
 
-        Rd53bRegDefault Rd53bGlobalCfg::* getNamedRegister(std::string name);
+        Rd53bRegDefault Rd53bGlobalCfg::* getNamedRegisterObject(std::string name);
 
         void setInjCharge(double charge, bool sCap=true, bool lCap=true) override {
             this->writeRegister((Rd53bRegDefault Rd53bGlobalCfg::*)&Rd53bGlobalCfg::InjVcalDiff, this->toVcal(charge));
@@ -56,14 +64,13 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         static std::pair<uint32_t, uint32_t> decodeSingleRegRead(uint32_t higher, uint32_t lower);
         static std::tuple<uint8_t, uint32_t, uint32_t> decodeSingleRegReadID(uint32_t higher, uint32_t lower);
 
-	void readUpdateWriteNamedReg(std::string name) override;
-	void readUpdateWriteReg(Rd53bRegDefault Rd53bGlobalCfg::*ref);
-        uint32_t readSingleRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref);
         
         // perform the necessary steps to program the E-fuse circuitry and perform
         // the readback of the E-fuse data
         itkpix_efuse_codec::EfuseData readEfuses();
         uint32_t readEfusesRaw();
+        uint32_t getEfuses();
+        uint8_t readChipId();
 
         void runRingOsc(uint16_t duration, bool isBankB);
         void confAdc(uint16_t MONMUX, bool doCur = false) override;

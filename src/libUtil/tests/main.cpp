@@ -2,6 +2,9 @@
 
 #include "catch.hpp"
 
+#include <fstream>
+#include <iostream>
+
 #include "LoggingConfig.h"
 
 int main( int argc, char* argv[] )

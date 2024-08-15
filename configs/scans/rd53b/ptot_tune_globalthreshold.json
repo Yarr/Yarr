@@ -33,7 +33,7 @@
       { "config": {
           "max": 350,
           "min": 0,
-          "step": 16,
+          "step": 32,
           "parameter": "DiffTh1M",
           "pixelReg": 0,
           "rstPixelReg": true

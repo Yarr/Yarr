@@ -1,6 +1,7 @@
 #include "GraphErrors.h"
 
 #include <algorithm>
+#include <fstream>
 #include <iomanip>
 
 #include "logging.h"
@@ -173,18 +174,21 @@ bool GraphErrors::fromFile(const std::string &filename) {
     data_yerr.clear();
     data_x.reserve(data_npoints);
     data_y.reserve(data_npoints);
-    if (j.contains({"Data","xerr"}))
-      data_xerr.reserve(data_npoints);
-    if (j.contains({"Data","yerr"}))
-      data_yerr.reserve(data_npoints);
+    if (j.contains("Data")) {
+      auto &jdata = j["Data"];
+      if(jdata.contains("xerr"))
+        data_xerr.reserve(data_npoints);
+      if (jdata.contains("yerr"))
+        data_yerr.reserve(data_npoints);
 
-    for (unsigned i=0; i<data_npoints; i++) {
-      data_x.push_back(j["Data"]["x"][i]);
-      data_y.push_back(j["Data"]["y"][i]);
-      if (j.contains({"Data","xerr"}))
-        data_xerr.push_back(j["Data"]["xerr"][i]);
-      if (j.contains({"Data","yerr"}))
-        data_yerr.push_back(j["Data"]["yerr"][i]);
+      for (unsigned i=0; i<data_npoints; i++) {
+        data_x.push_back(jdata["x"][i]);
+        data_y.push_back(jdata["y"][i]);
+        if (jdata.contains("xerr"))
+          data_xerr.push_back(jdata["xerr"][i]);
+        if (jdata.contains("yerr"))
+          data_yerr.push_back(jdata["yerr"][i]);
+      }
     }
   }
   file.close();

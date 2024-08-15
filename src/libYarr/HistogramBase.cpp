@@ -46,8 +46,14 @@ std::unique_ptr<HistogramBase> HistogramBase::fromJson(const json &j)
         h->fromJson(j);
         return h;
     } else if(type=="Histo3d") {
-        // fromJson is not implemented
-        hlog->error("Sorry, can't load Histo3d at the moment");
+        auto h = std::make_unique<Histo3d>(j["Name"],
+                                           j["x"]["Bins"], j["x"]["Low"], j["x"]["High"],
+                                           j["y"]["Bins"], j["y"]["Low"], j["y"]["High"],
+                                           j["z"]["Bins"], j["z"]["Low"], j["z"]["High"]);
+        h->fromJson(j);
+        return h;
+    } else {
+        hlog->error("Failed to load histogram type: {}", type);
     }
 
     hlog->error("Loading histogram from json, Type property not recognised");
@@ -80,8 +86,15 @@ std::unique_ptr<HistogramBase> HistogramBase::fromJson(const json &j, const Loop
         h->fromJson(j);
         return h;
     } else if(type=="Histo3d") {
+        auto h = std::make_unique<Histo3d>(j["Name"],
+                                           j["x"]["Bins"], j["x"]["Low"], j["x"]["High"],
+                                           j["y"]["Bins"], j["y"]["Low"], j["y"]["High"],
+                                           j["z"]["Bins"], j["z"]["Low"], j["z"]["High"], lstatus);
+        h->fromJson(j);
+        return h;
+    } else {
         // fromJson is not implemented
-        hlog->error("Sorry, can't load Histo3d at the moment");
+      hlog->error("Failed to load histogram type (with LoopStatus): {}", type);
     }
 
     hlog->error("Loading histogram from json, Type property not recognised");

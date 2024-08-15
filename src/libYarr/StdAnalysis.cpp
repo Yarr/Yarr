@@ -647,6 +647,17 @@ void ScurveFitter::loadConfig(const json &j) {
             m_parametersOfInterest.push_back(j["parametersOfInterest"][i]);
         }
     }
+    if (j.contains("fitParameterCuts")) {
+        if (j["fitParameterCuts"].contains("chi2Min")) {
+            chi2Min = j["fitParameterCuts"]["chi2Min"];
+        }
+        if (j["fitParameterCuts"].contains("chi2Max")) {
+            chi2Max = j["fitParameterCuts"]["chi2Max"];
+        }
+        if (j["fitParameterCuts"].contains("maxBaselineDifference")) {
+            maxBaselineDifference = j["fitParameterCuts"]["maxBaselineDifference"];
+        }
+    }
 }
 
 // Errorfunction
@@ -663,50 +674,102 @@ double reverseScurveFct(double x, const double *par) {
     return par[3] + 0.5*( erfc( (x-par[0])/(par[1]*SQRT2) ) )*par[2];
 }
 
+bool ScurveFitter::fitSuccess(const double (&fit_params)[n_fit_params], const double &chi2) const {
+    return (vcalMin < fit_params[0]) && (fit_params[0] < vcalMax) && \
+           // mean should be within vcal bounds
+           (0 <= fit_params[1]) && (fit_params[1] < (vcalMax-vcalMin)) && \
+           // width should be between 0 and the vcal range
+           (reverse || fit_params[1] > 0) && \
+           // reverse s-curve fit can touch 0, but not the regular s-curve fit
+           (chi2Min < chi2) && (chi2 < chi2Max) && \
+           // chi2 should be within specified range
+           (fabs((fit_params[2] - fit_params[3])/injections - 1) < maxBaselineDifference);
+           // difference between 100% baseline and 0% baseline compared to number of injections
+           // should be within specified range
+}
+
+void ScurveFitter::createFitResultHistograms(const unsigned long& outerIdent, const LoopStatus& loopStatus) {
+    auto hh2 = std::make_unique<Histo2d>("ThresholdMap-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, loopStatus);
+    hh2->setXaxisTitle("Column");
+    hh2->setYaxisTitle("Row");
+    hh2->setZaxisTitle("Threshold [e]");
+    thrMap[outerIdent] = std::move(hh2);
+
+    hh2 = std::make_unique<Histo2d>("NoiseMap-"+std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, loopStatus);
+    hh2->setXaxisTitle("Column");
+    hh2->setYaxisTitle("Row");
+    hh2->setZaxisTitle("Noise [e]");
+    sigMap[outerIdent] = std::move(hh2);
+
+    auto hh1 = std::make_unique<Histo1d>("Chi2Dist-"+std::to_string(outerIdent), 51, chi2Min-0.025, chi2Max+0.025, loopStatus);
+    hh1->setXaxisTitle("Fit Chi/ndf");
+    hh1->setYaxisTitle("Number of Pixels");
+    chiDist[outerIdent] = std::move(hh1);
+
+    hh2 = std::make_unique<Histo2d>("Chi2Map-"+std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, loopStatus);
+    hh2->setXaxisTitle("Column");
+    hh2->setYaxisTitle("Row");
+    hh2->setZaxisTitle("Chi2");
+    chi2Map[outerIdent] = std::move(hh2);
+
+    hh2 = std::make_unique<Histo2d>("StatusMap-"+std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, loopStatus);
+    hh2->setXaxisTitle("Column");
+    hh2->setYaxisTitle("Row");
+    hh2->setZaxisTitle("Fit Status");
+    statusMap[outerIdent] = std::move(hh2);
+
+    hh1 = std::make_unique<Histo1d>("StatusDist-"+std::to_string(outerIdent), 11, -0.5, 10.5, loopStatus);
+    hh1->setXaxisTitle("Fit Status ");
+    hh1->setYaxisTitle("Number of Pixels");
+    statusDist[outerIdent] = std::move(hh1);
+
+    hh1 = std::make_unique<Histo1d>("TimePerFitDist-"+std::to_string(outerIdent), 201, -1, 401, loopStatus);
+    hh1->setXaxisTitle("Fit Time [us]");
+    hh1->setYaxisTitle("Number of Pixels");
+    timeDist[outerIdent] = std::move(hh1);
+}
+
 void ScurveFitter::processHistogram(HistogramBase *h) {
     cnt++;
     // Check if right Histogram
     if (h->getName().find(OccupancyMap::outputName()) != 0)
         return;
 
-    Histo2d *hh = (Histo2d*) h;
+    auto hh = dynamic_cast<Histo2d*>(h);
+    LoopStatus loopStatus = hh->getStat();
 
-    unsigned long medIdent = 0;
-    unsigned long medOffset = 1;
     unsigned long outerIdent = 0;
     unsigned long outerOffset = 1;
     for (unsigned n=0; n<loops.size(); n++) {
-        outerIdent += hh->getStat().get(loops[n])*outerOffset;
-        medIdent += hh->getStat().get(loops[n])*medOffset;
-        medOffset *= loopMax[n];
+        outerIdent += loopStatus.get(loops[n])*outerOffset;
         outerOffset *= loopMax[n];
     }
-    medCnt[medIdent]++;
+    medCnt[outerIdent]++;
 
+    unsigned long offset = nCol * nRow;
+    unsigned vcal = loopStatus.get(vcalLoop);
     for(unsigned col=1; col<=nCol; col++) {
         for (unsigned row=1; row<=nRow; row++) {
             unsigned bin = hh->binNum(col, row);
             if (hh->getBin(bin) != 0 || reverse) {
                 // Select correct output container
                 unsigned long ident = bin;
-                unsigned long offset = nCol*nRow;
-                unsigned vcal = hh->getStat().get(vcalLoop);
                 // Determine identifier
                 std::string name = "Scurve";
                 name += "-" + std::to_string(col) + "-" + std::to_string(row);
                 // Check for other loops
                 for (unsigned n=0; n<loops.size(); n++) {
-                    ident += hh->getStat().get(loops[n])*offset;
+                    ident += loopStatus.get(loops[n])*offset;
                     offset *= loopMax[n];
-                    name += "-" + std::to_string(hh->getStat().get(loops[n]));
+                    name += "-" + std::to_string(loopStatus.get(loops[n]));
                 }
 
                 // Check if Histogram exists
                 if (histos[ident] == nullptr) {
-                    Histo1d *hhh = new Histo1d(name, vcalBins+1, vcalMin-((double)vcalStep/2.0), vcalMax+((double)vcalStep/2.0));
+                    auto hhh = std::make_unique<Histo1d>(name, vcalBins+1, vcalMin-((double)vcalStep/2.0), vcalMax+((double)vcalStep/2.0));
                     hhh->setXaxisTitle("Vcal");
                     hhh->setYaxisTitle("Occupancy");
-                    histos[ident].reset(hhh);
+                    histos[ident] = std::move(hhh);
                     innerCnt[ident] = 0;
                 }
 
@@ -731,7 +794,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     std::chrono::high_resolution_clock::time_point start;
                     std::chrono::high_resolution_clock::time_point end;
                     start = std::chrono::high_resolution_clock::now();
-                    
+
                     if (use_scurvegauss) {
                         // mean and sigma calculated rather than fitted, implementation libUtil/scurvegauss.cpp
                         scurvegauss(par, vcalBins, &x[0], histos[ident]->getData());
@@ -745,54 +808,15 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
                     end = std::chrono::high_resolution_clock::now();
                     std::chrono::microseconds fitTime = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
                     if (thrMap[outerIdent] == nullptr) {
-                        Histo2d *hh2 = new Histo2d("ThresholdMap-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, hh->getStat());
-                        hh2->setXaxisTitle("Column");
-                        hh2->setYaxisTitle("Row");
-                        hh2->setZaxisTitle("Threshold [e]");
-                        thrMap[outerIdent].reset(hh2);
-                        hh2 = new Histo2d("NoiseMap-"+std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
-                        hh2->setXaxisTitle("Column");
-                        hh2->setYaxisTitle("Row");
-                        hh2->setZaxisTitle("Noise [e]");
-
-                        sigMap[outerIdent].reset(hh2);
-
-                        Histo1d *hh1 = new Histo1d("Chi2Dist-"+std::to_string(outerIdent), 51, -0.025, 2.525);
-                        hh1->setXaxisTitle("Fit Chi/ndf");
-                        hh1->setYaxisTitle("Number of Pixels");
-                        chiDist[outerIdent].reset(hh1);
-
-                        hh2 = new Histo2d("Chi2Map-"+std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
-                        hh2->setXaxisTitle("Column");
-                        hh2->setYaxisTitle("Row");
-                        hh2->setZaxisTitle("Chi2");
-                        chi2Map[outerIdent].reset(hh2);
-
-                        hh2 = new Histo2d("StatusMap-"+std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
-                        hh2->setXaxisTitle("Column");
-                        hh2->setYaxisTitle("Row");
-                        hh2->setZaxisTitle("Fit Status");
-                        statusMap[outerIdent].reset(hh2);
-
-                        hh1 = new Histo1d("StatusDist-"+std::to_string(outerIdent), 11, -0.5, 10.5);
-                        hh1->setXaxisTitle("Fit Status ");
-                        hh1->setYaxisTitle("Number of Pixels");
-                        statusDist[outerIdent].reset(hh1);
-
-                        hh1 = new Histo1d("TimePerFitDist-"+std::to_string(outerIdent), 201, -1, 401);
-                        hh1->setXaxisTitle("Fit Time [us]");
-                        hh1->setYaxisTitle("Number of Pixels");
-                        timeDist[outerIdent].reset(hh1);
+                        createFitResultHistograms(outerIdent, loopStatus);
                     }
 
                     double chi2= status.fnorm/(double)(vcalBins - n_par);
-                    
+
                     //override the following chi2 check if using scurvegauss (no fit involved)
                     if (use_scurvegauss) chi2 = 1.;
 
-                    if (par[0] > vcalMin && par[0] < vcalMax && par[1] > 0 && par[1] < (vcalMax-vcalMin) && par[1] >= 0
-                            && chi2 < 2.5 && chi2 > 1e-6
-                            && fabs((par[2] - par[3])/injections - 1) < 0.1) {  // Add new criteria: difference between 100% baseline and 0% baseline should agree with number of injections within 10%
+                    if (fitSuccess(par, chi2)) {
                         thrMap[outerIdent]->setBin(bin, feCfg->toCharge(par[0], useScap, useLcap));
                         // Reudce effect of vcal offset on this, don't want to probe at low vcal
                         sigMap[outerIdent]->setBin(bin, feCfg->toCharge(par[0]+par[1], useScap, useLcap)-feCfg->toCharge(par[0], useScap, useLcap));
@@ -817,7 +841,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 
     // Finished full vcal loop, if feedback loop provide TDAC feedback
     // Requires odd number of TDAC steps, optimised for 3 iterations
-    if (medCnt[medIdent] == n_count && fb != nullptr) {
+    if (medCnt[outerIdent] == n_count && fb != nullptr) {
         if (outerIdent == 0) {
             thrTarget = thrMap[outerIdent]->getMean();
         }
@@ -831,11 +855,11 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
         }
 
         if (deltaThr[outerIdent] == nullptr) {
-            Histo2d *hh2 = new Histo2d("DeltaThreshold-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
+            auto hh2 = std::make_unique<Histo2d>("DeltaThreshold-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
             hh2->setXaxisTitle("Column");
             hh2->setYaxisTitle("Row");
             hh2->setZaxisTitle("Delta Threshold [e]");
-            deltaThr[outerIdent].reset(hh2);
+            deltaThr[outerIdent] = std::move(hh2);
         }
 
         for(unsigned col=1; col<=nCol; col++) {
@@ -907,10 +931,10 @@ void ScurveFitter::end() {
             bins = (xhigh-xlow)/bin_width;
 
 
-            Histo1d *hh1 = new Histo1d("ThresholdDist-" + std::to_string(i), bins, xlow, xhigh);
+            auto hh1 = std::make_unique<Histo1d>("ThresholdDist-" + std::to_string(i), bins, xlow, xhigh);
             hh1->setXaxisTitle("Threshold [e]");
             hh1->setYaxisTitle("Number of Pixels");
-            thrDist[i].reset(hh1);
+            thrDist[i] = std::move(hh1);
 
             bin_width = 5;
             int rSigMean = (int)(sigMean) - (int)(sigMean)%bin_width;
@@ -927,10 +951,10 @@ void ScurveFitter::end() {
             }
             bins = (xhigh-xlow)/bin_width;
 
-            hh1 = new Histo1d("NoiseDist-" + std::to_string(i), bins, xlow, xhigh);
+            hh1 = std::make_unique<Histo1d>("NoiseDist-" + std::to_string(i), bins, xlow, xhigh);
             hh1->setXaxisTitle("Noise [e]");
             hh1->setYaxisTitle("Number of Pixels");
-            sigDist[i].reset(hh1);
+            sigDist[i] = std::move(hh1);
 
             for(unsigned bin=0; bin<(nCol*nRow); bin++) {
                 if (thrMap[i]->getBin(bin) != 0)
@@ -960,70 +984,172 @@ void ScurveFitter::end() {
 }
 
 void NPointGain::init(const ScanLoopInfo *s) {
-    for (unsigned n=0; n<s->size(); n++) {
+    for (unsigned n = 0; n < s->size(); n++) {
         auto l = s->getLoop(n);
         if (isPOILoop(l)) {
-            par_loopindex = n;
-            par_min = l->getMin();
-            par_max = l->getMax();
-            par_step = l->getStep();
+            m_injectionLoopIndex = n;
             break;
         }
     }
 }
 
-void NPointGain::processHistogram(HistogramBase *h) {
-    // Pick the threshold map based on histogram names
-    // Target string: "ThresholdMap-<parameter>"
-    std::string hname = h->getName();
-    if (hname.substr(0, hname.find("-")) != "ThresholdMap")
-        return;
-    auto h2d = dynamic_cast<Histo2d*>(h);
-    if (h2d == nullptr)
-        return;
-
-    // Get the scan parameter value (BCAL)
-    //std::string par_str = hname.substr(hname.find("-")+1);
-    //int par = std::stoi(par_str);
-    int par = h->getStat().get(par_loopindex);
-
-    inj.push_back(par);
-    inj_err.push_back(0);
-    thr.push_back(h2d->getMean());
-    thr_err.push_back(h2d->getStdDev());
-}
-
-void NPointGain::end() {
-    unsigned npoints = inj.size();
-
-    // Response curve
-    double inj_min = *std::min_element(inj.begin(), inj.end());
-    double inj_max = *std::max_element(inj.begin(), inj.end());
-    double bwidth = (inj_max - inj_min) / (npoints - 1);
-    double xlow = inj_min - bwidth/2;
-    double xhigh = inj_max + bwidth/2;
-
-    respCurve.reset(new Histo1d("responseCurve", npoints, xlow, xhigh));
-    for (unsigned p=0; p<npoints; p++) {
-        respCurve->fill(inj[p], thr[p]);
-    }
-    respCurve->setXaxisTitle("Injected Charge");
-    respCurve->setYaxisTitle("Threshold");
-
-    // Do fit here
-
-    // Output
-    output->pushData(std::move(respCurve));
-}
-
 void NPointGain::loadConfig(const json &j) {
     if (j.contains("parametersOfInterest")) {
-        for (unsigned i=0; i<j["parametersOfInterest"].size(); i++) {
+        for (unsigned i = 0; i < j["parametersOfInterest"].size(); i++) {
             m_parametersOfInterest.push_back(j["parametersOfInterest"][i]);
         }
     }
+
     if (j.contains("skipDependencyCheck"))
         m_skipDependencyCheck = j["skipDependencyCheck"];
+
+    if (j.contains("fitFunction") && (m_respFuncMap.find(j["fitFunction"]) != m_respFuncMap.end())) {
+        if (m_respFuncMap.find(j["fitFunction"]) != m_respFuncMap.end()) {
+            m_respFuncName = j["fitFunction"];
+        } else {
+            alog->warn("NPointGain: Unknown response function '{}' provided in config.", static_cast<std::string>(j["fitFunction"]));
+            m_respFuncName = "linear";
+        }
+    } else {
+        m_respFuncName = "linear";
+    }
+
+    m_respFunc = m_respFuncMap[m_respFuncName];
+    m_gainConvFunc = m_gainConvFuncMap[m_respFuncName];
+    m_respFuncNParams = m_respFuncNParamsMap[m_respFuncName];
+    alog->info("NPointGain: Response function set to '{}'.", m_respFuncName);
+}
+
+void NPointGain::processHistogram(HistogramBase *h) {
+    std::string hname = h->getName();
+    std::string prefix = hname.substr(0, hname.find("-"));
+
+    // pick storage container and conversion function based on input histogram
+    InjectionDataMap* container;
+    std::function<double(double)> conversion;
+    if (prefix == "ThresholdMap") {
+        container = &m_thresholdMap;
+        // bind the threshold conversion function to the class instance with one placeholder arg
+        conversion = std::bind(&NPointGain::convertThresholdUnit, this, std::placeholders::_1);
+    } else if (prefix == "NoiseMap") {
+        container = &m_inputNoiseMap;
+        conversion = [](double x) { return x; }; // no conversion for input noise
+    } else {
+        return;
+    }
+
+    auto histo = dynamic_cast<Histo2d*>(h);
+    if (histo == nullptr)
+        return;
+
+    // get the scan parameter value (injection) and initialize corresponding map element
+    double inj_raw = histo->getStat().get(m_injectionLoopIndex);
+    double inj = convertInjectionUnit(inj_raw);
+    (*container)[inj] = std::vector<std::vector<double>>(nCol, std::vector<double>(nRow));
+
+    // fill values for each channel
+    for (unsigned col = 0; col < nCol; col++) {
+        for (unsigned row = 0; row < nRow; row++) {
+            int binNum = histo->binNum(col+1, row+1);
+            (*container)[inj][col][row] = conversion(histo->getBin(binNum));
+        }
+    }
+}
+
+std::vector<double> NPointGain::createResponseCurve(unsigned col, unsigned row) {
+    std::vector<double> thresholds;
+    thresholds.reserve(m_injections.size());
+    for(const auto inj : m_injections) {
+        thresholds.push_back(m_thresholdMap[inj][col][row]);
+    }
+    return thresholds;
+}
+
+std::vector<double> NPointGain::guessInitialFitParams(const std::vector<double>& thresholds) {
+    std::vector<double> fitParams;
+
+    if (m_respFuncName == "linear" || m_respFuncName == "polynomial") {
+        // easy to just get slope from data
+        double slope = (thresholds[thresholds.size()-1] - thresholds[0]) \
+                    / (m_injections[m_injections.size()-1] - m_injections[0]);
+        fitParams.push_back(0.);
+        fitParams.push_back(slope);
+        if (m_respFuncName == "polynomial") {
+            fitParams.push_back(0.);
+        }
+    } else {
+        // exponential is a bit trickier, so just leave zero for now
+        fitParams = std::vector<double>(m_respFuncNParamsMap[m_respFuncName], 0.);
+    }
+
+    return fitParams;
+}
+
+void NPointGain::fitResponseCurve(const std::vector<double>& thresholds, std::vector<double>& fitParams) {
+    lm_status_struct status;
+    lm_control_struct control = lm_control_float;
+    control.verbosity = 0;
+
+    lmcurve(
+        fitParams.size(), fitParams.data(),
+        m_injections.size(), m_injections.data(), thresholds.data(),
+        m_respFunc, &control, &status);
+}
+
+void NPointGain::end() {
+    // get injections vector for fitting, needs to be double for lmcurve
+    // it is already sorted because it came from a map!
+    for (const auto& pair : m_thresholdMap) {
+        m_injections.push_back(pair.first);
+    }
+
+    // output histograms
+    // injectionHisto maps index in 3rd histo dimension to injection value for
+    // thresholdHisto and inputNoiseHisto
+    auto injectionHisto = std::make_unique<Histo1d>("InjectionValues",
+        m_injections.size(), -0.5, m_injections.size()-0.5);
+    auto fitParamsHisto = std::make_unique<Histo3dT<float>>("ResponseFitParams",
+        nCol, -0.5, nCol-0.5, nRow, -0.5, nRow-0.5,
+        m_respFuncNParams, -0.5, m_respFuncNParams-0.5);
+    auto thresholdHisto = std::make_unique<Histo3dT<float>>("Thresholds",
+        nCol, -0.5, nCol-0.5, nRow, -0.5, nRow-0.5,
+        m_injections.size(), -0.5, m_injections.size()-0.5);
+    auto inputNoiseHisto = std::make_unique<Histo3dT<float>>("InputNoise",
+        nCol, 0.5, nCol-0.5, nRow, 0.5, nRow-0.5,
+        m_injections.size(), -0.5, m_injections.size()-0.5);
+    auto gainCurveHisto = std::make_unique<Histo3dT<float>>("GainCurve",
+        nCol, 0.5, nCol-0.5, nRow, 0.5, nRow-0.5,
+        m_injections.size(), -0.5, m_injections.size()-0.5);
+
+    // run response curve fit for each channel
+    for (unsigned col = 0; col < nCol; col++) {
+        for (unsigned row = 0; row < nRow; row++) {
+            auto thresholds = createResponseCurve(col, row);
+            std::vector<double> fitParams = guessInitialFitParams(thresholds);
+            fitResponseCurve(thresholds, fitParams);
+
+            for (unsigned parIdx = 0; parIdx < m_respFuncNParams; parIdx++) {
+                fitParamsHisto->fill(col, row, parIdx, fitParams[parIdx]);
+            }
+
+            for (unsigned injIdx = 0; injIdx < m_injections.size(); injIdx++) {
+                double inj = m_injections[injIdx];
+                thresholdHisto->fill(col, row, injIdx, m_thresholdMap[inj][col][row]);
+                inputNoiseHisto->fill(col, row, injIdx, m_inputNoiseMap[inj][col][row]);
+                gainCurveHisto->fill(col, row, injIdx, m_gainConvFunc(inj, fitParams.data()));
+            }
+        }
+    }
+
+    for (unsigned injIdx = 0; injIdx < m_injections.size(); injIdx++) {
+        injectionHisto->fill(injIdx, m_injections[injIdx]);
+    }
+
+    output->pushData(std::move(injectionHisto));
+    output->pushData(std::move(fitParamsHisto));
+    output->pushData(std::move(thresholdHisto));
+    output->pushData(std::move(inputNoiseHisto));
+    output->pushData(std::move(gainCurveHisto));
 }
 
 void OccGlobalThresholdTune::init(const ScanLoopInfo *s) {
@@ -1100,25 +1226,20 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
         for(unsigned i=0; i<occMaps[ident]->size(); i++)
             occDists[ident]->fill(occMaps[ident]->getBin(i));
 
-        bool done = false;
-        double sign = 0;
+        m_entries = occDists[ident]->getEntries();
 
-        double meanOcc = occDists[ident]->getMean()/(double)injections;
-        double entries = occDists[ident]->getEntries();
-        alog->info("[{}] Mean Occupancy = {}", id, meanOcc);
-
-        if (entries < (nCol*nRow)*0.005) { // Want at least 1% of all pixels to fire
-            sign = -1;
-        } else if ((meanOcc > 0.51) && !done) {
-            sign = +1;
-        } else if ((meanOcc < 0.49) && !done) {
-            sign = -1;
-        } else {
-            sign = 0;
-            done = true;
+        // inverts sign if previous number of entries in bathtub plot is larger than current number of entries in bathtub plot
+        if (m_entries < (nCol*nRow)*0.005) { // Want at least 0.5% of all pixels to fire
+            m_sign = -1;
+        } else if (m_entries < m_oldEntries && !m_done) {
+            m_sign *= -1;
         }
 
-        fb->feedback(this->id, sign, done);
+        alog->info("[{}] Total Entries = {}. Previous Total Entries = {}. Sign = {}.", id, m_entries, m_oldEntries, m_sign);
+
+        m_oldEntries = m_entries;
+
+        fb->feedback(this->id, m_sign, m_done);
         output->pushData(std::move(occMaps[ident]));
         output->pushData(std::move(occDists[ident]));
         innerCnt[ident] = 0;

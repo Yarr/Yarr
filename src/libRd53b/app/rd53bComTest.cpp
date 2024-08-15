@@ -183,9 +183,10 @@ int main (int argc, char *argv[]) {
     // Read counter
     rd53b.writeRegister(&Rd53b::CmdErrCnt, 0);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    rd53b.readRegister(&Rd53b::CmdErrCnt);
+    uint16_t cmdErrCnt = 0;
+    rd53b.readRegister(&Rd53b::CmdErrCnt, cmdErrCnt);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    logger->info("CmdErrCnt: {}", rd53bTest::singleRegRead(hwCtrl.get()).second);
+    logger->info("CmdErrCnt: {}", cmdErrCnt);
 
     unsigned ok = 0;
     unsigned total = 2000;
@@ -197,28 +198,9 @@ int main (int argc, char *argv[]) {
         uint32_t val = rd53b.DiffPreampM.read();
         rd53b.writeRegister(&Rd53b::DiffPreampM, val);
         rd53b.sendGlobalPulse(16);
-        rd53b.readRegister(&Rd53b::DiffPreampM);
-        while(!hwCtrl->isCmdEmpty());
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        
-        std::pair<uint32_t, uint32_t> answer(0, 0), answer2(0, 0);
-
-        std::vector<RawDataPtr> dataVec = hwCtrl->readData();
-        RawDataPtr data;
-        int timeout = 0;
-        if  (dataVec.size() > 0) {
-            data = dataVec[0];
-            answer = Rd53b::decodeSingleRegRead(data->get(0), data->get(1));
-            if (data->getSize()>2) {
-                answer2 = Rd53b::decodeSingleRegRead(data->get(2), data->get(3));
-            }
-            binOut.write((char*) data->getBuf(), data->getSize()*4);
-        }
-
-        if (answer.first == addr || answer2.first == addr) {
-            if (answer.second == val || answer2.second == val) {
-               ok++;
-            }
+        uint16_t new_val = 0;
+        if (rd53b.readRegister(&Rd53b::DiffPreampM, new_val) == yarrSuccess) {
+           ok++;
         }
 
     }
@@ -227,22 +209,18 @@ int main (int argc, char *argv[]) {
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     
     // Read counter
-    rd53b.readRegister(&Rd53b::CmdErrCnt);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    std::pair<uint32_t, uint32_t> readRegCmdErr = rd53bTest::singleRegRead(hwCtrl.get());
-    logger->info("CmdErrCnt: {}", readRegCmdErr.second);
+    rd53b.readRegister(&Rd53b::CmdErrCnt, cmdErrCnt);
+    logger->info("CmdErrCnt: {}", cmdErrCnt);
     
     rd53b.writeRegister(&Rd53b::CmdErrCnt, 0);
     rd53b.writeRegister(&Rd53b::SkippedTrigCnt, 0);
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     
-    rd53b.readRegister(&Rd53b::CmdErrCnt);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    logger->info("CmdErrCnt: {} Reset ?", rd53bTest::singleRegRead(hwCtrl.get()).second);
+    rd53b.readRegister(&Rd53b::CmdErrCnt, cmdErrCnt);
+    logger->info("CmdErrCnt: {} Reset ?", cmdErrCnt);
     
-    rd53b.readRegister(&Rd53b::SkippedTrigCnt);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    logger->info("SkippedTrigCnt: {} = 0 ?", rd53bTest::singleRegRead(hwCtrl.get()).second);
+    rd53b.readRegister(&Rd53b::SkippedTrigCnt, cmdErrCnt);
+    logger->info("SkippedTrigCnt: {} = 0 ?", cmdErrCnt);
 
 #ifdef MONEATER
     std::string cmd = "echo \"success\treadRegCmdErr\n" + std::to_string(ok) +"\t" + std::to_string(readRegCmdErr.second) + "\" | python3 ~/moneater/moneater.py --host 127.0.0.1 --port 8086 --user <user> --password <password> --database betsee --table rd53b_com_test eaters.tabeater.TabEater";
@@ -299,15 +277,11 @@ int main (int argc, char *argv[]) {
     
     hwCtrl->flushBuffer();
     
-    rd53b.readRegister(&Rd53b::CmdErrCnt);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    readRegCmdErr = rd53bTest::singleRegRead(hwCtrl.get());
-    logger->info("CmdErrCnt: {}", readRegCmdErr.second);
+    rd53b.readRegister(&Rd53b::CmdErrCnt, cmdErrCnt);
+    logger->info("CmdErrCnt: {}", cmdErrCnt);
     
-    rd53b.readRegister(&Rd53b::SkippedTrigCnt);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    std::pair<uint32_t, uint32_t> skipTrig = rd53bTest::singleRegRead(hwCtrl.get());
-    logger->info("SkippedTriggerCnt: {}", skipTrig.second);
+    rd53b.readRegister(&Rd53b::SkippedTrigCnt, cmdErrCnt);
+    logger->info("SkippedTriggerCnt: {}", cmdErrCnt);
 
 #ifdef MONEATER
     std::string cmd2 = "echo \"success\ttrigCmdErr\tskippedTrigCnt\n" + std::to_string(ok) +"\t" + std::to_string(readRegCmdErr.second) + "\t" + std::to_string(skipTrig.second) + "\" | python3 ~/moneater/moneater.py --host 127.0.0.1 --port 8086 --user <user> --password <password> --database betsee --table rd53b_trig_test eaters.tabeater.TabEater";

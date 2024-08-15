@@ -36,7 +36,7 @@ void Rd53bParameterLoop::init() {
 
     m_done = false;
     m_cur = min;
-    parPtr = keeper->globalFe<Rd53b>()->getNamedRegister(parName);
+    parPtr = keeper->globalFe<Rd53b>()->getNamedRegisterObject(parName);
     this->writePar();
     //std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }

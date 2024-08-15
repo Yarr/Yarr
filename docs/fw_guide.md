@@ -2,7 +2,7 @@
 
 Note: For instructions for switching to the 1.28 Gbps firmware, please refer to the [Guide for Updating Firmware](updating_firmware.md)
 
-For the YARR readout, most commonly Series 7 FPGAs are used - specifically the TEF1001 is the recommended FPGA, and XpressK7 and KC705 are also supported. If in doubt of what you have, see the following picture for identification:
+For the YARR readout, most commonly Series 7 FPGAs are used - specifically the TEF1001 is the recommended FPGA, XpressK7, KC705 and Nereid are also supported. If in doubt of what you have, see the following picture for identification:
 
 ![Supported PCIe cards](images/pcie_cards.png)
 
@@ -110,6 +110,14 @@ As this card is not produced anymore by PLDA and you require more information, r
 #### Xilinx KC705
 
 ![KC705](images/kc705.jpg)
+
+#### Numato Nereid (with Kintex-7 XC7K160T)
+
+![Nereid](images/nereid.jpg)
+
+* A jumper has to be placed at the 1V8 pins on the J3 header.
+
+More info can be found [here](https://numato.com/product/nereid-kintex-7-pci-express-fpga-development-board/).
 
 #### CERN SPEC Spartan6
 

@@ -19,7 +19,7 @@
 
 #include "logging.h"
 
-//Allowed response packet types
+/// Allowed response packet types
 enum PacketType {
   TYP_NONE,
   TYP_PR,
@@ -33,19 +33,19 @@ enum PacketType {
   TYP_UNKNOWN
 };
 
-//Map of packet type to 4-bit header
+/// Map of packet type to 4-bit header
 static std::map<int, PacketType> packet_type_headers = {
  {1, TYP_PR}, {2, TYP_LP}, {4, TYP_ABC_RR}, {7, TYP_ABC_TRANSP},
  {8, TYP_HCC_RR}, {11, TYP_ABC_FULL}, {13, TYP_ABC_HPR}, {14, TYP_HCC_HPR}, {0, TYP_NONE}
 };
 
-//Reverse map of packet type to 4-bit header
+/// Reverse map of packet type to 4-bit header
 static std::map<PacketType, int> packet_type_headers_reversed = {
  {TYP_PR, 1}, {TYP_LP, 2}, {TYP_ABC_RR, 4}, {TYP_ABC_TRANSP, 7},
  {TYP_HCC_RR, 8}, {TYP_ABC_FULL, 11}, {TYP_ABC_HPR, 13}, {TYP_HCC_HPR, 14}, {TYP_NONE, 0}
 };
 
-//Map of packet type to packet name
+/// Map of packet type to packet name
 static std::map<PacketType, std::string> packet_type_names = {
  {TYP_NONE, "TYP_NONE"},
  {TYP_PR, "TYP_PR"},
@@ -60,7 +60,7 @@ static std::map<PacketType, std::string> packet_type_names = {
 
 };
 
-//ABC cluster object holding relevant information
+/// ABC cluster object holding relevant information
 struct Cluster{
   int input_channel = 0;
   int raw_cluster = 0;
@@ -68,14 +68,14 @@ struct Cluster{
   int next = 0;
 };
 
-//Definition of equality for clusters
+/// Definition of equality for clusters
 inline bool operator==(const Cluster& lhs, const Cluster& rhs)
 {
     return ( (lhs.input_channel == rhs.input_channel) &&
              (lhs.raw_cluster == rhs.raw_cluster) );
 }
 
-//A class defining the error block for recording which channels have packet error
+/// A class defining the error block for recording which channels have packet error
 class ErrorBlock{
   public:
 
@@ -156,8 +156,8 @@ class ErrorBlock{
 };
 
 
-//HCCStar Packet class, holding information for and parsing various packet types
-//Corresponds to a single HCCStar Packet
+/// HCCStar Packet class, holding information for and parsing various packet types
+/// Corresponds to a single HCCStar Packet
 class StarChipPacket{
   static logging::Logger &logger() {
     static logging::LoggerStore instance = logging::make_log("Star::StarChipPacket");
@@ -166,20 +166,20 @@ class StarChipPacket{
 
   public:
 
-  //Raw 8-bit words added to the packet
+  /// Raw 8-bit words added to the packet
   std::vector<uint16_t> raw_words;
-  //Packet type, parsed from raw words
+  /// Packet type, parsed from raw words
   PacketType type = TYP_NONE;
-  //Error block (empty if no errors)
+  /// Error block (empty if no errors)
   std::unique_ptr<ErrorBlock> error_block;
 
-  //HCC or ABC read information
+  /// HCC or ABC read information
   unsigned char address = 0;
   unsigned int value = 0;
   uint16_t channel_abc = 0; //IC number, for ABC responses only
   uint16_t abc_status = 0;  // Status word from ABC
 
-  //LP / PR information
+  /// LP / PR information
   int flag = 0;
   int bcid = 0;
   int bcid_parity = 0;
@@ -187,7 +187,7 @@ class StarChipPacket{
   std::vector<Cluster> clusters;
   int num_idles = 0;
 
-  //Empty constructor
+  /// Empty constructor
   StarChipPacket() {
     raw_words.clear();
     clusters.clear();
@@ -204,27 +204,27 @@ class StarChipPacket{
       return true;
   }
 
-  //Add a new 8-bit words
+  /// Add a new 8-bit words
   void add_word(uint16_t word){
     raw_words.push_back(word);
   }
 
-  //Return number of 8-bit words in the packet
+  /// Return number of 8-bit words in the packet
   unsigned int n_words() const{
     return raw_words.size();
   }
 
-  //Return number of clusters in the packet
+  /// Return number of clusters in the packet
   unsigned int n_clusters() const{
     return clusters.size();
   }
 
-  //Return type of packet
+  /// Return type of packet
   PacketType getType() const{
    return type;
   }
 
-  //If packet words are empty
+  /// If packet words are empty
   bool is_empty() const{
     if( raw_words.size() == 0 )
       return true;
@@ -232,7 +232,7 @@ class StarChipPacket{
       return false;
   }
 
-  //Print basic info
+  /// Print basic info
   void print(std::ostream &os) const {
     if(this->type == TYP_LP || this->type == TYP_PR){
       os << "Packet info: BCID " << bcid << " (" << bcid_parity << "), "
@@ -264,7 +264,7 @@ class StarChipPacket{
       this->error_block->print(os);
   }
 
-  //Print clusters (for LP / PR packets)
+  /// Print clusters (for LP / PR packets)
   void print_clusters(std::ostream &os) {
     this->print(os);
     os << "Packet's abc clusters are:\n";
@@ -293,7 +293,7 @@ class StarChipPacket{
     os << "\n";
   }
 
-  //Print all raw words in packet
+  /// Print all raw words in packet
   void print_words(std::ostream &os) {
     os << "Packet's " << raw_words.size() << " raw 10b words are: ";
     os << std::hex << std::setfill('0');
@@ -304,7 +304,7 @@ class StarChipPacket{
     os << "\n";
   }
 
-  //Return a string of the raw words in a single line
+  /// Return a string of the raw words in a single line
   std::string raw_word_string(){
     std::string raw_words_str = "";
     char text_buffer[10];
@@ -315,7 +315,7 @@ class StarChipPacket{
     return raw_words_str;
   }
 
-  //Clear only parsed information
+  /// Clear only parsed information
   void clear_parsed_info(){
     this->address = 0;
     this->value = 0;
@@ -331,14 +331,14 @@ class StarChipPacket{
     this->clusters.clear();
   }
 
-  //Clear raw words and parsed information
+  /// Clear raw words and parsed information
   void clear(){
     this->raw_words.clear();
     this->clear_parsed_info();
     this->num_idles = 0;
   }
 
-  //Parse a HCC read packet
+  /// Parse a HCC read packet
   int parse_data_HCC_read(){
     if( raw_words.size() != 8 ){
       if((raw_words.size()-2)/4 == 2) {
@@ -357,7 +357,7 @@ class StarChipPacket{
   return 0;
   }
 
-  //Parse an ABC read packet
+  /// Parse an ABC read packet
   int parse_data_ABC_read(){
     if( raw_words.size() != 11 ){
       if((raw_words.size()-2)/4 == 3) {
@@ -385,7 +385,7 @@ class StarChipPacket{
     return 0;
   }
 
-  //Parse a PR or LP packet
+  /// Parse a PR or LP packet
   int parse_data_PRLP(){
     this->flag = (raw_words[1] >> 3) & 1;
     this->l0id = ((raw_words[1] & 0b111) << 4) | ((raw_words[2] >> 4) & 0xF);
@@ -537,7 +537,7 @@ class StarChipPacket{
     return 0;
   }//parse
 
-  //Check if the raw words between two packets are identical (ordering matters!)
+  /// Check if the raw words between two packets are identical (ordering matters!)
   bool compare_raw_words(StarChipPacket* compare_packet){
     if(this->n_words() != compare_packet->n_words())
       return false;
@@ -551,7 +551,7 @@ class StarChipPacket{
     return true;
   }
 
-  //Check if parsed data between two packets is identical (ignores cluster ordering)
+  /// Check if parsed data between two packets is identical (ignores cluster ordering)
   bool compare(StarChipPacket* compare_packet){
     if( this->address      != compare_packet->address ||
         this->value        != compare_packet->value ||
@@ -573,6 +573,7 @@ class StarChipPacket{
     return true;
   }
 
+  /// Check that the logger is created (called by StarDataProcessor.cpp)
   static void make_logger() {
     (void)logger();
   }

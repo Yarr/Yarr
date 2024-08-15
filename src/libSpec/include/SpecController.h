@@ -45,35 +45,36 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
             
             // Configure trigger logic (disable trigger encoder by default)
             if (j.contains("trigConfig")) {
-                if(j.contains({"trigConfig","mask"}))
-                    this->setTriggerLogicMask(j["trigConfig"]["mask"]);
+                auto &tc = j["trigConfig"];
+                if(tc.contains("mask"))
+                    this->setTriggerLogicMask(tc["mask"]);
                 
-                if(j.contains({"trigConfig","mode"}))
-                    this->setTriggerLogicMode(j["trigConfig"]["mode"]);
+                if(tc.contains("mode"))
+                    this->setTriggerLogicMode(tc["mode"]);
                 
-                if(j.contains({"trigConfig","config"}))
-                    this->setTriggerLogicConfig(j["trigConfig"]["config"]);
+                if(tc.contains("config"))
+                    this->setTriggerLogicConfig(tc["config"]);
                 
-                if(j.contains({"trigConfig","edge"}))
-                    this->setTriggerEdge(j["trigConfig"]["edge"]);
+                if(tc.contains("edge"))
+                    this->setTriggerEdge(tc["edge"]);
                 
-                if(j.contains({"trigConfig","delay"})) {
-                    if(j["trigConfig"]["delay"].size() == 4) {
+                if(tc.contains("delay")) {
+                    if(tc["delay"].size() == 4) {
                         for (unsigned i=0; i<4; i++) {
-                            this->setTriggerDelay(i, j["trigConfig"]["delay"][i]);
+                            this->setTriggerDelay(i, tc["delay"][i]);
                         }
                     }
                 }
-                if(j.contains({"trigConfig","deadtime"}))
-                    this->setTriggerDeadtime(j["trigConfig"]["deadtime"]);
-                if(j.contains({"trigConfig","triggerEncoderMultiplier"})) {
-                    this->setTriggerEncoderMultiplier(j["trigConfig"]["triggerEncoderMultiplier"]);
+                if(tc.contains("deadtime"))
+                    this->setTriggerDeadtime(tc["deadtime"]);
+                if(tc.contains("triggerEncoderMultiplier")) {
+                    this->setTriggerEncoderMultiplier(tc["triggerEncoderMultiplier"]);
                 }
                 else {
                     this->setTriggerEncoderMultiplier(0);
                 }
-                if(j.contains({"trigConfig","triggerEncoderEnable"})) {
-                    this->setTriggerEncoderEnable(j["trigConfig"]["triggerEncoderEnable"]);
+                if(tc.contains("triggerEncoderEnable")) {
+                    this->setTriggerEncoderEnable(tc["triggerEncoderEnable"]);
                 }
                 else {
                     this->setTriggerEncoderEnable(0);
@@ -87,33 +88,36 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
 
             // Configure pulse logic
             if (j.contains("pulse")) {
-                if (j.contains({"pulse","word"})) {
-                    this->setPulseWord(j["pulse"]["word"]);
-                    m_pulseWord = j["pulse"]["word"];
+                auto &jp = j["pulse"];
+                if (jp.contains("word")) {
+                    this->setPulseWord(jp["word"]);
+                    m_pulseWord = jp["word"];
                 }
-                if (j.contains({"pulse","interval"})) {
-                    this->setPulseInterval(j["pulse"]["interval"]);
-                    m_pulseInterval = j["pulse"]["interval"];
+                if (jp.contains("interval")) {
+                    this->setPulseInterval(jp["interval"]);
+                    m_pulseInterval = jp["interval"];
                 }
             }
             
             // Configure sync logic
             if (j.contains("sync")) {
-                if (j.contains({"sync","word"})) {
-                    this->setSyncWord(j["sync"]["word"]);
-                    m_syncWord = j["sync"]["word"];
+                auto &js = j["sync"];
+                if (js.contains("word")) {
+                    this->setSyncWord(js["word"]);
+                    m_syncWord = js["word"];
                 }
-                if (j.contains({"sync","interval"})) {
-                    this->setSyncInterval(j["sync"]["interval"]);
-                    m_syncInterval = j["sync"]["interval"];
+                if (js.contains("interval")) {
+                    this->setSyncInterval(js["interval"]);
+                    m_syncInterval = js["interval"];
                 }
             }
 
             // Configure sync logic
             if (j.contains("idle")) {
-                if (j.contains({"idle","word"})) {
-                    this->setIdleWord(j["idle"]["word"]);
-                    m_idleWord = j["idle"]["word"];
+                auto &ji = j["idle"];
+                if (ji.contains("word")) {
+                    this->setIdleWord(ji["word"]);
+                    m_idleWord = ji["word"];
                 }
             }
 

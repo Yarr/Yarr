@@ -84,8 +84,8 @@ int main(int argc, char **argv) {
     bool save_delay=true;
     bool skip_config=false;
     bool print_raw_value=false;
-    uint32_t cdrclksel = 0;
-    uint32_t serblckperiod = 50;
+    uint16_t cdrclksel = 0;
+    uint16_t serblckperiod = 50;
 
     while ((c = getopt(argc, argv, "hr:c:t:nsv")) != -1) {
         switch (c) {
@@ -325,8 +325,8 @@ int main(int argc, char **argv) {
             std::cerr << "WARNING: Skipping chip at index " << ichip << " in connectivity file" << std::endl;
             continue;
         } else {
-            cdrclksel = fe->getRegisterValue("CdrClkSel");
-            serblckperiod = fe->getRegisterValue("ServiceBlockPeriod");
+            fe->getNamedRegister("CdrClkSel", cdrclksel);
+            fe->getNamedRegister("ServiceBlockPeriod", serblckperiod);
 
             // Wait for fifo to be empty
             std::this_thread::sleep_for(std::chrono::microseconds(10));

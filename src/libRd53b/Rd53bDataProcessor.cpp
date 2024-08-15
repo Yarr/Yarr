@@ -183,7 +183,7 @@ bool Rd53bDataProcessor::retrieve(uint64_t &variable, const unsigned length, con
             // TODO: apply corrective action?
             else
             {
-                logger->error("Expect unfinished stream while NS = 1: {}{}. Will start a new event...", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+                logger->error("[{}] Expect unfinished stream while NS = 1: {}{}. Will start a new event...", m_feCfg->getName(), std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
                 getPreviousDataBlock();
                 _status = INIT;
                 return false;
@@ -232,7 +232,7 @@ void Rd53bDataProcessor::process_core()
         // Get event tag
         if (unlikely(!(_data[0] >> 31 & 0x1)))
         {
-            logger->error("Expect new stream while NS = 0: {}{}. Skipping block...", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+            logger->error("[{}] Expect new stream while NS = 0: {}{}. Skipping block...", m_feCfg->getName(), std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
             return;
         }
         _tag = (_data[0] >> (23-_chipIdShift)) & 0xFF;
@@ -269,7 +269,7 @@ void Rd53bDataProcessor::process_core()
                 // Get event tag. TODO: add support of chip ID
                 if (unlikely(!(_data[0] >> 31 & 0x1)))
                 {
-                    logger->error("Expect new stream while NS = 0: {}{}. Skipping block...", std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+                    logger->error("[{}] Expect new stream while NS = 0: {}{}. Skipping block...", m_feCfg->getName(), std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
                     continue;
                 }
                 _tag = (_data[0] >> (23-_chipIdShift)) & 0xFF;
@@ -507,6 +507,23 @@ bool Rd53bDataProcessor::getNextDataBlock()
     // Cannot get more data: return failure code
     if (_curInV == nullptr || _curInV->size() == 0 || _rawDataIdx >= _curInV->size())
     {
+
+        //Do not perform a cleanup and decoding termination if we are in the hitmap retrieval step.
+        //This protects the edge case when we would hit the end of the stream while retrieving the
+        //16 bits of the last qcore hitmap, which leads to the last hit being dropped from the output.
+        if (_status == HMAP1) {
+            // 8 bits is minimum for a hit with compression: 0000 0001
+            // If we have 8 or more bits, process the hit accordingly.
+            if(likely(BLOCKSIZE - _bitIdx > 7)) {
+                return true;
+            }
+            // Otherwise print an error
+            else {
+                uint32_t _ns = (_data[0] >> 31) & 0x1;
+                logger->error("[{}] Requested out-of-range bits while NS={}, at position {} in stream. Flushing remainder of data block 0x{:x}{:x}", m_feCfg->getName(), _ns, _bitIdx, _data[0], _data[1]);
+            }
+        }
+        
         // Reset raw data index and word index
         _rawDataIdx = 0;
         _wordIdx = 0;
@@ -544,8 +561,15 @@ bool Rd53bDataProcessor::getNextDataBlock()
             return false;
         if (_curInV->size() == 0){
             if (_curInV->stat.is_end_of_iteration) {
-                auto endOut = std::make_unique<FrontEndData>(_curInV->stat);
-                m_out->pushData(std::move(endOut));
+                // push any remaining _curOut data
+                if(likely(_curOut!=nullptr)) {
+                    m_out->pushData(std::move(_curOut));
+                }
+                // re-initalize object with end-of-iteration marker
+                _curOut = std::make_unique<FrontEndData>(_curInV->stat);
+                // push end-of-iteration marker along
+                m_out->pushData(std::move(_curOut));
+
             }
             return false;
         }

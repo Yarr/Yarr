@@ -87,65 +87,72 @@ void Itkpixv2Cfg::writeConfig(json &j) {
 }
 
 void Itkpixv2Cfg::loadConfig(const json &j) {
-    if (j.contains({"ITKPIXV2","Parameter","Name"}))
-        name = j["ITKPIXV2"]["Parameter"]["Name"];
+    if (j.contains("ITKPIXV2") && j["ITKPIXV2"].contains("Parameter")) {
+        auto &jparams = j["ITKPIXV2"]["Parameter"];
+        if (jparams.contains("Name"))
+            name = jparams["Name"];
     
-    if (j.contains({"ITKPIXV2","Parameter","ChipId"}))
-        m_chipId = j["ITKPIXV2"]["Parameter"]["ChipId"];
+        if (jparams.contains("ChipId"))
+            m_chipId = jparams["ChipId"];
     
-    if (j.contains({"ITKPIXV2","Parameter","InjCap"}))
-        m_injCap = j["ITKPIXV2"]["Parameter"]["InjCap"];
+        if (jparams.contains("InjCap"))
+            m_injCap = jparams["InjCap"];
    
-    if (j.contains({"ITKPIXV2", "Parameter","EnforceNameIdCheck"}))
-        enforceChipIdInName = j["ITKPIXV2"]["Parameter"]["EnforceNameIdCheck"];
+        if (jparams.contains("EnforceNameIdCheck"))
+            enforceChipIdInName = jparams["EnforceNameIdCheck"];
     
-    if (j.contains({"ITKPIXV2","Parameter","NfDSLDO"}))
-        m_nf[0] = j["ITKPIXV2"]["Parameter"]["NfDSLDO"];
+        if (jparams.contains("NfDSLDO"))
+            m_nf[0] = jparams["NfDSLDO"];
 
-    if (j.contains({"ITKPIXV2","Parameter","NfASLDO"}))
-        m_nf[1] = j["ITKPIXV2"]["Parameter"]["NfASLDO"];
+        if (jparams.contains("NfASLDO"))
+            m_nf[1] = jparams["NfASLDO"];
 
-    if (j.contains({"ITKPIXV2","Parameter","NfACB"}))
-        m_nf[2] = j["ITKPIXV2"]["Parameter"]["NfACB"];
+        if (jparams.contains("NfACB"))
+            m_nf[2] = jparams["NfACB"];
 
-    if (j.contains({"ITKPIXV2","Parameter","IrefTrim"}))
-        m_irefTrim = j["ITKPIXV2"]["Parameter"]["IrefTrim"];
+        if (jparams.contains("IrefTrim"))
+            m_irefTrim = jparams["IrefTrim"];
 
-    if (j.contains({"ITKPIXV2","Parameter","KSenseInA"}))
-        m_kSenseInA = j["ITKPIXV2"]["Parameter"]["KSenseInA"];
+        if (jparams.contains("KSenseInA"))
+            m_kSenseInA = jparams["KSenseInA"];
 
-    if (j.contains({"ITKPIXV2","Parameter","KSenseInD"}))
-        m_kSenseInD = j["ITKPIXV2"]["Parameter"]["KSenseInD"];
+        if (jparams.contains("KSenseInD"))
+            m_kSenseInD = jparams["KSenseInD"];
 
-    if (j.contains({"ITKPIXV2","Parameter","KSenseShuntA"}))
-        m_kSenseShuntA = j["ITKPIXV2"]["Parameter"]["KSenseShuntA"];
+        if (jparams.contains("KSenseShuntA"))
+            m_kSenseShuntA = jparams["KSenseShuntA"];
 
-    if (j.contains({"ITKPIXV2","Parameter","KSenseShuntD"}))
-        m_kSenseShuntD = j["ITKPIXV2"]["Parameter"]["KSenseShuntD"];
+        if (jparams.contains("KSenseShuntD"))
+            m_kSenseShuntD = jparams["KSenseShuntD"];
 
-    if (j.contains({"ITKPIXV2","Parameter","KShuntA"}))
-        m_kShuntA = j["ITKPIXV2"]["Parameter"]["KShuntA"];
+        if (jparams.contains("KShuntA"))
+            m_kShuntA = jparams["KShuntA"];
 
-    if (j.contains({"ITKPIXV2","Parameter","KShuntD"}))
-        m_kShuntD = j["ITKPIXV2"]["Parameter"]["KShuntD"];
-    
-    if (j.contains({"ITKPIXV2","Parameter","VcalPar"}))
-        if (j["ITKPIXV2"]["Parameter"]["VcalPar"].size() == m_vcalPar.size()) {
-            for(unsigned  i=0;i<m_vcalPar.size();i++)
-                m_vcalPar[i] = j["ITKPIXV2"]["Parameter"]["VcalPar"][i];
+        if (jparams.contains("KShuntD"))
+            m_kShuntD = jparams["KShuntD"];
+
+        if (jparams.contains("VcalPar"))
+            if (jparams["VcalPar"].size() == m_vcalPar.size()) {
+                for(unsigned  i=0;i<m_vcalPar.size();i++)
+                    m_vcalPar[i] = jparams["VcalPar"][i];
+            }
+
+        if (jparams.contains("ADCcalPar")) {
+            if (jparams["ADCcalPar"].size() == m_adcCalPar.size()) {
+                for(unsigned  i=0;i<m_adcCalPar.size();i++) {
+                    m_adcCalPar[i] = jparams["ADCcalPar"][i];
+                }
+            }
         }
 
-    if (j.contains({"ITKPIXV2","Parameter","ADCcalPar"}))
-        if (j["ITKPIXV2"]["Parameter"]["ADCcalPar"].size() == m_adcCalPar.size()) {
-            for(unsigned  i=0;i<m_adcCalPar.size();i++)
-                m_adcCalPar[i] = j["ITKPIXV2"]["Parameter"]["ADCcalPar"][i];
+        if (jparams.contains("NtcCalPar")) {
+            if (jparams["NtcCalPar"].size() == m_ntcCalPar.size()) {
+                for (unsigned i = 0; i < m_ntcCalPar.size(); i++) {
+                  m_ntcCalPar[i] = jparams["NtcCalPar"][i];
+                }
+            }
         }
-
-    if (j.contains({"ITKPIXV2","Parameter","NtcCalPar"}))
-        if (j["ITKPIXV2"]["Parameter"]["NtcCalPar"].size() == m_ntcCalPar.size()) {
-            for (unsigned i = 0; i < m_ntcCalPar.size(); i++)
-                m_ntcCalPar[i] = j["ITKPIXV2"]["Parameter"]["NtcCalPar"][i];
-        }
+    }
 
     Itkpixv2GlobalCfg::loadConfig(j);
     Itkpixv2PixelCfg::loadConfig(j);

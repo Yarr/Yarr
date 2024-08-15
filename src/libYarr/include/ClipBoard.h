@@ -17,7 +17,6 @@
 #include <chrono>
 
 #include "RawData.h"
-
 #include <typeinfo>
 
 template <class T>

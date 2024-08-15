@@ -36,7 +36,7 @@ void Itkpixv2ParameterLoop::init() {
 
     m_done = false;
     m_cur = min;
-    parPtr = keeper->globalFe<Itkpixv2>()->getNamedRegister(parName);
+    parPtr = keeper->globalFe<Itkpixv2>()->getNamedRegisterObject(parName);
     this->writePar();
     //std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
