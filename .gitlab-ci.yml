@@ -1,285 +1,296 @@
+---
+stages:
+  - build
+  - test
+  - deploy
+
 # If the pipeline is triggered by:
 #    A merge request, run a merge request pipeline. For example, a merge request pipeline can be triggered by a push to a branch with an associated open merge request.
 #    A change to a branch, but a merge request is open for that branch, do not run a branch pipeline.
 #    A change to a branch, but without any open merge requests, run a branch pipeline.
-workflow:
-    rules:
-        - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-        - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
-          when: never
-        - if: '$CI_COMMIT_BRANCH'
 
-stages:
-    - build
-    - test
-    - deploy
+.rules:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
+      when: never
+    - if: '$CI_COMMIT_BRANCH'
 
-# Baseline is ALMA9 image
+# common build definitions
 image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_alma9_build
+.build:
+  extends: .rules
+  stage: build
+
+.build_matrix:
+  extends: .build
+  image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
+  parallel:
+    matrix:
+      - ARCH: ['cc7', 'alma9']
 
 ###############
 # Build Stage #
 ###############
 
 job_build_all:
-    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
-    parallel:
-        matrix:
-            - ARCH: ['cc7', 'alma9']
-    stage: build
-    artifacts:
-        paths:
-          - bin
-          - lib
-          - python
-    script:
-      - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-      - mkdir  build
-      - cd build
-      - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DENABLE_PYTHON=On
-      - make install -j4
-      - CTEST_OUTPUT_ON_FAILURE=1 make test
-      - bin/scanConsole -k
-      - cd ..
+  extends: .build_matrix
+  artifacts:
+    paths:
+      - bin
+      - lib
+      - python
+  script:
+    - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+    - mkdir  build
+    - cd build
+    - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DENABLE_PYTHON=On
+    - make install -j4
+    - CTEST_OUTPUT_ON_FAILURE=1 make test
+    - bin/scanConsole -k
+    - cd ..
 
 job_build_and_test_out_of_source:
-    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
-    parallel:
-        matrix:
-            - ARCH: ['cc7', 'alma9']
-    stage: build
-    script:
-      - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-      - CXXFLAGS=-Werror cmake3 -S . -B /tmp/build -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=cmake/linux-gcc
-      - cmake3 --build /tmp/build -j4
-      - cmake3 --install /tmp/build
-      - CTEST_OUTPUT_ON_FAILURE=1 cmake3 --build /tmp/build --target test
-      - /tmp/build/bin/scanConsole -k
+  extends: .build_matrix
+  stage: build
+  script:
+    - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+    - CXXFLAGS=-Werror cmake3 -S . -B /tmp/build -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=cmake/linux-gcc
+    - cmake3 --build /tmp/build -j4
+    - cmake3 --install /tmp/build
+    - CTEST_OUTPUT_ON_FAILURE=1 cmake3 --build /tmp/build --target test
+    - /tmp/build/bin/scanConsole -k
 
 job_build_clang:
-    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
-    parallel:
-        matrix:
-            - ARCH: ['cc7', 'alma9']
-    stage: build
-    script:
-      - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-      - source scl_source enable llvm-toolset-11.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-      - mkdir -p build
-      - cd build 
-      - CXXFLAGS=-Werror cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang
-      - make install -j4
-      - CTEST_OUTPUT_ON_FAILURE=1 make test
-      - cd ..
-      - bin/scanConsole -k
+  extends: .build_matrix
+  stage: build
+  script:
+    - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+    - source scl_source enable llvm-toolset-11.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+    - mkdir -p build
+    - cd build
+    - CXXFLAGS=-Werror cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang
+    - make install -j4
+    - CTEST_OUTPUT_ON_FAILURE=1 make test
+    - cd ..
+    - bin/scanConsole -k
 
 job_build_none:
-    stage: build
-    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
-    parallel:
-        matrix:
-            - ARCH: ['cc7', 'alma9']
-    script:
-      - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-      - mkdir build
-      - cd build
-      - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD= -DYARR_FRONT_ENDS_TO_BUILD= -DYARR_ACTIVE_LOGGER_LEVEL=OFF
-      - make install -j4
-      - CTEST_OUTPUT_ON_FAILURE=1 make test
-      - bin/scanConsole -k
+  extends: .build_matrix
+  script:
+    - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+    - mkdir build
+    - cd build
+    - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD= -DYARR_FRONT_ENDS_TO_BUILD= -DYARR_ACTIVE_LOGGER_LEVEL=OFF
+    - make install -j4
+    - CTEST_OUTPUT_ON_FAILURE=1 make test
+    - bin/scanConsole -k
 
 job_code_coverage:
-    stage: build
-    artifacts:
-        paths:
-          - cc_tests
-    script:
-      - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-      - mkdir  build
-      - cd build
-      - cmake3 .. -DBUILD_TESTS=on -DCMAKE_BUILD_TYPE=Coverage -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
-      - make install -j4
-      - /bin/pwd
-      - cd ../
-      - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-      - scripts/cc_tool.sh
-    coverage: '/  lines......: \d+(?:\.\d+)?/'
+  extends: .build
+  artifacts:
+    paths:
+      - cc_tests
+  script:
+    - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+    - mkdir  build
+    - cd build
+    - cmake3 .. -DBUILD_TESTS=on -DCMAKE_BUILD_TYPE=Coverage -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
+    - make install -j4
+    - /bin/pwd
+    - cd ../
+    - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+    - scripts/cc_tool.sh
+  coverage: '/  lines......: \d+(?:\.\d+)?/'
 
 job_run_codechecker:
-    stage: build
-    timeout: 3 hours
-    only:
-        - merge_requests
-    script:
-        - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-        - source scl_source enable llvm-toolset-11.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-        - scripts/run_codechecker.sh -j 4
-    after_script:
-        - cat gl-code-quality-report.json
-    artifacts:
-        paths:
-          - checks
-          - gl-code-quality-report.json
-        reports:
-            codequality: gl-code-quality-report.json
+  stage: build
+  timeout: 3 hours
+  only:
+    - merge_requests
+  script:
+    - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+    - source scl_source enable llvm-toolset-11.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+    - scripts/run_codechecker.sh -j 4
+  after_script:
+    - cat gl-code-quality-report.json
+  artifacts:
+    paths:
+      - checks
+      - gl-code-quality-report.json
+    reports:
+      codequality: gl-code-quality-report.json
+
+job_yamllint:
+  extends: .build
+  before_script:
+    - pip install yamllint
+  script:
+    - yamllint .
 
 job_build_doxygen:
-    stage: build
-    before_script:
-        - yum install -y doxygen graphviz
-    script:
-        - doxygen Doxyfile
-    artifacts:
-        paths:
-            - doxygen/html
+  extends: .build
+  before_script:
+    - yum install -y doxygen graphviz
+  script:
+    - doxygen Doxyfile
+  artifacts:
+    paths:
+      - doxygen/html
 
 build_docs:
-    stage: build
-    before_script:
-        - pip install mkdocs
-    script:
-        - export LC_ALL=en_US.utf-8
-        - export LANG=en_US.utf-8
-        - mkdocs build
-    artifacts:
-        paths:
-            - site
+  extends: .build
+  before_script:
+    - pip install mkdocs
+  script:
+    - export LC_ALL=en_US.utf-8
+    - export LANG=en_US.utf-8
+    - mkdocs build
+  artifacts:
+    paths:
+      - site
 
 ###############
 # Test Stage #
 ###############
 
 job_test_pixel:
-    stage: test
-    needs: 
-        - job: job_build_all
-          parallel:
-              matrix:
-                  - ARCH: ['alma9']
-    script:
-      - bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p -l configs/logging/trace_all.json
-      - ls
-      - ls ./data/
-      - ls ./data/000001_std_digitalscan/
-      - cat ./data/000001_std_digitalscan/*_OccupancyMap.json
-      - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
-      - if [ "$NUM100" != "26880" ]; then exit 2; fi
-      - bin/scanConsole  -r configs/controller/emuCfg_rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json
-      - ls
-      - ls ./data/
-      - ls ./data/000002_std_digitalscan/
-      - cat ./data/000002_std_digitalscan/*_OccupancyMap.json
-      - NUM100=`cat ./data/000002_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
-      - if [ "$NUM100" != "76800" ]; then exit 2; fi
+  stage: test
+  extends: .rules
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['alma9']
+  script:
+    - bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p -l configs/logging/trace_all.json
+    - ls
+    - ls ./data/
+    - ls ./data/000001_std_digitalscan/
+    - cat ./data/000001_std_digitalscan/*_OccupancyMap.json
+    - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
+    - if ["$NUM100" != "26880"]; then exit 2; fi
+    - bin/scanConsole  -r configs/controller/emuCfg_rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json
+    - ls
+    - ls ./data/
+    - ls ./data/000002_std_digitalscan/
+    - cat ./data/000002_std_digitalscan/*_OccupancyMap.json
+    - NUM100=`cat ./data/000002_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
+    - if ["$NUM100" != "76800"]; then exit 2; fi
 
 job_test_strips:
-    stage: test
-    needs: 
-        - job: job_build_all
-          parallel:
-              matrix:
-                  - ARCH: ['alma9']
-    script:
-      - bin/test_star configs/controller/emuCfg_star.json -r 0 -t 0
+  stage: test
+  extends: .rules
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['alma9']
+  script:
+    - bin/test_star configs/controller/emuCfg_star.json -r 0 -t 0
 
 job_test_python:
-    stage: test
-    needs: 
-        - job: job_build_all
-          parallel:
-              matrix:
-                  - ARCH: ['alma9']
-    script:
-      - PYTHONPATH=$PWD/lib python3 python/scan_cli_logger.py -r configs/controller/emuCfg_rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json
+  stage: test
+  extends: .rules
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['alma9']
+  script:
+    - PYTHONPATH=$PWD/lib python3 python/scan_cli_logger.py -r configs/controller/emuCfg_rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json
 
 job_test_json_parsing:
-    stage: test
-    needs: 
-        - job: job_build_all
-          parallel:
-              matrix:
-                  - ARCH: ['alma9']
-    script:
-      # Check schema by loading configs in turn
-      - (for file in $(find configs/defaults -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t FRONT_END || exit; done)
-      - (for file in $(find configs/connectivity -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t CONNECTIVITY || exit; done)
-      - (for file in $(find configs/controller -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t CONTROLLER || exit; done)
-      - (for file in $(find configs/scans/* -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t SCAN_CONFIG || exit; done)
+  stage: test
+  extends: .rules
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['alma9']
+  script:
+    # Check schema by loading configs in turn
+    - (for file in $(find configs/defaults -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t FRONT_END || exit; done)
+    - (for file in $(find configs/connectivity -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t CONNECTIVITY || exit; done)
+    - (for file in $(find configs/controller -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t CONTROLLER || exit; done)
+    - (for file in $(find configs/scans/* -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t SCAN_CONFIG || exit; done)
 
 job_test_netio:
-    stage: test
-    needs: 
-        - job: job_build_all
-          parallel:
-              matrix:
-                  - ARCH: ['cc7']
-    image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_cc7_build
-    script:
-      # Launch netio_bridge to connect an emulator to NetIO
-      - bin/netio_bridge -p 12340 -q 12350 -f configs/controller/emuCfg_star.json & pid_bridge=($!)
-      - sleep 1
-      # Run scans with the NetIO controller
-      - bin/scanConsole -r configs/controller/felix_netio_strips.json -c configs/connectivity/example_star_setup.json -s configs/scans/star/std_regDump.json
-      - bin/scanConsole -r configs/controller/felix_netio_strips.json -c configs/connectivity/example_star_setup.json -s configs/scans/star/std_latencyScan.json -p
-      # Terminate netio_bridge
-      - kill ${pid_bridge}
+  stage: test
+  extends: .rules
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['cc7']
+  image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_cc7_build
+  script:
+    # Launch netio_bridge to connect an emulator to NetIO
+    - bin/netio_bridge -p 12340 -q 12350 -f configs/controller/emuCfg_star.json & pid_bridge=($!)
+    - sleep 1
+    # Run scans with the NetIO controller
+    - bin/scanConsole -r configs/controller/felix_netio_strips.json -c configs/connectivity/example_star_setup.json -s configs/scans/star/std_regDump.json
+    - bin/scanConsole -r configs/controller/felix_netio_strips.json -c configs/connectivity/example_star_setup.json -s configs/scans/star/std_latencyScan.json -p
+    # Terminate netio_bridge
+    - kill ${pid_bridge}
 
 job_test_json:
-    stage: test
-    script:
-      - source scl_source enable rh-nodejs6 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-      - npm install jsonlint -g
-      - for file in $(find configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
+  stage: test
+  extends: .rules
+  script:
+    - source scl_source enable rh-nodejs6 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+    - npm install jsonlint -g
+    - for file in $(find configs/ -iname "*.json"); do echo ${file}; jsonlint -q ${file} || break -1; done
 
 ################
 # Deploy Stage #
 ################
 
 deploy_master:
-    stage: deploy
-    dependencies: ["build_docs"]
-    only:
-        - master@YARR/YARR
-    variables:
-        "EOS_PATH" : "/eos/user/t/theim/www/yarr"
-        "CI_OUTPUT_DIR" : "site/"
-    image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
-    script:
-        - deploy-eos
+  stage: deploy
+  dependencies: ["build_docs"]
+  only:
+    - master@YARR/YARR
+  variables:
+    "EOS_PATH": "/eos/user/t/theim/www/yarr"
+    "CI_OUTPUT_DIR": "site/"
+  image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
+  script:
+    - deploy-eos
 
 deploy_devel:
-    stage: deploy
-    dependencies: ["build_docs"]
-    only:
-        - devel@YARR/YARR
-    variables:
-        "EOS_PATH" : "/eos/user/t/theim/www/yarr/devel"
-        "CI_OUTPUT_DIR" : "site/"
-    image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
-    script:
-        - deploy-eos
+  stage: deploy
+  dependencies: ["build_docs"]
+  only:
+    - devel@YARR/YARR
+  variables:
+    "EOS_PATH": "/eos/user/t/theim/www/yarr/devel"
+    "CI_OUTPUT_DIR": "site/"
+  image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
+  script:
+    - deploy-eos
 
 deploy_devel_doxygen:
-    stage: deploy
-    dependencies: ["job_build_doxygen"]
-    only:
-        - devel@YARR/YARR
-    variables:
-        "EOS_PATH" : "/eos/user/t/theim/www/yarr/doxygen/devel/"
-        "CI_OUTPUT_DIR" : "doxygen/html/"
-    image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
-    script:
-        - mkdir -p /eos/user/t/theim/www/yarr/doxygen/devel/
-        - deploy-eos
+  stage: deploy
+  dependencies: ["job_build_doxygen"]
+  only:
+    - devel@YARR/YARR
+  variables:
+    "EOS_PATH": "/eos/user/t/theim/www/yarr/doxygen/devel/"
+    "CI_OUTPUT_DIR": "doxygen/html/"
+  image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
+  script:
+    - mkdir -p /eos/user/t/theim/www/yarr/doxygen/devel/
+    - deploy-eos
 
 deploy_coverage:
-    stage: deploy
-    dependencies: ["job_code_coverage"]
-    only:
-        - devel@YARR/YARR
-    variables:
-        "EOS_PATH" : "/eos/user/t/theim/www/yarr/devel/coverage"
-        "CI_OUTPUT_DIR" : "cc_tests/"
-    image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
-    script:
-        - deploy-eos
+  stage: deploy
+  dependencies: ["job_code_coverage"]
+  only:
+    - devel@YARR/YARR
+  variables:
+    "EOS_PATH": "/eos/user/t/theim/www/yarr/devel/coverage"
+    "CI_OUTPUT_DIR": "cc_tests/"
+  image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
+  script:
+    - deploy-eos
