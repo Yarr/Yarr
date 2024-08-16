@@ -24,7 +24,9 @@ target_link_libraries(Itkpixv2 Scan)
 
 LIST(APPEND apps
         Itkpixv2CheckPulse
-        Itkpixv2ReadRingosc)
+        Itkpixv2ConnectivityScan
+        Itkpixv2ReadRingosc
+        )
 
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)

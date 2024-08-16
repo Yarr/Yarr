@@ -1,34 +1,38 @@
-# Star testing
+# Star FrontEnd
+
+The support for Strips ASICs is via the Star FrontEnd. This represents
+one HCC and the ABCs it supports.
 
 ## Test program
 
-There is preliminary support for the ABC and HCC star ASICs (Front-end for
-Strips). Currently only initial testing has been done.
-The test program writes an HCC register, and reads back data packets
-(HPR will be sent back continuously, once every 1ms).
+There is a standalone test program, which can do various low level tests.
 
-Using default SPEC hardware:
+For instance writing ASIC registers, and reading back data packet. By default
+this also provides some checks.
+
+The primary argument is for the controller configuration (as elsewhere):
 
 ```bash
-bin/star_test
+bin/test_star configs/controller/felix_client_strips.json
 ```
 
-Or by specifying a config for communication with felix_core:
+In order to give useful results, you will need to provide a valid rx channel(s):
 
 ```bash
-bin/test_star configs/controller/netio.json
+bin/test_star -r 0 2 4 configs/controller/emuCfg_star.json
 ```
 
-For comparison purposes, a barebones interface to the itsdaq FW is provided:
+By default, the full of tests will be run. Parts of tests can also be run
+individually:
 
 ```bash
-bin/test_star configs/controller/itsdaq.json
+bin/test_star -r 0 2 4 -s checkHPRs configs/controller/emuCfg_star.json
 ```
 
-The emulator version can be run as follows:
+For more information see the help:
 
 ```bash
-bin/test_star -r 0 configs/controller/emuCfg_star.json
+bin/test_star --help
 ```
 
 ## Loop Actions

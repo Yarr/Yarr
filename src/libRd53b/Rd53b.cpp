@@ -255,7 +255,7 @@ yarrStatus Rd53b::writeRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t v
     return yarrSuccess;
 }
 
-yarrStatus Rd53b::readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t &value) {
+yarrStatus Rd53b::readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t &value, uint8_t &chipId) {
     m_rxcore->flushBuffer();
     // send a read register command to the chip so that it
     // sends back the current value of the register
@@ -280,6 +280,7 @@ yarrStatus Rd53b::readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t &v
                 }
 
                 auto [id, received_address, register_value] = Rd53b::decodeSingleRegReadID(data->get(0), data->get(1));
+                chipId = id; // chipId is read from the chip wirebonded ID, m_chipId is set in the chip config file
                 if(id == (m_chipId&0x3)) {
                     if(received_address != (this->*ref).addr()) {
                         logger->error("readRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
@@ -299,6 +300,11 @@ yarrStatus Rd53b::readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t &v
     
     logger->warn("readRegister failed, did not received register readback data from chip with chipId {}", m_chipId);
     return yarrFailure;
+}
+
+yarrStatus Rd53b::readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t &value) {
+  uint8_t _ = 0;
+  return readRegister(ref, value, _);
 }
 
 yarrStatus Rd53b::readUpdateWriteRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, const uint16_t value) {
@@ -441,12 +447,27 @@ yarrStatus Rd53b::checkCom() {
 }
 
 yarrStatus Rd53b::hasValidName() {
-
     // return true if no check is requested
     if(auto cfg = dynamic_cast<Rd53bCfg*>(this); !cfg->checkChipIdInName()) {
         return yarrSuccess;
     }
 
+    uint32_t efuse = this->getEfuses();
+    std::stringstream id_from_efuse;
+    id_from_efuse << std::hex << efuse;
+
+    bool id_in_name = name.find(id_from_efuse.str()) != std::string::npos;
+
+    if(!id_in_name) {
+        logger->error("Chip serial number decoded from e-fuse data (0x{:x}) does not appear in Chip \"name\" field (\"{}\") in loaded configuration  for chip with ChipId = {}", efuse, name, m_chipId);
+       	return yarrFailure;
+    }
+    logger->info("Chip serial number obtained from e-fuse data: 0x{:x}", efuse );
+    return yarrSuccess;
+}
+
+
+uint32_t Rd53b::getEfuses() {
     // Rd53b stores serial numbers in on-chip registers, so service blocks be
     // enabled in order to query them
     if (this->ServiceBlockEn.read() == 0) {
@@ -456,33 +477,24 @@ yarrStatus Rd53b::hasValidName() {
 
     // if user is requested to enforce that the chip id be in the FrontEnd "name"
     // field, then readback the E-fuses to get the actual chip's ID
-    //itkpix_efuse_codec::EfuseData efuse_data = this->readEfuses();
     uint32_t efuse_data_raw = this->readEfusesRaw();
+    logger->info("Chip serial number obtained from e-fuse data (raw): 0x{:x}", efuse_data_raw);
 
     itkpix_efuse_codec::EfuseData efuse_data = itkpix_efuse_codec::EfuseData{itkpix_efuse_codec::decode(efuse_data_raw)};
     itkpix_efuse_codec::EfuseData efuse_data_old = itkpix_efuse_codec::EfuseData{itkpix_efuse_codec::decodeOldFormat(efuse_data_raw)};
 
-    std::stringstream id_from_efuse;
-    id_from_efuse << std::hex << efuse_data.chip_sn();
+    uint32_t chip_sn = efuse_data.chip_sn();
+    uint32_t chip_sn_old = efuse_data_old.chip_sn();
 
-    std::stringstream id_from_efuse_old;
-    id_from_efuse_old << std::hex << efuse_data_old.chip_sn();
-
-    logger->info("Chip serial number obtained from e-fuse data (raw): 0x{:x}", efuse_data_raw);
-    bool id_in_name = name.find(id_from_efuse.str()) != std::string::npos;
-    bool id_in_name_old = name.find(id_from_efuse_old.str()) != std::string::npos;
-    if(!id_in_name) {
-        logger->error("Chip serial number decoded from e-fuse data (0x{:x}) does not appear in Chip \"name\" field (\"{}\") in loaded configuration  for chip with ChipId = {}", efuse_data.chip_sn(), name, m_chipId);
-	if (id_in_name_old) {
-    		logger->info("Chip serial number decoded with old format from e-fuse data: 0x{:x}", efuse_data_old.chip_sn());
-    		return yarrSuccess;
-	} else {
-        	logger->error("Chip serial number decoded with old format from e-fuse data (0x{:x}) does not appear in Chip \"name\" field (\"{}\") in loaded configuration  for chip with ChipId = {}", efuse_data_old.chip_sn(), name, m_chipId);
-        	return yarrFailure;
-	}
+    // https://gitlab.cern.ch/YARR/YARR/-/issues/166
+    if (chip_sn > 0x16000) {
+        logger->info("Chip serial number obtained from e-fuse data: 0x{:x}", chip_sn );
+        return chip_sn;
+    } else {
+        logger->info("Chip serial number decoded with old format from e-fuse data: 0x{:x}", chip_sn_old);
+        return chip_sn_old;
     }
-    logger->info("Chip serial number obtained from e-fuse data: 0x{:x}", efuse_data.chip_sn() );
-    return yarrSuccess;
+    return yarrFailure;
 }
 
 std::pair<uint32_t, uint32_t> Rd53b::decodeSingleRegRead(uint32_t higher, uint32_t lower) {
@@ -500,9 +512,10 @@ std::pair<uint32_t, uint32_t> Rd53b::decodeSingleRegRead(uint32_t higher, uint32
 
 std::tuple<uint8_t, uint32_t, uint32_t> Rd53b::decodeSingleRegReadID(uint32_t higher, uint32_t lower) {
     std::tuple<uint8_t, uint32_t, uint32_t> output = std::make_tuple(16, 999, 666);
-    if ((higher & 0xFF000000) == 0x55000000) {
+    // only the 2 LSB of the chip ID are sent by the chip. Ref manual 10.2 Aurora and RD53B Data
+    if ((higher & 0xFF000000) == 0x55000000) { // register address 136 which is EfuseReadData0
         output = std::make_tuple((higher>>22)&0x3, (lower>>16)&0x3FF, lower&0xFFFF);
-    } else if ((higher & 0xFF000000) == 0x99000000) {
+    } else if ((higher & 0xFF000000) == 0x99000000) { // register address 135 which is EfuseReadData1
         output = std::make_tuple((higher>>22)&0x3, (higher>>10)&0x3FF, ((lower>>26)&0x3F)+((higher&0x3FF)<<6));
     } else {
         logger->error("Could not decode reg read!");
@@ -581,8 +594,17 @@ uint32_t Rd53b::readEfusesRaw() {
         logger->warn("Failed to readback E-fuse 1 data for chip with {}", m_chipId);
         return 0;
     }
-    
     return (((uint32_t)efuse_data_1 & 0xffff) << 16) | ((uint32_t)efuse_data_0 & 0xffff);
+}
+
+uint8_t Rd53b::readChipId() {
+    uint16_t _ = 0;
+    uint8_t id = 15;
+    if (readRegister(&Rd53b::EfuseReadData0, _, id) != yarrSuccess) {
+        logger->warn("Failed to readback E-fuse 1 data for chip with {}", m_chipId);
+        return 255;
+    }
+    return id;
 }
 
 void Rd53b::confAdc(uint16_t MONMUX, bool doCur) {
