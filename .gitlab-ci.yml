@@ -9,7 +9,7 @@ stages:
 #    A change to a branch, but a merge request is open for that branch, do not run a branch pipeline.
 #    A change to a branch, but without any open merge requests, run a branch pipeline.
 
-.rules:
+workflow:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
@@ -19,7 +19,6 @@ stages:
 # common build definitions
 image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_alma9_build
 .build:
-  extends: .rules
   stage: build
 
 .build_matrix:
@@ -156,7 +155,6 @@ build_docs:
 
 job_test_pixel:
   stage: test
-  extends: .rules
   needs:
     - job: job_build_all
       parallel:
@@ -180,7 +178,6 @@ job_test_pixel:
 
 job_test_strips:
   stage: test
-  extends: .rules
   needs:
     - job: job_build_all
       parallel:
@@ -191,7 +188,6 @@ job_test_strips:
 
 job_test_python:
   stage: test
-  extends: .rules
   needs:
     - job: job_build_all
       parallel:
@@ -202,7 +198,6 @@ job_test_python:
 
 job_test_json_parsing:
   stage: test
-  extends: .rules
   needs:
     - job: job_build_all
       parallel:
@@ -217,7 +212,6 @@ job_test_json_parsing:
 
 job_test_netio:
   stage: test
-  extends: .rules
   needs:
     - job: job_build_all
       parallel:
@@ -236,7 +230,6 @@ job_test_netio:
 
 job_test_json:
   stage: test
-  extends: .rules
   script:
     - source scl_source enable rh-nodejs6 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
     - npm install jsonlint -g
