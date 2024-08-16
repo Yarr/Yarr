@@ -6,6 +6,7 @@
 
 #include "Itkpixv2EmuCommandExe.h"
 #include "logging.h"
+#include <random>
 
 namespace {
     auto rlog = logging::make_log("Itkpixv2EmuCommandExe");
@@ -22,6 +23,7 @@ Itkpixv2EmuCommandExe::Itkpixv2EmuCommandExe(EmuCom* rx, std::shared_ptr<Itkpixv
 
     //initialize the encoder
     m_encoder = std::make_shared<Itkpixv2Encoder>();
+    m_encoder->setEventsPerStream(1);
 
 }
 
@@ -41,13 +43,43 @@ void Itkpixv2EmuCommandExe::doPLLlock(const Itkpixv2EmuUtils::Cmd& cmd){
 
 void Itkpixv2EmuCommandExe::doClear(const Itkpixv2EmuUtils::Cmd& cmd){
 
+    rlog->warn("Clear command received - potential reset not implemented!");
+
 }
 
 void Itkpixv2EmuCommandExe::doGlobalPulse(const Itkpixv2EmuUtils::Cmd& cmd){
+    
+    rlog->warn("GlobalPulse command received - potential reset not implemented!");
 
 }
 
 void Itkpixv2EmuCommandExe::doCal(const Itkpixv2EmuUtils::Cmd& cmd){
+    //First, check if we're doing digital or analog injection,
+    //this is controlled by InjDigEn (global register 54,
+    //1 for digital, 0 for analog).
+    //The idea is to have the signals in all enabled pixels
+    //generated with this function, then we'll trigger.
+
+    //start by zeroing the current ToTs
+    m_tots.reset();
+
+    switch (m_cfg->InjDigEn.read()){
+        //analog injection
+        case 0:{
+            rlog->info("Analog injection happening...");
+            break;
+        }
+        case 1:{
+            rlog->info("Digital injection happening...");
+            //Let's just put the middle value everywhere now...
+            for (uint32_t pixel : m_activePixels){
+                m_tots(pixel) = 9;
+                //rlog->info("Pixel col {} row {} has ToT {}", pixel / 384, pixel % 384, m_tots(pixel));
+            }
+            break;
+        }
+    }
+
 
 }
 
@@ -175,4 +207,63 @@ void Itkpixv2EmuCommandExe::doRdReg(const Itkpixv2EmuUtils::Cmd& cmd){
     m_rx->write32(serviceBlock >> 32);
     m_rx->write32(serviceBlock & 0xFFFFFFFF);
     
+}
+
+void Itkpixv2EmuCommandExe::doTrigger(const Itkpixv2EmuUtils::Cmd& cmd){
+    
+    //We will likely want to implement some timing here.
+    //For now, let's just encode and send as the trigger arrives.
+    //Perhaps we could have the ToT actually buffered in
+    //a PixelLayout<std::array<uint16_t, 4>>, and each received
+    //triger command would operate on the length-4 array?
+
+    for (uint8_t bc = 0; bc < 4; bc++){
+        //the trigger pattern is ordered as MSB = first bc of the window
+        if (Itkpixv2EmuUtils::lutTriggerPattern[cmd.header] & (0x1 << bc)){
+            //The trigger command has to encode and send the data. We also
+            //need to give the stream the correct header. That one is composed
+            //of the tag-dependent base (LUT-ed) and the actual bc (T000 -> 00,
+            //0T00 -> 01, 00T0 -> 10, 000T -> 11)
+            
+            uint8_t extendedTag = Itkpixv2EmuUtils::lutTriggerTagBase[cmd.id] << 2 | (bc & 0x3);
+        
+            //Encode
+            m_encoder->addToStream(m_tots, extendedTag);
+
+            //Push whatever is currently in the encoder output. Then clear it.
+            //This will always work for 1-event streams. We need to be careful
+            //about the longer streams. How long does the DAQ wait?
+            for (uint& word : m_encoder->getWords()){
+                m_rx->write32(word);
+                rlog->info("Writing 0x{:x}", word);
+            }
+            rlog->info("{} encoded words written to the output", m_encoder->getWords().size());
+            m_encoder->getWords().clear();
+
+            //Clear the ToT hit map
+            m_tots.reset();
+        
+        }
+    }
+
+}
+
+void Itkpixv2EmuCommandExe::initPixels(const int seed){
+
+    //We need to initialize all pixels with slightly
+    //Randomized threshold to reflect real chip behaviour
+    //The PixelLayout called m_thresholds will hold
+    //a deviation from 1, where 1 would be exactly the desired
+    //set threshold. For the time being, setting the deviation
+    //to 5 %.
+    
+    std::mt19937 gen(seed);
+    std::normal_distribution gauss(1., 0.05);
+
+    for (uint col = 0; col < 400; col++){
+        for (uint row = 0; row < 384; row++){
+            m_thresholds(col, row) = gauss(gen);
+        }
+    }
+
 }

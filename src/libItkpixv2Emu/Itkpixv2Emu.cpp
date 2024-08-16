@@ -19,9 +19,6 @@ Itkpixv2Emu::Itkpixv2Emu(EmuCom* tx, EmuCom* rx, int id, int seed): m_tx(tx), m_
     //Switch on    
     run  = true;
 
-    //Initialize pixels
-    initPixels(seed);
-
     //Initialize the FE registers. This is needed to be accessible both here for setting up the pixels
     //and in the command exe
     m_itkpixv2Cfg = std::make_shared<Itkpixv2Cfg>();
@@ -31,6 +28,9 @@ Itkpixv2Emu::Itkpixv2Emu(EmuCom* tx, EmuCom* rx, int id, int seed): m_tx(tx), m_
     m_cmdInterpreter = std::make_unique<Itkpixv2EmuCommandInterpreter>();
     m_commandBuffer = m_cmdInterpreter->getBuffer();
     m_cmdExe         = std::make_unique<Itkpixv2EmuCommandExe>(m_rx, m_itkpixv2Cfg);
+
+    //Initialize pixels
+    m_cmdExe->initPixels(seed);
 
 }
 
@@ -75,6 +75,7 @@ void Itkpixv2Emu::executeLoop(){
             }
             case Itkpixv2EmuUtils::Commands::Cal           :{
                 rlog->info("Cal command with id {} with data {}", cmd.id, cmd.data);
+                m_cmdExe->exe(cmd);
                 break;
             }
             case Itkpixv2EmuUtils::Commands::WrReg                   :{
@@ -88,8 +89,11 @@ void Itkpixv2Emu::executeLoop(){
                 break;
             }
             default : {
-                //if (Itkpixv2EmuUtils::triggerCommands.find(cmd.header) != Itkpixv2EmuUtils::triggerCommands.end()) rlog->info("Trigger command {} with counter {}", cmd.header, cmd.id);
-                //else rlog->info("Unknown command with header {} and tag {}", cmd.header, cmd.tag);
+                if (Itkpixv2EmuUtils::triggerCommands.find(cmd.header) != Itkpixv2EmuUtils::triggerCommands.end()){
+                    rlog->info("Trigger command {} (pattern 0x{:x}), tag 0x{:x}, ", cmd.header, Itkpixv2EmuUtils::lutTriggerPattern[cmd.header], cmd.id);
+                    m_cmdExe->exe(cmd);
+                }
+                else rlog->info("Unknown command with header {} and tag {}", cmd.header, cmd.id);
                 break;
             }
 
@@ -102,26 +106,6 @@ void Itkpixv2Emu::executeLoop(){
 }
 
 void Itkpixv2Emu::outputLoop(){
-
-}
-
-void Itkpixv2Emu::initPixels(int seed){
-
-    //We need to initialize all pixels with slightly
-    //Randomized threshold to reflect real chip behaviour
-    //The PixelLayout called m_thresholds will hold
-    //a deviation from 1, where 1 would be exactly the desired
-    //set threshold. For the time being, setting the deviation
-    //to 5 %.
-    
-    std::mt19937 gen(seed);
-    std::normal_distribution gauss(1., 0.05);
-
-    for (uint col = 0; col < 400; col++){
-        for (uint row = 0; row < 384; row++){
-            m_thresholds(col, row) = gauss(gen);
-        }
-    }
 
 }
 

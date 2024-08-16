@@ -9,6 +9,7 @@
 void Itkpixv2Encoder::endStream(){
     m_currBlock |= (0x1ULL << 63);
     pushWords32();
+    m_currEvent = 0;
 }
 
 void Itkpixv2Encoder::addToStream(const HitMap& hitMap, bool last){
@@ -39,5 +40,24 @@ void Itkpixv2Encoder::addToStream(const HitMap& hitMap, bool last){
         endStream();
         m_currEvent = 0;
     }
+
+}
+
+void Itkpixv2Encoder::addToStream(const HitMap& hitMap, const uint8_t tag){
+    //This overload is suited to adding custom tags to
+    //the events, for the actual application in the emulator.
+    //The streams - in case of need in cases other than reaching
+    //m_nEventsPerStream - shall be terminated externally
+    //rather than within this function, and this overload is meant
+    //to finally supersede the above one, which was used for the
+    //original unit tests.
+
+    m_currEvent == 0 ? streamTag(tag) : intTag(tag);
+
+    setHitMap(hitMap);
+    encodeEvent();
+    m_currEvent++;
+
+    if (m_currEvent == m_nEventsPerStream) endStream();
 
 }

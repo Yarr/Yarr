@@ -11,6 +11,7 @@
 #include "Itkpixv2EmuUtils.h"
 #include "EmuCom.h"
 #include "Itkpixv2Encoder.h"
+#include "ItkpixLayout.h"
 #include <memory>
 #include <map>
 #include <set>
@@ -23,6 +24,8 @@ class Itkpixv2EmuCommandExe {
         Itkpixv2EmuCommandExe(EmuCom* rx, std::shared_ptr<Itkpixv2Cfg>& cfg);
 
         void exe(const Itkpixv2EmuUtils::Cmd cmd);
+
+        void initPixels(const int seed);
 
     private:
 
@@ -40,6 +43,8 @@ class Itkpixv2EmuCommandExe {
 
         void doRdReg(const Itkpixv2EmuUtils::Cmd& cmd);
 
+        void doTrigger(const Itkpixv2EmuUtils::Cmd& cmd);
+
         //Mapping from command tags to the actual functions
         std::map<uint8_t, void (Itkpixv2EmuCommandExe::*)(const Itkpixv2EmuUtils::Cmd& cmd)> commandMap =  {
             {Itkpixv2EmuUtils::Commands::Sync       , &Itkpixv2EmuCommandExe::doSync       },
@@ -48,7 +53,22 @@ class Itkpixv2EmuCommandExe {
             {Itkpixv2EmuUtils::Commands::GlobalPulse, &Itkpixv2EmuCommandExe::doGlobalPulse},
             {Itkpixv2EmuUtils::Commands::Cal        , &Itkpixv2EmuCommandExe::doCal        },
             {Itkpixv2EmuUtils::Commands::WrReg      , &Itkpixv2EmuCommandExe::doWrReg      },
-            {Itkpixv2EmuUtils::Commands::RdReg      , &Itkpixv2EmuCommandExe::doRdReg      }
+            {Itkpixv2EmuUtils::Commands::RdReg      , &Itkpixv2EmuCommandExe::doRdReg      },
+            {Itkpixv2EmuUtils::Commands::Trig01     , &Itkpixv2EmuCommandExe::doTrigger    },
+            {Itkpixv2EmuUtils::Commands::Trig02     , &Itkpixv2EmuCommandExe::doTrigger    },
+            {Itkpixv2EmuUtils::Commands::Trig03     , &Itkpixv2EmuCommandExe::doTrigger    },
+            {Itkpixv2EmuUtils::Commands::Trig04     , &Itkpixv2EmuCommandExe::doTrigger    },
+            {Itkpixv2EmuUtils::Commands::Trig05     , &Itkpixv2EmuCommandExe::doTrigger    },
+            {Itkpixv2EmuUtils::Commands::Trig06     , &Itkpixv2EmuCommandExe::doTrigger    },
+            {Itkpixv2EmuUtils::Commands::Trig07     , &Itkpixv2EmuCommandExe::doTrigger    },
+            {Itkpixv2EmuUtils::Commands::Trig08     , &Itkpixv2EmuCommandExe::doTrigger    },
+            {Itkpixv2EmuUtils::Commands::Trig09     , &Itkpixv2EmuCommandExe::doTrigger    },
+            {Itkpixv2EmuUtils::Commands::Trig10     , &Itkpixv2EmuCommandExe::doTrigger    },
+            {Itkpixv2EmuUtils::Commands::Trig11     , &Itkpixv2EmuCommandExe::doTrigger    },
+            {Itkpixv2EmuUtils::Commands::Trig12     , &Itkpixv2EmuCommandExe::doTrigger    },
+            {Itkpixv2EmuUtils::Commands::Trig13     , &Itkpixv2EmuCommandExe::doTrigger    },
+            {Itkpixv2EmuUtils::Commands::Trig14     , &Itkpixv2EmuCommandExe::doTrigger    },
+            {Itkpixv2EmuUtils::Commands::Trig15     , &Itkpixv2EmuCommandExe::doTrigger    }
         };
 
 
@@ -57,6 +77,10 @@ class Itkpixv2EmuCommandExe {
 
         //Register map pointer
         std::shared_ptr<Itkpixv2Cfg> m_cfg;
+
+        //Pixel representations
+        ItkpixLayout<float> m_thresholds;
+        ItkpixLayout<uint16_t> m_tots;
 
         //Bookkeeping enabled pixel coordinates. The (col, row) coordinates
         //are flattened in the same manner as the ItkpixLayout indexing: col * 384 + row

@@ -19,6 +19,8 @@ class Itkpixv2Encoder : public ItkpixEncoder {
         void endStream();
         
         void addToStream(const HitMap& hitMap, bool last = false);
+
+        void addToStream(const HitMap& hitMap, const uint8_t tag);
 };
 
 #endif

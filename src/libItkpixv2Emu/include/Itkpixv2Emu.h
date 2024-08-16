@@ -63,10 +63,6 @@ class Itkpixv2Emu {
         //by command interpreter
         std::unique_ptr<Itkpixv2EmuCommandExe> m_cmdExe;
 
-        //Pixel representations
-        ItkpixLayout<float> m_thresholds;
-        ItkpixLayout<uint16_t> m_tots;
-
         //Randomization
         std::mt19937 generator;
 

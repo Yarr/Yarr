@@ -32,6 +32,26 @@ template<class T> class ItkpixLayout{
 
         }
 
+        T& operator()(const uint32_t pos){
+            
+            //In case we already have the position at hand
+            return pixels[pos];
+        
+        }
+
+        T operator()(const uint32_t pos) const {
+            
+            //In case we already have the position at hand
+            return pixels[pos];
+        
+        }
+
+        void reset(){
+
+            pixels = {};
+
+        }
+
     private:
 
         //All chips will allways have 400*384 pixels
