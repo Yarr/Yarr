@@ -295,7 +295,7 @@ yarrStatus Rd53b::readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t &v
 	      if(received_address != (this->*ref).addr()) {
 		logger->error("readRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
 		found = false;
-		value = 65536;
+		value = 65535;
 		return yarrFailure;
 	      }
 	      logger->debug("readSingleRegister successful for register address {} with value {} from chip with chipId {}", (this->*ref).addr(), register_value, m_chipId);
@@ -325,7 +325,7 @@ yarrStatus Rd53b::readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t &v
 
     logger->warn("readRegister failed, did not received register readback data for address {} from chip with chipId {}", (this->*ref).addr(), m_chipId);
 
-    value = 65536;
+    value = 65535;
     return yarrFailure;
 }
 
