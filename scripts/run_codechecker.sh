@@ -15,10 +15,10 @@ while getopts "j:" o; do
 done
 echo Running CodeChecker with ${jobs} jobs
 mkdir checks
-cmake3 -S . -B build -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;StarEmu;Rd53aEmu;FelixClient" -DYARR_FRONT_ENDS_TO_BUILD="Rd53a;Star;Rd53b;Itkpixv2" -DDISABLE_PLOTTING_TOOLS=On -DYARR_EMULATORS_TO_BUILD="StarEmu;Rd53aEmu"
+cmake3 -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=On  -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;StarEmu;Rd53aEmu;FelixClient" -DYARR_FRONT_ENDS_TO_BUILD="Rd53a;Star;Rd53b;Itkpixv2" -DDISABLE_PLOTTING_TOOLS=On -DYARR_EMULATORS_TO_BUILD="StarEmu;Rd53aEmu"
 CodeChecker version
-CodeChecker log -b  "cmake3 --build build --parallel  ${jobs}" -o  checks/compilation_cmds.json
-scripts/fix_cdb.py > checks/compilation_cmds_filtered.json 
+cmake --build build --parallel ${jobs}
+scripts/fix_cdb.py > checks/compilation_cmds_filtered.json
 CodeChecker analyze checks/compilation_cmds_filtered.json -i scripts/code_checker.ignore -j ${jobs} -o checks/results \
   --analyzers clang-tidy \
   --enable=modernize-use-nullptr \
