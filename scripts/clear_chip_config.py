@@ -3,7 +3,7 @@ Script to restore chip configs to untuned state (removing PixelConfig and DiffTh
 
 Author: Emily Thompson (emily.anne.thompson@cern.ch)
 
-usage: scripts/update_chip_dbconfig.py [-h] [-c CONFIG_FILE]
+usage: scripts/clear_chip_config.py [-h] [-c CONNECTIVITY_FILE]
 
 optional arguments:
   -h, --help            show this help message and exit
