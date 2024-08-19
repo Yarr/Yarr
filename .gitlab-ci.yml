@@ -9,7 +9,7 @@ stages:
 #    A change to a branch, but a merge request is open for that branch, do not run a branch pipeline.
 #    A change to a branch, but without any open merge requests, run a branch pipeline.
 
-workflow:
+.rules:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
@@ -20,6 +20,7 @@ workflow:
 image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_alma9_build
 .build:
   stage: build
+  extends: .rules
 
 .build_matrix:
   extends: .build
@@ -27,6 +28,9 @@ image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_alma9_build
   parallel:
     matrix:
       - ARCH: ['cc7', 'alma9']
+.test:
+  stage: test
+  extends: .rules
 
 ###############
 # Build Stage #
@@ -154,7 +158,7 @@ build_docs:
 ###############
 
 job_test_pixel:
-  stage: test
+  extends: .test
   needs:
     - job: job_build_all
       parallel:
@@ -177,7 +181,7 @@ job_test_pixel:
     - if ["$NUM100" != "76800"]; then exit 2; fi
 
 job_test_strips:
-  stage: test
+  extends: .test
   needs:
     - job: job_build_all
       parallel:
@@ -187,7 +191,7 @@ job_test_strips:
     - bin/test_star configs/controller/emuCfg_star.json -r 0 -t 0
 
 job_test_python:
-  stage: test
+  extends: .test
   needs:
     - job: job_build_all
       parallel:
@@ -197,7 +201,7 @@ job_test_python:
     - PYTHONPATH=$PWD/lib python3 python/scan_cli_logger.py -r configs/controller/emuCfg_rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json
 
 job_test_json_parsing:
-  stage: test
+  extends: .test
   needs:
     - job: job_build_all
       parallel:
@@ -211,7 +215,7 @@ job_test_json_parsing:
     - (for file in $(find configs/scans/* -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t SCAN_CONFIG || exit; done)
 
 job_test_netio:
-  stage: test
+  extends: .test
   needs:
     - job: job_build_all
       parallel:
@@ -229,7 +233,7 @@ job_test_netio:
     - kill ${pid_bridge}
 
 job_test_json:
-  stage: test
+  extends: .test
   script:
     - source scl_source enable rh-nodejs6 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
     - npm install jsonlint -g
@@ -242,8 +246,8 @@ job_test_json:
 deploy_master:
   stage: deploy
   dependencies: ["build_docs"]
-  only:
-    - master@YARR/YARR
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master" && $CI_PROJECT_PATH == "YARR/YARR"'
   variables:
     "EOS_PATH": "/eos/user/t/theim/www/yarr"
     "CI_OUTPUT_DIR": "site/"
@@ -254,8 +258,8 @@ deploy_master:
 deploy_devel:
   stage: deploy
   dependencies: ["build_docs"]
-  only:
-    - devel@YARR/YARR
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "devel" && $CI_PROJECT_PATH == "YARR/YARR"'
   variables:
     "EOS_PATH": "/eos/user/t/theim/www/yarr/devel"
     "CI_OUTPUT_DIR": "site/"
@@ -266,8 +270,8 @@ deploy_devel:
 deploy_devel_doxygen:
   stage: deploy
   dependencies: ["job_build_doxygen"]
-  only:
-    - devel@YARR/YARR
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "devel" && $CI_PROJECT_PATH == "YARR/YARR"'
   variables:
     "EOS_PATH": "/eos/user/t/theim/www/yarr/doxygen/devel/"
     "CI_OUTPUT_DIR": "doxygen/html/"
@@ -279,8 +283,8 @@ deploy_devel_doxygen:
 deploy_coverage:
   stage: deploy
   dependencies: ["job_code_coverage"]
-  only:
-    - devel@YARR/YARR
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "devel" && $CI_PROJECT_PATH == "YARR/YARR"'
   variables:
     "EOS_PATH": "/eos/user/t/theim/www/yarr/devel/coverage"
     "CI_OUTPUT_DIR": "cc_tests/"
