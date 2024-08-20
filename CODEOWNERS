@@ -21,7 +21,7 @@
 /src/libSpec/ @mamirono @theim
 /src/libStar/ @bgallop @otoldaie
 /src/libStarEmu/ @ztao @bgallop @otoldaie
-/src/libUtil/ @bgallop @mwittgen @theim
+/src/libUtil/ @bgallop @wittgen @theim
 /src/libYarr/ @bgallop @theim
-/src/python/ @mwittgen
+/src/python/ @wittgen
 /src/tools/ @bgallop @otoldaie @mamirono @theim @ztao @arastogi
