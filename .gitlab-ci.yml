@@ -32,10 +32,6 @@ image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_alma9_build
   stage: test
   extends: .rules
 
-.deploy:
-  stage: deploy
-  extends: .rules
-
 ###############
 # Build Stage #
 ###############
@@ -248,8 +244,7 @@ job_test_json:
 ################
 
 deploy_master:
-  extends: .deploy
-  dependencies: ["build_docs"]
+  needs: ["build_docs"]
   rules:
     - if: '$CI_COMMIT_BRANCH == "master" && $CI_PROJECT_PATH == "YARR/YARR"'
   variables:
@@ -260,8 +255,7 @@ deploy_master:
     - deploy-eos
 
 deploy_devel:
-  extends: .deploy
-  dependencies: ["build_docs"]
+  needs: ["build_docs"]
   rules:
     - if: '$CI_COMMIT_BRANCH == "devel" && $CI_PROJECT_PATH == "YARR/YARR"'
   variables:
@@ -272,8 +266,7 @@ deploy_devel:
     - deploy-eos
 
 deploy_devel_doxygen:
-  extends: .deploy
-  dependencies: ["job_build_doxygen"]
+  needs: ["job_build_doxygen"]
   rules:
     - if: '$CI_COMMIT_BRANCH == "devel" && $CI_PROJECT_PATH == "YARR/YARR"'
   variables:
@@ -285,8 +278,7 @@ deploy_devel_doxygen:
     - deploy-eos
 
 deploy_coverage:
-  extends: .deploy
-  dependencies: ["job_code_coverage"]
+  needs: ["job_code_coverage"]
   rules:
     - if: '$CI_COMMIT_BRANCH == "devel" && $CI_PROJECT_PATH == "YARR/YARR"'
   variables:
