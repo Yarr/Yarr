@@ -172,7 +172,7 @@ build_docs:
   extends: [".build_docs", ".rules"]
 
 build_docs_deploy:
-  extends: .build_docs"
+  extends: .build_docs
 
 ###############
 # Test Stage #
