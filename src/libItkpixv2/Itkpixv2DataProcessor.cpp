@@ -49,6 +49,14 @@ Itkpixv2DataProcessor::Itkpixv2DataProcessor()
     _chipId = 15;
     _streamMask = 0x7FFFFFFF;
 
+    // Set counters to zero
+    _chipTagBitFlipCnt = 0;
+    _chipTagErrorCnt = 0;
+    _unfinishedStreamErrorCnt = 0;
+    _unfinishedStreamEOSErrorCnt = 0;
+    _corruptStreamErrorCnt = 0;
+    _outOfRangeBitsCnt = 0;
+
     // Data stream components
     _ccol = 0;
     // Core column index starts from 1. So _qrow[0] will never be used
@@ -74,14 +82,6 @@ void Itkpixv2DataProcessor::init()
     _bcid = 666;
     _wordCount = 0;
     _hits = 0;
-
-    // Set counters to zero
-    _chipTagBitFlipCnt = 0;
-    _chipTagErrorCnt = 0;
-    _unfinishedStreamErrorCnt = 0;
-    _unfinishedStreamEOSErrorCnt = 0;
-    _corruptStreamErrorCnt = 0;
-    _outOfRangeBitsCnt = 0;
 
     // Load decoder specific bits
     _isCompressedHitmap = (m_feCfg->DataEnRaw.read() == 0 ? true : false);

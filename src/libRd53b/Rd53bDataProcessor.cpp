@@ -49,6 +49,11 @@ Rd53bDataProcessor::Rd53bDataProcessor()
     _chipId = 15;
     _streamMask = 0x7FFFFFFF;
 
+    // Set error counters to zero
+    _unfinishedStreamErrorCnt = 0;
+    _expectNewStreamErrorCnt = 0;
+    _outOfRangeBitsCnt = 0;
+
     // Data stream components
     _ccol = 0;
     // Core column index starts from 1. So _qrow[0] will never be used
@@ -74,11 +79,6 @@ void Rd53bDataProcessor::init()
     _bcid = 666;
     _wordCount = 0;
     _hits = 0;
-
-    // Set error counters to zero
-    _unfinishedStreamErrorCnt = 0;
-    _expectNewStreamErrorCnt = 0;
-    _outOfRangeBitsCnt = 0;
 
     // Load decoder specific bits
     _isCompressedHitmap = (m_feCfg->DataEnRaw.read() == 0 ? true : false);
