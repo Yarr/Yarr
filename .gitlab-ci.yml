@@ -151,7 +151,7 @@ job_yamllint:
       - doxygen/html
 
 job_build_doxygen:
-  extenas: [".job_build_doxygen", .rules"]
+  extends: [".job_build_doxygen", ".rules"]
 
 job_build_doxygen_deploy:
   extends: .job_build_doxygen
