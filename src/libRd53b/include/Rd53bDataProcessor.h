@@ -45,9 +45,9 @@ public:
     std::unique_ptr<FrontEndData> _curOut; // Output data container
     int _events;                           // Output number of events    
 
-    int _unfinishedStreamErrorCnt; // Number of "expect unfinished stream while ES=1" (without check EOS on)
-    int _expectNewStreamErrorCnt; // Number of "expect new stream while NS=0"
-    int _outOfRangeBitsCnt; // Number of times we requested past EOS for hitmap
+    unsigned _unfinishedStreamErrorCnt; // Number of "expect unfinished stream while ES=1" (without check EOS on)
+    unsigned _expectNewStreamErrorCnt; // Number of "expect new stream while NS=0"
+    unsigned _outOfRangeBitsCnt; // Number of times we requested past EOS for hitmap
 
     void setCompressedHitmap(bool flag) { _isCompressedHitmap = flag; }
     void setDropToT(bool flag){_dropToT = flag;}
