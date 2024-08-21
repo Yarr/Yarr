@@ -208,7 +208,8 @@ fi
 pippackages=$(cat ${shell_dir}/setting/requirements-pip.txt)
 if "${pytver}"; then
     for pac in ${pippackages[@]}; do
-        if ! python3 -m pip list 2>&1 | grep ${pac} 2>&1 > /dev/null; then
+        pac_mod=$( echo "${pac}" | sed -e "s/==.*//g" | sed -e "s/>=.*//g")
+        if ! python3 -m pip list 2>&1 | grep ${pac_mod} 2>&1 > /dev/null; then
             piparray+=(${pac})
         fi
     done

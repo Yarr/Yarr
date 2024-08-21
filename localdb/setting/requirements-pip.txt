@@ -1,8 +1,8 @@
 arguments
 coloredlogs
 pdf2image
-Pillow
-pymongo
+pillow
+pymongo>=4.8.0
 python-dateutil
 PyYAML
 pytz
@@ -10,4 +10,4 @@ numpy
 requests
 tzlocal
 pandas
-module-qc-database-tools>=2.2.8
+module-qc-database-tools>=2.3.0
