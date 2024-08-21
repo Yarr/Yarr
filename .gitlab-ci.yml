@@ -128,7 +128,7 @@ job_build_felix_check:
 
 
 .job_code_coverage:
-  extends: .build
+  stage: build
   artifacts:
     paths:
       - cc_tests
