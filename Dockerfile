@@ -1,6 +1,6 @@
 ARG FELIX_VERSION=latest
 
-FROM gitlab-registry.cern.ch/atlas-itk-pixel-systemtest/itk-demo-sw/containers/felix-release:${FELIX_VERSION}
+FROM gitlab-registry.cern.ch/atlas-itk-pixel-systemtest/itk-demo-sw/felix-baseimage:${FELIX_VERSION}
 RUN mkdir /yarr/
 COPY bin /yarr/bin
 COPY lib /yarr/lib
