@@ -15,8 +15,6 @@ stages:
     - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
       when: never
     - if: '$CI_COMMIT_BRANCH'
-    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"
-    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "devel"
 
 # common build definitions
 image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_alma9_build
@@ -94,8 +92,8 @@ job_build_none:
     - CTEST_OUTPUT_ON_FAILURE=1 make test
     - bin/scanConsole -k
 
-job_code_coverage:
-  extends: .build
+.job_code_coverage:
+  stage: build
   artifacts:
     paths:
       - cc_tests
@@ -110,6 +108,12 @@ job_code_coverage:
     - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
     - scripts/cc_tool.sh
   coverage: '/  lines......: \d+(?:\.\d+)?/'
+
+job_code_coverage:
+  extends: [".job_code_coverage", ".rules"]
+
+job_code_coverage_deploy:
+  extends: .job_code_coverage
 
 job_run_codechecker:
   stage: build
@@ -136,8 +140,8 @@ job_yamllint:
   script:
     - yamllint .
 
-job_build_doxygen:
-  extends: .build
+.job_build_doxygen:
+  stage: build
   before_script:
     - yum install -y doxygen graphviz
   script:
@@ -146,8 +150,14 @@ job_build_doxygen:
     paths:
       - doxygen/html
 
-build_docs:
-  extends: .build
+job_build_doxygen:
+  extenas: [".job_build_doxygen", .rules"]
+
+job_build_doxygen_deploy:
+  extends: .job_build_doxygen
+
+.build_docs:
+  stage: build
   before_script:
     - pip install mkdocs
   script:
@@ -157,6 +167,12 @@ build_docs:
   artifacts:
     paths:
       - site
+
+build_docs:
+  extends: [".build_docs", ".rules"]
+
+build_docs_deploy:
+  extends: .build_docs"
 
 ###############
 # Test Stage #
@@ -250,7 +266,7 @@ job_test_json:
 
 deploy_master:
   extends: .deploy
-  dependencies: ["build_docs"]
+  dependencies: ["build_docs_deploy"]
   rules:
     - if: '$CI_COMMIT_BRANCH == "master" && $CI_PROJECT_PATH == "YARR/YARR"'
   variables:
@@ -262,7 +278,7 @@ deploy_master:
 
 deploy_devel:
   extends: .deploy
-  dependencies: ["build_docs"]
+  dependencies: ["build_docs_deploy"]
   rules:
     - if: '$CI_COMMIT_BRANCH == "devel" && $CI_PROJECT_PATH == "YARR/YARR"'
   variables:
@@ -274,7 +290,7 @@ deploy_devel:
 
 deploy_devel_doxygen:
   extends: .deploy
-  dependencies: ["job_build_doxygen"]
+  dependencies: ["job_build_doxygen_deploy"]
   rules:
     - if: '$CI_COMMIT_BRANCH == "devel" && $CI_PROJECT_PATH == "YARR/YARR"'
   variables:
@@ -287,7 +303,7 @@ deploy_devel_doxygen:
 
 deploy_coverage:
   extends: .deploy
-  dependencies: ["job_code_coverage"]
+  dependencies: ["job_code_coverage_deploy"]
   rules:
     - if: '$CI_COMMIT_BRANCH == "devel" && $CI_PROJECT_PATH == "YARR/YARR"'
   variables:
