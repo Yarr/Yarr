@@ -252,7 +252,6 @@ void Rd53bDataProcessor::process_core()
         // Create a new event
         // RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
         _curOut->newEvent(_tag, _l1id, _bcid);
-        //logger->info("New Stream, New Event: {} ", _tag);
         _events++;
         sendFeedback(_tag, _bcid);
     }
@@ -290,7 +289,6 @@ void Rd53bDataProcessor::process_core()
                 // Create a new event
                 // RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
                 _curOut->newEvent(_tag, _l1id, _bcid);
-                //logger->info("New Stream, New Event: {} ", _tag);
                 _events++;
                 _status = CCOL;
                 sendFeedback(_tag, _bcid);
@@ -308,7 +306,6 @@ void Rd53bDataProcessor::process_core()
                 // Create a new event
                 // There is no L1ID and BCID in RD53B data stream. Currently put dummy values
                 _curOut->newEvent(_tag, _l1id, _bcid);
-                //logger->info("Same Stream, New Event: {} ", _tag);
                 _events++;
                 _status = CCOL;
                 sendFeedback(_tag, _bcid);
@@ -550,7 +547,6 @@ bool Rd53bDataProcessor::getNextDataBlock()
             // Push out data accumulated so far
             if (_events > 0)
             {
-                //logger->error("Pushing out data {} events", _events[_activeChannels[i]]);
                 _events = 0;
 
                 // Propogate current status and push out data

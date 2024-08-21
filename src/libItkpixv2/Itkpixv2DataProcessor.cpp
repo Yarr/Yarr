@@ -238,7 +238,6 @@ void Itkpixv2DataProcessor::process_core()
         // Create a new event
         // TODO RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
         _curOut->newEvent(_tag, _l1id, _bcid);
-        //logger->info("New Stream, New Event: {} ", _tag);
         _events++;
         sendFeedback(_tag, _bcid);
     }
@@ -254,10 +253,8 @@ void Itkpixv2DataProcessor::process_core()
             // This is also the ONLY place where we check end-of-stream. In other places we simply assuming continuation of stream, and will throw an error message if the end of stream is somehow reached.
             if (!retrieve(_ccol, 6, true))
                 return;
-            // logger->error("Read ccol {}", _ccol);
         case CCC:
             _status = CCC;
-            // logger->error("Read CCC");
             // End of stream is marked with 0b000000. This is ensured in software in spite of the chip orphan bit configuration
             if (_ccol == 0) {
                 // Check ES bit
@@ -292,7 +289,6 @@ void Itkpixv2DataProcessor::process_core()
                 // Create a new event
                 // TODO RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
                 _curOut->newEvent(_tag, _l1id, _bcid);
-                // logger->error("New Stream, New Event: {} ", _tag);
                 _events++;
                 sendFeedback(_tag, _bcid);
 
@@ -311,7 +307,6 @@ void Itkpixv2DataProcessor::process_core()
                 // Create a new event
                 // There is no L1ID and BCID in RD53B data stream. Currently put dummy values
                 _curOut->newEvent(_tag, _l1id, _bcid);
-                //logger->info("Same Stream, New Event: {} ", _tag);
                 _events++;
                 sendFeedback(_tag, _bcid);
 
@@ -334,8 +329,6 @@ void Itkpixv2DataProcessor::process_core()
                 // Note the qrow index will be absent if isneighbor = 1
                 if (!retrieve(_islast_isneighbor, 2))
                     return;
-                // logger->error("Read islast/isneighbor {}", _islast_isneighbor);
-                
 
             case QROW:
                 _status = QROW;
@@ -346,7 +339,7 @@ void Itkpixv2DataProcessor::process_core()
                 // Otherwise read the qrow value
                 else if (!retrieve(_qrow[_ccol], 8))
                     return;
-                // logger->error("Read qrow {}", _qrow[_ccol]);
+
             case HMAP1:
                 _status = HMAP1;
                 // ############ Step 2. read hit map ############
@@ -354,7 +347,6 @@ void Itkpixv2DataProcessor::process_core()
                 //_hitmap = 0;
                 if (!retrieve(_hitmap, 16, false, true))
                     return;
-                // logger->error("Read hitmap 1 {}", _hitmap);
                 
             case HMAP2:
                 _status = HMAP2;
@@ -394,7 +386,6 @@ void Itkpixv2DataProcessor::process_core()
                         rollBack((_LUT_BinaryTreeHitMap[hitmap_raw] & 0xFF0000) >> 16);
                     }
                 }
-                // logger->error("Read hitmap 2 {}", _hitmap);
 
             case TOT:
                 _status = TOT;
@@ -489,7 +480,6 @@ void Itkpixv2DataProcessor::process_core()
                         _hits++;
                     }
                 }
-                // logger->error("Read ToT {}", _ToT);
 
             default:
                 break;
@@ -634,8 +624,6 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
 
     // Upate the data pointer. Note the meaning of block index is the first block that is *unprocessed*
     _data = &_curInV->data[_rawDataIdx]->get(_wordIdx);
-
-    //logger->info("[{}] {} 0x{:x}{:x}", _wordIdx, _data[0]>>31, _data[0], _data[1]);
 
     // Return success code
     if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
