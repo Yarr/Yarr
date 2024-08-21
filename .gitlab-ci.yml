@@ -1,6 +1,8 @@
 ---
 stages:
   - build
+  - package
+  - tag
   - test
   - deploy
 
@@ -15,6 +17,12 @@ stages:
     - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
       when: never
     - if: '$CI_COMMIT_BRANCH'
+.tag:
+  stage: tag
+  image: gitlab-registry.cern.ch/ci-tools/docker-builder/tools
+  variables:
+    GIT_STRATEGY: none
+  dependencies: []
 
 # common build definitions
 image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_alma9_build
@@ -92,6 +100,33 @@ job_build_none:
     - CTEST_OUTPUT_ON_FAILURE=1 make test
     - bin/scanConsole -k
 
+.build_felix:
+  stage: build
+  image: gitlab-registry.cern.ch/atlas-tdaq-felix/gitlab_ci_runner:el9-netboot-dev
+  tags:
+    - k8s-cvmfs
+  artifacts:
+    paths:
+      - installed
+  script:
+    - git clone https://gitlab.cern.ch/atlas-tdaq-felix/cmake_tdaq
+    - source cmake_tdaq/bin/setup.sh
+    - mkdir installed
+    - cmake -S . -B build -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;StarEmu;Rd53aEmu;FelixClient" -DYARR_FRONT_ENDS_TO_BUILD="Rd53a;Star;Rd53b;Itkpixv2" -DDISABLE_PLOTTING_TOOLS=On -DYARR_EMULATORS_TO_BUILD="StarEmu;Rd53aEmu"  -DENABLE_PYTHON=On  ..
+    - cmake --build build -j$(nproc)
+    - cmake --install build
+    - cp -r Dockerfile bin lib python installed/
+
+job_build_felix:
+  extends: .build_felix
+  only:
+    - devel
+    - tags
+
+job_build_felix_check:
+  extends: [.build_felix, .rules]
+
+
 .job_code_coverage:
   stage: build
   artifacts:
@@ -114,6 +149,9 @@ job_code_coverage:
 
 job_code_coverage_deploy:
   extends: .job_code_coverage
+  only:
+    - devel
+    - master
 
 job_run_codechecker:
   stage: build
@@ -155,6 +193,9 @@ job_build_doxygen:
 
 job_build_doxygen_deploy:
   extends: .job_build_doxygen
+  only:
+    - devel
+    - master
 
 .build_docs:
   stage: build
@@ -173,6 +214,31 @@ build_docs:
 
 build_docs_deploy:
   extends: .build_docs
+  only:
+    - devel
+    - master
+
+#################
+# Package Stage #
+#################
+
+build_container:
+  stage: package
+  only:
+    - devel
+    - tags
+  trigger:
+    include:
+      - project: 'ci-tools/docker-builder'
+        file: '/ci.yml'
+    strategy: depend
+  variables:
+    BUILD_AARCH64: "false"
+    TO: "${CI_REGISTRY_IMAGE}"
+    CONTEXT_DIR: installed
+    DOCKER_FILE: installed//Dockerfile
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+    ARTIFACT_JOB: job_build_felix
 
 ###############
 # Test Stage #
@@ -312,3 +378,31 @@ deploy_coverage:
   image: gitlab-registry.cern.ch/ci-tools/ci-web-deployer
   script:
     - deploy-eos
+
+#############
+# Tag Stage #
+#############
+
+tag_latest_devel_container:
+  extends: .tag
+  needs:
+    - build_container
+  script:
+    - /kaniko/auth.sh
+    - crane tag "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}" "devel"
+    - crane validate --remote "${CI_REGISTRY_IMAGE}:devel"
+  only:
+    - devel
+
+tag_latest_release_container:
+  extends: .tag
+  needs:
+    - build_container
+  script:
+    - /kaniko/auth.sh
+    - crane tag "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}" "${CI_COMMIT_TAG}"
+    - crane validate --remote "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}"
+    - crane tag "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}" "latest"
+    - crane validate --remote "${CI_REGISTRY_IMAGE}:latest"
+  only:
+    - tags
