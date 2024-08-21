@@ -149,6 +149,9 @@ job_code_coverage:
 
 job_code_coverage_deploy:
   extends: .job_code_coverage
+  only:
+    - devel
+    - master
 
 job_run_codechecker:
   stage: build
@@ -190,6 +193,9 @@ job_build_doxygen:
 
 job_build_doxygen_deploy:
   extends: .job_build_doxygen
+  only:
+    - devel
+    - master
 
 .build_docs:
   stage: build
@@ -208,6 +214,9 @@ build_docs:
 
 build_docs_deploy:
   extends: .build_docs
+  only:
+    - devel
+    - master
 
 #################
 # Package Stage #
