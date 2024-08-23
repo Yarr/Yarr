@@ -52,10 +52,12 @@ def clear_chip_config(connectivity_file):
         data_chip=json.load(f_chip)
 
         if data_chip[chip_type].get("PixelConfig"):
+            print("Deleting PixelConfig from chip config")
             del data_chip[chip_type]["PixelConfig"]
 
-        for th in ["DiffTh1L", "DiffTh1M", "DiffTh1R"]:
+        for th in ["DiffTh1L", "DiffTh1M", "DiffTh1R", "DiffVff"]:
             if th in data_chip[chip_type]["GlobalConfig"].keys():
+                print(f"Deleting {th} from chip config")
                 del data_chip[chip_type]["GlobalConfig"][th]
 
                 
