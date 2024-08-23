@@ -138,7 +138,7 @@ After ``std_digitalscan`` (depends on exact config):
 
 We recommend the following tuning routine:
 
-1. Tune global threshold to 1000e
+1. Tune global threshold to 1200e (Overtune by approx 200e)
 2. Tune pixel threshold to 1000e
 
 ## Active Lanes
@@ -190,7 +190,7 @@ Since one can read only ONE chip at the time, at the begining of each scan the r
 Tunning routine:
 - std_digitalscan
 - std_analogscan
-- std_tune_globalthreshold (target 1000e)
+- std_tune_globalthreshold (target 1200e)
 - std_tune_pixelthreshold (target 1000e)
 - std_thresholdscan
 

@@ -258,7 +258,7 @@ void Rd53bGlobalCfg::init() {
     DataEnBcid.init         ( 74, &m_cfg[ 74], 10,  1, 0); regMap["DataEnBcid"] = &Rd53bGlobalCfg::DataEnBcid;
     DataEnL1id.init         ( 74, &m_cfg[ 74], 9,  1, 0); regMap["DataEnL1id"] = &Rd53bGlobalCfg::DataEnL1id;
     DataEnEos.init          ( 74, &m_cfg[ 74], 8,  1, 1); regMap["DataEnEos"] = &Rd53bGlobalCfg::DataEnEos;
-    NumOfEventsInStream.init( 74, &m_cfg[ 74], 0,  8, 1); regMap["NumOfEventsInStream"] = &Rd53bGlobalCfg::NumOfEventsInStream;
+    NumOfEventsInStream.init( 74, &m_cfg[ 74], 0,  8, 0); regMap["NumOfEventsInStream"] = &Rd53bGlobalCfg::NumOfEventsInStream;
     //75
     DataEnBinaryRo.init     ( 75, &m_cfg[ 75], 10,  1, 0); regMap["DataEnBinaryRo"] = &Rd53bGlobalCfg::DataEnBinaryRo;
     DataEnRaw.init          ( 75, &m_cfg[ 75], 9,  1, 0); regMap["DataEnRaw"] = &Rd53bGlobalCfg::DataEnRaw;
