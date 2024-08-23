@@ -46,7 +46,7 @@ function main {
                 return 0
                 ;;
             -t)
-                first_threshold=${2}
+                threshold=${2}
                 shift
                 ;;
             -r)
@@ -114,7 +114,7 @@ function main {
     
 
     # threshold tuning
-    ${base_cmd} -s ${scan_dir}/std_tune_globalthreshold.json -t ${threshold}
+    ${base_cmd} -s ${scan_dir}/std_tune_globalthreshold.json -t $(( ${threshold} + 200 ))
     ${base_cmd} -s ${scan_dir}/std_tune_pixelthreshold.json -t ${threshold}
 
     # after-tuning threshold distribution
@@ -123,6 +123,7 @@ function main {
 
     # analog scan currently a bit buggy, so -t 5000
     ${base_cmd} -s ${scan_dir}/std_analogscan.json -t 5000
+    ./bin/plotFromDir -i data/last_scan/ -p png -P
 }
 
 #______________________________________

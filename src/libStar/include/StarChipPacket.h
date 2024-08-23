@@ -354,6 +354,8 @@ class StarChipPacket{
     this->value = ((raw_words[2] & 0xF) << 28) | ((raw_words[3] & 0xFF) << 20) |
       ((raw_words[4] & 0xFF) << 12) | ((raw_words[5] & 0xFF) << 4) | ((raw_words[6] >> 4) & 0xF) ;
 
+    logger().trace("HCC read data: address={:x} value={:x}", this->address, this->value);
+
   return 0;
   }
 
@@ -381,6 +383,9 @@ class StarChipPacket{
     this->abc_status = ((raw_words[7] & 0xF) << 12)
                      | ((raw_words[8] & 0xFF) << 4)
                      | ((raw_words[9] & 0xF0) >> 4);
+
+    logger().trace("ABC read data: channel_abc={:x} address={:x} value={:x} abc_status={:x}",
+		    this->channel_abc, this->address, this->value, this->abc_status);
 
     return 0;
   }
