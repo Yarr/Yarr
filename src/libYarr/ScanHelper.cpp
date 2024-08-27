@@ -388,8 +388,9 @@ namespace ScanHelper {
 
                 histogrammer.connect(&fe->clipData, &fe->clipHisto);
 
-                auto add_histo = [&](const std::string& algo_name) {
+                auto add_histo = [&](const std::string& algo_name, const json& subHistoCfg) {
                     auto histo = StdDict::getHistogrammer(algo_name);
+                    histo->loadConfig(subHistoCfg);
                     if(algo_name == "DataArchiver") {
                         auto archiver = dynamic_cast<DataArchiver*>(histo.get());
                         std::string output_filename = (outputDir + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_data.raw");
@@ -412,13 +413,13 @@ namespace ScanHelper {
 
                     for (int j=0; j<nHistos; j++) {
                         std::string algo_name = histoCfg[std::to_string(j)]["algorithm"];
-                        add_histo(algo_name);
+                        add_histo(algo_name, histoCfg[std::to_string(j)]["config"]);
                     }
                 } else {
                     std::size_t nHistos = histoCfg.size();
                     for (int j=0; j<nHistos; j++) {
                         std::string algo_name = histoCfg[j]["algorithm"];
-                        add_histo(algo_name);
+                        add_histo(algo_name, histoCfg[std::to_string(j)]["config"]);
                     }
                 }
                 histogrammer.setMapSize(fe->geo.nCol, fe->geo.nRow);
