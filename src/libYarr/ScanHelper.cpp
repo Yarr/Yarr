@@ -390,7 +390,6 @@ namespace ScanHelper {
 
                 auto add_histo = [&](const std::string& algo_name, const json& subHistoCfg) {
                     auto histo = StdDict::getHistogrammer(algo_name);
-                    histo->loadConfig(subHistoCfg);
                     if(algo_name == "DataArchiver") {
                         auto archiver = dynamic_cast<DataArchiver*>(histo.get());
                         std::string output_filename = (outputDir + dynamic_cast<FrontEndCfg*>(fe)->getName() + "_data.raw");
@@ -401,6 +400,7 @@ namespace ScanHelper {
                         } 
                     }
                     if(histo) {
+                        histo->loadConfig(subHistoCfg);
                         bhlog->debug(" ... adding {}", algo_name);
                         histogrammer.addHistogrammer(std::move(histo));
                     } else {
