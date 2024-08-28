@@ -29,11 +29,10 @@ class DataArchiver : public HistogramAlgorithm {
         ~DataArchiver() override { if(fileHandle.is_open()) fileHandle.close(); }
 
         bool open(std::string filename);
+
         void create(const LoopStatus &stat) override {}
-        void loadConfig(const json &config) override {}
+        
         void processEvent(FrontEndData *data) override;
-        void processTaggedEvent(FrontEndData *data);
-        void processBaseEvent(FrontEndData *data);
 
     private :
         std::fstream fileHandle;
@@ -48,8 +47,6 @@ class OccupancyMap : public HistogramAlgorithm {
         ~OccupancyMap() override = default;
         
         void create(const LoopStatus &stat) override;
-
-        void loadConfig(const json &config) override {}
 
         void processEvent(FrontEndData *data) override;
 
@@ -134,8 +131,6 @@ class TagDist : public HistogramAlgorithm {
         ~TagDist() override = default;
 
         void create(const LoopStatus &stat) override;
-        
-        void loadConfig(const json &config) override {}
 
         void processEvent(FrontEndData *data) override;
 
@@ -155,8 +150,6 @@ class TagMap : public HistogramAlgorithm {
 
         void create(const LoopStatus &stat) override;
 
-        void loadConfig(const json &config) override {}
-
         void processEvent(FrontEndData *data) override;
 
         static std::string outputName() { return "TagMap"; }
@@ -175,8 +168,6 @@ class L1Dist : public HistogramAlgorithm {
         ~L1Dist() override = default;
 
         void create(const LoopStatus &stat) override;
-
-        void loadConfig(const json &config) override {}
 
         void processEvent(FrontEndData *data) override;
 
@@ -199,8 +190,6 @@ class L13d : public HistogramAlgorithm {
 
         void create(const LoopStatus &stat) override;
 
-        void loadConfig(const json &config) override {}
-
         void processEvent(FrontEndData *data) override;
 
         static std::string outputName() { return "L13d"; }
@@ -221,8 +210,6 @@ class HitsPerEvent : public HistogramAlgorithm {
         ~HitsPerEvent() override = default;
 
         void create(const LoopStatus &stat) override;
-
-        void loadConfig(const json &config) override {}
 
         void processEvent(FrontEndData *data) override;
 
