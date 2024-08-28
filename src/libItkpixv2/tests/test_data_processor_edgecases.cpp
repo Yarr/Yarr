@@ -7,6 +7,7 @@
 #include "EventData.h"
 
 #include "Itkpixv2Cfg.h"
+
 #include "Itkpixv2DataProcessor.h"
 
 void process_case(std::vector<std::vector<uint32_t>> packages) {
