@@ -31,7 +31,7 @@ class DataArchiver : public HistogramAlgorithm {
         bool open(std::string filename);
 
         void create(const LoopStatus &stat) override {}
-        
+
         void processEvent(FrontEndData *data) override;
 
     private :
@@ -65,8 +65,6 @@ class TotMap : public HistogramAlgorithm {
 
         void create(const LoopStatus &stat) override;
 
-        void loadConfig(const json &config) override {}
-
         void processEvent(FrontEndData *data) override;
 
         static std::string outputName() { return "TotMap"; }
@@ -81,8 +79,6 @@ class Tot2Map : public HistogramAlgorithm {
         ~Tot2Map() override = default;
 
         void create(const LoopStatus &stat) override;
-
-        void loadConfig(const json &config) override {}
 
         void processEvent(FrontEndData *data) override;
 
