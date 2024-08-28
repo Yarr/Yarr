@@ -587,14 +587,18 @@ bool Rd53bDataProcessor::getNextDataBlock()
             _wordCount += _curInV->data[c]->getSize();
     }
 
+    uint32_t *_data_t = &_curInV->data[_rawDataIdx]->get(_wordIdx);
+
+    // Skip special symbols
+    if (_data_t[0] == 0xFFFFDEAD && _data_t[1] == 0xFFFFDEAD)
+        return getNextDataBlock();
+    if (((_data_t[0] >> 29) & 0x3) != _chipId && _enChipId)
+        return getNextDataBlock();
+    
     // Upate the data pointer. Note the meaning of block index is the first block that is *unprocessed*
     _data = &_curInV->data[_rawDataIdx]->get(_wordIdx);
 
     // Return success code
-    if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
-         return getNextDataBlock();
-    if (((_data[0] >> 29) & 0x3) != _chipId && _enChipId)
-         return getNextDataBlock();
     return true;
 }
 
