@@ -7,9 +7,9 @@
 #include "EventData.h"
 
 #include "Itkpixv2Cfg.h"
+#include "Itkpixv2DataProcessor.h"
 
-void process_case(std::vector<uint32_t> words) {
-    int nWords = words.size();
+void process_case(std::vector<std::vector<uint32_t>> packages) {
   
     std::shared_ptr<FeDataProcessor> proc = StdDict::getDataProcessor("ITKPIXV2");
 
@@ -24,26 +24,32 @@ void process_case(std::vector<uint32_t> words) {
     proc->init();
     proc->run();
 
-    RawDataPtr rd = std::make_shared<RawData>(0, nWords);
-    uint32_t *buffer = rd->getBuf();
-    buffer[nWords-1] = 0;
 
-    std::copy(words.data(), words.data()+nWords, buffer);
+    for (auto words : packages) {
 
+        int nWords = words.size();
+        std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(LoopStatus()));
+        RawDataPtr rd = std::make_shared<RawData>(0, nWords);
+        uint32_t *buffer = rd->getBuf();
+        buffer[nWords-1] = 0;
+        std::copy(words.data(), words.data()+nWords, buffer);
 
-    std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(LoopStatus()));
-    rdc->add(std::move(rd));
-    rd_cp.pushData(std::move(rdc));
+        rdc->add(std::move(rd));
+        rd_cp.pushData(std::move(rdc));
+    }
 
     rd_cp.finish();
-
     proc->join();
 
-    if(!em_cp.empty()) {
+    while(!em_cp.empty()) {
         auto data = em_cp.popData();
         FrontEndData &rawData = *(FrontEndData*)data.get();
         REQUIRE(rawData.events.size() > 0);
     }
+
+    // Make sure FFFFDEAD was never a processed data block
+    std::shared_ptr<Itkpixv2DataProcessor> v2proc = std::dynamic_pointer_cast<Itkpixv2DataProcessor>(proc);
+    REQUIRE(((v2proc->_data[0] != 0xFFFFDEAD) && (v2proc->_data[1] != 0xFFFFDEAD)));
     
     // Only one thing
     REQUIRE (em_cp.empty());
@@ -52,17 +58,19 @@ void process_case(std::vector<uint32_t> words) {
 TEST_CASE("Itkpixv2DataProcessor", "[itkpixv2][data_processor_edge_case]") {
 
     // Random selftrigger case
-    process_case({
+    std::cout << "BASE SELFTRIGGER CASE" << std::endl;
+    process_case({{
         4242473892, 171971904, // tag 249
         4250599616, 77605504,  // tag 250
         4253024256, 0          // tag 251
-    });
+    }});
 
     // Minimal example segfault block
-    process_case({
+    std::cout << "BASIC SEGFAULT CASE" << std::endl;
+    process_case({{
         0x7e3d4ba8, 0x17411215, // tag 252
         0x38048494, 0xE2021493  // lots of hits
-    });
+    }});
 
     // 64 bit block analysis:
     // 0 11111100 011110 10 10010111 01 10 10 01 0000 101110 1 0 00001000 10 01 10 01 0010 101                  // 0 11111100 011110 1 0 10010111 0 10100000010111010000010001001000010101
@@ -72,7 +80,31 @@ TEST_CASE("Itkpixv2DataProcessor", "[itkpixv2][data_processor_edge_case]") {
     //ES ^43 L N ^ 1      single hit  tot2 ^18    L N ^113   single hit    tot1 ^2     L N ^73      ^ this is removing a segfault
     
     // Harder segfault block
-    process_case({
+    std::cout << "COMPLEX SEGFAULT CASE" << std::endl;
+    process_case({{
         0x73c91dab, 0xdb8c39d4
+    }});
+
+    // Multiple blocks
+    std::cout << "MULTIPLE BLOCK CASE" << std::endl;
+    process_case({
+        {
+            4250599616, 77605504
+        },
+        {
+            4253024256, 0
+        }
+    });
+
+    // 0xffffdead case
+    std::cout << "0xFFFFDEAD CASE" << std::endl;
+    process_case({
+        {
+            4250599616, 77605504,       // Fully complete data
+            0xFFFFDEAD, 0xFFFFDEAD      // ffffdead at end of block
+        },
+        {
+            0xFFFFDEAD, 0xFFFFDEAD      // This will leave data processor in a state where last block is 0xFFFFDEAD
+        }
     });
 }
