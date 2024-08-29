@@ -17,8 +17,8 @@ Itkpixv2EmuCommandInterpreter::Itkpixv2EmuCommandInterpreter(){
     
 }
 
-std::shared_ptr<std::queue<Itkpixv2EmuUtils::Cmd>> Itkpixv2EmuCommandInterpreter::getBuffer(){
-    return std::shared_ptr<std::queue<Itkpixv2EmuUtils::Cmd>>(&m_commandsOut);
+std::queue<Itkpixv2EmuUtils::Cmd>* Itkpixv2EmuCommandInterpreter::getBuffer(){
+    return &m_commandsOut;
 }
 
 void Itkpixv2EmuCommandInterpreter::bufferCommandUnits(EmuCom* tx){
@@ -120,7 +120,7 @@ void Itkpixv2EmuCommandInterpreter::readCommand(EmuCom* tx){
                 //multiple write
                 case 1:{
                     //pop the two blocks of address, it's 0 anyway
-                    rlog->info("WrReg(1) command!!!");
+                    //rlog->info("WrReg(1) command!!!");
                     m_commandUnitBuffer.pop();
                     m_commandUnitBuffer.pop();
                     //keep track of the multiple-write mode in the 10-th bit

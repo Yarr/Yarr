@@ -17,13 +17,13 @@ namespace Itkpixv2EmuUtils {
 
     //Itkpixv2 commands in a human-readable form
     enum Commands : uint8_t{
-        Sync        = 0b10000001,
-        PLLlock     = 0b10101010,
-        Clear       = 0b01011010,
-        GlobalPulse = 0b01011100,
-        Cal         = 0b01100011,
-        WrReg       = 0b01100110,
-        RdReg       = 0b01100101,
+        Sync        = 0x81,//0b10000001,
+        PLLlock     = 0xAA,//0b10101010,
+        Clear       = 0x5A,//0b01011010,
+        GlobalPulse = 0x5C,//0b01011100,
+        Cal         = 0x63,//0b01100011,
+        WrReg       = 0x66,//0b01100110,
+        RdReg       = 0x65,//0b01100101,
         Trig01      = 0x2B,
         Trig02      = 0x2D,
         Trig03      = 0x2E,

@@ -28,7 +28,7 @@ class Itkpixv2EmuCommandInterpreter {
         //Read the next command, and return a (header, payload)
         //pair, which is then digested by the command exe
         void readCommand(EmuCom* tx);
-        std::shared_ptr<std::queue<Itkpixv2EmuUtils::Cmd>> getBuffer();
+        std::queue<Itkpixv2EmuUtils::Cmd>* getBuffer();
 
 
     private:

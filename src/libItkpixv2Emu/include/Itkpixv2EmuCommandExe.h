@@ -15,6 +15,7 @@
 #include <memory>
 #include <map>
 #include <set>
+#include <mutex>
 
 
 class Itkpixv2EmuCommandExe {
@@ -88,6 +89,9 @@ class Itkpixv2EmuCommandExe {
 
         //encoder
         std::shared_ptr<Itkpixv2Encoder> m_encoder;
+
+        //mutex
+        std::mutex m_mtx;
 
 };
 

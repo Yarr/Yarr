@@ -26,7 +26,7 @@ Itkpixv2Emu::Itkpixv2Emu(EmuCom* tx, EmuCom* rx, int id, int seed): m_tx(tx), m_
 
     //Initialize the command interpreter and exe
     m_cmdInterpreter = std::make_unique<Itkpixv2EmuCommandInterpreter>();
-    m_commandBuffer = m_cmdInterpreter->getBuffer();
+    m_commandBuffer  = m_cmdInterpreter->getBuffer();
     m_cmdExe         = std::make_unique<Itkpixv2EmuCommandExe>(m_rx, m_itkpixv2Cfg);
 
     //Initialize pixels
@@ -66,34 +66,34 @@ void Itkpixv2Emu::executeLoop(){
                 break;
             }
             case Itkpixv2EmuUtils::Commands::Clear         :{
-                rlog->info("Clear command with id {}", cmd.id);
+                //rlog->info("Clear command with id {}", cmd.id);
                 break;
             }
             case Itkpixv2EmuUtils::Commands::GlobalPulse   :{
-                rlog->info("GlobalPulse command with id {}", cmd.id);
+                //rlog->info("GlobalPulse command with id {}", cmd.id);
                 break;
             }
             case Itkpixv2EmuUtils::Commands::Cal           :{
-                rlog->info("Cal command with id {} with data {}", cmd.id, cmd.data);
+                rlog->trace("Cal command with id {} with data {}", cmd.id, cmd.data);
                 m_cmdExe->exe(cmd);
                 break;
             }
             case Itkpixv2EmuUtils::Commands::WrReg                   :{
-                rlog->info("WrReg command to address 0x{:x} with data 0x{:x}", cmd.address, cmd.data);
+                //rlog->trace("WrReg command to address 0x{:x} with data 0x{:x}", cmd.address, cmd.data);
                 m_cmdExe->exe(cmd);
                 break;
             }
             case Itkpixv2EmuUtils::Commands::RdReg                   :{
-                rlog->info("RdReg command to address {} with data {}", cmd.address, cmd.data);
+                rlog->trace("RdReg command to address {} with data {}", cmd.address, cmd.data);
                 m_cmdExe->exe(cmd);
                 break;
             }
             default : {
                 if (Itkpixv2EmuUtils::triggerCommands.find(cmd.header) != Itkpixv2EmuUtils::triggerCommands.end()){
-                    rlog->info("Trigger command {} (pattern 0x{:x}), tag 0x{:x}, ", cmd.header, Itkpixv2EmuUtils::lutTriggerPattern[cmd.header], cmd.id);
+                    rlog->trace("Trigger command {} (pattern 0x{:x}), tag 0x{:x}, ", cmd.header, Itkpixv2EmuUtils::lutTriggerPattern[cmd.header], cmd.id);
                     m_cmdExe->exe(cmd);
                 }
-                else rlog->info("Unknown command with header {} and tag {}", cmd.header, cmd.id);
+                //else rlog->info("Unknown command with header {} and tag {}", cmd.header, cmd.id);
                 break;
             }
 

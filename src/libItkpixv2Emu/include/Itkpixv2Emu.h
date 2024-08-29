@@ -57,7 +57,7 @@ class Itkpixv2Emu {
         //Utility class for preparation of the commands that arrive
         //through tx
         std::unique_ptr<Itkpixv2EmuCommandInterpreter> m_cmdInterpreter;
-        std::shared_ptr<std::queue<Itkpixv2EmuUtils::Cmd>> m_commandBuffer;
+        std::queue<Itkpixv2EmuUtils::Cmd>* m_commandBuffer;
 
         //Utility class that takes care of executing the commands fetched
         //by command interpreter
