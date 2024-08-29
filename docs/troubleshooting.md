@@ -81,6 +81,34 @@ java.lang.NoClassDefFoundError: Could not initialize class java.awt.GraphicsEnvi
 Execute ``xhost +``.
 
 
+## Software Troubleshooting
+
+### `yarr_version.h` no such file or directory
+
+If the compilation fails with the following
+
+```bash
+: not found_hash.sh: 2:
+: not found_hash.sh: 8:
+[  2%] Built target git_hash
+...
+<lots of text>
+...
+Building CXX object src/libYarr/CMakeFiles/Yarr.dir/yarr.cpp.o
+/home/user/Yarr/src/libYarr/yarr.cpp:3:10: fatal error: yarr_version.h: No such file or directory
+    3 | #include "yarr_version.h"
+      |          ^~~~~~~~~~~~~~~~
+compilation terminated.
+make[2]: *** [src/libYarr/CMakeFiles/Yarr.dir/build.make:76: src/libYarr/CMakeFiles/Yarr.dir/yarr.cpp.o] Error 1
+make[1]: *** [CMakeFiles/Makefile2:336: src/libYarr/CMakeFiles/Yarr.dir/all] Error 2
+make: *** [Makefile:136: all] Error 2
+```
+
+then it is likely that `yarr_version.h` was not properly generated.
+It could be due to the `git` setting `autocrlf` to be set to `true`.
+Disable this setting with `git config [--global] core.autocrlf false`.
+Then re-clone the repository and recompile.
+
 ## PCIe Card Troubleshooting
 
 The following points are specific to PCIe cards.

@@ -13,12 +13,12 @@ while getopts "j:" o; do
             ;;
     esac
 done
-
+echo Running CodeChecker with ${jobs} jobs
 mkdir checks
-cmake3 -S . -B build
+cmake3 -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=On
 CodeChecker version
-CodeChecker log -b  "cmake3 --build build -- -j ${jobs}" -o  checks/compilation_cmds.json
-scripts/fix_cdb.py > checks/compilation_cmds_filtered.json 
+cmake --build build --parallel ${jobs}
+scripts/fix_cdb.py > checks/compilation_cmds_filtered.json
 CodeChecker analyze checks/compilation_cmds_filtered.json -i scripts/code_checker.ignore -j ${jobs} -o checks/results \
   --analyzers clang-tidy \
   --enable=modernize-use-nullptr \
