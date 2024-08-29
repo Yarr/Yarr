@@ -30,6 +30,8 @@ class HistogramAlgorithm {
         }
         
         virtual void processEvent(FrontEndData *data) {}
+        virtual void loadConfig(const json &config) {}
+        
         void setMapSize(unsigned col, unsigned row) {
             nCol = col;
             nRow = row;
