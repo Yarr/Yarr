@@ -49,6 +49,11 @@ Rd53bDataProcessor::Rd53bDataProcessor()
     _chipId = 15;
     _streamMask = 0x7FFFFFFF;
 
+    // Set error counters to zero
+    _unfinishedStreamErrorCnt = 0;
+    _expectNewStreamErrorCnt = 0;
+    _outOfRangeBitsCnt = 0;
+
     // Data stream components
     _ccol = 0;
     // Core column index starts from 1. So _qrow[0] will never be used
@@ -98,7 +103,7 @@ void Rd53bDataProcessor::join()
 
 void Rd53bDataProcessor::process()
 {
-    logger->info("Started raw data processor thread for {}.", m_feCfg->getName());
+    logger->info("[{}] Started raw data processor thread", m_feCfg->getName());
     while (true)
     {
         m_input->waitNotEmptyOrDone();
@@ -115,7 +120,11 @@ void Rd53bDataProcessor::process()
     }
 
     process_core();
-    logger->info("Finished raw data processor thread for {}.", m_feCfg->getName());
+
+    logger->info("[{}] Finished raw data processor thread", m_feCfg->getName());
+    logger->info("[{}]   Unfinished streams (no EOS): {}", m_feCfg->getName(), _unfinishedStreamErrorCnt);
+    logger->info("[{}]   Expect new stream with NS=0: {}", m_feCfg->getName(), _expectNewStreamErrorCnt);
+    logger->info("[{}]     Out-of-range bit requests: {}", m_feCfg->getName(), _outOfRangeBitsCnt);
 }
 
 // Method for retrieving bits from data
@@ -124,7 +133,7 @@ bool Rd53bDataProcessor::retrieve(uint64_t &variable, const unsigned length, con
     // Should never happen: reading 0 bit
     if (unlikely(length == 0))
     {
-        logger->warn("Retrieving 0 length from data stream");
+        logger->warn("[{}] Retrieving 0 length from data stream", m_feCfg->getName());
         return true;
     }
 
@@ -184,6 +193,7 @@ bool Rd53bDataProcessor::retrieve(uint64_t &variable, const unsigned length, con
             else
             {
                 logger->error("[{}] Expect unfinished stream while NS = 1: {}{}. Will start a new event...", m_feCfg->getName(), std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+                _unfinishedStreamErrorCnt++;
                 getPreviousDataBlock();
                 _status = INIT;
                 return false;
@@ -233,6 +243,7 @@ void Rd53bDataProcessor::process_core()
         if (unlikely(!(_data[0] >> 31 & 0x1)))
         {
             logger->error("[{}] Expect new stream while NS = 0: {}{}. Skipping block...", m_feCfg->getName(), std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+            _expectNewStreamErrorCnt++;
             return;
         }
         _tag = (_data[0] >> (23-_chipIdShift)) & 0xFF;
@@ -241,7 +252,6 @@ void Rd53bDataProcessor::process_core()
         // Create a new event
         // RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
         _curOut->newEvent(_tag, _l1id, _bcid);
-        //logger->info("New Stream, New Event: {} ", _tag);
         _events++;
         sendFeedback(_tag, _bcid);
     }
@@ -270,6 +280,7 @@ void Rd53bDataProcessor::process_core()
                 if (unlikely(!(_data[0] >> 31 & 0x1)))
                 {
                     logger->error("[{}] Expect new stream while NS = 0: {}{}. Skipping block...", m_feCfg->getName(), std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+                    _expectNewStreamErrorCnt++;
                     continue;
                 }
                 _tag = (_data[0] >> (23-_chipIdShift)) & 0xFF;
@@ -278,7 +289,6 @@ void Rd53bDataProcessor::process_core()
                 // Create a new event
                 // RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
                 _curOut->newEvent(_tag, _l1id, _bcid);
-                //logger->info("New Stream, New Event: {} ", _tag);
                 _events++;
                 _status = CCOL;
                 sendFeedback(_tag, _bcid);
@@ -296,7 +306,6 @@ void Rd53bDataProcessor::process_core()
                 // Create a new event
                 // There is no L1ID and BCID in RD53B data stream. Currently put dummy values
                 _curOut->newEvent(_tag, _l1id, _bcid);
-                //logger->info("Same Stream, New Event: {} ", _tag);
                 _events++;
                 _status = CCOL;
                 sendFeedback(_tag, _bcid);
@@ -540,7 +549,6 @@ bool Rd53bDataProcessor::getNextDataBlock()
             // Push out data accumulated so far
             if (_events > 0)
             {
-                //logger->error("Pushing out data {} events", _events[_activeChannels[i]]);
                 _events = 0;
 
                 // Propogate current status and push out data
