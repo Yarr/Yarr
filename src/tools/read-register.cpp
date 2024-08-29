@@ -167,6 +167,9 @@ int main(int argc, char* argv[]) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
                 hw->setRxEnable(cfg->getRegRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
+                while(!hw->isCmdEmpty());
+		std::this_thread::sleep_for(std::chrono::microseconds(100));
+
 	        uint16_t res = 0;
                 if (fe->readNamedRegister(register_name, res) != yarrSuccess) {
 		  std::cerr << "ERROR failed to read register of " << current_chip_name << "!" << std::endl;
@@ -181,6 +184,9 @@ int main(int argc, char* argv[]) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
                 hw->setRxEnable(cfg->getRegRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
+                while(!hw->isCmdEmpty());
+		std::this_thread::sleep_for(std::chrono::microseconds(100));
+
 	        uint16_t res = 0;
                 if (fe->readNamedRegister(register_name, res) != yarrSuccess) {
 		  std::cerr << "ERROR failed to read register of " << current_chip_name << "!" << std::endl;

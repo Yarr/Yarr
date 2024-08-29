@@ -294,11 +294,9 @@ yarrStatus Rd53b::readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t &v
 	    if(id == (m_chipId&0x3)) {
 	      if(received_address != (this->*ref).addr()) {
 		logger->error("readRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
-		found = false;
-		value = 65535;
-		return yarrFailure;
+		continue;
 	      }
-	      logger->debug("readSingleRegister successful for register address {} with value {} from chip with chipId {}", (this->*ref).addr(), register_value, m_chipId);
+	      logger->debug("readRegister successful for register address {} with value {} from chip with chipId {}", (this->*ref).addr(), register_value, m_chipId);
 	      found = true;
 	      // Update memory
 	      m_cfg[(this->*ref).addr()] = register_value;
@@ -307,7 +305,6 @@ yarrStatus Rd53b::readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t &v
 	      return yarrSuccess;
 	    } else {
 	      logger->info("readRegister 0x{:x} 0x{:x} -> ID {} - {}, addr 0x{:x} val 0x{:x}", data->get(0), data->get(1), id, m_chipId&0x3, received_address, register_value);
-	      found =false;
 	      continue;
 	    }
 	  }
@@ -437,15 +434,18 @@ yarrStatus Rd53b::checkCom() {
     logger->debug("Checking communication for {} by reading a register ...", this->name);
     uint32_t regAddr = 21;
     uint32_t regValue = m_cfg[regAddr];
+  
+    m_rxcore->flushBuffer();
     this->sendRdReg(m_chipId, regAddr);
     while(!core->isCmdEmpty()){;} // Required by the rdRegister() above 
                                   // (when relying on isCmdEmpty() to actually send commands).
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     // TODO not happy about this, rx knowledge should not be here
     std::vector<RawDataPtr> dataVec = m_rxcore->readData();
     RawDataPtr data;
-    if (dataVec.size() > 0) {
+
+    if (dataVec.size() > 0 && dataVec[0]->getAdr() == regRxChannel) {
         data = dataVec[0];
     }
 
@@ -558,7 +558,8 @@ itkpix_efuse_codec::EfuseData Rd53b::readEfuses() {
     //
     this->writeRegister(&Rd53b::EfuseConfig, 0x0f0f);
     while(!core->isCmdEmpty()) {}
-
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));     
+    
     //
     // send E-fuse circuit the reset signal to halt any other state (reset E-fuse block FSM)
     //
@@ -597,6 +598,7 @@ uint32_t Rd53b::readEfusesRaw() {
     //
     this->writeRegister(&Rd53b::EfuseConfig, 0x0f0f);
     while(!core->isCmdEmpty()) {}
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     //
     // send E-fuse circuit the reset signal to halt any other state (reset E-fuse block FSM)

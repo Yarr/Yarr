@@ -177,29 +177,67 @@ int main(int argc, char* argv[]) {
             if ( chip_idx.size() == 0 || (std::find(chip_idx.begin(), chip_idx.end(), ichip)!= chip_idx.end()) ) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
         	hw->setRxEnable(cfg->getRegRxChannel());
-        	hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
+                hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().                                                                                                                  
+                while(!hw->isCmdEmpty());
+		std::this_thread::sleep_for(std::chrono::microseconds(100));
+
+		if (fe->checkCom() != yarrSuccess) {
+		  std::cout<<"Can't establish communication, aborting!"<<std::endl;
+		  return -1;
+		}
+		if (fe->hasValidName() != yarrSuccess) {
+		  std::cout<<"Invalid chip name, aborting!"<<std::endl;
+		  return -1;
+		}
+
 		if (fe->readUpdateWriteNamedRegister(register_name, register_value) != yarrSuccess) {
 		  std::cerr << "ERROR: failed to readUpdateWrite register for " << current_chip_name << "!" << std::endl;
 		  if (force) {
 		    std::cout << "Trying to force overwrite register without update!" << std::endl;
 		    fe->writeNamedRegister(register_name, register_value);
+		    while(!hw->isCmdEmpty()) {}
+		    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		  }
 		  error_cnt++;
                 }
+		else{
+		  fe->writeNamedRegister(register_name, register_value);
+		  while(!hw->isCmdEmpty()) {}
+		  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		}
 	    }
         } else {
             if (std::find(chip_name.begin(), chip_name.end(), current_chip_name) != chip_name.end()) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
         	hw->setRxEnable(cfg->getRegRxChannel());
         	hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
+                while(!hw->isCmdEmpty());
+		std::this_thread::sleep_for(std::chrono::microseconds(100));
+
+                if (fe->checkCom() != yarrSuccess) {
+		  std::cout<<"Can't establish communication, aborting!"<<std::endl;
+                  return -1;
+                }
+                if (fe->hasValidName() != yarrSuccess) {
+		  std::cout<<"Invalid chip name, aborting!"<<std::endl;
+                  return -1;
+                }
+
 		if (fe->readUpdateWriteNamedRegister(register_name, register_value) != yarrSuccess) {
 		  std::cerr << "ERROR: failed to readUpdateWrite register for " << current_chip_name << "!" << std::endl;
 		  if (force) {
 		    std::cout << "Trying to force overwrite register without update!" << std::endl;
 		    fe->writeNamedRegister(register_name, register_value);
+		    while(!hw->isCmdEmpty()) {}
+		    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		  }
 		  error_cnt++;
                 }
+		else{
+		  fe->writeNamedRegister(register_name, register_value);
+		  while(!hw->isCmdEmpty()) {}
+		  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		}
             }
         }
     }
