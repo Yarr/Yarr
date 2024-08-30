@@ -7,6 +7,7 @@
 #include "Itkpixv2EmuCommandExe.h"
 #include "logging.h"
 #include <random>
+#include <mutex>
 
 namespace {
     auto rlog = logging::make_log("Itkpixv2EmuCommandExe");
@@ -66,13 +67,27 @@ void Itkpixv2EmuCommandExe::doCal(const Itkpixv2EmuUtils::Cmd& cmd){
     switch (m_cfg->InjDigEn.read()){
         //analog injection
         case 0:{
-            rlog->info("Analog injection happening...");
+            rlog->trace("Analog injection happening...");
             break;
         }
         case 1:{
-            rlog->info("Digital injection happening...");
+            rlog->trace("Digital injection happening...");
             //Let's just put the middle value everywhere now...
             for (uint32_t pixel : m_activePixels){
+                //The core-col calibration enable needs to be checked here
+                //What is the ccol of the current pixel?
+                uint16_t ccol = (pixel / 384) / 8;
+
+                //What is the current ccol cal masking?
+                uint64_t ccolCalEnabled = 0x0ULL;
+                ccolCalEnabled |= m_cfg->EnCoreColCal0.read();
+                ccolCalEnabled |= ((uint64_t)m_cfg->EnCoreColCal1.read() << 16);
+                ccolCalEnabled |= ((uint64_t)m_cfg->EnCoreColCal2.read() << 32);
+                ccolCalEnabled |= ((uint64_t)m_cfg->EnCoreColCal3.read() << 48);
+
+                //if this ccol is masked, continue
+                if (!((0x1ULL << ccol) & ccolCalEnabled)) continue;
+
                 m_tots(pixel) = 9;
                 //rlog->info("Pixel col {} row {} has ToT {}", pixel / 384, pixel % 384, m_tots(pixel));
             }
@@ -84,14 +99,14 @@ void Itkpixv2EmuCommandExe::doCal(const Itkpixv2EmuUtils::Cmd& cmd){
 }
 
 void Itkpixv2EmuCommandExe::doWrReg(const Itkpixv2EmuUtils::Cmd& cmd){
-    rlog->info("Active pixels: {}", m_activePixels.size());
+    //rlog->info("Active pixels: {}", m_activePixels.size());
     
     //Can be either to pixel portal (register 0) or a global register.
     //Technically, only 9 bits represent the address, the 10-th bit
     //keeps track of the multiple-write mode
     switch (cmd.address & 0x1FF){
         case 0 : {
-            rlog->info("Writing pixel register, address 0x{:x}", cmd.address);
+            //rlog->info("Writing pixel register, address 0x{:x}", cmd.address);
 
             //Registers PixRegionRow and PixRegionCol decide which of the pixel pairs the portal portals to
             uint16_t& val = m_cfg->pixRegs[m_cfg->PixRegionCol.read()][m_cfg->PixRegionRow.read()];
@@ -233,16 +248,12 @@ void Itkpixv2EmuCommandExe::doTrigger(const Itkpixv2EmuUtils::Cmd& cmd){
             //Push whatever is currently in the encoder output. Then clear it.
             //This will always work for 1-event streams. We need to be careful
             //about the longer streams. How long does the DAQ wait?
-            for (uint& word : m_encoder->getWords()){
-                m_rx->write32(word);
-                rlog->info("Writing 0x{:x}", word);
-            }
-            rlog->info("{} encoded words written to the output", m_encoder->getWords().size());
+            rlog->trace("Writing {} words to the input", m_encoder->getWords().size());
+            m_rx->write32(m_encoder->getWords());
             m_encoder->getWords().clear();
 
             //Clear the ToT hit map
-            m_tots.reset();
-        
+            m_tots.reset();   
         }
     }
 
