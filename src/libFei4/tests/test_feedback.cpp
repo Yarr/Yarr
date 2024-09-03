@@ -65,7 +65,7 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
 
     auto g_fe = StdDict::getFrontEnd("FEI4B");
     g_fe->makeGlobal();
-    g_fe->init(&empty, FrontEndConnectivity(0,0,0));
+    g_fe->init(&empty, fe_conn);
     bookie.initGlobalFe(std::move(g_fe));
 
     json js;
@@ -142,7 +142,7 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
 
     auto g_fe = StdDict::getFrontEnd("FEI4B");
     g_fe->makeGlobal();
-    g_fe->init(&empty, FrontEndConnectivity(0,0,0));
+    g_fe->init(&empty, fe_conn);
     bookie.initGlobalFe(std::move(g_fe));
 
     json js;
