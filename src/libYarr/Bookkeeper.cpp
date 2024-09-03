@@ -52,7 +52,6 @@ void Bookkeeper::addFe(std::unique_ptr<FrontEnd> fe, const FrontEndConnectivity&
     if(fe_cfg) fe_cfg->setChannel(cfg);
 
     rxToIdMap[cfg.getRxChannel()].emplace_back(uid);
-    rxToIdMap[cfg.getRegRxChannel()].emplace_back(uid);
 
     // Using macro includes file/line info
     SPDLOG_LOGGER_INFO(blog, "Added FE: Tx({}), Rx({}), RegRx({}) under ID {}", cfg.getTxChannel(), cfg.getRxChannel(), cfg.getRegRxChannel(), uid);
