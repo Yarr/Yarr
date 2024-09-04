@@ -6,10 +6,12 @@
 // ################################
 
 #include "StarTrimDacAnalysis.h"
+
 #include "AllAnalyses.h"
-#include "StarJsonData.h"
-#include "Histo1d.h"
 #include "GraphErrors.h"
+#include "Histo1d.h"
+#include "StarJsonData.h"
+#include "StdParameterAction.h"
 
 #include "logging.h"
 
@@ -27,13 +29,13 @@ namespace {
 //! Initializes the analysis ; mostly consists of getting the loop parameter over which data will be aggregated
 /*!
 */
-void StarTrimDacAnalysis::init(ScanBase *s) {
+void StarTrimDacAnalysis::init(const ScanLoopInfo *s) {
   unsigned iPOI=0;
   for (const auto& poi : m_parametersOfInterest) {
     for (unsigned n=0; n<s->size(); n++) {
-      std::shared_ptr<LoopActionBase> l = s->getLoop(n);
+      auto l = s->getLoop(n);
       if (l->isParameterLoop()) {
-        auto paramLoop = dynamic_cast<StdParameterLoop*>(l.get());
+        auto paramLoop = dynamic_cast<const StdParameterAction*>(l);
         if (paramLoop->getParName() == poi) {
           if (iPOI==0)
             parTrimRange_loopindex = n;

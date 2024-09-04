@@ -39,7 +39,12 @@ class StarTrimDacAnalysis : public AnalysisAlgorithm {
         StarTrimDacAnalysis() : AnalysisAlgorithm() {} //!< Default constructor
         ~StarTrimDacAnalysis() override = default;     //!< Default destructor
 
-        void init(ScanBase *s) override;               //!< Initializes the analysis ; mostly consists of getting the loop parameter over which data will be aggregated
+        /**
+         * Initializes the analysis.
+         *
+         * Mostly consists of getting the loop parameter over which data will be aggregated
+         */
+        void init(const ScanLoopInfo *s) override;
         void processHistogram(HistogramBase *h) override; //!< Stores the input StarThresholdResult in the instance for later analysis
         void end() override; //!< Once all scans inputs have been collected, finds target thresholds, optimises TrimDACs for each channel and dumps the obtained values and control plots
         void loadConfig(const json& config) override;  //!< Loads the analysis configuration from a json object
