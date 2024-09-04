@@ -195,14 +195,15 @@ int main(int argc, char* argv[]) {
             hw->setCmdEnable(cfg->getTxChannel()); 
             hw->setRxEnable(cfg->getRegRxChannel());
             hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
+	    while(!hw->isCmdEmpty());
+	    std::this_thread::sleep_for(std::chrono::microseconds(100));
+
 	    if (fe->readUpdateWriteNamedRegister("MonitorV", high_z) != yarrSuccess) {
 	      std::cerr << "ERROR: failed to readUpdateWrite register for " << ichip << "!" << std::endl;
 	      error_cnt++;
             }
-	    hw->isCmdEmpty();
             fe->writeNamedRegister("MonitorV", high_z);
-	    hw->isCmdEmpty();
-        }
+	}
         fes.push_back(std::make_pair(ichip, std::move(fe)));
     }
 
@@ -216,6 +217,9 @@ int main(int argc, char* argv[]) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
                 hw->setRxEnable(cfg->getRegRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
+		while(!hw->isCmdEmpty());
+		std::this_thread::sleep_for(std::chrono::microseconds(100));
+
                 fe->confAdc(monitorV, meas_curr);
 		uint16_t res = 0;
                 if (fe->readNamedRegister("MonitoringDataAdc", res) != yarrSuccess) {
@@ -233,7 +237,10 @@ int main(int argc, char* argv[]) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
                 hw->setRxEnable(cfg->getRegRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-                fe->confAdc(monitorV, meas_curr);
+		while(!hw->isCmdEmpty());
+		std::this_thread::sleep_for(std::chrono::microseconds(100));
+
+		fe->confAdc(monitorV, meas_curr);
 		uint16_t res = 0;
                 if (fe->readNamedRegister("MonitoringDataAdc", res) != yarrSuccess) {
 		  std::cerr << "ERROR: failed to read register for " << current_chip_name << "!" << std::endl;
