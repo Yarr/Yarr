@@ -168,15 +168,21 @@ std::vector<int> StarTrimDacAnalysis::getTrimRanges(const std::map<unsigned, std
 std::map<int, double> StarTrimDacAnalysis::findTargetThresholds(const std::map<unsigned, std::map<TrimRangeTrimDac, double> > & mapThresholdVsTrimDacVsChannelNumber, const std::vector<double> & listThresholds, StarJsonData * outJD) const {
         std::map<int, double> targetThrPerChip;
 
+        if (listThresholds.front() == listThresholds.back()) {
+              // This shouldn't be the case due to the same check in `end`
+              // Repeated here for clarity (listThresholds.size() > 1)
+              return targetThrPerChip;
+        }
+
         //Will collect the list of TrimRanges to scan
         std::vector<int> trimRanges = getTrimRanges(mapThresholdVsTrimDacVsChannelNumber);
 
         std::map<double,int> multForAllChips;//Will collect info for all chips together in case we want an overall target
         //Probing target thresholds using 60 steps between 0 and the max reachable target (not magic under the '60', just a historical number)
-        double minThr = (listThresholds.size()>1) ? listThresholds[listThresholds.size()-1] : 0.;
+        double minThr = listThresholds[listThresholds.size()-1];
         double maxThr = listThresholds[0];
         int nStepsThr = 60;
-        double stepThr = (listThresholds.size()>1) ? (double)((maxThr-minThr)/nStepsThr) : maxThr;
+        double stepThr = (double)((maxThr-minThr)/nStepsThr);
         for (unsigned int iChip=0; iChip<(nCol/128); iChip++) {
           outJD->initialiseStarChannelsDataAtProp({"ABCStar_" + std::to_string(iChip), "TargetThreshold"}, 1);
           Histo1d *hNTrimmable = new Histo1d("NumTrimmable_Chip" + std::to_string(iChip), nStepsThr+1, minThr-(stepThr/2.), maxThr+(stepThr/2.));
@@ -314,6 +320,12 @@ void StarTrimDacAnalysis::end() {
 
         //Let's find the threshold 'targetThr' with the maximum multiplicity of channels per chip and overall
         sort(listThresholds.begin(), listThresholds.end(), std::greater<double>()); //we'll start probing the threshold values in decreasing order
+
+        // Return if no useful data extracted
+        if (listThresholds.front() == listThresholds.back()) {
+                alog->info("Aborting trim analysis as all thresholds are equal!");
+                return;
+        }
 
         std::map<int, double> targetThrPerChip = findTargetThresholds(mapThresholdVsTrimDacVsChannelNumber, listThresholds, outJD);
 
