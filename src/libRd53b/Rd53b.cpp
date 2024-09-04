@@ -305,7 +305,11 @@ yarrStatus Rd53b::readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t &v
 	      return yarrSuccess;
 	    } else {
 	      logger->info("readRegister 0x{:x} 0x{:x} -> ID {} - {}, addr 0x{:x} val 0x{:x}", data->get(0), data->get(1), id, m_chipId&0x3, received_address, register_value);
-	      continue;
+	      logger->info("Sending another readRegister command.");
+	      m_rxcore->flushBuffer();
+	      this->sendRdReg(m_chipId, (this->*ref).addr());
+	      while(!core->isCmdEmpty()) {}
+	      break;
 	    }
 	  }
         }
