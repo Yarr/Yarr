@@ -556,8 +556,14 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
         // Keep track of last block
         if (_curInV != nullptr && _curInV->size() > 0)
         {
-            _data_pre[0] = _data[0];
-            _data_pre[1] = _data[1];
+            if(unlikely(_data == nullptr)) {
+                _data_pre[0] = 0xFFFFDEAD;
+                _data_pre[1] = 0xFFFFDEAD;
+            }
+            else {
+                _data_pre[0] = _data[0];
+                _data_pre[1] = _data[1];
+            }
 
             // Push out data accumulated so far
             if (_events > 0)
