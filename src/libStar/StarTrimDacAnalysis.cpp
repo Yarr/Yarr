@@ -22,7 +22,7 @@ namespace {
 namespace {
     bool oa_registered =
       StdDict::registerAnalysis("StarTrimDacAnalysis",
-                                []() { return std::unique_ptr<AnalysisAlgorithm>(new StarTrimDacAnalysis());});
+                                []() { return std::make_unique<StarTrimDacAnalysis>();});
 }
 
 
@@ -99,7 +99,7 @@ std::unique_ptr<StarJsonData> StarTrimDacAnalysis::initOutputJsonData() const {
         }
 
         alog->debug("creating StarJsonData object to store results");
-        std::unique_ptr<StarJsonData> upJD(new StarJsonData("JsonData_StarTrimDACResult", *aggregated_loop_status));
+        auto upJD = std::make_unique<StarJsonData>("JsonData_StarTrimDACResult", *aggregated_loop_status);
         upJD->setJsonDataType("JsonData_StarTrimDACResult");
 
         return upJD;
@@ -165,7 +165,7 @@ std::vector<int> StarTrimDacAnalysis::getTrimRanges(const std::map<unsigned, std
   \param listThresholds Input list of reached thresholds used to determine the ranger over which to look for a target threshold
   \param outJD Output JsonData object in which are stored the obtained targets
 */
-std::map<int, double> StarTrimDacAnalysis::findTargetThresholds(const std::map<unsigned, std::map<TrimRangeTrimDac, double> > & mapThresholdVsTrimDacVsChannelNumber, const std::vector<double> & listThresholds, StarJsonData * outJD) const {
+std::map<int, double> StarTrimDacAnalysis::findTargetThresholds(const std::map<unsigned, std::map<TrimRangeTrimDac, double> > & mapThresholdVsTrimDacVsChannelNumber, const std::vector<double> & listThresholds, StarJsonData &outJD) const {
         std::map<int, double> targetThrPerChip;
 
         if (listThresholds.front() == listThresholds.back()) {
@@ -184,8 +184,8 @@ std::map<int, double> StarTrimDacAnalysis::findTargetThresholds(const std::map<u
         int nStepsThr = 60;
         double stepThr = (double)((maxThr-minThr)/nStepsThr);
         for (unsigned int iChip=0; iChip<(nCol/128); iChip++) {
-          outJD->initialiseStarChannelsDataAtProp({"ABCStar_" + std::to_string(iChip), "TargetThreshold"}, 1);
-          Histo1d *hNTrimmable = new Histo1d("NumTrimmable_Chip" + std::to_string(iChip), nStepsThr+1, minThr-(stepThr/2.), maxThr+(stepThr/2.));
+          outJD.initialiseStarChannelsDataAtProp({"ABCStar_" + std::to_string(iChip), "TargetThreshold"}, 1);
+          auto hNTrimmable = std::make_unique<Histo1d>("NumTrimmable_Chip" + std::to_string(iChip), nStepsThr+1, minThr-(stepThr/2.), maxThr+(stepThr/2.));
           hNTrimmable->setXaxisTitle("Threshold [e]");
           hNTrimmable->setYaxisTitle("Number of trimmable channels");
           double targetThr=-1; int maxMultOverAllThresholds=-1;
@@ -206,12 +206,10 @@ std::map<int, double> StarTrimDacAnalysis::findTargetThresholds(const std::map<u
           }
           alog->info("For ABC {}, target threshold is {}", iChip, targetThr);
           if (m_targetThresholdPerChip){
-            outJD->setValForProp({"ABCStar_" + std::to_string(iChip), "TargetThreshold"}, 0, targetThr);
+            outJD.setValForProp({"ABCStar_" + std::to_string(iChip), "TargetThreshold"}, 0, targetThr);
             targetThrPerChip[iChip] = targetThr;
           }
-          std::unique_ptr<Histo1d> uphNTrimmable;
-          uphNTrimmable.reset(hNTrimmable);
-          output->pushData(std::move(uphNTrimmable));
+          output->pushData(std::move(hNTrimmable));
         }
         //Looking for an overall threshold for all chips
         unsigned int maxMultForAllChips=0;
@@ -224,14 +222,14 @@ std::map<int, double> StarTrimDacAnalysis::findTargetThresholds(const std::map<u
                 }
         }
 
-        outJD->initialiseStarChannelsDataAtProp({"OverallTargetThreshold"},1);
-        outJD->setValForProp({"OverallTargetThreshold"}, 0, targetOverallForAllChips);
+        outJD.initialiseStarChannelsDataAtProp({"OverallTargetThreshold"},1);
+        outJD.setValForProp({"OverallTargetThreshold"}, 0, targetOverallForAllChips);
         alog->info("Target threshold overall over all chips would be {}", targetOverallForAllChips);
         //In case we want a common target for all chips, we reset the content of targetThrPerChip (to match the targetOverallForAllChips)
         if (!m_targetThresholdPerChip) {
                 alog->info("Setting threshold for all chips to this.");
                 for (unsigned int iChip=0; iChip<(nCol/128); iChip++){
-                  outJD->setValForProp({"ABCStar_" + std::to_string(iChip), "TargetThreshold"}, 0, targetOverallForAllChips);
+                  outJD.setValForProp({"ABCStar_" + std::to_string(iChip), "TargetThreshold"}, 0, targetOverallForAllChips);
                   targetThrPerChip[iChip] = targetOverallForAllChips;
                 }
         }
@@ -247,27 +245,27 @@ std::map<int, double> StarTrimDacAnalysis::findTargetThresholds(const std::map<u
   \param outJD Output JsonData object in which are stored the obtained optimised TrimDAC values
   \param iChip Chip index for which to dump the information
 */
-void StarTrimDacAnalysis::makeSummaryPlotsForChip(const std::map<unsigned, std::map<TrimRangeTrimDac, double> > & mapThresholdVsTrimDacVsChannelNumber, const int & bestTrimRange, const std::map<unsigned,int> & mapOfBestTrims, StarJsonData * outJD, const int & iChip) const {
+void StarTrimDacAnalysis::makeSummaryPlotsForChip(const std::map<unsigned, std::map<TrimRangeTrimDac, double> > & mapThresholdVsTrimDacVsChannelNumber, const int & bestTrimRange, const std::map<unsigned,int> & mapOfBestTrims, StarJsonData & outJD, const int & iChip) const {
                 //Will dump monitoring plots
-                Histo1d *hDistThrBef = new Histo1d("ThresholdDistInit_Chip" + std::to_string(iChip), 120, 0, 120);
+                auto hDistThrBef = std::make_unique<Histo1d>("ThresholdDistInit_Chip" + std::to_string(iChip), 120, 0, 120);
                 hDistThrBef->setXaxisTitle("Threshold [e]");
                 hDistThrBef->setYaxisTitle("Number of channels");
-                Histo1d *hDistThrTrimmed = new Histo1d("ThresholdDistTrimmed_Chip" + std::to_string(iChip), 120, 0, 120);
+                auto hDistThrTrimmed = std::make_unique<Histo1d>("ThresholdDistTrimmed_Chip" + std::to_string(iChip), 120, 0, 120);
                 hDistThrTrimmed->setXaxisTitle("Threshold [e]");
                 hDistThrTrimmed->setYaxisTitle("Number of channels");
                 TrimRangeTrimDac defaultTrimDAC(6, 16);
                 //Getting the optimal TrimDAC for each channel
-                outJD->initialiseStarChannelsDataAtProp({"ABCStar_" + std::to_string(iChip), "TrimRange"}, 1);
-                outJD->setValForProp({"ABCStar_" + std::to_string(iChip), "TrimRange"}, 0, bestTrimRange);
+                outJD.initialiseStarChannelsDataAtProp({"ABCStar_" + std::to_string(iChip), "TrimRange"}, 1);
+                outJD.setValForProp({"ABCStar_" + std::to_string(iChip), "TrimRange"}, 0, bestTrimRange);
                 for (unsigned row=0; row<2; row++) {
-                        outJD->initialiseStarChannelsDataAtProp({"ABCStar_" + std::to_string(iChip), "TrimDAC", "Row" + std::to_string(row)});
+                        outJD.initialiseStarChannelsDataAtProp({"ABCStar_" + std::to_string(iChip), "TrimDAC", "Row" + std::to_string(row)});
                         for (unsigned iStrip=0; iStrip<128; iStrip++) {
                                 unsigned iChannelInTrimMap = iStrip + row*128 + 256*iChip;
                                 //if the trim could be computed for this channel we set it to it, otherwise to -1
                                 int newTrimDAC=-999;
                                 if (mapOfBestTrims.find(iChannelInTrimMap) != mapOfBestTrims.end()) {
                                         newTrimDAC=mapOfBestTrims.at(iChannelInTrimMap);
-                                        outJD->setValForProp({"ABCStar_" + std::to_string(iChip), "TrimDAC", "Row" + std::to_string(row)}, iStrip, newTrimDAC);
+                                        outJD.setValForProp({"ABCStar_" + std::to_string(iChip), "TrimDAC", "Row" + std::to_string(row)}, iStrip, newTrimDAC);
                                 }
                                 //Filling in monitoring plots
                                 if (mapThresholdVsTrimDacVsChannelNumber.find(iChannelInTrimMap)!=mapThresholdVsTrimDacVsChannelNumber.end()){
@@ -288,12 +286,8 @@ void StarTrimDacAnalysis::makeSummaryPlotsForChip(const std::map<unsigned, std::
                                 }
                         }
                 }
-                std::unique_ptr<Histo1d> uphDistThrBef;
-                uphDistThrBef.reset(hDistThrBef);
-                output->pushData(std::move(uphDistThrBef));
-                std::unique_ptr<Histo1d> uphDistThrTrimmed;
-                uphDistThrTrimmed.reset(hDistThrTrimmed);
-                output->pushData(std::move(uphDistThrTrimmed));
+                output->pushData(std::move(hDistThrBef));
+                output->pushData(std::move(hDistThrTrimmed));
 }
 
 
@@ -306,8 +300,7 @@ void StarTrimDacAnalysis::end() {
                 return;
 
         //Creating a new LoopStatus "agregating" the POI in order to be used in outputs
-        std::unique_ptr<StarJsonData> upJD = std::move(initOutputJsonData());
-        StarJsonData * outJD = upJD.get();
+        std::unique_ptr<StarJsonData> outJD = (initOutputJsonData());
 
         // Send debug plots first
         for (unsigned int iChip=0; iChip<(nCol/128); iChip++) {
@@ -327,7 +320,7 @@ void StarTrimDacAnalysis::end() {
                 return;
         }
 
-        std::map<int, double> targetThrPerChip = findTargetThresholds(mapThresholdVsTrimDacVsChannelNumber, listThresholds, outJD);
+        std::map<int, double> targetThrPerChip = findTargetThresholds(mapThresholdVsTrimDacVsChannelNumber, listThresholds, *outJD);
 
         //Let's retrieve the trims for the target, i.e. finding for each channel the value of TrimDac leading to the Threshold the closest to targetThr
         std::map<unsigned, std::map<unsigned,int>> mapOfBestTrims;
@@ -344,11 +337,11 @@ void StarTrimDacAnalysis::end() {
               mapOfBestTrims[iChip] = mapOfTrims;
             }
           }
-          makeSummaryPlotsForChip(mapThresholdVsTrimDacVsChannelNumber, bestTrimRangeForChip[iChip], mapOfBestTrims[iChip], outJD, iChip);
+          makeSummaryPlotsForChip(mapThresholdVsTrimDacVsChannelNumber, bestTrimRangeForChip[iChip], mapOfBestTrims[iChip], *outJD, iChip);
         }
 
         //Dumping full JsonData
-        output->pushData(std::move(upJD));
+        output->pushData(std::move(outJD));
 }
 
 
