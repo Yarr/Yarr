@@ -181,29 +181,16 @@ int main(int argc, char* argv[]) {
                 while(!hw->isCmdEmpty());
 		std::this_thread::sleep_for(std::chrono::microseconds(100));
 
-		if (fe->checkCom() != yarrSuccess) {
-		  std::cout<<"Can't establish communication, aborting!"<<std::endl;
-		  return -1;
-		}
-		if (fe->hasValidName() != yarrSuccess) {
-		  std::cout<<"Invalid chip name, aborting!"<<std::endl;
-		  return -1;
-		}
-
 		if (fe->readUpdateWriteNamedRegister(register_name, register_value) != yarrSuccess) {
 		  std::cerr << "ERROR: failed to readUpdateWrite register for " << current_chip_name << "!" << std::endl;
 		  if (force) {
 		    std::cout << "Trying to force overwrite register without update!" << std::endl;
 		    fe->writeNamedRegister(register_name, register_value);
-		    while(!hw->isCmdEmpty()) {}
-		    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		  }
 		  error_cnt++;
                 }
 		else{
 		  fe->writeNamedRegister(register_name, register_value);
-		  while(!hw->isCmdEmpty()) {}
-		  std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
 	    }
         } else {
@@ -214,29 +201,16 @@ int main(int argc, char* argv[]) {
                 while(!hw->isCmdEmpty());
 		std::this_thread::sleep_for(std::chrono::microseconds(100));
 
-                if (fe->checkCom() != yarrSuccess) {
-		  std::cout<<"Can't establish communication, aborting!"<<std::endl;
-                  return -1;
-                }
-                if (fe->hasValidName() != yarrSuccess) {
-		  std::cout<<"Invalid chip name, aborting!"<<std::endl;
-                  return -1;
-                }
-
 		if (fe->readUpdateWriteNamedRegister(register_name, register_value) != yarrSuccess) {
 		  std::cerr << "ERROR: failed to readUpdateWrite register for " << current_chip_name << "!" << std::endl;
 		  if (force) {
 		    std::cout << "Trying to force overwrite register without update!" << std::endl;
 		    fe->writeNamedRegister(register_name, register_value);
-		    while(!hw->isCmdEmpty()) {}
-		    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		  }
 		  error_cnt++;
                 }
 		else{
 		  fe->writeNamedRegister(register_name, register_value);
-		  while(!hw->isCmdEmpty()) {}
-		  std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
             }
         }
