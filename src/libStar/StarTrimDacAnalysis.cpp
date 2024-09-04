@@ -354,6 +354,10 @@ void StarTrimDacAnalysis::loadConfig(const json &j) {
         for (unsigned i=0; i<j["parametersOfInterest"].size(); i++) {
             m_parametersOfInterest.push_back(j["parametersOfInterest"][i]);
         }
+    } else {
+        // Default
+        m_parametersOfInterest.push_back("ABCs_BTRANGE");
+        m_parametersOfInterest.push_back("TRIMs");
     }
 
     if (j.contains("targetThresholdPerChip"))

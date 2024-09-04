@@ -11,7 +11,7 @@
       "1": {
         "algorithm": "StarTrimDacAnalysis",
         "config": {
-          "parametersOfInterest": ["ABCs_BTRANGE", "TrimDAC"],
+          "parametersOfInterest": ["ABCs_BTRANGE", "TRIMs"],
           "targetThresholdPerChip": true
         },
         "dependOn": ["ScurveFitter"]
