@@ -544,8 +544,9 @@ bool Rd53bDataProcessor::getNextDataBlock()
         if (_curInV != nullptr && _curInV->size() > 0)
         {
             if(unlikely(_data == nullptr)) {
-                _data_pre[0] = 0xFFFFDEAD;
-                _data_pre[1] = 0xFFFFDEAD;
+                // Fake error frame, should never decode this
+                _data_pre[0] = 0x7F800000;
+                _data_pre[1] = 0x00000000;
             }
             else {
                 _data_pre[0] = _data[0];
