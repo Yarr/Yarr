@@ -322,7 +322,7 @@ yarrStatus Rd53b::readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t &v
       check_seconds = std::chrono::duration_cast<std::chrono::seconds>(comm_t1 - comm_t0).count();
       if(!found)
 	std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }while(!found && check_seconds<10.);
+    }while(!found && check_seconds<3.);
 
     logger->warn("readRegister failed, did not received register readback data for address {} from chip with chipId {}", (this->*ref).addr(), m_chipId);
 
