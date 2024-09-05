@@ -224,13 +224,23 @@ void enableConnectedChannels(HwController& hwCtrl, std::vector<Hybrid>& hccStars
 int packetFromRawData(StarChipPacket& packet, RawData& data) {
   packet.clear();
 
+  std::stringstream ss;
+  ss << std::hex << std::setfill('0');
+
   packet.add_word(0x13C); //add SOP
   for(unsigned iw=0; iw<data.getSize(); iw++) {
     for(int i=0; i<4;i++){
-      packet.add_word((data[iw]>>i*8)&0xFF);
+      auto byte = (data[iw]>>i*8) & 0xFF;
+      packet.add_word(byte);
+
+      if (logger->should_log(spdlog::level::trace)) {
+	ss << ' ' << std::setw(2) << static_cast<unsigned>(byte);
+      }
     }
   }
   packet.add_word(0x1DC); //add EOP
+
+  logger->trace("Raw data: {}", ss.str());
 
   return packet.parse();
 }

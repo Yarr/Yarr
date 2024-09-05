@@ -4,7 +4,7 @@
 /configs/ @bgallop @otoldaie @mamirono @theim
 /docker/ @bgallop @mwittgen @theim
 /docs/ @bgallop @otoldaie @mamirono @theim @ztao @arastogi
-/localdb/ @hoide
+/localdb/ @hoide @gstark
 /scripts/ @bgallop @mwittgen @theim
 
 /src/libBdaq/ @wlkakhi
@@ -18,11 +18,10 @@
 /src/libRd53a/ @mamirono @theim
 /src/libRd53aEmu/ @mamirono @theim
 /src/libRd53b/ @mamirono @theim
-/src/libRogue/ @mwittgen
 /src/libSpec/ @mamirono @theim
 /src/libStar/ @bgallop @otoldaie
 /src/libStarEmu/ @ztao @bgallop @otoldaie
-/src/libUtil/ @bgallop @mwittgen @theim
+/src/libUtil/ @bgallop @wittgen @theim
 /src/libYarr/ @bgallop @theim
-/src/python/ @mwittgen
+/src/python/ @wittgen
 /src/tools/ @bgallop @otoldaie @mamirono @theim @ztao @arastogi

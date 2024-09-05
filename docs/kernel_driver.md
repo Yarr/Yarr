@@ -48,6 +48,11 @@ $ dmesg | grep spec
 
 ## Troubleshoot
 
+### Skipping BTF generation
+
+`Skipping BTF generation for /home/lingxin/work/spec-driver/src/specDriver.ko due to unavailability of vmlinux
+` during `make` can be ignored.
+
 ### Dependency
 
 If you encounter something like
