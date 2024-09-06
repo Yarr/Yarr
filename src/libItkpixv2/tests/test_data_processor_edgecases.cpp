@@ -50,7 +50,8 @@ void process_case(std::vector<std::vector<uint32_t>> packages) {
 
     // Make sure FFFFDEAD was never a processed data block
     std::shared_ptr<Itkpixv2DataProcessor> v2proc = std::dynamic_pointer_cast<Itkpixv2DataProcessor>(proc);
-    REQUIRE(((v2proc->_data[0] != 0xFFFFDEAD) && (v2proc->_data[1] != 0xFFFFDEAD)));
+    if(v2proc->_data)
+        REQUIRE(((v2proc->_data[0] != 0xFFFFDEAD) && (v2proc->_data[1] != 0xFFFFDEAD)));
     
     // Only one thing
     REQUIRE (em_cp.empty());
@@ -106,6 +107,15 @@ TEST_CASE("Itkpixv2DataProcessor", "[itkpixv2][data_processor_edge_case]") {
         },
         {
             0xFFFFDEAD, 0xFFFFDEAD      // This will leave data processor in a state where last block is 0xFFFFDEAD
+        }
+    });
+
+    // Low data case
+    std::cout << "LOW DATA CASE" << std::endl;
+    process_case({
+        {
+            0xFFFFDEAD, 0xFFFFDEAD,     // Lots of FFFFDEAD
+            0xFFFFDEAD, 0xFFFFDEAD      // FFFFDEADs at end of block
         }
     });
 }
