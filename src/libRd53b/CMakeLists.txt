@@ -17,7 +17,8 @@ add_library(Rd53b SHARED
         Rd53bReadRegLoop.cpp
         Rd53bTriggerLoop.cpp
         Rd53bChipMap.cpp
-        Rd53bEncodingTool.cpp)
+        Rd53bEncodingTool.cpp
+        Rd53bEncoder.cpp)
 
 post_build_debug_library(Rd53b)
 target_include_directories(Rd53b PRIVATE ../libYarr/include)
@@ -26,6 +27,7 @@ target_include_directories(Rd53b PUBLIC ./include)
 target_link_libraries(Rd53b Scan)
 
 LIST(APPEND apps
+        rd53bConnectivityScan
         rd53bComTest
         rd53bDecodeTool
         rd53bReadRingosc

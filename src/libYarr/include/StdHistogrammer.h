@@ -16,7 +16,9 @@
 
 class Histo1d;
 class Histo2d;
-class Histo3d;
+template<typename T>
+class Histo3dT;
+using Histo3d = Histo3dT<uint16_t>;
 class LoopStatus;
 
 class DataArchiver : public HistogramAlgorithm {
@@ -27,7 +29,9 @@ class DataArchiver : public HistogramAlgorithm {
         ~DataArchiver() override { if(fileHandle.is_open()) fileHandle.close(); }
 
         bool open(std::string filename);
+
         void create(const LoopStatus &stat) override {}
+
         void processEvent(FrontEndData *data) override;
 
     private :

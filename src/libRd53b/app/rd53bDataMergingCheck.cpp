@@ -315,8 +315,8 @@ int main(int argc, char **argv) {
             std::cerr << "WARNING: Skipping chip at index " << ichip << " in connectivity file" << std::endl;
             continue;
         } else {
-            cdrclksel = fe->getRegisterValue("CdrClkSel");
-            serblckperiod = fe->getRegisterValue("ServiceBlockPeriod");
+            fe->getNamedRegister("CdrClkSel", cdrclksel);
+            fe->getNamedRegister("ServiceBlockPeriod", serblckperiod);
             logger->info("Read \"CdrClkSel\" {} and \"ServiceBlockPeriod\" {} from virtual register read", cdrclksel, serblckperiod);
 
             // Wait for fifo to be empty

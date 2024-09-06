@@ -2,7 +2,7 @@
 import json
 
 # Opening JSON file
-f = open('checks/compilation_cmds.json')
+f = open('build/compile_commands.json')
  
 # returns JSON object as
 # a dictionary

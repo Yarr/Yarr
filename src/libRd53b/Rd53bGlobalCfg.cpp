@@ -258,7 +258,7 @@ void Rd53bGlobalCfg::init() {
     DataEnBcid.init         ( 74, &m_cfg[ 74], 10,  1, 0); regMap["DataEnBcid"] = &Rd53bGlobalCfg::DataEnBcid;
     DataEnL1id.init         ( 74, &m_cfg[ 74], 9,  1, 0); regMap["DataEnL1id"] = &Rd53bGlobalCfg::DataEnL1id;
     DataEnEos.init          ( 74, &m_cfg[ 74], 8,  1, 1); regMap["DataEnEos"] = &Rd53bGlobalCfg::DataEnEos;
-    NumOfEventsInStream.init( 74, &m_cfg[ 74], 0,  8, 1); regMap["NumOfEventsInStream"] = &Rd53bGlobalCfg::NumOfEventsInStream;
+    NumOfEventsInStream.init( 74, &m_cfg[ 74], 0,  8, 0); regMap["NumOfEventsInStream"] = &Rd53bGlobalCfg::NumOfEventsInStream;
     //75
     DataEnBinaryRo.init     ( 75, &m_cfg[ 75], 10,  1, 0); regMap["DataEnBinaryRo"] = &Rd53bGlobalCfg::DataEnBinaryRo;
     DataEnRaw.init          ( 75, &m_cfg[ 75], 9,  1, 0); regMap["DataEnRaw"] = &Rd53bGlobalCfg::DataEnRaw;
@@ -320,7 +320,7 @@ void Rd53bGlobalCfg::init() {
     //95
     SerInvTap.init          ( 95, &m_cfg[ 95], 6,  2, 1); regMap["SerInvTap"] = &Rd53bGlobalCfg::SerInvTap;
     SerEnTap.init           ( 95, &m_cfg[ 95], 4,  2, 1); regMap["SerEnTap"] = &Rd53bGlobalCfg::SerEnTap;
-    SerEnLane.init          ( 95, &m_cfg[ 95], 0,  4, 8); regMap["SerEnLane"] = &Rd53bGlobalCfg::SerEnLane;
+    SerEnLane.init          ( 95, &m_cfg[ 95], 0,  4, 15); regMap["SerEnLane"] = &Rd53bGlobalCfg::SerEnLane;
     //96
     CmlBias2.init           ( 96, &m_cfg[ 96], 0, 10, 0); regMap["CmlBias2"] = &Rd53bGlobalCfg::CmlBias2;
     //97
@@ -328,9 +328,9 @@ void Rd53bGlobalCfg::init() {
     //98
     CmlBias0.init           ( 98, &m_cfg[ 98], 0, 10, 800); regMap["CmlBias0"] = &Rd53bGlobalCfg::CmlBias0;
     //99
-    MonitorEnable.init      ( 99, &m_cfg[ 99], 12,  1, 0); regMap["MonitorEnable"] = &Rd53bGlobalCfg::MonitorEnable;
+    MonitorEnable.init      ( 99, &m_cfg[ 99], 12,  1, 1); regMap["MonitorEnable"] = &Rd53bGlobalCfg::MonitorEnable;
     MonitorI.init           ( 99, &m_cfg[ 99], 6,  6, 63); regMap["MonitorI"] = &Rd53bGlobalCfg::MonitorI;
-    MonitorV.init           ( 99, &m_cfg[ 99], 0,  6, 63); regMap["MonitorV"] = &Rd53bGlobalCfg::MonitorV;
+    MonitorV.init           ( 99, &m_cfg[ 99], 0,  6, 32); regMap["MonitorV"] = &Rd53bGlobalCfg::MonitorV;
     //100
     ErrWngMask.init         (100, &m_cfg[100], 0,  8, 0); regMap["ErrWngMask"] = &Rd53bGlobalCfg::ErrWngMask;
     //101
@@ -419,9 +419,14 @@ void Rd53bGlobalCfg::writeConfig(json &j) {
 }
 
 void Rd53bGlobalCfg::loadConfig(json const &j) {
+    if (!j.contains("RD53B") || !j["RD53B"].contains("GlobalConfig")) {
+        logger->error("Could not find global register config, using default!");
+        return;
+    }
+    auto &jconfig = j["RD53B"]["GlobalConfig"];
     for (auto it : regMap) {
-        if (j.contains({"RD53B","GlobalConfig",it.first})) {
-            (this->*it.second).write(j["RD53B"]["GlobalConfig"][it.first]);
+        if (jconfig.contains(it.first)) {
+            (this->*it.second).write(jconfig[it.first]);
         } else {
             logger->error("Could not find register \"{}\" using default!", it.first);
         }

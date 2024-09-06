@@ -5,19 +5,23 @@ The topics in this section are ordered in increasing complexity. If a problem oc
 
 ## Firmware Troubleshooting
 
-If you encounter errors concerning permissions, e.g. 
+### `no hw_target`
+
+**Symptom:** If you encounter errors concerning permissions, e.g.
+
 ```
 # open_hw_target
 ERROR: [Labtoolstcl 44-469] There is no current hw_target.
 ```
-try installing cable drivers:
+
+**Resolve by:**
+- Try installing cable drivers:
 
 ```
 cd /opt/Xilinx/Vivado/2020.1/data/xicom/cable_drivers/lin64/install_script/install_drivers/
 sudo ./install_drivers
 ```
-
-Alternatively you might have to add a ``udev`` rule. Run ``lsusb`` and identify your JTAG cable, e.g. ``Bus 001 Device 007: ID 0403:6014``.
+- In addition, you might have to add a ``udev`` rule. Run ``lsusb`` and identify your JTAG cable, e.g. ``Bus 001 Device 007: ID 0403:6014``.
 Open ``/etc/udev/rules.d/99-usb.rules`` and add the line
 ```
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6014", MODE:="0666"
@@ -27,12 +31,33 @@ with the correct vendor and product ID from ``lsusb``. Reload ``udev`` rules wit
 sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
 
+
+### Couldn't load "librdi_commontasks.so": libtinfo.so.5
+
+**Occurrence:** CentOS 8, Alma 9
+
+**Symptom:**
+
+```
+application-specific initialization failed: couldn't load file "librdi_commontasks.so": libtinfo.so.5: cannot open shared object file: No such file or directory
+```
+
+**Resolve by:**
+- In ``/usr/lib64`` make a symblink ``sudo ln -s libtinfo.so.6 libtinfo.so.5``.
+- Or ``sudo yum install ncurses-compat-libs``.
+
+
 ### Centos 8
 
 #### Kernel driver does not load on start up
+
+**Resolve by:**
 In ``/etc/modules-load.d/`` add a line to a config file (or create one if none existing) e.g. ``modules.conf`` with ``specDriver``
 
 #### Installing Vivado
+
+**Symptom:**
+
 ```
 No protocol specified
 No protocol specified
@@ -52,16 +77,37 @@ java.lang.NoClassDefFoundError: Could not initialize class java.awt.GraphicsEnvi
 	at com.xilinx.installer.api.InstallerLauncher.main(Unknown Source)
 ```
 
+**Resolve by:**
 Execute ``xhost +``.
 
-#### Couldn't load "librdi_commontasks.so": libtinfo.so.5
 
+## Software Troubleshooting
+
+### `yarr_version.h` no such file or directory
+
+If the compilation fails with the following
+
+```bash
+: not found_hash.sh: 2:
+: not found_hash.sh: 8:
+[  2%] Built target git_hash
+...
+<lots of text>
+...
+Building CXX object src/libYarr/CMakeFiles/Yarr.dir/yarr.cpp.o
+/home/user/Yarr/src/libYarr/yarr.cpp:3:10: fatal error: yarr_version.h: No such file or directory
+    3 | #include "yarr_version.h"
+      |          ^~~~~~~~~~~~~~~~
+compilation terminated.
+make[2]: *** [src/libYarr/CMakeFiles/Yarr.dir/build.make:76: src/libYarr/CMakeFiles/Yarr.dir/yarr.cpp.o] Error 1
+make[1]: *** [CMakeFiles/Makefile2:336: src/libYarr/CMakeFiles/Yarr.dir/all] Error 2
+make: *** [Makefile:136: all] Error 2
 ```
-application-specific initialization failed: couldn't load file "librdi_commontasks.so": libtinfo.so.5: cannot open shared object file: No such file or directory
-```
 
-In ``/usr/lib64`` make a symblink ``sudo ln -s libtinfo.so.6 libtinfo.so.5``.
-
+then it is likely that `yarr_version.h` was not properly generated.
+It could be due to the `git` setting `autocrlf` to be set to `true`.
+Disable this setting with `git config [--global] core.autocrlf false`.
+Then re-clone the repository and recompile.
 
 ## PCIe Card Troubleshooting
 
@@ -79,7 +125,7 @@ $ lspci
 <Possibly more text>
 ```
 
-    - For the CERN SPEC card
+- For the CERN SPEC card
 
 ```bash
 $ lspci

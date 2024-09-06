@@ -42,6 +42,7 @@
 #define TX_IDLE_WORD 0x13
 #define TRIG_EXTEND_INTERVAL 0x14
 #define TRIG_ENCODER_ENABLE 0x15
+#define TRIG_CODE_READY_COUNTER 0x16
 
 #define TX_CLK_PERIOD 25e-9
 
@@ -53,6 +54,8 @@
 #define TRIG_LOGIC_EDGE 0x3
 #define TRIG_LOGIC_DELAY 0x4 // And the next 3 addresses up to 0x7
 #define TRIG_LOGIC_DEADTIME 0x8
+#define TRIG_LOGIC_EUDET_SIMPLE 0x9 // use simple eudet mode
+#define TRIG_LOGIC_MASTER_TRIGGER_COUNTER 0xA // Master trig counter
 
 #define NCHANNELS 4
 
@@ -133,9 +136,13 @@ class SpecTxCore : virtual public TxCore, virtual public SpecCom{
             SpecCom::writeSingle(TRIG_LOGIC_ADR | 0xFF, 0x1);
         }
 
-	void setTriggerEncoderMultiplier(uint32_t interval) {
-	    SpecCom::writeSingle(TX_ADDR | TRIG_EXTEND_INTERVAL, interval);
-	}
+        void setTriggerEncoderMultiplier(uint32_t interval) {
+            // n_trigs to BC conversion: 4*(N - 1) + 1
+            if(interval > 0)
+                interval = 4*(interval - 1) + 1;
+
+            SpecCom::writeSingle(TX_ADDR | TRIG_EXTEND_INTERVAL, interval);
+        }
 
 	void setTriggerEncoderEnable(uint32_t value) {
 	    SpecCom::writeSingle(TX_ADDR | TRIG_ENCODER_ENABLE, value);

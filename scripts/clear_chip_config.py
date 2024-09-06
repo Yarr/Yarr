@@ -1,10 +1,9 @@
 '''
-Script to update exisiting chip configs from 640 Mbps to 1.28 Gbps 
-Mainly targeted at moduleQC 
+Script to restore chip configs to untuned state (removing PixelConfig and DiffTh1L/R/M register settings from configs). For use in moduleQC.
 
-Author: Maria Mironova (maria.mironova@cern.ch)
+Author: Emily Thompson (emily.anne.thompson@cern.ch)
 
-usage: scripts/update_config.py [-h] [-c CONFIG_FILE] [-t CHIP_TYPE]
+usage: scripts/clear_chip_config.py [-h] [-c CONNECTIVITY_FILE]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -17,19 +16,20 @@ import sys
 import os
 import argparse
 
+def clear_chip_config(connectivity_file):
 
-
-def update_config(connectivity_file):
     # Opening JSON file
     f = open(connectivity_file)
-    
     # returns JSON object as 
     # a dictionary
     data = json.load(f)
     chip_type=data["chipType"]
+    if (chip_type != "RD53B" and chip_type != "ITKPIXV2"):
+        sys.exit("ERROR: Invalid chip type - only RD53B or ITKPIXV2 supported")
     dir_path=os.path.split(connectivity_file)[0]
-    print(dir_path)
+
     for j in range(0,len(data["chips"])):
+    
         chip=data["chips"][j]
         if ("path" in chip.keys()):
             if (chip["path"] == "relToExec"): 
@@ -50,12 +50,17 @@ def update_config(connectivity_file):
         print("Updating chip config %s"%(chipConfigPath))
         f_chip=open(chipConfigPath)
         data_chip=json.load(f_chip)
-        data_chip[chip_type]["GlobalConfig"]["CdrClkSel"]=0
-        data_chip[chip_type]["GlobalConfig"]["CmlBias0"]=800
-        data_chip[chip_type]["GlobalConfig"]["CmlBias1"]=400
-        data_chip[chip_type]["GlobalConfig"]["MonitorV"]=32
-        data_chip[chip_type]["GlobalConfig"]["MonitorEnable"]=1
 
+        if data_chip[chip_type].get("PixelConfig"):
+            print("Deleting PixelConfig from chip config")
+            del data_chip[chip_type]["PixelConfig"]
+
+        for th in ["DiffTh1L", "DiffTh1M", "DiffTh1R", "DiffVff"]:
+            if th in data_chip[chip_type]["GlobalConfig"].keys():
+                print(f"Deleting {th} from chip config")
+                del data_chip[chip_type]["GlobalConfig"][th]
+
+                
         with open(chipConfigPath,'w') as outfile:
             outfile.write(json.dumps(data_chip, sort_keys=True, indent=4))
         outfile.close()
@@ -67,4 +72,4 @@ if __name__ == "__main__":
     args = vars(parser.parse_args())
 
     connectivity_file=args["connectivity_file"]
-    update_config(connectivity_file)
+    clear_chip_config(connectivity_file)

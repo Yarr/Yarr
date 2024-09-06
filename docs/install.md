@@ -13,13 +13,15 @@ for instance [NetIO](netio.md).
 
 Just want to install the latest version of the YARR software? Follow the quick install instructions here. In case of a new machine, or if you're not sure, follow the more detailed instructions below.
 
-Enable GCC version 9.0 or higher: 
+<details> <summary> If using CentOS 7 or 8, enable GCC version 9.0 or higher</summary>:
+
 ```bash
 # Source the setup script
 $ source /opt/rh/devtoolset-9/enable
 # Add it to your bash_profile to enable it by default
 $ echo "source /opt/rh/devtoolset-9/enable" >> ~/.bash_profile
 ```
+</details>
 
 Clone the YARR repository to your local machine: 
 ```bash
@@ -95,6 +97,14 @@ $ sudo yum install gnuplot texlive-epstopdf cmake3 zeromq zeromq-devel
 $ sudo yum install gnuplot texlive-epstopdf cmake3 elfutils-libelf-devel
 ```
 
+
+### Dependencies for Alma 9
+- If not installed before, you need some standard packages:
+```bash
+$ sudo yum install gnuplot texlive-epstopdf cmake
+```
+
+
 ### Initialise repository
 If you want to install the software in a new machine or want to make a new installation, then clone the repository to your local machine:
 ```bash
@@ -115,6 +125,7 @@ The most up-to date development can be found in the devel branch.
 
 - A version history and description can be found [here](version.md)
 - Note, Yarr is also available in a [GitHub repository.](https://github.com/Yarr/ "GitHub repository"), but using the GitLab version is recommended as it is used for active development.
+
 
 ### Update the software version
 If you already have an installed YARR version on your local machine, then just fetch the latest version to update it:
@@ -163,12 +174,12 @@ $ cd ..
     - For all controllers: 
         - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=all ..``
     - For NetIO:
-        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=Spec;Emu;NetioHW``
+        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;NetioHW"``
 
 - In order to specify specific hardware controller and/or front-end libraries to build,
-one can provide an OR'ed chain of their names to the `SELECT_LIBS` CMake variable. For example, if the default list of hardware controllers is `YARR_CONTROLLERS_TO_BUILD=Spec;Emu;NetioHW` and the default list of front-ends to build is `YARR_FRONT_ENDS_TO_BUILD=Fei4;Star;Rd53a;Rd53b` one can specify that only the `Spec` hardware controller and `Rd53b` front-end libraries are built by doing:
+one can provide an OR'ed chain of their names to the `SELECT_LIBS` CMake variable. For example, if the default list of hardware controllers is `YARR_CONTROLLERS_TO_BUILD="Spec;Emu;NetioHW"` and the default list of front-ends to build is `YARR_FRONT_ENDS_TO_BUILD="Fei4;Star;Rd53a;Rd53b"` one can specify that only the `Spec` hardware controller and `Rd53b` front-end libraries are built by doing:
 ```
-    $ cmake3 -DSELECT_LIBS=Spec|Rd53b ..
+    $ cmake3 -DSELECT_LIBS="Spec|Rd53b" ..
 ```
 - In order to specify a subset of executables to be built, one can provide an OR'ed chain of the names of the executables to be built with the `SELECT_TOOLS` CMake variable. For example, to only build the `scanConsole` executable one can do:
 ```

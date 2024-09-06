@@ -155,30 +155,30 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
             CHECK (jt == output_name);
 
             REQUIRE (j_out.contains("ABCStar_0"));
-            REQUIRE (j_out.contains({"ABCStar_0", "OptimalStrobeDelay"}));
-            REQUIRE (j_out.contains({"ABCStar_0", "OptimalStrobeDelay", "Data"}));
+            REQUIRE (j_out["ABCStar_0"].contains("OptimalStrobeDelay"));
+            REQUIRE (j_out["ABCStar_0"]["OptimalStrobeDelay"].contains("Data"));
             // clang finds the overload resolution ambigous if compare
             // variant with Approx directly
             double chip_0_opt_sd = j_out["ABCStar_0"]["OptimalStrobeDelay"]["Data"][0];
             CHECK (chip_0_opt_sd == Catch::Approx(5.0));
             if(chip_count > 1) {
                 REQUIRE (j_out.contains("ABCStar_1"));
-                REQUIRE (j_out.contains({"ABCStar_1", "OptimalStrobeDelay"}));
-                REQUIRE (j_out.contains({"ABCStar_1", "OptimalStrobeDelay", "Data"}));
+                REQUIRE (j_out["ABCStar_1"].contains("OptimalStrobeDelay"));
+                REQUIRE (j_out["ABCStar_1"]["OptimalStrobeDelay"].contains("Data"));
                 double chip_1_opt_sd = j_out["ABCStar_1"]["OptimalStrobeDelay"]["Data"][0];
                 CHECK (chip_1_opt_sd == Catch::Approx(5.0));
             }
 
-            REQUIRE (j_out.contains({"ABCStar_0", "LeftEdge"}));
-            REQUIRE (j_out.contains({"ABCStar_0", "RightEdge"}));
+            REQUIRE (j_out["ABCStar_0"].contains("LeftEdge"));
+            REQUIRE (j_out["ABCStar_0"].contains("RightEdge"));
 
             auto left = j_out["ABCStar_0"]["LeftEdge"];
             auto right = j_out["ABCStar_0"]["RightEdge"];
 
             REQUIRE (left.contains("Row0"));
-            REQUIRE (left.contains({"Row0", "Data"}));
+            REQUIRE (left["Row0"].contains("Data"));
             REQUIRE (right.contains("Row1"));
-            REQUIRE (right.contains({"Row1", "Data"}));
+            REQUIRE (right["Row1"].contains("Data"));
 
             // For each channel
             CHECK (left["Row0"]["Data"][0] == 3.0);

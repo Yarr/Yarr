@@ -115,7 +115,7 @@ void ScanFactory::loadConfig(const json &scanCfg) {
         action->writeConfig(tCfg);
         if (!tCfg.empty()) {
             std::stringstream ss;
-            ss << tCfg;
+            ss << std::setw(4) << tCfg;
             std::string line;
             while (std::getline(ss, line)) sflog->info("~~~ {}", line); //yes overkill, i know ..
         } else {

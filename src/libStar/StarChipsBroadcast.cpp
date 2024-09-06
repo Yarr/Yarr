@@ -7,7 +7,8 @@ namespace {
 }
 
 StarChipsBroadcast::StarChipsBroadcast(int abc_version, int hcc_version) 
-  : StarChips(abc_version, hcc_version)
+  : StarChips(abc_version, hcc_version),
+    keeper(nullptr)
 {
   // Dummy configuration for globalFe in preScan routines
   setHCCChipId(0xf);
@@ -28,7 +29,7 @@ void StarChipsBroadcast::enableAll() {
   glog->error("enableAll() is called via the global FE");
 }
 
-void StarChipsBroadcast::writeNamedRegister(std::string name, uint16_t value) {
+yarrStatus StarChipsBroadcast::writeNamedRegister(std::string name, const uint16_t value) {
   if (isBroadcastable(name)) {
     this->writeNamedRegister(name, value);
   } else {
@@ -39,6 +40,7 @@ void StarChipsBroadcast::writeNamedRegister(std::string name, uint16_t value) {
       entry.fe->writeNamedRegister(name, value);
     }
   }
+  return yarrSuccess;
 }
 
 /// Check if a request to write a named register can be broadcasted  

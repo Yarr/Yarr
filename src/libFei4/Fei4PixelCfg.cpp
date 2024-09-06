@@ -220,17 +220,18 @@ void Fei4PixelCfg::writeConfig(json &j) {
 
 void Fei4PixelCfg::loadConfig(const json &j) {
     // Layout is one array per column
-    if (!j.contains({"FE-I4B","PixelConfig"}))
+    if (!j.contains("FE-I4B") || !j["FE-I4B"].contains("PixelConfig"))
         return;
+    auto &jconfig = j["FE-I4B"]["PixelConfig"];
     for (unsigned row=1; row<=n_Row; row++) {
+        auto &jrow = jconfig[row-1];
         for (unsigned col=1; col<=n_Col; col++) {
-            setEn(col, row, j["FE-I4B"]["PixelConfig"][row-1]["Enable"][col-1]);
-            setHitbus(col, row, j["FE-I4B"]["PixelConfig"][row-1]["Hitbus"][col-1]);
-            setTDAC(col, row, j["FE-I4B"]["PixelConfig"][row-1]["TDAC"][col-1]);
-            setLCap(col, row, j["FE-I4B"]["PixelConfig"][row-1]["LCap"][col-1]);
-            setSCap(col, row, j["FE-I4B"]["PixelConfig"][row-1]["SCap"][col-1]);
-            setFDAC(col, row, j["FE-I4B"]["PixelConfig"][row-1]["FDAC"][col-1]);
+            setEn(col, row, jrow["Enable"][col-1]);
+            setHitbus(col, row, jrow["Hitbus"][col-1]);
+            setTDAC(col, row, jrow["TDAC"][col-1]);
+            setLCap(col, row, jrow["LCap"][col-1]);
+            setSCap(col, row, jrow["SCap"][col-1]);
+            setFDAC(col, row, jrow["FDAC"][col-1]);
         }
     }
-
 }

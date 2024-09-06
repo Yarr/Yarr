@@ -12,9 +12,10 @@ The information presented here is in addition to the information in the [Chip Ma
 - Either ``R15`` or ``R17`` should be mounted, not both
 - Either ``R14`` or ``R16`` should be mounted, not both
 - ``GND_SNS``, ``VDDD_SNS``, ``R_SCAN``, ``R7``, ``R10``, ``R_GND_BDAQ`` should not be mounted
+
 ### Jumpers
 
-- Untuned ``IREF_TRIM`` should be set to ``0xB`` (``1011``), meaning only bit 2 closed with a jumper. Ideally the IREF should be trimmed to 4uA.
+- IREF should be trimmed to 4uA. The 4 ``IREF_TRIM`` pin pairs correspond to a binary number that tunes the IREF. To tune IREF, various ``IREF_TRIM`` jumper configurations are tried until the ``Vref_ADC`` pin reads as close to ``0.845 V`` as possible. Untuned ``IREF_TRIM`` should be set to ``0xB`` (``1011``), meaning only bit 2 closed with a jumper. 
 - If no ChipId jumper is placed, the default ChipId is ``0xF``/``15``.
 - ``VDD_EFUSE`` should be shorted to GND (jumper inserted)
 - No ``DEBUG`` jumpers (``PIMTM``, ``TEST_MODE``, ``BYP_MODE``) should be placed
@@ -45,6 +46,17 @@ Preferred mode for testing should be LDO mode.
     - Crosscheck value of ``R_EXTA``, ``R_EXTD``, ``R_IOFS``, and ``R_IOFS_LB`` to be according to your operational needs (read manual for further info).
     - Supply current fitting your offset and slope choice, optimal voltage across the module is around 1.6V
 
+### CML settings
+
+The global chip settings for an SCC should be as below. The default values in YARR are optimised for quad modules.
+
+```
+"CmlBias0": 500,
+"CmlBias1": 0,
+"SerEnTap": 0,
+"SerInvTap": 0,
+```
+
 ## DAQ specifics for RD53B
 
 ## Data transmission 
@@ -66,7 +78,7 @@ Options:
 
 For example: 
 ```bash
-/bin/eyeDiagram -r configs/controller/specCfg-rd53b-4x4.json -c configs/connectivity/example_rd53b_setup.json 
+./bin/eyeDiagram -r configs/controller/specCfg-rd53b-16x1.json -c configs/connectivity/example_rd53b_setup.json 
 ```
 
 This scan has to be run before running any other scan, and it will save the best delay setting to the controller config file. A script for plotting the eye diagram is also provided (``scripts/plot_eyediagram.py``), and an example of an eye diagram is shown below. 
@@ -96,7 +108,7 @@ Typically 16x1 firmware uses one lane ``AuroraActiveLanes = 1`` and 4x4 firmware
 
 The general structure of the scanConsole command is:
 ```bash
-bin/scanConsole -r configs/controller/specCfg-rd53b.json -c configs/connectivity/example_rd53b_setup.json -s configs/scans/rd53b/<type of scan>.json -p
+./bin/scanConsole -r configs/controller/specCfg-rd53b.json -c configs/connectivity/example_rd53b_setup.json -s configs/scans/rd53b/<type of scan>.json -p
 ```
 
 which specifies the controller (`-r`), the chip list and chip type (`-c`), and the scan (`-s`). The option `-p` selects plotting so plots are produced after the scans.
@@ -138,10 +150,8 @@ After ``std_digitalscan`` (depends on exact config):
 
 We recommend the following tuning routine:
 
-1. Tune global threshold to 1500e (Note: edge columns need to be adjusted by hand via ``DiffTh1L/R``)
-2. Tune pixel threshold to 1500e
-3. Retune (not changing TDACs) global threshold to 1000e
-4. Retune pixel threshold to 1000e
+1. Tune global threshold to 1200e (Overtune by approx 200e)
+2. Tune pixel threshold to 1000e
 
 ## Active Lanes
 
@@ -179,13 +189,11 @@ Due to an issue in the SW you can only read out ONE chip at a time.
 Since one can read only ONE chip at the time, at the begining of each scan the reset should be avoided, MR is here https://gitlab.cern.ch/YARR/YARR/-/merge_requests/482 
 
 Tunning routine should use precision ToT scans:
+
 - ptot_digitalscan
 - ptot_analogscan
-- ptot_thresholdscan
-- ptot_tune_globalthreshold (target 1500e)
-- ptot_tune_pixelthreshold (target 1500e)
-- ptot_retune_globalthreshold (target 1000e)
-- ptot_retune_pixelthreshold (target 1000e)
+- ptot_tune_globalthreshold (target 1000e)
+- ptot_tune_pixelthreshold (target 1000e)
 - ptot_thresholdscan
 
 ## Testing with ITkPixV1.1
@@ -193,19 +201,18 @@ Tunning routine should use precision ToT scans:
 Since one can read only ONE chip at the time, at the begining of each scan the reset should be avoided, MR is here https://gitlab.cern.ch/YARR/YARR/-/merge_requests/482 
 
 Tunning routine:
+
 - std_digitalscan
 - std_analogscan
-- std_thresholdscan
-- std_tune_globalthreshold (target 1500e)
-- std_tune_pixelthreshold (target 1500e)
-- std_retune_globalthreshold (target 1000e)
-- std_retune_pixelthreshold (target 1000e)
+- std_tune_globalthreshold (target 1200e)
+- std_tune_pixelthreshold (target 1000e)
 - std_thresholdscan
 
 
-## Configuration files with 1-DisplayPort Data Adapter Card
+## Quad module configuration files with 1-DisplayPort Data Adapter Card
 
 The DisplayPort is connected to Port A of the Ohio cars. Note that DisplayPort pins are connected to:
+
 - pins 1,3 correspond to channel 0
 - pins 4,6 to channel 1
 - pins 7,9 to channel 2

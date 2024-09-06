@@ -1,0 +1,27 @@
+# YARR Codeowners file to steer MR approval
+
+/cmake/ @bgallop @mwittgen @theim
+/configs/ @bgallop @otoldaie @mamirono @theim
+/docker/ @bgallop @mwittgen @theim
+/docs/ @bgallop @otoldaie @mamirono @theim @ztao @arastogi
+/localdb/ @hoide @gstark
+/scripts/ @bgallop @mwittgen @theim
+
+/src/libBdaq/ @wlkakhi
+/src/libEmu/ @ztao
+/src/libFei4/ @mamirono @theim
+/src/libFei4Emu/ @mamirono @theim
+/src/libFelixClient/ @ztao @arastogi
+/src/libItkpixv2/ @mamirono @theim
+/src/libItsdaqFW/ @bgallop
+/src/libNetioHW @ztao @arastogi
+/src/libRd53a/ @mamirono @theim
+/src/libRd53aEmu/ @mamirono @theim
+/src/libRd53b/ @mamirono @theim
+/src/libSpec/ @mamirono @theim
+/src/libStar/ @bgallop @otoldaie
+/src/libStarEmu/ @ztao @bgallop @otoldaie
+/src/libUtil/ @bgallop @wittgen @theim
+/src/libYarr/ @bgallop @theim
+/src/python/ @wittgen
+/src/tools/ @bgallop @otoldaie @mamirono @theim @ztao @arastogi

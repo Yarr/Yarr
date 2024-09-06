@@ -770,7 +770,8 @@ RECURSIVE              = YES
 
 EXCLUDE                = src/libUtil/include/LUT_BinaryTreeHitMap.h \ 
                          src/libUtil/include/json.hpp \
-                         src/libUtil/include/catch.hpp
+                         src/libUtil/include/catch.hpp \
+                         src/libUtil/include/ItkpixQCoreEncodingLUT.h
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded

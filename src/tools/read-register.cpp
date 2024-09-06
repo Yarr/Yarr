@@ -139,6 +139,8 @@ int main(int argc, char* argv[]) {
 
     std::string chipType = ScanHelper::loadChipConfigs(jconn, false, Utils::dirFromPath(connectivity_filename));
 
+    unsigned error_cnt = 0;
+
     auto chip_configs = jconn["chips"];
     size_t n_chips = chip_configs.size();
     for (size_t ichip = 0; ichip < n_chips; ichip++) {
@@ -162,23 +164,33 @@ int main(int argc, char* argv[]) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
                 hw->setRxEnable(cfg->getRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-                fe->readUpdateWriteNamedReg(register_name);
-                uint16_t res = fe->readNamedRegister(register_name);
-                std::cout << res << std::endl;
+                uint16_t res = 0;
+                if (fe->readNamedRegister(register_name, res) != yarrSuccess) {
+                    std::cerr << "ERROR failed to read register of " << current_chip_name << "!" << std::endl;
+                    std::cout << "-666" << std::endl;
+                    error_cnt++;
+                } else {
+                    std::cout << res << std::endl;
+                }
             }
         } else {
             if (std::find(chip_name.begin(), chip_name.end(), current_chip_name) != chip_name.end()) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
                 hw->setRxEnable(cfg->getRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-                fe->readUpdateWriteNamedReg(register_name);
-                uint16_t res = fe->readNamedRegister(register_name);
-                std::cout << res << std::endl;
+                uint16_t res = 0;
+                if (fe->readNamedRegister(register_name, res) != yarrSuccess) {
+                    std::cerr << "ERROR failed to read register of " << current_chip_name << "!" << std::endl;
+                    std::cout << "-666" << std::endl;
+                    error_cnt++;
+                } else {
+                    std::cout << res << std::endl;
+                }
             }
         }
     }
 
     std::cerr << "Done." << std::endl;
 
-    return 0;
+    return error_cnt;
 }

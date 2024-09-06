@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <iostream>
 #include <string>
 
 #include "SpecCom.h"

@@ -6,7 +6,7 @@
             "tx" : 0,
             "rx" : 0,
             "enable" : 1,
-            "locked" : 0
+            "locked" : false
         }
     ]
 }

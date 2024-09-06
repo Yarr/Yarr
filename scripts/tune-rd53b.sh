@@ -3,9 +3,10 @@
 ##
 ## Script to run through the steps to tune an ITkPixV1 ship.
 ##
+## author: Liam Foster
 ## author: Daniel Joseph Antrim
-## e-mail: daniel.joseph.antrim AT cern DOT ch
-## date: March 2021
+## e-mail: liam@lbl.gov
+## date: June 2024
 ##
 
 function print_usage {
@@ -13,13 +14,12 @@ function print_usage {
     echo " Tune Rd53b"
     echo ""
     echo " Usage:"
-    echo "  $ ${1}  --t0 <threshold first> --t1 <threshold last> -r <controller> -c <connectivity>"
+    echo "  $ ${1}  -t <threshold> -r <controller> -c <connectivity>"
     echo ""
     echo " Options:"
-    echo "  --t0        Initial threshold that the chip will be tuned to in the first pass [default: 1500e]."
-    echo "  --t1        Final threshold that the chip will be tuned to [default: 1000e]."
-    echo "  -r          Path to JSON YARR controller configuration file [REQUIRED]."
-    echo "  -c          Path to JSON YARR connectivity configuration file [REQUIRED]."
+    echo "  -t         Threshold the chip will be tuned to [default: 1000e]."
+    echo "  -r          Path to JSON YARR controller [REQUIRED]."
+    echo "  -c          Path to JSON YARR connectivity [REQUIRED]."
     echo "  -o          Output directory [default: ./data/]."
     echo "  -h|--help   Print this help message and exit."
     echo ""
@@ -29,10 +29,9 @@ function print_usage {
 
 function main {
 
-    first_threshold="1500"
-    second_threshold="1000"
-    controller_config=""
-    connectivity_config=""
+    threshold="1000"
+    controller=""
+    connectivity=""
     output_dir="./data/"
 
     while test $# -gt 0
@@ -46,20 +45,16 @@ function main {
                 print_usage $0
                 return 0
                 ;;
-            --t0)
-                first_threshold=${2}
-                shift
-                ;;
-            --t1)
-                second_threshold=${2}
+            -t)
+                threshold=${2}
                 shift
                 ;;
             -r)
-                controller_config=${2}
+                controller=${2}
                 shift
                 ;;
             -c)
-                connectivity_config=${2}
+                connectivity=${2}
                 shift
                 ;;
             -o)
@@ -77,22 +72,22 @@ function main {
     ##
     ## check inputs
     ##
-    if [ "${controller_config}" == "" ]; then
+    if [ "${controller}" == "" ]; then
         echo "ERROR No controller configuration file provided"
         return 1
     else
-        if [ ! -f ${controller_config} ]; then
-            echo "ERROR Could not find path to indicated controller configuration file (=${controller_config})"
+        if [ ! -f ${controller} ]; then
+            echo "ERROR Could not find path to indicated controller configuration file (=${controller})"
             return 1
         fi
     fi
 
-    if [ "${connectivity_config}" == "" ]; then
+    if [ "${connectivity}" == "" ]; then
         echo "ERROR No connectivity configuration file provided"
         return 1
     else
-        if [ ! -f ${connectivity_config} ]; then
-            echo "ERROR Could not find path to indicated connectivity configuration file (=${connectivity_config})"
+        if [ ! -f ${connectivity} ]; then
+            echo "ERROR Could not find path to indicated connectivity configuration file (=${connectivity})"
             return 1
         fi
     fi
@@ -113,24 +108,22 @@ function main {
         return 1
     fi
 
-    base_cmd="${scan_console} -r ${controller_config} -c ${connectivity_config} -o ${output_dir}"
+    ./bin/eyeDiagram -r ${controller} -c ${connectivity}
 
-    ${base_cmd} -s ${scan_dir}/std_digitalscan.json -m 1
-    ${base_cmd} -s ${scan_dir}/std_analogscan.json
+    base_cmd="${scan_console} -r ${controller} -c ${connectivity} -o ${output_dir}"
+    
 
-    # before-tuning threshold distribution
-    ${base_cmd} -s ${scan_dir}/std_thresholdscan.json -p
-
-    # initial pass tuning
-    ${base_cmd} -s ${scan_dir}/std_tune_globalthreshold.json -t ${first_threshold} -p
-    ${base_cmd} -s ${scan_dir}/std_tune_pixelthreshold.json -t ${first_threshold} -p
-
-    # second pass tuning
-    ${base_cmd} -s ${scan_dir}/std_retune_globalthreshold.json -t ${second_threshold} -p
-    ${base_cmd} -s ${scan_dir}/std_retune_pixelthreshold.json -t ${second_threshold} -p
+    # threshold tuning
+    ${base_cmd} -s ${scan_dir}/std_tune_globalthreshold.json -t $(( ${threshold} + 200 ))
+    ${base_cmd} -s ${scan_dir}/std_tune_pixelthreshold.json -t ${threshold}
 
     # after-tuning threshold distribution
-    ${base_cmd} -s ${scan_dir}/std_thresholdscan.json -p
+    ${base_cmd} -s ${scan_dir}/std_thresholdscan.json
+    ./bin/plotFromDir -i data/last_scan/ -p png -P
+
+    # analog scan currently a bit buggy, so -t 5000
+    ${base_cmd} -s ${scan_dir}/std_analogscan.json -t 5000
+    ./bin/plotFromDir -i data/last_scan/ -p png -P
 }
 
 #______________________________________

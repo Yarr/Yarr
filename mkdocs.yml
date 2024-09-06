@@ -1,3 +1,4 @@
+---
 site_name: YARR Docks
 nav:
     - Home: index.md
@@ -6,16 +7,19 @@ nav:
     - Kernel Driver: kernel_driver.md
     - PCIe Firmware/Hardware: fw_guide.md
     - Updating to 1.28 Gbps: updating_firmware.md
+    - Firmware Trigger Tagging Guide: trigger_tagging.md
     - External PCIe: pcie_ext.md
     - ScanConsole: scanconsole.md
     - FE-I4: fei4.md
     - FE65-P2: fe65p2.md
     - RD53A: rd53a.md
     - RD53B: rd53b.md
+    - ITkPixV2: itkpixv2.md
     - Star: star.md
     - Local DB: localdb.md
     - Plotting Tools: plotting.md
     - Logging configuration: logging.md
+    - FelixClient: felixclient.md
     - NetIO: netio.md
     - BDAQ Hardware: bdaq.md
     - ITSDAQ FW: itsdaq.md

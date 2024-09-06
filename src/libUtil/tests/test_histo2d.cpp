@@ -47,8 +47,7 @@ void testSaveLoad(const Histo2d &hh, const HistoInfo &hi) {
 
   out_histo.fromJson(j);
 
-  std::string json_output;
-  j.dump(json_output);
+  std::string json_output = j.dump();
 
   CAPTURE (json_output);
 
@@ -59,8 +58,7 @@ void testSaveLoad(const Histo2d &hh, const HistoInfo &hi) {
   json j2;
   out_histo.toJson(j2);
 
-  std::string json2_output;
-  j2.dump(json2_output);
+  std::string json2_output = j2.dump();
 
   CHECK (json_output == json2_output);
 }
