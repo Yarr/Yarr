@@ -252,14 +252,13 @@ void Itkpixv2DataProcessor::rollBack(const unsigned length)
 }
 
 void Itkpixv2DataProcessor::process_core()
-{   
+{
     if (m_input->empty())
         return;
     if (_status == INIT)
     {
         // Get data containers
         if (!getNextDataBlock())
-            // logger->info("No data block found");
             return;
 
         _tag = (_data[0] >> (23-_chipIdShift)) & 0xFF;
@@ -293,7 +292,6 @@ void Itkpixv2DataProcessor::process_core()
 #if USE_DEBUG_BUFFER==2
                     dumpDebugBuffer();
 #endif
-                    return;
                     logger->error("[{}] The ES bit is 0 while the core column number read is zero. Data processed so far are corrupted... Last block {:x}{:x}", m_feCfg->getName(), _data[0], _data[1]);
                     _corruptStreamErrorCnt++;
                     // TODO: keep skipping data until ES = 1, and then skip one more
@@ -426,19 +424,14 @@ void Itkpixv2DataProcessor::process_core()
                 _status = TOT;
                 // ############ Step 3. read ToT ############
                 // Check whether it is precision ToT (PToT) data. PToT data is indicated by unphysical qrow index 196, and it should not be aggregated by the isnext bit
-                // logger->error("Entered ToT block with _ccol {}, _qrow {}, _islast {}", _ccol, _qrow[_ccol], _islast_isneighbor);
                 if (_qrow[_ccol] == 196 && !(_islast_isneighbor & 0x1))
                 {
-                    // logger->error("Entered pToT block");
                     if (!retrieve(_ToT, _LUT_PlainHMap_To_ColRow_ArrSize[_hitmap] << 2))
-                        // logger->error("Failed to retrieve pToT");
                         return;
 
                     int idx = 0;
                     for (unsigned ibus = 0; ibus < 4; ibus++)
                     {
-                        // logger->error("pTot loop {}", ibus);
-
                         uint8_t hitsub = (_hitmap >> (ibus << 2)) & 0xF;
                         if (hitsub)
                         {
@@ -684,7 +677,6 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
     _debugBuffer[_debugIdx] = _data[1];
     _debugIdx = (_debugIdx + 1) % DEBUG_BUFFERSIZE;
 #endif
-    //logger->info("[{}] {} 0x{:x}{:x}", _wordIdx, _data[0]>>31, _data[0], _data[1]);
 
     // Return success code
     return true;

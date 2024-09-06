@@ -540,7 +540,6 @@ bool Rd53bDataProcessor::getNextDataBlock()
         }
         _wordIdx += 2; // Increase block index
 
-
 #if USE_DEBUG_BUFFER > 0
         // Segfault will happen at the next line, print circular buffer results
         if (_curInV->data.size() <= _rawDataIdx) {

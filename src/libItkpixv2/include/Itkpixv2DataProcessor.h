@@ -107,7 +107,7 @@ private:
         QROW=4,  // Reading quarter row
         HMAP1=5, // Reading hit map step 1
         HMAP2=6, // Reading hit map step 2
-        TOT=7   // Reading ToT
+        TOT=7    // Reading ToT
     };
 
     STATUS _status;
