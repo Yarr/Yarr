@@ -5,6 +5,42 @@ set (YARR_VERSION_MAJOR 1)
 set (YARR_VERSION_MINOR 0)
 set (CMAKE_CXX_STANDARD 17)
 
+execute_process(
+        COMMAND git rev-parse HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE YARR_GIT_HASH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+execute_process(
+        COMMAND git rev-parse --abbrev-ref HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE YARR_GIT_BRANCH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+execute_process(
+        COMMAND git describe --tag
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE YARR_GIT_TAG
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+execute_process(
+        COMMAND git log -1 --format=%ad --date=iso
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE YARR_GIT_DATE
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+execute_process(
+        COMMAND git log -1 --format=%s
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE YARR_GIT_SUBJECT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+string(TIMESTAMP BUILD_TIME "%Y-%m-%d %H:%M:%S UTC" UTC)
+configure_file(
+        ${CMAKE_SOURCE_DIR}/src/libYarr/include/yarr_version.h.in
+        ${CMAKE_SOURCE_DIR}/src/libYarr/include/yarr_version.h
+)
+
 # minimum required gcc version
 if(NOT MIN_GCC_VERSION)
   set(MIN_GCC_VERSION 9)
@@ -22,10 +58,6 @@ else()
     message(WARNING "You are using an unsupported compiler! Compilation has only been tested with Clang and GCC.")
 endif()
 
-add_custom_target(git_hash ALL
-  COMMAND scripts/git_hash.sh
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-)
 
 # Export compile commands JSON
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
