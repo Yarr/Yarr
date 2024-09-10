@@ -1,0 +1,10 @@
+#pragma once
+
+// this file is automatically genrted by cmake - DO NOT EDIT
+
+#define YARR_GIT_BRANCH "@YARR_GIT_BRANCH@"
+#define YARR_GIT_TAG "@YARR_GIT_TAG@"
+#define YARR_GIT_HASH "@YARR_GIT_HASH@"
+#define YARR_GIT_DATE "@YARR_GIT_DATE@"
+#define YARR_GIT_SUBJECT "@YARR_GIT_SUBJECT@"
+#define BUILD_TIME "@BUILD_TIME@"
