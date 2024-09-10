@@ -1,5 +1,5 @@
 #include "FelixTxCore.h"
-
+#include "felix/felix_client_exception.hpp"
 #include "logging.h"
 
 #include <sstream>
@@ -501,7 +501,21 @@ void FelixTxCore::trigger() {
     }
 
     bool flush = true;
-    fclient->send_data(fid_broadcast, m_trigFifo[fid_broadcast].data(), m_trigFifo[fid_broadcast].size(), flush);
+    bool retryIfFails=true;
+    while (retryIfFails) {
+      try {
+	fclient->send_data(fid_broadcast, m_trigFifo[fid_broadcast].data(), m_trigFifo[fid_broadcast].size(), flush);
+	retryIfFails=false;
+      } catch (FelixClientResourceNotAvailableException &e) {
+	if (retryIfFails) {
+	  ftlog->warn("Exception from FelixClient::send_data: {}. Retrying.", e.what());
+	  std::this_thread::sleep_for(std::chrono::microseconds(m_isCmdEmptyWaitTime));
+	  retryIfFails=false;
+	} else {
+	  ftlog->warn("Exception from FelixClient::send_data: {}. Giving up.", e.what());
+	}
+      }
+    }
 
   } else {
     for (auto& [chn, buffer] : m_trigFifo) {
@@ -511,9 +525,23 @@ void FelixTxCore::trigger() {
       for (const auto& word : buffer) {
         ftlog->trace(" {:02x}", word&0xff);
       }
-
+      
       bool flush = true;
-      fclient->send_data(chn, buffer.data(), buffer.size(), flush);
+      bool retryIfFails=true;
+      while (retryIfFails) {
+	try {
+	  fclient->send_data(chn, buffer.data(), buffer.size(), flush);
+	  retryIfFails=false;
+	} catch (FelixClientResourceNotAvailableException &e) {
+	  if (retryIfFails) {
+	    ftlog->warn("Exception from FelixClient::send_data: {}. Retrying.", e.what());
+	    std::this_thread::sleep_for(std::chrono::microseconds(m_isCmdEmptyWaitTime));
+	    retryIfFails=false;
+	  } else {
+	    ftlog->warn("Exception from FelixClient::send_data: {}. Giving up.", e.what());
+	  }
+	}
+      }     
     }
   }
 }
