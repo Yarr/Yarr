@@ -71,7 +71,7 @@ Itkpixv2DataProcessor::Itkpixv2DataProcessor()
     _status = INIT;
 
     // Debug buffer
-    _debugBuffer.resize(DEBUG_BUFFERSIZE);
+    _debugBuffer.resize(ITKPIX_DEBUG_BUFFERSIZE << 1);
     _debugIdx = 0;
 }
 
@@ -171,7 +171,7 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
             {
                 // End of stream
                 if (unlikely(variable != 0)) {
-#if USE_DEBUG_BUFFER==2
+#if USE_ITKPIX_DEBUG_BUFFER > 1
                     dumpDebugBuffer();
 #endif
                     logger->error("[{}] The ES bit is 1 while the core column number read is non-zero ({} [{}]). Data processed so far are corrupted... Last block {:x}{:x} (status {})", m_feCfg->getName(), variable, _bitIdx, _data[0], _data[1], _status);
@@ -184,7 +184,7 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
             // Otherwise throw error message, unless over-draft is expected
             else if (!skipNSCheck)
             {
-#if USE_DEBUG_BUFFER==2
+#if USE_ITKPIX_DEBUG_BUFFER > 1
                 dumpDebugBuffer();
 #endif
                 logger->error("[{}] Expected unfinished stream while ES = 1: 0x{:x}{:x} [{} - {}]. Will start a new event... (status {})", m_feCfg->getName(), _data[0], _data[1], _bitIdx, length, _status);
@@ -216,7 +216,7 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
 
 // Debug function
 void Itkpixv2DataProcessor::dumpDebugBuffer() {
-    logger->error("[{}] Dumping last {} data blocks, in hex:", m_feCfg->getName(), DEBUG_BUFFERSIZE);
+    logger->error("[{}] Dumping last {} data blocks, in hex:", m_feCfg->getName(), ITKPIX_DEBUG_BUFFERSIZE);
     logger->error(
         "[{}] wordIdx={}, bitIdx={}, rawDataIdx={}, wordCount={}, tag={}, ccol={}, qrow={}, islast_isneighbor={}, hitmap={}",
         m_feCfg->getName(), _wordIdx, _bitIdx, _rawDataIdx, _wordCount, _tag, _ccol, _qrow[_ccol], _islast_isneighbor, _hitmap
@@ -225,10 +225,10 @@ void Itkpixv2DataProcessor::dumpDebugBuffer() {
 
     for (int i = _debugIdx; i < _debugIdx + _debugBuffer.size(); i++) {
         if(i%2 == 0) {
-            logger->error("[{}] ES={}: 0x{:x}", m_feCfg->getName(), ((_debugBuffer[i % DEBUG_BUFFERSIZE] >> 31) & 0x1), _debugBuffer[i % DEBUG_BUFFERSIZE]);
+            logger->error("[{}] ES={}: 0x{:x}", m_feCfg->getName(), ((_debugBuffer[i % ITKPIX_DEBUG_BUFFERSIZE] >> 31) & 0x1), _debugBuffer[i % ITKPIX_DEBUG_BUFFERSIZE]);
         }
         else {
-            logger->error("[{}]       0x{:x}", m_feCfg->getName(), _debugBuffer[i % DEBUG_BUFFERSIZE]);
+            logger->error("[{}]       0x{:x}", m_feCfg->getName(), _debugBuffer[i % ITKPIX_DEBUG_BUFFERSIZE]);
         }
     }
     logger->error("[{}]", m_feCfg->getName());
@@ -289,7 +289,7 @@ void Itkpixv2DataProcessor::process_core()
             if (_ccol == 0) {
                 // Check ES bit
                 if (((_data[0] >> 31) & 0x1) != 0x1) {
-#if USE_DEBUG_BUFFER==2
+#if USE_ITKPIX_DEBUG_BUFFER > 1
                     dumpDebugBuffer();
 #endif
                     logger->error("[{}] The ES bit is 0 while the core column number read is zero. Data processed so far are corrupted... Last block {:x}{:x}", m_feCfg->getName(), _data[0], _data[1]);
@@ -547,7 +547,7 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
         // Segfault will happen at the next line, print circular buffer results
         if (unlikely(_curInV->data.size() <= _rawDataIdx)) {
             logger->error("[{}] DataProcessor is entering segfault case! _curInV size {}, _rawDataIdx {}, 0x{:x} 0x{:x}", m_feCfg->getName(), _curInV->data.size(), _rawDataIdx, _data[0], _data[1]);
-#if USE_DEBUG_BUFFER > 0
+#if USE_ITKPIX_DEBUG_BUFFER > 0
             dumpDebugBuffer();
 #endif
         }
@@ -671,11 +671,11 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
     // Upate the data pointer. Note the meaning of block index is the first block that is *unprocessed*
     _data = &_curInV->data[_rawDataIdx]->get(_wordIdx);
 
-#if USE_DEBUG_BUFFER > 0
+#if USE_ITKPIX_DEBUG_BUFFER > 0
     _debugBuffer[_debugIdx] = _data[0];
-    _debugIdx = (_debugIdx + 1) % DEBUG_BUFFERSIZE;
+    _debugIdx = (_debugIdx + 1) % ITKPIX_DEBUG_BUFFERSIZE;
     _debugBuffer[_debugIdx] = _data[1];
-    _debugIdx = (_debugIdx + 1) % DEBUG_BUFFERSIZE;
+    _debugIdx = (_debugIdx + 1) % ITKPIX_DEBUG_BUFFERSIZE;
 #endif
 
     // Return success code
