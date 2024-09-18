@@ -585,8 +585,15 @@ bool Rd53bDataProcessor::getNextDataBlock()
         // Keep track of last block
         if (_curInV != nullptr && _curInV->size() > 0)
         {
-            _data_pre[0] = _data[0];
-            _data_pre[1] = _data[1];
+            if(unlikely(_data == nullptr)) {
+                // Fake error frame, should never decode this
+                _data_pre[0] = 0x7F800000;
+                _data_pre[1] = 0x00000000;
+            }
+            else {
+                _data_pre[0] = _data[0];
+                _data_pre[1] = _data[1];
+            }
 
             // Push out data accumulated so far
             if (_events > 0)
