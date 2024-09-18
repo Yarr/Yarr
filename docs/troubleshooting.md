@@ -120,11 +120,11 @@ During scans with Rd53b/Itkpixv2, there can be DataProcessor errors such as the 
 If these errors are reproducible, more information can be obtained on their source by enabling the **debug buffer**. This is a compile-time option that is enabled using `cmake`, and consists of a buffer of the last `<N>` 64 bit streams recieved by the DataProcessor leading up to the error.
 
 The available parameters are:
-- `-DUSE_DEBUG_BUFFER`
+- `-DUSE_ITKPIX_DEBUG_BUFFER`
   - `0`: Disable debug buffer completely & remove it from compilation
   - `1`: Enable debug buffer only for segfault-inducing cases (may miss some, in development!)
   - `2`: Enable debug buffer for all DataProcessor error cases
-- `-DDEBUG_BUFFERSIZE`
+- `-DITKPIX_DEBUG_BUFFERSIZE`
   - `<n>` with `n > 0`: Number of 64 bit streams to save into debug buffer memory.
 
 As an example, to enable the debug buffer for all DataProcessor errors, with 12 saved 64 bit streams, we would run the following compile options:
