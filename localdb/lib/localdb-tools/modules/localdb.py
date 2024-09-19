@@ -145,6 +145,7 @@ class LocalDb(object):
                     serverSelectionTimeoutMS=max_server_delay,
                     authSource=self.authSource
                     )
+                    localdb = client[self.name]
                     localdb.list_collection_names()
                     #localdb.authenticate(username, password)
                     self.__connection_succeeded('Authentication success.')
