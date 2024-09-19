@@ -1,0 +1,86 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "ScurveFitter",
+        "config": {
+          "reverse": true,
+          "parametersOfInterest": ["ABCs_BVT"]
+        }
+      },
+      "1": {
+        "algorithm": "StarTrimDacAnalysis",
+        "config": {
+          "parametersOfInterest": ["ABCs_BTRANGE", "TRIMs"],
+          "targetThresholdPerChip": true
+        },
+        "dependOn": ["ScurveFitter"]
+      },
+      "n_count": 2
+    },
+    "histogrammer": {
+      "0": {
+          "algorithm": "OccupancyMap",
+          "config": {}
+      },
+      "n_count": 1
+    },
+    "loops": [
+      {
+        "config": {
+          "max": 6,
+          "min": 6,
+          "step": 1,
+          "parameter":"ABCs_BTRANGE"
+        },
+        "loopAction": "StdParameterLoop"
+      },
+      {
+        "config": {
+          "max": 31,
+          "min": 0,
+          "step": 1,
+          "parameter":"TRIMs"
+        },
+        "loopAction": "StdParameterLoop"
+      },
+      {
+        "config": {
+          "max": 80,
+          "min": 0,
+          "step": 2,
+          "parameter":"ABCs_BVT"
+        },
+        "loopAction": "StdParameterLoop"
+      },
+      {
+        "config": {
+          "trig_count": 500,
+          "trig_frequency": 250,
+          "trig_time": 0,
+          "l0_latency": 20,
+          "extTrigger": false,
+          "noInject": false
+        },
+        "loopAction": "StarTriggerLoop"
+      },
+      {
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "TrimScanWithTrimRange",
+    "prescan": {
+        "ABCs_PR_ENABLE":  1,
+        "ABCs_LP_ENABLE":  1,
+        "ABCs_DETMODE":    0,
+        "ABCs_MASKHPR":    1,
+        "ABCs_STOPHPR":    1,
+        "HCC_MASKHPR":     1,
+        "HCC_STOPHPR":     1,
+        "ABCs_BCAL":       0,
+        "ABCs_CALPULSE_ENABLE":    1,
+        "ABCs_CALPULSE_POLARITY":  0,
+        "ABCs_CURRDRIV": 4
+    }
+  }
+}
