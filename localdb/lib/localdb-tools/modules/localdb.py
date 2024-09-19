@@ -147,7 +147,6 @@ class LocalDb(object):
                     )
                     localdb = client[self.name]
                     localdb.list_collection_names()
-                    #localdb.authenticate(username, password)
                     self.__connection_succeeded('Authentication success.')
                 except errors.OperationFailure as err:
                     self.__connection_failed('auth', err)
