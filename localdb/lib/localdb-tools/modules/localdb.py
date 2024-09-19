@@ -137,7 +137,16 @@ class LocalDb(object):
 
             if username and password:
                 try:
-                    localdb.authenticate(username, password)
+                    pos = self.url.find("://")
+                    if pos != -1:
+                        self.url = self.url[:pos + len("://")] + username + ':' + password + '@' + self.url[pos + len("://"):]
+                    client = MongoClient(
+                    self.url,
+                    serverSelectionTimeoutMS=max_server_delay,
+                    authSource=self.authSource
+                    )
+                    localdb.list_collection_names()
+                    #localdb.authenticate(username, password)
                     self.__connection_succeeded('Authentication success.')
                 except errors.OperationFailure as err:
                     self.__connection_failed('auth', err)
