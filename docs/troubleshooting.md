@@ -179,8 +179,10 @@ $ bin/specComTest
 ...
 
 ## RD53B Troubleshooting
+see [RD53A Troubleshooting](#RD53A-troubleshooting)
 
-...
+Note that the SLDO trim registers are named ``SldoTrimA`` and ``SldoTrimD``, respectively, for RD53B.
+
 
 ## RD53A Troubleshooting
 
@@ -194,7 +196,8 @@ $ bin/specComTest
 - Try power-cycling the chip.
 - Make sure the DP cable is plugged into the right ports and you have selected the correct Tx/Rx links in the connectivity.
 - Meausure the analog regulator output voltage, if below 1.1V consider installing a Vref hack (ask experts).
-- Increase or decrease the SLDO analog trim (``SldoTrimA``) and SLDO digital trim (``SldoTrimD``) register (try going in steps by 5) or tune them to output 1.2V
+- Increase or decrease the ``SldoAnalogTrim`` and ``SldoDigitalTrim`` register (try going in steps by 5) or tune them to output 1.2V.
+  (Note that the registers are called ``SldoTrimA`` and ``SldoTrimD``, respectively, for RD53B.)
 - Increase or decrease the ``CmlTapBias0`` register (try testing in steps of 100)
 - Try a different kind of DisplayPort cable (typically short is better)
 - Try a better/different kind of power cable (try jiggeling the power cable)
