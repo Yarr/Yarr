@@ -1,11 +1,11 @@
 # YARR Codeowners file to steer MR approval
 
-/cmake/ @bgallop @mwittgen @theim
+/cmake/ @bgallop @wittgen @theim
 /configs/ @bgallop @otoldaie @mamirono @theim
-/docker/ @bgallop @mwittgen @theim
+/docker/ @bgallop @wittgen @theim
 /docs/ @bgallop @otoldaie @mamirono @theim @ztao @arastogi
 /localdb/ @hoide @gstark
-/scripts/ @bgallop @mwittgen @theim
+/scripts/ @bgallop @wittgen @theim
 
 /src/libBdaq/ @wlkakhi
 /src/libEmu/ @ztao

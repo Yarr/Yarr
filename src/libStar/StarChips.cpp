@@ -264,6 +264,26 @@ yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_va
                                         getHCCchipID(), cfg.getABCchipID()));
           }
         });
+    } else if(subRegName == "TRIMs") {
+      // Write the same value to all trim regs
+
+      logger->trace("Writing {:08x} to trim register for all ABCStar chips.", reg_value);
+
+      for (unsigned row=1; row<=geo.nRow; row++) {
+        for (unsigned col=1; col<=geo.nCol; col++) {
+          setTrimDAC(col, row, reg_value);
+        }
+      }
+
+      // Now sent the register config
+      eachAbc([&](auto &cfg) {
+          for(int m = ABCStarRegister::TrimLo(0);
+              m <= ABCStarRegister::TrimHi(7); m++) {
+            // cfg.setRegisterValue(ABCStarRegister::_from_integral(m), val);
+            sendCmd( write_abc_register(m, reg_value,
+                                        getHCCchipID(), cfg.getABCchipID()));
+          }
+        });
     } else if(!ABCStarSubRegister::_is_valid(subRegName.c_str())) {
       logger->error(" --> Error: Could not find ABC sub-register \"{}\"", subRegName);
       return yarrFailure;

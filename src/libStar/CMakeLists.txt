@@ -17,7 +17,9 @@ add_library(Star SHARED
         StarRegDump.cpp
         StarSeqGenerator.cpp
         StarStrobeDelayAnalysis.cpp
-        StarTriggerLoop.cpp)
+        StarTriggerLoop.cpp
+        StarTrimDacAnalysis.cpp
+)
 
 post_build_debug_library(Star)
 target_include_directories(Star PRIVATE ../libYarr/include)

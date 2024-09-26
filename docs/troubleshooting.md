@@ -81,6 +81,34 @@ java.lang.NoClassDefFoundError: Could not initialize class java.awt.GraphicsEnvi
 Execute ``xhost +``.
 
 
+## Software Troubleshooting
+
+### `yarr_version.h` no such file or directory
+
+If the compilation fails with the following
+
+```bash
+: not found_hash.sh: 2:
+: not found_hash.sh: 8:
+[  2%] Built target git_hash
+...
+<lots of text>
+...
+Building CXX object src/libYarr/CMakeFiles/Yarr.dir/yarr.cpp.o
+/home/user/Yarr/src/libYarr/yarr.cpp:3:10: fatal error: yarr_version.h: No such file or directory
+    3 | #include "yarr_version.h"
+      |          ^~~~~~~~~~~~~~~~
+compilation terminated.
+make[2]: *** [src/libYarr/CMakeFiles/Yarr.dir/build.make:76: src/libYarr/CMakeFiles/Yarr.dir/yarr.cpp.o] Error 1
+make[1]: *** [CMakeFiles/Makefile2:336: src/libYarr/CMakeFiles/Yarr.dir/all] Error 2
+make: *** [Makefile:136: all] Error 2
+```
+
+then it is likely that `yarr_version.h` was not properly generated.
+It could be due to the `git` setting `autocrlf` to be set to `true`.
+Disable this setting with `git config [--global] core.autocrlf false`.
+Then re-clone the repository and recompile.
+
 ## PCIe Card Troubleshooting
 
 The following points are specific to PCIe cards.
@@ -151,8 +179,10 @@ $ bin/specComTest
 ...
 
 ## RD53B Troubleshooting
+see [RD53A Troubleshooting](#RD53A-troubleshooting)
 
-...
+Note that the SLDO trim registers are named ``SldoTrimA`` and ``SldoTrimD``, respectively, for RD53B.
+
 
 ## RD53A Troubleshooting
 
@@ -166,7 +196,8 @@ $ bin/specComTest
 - Try power-cycling the chip.
 - Make sure the DP cable is plugged into the right ports and you have selected the correct Tx/Rx links in the connectivity.
 - Meausure the analog regulator output voltage, if below 1.1V consider installing a Vref hack (ask experts).
-- Increase or decrease the ``SldoAnalogTrim`` and ``SldoDigitalTrim`` register (try going in steps by 5) or tune them to output 1.2V
+- Increase or decrease the ``SldoAnalogTrim`` and ``SldoDigitalTrim`` register (try going in steps by 5) or tune them to output 1.2V.
+  (Note that the registers are called ``SldoTrimA`` and ``SldoTrimD``, respectively, for RD53B.)
 - Increase or decrease the ``CmlTapBias0`` register (try testing in steps of 100)
 - Try a different kind of DisplayPort cable (typically short is better)
 - Try a better/different kind of power cable (try jiggeling the power cable)

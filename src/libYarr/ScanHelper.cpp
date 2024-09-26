@@ -22,6 +22,9 @@ namespace fs = std::filesystem;
 #include "StdAnalysis.h" // needed for special handling of HistogramArchiver
 #include "ScanFactory.h"
 
+#include "yarr.h"
+
+
 #include "logging.h"
 #include "LoggingConfig.h"
 
@@ -388,7 +391,7 @@ namespace ScanHelper {
 
                 histogrammer.connect(&fe->clipData, &fe->clipHisto);
 
-                auto add_histo = [&](const std::string& algo_name) {
+                auto add_histo = [&](const std::string& algo_name, const json& subHistoCfg) {
                     auto histo = StdDict::getHistogrammer(algo_name);
                     if(algo_name == "DataArchiver") {
                         auto archiver = dynamic_cast<DataArchiver*>(histo.get());
@@ -400,6 +403,7 @@ namespace ScanHelper {
                         } 
                     }
                     if(histo) {
+                        histo->loadConfig(subHistoCfg);
                         bhlog->debug(" ... adding {}", algo_name);
                         histogrammer.addHistogrammer(std::move(histo));
                     } else {
@@ -412,13 +416,13 @@ namespace ScanHelper {
 
                     for (int j=0; j<nHistos; j++) {
                         std::string algo_name = histoCfg[std::to_string(j)]["algorithm"];
-                        add_histo(algo_name);
+                        add_histo(algo_name, histoCfg[std::to_string(j)]["config"]);
                     }
                 } else {
                     std::size_t nHistos = histoCfg.size();
                     for (int j=0; j<nHistos; j++) {
                         std::string algo_name = histoCfg[j]["algorithm"];
-                        add_histo(algo_name);
+                        add_histo(algo_name, histoCfg[std::to_string(j)]["config"]);
                     }
                 }
                 histogrammer.setMapSize(fe->geo.nCol, fe->geo.nRow);
@@ -886,6 +890,7 @@ namespace ScanHelper {
 
         std::cout << "Help:" << std::endl;
         std::cout << " -h: Shows this." << std::endl;
+        std::cout << " --version: Print version." << std::endl;
         std::cout << " -s <scan_type> : Scan config" << std::endl;
         std::cout << " -c <connectivity.json> [<cfg2.json> ...]: Provide connectivity configuration, can take multiple arguments." << std::endl;
         std::cout << " -r <ctrl.json> Provide controller configuration." << std::endl;
@@ -916,18 +921,21 @@ namespace ScanHelper {
         {
             {"skip-reset", no_argument, 0, 'z'},
             {"help", no_argument, 0, 'h'},
+            {"version", no_argument, 0, 'v'},
             {0, 0, 0, 0}};
         int c;
         while (true) {
             int opt_index=0;
-            c = getopt_long(argc, argv, "hn:ks:m:r:c:t:pgo:W:d:u:i:l:QIz", long_options, &opt_index);
+            c = getopt_long(argc, argv, "hvn:ks:m:r:c:t:pgo:W:d:u:i:l:QIz", long_options, &opt_index);
             int count = 0;
             if(c == -1) break;
             switch (c) {
                 case 'h':
                     printHelp();
                     return 0;
-                    break;
+                case 'v':
+                    std::cout << yarr::version::get().dump(4) << std::endl;
+                    return 0;
                 case 'k':
                     ScanHelper::listKnown();
                     return 0;

@@ -532,7 +532,7 @@ def writeScan(self, i_dir):
                 logger.debug( f'chip_SN = {chip_SN}, file_name = {file_name}, hexSN = {hexSN}' )
                 try:
                     if '{}_'.format(hexSN) in file_name:
-                        if any( [ ext in file_name for ext in ['png', 'jpg', 'pdf'] ] ):
+                        if any( [ ext in file_name for ext in ['png', 'jpg', 'pdf', 'raw'] ] ):
                             continue
                         
                         file_path = '{0}/{1}'.format(i_dir, file_name)

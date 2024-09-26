@@ -49,6 +49,14 @@ Itkpixv2DataProcessor::Itkpixv2DataProcessor()
     _chipId = 15;
     _streamMask = 0x7FFFFFFF;
 
+    // Set counters to zero
+    _chipTagBitFlipCnt = 0;
+    _chipTagErrorCnt = 0;
+    _unfinishedStreamErrorCnt = 0;
+    _unfinishedStreamEOSErrorCnt = 0;
+    _corruptStreamErrorCnt = 0;
+    _outOfRangeBitsCnt = 0;
+
     // Data stream components
     _ccol = 0;
     // Core column index starts from 1. So _qrow[0] will never be used
@@ -98,7 +106,7 @@ void Itkpixv2DataProcessor::join()
 
 void Itkpixv2DataProcessor::process()
 {
-    logger->info("Started raw data processor thread for {}.", m_feCfg->getName());
+    logger->info("[{}] Started raw data processor thread", m_feCfg->getName());
     while (true)
     {
         m_input->waitNotEmptyOrDone();
@@ -115,7 +123,13 @@ void Itkpixv2DataProcessor::process()
     }
 
     process_core();
-    logger->info("Finished raw data processor thread for {}.", m_feCfg->getName());
+    logger->info("[{}] Finished raw data processor thread", m_feCfg->getName());
+    logger->info("[{}]             Chip tag bitflips: {}", m_feCfg->getName(), _chipTagBitFlipCnt);
+    logger->info("[{}]        Chip unrecognized tags: {}", m_feCfg->getName(), _chipTagErrorCnt);
+    logger->info("[{}]   Unfinished streams (no EOS): {}", m_feCfg->getName(), _unfinishedStreamErrorCnt);
+    logger->info("[{}]   Unfinished streams (w/ EOS): {}", m_feCfg->getName(), _unfinishedStreamEOSErrorCnt);
+    logger->info("[{}]               Corrupt streams: {}", m_feCfg->getName(), _corruptStreamErrorCnt);
+    logger->info("[{}]     Out-of-range bit requests: {}", m_feCfg->getName(), _outOfRangeBitsCnt);
 }
 
 // Method for retrieving bits from data
@@ -152,8 +166,10 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
             if (checkEOS)
             {
                 // End of stream
-                if (unlikely(variable != 0))
+                if (unlikely(variable != 0)) {
                     logger->error("[{}] The ES bit is 1 while the core column number read is non-zero ({} [{}]). Data processed so far are corrupted... Last block {:x}{:x} (status {})", m_feCfg->getName(), variable, _bitIdx, _data[0], _data[1], _status);
+                    _unfinishedStreamEOSErrorCnt++;
+                }
                 _bitIdx = 64;
                 variable = 0;
                 return true;
@@ -162,6 +178,7 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
             else if (!skipNSCheck)
             {
                 logger->error("[{}] Expected unfinished stream while ES = 1: 0x{:x}{:x} [{} - {}]. Will start a new event... (status {})", m_feCfg->getName(), _data[0], _data[1], _bitIdx, length, _status);
+                _unfinishedStreamErrorCnt++;
                 _status = INIT;
                 return false;
             }
@@ -221,7 +238,6 @@ void Itkpixv2DataProcessor::process_core()
         // Create a new event
         // TODO RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
         _curOut->newEvent(_tag, _l1id, _bcid);
-        //logger->info("New Stream, New Event: {} ", _tag);
         _events++;
         sendFeedback(_tag, _bcid);
     }
@@ -237,15 +253,14 @@ void Itkpixv2DataProcessor::process_core()
             // This is also the ONLY place where we check end-of-stream. In other places we simply assuming continuation of stream, and will throw an error message if the end of stream is somehow reached.
             if (!retrieve(_ccol, 6, true))
                 return;
-            // logger->error("Read ccol {}", _ccol);
         case CCC:
             _status = CCC;
-            // logger->error("Read CCC");
             // End of stream is marked with 0b000000. This is ensured in software in spite of the chip orphan bit configuration
             if (_ccol == 0) {
                 // Check ES bit
                 if (((_data[0] >> 31) & 0x1) != 0x1) {
                     logger->error("[{}] The ES bit is 0 while the core column number read is zero. Data processed so far are corrupted... Last block {:x}{:x}", m_feCfg->getName(), _data[0], _data[1]);
+                    _corruptStreamErrorCnt++;
                     // TODO: keep skipping data until ES = 1, and then skip one more
                 }
                     
@@ -256,11 +271,24 @@ void Itkpixv2DataProcessor::process_core()
                 }
                 _tag = (_data[0] >> (23-_chipIdShift)) & 0xFF;
                 _bitIdx = 9 + _chipIdShift; // Reset bit index = ES + tag
+                
+                // RD53C Error Tags (according to Raoberto Beccherle)
+                // - 216-219: Single big flip in trigger tag
+                // - 220-223: Fully unrecognized trigger tag
+                if(unlikely((_tag >> 3) == 27)) {
+                    if((_tag >> 2) == 54) {
+                        logger->error("[{}] Recieved chip error tag {}, corresponding to a single bit flip in trigger symbol. Data block 0x{:x} 0x{:x}", m_feCfg->getName(), _tag, _data[0], _data[1]);
+                        _chipTagBitFlipCnt++;
+                    }
+                    else {
+                        logger->error("[{}] Recieved chip error tag {}, corresponding to a totally unrecognized trigger symbol. Data block 0x{:x} 0x{:x}", m_feCfg->getName(), _tag, _data[0], _data[1]);
+                        _chipTagErrorCnt++;
+                    }
+                }
 
                 // Create a new event
                 // TODO RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
                 _curOut->newEvent(_tag, _l1id, _bcid);
-                //logger->info("New Stream, New Event: {} ", _tag);
                 _events++;
                 sendFeedback(_tag, _bcid);
 
@@ -279,7 +307,6 @@ void Itkpixv2DataProcessor::process_core()
                 // Create a new event
                 // There is no L1ID and BCID in RD53B data stream. Currently put dummy values
                 _curOut->newEvent(_tag, _l1id, _bcid);
-                //logger->info("Same Stream, New Event: {} ", _tag);
                 _events++;
                 sendFeedback(_tag, _bcid);
 
@@ -302,8 +329,6 @@ void Itkpixv2DataProcessor::process_core()
                 // Note the qrow index will be absent if isneighbor = 1
                 if (!retrieve(_islast_isneighbor, 2))
                     return;
-                // logger->error("Read islast/isneighbor {}", _islast_isneighbor);
-                
 
             case QROW:
                 _status = QROW;
@@ -314,7 +339,7 @@ void Itkpixv2DataProcessor::process_core()
                 // Otherwise read the qrow value
                 else if (!retrieve(_qrow[_ccol], 8))
                     return;
-                // logger->error("Read qrow {}", _qrow[_ccol]);
+
             case HMAP1:
                 _status = HMAP1;
                 // ############ Step 2. read hit map ############
@@ -322,7 +347,6 @@ void Itkpixv2DataProcessor::process_core()
                 //_hitmap = 0;
                 if (!retrieve(_hitmap, 16, false, true))
                     return;
-                // logger->error("Read hitmap 1 {}", _hitmap);
                 
             case HMAP2:
                 _status = HMAP2;
@@ -362,7 +386,6 @@ void Itkpixv2DataProcessor::process_core()
                         rollBack((_LUT_BinaryTreeHitMap[hitmap_raw] & 0xFF0000) >> 16);
                     }
                 }
-                // logger->error("Read hitmap 2 {}", _hitmap);
 
             case TOT:
                 _status = TOT;
@@ -457,7 +480,6 @@ void Itkpixv2DataProcessor::process_core()
                         _hits++;
                     }
                 }
-                // logger->error("Read ToT {}", _ToT);
 
             default:
                 break;
@@ -534,8 +556,15 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
         // Keep track of last block
         if (_curInV != nullptr && _curInV->size() > 0)
         {
-            _data_pre[0] = _data[0];
-            _data_pre[1] = _data[1];
+            if(unlikely(_data == nullptr)) {
+                // Fake error frame, should never decode this
+                _data_pre[0] = 0xFF800000;
+                _data_pre[1] = 0x00000000;
+            }
+            else {
+                _data_pre[0] = _data[0];
+                _data_pre[1] = _data[1];
+            }
 
             // Push out data accumulated so far
             if (_events > 0)
@@ -601,17 +630,19 @@ bool Itkpixv2DataProcessor::getNextDataBlock()
         for (unsigned c = 0; c < _curInV->size(); c++)
             _wordCount += _curInV->data[c]->getSize();
     }
+    
+    uint32_t *_data_t = &_curInV->data[_rawDataIdx]->get(_wordIdx);
 
+    // Skip special symbols
+    if (_data_t[0] == 0xFFFFDEAD && _data_t[1] == 0xFFFFDEAD)
+        return getNextDataBlock();
+    if (((_data_t[0] >> 29) & 0x3) != _chipId && _enChipId)
+        return getNextDataBlock();
+    
     // Upate the data pointer. Note the meaning of block index is the first block that is *unprocessed*
     _data = &_curInV->data[_rawDataIdx]->get(_wordIdx);
 
-    //logger->info("[{}] {} 0x{:x}{:x}", _wordIdx, _data[0]>>31, _data[0], _data[1]);
-
     // Return success code
-    if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
-        return getNextDataBlock();
-    if (((_data[0] >> 29) & 0x3) != _chipId && _enChipId)
-        return getNextDataBlock();
     return true;
 }
 

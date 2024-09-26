@@ -34,7 +34,7 @@
         "algorithm": "HitsPerEvent",
         "config": {}
       },
-      "n_count": 2
+      "n_count": 1
     },
     "loops": [
       {

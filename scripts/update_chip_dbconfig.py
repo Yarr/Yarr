@@ -152,4 +152,4 @@ if __name__ == "__main__":
 
     connectivity_file=args["connectivity_file"]
     controller_file=args["controller_file"]
-    update_chip_configdb(connectivity_file,controller_file)
+    update_chip_dbconfig(connectivity_file,controller_file)
