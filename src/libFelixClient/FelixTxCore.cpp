@@ -339,12 +339,19 @@ void FelixTxCore::setTrigTime(double time) {
 void FelixTxCore::setTrigWordLength(uint32_t length) {
   m_trigWordLength = length;
 }
+// For FELIX, max is 32x16bit commands
+// YARR writes 32 bit commands so Trigger Loop needs to be instructed to 
+// write 16x32bit commands that can be broken apart for FELIX
+uint32_t FelixTxCore::getMaxTrigWordLength(){
+  return 16;
+}
 
 void FelixTxCore::setTrigWord(uint32_t *words, uint32_t size) {
   m_trigWords.clear();
 
   for (uint32_t i=0; i<size; i++) {
     m_trigWords.push_back(words[i]);
+    ftlog->info("trig words {:x}",words[i]);
   }
 }
 
@@ -366,7 +373,6 @@ uint32_t FelixTxCore::getTrigInCount() {
 
 void FelixTxCore::prepareTrigger(std::vector<uint8_t>& trigFifo) {
   trigFifo.clear();
-
 
   switch(m_fwMode){
   case ITK_Pixel: //For ITk pixel RM 5.0 firmware

@@ -41,6 +41,7 @@ class TxCore {
         virtual void maskTrigEnable(uint32_t value, uint32_t mask) = 0;
         virtual bool isTrigDone() = 0;
 
+        virtual uint32_t getMaxTrigWordLength() {return 32;};
 
         virtual void setTrigConfig(enum TRIG_CONF_VALUE cfg) = 0;
         virtual void setTrigFreq(double freq) = 0; // in Hz

@@ -54,6 +54,7 @@ public:
   void setTrigCnt(uint32_t count) override; 	// set the number of desired triggers
   void setTrigTime(double time) override; 	// set the trigger time in seconds
   void setTrigWordLength(uint32_t length) override; 	// set Trigger Word Length
+  uint32_t getMaxTrigWordLength() override; // return the maximum Trigger Word Length
   void setTrigWord(uint32_t *words, uint32_t size) override; 	// set the trigger words
   void toggleTrigAbort() override; 	// abort the trigger sequence
   void setTriggerLogicMask(uint32_t mask) override; 	// set the trigger logic

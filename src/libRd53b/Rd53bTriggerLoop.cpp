@@ -21,6 +21,7 @@ Rd53bTriggerLoop::Rd53bTriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) {
     m_trigFreq = 1e3;
     m_trigTime = 10;
     m_trigWordLength = 32;
+    m_maxTrigWordLength = 32;
     m_pulseDuration = 8;
     m_trigWord.fill(0xAAAAAAAA);
     m_noInject = false;
@@ -38,13 +39,13 @@ Rd53bTriggerLoop::Rd53bTriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) {
     loopType = typeid(this);
 }
 
-void Rd53bTriggerLoop::setTrigDelay(uint32_t delay, uint32_t cal_edge_delay=0) {
+void Rd53bTriggerLoop::setTrigDelay(uint32_t delay, uint32_t cal_edge_delay=0, uint32_t m_maxTrigWordLength=32) {
     m_trigWord.fill(0xAAAAAAAA);
     
     // Injection command
     std::array<uint16_t, 3> calWords = Rd53b::genCal(16, 0, cal_edge_delay, 1, 0, 0);
-    m_trigWord[31] = 0xAAAA0000 | calWords[0];
-    m_trigWord[30] = ((uint32_t)calWords[1]<<16) | calWords[2];
+    m_trigWord[m_maxTrigWordLength - 1] = 0xAAAA0000 | calWords[0];
+    m_trigWord[m_maxTrigWordLength - 2] = ((uint32_t)calWords[1]<<16) | calWords[2];
     
     //std::array<uint16_t, 4> wrReg = Rd53bCmd::genWrReg(16, 53, 0x0);
     //m_trigWord[29] = (((uint32_t)wrReg[0] << 16) | wrReg[1]);
@@ -61,10 +62,10 @@ void Rd53bTriggerLoop::setTrigDelay(uint32_t delay, uint32_t cal_edge_delay=0) {
         trigStream = trigStream << delay%8;
 
         for (unsigned i=0; i<(m_trigMultiplier/8)+1; i++) {
-            if (((30-(delay/8)-i) > 2) && delay > 30) {
+            if (((m_maxTrigWordLength-2-(delay/8)-i) > 2) && delay > m_maxTrigWordLength-2) {
                 uint32_t bc1 = (trigStream >> (2*i*4)) & 0xF;
                 uint32_t bc2 = (trigStream >> ((2*i*4)+4)) & 0xF;
-                m_trigWord[30-(delay/8)-i] = ((uint32_t)Rd53b::genTrigger(bc1, 2*i)[0] << 16) |  Rd53b::genTrigger(bc2, (2*i)+1)[0];
+                m_trigWord[m_maxTrigWordLength-2-(delay/8)-i] = ((uint32_t)Rd53b::genTrigger(bc1, 2*i)[0] << 16) |  Rd53b::genTrigger(bc2, (2*i)+1)[0];
             } else {
                 logger->error("Delay is either too small or too large!");
             }
@@ -81,23 +82,23 @@ void Rd53bTriggerLoop::setTrigDelay(uint32_t delay, uint32_t cal_edge_delay=0) {
     m_trigWord[0] = ((uint32_t)armWords[1]<<16) | armWords[2];
     
     logger->debug("Trigger buffer set to:");
-    for (unsigned i=0; i<m_trigWordLength; i++) {
-      logger->debug("[{}: 0x{:x}", 31-i, m_trigWord[31-i]);
+    for (unsigned i=0; i<m_maxTrigWordLength; i++) {
+      logger->debug("[{}: 0x{:x}", m_maxTrigWordLength-i, m_trigWord[m_maxTrigWordLength-i]);
     }
 }
 
-void Rd53bTriggerLoop::setEdgeMode(uint32_t duration) {
+void Rd53bTriggerLoop::setEdgeMode(uint32_t duration, uint32_t m_maxTrigWordLength = 32) {
     // Assumes CAL command to be in index 31/30
     std::array<uint16_t, 3> calWords = Rd53b::genCal(16, 1, 0, duration, 0, 0);
-    m_trigWord[31] = 0xAAAA0000 | calWords[0];
-    m_trigWord[30] = ((uint32_t)calWords[1]<<16) | calWords[2];
+    m_trigWord[m_maxTrigWordLength-1] = 0xAAAA0000 | calWords[0];
+    m_trigWord[m_maxTrigWordLength-2] = ((uint32_t)calWords[1]<<16) | calWords[2];
     m_trigWord[1] = 0xAAAAAAAA;
     m_trigWord[0] = 0xAAAAAAAA;
 }
 
-void Rd53bTriggerLoop::setNoInject() {
-    m_trigWord[31] = 0xAAAAAAAA;
-    m_trigWord[30] = 0xAAAAAAAA;
+void Rd53bTriggerLoop::setNoInject(uint32_t m_maxTrigWordLength = 32) {
+    m_trigWord[m_maxTrigWordLength-1] = 0xAAAAAAAA;
+    m_trigWord[m_maxTrigWordLength-2] = 0xAAAAAAAA;
     m_trigWord[1] = 0xAAAAAAAA;
     m_trigWord[0] = 0xAAAAAAAA;
 
@@ -107,9 +108,10 @@ void Rd53bTriggerLoop::init() {
     SPDLOG_LOGGER_TRACE(logger, "");
     m_done = false;
 
-    this->setTrigDelay(m_trigDelay, m_calEdgeDelay);
+    m_maxTrigWordLength = g_tx->getMaxTrigWordLength();
+    this->setTrigDelay(m_trigDelay, m_calEdgeDelay, m_maxTrigWordLength);
     if (m_edgeMode)
-        this->setEdgeMode(m_edgeDuration);
+        this->setEdgeMode(m_edgeDuration, m_maxTrigWordLength);
     if (m_extTrig) {
         g_tx->setTrigConfig(EXT_TRIGGER);
     } else if (getTrigCnt() > 0) {
@@ -118,12 +120,12 @@ void Rd53bTriggerLoop::init() {
         g_tx->setTrigConfig(INT_TIME);
     }
     if (m_noInject) {
-        setNoInject();
+        setNoInject(m_maxTrigWordLength);
     }
     g_tx->setTrigFreq(m_trigFreq);
     g_tx->setTrigCnt(getTrigCnt());
-    g_tx->setTrigWord(&m_trigWord[0], 32);
-    g_tx->setTrigWordLength(m_trigWordLength);
+    g_tx->setTrigWord(&m_trigWord[0],m_maxTrigWordLength);
+    g_tx->setTrigWordLength(m_maxTrigWordLength);
     g_tx->setTrigTime(m_trigTime);
     g_tx->setCmdEnable(keeper->getTxMask());
     while(!g_tx->isCmdEmpty());
@@ -167,8 +169,8 @@ void Rd53bTriggerLoop::execPart2() {
         this->setEdgeMode(2);
         g_tx->setTrigFreq(800000);
         g_tx->setTrigCnt(100);
-        g_tx->setTrigWord(&m_trigWord[0], 32);
-        g_tx->setTrigWordLength(32);
+        g_tx->setTrigWord(&m_trigWord[0], m_maxTrigWordLength);
+        g_tx->setTrigWordLength(m_maxTrigWordLength);
         g_tx->setTrigConfig(INT_COUNT);
 
         g_tx->setTrigEnable(0x1);
