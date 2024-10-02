@@ -89,6 +89,7 @@ class Itkpixv2EmuCommandExe {
 
         //encoder
         std::shared_ptr<Itkpixv2Encoder> m_encoder;
+        bool m_hitMapFilled;
 
         //mutex
         std::mutex m_mtx;

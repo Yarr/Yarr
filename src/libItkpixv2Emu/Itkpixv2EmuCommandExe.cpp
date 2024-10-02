@@ -8,6 +8,7 @@
 #include "logging.h"
 #include <random>
 #include <mutex>
+#include <chrono>
 
 namespace {
     auto rlog = logging::make_log("Itkpixv2EmuCommandExe");
@@ -25,6 +26,9 @@ Itkpixv2EmuCommandExe::Itkpixv2EmuCommandExe(EmuCom* rx, std::shared_ptr<Itkpixv
     //initialize the encoder
     m_encoder = std::make_shared<Itkpixv2Encoder>();
     m_encoder->setEventsPerStream(1);
+
+    //try to pre-allocate some memory to the output buffer
+    m_encoder->getWords().reserve(1000);
 
 }
 
@@ -94,7 +98,7 @@ void Itkpixv2EmuCommandExe::doCal(const Itkpixv2EmuUtils::Cmd& cmd){
             break;
         }
     }
-
+    m_hitMapFilled = true;
 
 }
 
@@ -242,18 +246,30 @@ void Itkpixv2EmuCommandExe::doTrigger(const Itkpixv2EmuUtils::Cmd& cmd){
             
             uint8_t extendedTag = Itkpixv2EmuUtils::lutTriggerTagBase[cmd.id] << 2 | (bc & 0x3);
         
-            //Encode
-            m_encoder->addToStream(m_tots, extendedTag);
+            //Encode. If the hit map is not empty, use the encoder. If it is
+            //empty, send EoS + trigger header, bypassing the encoder. This saves
+            //some processing time, as the encoder is still somewhat expensive.
+            if (m_hitMapFilled){
+                //Encode the hit map
+                m_encoder->addToStream(m_tots, extendedTag);
+            
+                //Push whatever is currently in the encoder output. Then clear it.
+                //This will always work for 1-event streams. We need to be careful
+                //about the longer streams. How long does the DAQ wait?
+                rlog->trace("Writing {} words to the input", m_encoder->getWords().size());
+                m_rx->write32(m_encoder->getWords());
+                m_encoder->getWords().clear();
+                //Clear the ToT hit map
+                m_tots.reset();
+                m_hitMapFilled = false;  
 
-            //Push whatever is currently in the encoder output. Then clear it.
-            //This will always work for 1-event streams. We need to be careful
-            //about the longer streams. How long does the DAQ wait?
-            rlog->trace("Writing {} words to the input", m_encoder->getWords().size());
-            m_rx->write32(m_encoder->getWords());
-            m_encoder->getWords().clear();
+            }
+            else {
+                //Form the EoS + trigger tag and send the empty event
+                uint32_t emptyEvent = (1 << 31) | (0x00000000 & extendedTag << 23);
+                m_rx->write32({emptyEvent, 0x00000000});
+            }
 
-            //Clear the ToT hit map
-            m_tots.reset();   
         }
     }
 
