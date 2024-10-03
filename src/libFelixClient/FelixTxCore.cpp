@@ -45,9 +45,8 @@ FelixTxCore::FelixID_t FelixTxCore::fid_from_channel(uint32_t chn) {
   // Compute FelixID from did, cid, link id elink #, streamId
 
   // Get link/GBT id and elink # from channel number
-  // chn[18:6] is the link ID; chn[5:0] is the e-link number
-  uint8_t elink = chn & 0x3f;
-  uint16_t link_id = (chn >> 6) & 0x1fff;
+  uint8_t elink = FelixTools::elink_from_chn(chn);
+  uint16_t link_id = FelixTools::link_from_chn(chn);
 
   // Hard code is_virtual to false, and streamID to 0 for now
   bool is_virtual = false;
