@@ -23,14 +23,22 @@
         "config": {}
       },
       "3": {
-        "algorithm": "L1Dist",
+        "algorithm": "TotDist",
         "config": {}
       },
       "4": {
+        "algorithm": "L1Dist",
+        "config": {}
+      },
+      "5": {
         "algorithm": "HitsPerEvent",
         "config": {}
       },
-      "n_count": 5
+      "6": {
+        "algorithm": "DataArchiver",
+        "config": {}
+      },
+      "n_count": 6
     },
     "loops": [
       {
