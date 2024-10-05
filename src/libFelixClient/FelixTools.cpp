@@ -56,3 +56,61 @@ uint64_t FelixTools::get_fid(
 
   return fid.to_ullong();
 }
+
+std::string FelixTools::getICEnableRegName(uint16_t linkId, bool toflx) {
+  std::stringstream regName;
+  regName << "MINI_EGROUP_";
+  if (toflx) {
+    regName << "FROMHOST_";
+  } else {
+    regName << "TOHOST_";
+  }
+  regName << std::setfill('0') << std::setw(2) << linkId << "_IC_ENABLE";
+  return regName.str();
+}
+
+std::string FelixTools::getICEnableRegName(FelixID_t fid) {
+  return FelixTools::getICEnableRegName(
+    FelixTools::link_from_fid(fid),
+    FelixTools::toflx_from_fid(fid)
+  );
+}
+
+std::string FelixTools::getECEnableRegName(uint16_t linkId, bool toflx) {
+  std::stringstream regName;
+  regName << "MINI_EGROUP_";
+  if (toflx) {
+    regName << "FROMHOST_";
+  } else {
+    regName << "TOHOST_";
+  }
+  regName << std::setfill('0') << std::setw(2) << linkId << "_EC_ENABLE";
+  return regName.str();
+}
+
+std::string FelixTools::getECEnableRegName(FelixID_t fid) {
+  return FelixTools::getECEnableRegName(
+    FelixTools::link_from_fid(fid),
+    FelixTools::toflx_from_fid(fid)
+  );
+}
+
+std::string FelixTools::getELinkEnableRegName(uint16_t linkId, uint8_t egroup, bool toflx) {
+  std::stringstream regName;
+  if (toflx) {
+    regName << "ENCODING_LINK";
+  } else {
+    regName << "DECODING_LINK";
+  }
+  regName << std::setfill('0') << std::setw(2) << linkId << "_EGROUP" << egroup << "_CTRL_EPATH_ENA";
+  return regName.str();
+}
+
+std::string FelixTools::getELinkEnableRegName(FelixID_t fid) {
+  bool toflx = FelixTools::toflx_from_fid(fid);
+  uint16_t linkId = FelixTools::link_from_fid(fid);
+  uint8_t elink = FelixTools::elink_from_fid(fid);
+  uint8_t egroup = FelixTools::egroup_from_elink(elink);
+
+  return FelixTools::getELinkEnableRegName(linkId, egroup, toflx);
+}

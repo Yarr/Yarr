@@ -99,6 +99,15 @@ namespace FelixTools {
     return std::make_tuple(linkId, egroup, epath, toflx);
   }
 
+  // FELIX register names for elink control
+  std::string getICEnableRegName(uint16_t linkId, bool toflx);
+  std::string getECEnableRegName(uint16_t linkId, bool toflx);
+  std::string getELinkEnableRegName(uint16_t linkId, uint8_t egroup, bool toflx);
+  // overload using FELIX ID
+  std::string getICEnableRegName(FelixID_t fid);
+  std::string getECEnableRegName(FelixID_t fid);
+  std::string getELinkEnableRegName(FelixID_t fid);
+
   struct QueueStatistics {
 
     std::atomic<uint64_t> messages_received {0}; // number of messages received
