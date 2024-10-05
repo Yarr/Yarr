@@ -1,64 +1,58 @@
 #include "FelixTools.h"
+#include <sstream>
+#include <iomanip>
 
-// cf. https://atlas-project-felix.web.cern.ch/atlas-project-felix/user/docs/LinkMappingSpecification.pdf, Figure 3
-uint64_t FelixTools::get_fid( // Version [63:60] always 0x1
-  uint8_t detectorID,   // [59:52]
-  uint16_t connectorID, // [51:36]
-  bool is_virtual,      // [35]
-  uint16_t linkID,      // [34:22], 13 bits
-  uint8_t elink,        // [21:16]
-  bool to_felix,        // [15]
-  uint8_t protocol,     // [14:8]
-  uint8_t streamID      // [7:0]
+uint64_t FelixTools::get_fid(
+  uint8_t detectorID,
+  uint16_t connectorID,
+  bool is_virtual,
+  uint16_t linkID,
+  uint8_t elink,
+  bool to_felix,
+  uint8_t protocol,
+  uint8_t streamID
   )
 {
+  using namespace FelixTools;
+
   std::bitset<64> fid;
   std::bitset<64> id;
 
   // Version [63:60] is always 0x1
   id = 1;
-  fid |= (id << 60);
+  fid |= (id << FELIXID_VER_SHIFT);
 
-  // Detector ID [59:52], 8 bits
-  id = detectorID;
-  fid |= (id << 52);
+  // Detector ID
+  id = detectorID & ((1<<FELIXID_DID_NBITS) - 1);
+  fid |= (id << FELIXID_DID_SHIFT);
 
-  // Connector ID [51:36], 16 bits
-  id = connectorID;
-  fid |= (id << 36);
+  // Connector ID
+  id = connectorID & ((1<<FELIXID_CID_NBITS) - 1);
+  fid |= (id << FELIXID_CID_SHIFT);
 
-  // Is virtual link [35], 1 bit
-  fid[35] = is_virtual;
+  // Is virtual link
+  // assert(FELIXID_ISVIRT_NBITS == 1);
+  fid[FELIXID_ISVIRT_SHIFT] = is_virtual;
 
-  // Link (GBT) ID [34:22], 13 bits
-  id = linkID & 0x1fff;
-  fid |= (id << 22);
+  // Link (GBT) ID
+  id = linkID & ((1<<FELIXID_LINKID_NBITS) - 1);
+  fid |= (id << FELIXID_LINKID_SHIFT);
 
-  // E-link [21:16], 6 bits
-  id = elink & 0x3f;
-  fid |= (id << 16);
+  // E-link
+  id = elink & ((1<<FELIXID_ELINK_NBITS) - 1);
+  fid |= (id << FELIXID_ELINK_SHIFT);
 
-  // Link direction [15] (0 = to host; 1 = to FELIX), 1 bit
-  fid[15] = to_felix;
+  // Link direction
+  // assert(FELIXID_TOFLX_NBITS==1);
+  fid[FELIXID_TOFLX_SHIFT] = to_felix;
 
-  // Protocol [14:8], 7 bits
-  // cf. https://atlas-project-felix.web.cern.ch/atlas-project-felix/user/docs/LinkMappingSpecification.pdf, Table 2
-  id = protocol & 0x7f;
-  fid |= (id << 8);
+  // Protocol
+  id = protocol & ((1<<FELIXID_PROTO_NBITS) - 1);
+  fid |= (id << FELIXID_PROTO_SHIFT);
 
-  // Stream ID [7:0], 8 bits
-  id = streamID;
-  fid |= id;
+  // Stream ID
+  id = streamID & ((1<<FELIXID_STREAM_NBITS) - 1);
+  fid |= (id << FELIXID_STREAM_SHIFT);
 
   return fid.to_ullong();
-}
-
-unsigned FelixTools::link_from_fid(uint64_t fid) {
-  // bit [34:22]
-  return (fid >> 22) & 0x1fff;
-}
-
-unsigned FelixTools::elink_from_fid(uint64_t fid) {
-  // bit [21:16]
-  return (fid >> 16) & 0x3f;
 }
