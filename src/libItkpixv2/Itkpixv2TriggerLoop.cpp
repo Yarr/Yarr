@@ -21,6 +21,7 @@ Itkpixv2TriggerLoop::Itkpixv2TriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) 
     m_trigFreq = 1e3;
     m_trigTime = 10;
     m_trigWordLength = 32;
+    m_maxTrigWordLength = 32;
     m_pulseDuration = 8;
     m_trigWord.fill(0xAAAAAAAA);
     m_noInject = false;
@@ -42,8 +43,8 @@ void Itkpixv2TriggerLoop::setTrigDelay(uint32_t delay, uint32_t cal_edge_delay=0
     
     // Injection command
     std::array<uint16_t, 3> calWords = Itkpixv2::genCal(16, 0, cal_edge_delay, 1, 0, 0);
-    m_trigWord[31] = 0xAAAA0000 | calWords[0];
-    m_trigWord[30] = ((uint32_t)calWords[1]<<16) | calWords[2];
+    m_trigWord[m_maxTrigWordLength-1] = 0xAAAA0000 | calWords[0];
+    m_trigWord[m_maxTrigWordLength-2] = ((uint32_t)calWords[1]<<16) | calWords[2];
     
     //std::array<uint16_t, 4> wrReg = Itkpixv2Cmd::genWrReg(16, 53, 0x0);
     //m_trigWord[29] = (((uint32_t)wrReg[0] << 16) | wrReg[1]);
@@ -60,12 +61,14 @@ void Itkpixv2TriggerLoop::setTrigDelay(uint32_t delay, uint32_t cal_edge_delay=0
         trigStream = trigStream << delay%8;
 
         for (unsigned i=0; i<(m_trigMultiplier/8)+1; i++) {
-            if (((30-(delay/8)-i) > 2) && delay > 30) {
+            int maxDelay = (m_maxTrigWordLength+2-4-i)*8;
+            int minDelay = m_maxTrigWordLength-2;
+            if (delay > minDelay && delay < maxDelay) {
                 uint32_t bc1 = (trigStream >> (2*i*4)) & 0xF;
                 uint32_t bc2 = (trigStream >> ((2*i*4)+4)) & 0xF;
-                m_trigWord[30-(delay/8)-i] = ((uint32_t)Itkpixv2::genTrigger(bc1, 2*i)[0] << 16) |  Itkpixv2::genTrigger(bc2, (2*i)+1)[0];
+                m_trigWord[m_maxTrigWordLength-2-(delay/8)-i] = ((uint32_t)Itkpixv2::genTrigger(bc1, 2*i)[0] << 16) |  Itkpixv2::genTrigger(bc2, (2*i)+1)[0];
             } else {
-                logger->error("Delay is either too small or too large!");
+                logger->error("Invalid delay value, required range: {} < delay < {}", minDelay, maxDelay);
             }
         }
     }
@@ -81,22 +84,22 @@ void Itkpixv2TriggerLoop::setTrigDelay(uint32_t delay, uint32_t cal_edge_delay=0
     
     logger->debug("Trigger buffer set to:");
     for (unsigned i=0; i<m_trigWordLength; i++) {
-      logger->debug("[{}: 0x{:x}", 31-i, m_trigWord[31-i]);
+      logger->debug("[{}: 0x{:x}", m_maxTrigWordLength-1-i, m_trigWord[m_maxTrigWordLength-1-i]);
     }
 }
 
 void Itkpixv2TriggerLoop::setEdgeMode(uint32_t duration) {
     // Assumes CAL command to be in index 31/30
     std::array<uint16_t, 3> calWords = Itkpixv2::genCal(16, 1, 0, duration, 0, 0);
-    m_trigWord[31] = 0xAAAA0000 | calWords[0];
-    m_trigWord[30] = ((uint32_t)calWords[1]<<16) | calWords[2];
+    m_trigWord[m_maxTrigWordLength-1] = 0xAAAA0000 | calWords[0];
+    m_trigWord[m_maxTrigWordLength-2] = ((uint32_t)calWords[1]<<16) | calWords[2];
     m_trigWord[1] = 0xAAAAAAAA;
     m_trigWord[0] = 0xAAAAAAAA;
 }
 
 void Itkpixv2TriggerLoop::setNoInject() {
-    m_trigWord[31] = 0xAAAAAAAA;
-    m_trigWord[30] = 0xAAAAAAAA;
+    m_trigWord[m_maxTrigWordLength-1] = 0xAAAAAAAA;
+    m_trigWord[m_maxTrigWordLength-2] = 0xAAAAAAAA;
     m_trigWord[1] = 0xAAAAAAAA;
     m_trigWord[0] = 0xAAAAAAAA;
 
@@ -106,6 +109,11 @@ void Itkpixv2TriggerLoop::init() {
     SPDLOG_LOGGER_TRACE(logger, "");
     m_done = false;
 
+    m_maxTrigWordLength = g_tx->getMaxTrigWordLength();
+    if (m_maxTrigWordLength < 4) {
+        logger->error("Maximum Trigger word length is too small, must be greater than 4; current value {}",m_maxTrigWordLength);
+    }
+    
     this->setTrigDelay(m_trigDelay, m_calEdgeDelay);
     if (m_edgeMode)
         this->setEdgeMode(m_edgeDuration);
@@ -121,8 +129,8 @@ void Itkpixv2TriggerLoop::init() {
     }
     g_tx->setTrigFreq(m_trigFreq);
     g_tx->setTrigCnt(getTrigCnt());
-    g_tx->setTrigWord(&m_trigWord[0], 32);
-    g_tx->setTrigWordLength(m_trigWordLength);
+    g_tx->setTrigWord(&m_trigWord[0], m_maxTrigWordLength);
+    g_tx->setTrigWordLength(m_maxTrigWordLength);
     g_tx->setTrigTime(m_trigTime);
 
     g_tx->setCmdEnable(keeper->getTxMask());
