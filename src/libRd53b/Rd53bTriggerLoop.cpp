@@ -39,7 +39,7 @@ Rd53bTriggerLoop::Rd53bTriggerLoop() : LoopActionBase(LOOP_STYLE_TRIGGER) {
     loopType = typeid(this);
 }
 
-void Rd53bTriggerLoop::setTrigDelay(uint32_t delay, uint32_t cal_edge_delay=0, uint32_t m_maxTrigWordLength=32) {
+void Rd53bTriggerLoop::setTrigDelay(uint32_t delay, uint32_t cal_edge_delay=0) {
     m_trigWord.fill(0xAAAAAAAA);
     
     // Injection command
@@ -62,12 +62,15 @@ void Rd53bTriggerLoop::setTrigDelay(uint32_t delay, uint32_t cal_edge_delay=0, u
         trigStream = trigStream << delay%8;
 
         for (unsigned i=0; i<(m_trigMultiplier/8)+1; i++) {
-            if (((m_maxTrigWordLength-2-(delay/8)-i) > 2) && delay > m_maxTrigWordLength-2) {
+            int maxDelay = (m_maxTrigWordLength+2-4-i)*8;
+            int minDelay = m_maxTrigWordLength-2;
+            // check to make sure given delay value is valid for max word length and trig multiplier
+            if (delay > minDelay && delay < maxDelay) {
                 uint32_t bc1 = (trigStream >> (2*i*4)) & 0xF;
                 uint32_t bc2 = (trigStream >> ((2*i*4)+4)) & 0xF;
                 m_trigWord[m_maxTrigWordLength-2-(delay/8)-i] = ((uint32_t)Rd53b::genTrigger(bc1, 2*i)[0] << 16) |  Rd53b::genTrigger(bc2, (2*i)+1)[0];
             } else {
-                logger->error("Delay is either too small or too large!");
+                logger->info("Invalid delay value, required range: {} < delay < {}", minDelay, maxDelay);
             }
         }
     }
@@ -82,12 +85,12 @@ void Rd53bTriggerLoop::setTrigDelay(uint32_t delay, uint32_t cal_edge_delay=0, u
     m_trigWord[0] = ((uint32_t)armWords[1]<<16) | armWords[2];
     
     logger->debug("Trigger buffer set to:");
-    for (unsigned i=0; i<m_maxTrigWordLength; i++) {
+    for (unsigned i=0; i<32; i++) {
       logger->debug("[{}: 0x{:x}", m_maxTrigWordLength-i, m_trigWord[m_maxTrigWordLength-i]);
     }
 }
 
-void Rd53bTriggerLoop::setEdgeMode(uint32_t duration, uint32_t m_maxTrigWordLength = 32) {
+void Rd53bTriggerLoop::setEdgeMode(uint32_t duration) {
     // Assumes CAL command to be in index 31/30
     std::array<uint16_t, 3> calWords = Rd53b::genCal(16, 1, 0, duration, 0, 0);
     m_trigWord[m_maxTrigWordLength-1] = 0xAAAA0000 | calWords[0];
@@ -96,7 +99,7 @@ void Rd53bTriggerLoop::setEdgeMode(uint32_t duration, uint32_t m_maxTrigWordLeng
     m_trigWord[0] = 0xAAAAAAAA;
 }
 
-void Rd53bTriggerLoop::setNoInject(uint32_t m_maxTrigWordLength = 32) {
+void Rd53bTriggerLoop::setNoInject() {
     m_trigWord[m_maxTrigWordLength-1] = 0xAAAAAAAA;
     m_trigWord[m_maxTrigWordLength-2] = 0xAAAAAAAA;
     m_trigWord[1] = 0xAAAAAAAA;
@@ -109,9 +112,12 @@ void Rd53bTriggerLoop::init() {
     m_done = false;
 
     m_maxTrigWordLength = g_tx->getMaxTrigWordLength();
-    this->setTrigDelay(m_trigDelay, m_calEdgeDelay, m_maxTrigWordLength);
+    if (m_maxTrigWordLength < 4) {
+        logger->error("Maximum Trigger word length is too small, must be greater than 4; current value {}",m_maxTrigWordLength);
+    }
+    this->setTrigDelay(m_trigDelay, m_calEdgeDelay);
     if (m_edgeMode)
-        this->setEdgeMode(m_edgeDuration, m_maxTrigWordLength);
+        this->setEdgeMode(m_edgeDuration);
     if (m_extTrig) {
         g_tx->setTrigConfig(EXT_TRIGGER);
     } else if (getTrigCnt() > 0) {
@@ -120,7 +126,7 @@ void Rd53bTriggerLoop::init() {
         g_tx->setTrigConfig(INT_TIME);
     }
     if (m_noInject) {
-        setNoInject(m_maxTrigWordLength);
+        setNoInject();
     }
     g_tx->setTrigFreq(m_trigFreq);
     g_tx->setTrigCnt(getTrigCnt());

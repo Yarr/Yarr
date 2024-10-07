@@ -342,12 +342,17 @@ void FelixTxCore::setTrigWordLength(uint32_t length) {
 // For FELIX, max is 32x16bit commands
 // YARR writes 32 bit commands so Trigger Loop needs to be instructed to 
 // write 16x32bit commands that can be broken apart for FELIX
-uint32_t FelixTxCore::getMaxTrigWordLength(){
+// for firware version ITK PIXEL regmap 5.0, build date 14-10-2023
+int FelixTxCore::getMaxTrigWordLength(){
   return 16;
 }
 
 void FelixTxCore::setTrigWord(uint32_t *words, uint32_t size) {
   m_trigWords.clear();
+  int maxLength = getMaxTrigWordLength
+  if (size > maxLength){
+    ftlog->error("Size of {} is greater than the maximum allowed length {}", size, maxLength);
+  }
 
   for (uint32_t i=0; i<size; i++) {
     m_trigWords.push_back(words[i]);
