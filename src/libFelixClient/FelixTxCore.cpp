@@ -349,7 +349,7 @@ int FelixTxCore::getMaxTrigWordLength(){
 
 void FelixTxCore::setTrigWord(uint32_t *words, uint32_t size) {
   m_trigWords.clear();
-  int maxLength = getMaxTrigWordLength
+  int maxLength = getMaxTrigWordLength();
   if (size > maxLength){
     ftlog->error("Size of {} is greater than the maximum allowed length {}", size, maxLength);
   }
