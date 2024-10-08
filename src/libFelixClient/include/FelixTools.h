@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <bitset>
 #include <atomic>
+#include <tuple>
 
 namespace FelixTools {
 
@@ -66,7 +67,7 @@ namespace FelixTools {
     return elink & BLOCK_EPATH_MASK_LPGBT;
   }
 
-  std::tuple<uint16_t,uint8_t,uint8_t> linkInfo_from_chn(uint32_t chn) {
+  inline std::tuple<uint16_t,uint8_t,uint8_t> linkInfo_from_chn(uint32_t chn) {
     uint16_t linkId = link_from_chn(chn);
     uint8_t elink = elink_from_chn(chn);
     uint8_t egroup = egroup_from_elink(elink);
@@ -88,7 +89,7 @@ namespace FelixTools {
     return (fid >> FELIXID_ELINK_SHIFT) & ((1<<FELIXID_ELINK_NBITS) - 1);
   }
 
-  std::tuple<uint16_t,uint8_t,uint8_t,bool> linkInfo_from_fid(FelixID_t fid) {
+  inline std::tuple<uint16_t,uint8_t,uint8_t,bool> linkInfo_from_fid(FelixID_t fid) {
     uint16_t linkId = link_from_fid(fid);
     uint8_t elink = elink_from_fid(fid);
     uint8_t egroup = egroup_from_elink(elink);
