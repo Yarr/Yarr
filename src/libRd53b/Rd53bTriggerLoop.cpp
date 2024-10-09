@@ -81,8 +81,9 @@ void Rd53bTriggerLoop::setTrigDelay(uint32_t delay, uint32_t cal_edge_delay=0) {
     
     // Rearm
     std::array<uint16_t, 3> armWords = Rd53b::genCal(16, 1, 0, 0, 0, 0);
-    m_trigWord[1] = 0xAAAA0000 | armWords[0];
-    m_trigWord[0] = ((uint32_t)armWords[1]<<16) | armWords[2];
+    m_trigWord[2] = 0xAAAA0000 | armWords[0];
+    m_trigWord[1] = ((uint32_t)armWords[1]<<16) | armWords[2];
+    m_trigWord[0] = 0x817E817E; // SYNC command
     
     logger->debug("Trigger buffer set to:");
     for (unsigned i=0; i<m_trigWordLength; i++) {
