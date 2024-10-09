@@ -63,7 +63,7 @@ void Rd53bTriggerLoop::setTrigDelay(uint32_t delay, uint32_t cal_edge_delay=0) {
 
         for (unsigned i=0; i<(m_trigMultiplier/8)+1; i++) {
             int maxDelay = (m_maxTrigWordLength+2-4-i)*8;
-            int minDelay = m_maxTrigWordLength-2;
+            int minDelay = m_maxTrigWordLength-3; // first command is sync, next two commands are the arm words (see below) so min is above 3
             // check to make sure given delay value is valid for max word length and trig multiplier
             if (delay > minDelay && delay < maxDelay) {
                 uint32_t bc1 = (trigStream >> (2*i*4)) & 0xF;
@@ -81,12 +81,11 @@ void Rd53bTriggerLoop::setTrigDelay(uint32_t delay, uint32_t cal_edge_delay=0) {
     
     // Rearm
     std::array<uint16_t, 3> armWords = Rd53b::genCal(16, 1, 0, 0, 0, 0);
-    m_trigWord[2] = 0xAAAA0000 | armWords[0];
+    m_trigWord[2] = 0x817E0000 | armWords[0]; // 0x817E is a SYNC commandß
     m_trigWord[1] = ((uint32_t)armWords[1]<<16) | armWords[2];
-    m_trigWord[0] = 0x817E817E; // SYNC command
     
     logger->debug("Trigger buffer set to:");
-    for (unsigned i=0; i<m_trigWordLength; i++) {
+    for (unsigned i=0; i<m_maxTrigWordLength+1; i++) {
       logger->debug("[{}: 0x{:x}", m_maxTrigWordLength-i, m_trigWord[m_maxTrigWordLength-i]);
     }
 }
