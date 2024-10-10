@@ -210,7 +210,10 @@ int main(int argc, char* argv[]) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
                 hw->setRxEnable(cfg->getRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-                fe->confAdc(monitorV, meas_curr);
+                if (fe->confAdc(monitorV, meas_curr) != yarrSuccess) {
+                    std::cerr << "ERROR: failed to read register for " << current_chip_name << "!" << std::endl;
+                    error_cnt++;
+                }
                 uint16_t res = 0;
                 if (fe->readNamedRegister("MonitoringDataAdc", res) != yarrSuccess) {
                     std::cerr << "ERROR: failed to read register for " << current_chip_name << "!" << std::endl;
@@ -227,7 +230,10 @@ int main(int argc, char* argv[]) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
                 hw->setRxEnable(cfg->getRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-                fe->confAdc(monitorV, meas_curr);
+                if (fe->confAdc(monitorV, meas_curr) != yarrSuccess) {
+                    std::cerr << "ERROR: failed to read register for " << current_chip_name << "!" << std::endl;
+                    error_cnt++;
+                }
                 uint16_t res = 0;
                 if (fe->readNamedRegister("MonitoringDataAdc", res) != yarrSuccess) {
                     std::cerr << "ERROR: failed to read register for " << current_chip_name << "!" << std::endl;
