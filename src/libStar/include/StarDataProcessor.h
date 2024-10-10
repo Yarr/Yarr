@@ -9,9 +9,7 @@
 // # Comment:
 // ################################
 
-#include <vector>
 #include <array>
-#include <map>
 #include <thread>
 
 #include "FeDataProcessor.h"
