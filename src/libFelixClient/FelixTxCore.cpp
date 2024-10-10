@@ -22,10 +22,18 @@ FelixTxCore::~FelixTxCore()
 // Channel control
 void FelixTxCore::enableChannel(FelixID_t fid) {
   ftlog->debug("Enable Tx link: 0x{:x}", fid);
-  if (checkChannel(fid)) {
-    m_enables[fid] = true;
-    m_fifo[fid];
+
+  if (m_fifo.find(fid) == m_fifo.end()) { // new fid
+    // check communication only if new fid
+    if (checkChannel(fid)) {
+      m_fifo[fid]; // create buffer
+    } else {
+      ftlog->error("Failed to enable Tx link: 0x{:x}", fid);
+      return;
+    }
   }
+
+  m_enables[fid] = true;
 }
 
 void FelixTxCore::disableChannel(FelixID_t fid) {
