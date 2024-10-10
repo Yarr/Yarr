@@ -55,7 +55,7 @@ Itkpixv2DataProcessor::Itkpixv2DataProcessor()
     _unfinishedStreamErrorCnt = 0;
     _unfinishedStreamEOSErrorCnt = 0;
     _corruptStreamErrorCnt = 0;
-    _outOfRangeBitsCnt = 0;
+    _splitEventsCnt = 0;
 
     // Data stream components
     _ccol = 0;
@@ -129,7 +129,7 @@ void Itkpixv2DataProcessor::process()
     logger->info("[{}]   Unfinished streams (no EOS): {}", m_feCfg->getName(), _unfinishedStreamErrorCnt);
     logger->info("[{}]   Unfinished streams (w/ EOS): {}", m_feCfg->getName(), _unfinishedStreamEOSErrorCnt);
     logger->info("[{}]               Corrupt streams: {}", m_feCfg->getName(), _corruptStreamErrorCnt);
-    logger->info("[{}]     Out-of-range bit requests: {}", m_feCfg->getName(), _outOfRangeBitsCnt);
+    logger->info("[{}]            Split events count: {}", m_feCfg->getName(), _splitEventsCnt);
 }
 
 // Method for retrieving bits from data
@@ -422,6 +422,7 @@ void Itkpixv2DataProcessor::process_core()
                                 // logger->warn("[{}] No header in data fragment!", _channel);
                                 _curOut->newEvent(_tag, _l1id, _bcid);
                                 _events++;
+                                _splitEventsCnt++;
                             }
 
                             // Reverse enginner the pixel address using mask staging

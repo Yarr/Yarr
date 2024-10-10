@@ -48,6 +48,7 @@ public:
     unsigned _unfinishedStreamErrorCnt; // Number of "expect unfinished stream while ES=1" (without check EOS on)
     unsigned _expectNewStreamErrorCnt; // Number of "expect new stream while NS=0"
     unsigned _outOfRangeBitsCnt; // Number of times we requested past EOS for hitmap
+    unsigned _splitEventsCnt;
 
     void setCompressedHitmap(bool flag) { _isCompressedHitmap = flag; }
     void setDropToT(bool flag){_dropToT = flag;}

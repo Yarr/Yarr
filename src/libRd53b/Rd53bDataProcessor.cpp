@@ -52,7 +52,7 @@ Rd53bDataProcessor::Rd53bDataProcessor()
     // Set error counters to zero
     _unfinishedStreamErrorCnt = 0;
     _expectNewStreamErrorCnt = 0;
-    _outOfRangeBitsCnt = 0;
+    _splitEventsCnt = 0;
 
     // Data stream components
     _ccol = 0;
@@ -124,7 +124,7 @@ void Rd53bDataProcessor::process()
     logger->info("[{}] Finished raw data processor thread", m_feCfg->getName());
     logger->info("[{}]   Unfinished streams (no EOS): {}", m_feCfg->getName(), _unfinishedStreamErrorCnt);
     logger->info("[{}]   Expect new stream with NS=0: {}", m_feCfg->getName(), _expectNewStreamErrorCnt);
-    logger->info("[{}]     Out-of-range bit requests: {}", m_feCfg->getName(), _outOfRangeBitsCnt);
+    logger->info("[{}]            Split events count: {}", m_feCfg->getName(), _splitEventsCnt);
 }
 
 // Method for retrieving bits from data
@@ -422,6 +422,7 @@ void Rd53bDataProcessor::process_core()
                                 // logger->warn("[{}] No header in data fragment!", _channel);
                                 _curOut->newEvent(_tag, _l1id, _bcid);
                                 _events++;
+                                _splitEventsCnt++;
                             }
 
                             // Reverse enginner the pixel address using mask staging

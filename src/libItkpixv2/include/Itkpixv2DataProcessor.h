@@ -50,7 +50,7 @@ public:
     unsigned _unfinishedStreamErrorCnt; // Number of "expect unfinished stream while ES=1" (without check EOS on)
     unsigned _unfinishedStreamEOSErrorCnt; // Number of "expect unfinished stream while ES=1" (with check EOS on)
     unsigned _corruptStreamErrorCnt; // Number of ES=0, but CCOL=0 instances (implies corrupted stream)
-    unsigned _outOfRangeBitsCnt; // Number of times we requested past EOS for hitmap
+    unsigned _splitEventsCnt; // Number of times we add a hit to a new event with the same tag as a previous event
 
     void setCompressedHitmap(bool flag) { _isCompressedHitmap = flag; }
     void setDropToT(bool flag){_dropToT = flag;}
