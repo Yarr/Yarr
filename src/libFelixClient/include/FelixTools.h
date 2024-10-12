@@ -8,6 +8,23 @@
 
 namespace FelixTools {
 
+  //Enum for declaring various FELIX firmware flavors as defined in section 2.1 of https://edms.cern.ch/ui/file/2681548/1/FELIX_Phase2_firmware_specs.pdf
+  //Firmware flavor determined by "FIRMWARE_MODE" FELIX register
+  enum FELIX_FW_MODE {
+    GBT_mode = 0,
+    FULL_mode = 1,
+    LTDB_mode = 2,
+    FEI4_mode = 3,
+    ITK_Pixel = 4,
+    ITK_Strip = 5,
+    FELIG = 6,
+    FULL_mode_emulator = 7,
+    FELIX_MROD_mode = 8,
+    lpGBT_mode = 9,
+    Interlaken_25G = 10,
+    Unknown = -1
+  };
+
   using FelixID_t = uint64_t;
 
   // Take from https://gitlab.cern.ch/atlas-tdaq-felix/ftools/-/blob/master/src/flxdefs.h
