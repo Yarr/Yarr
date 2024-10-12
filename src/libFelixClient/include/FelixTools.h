@@ -84,15 +84,16 @@ namespace FelixTools {
     return elink & BLOCK_EPATH_MASK_LPGBT;
   }
 
-  inline std::tuple<uint16_t,uint8_t,uint8_t> linkInfo_from_chn(uint32_t chn) {
-    uint16_t linkId = link_from_chn(chn);
-    uint8_t elink = elink_from_chn(chn);
-    uint8_t egroup = egroup_from_elink(elink);
-    uint8_t epath = epath_from_elink(elink);
+  // Special cases for ITk Strips LCB encoder e-links
+  // FELIX Phase 2 FW spec (v1.037)
+  // Section 8.5.9 ITK STRIPS LCB ENCODER Table 8.31
+  // Subject to change in the future FELIX firmware
+  inline uint8_t egroup_from_elink_lcb(uint8_t elink) { return elink / 5;}
+  inline uint8_t epath_from_elink_lcb(uint8_t elink) { return elink % 5;}
+  /// Get LCB config, command, and trickle channel numbers
+  std::tuple<uint32_t,uint32_t,uint32_t> lcbChns_from_chn(uint32_t chn);
 
-    // return linkId, egroup, epath
-    return std::make_tuple(linkId, egroup, epath);
-  }
+  std::tuple<uint16_t,uint8_t,uint8_t> linkInfo_from_chn(uint32_t chn, bool toflx, FELIX_FW_MODE fwmode);
 
   inline uint16_t link_from_fid(FelixID_t fid) {
     return (fid >> FELIXID_LINKID_SHIFT) & ((1<<FELIXID_LINKID_NBITS) - 1);
@@ -106,16 +107,7 @@ namespace FelixTools {
     return (fid >> FELIXID_ELINK_SHIFT) & ((1<<FELIXID_ELINK_NBITS) - 1);
   }
 
-  inline std::tuple<uint16_t,uint8_t,uint8_t,bool> linkInfo_from_fid(FelixID_t fid) {
-    uint16_t linkId = link_from_fid(fid);
-    uint8_t elink = elink_from_fid(fid);
-    uint8_t egroup = egroup_from_elink(elink);
-    uint8_t epath = epath_from_elink(elink);
-    bool toflx = toflx_from_fid(fid);
-
-    // return linkId, egroup, epath, toflx
-    return std::make_tuple(linkId, egroup, epath, toflx);
-  }
+  std::tuple<uint16_t,uint8_t,uint8_t,bool> linkInfo_from_fid(FelixID_t fid, FELIX_FW_MODE fwmode);
 
   // FELIX register names for elink control
   std::string getICEnableRegName(uint16_t linkId, bool toflx);

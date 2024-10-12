@@ -57,6 +57,43 @@ uint64_t FelixTools::get_fid(
   return fid.to_ullong();
 }
 
+std::tuple<uint16_t,uint8_t,uint8_t> FelixTools::linkInfo_from_chn(uint32_t chn, bool toflx, FelixTools::FELIX_FW_MODE fwmode) {
+  uint16_t linkId = FelixTools::link_from_chn(chn);
+  uint8_t elink = FelixTools::elink_from_chn(chn);
+
+  // A special case for Strip LCB encoder
+  bool isLCB = toflx and fwmode == FelixTools::FELIX_FW_MODE::ITK_Strip;
+  uint8_t egroup = isLCB ? FelixTools::egroup_from_elink_lcb(elink) : FelixTools::egroup_from_elink(elink);
+  uint8_t epath = isLCB ? FelixTools::epath_from_elink_lcb(elink) : FelixTools::epath_from_elink(elink);
+
+  // return linkId, egroup, epath
+  return std::make_tuple(linkId, egroup, epath);
+}
+
+std::tuple<uint16_t,uint8_t,uint8_t,bool> FelixTools::linkInfo_from_fid(FelixTools::FelixID_t fid, FelixTools::FELIX_FW_MODE fwmode) {
+  uint16_t linkId = FelixTools::link_from_fid(fid);
+  uint8_t elink = FelixTools::elink_from_fid(fid);
+  bool toflx = FelixTools::toflx_from_fid(fid);
+
+  // Special case for Strip LCB encoder
+  bool isLCB = toflx and fwmode == FelixTools::FELIX_FW_MODE::ITK_Strip;
+  uint8_t egroup = isLCB ? FelixTools::egroup_from_elink_lcb(elink) : FelixTools::egroup_from_elink(elink);
+  uint8_t epath = isLCB ? FelixTools::epath_from_elink_lcb(elink) : FelixTools::epath_from_elink(elink);
+
+  // return linkId, egroup, epath, toflx
+  return std::make_tuple(linkId, egroup, epath, toflx);
+}
+
+std::tuple<uint32_t,uint32_t,uint32_t> FelixTools::lcbChns_from_chn(uint32_t chn) {
+  uint32_t linkId = link_from_chn(chn);
+  uint32_t elink = elink_from_chn(chn);
+  uint32_t segment = egroup_from_elink_lcb(elink);
+  uint32_t lcb_command = (linkId << BLOCK_LNK_SHIFT) + segment * 5 + 1;
+  uint32_t lcb_config = lcb_command - 1;
+  uint32_t lcb_trickle = lcb_command + 1;
+  return std::make_tuple(lcb_config, lcb_command, lcb_trickle);
+}
+
 std::string FelixTools::getICEnableRegName(uint16_t linkId, bool toflx) {
   std::stringstream regName;
   regName << "MINI_EGROUP_";

@@ -199,7 +199,7 @@ bool FelixController::getECEnable(uint16_t linkId, bool toflx) {
 }
 
 bool FelixController::getELinkEnable(unsigned chn, bool toflx) {
-  auto [linkId, egroup, epath] = FelixTools::linkInfo_from_chn(chn);
+  auto [linkId, egroup, epath] = FelixTools::linkInfo_from_chn(chn, toflx, fwMode());
 
   std::string regName = FelixTools::getELinkEnableRegName(linkId, egroup, toflx);
   uint64_t regValue;
@@ -214,7 +214,7 @@ bool FelixController::getELinkEnable(unsigned chn, bool toflx) {
 }
 
 bool FelixController::getELinkEnable(uint64_t fid) {
-  auto [linkId, egroup, epath, toflx] = FelixTools::linkInfo_from_fid(fid);
+  auto [linkId, egroup, epath, toflx] = FelixTools::linkInfo_from_fid(fid, fwMode());
 
   std::string regName = FelixTools::getELinkEnableRegName(linkId, egroup, toflx);
   uint64_t regValue;
@@ -232,7 +232,7 @@ bool FelixController::getELinkEnablesAll(const std::vector<unsigned>& chns, bool
   std::map<std::string, uint8_t> enableRegMask;
 
   for (const auto& chn : chns) {
-    auto [linkId, egroup, epath] = FelixTools::linkInfo_from_chn(chn);
+    auto [linkId, egroup, epath] = FelixTools::linkInfo_from_chn(chn, toflx, fwMode());
     updateEnableMap(enableRegMask, linkId, egroup, epath, toflx);
   }
 
@@ -243,7 +243,7 @@ bool FelixController::getELinkEnablesAll(const std::vector<uint64_t>& fids) {
   std::map<std::string, uint8_t> enableRegMask;
 
   for (const auto& fid : fids) {
-    auto [linkId, egroup, epath, toflx] = FelixTools::linkInfo_from_fid(fid);
+    auto [linkId, egroup, epath, toflx] = FelixTools::linkInfo_from_fid(fid, fwMode());
     updateEnableMap(enableRegMask, linkId, egroup, epath, toflx);
   }
 
@@ -263,12 +263,12 @@ bool FelixController::setECEnable(uint16_t linkId, bool toflx, bool enable) {
 }
 
 bool FelixController::setELinkEnable(unsigned chn, bool toflx, bool enable) {
-  auto [linkId, egroup, epath] = FelixTools::linkInfo_from_chn(chn);
+  auto [linkId, egroup, epath] = FelixTools::linkInfo_from_chn(chn, toflx, fwMode());
   return setELinkEnableImpl(enable, linkId, egroup, epath, toflx);
 }
 
 bool FelixController::setELinkEnable(uint64_t fid, bool enable) {
-  auto [linkId, egroup, epath, toflx] = FelixTools::linkInfo_from_fid(fid);
+  auto [linkId, egroup, epath, toflx] = FelixTools::linkInfo_from_fid(fid, fwMode());
   return setELinkEnableImpl(enable, linkId, egroup, epath, toflx);
 }
 
@@ -283,7 +283,7 @@ bool FelixController::setELinkEnables(const std::vector<unsigned> chns, bool tof
   std::map<std::string, uint8_t> enableRegValue;
 
   for (unsigned i=0; i<chns.size(); ++i) {
-    auto [linkId, egroup, epath] = FelixTools::linkInfo_from_chn(chns[i]);
+    auto [linkId, egroup, epath] = FelixTools::linkInfo_from_chn(chns[i], toflx, fwMode());
     updateEnableMap(enableRegMask, linkId, egroup, epath, toflx);
     updateEnableMap(enableRegValue, linkId, egroup, epath, toflx, enables[i]);
   }
@@ -307,7 +307,7 @@ bool FelixController::setELinkEnables(const std::vector<uint64_t> fids, const st
   std::map<std::string, uint8_t> enableRegValue;
 
   for (unsigned i=0; i<fids.size(); ++i) {
-    auto [linkId, egroup, epath, toflx] = FelixTools::linkInfo_from_fid(fids[i]);
+    auto [linkId, egroup, epath, toflx] = FelixTools::linkInfo_from_fid(fids[i], fwMode());
     updateEnableMap(enableRegMask, linkId, egroup, epath, toflx);
     updateEnableMap(enableRegValue, linkId, egroup, epath, toflx, enables[i]);
   }
