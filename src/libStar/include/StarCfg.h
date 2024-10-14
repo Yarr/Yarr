@@ -97,14 +97,49 @@ class StarCfg : public FrontEndCfg {
   /// Set value of named register field (either ABC or HCC)
   void setSubRegisterValue(int chipIndex, std::string subRegName, uint32_t value);
 
+  /// Set value of HCC register field
+  void setHCCSubRegisterValue(HCCStarSubRegister subReg, uint32_t value) {
+      m_hcc.setSubRegisterValue(subReg, value);
+  }
+
+  /// Set value of ABC register field
+  void setABCSubRegisterValue(int chipIndex, ABCStarSubRegister subReg, uint32_t value) {
+      if (isAbcForInputChannel(chipIndex-1))
+          abcFromIndex(chipIndex).setSubRegisterValue(subReg, value);
+  }
+
   /// Get value of named register field (either ABC or HCC)
   uint32_t getSubRegisterValue(int chipIndex, std::string subRegName) const;
+
+  /// Get value of HCC register field
+  uint32_t getHCCSubRegisterValue(HCCStarSubRegister subReg) const {
+    return m_hcc.getSubRegisterValue(subReg);
+  }
+
+  /// Get value of ABC register field
+  uint32_t getABCSubRegisterValue(int chipIndex, ABCStarSubRegister subReg) const {
+    if (isAbcForInputChannel(chipIndex-1))
+        return abcFromIndex(chipIndex).getSubRegisterValue(subReg);
+    return 0;
+  }
 
   /// Get register address for named register field (either ABC or HCC)
   int getSubRegisterParentAddr(int chipIndex, std::string subRegName);
 
   /// Get register value for named register field (either ABC or HCC)
   uint32_t getSubRegisterParentValue(int chipIndex, std::string subRegName);
+
+  /// Get register address for HCC register field
+  int getHCCSubRegisterParentAddr(HCCStarSubRegister subReg);
+
+  /// Get register address for ABC register field (should be input channel?)
+  int getABCSubRegisterParentAddr(int chipIndex, ABCStarSubRegister subReg);
+
+  /// Get register value for named register field (HCC)
+  uint32_t getHCCSubRegisterParentValue(HCCStarSubRegister subReg);
+
+  /// Get register value for named register field
+  uint32_t getABCSubRegisterParentValue(int chipIndex, ABCStarSubRegister subReg);
 
   void maskPixel(unsigned col, unsigned row, bool doAltMask = false) override {}
   unsigned getPixelEn(unsigned col, unsigned row, bool doAltMask = false) override {

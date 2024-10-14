@@ -70,6 +70,10 @@ class AbcStarRegInfo {
     return subRegByName(subRegName)->getRegAddress();
   }
 
+  int getSubRegisterParentAddr(ABCStarSubRegister subReg) const {
+    return subRegFromEnum(subReg)->getRegAddress();
+  }
+
   /// The sub-reg map is accessible, but is const so can't be updated
   const std::map<ABCStarSubRegister, SubInfoPtr> subRegMap() const {
     return abcSubRegisterMap_all;
@@ -123,9 +127,23 @@ class AbcCfg {
             reg.getSubRegister(info).updateValue(value);
         }
 
+        /// Set the value of a register field for this ABC
+        void setSubRegisterValue(ABCStarSubRegister subReg, uint32_t value) {
+            auto info = m_info->subRegFromEnum(subReg);
+            auto &reg = getRegister(info->m_regAddress);
+            reg.getSubRegister(info).updateValue(value);
+        }
+
         /// Get the value of a register field for this ABC
         uint32_t getSubRegisterValue(std::string subRegName) const {
             auto info = m_info->subRegByName(subRegName);
+            auto &reg = getRegister(info->m_regAddress);
+            return reg.getSubRegister(info).getValue();
+        }
+
+        /// Get the value of a register field for this ABC
+        uint32_t getSubRegisterValue(ABCStarSubRegister subReg) const {
+            auto info = m_info->subRegFromEnum(subReg);
             auto &reg = getRegister(info->m_regAddress);
             return reg.getSubRegister(info).getValue();
         }
@@ -135,9 +153,20 @@ class AbcCfg {
             return m_info->getSubRegisterParentAddr(subRegName);
         }
 
+        /// Lookup the register address for a register field
+        int getSubRegisterParentAddr(ABCStarSubRegister subReg) const {
+            return m_info->getSubRegisterParentAddr(subReg);
+        }
+
         /// Find the full register contents for a named register field
         uint32_t getSubRegisterParentValue(std::string subRegName) const {
             auto info = m_info->subRegByName(subRegName);
+            return getRegister(info->m_regAddress).getValue();
+        }
+
+        /// Find the full register contents for a register field
+        uint32_t getSubRegisterParentValue(ABCStarSubRegister subReg) const {
+            auto info = m_info->subRegFromEnum(subReg);
             return getRegister(info->m_regAddress).getValue();
         }
 

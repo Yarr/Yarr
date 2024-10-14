@@ -117,9 +117,23 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
                                 getHCCchipID()) );
   }
 
+  /// Set HCC register field and write to front end
+  void setAndWriteHCCSubRegister(HCCStarSubRegister subRegEnum, uint32_t value){
+    m_hcc.setSubRegisterValue(subRegEnum, value);
+    sendCmd( write_hcc_register(hcc().getSubRegisterParentAddr(subRegEnum),
+                                hcc().getSubRegisterParentValue(subRegEnum),
+                                getHCCchipID()) );
+  }
+
   /// Send command to read named HCC register field
   void readHCCSubRegister(std::string subRegName){
     sendCmd(read_hcc_register(hcc().getSubRegisterParentAddr(subRegName),
+                              getHCCchipID()));
+  }
+
+  /// Send command to read HCC register field
+  void readHCCSubRegister(HCCStarSubRegister subRegEnum){
+    sendCmd(read_hcc_register(hcc().getSubRegisterParentAddr(subRegEnum),
                               getHCCchipID()));
   }
 
@@ -141,9 +155,35 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
                 }
   }
 
+  /**
+     Set ABC register field and write to front end.
+
+     @param subReg Register field (enum).
+     @param value Value to write to field.
+     @param chipID Communications ID of ABC to write to (15 for broadcast).
+  */
+  void setAndWriteABCSubRegister(ABCStarSubRegister subReg, uint32_t value, int32_t chipID){
+      if (chipID != 15) {
+          //User specified a chipID, no broadcast
+          setAndWriteABCSubRegister(subReg,
+                                    abcFromChipID(chipID), value);
+      } else {
+          //User wants to broadcast, but we want to set the cfg. Iterate through ABCs.
+          eachAbc([&] (auto &abc)->void
+              {
+                  setAndWriteABCSubRegister(subReg, abc, value);
+              });
+      }
+  }
+
   /// Reads value of subregister subRegName for chip with ID chipID
   void readABCSubRegister(std::string subRegName, int32_t chipID){
     readABCSubRegister(subRegName, abcFromChipID(chipID));
+  }
+
+  /// Reads value of subregister for chip with ID chipID
+  void readABCSubRegister(ABCStarSubRegister subReg, int32_t chipID){
+     readABCSubRegister(subReg, abcFromChipID(chipID));
   }
 
  private:
@@ -154,8 +194,20 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
                                 getHCCchipID(), cfg.getABCchipID()) );
   }
 
+  void setAndWriteABCSubRegister(ABCStarSubRegister subReg, AbcCfg &cfg, uint32_t value) {
+    cfg.setSubRegisterValue(subReg, value);
+    sendCmd( write_abc_register(cfg.getSubRegisterParentAddr(subReg),
+                                cfg.getSubRegisterParentValue(subReg),
+                              getHCCchipID(), cfg.getABCchipID()));
+  }
+
   void readABCSubRegister(std::string subRegName, AbcCfg &cfg) {
     sendCmd(read_abc_register(cfg.getSubRegisterParentAddr(subRegName),
+                              getHCCchipID(), cfg.getABCchipID()));
+  }
+
+  void readABCSubRegister(ABCStarSubRegister subReg, AbcCfg &cfg) {
+    sendCmd(read_abc_register(cfg.getSubRegisterParentAddr(subReg),
                               getHCCchipID(), cfg.getABCchipID()));
   }
 

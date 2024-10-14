@@ -146,6 +146,19 @@ int StarCfg::getSubRegisterParentAddr(int chipIndex, std::string subRegName)
     return 0;
 }
 
+int StarCfg::getHCCSubRegisterParentAddr(HCCStarSubRegister subReg)
+{
+    return m_hcc.getSubRegisterParentAddr(subReg);
+}
+
+int StarCfg::getABCSubRegisterParentAddr(int chipIndex, ABCStarSubRegister subReg)
+{
+    if (isAbcForInputChannel(chipIndex-1)) {
+        return m_abc_info->getSubRegisterParentAddr(subReg);
+    }
+    return 0;
+}
+
 /// Get register value for named register field (either ABC or HCC)
 uint32_t StarCfg::getSubRegisterParentValue(int chipIndex, std::string subRegName)
 {
@@ -165,6 +178,21 @@ uint32_t StarCfg::getSubRegisterParentValue(int chipIndex, std::string subRegNam
         } else {
             std::cerr << " --> Error: Could not find ABC register \""<< subRegName << "\"" << std::endl;
         }
+    }
+    return 0;
+}
+
+uint32_t StarCfg::getHCCSubRegisterParentValue(HCCStarSubRegister subReg)
+{
+    return m_hcc.getSubRegisterParentValue(subReg);
+}
+
+uint32_t StarCfg::getABCSubRegisterParentValue(int chipIndex, ABCStarSubRegister subReg)
+{
+    if (isAbcForInputChannel(chipIndex-1)) {
+        return abcFromIndex(chipIndex).getSubRegisterParentValue(subReg);
+    } else {
+      std::cerr << " --> No input channel for index " << chipIndex << "\n";
     }
     return 0;
 }
