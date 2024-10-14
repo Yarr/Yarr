@@ -211,7 +211,7 @@ int main(int argc, char* argv[]) {
                 hw->setRxEnable(cfg->getRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
                 if (fe->confAdc(monitorV, meas_curr) != yarrSuccess) {
-                    std::cerr << "ERROR: failed to read register for " << current_chip_name << "!" << std::endl;
+                    std::cerr << "ERROR: failed to configure ADC for " << current_chip_name << "!" << std::endl;
                     error_cnt++;
                 }
                 uint16_t res = 0;
@@ -231,7 +231,7 @@ int main(int argc, char* argv[]) {
                 hw->setRxEnable(cfg->getRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
                 if (fe->confAdc(monitorV, meas_curr) != yarrSuccess) {
-                    std::cerr << "ERROR: failed to read register for " << current_chip_name << "!" << std::endl;
+                    std::cerr << "ERROR: failed to configure ADC for " << current_chip_name << "!" << std::endl;
                     error_cnt++;
                 }
                 uint16_t res = 0;
