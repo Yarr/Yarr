@@ -47,10 +47,6 @@ void Rd53bTriggerLoop::setTrigDelay(uint32_t delay, uint32_t cal_edge_delay=0) {
     m_trigWord[m_maxTrigWordLength - 1] = 0xAAAA0000 | calWords[0];
     m_trigWord[m_maxTrigWordLength - 2] = ((uint32_t)calWords[1]<<16) | calWords[2];
     
-    //std::array<uint16_t, 4> wrReg = Rd53bCmd::genWrReg(16, 53, 0x0);
-    //m_trigWord[29] = (((uint32_t)wrReg[0] << 16) | wrReg[1]);
-    //m_trigWord[28] = (((uint32_t)wrReg[2] << 16) | wrReg[3]);
-    
 	// Special case: if trigger multiplier = 0, no trigger should be sent in command line
     if(m_trigMultiplier != 0){
         uint64_t trigStream = 0;
@@ -61,8 +57,9 @@ void Rd53bTriggerLoop::setTrigDelay(uint32_t delay, uint32_t cal_edge_delay=0) {
             trigStream |= (one << i);
         trigStream = trigStream << delay%8;
 
+        // The delay is in units of bunch crossings, there are four bunch crossings per 16 bit trigger command
         for (unsigned i=0; i<(m_trigMultiplier/8)+1; i++) {
-            int maxDelay = (m_maxTrigWordLength+2-4-i)*8;
+            int maxDelay = (m_maxTrigWordLength-4-i)*8;
             int minDelay = m_maxTrigWordLength-2; // first two commands are rearming commands
             // check to make sure given delay value is valid for max word length and trig multiplier
             if (delay > minDelay && delay < maxDelay) {
@@ -74,10 +71,6 @@ void Rd53bTriggerLoop::setTrigDelay(uint32_t delay, uint32_t cal_edge_delay=0) {
             }
         }
     }
-
-    //std::array<uint16_t, 4> wrReg2 = Rd53bCmd::genWrReg(16, 53, 0x80);
-    //m_trigWord[3] = (((uint32_t)wrReg2[0] << 16) | wrReg2[1]);
-    //m_trigWord[2] = (((uint32_t)wrReg2[2] << 16) | wrReg2[3]);
     
     // Rearm
     std::array<uint16_t, 3> armWords = Rd53b::genCal(16, 1, 0, 0, 0, 0);
@@ -104,7 +97,6 @@ void Rd53bTriggerLoop::setNoInject() {
     m_trigWord[m_maxTrigWordLength-2] = 0xAAAAAAAA;
     m_trigWord[1] = 0xAAAAAAAA;
     m_trigWord[0] = 0xAAAAAAAA;
-
 }
 
 void Rd53bTriggerLoop::init() {
@@ -113,7 +105,7 @@ void Rd53bTriggerLoop::init() {
 
     m_maxTrigWordLength = g_tx->getMaxTrigWordLength();
     if (m_maxTrigWordLength < 4) {
-        logger->error("Maximum Trigger word length is too small, must be greater than 4; current value {}",m_maxTrigWordLength);
+        logger->error("The maximum Trigger word length supported by this controller is too small to be supported by thish chip, must be greater than 4; current value {}",m_maxTrigWordLength);
     }
     
     this->setTrigDelay(m_trigDelay, m_calEdgeDelay);
