@@ -138,7 +138,7 @@ namespace StarPreset {
       }
 
       // Set HCC's IC_Enable accordingly
-      feCfg.hcc().setSubRegisterValue("ICENABLE", maskHccIn);
+      feCfg.hcc().setSubRegisterValue(HCCStarSubRegister::ICENABLE, maskHccIn);
 
       json chipCfg;
       feCfg.writeConfig(chipCfg);
@@ -158,7 +158,7 @@ namespace StarPreset {
     feCfg.clearABCchipIDs();
     feCfg.addABCchipID(0, 0);
     // And set HCC's IC_Enable accordingly
-    feCfg.hcc().setSubRegisterValue("ICENABLE", 0x1);
+    feCfg.hcc().setSubRegisterValue(HCCStarSubRegister::ICENABLE, 0x1);
 
     // Config for one HCCStar + one ABCStar
     json cfg;

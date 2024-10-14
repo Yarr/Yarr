@@ -478,14 +478,14 @@ void StarChipsetEmu::logicReset() {
   hpr_clkcnt = HPRPERIOD/2;
   std::fill(hpr_sent.begin(), hpr_sent.end(), false);
 
-  (m_starCfg->hcc()).setSubRegisterValue("TESTHPR", 0);
-  (m_starCfg->hcc()).setSubRegisterValue("STOPHPR", 0);
-  (m_starCfg->hcc()).setSubRegisterValue("MASKHPR", 0);
+  (m_starCfg->hcc()).setSubRegisterValue(HCCStarSubRegister::TESTHPR, 0);
+  (m_starCfg->hcc()).setSubRegisterValue(HCCStarSubRegister::STOPHPR, 0);
+  (m_starCfg->hcc()).setSubRegisterValue(HCCStarSubRegister::MASKHPR, 0);
 
   m_starCfg->eachAbc([&](auto &abc) {
-      abc.setSubRegisterValue("TESTHPR", 0);
-      abc.setSubRegisterValue("STOPHPR", 0);
-      abc.setSubRegisterValue("MASKHPR", 0);
+      abc.setSubRegisterValue(ABCStarSubRegister::TESTHPR, 0);
+      abc.setSubRegisterValue(ABCStarSubRegister::STOPHPR, 0);
+      abc.setSubRegisterValue(ABCStarSubRegister::MASKHPR, 0);
     });
 
   clearFEData();
@@ -558,9 +558,9 @@ void StarChipsetEmu::doHPR_HCC(LCB::Frame frame) {
   setHCCStarHPR(frame);
 
   //// HPR control logic
-  bool testHPR = m_starCfg->getSubRegisterValue(0, "TESTHPR");
-  bool stopHPR = m_starCfg->getSubRegisterValue(0, "STOPHPR");
-  bool maskHPR = m_starCfg->getSubRegisterValue(0, "MASKHPR");
+  bool testHPR = m_starCfg->getHCCSubRegisterValue(HCCStarSubRegister::TESTHPR);
+  bool stopHPR = m_starCfg->getHCCSubRegisterValue(HCCStarSubRegister::STOPHPR);
+  bool maskHPR = m_starCfg->getHCCSubRegisterValue(HCCStarSubRegister::MASKHPR);
 
   // Assume for now in the software emulation LCB is always locked and only
   // testHPR bit can trigger the one-time pulse to send an HPR packet
@@ -591,11 +591,11 @@ void StarChipsetEmu::doHPR_HCC(LCB::Frame frame) {
   // Reset stopHPR to zero (i.e. resume the periodic HPR packet transmission)
   // if lcb_lock_changed
   if (stopHPR and lcb_lock_changed)
-    m_starCfg->setSubRegisterValue(0, "STOPHPR", 0);
+    m_starCfg->setHCCSubRegisterValue(HCCStarSubRegister::STOPHPR, 0);
 
   // Reset testHPR bit to zero if it is one
   if (testHPR)
-    m_starCfg->setSubRegisterValue(0, "TESTHPR", 0);
+    m_starCfg->setHCCSubRegisterValue(HCCStarSubRegister::TESTHPR, 0);
 }
 
 void StarChipsetEmu::doHPR_ABC(LCB::Frame frame, unsigned ichip) {
@@ -605,9 +605,9 @@ void StarChipsetEmu::doHPR_ABC(LCB::Frame frame, unsigned ichip) {
   setABCStarHPR(frame, abcID);
 
   //// HPR control logic
-  bool testHPR = m_starCfg->getSubRegisterValue(ichip, "TESTHPR");
-  bool stopHPR = m_starCfg->getSubRegisterValue(ichip, "STOPHPR");
-  bool maskHPR = m_starCfg->getSubRegisterValue(ichip, "MASKHPR");
+  bool testHPR = m_starCfg->getABCSubRegisterValue(ichip, ABCStarSubRegister::TESTHPR);
+  bool stopHPR = m_starCfg->getABCSubRegisterValue(ichip, ABCStarSubRegister::STOPHPR);
+  bool maskHPR = m_starCfg->getABCSubRegisterValue(ichip, ABCStarSubRegister::MASKHPR);
 
   bool lcb_lock_changed = testHPR & (!maskHPR);
   bool hpr_periodic = not (hpr_clkcnt%HPRPERIOD) and not stopHPR;
@@ -626,9 +626,9 @@ void StarChipsetEmu::doHPR_ABC(LCB::Frame frame, unsigned ichip) {
 
   //// Update HPR control bits
   if (stopHPR and lcb_lock_changed)
-    m_starCfg->setSubRegisterValue(ichip, "STOPHPR", 0);
+    m_starCfg->setABCSubRegisterValue(ichip, ABCStarSubRegister::STOPHPR, 0);
   if (testHPR)
-    m_starCfg->setSubRegisterValue(ichip, "TESTHPR", 0);
+    m_starCfg->setABCSubRegisterValue(ichip, ABCStarSubRegister::TESTHPR, 0);
 }
 
 void StarChipsetEmu::setHCCStarHPR(LCB::Frame frame) {
@@ -670,7 +670,7 @@ void StarChipsetEmu::setABCStarHPR(LCB::Frame frame, int abcID) {
 void StarChipsetEmu::doL0A(bool bcr, uint8_t l0a_mask, uint8_t l0a_tag) {
   logger->debug("Receive an L0A command: BCR = {}, L0A mask = {:b}, L0A tag = 0x{:x}", bcr, l0a_mask, l0a_tag);
 
-  bool trig_mode = m_starCfg->getSubRegisterValue(0, "TRIGMODE"); // TRIGMODEC?
+  bool trig_mode = m_starCfg->getHCCSubRegisterValue(HCCStarSubRegister::TRIGMODE); // TRIGMODEC?
   logger->debug("Trigger mode is {}", trig_mode ? "single-level" : "multi-level");
 
   // An LCB frame covers 4 BCs
@@ -696,7 +696,7 @@ void StarChipsetEmu::doL0A(bool bcr, uint8_t l0a_mask, uint8_t l0a_tag) {
           this->countHits(abc, hits);
 
           // form clusters
-          if (abc.getSubRegisterValue("LP_ENABLE")) {
+          if (abc.getSubRegisterValue(ABCStarSubRegister::LP_ENABLE)) {
             auto abc_clusters = this->getClusters(abc, hits);
             clusters.push_back(abc_clusters);
           }
@@ -737,7 +737,7 @@ void StarChipsetEmu::doL0A(bool bcr, uint8_t l0a_mask, uint8_t l0a_tag) {
 }
 
 void StarChipsetEmu::doPRLP(uint8_t mask, uint8_t l0tag) {
-  bool trig_mode = m_starCfg->getSubRegisterValue(0, "TRIGMODE"); // TRIGMODEC?
+  bool trig_mode = m_starCfg->getHCCSubRegisterValue(HCCStarSubRegister::TRIGMODE); // TRIGMODEC?
   if (trig_mode) { // single-level
     logger->critical("doPRLP is called while the trigger mode is single level");
     return;
@@ -764,12 +764,12 @@ void StarChipsetEmu::doPRLP(uint8_t mask, uint8_t l0tag) {
 
   // for each ABC
   m_starCfg->eachAbc([this, l0tag, isPR, &bcid, &clusters](auto& abc) {
-      if (isPR and not abc.getSubRegisterValue("PR_ENABLE")) {
+      if (isPR and not abc.getSubRegisterValue(ABCStarSubRegister::PR_ENABLE)) {
         // Skip if a R3 command for PR packets is received but PR_ENABLE is 0
         return;
       }
 
-      if (not isPR and not abc.getSubRegisterValue("LP_ENABLE")) {
+      if (not isPR and not abc.getSubRegisterValue(ABCStarSubRegister::LP_ENABLE)) {
         // Skip if an L1 command for LP packets is received but LP_ENABLE is 0
         return;
       }
@@ -834,7 +834,7 @@ unsigned int StarChipsetEmu::countTriggers(LCB::Frame frame) {
 void StarChipsetEmu::countHits(AbcCfg& abc, const StripData& hits) const {
   if (not m_startHitCount) return;
 
-  bool EnCount = abc.getSubRegisterValue("ENCOUNT");
+  bool EnCount = abc.getSubRegisterValue(ABCStarSubRegister::ENCOUNT);
   if (not EnCount) return;
 
   // HitCountReg0-63: four channels per register
@@ -1048,7 +1048,7 @@ std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_Tes
   uint8_t bcid = 0;
 
   // enable
-  bool TestPulseEnable = abc.getSubRegisterValue("TEST_PULSE_ENABLE");
+  bool TestPulseEnable = abc.getSubRegisterValue(ABCStarSubRegister::TEST_PULSE_ENABLE);
   if (not TestPulseEnable)
     return std::make_pair(bcid, hits);
 
@@ -1056,7 +1056,7 @@ std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_Tes
   StripData masks = getMasks(abc);
 
   // Two test pulse options: determined by bit 18 of ABC register CREG0
-  bool testPattEnable = abc.getSubRegisterValue("TESTPATT_ENABLE");
+  bool testPattEnable = abc.getSubRegisterValue(ABCStarSubRegister::TESTPATT_ENABLE);
   if (testPattEnable) { // Use test pattern
     // Need to check four slots in m_l0buffer_lite: from l0addr to l0addr-3
     for (unsigned ibit=0; ibit<4; ibit++) {
@@ -1068,8 +1068,8 @@ std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_Tes
         bcid = pulse.to_ulong() & 0xff;
 
         // testPatt1 if mask bit is 0, otherwise testPatt2
-        uint8_t testPatt1 = abc.getSubRegisterValue("TESTPATT1");
-        uint8_t testPatt2 = abc.getSubRegisterValue("TESTPATT2");
+        uint8_t testPatt1 = abc.getSubRegisterValue(ABCStarSubRegister::TESTPATT1);
+        uint8_t testPatt2 = abc.getSubRegisterValue(ABCStarSubRegister::TESTPATT2);
 
         StripData patt1_ibit(0); // Initialize all bits to zero
         if ( (testPatt1>>ibit)&1 ) {
@@ -1115,12 +1115,12 @@ std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_Cal
   uint8_t pulsetype = (pulse.to_ulong()>>8) & 3;
 
   //assert(TM==0)
-  bool CalPulseEnable = abc.getSubRegisterValue("CALPULSE_ENABLE");
+  bool CalPulseEnable = abc.getSubRegisterValue(ABCStarSubRegister::CALPULSE_ENABLE);
 
   // Charge injection DAC
   uint16_t BCAL;
   if (pulsetype == 1 and CalPulseEnable) {
-    BCAL = abc.getSubRegisterValue("BCAL");
+    BCAL = abc.getSubRegisterValue(ABCStarSubRegister::BCAL);
     //assert(bcid == (l0addr&0xff));
   } else { // No calibration pulse. Hits could still be recorded due to noise.
     BCAL = 0;
@@ -1130,11 +1130,11 @@ std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_Cal
 
   // Threshold DAC
   // BVT: 8 bits, 0 - -550 mV
-  uint8_t BVT = abc.getSubRegisterValue("BVT");
+  uint8_t BVT = abc.getSubRegisterValue(ABCStarSubRegister::BVT);
 
   // Trim Range
   // BTRANGE: 5 bits, 50 mV - 230 mV
-  uint8_t BTRANGE = abc.getSubRegisterValue("BTRANGE");
+  uint8_t BTRANGE = abc.getSubRegisterValue(ABCStarSubRegister::BTRANGE);
 
   // Calibration enables for each strip channel
   auto enables = getCalEnables(abc);
@@ -1161,7 +1161,7 @@ std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_Cal
 unsigned StarChipsetEmu::getL0BufferAddr(const AbcCfg& abc, uint8_t cmdBC) const {
   // L0A latency from ABCStar register CREG2
   // 9 bits
-  unsigned l0_latency = abc.getSubRegisterValue("LATENCY");
+  unsigned l0_latency = abc.getSubRegisterValue(ABCStarSubRegister::LATENCY);
 
   // cmdBC = 0, 1, 2, or 3 from trigger command
   // address of m_l0buffer_lite that associates to cmdBC
@@ -1171,7 +1171,7 @@ unsigned StarChipsetEmu::getL0BufferAddr(const AbcCfg& abc, uint8_t cmdBC) const
 
 std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::getFEData(const AbcCfg& abc, unsigned l0addr) {
   // Mode of operation
-  uint8_t TM = abc.getSubRegisterValue("TM");
+  uint8_t TM = abc.getSubRegisterValue(ABCStarSubRegister::TM);
   if (TM == 0) { // Normal data taking
     return generateFEData_CaliPulse(abc, l0addr);
   } else if (TM == 1) { // Static test mode
@@ -1183,8 +1183,8 @@ std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::getFEData(const Ab
 
 std::vector<uint16_t> StarChipsetEmu::getClusters(const AbcCfg& abc, const StripData& hits) {
   // max clusters
-  bool maxcluster_en = abc.getSubRegisterValue("MAX_CLUSTER_ENABLE");
-  uint8_t maxcluster = maxcluster_en ? abc.getSubRegisterValue("MAX_CLUSTER") : 63;
+  bool maxcluster_en = abc.getSubRegisterValue(ABCStarSubRegister::MAX_CLUSTER_ENABLE);
+  uint8_t maxcluster = maxcluster_en ? abc.getSubRegisterValue(ABCStarSubRegister::MAX_CLUSTER) : 63;
   return clusterFinder(hits, maxcluster);
 }
 

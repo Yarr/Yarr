@@ -239,7 +239,7 @@ std::array<uint8_t, HCC_INPUT_CHANNEL_COUNT> HccCfg::histoChipMap() const {
   // On HCCv1, we map histogram slots based on increasing IC number
 
   // Mask of enabled ICs
-  auto input_enables = getSubRegisterValue("ICENABLE");
+  auto input_enables = getSubRegisterValue(HCCStarSubRegister::ICENABLE);
   auto version_1 = m_registerSet.size() != HccNames::listRegs().size();
 
   size_t offset = 0;

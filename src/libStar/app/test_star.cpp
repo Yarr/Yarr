@@ -155,27 +155,26 @@ void sendCommand(uint16_t cmd, HwController& hwCtrl) {
 // Update the sub-register value in the star config
 // Return the address and new register value to be sent to the chips
 std::tuple<uint32_t, uint32_t> updateHCCSubRegister(const std::string& subRegName, uint32_t value, StarCfg& cfg) {
-  // chipIndex 0 for HCC
-  int chipIndex = 0;
-  cfg.setSubRegisterValue(chipIndex, subRegName, value);
+  auto subReg = HccNames::subRegFromString(subRegName).value();
+  cfg.setHCCSubRegisterValue(subReg, value);
 
-  uint32_t addr = cfg.getSubRegisterParentAddr(chipIndex, subRegName);
-  uint32_t newValue = cfg.getSubRegisterParentValue(chipIndex, subRegName);
+  uint32_t addr = cfg.getHCCSubRegisterParentAddr(subReg);
+  uint32_t newValue = cfg.getHCCSubRegisterParentValue(subReg);
 
   return std::make_tuple(addr, newValue);
 }
 
 // Assume the register configuration command is always broadcasted to all chips
 std::tuple<uint32_t, uint32_t> updateABCSubRegister(const std::string& subRegName, uint32_t value, StarCfg& cfg) {
-
+  auto subReg = AbcNames::subRegFromString(subRegName).value();
   cfg.eachAbc([&](auto &abc) {
-      abc.setSubRegisterValue(subRegName, value);
+      abc.setSubRegisterValue(subReg, value);
     });
 
   // chipIndex 1 for the first ABC
   int chipIndex = 1;
-  uint32_t addr = cfg.getSubRegisterParentAddr(chipIndex, subRegName);
-  uint32_t newValue = cfg.getSubRegisterParentValue(chipIndex, subRegName);
+  uint32_t addr = cfg.getABCSubRegisterParentAddr(chipIndex, subReg);
+  uint32_t newValue = cfg.getABCSubRegisterParentValue(chipIndex, subReg);
 
   return std::make_tuple(addr, newValue);
 }

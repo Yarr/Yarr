@@ -166,7 +166,7 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
 
   // Use the global FE to update a sub-register "BCAL" of all FEs
   // BCAL is in the same register as STR_DEL
-  REQUIRE(star1->getSubRegisterParentAddr(1,"BCAL") == star1->getSubRegisterParentAddr(1,"STR_DEL"));
+  REQUIRE(star1->getABCSubRegisterParentAddr(1, ABCStarSubRegister::BCAL) == star1->getABCSubRegisterParentAddr(1, ABCStarSubRegister::STR_DEL));
 
   bk.getGlobalFe()->writeNamedRegister("ABCs_BCAL", 66);
   while(not emu->isCmdEmpty());
@@ -182,7 +182,7 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
 
   // Send register read command
   emu->setRxEnable(rx0);
-  star1->readABCSubRegister("STR_DEL", 9);
+  star1->readABCSubRegister(ABCStarSubRegister::STR_DEL, 9);
   while(not emu->isCmdEmpty());
   // Read RR packet
   auto [addr1, val1] = readABCRRPacket(emu.get());
@@ -191,10 +191,10 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
 
   dummyCfg.setABCRegister(addr1, val1, 0xf);
   // Expected STR_DEL: 12
-  REQUIRE(dummyCfg.getSubRegisterValue(1, "STR_DEL") == 12);
+  REQUIRE(dummyCfg.getABCSubRegisterValue(1, ABCStarSubRegister::STR_DEL) == 12);
 
   // Send register read command
-  star1->readABCSubRegister("STR_DEL", 8);
+  star1->readABCSubRegister(ABCStarSubRegister::STR_DEL, 8);
   while(not emu->isCmdEmpty());
   // Read RR packet
   auto [addr2, val2] = readABCRRPacket(emu.get());
@@ -203,10 +203,10 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
 
   dummyCfg.setABCRegister(addr2, val2, 0xf);
   // Expected STR_DEL: 21
-  REQUIRE(dummyCfg.getSubRegisterValue(1, "STR_DEL") == 21);
+  REQUIRE(dummyCfg.getABCSubRegisterValue(1, ABCStarSubRegister::STR_DEL) == 21);
 
   emu->setRxEnable(rx1);
-  star2->readABCSubRegister("STR_DEL", 1);
+  star2->readABCSubRegister(ABCStarSubRegister::STR_DEL, 1);
   while(not emu->isCmdEmpty());
   // Read RR packet
   auto [addr3, val3] = readABCRRPacket(emu.get());
@@ -215,9 +215,9 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
 
   dummyCfg.setABCRegister(addr3, val3, 0xf);
   // Expected STR_DEL: 13
-  REQUIRE(dummyCfg.getSubRegisterValue(1, "STR_DEL") == 13);
+  REQUIRE(dummyCfg.getABCSubRegisterValue(1, ABCStarSubRegister::STR_DEL) == 13);
 
-  star2->readABCSubRegister("STR_DEL", 2);
+  star2->readABCSubRegister(ABCStarSubRegister::STR_DEL, 2);
   while(not emu->isCmdEmpty());
   // Read RR packets
   auto [addr4, val4] = readABCRRPacket(emu.get());
@@ -226,5 +226,5 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
 
   dummyCfg.setABCRegister(addr4, val4, 0xf);
   // Expected STR_DEL: 30
-  REQUIRE(dummyCfg.getSubRegisterValue(1, "STR_DEL") == 30);
+  REQUIRE(dummyCfg.getABCSubRegisterValue(1, ABCStarSubRegister::STR_DEL) == 30);
 }

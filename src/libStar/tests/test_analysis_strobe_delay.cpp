@@ -292,10 +292,10 @@ void check_strobe_values(const FrontEnd &fe,
     REQUIRE(star_fe);
 
     for(const auto &fe_info: info) {
-        // This is the index in StarCfg (1-based as HCC is 0)
+        // This is the index in StarCfg (1-based as HCC is 0) ???
         int fe_idx = fe_info.id+1;
         CAPTURE (fe_info.id, fe_idx, fe_info.sd_val);
-        REQUIRE ( star_fe->getSubRegisterValue(fe_idx, "STR_DEL") == fe_info.sd_val );
+        REQUIRE ( star_fe->getABCSubRegisterValue(fe_idx, ABCStarSubRegister::STR_DEL) == fe_info.sd_val );
     }
 }
 

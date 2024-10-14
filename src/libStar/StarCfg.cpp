@@ -131,14 +131,16 @@ int StarCfg::getSubRegisterParentAddr(int chipIndex, std::string subRegName)
     if (chipIndex == 0) {
         // If HCC, looking name
         if(HccNames::subRegStringIsValid(subRegName)) {
-            return m_hcc.getSubRegisterParentAddr(subRegName);
+            auto reg = HccNames::subRegFromString(subRegName).value();
+            return m_hcc.getSubRegisterParentAddr(reg);
         } else {
             std::cerr << " --> Error: Could not find HCC register \""<< subRegName << "\"" << std::endl;
         }
     } else {
         // If looking for an ABC subregister enum
         if (AbcNames::subRegStringIsValid(subRegName)) {
-            return m_abc_info->getSubRegisterParentAddr(subRegName);
+            auto reg = AbcNames::subRegFromString(subRegName).value();
+            return m_abc_info->getSubRegisterParentAddr(reg);
         } else {
             std::cerr << " --> Error: Could not find ABC register \""<< subRegName << "\"" << std::endl;
         }
@@ -165,15 +167,17 @@ uint32_t StarCfg::getSubRegisterParentValue(int chipIndex, std::string subRegNam
     if (chipIndex == 0) {
         // If HCC, looking name
         if(HccNames::subRegStringIsValid(subRegName)) {
-            return m_hcc.getSubRegisterParentValue(subRegName);
+            auto reg = HccNames::subRegFromString(subRegName).value();
+            return m_hcc.getSubRegisterParentValue(reg);
         } else {
             std::cerr << " --> Error: Could not find HCC register \""<< subRegName << "\"" << std::endl;
         }
     } else {
         //If looking for an ABC subregister enum
         if (AbcNames::subRegStringIsValid(subRegName)) {
+            auto reg = AbcNames::subRegFromString(subRegName).value();
             if (isAbcForInputChannel(chipIndex-1)) {
-                return abcFromIndex(chipIndex).getSubRegisterParentValue(subRegName);
+                return abcFromIndex(chipIndex).getSubRegisterParentValue(reg);
             }
         } else {
             std::cerr << " --> Error: Could not find ABC register \""<< subRegName << "\"" << std::endl;
@@ -452,10 +456,12 @@ void StarCfg::loadConfig(const json &j) {
             std::string subRegName = i.key();
             uint32_t subRegValue = valFromJson(i.value());
 
-            auto regPre = m_hcc.getSubRegisterParentValue(subRegName);
-            m_hcc.setSubRegisterValue(subRegName, subRegValue);
-            auto retrieved = m_hcc.getSubRegisterValue(subRegName);
-            auto regPost = m_hcc.getSubRegisterParentValue(subRegName);
+            auto subReg = HccNames::subRegFromString(subRegName).value();
+
+            auto regPre = m_hcc.getSubRegisterParentValue(subReg);
+            m_hcc.setSubRegisterValue(subReg, subRegValue);
+            auto retrieved = m_hcc.getSubRegisterValue(subReg);
+            auto regPost = m_hcc.getSubRegisterParentValue(subReg);
             logger->trace("Load from JSON: For HCC, {} has been set to {} (check {}) {:08x} -> {:08x}", subRegName, subRegValue, retrieved, regPre, regPost);
         } 
     }
@@ -657,10 +663,11 @@ void StarCfg::loadConfig(const json &j) {
                 std::string subRegName = i.key();
                 uint32_t subRegValue = valFromJson(i.value());
 
-                auto regPre = abc.getSubRegisterParentValue(subRegName);
-                abc.setSubRegisterValue(subRegName, subRegValue);
-                auto retrieved = abc.getSubRegisterValue(subRegName);
-                auto regPost = abc.getSubRegisterParentValue(subRegName);
+                auto subReg = AbcNames::subRegFromString(subRegName).value();
+                auto regPre = abc.getSubRegisterParentValue(subReg);
+                abc.setSubRegisterValue(subReg, subRegValue);
+                auto retrieved = abc.getSubRegisterValue(subReg);
+                auto regPost = abc.getSubRegisterParentValue(subReg);
                 logger->trace("Load from JSON: For ABC index {}, {} has been set to {} (check {}) {:08x} -> {:08x}", iABC, subRegName, subRegValue, retrieved, regPre, regPost);
             }
         } // Loop over ABCs

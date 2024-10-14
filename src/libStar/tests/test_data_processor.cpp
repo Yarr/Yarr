@@ -28,7 +28,7 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
   // Use v1 mapping for simplicity
   int hcc_version = 1;
   StarCfg starCfg(0, hcc_version);
-  starCfg.hcc().setSubRegisterValue("ICENABLE", 0x3ff);
+  starCfg.hcc().setSubRegisterValue(HCCStarSubRegister::ICENABLE, 0x3ff);
 
   proc->connect(&starCfg, nullptr, nullptr);
 

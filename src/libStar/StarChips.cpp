@@ -252,7 +252,8 @@ yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_va
       logger->error(" --> Error: Could not find HCC sub-register \"{}\"", subRegName);
       return yarrFailure;
     } else {
-      setAndWriteHCCSubRegister(subRegName, reg_value);
+      auto subRegEnum = HccNames::subRegFromString(subRegName).value();
+      setAndWriteHCCSubRegister(subRegEnum, reg_value);
     }
   } else  if (strPrefix=="ABCs") {
     auto subRegName = name.substr(5); // Including _
@@ -293,8 +294,9 @@ yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_va
       return yarrFailure;
     } else {
       logger->trace("Writing {} on setting '{}' for all ABCStar chips.", reg_value, name);
+      auto abcRegEnum = AbcNames::subRegFromString(subRegName).value();
       eachAbc([&](auto &cfg) {
-          setAndWriteABCSubRegister(subRegName, cfg, reg_value);
+          setAndWriteABCSubRegister(abcRegEnum, cfg, reg_value);
         });
     }
   }

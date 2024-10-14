@@ -1,24 +1,27 @@
 #include "catch.hpp"
 
+#include "AbcNames.h"
 #include "StarCfg.h"
 
 TEST_CASE("StarCfg", "[star][config]") {
   int abc_version = 2;
   int hcc_version = 0;
   uint32_t creg0_response;
-  std::string bad_name;
-  std::string good_name;
+
+  ABCStarSubRegister bad_name{ABCStarSubRegister::BVT};
+  ABCStarSubRegister good_name{ABCStarSubRegister::BVT};
+
   SECTION("With ABCv0") {
     abc_version = 0;
     creg0_response = 0x8a554321;
-    bad_name = "READOUT_TIMEOUT_ENABLE";
-    good_name = "A_S";
+    bad_name = ABCStarSubRegister::READOUT_TIMEOUT_ENABLE;
+    good_name = ABCStarSubRegister::A_S;
   }
   SECTION("With ABCv1") {
     abc_version = 1;
     creg0_response = 0x87669721;
-    good_name = "READOUT_TIMEOUT_ENABLE";
-    bad_name = "A_S";
+    good_name = ABCStarSubRegister::READOUT_TIMEOUT_ENABLE;
+    bad_name = ABCStarSubRegister::A_S;
   }
 
   CAPTURE (abc_version);
@@ -51,20 +54,20 @@ TEST_CASE("StarCfg", "[star][config]") {
 
       REQUIRE (abc.getABCchipID() == abc_id);
 
-      REQUIRE ((ABCStarRegister)abc.getSubRegisterParentAddr("TESTPATT1") == ABCStarRegister::CREG0);
+      REQUIRE ((ABCStarRegister)abc.getSubRegisterParentAddr(ABCStarSubRegister::TESTPATT1) == ABCStarRegister::CREG0);
 
-      abc.setSubRegisterValue("TESTPATT1", 0x5);
-      abc.setSubRegisterValue("TESTPATT2", 0xa);
-      REQUIRE (abc.getSubRegisterValue("TESTPATT1") == 0x5);
+      abc.setSubRegisterValue(ABCStarSubRegister::TESTPATT1, 0x5);
+      abc.setSubRegisterValue(ABCStarSubRegister::TESTPATT2, 0xa);
+      REQUIRE (abc.getSubRegisterValue(ABCStarSubRegister::TESTPATT1) == 0x5);
 
-      CHECK_THROWS (abc.getSubRegisterValue("RANDOM_NAME"));
+      CHECK_THROWS (AbcNames::subRegFromString("RANDOM_NAME"));
 
       // Common name
-      CHECK_NOTHROW (abc.getSubRegisterValue("BVT"));
+      CHECK_NOTHROW (AbcNames::subRegFromString("BVT"));
 
       // Use abc_id here for some reason
       CHECK (test_config.getABCRegister(ABCStarRegister::CREG0, abc_id) == creg0_response);
-      CHECK (abc.getSubRegisterParentValue("TESTPATT1") == creg0_response);
+      CHECK (abc.getSubRegisterParentValue(ABCStarSubRegister::TESTPATT1) == creg0_response);
 
       // Config specific good/bad
       CHECK_THROWS (abc.getSubRegisterValue(bad_name));
@@ -76,14 +79,14 @@ TEST_CASE("StarCfg", "[star][config]") {
 
   REQUIRE (test_config.getABCchipID(abc_index) == abc_id);
 
-  REQUIRE ((ABCStarRegister)test_config.getSubRegisterParentAddr(abc_index, "TESTPATT1") == ABCStarRegister::CREG0);
+  REQUIRE ((ABCStarRegister)test_config.getABCSubRegisterParentAddr(abc_index, ABCStarSubRegister::TESTPATT1) == ABCStarRegister::CREG0);
 
-  test_config.setSubRegisterValue(abc_index, "TESTPATT1", 0x5);
-  test_config.setSubRegisterValue(abc_index, "TESTPATT2", 0xa);
-  REQUIRE (test_config.getSubRegisterValue(abc_index, "TESTPATT1") == 0x5);
+  test_config.setABCSubRegisterValue(abc_index, ABCStarSubRegister::TESTPATT1, 0x5);
+  test_config.setABCSubRegisterValue(abc_index, ABCStarSubRegister::TESTPATT2, 0xa);
+  REQUIRE (test_config.getABCSubRegisterValue(abc_index, ABCStarSubRegister::TESTPATT1) == 0x5);
 
   REQUIRE (test_config.getABCRegister(ABCStarRegister::CREG0, abc_id) == creg0_response);
-  REQUIRE (test_config.getSubRegisterParentValue(abc_index, "TESTPATT1") == creg0_response);
+  REQUIRE (test_config.getABCSubRegisterParentValue(abc_index, ABCStarSubRegister::TESTPATT1) == creg0_response);
 
   json j;
   test_config.writeConfig(j);
@@ -116,18 +119,18 @@ TEST_CASE("StarCfg_ABCv1", "[star][config]") {
   test_config.eachAbc([&](AbcCfg &abc) {
       REQUIRE (abc.getABCchipID() == abc_id);
 
-      REQUIRE ((ABCStarRegister)abc.getSubRegisterParentAddr("BVREF") == ABCStarRegister::ADCS1);
+      REQUIRE ((ABCStarRegister)abc.getSubRegisterParentAddr(ABCStarSubRegister::BVREF) == ABCStarRegister::ADCS1);
 
-      abc.setSubRegisterValue("BVREF", 0x1f);
-      abc.setSubRegisterValue("BIREF", 0x1f);
-      abc.setSubRegisterValue("B8BREF", 0x1f);
-      abc.setSubRegisterValue("BTRANGE", 0x1f);
-      abc.setSubRegisterValue("BVT", 0xff);
-      abc.setSubRegisterValue("DIS_CLK", 7);
-      abc.setSubRegisterValue("LCB_SELF_TEST_ENABLE", 1);
+      abc.setSubRegisterValue(ABCStarSubRegister::BVREF, 0x1f);
+      abc.setSubRegisterValue(ABCStarSubRegister::BIREF, 0x1f);
+      abc.setSubRegisterValue(ABCStarSubRegister::B8BREF, 0x1f);
+      abc.setSubRegisterValue(ABCStarSubRegister::BTRANGE, 0x1f);
+      abc.setSubRegisterValue(ABCStarSubRegister::BVT, 0xff);
+      abc.setSubRegisterValue(ABCStarSubRegister::DIS_CLK, 7);
+      abc.setSubRegisterValue(ABCStarSubRegister::LCB_SELF_TEST_ENABLE, 1);
 
       REQUIRE (test_config.getABCRegister(ABCStarRegister::ADCS1, abc_id) == 0xffffffff);
-      REQUIRE (abc.getSubRegisterParentValue("LCB_SELF_TEST_ENABLE") == 0xffffffff);
+      REQUIRE (abc.getSubRegisterParentValue(ABCStarSubRegister::LCB_SELF_TEST_ENABLE) == 0xffffffff);
 
       // Others unchanged
       REQUIRE (test_config.getABCRegister(ABCStarRegister::ADCS2, abc_id) == 0x87654321);
@@ -288,23 +291,23 @@ TEST_CASE("StarCfg_HCCv1", "[star][config]") {
 
   HccCfg &hcc = test_config.hcc();
 
-  REQUIRE (hcc.getSubRegisterParentAddr("EPLLPHASE160") == (int)HCCStarRegister::PLL1);
+  REQUIRE (hcc.getSubRegisterParentAddr(HCCStarSubRegister::EPLLPHASE160) == (int)HCCStarRegister::PLL1);
 
-  hcc.setSubRegisterValue("EPLLICP", 0xf);
-  hcc.setSubRegisterValue("EPLLCAP", 0x3);
-  hcc.setSubRegisterValue("EPLLRES", 0xf);
-  hcc.setSubRegisterValue("EPLLREFFREQ", 0x3);
-  hcc.setSubRegisterValue("EPLLENABLEPHASE", 0x3);
-  hcc.setSubRegisterValue("EPLLPHASE160", 0x7);
+  hcc.setSubRegisterValue(HCCStarSubRegister::EPLLICP, 0xf);
+  hcc.setSubRegisterValue(HCCStarSubRegister::EPLLCAP, 0x3);
+  hcc.setSubRegisterValue(HCCStarSubRegister::EPLLRES, 0xf);
+  hcc.setSubRegisterValue(HCCStarSubRegister::EPLLREFFREQ, 0x3);
+  hcc.setSubRegisterValue(HCCStarSubRegister::EPLLENABLEPHASE, 0x3);
+  hcc.setSubRegisterValue(HCCStarSubRegister::EPLLPHASE160, 0x7);
 
-  REQUIRE (hcc.getSubRegisterValue("EPLLICP") == 0xf);
-  REQUIRE (hcc.getSubRegisterValue("EPLLRES") == 0xf);
-  REQUIRE (hcc.getSubRegisterValue("EPLLPHASE160") == 0x7);
+  REQUIRE (hcc.getSubRegisterValue(HCCStarSubRegister::EPLLICP) == 0xf);
+  REQUIRE (hcc.getSubRegisterValue(HCCStarSubRegister::EPLLRES) == 0xf);
+  REQUIRE (hcc.getSubRegisterValue(HCCStarSubRegister::EPLLPHASE160) == 0x7);
 
   uint32_t pll1 = 0xe0033f3f;
 
   REQUIRE (test_config.getHCCRegister(HCCStarRegister::PLL1) == pll1);
-  REQUIRE (hcc.getSubRegisterParentValue("EPLLPHASE160") == pll1);
+  REQUIRE (hcc.getSubRegisterParentValue(HCCStarSubRegister::EPLLPHASE160) == pll1);
 
   json j;
   test_config.writeConfig(j);
