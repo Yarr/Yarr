@@ -477,7 +477,7 @@ void Rd53bDataProcessor::process_core()
                         }
 
                         // Yarr_tot = chip_tot + 1 - to avoid ToT = 0 
-                        _curOut->curEvent->addHit({pix_col, pix_row, pix_tot+1});
+                        _curOut->curEvent->addHit({pix_col, pix_row, uint16_t(pix_tot+1)});
                         _hits++;
                     }
                 }
