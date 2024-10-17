@@ -279,7 +279,6 @@ int main(int argc, char **argv) {
 
     // Check which data merging mode we want to test 
     if (mode=="4-to-1"){
-        std::cout << "testing 4-to-1" << std::endl;
         fe->writeNamedRegister("ServiceBlockEn", 1);
         if (chip_id==12){
             fe->writeNamedRegister("SerSelOut1", 1);
@@ -289,7 +288,6 @@ int main(int argc, char **argv) {
             fe->writeNamedRegister("SerEnLane", 4);
         }   
     } else if (mode=="2-to-1"){
-        std::cout << "testing 2-to-1" << std::endl;
         // still to implement
     } else {
         std::cout << "unknown data merging mode. please provide a valid argument.." << std::endl;
@@ -338,10 +336,11 @@ int main(int argc, char **argv) {
     }
 
     if (print_raw_value){
-        std::cout << chip_id << "  " << error_count << std::endl;
+        std::cout << mode << " data merging on chip " << std::to_string(test_ichip) << ". Error count:  " << error_count << std::endl;
     } else {
-        std::cout << chip_id << "  " << link_quality << std::endl;
+        std::cout << mode << " data merging on chip " << std::to_string(test_ichip) << ". Link quality:  " << link_quality << std::endl;
     }             
+
     // Reset registers, need to fix so we set the lanes correctly again       
     fe->writeNamedRegister("ServiceBlockEn", 0);
     if (chip_id==12 || chip_id==13 || chip_id==14){
