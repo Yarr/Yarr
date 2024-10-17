@@ -23,7 +23,7 @@ TEST_CASE("StarTrimDacAnalysis", "[Analysis][Star][Trim]") {
     std::vector<float> trim_points{0, 1, 2};
     std::vector<float> range_points{0, 1, 2};
 
-    int n_injections = 50;
+    // int n_injections = 50;
 
     json analysisCfg;
 

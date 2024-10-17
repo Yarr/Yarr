@@ -134,7 +134,7 @@ std::unique_ptr<EventDataBase> StarDataProcessor::process_event_core(const RawDa
 
     for(unsigned c=0; c<size; c++) {
         RawDataPtr r = curIn.data[c];
-        unsigned channel = r->getAdr(); //elink number
+        // unsigned channel = r->getAdr(); //elink number
         std::unique_ptr<FeedbackProcessingInfo> fb_stat(new FeedbackProcessingInfo{.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_ERROR});
         pimpl->proc_data(*r, *output, *fb_stat, chip_map);
         push_fb(std::move(fb_stat));
@@ -283,7 +283,7 @@ void process_data(RawData &curIn,
     for(unsigned iw=0; iw<curIn.getSize(); iw++) {
         for(int i=0; i<4;i++){
             packet.add_word((curIn[iw]>>i*8)&0xFF);
-        }
+	}
     }
     packet.add_word(0x1DC); //add EOP, only to make decoder happy
 

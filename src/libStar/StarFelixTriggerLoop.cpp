@@ -17,8 +17,8 @@ namespace {
 
 StarFelixTriggerLoop::StarFelixTriggerLoop()
   : LoopActionBase(LOOP_STYLE_TRIGGER),
-    m_nTrigsTrickle(0),
-    m_trigWord{}
+    m_trigWord{},
+    m_nTrigsTrickle(0)
 {
   setTrigCnt(50); // Maximum number of triggers to send
   min = 0;

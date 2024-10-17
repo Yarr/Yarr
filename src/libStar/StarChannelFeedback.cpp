@@ -61,7 +61,7 @@ void StarChannelFeedback::feedback(unsigned id, std::unique_ptr<Histo2d> h) {
         m_fb[id] = std::move(h);
 
         // TODO Not used, need to verify that it shouldn't be!
-        auto chip_map = fe->hcc().histoChipMap();
+        // auto chip_map = fe->hcc().histoChipMap();
         unsigned nABCs = nCol / Star::StripsPerABCRow;
 
         for (unsigned histo_abc=0; histo_abc<nABCs; histo_abc++) {

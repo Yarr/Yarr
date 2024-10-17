@@ -294,7 +294,7 @@ RawDataPtr readData(
     logger->debug("No data met the requirement");
   }
 
-  return std::move(data);
+  return data;
 }
 
 RawDataContainer readAllData(
@@ -302,7 +302,7 @@ RawDataContainer readAllData(
   std::function<bool(RawData&)> filter_cb,
   uint32_t timeout=2000)
 {
-  bool nodata = true;
+  //  bool nodata = true;
 
   RawDataContainer rdc(LoopStatus{});
   

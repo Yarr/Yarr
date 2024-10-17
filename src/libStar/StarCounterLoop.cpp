@@ -20,9 +20,9 @@ StarCounterLoop::StarCounterLoop()
 	m_trigDelay(45), // L0_delay 34
 	m_trigFreq(1e3), // 1kHz
 	m_trigTime(10), // 10s
-	m_noInject(false),
 	m_trigWordLength(0),
-	m_trigWord{}
+        m_trigWord{},
+        m_noInject(false)
 {
 	setTrigCnt(50); // Maximum number of triggers to send
 
