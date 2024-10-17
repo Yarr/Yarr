@@ -89,34 +89,36 @@ void YarrDiagram::addProcNodes(
 
 void YarrDiagram::addDataNodes(const BookEntry& entry) {
   rawData.push_back(std::make_unique<Hex>());
-  rawData.back()->label = typeid(entry.fe->clipRawData).name();
-  rawData.back()->objPtr = &(entry.fe->clipRawData);
+  auto &cp = entry.fe->clipboards();
+  rawData.back()->label = typeid(cp.clipRawData).name();
+  rawData.back()->objPtr = &(cp.clipRawData);
   if (rawData.back()->width > maxCellWidth)
     maxCellWidth = rawData.back()->width;
 
   events.push_back(std::make_unique<Hex>());
-  events.back()->label = typeid(entry.fe->clipData).name();
-  events.back()->objPtr = &(entry.fe->clipData);
+  events.back()->label = typeid(cp.clipData).name();
+  events.back()->objPtr = &(cp.clipData);
   if (events.back()->width > maxCellWidth)
     maxCellWidth = events.back()->width;
 
   hists.push_back(std::make_unique<Hex>());
-  hists.back()->label = typeid(entry.fe->clipHisto).name();
-  hists.back()->objPtr = &(entry.fe->clipHisto);
+  hists.back()->label = typeid(cp.clipHisto).name();
+  hists.back()->objPtr = &(cp.clipHisto);
   if (hists.back()->width > maxCellWidth)
     maxCellWidth = hists.back()->width;
 
   // results: the inner vector is for different rows (FEs) of the same column;
   // The outer vector is for different columns
-  if (results.size() < entry.fe->clipResult.size()) {
-    results.resize(entry.fe->clipResult.size());
+  if (results.size() < cp.clipResult.size()) {
+    results.resize(cp.clipResult.size());
   }
 
-  for (unsigned i = 0; i < entry.fe->clipResult.size(); i++) {
+  auto &outputs = entry.fe->clipboards().clipResult;
+  for (unsigned i = 0; i < outputs.size(); i++) {
     results[i].push_back(std::make_unique<Hex>());
-    auto resPtr = entry.fe->clipResult[i].get();
+    auto resPtr = outputs[i].get();
     results[i].back()->label = typeid(*resPtr).name();
-    results[i].back()->objPtr = (entry.fe->clipResult)[i].get();
+    results[i].back()->objPtr = outputs[i].get();
     if (results[i].back()->width > maxCellWidth)
       maxCellWidth = results[i].back()->width;
   }

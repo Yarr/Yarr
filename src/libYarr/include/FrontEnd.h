@@ -45,9 +45,18 @@ typedef struct FeedbackProcessingInfo
 class Bookkeeper;
 class FrontEndConnectivity;
 
+/// Clipboards to buffer data between processors
+struct FrontEndClipBoards {
+    ClipBoard<RawDataContainer> clipRawData;
+    ClipBoard<EventDataBase> clipData;
+    ClipBoard<HistogramBase> clipHisto;
+    ClipBoard<FeedbackProcessingInfo> clipProcFeedback;
+    std::vector<std::unique_ptr<ClipBoard<HistogramBase>> > clipResult;
+};
+
 class FrontEnd {
     public:
-        FrontEnd() = default;
+        FrontEnd();
         virtual ~FrontEnd() = default;
         
         virtual void init(HwController *arg_core, const FrontEndConnectivity& fe_cfg)=0;
@@ -84,16 +93,12 @@ class FrontEnd {
 
         virtual void setInjCharge(double, bool, bool) = 0;
 
-        // Clipboards to buffer data
-        ClipBoard<RawDataContainer> clipRawData;
-        ClipBoard<EventDataBase> clipData;
-        ClipBoard<HistogramBase> clipHisto;
-        ClipBoard<FeedbackProcessingInfo> clipProcFeedback;
-        std::vector<std::unique_ptr<ClipBoard<HistogramBase>> > clipResult;
-        
+        FrontEndClipBoards &clipboards();
+
         FrontEndGeometry geo;
 
     protected:
+        std::unique_ptr<FrontEndClipBoards> m_clipboards;
         bool active;
         RxCore *m_rxcore;
 };

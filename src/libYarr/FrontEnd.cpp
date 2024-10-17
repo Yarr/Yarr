@@ -10,6 +10,11 @@
 
 #include "FrontEndCfg.h"
 
+FrontEnd::FrontEnd()
+  : m_clipboards(std::make_unique<FrontEndClipBoards>())
+{
+}
+
 bool FrontEnd::isActive() const {
 	return active;
 }

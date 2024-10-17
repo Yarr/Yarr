@@ -336,8 +336,9 @@ namespace ScanHelper {
             auto fe = bookie.getFe(id);
             procs[id] = StdDict::getDataProcessor(chipType);
             procs[id]->loadConfig(procConfig);
-            procs[id]->connect(dynamic_cast<FrontEndCfg*>(fe), &bookie.getFe(id)->clipRawData, &bookie.getFe(id)->clipData);
-            procs[id]->connect(&bookie.getFe(id)->clipProcFeedback);
+            auto &cp = fe->clipboards();
+            procs[id]->connect(dynamic_cast<FrontEndCfg*>(fe), &cp.clipRawData, &cp.clipData);
+            procs[id]->connect(&cp.clipProcFeedback);
             // TODO load chip specific config
         }
     }
@@ -485,7 +486,10 @@ namespace ScanHelper {
                 histogrammers[id] = std::make_unique<HistogrammerProcessor>( );
                 auto& histogrammer = dynamic_cast<HistogrammerProcessor&>( *(histogrammers[id]) );
 
-                histogrammer.connect(&fe->clipData, &fe->clipHisto);
+                auto &e = bookie.getEntry(id);
+                auto &cp = e.fe->clipboards();
+
+                histogrammer.connect(&cp.clipData, &cp.clipHisto);
 
                 auto add_histo = [&](const std::string& algo_name, const json& subHistoCfg) {
                     auto histo = StdDict::getHistogrammer(algo_name);
@@ -667,6 +671,7 @@ namespace ScanHelper {
         for (unsigned id=0; id<bookie.getNumOfEntries(); id++ ) {
             auto fe = bookie.getFe(id);
             if (fe->isActive()) {
+                auto &cp = fe->clipboards();
                 buildAnalysisForFrontEnd(analyses[id],
                                          id,
                                          bookie.getFeCfg(id),
@@ -674,8 +679,8 @@ namespace ScanHelper {
                                          fe->geo,
                                          algoIndexTiers,
                                          &(*fbData)[id],
-                                         fe->clipResult,
-                                         fe->clipHisto,
+                                         cp.clipResult,
+                                         cp.clipHisto,
                                          s,
                                          mask_opt,
                                          outputDir,

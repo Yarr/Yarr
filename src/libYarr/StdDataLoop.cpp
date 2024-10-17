@@ -125,7 +125,7 @@ void StdDataLoop::execPart2() {
                 if (nReadsInCurrentRxCycle > m_maxConsecutiveRxReads) {
                     for (auto &[id, rdc] : rdcMap) {
                         rdc->stat.is_end_of_iteration = false;
-                        keeper->getFe(id)->clipRawData.pushData(std::move(rdc));
+                        keeper->getFe(id)->clipboards().clipRawData.pushData(std::move(rdc));
                         activeChannels.insert(id);
                     }
                     nReadsInCurrentRxCycle = 0; rdcMap.clear();
@@ -137,7 +137,7 @@ void StdDataLoop::execPart2() {
         // if there is anything left to process -- push it
         for (auto &[id, rdc] : rdcMap) {
             rdc->stat.is_end_of_iteration = false;
-            keeper->getFe(id)->clipRawData.pushData(std::move(rdc));
+            keeper->getEntry(id).fe->clipboards().clipRawData.pushData(std::move(rdc));
             activeChannels.insert(id);
         }
 
@@ -163,9 +163,10 @@ void StdDataLoop::execPart2() {
             // check the active channels for feedback
             for (auto& chan_id : activeChannels) {
                 // pull all the currently available feedback from this channel
-                while(bool receivedOnChan = keeper->getEntry(chan_id).fe->clipProcFeedback.waitNotEmptyOrDoneOrTimeout(m_averageDataProcessingTime)) {
+                auto &cp = keeper->getEntry(chan_id).fe->clipboards();
+                while(bool receivedOnChan = cp.clipProcFeedback.waitNotEmptyOrDoneOrTimeout(m_averageDataProcessingTime)) {
                     receivedFeedbackSomewhere |= receivedOnChan;
-                    auto params = keeper->getEntry(chan_id).fe->clipProcFeedback.popData();
+                    auto params = cp.clipProcFeedback.popData();
 
                     if (params->trigger_tag >=  0) {
                         channelReceivedTriggersCnt[chan_id] += 1;
@@ -254,8 +255,9 @@ void StdDataLoop::execPart2() {
     loopStatusIterationEnd.is_end_of_iteration = true;
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
         std::unique_ptr<RawDataContainer> cIterEnd = std::make_unique<RawDataContainer>(std::move(loopStatusIterationEnd));
-        keeper->getFe(id)->clipRawData.pushData(std::move(cIterEnd));
-        keeper->getFe(id)->clipProcFeedback.reset();
+        auto &cp = keeper->getEntry(id).fe->clipboards();
+        cp.clipRawData.pushData(std::move(cIterEnd));
+        cp.clipProcFeedback.reset();
     }
 
     // report the average channel occupancy data
