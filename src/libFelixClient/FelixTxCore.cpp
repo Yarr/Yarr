@@ -61,26 +61,19 @@ FelixTxCore::FelixID_t FelixTxCore::fid_from_channel(uint32_t chn) {
 bool FelixTxCore::checkChannel(FelixID_t fid) {
   ftlog->debug("Try sending data to Tx link: 0x{:x}",fid);
 
-  static clk::time_point start = clk::now();
-  if((clk::now()-start) >= std::chrono::microseconds(5000000)){ //FIXME LATER: CONNECTION TIMEOUT OF THE NETIO SOCKET
-    start = clk::now();
-  }    
-  
-  if((clk::now()-start) < std::chrono::microseconds(500)){
-    try {
-      switch(fwMode()){
-      case ITK_Pixel: //ITk Pixel firmware
-      case ITK_Strip: //ITk Strip firmware
-	fclient->send_data(fid, static_cast<const unsigned char*>(&(m_idleWords[0])), m_idleWords.size(), true); 
-	break;
-      default:
-	ftlog->error("FELIX firmware version not supported in YARR. Try again...");
-	exit(1);
-      }
-    } catch (std::runtime_error& e) {
-      ftlog->warn("Fail to send to Tx link 0x{:x}: {}", fid, e.what());
-      return false;
+  try {
+    switch(fwMode()){
+    case ITK_Pixel: //ITk Pixel firmware
+    case ITK_Strip: //ITk Strip firmware
+      fclient->send_data(fid, static_cast<const unsigned char*>(&(m_idleWords[0])), m_idleWords.size(), true); 
+      break;
+    default:
+      ftlog->error("FELIX firmware version not supported in YARR. Try again...");
+      exit(1);
     }
+  } catch (std::runtime_error& e) {
+    ftlog->warn("Fail to send to Tx link 0x{:x}: {}", fid, e.what());
+    return false;
   }
 
   return true;
