@@ -153,7 +153,7 @@ namespace itkpix_efuse_codec {
         expected << std::hex << efuse_input;
         std::stringstream received;
         received << std::hex << std::stoul(encoding_without_parity, 0, 2);
-        bool equal_as_expected = (expected.str() == received.str());
+        // bool equal_as_expected = (expected.str() == received.str());
 
         // itkpix efuses store the parity bits as 8-bit block
         std::stringstream parity_bit_block;
