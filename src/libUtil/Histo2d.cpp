@@ -413,9 +413,9 @@ std::unique_ptr<Histo1d> Histo2d::profileY() const {
   outH->setXaxisTitle(getYaxisTitle());
  
   // Fill the profile histogram
-  for (int ybin = 0; ybin < getYbins(); ybin++) {
+  for (size_t ybin = 0; ybin < getYbins(); ybin++) {
     double bin_y = getYlow() + ybin * getYbinWidth();
-    for (int xbin = 0; xbin < getXbins(); xbin++) {
+    for (size_t xbin = 0; xbin < getXbins(); xbin++) {
       auto bin = xbin+(ybin*xbins);
       double cxy = getBin(bin);
       if (cxy)

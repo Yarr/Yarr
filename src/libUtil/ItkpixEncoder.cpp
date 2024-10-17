@@ -9,7 +9,11 @@
 
 //Constructor sets up the geometry for all future loops
 
-ItkpixEncoder::ItkpixEncoder(const uint nCol, const uint nRow, const uint nColInCCol, const uint nRowInQRow, const uint nEventsPerStream, const bool plainHitMap, const bool dropToT): m_nCol(nCol), m_nRow(nRow), m_nColInCCol(nColInCCol), m_nRowInQRow(nRowInQRow), m_nEventsPerStream(nEventsPerStream), m_plainHitMap(plainHitMap), m_dropToT(dropToT){
+ItkpixEncoder::ItkpixEncoder(const uint nCol, const uint nRow, const uint nColInCCol, const uint nRowInQRow, const uint nEventsPerStream, const bool plainHitMap, const bool dropToT)
+  : m_nEventsPerStream(nEventsPerStream),
+    m_nCol(nCol), m_nRow(nRow), m_nColInCCol(nColInCCol), m_nRowInQRow(nRowInQRow),
+    m_plainHitMap(plainHitMap), m_dropToT(dropToT)
+{
     m_nCCol = nCol/m_nColInCCol;
     m_nQRow = nRow/m_nRowInQRow;
     m_currBlock  = 0x0ULL;
@@ -157,7 +161,7 @@ void ItkpixEncoder::encodeEvent(){
         //add the 6-bit (CCol + 1) address
         addBits64(CCol + 1, 6);    
 
-        int previousQRow = -666;
+        uint previousQRow = -666;
         for (uint QRow = 0; QRow < m_nQRow; QRow++){
             //if there's no hit in this row, continue
             if (!m_hitQCores[CCol][QRow]) continue;            
