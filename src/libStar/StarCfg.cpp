@@ -324,8 +324,8 @@ void StarCfg::loadConfig(const json &j) {
                 logger->trace("Set HCC value {} {}", addr, regValue);
                 m_hcc.setRegisterValue(addr, regValue);
                 auto value = m_hcc.getRegisterValue(addr);
-                logger->trace("From JSON: Set HCC {} reg {} to {:08x}",
-                              getHCCchipID(), regName, regValue);
+                logger->trace("From JSON: Set HCC {} reg {} to {:08x} check {:08x}",
+                              getHCCchipID(), regName, regValue, value);
             } catch(std::runtime_error &e) {
                 logger->warn("Reg {} in JSON file does not exist as an HCC register.  It will be ignored!", regName);
             }
