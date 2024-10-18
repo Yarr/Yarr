@@ -82,7 +82,7 @@ class FrontEnd {
 
         virtual void setInjCharge(double, bool, bool) = 0;
 
-        FrontEndClipBoards &clipboards();
+        FrontEndClipBoards &clipboards() { return *m_clipboards; }
 
         FrontEndGeometry geo;
 
