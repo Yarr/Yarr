@@ -330,6 +330,7 @@ TEST_CASE("StarStrobeDelayFeedback", "[Analysis][Star][SD]") {
     int rx_channel = 0;
     FrontEndConnectivity fe_conn(0,rx_channel);
 
+    unsigned feUid;
     {
       // HCCv1 so chips are in expected order
       auto fe = StdDict::getFrontEnd("Star_vH1A1");
@@ -353,9 +354,8 @@ TEST_CASE("StarStrobeDelayFeedback", "[Analysis][Star][SD]") {
       }
       fe->writeNamedRegister("HCC_ICENABLE", ic_mask);
 
-      bookie.addFe(std::move(fe), fe_conn);
+      feUid = bookie.addFe(std::move(fe), fe_conn);
     }
-    unsigned feUid = bookie.getId(bookie.getLastFe());
 
     std::vector<SdTestValueInfo> sd_info;
     for(int i=0; i<chip_count; i++) {

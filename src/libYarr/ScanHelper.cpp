@@ -332,9 +332,10 @@ namespace ScanHelper {
 	      regRx = chip["regRx"];
 	    }
             FrontEndConnectivity fe_conn((unsigned)chip["tx"], (unsigned)chip["rx"], regRx);
-            bookie.addFe(StdDict::getFrontEnd(chipType), fe_conn);
-            bookie.getLastFe()->init(hwCtrl, fe_conn);
-            auto *feCfg = dynamic_cast<FrontEndCfg*>(bookie.getLastFe());
+            unsigned last_id = bookie.addFe(StdDict::getFrontEnd(chipType), fe_conn);
+            auto fe = bookie.getFe(last_id);
+            fe->init(hwCtrl, fe_conn);
+            auto *feCfg = dynamic_cast<FrontEndCfg*>(fe);
             const json &cfg=chip["__config_data__"];
             feCfg->loadConfig(cfg);
             if (chip.contains("locked")) {
@@ -352,7 +353,7 @@ namespace ScanHelper {
                 } else {
                     active = chip["active"];
                 }
-                bookie.getLastFe()->setActive(active);
+                fe->setActive(active);
             }
 
             if (chip.contains("activeLoop")) {
@@ -362,7 +363,7 @@ namespace ScanHelper {
                 } else {
                     activeLoop = chip["activeLoop"];
                 }
-                bookie.getLastFe()->setActiveLoop(activeLoop);
+                fe->setActiveLoop(activeLoop);
             }
 
             // Check for hidden clipboard monitor parameter, and start them if true
@@ -374,7 +375,7 @@ namespace ScanHelper {
 
             std::size_t botDirPos = chipConfigPath.find_last_of('/');
             std::string  cfgFile=chipConfigPath.substr(botDirPos, chipConfigPath.length());
-            feCfgMap[bookie.getId(bookie.getLastFe())] = {chipConfigPath, cfgFile};
+            feCfgMap[last_id] = {chipConfigPath, cfgFile};
         }
 
         // Check for hidden config-level parameter clipboardMonitorRefreshTime
