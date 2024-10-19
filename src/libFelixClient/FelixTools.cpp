@@ -132,7 +132,7 @@ std::string FelixTools::getECEnableRegName(FelixID_t fid) {
   );
 }
 
-std::string FelixTools::getELinkEnableRegName(uint16_t linkId, uint8_t egroup, bool toflx) {
+std::string FelixTools::getELinkEnableRegName(unsigned linkId, unsigned egroup, bool toflx) {
   std::stringstream regName;
   if (toflx) {
     regName << "ENCODING_LINK";
