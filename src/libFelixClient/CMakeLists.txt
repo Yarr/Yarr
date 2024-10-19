@@ -12,7 +12,7 @@ target_include_directories(FelixClient PRIVATE ../libUtil/include)
 target_include_directories(FelixClient PUBLIC ./include)
 target_link_libraries(FelixClient PRIVATE felix-client-thread)
 
-LIST(APPEND apps testFelixClient felixRegister)
+LIST(APPEND apps testFelixClient felixRegister elinkConfig)
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)
     target_link_libraries(${target} Yarr)
