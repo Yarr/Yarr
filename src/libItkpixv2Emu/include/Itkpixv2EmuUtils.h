@@ -172,8 +172,8 @@ namespace Itkpixv2EmuUtils {
     static float TDACToCharge(const int TDAC){
         //Just take different slopes for positive
         //and negative TDACs, nothing fancier
-        if (TDAC) return 1000./15. * TDAC;
-        else      return 1400./15. * TDAC;
+        if (TDAC > 0.) return 1000./15. * TDAC;
+        else           return 1400./15. * TDAC;
     };
 
     static float globalDACToCharge(const int DAC){
