@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <chrono>
 #include <map>
+#include <random>
 #include <unordered_set>
 #include <unordered_map>
 
@@ -168,8 +169,28 @@ namespace Itkpixv2EmuUtils {
               {0x66, 0x35}
     };
 
+    static float TDACToCharge(const int TDAC){
+        //Just take different slopes for positive
+        //and negative TDACs, nothing fancier
+        if (TDAC) return 1000./15. * TDAC;
+        else      return 1400./15. * TDAC;
+    };
 
+    static float globalDACToCharge(const int DAC){
+        //Translate the threshold in DAC to
+        //charge.
+        //For first pass just use something dummy, like *10.
+        //This is where a more-complex parametrization
+        //should come.
+        return 10. * DAC;
+    }
 
+    static uint16_t chargeToToT(const float charge){
+        //This translates charge (over threshold to ToT)
+        if (charge <= 0.) return 0;
+        //just for testing purposes
+        return 14./33000. * charge;
+    }
 
 }
 

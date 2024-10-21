@@ -13,6 +13,7 @@
 #include "Itkpixv2Encoder.h"
 #include "ItkpixLayout.h"
 #include <memory>
+#include <random>
 #include <map>
 #include <set>
 #include <mutex>
@@ -90,6 +91,12 @@ class Itkpixv2EmuCommandExe {
         //encoder
         std::shared_ptr<Itkpixv2Encoder> m_encoder;
         bool m_hitMapFilled;
+
+        //random number generator
+        std::mt19937 m_rng;
+
+        //noise generator
+        std::normal_distribution<float> m_noiseDist;
 
         //mutex
         std::mutex m_mtx;

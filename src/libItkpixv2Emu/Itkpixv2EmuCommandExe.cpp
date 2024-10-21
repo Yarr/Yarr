@@ -68,35 +68,62 @@ void Itkpixv2EmuCommandExe::doCal(const Itkpixv2EmuUtils::Cmd& cmd){
     //start by zeroing the current ToTs
     m_tots.reset();
 
-    switch (m_cfg->InjDigEn.read()){
-        //analog injection
-        case 0:{
-            rlog->trace("Analog injection happening...");
-            break;
-        }
-        case 1:{
-            rlog->trace("Digital injection happening...");
-            //Let's just put the middle value everywhere now...
-            for (uint32_t pixel : m_activePixels){
-                //The core-col calibration enable needs to be checked here
-                //What is the ccol of the current pixel?
-                uint16_t ccol = (pixel / 384) / 8;
+    //handle noise
+    if (!m_cfg->InjDigEn.read()) m_noiseDist = std::normal_distribution<float>(0., 50.);
 
-                //What is the current ccol cal masking?
-                uint64_t ccolCalEnabled = 0x0ULL;
-                ccolCalEnabled |= m_cfg->EnCoreColCal0.read();
-                ccolCalEnabled |= ((uint64_t)m_cfg->EnCoreColCal1.read() << 16);
-                ccolCalEnabled |= ((uint64_t)m_cfg->EnCoreColCal2.read() << 32);
-                ccolCalEnabled |= ((uint64_t)m_cfg->EnCoreColCal3.read() << 48);
+    for (uint32_t pixel : m_activePixels){
+        //The core-col calibration enable needs to be checked here
+        //What is the ccol of the current pixel?
+        uint16_t ccol = (pixel / 384) / 8;
 
-                //if this ccol is masked, continue
-                if (!((0x1ULL << ccol) & ccolCalEnabled)) continue;
+        //What is the current ccol cal masking?
+        uint64_t ccolCalEnabled = 0x0ULL;
+        ccolCalEnabled |= m_cfg->EnCoreColCal0.read();
+        ccolCalEnabled |= ((uint64_t)m_cfg->EnCoreColCal1.read() << 16);
+        ccolCalEnabled |= ((uint64_t)m_cfg->EnCoreColCal2.read() << 32);
+        ccolCalEnabled |= ((uint64_t)m_cfg->EnCoreColCal3.read() << 48);
 
-                m_tots(pixel) = 9;
-                //rlog->info("Pixel col {} row {} has ToT {}", pixel / 384, pixel % 384, m_tots(pixel));
+        //if this ccol is masked, continue
+        if (!((0x1ULL << ccol) & ccolCalEnabled)) continue;
+
+        switch (m_cfg->InjDigEn.read()){
+            //analog injection
+            case 0:{
+                rlog->trace("Analog injection happening...");
+                //What's the injected charge?
+                //This calibration works
+                float injCharge = m_cfg->toCharge(m_cfg->InjVcalDiff.read());
+                //rlog->info("Injected charge = {}", injCharge);
+                
+                //What is the global threshold? Probably quite overkill - implement the
+                //left edge, middle and right edge treatment
+                //The current pixel is most likely in the center.
+                int globalDAC = m_cfg->DiffTh1M.read() - m_cfg->DiffTh2.read();
+                if      (pixel / 384 <=1)    globalDAC = m_cfg->DiffTh1L.read() - m_cfg->DiffTh2.read();
+                else if (pixel / 384 >= 398) globalDAC = m_cfg->DiffTh1R.read() - m_cfg->DiffTh2.read();
+                //Include the random effect of non-shperical-cow pixels
+                float globalDACCharge = m_thresholds(pixel) * Itkpixv2EmuUtils::globalDACToCharge(globalDAC);
+                
+                //What is the current pixel's TDAC?
+                int TDAC = m_cfg->getTDAC(pixel / 384, pixel % 384);
+                float TDACCharge = Itkpixv2EmuUtils::TDACToCharge(TDAC);
+                //rlog->info("TDAC is {}", TDAC);
+
+                //Add some noise on top  and translate the charge over threshold to ToT
+                float noiseCharge = m_noiseDist(m_rng);//Itkpixv2EmuUtils::noiseCharge(m_rng);
+                float tot =  Itkpixv2EmuUtils::chargeToToT(injCharge + noiseCharge - (globalDACCharge + TDACCharge));
+                m_tots(pixel) = tot > 0 ? tot + 1 : 0;
+
+                break;
             }
-            break;
+            case 1:{
+                rlog->trace("Digital injection happening...");
+                //Let's just put the middle value everywhere now...
+                m_tots(pixel) = 9;
+                break;
+            }
         }
+
     }
     m_hitMapFilled = true;
 
@@ -282,14 +309,14 @@ void Itkpixv2EmuCommandExe::initPixels(const int seed){
     //The PixelLayout called m_thresholds will hold
     //a deviation from 1, where 1 would be exactly the desired
     //set threshold. For the time being, setting the deviation
-    //to 5 %.
+    //to 10 %.
     
-    std::mt19937 gen(seed);
-    std::normal_distribution gauss(1., 0.05);
+    m_rng = std::mt19937(seed);
+    std::normal_distribution gauss(1., 0.10);
 
     for (uint col = 0; col < 400; col++){
         for (uint row = 0; row < 384; row++){
-            m_thresholds(col, row) = gauss(gen);
+            m_thresholds(col, row) = gauss(m_rng);
         }
     }
 
