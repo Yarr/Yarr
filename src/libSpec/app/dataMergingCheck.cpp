@@ -19,21 +19,22 @@ namespace fs = std::filesystem;
 #include "Utils.h"
 
 
-auto logger = logging::make_log("Itkpixv2DataMergingCheck");
+auto logger = logging::make_log("dataMergingCheck");
 
 constexpr const char* COLOR_GREEN = "\033[32m";
 constexpr const char* COLOR_RESET = "\033[0m";
 
 void printHelp() {
-       std::cout << "./bin/Itkpixv2DataMergingScan_4to1 [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-t <test_size>] [-s] [-v]\n\n"
+       std::cout << "./bin/dataMergingScan [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-t <test_size>] [-s] [-v]\n\n"
               << "Options:\n"
               << "  -h                   Display this help message.\n"
               << "  -r <hw_controller_file>   Specify hardware controller JSON path.\n"
               << "  -c <connectivity_file>    Specify connectivity config JSON path.\n"
               << "  -t <test_size>            Specify the error counter test size. Default 1 x 10^6\n"
-              << "  -s                   Skip chip configuration.\n"
-              << "  -o                   Prefix for the output files in ./datamerging_results/.\n"
-              << "  -v                   Print out and store raw error counter values.\n";
+              << "  -v                   Print out and store raw error counter values.\n"
+              << "  -i                   Chip index.\n"
+              << "  -m                   Data merging mode. Can be 4-to-1 or 2-to-1.\n";
+
 }
 
 std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn, int fe_num) {
@@ -149,18 +150,17 @@ int main(int argc, char **argv) {
     hw->disableRx(); // needed?
 
     auto jconn = ScanHelper::openJsonFile(connectivity_filename);
-    std::string chipType = ScanHelper::loadChipConfigs(jconn, false, Utils::dirFromPath(connectivity_filename));
+    std::string chipType = jconn["chipType"];
+    std::cout << chipType << std::endl;
     auto chip_configs = jconn["chips"];
     size_t n_chips = chip_configs.size();
+    std::cout << n_chips << std::endl; 
 
     int lane=0;
     int temp_lane=0;
-    for (int j=0; j<n_chips; j++){
-        temp_lane=jconn["chips"][j]["rx"];
-        if (temp_lane%4==3){
-            lane=temp_lane;
-        }
-    }
+
+    lane=jconn["chips"][j]["rx"];
+    std::cout << "before reading delay" << std::endl; 
     int delay=jcontroller["ctrlCfg"]["cfg"]["delay"][lane];
 
     // Calculate various parameters for the scan 
@@ -185,7 +185,7 @@ int main(int argc, char **argv) {
     mySpec.writeSingle(0x2 << 14 | 0x5, delay);
 
 
-    logger->info("Setting up configuration for all chips...");
+    std::cout << "Setting up configuration for all chips..." << std::endl;
 
     // Set up all chips 
     for (size_t ichip = 0; ichip < n_chips; ichip++) {
@@ -210,7 +210,8 @@ int main(int argc, char **argv) {
             // By default, disable service blocks and set VDDA/VDDD low
             fe->writeNamedRegister("ServiceBlockEn", 0);
 
-            int chip_id=jchip["ITKPIXV2"]["Parameter"]["ChipId"];
+            std::cout << "Getting chipId maybe" << std::endl;
+            int chip_id=jchip[chipType]["Parameter"]["ChipId"];
 
             if (chip_id == 12 || chip_id==13 || chip_id==14){
 
@@ -271,7 +272,7 @@ int main(int argc, char **argv) {
     auto cfg = dynamic_cast<FrontEndCfg*>(fe.get());
     std::string current_chip_name = cfg->getName();
     auto jchip = ScanHelper::openJsonFile(chip_register_file_path);
-    int chip_id=jchip["ITKPIXV2"]["Parameter"]["ChipId"];
+    int chip_id=jchip[chipType]["Parameter"]["ChipId"];
 
     // Wait for fifo to be empty
     std::this_thread::sleep_for(std::chrono::microseconds(10));
@@ -279,6 +280,7 @@ int main(int argc, char **argv) {
 
     // Check which data merging mode we want to test 
     if (mode=="4-to-1"){
+        std::cout << "testing 4-to-1" << std::endl;
         fe->writeNamedRegister("ServiceBlockEn", 1);
         if (chip_id==12){
             fe->writeNamedRegister("SerSelOut1", 1);
@@ -288,6 +290,7 @@ int main(int argc, char **argv) {
             fe->writeNamedRegister("SerEnLane", 4);
         }   
     } else if (mode=="2-to-1"){
+        std::cout << "testing 2-to-1" << std::endl;
         // still to implement
     } else {
         std::cout << "unknown data merging mode. please provide a valid argument.." << std::endl;
@@ -336,11 +339,10 @@ int main(int argc, char **argv) {
     }
 
     if (print_raw_value){
-        std::cout << mode << " data merging on chip " << std::to_string(test_ichip) << ". Error count:  " << error_count << std::endl;
+        std::cout << chip_id << "  " << error_count << std::endl;
     } else {
-        std::cout << mode << " data merging on chip " << std::to_string(test_ichip) << ". Link quality:  " << link_quality << std::endl;
+        std::cout << chip_id << "  " << link_quality << std::endl;
     }             
-
     // Reset registers, need to fix so we set the lanes correctly again       
     fe->writeNamedRegister("ServiceBlockEn", 0);
     if (chip_id==12 || chip_id==13 || chip_id==14){

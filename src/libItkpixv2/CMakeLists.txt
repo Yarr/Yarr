@@ -26,7 +26,6 @@ LIST(APPEND apps
         Itkpixv2CheckPulse
         Itkpixv2ConnectivityScan
         Itkpixv2ReadRingosc
-        Itkpixv2DataMergingCheck
         )
 
 foreach (target IN LISTS apps)
