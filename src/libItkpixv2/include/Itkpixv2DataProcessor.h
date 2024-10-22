@@ -71,6 +71,9 @@ private:
     bool _isCompressedHitmap; // Flag for toggle hitmap type, true for compressed, false for raw
     bool _dropToT;
     bool _enChipId;
+    bool _enBcid; // Flag for BCID read enable
+    bool _enL1id; // Flag for Level-1 read enable
+    bool _readBcL1; // OR 
     unsigned _chipIdShift;
     unsigned _chipId;
     unsigned long _streamMask;
@@ -95,13 +98,14 @@ private:
     enum STATUS
     {
         INIT=0,  // Initial run
-        CCOL=1,  // Reading core column
-        CCC=2,   // Core column check
-        ILIN=3,  // Reading islast/isneighbor bits
-        QROW=4,  // Reading quarter row
-        HMAP1=5, // Reading hit map step 1
-        HMAP2=6, // Reading hit map step 2
-        TOT=7    // Reading ToT
+        BCIDL1=1, // Reading BCID and/or L1ID
+        CCOL=2,  // Reading core column
+        CCC=3,   // Core column check
+        ILIN=4,  // Reading islast/isneighbor bits
+        QROW=5,  // Reading quarter row
+        HMAP1=6, // Reading hit map step 1
+        HMAP2=7, // Reading hit map step 2
+        TOT=8    // Reading ToT
     };
 
     STATUS _status;
