@@ -19,24 +19,40 @@ public:
   const json getStatus() override;
 
   // E-link control
-  bool getICEnable(uint16_t linkId, bool toflx);
-  bool getECEnable(uint16_t linkId, bool toflx);
-  bool getELinkEnable(unsigned chn, bool toflx);
+  // IC
+  bool getICEnable(uint64_t fid);
+  bool getICEnable(const std::vector<uint64_t>& fids);
+
+  bool setICEnable(uint64_t fid, bool enable=true);
+  bool setICEnable(const std::vector<uint64_t>& fids, const std::vector<bool>& enables);
+  inline bool setICEnable(const std::vector<uint64_t>& fids) {
+    std::vector<bool> enables(fids.size(), true);
+    return setICEnable(fids, enables);
+  }
+
+  // EC
+  bool getECEnable(uint64_t fid);
+  bool getECEnable(const std::vector<uint64_t>& fids);
+
+  bool setECEnable(uint64_t fid, bool enable=true);
+  bool setECEnable(const std::vector<uint64_t>& fids, const std::vector<bool>& enables);
+  inline bool setECEnable(const std::vector<uint64_t>& fids) {
+    std::vector<bool> enables(fids.size(), true);
+    return setECEnable(fids, enables);
+  }
+
+  // Data E-links
   bool getELinkEnable(uint64_t fid);
-  bool getELinkEnablesAll(const std::vector<unsigned>& chns, bool toflx);
-  bool getELinkEnablesAll(const std::vector<uint64_t>& fids);
+  bool getELinkEnable(const std::vector<uint64_t>& fids);
 
-  bool setICEnable(uint16_t linkId, bool toflx, bool enable=true);
-  bool setECEnable(uint16_t linkId, bool toflx, bool enable=true);
-  bool setELinkEnable(unsigned chn, bool toflx, bool enable=true);
   bool setELinkEnable(uint64_t fid, bool enable=true);
+  bool setELinkEnable(const std::vector<uint64_t>& fids, const std::vector<bool>& enables);
+  inline bool setELinkEnable(const std::vector<uint64_t>& fids) {
+    std::vector<bool> enables(fids.size(), true);
+    return setELinkEnable(fids, enables);
+  }
 
-  bool setELinkEnables(const std::vector<unsigned> chns, bool toflx, const std::vector<bool>& enables);
-  bool setELinkEnables(const std::vector<unsigned> chns, bool toflx);
-  bool setELinkEnables(const std::vector<uint64_t> fids, const std::vector<bool>& enables);
-  bool setELinkEnables(const std::vector<uint64_t> fids);
-
-private:
+protected:
 
   std::shared_ptr<FelixClientThread> client;
 
@@ -56,13 +72,13 @@ private:
   }
 
   // E-Link control utilities
-  void updateEnableMap(std::map<std::string, uint8_t>& maskMap, uint16_t linkId, uint8_t egroup, uint8_t epath, bool toflx, bool val=1);
+  void updateRegMap(std::map<std::string, unsigned>& regMap, const std::string& regName, unsigned value, bool overwrite);
+  bool checkRegValue(const std::string& regName, unsigned value, bool ismask);
+  bool checkRegValuesAll(const std::map<std::string, unsigned>& regValueMap, bool ismask);
 
-  bool checkELinkEnableRegs(const std::map<std::string, uint8_t>& maskMap);
-
-  bool setELinkEnableImpl(bool enable, uint16_t linkId, uint8_t egroup, uint8_t epath, bool toflx);
-
-  bool setELinkEnableRegs(const std::map<std::string, uint8_t>& maskMap, const std::map<std::string, uint8_t>& valMap);
+  bool setRegValue(const std::string& regName, unsigned value, unsigned mask=0);
+  bool setRegValueAll(const std::map<std::string, unsigned>& regValueMap, const std::map<std::string, unsigned>& regMaskMap);
+  bool setRegValueAll(const std::map<std::string, unsigned>& regValueMap);
 };
 
 #endif

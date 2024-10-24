@@ -174,297 +174,278 @@ const json FelixController::getStatus() {
 }
 
 // E-link control
-bool FelixController::getICEnable(uint16_t linkId, bool toflx) {
-  std::string regName = FelixTools::getICEnableRegName(linkId, toflx);
-  uint64_t regValue;
-
-  fclog->debug("Get link {} (toflx={}) IC channel enable:", linkId, toflx);
-  if ( readFelixRegister(regName, regValue) ) {
-    fclog->debug(" {} = 0x{:x}", regName, regValue);
-    return regValue & 1;
-  } else {
-    // failed to read the register
-    return false;
-  }
+bool FelixController::getICEnable(uint64_t fid) {
+  fclog->debug("Get FID 0x{:x} IC channel enable:", fid);
+  return checkRegValue(FelixTools::getICEnableRegName(fid), 1, true);
 }
 
-bool FelixController::getECEnable(uint16_t linkId, bool toflx) {
-  std::string regName = FelixTools::getECEnableRegName(linkId, toflx);
-  uint64_t regValue;
-
-  fclog->debug("Get link {} (toflx={}) EC channel enable:", linkId, toflx);
-  if (readFelixRegister(regName, regValue) ) {
-    fclog->debug(" {} = 0x{:x}", regName, regValue);
-    return regValue & 1;
-  } else {
-    // failed to read the register
-    return false;
-  }
-}
-
-bool FelixController::getELinkEnable(unsigned chn, bool toflx) {
-  auto [linkId, egroup, epath] = FelixTools::linkInfo_from_chn(chn, toflx, fwMode());
-
-  std::string regName = FelixTools::getELinkEnableRegName(linkId, egroup, toflx);
-  uint64_t regValue;
-
-  fclog->debug("Get channel {} (toflx={}) () enable:", chn, toflx);
-  if ( readFelixRegister(regName, regValue) ) {
-    fclog->debug(" {} = 0x{:x} [Bit {}]", regName, regValue, epath);
-    // check the bit
-    return regValue & (1 << epath);
-  } else {
-    // failed to read the register
-    return false;
-  }
-}
-
-bool FelixController::getELinkEnable(uint64_t fid) {
-  auto [linkId, egroup, epath, toflx] = FelixTools::linkInfo_from_fid(fid, fwMode());
-
-  std::string regName = FelixTools::getELinkEnableRegName(linkId, egroup, toflx);
-  uint64_t regValue;
-
-  fclog->debug("Get FID 0x{:x} enable:", fid);
-  if (readFelixRegister(regName, regValue) ) {
-    fclog->debug(" {} = 0x{:x} [Bit {}]", regName, regValue, epath);
-    // check the bit
-    return regValue & (1 << epath);
-  } else {
-    // failed to read the register
-    return false;
-  }
-}
-
-bool FelixController::getELinkEnablesAll(const std::vector<unsigned>& chns, bool toflx) {
-  std::map<std::string, uint8_t> enableRegMask;
-
-  std::stringstream ss_chns;
-
-  for (const auto& chn : chns) {
-    auto [linkId, egroup, epath] = FelixTools::linkInfo_from_chn(chn, toflx, fwMode());
-    updateEnableMap(enableRegMask, linkId, egroup, epath, toflx);
-
-    if (spdlog::should_log(spdlog::level::debug)) {
-      ss_chns << " " << chn;
-    }
-  }
-  fclog->debug("Get enable of channels (toflx={}):{}", toflx, ss_chns.str());
-
-  return checkELinkEnableRegs(enableRegMask);
-}
-
-bool FelixController::getELinkEnablesAll(const std::vector<uint64_t>& fids) {
-  std::map<std::string, uint8_t> enableRegMask;
+bool FelixController::getICEnable(const std::vector<uint64_t>& fids) {
+  std::map<std::string, unsigned>  regICEnables;
 
   std::stringstream ss_fids;
   ss_fids << std::hex;
 
   for (const auto& fid : fids) {
-    auto [linkId, egroup, epath, toflx] = FelixTools::linkInfo_from_fid(fid, fwMode());
-    updateEnableMap(enableRegMask, linkId, egroup, epath, toflx);
+    if (spdlog::should_log(spdlog::level::debug)) ss_fids << " 0x" << fid;
+    updateRegMap(regICEnables, FelixTools::getICEnableRegName(fid), 1, false);
+  }
+  fclog->debug("Get IC enables corresponding to FIDs:{}", ss_fids.str());
 
-    if (spdlog::should_log(spdlog::level::debug)) {
-      ss_fids << " 0x" << fid;
-    }
+  return checkRegValuesAll(regICEnables, true);
+}
+
+bool FelixController::getECEnable(uint64_t fid) {
+  fclog->debug("Get FID 0x{:x} EC channel enable:", fid);
+  return checkRegValue(FelixTools::getECEnableRegName(fid), 1, true);
+}
+
+bool FelixController::getECEnable(const std::vector<uint64_t>& fids) {
+  std::map<std::string, unsigned>  regECEnables;
+
+  std::stringstream ss_fids;
+  ss_fids << std::hex;
+
+  for (const auto& fid : fids) {
+    if (spdlog::should_log(spdlog::level::debug)) ss_fids << " 0x" << fid;
+    updateRegMap(regECEnables, FelixTools::getECEnableRegName(fid), 1, false);
+  }
+  fclog->debug("Get EC enables corresponding to FIDs:{}", ss_fids.str());
+
+  return checkRegValuesAll(regECEnables, true);
+}
+
+bool FelixController::getELinkEnable(uint64_t fid) {
+  fclog->debug("Get FID 0x{:x} enable:", fid);
+
+  auto [linkId, egroup, epath, toflx] = FelixTools::linkInfo_from_fid(fid, fwMode());
+  std::string regName = FelixTools::getELinkEnableRegName(linkId, egroup, toflx);
+  unsigned mask = (1 << epath);
+
+  return checkRegValue(regName, mask, true);
+}
+
+bool FelixController::getELinkEnable(const std::vector<uint64_t>& fids) {
+  std::map<std::string, unsigned> enableRegMask;
+
+  std::stringstream ss_fids;
+  ss_fids << std::hex;
+
+  for (const auto& fid : fids) {
+    if (spdlog::should_log(spdlog::level::debug)) ss_fids << " 0x" << fid;
+
+    auto [linkId, egroup, epath, toflx] = FelixTools::linkInfo_from_fid(fid, fwMode());
+    std::string regName = FelixTools::getELinkEnableRegName(linkId, egroup, toflx);
+    unsigned mask = (1 << epath);
+
+    updateRegMap(enableRegMask, regName, mask, false);
   }
   fclog->debug("Get enable of FIDs:{}", ss_fids.str());
 
-  return checkELinkEnableRegs(enableRegMask);
+  return checkRegValuesAll(enableRegMask, true);
 }
 
-bool FelixController::setICEnable(uint16_t linkId, bool toflx, bool enable) {
-  fclog->debug("Set link {} (toflx={}) IC channel enable to {}", linkId, toflx, enable);
-
-  std::string regName = FelixTools::getICEnableRegName(linkId, toflx);
-  bool success = writeFelixRegister(regName, std::to_string(enable));
-  if (success) fclog->debug(" {} = {}", regName, enable);
-
-  return success;
+//////
+bool FelixController::setICEnable(uint64_t fid, bool enable) {
+  fclog->debug("Set FID 0x{:x} IC channel enable:", fid);
+  return setRegValue(FelixTools::getICEnableRegName(fid), enable);
 }
 
-bool FelixController::setECEnable(uint16_t linkId, bool toflx, bool enable) {
-  fclog->debug("Set link {} (toflx={}) EC channel enable to {}", linkId, toflx, enable);
-
-  std::string regName = FelixTools::getECEnableRegName(linkId, toflx);
-  bool success = writeFelixRegister(regName, std::to_string(enable));
-  if (success) fclog->debug(" {} = {}", regName, enable);
-
-  return success;
-}
-
-bool FelixController::setELinkEnable(unsigned chn, bool toflx, bool enable) {
-  fclog->debug("Set channel {} (toflx={}) enable to {}", chn, toflx, enable);
-  auto [linkId, egroup, epath] = FelixTools::linkInfo_from_chn(chn, toflx, fwMode());
-  return setELinkEnableImpl(enable, linkId, egroup, epath, toflx);
-}
-
-bool FelixController::setELinkEnable(uint64_t fid, bool enable) {
-  fclog->debug("Set FID 0x{:x} enable to {}", fid, enable);
-  auto [linkId, egroup, epath, toflx] = FelixTools::linkInfo_from_fid(fid, fwMode());
-  return setELinkEnableImpl(enable, linkId, egroup, epath, toflx);
-}
-
-bool FelixController::setELinkEnables(const std::vector<unsigned> chns, bool toflx, const std::vector<bool>& enables) {
-  // check if chns and enables are of the same length
-  if (chns.size() != enables.size()) {
-    fclog->error("Failed to set e-link enable registers: inconsistent numbers of channels and enables");
-    return false;
-  }
-
-  std::map<std::string, uint8_t> enableRegMask;
-  std::map<std::string, uint8_t> enableRegValue;
-
-  std::stringstream ss_chns;
-
-  for (unsigned i=0; i<chns.size(); ++i) {
-    auto [linkId, egroup, epath] = FelixTools::linkInfo_from_chn(chns[i], toflx, fwMode());
-    updateEnableMap(enableRegMask, linkId, egroup, epath, toflx);
-    updateEnableMap(enableRegValue, linkId, egroup, epath, toflx, enables[i]);
-
-    if (spdlog::should_log(spdlog::level::debug)) {
-      ss_chns << " " << chns[i];
-    }
-  }
-  fclog->debug("Set enable of channels (toflx={}):{}", toflx, ss_chns.str());
-
-  return setELinkEnableRegs(enableRegMask, enableRegValue);
-}
-
-bool FelixController::setELinkEnables(const std::vector<unsigned> chns, bool toflx) {
-  std::vector<bool> enables(chns.size(), true);
-  return setELinkEnables(chns, toflx, enables);
-}
-
-bool FelixController::setELinkEnables(const std::vector<uint64_t> fids, const std::vector<bool>& enables) {
+bool FelixController::setICEnable(const std::vector<uint64_t>& fids, const std::vector<bool>& enables) {
   // check if fids and enables are of the same length
   if (fids.size() != enables.size()) {
-    fclog->error("Failed to set e-link enable registers: inconsistent numbers of channels and enables");
+    fclog->error("Failed to set IC enable registers: inconsistent numbers of channels and enables");
     return false;
   }
 
-  std::map<std::string, uint8_t> enableRegMask;
-  std::map<std::string, uint8_t> enableRegValue;
+  std::map<std::string, unsigned> regICEnables;
 
   std::stringstream ss_fids;
   ss_fids << std::hex;
 
   for (unsigned i=0; i<fids.size(); ++i) {
-    auto [linkId, egroup, epath, toflx] = FelixTools::linkInfo_from_fid(fids[i], fwMode());
-    updateEnableMap(enableRegMask, linkId, egroup, epath, toflx);
-    updateEnableMap(enableRegValue, linkId, egroup, epath, toflx, enables[i]);
+    if (spdlog::should_log(spdlog::level::debug)) ss_fids << " 0x" << fids[i];
+    updateRegMap(regICEnables, FelixTools::getICEnableRegName(fids[i]), enables[i], true);
+  }
 
-    if (spdlog::should_log(spdlog::level::debug)) {
-      ss_fids << " 0x" << fids[i];
+  fclog->debug("Set IC enables corresponding to FIDs:{}", ss_fids.str());
+  return setRegValueAll(regICEnables);
+}
+
+bool FelixController::setECEnable(uint64_t fid, bool enable) {
+  fclog->debug("Set FID 0x{:x} EC channel enable:", fid);
+  return setRegValue(FelixTools::getECEnableRegName(fid), enable);
+}
+
+bool FelixController::setECEnable(const std::vector<uint64_t>& fids, const std::vector<bool>& enables) {
+  // check if fids and enables are of the same length
+  if (fids.size() != enables.size()) {
+    fclog->error("Failed to set EC enable registers: inconsistent numbers of channels and enables");
+    return false;
+  }
+
+  std::map<std::string, unsigned> regECEnables;
+
+  std::stringstream ss_fids;
+  ss_fids << std::hex;
+
+  for (unsigned i=0; i<fids.size(); ++i) {
+    if (spdlog::should_log(spdlog::level::debug)) ss_fids << " 0x" << fids[i];
+    updateRegMap(regECEnables, FelixTools::getECEnableRegName(fids[i]), enables[i], true);
+  }
+
+  fclog->debug("Set EC enables corresponding to FIDs:{}", ss_fids.str());
+  return setRegValueAll(regECEnables);
+}
+
+bool FelixController::setELinkEnable(uint64_t fid, bool enable) {
+  fclog->debug("Set FID 0x{:x} enable to {}", fid, enable);
+  auto [linkId, egroup, epath, toflx] = FelixTools::linkInfo_from_fid(fid, fwMode());
+  auto regName = FelixTools::getELinkEnableRegName(linkId, egroup, toflx);
+
+  return setRegValue(regName, enable << epath, 1 << epath);
+}
+
+bool FelixController::setELinkEnable(const std::vector<uint64_t>& fids, const std::vector<bool>& enables) {
+  // check if chns and enables are of the same length
+  if (fids.size() != enables.size()) {
+    fclog->error("Failed to set e-link enable registers: inconsistent numbers of channels and enables");
+    return false;
+  }
+
+  std::map<std::string, unsigned> enableRegValue;
+  std::map<std::string, unsigned> enableRegMask;
+
+  std::stringstream ss_fids;
+  ss_fids << std::hex;
+
+  for (unsigned i=0; i<fids.size(); ++i) {
+    if (spdlog::should_log(spdlog::level::debug)) ss_fids << " 0x" << fids[i];
+
+    std::string regName = FelixTools::getELinkEnableRegName(fids[i], fwMode());
+    updateRegMap(enableRegValue, regName, enables[i], false);
+    updateRegMap(enableRegMask, regName, 1, false);
+  }
+
+  fclog->debug("Set enable of FIDs:{}", ss_fids.str());
+  return setRegValueAll(enableRegValue, enableRegMask);
+}
+
+void FelixController::updateRegMap(std::map<std::string, unsigned>& regMap, const std::string& regName, unsigned value, bool overwrite) {
+  // check if regName is already in the map
+  if (regMap.find(regName) != regMap.end()) {
+    // already exist
+    if (overwrite) {
+      regMap[regName] = value;
+    } else {
+      regMap[regName] = regMap[regName] | value;
+    }
+  } else {
+    //new key
+    regMap[regName] = value;
+  }
+}
+
+bool FelixController::checkRegValue(const std::string& regName, unsigned value, bool ismask) {
+  bool good {false};
+
+  // read the register
+  uint64_t regValue;
+  if ( readFelixRegister(regName, regValue) ) {
+    // check against value
+    if (ismask) {
+      // only compare the bits masked by value i.e. only check the positions in regValue that corresponds to the bits that are 1's in value
+      good = (regValue & value) == value;
+    } else {
+      // check if exactly the same
+      good = regValue == value;
+    }
+
+    if (good) {
+      fclog->debug(" {} = 0x{:x} [{}: 0x{:x}]", regName, regValue, ismask?"Mask":"Expected", value);
+    } else {
+      fclog->warn(" {} = 0x{:x} [{}: 0x{:x}]", regName, regValue, ismask?"Mask":"Expected", value);
     }
   }
-  fclog->debug("Set enable of FIDs:{}", ss_fids.str());
+  // else failed to read FELIX register
 
-  return setELinkEnableRegs(enableRegMask, enableRegValue);
+  return good;
 }
 
-bool FelixController::setELinkEnables(const std::vector<uint64_t> fids) {
-  std::vector<bool> enables(fids.size(), true);
-  return setELinkEnables(fids, enables);
-}
-
-void FelixController::updateEnableMap(std::map<std::string, uint8_t>& maskMap, uint16_t linkId, uint8_t egroup, uint8_t epath, bool toflx, bool val) {
-  std::string regName = FelixTools::getELinkEnableRegName(linkId, egroup, toflx);
-
-  // check if regName is already in the map
-  if (maskMap.find(regName) != maskMap.end()) {
-    // already exist
-    maskMap[regName] = maskMap[regName] | (val << epath);
-  } else {
-    // new key
-    maskMap[regName] = (val << epath);
-  }
-}
-
-bool FelixController::checkELinkEnableRegs(const std::map<std::string, uint8_t>& maskMap) {
+bool FelixController::checkRegValuesAll(const std::map<std::string, unsigned>& regValueMap, bool ismask) {
   bool allGood = true;
 
-  for (const auto& [regName, mask]: maskMap) {
-    // read the register
-    uint64_t regValue;
-    if ( readFelixRegister(regName, regValue) ) {
-      // check against mask
-      bool regGood = (regValue & mask) == mask;
-      if (not regGood) {
-        fclog->warn("Not all E-links are enabled: {} = 0x{:x}. Expected mask: 0x{:x}", regName, regValue, mask);
-      } else {
-        fclog->debug(" {} = 0x{:x} [mask=0x{:x}]", regName, regValue, mask);
-      }
+  for (const auto& [regName, value]: regValueMap) {
+    allGood &= checkRegValue(regName, value, ismask);
+  }
 
-      allGood &= regGood;
-    } else {
-      // failed to read the register
-      allGood = false;
-    }
+  if (not allGood) {
+    fclog->warn("Not all registers have the expected {}!", ismask?"mask":"value");
   }
 
   return allGood;
 }
 
-bool FelixController::setELinkEnableImpl(bool enable, uint16_t linkId, uint8_t egroup, uint8_t epath, bool toflx) {
-  std::string regName = FelixTools::getELinkEnableRegName(linkId, egroup, toflx);
+bool FelixController::setRegValue(const std::string& regName, unsigned value, unsigned mask) {
+  uint64_t regValueOld, regValueNew;
 
-  // read the register first
-  uint64_t regValueOld;
-  bool readSuccess = readFelixRegister(regName, regValueOld);
+  if (mask) {
+    // read the register first
+    bool readSuccess = readFelixRegister(regName, regValueOld);
 
-  if (not readSuccess) {
-    fclog->error("Failed to set E-link enable: cannot access the current value of register {}", regName);
-    return false;
-  }
+    if (not readSuccess) {
+      fclog->error("Failed to set register {}: cannot access its current value", regName);
+      return false;
+    }
 
-  // modify only the bit according to epath
-  uint64_t regValue = regValueOld;
-  if (enable) {
-    regValue |= (1 << epath);
+    // modify only the bits corresponding to the mask
+    regValueNew = (regValueOld & ~mask) | (value & mask);
   } else {
-    regValue &= ~(1 << epath);
+    // Special case if mask is 0: overwrite the old value
+    regValueNew = value;
   }
 
-  bool writeSuccess = writeFelixRegister(regName, std::to_string(regValue));
-  if (writeSuccess) fclog->debug(" {} = 0x{:x} (previous value: 0x{:x})", regName, regValue, regValueOld);
+  bool writeSuccess = writeFelixRegister(regName, std::to_string(regValueNew));
+  if (writeSuccess) {
+    if (mask) {
+      fclog->debug(" {} = 0x{:x} (old value: 0x{:x})", regName, regValueNew, regValueOld);
+    } else {
+      fclog->debug(" {} = 0x{:x}", regName, regValueNew);
+    }
+  }
 
   return writeSuccess;
 }
 
-bool FelixController::setELinkEnableRegs(
-  const std::map<std::string, uint8_t>& maskMap,
-  const std::map<std::string, uint8_t>& valMap)
-{
+bool FelixController::setRegValueAll(const std::map<std::string, unsigned>& regValueMap, const std::map<std::string, unsigned>& regMaskMap) {
   // check map size
-  if (maskMap.size() != valMap.size()) {
-    fclog->error("Failed to set e-link enable registers: e-link enable mask and value maps are not of the same size!");
+  if (regValueMap.size() != regMaskMap.size()) {
+    fclog->error("Failed to set register values: value and mask maps are not of the same size!");
     return false;
   }
 
   bool allSuccess = true;
 
-  for (const auto& [regName, mask]: maskMap) {
-    // read the current value
-    uint64_t regValueOld;
-    bool readSuccess = readFelixRegister(regName, regValueOld);
-    if (not readSuccess) {
-      fclog->error("Failed to set E-link enable: cannot access the current value of register {}", regName);
-      return false;
-    }
-
-    // update the register value
-    // only modify the bits according to mask to valMap[regName]
-    uint64_t regValue = (regValueOld & ~mask) | (valMap.at(regName) & mask);
-
-    bool writeSuccess = writeFelixRegister(regName, std::to_string(regValue));
-    if (writeSuccess) {
-      fclog->debug(" {} = 0x{:x} (previous value: 0x{:x})", regName, regValue, regValueOld);
-    }
-
-    allSuccess &= writeSuccess;
+  for (const auto& [regName, regValue]: regValueMap) {
+    auto regMask = regMaskMap.at(regName);
+    allSuccess &= setRegValue(regName, regValue, regMask);
   }
 
+  if (not allSuccess) {
+    fclog->warn("Not all register values are updated!");
+  }
+  return allSuccess;
+}
+
+bool FelixController::setRegValueAll(const std::map<std::string, unsigned>& regValueMap) {
+  // No mask map provided. Overwrite all registers
+  bool allSuccess = true;
+  for (const auto& [regName, regValue]: regValueMap) {
+    allSuccess &= setRegValue(regName, regValue, 0);
+  }
+
+  if (not allSuccess) {
+    fclog->warn("Not all register values are updated!");
+  }
   return allSuccess;
 }
 
