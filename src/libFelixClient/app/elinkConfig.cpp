@@ -23,6 +23,7 @@ namespace {
     std::cout << " -t TX_CHANNELS : A list of Tx channels to be configured." << std::endl;
     std::cout << " -r RX_CHANNELS : A list of Rx channels to be configured." << std::endl;
     std::cout << " -c CHIP_CONFIG : Connectivity configuration file." << std::endl;
+    std::cout << " -b BANDWIDTH : Rx bandwidth in Mbps." << std::endl;
     std::cout << " -I : Include IC channels" << std::endl;
     std::cout << " -E : Include EC channels" << std::endl;
     std::cout << " -l LOG_CONFIG : Configuration for the logger." << std::endl;
@@ -123,6 +124,7 @@ int main(int argc, char **argv) {
   std::string conCfg;
   std::vector<unsigned> rxChannels;
   std::vector<unsigned> txChannels;
+  unsigned rxBandWidth {0}; // Mbps
   bool includeIC {false};
   bool includeEC {false};
   bool verbose {false};
@@ -142,7 +144,7 @@ int main(int argc, char **argv) {
     };
 
   int opt;
-  while ((opt = getopt_long(argc, argv, "hl:t:r:c:IEv", long_options, nullptr)) != -1) {
+  while ((opt = getopt_long(argc, argv, "hl:t:r:c:b:IEv", long_options, nullptr)) != -1) {
     switch(opt) {
     case 'h':
       printHelp();
@@ -174,6 +176,9 @@ int main(int argc, char **argv) {
       break;
     case 'c':
       conCfg = std::string(optarg);
+      break;
+    case 'b':
+      rxBandWidth = std::stoi(optarg);
       break;
     case 'I':
       includeIC = true;
@@ -298,6 +303,10 @@ int main(int argc, char **argv) {
       checkECEnable(flxCtrlPtr, vfids_rx, "Rx");
     }
 
+    if (rxBandWidth > 0) {
+      checkELinkBandWidth(flxCtrlPtr, vfids_rx, rxBandWidth, "Rx");
+    }
+
     checkELinkEnable(flxCtrlPtr, vfids_tx, "Tx");
     checkELinkEnable(flxCtrlPtr, vfids_rx, "Rx");
   }
@@ -310,6 +319,10 @@ int main(int argc, char **argv) {
     if (includeEC) {
       enableECs(flxCtrlPtr, vfids_tx, "Tx");
       enableECs(flxCtrlPtr, vfids_rx, "Rx");
+    }
+
+    if (rxBandWidth > 0) {
+      setELinkBandWidth(flxCtrlPtr, vfids_rx, rxBandWidth, "Rx");
     }
 
     enableELinks(flxCtrlPtr, vfids_tx, "Tx");

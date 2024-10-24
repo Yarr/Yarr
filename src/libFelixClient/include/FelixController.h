@@ -44,6 +44,8 @@ public:
   // Data E-links
   bool getELinkEnable(uint64_t fid);
   bool getELinkEnable(const std::vector<uint64_t>& fids);
+  unsigned getELinkWidthNBits(uint64_t fid);
+  unsigned getELinkWidthMbps(uint64_t fid);
 
   bool setELinkEnable(uint64_t fid, bool enable=true);
   bool setELinkEnable(const std::vector<uint64_t>& fids, const std::vector<bool>& enables);
@@ -51,6 +53,10 @@ public:
     std::vector<bool> enables(fids.size(), true);
     return setELinkEnable(fids, enables);
   }
+  bool setELinkWidthNBits(uint64_t fid, unsigned nbits);
+  bool setELinkWidthNBits(const std::vector<uint64_t>& fids, unsigned nbits);
+  bool setELinkWidthMbps(uint64_t fid, unsigned bandwidth);
+  bool setELinkWidthMbps(const std::vector<uint64_t>& fids, unsigned bandwidth);
 
 protected:
 

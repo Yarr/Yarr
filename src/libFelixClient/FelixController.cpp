@@ -244,6 +244,27 @@ bool FelixController::getELinkEnable(const std::vector<uint64_t>& fids) {
   return checkRegValuesAll(enableRegMask, true);
 }
 
+unsigned FelixController::getELinkWidthNBits(uint64_t fid) {
+  fclog->debug("Get FID 0x{:x} width:", fid);
+
+  unsigned nbits_w {0};
+
+  std::string regName = FelixTools::getELinkWidthRegName(fid, fwMode());
+  uint64_t regValue;
+  if ( readFelixRegister(regName, regValue) ) {
+    fclog->debug(" {} = 0x{:x}", regName, regValue);
+    nbits_w = 2 << (regValue & 0x7);
+  }
+  /* else {
+    failed to read the register
+  }*/
+  return nbits_w;
+}
+
+unsigned FelixController::getELinkWidthMbps(uint64_t fid) {
+  return getELinkWidthNBits(fid) * 40;
+}
+
 //////
 bool FelixController::setICEnable(uint64_t fid, bool enable) {
   fclog->debug("Set FID 0x{:x} IC channel enable:", fid);
@@ -328,6 +349,42 @@ bool FelixController::setELinkEnable(const std::vector<uint64_t>& fids, const st
 
   fclog->debug("Set enable of FIDs:{}", ss_fids.str());
   return setRegValueAll(enableRegValue, enableRegMask);
+}
+
+bool FelixController::setELinkWidthNBits(uint64_t fid, unsigned nbits) {
+  fclog->debug("Set FID 0x{:x} width to {} bits", nbits);
+
+  std::string regName = FelixTools::getELinkWidthRegName(fid, fwMode());
+  unsigned regValue = (__builtin_ctz(nbits) - 1) & 0x7; // 3 bits
+  // or std::countr_zero when we move to c++20
+
+  return setRegValue(regName, regValue);
+}
+
+bool FelixController::setELinkWidthNBits(const std::vector<uint64_t>& fids, unsigned nbits) {
+  std::map<std::string, unsigned> regWidths;
+
+  std::stringstream ss_fids;
+  ss_fids << std::hex;
+
+  for (const auto& fid : fids) {
+    if (spdlog::should_log(spdlog::level::debug)) ss_fids << " 0x" << fid;
+    auto regName = FelixTools::getELinkWidthRegName(fid, fwMode());
+    updateRegMap(regWidths, regName, nbits, true);
+  }
+
+  fclog->debug("Set e-link width to {} bits for FIDs:{}", nbits, ss_fids.str());
+  return setRegValueAll(regWidths);
+}
+
+bool FelixController::setELinkWidthMbps(uint64_t fid, unsigned bandwidth) {
+  fclog->debug("Set FID 0x{:x} width to {} Mbps", fid, bandwidth);
+  return setELinkWidthNBits(fid, bandwidth/40);
+}
+
+bool FelixController::setELinkWidthMbps(const std::vector<uint64_t>& fids, unsigned bandwidth) {
+  fclog->debug("Set e-link width to {} Mbps", bandwidth);
+  return setELinkWidthNBits(fids, bandwidth/40);
 }
 
 void FelixController::updateRegMap(std::map<std::string, unsigned>& regMap, const std::string& regName, unsigned value, bool overwrite) {
