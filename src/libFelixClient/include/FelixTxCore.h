@@ -51,6 +51,8 @@ public:
   void loadFWMode(); // retrieve firmware mode from the FELIX register
   FelixTools::FELIX_FW_MODE fwMode(); // get the FELIX firmware mode
 
+  FelixTools::FelixID_t fid_from_channel(uint32_t chn); // covert channel number to fid
+
 protected:
 
   void loadConfig(const json &j); 		     // read configuration from json
@@ -114,7 +116,6 @@ protected:
   std::vector<uint8_t> m_idleWords;
 
   // For Felix ID
-  FelixID_t fid_from_channel(uint32_t chn);
   uint8_t m_did {0};  // detector ID; 0x00 reserved for local IDs
   uint16_t m_cid {0}; // connector ID; 0x0000 reserved for local IDs
   uint8_t m_protocol {0}; // protocol ID
