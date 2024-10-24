@@ -74,6 +74,7 @@ int main(int argc, char *argv[]) {
         int prev_basetag = 0;
         int i = 0;
         int basetag_jumps = 0;
+        int totaljumps = 0;
 
         while(inputFile) {
             FrontEndEvent event;
@@ -97,7 +98,10 @@ int main(int argc, char *argv[]) {
 
             if(((basetag - prev_basetag) > 1) & (i > n_start)) {
                 basetag_jumps += (basetag - prev_basetag) - 1;
-                std::cout << "ERROR | header " << i << "| tag " << event.tag << " | event # " << eventCnt << " : basetag jump from " << prev_basetag << " to " << basetag << " (total " << basetag_jumps << ")" << std::endl;
+                totaljumps++;
+                std::cout << "ERROR | header " << i << "| tag " << event.tag << 
+                " | event # " << eventCnt << " : basetag jump from " << prev_basetag << 
+                " to " << basetag << " (total " << basetag_jumps << " skipped basetags over " << totaljumps << " jumps)" << std::endl;
             }
             if(verbose) {
                 std::cout << 
