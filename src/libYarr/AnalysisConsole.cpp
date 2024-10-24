@@ -148,35 +148,32 @@ int AnalysisConsole::parseOptions(int argc, char *argv[], AnalysisOpts &anOpts) 
     int c;
     while (true) {
         int opt_index=0;
-        c = getopt_long(argc, argv, "hs:y:m:c:t:po:W:d:u:i:l:QIz", long_options, &opt_index);
+        c = getopt_long(argc, argv, "hpc:l:m:o:s:t:y:", long_options, &opt_index);
         int count = 0;
         if(c == -1) break;
         switch (c) {
         case 'h':
             printHelp();
             return 0;
-        case 's':
-            anOpts.scanFile = std::string(optarg);
-            break;
-        case 'l': // Logger config file
-            anOpts.logCfgPath = std::string(optarg);
-            break;
-        case 'y':
-            anOpts.chipType = std::string(optarg);
-            break;
-        case 'm':
-            anOpts.mask_opt = atoi(optarg);
+        case 'p':
+            anOpts.doPlots = true;
             break;
         case 'c':
             anOpts.chipConfigPath = std::string(optarg);
             break;
-        case 'p':
-            anOpts.doPlots = true;
+        case 'l': // Logger config file
+            anOpts.logCfgPath = std::string(optarg);
+            break;
+        case 'm':
+            anOpts.mask_opt = atoi(optarg);
             break;
         case 'o':
             anOpts.outputDir = std::string(optarg);
             if (anOpts.outputDir.back() != '/')
                 anOpts.outputDir = anOpts.outputDir + "/";
+            break;
+        case 's':
+            anOpts.scanFile = std::string(optarg);
             break;
         case 't':
             optind -= 1; //this is a bit hacky, but getopt doesn't support multiple
@@ -195,6 +192,9 @@ int AnalysisConsole::parseOptions(int argc, char *argv[], AnalysisOpts &anOpts) 
                 }
                 count++;
             }
+            break;
+        case 'y':
+            anOpts.chipType = std::string(optarg);
             break;
         case '?':
             if (optopt == 's') {
