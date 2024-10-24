@@ -112,11 +112,15 @@ namespace FelixTools {
   // FELIX register names for elink control
   std::string getICEnableRegName(uint16_t linkId, bool toflx);
   std::string getECEnableRegName(uint16_t linkId, bool toflx);
+  std::string getELinkRegName(unsigned linkId, unsigned egroup, bool toflx, const std::string& suffix);
   std::string getELinkEnableRegName(unsigned linkId, unsigned egroup, bool toflx);
+  std::string getELinkWidthRegName(unsigned linkId, unsigned egroup, bool toflx);
   // overload using FELIX ID
   std::string getICEnableRegName(FelixID_t fid);
   std::string getECEnableRegName(FelixID_t fid);
-  std::string getELinkEnableRegName(FelixID_t fid);
+  std::string getELinkRegName(FelixID_t fid, FELIX_FW_MODE fwmode, const std::string& suffix);
+  std::string getELinkEnableRegName(FelixID_t fid, FELIX_FW_MODE fwmode);
+  std::string getELinkWidthRegName(FelixID_t fid, FELIX_FW_MODE fwmode);
 
   struct QueueStatistics {
 
