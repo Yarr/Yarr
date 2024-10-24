@@ -1022,25 +1022,33 @@ namespace ScanHelper {
         int c;
         while (true) {
             int opt_index=0;
-            c = getopt_long(argc, argv, "hvn:ks:m:r:c:t:pgo:W:d:u:i:l:QIz", long_options, &opt_index);
+            c = getopt_long(argc, argv, "ghkpvzIQc:d:i:l:m:o:r:s:t:u:W:", long_options, &opt_index);
             int count = 0;
             if(c == -1) break;
             switch (c) {
+                case 'g':
+                    scanOpts.makeGraph = true;
+                    break;
                 case 'h':
                     printHelp();
-                    return 0;
-                case 'v':
-                    std::cout << yarr::version::get().dump(4) << std::endl;
                     return 0;
                 case 'k':
                     ScanHelper::listKnown();
                     return 0;
-                case 's':
-                    scanOpts.scan_config_provided = true;
-                    scanOpts.scanType = std::string(optarg);
+                case 'p':
+                    scanOpts.doPlots = true;
                     break;
-                case 'm':
-                    scanOpts.mask_opt = atoi(optarg);
+                case 'v':
+                    std::cout << yarr::version::get().dump(4) << std::endl;
+                    return 0;
+                case 'z':
+                    scanOpts.doResetBeforeScan = false;
+                    break;
+                case 'I':
+                    scanOpts.setInteractiveMode = true;
+                    break;
+                case 'Q':
+                    scanOpts.setQCMode = true;
                     break;
                 case 'c':
                     optind -= 1; //this is a bit hacky, but getopt doesn't support multiple
@@ -1049,19 +1057,29 @@ namespace ScanHelper {
                         scanOpts.cConfigPaths.push_back(std::string(argv[optind]));
                     }
                     break;
-                case 'r':
-                    scanOpts.ctrlCfgPath = std::string(optarg);
+                case 'd': // Database config file
+                    scanOpts.dbCfgPath = std::string(optarg);
                     break;
-                case 'p':
-                    scanOpts.doPlots = true;
+                case 'i': // Database config file
+                    scanOpts.dbSiteCfgPath = std::string(optarg);
                     break;
-                case 'g':
-                    scanOpts.makeGraph = true;
+                case 'l': // Logger config file
+                    scanOpts.logCfgPath = std::string(optarg);
+                    break;
+                case 'm':
+                    scanOpts.mask_opt = atoi(optarg);
                     break;
                 case 'o':
                     scanOpts.outputDir = std::string(optarg);
                     if (scanOpts.outputDir.back() != '/')
                         scanOpts.outputDir = scanOpts.outputDir + "/";
+                    break;
+                case 'r':
+                    scanOpts.ctrlCfgPath = std::string(optarg);
+                    break;
+                case 's':
+                    scanOpts.scan_config_provided = true;
+                    scanOpts.scanType = std::string(optarg);
                     break;
                 case 't':
                     optind -= 1; //this is a bit hacky, but getopt doesn't support multiple
@@ -1081,30 +1099,12 @@ namespace ScanHelper {
                         count++;
                     }
                     break;
-                case 'W': // Write to DB
-                    scanOpts.dbUse = true;
-		    scanOpts.dbTag = std::string(optarg);
-                    break;
-                case 'd': // Database config file
-                    scanOpts.dbCfgPath = std::string(optarg);
-                    break;
-                case 'l': // Logger config file
-                    scanOpts.logCfgPath = std::string(optarg);
-                    break;
-                case 'i': // Database config file
-                    scanOpts.dbSiteCfgPath = std::string(optarg);
-                    break;
                 case 'u': // Database config file
                     scanOpts.dbUserCfgPath = std::string(optarg);
                     break;
-                case 'Q':
-                    scanOpts.setQCMode = true;
-                    break;
-                case 'I':
-                    scanOpts.setInteractiveMode = true;
-                    break;
-                case 'z':
-                    scanOpts.doResetBeforeScan = false;
+                case 'W': // Write to DB
+                    scanOpts.dbUse = true;
+		    scanOpts.dbTag = std::string(optarg);
                     break;
                 case '?':
                     if (optopt == 's') {
