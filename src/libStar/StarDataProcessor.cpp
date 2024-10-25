@@ -86,6 +86,22 @@ void StarDataProcessor::process() {
     process_core();
 }
 
+std::unique_ptr<EventDataBase> StarDataProcessor::process_event_core(const RawDataContainer &curIn, std::function<void (std::unique_ptr<FeedbackProcessingInfo>)> push_fb) {
+    auto output = std::make_unique<FrontEndData>(curIn.stat);
+
+    unsigned size = curIn.size();
+
+    for(unsigned c=0; c<size; c++) {
+        RawDataPtr r = curIn.data[c];
+        unsigned channel = r->getAdr(); //elink number
+        std::unique_ptr<FeedbackProcessingInfo> fb_stat(new FeedbackProcessingInfo{.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_ERROR});
+        process_data(*r, *output, *fb_stat, chip_map);
+        push_fb(std::move(fb_stat));
+    }
+
+    return output;
+}
+
 void StarDataProcessor::process_core() {
     while(!input->empty()) {
         // Get data containers
@@ -93,18 +109,9 @@ void StarDataProcessor::process_core() {
         if (curInV == nullptr)
             continue;
 
-        // Create Output Container
-        std::unique_ptr<FrontEndData> curOut(new FrontEndData(curInV->stat));
-
-        unsigned size = curInV->size();
-
-        for(unsigned c=0; c<size; c++) {
-            RawDataPtr r = curInV->data[c];
-            unsigned channel = r->getAdr(); //elink number
-            std::unique_ptr<FeedbackProcessingInfo> stat(new FeedbackProcessingInfo{.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_ERROR});
-            process_data(*r, *curOut, *stat, chip_map);
-            if (statusFb != nullptr) statusFb->pushData(std::move(stat));
-        }
+        auto curOut = statusFb
+	  ?process_event_core(*curInV, [&](auto fb) {statusFb->pushData(std::move(fb));})
+	  :process_event_core(*curInV, [&](auto fb) {});
 
         output->pushData(std::move(curOut));
         // dataCnt++;

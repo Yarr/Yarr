@@ -20,6 +20,7 @@ class FeDataProcessor : public DataProcessor {
     public:
         virtual void connect(FrontEndCfg *feCfg, ClipBoard<RawDataContainer> *arg_input, ClipBoard<EventDataBase> *arg_output) = 0;
         virtual void connect(ClipBoard<FeedbackProcessingInfo> *arg_proc_status) {}
+        virtual std::unique_ptr<EventDataBase> process_event_core(const RawDataContainer &rdc, std::function<void (std::unique_ptr<FeedbackProcessingInfo>)> push_fb) { return {}; }
 };
 
 #endif
