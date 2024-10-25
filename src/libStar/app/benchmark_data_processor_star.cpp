@@ -12,6 +12,8 @@
 
 auto logger = logging::make_log("benchmark_dataprocessing_star");
 
+void run_test(StarCfg &cfg, FeDataProcessor &proc, int iterations, std::vector<uint8_t> &buffer);
+
 std::vector<uint8_t> read_file(const char *file_name) {
     std::vector<uint8_t> buffer;
 
@@ -56,17 +58,24 @@ int main(int argc, char *argv[]) {
       return 1;
     }
 
-    ClipBoard<RawDataContainer> rd_cp;
-    ClipBoard<EventDataBase> em_cp;
-
     StarCfg cfg(1, 1);
     cfg.setHCCRegister(40, 0x7ff);
 
-    proc->connect(&cfg, &rd_cp, &em_cp);
+    run_test(cfg, *proc, iterations, buffer);
 
-    proc->init();
+    return 0;
+}
 
-    std::thread proc_thread([&proc]() { proc->process(); });
+void run_test(StarCfg &cfg, FeDataProcessor &proc, int iterations, std::vector<uint8_t> &buffer) {
+
+    ClipBoard<RawDataContainer> rd_cp;
+    ClipBoard<EventDataBase> em_cp;
+
+    proc.connect(&cfg, &rd_cp, &em_cp);
+
+    proc.init();
+
+    std::thread proc_thread([&proc]() { proc.process(); });
 
     std::size_t nbits{};
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
@@ -134,6 +143,4 @@ int main(int argc, char *argv[]) {
     rd_cp.finish();
 
     proc_thread.join();
-
-    return 0;
 }
