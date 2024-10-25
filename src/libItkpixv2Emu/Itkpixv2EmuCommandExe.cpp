@@ -89,7 +89,7 @@ void Itkpixv2EmuCommandExe::doCal(const Itkpixv2EmuUtils::Cmd& cmd){
         switch (m_cfg->InjDigEn.read()){
             //analog injection
             case 0:{
-                rlog->trace("Analog injection happening...");
+                //rlog->trace("Analog injection happening...");
                 //What's the injected charge?
                 //This calibration works
                 float injCharge = m_cfg->toCharge(m_cfg->InjVcalDiff.read());
@@ -117,7 +117,7 @@ void Itkpixv2EmuCommandExe::doCal(const Itkpixv2EmuUtils::Cmd& cmd){
                 break;
             }
             case 1:{
-                rlog->trace("Digital injection happening...");
+                //rlog->trace("Digital injection happening...");
                 //Let's just put the middle value everywhere now...
                 m_tots(pixel) = 9;
                 break;
