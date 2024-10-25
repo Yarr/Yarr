@@ -24,6 +24,7 @@ namespace {
     std::cout << " -r RX_CHANNELS : A list of Rx channels to be configured." << std::endl;
     std::cout << " -c CHIP_CONFIG : Connectivity configuration file." << std::endl;
     std::cout << " -b BANDWIDTH : Rx bandwidth in Mbps." << std::endl;
+    std::cout << " -e : Channels specifeid in options are enabled exclusively. All other channels are disabled." << std::endl;
     std::cout << " -I : Include IC channels" << std::endl;
     std::cout << " -E : Include EC channels" << std::endl;
     std::cout << " -l LOG_CONFIG : Configuration for the logger." << std::endl;
@@ -31,32 +32,44 @@ namespace {
     std::cout << " " << std::endl;
   }
 
-  void checkICEnable(FelixController* flx, const std::vector<FelixTools::FelixID_t>& fids, const std::string& label) {
+  void checkICEnable(FelixController* flx, const std::vector<FelixTools::FelixID_t>& fids, const std::string& label, bool exclusive) {
     if (fids.empty()) return;
 
     logger->info("Checking IC ({}) enable registers...", label);
-    if ( flx->getICEnable(fids) ) {
+    if ( flx->getICEnable(fids, exclusive) ) {
       logger->info(" All relevant IC ({}) channels are enabled!", label);
+      if (exclusive) {
+        logger->info(" ...and other IC ({}) channels are all disabled!", label);
+      }
     } else {
       logger->warn(" Not all relevant IC ({}) channels are enabled!", label);
+      if (exclusive) {
+        logger->warn(" ...or not all other IC ({}) channels are disabled!", label);
+      }
     }
   }
 
-  void checkECEnable(FelixController* flx, const std::vector<FelixTools::FelixID_t>& fids, const std::string& label) {
+  void checkECEnable(FelixController* flx, const std::vector<FelixTools::FelixID_t>& fids, const std::string& label, bool exclusive) {
     if (fids.empty()) return;
 
     logger->info("Checking EC ({}) enable registers...", label);
-    if ( flx->getECEnable(fids) ) {
+    if ( flx->getECEnable(fids, exclusive) ) {
       logger->info(" All relevant EC ({}) channels are enabled!", label);
+      if (exclusive) {
+        logger->info(" ...and other EC ({}) channels are disabled", label);
+      }
     } else {
       logger->warn(" Not all relevant EC ({}) channels are enabled!", label);
+      if (exclusive) {
+        logger->warn(" ...or not all other EC ({}) channels are disabled!", label);
+      }
     }
   }
 
   void checkELinkBandWidth(FelixController* flx, const std::vector<FelixTools::FelixID_t>& fids, unsigned bandwidth, const std::string& label) {
     if (fids.empty()) return;
 
-    logger->info("Checking E-link ({}) bandwidths...", label);
+    logger->info("Checking e-link ({}) bandwidths...", label);
     bool allGood {true};
 
     for (const auto& fid : fids) {
@@ -67,34 +80,40 @@ namespace {
       }
     }
 
-    if (allGood) logger->info(" All E-links are {} Mbps!", bandwidth);
+    if (allGood) logger->info(" All e-links are {} Mbps!", bandwidth);
   }
 
-  void checkELinkEnable(FelixController* flx, const std::vector<FelixTools::FelixID_t>& fids, const std::string& label) {
+  void checkELinkEnable(FelixController* flx, const std::vector<FelixTools::FelixID_t>& fids, const std::string& label, bool exclusive) {
     if (fids.empty()) return;
 
-    logger->info("Checking E-link ({}) enable registers...", label);
-    if ( flx->getELinkEnable(fids) ) {
-      logger->info(" All E-links ({}) are enabled!", label);
+    logger->info("Checking e-link ({}) enable registers...", label);
+    if ( flx->getELinkEnable(fids, exclusive) ) {
+      logger->info(" All specified e-links ({}) are enabled!", label);
+      if (exclusive) {
+        logger->info(" ...and other e-links ({}) are disabled!", label);
+      }
     } else {
-      logger->warn(" Not all E-links ({}) are enabled!", label);
+      logger->warn(" Not all specified e-links ({}) are enabled!", label);
+      if (exclusive) {
+        logger->info(" ...or not all other e-links ({}) are disabled!", label);
+      }
     }
   }
 
-  void enableICs(FelixController* flx, const std::vector<FelixTools::FelixID_t>& fids, const std::string& label) {
+  void enableICs(FelixController* flx, const std::vector<FelixTools::FelixID_t>& fids, const std::string& label, bool exclusive) {
     if (fids.empty()) return;
 
     logger->info("Enable IC ({}) channels...", label);
-    if ( flx->setICEnable(fids) ) {
+    if ( flx->setICEnable(fids, exclusive) ) {
       logger->info(" ...done!");
     }
   }
 
-  void enableECs(FelixController* flx, const std::vector<FelixTools::FelixID_t>& fids, const std::string& label) {
+  void enableECs(FelixController* flx, const std::vector<FelixTools::FelixID_t>& fids, const std::string& label, bool exclusive) {
     if (fids.empty()) return;
 
     logger->info("Enable EC ({}) channels...", label);
-    if ( flx->setECEnable(fids) ) {
+    if ( flx->setECEnable(fids, exclusive) ) {
       logger->info(" ...done!");
     }
   }
@@ -102,17 +121,17 @@ namespace {
   void setELinkBandWidth(FelixController* flx, const std::vector<FelixTools::FelixID_t>& fids, unsigned bandwidth, const std::string& label) {
     if (fids.empty()) return;
 
-    logger->info("Setting E-link ({}) bandwidth to {} Mbps...", label, bandwidth);
+    logger->info("Setting e-link ({}) bandwidth to {} Mbps...", label, bandwidth);
     if ( flx->setELinkWidthMbps(fids, bandwidth) ) {
       logger->info(" ...done!");
     }
   }
 
-  void enableELinks(FelixController* flx, const std::vector<FelixTools::FelixID_t>& fids, const std::string& label) {
+  void enableELinks(FelixController* flx, const std::vector<FelixTools::FelixID_t>& fids, const std::string& label, bool exclusive) {
     if (fids.empty()) return;
 
-    logger->info("Enable E-links ({})...", label);
-    if ( flx->setELinkEnable(fids) ) {
+    logger->info("Enable e-links ({})...", label);
+    if ( flx->setELinkEnable(fids, exclusive) ) {
       logger->info(" ...done!");
     }
   }
@@ -125,6 +144,7 @@ int main(int argc, char **argv) {
   std::vector<unsigned> rxChannels;
   std::vector<unsigned> txChannels;
   unsigned rxBandWidth {0}; // Mbps
+  bool exclusive {false};
   bool includeIC {false};
   bool includeEC {false};
   bool verbose {false};
@@ -144,7 +164,7 @@ int main(int argc, char **argv) {
     };
 
   int opt;
-  while ((opt = getopt_long(argc, argv, "hl:t:r:c:b:IEv", long_options, nullptr)) != -1) {
+  while ((opt = getopt_long(argc, argv, "hl:t:r:c:b:eIEv", long_options, nullptr)) != -1) {
     switch(opt) {
     case 'h':
       printHelp();
@@ -179,6 +199,9 @@ int main(int argc, char **argv) {
       break;
     case 'b':
       rxBandWidth = std::stoi(optarg);
+      break;
+    case 'e':
+      exclusive = true;
       break;
     case 'I':
       includeIC = true;
@@ -294,39 +317,39 @@ int main(int argc, char **argv) {
 
   if (cmd == "get" or cmd == "GET") {
     if (includeIC) {
-      checkICEnable(flxCtrlPtr, vfids_tx, "Tx");
-      checkICEnable(flxCtrlPtr, vfids_rx, "Rx");
+      checkICEnable(flxCtrlPtr, vfids_tx, "Tx", exclusive);
+      checkICEnable(flxCtrlPtr, vfids_rx, "Rx", exclusive);
     }
 
     if (includeEC) {
-      checkECEnable(flxCtrlPtr, vfids_tx, "Tx");
-      checkECEnable(flxCtrlPtr, vfids_rx, "Rx");
+      checkECEnable(flxCtrlPtr, vfids_tx, "Tx", exclusive);
+      checkECEnable(flxCtrlPtr, vfids_rx, "Rx", exclusive);
     }
 
     if (rxBandWidth > 0) {
       checkELinkBandWidth(flxCtrlPtr, vfids_rx, rxBandWidth, "Rx");
     }
 
-    checkELinkEnable(flxCtrlPtr, vfids_tx, "Tx");
-    checkELinkEnable(flxCtrlPtr, vfids_rx, "Rx");
+    checkELinkEnable(flxCtrlPtr, vfids_tx, "Tx", exclusive);
+    checkELinkEnable(flxCtrlPtr, vfids_rx, "Rx", exclusive);
   }
   else if (cmd == "set" or cmd == "SET") {
     if (includeIC) {
-      enableICs(flxCtrlPtr, vfids_tx, "Tx");
-      enableICs(flxCtrlPtr, vfids_rx, "Rx");
+      enableICs(flxCtrlPtr, vfids_tx, "Tx", exclusive);
+      enableICs(flxCtrlPtr, vfids_rx, "Rx", exclusive);
     }
 
     if (includeEC) {
-      enableECs(flxCtrlPtr, vfids_tx, "Tx");
-      enableECs(flxCtrlPtr, vfids_rx, "Rx");
+      enableECs(flxCtrlPtr, vfids_tx, "Tx", exclusive);
+      enableECs(flxCtrlPtr, vfids_rx, "Rx", exclusive);
     }
 
     if (rxBandWidth > 0) {
       setELinkBandWidth(flxCtrlPtr, vfids_rx, rxBandWidth, "Rx");
     }
 
-    enableELinks(flxCtrlPtr, vfids_tx, "Tx");
-    enableELinks(flxCtrlPtr, vfids_rx, "Rx");
+    enableELinks(flxCtrlPtr, vfids_tx, "Tx", exclusive);
+    enableELinks(flxCtrlPtr, vfids_rx, "Rx", exclusive);
   }
   else {
     logger->error("Unknown command {}. Possible commands are: 'get', 'set'", cmd);

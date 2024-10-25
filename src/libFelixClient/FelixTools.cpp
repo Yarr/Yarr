@@ -163,3 +163,33 @@ std::string FelixTools::getELinkWidthRegName(unsigned linkId, unsigned egroup, b
 std::string FelixTools::getELinkWidthRegName(FelixID_t fid, FELIX_FW_MODE fwmode) {
   return getELinkRegName(fid, fwmode, "WIDTH");
 }
+
+std::vector<std::string> FelixTools::getAllICEnableRegNames(bool toflx) {
+  std::vector<std::string> allRegNames;
+  for (unsigned l = 0; l < FelixTools::FLX_LINKS; ++l) {
+    allRegNames.push_back(getICEnableRegName(l, toflx));
+  }
+  return allRegNames;
+}
+
+std::vector<std::string> FelixTools::getAllECEnableRegNames(bool toflx) {
+  std::vector<std::string> allRegNames;
+  for (unsigned l = 0; l < FelixTools::FLX_LINKS; ++l) {
+    allRegNames.push_back(getECEnableRegName(l, toflx));
+  }
+  return allRegNames;
+}
+
+std::vector<std::string> FelixTools::getAllELinkEnableRegNames(bool toflx) {
+  std::vector<std::string> allRegNames;
+
+  unsigned NUM_EGROUPS = toflx ? FelixTools::FLX_TOFLX_EGROUPS : FelixTools::FLX_TOHOST_EGROUPS;
+
+  for (unsigned l = 0; l < FelixTools::FLX_LINKS; ++l) {
+    for (unsigned g = 0; g < NUM_EGROUPS; ++g) {
+      allRegNames.push_back(getELinkEnableRegName(l,g, toflx));
+    }
+  }
+
+  return allRegNames;
+}

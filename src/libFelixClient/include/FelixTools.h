@@ -5,6 +5,8 @@
 #include <bitset>
 #include <atomic>
 #include <tuple>
+#include <vector>
+#include <algorithm>
 
 namespace FelixTools {
 
@@ -33,6 +35,9 @@ namespace FelixTools {
   constexpr unsigned BLOCK_EGROUP_MASK_LPGBT = 0x001C;
   constexpr unsigned BLOCK_EGROUP_SHIFT_LPGBT = 2;
   constexpr unsigned BLOCK_EPATH_MASK_LPGBT = 0x0003;
+  constexpr unsigned FLX_LINKS = 12; // Number of links per logical FLX device
+  constexpr unsigned FLX_TOHOST_EGROUPS = 7; // Number of decoding egroups
+  constexpr unsigned FLX_TOFLX_EGROUPS = 5; // Number of encoding egroups
 
   // FELIX ID definition
   // Take from https://atlas-project-felix.web.cern.ch/atlas-project-felix/user/docs/LinkMappingSpecification.pdf, Figure 3
@@ -103,6 +108,22 @@ namespace FelixTools {
     return (fid >> FELIXID_TOFLX_SHIFT) & 1;
   }
 
+  inline bool all_toflx_from_fids(const std::vector<FelixID_t>& fids) {
+    if (fids.empty()) {
+      return false;
+    } else {
+      return std::all_of(fids.begin(), fids.end(), [](FelixID_t fid){return toflx_from_fid(fid);});
+    }
+  }
+
+  inline bool all_tohost_from_fids(const std::vector<FelixID_t>& fids) {
+    if (fids.empty()) {
+      return false;
+    } else {
+      return std::all_of(fids.begin(), fids.end(), [](FelixID_t fid){return not toflx_from_fid(fid);});
+    }
+  }
+
   inline uint8_t elink_from_fid(FelixID_t fid) {
     return (fid >> FELIXID_ELINK_SHIFT) & ((1<<FELIXID_ELINK_NBITS) - 1);
   }
@@ -121,6 +142,11 @@ namespace FelixTools {
   std::string getELinkRegName(FelixID_t fid, FELIX_FW_MODE fwmode, const std::string& suffix);
   std::string getELinkEnableRegName(FelixID_t fid, FELIX_FW_MODE fwmode);
   std::string getELinkWidthRegName(FelixID_t fid, FELIX_FW_MODE fwmode);
+
+  // Full list of register names
+  std::vector<std::string> getAllICEnableRegNames(bool toflx);
+  std::vector<std::string> getAllECEnableRegNames(bool toflx);
+  std::vector<std::string> getAllELinkEnableRegNames(bool toflx);
 
   struct QueueStatistics {
 

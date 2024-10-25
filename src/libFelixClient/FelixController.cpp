@@ -176,42 +176,56 @@ const json FelixController::getStatus() {
 // E-link control
 bool FelixController::getICEnable(uint64_t fid) {
   fclog->debug("Get FID 0x{:x} IC channel enable:", fid);
-  return checkRegValue(FelixTools::getICEnableRegName(fid), 1, true);
+  return checkRegValue(FelixTools::getICEnableRegName(fid), 1);
 }
 
-bool FelixController::getICEnable(const std::vector<uint64_t>& fids) {
+bool FelixController::getICEnable(const std::vector<uint64_t>& fids, bool exclusive) {
   std::map<std::string, unsigned>  regICEnables;
+
+  if (exclusive) {
+    // Initialize the register map with all possible registers
+    bool allToFlx = FelixTools::all_toflx_from_fids(fids);
+    bool allToHost = FelixTools::all_tohost_from_fids(fids);
+    initAllICEnableRegMap(regICEnables, allToFlx, allToHost);
+  }
 
   std::stringstream ss_fids;
   ss_fids << std::hex;
 
   for (const auto& fid : fids) {
     if (spdlog::should_log(spdlog::level::debug)) ss_fids << " 0x" << fid;
-    updateRegMap(regICEnables, FelixTools::getICEnableRegName(fid), 1, false);
+    updateRegMap(regICEnables, FelixTools::getICEnableRegName(fid), 1, true);
   }
-  fclog->debug("Get IC enables corresponding to FIDs:{}", ss_fids.str());
 
-  return checkRegValuesAll(regICEnables, true);
+  fclog->debug("Get IC enables corresponding to FIDs:{}", ss_fids.str());
+  return checkRegValuesAll(regICEnables);
 }
 
 bool FelixController::getECEnable(uint64_t fid) {
   fclog->debug("Get FID 0x{:x} EC channel enable:", fid);
-  return checkRegValue(FelixTools::getECEnableRegName(fid), 1, true);
+  return checkRegValue(FelixTools::getECEnableRegName(fid), 1);
 }
 
-bool FelixController::getECEnable(const std::vector<uint64_t>& fids) {
+bool FelixController::getECEnable(const std::vector<uint64_t>& fids, bool exclusive) {
   std::map<std::string, unsigned>  regECEnables;
+
+  if (exclusive) {
+    // Initialize the register map with all possible registers
+    bool allToFlx = FelixTools::all_toflx_from_fids(fids);
+    bool allToHost = FelixTools::all_tohost_from_fids(fids);
+    initAllECEnableRegMap(regECEnables, allToFlx, allToHost);
+  }
 
   std::stringstream ss_fids;
   ss_fids << std::hex;
 
   for (const auto& fid : fids) {
     if (spdlog::should_log(spdlog::level::debug)) ss_fids << " 0x" << fid;
-    updateRegMap(regECEnables, FelixTools::getECEnableRegName(fid), 1, false);
+    updateRegMap(regECEnables, FelixTools::getECEnableRegName(fid), 1, true);
   }
-  fclog->debug("Get EC enables corresponding to FIDs:{}", ss_fids.str());
 
-  return checkRegValuesAll(regECEnables, true);
+  fclog->debug("Get EC enables corresponding to FIDs:{}", ss_fids.str());
+  return checkRegValuesAll(regECEnables);
 }
 
 bool FelixController::getELinkEnable(uint64_t fid) {
@@ -219,13 +233,21 @@ bool FelixController::getELinkEnable(uint64_t fid) {
 
   auto [linkId, egroup, epath, toflx] = FelixTools::linkInfo_from_fid(fid, fwMode());
   std::string regName = FelixTools::getELinkEnableRegName(linkId, egroup, toflx);
-  unsigned mask = (1 << epath);
+  unsigned value = (1 << epath);
+  unsigned mask = value;
 
-  return checkRegValue(regName, mask, true);
+  return checkRegValue(regName, value, mask);
 }
 
-bool FelixController::getELinkEnable(const std::vector<uint64_t>& fids) {
+bool FelixController::getELinkEnable(const std::vector<uint64_t>& fids, bool exclusive) {
   std::map<std::string, unsigned> enableRegMask;
+
+  if (exclusive) {
+    // Initialize the register map with all possible registers
+    bool allToFlx = FelixTools::all_toflx_from_fids(fids);
+    bool allToHost = FelixTools::all_tohost_from_fids(fids);
+    initAllELinkEnableRegMap(enableRegMask, allToFlx, allToHost);
+  }
 
   std::stringstream ss_fids;
   ss_fids << std::hex;
@@ -241,7 +263,13 @@ bool FelixController::getELinkEnable(const std::vector<uint64_t>& fids) {
   }
   fclog->debug("Get enable of FIDs:{}", ss_fids.str());
 
-  return checkRegValuesAll(enableRegMask, true);
+  if (exclusive) {
+    // compare all registers and check they match exactly
+    return checkRegValuesAll(enableRegMask, 0);
+  } else {
+    // only check the bits corresponding to the fids
+    return checkRegValuesAll(enableRegMask, enableRegMask);
+  }
 }
 
 unsigned FelixController::getELinkWidthNBits(uint64_t fid) {
@@ -271,7 +299,7 @@ bool FelixController::setICEnable(uint64_t fid, bool enable) {
   return setRegValue(FelixTools::getICEnableRegName(fid), enable);
 }
 
-bool FelixController::setICEnable(const std::vector<uint64_t>& fids, const std::vector<bool>& enables) {
+bool FelixController::setICEnable(const std::vector<uint64_t>& fids, const std::vector<bool>& enables, bool exclusive) {
   // check if fids and enables are of the same length
   if (fids.size() != enables.size()) {
     fclog->error("Failed to set IC enable registers: inconsistent numbers of channels and enables");
@@ -279,6 +307,13 @@ bool FelixController::setICEnable(const std::vector<uint64_t>& fids, const std::
   }
 
   std::map<std::string, unsigned> regICEnables;
+
+  if (exclusive) {
+    // Initialize the register map with all possible registers
+    bool allToFlx = FelixTools::all_toflx_from_fids(fids);
+    bool allToHost = FelixTools::all_tohost_from_fids(fids);
+    initAllICEnableRegMap(regICEnables, allToFlx, allToHost);
+  }
 
   std::stringstream ss_fids;
   ss_fids << std::hex;
@@ -297,7 +332,7 @@ bool FelixController::setECEnable(uint64_t fid, bool enable) {
   return setRegValue(FelixTools::getECEnableRegName(fid), enable);
 }
 
-bool FelixController::setECEnable(const std::vector<uint64_t>& fids, const std::vector<bool>& enables) {
+bool FelixController::setECEnable(const std::vector<uint64_t>& fids, const std::vector<bool>& enables, bool exclusive) {
   // check if fids and enables are of the same length
   if (fids.size() != enables.size()) {
     fclog->error("Failed to set EC enable registers: inconsistent numbers of channels and enables");
@@ -305,6 +340,13 @@ bool FelixController::setECEnable(const std::vector<uint64_t>& fids, const std::
   }
 
   std::map<std::string, unsigned> regECEnables;
+
+  if (exclusive) {
+    // Initialize the register map with all possible registers
+    bool allToFlx = FelixTools::all_toflx_from_fids(fids);
+    bool allToHost = FelixTools::all_tohost_from_fids(fids);
+    initAllICEnableRegMap(regECEnables, allToFlx, allToHost);
+  }
 
   std::stringstream ss_fids;
   ss_fids << std::hex;
@@ -326,7 +368,7 @@ bool FelixController::setELinkEnable(uint64_t fid, bool enable) {
   return setRegValue(regName, enable << epath, 1 << epath);
 }
 
-bool FelixController::setELinkEnable(const std::vector<uint64_t>& fids, const std::vector<bool>& enables) {
+bool FelixController::setELinkEnable(const std::vector<uint64_t>& fids, const std::vector<bool>& enables, bool exclusive) {
   // check if chns and enables are of the same length
   if (fids.size() != enables.size()) {
     fclog->error("Failed to set e-link enable registers: inconsistent numbers of channels and enables");
@@ -336,6 +378,14 @@ bool FelixController::setELinkEnable(const std::vector<uint64_t>& fids, const st
   std::map<std::string, unsigned> enableRegValue;
   std::map<std::string, unsigned> enableRegMask;
 
+  if (exclusive) {
+    // Initialize the register map with all possible registers
+    bool allToFlx = FelixTools::all_toflx_from_fids(fids);
+    bool allToHost = FelixTools::all_tohost_from_fids(fids);
+    initAllELinkEnableRegMap(enableRegValue, allToFlx, allToHost);
+    // mask is not needed in case of exclusive=true
+  }
+
   std::stringstream ss_fids;
   ss_fids << std::hex;
 
@@ -344,11 +394,17 @@ bool FelixController::setELinkEnable(const std::vector<uint64_t>& fids, const st
 
     std::string regName = FelixTools::getELinkEnableRegName(fids[i], fwMode());
     updateRegMap(enableRegValue, regName, enables[i], false);
-    updateRegMap(enableRegMask, regName, 1, false);
+    if (not exclusive) {
+      updateRegMap(enableRegMask, regName, 1, false);
+    }
   }
 
   fclog->debug("Set enable of FIDs:{}", ss_fids.str());
-  return setRegValueAll(enableRegValue, enableRegMask);
+  if (exclusive) {
+    return setRegValueAll(enableRegValue, 0);
+  } else {
+    return setRegValueAll(enableRegValue, enableRegMask);
+  }
 }
 
 bool FelixController::setELinkWidthNBits(uint64_t fid, unsigned nbits) {
@@ -402,25 +458,30 @@ void FelixController::updateRegMap(std::map<std::string, unsigned>& regMap, cons
   }
 }
 
-bool FelixController::checkRegValue(const std::string& regName, unsigned value, bool ismask) {
+bool FelixController::checkRegValue(const std::string& regName, unsigned value, unsigned mask) {
   bool good {false};
 
   // read the register
   uint64_t regValue;
   if ( readFelixRegister(regName, regValue) ) {
     // check against value
-    if (ismask) {
-      // only compare the bits masked by value i.e. only check the positions in regValue that corresponds to the bits that are 1's in value
-      good = (regValue & value) == value;
+    if (mask) {
+      // only compare the bits masked by mask to value
+      good = (regValue & mask) == value;
     } else {
       // check if exactly the same
       good = regValue == value;
     }
 
+    std::stringstream ss_log;
+    ss_log << " " << regName << " = " << std::hex << "0x" << regValue << " (";
+    if (mask) ss_log << "mask: 0x" << mask <<" ";
+    ss_log << "expected value: 0x" << value << ")";
+
     if (good) {
-      fclog->debug(" {} = 0x{:x} [{}: 0x{:x}]", regName, regValue, ismask?"Mask":"Expected", value);
+      fclog->debug(ss_log.str());
     } else {
-      fclog->warn(" {} = 0x{:x} [{}: 0x{:x}]", regName, regValue, ismask?"Mask":"Expected", value);
+      fclog->warn(ss_log.str());
     }
   }
   // else failed to read FELIX register
@@ -428,17 +489,36 @@ bool FelixController::checkRegValue(const std::string& regName, unsigned value, 
   return good;
 }
 
-bool FelixController::checkRegValuesAll(const std::map<std::string, unsigned>& regValueMap, bool ismask) {
+bool FelixController::checkRegValuesAll(const std::map<std::string, unsigned>& regValueMap, const std::map<std::string, unsigned>& regMaskMap) {
+  // check map size
+  if (regValueMap.size() != regMaskMap.size()) {
+    fclog->error("Failed to set register values: value and mask maps are not of the same size!");
+    return false;
+  }
+
   bool allGood = true;
 
   for (const auto& [regName, value]: regValueMap) {
-    allGood &= checkRegValue(regName, value, ismask);
+    auto regMask = regMaskMap.at(regName);
+    allGood &= checkRegValue(regName, value, regMask);
   }
 
   if (not allGood) {
-    fclog->warn("Not all registers have the expected {}!", ismask?"mask":"value");
+    fclog->warn("Not all registers have the expected value!");
+  }
+  return allGood;
+}
+
+bool FelixController::checkRegValuesAll(const std::map<std::string, unsigned>& regValueMap, unsigned mask) {
+  bool allGood = true;
+
+  for (const auto& [regName, value]: regValueMap) {
+    allGood &= checkRegValue(regName, value, mask);
   }
 
+  if (not allGood) {
+    fclog->warn("Not all registers have the expected value!");
+  }
   return allGood;
 }
 
@@ -493,17 +573,55 @@ bool FelixController::setRegValueAll(const std::map<std::string, unsigned>& regV
   return allSuccess;
 }
 
-bool FelixController::setRegValueAll(const std::map<std::string, unsigned>& regValueMap) {
-  // No mask map provided. Overwrite all registers
+bool FelixController::setRegValueAll(const std::map<std::string, unsigned>& regValueMap, unsigned mask) {
   bool allSuccess = true;
   for (const auto& [regName, regValue]: regValueMap) {
-    allSuccess &= setRegValue(regName, regValue, 0);
+    allSuccess &= setRegValue(regName, regValue, mask);
   }
 
   if (not allSuccess) {
     fclog->warn("Not all register values are updated!");
   }
   return allSuccess;
+}
+
+void FelixController::initAllICEnableRegMap(std::map<std::string, unsigned>& regMap, bool toflx, bool tohost) {
+  for (const auto& regName : FelixTools::getAllICEnableRegNames(toflx)) {
+    regMap[regName] = 0;
+  }
+
+  if (toflx == tohost) {
+    // mixed direction, add register names for the opposite direction too
+    for (const auto& regName : FelixTools::getAllICEnableRegNames(not toflx)) {
+      regMap[regName] = 0;
+    }
+  }
+}
+
+void FelixController::initAllECEnableRegMap(std::map<std::string, unsigned>& regMap, bool toflx, bool tohost) {
+  for (const auto& regName : FelixTools::getAllECEnableRegNames(toflx)) {
+    regMap[regName] = 0;
+  }
+
+  if (toflx == tohost) {
+    // mixed direction, add register names for the opposite direction too
+    for (const auto& regName : FelixTools::getAllECEnableRegNames(not toflx)) {
+      regMap[regName] = 0;
+    }
+  }
+}
+
+void FelixController::initAllELinkEnableRegMap(std::map<std::string, unsigned>& regMap, bool toflx, bool tohost) {
+  for (const auto& regName : FelixTools::getAllELinkEnableRegNames(toflx)) {
+    regMap[regName] = 0;
+  }
+
+  if (toflx == tohost) {
+    // mixed direction, add register names for the opposite direction too
+    for (const auto& regName : FelixTools::getAllELinkEnableRegNames(not toflx)) {
+      regMap[regName] = 0;
+    }
+  }
 }
 
 bool felix_registered = StdDict::registerHwController(
