@@ -52,7 +52,7 @@ int StarCfg::hccChannelForABCchipID(unsigned int chipID) {
 }
 
 //HCC register accessor functions
-uint32_t StarCfg::getHCCRegister(HCCStarRegister addr){
+uint32_t StarCfg::getHCCRegister(HCCStarRegister addr) const {
   return m_hcc.getRegisterValue(addr);
 }
 void StarCfg::setHCCRegister(HCCStarRegister addr, uint32_t val){
@@ -141,7 +141,7 @@ void StarCfg::writeConfig(json &j) {
         if(addr >= 32) {
           auto reg = HCCStarRegister::_from_integral(addr);
           std::string regKey = reg._to_string();
-          uint32_t val = getHCCRegister(addr);
+          uint32_t val = getHCCRegister(reg);
           std::stringstream ss;
           ss << std::hex << std::setw(8) << std::setfill('0') << val;
           j["HCC"]["regs"][regKey] = ss.str();
