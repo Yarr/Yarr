@@ -7,6 +7,7 @@
 #include "LoopStatus.h"
 
 #include "StarChipPacket.h"
+#include "StarProcessor.h"
 #include "StarCfg.h"
 
 #include "EventData.h"
@@ -118,10 +119,123 @@ void StarDataProcessor::process_core() {
     }
 }
 
+class MyProc : public EmptyProc {
+    bool seen_error{false};
+
+    FrontEndData &curOut;
+    FeedbackProcessingInfo &curStatus;
+    const std::array<uint8_t, 11> &chip_map;
+
+public:
+
+    void data_header(bool pr_not_lp, uint8_t bcid, bool parity, uint8_t l0id, int flag) {
+        curStatus.trigger_tag = l0id;
+        curStatus.bcid        = bcid;
+
+        curOut.newEvent(l0id, l0id, bcid);
+    }
+
+    void data_cluster(int input_channel, uint8_t address, int next)
+    {
+        curStatus.n_clusters++;
+
+        int row = ((address>>7)&1)+1;
+
+        if(input_channel >= HCC_INPUT_CHANNEL_COUNT) {
+          logger->warn("Bad input channel {} in cluster",
+                       input_channel);
+          return;
+        }
+
+        int histo_chip = chip_map[input_channel];
+        if(histo_chip == HCC_INPUT_CHANNEL_BAD_SLOT) {
+          logger->warn("Bad input channel {} missing in config",
+                       input_channel);
+          return;
+        }
+        logger->trace("Mapped ic {} to histo {}", input_channel, histo_chip);
+
+        int histo_base = histo_chip * 128;
+
+        // Split hits into two rows of strips
+
+        //NOTE::tot(1) is just dummy value, because this is the standard check in the histogrammers.
+        //row and col both + 1 because pixel row & col numbering start from 1
+        unsigned tot = 1;
+
+        curOut.curEvent->addHit( row,
+                                 histo_base+((address&0x7f)+1), tot);
+
+        std::bitset<3> nextPattern (next);
+        for(unsigned i=0; i<3; i++){
+          if(!nextPattern.test(i)) continue;
+          auto nextAddress = address+(3-i);
+          curOut.curEvent->addHit( row,
+                                   histo_base+((nextAddress&0x7f)+1),1);
+
+          // It's an error for cluster to escape either "side"
+          if((address & (~0x7f)) != (nextAddress & (~0x7f))) {
+            logger->warn(" strip address > 128");
+          }
+        }
+    }
+
+    void hcc_read(bool hpr_not_rr, int address, int value) {
+        if(hpr_not_rr) {
+            curStatus.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_Control;
+        } else {
+            curStatus.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_RR;
+        }
+    }
+
+    void abc_read(bool hpr_not_rr, int ic, int address, int value, int status) {
+        if(hpr_not_rr) {
+            curStatus.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_Control;
+        } else {
+            curStatus.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_RR;
+        }
+
+        if(address >= 0x80 && address <= 0xbf) {
+            //Hit Counter Register Read
+            if (value == 0) {
+                return; //No Hits
+            }
+
+            logger->trace("Adding hits from HitCounter", address);
+
+            curOut.newEvent(0,0,0); //No l0id or bcid
+            int start_channel = (address - 0x80)*4;
+            for (int i=0; i < 4; i++) {
+                int channel = start_channel+i;
+                int row = (channel&1)+1;
+                int hits = (value>>(8*i)) & 0xff;
+                for(int j=0; j<hits; j++) {
+                    curOut.curEvent->addHit( row,
+                                             ic*128+( ((channel>>1)&0x7f)+1), 1);
+                }
+            }
+        }
+    }
+
+public:
+    MyProc(FrontEndData &curOut,
+           FeedbackProcessingInfo &curStatus,
+           const std::array<uint8_t, 11> &chip_map)
+      : curOut(curOut),
+        curStatus(curStatus),
+        chip_map(chip_map)
+    { }
+
+    bool error() {
+      return seen_error;
+    }
+};
+
 void process_data(RawData &curIn,
                   FrontEndData &curOut,
                   FeedbackProcessingInfo &curStatus,
                   const std::array<uint8_t, 11> &chip_map) {
+#if 0
     StarChipPacket packet;
     curStatus.packet_size = curIn.getSize();
 
@@ -226,6 +340,27 @@ void process_data(RawData &curIn,
             logger->trace("{}", os.str());
         }
     }
+#else
+    curStatus.packet_size = curIn.getSize();
+    uint8_t *start = (uint8_t*)curIn.getBuf();
+    uint8_t *end = start + (curIn.getSize() * 4);
+
+    MyProc proc(curOut, curStatus, chip_map);
+    StarProcessPacket(start, end, proc);
+
+    if(proc.error()) {
+      logger->error("Star packet parsing failed, continuing to report the extracted data\n");
+    }
+
+    logger->debug("Process data");
+
+    if(logger->should_log(spdlog::level::trace)) {
+      std::stringstream os;
+      PrintProc printer(os);
+      StarProcessPacket(start, end, printer);
+      logger->trace("{}", os.str());
+    }
+#endif
 }
 
 // Need to instantiate something to register the logger
