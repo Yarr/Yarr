@@ -462,7 +462,7 @@ void Itkpixv2DataProcessor::process_core()
                     }
                     for (unsigned ihit = 0; ihit < _LUT_PlainHMap_To_ColRow_ArrSize[_hitmap]; ++ihit)
                     {
-                        const uint8_t pix_tot = (_ToT >> (ihit << 2)) & 0xF;
+                        const uint8_t pix_tot = ((_ToT >> (ihit << 2)) & 0xF);
                         // First pixel is 1,1, last pixel is 400,384
                         const uint16_t pix_col = ((_ccol - 1) * 8) + (_LUT_PlainHMap_To_ColRow[_hitmap][ihit] >> 4) + 1;
                         const uint16_t pix_row = ((_qrow[_ccol])*2) + (_LUT_PlainHMap_To_ColRow[_hitmap][ihit] & 0xF) + 1;
@@ -476,7 +476,8 @@ void Itkpixv2DataProcessor::process_core()
                             _events++;
                         }
 
-                        _curOut->curEvent->addHit({pix_col, pix_row, pix_tot});
+                       // Yarr_tot = chip_tot + 1 - avoid ToT = 0, yarr tot range now[1,15]
+                        _curOut->curEvent->addHit({pix_col, pix_row, uint16_t(pix_tot+1)});
                         _hits++;
                     }
                 }
