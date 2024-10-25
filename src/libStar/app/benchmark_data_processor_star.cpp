@@ -84,6 +84,7 @@ void run_test(StarCfg &cfg, FeDataProcessor &proc, int iterations, std::vector<u
         uint32_t n = *((uint32_t *) &buffer[index]);
         index += sizeof(uint32_t);
         // logger->info("Loading {} packets", n);
+        std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(LoopStatus({1}, {LOOP_STYLE_MASK})));
         for (unsigned k = 0; k < n; k++) {
             struct Data {
                 uint64_t timestamp;
@@ -106,11 +107,10 @@ void run_test(StarCfg &cfg, FeDataProcessor &proc, int iterations, std::vector<u
             nbits += nb*8;
             index += sizeof(uint8_t) * nb;
             RawDataPtr rd = std::make_shared<RawData>(eid, std::move(edata));
-            std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(LoopStatus({1}, {LOOP_STYLE_MASK})));
-
             rdc->add(std::move(rd));
-            rd_cp.pushData(std::move(rdc));
         }
+
+        rd_cp.pushData(std::move(rdc));
     }
     auto packets = rd_cp.getNumDataIn();
     logger->info("Packets pushed {}: ", packets);
