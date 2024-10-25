@@ -193,7 +193,7 @@ bool FelixController::getICEnable(const std::vector<uint64_t>& fids, bool exclus
   ss_fids << std::hex;
 
   for (const auto& fid : fids) {
-    if (spdlog::should_log(spdlog::level::debug)) ss_fids << " 0x" << fid;
+    if (fclog->should_log(spdlog::level::debug)) ss_fids << " 0x" << fid;
     updateRegMap(regICEnables, FelixTools::getICEnableRegName(fid), 1, true);
   }
 
@@ -220,7 +220,7 @@ bool FelixController::getECEnable(const std::vector<uint64_t>& fids, bool exclus
   ss_fids << std::hex;
 
   for (const auto& fid : fids) {
-    if (spdlog::should_log(spdlog::level::debug)) ss_fids << " 0x" << fid;
+    if (fclog->should_log(spdlog::level::debug)) ss_fids << " 0x" << fid;
     updateRegMap(regECEnables, FelixTools::getECEnableRegName(fid), 1, true);
   }
 
@@ -253,7 +253,7 @@ bool FelixController::getELinkEnable(const std::vector<uint64_t>& fids, bool exc
   ss_fids << std::hex;
 
   for (const auto& fid : fids) {
-    if (spdlog::should_log(spdlog::level::debug)) ss_fids << " 0x" << fid;
+    if (fclog->should_log(spdlog::level::debug)) ss_fids << " 0x" << fid;
 
     auto [linkId, egroup, epath, toflx] = FelixTools::linkInfo_from_fid(fid, fwMode());
     std::string regName = FelixTools::getELinkEnableRegName(linkId, egroup, toflx);
@@ -319,7 +319,7 @@ bool FelixController::setICEnable(const std::vector<uint64_t>& fids, const std::
   ss_fids << std::hex;
 
   for (unsigned i=0; i<fids.size(); ++i) {
-    if (spdlog::should_log(spdlog::level::debug)) ss_fids << " 0x" << fids[i];
+    if (fclog->should_log(spdlog::level::debug)) ss_fids << " 0x" << fids[i];
     updateRegMap(regICEnables, FelixTools::getICEnableRegName(fids[i]), enables[i], true);
   }
 
@@ -352,7 +352,7 @@ bool FelixController::setECEnable(const std::vector<uint64_t>& fids, const std::
   ss_fids << std::hex;
 
   for (unsigned i=0; i<fids.size(); ++i) {
-    if (spdlog::should_log(spdlog::level::debug)) ss_fids << " 0x" << fids[i];
+    if (fclog->should_log(spdlog::level::debug)) ss_fids << " 0x" << fids[i];
     updateRegMap(regECEnables, FelixTools::getECEnableRegName(fids[i]), enables[i], true);
   }
 
@@ -390,7 +390,7 @@ bool FelixController::setELinkEnable(const std::vector<uint64_t>& fids, const st
   ss_fids << std::hex;
 
   for (unsigned i=0; i<fids.size(); ++i) {
-    if (spdlog::should_log(spdlog::level::debug)) ss_fids << " 0x" << fids[i];
+    if (fclog->should_log(spdlog::level::debug)) ss_fids << " 0x" << fids[i];
 
     std::string regName = FelixTools::getELinkEnableRegName(fids[i], fwMode());
     updateRegMap(enableRegValue, regName, enables[i], false);
@@ -451,7 +451,7 @@ bool FelixController::setELinkWidthNBits(const std::vector<uint64_t>& fids, unsi
   ss_fids << std::hex;
 
   for (const auto& fid : fids) {
-    if (spdlog::should_log(spdlog::level::debug)) ss_fids << " 0x" << fid;
+    if (fclog->should_log(spdlog::level::debug)) ss_fids << " 0x" << fid;
     auto regName = FelixTools::getELinkWidthRegName(fid, fwMode());
     updateRegMap(regWidths, regName, nbits, true);
   }
@@ -531,7 +531,7 @@ bool FelixController::checkRegValuesAll(const std::map<std::string, unsigned>& r
   }
 
   if (not allGood) {
-    fclog->warn("Not all registers have the expected value!");
+    fclog->warn(" Not all registers have the expected value!");
   }
   return allGood;
 }
@@ -544,7 +544,7 @@ bool FelixController::checkRegValuesAll(const std::map<std::string, unsigned>& r
   }
 
   if (not allGood) {
-    fclog->warn("Not all registers have the expected value!");
+    fclog->warn(" Not all registers have the expected value!");
   }
   return allGood;
 }
@@ -595,7 +595,7 @@ bool FelixController::setRegValueAll(const std::map<std::string, unsigned>& regV
   }
 
   if (not allSuccess) {
-    fclog->warn("Not all register values are updated!");
+    fclog->warn(" Not all register values are updated!");
   }
   return allSuccess;
 }
@@ -607,7 +607,7 @@ bool FelixController::setRegValueAll(const std::map<std::string, unsigned>& regV
   }
 
   if (not allSuccess) {
-    fclog->warn("Not all register values are updated!");
+    fclog->warn(" Not all register values are updated!");
   }
   return allSuccess;
 }

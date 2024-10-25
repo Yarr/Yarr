@@ -31,6 +31,8 @@ namespace {
     std::cout << " -l LOG_CONFIG : Configuration for the logger." << std::endl;
     std::cout << " -v : Verbose mode. Set logging level to 'debug'. Overwritten by '-l LOG_CONFIG' if a logging configuration is provided." << std::endl;
     std::cout << " " << std::endl;
+
+    //std::cout << " -L LINK_NUMBERS :  A list of link numbers for considering other channels that are not specified via -t, -r, or -c. Default is including all 12 links on a logical FLX device."
   }
 
   void checkICEnable(FelixController* flx, const std::vector<FelixTools::FelixID_t>& fids, const std::string& label, bool exclusive) {
@@ -137,7 +139,32 @@ namespace {
     }
   }
 
-}
+  void setupDefaultLoggers(bool verbose) {
+    ScanOpts options;
+    json jlog;
+    jlog["pattern"] = options.defaultLogPattern;
+
+    jlog["log_config"][0]["name"] = "elinkConfig";
+    jlog["log_config"][0]["level"] = verbose ? "debug" : "info";
+
+    jlog["log_config"][1]["name"] = "FelixController";
+    jlog["log_config"][1]["level"] = verbose ? "debug" : "info";
+
+    jlog["log_config"][2]["name"] = "FelixTxCore";
+    jlog["log_config"][2]["level"] = "info";
+
+    jlog["log_config"][3]["name"] = "FelixRxCore";
+    jlog["log_config"][3]["level"] = "info";
+
+    if (verbose) { // add additional loggers
+      jlog["log_config"][4]["name"] = "ScanHelper";
+      jlog["log_config"][4]["level"] = "info";
+    }
+
+    logging::setupLoggers(jlog);
+  }
+
+} // end of namespace
 
 int main(int argc, char **argv) {
   std::string logCfg;
@@ -221,16 +248,7 @@ int main(int argc, char **argv) {
 
   // configure logger
   if (logCfg.empty()) { // default
-    ScanOpts options;
-    json jlog;
-    jlog["pattern"] = options.defaultLogPattern;
-    jlog["log_config"][0]["name"] = "all";
-    if (verbose) {
-      jlog["log_config"][0]["level"] = "debug";
-    } else {
-      jlog["log_config"][0]["level"] = "info";
-    }
-    logging::setupLoggers(jlog);
+    setupDefaultLoggers(verbose);
   } else {
     try {
       auto jlog = ScanHelper::openJsonFile(logCfg);
