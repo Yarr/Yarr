@@ -392,10 +392,12 @@ bool FelixController::setELinkEnable(const std::vector<uint64_t>& fids, const st
   for (unsigned i=0; i<fids.size(); ++i) {
     if (fclog->should_log(spdlog::level::debug)) ss_fids << " 0x" << fids[i];
 
-    std::string regName = FelixTools::getELinkEnableRegName(fids[i], fwMode());
-    updateRegMap(enableRegValue, regName, enables[i], false);
+    auto [linkId, egroup, epath, toflx] = FelixTools::linkInfo_from_fid(fids[i], fwMode());
+    auto regName = FelixTools::getELinkEnableRegName(linkId, egroup, toflx);
+
+    updateRegMap(enableRegValue, regName, enables[i] << epath, false);
     if (not exclusive) {
-      updateRegMap(enableRegMask, regName, 1, false);
+      updateRegMap(enableRegMask, regName, 1 << epath, false);
     }
   }
 
