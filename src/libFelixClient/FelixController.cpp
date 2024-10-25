@@ -407,6 +407,33 @@ bool FelixController::setELinkEnable(const std::vector<uint64_t>& fids, const st
   }
 }
 
+bool FelixController::disableAllICs(bool toflx) {
+  fclog->debug("Disabling all IC ({}) channels...", toflx?"Tx":"Rx");
+  bool allGood {true};
+  for (const auto& regName : FelixTools::getAllICEnableRegNames(toflx)) {
+    allGood &= setRegValue(regName, 0);
+  }
+  return allGood;
+}
+
+bool FelixController::disableAllECs(bool toflx) {
+  fclog->debug("Disabling all EC ({}) channels...", toflx?"Tx":"Rx");
+  bool allGood {true};
+  for (const auto& regName : FelixTools::getAllECEnableRegNames(toflx)) {
+    allGood &= setRegValue(regName, 0);
+  }
+  return allGood;
+}
+
+bool FelixController::disableAllELinks(bool toflx) {
+  fclog->debug("Disabling all e-links ({})...", toflx?"Tx":"Rx");
+  bool allGood {true};
+  for (const auto& regName : FelixTools::getAllELinkEnableRegNames(toflx)) {
+    allGood &= setRegValue(regName, 0);
+  }
+  return allGood;
+}
+
 bool FelixController::setELinkWidthNBits(uint64_t fid, unsigned nbits) {
   fclog->debug("Set FID 0x{:x} width to {} bits", nbits);
 

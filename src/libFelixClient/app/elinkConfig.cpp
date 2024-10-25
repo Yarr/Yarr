@@ -18,6 +18,7 @@ namespace {
     std::cout << "Commands:" << std::endl;
     std::cout << " get : Check if all e-links specified in options are enabled." << std::endl;
     std::cout << " set : Enable all e-links specified in options." << std::endl;
+    std::cout << " off : Disable all e-links." << std::endl;
     std::cout << "Options:" << std::endl;
     std::cout << " -h : Show this help." << std::endl;
     std::cout << " -t TX_CHANNELS : A list of Tx channels to be configured." << std::endl;
@@ -287,7 +288,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  if (txChannels.empty() and rxChannels.empty()) {
+  if (txChannels.empty() and rxChannels.empty() and not (cmd=="off" or cmd=="OFF")) {
     logger->warn("No Tx or Rx channels specified! Please provide channel numbers using the option '-t', '-r', and/or '-c'.");
     return 0;
   }
@@ -350,6 +351,20 @@ int main(int argc, char **argv) {
 
     enableELinks(flxCtrlPtr, vfids_tx, "Tx", exclusive);
     enableELinks(flxCtrlPtr, vfids_rx, "Rx", exclusive);
+  }
+  else if (cmd == "off" or cmd == "OFF") {
+    flxCtrlPtr->disableAllELinks(true);
+    flxCtrlPtr->disableAllELinks(false);
+
+    if (includeIC) {
+      flxCtrlPtr->disableAllICs(true);
+      flxCtrlPtr->disableAllICs(false);
+    }
+
+    if (includeEC) {
+      flxCtrlPtr->disableAllECs(true);
+      flxCtrlPtr->disableAllECs(false);
+    }
   }
   else {
     logger->error("Unknown command {}. Possible commands are: 'get', 'set'", cmd);

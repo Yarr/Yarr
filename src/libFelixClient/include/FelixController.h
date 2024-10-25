@@ -30,6 +30,8 @@ public:
     return setICEnable(fids, enables, exclusive);
   }
 
+  bool disableAllICs(bool toflx);
+
   // EC
   bool getECEnable(uint64_t fid);
   bool getECEnable(const std::vector<uint64_t>& fids, bool exclusive);
@@ -40,6 +42,8 @@ public:
     std::vector<bool> enables(fids.size(), true);
     return setECEnable(fids, enables, exclusive);
   }
+
+  bool disableAllECs(bool toflx);
 
   // Data E-links
   bool getELinkEnable(uint64_t fid);
@@ -53,6 +57,9 @@ public:
     std::vector<bool> enables(fids.size(), true);
     return setELinkEnable(fids, enables, exclusive);
   }
+
+  bool disableAllELinks(bool toflx);
+
   bool setELinkWidthNBits(uint64_t fid, unsigned nbits);
   bool setELinkWidthNBits(const std::vector<uint64_t>& fids, unsigned nbits);
   bool setELinkWidthMbps(uint64_t fid, unsigned bandwidth);
