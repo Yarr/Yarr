@@ -15,7 +15,8 @@
 
 auto logger = logging::make_log("benchmark_dataprocessing_star");
 
-void run_test(StarCfg &cfg, FeDataProcessor &proc, int iterations, std::vector<uint8_t> &buffer);
+void run_with_clipboard(StarCfg &cfg, FeDataProcessor &proc, int iterations, std::vector<uint8_t> &buffer);
+void run_without_clipboard(StarCfg &cfg, FeDataProcessor &proc, int iterations, std::vector<uint8_t> &buffer);
 
 std::vector<uint8_t> read_file(const std::string &file_name) {
     std::vector<uint8_t> buffer;
@@ -96,12 +97,13 @@ int main(int argc, char *argv[]) {
     StarCfg cfg(1, 1);
     cfg.setHCCRegister(40, 0x7ff);
 
-    run_test(cfg, *proc, iterations, buffer);
+    run_with_clipboard(cfg, *proc, iterations, buffer);
+    run_without_clipboard(cfg, *proc, iterations, buffer);
 
     return 0;
 }
 
-void run_test(StarCfg &cfg, FeDataProcessor &proc, int iterations, std::vector<uint8_t> &buffer) {
+void run_with_clipboard(StarCfg &cfg, FeDataProcessor &proc, int iterations, std::vector<uint8_t> &buffer) {
 
     ClipBoard<RawDataContainer> rd_cp;
     ClipBoard<EventDataBase> em_cp;
@@ -174,8 +176,73 @@ void run_test(StarCfg &cfg, FeDataProcessor &proc, int iterations, std::vector<u
     double rate = nbits / (double) elapsed_us / 1000.;
     logger->info("Numbers of bits: {} ", nbits);
     logger->info("Time [us]: {}", elapsed_us);
-    logger->info("Throughput [Gbps]: {}", rate);
+    logger->info("Throughput with clipboard [Gbps]: {}", rate);
     rd_cp.finish();
 
     proc_thread.join();
+}
+
+void run_without_clipboard(StarCfg &cfg, FeDataProcessor &proc, int iterations, std::vector<uint8_t> &buffer) {
+
+    proc.init();
+
+    std::size_t nbits{};
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
+    std::size_t done_count = 0;
+    auto last_log = std::chrono::steady_clock::now();
+
+    uint32_t n_buffer = *((uint32_t *) &buffer[0]);
+    unsigned expected = n_buffer * iterations;
+
+    auto check_log = [&]() {
+        auto log_check = std::chrono::steady_clock::now();
+        if((log_check - last_log) > std::chrono::milliseconds(100)) {
+            logger->info("Progress {}%", done_count*100/expected);
+            last_log = log_check;
+        }
+    };
+
+    for (unsigned i = 0; i < iterations; i++) {
+        uint32_t index = 0;
+
+        // Start from scratch on each iteration, but already read the count
+        index += sizeof(uint32_t);
+
+        std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(LoopStatus({1}, {LOOP_STYLE_MASK})));
+        for (unsigned k = 0; k < n_buffer; k++) {
+            struct Data {
+                uint64_t timestamp;
+                uint64_t id;
+                uint32_t nbytes;
+            } __attribute__ ((packed));
+
+            if(index + sizeof(Data) > buffer.size()) {
+                logger->error("Failed to read data for index {}", k);
+                break;
+            }
+
+            Data &data = *(Data *)&buffer[index];
+            index += sizeof(Data);
+
+            std::vector<uint32_t> edata((uint32_t *) &buffer[index], ((uint32_t *) &buffer[index]) + (data.nbytes+3)/4);
+            nbits += data.nbytes*8;
+            index += sizeof(uint8_t) * data.nbytes;
+            RawDataPtr rd = std::make_shared<RawData>(0, std::move(edata));
+
+            rdc->add(std::move(rd));
+        }
+
+        proc.process_event_core(*rdc, [](auto){});
+        done_count ++;
+
+        check_log();
+    }
+
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    auto elapsed_us = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+    double rate = nbits / (double) elapsed_us / 1000.;
+    logger->info("Numbers of bits: {} ", nbits);
+    logger->info("Time [us]: {}", elapsed_us);
+    logger->info("Throughput without clipboard [Gbps]: {}", rate);
 }
