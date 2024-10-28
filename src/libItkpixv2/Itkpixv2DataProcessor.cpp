@@ -90,6 +90,9 @@ void Itkpixv2DataProcessor::init()
     _chipIdShift = (m_feCfg->EnChipId.read() == 1 ? 2 : 0);
     _chipId = m_feCfg->getChipId() & 0x3;
     _streamMask = (_enChipId ? 0x1FFFFFFF : 0x7FFFFFFF);
+    _enBcid = (m_feCfg->DataEnBcid.read() == 1 ? true : false);
+    _enL1id = (m_feCfg->DataEnL1id.read() == 1 ? true : false);
+    _readBcL1 = _enBcid || _enL1id;
 }
 
 void Itkpixv2DataProcessor::run()
@@ -235,11 +238,6 @@ void Itkpixv2DataProcessor::process_core()
         _bitIdx = 9+_chipIdShift; // Reset bit index = ES + tag
 
         // logger->error("Got tag {}", _tag);
-        // Create a new event
-        // TODO RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
-        _curOut->newEvent(_tag, _l1id, _bcid);
-        _events++;
-        sendFeedback(_tag, _bcid);
     }
 
     // Start looping over data words in the current packet
@@ -247,6 +245,29 @@ void Itkpixv2DataProcessor::process_core()
     {
         switch (_status){
         case INIT:
+        case BCIDL1:
+            _status = BCIDL1;
+            if (_readBcL1) {
+                uint64_t temp;
+                if (!retrieve(temp, 16, true))
+                    return;
+
+                if(_enBcid && _enL1id) {
+                    // Each gets 8 bits
+                    _bcid = temp >> 8;
+                    _l1id = temp & 0xFF;
+                }
+                else if(_enBcid)
+                    _bcid = temp;
+                else
+                    _l1id = temp;            
+            }
+            // Create a new event
+            // RD53C can return l1id/bcid values according to chip config registers
+            _curOut->newEvent(_tag, _l1id, _bcid);
+            _events++;
+            sendFeedback(_tag, _bcid);
+        
         case CCOL:
             _status = CCOL;
             // Start from getting core column index
@@ -285,14 +306,7 @@ void Itkpixv2DataProcessor::process_core()
                         _chipTagErrorCnt++;
                     }
                 }
-
-                // Create a new event
-                // TODO RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
-                _curOut->newEvent(_tag, _l1id, _bcid);
-                _events++;
-                sendFeedback(_tag, _bcid);
-
-                _status = CCOL;
+                _status = BCIDL1; // Go back to newEvent / BCIDL1 assignment
                 continue;
             }
             else if (_ccol >= 0x38) // Internal tag
@@ -303,14 +317,7 @@ void Itkpixv2DataProcessor::process_core()
                     return;
 
                 _tag = (_ccol << 5) | temp;
-
-                // Create a new event
-                // There is no L1ID and BCID in RD53B data stream. Currently put dummy values
-                _curOut->newEvent(_tag, _l1id, _bcid);
-                _events++;
-                sendFeedback(_tag, _bcid);
-
-                _status = CCOL;
+                _status = BCIDL1; // Go back to newEvent / BCIDL1 assignment
                 continue;
             }
         default:
