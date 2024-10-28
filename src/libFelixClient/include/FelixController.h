@@ -65,7 +65,7 @@ public:
   bool setELinkWidthMbps(uint64_t fid, unsigned bandwidth);
   bool setELinkWidthMbps(const std::vector<uint64_t>& fids, unsigned bandwidth);
 
-protected:
+private:
 
   std::shared_ptr<FelixClientThread> client;
 
