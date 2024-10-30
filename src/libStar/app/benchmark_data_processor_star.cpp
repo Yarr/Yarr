@@ -3,6 +3,9 @@
 #include <vector>
 #include <filesystem>
 
+#include "getopt.h"
+#include "unistd.h"
+
 #include "AllProcessors.h"
 #include "EventData.h"
 #include "StarCfg.h"
@@ -14,7 +17,7 @@ auto logger = logging::make_log("benchmark_dataprocessing_star");
 
 void run_test(StarCfg &cfg, FeDataProcessor &proc, int iterations, std::vector<uint8_t> &buffer);
 
-std::vector<uint8_t> read_file(const char *file_name) {
+std::vector<uint8_t> read_file(const std::string &file_name) {
     std::vector<uint8_t> buffer;
 
     std::error_code ec;
@@ -28,8 +31,11 @@ std::vector<uint8_t> read_file(const char *file_name) {
 }
 
 void printHelp() {
-  std::cout << "Run data process benchmark (star version)\n";
-  std::cout << "  benchmark_data_processor data_file [iters]\n";
+    std::cout << "Run data process benchmark (star version)\n";
+    std::cout << "  benchmark_data_processor [opts] data_file\n";
+    std::cout << "   --file-name,-f FILE_NAME\tFile name to load\n";
+    std::cout << "   --iterations,-i ITER\tNumber of iterations to run\n";
+    std::cout << "   --help,-h Show help\n";
 }
 
 int main(int argc, char *argv[]) {
@@ -40,19 +46,48 @@ int main(int argc, char *argv[]) {
     loggerConfig["outputDir"] = "";
     logging::setupLoggers(loggerConfig);
 
+    const struct option long_options[] = {
+      {"help", no_argument, nullptr, 'h'},
+      {"file-name", required_argument, nullptr, 'f'},
+      {"iterations", required_argument, nullptr, 'i'},
+      {nullptr, 0, nullptr, 0}
+    };
+
+    unsigned iterations = 100;
+    std::string file_name;
+
+    int c;
+    while((c = getopt_long(argc, argv, "hf:i:", long_options, nullptr)) != -1) {
+        switch(c) {
+        case 'h':
+            printHelp();
+            return 0;
+        case 'f':
+            file_name = optarg;
+            break;
+        case 'i':
+            iterations = atoi(optarg);
+            break;
+        default:
+            std::cerr << "Error while parsing command line arguments!" << std::endl;
+            printHelp();
+            return 1;
+        }
+    }
+
     std::shared_ptr<FeDataProcessor> proc = StdDict::getDataProcessor("Star");
-    if(argc == 1) {
+
+    if(optind != argc && file_name.empty()) {
+        file_name = argv[optind++];
+    }
+
+    if(optind != argc) {
+        std::cout << "Too many parameters\n";
         printHelp();
         return 0;
     }
 
-    unsigned iterations = 100;
-
-    if(argc == 3) {
-        iterations = atoi(argv[2]);
-    }
-
-    auto buffer = read_file(argv[1]);
+    auto buffer = read_file(file_name);
     if(buffer.empty()) {
       std::cout << "Aborting, buffer empty\n";
       return 1;
