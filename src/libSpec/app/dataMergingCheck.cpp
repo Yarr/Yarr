@@ -49,7 +49,7 @@ std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn
     }
     auto chip_config = chip_configs[fe_num];
     fe->init(&*hw, FrontEndConnectivity(chip_config["tx"], chip_config["rx"]));
-    auto chip_register_file_path = chip_config["__config_path__"];
+    auto chip_register_file_path = chip_config["config"];
     fs::path pconfig{chip_register_file_path};
     if(!fs::exists(pconfig)) {
         std::cerr << "WARNING: Chip config \"" << chip_register_file_path << "\" not found" << std::endl;
@@ -151,17 +151,8 @@ int main(int argc, char **argv) {
 
     auto jconn = ScanHelper::openJsonFile(connectivity_filename);
     std::string chipType = jconn["chipType"];
-    std::cout << chipType << std::endl;
     auto chip_configs = jconn["chips"];
     size_t n_chips = chip_configs.size();
-    std::cout << n_chips << std::endl; 
-
-    int lane=0;
-    int temp_lane=0;
-
-    lane=jconn["chips"][j]["rx"];
-    std::cout << "before reading delay" << std::endl; 
-    int delay=jcontroller["ctrlCfg"]["cfg"]["delay"][lane];
 
     // Calculate various parameters for the scan 
     double clk_speed=37.5;
@@ -173,32 +164,40 @@ int main(int argc, char **argv) {
     int min=std::floor(count);
     int max=std::ceil(count);
     int wait = time*10000000;
-
-    // Enable manual delay control
-    mySpec.writeSingle(0x2 << 14 | 0x6, 0xffff);
-
-    mySpec.writeSingle(0x2 << 14 | 0x8, test_size);
-    mySpec.writeSingle(0x2 << 14 | 0x9, 0);
-
     std::cout << std::fixed << std::setprecision(2);
-    mySpec.writeSingle(0x2 << 14 | 0x4, lane);
-    mySpec.writeSingle(0x2 << 14 | 0x5, delay);
 
+    int lane=0;
+    int delay=0;
+    // set correct delay setting for all chips: 
+    for(int j=0; j<n_chips; j++){
+
+        lane=jconn["chips"][j]["rx"];
+        delay=jcontroller["ctrlCfg"]["cfg"]["delay"][lane];
+
+        // Enable manual delay control
+        mySpec.writeSingle(0x2 << 14 | 0x6, 0xffff);
+
+        mySpec.writeSingle(0x2 << 14 | 0x8, test_size);
+        mySpec.writeSingle(0x2 << 14 | 0x9, 0);
+
+        mySpec.writeSingle(0x2 << 14 | 0x4, lane);
+        mySpec.writeSingle(0x2 << 14 | 0x5, delay);
+    } 
 
     std::cout << "Setting up configuration for all chips..." << std::endl;
 
     // Set up all chips 
     for (size_t ichip = 0; ichip < n_chips; ichip++) {
-
+        
         if (chip_configs[ichip]["enable"] == 0)
             continue;
-
+        
         auto fe = init_fe(hw, jconn, ichip);
         if(!fe) {
             std::cerr << "WARNING: Skipping chip at index " << ichip << " in connectivity file" << std::endl;
             continue;
         } else {
-            fs::path chip_register_file_path{chip_configs[ichip]["__config_path__"]};
+            fs::path chip_register_file_path{chip_configs[ichip]["config"]};
             auto jchip = ScanHelper::openJsonFile(chip_register_file_path);
 
             fe->configure();           
@@ -210,7 +209,6 @@ int main(int argc, char **argv) {
             // By default, disable service blocks and set VDDA/VDDD low
             fe->writeNamedRegister("ServiceBlockEn", 0);
 
-            std::cout << "Getting chipId maybe" << std::endl;
             int chip_id=jchip[chipType]["Parameter"]["ChipId"];
 
             if (chip_id == 12 || chip_id==13 || chip_id==14){
@@ -267,7 +265,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    fs::path chip_register_file_path{chip_configs[test_ichip]["__config_path__"]};
+    fs::path chip_register_file_path{chip_configs[test_ichip]["config"]};
     auto fe = init_fe(hw, jconn, test_ichip);
     auto cfg = dynamic_cast<FrontEndCfg*>(fe.get());
     std::string current_chip_name = cfg->getName();
@@ -291,7 +289,12 @@ int main(int argc, char **argv) {
         }   
     } else if (mode=="2-to-1"){
         std::cout << "testing 2-to-1" << std::endl;
-        // still to implement
+        fe->writeNamedRegister("ServiceBlockEn", 1);
+        if (chip_id==12 || chip_id==14){
+            fe->writeNamedRegister("SerSelOut0", 1);
+            fe->writeNamedRegister("SerSelOut1", 1);
+            fe->writeNamedRegister("SerEnLane", 1);
+        }
     } else {
         std::cout << "unknown data merging mode. please provide a valid argument.." << std::endl;
     }
@@ -303,6 +306,10 @@ int main(int argc, char **argv) {
 
     hw->flushBuffer();
     std::this_thread::sleep_for(std::chrono::microseconds(10000));
+
+
+    lane=jconn["chips"][test_ichip]["rx"];
+    delay=jcontroller["ctrlCfg"]["cfg"]["delay"][lane];
 
     // Enable manual delay control
     mySpec.writeSingle(0x2 << 14 | 0x6, 0xffff); 
