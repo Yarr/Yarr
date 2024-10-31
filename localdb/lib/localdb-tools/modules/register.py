@@ -172,7 +172,7 @@ class RegisterData():
                     if parent_doc != None:
                         module_SNs += [ parent_doc.get('serialNumber') ]
                         stage_doc = self.localdb.QC.module.status.find_one( {'component': parent} )
-                        stages += [ stage_doc.get('currentStage') ]
+                        stages += [ stage_doc.get('stage') ]
 
             #self.logger.info( f'chip_SNs = {chip_SNs}' )
             #self.logger.info( f'module_SNs = {module_SNs}' )
@@ -809,7 +809,7 @@ class ScanData(RegisterData):
         if i_mo_oid:
             query = { 'component': i_mo_oid }
             this = self.localdb.QC.module.status.find_one(query)
-            if this: stage = this['currentStage']
+            if this: stage = this['stage']
         return stage
 
 
