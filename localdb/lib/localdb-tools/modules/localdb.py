@@ -12,6 +12,7 @@ from pymongo          import MongoClient, errors, DESCENDING
 from getpass          import getpass
 from bson.objectid    import ObjectId
 from datetime         import datetime
+from urllib.parse import urlparse, urlunparse
 
 class DBServiceError(Exception):
     pass
@@ -104,18 +105,18 @@ class LocalDb(object):
         max_server_delay = 1000
         username = None
         password = None
-        try:
-            client = MongoClient(
+
+        client = MongoClient(
             self.url,
             serverSelectionTimeoutMS=max_server_delay,
             authSource=self.authSource
-            )
-        except Exception as e:
-            print("failed with {0}".format(e))
+        )
         localdb = client[self.name]
+
         try:
-            localdb.list_collection_names()
+            localdb.command("ping")
             self.__connection_succeeded()
+            self.client = client
         except errors.ServerSelectionTimeoutError as err:
             self.__connection_failed('to', err)
         except errors.OperationFailure as err:
@@ -135,30 +136,26 @@ class LocalDb(object):
             else:
                 password = ''
 
-            if username and password:
-                try:
-                    pos = self.url.find("://")
-                    if pos != -1:
-                        self.url = self.url[:pos + len("://")] + username + ':' + password + '@' + self.url[pos + len("://"):]
-                    client = MongoClient(
-                    self.url,
-                    serverSelectionTimeoutMS=max_server_delay,
-                    authSource=self.authSource
-                    )
-                    localdb = client[self.name]
-                    localdb.list_collection_names()
-                    self.__connection_succeeded('Authentication success.')
-                except errors.OperationFailure as err:
-                    self.__connection_failed('auth', err)
-            else:
-                self.__connection_failed('auth', 'No username and password given')
-        client = MongoClient(
-            self.url,
-            username=username,
-            password=password,
-            authSource=self.authSource
-        )
-        self.client = client
+            if not username or not password:
+                return self.__connection_failed('auth', 'No username and password given')
+
+            parts = urlparse(self.url)
+            self.url = parts.replace(netloc = f'{username}:{password}@{parts.netloc}').geturl()
+            client = MongoClient(
+                self.url,
+                serverSelectionTimeoutMS=max_server_delay,
+                authSource=self.authSource
+            )
+            localdb = client[self.name]
+            try:
+                client.command("ping")
+                self.__connection_succeeded('Authentication success.')
+                self.client = client
+            except errors.ServerSelectionTimeoutError as exc:
+                return self.__connection_failed('to', err)
+            except errors.OperationFailure as exc:
+                return self.__connection_failed('auth', err)
+
         return True
 
     def __check_connection_viewer(self):
