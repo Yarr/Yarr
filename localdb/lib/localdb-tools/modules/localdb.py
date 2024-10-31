@@ -12,7 +12,7 @@ from pymongo          import MongoClient, errors, DESCENDING
 from getpass          import getpass
 from bson.objectid    import ObjectId
 from datetime         import datetime
-from urllib.parse import urlparse, urlunparse
+from urllib.parse     import urlparse
 
 class DBServiceError(Exception):
     pass
@@ -56,7 +56,7 @@ class LocalDb(object):
 
     def setUsername(self, i_username):
         self.username = i_username
-    def setPassword(i_password):
+    def setPassword(self, i_password):
         self.password = i_password
 
     def checkConnection(self):
