@@ -5,37 +5,25 @@
 #include "Histo1d.h"
 
 TEST_CASE("HistogramHitsPerEvent", "[Histogrammer][HitsPerEvent]") {
-    // This is for one FE
-    std::unique_ptr<HistoDataProcessor> histo(new HistogrammerProcessor);
-    auto& histogrammer = static_cast<HistogrammerProcessor&>(*histo);
+    auto algo = StdDict::getHistogrammer("HitsPerEvent");
 
-    ClipBoard<EventDataBase> input;
-    ClipBoard<HistogramBase> output;
+    REQUIRE (algo);
 
-    histogrammer.connect(&input, &output);
+    auto data = std::make_unique<FrontEndData>();
+    data->newEvent(1, 2, 3);
+    data->curEvent->addHit(1, 2, 3);
 
-    histogrammer.addHistogrammer(StdDict::getHistogrammer("HitsPerEvent"));
-    // histogrammer.addHistogrammer(new HitsPerEvent());
+    // Create output histogram
+    algo->create(data->lStat);
 
-    histogrammer.init();
-    histogrammer.run();
+    algo->processEvent(data.get());
 
-    {
-        auto data = std::make_unique<FrontEndData>();
-        data->newEvent(1, 2, 3);
-        data->curEvent->addHit(1, 2, 3);
-        input.pushData(std::move(data));
-    }
+    std::unique_ptr<HistogramBase> result(algo->getHisto());
 
-    input.finish();
-    histogrammer.join();
-
-    REQUIRE (!output.empty());
-
-    std::unique_ptr<HistogramBase> result = output.popData();
+    REQUIRE (result);
 
     // Only one thing
-    REQUIRE (output.empty());
+    REQUIRE (!algo->getHisto());
 
     REQUIRE (result->getXaxisTitle() == "Number of Hits");
     REQUIRE (result->getYaxisTitle() == "Events");
