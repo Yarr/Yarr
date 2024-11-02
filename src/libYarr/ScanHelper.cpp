@@ -19,7 +19,7 @@ namespace fs = std::filesystem;
 
 #include "AnalysisAlgorithm.h"
 #include "Configuration.h"
-#include "HistogramAlgorithm.h"
+#include "HistogramProcessor.h"
 #include "StdHistogrammer.h" // needed for special handling of DataArchiver
 #include "StdAnalysis.h" // needed for special handling of HistogramArchiver
 #include "ScanFactory.h"
