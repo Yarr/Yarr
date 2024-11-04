@@ -16,6 +16,14 @@
 #define BLOCKSIZE 64
 #define HALFBLOCKSIZE 32
 
+#ifndef USE_ITKPIX_DEBUG_BUFFER 
+#   define USE_ITKPIX_DEBUG_BUFFER 0
+#endif
+
+#ifndef ITKPIX_DEBUG_BUFFERSIZE
+#   define ITKPIX_DEBUG_BUFFERSIZE 30
+#endif
+
 class Rd53bDataProcessor : public FeDataProcessor
 {
 public:
@@ -73,6 +81,9 @@ private:
     unsigned _chipId;
     unsigned long _streamMask;
 
+    std::vector<uint32_t> _debugBuffer;
+    unsigned _debugIdx; // position in debug buffer
+
     // Inline functions frequently used
     inline bool retrieve(uint64_t &variable, const unsigned length, const bool checkEOS = false, const bool skipNSCheck = false);	// Retrieve bit string with length
     inline void rollBack(const unsigned length);									// Roll back bit index
@@ -81,7 +92,7 @@ private:
     inline void getPreviousDataBlock();
     inline void process_core();
     inline void sendFeedback(unsigned tag, unsigned bcid);
-
+    void dumpDebugBuffer();
     // Data stream components
     uint64_t _ccol;
     uint64_t _qrow[55]; // One counter for each core column. Use 54 as total number of core columns to be compatible with CMS chip geometry. Note core column index starts from 1.

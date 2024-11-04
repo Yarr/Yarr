@@ -1609,6 +1609,9 @@ void NoiseAnalysis::init(const ScanLoopInfo *s) {
     tot->setXaxisTitle("Col");
     tot->setYaxisTitle("Row");
     tot->setZaxisTitle("Averaged ToT");
+    totDist.reset(new Histo1d("TotDist", 16, 0.5, 16.5));
+    totDist->setXaxisTitle("ToT [bc]");
+    totDist->setYaxisTitle("Hits");
     n_trigger = 0;
 }
 
@@ -1625,6 +1628,10 @@ void NoiseAnalysis::processHistogram(HistogramBase *h) {
     else if (h->getName() == HitsPerEvent::outputName()) {
         n_trigger += ((Histo1d*)h)->getEntries();
     }
+    else if (h->getName() == TotDist::outputName()) {
+        totDist->add(*(Histo1d*)h);
+    }
+
 }
 
 void NoiseAnalysis::loadConfig(const json &j){
@@ -1674,6 +1681,7 @@ void NoiseAnalysis::end() {
     output->pushData(std::move(tag));
     output->pushData(std::move(noiseOcc));
     output->pushData(std::move(mask));
+    output->pushData(std::move(totDist));
 }
 
 void NoiseTuning::init(const ScanLoopInfo *s) {

@@ -26,7 +26,8 @@ enum FELIX_FW_MODE {
   FULL_mode_emulator = 7,
   FELIX_MROD_mode = 8,
   lpGBT_mode = 9,
-  Interlaken_25G = 10
+  Interlaken_25G = 10,
+  Unknown = -1
 };
 
 class FelixTxCore : virtual public TxCore {
@@ -63,6 +64,9 @@ public:
 
   bool readFelixRegister(const std::string&, uint64_t&);
   bool writeFelixRegister(const std::string&, const std::string&);
+
+  void loadFWMode(); // retrieve firmware mode from the FELIX register
+  FELIX_FW_MODE fwMode(); // get the FELIX firmware mode
 
 protected:
 
@@ -113,8 +117,7 @@ protected:
   int m_bufferSize {0};
   bool m_broadcast {true};
   uint32_t m_numEnabledChns {0};
-  uint64_t m_regValue;
-  enum FELIX_FW_MODE m_fwMode;
+  enum FELIX_FW_MODE m_fwMode {FELIX_FW_MODE::Unknown};
 
   // GBT link and e-link number for broadcasting
   static constexpr unsigned BroadcastLink = 0x1f;
