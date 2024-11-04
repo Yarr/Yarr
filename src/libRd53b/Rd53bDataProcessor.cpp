@@ -475,6 +475,7 @@ void Rd53bDataProcessor::process_core()
                             // logger->warn("[{}] No header in data fragment!", _channel);
                             _curOut->newEvent(_tag, _l1id, _bcid);
                             _events++;
+                            _splitEventsCnt++;
                         }
 
                         _curOut->curEvent->addHit({pix_col, pix_row, pix_tot});
