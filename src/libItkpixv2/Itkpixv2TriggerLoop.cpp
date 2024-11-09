@@ -68,7 +68,7 @@ void Itkpixv2TriggerLoop::setTrigDelay(uint32_t delay, uint32_t cal_edge_delay=0
             }
         }
     }
-    
+    m_trigWordLength = m_maxTrigWordLength;
     // Rearm
     std::array<uint16_t, 3> armWords = Itkpixv2::genCal(16, 1, 0, 0, 0, 0);
     m_trigWord[1] = ((uint32_t) Itkpixv2::genTrigger(0x1, 53)[0] << 16) | armWords[0];
@@ -76,7 +76,7 @@ void Itkpixv2TriggerLoop::setTrigDelay(uint32_t delay, uint32_t cal_edge_delay=0
     
     logger->debug("Trigger buffer set to:");
     for (unsigned i=0; i<m_trigWordLength; i++) {
-      logger->debug("[{}: 0x{:x}", m_maxTrigWordLength-1-i, m_trigWord[m_maxTrigWordLength-1-i]);
+      logger->debug("[{}: 0x{:x}", m_trigWordLength-1-i, m_trigWord[m_trigWordLength-1-i]);
     }
 }
 
@@ -121,8 +121,8 @@ void Itkpixv2TriggerLoop::init() {
     }
     g_tx->setTrigFreq(m_trigFreq);
     g_tx->setTrigCnt(getTrigCnt());
-    g_tx->setTrigWord(&m_trigWord[0], m_maxTrigWordLength);
-    g_tx->setTrigWordLength(m_maxTrigWordLength);
+    g_tx->setTrigWord(&m_trigWord[0], m_trigWordLength);
+    g_tx->setTrigWordLength(m_trigWordLength);
     g_tx->setTrigTime(m_trigTime);
 
     g_tx->setCmdEnable(keeper->getTxMask());

@@ -71,15 +71,16 @@ void Rd53bTriggerLoop::setTrigDelay(uint32_t delay, uint32_t cal_edge_delay=0) {
             }
         }
     }
-    
+
+    m_trigWordLength = m_maxTrigWordLength;
     // Rearm
     std::array<uint16_t, 3> armWords = Rd53b::genCal(16, 1, 0, 0, 0, 0);
     m_trigWord[1] = 0x817E0000 | armWords[0]; // 0x817E is a SYNC command
     m_trigWord[0] = ((uint32_t)armWords[1]<<16) | armWords[2];
     
     logger->debug("Trigger buffer set to:");
-    for (unsigned i=0; i<m_maxTrigWordLength+1; i++) {
-      logger->debug("[{}: 0x{:x}", m_maxTrigWordLength-i, m_trigWord[m_maxTrigWordLength-i]);
+    for (unsigned i=0; i<m_trigWordLength+1; i++) {
+      logger->debug("[{}: 0x{:x}", m_trigWordLength-i, m_trigWord[m_trigWordLength-i]);
     }
 }
 
@@ -123,8 +124,8 @@ void Rd53bTriggerLoop::init() {
     }
     g_tx->setTrigFreq(m_trigFreq);
     g_tx->setTrigCnt(getTrigCnt());
-    g_tx->setTrigWord(&m_trigWord[0],m_maxTrigWordLength);
-    g_tx->setTrigWordLength(m_maxTrigWordLength);
+    g_tx->setTrigWord(&m_trigWord[0],m_trigWordLength);
+    g_tx->setTrigWordLength(m_trigWordLength);
     g_tx->setTrigTime(m_trigTime);
     g_tx->setCmdEnable(keeper->getTxMask());
     while(!g_tx->isCmdEmpty());
