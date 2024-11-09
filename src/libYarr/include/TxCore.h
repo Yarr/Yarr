@@ -42,7 +42,6 @@ class TxCore {
         virtual bool isTrigDone() = 0;
 
         // return the maximum length of a trigger sequence (e.g. for spec card 32, for FELIX controller 16)
-        // function is implemented within controllers, default is 32
         // function can be overridden within controllers
         virtual int getMaxTrigWordLength() {return 32;};
 
