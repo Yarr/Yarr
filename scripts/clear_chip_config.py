@@ -57,6 +57,8 @@ def clear_chip_config(connectivity_file):
 
         for th in ["DiffTh1L", "DiffTh1M", "DiffTh1R", "DiffVff"]:
             if th in data_chip[chip_type]["GlobalConfig"].keys():
+                if th == "DiffVff" and chip_type == "RD53B":
+                    continue
                 print(f"Deleting {th} from chip config")
                 del data_chip[chip_type]["GlobalConfig"][th]
 
