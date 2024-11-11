@@ -44,8 +44,8 @@ void Rd53bEncoder::addToStream(const HitMap& hitMap, bool last){
     }
     
     //Then add the actual encoded event information
-    setHitMap(hitMap);
-    encodeEvent();
+    // setHitMap(hitMap);
+    encodeEvent(hitMap);
     m_currEvent++;
 
     //If this is the last event in the stream or if we explicitly

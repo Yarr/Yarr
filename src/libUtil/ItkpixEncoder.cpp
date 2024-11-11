@@ -73,7 +73,7 @@ void ItkpixEncoder::pushWords32(){
     m_currBit   = 0;
 }
 
-void ItkpixEncoder::encodeQCore(const uint nCCol, const uint nQRow){
+void ItkpixEncoder::encodeQCore(const HitMap& hitMap, const uint nCCol, const uint nQRow){
     //produce hit map and ToTs
     //First, get the top-left pixel in the QCore
     uint m_col = nCCol * m_nColInCCol;
@@ -87,14 +87,13 @@ void ItkpixEncoder::encodeQCore(const uint nCCol, const uint nQRow){
     int pix = 0;
     for (uint pixRow = m_row; pixRow < m_row + m_nRowInQRow; pixRow++){
         for (uint pixCol = m_col; pixCol < m_col + m_nColInCCol; pixCol++){
-            if (m_hitMap[pixCol][pixRow]){
+            if (hitMap[pixCol][pixRow]){
                 lutIndex |= 0x1 << pix;
-                tots.push_back(m_hitMap[pixCol][pixRow] - 1);
+                tots.push_back(hitMap[pixCol][pixRow] - 1);
             }
             pix++;
         }
     }
-
     //now add the binary-tree encoded & compressed map
     //from the LUT to the stream. If, instead, the plain
     //hit map is requested, add the index (which is the
@@ -111,7 +110,7 @@ void ItkpixEncoder::encodeQCore(const uint nCCol, const uint nQRow){
     }
 }
 
-bool ItkpixEncoder::hitInQCore(const uint CCol, const uint QRow){
+bool ItkpixEncoder::hitInQCore(const HitMap& hitMap, const uint CCol, const uint QRow){
     //Was there a hit in this QCore?
 
     uint m_col = CCol * m_nColInCCol;
@@ -119,14 +118,14 @@ bool ItkpixEncoder::hitInQCore(const uint CCol, const uint QRow){
 
     for (uint pixRow = m_row; pixRow < m_row + m_nRowInQRow; pixRow++){
         for (uint pixCol = m_col; pixCol < m_col + m_nColInCCol; pixCol++){
-            if (m_hitMap[pixCol][pixRow]) return true;
+            if (hitMap[pixCol][pixRow]) return true;
         }
     }
 
     return false;
 }
 
-void ItkpixEncoder::scanHitMap(){
+void ItkpixEncoder::scanHitMap(const HitMap& hitMap){
     //Fill in a helper map of hit QCores and a vector of last qrow in each ccol
     m_hitQCores = std::vector<std::vector<bool>>(m_nCCol, std::vector<bool>(m_nQRow, false));
     m_lastQRow  = std::vector<uint>(m_nCCol, 0);
@@ -134,7 +133,7 @@ void ItkpixEncoder::scanHitMap(){
     for (uint CCol = 0; CCol < m_nCCol; CCol++){
         for (uint QRow = 0; QRow < m_nQRow; QRow++){
             //if there's a hit in the qcore, flag the helper map
-            m_hitQCores[CCol][QRow] = hitInQCore(CCol, QRow);
+            m_hitQCores[CCol][QRow] = hitInQCore(hitMap, CCol, QRow);
             
             //and keep track of the last qrow in each CCol, so that we can
             //easily set the isLast bit. Numbering starts at 1, in order to
@@ -146,10 +145,10 @@ void ItkpixEncoder::scanHitMap(){
 
 }
 
-void ItkpixEncoder::encodeEvent(){
+void ItkpixEncoder::encodeEvent(const HitMap& hitMap){
     //This produces the bits for one event.
     //First, scan the map and produce helpers
-    scanHitMap();
+    scanHitMap(hitMap);
 
     for (uint CCol = 0; CCol < m_nCCol; CCol++){
         //if there are no hits in this CCol, continue
@@ -175,7 +174,7 @@ void ItkpixEncoder::encodeEvent(){
             };
 
             //add the map and ToT
-            encodeQCore(CCol, QRow);
+            encodeQCore(hitMap, CCol, QRow);
 
             //update the previous QRow
             previousQRow = QRow;

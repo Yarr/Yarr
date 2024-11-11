@@ -10,6 +10,7 @@ list(APPEND tools
         scurve_test
         test_json
         dumpRawDataToText
+        encodeRawData
         )
 
 if (NOT "${TARGET_ARCH}" MATCHES "arm*")
