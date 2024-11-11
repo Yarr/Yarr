@@ -168,7 +168,7 @@ int main(int argc, char** argv) {
 
             for(int hit_n = 0; hit_n < evo.hits.size(); hit_n++) {
                 // std::cout << "hit_n: " << hit_n << std::endl;
-                if (evo.hits[hit_n].row < 1 || evo.hits[hit_n].col < 1) {
+                if (evo.hits[hit_n].row < 1 || evo.hits[hit_n].col < 1 || evo.hits[hit_n].row >  384 || evo.hits[hit_n].col > 400) {
                     std::cout << "ERROR: got hit with zero row/col: " << evo.hits[hit_n].row << ", " << evo.hits[hit_n].col << ", " << evo.hits[hit_n].tot << std::endl;
                 }
                 else {
