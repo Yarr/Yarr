@@ -21,6 +21,7 @@ void usage(char* argv[])
     std::cout << "        -e <end_event> (default: -1)" << std::endl;
     std::cout << "        -w <word_max> (default 255)" << std::endl;
     std::cout << "        -h <hit_max> (default 50)" << std::endl;
+    std::cout << "        -i <bits_per_hit_max> (default 100)" << std::endl;
     exit(1);
 }
 
@@ -41,10 +42,11 @@ int main(int argc, char** argv) {
     int end = -1;
     int wordMax = 255;
     int hitMax = 50;
-    std::string prefix = "";
+    int bphMax = 100;
+    std::string prefix = "out";
     // Parse CL
     int c;
-    while ((c = getopt (argc, argv, "o:s:e:p:w:h:")) != -1)
+    while ((c = getopt (argc, argv, "o:s:e:p:w:h:i:")) != -1)
     {
         switch (c)
         {
@@ -65,6 +67,9 @@ int main(int argc, char** argv) {
             break;
         case 'h':
             hitMax = std::stoi(optarg);
+            break;
+        case 'i':
+            bphMax = std::stoi(optarg);
             break;
         }
     }
@@ -125,7 +130,7 @@ int main(int argc, char** argv) {
         // std::vector<uint8_t> word_counts;
         // word_counts.reserve(100000);
         int n_words = 0;
-        int wphMax = wordMax/hitMax + 1;
+
         Histo1d words("words", (float)wordMax + 1, -0.5, (float)wordMax + 0.5);
         words.setXaxisTitle("64-bit word count");
         words.setYaxisTitle("Count");
@@ -134,9 +139,10 @@ int main(int argc, char** argv) {
         hits.setXaxisTitle("Hit count");
         hits.setYaxisTitle("Count");
         
-        Histo1d wordsPerHit("wordsPerHit", (float)wphMax + 1, -0.05, (float)wphMax + 0.5);
-        wordsPerHit.setXaxisTitle("64 bit words / hits, per event");
-        wordsPerHit.setYaxisTitle("Count");
+
+        Histo1d bitsPerHit("bitsPerHit", (float)bphMax  + 1, -0.5, (float)bphMax + 0.5);
+        bitsPerHit.setXaxisTitle("Bits per hit, per event");
+        bitsPerHit.setYaxisTitle("Count");
         
         Histo2d wordsVsHits(
             "wordsVsHits", 
@@ -177,14 +183,14 @@ int main(int argc, char** argv) {
             wordsVsHits.fill(k->wordSize()/2, evo.hits.size());
 
             if(evo.hits.size() > 0) {
-                float wph = (((float)k->wordSize()/2) / (float)evo.hits.size());
+                float wph = 32*(((float)k->wordSize()) / (float)evo.hits.size());
                 // if (wph > 3) {
                 //     std::cout << evo.hits.size() << ", " << k->wordSize() << std::endl;
                 // }
-                wordsPerHit.fill(wph);
+                bitsPerHit.fill(wph);
             }
             else {
-                wordsPerHit.fill(0);
+                bitsPerHit.fill(0);
             }
 
             // word_counts.push_back(k->wordSize());
@@ -215,16 +221,16 @@ int main(int argc, char** argv) {
         std::cout << "Bits/Event: " << ((float)n_words*32)/((float)n_events) << std::endl;
 
         words.plot(prefix, outputDir);
-        words.toFile(outputDir + prefix);
+        words.toFile(prefix, outputDir);
 
         hits.plot(prefix, outputDir);
-        hits.toFile(outputDir + prefix);
+        hits.toFile(prefix, outputDir);
 
-        wordsPerHit.plot(prefix, outputDir);
-        wordsPerHit.toFile(outputDir + prefix);
+        bitsPerHit.plot(prefix, outputDir);
+        bitsPerHit.toFile(prefix, outputDir);
 
         wordsVsHits.plot(prefix, outputDir);
-        wordsVsHits.toFile(outputDir + prefix);
+        wordsVsHits.toFile(prefix, outputDir);
     }
     return 0;
 }
