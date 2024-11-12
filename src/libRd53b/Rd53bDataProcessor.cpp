@@ -66,6 +66,10 @@ Rd53bDataProcessor::Rd53bDataProcessor()
 
     // Status
     _status = INIT;
+
+    // Debug buffer
+    _debugBuffer.resize(ITKPIX_DEBUG_BUFFERSIZE << 1);
+    _debugIdx = 0;
 }
 
 Rd53bDataProcessor::~Rd53bDataProcessor()= default;
@@ -193,6 +197,9 @@ bool Rd53bDataProcessor::retrieve(uint64_t &variable, const unsigned length, con
             else
             {
                 logger->error("[{}] Expect unfinished stream while NS = 1: {}{}. Will start a new event...", m_feCfg->getName(), std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+#if USE_ITKPIX_DEBUG_BUFFER==2
+                dumpDebugBuffer();
+#endif
                 _unfinishedStreamErrorCnt++;
                 getPreviousDataBlock();
                 _status = INIT;
@@ -210,6 +217,26 @@ bool Rd53bDataProcessor::retrieve(uint64_t &variable, const unsigned length, con
     }
 
     return true;
+}
+
+// Debug function
+void Rd53bDataProcessor::dumpDebugBuffer() {
+    logger->error("[{}] Dumping last {} data blocks, in hex:", m_feCfg->getName(), ITKPIX_DEBUG_BUFFERSIZE);
+    logger->error(
+        "[{}] wordIdx={}, bitIdx={}, rawDataIdx={}, wordCount={}, tag={}, ccol={}, qrow={}, islast_isneighbor={}, hitmap={}",
+        m_feCfg->getName(), _wordIdx, _bitIdx, _rawDataIdx, _wordCount, _tag, _ccol, _qrow[_ccol], _islast_isneighbor, _hitmap
+    );
+    logger->error("[{}]", m_feCfg->getName());
+
+    for (int i = _debugIdx; i < _debugIdx + _debugBuffer.size(); i++) {
+        if(i%2 == 0) {
+            logger->error("[{}] NS={}: 0x{:x}", m_feCfg->getName(), ((_debugBuffer[i % ITKPIX_DEBUG_BUFFERSIZE] >> 31) & 0x1), _debugBuffer[i % ITKPIX_DEBUG_BUFFERSIZE]);
+        }
+        else {
+            logger->error("[{}]       0x{:x}", m_feCfg->getName(), _debugBuffer[i % ITKPIX_DEBUG_BUFFERSIZE]);
+        }
+    }
+    logger->error("[{}]", m_feCfg->getName());
 }
 
 // Method for rolling back bit index
@@ -243,6 +270,9 @@ void Rd53bDataProcessor::process_core()
         if (unlikely(!(_data[0] >> 31 & 0x1)))
         {
             logger->error("[{}] Expect new stream while NS = 0: {}{}. Skipping block...", m_feCfg->getName(), std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+#if USE_ITKPIX_DEBUG_BUFFER==2
+            dumpDebugBuffer();
+#endif
             _expectNewStreamErrorCnt++;
             return;
         }
@@ -280,6 +310,9 @@ void Rd53bDataProcessor::process_core()
                 if (unlikely(!(_data[0] >> 31 & 0x1)))
                 {
                     logger->error("[{}] Expect new stream while NS = 0: {}{}. Skipping block...", m_feCfg->getName(), std::bitset<32>(_data[0]).to_string(), std::bitset<32>(_data[1]).to_string());
+#if USE_ITKPIX_DEBUG_BUFFER==2
+                    dumpDebugBuffer();
+#endif
                     _expectNewStreamErrorCnt++;
                     continue;
                 }
@@ -476,7 +509,8 @@ void Rd53bDataProcessor::process_core()
                             _events++;
                         }
 
-                        _curOut->curEvent->addHit({pix_col, pix_row, pix_tot});
+                        // Yarr_tot = chip_tot + 1 - to avoid ToT = 0 
+                        _curOut->curEvent->addHit({pix_col, pix_row, uint16_t(pix_tot+1)});
                         _hits++;
                     }
                 }
@@ -506,6 +540,15 @@ bool Rd53bDataProcessor::getNextDataBlock()
             return true;
         }
         _wordIdx += 2; // Increase block index
+
+#if USE_ITKPIX_DEBUG_BUFFER > 0
+        // Segfault will happen at the next line, print circular buffer results
+        if (_curInV->data.size() <= _rawDataIdx) {
+            logger->error("[{}] DataProcessor is entering segfault case.", m_feCfg->getName());
+            dumpDebugBuffer();
+        }
+#endif
+        
         if (_wordIdx >= _curInV->data[_rawDataIdx]->getSize())
         {
             _rawDataIdx++;
@@ -612,6 +655,13 @@ bool Rd53bDataProcessor::getNextDataBlock()
     
     // Upate the data pointer. Note the meaning of block index is the first block that is *unprocessed*
     _data = &_curInV->data[_rawDataIdx]->get(_wordIdx);
+
+#if USE_ITKPIX_DEBUG_BUFFER > 0
+    _debugBuffer[_debugIdx] = _data[0];
+    _debugIdx = (_debugIdx + 1) % ITKPIX_DEBUG_BUFFERSIZE;
+    _debugBuffer[_debugIdx] = _data[1];
+    _debugIdx = (_debugIdx + 1) % ITKPIX_DEBUG_BUFFERSIZE;
+#endif
 
     // Return success code
     return true;

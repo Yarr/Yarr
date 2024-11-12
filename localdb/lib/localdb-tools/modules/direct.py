@@ -277,7 +277,7 @@ def __pull(dir_path, args):
                 query = { 'component': str(this_cmp['_id']) }
                 this_QC = localdb.QC.module.status.find_one(query)
                 if this_QC:
-                    stage = this_QC['currentStage']
+                    stage = this_QC['stage']
                     if not conn_json['stage']==stage:
                         logger.warning('Current stage is \033[1m' + stage + '\033[0m\n')
                         conn_json.update({ 'stage': stage })
@@ -391,7 +391,7 @@ def __pull(dir_path, args):
             query = { 'component': str(this_chip['_id']) }
             this_QC = localdb.QC.module.status.find_one(query)
             if this_QC:
-                stage = this_QC['currentStage']
+                stage = this_QC['stage']
                 conn_json.update({ 'stage': stage })
             for entry in entries:
                 children.append(entry['child'])

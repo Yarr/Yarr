@@ -633,35 +633,39 @@ uint8_t Itkpixv2::readChipId() {
     return id;
 }
 
-void Itkpixv2::confAdc(uint16_t MONMUX, bool doCur) {
+yarrStatus Itkpixv2::confAdc(uint16_t MONMUX, bool doCur) {
     //This only works for voltage MUX values.
     uint16_t OriginalGlobalRT = this->GlobalPulseConf.read();
     uint16_t OriginalMonitorEnable = this->MonitorEnable.read(); //Enabling monitoring
     uint16_t OriginalMonitorV = this->MonitorV.read();
     uint16_t OriginalMonitorI = this->MonitorI.read();
 
+    // this value is AND'ed with all write register functions
+    // if ALL writes are successful, success=true and yarrSuccess is returned
+    bool success = true;
+
     if (doCur)
     {
-        this->writeRegister(&Itkpixv2::MonitorV, 1);      // Forward via VMUX
-        this->writeRegister(&Itkpixv2::MonitorI, MONMUX); // Select what to monitor
+        success = success && (this->writeRegister(&Itkpixv2::MonitorV, 1) == yarrSuccess);      // Forward via VMUX
+        success = success && (this->writeRegister(&Itkpixv2::MonitorI, MONMUX) == yarrSuccess); // Select what to monitor
     }
     else
     {
-        this->writeRegister(&Itkpixv2::MonitorV, MONMUX); // Select what to monitor
+        success = success && (this->writeRegister(&Itkpixv2::MonitorV, MONMUX) == yarrSuccess); // Select what to monitor
     }
 
-    this->writeRegister(&Itkpixv2::MonitorEnable, 1); // Enabling monitoring
+    success = success && (this->writeRegister(&Itkpixv2::MonitorEnable, 1) == yarrSuccess); // Enabling monitoring
     while(!core->isCmdEmpty()){;}
 
-    this->writeRegister(&Itkpixv2::GlobalPulseConf, 0x40); // Reset ADC
-    this->writeRegister(&Itkpixv2::GlobalPulseWidth, 4);   // Duration = 4 inherited from RD53A
+    success = success && (this->writeRegister(&Itkpixv2::GlobalPulseConf, 0x40) == yarrSuccess); // Reset ADC
+    success = success && (this->writeRegister(&Itkpixv2::GlobalPulseWidth, 4) == yarrSuccess);   // Duration = 4 inherited from RD53A
     while(!core->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::microseconds(100));
 
     this->sendGlobalPulse(m_chipId);
     std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Need to wait long enough for ADC to reset
 
-    this->writeRegister(&Itkpixv2::GlobalPulseConf, 0x1000); //Trigger ADC Conversion
+    success = success && (this->writeRegister(&Itkpixv2::GlobalPulseConf, 0x1000) == yarrSuccess); //Trigger ADC Conversion
     while (!core->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::microseconds(100));
 
@@ -669,12 +673,14 @@ void Itkpixv2::confAdc(uint16_t MONMUX, bool doCur) {
     std::this_thread::sleep_for(std::chrono::microseconds(1000)); //This is neccessary to clean. This might be controller dependent.
 
     // Reset register values
-    this->writeRegister(&Itkpixv2::GlobalPulseConf, OriginalGlobalRT);
-    this->writeRegister(&Itkpixv2::MonitorEnable, OriginalMonitorEnable);
-    this->writeRegister(&Itkpixv2::MonitorV, OriginalMonitorV);
-    this->writeRegister(&Itkpixv2::MonitorI, OriginalMonitorI);
+    success = success && (this->writeRegister(&Itkpixv2::GlobalPulseConf, OriginalGlobalRT) == yarrSuccess);
+    success = success && (this->writeRegister(&Itkpixv2::MonitorEnable, OriginalMonitorEnable) == yarrSuccess);
+    success = success && (this->writeRegister(&Itkpixv2::MonitorV, OriginalMonitorV) == yarrSuccess);
+    success = success && (this->writeRegister(&Itkpixv2::MonitorI, OriginalMonitorI) == yarrSuccess);
     while (!core->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::microseconds(100));
+
+    return (success ? yarrSuccess : yarrFailure);
 }
 
 void Itkpixv2::runRingOsc(uint16_t duration, bool isBankB) {

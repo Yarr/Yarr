@@ -20,18 +20,22 @@
         "config": {}
       },
       "3": {
-        "algorithm": "TagDist",
+        "algorithm": "TotDist",
         "config": {}
       },
       "4": {
-        "algorithm": "HitsPerEvent",
+        "algorithm": "TagDist",
         "config": {}
       },
       "5": {
+        "algorithm": "HitsPerEvent",
+        "config": {}
+      },
+      "6": {
         "algorithm": "DataArchiver",
         "config": {}
       },
-      "n_count": 5
+      "n_count": 6
     },
     "loops": [
       {

@@ -22,10 +22,18 @@ FelixTxCore::~FelixTxCore()
 // Channel control
 void FelixTxCore::enableChannel(FelixID_t fid) {
   ftlog->debug("Enable Tx link: 0x{:x}", fid);
-  if (checkChannel(fid)) {
-    m_enables[fid] = true;
-    m_fifo[fid];
+
+  if (m_fifo.find(fid) == m_fifo.end()) { // new fid
+    // check communication only if new fid
+    if (checkChannel(fid)) {
+      m_fifo[fid]; // create buffer
+    } else {
+      ftlog->error("Failed to enable Tx link: 0x{:x}", fid);
+      return;
+    }
   }
+
+  m_enables[fid] = true;
 }
 
 void FelixTxCore::disableChannel(FelixID_t fid) {
@@ -53,34 +61,19 @@ FelixTxCore::FelixID_t FelixTxCore::fid_from_channel(uint32_t chn) {
 bool FelixTxCore::checkChannel(FelixID_t fid) {
   ftlog->debug("Try sending data to Tx link: 0x{:x}",fid);
 
-  static int counter = 0;
-
-  if(counter==0){
-    readFelixRegister("FIRMWARE_MODE", m_regValue);
-    m_fwMode = (FELIX_FW_MODE)m_regValue;
-    counter++;
-  }
-      
-  static clk::time_point start = clk::now();
-  if((clk::now()-start) >= std::chrono::microseconds(5000000)){ //FIXME LATER: CONNECTION TIMEOUT OF THE NETIO SOCKET
-    start = clk::now();
-  }    
-  
-  if((clk::now()-start) < std::chrono::microseconds(500)){
-    try {
-      switch(m_fwMode){
-      case ITK_Pixel: //ITk Pixel firmware
-      case ITK_Strip: //ITk Strip firmware
-	fclient->send_data(fid, static_cast<const unsigned char*>(&(m_idleWords[0])), m_idleWords.size(), true); 
-	break;
-      default:
-	ftlog->error("FELIX firmware version not supported in YARR. Try again...");
-	exit(1);
-      }
-    } catch (std::runtime_error& e) {
-      ftlog->warn("Fail to send to Tx link 0x{:x}: {}", fid, e.what());
-      return false;
+  try {
+    switch(fwMode()){
+    case ITK_Pixel: //ITk Pixel firmware
+    case ITK_Strip: //ITk Strip firmware
+      fclient->send_data(fid, static_cast<const unsigned char*>(&(m_idleWords[0])), m_idleWords.size(), true); 
+      break;
+    default:
+      ftlog->error("FELIX firmware version not supported in YARR. Try again...");
+      exit(1);
     }
+  } catch (std::runtime_error& e) {
+    ftlog->warn("Fail to send to Tx link 0x{:x}: {}", fid, e.what());
+    return false;
   }
 
   return true;
@@ -379,7 +372,8 @@ uint32_t FelixTxCore::getTrigInCount() {
 void FelixTxCore::prepareTrigger(std::vector<uint8_t>& trigFifo) {
   trigFifo.clear();
 
-  switch(m_fwMode){
+
+  switch(fwMode()){
   case ITK_Pixel: //For ITk pixel RM 5.0 firmware
     if(m_pixFwTrigger){ //FW-based triggers with special 16b character in the F/W = {1110, #iteration (7b), frequency(5b)
       int32_t trigFreq_ratio = (40000000/m_trigFreq)/128; //40 MHz/m_trigFreq(Hz) and /128(clocks) as F/W can in/decrease frequency only in multiple of 128(clocks)
@@ -449,7 +443,7 @@ void FelixTxCore::doTriggerCnt() {
 
   uint32_t trigs=0;
   if (m_trigEnabled) {
-    switch(m_fwMode){
+    switch(fwMode()){
     case ITK_Pixel:
       if (m_pixFwTrigger){
 	// send a single command that will start the firmware-based trigger sequence for ITk pixel
@@ -682,4 +676,21 @@ bool FelixTxCore::writeFelixRegister(
   }
 
   return success;
+}
+
+void FelixTxCore::loadFWMode() {
+  uint64_t regValue;
+  bool success = readFelixRegister("FIRMWARE_MODE", regValue);
+  if (success) {
+    m_fwMode = static_cast<FELIX_FW_MODE>(regValue);
+  } else {
+    m_fwMode = FELIX_FW_MODE::Unknown;
+  }
+}
+
+FELIX_FW_MODE FelixTxCore::fwMode() {
+  if (m_fwMode == FELIX_FW_MODE::Unknown) {
+    loadFWMode();
+  }
+  return m_fwMode;
 }

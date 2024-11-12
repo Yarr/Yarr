@@ -386,7 +386,7 @@ class NoiseAnalysis : public AnalysisAlgorithm {
     private:
         unsigned n_trigger;
         std::unique_ptr<Histo2d> occ, tot;
-        std::unique_ptr<Histo1d> tag;
+        std::unique_ptr<Histo1d> tag, totDist;
         bool createMask;
         double noiseThr;
 };
