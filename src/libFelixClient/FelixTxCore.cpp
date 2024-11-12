@@ -356,7 +356,7 @@ void FelixTxCore::setTrigWord(uint32_t *words, uint32_t size) {
 
   for (uint32_t i=0; i<size; i++) {
     m_trigWords.push_back(words[i]);
-    ftlog->trace("trig word: {:x} at index {}",words[i], i);
+    ftlog->debug("trig word: {:x} at index {}",words[i], i);
   }
 }
 
