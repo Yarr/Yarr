@@ -67,9 +67,9 @@ private:
     ClipBoard<FeedbackProcessingInfo> *statusFb = nullptr;
     Rd53bCfg *m_feCfg;
 
-    uint32_t _tag;
-    uint16_t _l1id;
-    uint16_t _bcid;
+    unsigned _tag;
+    unsigned _l1id;
+    unsigned _bcid;
     unsigned long _wordCount;
     unsigned long _hits;
 
