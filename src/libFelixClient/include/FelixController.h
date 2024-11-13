@@ -21,42 +21,36 @@ public:
   // E-link control
   // IC
   bool getICEnable(uint64_t fid);
-  bool getICEnable(const std::vector<uint64_t>& fids, bool exclusive);
+  bool getICEnable(const std::vector<uint64_t>& fids);
+  bool getICEnableExclusive(const std::vector<uint64_t>& fids);
 
   bool setICEnable(uint64_t fid, bool enable=true);
-  bool setICEnable(const std::vector<uint64_t>& fids, const std::vector<bool>& enables, bool exclusive);
-  inline bool setICEnable(const std::vector<uint64_t>& fids, bool exclusive) {
-    std::vector<bool> enables(fids.size(), true);
-    return setICEnable(fids, enables, exclusive);
-  }
+  bool setICEnable(const std::vector<uint64_t>& fids, bool enable=true);
+  bool setICEnableExclusive(const std::vector<uint64_t>& fids);
 
   bool disableAllICs(bool toflx);
 
   // EC
   bool getECEnable(uint64_t fid);
-  bool getECEnable(const std::vector<uint64_t>& fids, bool exclusive);
+  bool getECEnable(const std::vector<uint64_t>& fids);
+  bool getECEnableExclusive(const std::vector<uint64_t>& fids);
 
   bool setECEnable(uint64_t fid, bool enable=true);
-  bool setECEnable(const std::vector<uint64_t>& fids, const std::vector<bool>& enables, bool exclusive);
-  inline bool setECEnable(const std::vector<uint64_t>& fids, bool exclusive) {
-    std::vector<bool> enables(fids.size(), true);
-    return setECEnable(fids, enables, exclusive);
-  }
+  bool setECEnable(const std::vector<uint64_t>& fids, bool enable=true);
+  bool setECEnableExclusive(const std::vector<uint64_t>& fids);
 
   bool disableAllECs(bool toflx);
 
   // Data E-links
   bool getELinkEnable(uint64_t fid);
-  bool getELinkEnable(const std::vector<uint64_t>& fids, bool exclusive);
+  bool getELinkEnable(const std::vector<uint64_t>& fids);
+  bool getELinkEnableExclusive(const std::vector<uint64_t>& fids);
   unsigned getELinkWidthNBits(uint64_t fid);
   unsigned getELinkWidthMbps(uint64_t fid);
 
   bool setELinkEnable(uint64_t fid, bool enable=true);
-  bool setELinkEnable(const std::vector<uint64_t>& fids, const std::vector<bool>& enables, bool exclusive);
-  inline bool setELinkEnable(const std::vector<uint64_t>& fids, bool exclusive) {
-    std::vector<bool> enables(fids.size(), true);
-    return setELinkEnable(fids, enables, exclusive);
-  }
+  bool setELinkEnable(const std::vector<uint64_t>& fids, bool enable=true);
+  bool setELinkEnableExclusive(const std::vector<uint64_t>& fids);
 
   bool disableAllELinks(bool toflx);
 

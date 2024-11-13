@@ -39,15 +39,18 @@ namespace {
     if (fids.empty()) return;
 
     logger->info("Checking IC ({}) enable registers...", label);
-    if ( flx->getICEnable(fids, exclusive) ) {
-      logger->info(" All relevant IC ({}) channels are enabled!", label);
-      if (exclusive) {
-        logger->info(" ...and other IC ({}) channels are all disabled!", label);
+
+    if (exclusive) {
+      if ( flx->getICEnableExclusive(fids) ) {
+        logger->info(" All relevant IC ({}) channeles are enabled and all others are disabled!", label);
+      } else {
+        logger->warn(" Not all relevant IC ({}) channels are enabled or not all other IC channels are disabled!", label);
       }
     } else {
-      logger->warn(" Not all relevant IC ({}) channels are enabled!", label);
-      if (exclusive) {
-        logger->warn(" ...or not all other IC ({}) channels are disabled!", label);
+      if ( flx->getICEnable(fids) ) {
+        logger->info(" All relevant IC ({}) channeles are enabled!", label);
+      } else {
+        logger->warn(" Not all relevant IC ({}) channels are enabled!", label);
       }
     }
   }
@@ -56,15 +59,18 @@ namespace {
     if (fids.empty()) return;
 
     logger->info("Checking EC ({}) enable registers...", label);
-    if ( flx->getECEnable(fids, exclusive) ) {
-      logger->info(" All relevant EC ({}) channels are enabled!", label);
-      if (exclusive) {
-        logger->info(" ...and other EC ({}) channels are disabled", label);
+
+    if (exclusive) {
+      if ( flx->getECEnableExclusive(fids) ) {
+        logger->info(" All relevant EC ({}) channeles are enabled and all others are disabled!", label);
+      } else {
+        logger->warn(" Not all relevant EC ({}) channels are enabled or not all other EC channels are disabled!", label);
       }
     } else {
-      logger->warn(" Not all relevant EC ({}) channels are enabled!", label);
-      if (exclusive) {
-        logger->warn(" ...or not all other EC ({}) channels are disabled!", label);
+      if ( flx->getECEnable(fids) ) {
+        logger->info(" All relevant EC ({}) channeles are enabled!", label);
+      } else {
+        logger->warn(" Not all relevant EC ({}) channels are enabled!", label);
       }
     }
   }
@@ -90,15 +96,18 @@ namespace {
     if (fids.empty()) return;
 
     logger->info("Checking e-link ({}) enable registers...", label);
-    if ( flx->getELinkEnable(fids, exclusive) ) {
-      logger->info(" All specified e-links ({}) are enabled!", label);
-      if (exclusive) {
-        logger->info(" ...and other e-links ({}) are disabled!", label);
+
+    if (exclusive) {
+      if ( flx->getELinkEnableExclusive(fids) ) {
+        logger->info(" All specified e-links ({}) are enabled and others are disabled!", label);
+      } else {
+        logger->warn(" Not all specified e-links ({}) are enabled or not all other e-links are disabled!", label);
       }
     } else {
-      logger->warn(" Not all specified e-links ({}) are enabled!", label);
-      if (exclusive) {
-        logger->info(" ...or not all other e-links ({}) are disabled!", label);
+      if ( flx->getELinkEnable(fids) ) {
+        logger->info(" All specified e-links ({}) are enabled!", label);
+      } else {
+        logger->warn(" Not all specified e-links ({}) are enabled!", label);
       }
     }
   }
@@ -107,7 +116,9 @@ namespace {
     if (fids.empty()) return;
 
     logger->info("Enable IC ({}) channels...", label);
-    if ( flx->setICEnable(fids, exclusive) ) {
+
+    bool success = exclusive ? flx->setICEnableExclusive(fids) : flx->setICEnable(fids);
+    if (success) {
       logger->info(" ...done!");
     }
   }
@@ -116,7 +127,9 @@ namespace {
     if (fids.empty()) return;
 
     logger->info("Enable EC ({}) channels...", label);
-    if ( flx->setECEnable(fids, exclusive) ) {
+
+    bool success = exclusive ? flx->setECEnableExclusive(fids) : flx->setECEnable(fids);
+    if (success) {
       logger->info(" ...done!");
     }
   }
@@ -134,7 +147,9 @@ namespace {
     if (fids.empty()) return;
 
     logger->info("Enable e-links ({})...", label);
-    if ( flx->setELinkEnable(fids, exclusive) ) {
+
+    bool success = exclusive ? flx->setELinkEnableExclusive(fids) : flx->setELinkEnable(fids);
+    if (success) {
       logger->info(" ...done!");
     }
   }
