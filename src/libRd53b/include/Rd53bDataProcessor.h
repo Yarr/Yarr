@@ -67,11 +67,11 @@ private:
     ClipBoard<FeedbackProcessingInfo> *statusFb = nullptr;
     Rd53bCfg *m_feCfg;
 
-    unsigned _tag;
-    unsigned _l1id;
-    unsigned _bcid;
-    unsigned _wordCount;
-    unsigned _hits;
+    uint32_t _tag;
+    uint16_t _l1id;
+    uint16_t _bcid;
+    unsigned long _wordCount;
+    unsigned long _hits;
 
     bool _isCompressedHitmap; // Flag for toggle hitmap type, true for compressed, false for raw
     bool _dropToT;
