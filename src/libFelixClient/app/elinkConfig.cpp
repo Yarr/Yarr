@@ -30,7 +30,13 @@ namespace {
     std::cout << " -E : Include EC channels" << std::endl;
     std::cout << " -l LOG_CONFIG : Configuration for the logger." << std::endl;
     std::cout << " -v : Verbose mode. Set logging level to 'debug'. Overwritten by '-l LOG_CONFIG' if a logging configuration is provided." << std::endl;
-    std::cout << " " << std::endl;
+    std::cout << "Examples:" << std::endl;
+    std::cout << "* To check if all elinks corresponding to the Rx channels 0, 2, 4, 6, 8, and 10 are enabled and configured with a bandwidth of 640 Mbps:" << std::endl;
+    std::cout << "  bin/elinkConfig get configs/controller/felix_client.json -r 0 2 4 6 8 10 -b 640" << std::endl;
+    std::cout << "* To enable exclusively the elinks specified in a connectivity config as well as the relevant IC and EC channels, and disable all other elinks:" << std::endl;
+    std::cout << "  bin/elinkConfig set configs/controller/felix_client.json -c <connectivity.json> -e -I -E" << std::endl;
+    std::cout << "* To turn off all elinks in a connectivity config:" << std::endl;
+    std::cout << "  bin/elinkConfig off -c <connectivity.json>" << std::endl;
 
     //std::cout << " -L LINK_NUMBERS :  A list of link numbers for considering other channels that are not specified via -t, -r, or -c. Default is including all 12 links on a logical FLX device."
   }
