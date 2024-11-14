@@ -10,8 +10,8 @@
 
 namespace FelixTools {
 
-  //Enum for declaring various FELIX firmware flavors as defined in section 2.1 of https://edms.cern.ch/ui/file/2681548/1/FELIX_Phase2_firmware_specs.pdf
-  //Firmware flavor determined by "FIRMWARE_MODE" FELIX register
+  /// Enum for FELIX firmware flavor determined by "FIRMWARE_MODE" register
+  /// Defined in section 2.1 of https://edms.cern.ch/ui/file/2681548/1/FELIX_Phase2_firmware_specs.pdf
   enum FELIX_FW_MODE {
     GBT_mode = 0,
     FULL_mode = 1,
@@ -39,8 +39,10 @@ namespace FelixTools {
   constexpr unsigned FLX_TOHOST_EGROUPS = 7; // Number of decoding egroups
   constexpr unsigned FLX_TOFLX_EGROUPS = 5; // Number of encoding egroups
 
-  // FELIX ID definition
-  // Take from https://atlas-project-felix.web.cern.ch/atlas-project-felix/user/docs/LinkMappingSpecification.pdf, Figure 3
+  /*
+  FELIX ID definition
+  Take from https://atlas-project-felix.web.cern.ch/atlas-project-felix/user/docs/LinkMappingSpecification.pdf, Figure 3
+  */
   // Version [63:60] is always 0x1
   constexpr unsigned FELIXID_VER_SHIFT = 60;
   // Detector ID [59:52], 8 bits
@@ -69,45 +71,87 @@ namespace FelixTools {
   constexpr unsigned FELIXID_STREAM_NBITS = 8;
   constexpr unsigned FELIXID_STREAM_SHIFT = 0;
 
+  /// Get 64-bit Felix ID
   FelixID_t get_fid(uint8_t detectorID, uint16_t connectorID, bool is_virtual, uint16_t linkID, uint8_t elink, bool to_felix, uint8_t protocol, uint8_t streamID);
 
-  // Utfilities to convert channel numbers to elink numbers
-  // chn[18:6] is the link ID; chn[5:0] is the e-link number
+  /*
+  Utilities to extract link and e-link information from channel numbers
+  */
+
+  /// @brief Get lpGBT link ID from channel number
+  /// @param chn Channel number (link ID and elink number)
+  /// @return LpGBT link ID
   inline uint16_t link_from_chn(uint32_t chn) {
     return (chn & BLOCK_LNK_MASK) >> BLOCK_LNK_SHIFT;
   }
 
+  /// @brief Get elink number from channel number
+  /// @param chn Channel number (link ID and elink number)
+  /// @return Elink number
   inline uint8_t elink_from_chn(uint32_t chn) {
     return chn & (BLOCK_EGROUP_MASK_LPGBT | BLOCK_EPATH_MASK_LPGBT);
   }
 
+  /// @brief Get egroup from elink number
+  /// @param elink Elink number
+  /// @return Egroup
   inline uint8_t egroup_from_elink(uint8_t elink) {
     return (elink & BLOCK_EGROUP_MASK_LPGBT) >> BLOCK_EGROUP_SHIFT_LPGBT;
   }
 
+  /// @brief Get epath from elink number
+  /// @param elink Elink number
+  /// @return Epath
   inline uint8_t epath_from_elink(uint8_t elink) {
     return elink & BLOCK_EPATH_MASK_LPGBT;
   }
 
-  // Special cases for ITk Strips LCB encoder e-links
-  // FELIX Phase 2 FW spec (v1.037)
-  // Section 8.5.9 ITK STRIPS LCB ENCODER Table 8.31
-  // Subject to change in the future FELIX firmware
+  /*
+  Special cases for ITk Strips LCB encoder e-links
+  FELIX Phase 2 FW spec (v1.037)
+  Section 8.5.9 ITK STRIPS LCB ENCODER Table 8.31
+  Subject to change in the future FELIX firmware
+  */
+
+  /// @brief Get egroup from elink number for the ITk Strip LCB encoder
+  /// @param elink Elink number
+  /// @return Egroup
   inline uint8_t egroup_from_elink_lcb(uint8_t elink) { return elink / 5;}
+
+  /// @brief Get epath from elink number for the ITk Strip LCB encoder
+  /// @param elink Elink number
+  /// @return Epath
   inline uint8_t epath_from_elink_lcb(uint8_t elink) { return elink % 5;}
-  /// Get LCB config, command, and trickle channel numbers
+
+  /// @brief Get LCB config, command, and trickle channel numbers given a 32-bit channel number for the ITk Strip LCB encoder
+  /// @param chn Channel number (link ID and elink number)
+  /// @return A tuple of three channel numbers for the LCB config, command, and trickle configureation associated with the input channel number
   std::tuple<uint32_t,uint32_t,uint32_t> lcbChns_from_chn(uint32_t chn);
 
+  /// @brief Get link information including lpGBT link ID, egroup, and epath based on the channel number and firmware mode
+  /// @param chn Channel number (link ID and elink number)
+  /// @param toflx A boolen flag to indicate the direction of the channel
+  /// @param fwmode FELIX firmware mode as defined in enum FELIX_FW_MODE
+  /// @return A tuple of link ID, egroup, and epath number
   std::tuple<uint16_t,uint8_t,uint8_t> linkInfo_from_chn(uint32_t chn, bool toflx, FELIX_FW_MODE fwmode);
 
+  /// @brief Extract lpGBT link ID from FELIX ID
+  /// @param fid 64-bit FELIX ID
+  /// @return Link ID
   inline uint16_t link_from_fid(FelixID_t fid) {
     return (fid >> FELIXID_LINKID_SHIFT) & ((1<<FELIXID_LINKID_NBITS) - 1);
   }
 
+  /// @brief Extract the flag that indicates the link direction from the FELIX ID
+  /// @param fid 64-bit FELIX ID
+  /// @return True if the link direction is to FELIX, false if to host
   inline bool toflx_from_fid(FelixID_t fid) {
     return (fid >> FELIXID_TOFLX_SHIFT) & 1;
   }
 
+  /// @brief Check if all FELIX IDs are in the ToFLX direction
+  /// @param fids A vector of FELIX IDs
+  /// @return True if all links are in the ToFLX direction, false otherwise
   inline bool all_toflx_from_fids(const std::vector<FelixID_t>& fids) {
     if (fids.empty()) {
       return false;
@@ -116,6 +160,9 @@ namespace FelixTools {
     }
   }
 
+  /// @brief Check if all FELIX IDs are in the ToHost direction
+  /// @param fids A vector of FELIX IDs
+  /// @return True if all links are in the ToHost direction, false otherwise
   inline bool all_tohost_from_fids(const std::vector<FelixID_t>& fids) {
     if (fids.empty()) {
       return false;
@@ -124,30 +171,103 @@ namespace FelixTools {
     }
   }
 
+  /// @brief Extract elink number of FELIX ID
+  /// @param fid 64-bit FELIX ID
+  /// @return Elink number
   inline uint8_t elink_from_fid(FelixID_t fid) {
     return (fid >> FELIXID_ELINK_SHIFT) & ((1<<FELIXID_ELINK_NBITS) - 1);
   }
 
+  /// @brief Get link information including lpGBT link ID, egroup, and epath number based on the FELIX ID and firmware mode
+  /// @param fid 64-bit FELIX ID
+  /// @param fwmode FELIX firmware mode
+  /// @return A tuple of link ID, egroup, and epath number
   std::tuple<uint16_t,uint8_t,uint8_t,bool> linkInfo_from_fid(FelixID_t fid, FELIX_FW_MODE fwmode);
 
-  // FELIX register names for elink control
+  /*
+  FELIX register names for elink control
+  */
+
+  /// @brief Get the IC enable register name associated with a link
+  /// @param linkId LpGBT link ID
+  /// @param toflx Link direction
+  /// @return IC enable register name
   std::string getICEnableRegName(uint16_t linkId, bool toflx);
+
+  /// @brief Get the EC enable register name assocaited with a link
+  /// @param linkId LpGBT link ID
+  /// @param toflx Link direction
+  /// @return EC enable register name
   std::string getECEnableRegName(uint16_t linkId, bool toflx);
+
+  /// @brief Get the elink register name associated with a link
+  /// @param linkId LpGBT link ID
+  /// @param egroup Egroup number
+  /// @param toflx Link direction
+  /// @param suffix Suffix of the register name
+  /// @return Register name
   std::string getELinkRegName(unsigned linkId, unsigned egroup, bool toflx, const std::string& suffix);
+
+  /// @brief Get the elink enable register name associated with a link
+  /// @param linkId LpGBT link ID
+  /// @param egroup Egroup number
+  /// @param toflx Link direction
+  /// @return Elink enable register name
   std::string getELinkEnableRegName(unsigned linkId, unsigned egroup, bool toflx);
+
+  /// @brief Get the elink width register name associated with a link
+  /// @param linkId LpGBT link ID
+  /// @param egroup Egroup number
+  /// @param toflx Link direction
+  /// @return Elink width register name
   std::string getELinkWidthRegName(unsigned linkId, unsigned egroup, bool toflx);
-  // overload using FELIX ID
+
+  /* Overload using FELIX ID */
+  /// @brief Get the IC enable register name associated with a link
+  /// @param fid 64-bit FELIX ID
+  /// @return IC enable register name
   std::string getICEnableRegName(FelixID_t fid);
+
+  /// @brief Get the EC enable register name associated with a link
+  /// @param fid 64-bit FELIX ID
+  /// @return EC enable register name
   std::string getECEnableRegName(FelixID_t fid);
+
+  /// @brief Get the elink register name associated with a link
+  /// @param fid 64-bit FELIX ID
+  /// @param fwmode FELIX firmware mode
+  /// @param suffix Suffix of the register name
+  /// @return Register name
   std::string getELinkRegName(FelixID_t fid, FELIX_FW_MODE fwmode, const std::string& suffix);
+
+  /// @brief Get the elink enable register name associated with a link
+  /// @param fid 64-bit FELIX ID
+  /// @param fwmode FELIX firmware mode
+  /// @return Elink enable register name
   std::string getELinkEnableRegName(FelixID_t fid, FELIX_FW_MODE fwmode);
+
+  /// @brief Get the elink width register name associated with a link
+  /// @param fid 64-bit FELIX ID
+  /// @param fwmode FELIX firmware mode
+  /// @return Elink width register name
   std::string getELinkWidthRegName(FelixID_t fid, FELIX_FW_MODE fwmode);
 
-  // Full list of register names
+  /// @brief Get the names of all IC enable registers of a FELIX device
+  /// @param toflx Link direction
+  /// @return A vector of IC enable register names
   std::vector<std::string> getAllICEnableRegNames(bool toflx);
+
+  /// @brief Get the names of all EC enable registers of a FELIX device
+  /// @param toflx Link direction
+  /// @return A vector of EC enable register names
   std::vector<std::string> getAllECEnableRegNames(bool toflx);
+
+  /// @brief Get the names of all elink enable registers of a FELIX device
+  /// @param toflx Link direction
+  /// @return A vector of elink enable register names
   std::vector<std::string> getAllELinkEnableRegNames(bool toflx);
 
+  /// @brief A struct for keeping track of rx queue statistics
   struct QueueStatistics {
 
     std::atomic<uint64_t> messages_received {0}; // number of messages received
