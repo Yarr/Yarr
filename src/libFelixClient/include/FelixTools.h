@@ -181,7 +181,7 @@ namespace FelixTools {
   /// @brief Get link information including lpGBT link ID, egroup, and epath number based on the FELIX ID and firmware mode
   /// @param fid 64-bit FELIX ID
   /// @param fwmode FELIX firmware mode
-  /// @return A tuple of link ID, egroup, and epath number
+  /// @return A tuple of link ID, egroup, epath number, and toflx (link direction)
   std::tuple<uint16_t,uint8_t,uint8_t,bool> linkInfo_from_fid(FelixID_t fid, FELIX_FW_MODE fwmode);
 
   /*
