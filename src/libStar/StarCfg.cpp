@@ -52,7 +52,7 @@ int StarCfg::hccChannelForABCchipID(unsigned int chipID) {
 }
 
 //HCC register accessor functions
-uint32_t StarCfg::getHCCRegister(HCCStarRegister addr){
+uint32_t StarCfg::getHCCRegister(HCCStarRegister addr) const {
   return m_hcc.getRegisterValue(addr);
 }
 void StarCfg::setHCCRegister(HCCStarRegister addr, uint32_t val){
@@ -141,7 +141,7 @@ void StarCfg::writeConfig(json &j) {
         if(addr >= 32) {
           auto reg = HCCStarRegister::_from_integral(addr);
           std::string regKey = reg._to_string();
-          uint32_t val = getHCCRegister(addr);
+          uint32_t val = getHCCRegister(reg);
           std::stringstream ss;
           ss << std::hex << std::setw(8) << std::setfill('0') << val;
           j["HCC"]["regs"][regKey] = ss.str();
@@ -324,8 +324,8 @@ void StarCfg::loadConfig(const json &j) {
                 logger->trace("Set HCC value {} {}", addr, regValue);
                 m_hcc.setRegisterValue(addr, regValue);
                 auto value = m_hcc.getRegisterValue(addr);
-                logger->trace("From JSON: Set HCC {} reg {} to {:08x}",
-                              getHCCchipID(), regName, regValue);
+                logger->trace("From JSON: Set HCC {} reg {} to {:08x} check {:08x}",
+                              getHCCchipID(), regName, regValue, value);
             } catch(std::runtime_error &e) {
                 logger->warn("Reg {} in JSON file does not exist as an HCC register.  It will be ignored!", regName);
             }
