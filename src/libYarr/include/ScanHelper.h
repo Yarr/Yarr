@@ -36,8 +36,8 @@ namespace ScanHelper {
 
         json openJsonFile(const std::string& filepath);
         std::unique_ptr<HwController> loadController(const json &ctrlCfg);
-        std::string buildChips(const json &j, Bookkeeper &bookie, HwController *hwCtrl, std::map<unsigned,
-                              std::array<std::string, 2>> &feCfgMap);
+        std::string buildChips(const json &j, Bookkeeper &bookie, HwController *hwCtrl,
+                               std::map<unsigned, std::array<std::string, 2>> &feCfgMap);
         
         std::string loadChipConfigs(json &j, const bool &createConfig, const std::string &dir);
         std::string loadChipConfigs(json &j, bool createConfig=false);

@@ -74,7 +74,7 @@ class RawDataContainer {
         
         ~RawDataContainer()=default;
 
-        inline void add(std::shared_ptr<RawData> arg_data) {
+        inline void add(RawDataPtr arg_data) {
             data.push_back(arg_data);
         }
 
@@ -82,7 +82,7 @@ class RawDataContainer {
             return data.size();
         }
 
-        std::vector<std::shared_ptr<RawData>> data;
+        std::vector<RawDataPtr> data;
         LoopStatus stat;
 };
 
