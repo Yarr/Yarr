@@ -79,7 +79,7 @@ namespace ScanHelper {
     json openJsonFile(const std::string& filepath) {
         std::ifstream file(filepath);
         if (!file) {
-            throw std::runtime_error("could not open file");
+            throw std::runtime_error("could not open file: " + filepath);
         }
         json j;
         try {

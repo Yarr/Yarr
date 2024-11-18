@@ -46,6 +46,17 @@ if(NOT MIN_GCC_VERSION)
   set(MIN_GCC_VERSION 9)
 endif()
 
+# Debug buffer and buffersize for Rd53b/Itkpixv2
+if(DEFINED USE_ITKPIX_DEBUG_BUFFER)
+    add_compile_definitions(USE_ITKPIX_DEBUG_BUFFER=${USE_ITKPIX_DEBUG_BUFFER})
+    message(STATUS "Set USE_ITKPIX_DEBUG_BUFFER=${USE_ITKPIX_DEBUG_BUFFER}")
+endif()
+
+if(DEFINED ITKPIX_DEBUG_BUFFERSIZE)
+    add_compile_definitions(ITKPIX_DEBUG_BUFFERSIZE=${ITKPIX_DEBUG_BUFFERSIZE})
+    message(STATUS "Set ITKPIX_DEBUG_BUFFERSIZE=${ITKPIX_DEBUG_BUFFERSIZE}")
+endif()
+
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS ${MIN_GCC_VERSION})
         message(FATAL_ERROR "GCC version must be at least ${MIN_GCC_VERSION}!")
@@ -91,6 +102,7 @@ add_compile_options(-Wnon-virtual-dtor)
 
 option(BUILD_TESTS "Build the YARR test suite" OFF)
 option(DISABLE_PLOTTING_TOOLS "Disable build of plotting tools" OFF)
+
 set(YARR_FRONT_ENDS_TO_BUILD "Fei4;Rd53a;Star;Rd53b;Itkpixv2"
     CACHE STRING "Semicolon-separated list of controllers to build, or \"all\"")
 set(YARR_CONTROLLERS_TO_BUILD  "Spec;Emu"

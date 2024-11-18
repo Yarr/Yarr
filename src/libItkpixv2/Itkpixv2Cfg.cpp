@@ -28,8 +28,8 @@ Itkpixv2Cfg::Itkpixv2Cfg() :
     m_kSenseInD(21000),
     m_kSenseShuntA(26000),
     m_kSenseShuntD(26000),
-    m_kShuntA(1040),
-    m_kShuntD(1040)
+    m_kShuntA(1000),
+    m_kShuntD(1000)
 {}
 
 void Itkpixv2Cfg::enableAll() {

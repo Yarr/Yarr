@@ -120,7 +120,7 @@ class FrontEndData : public EventDataBase {
     public:
 
         FrontEndData()=default;
-        FrontEndData(LoopStatus& l) : lStat(l) {}
+        FrontEndData(const LoopStatus& l) : lStat(l) {}
         ~FrontEndData() override = default;;
 
         void delLastEvent() {
