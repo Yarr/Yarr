@@ -39,7 +39,7 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(e)
 
-    data = jason["Data"] ## 400 lists of 384 rows
+    data = np.array(jason["Data"], dtype=float) ## 400 lists of 384 rows
     plottype = jason["Type"]
     xlow = jason["x"]["Low"]
     xhigh = jason["x"]["High"]
