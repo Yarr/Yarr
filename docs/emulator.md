@@ -1,3 +1,65 @@
+# RD53C / ITkPixV2 emulator
+
+ITkPixV2 emulator covers range of the real chip functionality. From the DAQ perspective, there's no difference between the two. The emulator receives commands and sends outputs via a virtual controller. Internally, it holds a full SW representation of the chip registers, an encoder and command interpreter. Currently supported functionality includes
+- All flavours of register writing
+    - Single write in global registers
+    - Single / multiple write in pixel registers, including row-auto increase
+    - Core column broadcasting
+- Register reading
+    - Single-register read
+- Calibration charge injection
+    - Digital / analog response to Cal command
+- Triggering
+
+With the functionality above, one can run digital, analog and threshold scans as well as full threshold tuning.
+
+## Quickstart
+
+All scans can be run through scanConsole, using the usual scan configurations and the emulator's controller under configs/controller/emuCfg_itkpixv2.json, e. g.:
+
+```
+./bin/scanConsole -r configs/controller/emuCfg_itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/std_digitalscan.json -p
+```
+for a digital scan, or
+```
+./bin/scanConsole -r configs/controller/emuCfg_itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/std_digitalscan.json -p
+```
+for an analog scan. Example outputs of mean ToT maps for the digital and analog scans are shown below.
+
+<figure class="image">
+<img src="images/emulator/Itkpixv2Emu_digitalScanExample.png" alt="ITkPixV2 emulator: Digital scan" width="250">
+<img src="images/emulator/Itkpixv2Emu_analogScanExample.png" alt="ITkPixV2 emulator: analog scan" width="250">
+<figcaption>Digital (left) and analog (right) scan ToT maps in the ITkPixV2 emulator.</figcaption>
+</figure>
+
+As illustrated in the analog scan result above, the emulator introduces a random variation of the analog FE response in each pixel. The (Gaussian) generation of this variation is seeded with a unique ID of the emulated chip, and is therefore constant and reproducible in time.
+
+This randomness, mimicking a non-ideal chip, is further pronounced in threshold scan:
+```
+./bin/scanConsole -r configs/controller/emuCfg_itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/std_thresholdscan.json -p
+```
+For an untuned chip, the threshold distribution is wide due to the per-pixel threshold variations and noise (emulated as Gauss(0, 50e)). The figures below show the untuned threshold distribution and map.
+
+<figure class="image">
+<img src="images/emulator/Itkpixv2Emu_untunedThresholdDist.png" alt="ITkPixV2 emulator: Untuned threshold distribution" width="250">
+<img src="images/emulator/Itkpixv2Emu_untunedThresholdMap.png" alt="ITkPixV2 emulator: Untuned threshold map" width="250">
+<figcaption>Untuned threshold distribution (left) and map (right), obtained with the ITkPixV2 emulator.</figcaption>
+</figure>
+
+One can tune the global threshold, resulting in an overall shift of the threshold distribution to average at the desired value, as well as pixel threshold tuning, which compensates for the non-idealness in each pixel. Figures below show the results of such tuning, which can be emulated with:
+```
+./bin/scanConsole -r configs/controller/emuCfg_itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/std_tune_globalthreshold.json -p -t 2000
+```
+and
+```
+./bin/scanConsole -r configs/controller/emuCfg_itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/std_tune_pixelthreshold.json -p -t 2000
+```
+<figure class="image">
+<img src="images/emulator/Itkpixv2Emu_tunedThresholdDist.png" alt="ITkPixV2 emulator: Untuned threshold distribution" width="250">
+<img src="images/emulator/Itkpixv2Emu_tunedThresholdMap.png" alt="ITkPixV2 emulator: Untuned threshold map" width="250">
+<figcaption>Tuned (except for the first core column) threshold distribution (left) and map (right), obtained with the ITkPixV2 emulator.</figcaption>
+</figure>
+
 # RD53A emulator
 
 ## Usage
