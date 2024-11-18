@@ -111,8 +111,11 @@ void Itkpixv2EmuCommandExe::doCal(const Itkpixv2EmuUtils::Cmd& cmd){
 
                 //Add some noise on top  and translate the charge over threshold to ToT
                 float noiseCharge = m_noiseDist(m_rng);//Itkpixv2EmuUtils::noiseCharge(m_rng);
-                float tot =  Itkpixv2EmuUtils::chargeToToT(injCharge + noiseCharge - (globalDACCharge + TDACCharge));
-                m_tots(pixel) = tot > 0 ? tot + 1 : 0;
+                //The chargeToToT function returns tot + 1, so that it serves
+                //as both indication of a hit when ToT = 0000 and the ToT itself
+                uint16_t totPlusOne =  Itkpixv2EmuUtils::chargeToToT(injCharge + noiseCharge - (globalDACCharge + TDACCharge));
+                //rlog->info("Injected = {} e, noise = {} e, global threshold = {} e {} DAC, pixel threshold = {} e, ToT = {} e", injCharge, noiseCharge, globalDACCharge, globalDAC, TDACCharge, totPlusOne);
+                m_tots(pixel) = totPlusOne > 0 ? totPlusOne : 0;
 
                 break;
             }

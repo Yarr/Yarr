@@ -38,6 +38,8 @@ void Itkpixv2Emu::executeLoop(){
     //This loop should only run if the chip is turned on
     //if (!run) return;
     while (run) {
+        //The following will be split into two threads in the future.
+
         //Check for commands in tx. This check has to stay here because
         //of the overall run flag. Can think of moving that flag to the
         //interpreter class somehow...
@@ -68,11 +70,11 @@ void Itkpixv2Emu::executeLoop(){
                     break;
                 }
                 case Itkpixv2EmuUtils::Commands::Clear         :{
-                    //rlog->info("Clear command with id {}", cmd.id);
+                    rlog->warn("Clear command received - potential reset not implemented!");
                     break;
                 }
                 case Itkpixv2EmuUtils::Commands::GlobalPulse   :{
-                    //rlog->info("GlobalPulse command with id {}", cmd.id);
+                    rlog->warn("GlobalPulse command received - potential reset not implemented!");
                     break;
                 }
                 case Itkpixv2EmuUtils::Commands::Cal           :{
@@ -104,7 +106,6 @@ void Itkpixv2Emu::executeLoop(){
         }
 
     }
-    //executeLoop();
 }
 
 void Itkpixv2Emu::outputLoop(){
