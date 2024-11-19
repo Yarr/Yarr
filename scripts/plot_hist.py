@@ -37,7 +37,8 @@ if __name__ == "__main__":
     try:
         jason = json.load(infile)
     except Exception as e:
-        logger.error(e)
+        logger.error(f"Can't read json file: {e}")
+        exit()
 
     data = np.array(jason["Data"], dtype=float) ## 400 lists of 384 rows
     plottype = jason["Type"]
@@ -48,7 +49,7 @@ if __name__ == "__main__":
     fig, ax = plt.subplots()
 
     if plottype == "Histo2d":
-        im = ax.imshow(np.array(data).T.tolist(), aspect='auto', origin="lower") ## needs to be transposed 
+        im = ax.imshow(np.array(data).T.tolist(), aspect='auto', origin="lower") ## needs to be transposed, otherwise row and col are swapped
         cbar = ax.figure.colorbar(im, ax=ax)
         cbar.ax.set_ylabel(jason["z"]["AxisTitle"], rotation=-90, va="bottom")
     elif plottype == "Histo1d":
