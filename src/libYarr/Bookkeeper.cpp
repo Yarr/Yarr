@@ -58,7 +58,7 @@ void Bookkeeper::addFe(std::unique_ptr<FrontEnd> fe, const FrontEndConnectivity&
 }
 
 void Bookkeeper::addFe(std::unique_ptr<FrontEnd> fe, unsigned channel) {
-  this->addFe(std::move(fe), FrontEndConnectivity(channel,channel,channel));
+  this->addFe(std::move(fe), FrontEndConnectivity(channel,channel));
 }
 
 void Bookkeeper::delFe(unsigned id) {
