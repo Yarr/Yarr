@@ -73,7 +73,7 @@ std::vector<std::vector<double>> StarNPointGainAnalysis::createAverageResponseCu
 
     for (unsigned injIdx = 0; injIdx < nInj; injIdx++) {
         double inj = m_injections[injIdx];
-	for (unsigned chip = 0; chip < nChips; chip++) {
+        for (unsigned chip = 0; chip < nChips; chip++) {
             double sum = 0.;
             for (unsigned row = 0; row < nRow; row++) {
                 for (unsigned strip = 0; strip < s_stripsPerRow; strip++) {
