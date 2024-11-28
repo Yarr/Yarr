@@ -33,6 +33,8 @@ public:
   void runMonitor(bool print_info=false);
   void stopMonitor();
 
+  FelixTools::FelixID_t fid_from_channel(uint32_t chn);
+
 protected:
 
   using FelixID_t = FelixTools::FelixID_t;
@@ -57,7 +59,6 @@ protected:
   unsigned m_flushWaitTime {50}; // in milliseconds
 
   // For Felix ID
-  FelixID_t fid_from_channel(uint32_t chn);
   uint8_t m_did {0};  // detector ID; 0x00 reserved for local IDs
   uint16_t m_cid {0}; // connector ID; 0x0000 reserved for local IDs
   uint8_t m_protocol {0}; // protocol ID
