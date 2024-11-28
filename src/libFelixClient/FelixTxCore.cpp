@@ -501,20 +501,20 @@ void FelixTxCore::trigger() {
     }
 
     bool flush = true;
-    bool retryIfFails=true;
-    while (retryIfFails) {
+    int nRetriesIfFails=0;
+    while (nRetriesIfFails<3) {
       try {
 	fclient->send_data(fid_broadcast, m_trigFifo[fid_broadcast].data(), m_trigFifo[fid_broadcast].size(), flush);
-	retryIfFails=false;
+	break;
       } catch (FelixClientResourceNotAvailableException &e) {
-	if (retryIfFails) {
-	  ftlog->warn("Exception from FelixClient::send_data: {}. Retrying.", e.what());
-	  std::this_thread::sleep_for(std::chrono::microseconds(m_isCmdEmptyWaitTime));
-	  retryIfFails=false;
-	} else {
-	  ftlog->warn("Exception from FelixClient::send_data: {}. Giving up.", e.what());
-	}
+	ftlog->warn("Exception from FelixClient::send_data: {}. Retrying.", e.what());
+	std::this_thread::sleep_for(std::chrono::microseconds(m_isCmdEmptyWaitTime));
+	nRetriesIfFails++;
       }
+    }
+    if(nRetriesIfFails==3){
+      ftlog->error("Could not send data due to FelixClientResourceNotAvailableException, even after 3 attempts. Exiting now...");
+      exit(1);
     }
 
   } else {
@@ -527,21 +527,21 @@ void FelixTxCore::trigger() {
       }
       
       bool flush = true;
-      bool retryIfFails=true;
-      while (retryIfFails) {
+      int nRetriesIfFails=0;
+      while (nRetriesIfFails<3) {
 	try {
 	  fclient->send_data(chn, buffer.data(), buffer.size(), flush);
-	  retryIfFails=false;
+	  break;
 	} catch (FelixClientResourceNotAvailableException &e) {
-	  if (retryIfFails) {
-	    ftlog->warn("Exception from FelixClient::send_data: {}. Retrying.", e.what());
-	    std::this_thread::sleep_for(std::chrono::microseconds(m_isCmdEmptyWaitTime));
-	    retryIfFails=false;
-	  } else {
-	    ftlog->warn("Exception from FelixClient::send_data: {}. Giving up.", e.what());
-	  }
+	  ftlog->warn("Exception from FelixClient::send_data: {}. Retrying.", e.what());
+	  std::this_thread::sleep_for(std::chrono::microseconds(m_isCmdEmptyWaitTime));
+	  nRetriesIfFails++;
 	}
-      }     
+      }
+      if(nRetriesIfFails==3){
+	ftlog->error("Could not send data due to FelixClientResourceNotAvailableException, even after 3 attempts. Exiting now...");
+	exit(1);
+      }
     }
   }
 }
