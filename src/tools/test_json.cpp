@@ -135,7 +135,7 @@ bool testScanConfig(const json &scanConfig) {
     std::map<unsigned, std::vector<std::unique_ptr<AnalysisDataProcessor>> > analyses;
 
     // If we don't add a front-end the info isn't checked...
-    b.addFe(std::make_unique<MyFrontEnd>(), FrontEndConnectivity(12,12,12));
+    b.addFe(std::make_unique<MyFrontEnd>(), FrontEndConnectivity(12,12));
 
     // This is run by ScanHelper, but doesn't depend on config
     // ScanHelper::buildRawDataProcs(procs, bookie, chipType);
