@@ -331,12 +331,24 @@ void FelixTxCore::setTrigTime(double time) {
 void FelixTxCore::setTrigWordLength(uint32_t length) {
   m_trigWordLength = length;
 }
+// For FELIX, max is 32x16bit commands
+// YARR writes 32 bit commands so Trigger Loop needs to be instructed to 
+// write 16x32bit commands that can be broken apart for FELIX
+// for firware version ITK PIXEL regmap 5.0, build date 14-10-2023
+int FelixTxCore::getMaxTrigWordLength(){
+  return 16;
+}
 
 void FelixTxCore::setTrigWord(uint32_t *words, uint32_t size) {
   m_trigWords.clear();
+  int maxLength = getMaxTrigWordLength();
+  if (size > maxLength && m_pixFwTrigger){
+    ftlog->error("Size of {} is greater than the maximum allowed length for this controller {}; note RD53A scans are not compatible with FELIX FW Triggers", size, maxLength);
+  }
 
   for (uint32_t i=0; i<size; i++) {
     m_trigWords.push_back(words[i]);
+    ftlog->debug("trig word: {:x} at index {}",words[i], i);
   }
 }
 
