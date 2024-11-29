@@ -3,6 +3,7 @@ add_executable(testStar
         test_analysis_strobe_delay.cpp
         test_analysis_trim.cpp
         test_analysis_scurvefitter.cpp
+        test_analysis_npointgain.cpp
         test_chips.cpp
         test_config.cpp
         test_data_processor.cpp
