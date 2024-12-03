@@ -106,7 +106,7 @@ class FrontEndEvent {
 
         uint16_t l1id;
         uint16_t bcid;
-        uint16_t tag;
+        uint32_t tag;
         uint16_t nHits;
         uint16_t nClusters;
         std::vector<FrontEndHit> hits;
