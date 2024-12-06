@@ -30,7 +30,7 @@ class StarCfg : public FrontEndCfg {
   void configure_ABC_Registers(int chipID);
 
   /// Return value of HCC register
-  uint32_t getHCCRegister(HCCStarRegister addr);
+  uint32_t getHCCRegister(HCCStarRegister addr) const;
 
   /// Set value of HCC register
   void     setHCCRegister(HCCStarRegister addr, uint32_t val);
@@ -42,7 +42,7 @@ class StarCfg : public FrontEndCfg {
   void     setABCRegister(ABCStarRegister addr, uint32_t val, int32_t chipID);
 
   /// Return value of HCC register (integer version)
-  inline const uint32_t getHCCRegister(uint32_t addr) {
+  inline const uint32_t getHCCRegister(uint32_t addr) const {
     return getHCCRegister(HCCStarRegister::_from_integral(addr));
   }
 
@@ -179,14 +179,14 @@ class StarCfg : public FrontEndCfg {
   size_t numABCs() { return m_ABCchips.size(); }
 
   /// Return highest input channel? of connected ABCs (internal?)
-  int highestABC() { 
+  int highestABC() const {
       if (m_ABCchips.size() == 0)
           return -1;
       return m_ABCchips.rbegin()->first; 
   } 
 
   /// Return lowest input channel? of connected ABCs (internal?)
-  int lowestABC() { 
+  int lowestABC() const {
       if (m_ABCchips.size() == 0)
           return -1;
       return m_ABCchips.begin()->first; 
