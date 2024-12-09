@@ -11,12 +11,12 @@
 #include <random>
 #include <iostream>
 #include "EventData.h"
+#include "ItkpixLayout.h"
 
 
 class HitMapGenerator{
-    //This is suboptimal and temporary - will need to change vector of vectors into something
-    //1-D, contiguously stored
-    typedef std::vector<std::vector<uint16_t>> HitMap;
+
+    typedef ItkpixLayout<uint16_t> HitMap;
 
 
     public:
