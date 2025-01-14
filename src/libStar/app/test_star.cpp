@@ -711,6 +711,38 @@ bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars
 
     if (not activeInChannels) {
       logger->warn("No ABCStar data from HCCStar {}", hcc.hcc_id);
+    } else {
+      // Read ABC efuse IDs
+      // Toggle the EFUSEL bit first to load the 24b efuse bits to the register STAT2
+      auto [addr_ef, val_ef] = updateABCSubRegister(ABCStarSubRegister::EFUSEL, 1, cfg);
+      sendCommand(star.write_abc_register(addr_ef, val_ef), hwCtrl);
+
+      // Loop over the ABCs associated with the HCC and read the STAT2 register
+      // (We could have broadcasted the read command, but might be more robust doing this one at a time)
+      for (const auto& [abc_chn, abc_id] : hcc.abcs) {
+        int stat2 = (int)ABCStarRegister::STAT2;
+        sendCommand(star.read_abc_register(stat2, 0xf, abc_id), hwCtrl);
+
+        // Read data
+        auto data = readData(
+          hwCtrl,
+          [&](RawData& d) {return isPacketType(d, TYP_ABC_RR) and isFromChannel(d, hcc.rx);}
+        );
+
+        if (not data) {
+          logger->warn(" No response from register read commands.");
+          continue;
+        }
+
+        StarChipPacket packet;
+        if (packetFromRawData(packet, *data)) {
+          logger->error("Packet parse failed");
+        } else {
+          uint32_t abcFuseID = packet.value & 0x00ffffff; // lowest 24 bits
+          //uint32_t abcStarVer = (packet.value & 0xff000000) >> 28; // top 8 bits
+          logger->info(" Found ABCStar on HCCStar {}: Input channel = {} ABC ID = {} eFuse = 0x{:06x}", hcc.hcc_id, abc_chn, abc_id, abcFuseID);
+        }
+      } // end of ABC loop
     }
 
     // Update HCC register ICenable
