@@ -45,9 +45,8 @@ FelixTxCore::FelixID_t FelixTxCore::fid_from_channel(uint32_t chn) {
   // Compute FelixID from did, cid, link id elink #, streamId
 
   // Get link/GBT id and elink # from channel number
-  // chn[18:6] is the link ID; chn[5:0] is the e-link number
-  uint8_t elink = chn & 0x3f;
-  uint16_t link_id = (chn >> 6) & 0x1fff;
+  uint8_t elink = FelixTools::elink_from_chn(chn);
+  uint16_t link_id = FelixTools::link_from_chn(chn);
 
   // Hard code is_virtual to false, and streamID to 0 for now
   bool is_virtual = false;
@@ -63,8 +62,8 @@ bool FelixTxCore::checkChannel(FelixID_t fid) {
 
   try {
     switch(fwMode()){
-    case ITK_Pixel: //ITk Pixel firmware
-    case ITK_Strip: //ITk Strip firmware
+    case FelixTools::FELIX_FW_MODE::ITK_Pixel: //ITk Pixel firmware
+    case FelixTools::FELIX_FW_MODE::ITK_Strip: //ITk Strip firmware
       fclient->send_data(fid, static_cast<const unsigned char*>(&(m_idleWords[0])), m_idleWords.size(), true); 
       break;
     default:
@@ -332,12 +331,24 @@ void FelixTxCore::setTrigTime(double time) {
 void FelixTxCore::setTrigWordLength(uint32_t length) {
   m_trigWordLength = length;
 }
+// For FELIX, max is 32x16bit commands
+// YARR writes 32 bit commands so Trigger Loop needs to be instructed to 
+// write 16x32bit commands that can be broken apart for FELIX
+// for firware version ITK PIXEL regmap 5.0, build date 14-10-2023
+int FelixTxCore::getMaxTrigWordLength(){
+  return 16;
+}
 
 void FelixTxCore::setTrigWord(uint32_t *words, uint32_t size) {
   m_trigWords.clear();
+  int maxLength = getMaxTrigWordLength();
+  if (size > maxLength && m_pixFwTrigger){
+    ftlog->error("Size of {} is greater than the maximum allowed length for this controller {}; note RD53A scans are not compatible with FELIX FW Triggers", size, maxLength);
+  }
 
   for (uint32_t i=0; i<size; i++) {
     m_trigWords.push_back(words[i]);
+    ftlog->debug("trig word: {:x} at index {}",words[i], i);
   }
 }
 
@@ -362,7 +373,7 @@ void FelixTxCore::prepareTrigger(std::vector<uint8_t>& trigFifo) {
 
 
   switch(fwMode()){
-  case ITK_Pixel: //For ITk pixel RM 5.0 firmware
+  case FelixTools::FELIX_FW_MODE::ITK_Pixel: //For ITk pixel RM 5.0 firmware
     if(m_pixFwTrigger){ //FW-based triggers with special 16b character in the F/W = {1110, #iteration (7b), frequency(5b)
       int32_t trigFreq_ratio = (40000000/m_trigFreq)/128; //40 MHz/m_trigFreq(Hz) and /128(clocks) as F/W can in/decrease frequency only in multiple of 128(clocks)
       trigFreq_ratio = trigFreq_ratio-1; //compensating for the trigger pattern being 256 clocks long
@@ -392,7 +403,7 @@ void FelixTxCore::prepareTrigger(std::vector<uint8_t>& trigFifo) {
     }
   break;
  
-  case ITK_Strip: //For ITk strips firmware
+  case FelixTools::FELIX_FW_MODE::ITK_Strip: //For ITk strips firmware
     // Need to send the last word in m_trigWords first
     // (Because of the way TriggerLoop sets up the trigger words)
     for (int j=m_trigWords.size()-1; j>=0; j--) {
@@ -432,7 +443,7 @@ void FelixTxCore::doTriggerCnt() {
   uint32_t trigs=0;
   if (m_trigEnabled) {
     switch(fwMode()){
-    case ITK_Pixel:
+    case FelixTools::FELIX_FW_MODE::ITK_Pixel:
       if (m_pixFwTrigger){
 	// send a single command that will start the firmware-based trigger sequence for ITk pixel
 	trigs=m_trigCnt;
@@ -449,7 +460,7 @@ void FelixTxCore::doTriggerCnt() {
       }
       break;
 
-    case ITK_Strip:
+    case FelixTools::FELIX_FW_MODE::ITK_Strip:
       for(uint32_t i=0; i<m_trigCnt; i++) {
 	if(m_trigEnabled==false) break;
 	trigs++;
@@ -670,14 +681,14 @@ void FelixTxCore::loadFWMode() {
   uint64_t regValue;
   bool success = readFelixRegister("FIRMWARE_MODE", regValue);
   if (success) {
-    m_fwMode = static_cast<FELIX_FW_MODE>(regValue);
+    m_fwMode = static_cast<FelixTools::FELIX_FW_MODE>(regValue);
   } else {
-    m_fwMode = FELIX_FW_MODE::Unknown;
+    m_fwMode = FelixTools::FELIX_FW_MODE::Unknown;
   }
 }
 
-FELIX_FW_MODE FelixTxCore::fwMode() {
-  if (m_fwMode == FELIX_FW_MODE::Unknown) {
+FelixTools::FELIX_FW_MODE FelixTxCore::fwMode() {
+  if (m_fwMode == FelixTools::FELIX_FW_MODE::Unknown) {
     loadFWMode();
   }
   return m_fwMode;

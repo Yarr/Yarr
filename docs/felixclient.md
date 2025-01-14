@@ -89,6 +89,116 @@ bin/test_star configs/controller/felix_client.json -r 0 -t 1 -R
 bin/scanConsole -r configs/controller/felix_client.json -c <connectivity.json> -s <scan_config.json>
 ```
 
+### Standalone applications
+
+In addition to using the FelixController in scans, a few lightweight executables are also provided for interacting with the FELIX system.
+
+#### [testFelixClient](../src/libFelixClient/app/testFelixClient.cpp)
+`testFelixClient` can be used to test basic communications with FELIX.
+
+To run:
+```
+bin/testFelixClient configs/controller/felix_client.json [OPTIONS...]
+```
+
+Available options:
+```
+ -t <TX_ELINK1> [<TX_ELINK2> ...] : A list of tx elinks for sending data.
+ -d <32b HEX WORD> [<32b HEX WORD> ...] : A list of data words in hex format to be sent.
+ -f <FILE_NAME> : Name of a file containing data words to be sent. It is expected each line has one 32-bit hex integer.
+ -n NUMBER : The number of times to send the data. Default: 1
+ -q FREQUENCY : Trigger frequency in Hz. If non-zero, send the data using TxCore::trigger(). Otherwise, send the data using TxCore::releaseFifo(). Default: 0
+
+ -r <RX_ELINK1> [<RX_ELINK2> ...] : A list of rx elinks for receiving data.
+ -w SECONDS : Number of seconds to wait for data. Default: 1
+
+ -s : Read FELIX status registers
+ -l LOG_CONFIG : Configuration for the logger.
+```
+
+Examples:
+- Read FELIX status registers:
+```
+bin/testFelixClient configs/controller/felix_client.json -s
+```
+- Send some data e.g. 0xdeadbeef to elinks 1, 6, 11, and 16 twice:
+```
+bin/testFelixClient configs/controller/felix_client.json -t 1 6 11 16 -d 0xdeadbeef -n 2
+```
+- Receive data from elinks 0 and 2 for 5 seconds:
+```
+bin/testFelixClient configs/controller/felix_client.json -r 0 2 -w 5
+```
+
+#### [felixRegister](../src/libFelixClient/app/felixRegister.cpp)
+`felixRegister` is an application to read and write FELIX registers.
+
+To read FELIX registers:
+```
+bin/felixRgister configs/controller/felix_client.json REGISTER_NAME [OPTIONS...]
+```
+
+To write FELIX registers:
+```
+bin/felixRgister configs/controller/felix_client.json REGISTER_NAME REGISTER_VALUE [OPTIONS...]
+```
+
+Available options:
+```
+ -l LOG_CONFIG : Configuration for the logger.
+```
+
+Examples:
+- Read the FELIX register FIRMWARE_MODE:
+```
+bin/felixRegister configs/controller/felix_client.json FIRMWARE_MODE
+```
+- Write 0xabcd to FELIX register BROADCAST_ENABLE_00:
+```
+bin/felixRegister configs/controller/felix_client.json BROADCAST_ENABLE_00 0xabcd
+```
+
+#### [elinkConfig](../src/libFelixClient/app/elinkConfig.cpp)
+`elinkConfig` can be used to check and configure elink settings.
+
+To run:
+```
+bin/elinkConfig COMMAND configs/controller/felix_client.json [OPTIONS...]
+```
+
+`COMMAND` can be one of the following:
+- `get`:  Check if all e-links specified in options are enabled.
+- `set`: Enable all e-links specified in options.
+- `off`: Disable all e-links.
+
+Available options:
+```
+ -t TX_CHANNELS : A list of Tx channels to be configured.
+ -r RX_CHANNELS : A list of Rx channels to be configured.
+ -c CHIP_CONFIG : Connectivity configuration file.
+ -b BANDWIDTH : Rx bandwidth in Mbps. If provided, check or set the Rx elink width.
+ -e : Channels specifeid in options are enabled exclusively. All other channels are disabled.
+ -I : Include IC channels
+ -E : Include EC channels
+ -l LOG_CONFIG : Configuration for the logger.
+ -v : Verbose mode. Set logging level to 'debug'. Overwritten by '-l LOG_CONFIG' if a logging configuration is provided.
+```
+Note that in case the option `-e` is used with the `set` (`get`) command, elinks specified via the options `-t` and `-r` will be enabled (checked if they are enabled), and **all other elinks on the same FELIX device** will be disabled (checked if they are disabled) . Without the option `-e`, only the elinks listed in the options `-t` and `-r` are enabled or checked.
+
+Example:
+- Check if all elinks corresponding to the Rx channels 0, 2, 4, 6, 8, and 10 are enabled and configured with a bandwidth of 640 Mbps:
+```
+bin/elinkConfig get configs/controller/felix_client.json -r 0 2 4 6 8 10 -b 640
+```
+- Enable exclusively the elinks specified in a connectivity config as well as the relevant IC and EC channels, and disable all other elinks:
+```
+bin/elinkConfig set configs/controller/felix_client.json -c <connectivity.json> -e -I -E
+```
+- Turn off all elinks in a connectivity config:
+```
+bin/elinkConfig off -c <connectivity.json>
+```
+
 ## TODO
 
 Support for Pixel readout chips.
