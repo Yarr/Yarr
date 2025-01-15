@@ -1,5 +1,5 @@
-#ifndef ABC_STAR_DATA_PROCESSOR_H
-#define ABC_STAR_DATA_PROCESSOR_H
+#ifndef STAR_DATA_PROCESSOR_H
+#define STAR_DATA_PROCESSOR_H
 
 // #################################
 // # Author:
@@ -9,9 +9,7 @@
 // # Comment:
 // ################################
 
-#include <vector>
 #include <array>
-#include <map>
 #include <thread>
 
 #include "FeDataProcessor.h"

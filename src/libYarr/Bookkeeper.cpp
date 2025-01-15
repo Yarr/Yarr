@@ -152,7 +152,7 @@ unsigned Bookkeeper::getId(FrontEnd *fe) {
     if (idMap.find(fe) != idMap.end()) {
         return idMap[fe];
     } else {
-        SPDLOG_LOGGER_ERROR(blog, "Could not find Id for FrontEnd at 0x{:x}", fmt::ptr(fe));
+        SPDLOG_LOGGER_ERROR(blog, "Could not find Id for FrontEnd at 0x{:p}", fmt::ptr(fe));
     }
     return 0;
 }

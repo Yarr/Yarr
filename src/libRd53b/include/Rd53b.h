@@ -73,7 +73,7 @@ class Rd53b : public FrontEnd, public Rd53bCfg, public Rd53bCmd{
         uint8_t readChipId();
 
         void runRingOsc(uint16_t duration, bool isBankB);
-        void confAdc(uint16_t MONMUX, bool doCur = false) override;
+        yarrStatus confAdc(uint16_t MONMUX, bool doCur = false) override;
     protected:
     private:
 };

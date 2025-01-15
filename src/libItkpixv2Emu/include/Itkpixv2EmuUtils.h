@@ -1,0 +1,198 @@
+/*
+* Author: Ondra Kovanda, ondrej.kovanda at cern.ch
+* Date: 05/2024
+* Description: Utilities common to several classes
+*/
+
+#ifndef ITKPIXV2EMUUTILS_H
+#define ITKPIXV2EMUUTILS_H
+
+#include <cstdint>
+#include <chrono>
+#include <map>
+#include <random>
+#include <cmath>
+#include <unordered_set>
+#include <unordered_map>
+
+namespace Itkpixv2EmuUtils {
+
+    //Itkpixv2 commands in a human-readable form
+    enum Commands : uint8_t{
+        Sync        = 0x81,//0b10000001,
+        PLLlock     = 0xAA,//0b10101010,
+        Clear       = 0x5A,//0b01011010,
+        GlobalPulse = 0x5C,//0b01011100,
+        Cal         = 0x63,//0b01100011,
+        WrReg       = 0x66,//0b01100110,
+        RdReg       = 0x65,//0b01100101,
+        Trig01      = 0x2B,
+        Trig02      = 0x2D,
+        Trig03      = 0x2E,
+        Trig04      = 0x33,
+        Trig05      = 0x35,
+        Trig06      = 0x36,
+        Trig07      = 0x39,
+        Trig08      = 0x3A,
+        Trig09      = 0x3C,
+        Trig10      = 0x4B,
+        Trig11      = 0x4D,
+        Trig12      = 0x4E,
+        Trig13      = 0x53,
+        Trig14      = 0x55,
+        Trig15      = 0x56,
+    };
+
+    //Constant time interval
+    static const std::chrono::nanoseconds m_ns10 = std::chrono::nanoseconds(10);
+
+    //give the passed command/payload a human-readable interface
+    struct Cmd {
+        uint8_t header   = 0;
+        uint8_t id       = 0;
+        uint32_t address = 0;
+        uint32_t data    = 0;
+    };
+
+    //8to5 bit encoding lookup table. Using map, since the indices are not 1, 2, 3, ...
+    static std::map<const uint8_t, const uint8_t> lut8to5 = {
+        {0x6A, 0x00},
+        {0x6C, 0x01},
+        {0x71, 0x02},
+        {0x72, 0x03},
+        {0x74, 0x04},
+        {0x8B, 0x05},
+        {0x8D, 0x06},
+        {0x8E, 0x07},
+        {0x93, 0x08},
+        {0x95, 0x09},
+        {0x96, 0x0A},
+        {0x99, 0x0B},
+        {0x9A, 0x0C},
+        {0x9C, 0x0D},
+        {0xA3, 0x0E},
+        {0xA5, 0x0F},
+        {0xA6, 0x10},
+        {0xA9, 0x11},
+        {0x59, 0x12},
+        {0xAC, 0x13}, 
+        {0xB1, 0x14},
+        {0xB2, 0x15},
+        {0xB4, 0x16},
+        {0xC3, 0x17}, 
+        {0xC5, 0x18},
+        {0xC6, 0x19},
+        {0xC9, 0x1A},
+        {0xCA, 0x1B}, 
+        {0xCC, 0x1C},
+        {0xD1, 0x1D},
+        {0xD2, 0x1E},
+        {0xD4, 0x1F}
+    };
+
+    //Trigger command collection
+    static std::unordered_set<uint8_t> triggerCommands = {0x2B, 0x2D, 0x2E, 0x33, 0x35, 0x36, 0x39, 0x3A, 0x3C, 0x4B, 0x4D, 0x4E, 0x53, 0x55, 0x56};
+
+    //Trigger patterns
+    static std::map<const uint8_t, const uint8_t> lutTriggerPattern = {
+        {0x2B, 0x1},
+        {0x2D, 0x2},
+        {0x2E, 0x3},
+        {0x33, 0x4},
+        {0x35, 0x5},
+        {0x36, 0x6},
+        {0x39, 0x7},
+        {0x3A, 0x8},
+        {0x3C, 0x9},
+        {0x4B, 0xA},
+        {0x4D, 0xB},
+        {0x4E, 0xC},
+        {0x53, 0xD},
+        {0x55, 0xE},
+        {0x56, 0xF}
+    };
+
+    //Trigger tag to stream tag base.
+    static std::unordered_map<uint8_t, uint8_t> lutTriggerTagBase = {
+        {0x6A, 0x00},
+        {0x6C, 0x01}, 
+        {0x71, 0x02}, 
+        {0x72, 0x03},
+        {0x74, 0x04},
+        {0x8B, 0x05}, 
+        {0x8D, 0x06}, 
+        {0x8E, 0x07},
+        {0x93, 0x08},
+        {0x95, 0x09}, 
+        {0x96, 0x0A}, 
+        {0x99, 0x0B},
+        {0x9A, 0x0C},
+        {0x9C, 0x0D}, 
+        {0xA3, 0x0E}, 
+        {0xA5, 0x0F},
+        {0xA6, 0x10},
+        {0xA9, 0x11}, 
+        {0x59, 0x12}, 
+        {0xAC, 0x13}, 
+        {0xB1, 0x14},
+        {0xB2, 0x15}, 
+        {0xB4, 0x16}, 
+        {0xC3, 0x17}, 
+        {0xC5, 0x18},
+        {0xC6, 0x19}, 
+        {0xC9, 0x1A}, 
+        {0xCA, 0x1B}, 
+        {0xCC, 0x1C},
+        {0xD1, 0x1D}, 
+        {0xD2, 0x1E}, 
+        {0xD4, 0x1F},
+        {0x63, 0x20},
+        {0x5A, 0x21}, 
+        {0x5C, 0x22}, 
+        {0xAA, 0x23},
+        {0x65, 0x24},
+        {0x69, 0x25}, 
+        {0x2B, 0x26}, 
+        {0x2D, 0x27},
+        {0x2E, 0x28},
+        {0x33, 0x29}, 
+        {0x35, 0x2A}, 
+        {0x36, 0x2B}, 
+        {0x39, 0x2C},
+        {0x3A, 0x2D}, 
+        {0x3C, 0x2E}, 
+        {0x4B, 0x2F}, 
+        {0x4D, 0x30},
+        {0x4E, 0x31}, 
+        {0x53, 0x32}, 
+        {0x55, 0x33}, 
+        {0x56, 0x34},
+        {0x66, 0x35}
+    };
+
+    static float TDACToCharge(const int TDAC){
+        //Just take different slopes for positive
+        //and negative TDACs, nothing fancier
+        if (TDAC > 0.) return 1000./15. * TDAC;
+        else           return 1400./15. * TDAC;
+    };
+
+    static float globalDACToCharge(const int DAC){
+        //Translate the threshold in DAC to
+        //charge.
+        //For second pass just use something simple, say, 2200 e at 300 DAC.
+        //This is where a more-complex parametrization
+        //should come.
+        return 2200./300. * DAC;
+    }
+
+    static uint16_t chargeToToT(const float charge){
+        //This translates charge (over threshold to ToT)
+        if (charge <= 0.) return 0;
+        //just for testing purposes
+        return std::round(14./33000. * charge) + 1;
+    }
+
+}
+
+#endif

@@ -16,7 +16,6 @@
 #include <condition_variable>
 #include <chrono>
 
-#include "RawData.h"
 #include <typeinfo>
 
 template <class T>
@@ -126,9 +125,5 @@ class ClipBoard {
         std::atomic<unsigned> numDataIn;
         std::atomic<unsigned> numDataOut;
 };
-
-template class ClipBoard<RawData>;
-// template class ClipBoard<Fei4Data>;
-
 
 #endif

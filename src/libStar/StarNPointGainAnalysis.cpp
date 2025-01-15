@@ -68,18 +68,21 @@ void StarNPointGainAnalysis::loadConfig(const json &j) {
 std::vector<std::vector<double>> StarNPointGainAnalysis::createAverageResponseCurves() {
 
     unsigned nChips = nCol / s_stripsPerRow;
-    std::vector<std::vector<double>> averages(nChips, std::vector<double>(m_injections.size()));
-    std::vector<std::vector<unsigned>> sizes(nChips, std::vector<unsigned>(m_injections.size()));
+    unsigned nInj = m_injections.size();
+    std::vector<std::vector<double>> averages(nChips, std::vector<double>(nInj));
 
-    for (const auto& inj : m_injections) {
-        for (unsigned col = 0; col < nCol; col++) {
-            unsigned chip = col / s_stripsPerRow;
+    for (unsigned injIdx = 0; injIdx < nInj; injIdx++) {
+        double inj = m_injections[injIdx];
+        for (unsigned chip = 0; chip < nChips; chip++) {
+            double sum = 0.;
             for (unsigned row = 0; row < nRow; row++) {
-                auto thr = m_thresholdMap[inj][col][row];
-                auto size = sizes[chip][inj];
-                averages[chip][inj] += (size * averages[chip][inj] * thr) / (size + 1);
-                sizes[chip][inj]++;
+                for (unsigned strip = 0; strip < s_stripsPerRow; strip++) {
+                    unsigned col = (chip * s_stripsPerRow) + strip;
+                    sum += m_thresholdMap[inj][col][row];
+                }
             }
+
+            averages[chip][injIdx] = sum / (nRow*s_stripsPerRow);
         }
     }
 

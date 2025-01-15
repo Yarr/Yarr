@@ -16,6 +16,14 @@
 #define BLOCKSIZE 64
 #define HALFBLOCKSIZE 32
 
+#ifndef USE_ITKPIX_DEBUG_BUFFER 
+#   define USE_ITKPIX_DEBUG_BUFFER 0
+#endif
+
+#ifndef ITKPIX_DEBUG_BUFFERSIZE
+#   define ITKPIX_DEBUG_BUFFERSIZE 30
+#endif
+
 class Rd53bDataProcessor : public FeDataProcessor
 {
 public:
@@ -59,11 +67,11 @@ private:
     ClipBoard<FeedbackProcessingInfo> *statusFb = nullptr;
     Rd53bCfg *m_feCfg;
 
-    unsigned _tag;
-    unsigned _l1id;
-    unsigned _bcid;
-    unsigned _wordCount;
-    unsigned _hits;
+    uint16_t _tag;
+    uint16_t _l1id;
+    uint16_t _bcid;
+    unsigned long _wordCount;
+    unsigned long _hits;
 
     bool _isCompressedHitmap; // Flag for toggle hitmap type, true for compressed, false for raw
     bool _dropToT;
@@ -71,6 +79,9 @@ private:
     unsigned _chipIdShift;
     unsigned _chipId;
     unsigned long _streamMask;
+
+    std::vector<uint32_t> _debugBuffer;
+    unsigned _debugIdx; // position in debug buffer
 
     // Inline functions frequently used
     inline bool retrieve(uint64_t &variable, const unsigned length, const bool checkEOS = false, const bool skipNSCheck = false);	// Retrieve bit string with length
@@ -80,7 +91,7 @@ private:
     inline void getPreviousDataBlock();
     inline void process_core();
     inline void sendFeedback(unsigned tag, unsigned bcid);
-
+    void dumpDebugBuffer();
     // Data stream components
     uint64_t _ccol;
     uint64_t _qrow[55]; // One counter for each core column. Use 54 as total number of core columns to be compatible with CMS chip geometry. Note core column index starts from 1.

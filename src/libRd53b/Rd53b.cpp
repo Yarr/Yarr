@@ -643,36 +643,40 @@ uint8_t Rd53b::readChipId() {
     }
     return id;
 }
-    
-void Rd53b::confAdc(uint16_t MONMUX, bool doCur) {
+
+yarrStatus Rd53b::confAdc(uint16_t MONMUX, bool doCur) {
     //This only works for voltage MUX values.
     uint16_t OriginalGlobalRT = this->GlobalPulseConf.read();
     uint16_t OriginalMonitorEnable = this->MonitorEnable.read(); //Enabling monitoring
     uint16_t OriginalMonitorV = this->MonitorV.read();
     uint16_t OriginalMonitorI = this->MonitorI.read();
+    
+    // this value is AND'ed with all write register functions
+    // if ALL writes are successful, success=true and yarrSuccess is returned
+    bool success = true;
 
     if (doCur)
     {
-        this->writeRegister(&Rd53b::MonitorV, 1);      // Forward via VMUX
-        this->writeRegister(&Rd53b::MonitorI, MONMUX); // Select what to monitor
+        success = success && (this->writeRegister(&Rd53b::MonitorV, 1) == yarrSuccess);      // Forward via VMUX
+        success = success && (this->writeRegister(&Rd53b::MonitorI, MONMUX) == yarrSuccess); // Select what to monitor
     }
     else
     {
-        this->writeRegister(&Rd53b::MonitorV, MONMUX); // Select what to monitor
+        success = success && (this->writeRegister(&Rd53b::MonitorV, MONMUX) == yarrSuccess); // Select what to monitor
     }
 
-    this->writeRegister(&Rd53b::MonitorEnable, 1); // Enabling monitoring
+    success = success && (this->writeRegister(&Rd53b::MonitorEnable, 1) == yarrSuccess); // Enabling monitoring
     while(!core->isCmdEmpty()){;}
 
-    this->writeRegister(&Rd53b::GlobalPulseConf, 0x40); // Reset ADC
-    this->writeRegister(&Rd53b::GlobalPulseWidth, 4);   // Duration = 4 inherited from RD53A
+    success = success && (this->writeRegister(&Rd53b::GlobalPulseConf, 0x40) == yarrSuccess); // Reset ADC
+    success = success && (this->writeRegister(&Rd53b::GlobalPulseWidth, 4) == yarrSuccess);   // Duration = 4 inherited from RD53A
     while(!core->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::microseconds(100));
 
     this->sendGlobalPulse(m_chipId);
     std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Need to wait long enough for ADC to reset
 
-    this->writeRegister(&Rd53b::GlobalPulseConf, 0x1000); //Trigger ADC Conversion
+    success = success && (this->writeRegister(&Rd53b::GlobalPulseConf, 0x1000) == yarrSuccess); //Trigger ADC Conversion
     while (!core->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::microseconds(100));
 
@@ -680,12 +684,14 @@ void Rd53b::confAdc(uint16_t MONMUX, bool doCur) {
     std::this_thread::sleep_for(std::chrono::microseconds(1000)); //This is neccessary to clean. This might be controller dependent.
 
     // Reset register values
-    this->writeRegister(&Rd53b::GlobalPulseConf, OriginalGlobalRT);
-    this->writeRegister(&Rd53b::MonitorEnable, OriginalMonitorEnable);
-    this->writeRegister(&Rd53b::MonitorV, OriginalMonitorV);
-    this->writeRegister(&Rd53b::MonitorI, OriginalMonitorI);
+    success = success && (this->writeRegister(&Rd53b::GlobalPulseConf, OriginalGlobalRT) == yarrSuccess);
+    success = success && (this->writeRegister(&Rd53b::MonitorEnable, OriginalMonitorEnable) == yarrSuccess);
+    success = success && (this->writeRegister(&Rd53b::MonitorV, OriginalMonitorV) == yarrSuccess);
+    success = success && (this->writeRegister(&Rd53b::MonitorI, OriginalMonitorI) == yarrSuccess);
     while (!core->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::microseconds(100));
+
+    return (success ? yarrSuccess : yarrFailure);
 }
 
 void Rd53b::runRingOsc(uint16_t duration, bool isBankB) {

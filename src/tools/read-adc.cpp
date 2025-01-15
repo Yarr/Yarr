@@ -220,8 +220,11 @@ int main(int argc, char* argv[]) {
 		while(!hw->isCmdEmpty());
 		std::this_thread::sleep_for(std::chrono::microseconds(100));
 
-                fe->confAdc(monitorV, meas_curr);
-		uint16_t res = 0;
+                if (fe->confAdc(monitorV, meas_curr) != yarrSuccess) {
+                    std::cerr << "ERROR: failed to configure ADC for " << current_chip_name << "!" << std::endl;
+                    error_cnt++;
+                }
+                uint16_t res = 0;
                 if (fe->readNamedRegister("MonitoringDataAdc", res) != yarrSuccess) {
 		  std::cerr << "ERROR: failed to read register for " << current_chip_name << "!" << std::endl;
 		  error_cnt++;
@@ -240,8 +243,11 @@ int main(int argc, char* argv[]) {
 		while(!hw->isCmdEmpty());
 		std::this_thread::sleep_for(std::chrono::microseconds(100));
 
-		fe->confAdc(monitorV, meas_curr);
-		uint16_t res = 0;
+                if (fe->confAdc(monitorV, meas_curr) != yarrSuccess) {
+                    std::cerr << "ERROR: failed to configure ADC for " << current_chip_name << "!" << std::endl;
+                    error_cnt++;
+                }
+                uint16_t res = 0;
                 if (fe->readNamedRegister("MonitoringDataAdc", res) != yarrSuccess) {
 		  std::cerr << "ERROR: failed to read register for " << current_chip_name << "!" << std::endl;
 		  error_cnt++;

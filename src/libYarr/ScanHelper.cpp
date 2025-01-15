@@ -22,6 +22,9 @@ namespace fs = std::filesystem;
 #include "StdAnalysis.h" // needed for special handling of HistogramArchiver
 #include "ScanFactory.h"
 
+#include "yarr.h"
+
+
 #include "logging.h"
 #include "LoggingConfig.h"
 
@@ -76,7 +79,7 @@ namespace ScanHelper {
     json openJsonFile(const std::string& filepath) {
         std::ifstream file(filepath);
         if (!file) {
-            throw std::runtime_error("could not open file");
+            throw std::runtime_error("could not open file: " + filepath);
         }
         json j;
         try {
@@ -891,6 +894,7 @@ namespace ScanHelper {
 
         std::cout << "Help:" << std::endl;
         std::cout << " -h: Shows this." << std::endl;
+        std::cout << " --version: Print version." << std::endl;
         std::cout << " -s <scan_type> : Scan config" << std::endl;
         std::cout << " -c <connectivity.json> [<cfg2.json> ...]: Provide connectivity configuration, can take multiple arguments." << std::endl;
         std::cout << " -r <ctrl.json> Provide controller configuration." << std::endl;
@@ -921,18 +925,21 @@ namespace ScanHelper {
         {
             {"skip-reset", no_argument, 0, 'z'},
             {"help", no_argument, 0, 'h'},
+            {"version", no_argument, 0, 'v'},
             {0, 0, 0, 0}};
         int c;
         while (true) {
             int opt_index=0;
-            c = getopt_long(argc, argv, "hn:ks:m:r:c:t:pgo:W:d:u:i:l:QIz", long_options, &opt_index);
+            c = getopt_long(argc, argv, "hvn:ks:m:r:c:t:pgo:W:d:u:i:l:QIz", long_options, &opt_index);
             int count = 0;
             if(c == -1) break;
             switch (c) {
                 case 'h':
                     printHelp();
                     return 0;
-                    break;
+                case 'v':
+                    std::cout << yarr::version::get().dump(4) << std::endl;
+                    return 0;
                 case 'k':
                     ScanHelper::listKnown();
                     return 0;

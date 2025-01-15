@@ -85,4 +85,13 @@ TEST_CASE("Rd53bDataProcessor", "[rd53b][data_processor_edgecases]") {
             0xFFFFDEAD, 0xFFFFDEAD      // This will leave data processor in a state where last block is 0xFFFFDEAD
         }
     });
+
+    // Low data case
+    std::cout << "LOW DATA CASE" << std::endl;
+    process_case({
+        {
+            0xFFFFDEAD, 0xFFFFDEAD,     // Lots of FFFFDEAD
+            0xFFFFDEAD, 0xFFFFDEAD      // FFFFDEADs at end of block
+        }
+    });
 }
