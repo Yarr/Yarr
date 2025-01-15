@@ -195,7 +195,5 @@ int main(int argc, char* argv[]) {
     	fe->writeNamedRegister("GlobalPulseConf", 0);
     }
 
-    std::cerr << "Done." << std::endl;
-
     return 0;
 }

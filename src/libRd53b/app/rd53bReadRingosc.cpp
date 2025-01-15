@@ -259,7 +259,5 @@ int main(int argc, char* argv[]) {
         for(int i=0; i<42; i++) {std::cout << RingValuesFreq[i] << " ";}
         std::cout << std::endl;
     }
-    std::cerr << "Done." << std::endl;
-
     return 0;
 }
