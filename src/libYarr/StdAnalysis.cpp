@@ -1641,6 +1641,9 @@ void NoiseAnalysis::loadConfig(const json &j){
     if (j.contains("noiseThr")){
         noiseThr=j["noiseThr"];
     }
+    if (j.contains("doAltMask")){
+        doAltMask=j["doAltMask"];
+    }
 }
 
 void NoiseAnalysis::end() {
@@ -1649,10 +1652,10 @@ void NoiseAnalysis::end() {
     noiseOcc->setYaxisTitle("Row");
     noiseOcc->setZaxisTitle("Noise Occupancy hits/bc");
 
-    std::unique_ptr<Histo2d> mask(new Histo2d("NoiseMask", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
+    std::unique_ptr<Histo2d> mask(new Histo2d(doAltMask ? "AltNoiseMask" : "NoiseMask", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
     mask->setXaxisTitle("Col");
     mask->setYaxisTitle("Row");
-    mask->setZaxisTitle("Mask");
+    mask->setZaxisTitle(doAltMask ? "AltMask" : "Mask");
 
     noiseOcc->add(&*occ);
     noiseOcc->scale(1.0/(double)n_trigger);
@@ -1665,7 +1668,7 @@ void NoiseAnalysis::end() {
                 mask->setBin(i, 0);
                 if (make_mask&&createMask) {
                     // maskPixel starts at 0,0
-                    feCfg->maskPixel(col-1, row-1);
+                    feCfg->maskPixel(col-1, row-1, doAltMask);
                 }
             } else {
                 mask->setBin(i, 1);

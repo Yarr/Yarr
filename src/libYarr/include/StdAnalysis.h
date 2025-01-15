@@ -376,6 +376,7 @@ class NoiseAnalysis : public AnalysisAlgorithm {
         NoiseAnalysis() : AnalysisAlgorithm() {
             createMask = true;
             noiseThr = 1e-6;
+	    doAltMask = false;
         }
         ~NoiseAnalysis() override = default;
 
@@ -389,6 +390,7 @@ class NoiseAnalysis : public AnalysisAlgorithm {
         std::unique_ptr<Histo1d> tag, totDist;
         bool createMask;
         double noiseThr;
+        bool doAltMask;
 };
 
 class NoiseTuning : public AnalysisAlgorithm {

@@ -23,7 +23,7 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
     public:
         Rd53aCfg();
 
-        void maskPixel(unsigned col, unsigned row) override {
+        void maskPixel(unsigned col, unsigned row, bool doAltMask = false) override {
             this->setEn(col, row, 0);
             this->setHitbus(col, row, 0);
         }

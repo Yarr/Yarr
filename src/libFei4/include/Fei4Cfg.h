@@ -32,7 +32,7 @@ class Fei4Cfg : public FrontEndCfg, public Fei4GlobalCfg, public Fei4PixelCfg {
             vcalSlope = 1.5;
         }
 
-        void maskPixel(unsigned col, unsigned row) override {
+        void maskPixel(unsigned col, unsigned row, bool doAltMask = false) override {
             this->setEn(col+1, row+1, 0);
             this->setHitbus(col+1, row+1, 1);
         }

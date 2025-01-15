@@ -143,7 +143,7 @@ class StarCfg : public FrontEndCfg {
     return 0;
   }
 
-  void maskPixel(unsigned col, unsigned row) override {}
+  void maskPixel(unsigned col, unsigned row, bool doAltMask = false) override {}
   unsigned getPixelEn(unsigned col, unsigned row) override {
     return 1; // getPixelEn() was desgined for Pixels, further modification is needed for StarChip
   }

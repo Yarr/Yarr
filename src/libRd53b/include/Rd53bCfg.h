@@ -20,11 +20,11 @@ class Rd53bCfg : public FrontEndCfg, public Rd53bGlobalCfg, public Rd53bPixelCfg
     public:
         Rd53bCfg();
 
-        void maskPixel(unsigned col, unsigned row) override {
-            this->setEn(col, row, 0);
+        void maskPixel(unsigned col, unsigned row, bool doAltMask = false) override {
+            if (!doAltMask) this->setEn(col, row, 0);
             this->setHitbus(col, row, 0);
         }
-        
+
         unsigned getPixelEn(unsigned col, unsigned row) override {
             return this->getEn(col, row);
         }
