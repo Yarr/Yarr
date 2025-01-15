@@ -43,11 +43,6 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
 
         yarrStatus checkCom() override;
 
-        void maskPixel(unsigned col, unsigned row) override {
-            this->setEn(col, row, 0);
-            this->setHitbus(col, row, 0);
-        }
-
         unsigned getPixelEn(unsigned col, unsigned row) override {
             return this->getEn(col, row);
         }
