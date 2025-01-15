@@ -157,7 +157,5 @@ int main(int argc, char* argv[]) {
         logger->error("There were errors reading back e-fuse IDs!");
     }
 
-    std::cerr << "Done." << std::endl;
-
     return errors;
 }

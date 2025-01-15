@@ -133,13 +133,12 @@ int main(int argc, char* argv[]) {
                 file_replaced = true;
                 break;
             }
-        } 
+        }
     }
 
     if (!file_replaced){
         std::cout << "Did not find any chip configs with suffix '" << suffix << "' in the provided output YARR scan directory that correspond to the chips listed in the connectivity file. No chip configs were reverted." << std::endl;
     }
-    std::cerr << "Done." << std::endl;
 
     return 0;
 }

@@ -269,8 +269,6 @@ int main(int argc, char* argv[]) {
 
     }
     std::cout << fail_1 << "   " << fail_2 << std::endl;
-    
-    std::cerr << "Done." << std::endl;
 
     return 0;
 }

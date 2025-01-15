@@ -248,7 +248,5 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    std::cerr << "Done." << std::endl;
-
     return error_cnt;
 }
