@@ -42,7 +42,7 @@ namespace {
   */
   std::map<std::string, std::vector<std::string>> sequenceMap = {
       {"Full", {
-          "checkHPRs", "probeHCCs", "testHCCRegister",
+          "checkHCCHPRs", "probeHCCs", "testHCCRegister",
           "configureHCC",
           "probeABCs", "testABCRegister",
           "configureABC",
@@ -74,7 +74,7 @@ namespace {
         Probe the front end ASICs
       */
       {"Probe", {
-          "checkHPRs", "probeHCCs",
+          "checkHCCHPRs", "probeHCCs",
           // In case resets were sent, HCCs need to be reconfigured to talk to ABCs
           "configureHCCIfReset", // only if doResets set
           "probeABCs",
@@ -517,7 +517,7 @@ void configureABC(HwController& hwCtrl, StarCfg& cfg, bool reset) {
 }
 
 // Test steps
-bool checkHPRs(HwController& hwCtrl,
+bool checkHCCHPRs(HwController& hwCtrl,
                const std::vector<uint32_t>& rxChannels,
                bool reset)
 {
@@ -1349,7 +1349,7 @@ int main(int argc, char *argv[]) {
     std::map<std::string, std::function<bool (HwController&)>>
       tests = {
       // Read HCCStar HPRs
-      {"checkHPRs", [&](auto &h) {return checkHPRs(h, rxChannels, doResets);}},
+      {"checkHCCHPRs", [&](auto &h) {return checkHCCHPRs(h, rxChannels, doResets);}},
       // Probe HCCs
       {"probeHCCs", [&](auto &h) {return probeHCCs(h, hccStars, txChannels, rxChannels, setHccId);}},
       // Test HCCStar register read and write
