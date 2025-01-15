@@ -172,7 +172,7 @@ int main(int argc, char* argv[]) {
         std::string current_chip_name = cfg->getName();
         if (!use_chip_name) {
             if ( chip_idx.size() == 0 || (std::find(chip_idx.begin(), chip_idx.end(), ichip)!= chip_idx.end()) ) {
-                hw->setCmdEnable(cfg->getTxChannel()); 
+                hw->setCmdEnable(cfg->getTxChannel());
                 hw->setRxEnable(cfg->getRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
                 if (fe->readUpdateWriteNamedRegister(register_name, register_value) != yarrSuccess) {
@@ -186,7 +186,7 @@ int main(int argc, char* argv[]) {
             }
         } else {
             if (std::find(chip_name.begin(), chip_name.end(), current_chip_name) != chip_name.end()) {
-                hw->setCmdEnable(cfg->getTxChannel()); 
+                hw->setCmdEnable(cfg->getTxChannel());
                 hw->setRxEnable(cfg->getRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
                 if (fe->readUpdateWriteNamedRegister(register_name, register_value) != yarrSuccess) {
@@ -200,8 +200,6 @@ int main(int argc, char* argv[]) {
             }
         }
     }
-
-    std::cerr << "Done." << std::endl;
 
     return error_cnt;
 }
