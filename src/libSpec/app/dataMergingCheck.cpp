@@ -25,15 +25,15 @@ constexpr const char* COLOR_GREEN = "\033[32m";
 constexpr const char* COLOR_RESET = "\033[0m";
 
 void printHelp() {
-       std::cout << "./bin/dataMergingScan [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-t <test_size>] [-s] [-v]\n\n"
-              << "Options:\n"
-              << "  -h                   Display this help message.\n"
-              << "  -r <hw_controller_file>   Specify hardware controller JSON path.\n"
-              << "  -c <connectivity_file>    Specify connectivity config JSON path.\n"
-              << "  -t <test_size>            Specify the error counter test size. Default 1 x 10^6\n"
-              << "  -v                   Print out and store raw error counter values.\n"
-              << "  -i                   Chip index.\n"
-              << "  -m                   Data merging mode. Can be 4-to-1 or 2-to-1.\n";
+    std::cout << "./bin/dataMergingScan [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-t <test_size>] [-s] [-v]\n\n"
+        << "Options:\n"
+        << "  -h                   Display this help message.\n"
+        << "  -r <hw_controller_file>   Specify hardware controller JSON path.\n"
+        << "  -c <connectivity_file>    Specify connectivity config JSON path.\n"
+        << "  -t <test_size>            Specify the error counter test size. Default 1 x 10^6\n"
+        << "  -v                   Print out and store raw error counter values.\n"
+        << "  -i                   Chip index.\n"
+        << "  -m                   Data merging mode. Can be 4-to-1 or 2-to-1.\n";
 
 }
 
@@ -49,7 +49,7 @@ std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn
     }
     auto chip_config = chip_configs[fe_num];
     fe->init(&*hw, FrontEndConnectivity(chip_config["tx"], chip_config["rx"]));
-    auto chip_register_file_path = chip_config["config"];
+    auto chip_register_file_path = chip_config["__config_path__"];
     fs::path pconfig{chip_register_file_path};
     if(!fs::exists(pconfig)) {
         std::cerr << "WARNING: Chip config \"" << chip_register_file_path << "\" not found" << std::endl;
@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
     j["log_config"][0]["name"] = "all";
     j["log_config"][0]["level"] = "info";
     logging::setupLoggers(j);
-    
+
     // Init spec
     logger->info("Init spec");
     int c;	
@@ -150,7 +150,8 @@ int main(int argc, char **argv) {
     hw->disableRx(); // needed?
 
     auto jconn = ScanHelper::openJsonFile(connectivity_filename);
-    std::string chipType = jconn["chipType"];
+    std::string chipType = ScanHelper::loadChipConfigs(jconn, false, Utils::dirFromPath(connectivity_filename));
+
     auto chip_configs = jconn["chips"];
     size_t n_chips = chip_configs.size();
 
@@ -188,16 +189,16 @@ int main(int argc, char **argv) {
 
     // Set up all chips 
     for (size_t ichip = 0; ichip < n_chips; ichip++) {
-        
+
         if (chip_configs[ichip]["enable"] == 0)
             continue;
-        
+
         auto fe = init_fe(hw, jconn, ichip);
         if(!fe) {
             std::cerr << "WARNING: Skipping chip at index " << ichip << " in connectivity file" << std::endl;
             continue;
         } else {
-            fs::path chip_register_file_path{chip_configs[ichip]["config"]};
+            fs::path chip_register_file_path{chip_configs[ichip]["__config_path__"]};
             auto jchip = ScanHelper::openJsonFile(chip_register_file_path);
 
             fe->configure();           
@@ -213,7 +214,7 @@ int main(int argc, char **argv) {
 
             if (chip_id == 12 || chip_id==13 || chip_id==14){
 
-		//Secondary
+                //Secondary
                 fe->writeNamedRegister("EnChipId", 1);
 
                 fe->writeNamedRegister("CdrClkSel", 2);
@@ -265,7 +266,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    fs::path chip_register_file_path{chip_configs[test_ichip]["config"]};
+    fs::path chip_register_file_path{chip_configs[test_ichip]["__config_path__"]};
     auto fe = init_fe(hw, jconn, test_ichip);
     auto cfg = dynamic_cast<FrontEndCfg*>(fe.get());
     std::string current_chip_name = cfg->getName();
@@ -324,7 +325,7 @@ int main(int argc, char **argv) {
     // Reset and restart error counter
     mySpec.writeSingle(0x2 << 14 | 0xb, 1); 
     mySpec.writeSingle(0x2 << 14 | 0xb, 0); 
-            
+
     std::this_thread::sleep_for(std::chrono::microseconds(wait));
 
     // Need to update do calculation correctly for datamerging quality        
@@ -360,7 +361,7 @@ int main(int argc, char **argv) {
         fe->writeNamedRegister("SerEnLane", 0);
     }
 
-    
+
 
     return 0;
 }
