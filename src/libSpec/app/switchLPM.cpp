@@ -29,7 +29,9 @@ int main(int argc, char **argv) {
     int specNum = 0;
     int enableTX = 15;
     int enable = 0;
+    bool masked = false;
     int frequency = 100;
+    int value = 0;
 
     if (strcmp(argv[1], "on") == 0){
 	enable=1; 
@@ -37,11 +39,14 @@ int main(int argc, char **argv) {
 	enable=0;
     }
 
-    while ((c = getopt(argc, argv, "he:f:s:")) != -1) {
+    while ((c = getopt(argc, argv, "hme:f:s:")) != -1) {
 		switch (c) {
 		case 'h':
 		    printHelp();
 		    return 0;
+	        case 'm':
+		    masked = true;
+		    break;
 		case 'e':
 		    enableTX = std::stoi(optarg);
 		    break;
@@ -67,7 +72,15 @@ int main(int argc, char **argv) {
     logger->info("Start writing to low power enable register  ...");
     logger->info("Enabling LPM on TX channels {} of Spec Card {}, using Frequency {} kHz", enable*enableTX, specNum, frequency );
 
-    mySpec.writeSingle(0x7<<14 | 0x0, enable*enableTX); 
+    if (masked) 
+	    value = mySpec.readSingle(0x7<<14 | 0x0);
+
+    if (enable)
+	value |= enableTX;
+    else
+	value &= ~enableTX;
+
+    mySpec.writeSingle(0x7<<14 | 0x0, value&0xf); 
     int count=0;
     count=160000/(2*frequency);
 

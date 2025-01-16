@@ -1,5 +1,5 @@
 #include "FelixTxCore.h"
-
+#include "felix/felix_client_exception.hpp"
 #include "logging.h"
 
 #include <sstream>
@@ -505,7 +505,21 @@ void FelixTxCore::trigger() {
     }
 
     bool flush = true;
-    fclient->send_data(fid_broadcast, m_trigFifo[fid_broadcast].data(), m_trigFifo[fid_broadcast].size(), flush);
+    int nRetriesIfFails=0;
+    while (nRetriesIfFails<3) {
+      try {
+	fclient->send_data(fid_broadcast, m_trigFifo[fid_broadcast].data(), m_trigFifo[fid_broadcast].size(), flush);
+	break;
+      } catch (FelixClientResourceNotAvailableException &e) {
+	ftlog->warn("Exception from FelixClient::send_data: {}. Retrying.", e.what());
+	std::this_thread::sleep_for(std::chrono::microseconds(m_isCmdEmptyWaitTime));
+	nRetriesIfFails++;
+      }
+    }
+    if(nRetriesIfFails==3){
+      ftlog->error("Could not send data due to FelixClientResourceNotAvailableException, even after 3 attempts. Exiting now...");
+      exit(1);
+    }
 
   } else {
     for (auto& [chn, buffer] : m_trigFifo) {
@@ -515,9 +529,23 @@ void FelixTxCore::trigger() {
       for (const auto& word : buffer) {
         ftlog->trace(" {:02x}", word&0xff);
       }
-
+      
       bool flush = true;
-      fclient->send_data(chn, buffer.data(), buffer.size(), flush);
+      int nRetriesIfFails=0;
+      while (nRetriesIfFails<3) {
+	try {
+	  fclient->send_data(chn, buffer.data(), buffer.size(), flush);
+	  break;
+	} catch (FelixClientResourceNotAvailableException &e) {
+	  ftlog->warn("Exception from FelixClient::send_data: {}. Retrying.", e.what());
+	  std::this_thread::sleep_for(std::chrono::microseconds(m_isCmdEmptyWaitTime));
+	  nRetriesIfFails++;
+	}
+      }
+      if(nRetriesIfFails==3){
+	ftlog->error("Could not send data due to FelixClientResourceNotAvailableException, even after 3 attempts. Exiting now...");
+	exit(1);
+      }
     }
   }
 }

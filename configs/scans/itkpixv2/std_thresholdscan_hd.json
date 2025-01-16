@@ -83,7 +83,7 @@
         "loopAction": "StdDataLoop"
       }
     ],
-    "name": "DigitalScan",
+    "name": "ThresholdScan",
     "prescan": {
         "InjDigEn": 0,
         "InjVcalMed": 200,
