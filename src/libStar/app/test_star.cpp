@@ -20,6 +20,8 @@
 
 namespace {
   auto logger = logging::make_log("test_star");
+  // A second logger for recording HCC and ABC IDs after probing
+  auto logger_id = logging::make_log("test_star_ids");
 
   StarCmd star;
 
@@ -617,6 +619,7 @@ bool probeHCCs(
         uint32_t hccID = (packet.value & 0xf0000000) >> 28; // top four bits
         uint32_t fuseID = packet.value & 0x00ffffff; // lowest 24 bits
         logger->info("Found HCCStar @ Tx = {} Rx = {}: ID = 0x{:x} eFuse ID = 0x{:06x}", tx, rx, hccID, fuseID);
+        logger_id->info("HCCStar @ Tx = {} Rx = {}: ID = 0x{:x} eFuse ID = 0x{:06x}", tx, rx, hccID, fuseID);
         hasHCCTx = true;
 
         if (setID) {
@@ -746,6 +749,7 @@ bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars
 
   for (auto& hcc : hccStars) {
     logger->info("Probing ABCStars on HCCStar {}", hcc.hcc_id);
+    logger_id->info("HCCStar {}", hcc.hcc_id);
 
     // Enable the tx and rx channel
     hwCtrl.setCmdEnable(hcc.tx);
@@ -797,6 +801,7 @@ bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars
       uint32_t abcFuseID = packet.value & 0x00ffffff; // lowest 24 bits
       //uint32_t abcStarVer = (packet.value & 0xff000000) >> 28; // top 8 bits
       logger->info(" Found ABCStar on HCCStar {}: Input channel = {} ABC ID = {} eFuse = 0x{:06x}", hcc.hcc_id, abc_chn, abcid, abcFuseID);
+      logger_id->info(" ABCStar: Input channel = {} ABC ID = {} eFuse = 0x{:06x}", abc_chn, abcid, abcFuseID);
     } // end of data container loop
 
     if (activeInChannels) {
@@ -1326,8 +1331,15 @@ int main(int argc, char *argv[]) {
       json j; // Start empty
       std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
       j["pattern"] = defaultLogPattern;
+      j["sinks"][0]["name"] = "file";
+      j["sinks"][0]["level"] = "info";
+      j["sinks"][0]["file_name"] = "test_star_probe.out";
+      j["sinks"][0]["pattern"] = "%v";
       j["log_config"][0]["name"] = "all";
       j["log_config"][0]["level"] = "info";
+      j["log_config"][1]["name"] = "test_star_ids";
+      j["log_config"][1]["level"] = "trace";
+      j["log_config"][1]["sink"] = "file";
       logging::setupLoggers(j);
     } else {
       try {
