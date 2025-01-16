@@ -1644,6 +1644,9 @@ void NoiseAnalysis::loadConfig(const json &j){
     if (j.contains("doAltMask")){
         doAltMask=j["doAltMask"];
     }
+    if (j.contains("minOcc")){
+        minOcc=j["minOcc"];
+    }
 }
 
 void NoiseAnalysis::end() {
@@ -1661,20 +1664,36 @@ void NoiseAnalysis::end() {
     noiseOcc->scale(1.0/(double)n_trigger);
     alog->info("[{}] Received {} total trigger!", id, n_trigger);
 
+    // Fail tags for printout
+    unsigned failNoiseCnt = 0, failAll = 0, failNew = 0, failTotal = 0;
+
     for(unsigned col=1; col<=nCol; col++) {
         for (unsigned row=1; row<=nRow; row++) {
             unsigned i = noiseOcc->binNum(col, row);
+            unsigned curEn = feCfg->getPixelEn(col-1, row-1);
+            failTotal += (!curEn); // add currently disabled pixels to total count
+            
             if (noiseOcc->getBin(i) > noiseThr) {
-                mask->setBin(i, 0);
-                if (make_mask&&createMask) {
-                    // maskPixel starts at 0,0
-                    feCfg->maskPixel(col-1, row-1, doAltMask);
-                }
-            } else {
-                mask->setBin(i, 1);
-            }
-        }
-    }
+                failNoiseCnt++;
+                if (occ->getBin(i) > minOcc) {
+                    failAll++;
+                    mask->setBin(i, 0);
+                    failTotal += curEn; // add count only if pixel is currently enabled
+                    failNew += curEn; // newly masked pixels
+                    if (make_mask&&createMask) {
+                        // maskPixel starts at 0,0
+                        feCfg->maskPixel(col-1, row-1);
+                    }
+                } else {
+                    mask->setBin(i, 1);
+                } // if
+            } // if
+        } // for
+    } // for
+
+    alog->info("[{}]  Found {} pixels failing noise occupancy cut of {}", id, failNoiseCnt, noiseThr);
+    alog->info("[{}] Masked {} pixels failing noise + raw occupancy cut of {}", id, failAll, minOcc);
+    alog->info("[{}] Masked {} new pixels, for {} total", id, failNew, failTotal);
 
     // Get averaged tot
     tot->divide(*occ);
