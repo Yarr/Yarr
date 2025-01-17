@@ -1675,14 +1675,14 @@ void NoiseAnalysis::end() {
             
             if (noiseOcc->getBin(i) > noiseThr) {
                 failNoiseCnt++;
-                if (occ->getBin(i) > minOcc) {
+                if (occ->getBin(i) >= minOcc) {
                     failAll++;
                     mask->setBin(i, 0);
                     failTotal += curEn; // add count only if pixel is currently enabled
                     failNew += curEn; // newly masked pixels
                     if (make_mask&&createMask) {
                         // maskPixel starts at 0,0
-                        feCfg->maskPixel(col-1, row-1);
+                        feCfg->maskPixel(col-1, row-1, doAltMask);
                     }
                 } else {
                     mask->setBin(i, 1);
