@@ -10,7 +10,10 @@
 auto logger = logging::make_log("switchLPM");
 
 void printHelp() {
-    std::cout << "./bin/switchLPM on/off \n -e <int>: enabled TX channels (decimal number from binary pattern starting from TX 0 as the least significant bit, for example 13 to switch on 1101, i.e. all TX channels apart from TX 1) \n -s <int> spec number \n -f <int> AC signal frequency in kHz (required to be > 80kHz for a square wave)" << std::endl;
+    std::cout << "./bin/switchLPM on/off \n\
+     -e <int>: enabled TX channels (decimal number from binary pattern starting from TX 0 as the least significant bit, for example 13 to switch on 1101, i.e. all TX channels apart from TX 1) \n -s <int> spec number \n\
+     -f <int>: AC signal frequency in kHz (required to be > 80kHz for a square wave) \n\
+     -m : apply the value of -e as a mask over the current value instead of overwriting it, e.g. if you enabled channel tx=1 (-e 2) in the past and you want to enable tx=0 you can do -m -e 1 and it will read the current value (2) apply 1 as OR mask and write back the result (3)" << std::endl;
 }
 
 int main(int argc, char **argv) {
