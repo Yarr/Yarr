@@ -46,7 +46,7 @@
                 "extTrigger": false,
                 "frequency": 0,
                 "noInject": true,
-                "time": 600,
+                "time": 120,
                 "edgeMode": false
               },
               "loopAction": "Itkpixv2TriggerLoop"
@@ -64,7 +64,7 @@
               "SelfTrigDigThrEn": 1,
               "SelfTrigDigThr": 1,
               "SelfTrigMulti": 4,
-              "SelfTrigDelay": 45
+              "SelfTrigDelay": 42
           }
         }
       }

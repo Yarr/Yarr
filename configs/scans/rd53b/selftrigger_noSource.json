@@ -46,7 +46,7 @@
             "extTrigger": false,
             "frequency": 0,
             "noInject": true,
-            "time": 600,
+            "time": 120,
             "edgeMode": false
           },
           "loopAction": "Rd53bTriggerLoop"
