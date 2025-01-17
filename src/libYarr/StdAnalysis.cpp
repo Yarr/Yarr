@@ -1665,21 +1665,24 @@ void NoiseAnalysis::end() {
     alog->info("[{}] Received {} total trigger!", id, n_trigger);
 
     // Fail tags for printout
-    unsigned failNoiseCnt = 0, failAll = 0, failNew = 0, failTotal = 0;
+    unsigned failNoiseOcc = 0, failBoth = 0, failBefore = 0, failNew = 0;
 
     for(unsigned col=1; col<=nCol; col++) {
         for (unsigned row=1; row<=nRow; row++) {
             unsigned i = noiseOcc->binNum(col, row);
-            unsigned curEn = feCfg->getPixelEn(col-1, row-1);
-            failTotal += (!curEn); // add currently disabled pixels to total count
-            
+            unsigned curEn = feCfg->getPixelEn(col-1, row-1, doAltMask);
+            failBefore += (!curEn); // add currently disabled pixels to total count
+
             if (noiseOcc->getBin(i) > noiseThr) {
-                failNoiseCnt++;
+                failNoiseOcc++;
                 if (occ->getBin(i) >= minOcc) {
-                    failAll++;
+                    failBoth++;
+
                     mask->setBin(i, 0);
-                    failTotal += curEn; // add count only if pixel is currently enabled
-                    failNew += curEn; // newly masked pixels
+
+                    // CurEn is 0 for disabled pixels, 1 for enabled
+                    failNew += curEn; // add count only if pixel is currently enabled
+
                     if (make_mask&&createMask) {
                         // maskPixel starts at 0,0
                         feCfg->maskPixel(col-1, row-1, doAltMask);
@@ -1691,9 +1694,9 @@ void NoiseAnalysis::end() {
         } // for
     } // for
 
-    alog->info("[{}]  Found {} pixels failing noise occupancy cut of {}", id, failNoiseCnt, noiseThr);
-    alog->info("[{}] Masked {} pixels failing noise + raw occupancy cut of {}", id, failAll, minOcc);
-    alog->info("[{}] Masked {} new pixels, for {} total", id, failNew, failTotal);
+    alog->info("[{}]  Found {} pixels failing noise occupancy cut of {}", id, failNoiseOcc, noiseThr);
+    alog->info("[{}]  Found {} pixels failing noise + raw occupancy cut of {}", id, failBoth, minOcc);
+    alog->info("[{}] Masked {} new pixels, for {} total ({} previously)", id, failNew, failBefore + failNew, failBefore);
 
     // Get averaged tot
     tot->divide(*occ);

@@ -25,7 +25,9 @@ class Itkpixv2Cfg : public FrontEndCfg, public Itkpixv2GlobalCfg, public Itkpixv
             this->setHitbus(col, row, 0);
         }
 
-        unsigned getPixelEn(unsigned col, unsigned row) override {
+        unsigned getPixelEn(unsigned col, unsigned row, bool doAltMask = false) override {
+            if(doAltMask)
+                return this->getHitbus(col, row);
             return this->getEn(col, row);
         }
 

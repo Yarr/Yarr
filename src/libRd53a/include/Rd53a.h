@@ -43,10 +43,6 @@ class Rd53a : public FrontEnd, public Rd53aCfg, public Rd53aCmd {
 
         yarrStatus checkCom() override;
 
-        unsigned getPixelEn(unsigned col, unsigned row) override {
-            return this->getEn(col, row);
-        }
-
         void enableAll() override;
 
 

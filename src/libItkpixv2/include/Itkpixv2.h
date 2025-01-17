@@ -39,11 +39,6 @@ class Itkpixv2 : public FrontEnd, public Itkpixv2Cfg, public Itkpixv2Cmd{
         yarrStatus checkCom() override;
         yarrStatus hasValidName() override;
 
-        unsigned getPixelEn(unsigned col, unsigned row) override {
-            return this->getEn(col, row);
-        }
-
-
         void enableAll() override;
 
         yarrStatus setNamedRegister(std::string name, const uint16_t value) override;

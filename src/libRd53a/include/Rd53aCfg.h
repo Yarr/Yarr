@@ -28,7 +28,9 @@ class Rd53aCfg : public FrontEndCfg, public Rd53aGlobalCfg, public Rd53aPixelCfg
             this->setHitbus(col, row, 0);
         }
 
-        unsigned getPixelEn(unsigned col, unsigned row) override {
+        unsigned getPixelEn(unsigned col, unsigned row, bool doAltMask = false) override {
+            if(doAltMask)
+                return this->getHitbus(col, row);
             return this->getEn(col, row);
         }
 

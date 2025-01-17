@@ -19,7 +19,7 @@ class EmptyFrontEndCfg : public FrontEndCfg {
         void writeConfig(json &) override {}
         void loadConfig(const json &) override {}
 
-        unsigned getPixelEn(unsigned col, unsigned row) override { return 0; }
+        unsigned getPixelEn(unsigned col, unsigned row, bool doAltMask = false) override { return 0; }
         void maskPixel(unsigned col, unsigned row, bool doAltMask = false) override {}
         void enableAll() override {}
 };

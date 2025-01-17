@@ -37,8 +37,10 @@ class Fei4Cfg : public FrontEndCfg, public Fei4GlobalCfg, public Fei4PixelCfg {
             this->setHitbus(col+1, row+1, 1);
         }
 
-        unsigned getPixelEn(unsigned col, unsigned row) override {
-	    return this->getEn(col, row);
+        unsigned getPixelEn(unsigned col, unsigned row, bool doAltMask = false) override {
+            if(doAltMask)
+                return this->getHitbus(col, row);
+            return this->getEn(col, row);
         }
 
         void enableAll() override;
