@@ -6,7 +6,7 @@
 	  "config": {
               "createMask": true,
 	      "doAltMask": true,
-	      "minOcc": 1
+	      "minOcc": 2
 	  }
       },
       "n_count": 1
