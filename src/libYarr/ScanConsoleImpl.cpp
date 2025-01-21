@@ -299,7 +299,7 @@ int ScanConsoleImpl::configure() {
         logger->info("Checking com {}", feCfg->getName());
         // Select correct channel
         hwCtrl->setCmdEnable(feCfg->getTxChannel());
-        hwCtrl->setRxEnable(feCfg->getRxChannel());
+        hwCtrl->setRxEnable({feCfg->getRxChannel(),feCfg->getRegRxChannel()});
         hwCtrl->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
         // Configure
         if (fe->checkCom() != yarrSuccess) {
