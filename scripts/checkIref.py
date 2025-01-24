@@ -8,7 +8,6 @@ from pathlib import Path
 log = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(prog="PROG", usage="%(prog)s [options]")
-# Remove default values before merging
 parser.add_argument(
     "-c", "--connectivity_file", help="Specify connectivity config JSON path."
 )
@@ -25,7 +24,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-
+# given the connectivity file of the module, return an array with the config files for all FE chips
 def get_chip_config_paths(connectivity_file: Path) -> list[str]:
     # NB: this code assumes that the chip order in the connectivity file is correct
     chip_config_paths = [Path()] * args.number_of_chips
@@ -40,12 +39,12 @@ def get_chip_config_paths(connectivity_file: Path) -> list[str]:
             raise RuntimeError(msg)
     return chip_config_paths
 
-
+# given the path to an individual FE chip's config file, return the Iref for that chip, as recorded in the config file
 def fetchIref_fromConfig(chip_config_path: Path) -> int:
     chip_config = json.loads(chip_config_path.read_text())
     return chip_config["ITKPIXV2"]["Parameter"]["IrefTrim"]
 
-
+# given an array of config files for FE chips, return an array with the Iref values stored in the config files
 def fetchIrefs_fromConfig(chip_config_paths) -> list[int]:
     Irefs = [-1] * args.number_of_chips
     for i, chip_config_path in enumerate(chip_config_paths):
@@ -53,7 +52,7 @@ def fetchIrefs_fromConfig(chip_config_paths) -> list[int]:
     log.info(Irefs)
     return Irefs
 
-
+# given the hardware controller file and connectivity file for the module, return an array with the Iref values for each FE chip, as determined by the wirebonding configuration on the chip
 def fetchIrefs_fromReadRegister(
     hw_controller_file: Path, connectivity_file: Path
 ) -> list[int]:
@@ -71,6 +70,8 @@ def fetchIrefs_fromReadRegister(
     if error:
         log.error(error)
 
+
+    # convert the bytelike output into an array of integers
     Iref_array = [
         int(v)
         for v in str(output)
@@ -82,14 +83,14 @@ def fetchIrefs_fromReadRegister(
     log.info(Iref_array)
     return Iref_array
 
-
+# print the actual and desired wirebonding configurations in an intuitive, human-readable format
 def Iref_discrepancy_fixer(Irefs_config, Irefs_register):
     wc_fromRR = get_fourDigit_binary(Irefs_register)
     wc_fromCf = get_fourDigit_binary(Irefs_config)
     log.info("Current wirebonding configuration: %s", wc_fromRR)
     log.info("Correct wirebonding configuration: %s", wc_fromCf)
 
-
+# add the '0' character to the beginning of a string so that the length is 4 for consistent formatting
 def get_fourDigit_binary(number):
     string = bin(number)[2:]
     while len(string) < 4:
