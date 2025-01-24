@@ -42,8 +42,12 @@ def get_chip_config_paths(connectivity_file: Path) -> list[str]:
 # given the path to an individual FE chip's config file, return the Iref for that chip, as recorded in the config file
 def fetchIref_fromConfig(chip_config_path: Path) -> int:
     chip_config = json.loads(chip_config_path.read_text())
-    return chip_config["ITKPIXV2"]["Parameter"]["IrefTrim"]
-
+    if "ITKPIXV2" in chip_config:
+        return chip_config["ITKPIXV2"]["Parameter"]["IrefTrim"]
+    else:
+        print("ERROR: This script is intended for use only with ITKPIXV2 modules")
+        sys.exit(1)
+    
 # given an array of config files for FE chips, return an array with the Iref values stored in the config files
 def fetchIrefs_fromConfig(chip_config_paths) -> list[int]:
     Irefs = [-1] * args.number_of_chips
