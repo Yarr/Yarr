@@ -13,23 +13,6 @@
 #include <atomic>
 
 
-//Enum for declaring various FELIX firmware flavors as defined in section 2.1 of https://edms.cern.ch/ui/file/2681548/1/FELIX_Phase2_firmware_specs.pdf
-//Firmware flavor determined by "FIRMWARE_MODE" FELIX register
-enum FELIX_FW_MODE {
-  GBT_mode = 0,
-  FULL_mode = 1,
-  LTDB_mode = 2,
-  FEI4_mode = 3,
-  ITK_Pixel = 4,
-  ITK_Strip = 5,
-  FELIG = 6,
-  FULL_mode_emulator = 7,
-  FELIX_MROD_mode = 8,
-  lpGBT_mode = 9,
-  Interlaken_25G = 10,
-  Unknown = -1
-};
-
 class FelixTxCore : virtual public TxCore {
 
 public:
@@ -55,6 +38,7 @@ public:
   void setTrigCnt(uint32_t count) override; 	// set the number of desired triggers
   void setTrigTime(double time) override; 	// set the trigger time in seconds
   void setTrigWordLength(uint32_t length) override; 	// set Trigger Word Length
+  int getMaxTrigWordLength() override; // return the maximum Trigger Word Length (16 x 32bit commands for FELIX)
   void setTrigWord(uint32_t *words, uint32_t size) override; 	// set the trigger words
   void toggleTrigAbort() override; 	// abort the trigger sequence
   void setTriggerLogicMask(uint32_t mask) override; 	// set the trigger logic
@@ -62,11 +46,14 @@ public:
   void resetTriggerLogic() override; 	// reset the trigger logic
   uint32_t getTrigInCount() override; 	// get the number of triggers in
 
-  bool readFelixRegister(const std::string&, uint64_t&);
-  bool writeFelixRegister(const std::string&, const std::string&);
+  // virtual here so they can be overriden in a dummy class for the unit test
+  virtual bool readFelixRegister(const std::string&, uint64_t&);
+  virtual bool writeFelixRegister(const std::string&, const std::string&);
 
   void loadFWMode(); // retrieve firmware mode from the FELIX register
-  FELIX_FW_MODE fwMode(); // get the FELIX firmware mode
+  FelixTools::FELIX_FW_MODE fwMode(); // get the FELIX firmware mode
+
+  FelixTools::FelixID_t fid_from_channel(uint32_t chn); // covert channel number to fid
 
 protected:
 
@@ -117,7 +104,7 @@ protected:
   int m_bufferSize {0};
   bool m_broadcast {true};
   uint32_t m_numEnabledChns {0};
-  enum FELIX_FW_MODE m_fwMode {FELIX_FW_MODE::Unknown};
+  enum FelixTools::FELIX_FW_MODE m_fwMode {FelixTools::FELIX_FW_MODE::Unknown};
 
   // GBT link and e-link number for broadcasting
   static constexpr unsigned BroadcastLink = 0x1f;
@@ -131,7 +118,6 @@ protected:
   std::vector<uint8_t> m_idleWords;
 
   // For Felix ID
-  FelixID_t fid_from_channel(uint32_t chn);
   uint8_t m_did {0};  // detector ID; 0x00 reserved for local IDs
   uint16_t m_cid {0}; // connector ID; 0x0000 reserved for local IDs
   uint8_t m_protocol {0}; // protocol ID

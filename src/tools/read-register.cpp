@@ -49,7 +49,10 @@ std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn
         throw std::runtime_error(e.str());
     }
     auto chip_config = chip_configs[fe_num];
-    fe->init(&*hw, FrontEndConnectivity(chip_config["tx"], chip_config["rx"]));
+    unsigned regRx = chip_config["rx"];
+    if(chip_config.contains("regRx"))
+      regRx = chip_config["regRx"];
+    fe->init(&*hw, FrontEndConnectivity(chip_config["tx"], chip_config["rx"], regRx));
     auto chip_register_file_path = chip_config["__config_path__"];
     fs::path pconfig{chip_register_file_path};
     if(!fs::exists(pconfig)) {
@@ -162,35 +165,39 @@ int main(int argc, char* argv[]) {
         if (!use_chip_name) {
             if ( chip_idx.size() == 0 || (std::find(chip_idx.begin(), chip_idx.end(), ichip)!= chip_idx.end()) ) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
-                hw->setRxEnable(cfg->getRxChannel());
+                hw->setRxEnable(cfg->getRegRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-                uint16_t res = 0;
+                while(!hw->isCmdEmpty());
+		std::this_thread::sleep_for(std::chrono::microseconds(100));
+
+	        uint16_t res = 0;
                 if (fe->readNamedRegister(register_name, res) != yarrSuccess) {
-                    std::cerr << "ERROR failed to read register of " << current_chip_name << "!" << std::endl;
-                    std::cout << "-666" << std::endl;
-                    error_cnt++;
+		  std::cerr << "ERROR failed to read register of " << current_chip_name << "!" << std::endl;
+		  std::cout << "-666" << std::endl;
+		  error_cnt++;
                 } else {
-                    std::cout << res << std::endl;
+		  std::cout << res << std::endl;
                 }
             }
         } else {
             if (std::find(chip_name.begin(), chip_name.end(), current_chip_name) != chip_name.end()) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
-                hw->setRxEnable(cfg->getRxChannel());
+                hw->setRxEnable(cfg->getRegRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-                uint16_t res = 0;
+                while(!hw->isCmdEmpty());
+		std::this_thread::sleep_for(std::chrono::microseconds(100));
+
+	        uint16_t res = 0;
                 if (fe->readNamedRegister(register_name, res) != yarrSuccess) {
-                    std::cerr << "ERROR failed to read register of " << current_chip_name << "!" << std::endl;
-                    std::cout << "-666" << std::endl;
-                    error_cnt++;
+		  std::cerr << "ERROR failed to read register of " << current_chip_name << "!" << std::endl;
+		  std::cout << "-666" << std::endl;
+		  error_cnt++;
                 } else {
-                    std::cout << res << std::endl;
+		  std::cout << res << std::endl;
                 }
             }
         }
     }
-
-    std::cerr << "Done." << std::endl;
 
     return error_cnt;
 }
