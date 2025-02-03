@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 log = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 parser = argparse.ArgumentParser(prog="PROG", usage="%(prog)s [options]")
 parser.add_argument(
@@ -50,7 +51,7 @@ def fetchIref_fromConfig(chip_config_path: Path) -> int:
     
 # given an array of config files for FE chips, return an array with the Iref values stored in the config files
 def fetchIrefs_fromConfig(chip_config_paths) -> list[int]:
-    Irefs = [-1] * args.number_of_chips
+    Irefs = [-1] * int(args.number_of_chips)
     for i, chip_config_path in enumerate(chip_config_paths):
         Irefs[i] = fetchIref_fromConfig(chip_config_path)
     log.info(Irefs)
@@ -118,19 +119,19 @@ def main():
     RED = "\033[91m"
     RESET = "\033[0m"
 
-    check = [False] * args.number_of_chips
+    check = [False] * int(args.number_of_chips)
     for i in range(0, len(check), 1):
         check[i] = Irefs_config[i] == Irefs_register[i]
         log.info(
-            "Iref for chip %d matches expected value? %s%s = %s %s%s",
-            GREEN if check[i] else RED,
+            "Iref for chip %s matches expected value?%s %s = %s %s%s",
             i + 1,
+            GREEN if check[i] else RED,
             Irefs_config[i],
             Irefs_register[i],
             check[i],
             RESET,
         )
-        Iref_discrepancy_fixer(Irefs_config[i], Irefs_register[i])
+        if check[i] == False: Iref_discrepancy_fixer(Irefs_config[i], Irefs_register[i])
     log.info(check)
     if not all(check):
         sys.exit(1)
