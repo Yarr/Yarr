@@ -159,6 +159,19 @@ unsigned ScanConsoleImpl::getRunNumber() {
 
 int ScanConsoleImpl::setupScan() {
     ScanHelper::banner(logger,"Setup Scan");
+    
+        //check if right type of scan
+    for (unsigned int i=0; i<scanCfg["scan"]["loops"].size(); i++) {
+        std::string loopAction = scanCfg["scan"]["loops"][i]["loopAction"];
+
+    	
+    	if (loopAction.find("Rd53a") != std::string::npos or loopAction.find("Rd53b") != std::string::npos or loopAction.find("Itkpixv2") != std::string::npos) {
+    		if (std::search(loopAction.begin(), loopAction.end(), chipType.begin(), chipType.end(), [](char a, char b){return std::tolower(a) == std::tolower(b);}) == loopAction.end()) {
+    			logger->error("Wrong scan file for chip type, aborting!");
+			return -1;
+			}
+		}	
+    	}
 
     // Make backup of scan config
 
