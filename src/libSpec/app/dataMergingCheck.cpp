@@ -18,7 +18,6 @@ namespace fs = std::filesystem;
 #include "ScanHelper.h"
 #include "Utils.h"
 
-
 auto logger = logging::make_log("dataMergingCheck");
 
 constexpr const char* COLOR_GREEN = "\033[32m";
@@ -32,8 +31,7 @@ void printHelp() {
         << "  -c <connectivity_file>    Specify connectivity config JSON path.\n"
         << "  -t <test_size>            Specify the error counter test size. Default 1 x 10^6\n"
         << "  -v                   Print out and store raw error counter values.\n"
-        << "  -i                   Chip index.\n"
-        << "  -m                   Data merging mode. Can be 4-to-1 or 2-to-1.\n";
+        << "  -m                   Data merging mode. Can be \"4-to-1\" or \"2-to-1\".\n";
 
 }
 
@@ -64,29 +62,18 @@ std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn
 
 
 int main(int argc, char **argv) {
-    // Setup logger with some defaults
-    std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
-    spdlog::set_pattern(defaultLogPattern);
-    json j; // empty
-    j["pattern"] = defaultLogPattern;
-    j["log_config"][0]["name"] = "all";
-    j["log_config"][0]["level"] = "info";
-    logging::setupLoggers(j);
-
-    // Init spec
-    logger->info("Init spec");
     int c;	
     int specNum = 0;
     std::string hw_controller_filename = "";
     std::string connectivity_filename = "";
     std::string mode=""; // data merging mode, should be "4-to-1" or "2-to-1"
     uint32_t test_size = 1000000;
-    bool print_raw_value=false;
     uint32_t cdrclksel = 0;
     uint32_t serblckperiod = 50;
     uint8_t test_ichip=0;
+    bool quietMode = false;
 
-    while ((c = getopt(argc, argv, "hr:c:m:i:t:nv")) != -1) {
+    while ((c = getopt(argc, argv, "hr:c:m:t:q")) != -1) {
         switch (c) {
             case 'h':
                 printHelp();
@@ -100,31 +87,41 @@ int main(int argc, char **argv) {
             case 'm': 
                 mode = optarg;
                 break;
-            case 'i':
-                test_ichip = std::stoi(optarg);
-                break;
             case 't' :
                 test_size = std::stoi(optarg);
                 break;
-            case 'v' :
-                print_raw_value = true;
+            case 'q':
+                quietMode = true;
                 break;
             default:
-                logger->critical("Invalid command line parameter(s) given!");
+                std::cerr << "Invalid command line parameter(s) given!" << std::endl;
                 return -1;
         }
+    }
+    if (!quietMode) {
+        // Setup logger with some defaults
+        std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
+        spdlog::set_pattern(defaultLogPattern);
+        json j; // empty
+        j["pattern"] = defaultLogPattern;
+        j["log_config"][0]["name"] = "all";
+        j["log_config"][0]["level"] = "info";
+        logging::setupLoggers(j);
+
+        // Init spec
+        logger->info("Init spec");
     }
 
     fs::path hw_controller_path{hw_controller_filename};
     if(!fs::exists(hw_controller_path)) {
         std::cerr << "ERROR: Provided hw controller file (=" << hw_controller_filename << ") does not exist" << std::endl;
-        return 1;
+        return -1;
     }
 
     fs::path connectivity_path{connectivity_filename};
     if(!fs::exists(connectivity_path)) {
         std::cerr << "ERROR: Provided connectivity file (=" << connectivity_filename << ") does not exist" << std::endl;
-        return 1;
+        return -1;
     }
 
     // instantiate the hw controller
@@ -136,7 +133,7 @@ int main(int argc, char **argv) {
         hw = ScanHelper::loadController(jcontroller);
     } catch (std::exception& e) {
         std::cerr << "ERROR: Unable to load controller from provided config, exception caught: " << e.what() << std::endl;
-        return 1;
+        return -1;
     }
 
     // Set up hardware config 
@@ -162,30 +159,20 @@ int main(int argc, char **argv) {
     time=1/readout_speed*66*test_size;
     double clkcycles = 1/(clk_speed*10e6);
     double count=time/clkcycles/(serblckperiod*2+1);
-    int min=std::floor(count);
-    int max=std::ceil(count);
     int wait = time*10000000;
     std::cout << std::fixed << std::setprecision(2);
 
-    int lane=0;
-    int delay=0;
-    // set correct delay setting for all chips: 
-    for(int j=0; j<n_chips; j++){
+    std::vector<unsigned> lanes;
+    if (mode=="4-to-1"){
+        count = count * 4;
+    } else if (mode=="2-to-1"){
+        count = count * 3;
+    }
+    
+    int min=std::floor(count)-1;
+    int max=std::ceil(count)+1;
 
-        lane=jconn["chips"][j]["rx"];
-        delay=jcontroller["ctrlCfg"]["cfg"]["delay"][lane];
-
-        // Enable manual delay control
-        mySpec.writeSingle(0x2 << 14 | 0x6, 0xffff);
-
-        mySpec.writeSingle(0x2 << 14 | 0x8, test_size);
-        mySpec.writeSingle(0x2 << 14 | 0x9, 0);
-
-        mySpec.writeSingle(0x2 << 14 | 0x4, lane);
-        mySpec.writeSingle(0x2 << 14 | 0x5, delay);
-    } 
-
-    std::cout << "Setting up configuration for all chips..." << std::endl;
+    logger->info("Setting up configuration for all chips...");
 
     // Set up all chips 
     for (size_t ichip = 0; ichip < n_chips; ichip++) {
@@ -195,12 +182,14 @@ int main(int argc, char **argv) {
 
         auto fe = init_fe(hw, jconn, ichip);
         if(!fe) {
-            std::cerr << "WARNING: Skipping chip at index " << ichip << " in connectivity file" << std::endl;
-            continue;
+            logger->critical("Could not create chip at index {} in connectivity file", ichip);
+            return -1;
         } else {
             fs::path chip_register_file_path{chip_configs[ichip]["__config_path__"]};
             auto jchip = ScanHelper::openJsonFile(chip_register_file_path);
+            std::string name = dynamic_cast<FrontEndCfg*>(&*fe)->getName();
 
+            logger->info("Configuring chip {} ...", name);
             fe->configure();           
 
             // Wait for fifo to be empty
@@ -212,156 +201,134 @@ int main(int argc, char **argv) {
 
             int chip_id=jchip[chipType]["Parameter"]["ChipId"];
 
-            if (chip_id == 12 || chip_id==13 || chip_id==14){
-
-                //Secondary
-                fe->writeNamedRegister("EnChipId", 1);
-
-                fe->writeNamedRegister("CdrClkSel", 2);
-
-                fe->writeNamedRegister("CmlBias0", 500);
-                fe->writeNamedRegister("CmlBias1", 0);
-                fe->writeNamedRegister("SerEnTap", 0);
-                fe->writeNamedRegister("SerInvTap", 0);
-
-                fe->writeNamedRegister("SerSelOut0", 3);
-                fe->writeNamedRegister("SerSelOut1", 3);
-                fe->writeNamedRegister("SerSelOut2", 3);
-                fe->writeNamedRegister("SerSelOut3", 3);
-                fe->writeNamedRegister("SerEnLane", 0);
-                if (chip_id==12){
-                    fe->writeNamedRegister("DataMergeOutMux0", 3);
-                    fe->writeNamedRegister("DataMergeOutMux1", 0);
-                    fe->writeNamedRegister("DataMergeOutMux2", 1);
-                    fe->writeNamedRegister("DataMergeOutMux3", 2);
-                } else if (chip_id==13 || chip_id==14){
-                    fe->writeNamedRegister("DataMergeOutMux0", 2);
-                    fe->writeNamedRegister("DataMergeOutMux1", 3);
-                    fe->writeNamedRegister("DataMergeOutMux2", 0);
-                    fe->writeNamedRegister("DataMergeOutMux3", 1);
+            fe->writeNamedRegister("EnChipId", 1);
+            // Check which data merging mode we want to test 
+            if (mode=="4-to-1"){
+                fe->writeNamedRegister("ServiceBlockEn", 1);
+                if (chip_id == 12 || chip_id==13 || chip_id==14){ // Secondaries
+                    fe->writeNamedRegister("EnChipId", 1);
+                    fe->writeNamedRegister("CdrClkSel", 2);
+                    fe->writeNamedRegister("CmlBias0", 500);
+                    fe->writeNamedRegister("CmlBias1", 0);
+                    fe->writeNamedRegister("SerEnTap", 0);
+                    fe->writeNamedRegister("SerInvTap", 0);
+                    logger->info("Setting up {} as secondary for 4-to-1 merging", name);
+                    if (chip_id==12){
+                        fe->writeNamedRegister("DataMergeOutMux0", 3);
+                        fe->writeNamedRegister("DataMergeOutMux1", 0);
+                        fe->writeNamedRegister("DataMergeOutMux2", 1);
+                        fe->writeNamedRegister("DataMergeOutMux3", 2);
+                        fe->writeNamedRegister("SerSelOut1", 1);
+                    } else if (chip_id==13 || chip_id==14){ // Secondary 
+                        fe->writeNamedRegister("SerSelOut2", 1);
+                        fe->writeNamedRegister("DataMergeOutMux0", 2);
+                        fe->writeNamedRegister("DataMergeOutMux1", 3);
+                        fe->writeNamedRegister("DataMergeOutMux2", 0);
+                        fe->writeNamedRegister("DataMergeOutMux3", 1);
+                    }
+                } else if (chip_id==15){ // Primary
+                    lanes.push_back(dynamic_cast<FrontEndCfg*>(&*fe)->getRxChannel());
+                    fe->writeNamedRegister("DataMergeEn", 13);
+                    logger->info("Setting up {} as primary for 4-to-1 merging", name);
+                } else {
+                    logger->critical("Non-standard chip IDs found for chip {}, please check your configs! Chip ID:{} ", name, chip_id);
+                    return -1; 
                 }
-
-            } else if (chip_id==15){
-
-                //Primary
-                fe->writeNamedRegister("EnChipId", 1);
-                fe->writeNamedRegister("DataMergeEn", 13);
-
-                fe->writeNamedRegister("SerSelOut0", 1);
-                fe->writeNamedRegister("SerSelOut1", 3);
-                fe->writeNamedRegister("SerSelOut2", 3);
-                fe->writeNamedRegister("SerSelOut3", 3);
-
+            } else if (mode=="2-to-1"){
+                fe->writeNamedRegister("ServiceBlockEn", 1);
+                if (chip_id==12 || chip_id==14){ // Secondaries
+                    fe->writeNamedRegister("CdrClkSel", 2);
+                    fe->writeNamedRegister("CmlBias0", 500);
+                    fe->writeNamedRegister("CmlBias1", 0);
+                    fe->writeNamedRegister("SerEnLane", 15);
+                    fe->writeNamedRegister("SerSelOut0", 1);
+                    fe->writeNamedRegister("SerSelOut1", 1);
+                    fe->writeNamedRegister("DataMergeOutMux0", 1);
+                    fe->writeNamedRegister("DataMergeOutMux1", 0);
+                    fe->writeNamedRegister("DataMergeOutMux2", 2);
+                    fe->writeNamedRegister("DataMergeOutMux3", 3);
+                    logger->info("Setting up {} as secondary for 2-to-1 merging", name);
+                } else if (chip_id==13){ // Primary
+                    fe->writeNamedRegister("DataMergeEn", 0);
+                    fe->writeNamedRegister("DataMergeEnBond", 1);
+                    fe->writeNamedRegister("ServiceBlockEn", 1);
+                    logger->info("Setting up {} as primary for 2-to-1 merging", name);
+                    lanes.push_back(dynamic_cast<FrontEndCfg*>(&*fe)->getRxChannel());
+                } else if (chip_id==15){ // Primary
+                    fe->writeNamedRegister("DataMergeEn", 0);
+                    fe->writeNamedRegister("DataMergeEnBond", 1);
+                    fe->writeNamedRegister("ServiceBlockEn", 1);
+                    logger->info("Setting up {} as primary for 2-to-1 merging", name);
+                    lanes.push_back(dynamic_cast<FrontEndCfg*>(&*fe)->getRxChannel());
+                } else {
+                    logger->critical("Non-standard chip IDs found for chip {}, please check your configs! Chip ID:{} ", name, chip_id);
+                    return -1; 
+                }
             } else {
-                std::cout << "ERROR: Non-standard chip IDs read from config, please check your configs! Chip ID: " << chip_id << std::endl;
-                return 1; 
+                logger->critical("Data merging mode ({}) unknown, please use \"4-to-1\" or \"2-to-1\".", mode);
+                return -1; 
             }
 
-            while(!hw->isCmdEmpty()){;}
-
-            std::this_thread::sleep_for(std::chrono::microseconds(200));
-
-            hw->flushBuffer();
-
         }
     }
+    while(!hw->isCmdEmpty()){;}
+    logger->info("Configuration done.");
 
-    fs::path chip_register_file_path{chip_configs[test_ichip]["__config_path__"]};
-    auto fe = init_fe(hw, jconn, test_ichip);
-    auto cfg = dynamic_cast<FrontEndCfg*>(fe.get());
-    std::string current_chip_name = cfg->getName();
-    auto jchip = ScanHelper::openJsonFile(chip_register_file_path);
-    int chip_id=jchip[chipType]["Parameter"]["ChipId"];
+    // Global soft reset
+    std::unique_ptr<FrontEnd> gFe = StdDict::getFrontEnd(chipType);
+    gFe->init(&*hw, FrontEndConnectivity(0,0));
+    gFe->makeGlobal();
 
-    // Wait for fifo to be empty
-    std::this_thread::sleep_for(std::chrono::microseconds(10));
-    while(!hw->isCmdEmpty());
+    logger->info("Soft resets all chips to synch gearboxes.");
+    gFe->resetAllSoft();
 
-    // Check which data merging mode we want to test 
-    if (mode=="4-to-1"){
-        std::cout << "testing 4-to-1" << std::endl;
-        fe->writeNamedRegister("ServiceBlockEn", 1);
-        if (chip_id==12){
-            fe->writeNamedRegister("SerSelOut1", 1);
-            fe->writeNamedRegister("SerEnLane", 2);
-        } else if (chip_id==13 || chip_id==14){
-            fe->writeNamedRegister("SerSelOut2", 1);
-            fe->writeNamedRegister("SerEnLane", 4);
-        }   
-    } else if (mode=="2-to-1"){
-        std::cout << "testing 2-to-1" << std::endl;
-        fe->writeNamedRegister("ServiceBlockEn", 1);
-        if (chip_id==12 || chip_id==14){
-            fe->writeNamedRegister("SerSelOut0", 1);
-            fe->writeNamedRegister("SerSelOut1", 1);
-            fe->writeNamedRegister("SerEnLane", 1);
-        }
-    } else {
-        std::cout << "unknown data merging mode. please provide a valid argument.." << std::endl;
-    }
-
-
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
     while(!hw->isCmdEmpty()){;}
 
-    std::this_thread::sleep_for(std::chrono::microseconds(200));
+    bool success = true;
 
-    hw->flushBuffer();
-    std::this_thread::sleep_for(std::chrono::microseconds(10000));
+    logger->info("Loop over primaries:");
+    for (auto lane : lanes) {
+        logger->info("Testing lane #{}", lane);
+        // Reset and restart error counter
+        mySpec.writeSingle(0x2 << 14 | 0xb, 1); 
+        mySpec.writeSingle(0x2 << 14 | 0xb, 0); 
 
+        std::this_thread::sleep_for(std::chrono::microseconds(wait));
 
-    lane=jconn["chips"][test_ichip]["rx"];
-    delay=jcontroller["ctrlCfg"]["cfg"]["delay"][lane];
-
-    // Enable manual delay control
-    mySpec.writeSingle(0x2 << 14 | 0x6, 0xffff); 
-
-    mySpec.writeSingle(0x2 << 14 | 0x8, test_size); 
-    mySpec.writeSingle(0x2 << 14 | 0x9, 0); 
-
-    std::cout << std::fixed << std::setprecision(2);
-    mySpec.writeSingle(0x2 << 14 | 0x4, lane); 
-    mySpec.writeSingle(0x2 << 14 | 0x5, delay);       
-
-    // Reset and restart error counter
-    mySpec.writeSingle(0x2 << 14 | 0xb, 1); 
-    mySpec.writeSingle(0x2 << 14 | 0xb, 0); 
-
-    std::this_thread::sleep_for(std::chrono::microseconds(wait));
-
-    // Need to update do calculation correctly for datamerging quality        
-    mySpec.writeSingle(0x2 << 14 | 0xa, lane); 
-    uint32_t errors = 0;
-    errors = mySpec.readSingle(0x2<<14 | 0xb);
-    double error_count = 0;
-    double value=0;
-    double link_quality=0;
-    if (((errors>>31)&0x1)) {
-        error_count = (0x7FFFFFFF & errors);
-        if (error_count>=min && error_count<=max+1 ){ 
-            value = 1;
-            link_quality=1;
-        } else { 
-            value = 0; 
-            link_quality = std::log(1 / (std::abs(error_count - count) / count))/13.0;                
+        // Need to update do calculation correctly for datamerging quality        
+        mySpec.writeSingle(0x2 << 14 | 0xa, lane); 
+        uint32_t errors = 0;
+        errors = mySpec.readSingle(0x2<<14 | 0xb);
+        double error_count = 0;
+        double value=0;
+        double link_quality=0;
+        if (((errors>>31)&0x1)) {
+            error_count = (0x7FFFFFFF & errors);
+            if (error_count>=min && error_count<=max){ 
+                value = 1;
+                link_quality=1;
+            } else { 
+                value = 0; 
+                link_quality = std::log(1 / (std::abs(error_count - count) / count))/13.0;                
+            }
         }
+
+        logger->info("[{}] Error Count: {} (expected [{},{}])", lane, error_count, min, max);
+        logger->info("[{}] Link quality: {}", lane, link_quality);
+
+        if (value != 1) {
+            success = false;
+            logger->warn("Lane {} failed data merging test", lane);
+        }
+
     }
 
-    if (print_raw_value){
-        std::cout << chip_id << "  " << error_count << std::endl;
-    } else {
-        std::cout << chip_id << "  " << link_quality << std::endl;
-    }             
-    // Reset registers, need to fix so we set the lanes correctly again       
-    fe->writeNamedRegister("ServiceBlockEn", 0);
-    if (chip_id==12 || chip_id==13 || chip_id==14){
-        fe->writeNamedRegister("SerSelOut0", 3);
-        fe->writeNamedRegister("SerSelOut1", 3);
-        fe->writeNamedRegister("SerSelOut2", 3);
-        fe->writeNamedRegister("SerSelOut3", 3);
-        fe->writeNamedRegister("SerEnLane", 0);
+    if (success) {
+        std::cout << "Passed" << std::endl;
+        return 0;
     }
 
-
-
-    return 0;
+    std::cout << "Failed" << std::endl;
+    return 1;
 }
