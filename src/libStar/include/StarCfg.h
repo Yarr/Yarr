@@ -106,7 +106,7 @@ class StarCfg : public FrontEndCfg {
   }
 
   /// Get value of named register field (either ABC or HCC)
-  uint32_t getSubRegisterValue(int chipIndex, std::string subRegName) {
+  uint32_t getSubRegisterValue(int chipIndex, std::string subRegName) const {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
       return m_hcc.getSubRegisterValue(subRegName);
     } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum

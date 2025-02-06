@@ -1,11 +1,13 @@
 #include "catch.hpp"
 
 #include "AllAnalyses.h"
+#include "AllChips.h"
 #include "Bookkeeper.h"
 #include "GraphErrors.h"
 #include "Histo1d.h"
 #include "JsonData.h"
 #include "ScanFactory.h"
+#include "StarChips.h"
 
 #include "EmptyHw.h"
 
@@ -15,6 +17,12 @@ namespace {
   auto logger = logging::make_log("test_analysis_strobe_delay");
 }
 
+/**
+   Test of strobe delay analysis.
+
+   Generate sequence of histograms (from OccupancyMap), and check expected
+   output.
+*/
 TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
 
     // Need enough points that the fit has enough data for 4 params!
@@ -271,4 +279,166 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
     // OccVsStrobeDelayVsChanChip0Row1 is per chip (+ profile)
     // OccVsStrobeDelayVsChan_Row1 is per row
     CHECK (histo_count == 5 + chip_count * 4);
+}
+
+struct SdTestValueInfo {
+    int id;
+    int sd_val;
+};
+
+void check_strobe_values(const FrontEnd &fe,
+                         const std::vector<SdTestValueInfo> &info) {
+    auto star_fe = dynamic_cast<const StarChips*> (&fe);
+    REQUIRE(star_fe);
+
+    for(const auto &fe_info: info) {
+        // This is the index in StarCfg (1-based as HCC is 0)
+        int fe_idx = fe_info.id+1;
+        CAPTURE (fe_info.id, fe_idx, fe_info.sd_val);
+        REQUIRE ( star_fe->getSubRegisterValue(fe_idx, "STR_DEL") == fe_info.sd_val );
+    }
+}
+
+/**
+   Test of feedback for strobe delay.
+
+   Run scan loop with StarParamFeedback. Feed back the appropriate strobedelay
+   parameters to the ABC chip configurations.
+*/
+TEST_CASE("StarStrobeDelayFeedback", "[Analysis][Star][SD]") {
+
+    int chip_count = 1;
+    int fe_count = 1;
+
+    SECTION ("Default") {
+    }
+
+    SECTION ("More chips") {
+      chip_count = 2;
+    }
+
+    // TODO: Add more configs with strange ABC mappings (barrel and endcap)
+
+    CAPTURE (chip_count);
+    CAPTURE (fe_count);
+
+    EmptyHw empty;
+    Bookkeeper bookie(&empty, &empty);
+
+    int rx_channel = 0;
+    FrontEndConnectivity fe_conn(0,rx_channel);
+
+    {
+      // HCCv1 so chips are in expected order
+      auto fe = StdDict::getFrontEnd("Star_vH1A1");
+      fe->setActive(true);
+
+      fe->init(&empty, FrontEndConnectivity(0,0));
+
+      auto star_fe = dynamic_cast<StarChips*> (&*fe);
+      for(int c=0; c<chip_count; c++) {
+        // This is the chip_id
+        star_fe->addABCchipID(c);
+      }
+
+      // Normally set up by StarChips::configre
+      star_fe->geo.nCol = 128 * chip_count;
+
+      int ic_mask = 0;
+      for(int i=0; i<chip_count; i++) {
+        ic_mask <<= 1;
+        ic_mask |= 1;
+      }
+      fe->writeNamedRegister("HCC_ICENABLE", ic_mask);
+
+      bookie.addFe(std::move(fe), fe_conn);
+    }
+    unsigned feUid = bookie.getId(bookie.getLastFe());
+
+    std::vector<SdTestValueInfo> sd_info;
+    for(int i=0; i<chip_count; i++) {
+      sd_info.push_back({i, 0});
+    }
+
+    // Get the entry from BK
+    auto &fe = *bookie.getEntry(feUid).fe;
+
+    // Test before making changes
+    check_strobe_values(fe, sd_info);
+
+    // This is what we want to change things to
+    for(auto &sd_entry: sd_info) {
+      sd_entry.sd_val = sd_entry.id + 2;
+    }
+
+    // Run scan loops, which wait for the feedback
+    FeedbackClipboardMap fb;
+    ScanFactory scan(&bookie, &fb);
+
+    // Setup the loops that analysis needs to know about
+    {
+      json scanCfg;
+      scanCfg["scan"]["name"] = "TestSDAnalysis";
+
+      // Create Loop objects so they're available to analysis
+      scanCfg["scan"]["loops"][0]["loopAction"] = "StarParamFeedback";
+      scanCfg["scan"]["loops"][0]["config"]["parameter"] = "STROBEDELAY";
+
+      scan.loadConfig(scanCfg);
+    }
+
+    scan.init();
+
+    // Send data back from analysis to store the correct configuration
+    PixelFeedbackSender send(&fb[feUid]);
+
+    uint32_t feedback_count = 0;
+
+    const int max_loops = 10;
+
+    // If exception is thrown this won't be cleared
+    bool thread_failure = true;
+
+    std::thread t([&]() {
+      int loop_count = 0;
+      while(feedback_count < 1) {
+        std::shared_ptr<RawDataContainer> data = std::make_shared<RawDataContainer>(LoopStatus({2}, {LOOP_STYLE_PIXEL_FEEDBACK}));
+        logger->debug("Generate feedback data");
+
+        const LoopStatus &stat = data->stat;
+
+        REQUIRE (stat.size() == 1);
+
+        logger->trace("Current loop status: {} {} {}",
+                      stat.get(0));
+
+        auto feedbackData = std::make_unique<Histo2d>("feedback", chip_count, 0, chip_count, 1, 0, 1);
+        for(int b=0; b<feedbackData->size(); b++) {
+          feedbackData->fill(b, 0, b+2);
+        }
+
+        // As there's no inner loop, send feedback immediately
+        send.feedback(feUid, std::move(feedbackData));
+        feedback_count ++;
+
+        logger->debug("Sent feedback at iteration {}", loop_count);
+        loop_count ++;
+      }
+
+      logger->warn("Finish unlocking thread after {} loop", max_loops);
+      thread_failure = false;
+    });
+
+    scan.run();
+
+    fe.clipRawData.finish();
+
+    t.join();
+
+    // Only feedback at the end, but once per front end
+    REQUIRE (feedback_count == fe_count);
+
+    check_strobe_values(fe, sd_info);
+
+    REQUIRE (!thread_failure);
 }

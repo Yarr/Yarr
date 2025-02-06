@@ -40,6 +40,8 @@ class StarStrobeDelayAnalysis : public AnalysisAlgorithm {
         unsigned m_nFailedfit_left{};                    //!< Number of failed left edge fits
 	unsigned m_nFailedfit_right{};                   //!< Number of failed right edge fits
 
+        std::unique_ptr<PixelFeedbackSender> m_fb;
+
         std::vector<double> m_strobeDelayVec;                            //!< Vector of all SD values                
 
         std::map<unsigned, std::unique_ptr<Histo1d>> m_strobeDelayHistos; //!< Map of histograms of occupancy vs strobe delay. Identifier corresponds to the channel number (0-1279 in first row, 1280-2559 in second row). 

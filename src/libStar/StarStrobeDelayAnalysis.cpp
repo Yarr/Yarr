@@ -13,6 +13,8 @@
 #include "StdHistogrammer.h"
 #include "StdTriggerAction.h"
 
+// Add feedback (via StarParamFeedback)
+
 // NB if we don't include this, it compiles, but we get a linker error,
 // presumably because it picks up names from C rather than C++
 #include <cmath>
@@ -58,6 +60,11 @@ void StarStrobeDelayAnalysis::init(const ScanLoopInfo *s) {
             } else {
                 m_injections = trigLoop->getTrigCnt();
             }
+        }
+
+        if (l->isPixelFeedbackLoop()) {
+            alog->debug("Found pixel feedback loop");
+            m_fb = std::make_unique<PixelFeedbackSender>(feedback);
         }
     }
 
@@ -197,8 +204,12 @@ void StarStrobeDelayAnalysis::end() {
   auto upJD = std::make_unique<StarJsonData>("JsonData_StarStrobeDelayResult");
   upJD->setJsonDataType("JsonData_StarStrobeDelayResult");
 
+  unsigned nChips = (nCol/128);
+
+  auto feedbackData = std::make_unique<Histo2d>("feedback", nChips, 0, nChips, 1, 0, 1);
+
   // For each chip, find max left edge and min right edge then define optimal strobe delay as the 57% point between the two 
-  for (unsigned int iChip=0; iChip<(nCol/128); iChip++){
+  for (unsigned int iChip=0; iChip<nChips; iChip++){
     upJD->initialiseStarChannelsDataAtProp({"ABCStar_" + std::to_string(iChip), "OptimalStrobeDelay"}, 1);
     double maxLeftEdgeForChip = 0.0;
     double minRightEdgeForChip = 100.0;
@@ -228,6 +239,8 @@ void StarStrobeDelayAnalysis::end() {
     }
     alog->debug("  Found optimal strobe delay = {} for chip {}", strobeDelayOpt, iChip);
     upJD->setValForProp({"ABCStar_" + std::to_string(iChip), "OptimalStrobeDelay"}, 0, strobeDelayOpt);   
+
+    feedbackData->fill(iChip, 0, strobeDelayOpt);
 
     // TODO: Write optimal value to STR_DEL in the front end configuration.
     //       Complicated by working out the mapping from histogram position
@@ -285,7 +298,10 @@ void StarStrobeDelayAnalysis::end() {
   for (auto i=m_hOccVsStrobeDelayVsChannelPerRow.begin(); i!=m_hOccVsStrobeDelayVsChannelPerRow.end(); i++) {
     output->pushData(std::move((*i).second));
   }
-   
+
+  if(m_fb) {
+    m_fb->feedback(id, std::move(feedbackData));
+  }
 }
 
 
