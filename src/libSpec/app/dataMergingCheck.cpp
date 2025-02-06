@@ -32,7 +32,8 @@ void printHelp() {
         << "  -t <test_size>            Specify the error counter test size. Default 1 x 10^6\n"
         << "  -v                   Print out and store raw error counter values.\n"
         << "  -m                   Data merging mode. Can be \"4-to-1\" or \"2-to-1\".\n";
-
+        << "  -q                   Quiet mode, no logger";
+        << std::endl;
 }
 
 std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn, int fe_num) {
