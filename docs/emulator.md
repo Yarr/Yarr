@@ -60,6 +60,54 @@ and
 <figcaption>Tuned (except for the first core column) threshold distribution (left) and map (right), obtained with the ITkPixV2 emulator.</figcaption>
 </figure>
 
+## Inner structure
+The emulator interacts with the outside through the `Itkpixv2Emu` class. `Itkpixv2Emu` instantiates two functional modules - `Itkpixv2EmuCommandInterpreter` and `Itkpixv2EmuCommandExe`. At the highest level, `Itkpixv2Emu` runs a loop that listens to the Tx and performs command interpretation and execution upon reception of data. This loop runs until stopped from the outside. The loop is sketched in the figure below.
+
+<figure class="image">
+<img src="" alt="" width="250">
+<figcaption>Top-level emulator loop.</figcaption>
+</figure>
+
+### Command interpretation
+All command interpretation is handled by the `Itkpixv2EmuCommandInterpreter` class. It is attached to the input Tx and for conveniece pre-buffers the incoming stream in 8-bit blocks. Depending on the header of each command, appropriate number of 8-bit blocks is processed at a time. Whenever needed, the block is 8-to-5 decoded through a LUT. Finally, a `Cmd` struct is formed:
+
+```
+struct Cmd {
+    uint8_t header   = 0;
+    uint8_t id       = 0;
+    uint32_t address = 0;
+    uint32_t data    = 0;
+}
+```
+
+These interpreted commands are then passed through a FIFO to the `Itkpixv2EmuCommandExe`, which takes the appropriate action. A diagram of `Itkpixv2EmuCommandInterpreter` functionality is shown in the figure below.
+
+### Carrying out commands
+`Cmd` structs form the input to the `Itkpixv2EmuCommandExe`, which decides what action to take based on the `Cmd` header. `Itkpixv2EmuCommandExe` holds instances of several helper classes, such as `Itkpixv2Encoder` for producing the output streams, `Itkpixv2Cfg` to represent the chip registers and `ItkpixLayout` to represent ToT in the chip matrix. In the current state, commands are carried out serially, but the development was done with consideration of potential future multi-threading.
+
+The following actions are taken for each command -
+
+- `WrReg`  - write provided value to the addressed register. All flavours are supported (global, pixel, broadcast, multiple write, ...).
+- `RdReg`  - Output the value of the desired register in a service block. Only one register is written out per service block, and only on request (no autoread).
+- `Cal`    - Generate analog or digital signals in the pixels.
+- `Trig`   - Encode the generated hits and send them out as the encoded stream with the appropriate trigger tag.
+- `PLLock` - no action
+- `Clear`  - no action
+
+
+## Calibrations
+Several calibrations based on real-chip measurements are used to translate between DAC, charge and ToT.
+
+### Injection charge (DAC to e)
+The injection charge is set in DACs in the chip registers, and is translated into electrons through a linear relation provided in `Itkpixv2Cfg::toCharge` function.
+
+### Global threshold (DAC to e)
+
+### Pixel threshold (TDAC to e)
+
+### Charge to ToT (e to bits)
+
+
 # RD53A emulator
 
 ## Usage
