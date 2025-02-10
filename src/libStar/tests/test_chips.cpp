@@ -11,6 +11,41 @@
 
 namespace {
 
+struct RegExtractInfo {
+  /// The id of the register write packet.
+  uint8_t reg;
+
+  /// The register value written.
+  uint32_t value;
+
+  /// Other info in the packet (eg communication IDs)
+  uint32_t other;
+
+  /// Count of idle words
+  size_t idle{0};
+
+  /// Count of non-idle words
+  size_t count{0};
+
+  /// Count of trigger/reset frames
+  size_t count_lb{0};
+
+  /// Count of fast command frames
+  size_t count_fast{0};
+
+  bool isRegWrite() const {
+    return count_lb == 0 && count_fast == 0 && count == 9;
+  }
+
+  bool isHccRegWrite() const {
+    return isRegWrite() && (other & 0x20) == 0;
+  }
+
+  bool isAbcRegWrite() const {
+    return isRegWrite() && (other & 0x20) == 0x20;
+  }
+};
+
 /**
    Override TxCore to record what is written to FIFO.
  */
@@ -46,20 +81,22 @@ public:
    * Check recorded data for register value.
    *
    * @param buff_id Record number to read (separated by releaseFifo)
-   * @param reg The id of the register write packet 
-   * @param value The register value written
-   * @param other Other info in the packet (eg communication IDs)
+   * @return Extracted packet info (mostly register).
    */
-  void getRegValueForBuffer(int buff_id,
-                            uint8_t &reg, uint32_t &value,
-                            uint32_t &other) const {
-    // reg = 0;
-    value = 0;
+  RegExtractInfo getRegValueForBuffer(int buff_id) const {
+    RegExtractInfo ri{};
+    ri.value = 0;
+
     int progress = 0;
     for(int i=0; i<buffers[buff_id].size()*2; i++) {
       LCB::Frame f = getFrame(buff_id, i);
       CAPTURE (buff_id, i, f, progress);
-      if(f == LCB::IDLE) continue;
+      if(f == LCB::IDLE) {
+        ri.idle ++;
+        continue;
+      }
+
+      ri.count ++;
 
       // Nothing beyond end
       REQUIRE (progress < 9);
@@ -69,20 +106,22 @@ public:
 
       if(code0 == LCB::K3) {
           // Fast command
+          ri.count_fast++;
           continue;
       }
 
       if(code0 == LCB::K2) {
         if(progress == 0) {
           // Start (ignore flags)
-          other &= 0xffffff00;
-          other |= SixEight::decode(code1);
+          // ABC/HCC + HCC ID
+          ri.other &= 0xffffff00;
+          ri.other |= SixEight::decode(code1);
           progress ++;
           continue;
         } else if(progress == 8) {
           // End (ignore flags)
-          other &= 0x00ffffff;
-          other |= SixEight::decode(code1) << 24;
+          ri.other &= 0x00ffffff;
+          ri.other |= SixEight::decode(code1) << 24;
           progress ++;
           continue;
         }
@@ -96,29 +135,32 @@ public:
 
       if((data12 & (~0x7f))) {
         // L0A/BCR
+        ri.count_lb++;
         continue;
       }
 
       if(progress == 1) {
-        other &= 0xfff00fff;
-        other |= (data12&0xffc) << 10;
+        ri.other &= 0xfff00fff;
+        ri.other |= (data12&0xffc) << 10;
 
-        reg &= 0x3f;
-        reg |= (data12&3)<<6;
+        ri.reg &= 0x3f;
+        ri.reg |= (data12&3)<<6;
       } else if(progress == 2) {
-        reg &= 0xc0;
-        reg |= (data12>>1) & 0x3f;
+        ri.reg &= 0xc0;
+        ri.reg |= (data12>>1) & 0x3f;
         // value |= (data12 & 0x7f) << (7*(7-progress)));
       } else {
         CAPTURE(data12);
         REQUIRE( progress != 0 );
-        value |= (data12 & 0x7f) << (7*(7-progress));
-        CAPTURE(value);
+        ri.value |= (data12 & 0x7f) << (7*(7-progress));
+        CAPTURE(ri.value);
         // CHECK (progress == 2) ;
       }
 
       progress ++;
     }
+
+    return ri;
   }
 };
 
@@ -184,15 +226,12 @@ TEST_CASE("StarBasicConfig", "[star][chips]") {
 
   // This just checks that the above code can parse the commands sent
   for(int i=0; i<buf_count; i++) {
-    uint8_t reg = 0xff;
-    uint32_t value;
-    uint32_t flags = 0xffffffff;
-    tx.getRegValueForBuffer(i, reg, value, flags);
-    if(reg == 17) {
-      l->info(" 16 reg from {:3}: {:3} {:08x} {:08x}", i, reg, value, flags);
+    RegExtractInfo rei = tx.getRegValueForBuffer(i);
+    if(rei.reg == 17) {
+      l->info(" HCCID reg from {:3}: {:3} {:08x} {:08x}", i, rei.reg, rei.value, rei.other);
       seenAddress = true;
     }
-    l->debug(" reg from {:3}: {:3} {:08x} {:08x}", i, reg, value, flags);
+    l->debug(" reg from {:3}: {:3} {:08x} {:08x}", i, rei.reg, rei.value, rei.other);
   }
 
   REQUIRE (seenAddress);
@@ -261,12 +300,9 @@ TEST_CASE("StarChipsNamedConfig", "[star][chips]") {
 
   // This just checks that the above code can parse the commands sent
   for(int i=0; i<buf_count; i++) {
-    uint8_t reg = 0xff;
-    uint32_t value;
-    uint32_t flags = 0xffffffff;
-    tx.getRegValueForBuffer(i, reg, value, flags);
-    l->debug(" reg from {:3}: {:3} {:08x} {:08x}", i, reg, value, flags);
-    found_regs.insert(std::make_pair(reg, value));
+    RegExtractInfo rei = tx.getRegValueForBuffer(i);
+    l->debug(" reg from {:3}: {:3} {:08x} {:08x}", i, rei.reg, rei.value, rei.other);
+    found_regs.insert(std::make_pair(rei.reg, rei.value));
   }
 
   for(auto &r: expected_regs) {
