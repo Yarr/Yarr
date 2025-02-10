@@ -72,7 +72,7 @@ void StarChips::setHccId(unsigned hccID) {
   //Let's reset the HCC communications ID.
   //  Use a broadcast write of the required ID+fuse on reg 17
   uint32_t newReg17val = (hccID<<28) | m_fuse_id;
-  sendCmd(write_hcc_register(17, newReg17val, 0xf));
+  sendCmd(write_hcc_register(HCCStarRegister::Addressing, newReg17val, 0xf));
   logger->info("Set HCC ID to {} (sent on reg17 0x{:08x})", hccID, newReg17val);
 }
 
