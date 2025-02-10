@@ -167,6 +167,21 @@ TEST_CASE("StarParameterLoop", "[star][parameter_loop]") {
     };
   }
 
+  SECTION ("SimpleMaskScan") {
+    j["parameter"] = "ABCs_MASKs";
+
+    j["min"] = 0;
+    j["max"] = 1;
+    j["step"] = 1;
+
+    reg_list = {
+      {16, 0x00000000},
+      {23, 0x00000000},
+      {16, 0xffffffff},
+      {23, 0xffffffff},
+    };
+  }
+
   std::unique_ptr<CapturePacketsTxCore> tx_ptr(std::move(runWithConfig(j)));
   auto tx = *tx_ptr;
 
