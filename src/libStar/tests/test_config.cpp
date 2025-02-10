@@ -25,11 +25,13 @@ TEST_CASE("StarCfg", "[star][config]") {
 
   // Side-effect of checking it's not abstract is intentional
   StarCfg test_config(abc_version, hcc_version);
+  test_config.clearABCchipIDs();
   test_config.setHCCChipId(4);
   const int abc_id = 14;
   test_config.addABCchipID(abc_id);
 
-  //  REQUIRE (test_config.numABCs() == 1);
+  REQUIRE (test_config.numABCs() == 1);
+
   REQUIRE (test_config.getHCCchipID() == 4);
 
   REQUIRE (test_config.getHCCRegister(HCCStarRegister::Delay1) == 0);
@@ -90,6 +92,7 @@ TEST_CASE("StarCfg_ABCv1", "[star][config]") {
   int hcc_version = 0;
 
   StarCfg test_config(abc_version, hcc_version);
+  test_config.clearABCchipIDs();
   test_config.setHCCChipId(4);
 
   const int abc_id = 13;
@@ -130,6 +133,7 @@ TEST_CASE("StarCfgTrims", "[star][config]") {
   int abc_version = 0;
   int hcc_version = 0;
   StarCfg test_config(abc_version, hcc_version);
+  test_config.clearABCchipIDs();
   test_config.setHCCChipId(2);
   const int abc_id = 3;
   test_config.addABCchipID(abc_id);
@@ -269,6 +273,7 @@ TEST_CASE("StarCfg_HCCv1", "[star][config]") {
   int hcc_version = 1;
 
   StarCfg test_config(abc_version, hcc_version);
+  test_config.clearABCchipIDs();
   test_config.setHCCChipId(4);
 
   const int abc_id = 13;
