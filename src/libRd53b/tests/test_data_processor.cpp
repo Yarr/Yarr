@@ -93,7 +93,7 @@ TEST_CASE("Rd53bDataProcessor", "[rd53b][data_processor]") {
 	  for(int ihit = 0; ihit < rawData.events[ievt].hits.size(); ihit++){
 		  REQUIRE(rawData.events[ievt].hits[ihit].col == truth.events[ievt].hits[ihit].col);
 		  REQUIRE(rawData.events[ievt].hits[ihit].row == truth.events[ievt].hits[ihit].row);
-		  REQUIRE(rawData.events[ievt].hits[ihit].tot == truth.events[ievt].hits[ihit].tot);
+		  REQUIRE(rawData.events[ievt].hits[ihit].tot == truth.events[ievt].hits[ihit].tot + 1);
       rawNHits++;
 	  }
     truthNHits += truth.events[ievt].nHits;

@@ -264,41 +264,69 @@ yarrStatus Rd53b::readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t &v
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     // go through the incoming data stream and get the register read data
-    std::vector<RawDataPtr> dataVec = m_rxcore->readData();
+    std::vector<RawDataPtr> dataVec;
     RawDataPtr data;
-    if (dataVec.size() > 0) {
+    bool found = false;
+    double check_seconds = 0.;
+
+    logger->debug("Reading register data for chip ID {} on channel {}", m_chipId, regRxChannel);
+    std::chrono::steady_clock::time_point comm_t0 = std::chrono::steady_clock::now();
+
+    do{
+      dataVec = m_rxcore->readData();
+      if (dataVec.size() > 0) {
         for(auto const &v : dataVec) {
             // Find raw data for this address
-            if (rxChannel != v->getAdr())
-                continue;
+	  if (regRxChannel != v->getAdr()){
+	    logger->debug("Data doesn't belong to the regRx channel {}, instead comes from channel {}", regRxChannel, v->getAdr());
+	    continue;
+	  }
 
-            if (v->get(0) != 0xffffdead) {
-                data = v;
-                if(!(data->getSize() >= 2)) {
-                    logger->error("readRegister failed, received wrong number of words ({}) for FE with chipId {}", data->getSize(), m_chipId);
-                    continue;
-                }
+	  if (v->get(0) != 0xffffdead) {
+	    data = v;
+	    if(!(data->getSize() >= 2)) {
+	      logger->error("readRegister failed, received wrong number of words ({}) for FE with chipId {}", data->getSize(), m_chipId);
+	      continue;
+	    }
 
-                auto [id, received_address, register_value] = Rd53b::decodeSingleRegReadID(data->get(0), data->get(1));
-                chipId = id; // chipId is read from the chip wirebonded ID, m_chipId is set in the chip config file
-                if(id == (m_chipId&0x3)) {
-                    if(received_address != (this->*ref).addr()) {
-                        logger->error("readRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
-                        return yarrFailure;
-                    }
-                    // Update memory
-                    m_cfg[(this->*ref).addr()] = register_value;
-                    // Return value
-                    value = (this->*ref).read();
-                    return yarrSuccess;
-                } else {
-                    logger->info("readRegister 0x{:x} 0x{:x} -> ID {} - {}, addr 0x{:x} val 0x{:x}", data->get(0), data->get(1), id, m_chipId&0x3, received_address, register_value);
-                }
-            }
+	    auto [id, received_address, register_value] = Rd53b::decodeSingleRegReadID(data->get(0), data->get(1));
+	    chipId = id; // chipId is read from the chip wirebonded ID, m_chipId is set in the chip config file
+	    if(id == (m_chipId&0x3)) {
+	      if(received_address != (this->*ref).addr()) {
+		logger->error("readRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
+		continue;
+	      }
+	      logger->debug("readRegister successful for register address {} with value {} from chip with chipId {}", (this->*ref).addr(), register_value, m_chipId);
+	      found = true;
+	      // Update memory
+	      m_cfg[(this->*ref).addr()] = register_value;
+	      // Return value
+	      value = (this->*ref).read();
+	      return yarrSuccess;
+	    } else {
+	      logger->info("readRegister 0x{:x} 0x{:x} -> ID {} - {}, addr 0x{:x} val 0x{:x}", data->get(0), data->get(1), id, m_chipId&0x3, received_address, register_value);
+	      logger->info("Sending another readRegister command.");
+	      m_rxcore->flushBuffer();
+	      this->sendRdReg(m_chipId, (this->*ref).addr());
+	      while(!core->isCmdEmpty()) {}
+	      break;
+	    }
+	  }
         }
-    }
-    
-    logger->warn("readRegister failed, did not received register readback data from chip with chipId {}", m_chipId);
+      }
+      else{
+	logger->debug("No raw data received.");
+      }
+
+      std::chrono::steady_clock::time_point comm_t1 = std::chrono::steady_clock::now();
+      check_seconds = std::chrono::duration_cast<std::chrono::seconds>(comm_t1 - comm_t0).count();
+      if(!found)
+	std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }while(!found && check_seconds<3.);
+
+    logger->warn("readRegister failed, did not received register readback data for address {} from chip with chipId {}", (this->*ref).addr(), m_chipId);
+
+    value = 65535;
     return yarrFailure;
 }
 
@@ -328,12 +356,16 @@ yarrStatus Rd53b::writeNamedRegister(std::string name, const uint16_t value) {
     if(regMap.find(name) != regMap.end()) {
         logger->debug("Write named register {} -> {}", name, value);
         this->writeRegister(regMap[name], value);
+	while(!core->isCmdEmpty()){;}
+	std::this_thread::sleep_for(std::chrono::microseconds(100));
         return yarrSuccess;
     }
     
     if(virtRegMap.find(name) != virtRegMap.end()) {
         logger->debug("Write named virtual register {} -> {}", name, value);
         this->writeRegister(virtRegMap[name], value);
+	while(!core->isCmdEmpty()){;}
+	std::this_thread::sleep_for(std::chrono::microseconds(100));
         return yarrSuccess;
     } 
 
@@ -410,15 +442,18 @@ yarrStatus Rd53b::checkCom() {
     logger->debug("Checking communication for {} by reading a register ...", this->name);
     uint32_t regAddr = 21;
     uint32_t regValue = m_cfg[regAddr];
+  
+    m_rxcore->flushBuffer();
     this->sendRdReg(m_chipId, regAddr);
     while(!core->isCmdEmpty()){;} // Required by the rdRegister() above 
                                   // (when relying on isCmdEmpty() to actually send commands).
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     // TODO not happy about this, rx knowledge should not be here
     std::vector<RawDataPtr> dataVec = m_rxcore->readData();
     RawDataPtr data;
-    if (dataVec.size() > 0) {
+
+    if (dataVec.size() > 0 && dataVec[0]->getAdr() == regRxChannel) {
         data = dataVec[0];
     }
 
@@ -531,7 +566,8 @@ itkpix_efuse_codec::EfuseData Rd53b::readEfuses() {
     //
     this->writeRegister(&Rd53b::EfuseConfig, 0x0f0f);
     while(!core->isCmdEmpty()) {}
-
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));     
+    
     //
     // send E-fuse circuit the reset signal to halt any other state (reset E-fuse block FSM)
     //
@@ -570,6 +606,7 @@ uint32_t Rd53b::readEfusesRaw() {
     //
     this->writeRegister(&Rd53b::EfuseConfig, 0x0f0f);
     while(!core->isCmdEmpty()) {}
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     //
     // send E-fuse circuit the reset signal to halt any other state (reset E-fuse block FSM)
@@ -607,35 +644,39 @@ uint8_t Rd53b::readChipId() {
     return id;
 }
 
-void Rd53b::confAdc(uint16_t MONMUX, bool doCur) {
+yarrStatus Rd53b::confAdc(uint16_t MONMUX, bool doCur) {
     //This only works for voltage MUX values.
     uint16_t OriginalGlobalRT = this->GlobalPulseConf.read();
     uint16_t OriginalMonitorEnable = this->MonitorEnable.read(); //Enabling monitoring
     uint16_t OriginalMonitorV = this->MonitorV.read();
     uint16_t OriginalMonitorI = this->MonitorI.read();
+    
+    // this value is AND'ed with all write register functions
+    // if ALL writes are successful, success=true and yarrSuccess is returned
+    bool success = true;
 
     if (doCur)
     {
-        this->writeRegister(&Rd53b::MonitorV, 1);      // Forward via VMUX
-        this->writeRegister(&Rd53b::MonitorI, MONMUX); // Select what to monitor
+        success = success && (this->writeRegister(&Rd53b::MonitorV, 1) == yarrSuccess);      // Forward via VMUX
+        success = success && (this->writeRegister(&Rd53b::MonitorI, MONMUX) == yarrSuccess); // Select what to monitor
     }
     else
     {
-        this->writeRegister(&Rd53b::MonitorV, MONMUX); // Select what to monitor
+        success = success && (this->writeRegister(&Rd53b::MonitorV, MONMUX) == yarrSuccess); // Select what to monitor
     }
 
-    this->writeRegister(&Rd53b::MonitorEnable, 1); // Enabling monitoring
+    success = success && (this->writeRegister(&Rd53b::MonitorEnable, 1) == yarrSuccess); // Enabling monitoring
     while(!core->isCmdEmpty()){;}
 
-    this->writeRegister(&Rd53b::GlobalPulseConf, 0x40); // Reset ADC
-    this->writeRegister(&Rd53b::GlobalPulseWidth, 4);   // Duration = 4 inherited from RD53A
+    success = success && (this->writeRegister(&Rd53b::GlobalPulseConf, 0x40) == yarrSuccess); // Reset ADC
+    success = success && (this->writeRegister(&Rd53b::GlobalPulseWidth, 4) == yarrSuccess);   // Duration = 4 inherited from RD53A
     while(!core->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::microseconds(100));
 
     this->sendGlobalPulse(m_chipId);
     std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Need to wait long enough for ADC to reset
 
-    this->writeRegister(&Rd53b::GlobalPulseConf, 0x1000); //Trigger ADC Conversion
+    success = success && (this->writeRegister(&Rd53b::GlobalPulseConf, 0x1000) == yarrSuccess); //Trigger ADC Conversion
     while (!core->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::microseconds(100));
 
@@ -643,12 +684,14 @@ void Rd53b::confAdc(uint16_t MONMUX, bool doCur) {
     std::this_thread::sleep_for(std::chrono::microseconds(1000)); //This is neccessary to clean. This might be controller dependent.
 
     // Reset register values
-    this->writeRegister(&Rd53b::GlobalPulseConf, OriginalGlobalRT);
-    this->writeRegister(&Rd53b::MonitorEnable, OriginalMonitorEnable);
-    this->writeRegister(&Rd53b::MonitorV, OriginalMonitorV);
-    this->writeRegister(&Rd53b::MonitorI, OriginalMonitorI);
+    success = success && (this->writeRegister(&Rd53b::GlobalPulseConf, OriginalGlobalRT) == yarrSuccess);
+    success = success && (this->writeRegister(&Rd53b::MonitorEnable, OriginalMonitorEnable) == yarrSuccess);
+    success = success && (this->writeRegister(&Rd53b::MonitorV, OriginalMonitorV) == yarrSuccess);
+    success = success && (this->writeRegister(&Rd53b::MonitorI, OriginalMonitorI) == yarrSuccess);
     while (!core->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::microseconds(100));
+
+    return (success ? yarrSuccess : yarrFailure);
 }
 
 void Rd53b::runRingOsc(uint16_t duration, bool isBankB) {

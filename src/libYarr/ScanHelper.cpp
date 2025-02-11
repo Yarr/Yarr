@@ -79,7 +79,7 @@ namespace ScanHelper {
     json openJsonFile(const std::string& filepath) {
         std::ifstream file(filepath);
         if (!file) {
-            throw std::runtime_error("could not open file");
+            throw std::runtime_error("could not open file: " + filepath);
         }
         json j;
         try {
@@ -262,7 +262,11 @@ namespace ScanHelper {
                 continue;
             }
             std::string chipConfigPath = chip["__config_path__"];
-            FrontEndConnectivity fe_conn((unsigned)chip["tx"], (unsigned)chip["rx"]);
+	    unsigned regRx = chip["rx"];
+	    if (chip.contains("regRx")){ 
+	      regRx = chip["regRx"];
+	    }
+            FrontEndConnectivity fe_conn((unsigned)chip["tx"], (unsigned)chip["rx"], regRx);
             bookie.addFe(StdDict::getFrontEnd(chipType), fe_conn);
             bookie.getLastFe()->init(hwCtrl, fe_conn);
             auto *feCfg = dynamic_cast<FrontEndCfg*>(bookie.getLastFe());

@@ -31,6 +31,7 @@ struct BookEntry {
     
     uint32_t txChannel = 666;
     uint32_t rxChannel = 666;
+    uint32_t regRxChannel = 666;
 };
 
 class Bookkeeper {
