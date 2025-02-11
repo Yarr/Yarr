@@ -7,9 +7,113 @@ namespace fs = std::filesystem;
 #include "SpecCom.h"
 #include "ScanHelper.h"
 #include "SpecTxCore.h"
+#include <map>
 
+class specReg {
+    public:
+        specReg() {
+            for (auto const& [key, val] : baseMap) {
+                baseMap_r[val] = key;
+            }
+            for (auto const& [key, val] : regMap) {
+                for (auto const& [key2, val2] : val) {
+                    regMap_r[key][val2] = key2;
+                }
+            }
+        }
+        ~specReg() = default;
 
-void print_help() {
+        void printHelp() {
+            for (auto const& [key, val] : baseMap) {
+                std::cout << "  " << val << ": " << key << std::endl;
+                for (auto const& [key2, val2] : regMap[val]) {
+                    int nchar = 30 - val2.size();
+                    std::cout << "    -- " << val2 << " : " << std::string(nchar, ' ') << "0x" << std::hex << key2 << std::dec << " = " << key2 << std::endl;
+                }
+            }
+        }
+
+        std::map<unsigned int, std::string> baseMap = {
+            {0x1 << 14, "TX_CORE"},
+            {0x2 << 14, "RX_CORE"},
+            {0x3 << 14, "RX_BRIDGE"},
+            {0x5 << 14, "TRIGGER_LOGIC"}
+        };
+        std::map<std::string, unsigned int> baseMap_r;
+
+        std::map<std::string, std::map<unsigned int, std::string>> regMap = {
+            {"TX_CORE", {
+                    {0x0, "TX_FIFO"},
+                    {0x1, "TX_ENABLE"},
+                    {0x2, "TX_EMPTY"},
+                    {0x3, "TRIG_EN"},
+                    {0x4, "TRIG_DONE"},
+                    {0x5, "TRIG_CONF"},
+                    {0x6, "TRIG_FREQ"},
+                    {0x7, "TRIG_TIME"},
+                    {0x9, "TRIG_COUNT"},
+                    {0xA, "TRIG_WORD_LENGTH"},
+                    {0xB, "TRIG_WORD"},
+                    {0xC, "TRIG_POINTER"},
+                    {0xD, "PULSE_WORD"},
+                    {0xE, "PULSE_WORD_INTERVAL"},
+                    {0xF, "TOGGLE_TRIG_ABORT"},
+                    {0x10, "TX_POLARITY"},
+                    {0x11, "SYNC_WORD"},
+                    {0x12, "SYNC_WORD_INTERVAL"},
+                    {0x13, "IDLE_WORD"},
+                    {0x14, "TRIG_EXTEND_INTERVAL"},
+                    {0x15, "TRIG_ENCODER_ENABLE"},
+                    {0x16, "TRIG_CODE_READY_COUNT"},
+                    {0x17, "BRAM_BUSY"},
+                    {0x18, "BRAM_ACK_COUNT"},
+                    {0x19, "BRAM_BUSY_CYCLE_COUNT"},
+                    {0x1A, "BRAM_BUSY_COUNT"},
+                    {0x1B, "BRAM_BUSY_ENABLE"}
+                }},
+            {"RX_CORE", {
+                    {0x0, "RX_ENABLE"},
+                    {0x1, "RX_LINK_STATUS"},
+                    {0x2, "RX_POLARITY"},
+                    {0x3, "NUM_ACTIVE_LANES"},
+                    {0x4, "LANE_SELECT"},
+                    {0x5, "LANE_DELAY_SET"},
+                    {0x6, "SET_DELAY_AUTO_MANUAL"},
+                    {0x7, "LANE_DELAY_READ"},
+                    {0x8, "ERR_COUNTER_STOP_VALUE"},
+                    {0x9, "ERR_COUNTER_MODE"},
+                    {0xA, "ERR_COUNTER_TARGET"},
+                    {0xB, "ERR_COUNTER_RESET_READ"},
+                    {0xC, "TOTAL_VALID_STREAM_COUNT"}
+                }},
+            {"RX_BRIDGE", {
+                    {0x0, "START_ADDR"},
+                    {0x1, "FIFO_COUNT"},
+                    {0x2, "LOOPBACK"},
+                    {0x3, "DATA_RATE"},
+                    {0x4, "RX_VALID_LOCAL"},
+                    {0x5, "FIFO_EMPTY"},
+                    {0x6, "DMA_CUR_COUNT"}
+                }},
+            {"TRIGGER_LOGIC", {
+                {0x0, "TRIG_MASK"},
+                {0x1, "TRIG_TAG_MODE"},
+                {0x2, "TRIG_LOGIC"},
+                {0x3, "TRIG_EDGE"},
+                {0x4, "CH0_DELAY"},
+                {0x5, "CH1_DELAY"},
+                {0x6, "CH2_DELAY"},
+                {0x7, "CH3_DELAY"},
+                {0x8, "DEADTIME"},
+                {0x9, "EUDET_SIMPLE_MODE"},
+                {0xA, "TRIG_PULSE_EXTENSION_INTERVAL"},
+                {0xB, "MASTER_TRIGGER_COUNT"},
+                {0xFF, "LOCAL_RESET"}}}
+        };
+        std::map<std::string, std::map<std::string, unsigned int>> regMap_r;
+};
+
+void print_help(specReg &reg) {
     std::cout << "Usage: ./bin/specReadWriteReg [-h] [-r <hw_controller_file>] [-w] [-o <register_option>]\n \n"
               << "Options:\n"
               << " -h                         Display help messages.\n"
@@ -17,79 +121,30 @@ void print_help() {
               << " -w                         Whether to read (default) or write (-w)\n"
               << " -o <reg_addr>              Specify HW register address.\n"
               << " -b <base_addr>             Specify HW base register address (default TX_ADDR = " << TX_ADDR << ", consider TRIG_LOGIC_ADR = " << TRIG_LOGIC_ADR << ")\n"
-              << " -v <value>                 Specify HW register write value (default 1).\n"
-              << "Address Map:\n"
-              << "  TX_ADDR: 0x1 << 14 = " << (0x1 << 14) << "\n"
-              << "     -- TX_FIFO 0x0 = " << 0x0 << "\n"
-              << "     -- TX_ENABLE 0x1 = " << 0x1 << "\n"
-              << "     -- TX_EMPTY 0x2 = " << 0x2 << "\n"
-              << "     -- TRIG_EN 0x3 = " << 0x3 << "\n"
-              << "     -- TRIG_DONE 0x4 = " << 0x4 << "\n"
-              << "     -- TRIG_CONF 0x5 = " << 0x5 << "\n"
-              << "     -- TRIG_FREQ 0x6 = " << 0x6 << "\n"
-              << "     -- TRIG_TIME 0x7 = " << 0x7 << "\n"
-              << "     -- TRIG_COUNT 0x9 = " << 0x9 << "\n"
-              << "     -- TRIG_WORD_LENGTH 0xA = " << 0xA << "\n"
-              << "     -- TRIG_WORD 0xB = " << 0xB << "\n"
-              << "     -- TRIG_WORD_POINTER 0xC = " << 0xC << "\n"
-              << "     -- TX_PULSE_WORD 0xD = " << 0xD << "\n"
-              << "     -- TX_PULSE_INTERVAL 0xE = " << 0xE << "\n"
-              << "     -- TRIG_ABORT 0xF = " << 0xF << "\n"
-              << "     -- TRIG_IN_CNT 0xF = " << 0xF << "\n"
-              << "     -- TX_POLARITY 0x10 = " << 0x10 << "\n"
-              << "     -- TX_SYNC_WORD 0x11 = " << 0x11 << "\n"
-              << "     -- TX_SYNC_INTERVAL 0x12 = " << 0x12 << "\n"
-              << "     -- TX_IDLE_WORD 0x13 = " << 0x13 << "\n"
-              << "     -- TRIG_EXTEND_INTERVAL 0x14 = " << 0x14 << "\n"
-              << "     -- TRIG_ENCODER_ENABLE 0x15 = " << 0x15 << "\n"
-              << "     -- TRIG_CODE_READY_COUNTER 0x16 = " << 0x16 << "\n"
-              << "  RX_ADDR: 0x2 << 14 = " << (0x2 << 14) << "\n"
-              << "     -- RX_ENABLE: 0x0 = " << 0x0 << "\n"
-              << "     -- RX_STATUS: 0x1 = " << 0x1 << "\n"
-              << "     -- RX_POLARITY: 0x2 = " << 0x2 << "\n"
-              << "     -- RX_ACTIVE_LANES: 0x3 = " << 0x3 << "\n"
-              << "     -- RX_LANE_SEL: 0x4 = " << 0x4 << "\n"
-              << "     -- RX_LANE_DELAY: 0x5 = " << 0x5 << "\n"
-              << "     -- RX_MANUAL_DELAY: 0x6 = " << 0x6 << "\n"
-              << "     -- RX_LANE_DELAY_OUT: 0x7 = " << 0x7 << "\n"
-              << "     -- RX_ERROR_COUNTER_STOP_VALUE: 0x8 = " << 0x8 << "\n"
-              << "     -- RX_ERROR_COUNTER_MODE: 0x9 = " << 0x9 << "\n"
-              << "     -- RX_ERROR_COUNTER_TARGET: 0xA = " << 0xA << "\n"
-              << "     -- RX_ERROR_COUNTER_RESET_READ: 0xB = " << 0xB << "\n"
-              << "     -- RX_TOTAL_VALID_STREAM_COUNTER: 0xC = " << 0xC << "\n"
-              << "  RX_BRIDGE_ADDR: 0x3 << 14 = " << (0x3 << 14) << "\n"
-              << "     -- RX_START_ADDR: 0x0 = " << 0x0 << "\n"
-              << "     -- RX_DATA_COUNT: 0x1 = " << 0x1 << "\n"
-              << "     -- RX_LOOPBACK: 0x2 = " << 0x2 << "\n"
-              << "     -- RX_DATA_RATE: 0x3 = " << 0x3 << "\n"
-              << "     -- RX_LOOP_FIFO: 0x4 = " << 0x4 << "\n"
-              << "     -- RX_BRIDGE_EMPTY: 0x5 = " << 0x5 << "\n"
-              << "     -- RX_CUR_COUNT: 0x6 = " << 0x6 << "\n"
-              << "  TRIG_LOGIC_ADR: 0x5 << 14 = " << (0x5 << 14) << "\n"
-              << "     -- TRIG_LOGIC_MASK: 0x0 = " << 0x0 << "\n"
-              << "     -- TRIG_LOGIC_MODE: 0x1 = " << 0x1 << "\n"
-              << "     -- TRIG_LOGIC_CONFIG: 0x2 = " << 0x2 << "\n"
-              << "     -- TRIG_LOGIC_EDGE: 0x3 = " << 0x3 << "\n"
-              << "     -- TRIG_LOGIC_DELAY: 0x4-0x7 = " << 0x4 << "\n"
-              << "     -- TRIG_LOGIC_DEADTIME: 0x8 = " << 0x8 << "\n"
-              << "     -- TRIG_LOGIC_EUDET_SIMPLE: 0x9 = " << 0x9 << "\n"
-              << "     -- TRIG_LOGIC_MASTER_TRIGGER_COUNTER: 0xA = " << 0xA << "\n"
-              ;
+              << " -v <value>                 Specify HW register write value (default 1).\n";
+    std::cout << "Address Maps:\n";
+    reg.printHelp();
+    return;
 }
 
 int main(int argc, char **argv) {
     int c;
     int specNum = 0;
-    uint32_t regOption = 0;
     uint32_t regValue = 0;
-    uint32_t baseAddr = TX_ADDR;
+    
+    uint32_t regOption = 0;
+    uint32_t baseAddr = 0;
+    std::string regOption_s = "", baseAddr_s = "";
+
     std::string hw_controller_filename = "";
     bool read=true;
+    
+    specReg reg;
 
     while ((c = getopt(argc, argv, "hwr:o:v:b:")) != -1) {
         switch (c) {
             case 'h':
-                print_help();
+                print_help(reg);
                 return 0;
             case 'r':
                 hw_controller_filename = optarg;
@@ -99,19 +154,42 @@ int main(int argc, char **argv) {
                 break;
             case 'o':
                 regOption = std::atoi(optarg);
+                regOption_s = std::string(optarg);
                 break;
             case 'v':
                 regValue = std::atoi(optarg);
                 break;
-            case 'b': 
+            case 'b':
                 baseAddr = std::atoi(optarg);
+                baseAddr_s = std::string(optarg);
                 break; 
             default:
-                print_help();
+                print_help(reg);
                 return -1;
         }
     }
 
+    // std::cout << baseAddr_s << ": " << baseAddr << ", " << regOption_s << ": " << regOption << std::endl;
+    // for (auto const& [key, val] : reg.baseMap_r) {
+    //     std::cout << key << " : " << val << std::endl;
+    // }
+    if (reg.baseMap_r.find(baseAddr_s) != reg.baseMap_r.end()) {
+        // std::cout << "inferring register base from " << baseAddr_s << std::endl;
+        baseAddr = reg.baseMap_r[baseAddr_s];
+    }
+    else {
+        // std::cout << "using integer reg base"  << baseAddr << std::endl;
+        baseAddr_s = reg.baseMap[baseAddr];
+    }
+
+    if (reg.regMap_r[baseAddr_s].find(regOption_s) != reg.regMap_r[baseAddr_s].end()) {
+        // std::cout << "inferring register value from " << regOption_s << std::endl;
+        regOption = reg.regMap_r[baseAddr_s][regOption_s];
+    }
+    else {
+        // std::cout << "using integer reg value " << regOption << std::endl;
+        regOption_s = reg.regMap[baseAddr_s][regOption];
+    }
 
     fs::path hw_controller_path{hw_controller_filename};
     if(!fs::exists(hw_controller_path)) {
@@ -128,11 +206,11 @@ int main(int argc, char **argv) {
 
     if(read) {
         uint32_t rValue = mySpec.readSingle(baseAddr | regOption);
-        std::cout << "Register " << regOption << " value: " << rValue << std::endl;
+        std::cout << baseAddr_s << " / " << regOption_s << ": value : " << rValue << std::endl;
     }
     else {
         mySpec.writeSingle(baseAddr | regOption, regValue);
-        std::cout << "Wrote register " << regOption << " with value: " << regValue << std::endl;
+        std::cout << baseAddr_s << " / " << regOption_s << ": written with value : " << regValue << std::endl;
     }
     return 0;
 }
