@@ -155,8 +155,11 @@ if(BUILD_TESTS)
     message(STATUS "Building the YARR test suite" )
     enable_testing()
 endif()
-set(TARGET_INSTALL_AREA ${PROJECT_SOURCE_DIR})
-set(SHARED_INSTALL_AREA ${PROJECT_SOURCE_DIR}/installed/)
+if(CMAKE_INSTALL_PREFIX)
+    set(TARGET_INSTALL_AREA ${CMAKE_INSTALL_PREFIX})
+else()
+    set(TARGET_INSTALL_AREA ${PROJECT_SOURCE_DIR})
+endif()
 
 function(post_build_debug_library name)
   add_custom_command(TARGET ${name}
