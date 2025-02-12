@@ -22,6 +22,7 @@ void usage(char* argv[])
     std::cout << "        -w <word_max> (default 255)" << std::endl;
     std::cout << "        -m <hit_max> (default 50)" << std::endl;
     std::cout << "        -i <bits_per_hit_max> (default 100)" << std::endl;
+    std::cout << "        -k Toggle dumping of data words to binary file (default false)" << std::endl;
     std::cout << "        -p Toggle plotting of results (default false)" << std::endl;
     std::cout << "        -h Show this help message" << std::endl;
     exit(1);
@@ -46,10 +47,11 @@ int main(int argc, char** argv) {
     int hitMax = 50;
     int bphMax = 100;
     bool plot = false;
+    bool dumpWords = false;
 
     // Parse CL
     int c;
-    while ((c = getopt (argc, argv, "o:s:e:w:m:i:hp")) != -1)
+    while ((c = getopt (argc, argv, "o:s:e:w:m:i:khp")) != -1)
     {
         switch (c)
         {
@@ -67,6 +69,9 @@ int main(int argc, char** argv) {
             break;
         case 'm':
             hitMax = std::stoi(optarg);
+            break;
+        case 'k':
+            dumpWords = true;
             break;
         case 'i':
             bphMax = std::stoi(optarg);
@@ -161,6 +166,17 @@ int main(int argc, char** argv) {
         wordsVsHits.setXaxisTitle("64-bit word count");
         wordsVsHits.setYaxisTitle("Hit count");
 
+        std::ifstream test(outputDir);
+        if (!test) {
+            std::string mkdirCmd = "mkdir -p " + outputDir;
+            if (system(mkdirCmd.c_str()) < 0){
+                std::cout << "#ERROR# Failed to create " << outputDir << " directory, not able to save data / plots!" << std::endl;
+                continue;
+            }
+        }
+        
+        std::ofstream fout(outputDir + chipname + "_data.binary", std::ios::binary);
+
         while(inputFile) {
             if (n_events++ < start)
                 continue;
@@ -205,6 +221,11 @@ int main(int argc, char** argv) {
             if (i % 10000 == 0) {
                 std::cout << "\t   Event " << i << ": hit size " << evo.hits.size() << ", word_count " << this_words << std::endl;
             }
+            if (dumpWords) {
+                auto w_elt = k->getWords();
+                // std::ofstream fout(outputDir + chipname + "_data.binary", ios::binary);
+                fout.write((char*)&w_elt[0], w_elt.size() * sizeof(w_elt));
+            }
             k->getWords().clear();
 
             evo.hits.clear();
@@ -212,23 +233,17 @@ int main(int argc, char** argv) {
             
             if (n_events == end)
                 break;
+
         }
+        fout.close();
         inputFile.close();
         
-        
-        std::cout << "\tEncoded word size: " << n_words << ", with " << 32*n_words << "bits\n";
+        std::cout << "\tEncoded word size: " << n_words << ", with " << 32*n_words << " bits\n";
         std::cout << "\tHits: " << n_hits << ", Events: " << n_events << "\n";
         std::cout << "\tBits/Event: " << ((float)n_words*32)/((float)n_events) << std::endl;
         std::cout << "\tSaving results to " << outputDir << " with FE name " << chipname << std::endl;
 
-        std::ifstream test(outputDir);
-        if (!test) {
-            std::string mkdirCmd = "mkdir -p " + outputDir;
-            if (system(mkdirCmd.c_str()) < 0){
-                std::cout << "#ERROR# Failed to create " << outputDir << " directory, not able to save data / plots!" << std::endl;
-                continue;
-            }
-        }
+        
 
         words.toFile(chipname, outputDir);
         hits.toFile(chipname, outputDir);
