@@ -176,7 +176,7 @@ int main(int argc, char* argv[]) {
         if (!use_chip_name) {
             if ( chip_idx.size() == 0 || (std::find(chip_idx.begin(), chip_idx.end(), ichip)!= chip_idx.end()) ) {
                 hw->setCmdEnable(cfg->getTxChannel());
-                hw->setRxEnable(cfg->getRxChannel());
+                hw->setRxEnable(cfg->getRegRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
                 if (fe->readUpdateWriteNamedRegister(register_name, register_value) != yarrSuccess) {
                     std::cerr << "ERROR: failed to readUpdateWrite register for " << current_chip_name << "!" << std::endl;
@@ -193,7 +193,7 @@ int main(int argc, char* argv[]) {
         } else {
             if (std::find(chip_name.begin(), chip_name.end(), current_chip_name) != chip_name.end()) {
                 hw->setCmdEnable(cfg->getTxChannel());
-                hw->setRxEnable(cfg->getRxChannel());
+                hw->setRxEnable(cfg->getRegRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
                 if (fe->readUpdateWriteNamedRegister(register_name, register_value) != yarrSuccess) {
                     std::cerr << "ERROR: failed to readUpdateWrite register for " << current_chip_name << "!" << std::endl;
