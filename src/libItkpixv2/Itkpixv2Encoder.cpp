@@ -29,8 +29,8 @@ void Itkpixv2Encoder::addToStream(const HitMap& hitMap, bool last){
     }
     
     //Then add the actual encoded event information
-    // setHitMap(hitMap);
-    encodeEvent(hitMap);
+    setHitMap(hitMap);
+    encodeEvent();
     m_currEvent++;
 
     //If this is the last event in the stream or if we explicitly

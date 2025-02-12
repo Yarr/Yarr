@@ -19,28 +19,24 @@ class ItkpixEncoder{
         ItkpixEncoder(const uint nCol = 400, const uint nRow = 384, const uint nColInCCol = 8, const uint nRowInQRow = 2, const uint nEventsPerStream = 16, const bool plainHitMap = false, const bool dropToT = false);
         
         std::vector<uint32_t>& getWords(){return m_words;}
-
-        void flushWords() {m_words.clear();}
-
-        size_t wordSize() {return m_words.size();}
         
         void addBits64(const uint64_t value, const uint8_t length);
 
         void pushWords32();
 
-        void encodeQCore(const HitMap& hitMap, const uint nCCol, const uint nQRow);
+        void encodeQCore(const uint nCCol, const uint nQRow);
         
-        void encodeEvent(const HitMap& hitMap);
+        void encodeEvent();
 
         void streamTag(const uint8_t nStream);
 
         void intTag(const uint16_t nEvt);
 
-        void scanHitMap(const HitMap& hitMap);
+        void scanHitMap();
 
-        bool hitInQCore(const HitMap& hitMap, const uint CCol, const uint QRow);
+        bool hitInQCore(const uint CCol, const uint QRow);
 
-        void setHitMap(const HitMap& hitMap){} //m_hitMap = hitMap;}
+        void setHitMap(const HitMap& hitMap){m_hitMap = hitMap;}
 
         void setEventsPerStream(const uint nEventsPerStream = 16){m_nEventsPerStream = nEventsPerStream;}
     
@@ -63,7 +59,7 @@ class ItkpixEncoder{
         bool m_plainHitMap, m_dropToT;
 
         // Input
-        // HitMap m_hitMap;
+        HitMap m_hitMap;
 
 
 };
