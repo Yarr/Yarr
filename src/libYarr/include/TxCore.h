@@ -41,6 +41,9 @@ class TxCore {
         virtual void maskTrigEnable(uint32_t value, uint32_t mask) = 0;
         virtual bool isTrigDone() = 0;
 
+        // return the maximum length of a trigger sequence (e.g. for spec card 32, for FELIX controller 16)
+        // function can be overridden within controllers
+        virtual int getMaxTrigWordLength() {return 32;};
 
         virtual void setTrigConfig(enum TRIG_CONF_VALUE cfg) = 0;
         virtual void setTrigFreq(double freq) = 0; // in Hz

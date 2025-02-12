@@ -87,9 +87,9 @@ void ItkpixEncoder::encodeQCore(const HitMap& hitMap, const uint nCCol, const ui
     int pix = 0;
     for (uint pixRow = m_row; pixRow < m_row + m_nRowInQRow; pixRow++){
         for (uint pixCol = m_col; pixCol < m_col + m_nColInCCol; pixCol++){
-            if (hitMap[pixCol][pixRow]){
+            if (m_hitMap(pixCol, pixRow)){
                 lutIndex |= 0x1 << pix;
-                tots.push_back(hitMap[pixCol][pixRow] - 1);
+                tots.push_back(m_hitMap(pixCol, pixRow) - 1);
             }
             pix++;
         }
@@ -118,7 +118,7 @@ bool ItkpixEncoder::hitInQCore(const HitMap& hitMap, const uint CCol, const uint
 
     for (uint pixRow = m_row; pixRow < m_row + m_nRowInQRow; pixRow++){
         for (uint pixCol = m_col; pixCol < m_col + m_nColInCCol; pixCol++){
-            if (hitMap[pixCol][pixRow]) return true;
+            if (m_hitMap(pixCol, pixRow)) return true;
         }
     }
 
@@ -165,7 +165,7 @@ void ItkpixEncoder::encodeEvent(const HitMap& hitMap){
             QRow + 1 == m_lastQRow[CCol] ? addBits64(0x1, 1) : addBits64(0x0, 1);
 
             //add the isNeighbor bit. If false, add the QRow address as well.
-            if (QRow == previousQRow + 1){
+            if (QRow == (uint)previousQRow + 1){
                 addBits64(0x1, 1);
             }
             else {
