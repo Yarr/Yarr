@@ -69,7 +69,12 @@ class specReg {
                     {0x18, "BRAM_ACK_COUNT"},
                     {0x19, "BRAM_BUSY_CYCLE_COUNT"},
                     {0x1A, "BRAM_BUSY_COUNT"},
-                    {0x1B, "BRAM_BUSY_ENABLE"}
+                    {0x1B, "BRAM_BUSY_ENABLE"},
+                    {0x1C, "TX_TRIG_PULSE_COUNT"},
+                    {0x1D, "TX_UNDERRUN"},
+                    {0x1F, "TX_OVERRUN"},
+                    {0x20, "TX_ALMOST_FULL"},
+                    {0x21, "TX_EMPTY"}
                 }},
             {"RX_CORE", {
                     {0x0, "RX_ENABLE"},
@@ -96,19 +101,20 @@ class specReg {
                     {0x6, "DMA_CUR_COUNT"}
                 }},
             {"TRIGGER_LOGIC", {
-                {0x0, "TRIG_MASK"},
-                {0x1, "TRIG_TAG_MODE"},
-                {0x2, "TRIG_LOGIC"},
-                {0x3, "TRIG_EDGE"},
-                {0x4, "CH0_DELAY"},
-                {0x5, "CH1_DELAY"},
-                {0x6, "CH2_DELAY"},
-                {0x7, "CH3_DELAY"},
-                {0x8, "DEADTIME"},
-                {0x9, "EUDET_SIMPLE_MODE"},
-                {0xA, "TRIG_PULSE_EXTENSION_INTERVAL"},
-                {0xB, "MASTER_TRIGGER_COUNT"},
-                {0xFF, "LOCAL_RESET"}}}
+                    {0x0, "TRIG_MASK"},
+                    {0x1, "TRIG_TAG_MODE"},
+                    {0x2, "TRIG_LOGIC"},
+                    {0x3, "TRIG_EDGE"},
+                    {0x4, "CH0_DELAY"},
+                    {0x5, "CH1_DELAY"},
+                    {0x6, "CH2_DELAY"},
+                    {0x7, "CH3_DELAY"},
+                    {0x8, "DEADTIME"},
+                    {0x9, "EUDET_SIMPLE_MODE"},
+                    {0xA, "TRIG_PULSE_EXTENSION_INTERVAL"},
+                    {0xB, "MASTER_TRIGGER_COUNT"},
+                    {0xFF, "LOCAL_RESET"}
+                }}
         };
         std::map<std::string, std::map<std::string, unsigned int>> regMap_r;
 };
