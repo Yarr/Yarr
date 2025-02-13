@@ -384,14 +384,7 @@ namespace ScanHelper {
     int loadConfigFile(const ScanOpts &scanOpts, bool writeConfig, json &config) {
         auto configuration = StdDict::getConfiguration(scanOpts.configurationType);
         // load controller configs
-        json ctrlCfg;
-        try {
-            ctrlCfg = ScanHelper::openJsonFile(scanOpts.ctrlCfgPath);
-        } catch(std::runtime_error &e) {
-            shlog->error("Error opening controller config ({}): {}",
-                    scanOpts.ctrlCfgPath, e.what());
-            throw (std::runtime_error("loadConfigFile failure"));
-        }
+        json ctrlCfg = configuration->getControllerConfiguration(scanOpts.ctrlCfgPath);
 
         if(!ctrlCfg.contains("ctrlCfg")) {
             shlog->critical("#ERROR# missing controller config");

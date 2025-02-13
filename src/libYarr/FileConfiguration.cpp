@@ -21,6 +21,8 @@ public:
     json getConnectivity(const std::vector<std::string> &) override;
 
     json getFrontEndConfig(const std::string &name) override;
+
+    json getControllerConfiguration(const std::string &name) override;
 };
 
 void FileConfiguration::reportStatus()
@@ -59,6 +61,18 @@ json FileConfiguration::getFrontEndConfig(const std::string &name)
     } catch (std::runtime_error &e) {
         fclog->error("Error opening chip config: {}", e.what());
         throw (std::runtime_error("buildChips failure"));
+    }
+}
+
+json FileConfiguration::getControllerConfiguration(const std::string &name)
+{
+    try {
+        fclog->debug("Loading controller configuration from {}", name);
+        return  ScanHelper::openJsonFile(name);
+    } catch(std::runtime_error &e) {
+        fclog->error("Error opening controller config ({}): {}",
+                     name, e.what());
+        throw (std::runtime_error("loadConfigFile failure"));
     }
 }
 

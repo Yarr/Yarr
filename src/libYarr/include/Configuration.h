@@ -38,6 +38,11 @@ class Configuration {
      * configuration for the required front end should be used instead.
      */
     virtual json getFrontEndConfig(const std::string &name) = 0;
+
+    /**
+     * Load configuration for specified controller.
+     */
+    virtual json getControllerConfiguration(const std::string &name) = 0;
 };
 
 #endif
