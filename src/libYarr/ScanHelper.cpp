@@ -11,12 +11,14 @@ namespace fs = std::filesystem;
 
 #include "AllAnalyses.h"
 #include "AllChips.h"
+#include "AllConfigurations.h"
 #include "AllHistogrammers.h"
 #include "AllHwControllers.h"
 #include "AllProcessors.h"
 #include "AllStdActions.h"
 
 #include "AnalysisAlgorithm.h"
+#include "Configuration.h"
 #include "HistogramAlgorithm.h"
 #include "StdHistogrammer.h" // needed for special handling of DataArchiver
 #include "StdAnalysis.h" // needed for special handling of HistogramArchiver
@@ -375,6 +377,7 @@ namespace ScanHelper {
 
 
     int loadConfigFile(const ScanOpts &scanOpts, bool writeConfig, json &config) {
+        auto configuration = StdDict::getConfiguration(scanOpts.configurationType);
         // load controller configs
         json ctrlCfg;
         try {
@@ -419,17 +422,21 @@ namespace ScanHelper {
         }
 
         // load FE configs
-        json chipConfig=json::array();
-        for (std::string const &sTmp: scanOpts.cConfigPaths) {
-            json feconfig;
-            try {
-                feconfig = ScanHelper::openJsonFile(sTmp);
-            } catch (std::runtime_error &e) {
-                shlog->critical("#ERROR# opening connectivity or chip configs ({}): {}", sTmp, e.what());
-                return -1;
+        json chipConfig = configuration->getConnectivity(scanOpts.cConfigPaths);
+
+        if(chipConfig.size() != scanOpts.cConfigPaths.size()) {
+            // Should be earlier message
+            shlog->critical("#ERROR# opening connectivity failed");
+            return -1;
+        }
+
+        for (json &feconfig: chipConfig) {
+            std::string path;
+            // If it might be relevant, config service can add where it was read from
+            if (feconfig.contains("_read_path")) {
+                path = feconfig["_read_path"];
             }
-            loadChipConfigs(feconfig, writeConfig, Utils::dirFromPath(sTmp));
-            chipConfig.push_back(feconfig);
+            loadChipConfigs(feconfig, writeConfig, Utils::dirFromPath(path));
         }
 
         // Load scans

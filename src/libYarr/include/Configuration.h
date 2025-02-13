@@ -1,0 +1,33 @@
+#ifndef YARR_CONFIGURATION_BACKEND_H
+#define YARR_CONFIGURATION_BACKEND_H
+
+#include "storage.hpp"
+
+/**
+ * Provide access to configuration information.
+ *
+ * This proxies requests for information about the following:
+ * * Connectivity
+ * * FrontEnd configuration
+ * * Hardware controller information
+ *
+ * For now it covers only reading data in json form.
+ */
+class Configuration {
+ public:
+    virtual ~Configuration() = default;
+
+    /// Report status via logger
+    virtual void reportStatus() = 0;
+
+    /**
+     * Return connectivity
+     *
+     * This is a vector of information about connectivity.
+     * Each entry corresponds to information about one front end.
+     * The response should be the same length as the input.
+     */
+    virtual json getConnectivity(const std::vector<std::string> &names) = 0;
+};
+
+#endif
