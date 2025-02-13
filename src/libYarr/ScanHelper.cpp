@@ -147,11 +147,21 @@ namespace ScanHelper {
         return hwCtrl;
     }
 
-    std::string loadChipConfigs(json &config, bool createConfig) {
-        return loadChipConfigs(config, createConfig, "");
+    std::string loadChipConfigs(json &config) {
+        return loadChipConfigs(config, false, "", "");
     }
 
-    std::string loadChipConfigs(json &config, const bool &createConfig, const std::string &dir) {
+    std::string loadChipConfigs(json &config, bool createConfig) {
+        return loadChipConfigs(config, createConfig, "", "");
+    }
+
+    std::string loadChipConfigs(json &config, bool createConfig, const std::string &dir) {
+        // Default configuration service (interpreted by AllConfigurations)
+        return loadChipConfigs(config, createConfig, dir, "");
+    }
+
+    std::string loadChipConfigs(json &config, bool createConfig, const std::string &dir, const std::string &configService) {
+      auto configuration = StdDict::getConfiguration(configService);
       std::string chipType;
       if (!config.contains("chipType") || !config.contains("chips")) {
           shlog->error("Invalid config, chip type or chips not specified!");
@@ -227,33 +237,28 @@ namespace ScanHelper {
           }
           chip["__global_config_path__"] = globalConfigPath;
 
-          // Load chip configuration file
-          auto fe = StdDict::getFrontEnd(chipType);
-          auto *feCfg = dynamic_cast<FrontEndCfg *>(fe.get());
-          if (std::filesystem::exists(chipConfigPath)) {
-              shlog->info("Loading config file: {}", chipConfigPath);
-              json cfg;
-              try {
-                  cfg = ScanHelper::openJsonFile(chipConfigPath);
-              } catch (std::runtime_error &e) {
-                  shlog->error("Error opening chip config: {}", e.what());
-                  throw (std::runtime_error("buildChips failure"));
-              }
-              chip["__config_data__"] = cfg;
-          } else {
-              shlog->warn("Config file not found, creating new file from defaults!");
+          // Load config
+          shlog->info("Loading config file: {}", chipConfigPath);
+          json cfg = configuration->getFrontEndConfig(chipConfigPath);
+          if (cfg == "default") {
+              shlog->warn("Making defulat config for {}!", chipType);
+              auto fe = StdDict::getFrontEnd(chipType);
+              auto *feCfg = dynamic_cast<FrontEndCfg *>(fe.get());
+
+              // Rename in case of multiple default configs
               feCfg->setName(feCfg->getName() + "_" + std::to_string((int)chip["rx"]));
               shlog->warn("Creating new config of FE {} at {}", feCfg->getName(), chipConfigPath);
-              json jTmp;
-              feCfg->writeConfig(jTmp);
-              chip["__config_data__"] = jTmp;
+              cfg = json{};
+              feCfg->writeConfig(cfg);
 
               if (createConfig && chip["enable"] == 1) {
                   std::ofstream oFTmp(chipConfigPath);
-                  oFTmp << std::setw(4) << jTmp;
+                  oFTmp << std::setw(4) << cfg;
                   oFTmp.close();
               }
           }
+
+          chip["__config_data__"] = cfg;
 
           // Load GlobalOverwrite, if specified
           if (std::filesystem::exists(globalConfigPath)) {
@@ -436,7 +441,7 @@ namespace ScanHelper {
             if (feconfig.contains("_read_path")) {
                 path = feconfig["_read_path"];
             }
-            loadChipConfigs(feconfig, writeConfig, Utils::dirFromPath(path));
+            loadChipConfigs(feconfig, writeConfig, Utils::dirFromPath(path), scanOpts.configurationType);
         }
 
         // Load scans

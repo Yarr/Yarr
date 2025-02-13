@@ -19,6 +19,8 @@ public:
     void reportStatus() override;
 
     json getConnectivity(const std::vector<std::string> &) override;
+
+    json getFrontEndConfig(const std::string &name) override;
 };
 
 void FileConfiguration::reportStatus()
@@ -42,6 +44,22 @@ json FileConfiguration::getConnectivity(const std::vector<std::string> &names)
         connConfig.push_back(feConnect);
     }
     return connConfig;
+}
+
+json FileConfiguration::getFrontEndConfig(const std::string &name)
+{
+    if (!std::filesystem::exists(name)) {
+        fclog->warn("Config file not found, using default front end {}!", name);
+        return "default";
+    }
+
+    try {
+        fclog->debug("Loading front end configuration from {}", name);
+        return ScanHelper::openJsonFile(name);
+    } catch (std::runtime_error &e) {
+        fclog->error("Error opening chip config: {}", e.what());
+        throw (std::runtime_error("buildChips failure"));
+    }
 }
 
 bool file_configuration_registered =

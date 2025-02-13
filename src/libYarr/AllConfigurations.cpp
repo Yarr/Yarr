@@ -22,6 +22,9 @@ namespace StdDict {
     }
 
     std::unique_ptr<Configuration> getConfiguration(std::string name) {
+        // If unspecified (for instance loadChipConfigs on commandline) use default
+        if(name.empty()) name = "File";
+
         auto result = registry().makeClass(name);
         if(result == nullptr) {
             aclog->error("List available:");
