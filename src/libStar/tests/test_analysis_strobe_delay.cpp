@@ -90,7 +90,7 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
       scanCfg["scan"]["loops"][0]["config"]["min"] = 0;
       scanCfg["scan"]["loops"][0]["config"]["max"] = bin_count - 1;
       scanCfg["scan"]["loops"][0]["config"]["step"] = 1;
-      // scanCfg["scan"]["loops"][0]["config"]["parameter"] = "TEST_PARAM";
+      scanCfg["scan"]["loops"][0]["config"]["parameter"] = "STR_DEL";
 
       scan.loadConfig(scanCfg);
     }
@@ -382,7 +382,7 @@ TEST_CASE("StarStrobeDelayFeedback", "[Analysis][Star][SD]") {
 
       // Create Loop objects so they're available to analysis
       scanCfg["scan"]["loops"][0]["loopAction"] = "StarParamFeedback";
-      scanCfg["scan"]["loops"][0]["config"]["parameter"] = "STROBEDELAY";
+      scanCfg["scan"]["loops"][0]["config"]["parameter"] = "STR_DEL";
 
       scan.loadConfig(scanCfg);
     }

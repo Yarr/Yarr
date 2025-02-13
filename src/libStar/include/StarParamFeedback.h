@@ -29,13 +29,10 @@ class StarParamFeedback : public LoopActionBase, public PixelFeedbackReceiver {
         /// Update trims for FrontEnd corresponding to channel
         void feedback(unsigned channel, std::unique_ptr<Histo2d> h) override;
 
-        void writeParameter();
-
     private:
         unsigned m_cur;
         std::string m_par;
 
-        // void addFeedback(unsigned ch);
         void writeChannelCfg(StarChips *fe);
 
         void init() override;

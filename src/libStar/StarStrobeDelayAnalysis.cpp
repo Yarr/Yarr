@@ -13,8 +13,6 @@
 #include "StdHistogrammer.h"
 #include "StdTriggerAction.h"
 
-// Add feedback (via StarParamFeedback)
-
 // NB if we don't include this, it compiles, but we get a linker error,
 // presumably because it picks up names from C rather than C++
 #include <cmath>
@@ -240,12 +238,10 @@ void StarStrobeDelayAnalysis::end() {
     alog->debug("  Found optimal strobe delay = {} for chip {}", strobeDelayOpt, iChip);
     upJD->setValForProp({"ABCStar_" + std::to_string(iChip), "OptimalStrobeDelay"}, 0, strobeDelayOpt);   
 
+    // Pass configuration to (eg) StarParamFeedback
+    // The chips in this histogram are in histogram order, and are rearranged
+    // (via histoChipMap) by the front end code.
     feedbackData->fill(iChip, 0, strobeDelayOpt);
-
-    // TODO: Write optimal value to STR_DEL in the front end configuration.
-    //       Complicated by working out the mapping from histogram position
-    //       to the right AbcCfg (HccCfg::histoChipMap gets half-way, but
-    //       might need to assume something).
   } // end loop over chips
 
   double leftEdgeMean = hDistLeftEdge->getMean();

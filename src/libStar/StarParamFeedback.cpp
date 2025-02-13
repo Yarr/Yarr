@@ -28,27 +28,6 @@ void StarParamFeedback::loadConfig(const json &j) {
         m_par = j["parameter"];
 }
 
-void StarParamFeedback::writeParameter() {
-    logger->trace("writeParameter");
-    for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        auto fe = keeper->getFe(id);
-        if(!fe->getActive()) {
-            continue;
-        }
-
-        auto fe_cfg = dynamic_cast<FrontEndCfg*>(fe);
-        auto tx_channel = fe_cfg->getTxChannel();
-        auto rx_channel = fe_cfg->getRxChannel();
-
-        // g_tx->setCmdEnable(tx_channel);
-        int val = 4;
-        fe->writeNamedRegister(m_par, val);
-        // fe->writeRegister(parPtr, chanInfo[id].values);
-        // while(!g_tx->isCmdEmpty());
-    }
-    // g_tx->setCmdEnable(keeper->getTxMask());
-}
-
 // Response to message sent from Analysis (via waitForFeedback)
 void StarParamFeedback::feedback(unsigned id, std::unique_ptr<Histo2d> h) {
     if(fbDoneMap[id]) {
@@ -58,6 +37,11 @@ void StarParamFeedback::feedback(unsigned id, std::unique_ptr<Histo2d> h) {
 
     logger->trace("Received feedback for ID {}", id);
     auto fe = (StarChips*) keeper->getFe(id);
+
+    if(m_par != "STR_DEL") {
+        logger->warn("StarParamFeedback currently only implemented for strobe delay (STR_DEL) not {}", m_par);
+        return;
+    }
 
     unsigned nCol = fe->geo.nCol;
     unsigned nABCs = nCol / 128;
@@ -104,7 +88,6 @@ void StarParamFeedback::feedback(unsigned id, std::unique_ptr<Histo2d> h) {
 
 void StarParamFeedback::writeChannelCfg(StarChips *fe) {
     g_tx->setCmdEnable(dynamic_cast<FrontEndCfg*>(fe)->getTxChannel());
-    // fe->writeTrims();
     while(!g_tx->isCmdEmpty());
     g_tx->setCmdEnable(keeper->getTxMask());
 }
@@ -123,7 +106,7 @@ void StarParamFeedback::execPart1() {
 
 // After scan loop
 void StarParamFeedback::execPart2() {
-    logger->trace("End of loop");
+    logger->trace("End of loop wait for feedback");
     // Scan has run, now wait for feedback from analysis
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
         auto fe = keeper->getFe(id);
@@ -139,6 +122,8 @@ void StarParamFeedback::execPart2() {
     if(!isFeedbackDone()) {
         logger->error("Feedback not received from all frontends");
     }
+
+    logger->trace("Parameter {} feedback complete", m_par);
 
     // Only one iteration allowed
     m_done = true;
