@@ -7,11 +7,6 @@
 #ifndef ENGINETBASE_H
 #define ENGINETBASE_H
 
-#include <memory>
-using std::shared_ptr;
-
-#include <vector>
-
 template <typename LT>
 class EngineTBase {
 	public: 

@@ -48,7 +48,7 @@ void StarDataProcessor::connect(FrontEndCfg *feCfg, ClipBoard<RawDataContainer> 
   }
   auto cfg = dynamic_cast<StarCfg*>(feCfg);
   if(cfg == nullptr) {
-    throw std::runtime_error("StarDataProcessor::connect given bad config (not StarCfg");
+    throw std::runtime_error("StarDataProcessor::connect given bad config (not StarCfg)");
   }
 
   chip_map = cfg->hcc().histoChipMap();

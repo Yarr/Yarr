@@ -50,7 +50,10 @@ std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn
         throw std::runtime_error(e.str());
     }
     auto chip_config = chip_configs[fe_num];
-    fe->init(&*hw, FrontEndConnectivity(chip_config["tx"], chip_config["rx"]));
+    unsigned regRx = chip_config["rx"];
+    if(chip_config.contains("regRx"))
+      regRx = chip_config["regRx"];
+    fe->init(&*hw, FrontEndConnectivity(chip_config["tx"], chip_config["rx"], regRx));
     auto chip_register_file_path = chip_config["__config_path__"];
     fs::path pconfig{chip_register_file_path};
     if(!fs::exists(pconfig)) {
@@ -172,8 +175,8 @@ int main(int argc, char* argv[]) {
         std::string current_chip_name = cfg->getName();
         if (!use_chip_name) {
             if ( chip_idx.size() == 0 || (std::find(chip_idx.begin(), chip_idx.end(), ichip)!= chip_idx.end()) ) {
-                hw->setCmdEnable(cfg->getTxChannel()); 
-                hw->setRxEnable(cfg->getRxChannel());
+                hw->setCmdEnable(cfg->getTxChannel());
+                hw->setRxEnable(cfg->getRegRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
                 if (fe->readUpdateWriteNamedRegister(register_name, register_value) != yarrSuccess) {
                     std::cerr << "ERROR: failed to readUpdateWrite register for " << current_chip_name << "!" << std::endl;
@@ -183,11 +186,14 @@ int main(int argc, char* argv[]) {
                     }
                     error_cnt++;
                 }
-            }
+		else{
+		  fe->writeNamedRegister(register_name, register_value);
+		}
+	    }
         } else {
             if (std::find(chip_name.begin(), chip_name.end(), current_chip_name) != chip_name.end()) {
-                hw->setCmdEnable(cfg->getTxChannel()); 
-                hw->setRxEnable(cfg->getRxChannel());
+                hw->setCmdEnable(cfg->getTxChannel());
+                hw->setRxEnable(cfg->getRegRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
                 if (fe->readUpdateWriteNamedRegister(register_name, register_value) != yarrSuccess) {
                     std::cerr << "ERROR: failed to readUpdateWrite register for " << current_chip_name << "!" << std::endl;
@@ -197,11 +203,12 @@ int main(int argc, char* argv[]) {
                     }
                     error_cnt++;
                 }
+		else{
+		  fe->writeNamedRegister(register_name, register_value);
+		}
             }
         }
     }
-
-    std::cerr << "Done." << std::endl;
 
     return error_cnt;
 }

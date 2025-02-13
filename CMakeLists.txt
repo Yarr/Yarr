@@ -46,6 +46,17 @@ if(NOT MIN_GCC_VERSION)
   set(MIN_GCC_VERSION 9)
 endif()
 
+# Debug buffer and buffersize for Rd53b/Itkpixv2
+if(DEFINED USE_ITKPIX_DEBUG_BUFFER)
+    add_compile_definitions(USE_ITKPIX_DEBUG_BUFFER=${USE_ITKPIX_DEBUG_BUFFER})
+    message(STATUS "Set USE_ITKPIX_DEBUG_BUFFER=${USE_ITKPIX_DEBUG_BUFFER}")
+endif()
+
+if(DEFINED ITKPIX_DEBUG_BUFFERSIZE)
+    add_compile_definitions(ITKPIX_DEBUG_BUFFERSIZE=${ITKPIX_DEBUG_BUFFERSIZE})
+    message(STATUS "Set ITKPIX_DEBUG_BUFFERSIZE=${ITKPIX_DEBUG_BUFFERSIZE}")
+endif()
+
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS ${MIN_GCC_VERSION})
         message(FATAL_ERROR "GCC version must be at least ${MIN_GCC_VERSION}!")
@@ -91,11 +102,12 @@ add_compile_options(-Wnon-virtual-dtor)
 
 option(BUILD_TESTS "Build the YARR test suite" OFF)
 option(DISABLE_PLOTTING_TOOLS "Disable build of plotting tools" OFF)
+
 set(YARR_FRONT_ENDS_TO_BUILD "Fei4;Rd53a;Star;Rd53b;Itkpixv2"
     CACHE STRING "Semicolon-separated list of controllers to build, or \"all\"")
 set(YARR_CONTROLLERS_TO_BUILD  "Spec;Emu"
     CACHE STRING "Semicolon-separated list of controllers to build, or \"all\".")
-set(YARR_EMULATORS_TO_BUILD "StarEmu;Fei4Emu;Rd53aEmu"
+set(YARR_EMULATORS_TO_BUILD "StarEmu;Fei4Emu;Rd53aEmu;Itkpixv2Emu"
     CACHE STRING "Semicolon-separated list of front-end specific emulators to build (if Emu in controller list)")
 
 set(YARR_ACTIVE_LOGGER_LEVEL "DEBUG"
@@ -108,7 +120,7 @@ set(CONTROLLERS "")
 
 # only build those controllers specified in YARR_CONTROLLERS_TO_BUILD
 if(YARR_CONTROLLERS_TO_BUILD STREQUAL "all")
-   set(CONTROLLERS "Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Bdaq;NetioHW;FelixClient;ItsdaqFW")
+   set(CONTROLLERS "Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Itkpixv2Emu;Bdaq;NetioHW;FelixClient;ItsdaqFW")
 else()
   foreach(ctrl IN LISTS YARR_CONTROLLERS_TO_BUILD )
     if(NOT ${ctrl} IN_LIST CONTROLLERS)
@@ -143,8 +155,10 @@ if(BUILD_TESTS)
     message(STATUS "Building the YARR test suite" )
     enable_testing()
 endif()
-set(TARGET_INSTALL_AREA ${PROJECT_SOURCE_DIR})
-set(SHARED_INSTALL_AREA ${PROJECT_SOURCE_DIR}/installed/)
+
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set_property(CACHE CMAKE_INSTALL_PREFIX PROPERTY VALUE "${PROJECT_SOURCE_DIR}")
+endif()
 
 function(post_build_debug_library name)
   add_custom_command(TARGET ${name}
@@ -155,7 +169,7 @@ function(post_build_debug_library name)
   )
 
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lib${name}.so.debug
-    DESTINATION ${TARGET_INSTALL_AREA}/lib
+	  DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
     )
 endfunction(post_build_debug_library)
 
@@ -168,14 +182,14 @@ function(post_build_debug_executable name)
   )
 
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${name}.debug
-    DESTINATION ${TARGET_INSTALL_AREA}/bin
+	  DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
     )
 endfunction(post_build_debug_executable)
 
 include(cmake/CMakeLists.txt.external)
 add_subdirectory(src)
 
-install(DIRECTORY ${PROJECT_BINARY_DIR}/bin DESTINATION ${TARGET_INSTALL_AREA}  FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+install(DIRECTORY ${PROJECT_BINARY_DIR}/bin DESTINATION ${CMAKE_INSTALL_PREFIX}  FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
     WORLD_EXECUTE WORLD_READ GROUP_EXECUTE GROUP_READ  )
-install(DIRECTORY ${PROJECT_BINARY_DIR}/lib DESTINATION ${TARGET_INSTALL_AREA}  FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+install(DIRECTORY ${PROJECT_BINARY_DIR}/lib DESTINATION ${CMAKE_INSTALL_PREFIX}  FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
     WORLD_EXECUTE WORLD_READ GROUP_EXECUTE GROUP_READ  )
