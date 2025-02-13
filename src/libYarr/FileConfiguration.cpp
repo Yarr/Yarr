@@ -23,6 +23,8 @@ public:
     json getFrontEndConfig(const std::string &name) override;
 
     json getControllerConfiguration(const std::string &name) override;
+
+    json getScanConfiguration(const std::string &name) override;
 };
 
 void FileConfiguration::reportStatus()
@@ -73,6 +75,17 @@ json FileConfiguration::getControllerConfiguration(const std::string &name)
         fclog->error("Error opening controller config ({}): {}",
                      name, e.what());
         throw (std::runtime_error("loadConfigFile failure"));
+    }
+}
+
+json FileConfiguration::getScanConfiguration(const std::string &name)
+{
+    try {
+        fclog->debug("Loading scan configuration from {}", name);
+        return openJsonFile(name);
+    } catch (std::runtime_error &e) {
+        fclog->critical("#ERROR# opening scan config: {}", e.what());
+        throw std::runtime_error("Load scan failure");
     }
 }
 

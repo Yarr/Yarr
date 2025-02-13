@@ -441,7 +441,7 @@ namespace ScanHelper {
         json scan;
         try {
             if (!scanOpts.scanType.empty())
-                scan = openJsonFile(scanOpts.scanType);
+                scan = configuration->getScanConfiguration(scanOpts.scanType);
         } catch (std::runtime_error &e) {
             shlog->critical("#ERROR# opening scan config: {}", e.what());
             return -1;

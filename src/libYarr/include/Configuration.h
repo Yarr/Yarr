@@ -10,6 +10,7 @@
  * * Connectivity
  * * FrontEnd configuration
  * * Hardware controller information
+ * * Scan configuration
  *
  * For now it covers only reading data in json form.
  */
@@ -43,6 +44,11 @@ class Configuration {
      * Load configuration for specified controller.
      */
     virtual json getControllerConfiguration(const std::string &name) = 0;
+
+    /**
+     * Load configuration for specified scan.
+     */
+    virtual json getScanConfiguration(const std::string &name) = 0;
 };
 
 #endif
