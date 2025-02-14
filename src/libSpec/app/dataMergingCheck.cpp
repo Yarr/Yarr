@@ -31,7 +31,7 @@ void printHelp() {
         << "  -c <connectivity_file>    Specify connectivity config JSON path.\n"
         << "  -t <test_size>            Specify the error counter test size. Default 1 x 10^6\n"
         << "  -v                   Print out and store raw error counter values.\n"
-        << "  -m                   Data merging mode. Can be \"4-to-1\" or \"2-to-2\".\n"
+        << "  -m                   Data merging mode. Can be \"4-to-1\" or \"2-to-1\".\n"
         << "  -q                   Quiet mode, no logger"
         << std::endl;
 }
@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
     int specNum = 0;
     std::string hw_controller_filename = "";
     std::string connectivity_filename = "";
-    std::string mode=""; // data merging mode, should be "4-to-1" or "2-to-2"
+    std::string mode=""; // data merging mode, should be "4-to-1" or "2-to-1"
     uint32_t test_size = 1000000;
     uint32_t cdrclksel = 0;
     uint32_t serblckperiod = 50;
@@ -166,7 +166,7 @@ int main(int argc, char **argv) {
     std::vector<unsigned> lanes;
     if (mode=="4-to-1"){
         count = count * 4;
-    } else if (mode=="2-to-2"){
+    } else if (mode=="2-to-1"){
         count = count * 3;
     }
     
@@ -235,7 +235,7 @@ int main(int argc, char **argv) {
                     logger->critical("Non-standard chip IDs found for chip {}, please check your configs! Chip ID:{} ", name, chip_id);
                     return -1; 
                 }
-            } else if (mode=="2-to-2"){
+            } else if (mode=="2-to-1"){
                 fe->writeNamedRegister("ServiceBlockEn", 1);
                 if (chip_id==12 || chip_id==14){ // Secondaries
                     fe->writeNamedRegister("CdrClkSel", 2);
@@ -248,25 +248,25 @@ int main(int argc, char **argv) {
                     fe->writeNamedRegister("DataMergeOutMux1", 0);
                     fe->writeNamedRegister("DataMergeOutMux2", 2);
                     fe->writeNamedRegister("DataMergeOutMux3", 3);
-                    logger->info("Setting up {} as secondary for 2-to-2 merging", name);
+                    logger->info("Setting up {} as secondary for 2-to-1 merging", name);
                 } else if (chip_id==13){ // Primary
                     fe->writeNamedRegister("DataMergeEn", 0);
                     fe->writeNamedRegister("DataMergeEnBond", 1);
                     fe->writeNamedRegister("ServiceBlockEn", 1);
-                    logger->info("Setting up {} as primary for 2-to-2 merging", name);
+                    logger->info("Setting up {} as primary for 2-to-1 merging", name);
                     lanes.push_back(dynamic_cast<FrontEndCfg*>(&*fe)->getRxChannel());
                 } else if (chip_id==15){ // Primary
                     fe->writeNamedRegister("DataMergeEn", 0);
                     fe->writeNamedRegister("DataMergeEnBond", 1);
                     fe->writeNamedRegister("ServiceBlockEn", 1);
-                    logger->info("Setting up {} as primary for 2-to-2 merging", name);
+                    logger->info("Setting up {} as primary for 2-to-1 merging", name);
                     lanes.push_back(dynamic_cast<FrontEndCfg*>(&*fe)->getRxChannel());
                 } else {
                     logger->critical("Non-standard chip IDs found for chip {}, please check your configs! Chip ID:{} ", name, chip_id);
                     return -1; 
                 }
             } else {
-                logger->critical("Data merging mode ({}) unknown, please use \"4-to-1\" or \"2-to-2\".", mode);
+                logger->critical("Data merging mode ({}) unknown, please use \"4-to-1\" or \"2-to-1\".", mode);
                 return -1; 
             }
 
