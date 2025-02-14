@@ -74,7 +74,11 @@ class specReg {
                     {0x1D, "TX_UNDERRUN"},
                     {0x1F, "TX_OVERRUN"},
                     {0x20, "TX_ALMOST_FULL"},
-                    {0x21, "TX_EMPTY"}
+                    {0x21, "TX_EMPTY"},
+                    {0x22, "EXT_TRIGGER_READ_COUNT"},
+                    {0x22, "EXT_TRIGGER_FULL_COUNT"},
+                    {0x24, "TX_CHANNEL_SEL"},
+                    {0x25, "TX_SERIAL_TRIG_COUNT"}
                 }},
             {"RX_CORE", {
                     {0x0, "RX_ENABLE"},
@@ -112,7 +116,7 @@ class specReg {
                     {0x8, "DEADTIME"},
                     {0x9, "EUDET_SIMPLE_MODE"},
                     {0xA, "TRIG_PULSE_EXTENSION_INTERVAL"},
-                    {0xB, "MASTER_TRIGGER_COUNT"},
+                    {0xB, "INT_TRIGGER_COUNT"},
                     {0xFF, "LOCAL_RESET"}
                 }}
         };
