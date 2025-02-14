@@ -62,6 +62,16 @@ def fetchIrefs_fromConfig(chip_config_paths) -> list[int]:
 def fetchIrefs_fromReadRegister(
     hw_controller_file: Path, connectivity_file: Path
 ) -> list[int]:
+    # run eye diagram to update the delay and configure the chips
+    cmd = (
+        "./bin/eyeDiagram -r "
+        + str(hw_controller_file)
+        + " -c "
+        + str(connectivity_file)
+    )
+    with subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True) as proc:
+        output, error = proc.communicate()
+
     # cmd = './bin/read-register -r configs/controller/specCfg-rd53b-16x1.json -c ../module-qc-database-tools/module_data/20UPIM13602155/20UPIM13602155_L2_warm.json IrefTrimSense'
     cmd = (
         "./bin/read-register -r "
