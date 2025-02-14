@@ -20,8 +20,9 @@ parser.add_argument(
 parser.add_argument(
     "-n",
     "--number_of_chips",
-    help="Specify number of chips in given module.",
-    default=4,
+    help = "Specify number of chips in given module.",
+    type = int,
+    default = 4,
 )
 args = parser.parse_args()
 
@@ -64,9 +65,9 @@ def fetchIrefs_fromReadRegister(
     # cmd = './bin/read-register -r configs/controller/specCfg-rd53b-16x1.json -c ../module-qc-database-tools/module_data/20UPIM13602155/20UPIM13602155_L2_warm.json IrefTrimSense'
     cmd = (
         "./bin/read-register -r "
-        + hw_controller_file
+        + str(hw_controller_file)
         + " -c "
-        + connectivity_file
+        + str(connectivity_file)
         + " IrefTrimSense"
     )
     with subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True) as proc:
