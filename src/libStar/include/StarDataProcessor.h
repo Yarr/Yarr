@@ -46,6 +46,8 @@ class StarDataProcessor : public FeDataProcessor {
         void process() override;
         virtual void process_core();
 
+        std::unique_ptr<EventDataBase> process_event_core(const RawDataContainer &rdc, std::function<void (std::unique_ptr<FeedbackProcessingInfo>)> push_fb) override;
+
     private:
         ClipBoard<RawDataContainer> *input;
         ClipBoard<EventDataBase> *output;
