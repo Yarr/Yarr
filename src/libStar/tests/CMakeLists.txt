@@ -11,6 +11,7 @@ add_executable(testStar
         test_json.cpp
         test_lcb.cpp
         test_mask_loop.cpp
+        test_parameter_loop.cpp
         test_parser.cpp
         test_trigger_loop.cpp
         test_conversion_tool.cpp
