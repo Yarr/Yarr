@@ -76,7 +76,7 @@ class specReg {
                     {0x20, "TX_ALMOST_FULL"},
                     {0x21, "TX_EMPTY"},
                     {0x22, "EXT_TRIGGER_READ_COUNT"},
-                    {0x22, "EXT_TRIGGER_FULL_COUNT"},
+                    {0x23, "EXT_TRIGGER_FULL_COUNT"},
                     {0x24, "TX_CHANNEL_SEL"},
                     {0x25, "TX_SERIAL_TRIG_COUNT"}
                 }},
