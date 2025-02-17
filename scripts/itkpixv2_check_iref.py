@@ -18,6 +18,7 @@ parser.add_argument(
 )
 # for testing/developer purposes, use "configs/controller/specCfg-rd53b-16x1.json",
 args = parser.parse_args()
+log.info(args)
 
 # given the connectivity file of the module, return an array with the config files for all FE chips
 def get_chip_config_paths(connectivity_file: Path) -> list[str]:
@@ -48,7 +49,7 @@ def fetchIrefs_fromConfig(chip_config_paths) -> list[int]:
     Irefs = [-1] * len(chip_config_paths)
     for i, chip_config_path in enumerate(chip_config_paths):
         Irefs[i] = fetchIref_fromConfig(chip_config_path)
-    log.info(Irefs)
+    log.info(f"IREF obtained from config: {Irefs}")
     return Irefs
 
 # given the hardware controller file and connectivity file for the module, return an array with the Iref values for each FE chip, as determined by the wirebonding configuration on the chip
@@ -56,6 +57,7 @@ def fetchIrefs_fromReadRegister(
     hw_controller_file: Path, connectivity_file: Path
 ) -> list[int]:
     # run eye diagram to update the delay and configure the chips
+    log.info("Running eye diagram and configuring the chips...")
     cmd = (
         "./bin/eyeDiagram -r "
         + str(hw_controller_file)
@@ -66,6 +68,7 @@ def fetchIrefs_fromReadRegister(
         output, error = proc.communicate()
 
     # cmd = './bin/read-register -r configs/controller/specCfg-rd53b-16x1.json -c ../module-qc-database-tools/module_data/20UPIM13602155/20UPIM13602155_L2_warm.json IrefTrimSense'
+    log.info("Reading wirebonded IREF...")
     cmd = (
         "./bin/read-register -r "
         + str(hw_controller_file)
@@ -89,15 +92,15 @@ def fetchIrefs_fromReadRegister(
         .replace("\\n", ",")[:-1]
         .split(",")
     ]
-    log.info(Iref_array)
+    log.info(f"IREF obtained from wirebonds: {Iref_array}")
     return Iref_array
 
 # print the actual and desired wirebonding configurations in an intuitive, human-readable format
 def Iref_discrepancy_fixer(Irefs_config, Irefs_register):
     wc_fromRR = get_fourDigit_binary(Irefs_register)
     wc_fromCf = get_fourDigit_binary(Irefs_config)
-    log.info("Current wirebonding configuration: %s", wc_fromRR)
-    log.info("Correct wirebonding configuration: %s", wc_fromCf)
+    log.info("Current wirebonding configuration TRIM0(pad47)->TRIM3(pad50): %s ('0': wirebonded, '1': open)", wc_fromRR[::-1])
+    log.info("Correct wirebonding configuration TRIM0(pad47)->TRIM3(pad50): %s ('0': wirebonded, '1': open)", wc_fromCf[::-1])
 
 # add the '0' character to the beginning of a string so that the length is 4 for consistent formatting
 def get_fourDigit_binary(number):
