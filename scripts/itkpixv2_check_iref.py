@@ -17,25 +17,18 @@ parser.add_argument(
     "-r", "--hw_controller_file", help="Specify hardware controller JSON path."
 )
 # for testing/developer purposes, use "configs/controller/specCfg-rd53b-16x1.json",
-parser.add_argument(
-    "-n",
-    "--number_of_chips",
-    help = "Specify number of chips in given module.",
-    type = int,
-    default = 4,
-)
 args = parser.parse_args()
 
 # given the connectivity file of the module, return an array with the config files for all FE chips
 def get_chip_config_paths(connectivity_file: Path) -> list[str]:
     # NB: this code assumes that the chip order in the connectivity file is correct
-    chip_config_paths = [Path()] * args.number_of_chips
+    chip_config_paths = [] #[Path()] * args.number_of_chips
     data = json.loads(connectivity_file.read_text())
-    for i, chip_data in enumerate(data["chips"]):
+    for chip_data in data["chips"]:
         if chip_data["path"] == "relToCon":
-            chip_config_paths[i] = connectivity_file.parent.joinpath(
+            chip_config_paths.append(connectivity_file.parent.joinpath(
                 chip_data["config"]
-            )
+            ))
         else:
             msg = f"Cannot handle chip config with path={chip_data['path']} for chip at index={i}"
             raise RuntimeError(msg)
@@ -52,7 +45,7 @@ def fetchIref_fromConfig(chip_config_path: Path) -> int:
     
 # given an array of config files for FE chips, return an array with the Iref values stored in the config files
 def fetchIrefs_fromConfig(chip_config_paths) -> list[int]:
-    Irefs = [-1] * int(args.number_of_chips)
+    Irefs = [-1] * len(chip_config_paths)
     for i, chip_config_path in enumerate(chip_config_paths):
         Irefs[i] = fetchIref_fromConfig(chip_config_path)
     log.info(Irefs)
@@ -130,7 +123,7 @@ def main():
     RED = "\033[91m"
     RESET = "\033[0m"
 
-    check = [False] * int(args.number_of_chips)
+    check = [False] * len(chip_config_paths)
     for i in range(0, len(check), 1):
         check[i] = Irefs_config[i] == Irefs_register[i]
         log.info(
