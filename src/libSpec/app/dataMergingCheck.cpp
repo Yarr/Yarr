@@ -24,15 +24,14 @@ constexpr const char* COLOR_GREEN = "\033[32m";
 constexpr const char* COLOR_RESET = "\033[0m";
 
 void printHelp() {
-    std::cout << "./bin/dataMergingScan [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-t <test_size>] [-s] [-v]\n\n"
+    std::cout << "./bin/dataMergingScan [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-t <test_size>] [-m <mode>] [-q]\n\n"
         << "Options:\n"
-        << "  -h                   Display this help message.\n"
+        << "  -h                        Display this help message.\n"
         << "  -r <hw_controller_file>   Specify hardware controller JSON path.\n"
         << "  -c <connectivity_file>    Specify connectivity config JSON path.\n"
         << "  -t <test_size>            Specify the error counter test size. Default 1 x 10^6\n"
-        << "  -v                   Print out and store raw error counter values.\n"
-        << "  -m                   Data merging mode. Can be \"4-to-1\" or \"2-to-1\".\n"
-        << "  -q                   Quiet mode, no logger"
+        << "  -m <mode>                 Data merging mode. Can be \"4-to-1\" or \"2-to-1\".\n"
+        << "  -q                        Quiet mode, no logger"
         << std::endl;
 }
 
