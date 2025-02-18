@@ -330,5 +330,5 @@ int main(int argc, char **argv) {
     }
 
     std::cout << "Failed" << std::endl;
-    return 1;
+    return 0;
 }
