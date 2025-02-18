@@ -23,6 +23,11 @@ void process_data(RawData &curIn,
                   FeedbackProcessingInfo &curStatus,
                   const std::array<uint8_t, 11> &chip_map);
 
+void process_data_template(RawData &curIn,
+                  FrontEndData &curOut,
+                  FeedbackProcessingInfo &curStatus,
+                  const std::array<uint8_t, 11> &chip_map);
+
 bool star_proc_registered =
   StdDict::registerDataProcessor("Star", []() { return std::unique_ptr<FeDataProcessor>(new StarDataProcessor());});
 bool star_proc_registered_0 =
@@ -32,16 +37,34 @@ bool star_proc_registered_ppa =
 bool star_proc_registered_ppb =
   StdDict::registerDataProcessor("Star_vH1A1", []() { return std::unique_ptr<FeDataProcessor>(new StarDataProcessor());});
 
+/**
+ * Private implementation.
+ */
+struct StarDataProcessorImpl {
+  std::function<void (RawData &curIn,
+                      FrontEndData &curOut,
+                      FeedbackProcessingInfo &curStatus,
+                      const std::array<uint8_t, 11> &chip_map)> proc_data = process_data;
+};
+
 StarDataProcessor::StarDataProcessor()
   : FeDataProcessor(),
     input(nullptr),
     output(nullptr),
-    chip_map{}
+    chip_map{},
+    pimpl(std::make_unique<StarDataProcessorImpl>())
 {}
 
 StarDataProcessor::~StarDataProcessor() = default;
 
 void StarDataProcessor::init() {}
+
+void StarDataProcessor::loadConfig(const json &config)
+{
+  if(config.contains("use_template")) {
+    pimpl->proc_data = process_data_template;
+  }
+}
 
 void StarDataProcessor::connect(FrontEndCfg *feCfg, ClipBoard<RawDataContainer> *arg_input, ClipBoard<EventDataBase> *arg_output) {
   if(feCfg == nullptr) {
@@ -96,7 +119,7 @@ std::unique_ptr<EventDataBase> StarDataProcessor::process_event_core(const RawDa
         RawDataPtr r = curIn.data[c];
         unsigned channel = r->getAdr(); //elink number
         std::unique_ptr<FeedbackProcessingInfo> fb_stat(new FeedbackProcessingInfo{.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_ERROR});
-        process_data(*r, *output, *fb_stat, chip_map);
+        pimpl->proc_data(*r, *output, *fb_stat, chip_map);
         push_fb(std::move(fb_stat));
     }
 
@@ -235,7 +258,6 @@ void process_data(RawData &curIn,
                   FrontEndData &curOut,
                   FeedbackProcessingInfo &curStatus,
                   const std::array<uint8_t, 11> &chip_map) {
-#if 0
     StarChipPacket packet;
     curStatus.packet_size = curIn.getSize();
 
@@ -340,7 +362,12 @@ void process_data(RawData &curIn,
             logger->trace("{}", os.str());
         }
     }
-#else
+}
+
+void process_data_template(RawData &curIn,
+                  FrontEndData &curOut,
+                  FeedbackProcessingInfo &curStatus,
+                  const std::array<uint8_t, 11> &chip_map) {
     curStatus.packet_size = curIn.getSize();
     uint8_t *start = (uint8_t*)curIn.getBuf();
     uint8_t *end = start + (curIn.getSize() * 4);
@@ -360,7 +387,6 @@ void process_data(RawData &curIn,
       StarProcessPacket(start, end, printer);
       logger->trace("{}", os.str());
     }
-#endif
 }
 
 // Need to instantiate something to register the logger
