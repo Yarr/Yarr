@@ -1,0 +1,39 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "OccupancyAnalysis",
+        "config": {}
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "n_count": 1
+    },
+    "loops": [
+      {
+        "config": {
+          "max": 31,
+          "min": 0,
+          "step": 1,
+          "parameter":"ABCs_TRIMs"
+        },
+        "loopAction": "StdParameterLoop"
+      },
+      {
+        "config": {
+              "addr": 64
+        },
+        "loopAction": "StarRegDump"
+      },
+      {
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "RegDumpScan"
+  }
+}
