@@ -1641,6 +1641,12 @@ void NoiseAnalysis::loadConfig(const json &j){
     if (j.contains("noiseThr")){
         noiseThr=j["noiseThr"];
     }
+    if (j.contains("doAltMask")){
+        doAltMask=j["doAltMask"];
+    }
+    if (j.contains("minOcc")){
+        minOcc=j["minOcc"];
+    }
 }
 
 void NoiseAnalysis::end() {
@@ -1649,29 +1655,48 @@ void NoiseAnalysis::end() {
     noiseOcc->setYaxisTitle("Row");
     noiseOcc->setZaxisTitle("Noise Occupancy hits/bc");
 
-    std::unique_ptr<Histo2d> mask(new Histo2d("NoiseMask", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
+    std::unique_ptr<Histo2d> mask(new Histo2d(doAltMask ? "AltNoiseMask" : "NoiseMask", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
     mask->setXaxisTitle("Col");
     mask->setYaxisTitle("Row");
-    mask->setZaxisTitle("Mask");
+    mask->setZaxisTitle(doAltMask ? "AltMask" : "Mask");
 
     noiseOcc->add(&*occ);
     noiseOcc->scale(1.0/(double)n_trigger);
     alog->info("[{}] Received {} total trigger!", id, n_trigger);
 
+    // Fail tags for printout
+    unsigned failNoiseOcc = 0, failBoth = 0, failBefore = 0, failNew = 0;
+
     for(unsigned col=1; col<=nCol; col++) {
         for (unsigned row=1; row<=nRow; row++) {
             unsigned i = noiseOcc->binNum(col, row);
+            unsigned curEn = feCfg->getPixelEn(col-1, row-1, doAltMask);
+            failBefore += (!curEn); // add currently disabled pixels to total count
+
             if (noiseOcc->getBin(i) > noiseThr) {
-                mask->setBin(i, 0);
-                if (make_mask&&createMask) {
-                    // maskPixel starts at 0,0
-                    feCfg->maskPixel(col-1, row-1);
-                }
-            } else {
-                mask->setBin(i, 1);
-            }
-        }
-    }
+                failNoiseOcc++;
+                if (occ->getBin(i) >= minOcc) {
+                    failBoth++;
+
+                    mask->setBin(i, 0);
+
+                    // CurEn is 0 for disabled pixels, 1 for enabled
+                    failNew += curEn; // add count only if pixel is currently enabled
+
+                    if (make_mask&&createMask) {
+                        // maskPixel starts at 0,0
+                        feCfg->maskPixel(col-1, row-1, doAltMask);
+                    }
+                } else {
+                    mask->setBin(i, 1);
+                } // if
+            } // if
+        } // for
+    } // for
+
+    alog->info("[{}]  Found {} pixels failing noise occupancy cut of {}", id, failNoiseOcc, noiseThr);
+    alog->info("[{}]  Found {} pixels failing noise + raw occupancy cut of {}", id, failBoth, minOcc);
+    alog->info("[{}] Masked {} new pixels, for {} total ({} previously)", id, failNew, failBefore + failNew, failBefore);
 
     // Get averaged tot
     tot->divide(*occ);

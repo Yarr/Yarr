@@ -376,6 +376,8 @@ class NoiseAnalysis : public AnalysisAlgorithm {
         NoiseAnalysis() : AnalysisAlgorithm() {
             createMask = true;
             noiseThr = 1e-6;
+	        doAltMask = false;
+            minOcc = 1; // need at least one hit to mask any pixel, default
         }
         ~NoiseAnalysis() override = default;
 
@@ -389,6 +391,8 @@ class NoiseAnalysis : public AnalysisAlgorithm {
         std::unique_ptr<Histo1d> tag, totDist;
         bool createMask;
         double noiseThr;
+        bool doAltMask;
+        unsigned minOcc; // minimum absolute occupancy for noise masking
 };
 
 class NoiseTuning : public AnalysisAlgorithm {
