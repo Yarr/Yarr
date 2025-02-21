@@ -12,6 +12,8 @@
 TEST_CASE("StarDataProcessor", "[star][data_processor]") {
   std::shared_ptr<FeDataProcessor> proc;
 
+  bool use_base_zero = false;
+
   SECTION("Star") {
     proc = StdDict::getDataProcessor("Star");
   }
@@ -30,6 +32,18 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
     j["use_template"] = true;
     proc->loadConfig(j);
   }
+
+  SECTION("Star_PPB_template_base0") {
+    use_base_zero = true;
+
+    proc = StdDict::getDataProcessor("Star_vH1A1");
+    json j;
+    j["use_template"] = true;
+    j["zero_base"] = true;
+    proc->loadConfig(j);
+  }
+
+  CAPTURE (use_base_zero);
 
   REQUIRE (proc);
 
@@ -96,9 +110,14 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
 
   for(auto &hit: first.hits) {
     // Remove offset to base 1
-    uint16_t packed = hit.col - 1;
-    if((hit.row-1) == 1) {
+    uint16_t packed = hit.col - (use_base_zero?0:1);
+    size_t check_row = hit.row - (use_base_zero?0:1);
+    CAPTURE(hit.row, hit.col);
+    CAPTURE(check_row);
+    if(check_row == 1) {
       packed |= 0x8000;
+    } else {
+      CHECK (check_row == 0);
     }
     out_hits.push_back(packed);
 

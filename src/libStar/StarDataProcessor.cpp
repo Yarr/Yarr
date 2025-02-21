@@ -23,6 +23,7 @@ void process_data(RawData &curIn,
                   FeedbackProcessingInfo &curStatus,
                   const std::array<uint8_t, 11> &chip_map);
 
+template<size_t BASE = 1>
 void process_data_template(RawData &curIn,
                   FrontEndData &curOut,
                   FeedbackProcessingInfo &curStatus,
@@ -61,8 +62,15 @@ void StarDataProcessor::init() {}
 
 void StarDataProcessor::loadConfig(const json &config)
 {
-  if(config.contains("use_template")) {
-    pimpl->proc_data = process_data_template;
+  logger->debug("Load config");
+  if(config.contains("use_template") && config["use_template"]) {
+    logger->debug("Using templated decoder");
+    if(config.contains("zero_base") && config["zero_base"]) {
+      pimpl->proc_data = process_data_template<0>;
+      logger->debug("Using zero-based row/col");
+    } else {
+      pimpl->proc_data = process_data_template<>;
+    }
   }
 }
 
@@ -142,6 +150,7 @@ void StarDataProcessor::process_core() {
     }
 }
 
+template<size_t BASE = 1>
 class MyProc : public EmptyProc {
     bool seen_error{false};
 
@@ -162,7 +171,7 @@ public:
     {
         curStatus.n_clusters++;
 
-        int row = ((address>>7)&1)+1;
+        int row = ((address>>7)&1) + BASE;
 
         if(input_channel >= HCC_INPUT_CHANNEL_COUNT) {
           logger->warn("Bad input channel {} in cluster",
@@ -187,14 +196,14 @@ public:
         unsigned tot = 1;
 
         curOut.curEvent->addHit( row,
-                                 histo_base+((address&0x7f)+1), tot);
+                                 histo_base+((address&0x7f)+BASE), tot);
 
         std::bitset<3> nextPattern (next);
         for(unsigned i=0; i<3; i++){
           if(!nextPattern.test(i)) continue;
           auto nextAddress = address+(3-i);
           curOut.curEvent->addHit( row,
-                                   histo_base+((nextAddress&0x7f)+1),1);
+                                   histo_base+((nextAddress&0x7f)+BASE), tot);
 
           // It's an error for cluster to escape either "side"
           if((address & (~0x7f)) != (nextAddress & (~0x7f))) {
@@ -234,7 +243,7 @@ public:
                 int hits = (value>>(8*i)) & 0xff;
                 for(int j=0; j<hits; j++) {
                     curOut.curEvent->addHit( row,
-                                             ic*128+( ((channel>>1)&0x7f)+1), 1);
+                                             ic*128+( ((channel>>1)&0x7f)+BASE), 1);
                 }
             }
         }
@@ -364,6 +373,7 @@ void process_data(RawData &curIn,
     }
 }
 
+template<size_t BASE>
 void process_data_template(RawData &curIn,
                   FrontEndData &curOut,
                   FeedbackProcessingInfo &curStatus,
@@ -372,7 +382,7 @@ void process_data_template(RawData &curIn,
     uint8_t *start = (uint8_t*)curIn.getBuf();
     uint8_t *end = start + (curIn.getSize() * 4);
 
-    MyProc proc(curOut, curStatus, chip_map);
+    MyProc<BASE> proc(curOut, curStatus, chip_map);
     StarProcessPacket(start, end, proc);
 
     if(proc.error()) {
