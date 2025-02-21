@@ -11,7 +11,7 @@
       "1": {
         "algorithm": "StarTrimDacAnalysis",
         "config": {
-          "parametersOfInterest": ["ABCs_BTRANGE", "TRIMs"],
+          "parametersOfInterest": ["ABCs_BTRANGE", "ABCs_TRIMs"],
           "targetThresholdPerChip": true
         },
         "dependOn": ["ScurveFitter"]
@@ -40,7 +40,7 @@
           "max": 31,
           "min": 0,
           "step": 1,
-          "parameter":"TRIMs"
+          "parameter":"ABCs_TRIMs"
         },
         "loopAction": "StdParameterLoop"
       },

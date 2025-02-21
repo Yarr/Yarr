@@ -31,7 +31,7 @@ enum class ConfigType {
 class MyFrontEnd : public FrontEnd {
 public:
   void init(HwController *arg_core, const FrontEndConnectivity& fe_cfg) {}
-  void maskPixel(unsigned col, unsigned row) {}
+  void maskPixel(unsigned col, unsigned row, bool doAltMask = false) {}
   unsigned getPixelEn(unsigned col, unsigned row) { return 1; }
   void enableAll() {}
   void configure() {}

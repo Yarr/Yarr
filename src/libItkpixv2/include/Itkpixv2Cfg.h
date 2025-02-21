@@ -20,12 +20,14 @@ class Itkpixv2Cfg : public FrontEndCfg, public Itkpixv2GlobalCfg, public Itkpixv
     public:
         Itkpixv2Cfg();
 
-        void maskPixel(unsigned col, unsigned row) override {
-            this->setEn(col, row, 0);
+        void maskPixel(unsigned col, unsigned row, bool doAltMask = false) override {
+            if (!doAltMask) this->setEn(col, row, 0);
             this->setHitbus(col, row, 0);
         }
-        
-        unsigned getPixelEn(unsigned col, unsigned row) override {
+
+        unsigned getPixelEn(unsigned col, unsigned row, bool doAltMask = false) override {
+            if(doAltMask)
+                return this->getHitbus(col, row);
             return this->getEn(col, row);
         }
 

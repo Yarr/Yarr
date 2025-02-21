@@ -27,6 +27,7 @@ LIST(APPEND apps
         specComTest
 	switchLPM
         eyeDiagram
+        dataMergingCheck
         specErrorCheckDma
         specErrorCheckSingle
         specS6programFpga

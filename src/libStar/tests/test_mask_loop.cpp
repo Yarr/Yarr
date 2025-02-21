@@ -11,92 +11,13 @@
 
 #include "EmptyHw.h"
 
+#include "star_utils.h"
+
 // Keep in a namespace to avoid collisions (eg test_trigger_loop)
 namespace MaskTesting {
 
-/**
-   Override TxCore to record what is written to FIFO.
- */
-class MyTxCore : public EmptyTxCore {
-public:
-  std::vector<std::vector<uint32_t>> buffers;
-
-  void writeFifo(uint32_t word) override {
-    if(buffers.empty()) {
-      buffers.push_back(std::vector<uint32_t>{});
-    }
-    buffers.back().push_back(word);
-  }
-
-  void releaseFifo() override {
-    buffers.push_back(std::vector<uint32_t>{});
-  }
-
-  /// Get LCB frame from sent words, index is in time order 
-  LCB::Frame getFrame(int buff_id, size_t idx) const {
-    REQUIRE (buff_id < buffers.size());
-
-    const auto &buffer = buffers[buff_id];
-
-    REQUIRE (idx < buffer.size() * 2);
-    size_t offset = idx/2;
-    // High word is first in time
-    int side = (idx+1)%2;
-    return (buffer[offset] >> (16*side)) & 0xffff;
-  }
-
-  void getRegValueForBuffer(int buff_id,
-                            uint8_t &reg, uint32_t &value) const {
-    reg = 0;
-    value = 0;
-    int progress = 0;
-    for(int i=0; i<buffers[buff_id].size()*2; i++) {
-      LCB::Frame f = getFrame(buff_id, i);
-      CAPTURE (buff_id, i, f, progress);
-      if(f == LCB::IDLE) continue;
-
-      // Nothing beyond end
-      REQUIRE (progress < 9);
-
-      uint8_t code0 = (f >> 8) & 0xff;
-      uint8_t code1 = f & 0xff;
-      if(code0 == LCB::K2) {
-        if(progress == 0) {
-          // Start (ignore flags)
-          progress ++;
-          continue;
-        } else if(progress == 8) {
-          // End (ignore flags)
-          progress ++;
-          continue;
-        }
-      }
-
-      REQUIRE (!SixEight::is_kcode(code1));
-      REQUIRE (!SixEight::is_kcode(code0));
-
-      uint16_t data12 = (SixEight::decode(code0) << 6)
-                       | SixEight::decode(code1);
-
-      if(progress == 1) {
-        reg |= (data12&3)<<6;
-      } else if(progress == 2) {
-        reg |= (data12>>1) & 0x3f;
-        // value |= (data12 & 0x7f) << (7*(7-progress)));
-      } else {
-        CAPTURE(data12);
-        value |= (data12 & 0x7f) << (7*(7-progress));
-        CAPTURE(value);
-        // CHECK (progress == 2) ;
-      }
-
-      progress ++;
-    }
-  }
-};
-
 class MyHwController
-  : public HwController, public MyTxCore, public EmptyRxCore {
+  : public HwController, public CapturePacketsTxCore, public EmptyRxCore {
 public:
   MyHwController() = default;
   ~MyHwController() override = default;
@@ -111,7 +32,7 @@ public:
 
 using namespace MaskTesting;
 
-std::unique_ptr<MyTxCore> runWithConfig(json &j) {
+std::unique_ptr<CapturePacketsTxCore> runWithConfig(json &j) {
   std::shared_ptr<LoopActionBase> action = StdDict::getLoopAction("StarMaskLoop");
 
   REQUIRE (action);
@@ -129,7 +50,7 @@ std::unique_ptr<MyTxCore> runWithConfig(json &j) {
   std::unique_ptr<MyHwController> hw(new MyHwController);
   Bookkeeper bk(&*hw, &*hw);
 
-  MyTxCore &tx = *hw;
+  CapturePacketsTxCore &tx = *hw;
 
   auto fe = StdDict::getFrontEnd("Star");
   {
@@ -153,7 +74,7 @@ std::unique_ptr<MyTxCore> runWithConfig(json &j) {
   return std::move(hw);
 }
 
-void checkMaskRegisters(MyTxCore &tx, json &j,
+void checkMaskRegisters(CapturePacketsTxCore &tx, json &j,
                         uint32_t full_mask,
                         MaskType first_mask, MaskType second_mask) {
   REQUIRE (tx.buffers.size() > 0);
@@ -206,24 +127,23 @@ void checkMaskRegisters(MyTxCore &tx, json &j,
   std::array<uint32_t, 8> mask{0};
 
   for(int i=0; i<buf_count; i++) {
-    uint8_t reg;
-    uint32_t value;
-    tx.getRegValueForBuffer(i, reg, value);
+    RegExtractInfo rei = tx.getRegValueForBuffer(i);
 
-    CAPTURE(i, reg, value);
+    CAPTURE(i, rei.reg, rei.value);
+    REQUIRE (rei.isAbcRegWrite());
 
-    if(reg > 0x18) {
+    if(rei.reg > 0x18) {
       REQUIRE (!mask_only);
-      REQUIRE ( ((reg >= 0x68) && (reg < 0x70)) );
+      REQUIRE ( ((rei.reg >= 0x68) && (rei.reg < 0x70)) );
     } else {
-      REQUIRE ( ((reg >= 0x10) && (reg < 0x18)) );
+      REQUIRE ( ((rei.reg >= 0x10) && (rei.reg < 0x18)) );
 
-      auto &test_mask = mask[reg-0x10];
-      CAPTURE(test_mask, mask, ~value);
+      auto &test_mask = mask[rei.reg-0x10];
+      CAPTURE(test_mask, mask, ~rei.value);
 
       // Not enabling anything already enabled
-      REQUIRE (((~value) & test_mask) == 0);
-      test_mask |= ~value;
+      REQUIRE (((~rei.value) & test_mask) == 0);
+      test_mask |= ~rei.value;
     }
 
     if(i == regs_per_loop - 1) {
@@ -336,7 +256,7 @@ TEST_CASE("StarMaskLoop", "[star][mask_loop]") {
     second_mask = {0x30, 0, 0x30, 0, 0x30, 0, 0x30, 0};
   }
 
-  std::unique_ptr<MyTxCore> tx_ptr(std::move(runWithConfig(j)));
+  std::unique_ptr<CapturePacketsTxCore> tx_ptr(std::move(runWithConfig(j)));
   auto tx = *tx_ptr;
 
   checkMaskRegisters(tx, j, full_mask, first_mask, second_mask);
@@ -360,7 +280,7 @@ TEST_CASE("StarMaskLoopNmask", "[star][mask_loop]") {
     j["step"] = 1;
   }
 
-  std::unique_ptr<MyTxCore> tx_ptr(std::move(runWithConfig(j)));
+  std::unique_ptr<CapturePacketsTxCore> tx_ptr(std::move(runWithConfig(j)));
   auto tx = *tx_ptr;
 
   REQUIRE (tx.buffers.size() > 0);
@@ -392,27 +312,26 @@ TEST_CASE("StarMaskLoopNmask", "[star][mask_loop]") {
   std::array<uint32_t, 8> mask{0};
 
   for(int i=0; i<buf_count; i++) {
-    uint8_t reg;
-    uint32_t value;
-    tx.getRegValueForBuffer(i, reg, value);
+    RegExtractInfo rei = tx.getRegValueForBuffer(i);
 
-    CAPTURE(i, reg, value);
+    CAPTURE(i, rei.reg, rei.value);
+    REQUIRE (rei.isAbcRegWrite());
 
-    if(reg > 0x18) {
+    if(rei.reg > 0x18) {
       REQUIRE (!mask_only);
-      REQUIRE ( ((reg >= 0x68) && (reg < 0x70)) );
+      REQUIRE ( ((rei.reg >= 0x68) && (rei.reg < 0x70)) );
     } else {
-      REQUIRE ( ((reg >= 0x10) && (reg < 0x18)) );
+      REQUIRE ( ((rei.reg >= 0x10) && (rei.reg < 0x18)) );
 
       // std::cout << "Mask: " << (reg-0x10) << " " << std::bitset<32>(value) << "\n";
 
-      auto &test_mask = mask[reg-0x10];
-      CAPTURE(test_mask, mask, ~value);
-      CAPTURE((~value) & test_mask);
+      auto &test_mask = mask[rei.reg-0x10];
+      CAPTURE(test_mask, mask, ~rei.value);
+      CAPTURE((~rei.value) & test_mask);
 
       // Not enabling anything already enabled
-      REQUIRE (((~value) & test_mask) == 0);
-      test_mask = value;
+      REQUIRE (((~rei.value) & test_mask) == 0);
+      test_mask = rei.value;
     }
 
     if(((i+1)%regs_per_loop) == 0) {
