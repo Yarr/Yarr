@@ -182,12 +182,16 @@ void StarStrobeDelayAnalysis::processHistogram(HistogramBase *h) {
                 }
         }
     }
+
+    if (m_strobeDelayCnt == m_strobeDelayBins) {
+        pushData();
+    }
 }
 
 //! Once all scan inputs have been collected, finds optimal strobe delay for each chip and dumps results and control plots
 /*!
 */
-void StarStrobeDelayAnalysis::end() {
+void StarStrobeDelayAnalysis::pushData() {
 
   // Make histograms of left/right edge for all channels
   auto hDistLeftEdge = std::make_unique<Histo1d>("LeftEdgeDist", m_strobeDelayBins, m_strobeDelayMin-((double)m_strobeDelayStep/2.0), m_strobeDelayMax+((double)m_strobeDelayStep/2.0));
@@ -241,6 +245,9 @@ void StarStrobeDelayAnalysis::end() {
     // Pass configuration to (eg) StarParamFeedback
     // The chips in this histogram are in histogram order, and are rearranged
     // (via histoChipMap) by the front end code.
+    if(m_fb) {
+      alog->info("Feedback strobe delay for chip {}: {}", iChip, strobeDelayOpt);
+    }
     feedbackData->fill(iChip, 0, strobeDelayOpt);
   } // end loop over chips
 
@@ -300,6 +307,9 @@ void StarStrobeDelayAnalysis::end() {
   }
 }
 
+void StarStrobeDelayAnalysis::end() {
+  // Nothing to do on shutdown
+}
 
 //! Find first x-axis value for which y-value goes above/below a certain fraction of the maximum
 /*!
