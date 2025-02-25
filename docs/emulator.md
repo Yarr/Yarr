@@ -64,7 +64,7 @@ and
 The emulator interacts with the outside through the `Itkpixv2Emu` class. `Itkpixv2Emu` instantiates two functional modules - `Itkpixv2EmuCommandInterpreter` and `Itkpixv2EmuCommandExe`. At the highest level, `Itkpixv2Emu` runs a loop that listens to the Tx and performs command interpretation and execution upon reception of data. This loop runs until stopped from the outside. The loop is sketched in the figure below.
 
 <figure class="image">
-<img src="" alt="" width="250">
+<img src="images/emulator/Itkpixv2EmuTopLevelLoop.png" alt="" width="">
 <figcaption>Top-level emulator loop.</figcaption>
 </figure>
 
@@ -82,6 +82,12 @@ struct Cmd {
 
 These interpreted commands are then passed through a FIFO to the `Itkpixv2EmuCommandExe`, which takes the appropriate action. A diagram of `Itkpixv2EmuCommandInterpreter` functionality is shown in the figure below.
 
+<figure class="image">
+<img src="images/emulator/Itkpixv2EmuCommandInterpreterSchematics.png" alt="" width="">
+<figcaption>Diagram of Itkpixv2EmuCommandInterpreter class functionality</figcaption>
+</figure>
+
+
 ### Carrying out commands
 `Cmd` structs form the input to the `Itkpixv2EmuCommandExe`, which decides what action to take based on the `Cmd` header. `Itkpixv2EmuCommandExe` holds instances of several helper classes, such as `Itkpixv2Encoder` for producing the output streams, `Itkpixv2Cfg` to represent the chip registers and `ItkpixLayout` to represent ToT in the chip matrix. In the current state, commands are carried out serially, but the development was done with consideration of potential future multi-threading.
 
@@ -94,6 +100,12 @@ The following actions are taken for each command -
 - `PLLock` - no action
 - `Clear`  - no action
 
+<figure class="image">
+<img src="images/emulator/Itkpixv2EmuCommandExeSchematics.png" alt="" width="">
+<figcaption>Diagram of Itkpixv2EmuCommandExe class functionality</figcaption>
+</figure>
+
+
 
 ## Calibrations
 Several calibrations based on real-chip measurements are used to translate between DAC, charge and ToT.
@@ -102,10 +114,26 @@ Several calibrations based on real-chip measurements are used to translate betwe
 The injection charge is set in DACs in the chip registers, and is translated into electrons through a linear relation provided in `Itkpixv2Cfg::toCharge` function.
 
 ### Global threshold (DAC to e)
+The global threshold calibration assumes linear translation between DAC and charge with 2200 e at 300 DAC (with no offset).
 
 ### Pixel threshold (TDAC to e)
+Depending on the TDAC sign, a linear relation is taken with slopes given by 1000 e at + 15 TDAC (positive TDAC) and -1400 e at -15 TDAC (negative TDAC). No offset is assumed in either case.
+
+<img src="images/emulator/Itkpixv2EmuTDACvsCharge.png" alt="" width="300">
+<figcaption>TDAC vs. threshold measurement used for emulator calibration</figcaption>
+</figure>
+
 
 ### Charge to ToT (e to bits)
+Very coarse linear calibration dividing 14 non-zero ToTs equally over 33000 e charge over threshold is used. The calibration function `Itkpixv2EmuUtils::chargeToToT` returns ToT + 1, so that serves both as ToT and an indication of a hit in case Tot is `0x0`. The lowest output value is therefore `0x1`. More realistic calibration (e. g. accounting for preamp settings) is currently not implemented.
+
+<img src="images/emulator/Itkpixv2EmuChargevsToT.png" alt="" width="300">
+<figcaption>Charge vs. ToT measurement used as a basis for emulator response calibration</figcaption>
+</figure>
+
+
+### Noise
+Gaussian noise with mean 0 e and RMS of 50 e is generated and added to the injected charge before subtracting the threshold.
 
 
 # RD53A emulator
