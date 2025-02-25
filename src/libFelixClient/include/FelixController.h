@@ -170,6 +170,35 @@ public:
   /// @return True if the operation is successful
   bool setELinkWidthMbps(const std::vector<uint64_t>& fids, unsigned bandwidth);
 
+  /*
+  Optoboard device communication
+  */
+  /// @brief Read a value from an LpGBT device register
+  /// @param regname Name of register (string)
+  /// @param regfield Name of register field (string)
+  /// @return Value of register (uint8_t)
+  uint8_t readLpGBTRegister(std::string regname, std::string regfield);
+
+  /// @brief Write a value to an LpGBT device register
+  /// @param regname Name of register (string)
+  /// @param regfield Name of register field (string)
+  /// @param regdata Data to write/read back, set by reference
+  /// @return True if the operation is successful
+  bool writeLpGBTRegister(std::string regname, std::string regfield, uint8_t regdata);
+
+  /// @brief Read a value from a GBCR device register
+  /// @param regname Name of register (string)
+  /// @param regfield Name of register field (string)
+  /// @return Value of register (uint8_t)
+  uint8_t readGBCRRegister(std::string regname, std::string regfield);
+
+  /// @brief Write a value to a GBCR device register
+  /// @param regname Name of register (string)
+  /// @param regfield Name of register field (string)
+  /// @param regdata Data to write/read back, set by reference
+  /// @return True if the operation is successful
+  bool writeGBCRRegister(std::string regname, std::string regfield, uint8_t regdata);
+
 private:
 
   std::shared_ptr<FelixClientThread> client;
@@ -217,6 +246,23 @@ private:
 
   /// Initiate a map with all elink enable register names on a FELIX device and set their value to 0
   void initAllELinkEnableRegMap(std::map<std::string, unsigned>& regMap, bool toflx, bool tohost);
+
+  /*
+  IC connection send/receive utilities
+  */
+  /// @brief Constructs the dataframe to send over an IC channel (used for example in LpGBT register reads)
+  /// @param regAddr Address of the register to read (const uint16_t)
+  /// @param data Data to send (const std::vector <uint8_t>&)
+  /// @param read Whether we will be reading or writing data (bool, true for read, false for write)
+  /// @return Returns the dataframe to send through the IC channel (std::vector<uint8_t>)
+  std::vector<uint8_t> prepareICDataFrame(const bool read, const uint16_t startAddr, const std::vector<uint8_t>& data);
+
+  /// @brief Send a command over an IC channel, useful for example in LpGBT register writing
+  /// @param fid The FIC of the IC channel (uint64_t)
+  /// @param data The dataframe to be sent (const std::vector<uint8_t>&)
+  /// @return Whether the operation was successful (bool)
+  bool communicateOverIC(uint64_t fid, const std::vector<uint8_t>& data);
+
 };
 
 #endif
