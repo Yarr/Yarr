@@ -711,7 +711,11 @@ void FelixController::initAllELinkEnableRegMap(std::map<std::string, unsigned>& 
   }
 }
 
-std::vector<uint8_t> prepareICDataFrame(const bool read, const uint16_t startAddr, const uint8_t i2cAddr, const unsigned int deviceVersion, const std::vector<uint8_t>& data){
+
+
+
+
+std::vector<uint8_t> FelixController::prepareICDataFrame(const bool read, const uint16_t startAddr, const uint8_t i2cAddr, const unsigned int deviceVersion, const std::vector<uint8_t>& data){
   /*
     Based on itk-ic-over-netio-next communication wrapper, 
     source: https://gitlab.cern.ch/itk-felix-sw/itk-ic-over-netio-next/-/blob/master/src/itk-ic-over-netio-next.cc?ref_type=heads
@@ -774,7 +778,7 @@ std::vector<uint8_t> prepareICDataFrame(const bool read, const uint16_t startAdd
   return frame;
 }
 
-bool communicateOverIC(uint64_t fid, const std::vector<uint8_t>& data){
+bool FelixController::communicateOverIC(uint64_t fid, const std::vector<uint8_t>& data){
   /*
     Based on itk-ic-over-netio-next communication wrapper, 
     source: https://gitlab.cern.ch/itk-felix-sw/itk-ic-over-netio-next/-/blob/master/src/itk-ic-over-netio-next.cc?ref_type=heads
@@ -797,6 +801,110 @@ bool communicateOverIC(uint64_t fid, const std::vector<uint8_t>& data){
   }
   return success;
  }
+
+
+uint8_t FelixController::readLpGBTRegister(unsigned int deviceVersion, unsigned int i2cAddr, std::string regname, std::string regfield=""){
+  /*
+  """Read a register of a device on the Optoboard.
+
+        Args:
+            reg (str): register name as in the register maps
+            reg_field (str): register field name as in the register maps.
+                If None is provided reg_data gets sent to the device as a full byte,
+                If a reg_field string is provided only the field gets updated.
+
+        Returns:
+            read (int): read value of the register
+        """
+          NOTE: do I have a good way of seeing if I'm writing/reading the primary LpGBT from the info I have..
+
+        ### Read for lpGBT master over IC
+        if self.master:
+
+            try:
+                getattr(getattr(eval("self." + self.device_type + "_reg_map"), reg), "address")
+            except:
+                raise NameError("The provided register name is not in the register map!")
+
+            read_reg, read = self.comm_wrapper(reg, None)
+
+        ### Read with lpGBT master I2C controller on Optoboard
+        else:
+            try:
+                reg_addr = getattr(getattr(eval("self." + self.device_type + "_reg_map"), reg), "address")
+            except:
+                raise NameError("The provided register name is not in the register map!")
+
+            if self.device_type == "lpgbt":
+                NBYTE = 2
+            else:
+                NBYTE = 1
+
+            self.comm_wrapper("I2CM" + str(self.I2C_master) + "DATA0", (self.SCLDRIVE << 7) | (NBYTE << 2) | self.FREQ)
+            self.comm_wrapper("I2CM" + str(self.I2C_master) + "CMD", self.I2C_WRITE_CR)
+
+            # Send register address
+            if self.device_type == "lpgbt":
+                self.comm_wrapper("I2CM" + str(self.I2C_master) + "DATA0", divmod(reg_addr,0x100)[1])    # Lower half of register address
+                self.comm_wrapper("I2CM" + str(self.I2C_master) + "DATA1", divmod(reg_addr,0x100)[0])    # Upper half of register address
+
+            else:
+                self.comm_wrapper("I2CM" + str(self.I2C_master) + "DATA0", reg_addr)
+
+            self.comm_wrapper("I2CM" + str(self.I2C_master) + "CMD", self.I2C_W_MULTI_4BYTE0)
+            self.comm_wrapper("I2CM" + str(self.I2C_master) + "ADDRESS", self.address)
+            self.comm_wrapper("I2CM" + str(self.I2C_master) + "CMD", self.I2C_WRITE_MULTI)    # Initiate send of register address and register value
+
+            # read answer from I2C device
+            NBYTE = 1
+            self.comm_wrapper("I2CM" + str(self.I2C_master) + "DATA0", (self.SCLDRIVE << 7) | (NBYTE << 2) | self.FREQ)
+            self.comm_wrapper("I2CM" + str(self.I2C_master) + "CMD", self.I2C_WRITE_CR)
+
+            self.comm_wrapper("I2CM" + str(self.I2C_master) + "ADDRESS", self.address)
+            self.comm_wrapper("I2CM" + str(self.I2C_master) + "CMD", self.I2C_READ_MULTI)
+
+            # if not Optoboard.test_mode:
+            #     # Reading status register for read of register
+            status_value = self.comm_wrapper("I2CM" + str(self.I2C_master) + "STATUS", None)
+            self.status_info(status_value)     # Read status register
+
+            # Read slave answer from LpGBT master register
+            read_reg, read = self.comm_wrapper("I2CM" + str(self.I2C_master) + "READ15", None)
+
+        if reg_field is not None:
+
+            reg_field_class = getattr(getattr(eval("self." + self.device_type + "_reg_map"), reg), reg_field)
+            read = read >> getattr(reg_field_class, "offset") & (2**getattr(reg_field_class, "length")-1)
+
+            logger.debug("read - reg_field is not None - offset: %s, length: %s", getattr(reg_field_class, "offset"), getattr(reg_field_class, "length"))
+
+            read_reg = reg + "_" + reg_field
+        else:
+            read_reg = reg      # would otherwise return "I2CM" + str(I2C_master) + "READ15"
+
+        logger.debug("Read from %s - %s: %s (%s, %s)", self.device, read_reg, read, hex(read), bin(read))
+
+        return read
+
+  */
+
+}
+
+bool FelixController::writeLpGBTRegister(unsigned int deviceVersion, unsigned int i2cAddr, std::string regname, std::string regfield, uint8_t regdata){
+
+
+}
+
+uint8_t FelixController::readGBCRRegister(unsigned int deviceVersion, unsigned int i2cAddr, std::string regname, std::string regfield){
+
+
+}
+
+bool FelixController::writeGBCRRegister(unsigned int deviceVersion, unsigned int i2cAddr, std::string regname, std::string regfield, uint8_t regdata){
+
+
+}
+
 
 bool felix_registered = StdDict::registerHwController(
   "FelixClient",
