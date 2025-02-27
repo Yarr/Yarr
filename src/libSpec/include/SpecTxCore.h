@@ -42,9 +42,11 @@
 #define TX_IDLE_WORD 0x13
 #define TRIG_EXTEND_INTERVAL 0x14
 #define TRIG_ENCODER_ENABLE 0x15
-#define TRIG_CODE_READY_COUNTER 0x16
-
+#define BRAM_BUSY_ENABLE 0x1B
+#define BRAM_FULL_THRESHOLD 0x26
+#define BRAM_EMPTY_THRESHOLD 0x27
 #define TX_CLK_PERIOD 25e-9
+#define BRAM_MAX_SIZE 131072
 
 // TODO move into its own class
 #define TRIG_LOGIC_ADR (0x5 << 14)
@@ -55,7 +57,8 @@
 #define TRIG_LOGIC_DELAY 0x4 // And the next 3 addresses up to 0x7
 #define TRIG_LOGIC_DEADTIME 0x8
 #define TRIG_LOGIC_EUDET_SIMPLE 0x9 // use simple eudet mode
-#define TRIG_LOGIC_MASTER_TRIGGER_COUNTER 0xA // Master trig counter
+#define TRIG_LOGIC_PULSE_EXTENSION_INTERVAL 0xA // Pulse extender interval for external trigger pulses
+
 
 #define NCHANNELS 4
 
@@ -144,9 +147,25 @@ class SpecTxCore : virtual public TxCore, virtual public SpecCom{
             SpecCom::writeSingle(TX_ADDR | TRIG_EXTEND_INTERVAL, interval);
         }
 
-	void setTriggerEncoderEnable(uint32_t value) {
-	    SpecCom::writeSingle(TX_ADDR | TRIG_ENCODER_ENABLE, value);
-	}
+        void setTriggerEncoderEnable(uint32_t value) {
+            SpecCom::writeSingle(TX_ADDR | TRIG_ENCODER_ENABLE, value);
+        }
+
+        void setBRAMBusyEnable(uint32_t value) {
+            SpecCom::writeSingle(TX_ADDR | BRAM_BUSY_ENABLE, value);
+        }
+
+        void setBRAMFullThreshold(uint32_t value);
+        void setBRAMEmptyThreshold(uint32_t value);
+
+        void setEudetSimpleMode(uint32_t value) {
+            SpecCom::writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_EUDET_SIMPLE, value);
+        }
+
+        void setExternalTriggerPulseMultiplier(uint32_t value) {
+            SpecCom::writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_PULSE_EXTENSION_INTERVAL, value);
+        }
+
 
         void setTxPolarity(uint32_t value);
         uint32_t getTxPolarity();
