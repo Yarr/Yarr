@@ -371,3 +371,29 @@ TEST_CASE("StarCfgLoadConfig", "[star][config]") {
   CHECK (test_config.getHCCchipID() == hccID);
   CHECK (test_config.getHCCfuseID() == fuseID);
 }
+
+TEST_CASE("Star_AbcHccInputChannelMapping", "[star][config]") {
+  int abc_version = 1;
+  int hcc_version = 1;
+
+  StarCfg test_config(abc_version, hcc_version);
+  test_config.clearABCchipIDs();
+  test_config.setHCCChipId(4);
+
+  test_config.addABCchipID(13);
+
+  CHECK( test_config.isAbcForInputChannel(0) );
+  CHECK( !test_config.isAbcForInputChannel(1) );
+
+  CHECK( test_config.abcForInputChannel(0).getABCchipID() == 13 );
+
+  test_config.addABCchipID(14, 1);
+  CHECK( test_config.isAbcForInputChannel(1) );
+  CHECK( test_config.abcForInputChannel(1).getABCchipID() == 14 );
+
+  test_config.addABCchipID(15, 6);
+  CHECK( !test_config.isAbcForInputChannel(2) );
+  CHECK( test_config.isAbcForInputChannel(6) );
+
+  CHECK( test_config.abcForInputChannel(6).getABCchipID() == 15 );
+}

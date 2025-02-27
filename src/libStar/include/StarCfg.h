@@ -149,6 +149,17 @@ class StarCfg : public FrontEndCfg {
   }
   void enableAll() override;
 
+  /// Is there an ABC associated with HCC input channel
+  bool isAbcForInputChannel(int input_channel) const {
+    assert(input_channel >= 0 && input_channel < HCC_INPUT_CHANNEL_COUNT);
+    return (m_ABCchips.count(input_channel) > 0);
+  }
+
+  /// Return ABC associated with HCC input channel
+  AbcCfg &abcForInputChannel(int hccIC) {
+    return abcFromIndex(hccIC + 1);
+  }
+
   /**
    * Obtain the corresponding charge [e] from the input VCal
    */
@@ -232,11 +243,6 @@ class StarCfg : public FrontEndCfg {
   HccCfg m_hcc;
 
   std::map<unsigned, AbcCfg> m_ABCchips;
-
-  bool isAbcForInputChannel(int input_channel) const {
-    assert(input_channel >= 0);
-    return (m_ABCchips.count(input_channel) > 0);
-  }
 
   AbcCfg &abcFromIndex(int chipIndex) {
     assert(isAbcForInputChannel(chipIndex-1));
