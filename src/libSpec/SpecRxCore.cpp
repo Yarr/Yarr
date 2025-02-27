@@ -139,7 +139,7 @@ void SpecRxCore::setRxBusySimpleMode(uint32_t value) {
 
 void SpecRxCore::setRxFIFOFullThreshold(uint32_t value) {
     if(value >= RX_FIFO_MAX_SIZE) {
-        stxlog->error("Warning - value {} for RX_FIFO_FULL_THRESHOLD is greater than maximum value {}", value, RX_FIFO_MAX_SIZE);
+        srxlog->error("Warning - value {} for RX_FIFO_FULL_THRESHOLD is greater than maximum value {}", value, RX_FIFO_MAX_SIZE);
     }
     else {
         SpecCom::writeSingle(RX_BRIDGE | RX_FIFO_FULL_THRESHOLD, value);
@@ -148,7 +148,7 @@ void SpecRxCore::setRxFIFOFullThreshold(uint32_t value) {
 
 void SpecRxCore::setRxFIFOEmptyThreshold(uint32_t value) {
     if(value >= RX_FIFO_MAX_SIZE) {
-        stxlog->error("Warning - value {} for RX_FIFO_EMPTY_THRESHOLD is greater than maximum value {}", value, RX_FIFO_MAX_SIZE);
+        srxlog->error("Warning - value {} for RX_FIFO_EMPTY_THRESHOLD is greater than maximum value {}", value, RX_FIFO_MAX_SIZE);
     }
     else {
         SpecCom::writeSingle(RX_BRIDGE | RX_FIFO_EMPTY_THRESHOLD, value);
