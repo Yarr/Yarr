@@ -31,6 +31,7 @@ TEST_CASE("StarBasicConfig", "[star][chips]") {
 
   // Default is with "global" addresses
   std::string fe_name = "Star";
+  uint32_t set_fuse = 0;
 
   SECTION("Default") {}
   SECTION("PPA") {
@@ -39,9 +40,18 @@ TEST_CASE("StarBasicConfig", "[star][chips]") {
   SECTION("PPB") {
     fe_name = "Star_vH1A1";
   }
+  SECTION("PPB_with_fuse") {
+    fe_name = "Star_vH1A1";
+    set_fuse = 0x123456;
+  }
 
   auto gen_fe = StdDict::getFrontEnd(fe_name);
   auto star_fe = dynamic_cast<StarChips*> (&*gen_fe);
+
+  if(set_fuse) {
+    star_fe->setHCCfuseID(set_fuse);
+  }
+
   REQUIRE(star_fe);
   star_fe->init(&hw, FrontEndConnectivity(0,0));
 
@@ -76,14 +86,17 @@ TEST_CASE("StarBasicConfig", "[star][chips]") {
   // This just checks that the above code can parse the commands sent
   for(int i=0; i<buf_count; i++) {
     RegExtractInfo rei = tx.getRegValueForBuffer(i);
-    if(rei.reg == 17) {
+    if(rei.isHccRegWrite() && (rei.reg == 17)) {
       l->info(" HCCID reg from {:3}: {:3} {:08x} {:08x}", i, rei.reg, rei.value, rei.other);
       seenAddress = true;
     }
     l->debug(" reg from {:3}: {:3} {:08x} {:08x}", i, rei.reg, rei.value, rei.other);
   }
 
-  REQUIRE (seenAddress);
+  bool has_fuse_id = star_fe->getHCCfuseID();
+  CHECK(has_fuse_id == (set_fuse!=0));
+
+  REQUIRE (seenAddress == has_fuse_id);
 }
 
 TEST_CASE("StarChipsNamedConfig", "[star][chips]") {
@@ -150,6 +163,7 @@ TEST_CASE("StarChipsNamedConfig", "[star][chips]") {
   // This just checks that the above code can parse the commands sent
   for(int i=0; i<buf_count; i++) {
     RegExtractInfo rei = tx.getRegValueForBuffer(i);
+    CHECK (rei.isRegWrite());
     l->debug(" reg from {:3}: {:3} {:08x} {:08x}", i, rei.reg, rei.value, rei.other);
     found_regs.insert(std::make_pair(rei.reg, rei.value));
   }

@@ -98,7 +98,7 @@ class StarCfg : public FrontEndCfg {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
       return m_hcc.setSubRegisterValue(subRegName, value);
     } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
-        if (abcAtIndex(chipIndex))
+        if (isAbcForInputChannel(chipIndex-1))
             return abcFromIndex(chipIndex).setSubRegisterValue(subRegName, value);
     }else {
       std::cerr << " --> Error: Could not find register \""<< subRegName << "\"" << std::endl;
@@ -110,7 +110,7 @@ class StarCfg : public FrontEndCfg {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
       return m_hcc.getSubRegisterValue(subRegName);
     } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
-        if (abcAtIndex(chipIndex))
+        if (isAbcForInputChannel(chipIndex-1))
             return abcFromIndex(chipIndex).getSubRegisterValue(subRegName);
     }else {
       std::cerr << " --> Error: Could not find register \""<< subRegName << "\"" << std::endl;
@@ -135,7 +135,7 @@ class StarCfg : public FrontEndCfg {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
       return m_hcc.getSubRegisterParentValue(subRegName);
     } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
-        if (abcAtIndex(chipIndex))
+        if (isAbcForInputChannel(chipIndex-1))
             return abcFromIndex(chipIndex).getSubRegisterParentValue(subRegName);
     }else {
       std::cerr << " --> Error: Could not find register \""<< subRegName << "\"" << std::endl;
@@ -233,19 +233,19 @@ class StarCfg : public FrontEndCfg {
 
   std::map<unsigned, AbcCfg> m_ABCchips;
 
-  bool abcAtIndex(int chipIndex) const {
-    assert(chipIndex > 0);
-    return (m_ABCchips.count(chipIndex-1) > 0);
+  bool isAbcForInputChannel(int input_channel) const {
+    assert(input_channel >= 0);
+    return (m_ABCchips.count(input_channel) > 0);
   }
 
   AbcCfg &abcFromIndex(int chipIndex) {
-    assert(abcAtIndex(chipIndex));
+    assert(isAbcForInputChannel(chipIndex-1));
     return m_ABCchips.at(chipIndex-1);
   }
 
   const AbcCfg &abcFromIndex(int chipIndex) const {
     assert(chipIndex > 0);
-    assert(abcAtIndex(chipIndex));
+    assert(isAbcForInputChannel(chipIndex-1));
     return m_ABCchips.at(chipIndex-1);
   }
 

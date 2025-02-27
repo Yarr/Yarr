@@ -100,7 +100,7 @@ void StarCfg::setTrimDAC(unsigned col, unsigned row, int value)  {
 
     uint8_t chipIndex = trimIndexFromHistogramLocation(col, row);
 
-    if(abcAtIndex(chipIndex)) {
+    if(isAbcForInputChannel(chipIndex-1)) {
         auto &abc = abcFromIndex(chipIndex);
         abc.setTrimDACRaw(channel, value);
     }
@@ -117,7 +117,7 @@ int StarCfg::getTrimDAC(unsigned col, unsigned row) const {
 
     uint8_t chipIndex = trimIndexFromHistogramLocation(col, row);
 
-    if(abcAtIndex(chipIndex)) {
+    if(isAbcForInputChannel(chipIndex-1)) {
         const auto &abc = abcFromIndex(chipIndex);
         return abc.getTrimDACRaw(channel);
     }
@@ -155,7 +155,7 @@ void StarCfg::writeConfig(json &j) {
     std::vector<std::map<std::string, std::string>> regs(highestABC()+1);
 
     for (int iABC = 0; iABC <= highestABC(); iABC++) {
-        if (!abcAtIndex(iABC+1))
+        if (!isAbcForInputChannel(iABC))
             continue;
         auto &abc = abcFromIndex(iABC+1);
         j["ABCs"]["IDs"][iABC] = abc.getABCchipID();
@@ -427,7 +427,7 @@ void StarCfg::loadConfig(const json &j) {
             try {
                 auto addr = ABCStarRegister::_from_string(regName.c_str());
                 for (int iABC = 0; iABC <= highestABC(); iABC++) {
-                    if (abcAtIndex(iABC+1))  {
+                    if (isAbcForInputChannel(iABC))  {
                         auto &abc = abcFromIndex(iABC+1);
                         abc.setRegisterValue(addr, regValue);
                     }

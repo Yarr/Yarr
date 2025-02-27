@@ -74,6 +74,9 @@ TEST_CASE("StarJsonDefault", "[star][json]") {
   json output;
     fecfg->writeConfig(output);
 
+  // Default config is for barrel
+  CHECK(output["ABCs"]["IDs"].size() == 10);
+
   // debugging
   // output.dump(4);
 
@@ -108,6 +111,8 @@ TEST_CASE("StarJsonMinimal", "[star][json]") {
 
   json output;
     fecfg->writeConfig(output);
+
+  CHECK(!output["ABCs"].contains("IDs"));
 
   REQUIRE(output["name"] == cfg["name"]);
 
@@ -157,6 +162,8 @@ TEST_CASE("StarJsonMinimalABC", "[star][json]") {
   REQUIRE(output["name"] == cfg["name"]);
 
   REQUIRE(output["HCC"]["ID"] == cfg["HCC"]["ID"]);
+
+  CHECK(output["ABCs"]["IDs"].size() == 2);
 
   for(int i=0; i<2; i++) {
     CAPTURE(i);
@@ -223,9 +230,9 @@ TEST_CASE("StarJsonHccRegs", "[star][json]") {
   // debugging
   // output.dump(4);
 
-  // REQUIRE(fecfg->numABCs() == 0);
-
   REQUIRE(output["name"] == cfg["name"]);
+
+  CHECK(!output["ABCs"].contains("IDs"));
 
   REQUIRE(output["HCC"]["ID"] == cfg["HCC"]["ID"]);
   REQUIRE(output["HCC"]["regs"]["Delay1"] == "12345678");
@@ -279,6 +286,8 @@ TEST_CASE("StarJsonAbcRegs", "[star][json]") {
   // output.dump(4);
 
   REQUIRE(output["name"] == cfg["name"]);
+
+  CHECK(output["ABCs"]["IDs"].size() == 2);
 
   // Output is simply all registers in hex
   std::string outVal = output["ABCs"]["regs"][0]["ADCS1"];
@@ -334,6 +343,8 @@ TEST_CASE("StarJsonAbcMasks", "[star][json]") {
 
   REQUIRE(output["name"] == cfg["name"]);
 
+  CHECK(output["ABCs"]["IDs"].size() == 2);
+
   REQUIRE(output["ABCs"]["masked"] == cfg["ABCs"]["masked"]);
 
   bounce_check(output, fe_name);
@@ -385,6 +396,8 @@ TEST_CASE("StarJsonAbcSubRegs", "[star][json]") {
   // output.dump(4);
 
   REQUIRE(output["name"] == cfg["name"]);
+
+  CHECK(output["ABCs"]["IDs"].size() == 2);
 
   // Output is simply all registers in hex
   std::string outVal = output["ABCs"]["regs"][0][lcb_thr_reg];
@@ -438,6 +451,8 @@ TEST_CASE("StarJsonAbcTrim", "[star][json]") {
 
   REQUIRE(output["name"] == cfg["name"]);
 
+  CHECK(output["ABCs"]["IDs"].size() == 2);
+
   REQUIRE(output["ABCs"]["trims"] == cfg["ABCs"]["trims"]);
 
   bounce_check(output, fe_name);
@@ -483,6 +498,8 @@ TEST_CASE("StarJsonAbcCommon", "[star][json]") {
   //output.dump(4);
 
   REQUIRE(output["name"] == cfg["name"]);
+
+  CHECK(output["ABCs"]["IDs"].size() == 3);
 
   auto check = [&](int i, std::string val) {
     std::string out_val = output["ABCs"]["regs"][i]["ADCS2"];
@@ -538,6 +555,8 @@ TEST_CASE("StarJsonNullChan", "[star][json]") {
   //output.dump(4);
 
   REQUIRE(output["name"] == cfg["name"]);
+
+  CHECK(output["ABCs"]["IDs"].size() == 4);
 
   auto check = [&](int i, std::string val, int abcID, bool is_null) {
     std::string out_val = "none";
