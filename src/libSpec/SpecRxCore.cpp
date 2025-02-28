@@ -65,7 +65,7 @@ std::vector<RawDataPtr> SpecRxCore::readData() {
         if (dma_count%32 != 0)
             dma_count += 32-(dma_count%32);
 
-        SPDLOG_LOGGER_DEBUG(srxlog, "Read data to Addr 0x{:x}, Count {}", dma_addr, dma_count);
+        srxlog->debug("Read data to Addr 0x{:x}, Count {}, Real count {}", dma_addr, dma_count, real_dma_count);
         RawDataPtr data = std::make_shared<RawData>(dma_addr, dma_count);
         if (SpecCom::readDma(dma_addr, data->getBuf(), dma_count)) {
             SPDLOG_LOGGER_CRITICAL(srxlog, "Critical error while readin data ... aborting!!");
@@ -139,7 +139,7 @@ void SpecRxCore::setRxBusySimpleMode(uint32_t value) {
 
 void SpecRxCore::setRxFIFOFullThreshold(uint32_t value) {
     if(value >= RX_FIFO_MAX_SIZE) {
-        srxlog->error("Warning - value {} for RX_FIFO_FULL_THRESHOLD is greater than maximum value {}", value, RX_FIFO_MAX_SIZE);
+        srxlog->error("Error - value {} for RX_FIFO_FULL_THRESHOLD is greater than maximum value {}. Leaving value unset.", value, RX_FIFO_MAX_SIZE);
     }
     else {
         SpecCom::writeSingle(RX_BRIDGE | RX_FIFO_FULL_THRESHOLD, value);
@@ -148,7 +148,7 @@ void SpecRxCore::setRxFIFOFullThreshold(uint32_t value) {
 
 void SpecRxCore::setRxFIFOEmptyThreshold(uint32_t value) {
     if(value >= RX_FIFO_MAX_SIZE) {
-        srxlog->error("Warning - value {} for RX_FIFO_EMPTY_THRESHOLD is greater than maximum value {}", value, RX_FIFO_MAX_SIZE);
+        srxlog->error("Error - value {} for RX_FIFO_EMPTY_THRESHOLD is greater than maximum value {}. Leaving value unset.", value, RX_FIFO_MAX_SIZE);
     }
     else {
         SpecCom::writeSingle(RX_BRIDGE | RX_FIFO_EMPTY_THRESHOLD, value);

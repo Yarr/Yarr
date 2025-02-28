@@ -144,7 +144,7 @@ uint32_t SpecTxCore::getTxPolarity() {
 
 void SpecTxCore::setBRAMFullThreshold(uint32_t value) {
     if(value >= BRAM_MAX_SIZE) {
-        stxlog->error("Warning - value {} for BRAM_FULL_THRESHOLD is greater than maximum value {}", value, BRAM_MAX_SIZE);
+        stxlog->error("Error - value {} for BRAM_FULL_THRESHOLD is greater than maximum value {}. Leaving value unset.", value, BRAM_MAX_SIZE);
     }
     else {
         SpecCom::writeSingle(TX_ADDR | BRAM_FULL_THRESHOLD, value);
@@ -153,7 +153,7 @@ void SpecTxCore::setBRAMFullThreshold(uint32_t value) {
 
 void SpecTxCore::setBRAMEmptyThreshold(uint32_t value) {
     if(value >= BRAM_MAX_SIZE) {
-        stxlog->error("Warning - value {} for BRAM_EMPTY_THRESHOLD is greater than maximum value {}", value, BRAM_MAX_SIZE);
+        stxlog->error("Error - value {} for BRAM_EMPTY_THRESHOLD is greater than maximum value {}. Leaving value unset.", value, BRAM_MAX_SIZE);
     }
     else {
         SpecCom::writeSingle(TX_ADDR | BRAM_EMPTY_THRESHOLD, value);

@@ -162,7 +162,7 @@ class SpecTxCore : virtual public TxCore, virtual public SpecCom{
             SpecCom::writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_EUDET_SIMPLE, value);
         }
 
-        void setExternalTriggerPulseMultiplier(uint32_t value) {
+        void setTriggerPulseExtension(uint32_t value) {
             SpecCom::writeSingle(TRIG_LOGIC_ADR | TRIG_LOGIC_PULSE_EXTENSION_INTERVAL, value);
         }
 
