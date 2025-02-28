@@ -203,6 +203,7 @@ private:
 
   std::shared_ptr<FelixClientThread> client;
 
+
   // Felix client callbacks
   void on_init() {}
 
@@ -247,25 +248,11 @@ private:
   /// Initiate a map with all elink enable register names on a FELIX device and set their value to 0
   void initAllELinkEnableRegMap(std::map<std::string, unsigned>& regMap, bool toflx, bool tohost);
 
-  /*
-  IC connection send/receive utilities
-  */
-  /// @brief Constructs the dataframe to send over an IC channel (used for example in LpGBT register reads)
-  /// @param read Whether we will be reading or writing data (const bool, true for read, false for write)
-  /// @param regAddr Address of the register to read (const uint16_t)
-  /// @param i2cAddr I2C address to send data along, for optoboard communication, address of primary LpGBT (const uint8_t)
-  /// @param deviceVersion LpGBT version (either 0 or 1), affects how the data frame is prepared (const unsigned int)
-  /// @param data Data to send (const std::vector <uint8_t>&)
-  /// @return Returns the dataframe to send through the IC channel (std::vector<uint8_t>)
-  std::vector<uint8_t> prepareICDataFrame(const bool read, const uint16_t regAddr, const uint8_t i2cAddr, const unsigned int deviceVersion, const std::vector<uint8_t>& data);
 
-
-  /// @brief Send a command over an IC channel, useful for example in LpGBT register writing
-  /// @param fid The FIC of the IC channel (uint64_t)
-  /// @param data The dataframe to be sent (const std::vector<uint8_t>&)
-  /// @return Whether the operation was successful (bool)
-  FelixClientThread::Reply communicateOverIC(uint64_t fid, const std::vector<uint8_t>& data);
 
 };
+
+
+/// namespace and then static const variables for the different registers 
 
 #endif
