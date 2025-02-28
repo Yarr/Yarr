@@ -124,6 +124,13 @@ protected:
   unsigned m_isCmdEmptyWaitTime {100}; // in milliseconds
 
   std::shared_ptr<FelixClientThread> fclient;
+
+private:
+  /// @brief Send a command over an IC channel, useful for example in LpGBT register writing
+  /// @param fid The FIC of the IC channel (uint64_t)
+  /// @param data The dataframe to be sent (const std::vector<uint8_t>&)
+  /// @return Whether the operation was successful (bool)
+  FelixClientThread::Reply sendIC(uint64_t fid, const std::vector<uint8_t>& data);
 };
 
 #endif
