@@ -5,9 +5,8 @@
 #include "Utils.h"
 #include "logging.h"
 
-class OptoUtils {
+namespace OptoUtils {
 
-public:
     /*
     Optoboard device communication
     */
@@ -35,7 +34,6 @@ public:
     /// @return True if operation is successful
     bool writeGBCRRegister(uint32_t reg_addr, uint8_t& reg_data);
 
-private:
     // I2C parameters, defined in: https://gitlab.cern.ch/bat/optoboard_felix/-/blob/main/src/optoboard_felix/driver/Hardware.py#L55 and lpGBTv1 manual ch. 12.2.1
     uint32_t m_i2c_write_cr{0x0};
     uint32_t m_i2c_write_msk{0x1};
@@ -105,12 +103,16 @@ private:
     static const uint32_t I2CM2STATUS_V1 {0x19B};
     static const uint32_t I2CM2READ15_V1 {0x1AD};
 
-
+    /// @brief For a given LpGBT number and FELIX link, finds the LpGBT address
+    /// @param LpGBT_num 0,1,2,3 (unsigned int)
+    /// @param link_num number of associated FELIX link (unsigned int)
+    /// @return Returns the LpGBT address (uint32_t)
     uint32_t getLpGBTAddress(unsigned int LpGBT_num, unsigned int link_num);
 
     /*
     IC connection send/receive utilities
     */
+
     /// @brief Constructs the dataframe to send over an IC channel (used for example in LpGBT register reads)
     /// @param read Whether we will be reading or writing data (const bool, true for read, false for write)
     /// @param regAddr Address of the register to read (const uint16_t)
