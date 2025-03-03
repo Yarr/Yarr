@@ -406,7 +406,7 @@ TEST_CASE("StarEmulatorHPR", "[star][emulator]") {
 
   StarCmd star;
 
-  typedef std::vector<uint8_t> PacketCompare;
+  typedef std::vector<uint8_t> PacketCompare;
 
   std::map<uint32_t, std::deque<PacketCompare>> expected;
 
@@ -510,6 +510,8 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
   json tmpRegCfg1;
   tmpRegCfg1["HCC"] = {{"ID", 3}};
   tmpRegCfg1["ABCs"] = {{"IDs", {1, 2}}};
+  // Tell HCC which input channels are connected
+  tmpRegCfg1["HCC"]["subregs"]["ICENABLE"] = 3;
   std::ofstream tmpRegFile1("test_star_1.json");
   tmpRegFile1 << std::setw(4) << tmpRegCfg1;
   tmpRegFile1.close();
@@ -518,6 +520,8 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
   json tmpRegCfg2;
   tmpRegCfg2["HCC"] = {{"ID", 4}};
   tmpRegCfg2["ABCs"] = {{"IDs", {7}}};
+  // Tell HCC which input channels are connected
+  tmpRegCfg2["HCC"]["subregs"]["ICENABLE"] = 1;
   std::ofstream tmpRegFile2("test_star_2.json");
   tmpRegFile2 << std::setw(4) << tmpRegCfg2;
   tmpRegFile2.close();
@@ -526,6 +530,8 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
   json tmpRegCfg3;
   tmpRegCfg3["HCC"] = {{"ID", 5}};
   tmpRegCfg3["ABCs"] = {{"IDs", {2 ,4, 7}}};
+  // Tell HCC which input channels are connected
+  tmpRegCfg3["HCC"]["subregs"]["ICENABLE"] = 7;
   std::ofstream tmpRegFile3("test_star_3.json");
   tmpRegFile3 << std::setw(4) << tmpRegCfg3;
   tmpRegFile3.close();
@@ -600,8 +606,8 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
     auto readABCCmd_hcc3 = star.read_abc_register(23, 3, 0xf);
     sendCommand(*emu, readABCCmd_hcc3);
     // Expect two ABC RR packets from ABC 1 and 2
-    expected[rx_fe1].push_back({rx_fe1, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf1, 0x00, 0x00}});
-    expected[rx_fe1].push_back({rx_fe1, {0x41, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
+    expected[rx_fe1].push_back({rx_fe1, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
+    expected[rx_fe1].push_back({rx_fe1, {0x41, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf1, 0x00, 0x00}});
 
     emu->releaseFifo();
     while(!emu->isCmdEmpty());
@@ -619,7 +625,8 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
     auto readABCCmd_5_7 = star.read_abc_register(0x17, 5, 7);
     sendCommand(*emu, readABCCmd_5_7);
 
-    expected[rx_fe3].push_back({rx_fe3, {0x42, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf7, 0x00, 0x00}});
+    // ABC 7 is now IC 0 (auto map from HCC v0)
+    expected[rx_fe3].push_back({rx_fe3, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf7, 0x00, 0x00}});
 
     emu->releaseFifo();
     while(!emu->isCmdEmpty());
@@ -630,16 +637,16 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
     sendCommand(*emu, readABCCmd_mask7);
 
     // Two ABC RR packets from ABC 1 and 2 on HCC 3
-    expected[rx_fe1].push_back({rx_fe1, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf1, 0x00, 0x00}});
-    expected[rx_fe1].push_back({rx_fe1, {0x41, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
+    expected[rx_fe1].push_back({rx_fe1, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
+    expected[rx_fe1].push_back({rx_fe1, {0x41, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf1, 0x00, 0x00}});
 
     // One ABC RR packet from ABC 7 on HCC 4
     expected[rx_fe2].push_back({rx_fe2, {0x40, 0x17, 0x0d, 0xea, 0xdb, 0xee, 0xf7, 0x00, 0x00}});
 
     // Three ABC RR packet from ABC 2, 4, 7 on HCC 5
-    expected[rx_fe3].push_back({rx_fe3, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
+    expected[rx_fe3].push_back({rx_fe3, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf7, 0x00, 0x00}});
     expected[rx_fe3].push_back({rx_fe3, {0x41, 0x17, 0x0a, 0xa0, 0x45, 0x1a, 0xa4, 0x00, 0x00}});
-    expected[rx_fe3].push_back({rx_fe3, {0x42, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf7, 0x00, 0x00}});
+    expected[rx_fe3].push_back({rx_fe3, {0x42, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
   }
 
   emu->releaseFifo();
