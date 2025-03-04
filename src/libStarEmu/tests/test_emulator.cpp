@@ -1142,7 +1142,7 @@ void checkData(HwController* emu, std::map<uint32_t, std::deque<PacketT>>& expec
   }
 
   // TODO need to check all entries in the map
-  //CHECK(expected.empty());
+  CHECK(expected.empty());
 }
 
 template<>
