@@ -16,6 +16,8 @@
 std::pair<unsigned, unsigned> readABCRRPacket(HwController* ctrl, unsigned maxTries=10) {
   StarChipPacket packet;
 
+  std::optional<std::pair<unsigned, unsigned>> result;
+
   for (unsigned i=0; i<maxTries; i++) {
     CAPTURE(i);
     auto dataVec = ctrl->readData();
@@ -43,9 +45,15 @@ std::pair<unsigned, unsigned> readABCRRPacket(HwController* ctrl, unsigned maxTr
       }
 
       if (packet.getType() == TYP_ABC_RR) {
-        return std::make_pair(packet.address, packet.value);
+        CHECK (!result.has_value());
+
+        result = std::make_pair(packet.address, packet.value);
       }
     }
+  }
+
+  if(result.has_value()) {
+    return *result;
   }
 
   // Shouldn't reach here
