@@ -288,11 +288,7 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     // Send another trigger: it should not increase any hit counters
     emu->writeFifo((LCB::l0a_mask(1, 16, false) << 16) + LCB::IDLE);
 
-    for (int i = 0; i < 5; i++) {
-      // Skip the comparison of these cluster packets
-      // Test of physics packets is done elsewhere
-      expected[1].push_back(mask_pattern);
-    }
+    // No cluster packets since LP_Enable is 0
 
     // Check the hit counts
     // HitCountREG0
