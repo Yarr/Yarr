@@ -883,9 +883,7 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
 
   // Load emulator configuration
   json cfg;
-  cfg["type"] = "emu_Star";
-  cfg["cfg"]  = json::object();
-  cfg["cfg"]["chipCfg"] = tmpFileName;
+  cfg["chipCfg"] = tmpFileName;
 
   staremu->loadConfig(cfg);
 
