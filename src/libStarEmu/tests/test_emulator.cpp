@@ -960,7 +960,7 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
   // Set the the HCC ID to e.g. 10 so it would respond to an R3 command
   // (default serial number from HCC register 17 is 0 in the emulator)
   uint8_t hccID = 10; // module #5
-  auto writeHCCCmd_id = star.write_hcc_register(17, hccID<<24);
+  auto writeHCCCmd_id = star.write_hcc_register(17, hccID<<28);
   sendCommand(*staremu, 0, writeHCCCmd_id);
   sendCommand(*staremu, 2, IdleCmd);
 
