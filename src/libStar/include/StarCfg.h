@@ -106,7 +106,7 @@ class StarCfg : public FrontEndCfg {
   }
 
   /// Get value of named register field (either ABC or HCC)
-  uint32_t getSubRegisterValue(int chipIndex, std::string subRegName) {
+  uint32_t getSubRegisterValue(int chipIndex, std::string subRegName) const {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
       return m_hcc.getSubRegisterValue(subRegName);
     } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
@@ -148,6 +148,17 @@ class StarCfg : public FrontEndCfg {
     return 1; // getPixelEn() was desgined for Pixels, further modification is needed for StarChip
   }
   void enableAll() override;
+
+  /// Is there an ABC associated with HCC input channel
+  bool isAbcForInputChannel(int input_channel) const {
+    assert(input_channel >= 0 && input_channel < HCC_INPUT_CHANNEL_COUNT);
+    return (m_ABCchips.count(input_channel) > 0);
+  }
+
+  /// Return ABC associated with HCC input channel
+  AbcCfg &abcForInputChannel(int hccIC) {
+    return abcFromIndex(hccIC + 1);
+  }
 
   /**
    * Obtain the corresponding charge [e] from the input VCal
@@ -232,11 +243,6 @@ class StarCfg : public FrontEndCfg {
   HccCfg m_hcc;
 
   std::map<unsigned, AbcCfg> m_ABCchips;
-
-  bool isAbcForInputChannel(int input_channel) const {
-    assert(input_channel >= 0);
-    return (m_ABCchips.count(input_channel) > 0);
-  }
 
   AbcCfg &abcFromIndex(int chipIndex) {
     assert(isAbcForInputChannel(chipIndex-1));

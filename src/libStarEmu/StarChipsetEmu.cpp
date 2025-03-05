@@ -309,8 +309,11 @@ void StarChipsetEmu::readRegister(const uint8_t address, bool isABC,
 
     // HCCStar channel number
     unsigned ich = m_starCfg->hccChannelForABCchipID(ABCID);
-    if (ich >= m_starCfg->numABCs()) {
-      logger->warn("Cannot find an ABCStar chip with ID = {}", ABCID);
+    if (ich >= HCC_INPUT_CHANNEL_COUNT) {
+      logger->warn("Cannot find an ABCStar chip with ID = {} ({})", ABCID, ich);
+      m_starCfg->eachAbc([&](auto &abc) {
+        logger->trace("Have ID {}", abc.getABCchipID());
+      });
       return;
     }
 
@@ -377,8 +380,9 @@ void StarChipsetEmu::execute_command_sequence() {
 
     // If cmd_abcID is '1111' i.e. broadcast address, read all ABCs
     if ((cmd_abcID & 0xf) == 0xf and m_isForABC) {
-      for (size_t index=1; index <= m_starCfg->numABCs(); ++index)
-        readRegister(reg_addr, true, m_starCfg->getABCchipID(index));
+      m_starCfg->eachAbc([&](auto &abc) {
+        readRegister(reg_addr, true, abc.getABCchipID());
+      });
     } else {
       readRegister(reg_addr, m_isForABC, cmd_abcID);
     }
@@ -399,8 +403,9 @@ void StarChipsetEmu::execute_command_sequence() {
     // write register
     // If cmd_abcID is '1111' i.e. broadcast address, write all ABCs
     if ((cmd_abcID & 0xf) == 0xf and m_isForABC) {
-      for (int index=1; index <= m_starCfg->numABCs(); ++index)
-        writeRegister(data, reg_addr, true, m_starCfg->getABCchipID(index));
+      m_starCfg->eachAbc([&](auto &abc) {
+        writeRegister(data, reg_addr, true, abc.getABCchipID());
+      });
     } else {
       writeRegister(data, reg_addr, m_isForABC, cmd_abcID);
     }
@@ -536,6 +541,9 @@ void StarChipsetEmu::doHPR(LCB::Frame frame) {
   doHPR_HCC(frame);
 
   for (unsigned ichip = 1; ichip <= m_starCfg->numABCs(); ++ichip) {
+    if(!m_starCfg->isAbcForInputChannel(ichip-1)) {
+      continue;
+    }
     doHPR_ABC(frame, ichip);
   }
 

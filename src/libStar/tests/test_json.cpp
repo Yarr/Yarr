@@ -146,6 +146,8 @@ TEST_CASE("StarJsonMinimalABC", "[star][json]") {
 
   cfg["name"] = "testname";
   cfg["HCC"]["ID"] = 12;
+  // Doesn't matter as long as 2 bits are set
+  cfg["HCC"]["subregs"]["ICENABLE"] = 10;
 
   for(int i=0; i<2; i++) {
     cfg["ABCs"]["IDs"][i] = i+3;
@@ -267,6 +269,8 @@ TEST_CASE("StarJsonAbcRegs", "[star][json]") {
   cfg["name"] = "testname";
 
   cfg["HCC"]["ID"] = 12;
+  // Doesn't matter as long as 2 bits are set
+  cfg["HCC"]["subregs"]["ICENABLE"] = 12;
 
   cfg["ABCs"]["IDs"][0] = 4;
   cfg["ABCs"]["IDs"][1] = 6;
@@ -316,6 +320,8 @@ TEST_CASE("StarJsonAbcMasks", "[star][json]") {
   cfg["name"] = "testname";
 
   cfg["HCC"]["ID"] = 12;
+  // Doesn't matter as long as 2 bits are set
+  cfg["HCC"]["subregs"]["ICENABLE"] = 12;
 
   cfg["ABCs"]["IDs"][0] = 4;
   cfg["ABCs"]["IDs"][1] = 6;
@@ -377,6 +383,8 @@ TEST_CASE("StarJsonAbcSubRegs", "[star][json]") {
   cfg["name"] = "testname";
 
   cfg["HCC"]["ID"] = 12;
+  // Doesn't matter as long as 2 bits are set
+  cfg["HCC"]["subregs"]["ICENABLE"] = 12;
 
   cfg["ABCs"]["IDs"][0] = 4;
   cfg["ABCs"]["IDs"][1] = 6;
@@ -427,6 +435,8 @@ TEST_CASE("StarJsonAbcTrim", "[star][json]") {
   cfg["name"] = "testname";
 
   cfg["HCC"]["ID"] = 12;
+  // Doesn't matter as long as 2 bits are set
+  cfg["HCC"]["subregs"]["ICENABLE"] = 12;
 
   cfg["ABCs"]["IDs"][0] = 4;
   cfg["ABCs"]["IDs"][1] = 6;
@@ -475,6 +485,8 @@ TEST_CASE("StarJsonAbcCommon", "[star][json]") {
   cfg["name"] = "testname";
 
   cfg["HCC"]["ID"] = 12;
+  // Doesn't matter as long as 3 bits are set
+  cfg["HCC"]["subregs"]["ICENABLE"] = 13;
 
   cfg["ABCs"]["IDs"][0] = 4;
   cfg["ABCs"]["IDs"][1] = 6;
@@ -531,6 +543,8 @@ TEST_CASE("StarJsonNullChan", "[star][json]") {
   cfg["name"] = "testname";
 
   cfg["HCC"]["ID"] = 12;
+  // Doesn't matter as long as 4 bits are set
+  cfg["HCC"]["subregs"]["ICENABLE"] = 0x1e;
 
   cfg["ABCs"]["IDs"][0] = 4;
   cfg["ABCs"]["IDs"][1] = nullptr;

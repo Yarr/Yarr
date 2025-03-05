@@ -156,7 +156,7 @@ class StarChips : public StarCfg, public StarCmd, public FrontEnd {
 
   void readABCSubRegister(std::string subRegName, AbcCfg &cfg) {
     sendCmd(read_abc_register(cfg.getSubRegisterParentAddr(subRegName),
-                              0xf, cfg.getABCchipID()));
+                              getHCCchipID(), cfg.getABCchipID()));
   }
 
   void writeABCRegister(int addr, AbcCfg &cfg);

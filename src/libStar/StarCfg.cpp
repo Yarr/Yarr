@@ -154,11 +154,17 @@ void StarCfg::writeConfig(json &j) {
     // Store until we know which are not common
     std::vector<std::map<std::string, std::string>> regs(highestABC()+1);
 
+    auto chip_map = m_hcc.histoChipMap();
+
     for (int iABC = 0; iABC <= highestABC(); iABC++) {
         if (!isAbcForInputChannel(iABC))
             continue;
-        auto &abc = abcFromIndex(iABC+1);
-        j["ABCs"]["IDs"][iABC] = abc.getABCchipID();
+        auto &abc = abcForInputChannel(iABC);
+        int histo_index = chip_map[iABC];
+        if(histo_index == HCC_INPUT_CHANNEL_BAD_SLOT) {
+          continue;
+        }
+        j["ABCs"]["IDs"][histo_index] = abc.getABCchipID();
 
         for(auto &reg_i: abcRegs) {
             auto &info = reg_i.second;
@@ -190,7 +196,7 @@ void StarCfg::writeConfig(json &j) {
             ss << std::hex << std::setw(8) << std::setfill('0') << val;
             std::string regKey = reg._to_string();
             std::string regValue = ss.str();
-            regs[iABC][regKey] = regValue;
+            regs[histo_index][regKey] = regValue;
 
             if(iABC == lowestABC()) {
                 common[regKey] = regValue;
@@ -212,13 +218,13 @@ void StarCfg::writeConfig(json &j) {
                 continue;
             }
 
-            j["ABCs"]["masked"][iABC].push_back(m);
+            j["ABCs"]["masked"][histo_index].push_back(m);
         }
         if(sameTrims) {
-            j["ABCs"]["trims"][iABC] = trims[0];
+            j["ABCs"]["trims"][histo_index] = trims[0];
         } else {
             for(int m=0; m<256; m++) {
-                j["ABCs"]["trims"][iABC][m] = trims[m];
+                j["ABCs"]["trims"][histo_index][m] = trims[m];
             }
         }
     }
@@ -355,6 +361,17 @@ void StarCfg::loadConfig(const json &j) {
         } 
     }
 
+    // Map from input channels to histo location
+    auto chip_map = m_hcc.histoChipMap();
+
+    // Count enabled chips for later consistency check
+    int enables_count = 0;
+    for(auto &i: chip_map) {
+      if(i==HCC_INPUT_CHANNEL_BAD_SLOT)
+        continue;
+      enables_count ++;
+    }
+
     // Clear list in case loading twice
     clearABCchipIDs();
 
@@ -368,7 +385,7 @@ void StarCfg::loadConfig(const json &j) {
 
     unsigned abc_arr_length = 0;
 
-    // Load the IDs
+    // Load the IDs (presented in histogram order)
     if (abcs.contains("IDs")) {
         auto &ids = abcs["IDs"];
         abc_arr_length = ids.size();
@@ -376,7 +393,19 @@ void StarCfg::loadConfig(const json &j) {
             auto &id = ids[iABC];
             if (id.is_null())
                 continue;
-            addABCchipID(id, iABC);
+
+            int ic_abc = -1;
+            for(int i=0; i<chip_map.size(); i++) {
+              if(chip_map[i] == iABC) {
+                ic_abc = i;
+              }
+            }
+            if(ic_abc == -1) {
+              logger->warn("While loading no mapping for ID {} found in HCC map at {}", (int)id, iABC);
+              continue;
+            }
+
+            addABCchipID(id, ic_abc);
         }
     }
 
@@ -400,6 +429,10 @@ void StarCfg::loadConfig(const json &j) {
     if( abc_count == 0 ){
         logger->warn("No ABC chipIDs were found in json file, continuing with HCC only");
         return; //No ABCs to load
+    }
+
+    if(abc_arr_length != enables_count) {
+      logger->warn("While loading, count from IDs {} doesn't match IC enables in HCC {}", abc_arr_length, enables_count);
     }
 
     //We need to null check these later. If it's empty, we already returned.
@@ -428,6 +461,7 @@ void StarCfg::loadConfig(const json &j) {
                 auto addr = ABCStarRegister::_from_string(regName.c_str());
                 for (int iABC = 0; iABC <= highestABC(); iABC++) {
                     if (isAbcForInputChannel(iABC))  {
+                        // Doesn't need remapping as common
                         auto &abc = abcFromIndex(iABC+1);
                         abc.setRegisterValue(addr, regValue);
                     }
@@ -463,7 +497,13 @@ void StarCfg::loadConfig(const json &j) {
                 return;
             }
 
-            auto &abc = abcFromIndex(iABC+1);
+            int ic_abc = -1;
+            for(int i=0; i<chip_map.size(); i++) {
+              if(chip_map[i] == iABC) {
+                ic_abc = i;
+              }
+            }
+            auto &abc = abcForInputChannel(ic_abc);
 
             auto b = chipRegs.begin();
             auto e = chipRegs.end();
@@ -504,7 +544,13 @@ void StarCfg::loadConfig(const json &j) {
                 return;
             }
 
-            auto &abc = abcFromIndex(iABC+1);
+            int ic_abc = -1;
+            for(int i=0; i<chip_map.size(); i++) {
+              if(chip_map[i] == iABC) {
+                ic_abc = i;
+              }
+            }
+            auto &abc = abcForInputChannel(ic_abc);
 
             auto b = chipSubRegs.begin();
             auto e = chipSubRegs.end();
@@ -535,8 +581,15 @@ void StarCfg::loadConfig(const json &j) {
                 continue;
             auto &maskedStrips = maskArray[iABC];
 
+            int ic_abc = -1;
+            for(int i=0; i<chip_map.size(); i++) {
+              if(chip_map[i] == iABC) {
+                ic_abc = i;
+              }
+            }
+
+            auto &abc = abcForInputChannel(ic_abc);
             for(int strip: maskedStrips) {
-                auto &abc = abcFromIndex(iABC+1);
                 abc.setMask(strip, true);
             }
         }
@@ -546,7 +599,7 @@ void StarCfg::loadConfig(const json &j) {
         auto &trimArray = abcs["trims"];
 
         if(trimArray.size() != abc_arr_length) {
-            logger->error("ABCs/trims array size does not match number of ABCs");
+            logger->error("ABCs/trims array size {} does not match number of ABCs {}", trimArray.size(), abc_arr_length);
             return;
         }
 
@@ -554,7 +607,15 @@ void StarCfg::loadConfig(const json &j) {
         for (size_t iABC = 0; iABC < abc_arr_length; iABC++) {
             if (ids[iABC].is_null())
                 continue;
-            auto &abc = abcFromIndex(iABC+1);
+
+            int ic_abc = -1;
+            for(int i=0; i<chip_map.size(); i++) {
+              if(chip_map[i] == iABC) {
+                ic_abc = i;
+              }
+            }
+
+            auto &abc = abcForInputChannel(ic_abc);
 
             auto &chipValue = trimArray[iABC];
             if(chipValue.is_number()) {

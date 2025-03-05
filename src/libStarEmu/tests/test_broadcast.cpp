@@ -63,6 +63,8 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
   // Two ABCs: ID = 9 and 8
   json chipCfg1;
   chipCfg1["HCC"] = {{"ID", 1}};
+  // Doesn't matter as long as 2 bits are set
+  chipCfg1["HCC"]["subregs"]["ICENABLE"] = 12;
   chipCfg1["ABCs"] = {{"IDs", {9, 8}}};
 
   // Set sub-register "STR_DEL" to different values for ABCs
@@ -80,6 +82,8 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
   // Two ABCs: ID = 1 and 2
   json chipCfg2;
   chipCfg2["HCC"] = {{"ID", 2}};
+  // Doesn't matter as long as 2 bits are set
+  chipCfg2["HCC"]["subregs"]["ICENABLE"] = 12;
   chipCfg2["ABCs"] = {{"IDs", {1, 2}}};
 
   // Set sub-register "STR_DEL" to different values for ABCs
