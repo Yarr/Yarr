@@ -731,6 +731,8 @@ void StarChipsetEmu::doPRLP(uint8_t mask, uint8_t l0tag) {
   if (trig_mode) { // single-level
     logger->critical("doPRLP is called while the trigger mode is single level");
     return;
+  } else {
+    logger->debug("Receive a R3L1 command: mask = {:b}, L0 tag = 0x{:x}", mask, l0tag);
   }
 
   bool isPR;
