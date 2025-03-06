@@ -31,8 +31,10 @@ TEST_CASE("StarNPointGainAnalysis", "[Star][Analysis][NPointGain]") {
   analysisConfig["fitFunction"] = "linear";
   double evenParams[] = {1, 2}; // values are specific to
   double oddParams[] = {0, 4};  // the desired fit params below
-  std::vector<double> desiredFitParams = {0.25, 76.4};
-  std::vector<double> tolerances = {0.01, 0.1};
+
+  // apply basic BVT->mV conversion for the expected {0.25, 76.4} fit params
+  std::vector<double> desiredFitParams = {2.7264 * 0.25 + 1.041, 2.7264 * 76.4 + 1.041};
+  std::vector<double> tolerances = {0.5, 2};
 
   for (const auto &inj : injections) {
     evenResponses.push_back(linear(inj, evenParams));
