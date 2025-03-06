@@ -65,15 +65,20 @@ void StdDataGatherer::execPart2() {
     bool receivingRxData = true;
     
     if(m_passData) {
+        
+        std::vector<RawDataPtr> newData;
+        std::map<uint32_t, std::unique_ptr<RawDataContainer>> rdcMap;
+        
         while (receivingRxData) {
-            std::vector<RawDataPtr> newData;
-            std::map<uint32_t, std::unique_ptr<RawDataContainer>> rdcMap;
-            
+            // Whether to execute another Rx cycle:
+            receivingRxData = !g_tx->isTrigDone();
+
+
             newData =  g_rx->readData();
             nAllRxReadIterations++;
 
             // Read all data until buffer is empty
-            while (newData.size() > 0 && count < m_maxConsecutiveRxReads && signaled == 0 && !killswitch) {
+            while (newData.size() > 0 && signaled == 0 && !killswitch) {
                 if (newData.size() > 0) {
                     for (auto &dataChunk : newData) {
                         count += dataChunk->getSize();
@@ -81,50 +86,88 @@ void StdDataGatherer::execPart2() {
                             if (rdcMap[uid] == nullptr) {
                                 rdcMap[uid] = std::make_unique<RawDataContainer>(g_stat->record());
                             }
-
                             rdcMap[uid]->add(dataChunk);
                         }
                     }
+                    newData.clear();
                 }
-                // Push the accumulated chunks for processing
-                for (auto &[id, rdc] : rdcMap) {
-                rdc->stat.is_end_of_iteration = false;
-                keeper->getFe(id)->clipRawData.pushData(std::move(rdc));
+ 
+                //Accumulate data
+                if (nAllRxReadIterations > m_maxConsecutiveRxReads) {
+                    // Create EoI
+                    LoopStatus loopStatusIterationEnd({0}, {LoopStyle::LOOP_STYLE_GLOBAL_FEEDBACK});
+                    loopStatusIterationEnd.is_end_of_iteration = true;
+
+                    // Push the accumulated chunks for processing
+                    for (auto &[id, rdc] : rdcMap) {
+                        if (rdc->size() > 0) { // Only push when not empty
+                            // Push data out
+                            rdc->stat.is_end_of_iteration = false;
+                            keeper->getFe(id)->clipRawData.pushData(std::move(rdc));
+                            // Send EoI
+                            std::unique_ptr<RawDataContainer> cIterEnd = std::make_unique<RawDataContainer>(std::move(loopStatusIterationEnd));
+                            keeper->getFe(id)->clipRawData.pushData(std::move(cIterEnd));
+                            keeper->getFe(id)->clipProcFeedback.clearData();
+                        }
+                    }
+                    rdcMap.clear();
+                    SPDLOG_LOGGER_DEBUG(sdglog, "--> Received {} words in {} iterations!", count, nAllRxReadIterations);
+                    count = 0;
+                    nAllRxReadIterations = 0;
                 }
-                rdcMap.clear();
-                // Wait a little bit to increase chance of new data having arrived
-                std::this_thread::sleep_for(std::chrono::microseconds(1));
+                
+                // Test if new data is available
                 newData =  g_rx->readData();
                 nAllRxReadIterations++;
             }
+            
+            // Wait a little bit to increase chance of new data having arrived
+            std::this_thread::sleep_for(std::chrono::microseconds(10));
+            
+            // Process leftover chunks
+            if (newData.size() > 0) {
+                for (auto &dataChunk : newData) {
+                    count += dataChunk->getSize();
+                    for (unsigned &uid : keeper->getRxToId(dataChunk->getAdr())) {
+                        if (rdcMap[uid] == nullptr) {
+                            rdcMap[uid] = std::make_unique<RawDataContainer>(g_stat->record());
+                        }
+
+                        rdcMap[uid]->add(dataChunk);
+                    }
+                }
+            }
+            newData.clear();
 
             // Push any remaining data for processing
             for (auto &[id, rdc] : rdcMap) {
-            rdc->stat.is_end_of_iteration = false;
-            keeper->getFe(id)->clipRawData.pushData(std::move(rdc));
+                if (rdc->size() > 0) {
+                    rdc->stat.is_end_of_iteration = false;
+                    keeper->getFe(id)->clipRawData.pushData(std::move(rdc));
+                }
             }
+            rdcMap.clear();
+            
 
-            // Clear feedback for all frontends
-            for (int id = 0; id < keeper->getNumOfEntries(); id++) {
-                keeper->getFe(id)->clipProcFeedback.clearData();
-            }
-
-            if (count == 0) {
-            SPDLOG_LOGGER_DEBUG(sdglog, "\033[1m\033[31m--> Received {} words in {} iterations!\033[0m", count, nAllRxReadIterations);
-            } else {
             SPDLOG_LOGGER_DEBUG(sdglog, "--> Received {} words in {} iterations!", count, nAllRxReadIterations);
-            }
 
             count = 0;
+            nAllRxReadIterations = 0;
 
             if (signaled == 1 || killswitch) {
                 SPDLOG_LOGGER_WARN(sdglog, "Caught interrupt, stopping data taking!");
                 SPDLOG_LOGGER_WARN(sdglog, "Abort might leave data in buffers!");
                 g_tx->toggleTrigAbort();
             }
-
-            // Whether to execute another Rx cycle:
-            receivingRxData = !g_tx->isTrigDone();
+        }
+        
+        // Send last EoI
+        LoopStatus loopStatusIterationEnd({0}, {LoopStyle::LOOP_STYLE_GLOBAL_FEEDBACK});
+        loopStatusIterationEnd.is_end_of_iteration = true;
+        for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+            std::unique_ptr<RawDataContainer> cIterEnd = std::make_unique<RawDataContainer>(std::move(loopStatusIterationEnd));
+            keeper->getFe(id)->clipRawData.pushData(std::move(cIterEnd));
+            keeper->getFe(id)->clipProcFeedback.clearData();
         }
     }
     else {
@@ -140,16 +183,6 @@ void StdDataGatherer::execPart2() {
             }
             receivingRxData = !g_tx->isTrigDone();
         }
-    }
-
-    // the iteration end marker for the processing & analysis
-    // send end-of-iteration empty container with LoopStatus::is_end_of_iteration = true
-    LoopStatus loopStatusIterationEnd({0}, {LoopStyle::LOOP_STYLE_GLOBAL_FEEDBACK});
-    loopStatusIterationEnd.is_end_of_iteration = true;
-    for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-      std::unique_ptr<RawDataContainer> cIterEnd = std::make_unique<RawDataContainer>(std::move(loopStatusIterationEnd));
-      keeper->getFe(id)->clipRawData.pushData(std::move(cIterEnd));
-      keeper->getFe(id)->clipProcFeedback.clearData();
     }
 
     m_done = true;
