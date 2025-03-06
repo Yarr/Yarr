@@ -8,17 +8,9 @@
 // # Description: Star n-point gain analysis
 // ################################
 
-#include <map>
-#include <memory>
 #include <string>
-#include <tuple>
-#include <utility>
 #include <vector>
 
-#include "HistogramBase.h"
-#include "Histo1d.h"
-#include "Histo2d.h"
-#include "Histo3d.h"
 #include "ScanLoopInfo.h"
 #include "StarConversionTools.h"
 #include "StdAnalysis.h"
@@ -48,8 +40,8 @@ class StarNPointGainAnalysis : public NPointGain {
         StarConversionTools* m_conversionTool;
 
         // member variables
-        bool m_convertBVTtomV = false;
-        std::string m_thresholdUnit = "BVT";
+        bool m_convertBVTtomV = true;
+        std::string m_thresholdUnit = "mV";
 };
 
 #endif
