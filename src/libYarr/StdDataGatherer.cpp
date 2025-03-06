@@ -92,8 +92,8 @@ void StdDataGatherer::execPart2() {
                     newData.clear();
                 }
  
-                // Accumulate data
-                if (count > (100*1024*1024/4) || nAllRxReadIterations > m_maxConsecutiveRxReads) {
+                // Accumulate data either until max number of chunks or chunks larger than max size
+                if (count > m_maxRxReadSize || nAllRxReadIterations > m_maxConsecutiveRxReads) {
 
                     // Push the accumulated chunks for processing
                     for (auto &[id, rdc] : rdcMap) {
@@ -193,6 +193,10 @@ void StdDataGatherer::loadConfig(const json &config) {
     if (config.contains("maxConsecutiveRxReads")) {
         m_maxConsecutiveRxReads = config["maxConsecutiveRxReads"];
         SPDLOG_LOGGER_INFO(sdglog, "Configured StdDataGatherer: maxConsecutiveRxReads: {} [times]", m_maxConsecutiveRxReads);
+    }
+    if (config.contains("maxRxReadSize")) {
+        m_maxRxReadSize = config["maxRxReadSize"];
+        SPDLOG_LOGGER_INFO(sdglog, "Configured StdDataGatherer: maxRxReadSize: {} [words]", m_maxConsecutiveRxReads);
     }
     if (config.contains("passData")) {
         m_passData = config["passData"];
