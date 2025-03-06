@@ -288,11 +288,7 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     // Send another trigger: it should not increase any hit counters
     emu->writeFifo((LCB::l0a_mask(1, 16, false) << 16) + LCB::IDLE);
 
-    for (int i = 0; i < 5; i++) {
-      // Skip the comparison of these cluster packets
-      // Test of physics packets is done elsewhere
-      expected[1].push_back(mask_pattern);
-    }
+    // No cluster packets since LP_Enable is 0
 
     // Check the hit counts
     // HitCountREG0
@@ -894,9 +890,7 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
 
   // Load emulator configuration
   json cfg;
-  cfg["type"] = "emu_Star";
-  cfg["cfg"]  = json::object();
-  cfg["cfg"]["chipCfg"] = tmpFileName;
+  cfg["chipCfg"] = tmpFileName;
 
   staremu->loadConfig(cfg);
 
@@ -973,7 +967,7 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
   // Set the the HCC ID to e.g. 10 so it would respond to an R3 command
   // (default serial number from HCC register 17 is 0 in the emulator)
   uint8_t hccID = 10; // module #5
-  auto writeHCCCmd_id = star.write_hcc_register(17, hccID<<24);
+  auto writeHCCCmd_id = star.write_hcc_register(17, hccID<<28);
   sendCommand(*staremu, 0, writeHCCCmd_id);
   sendCommand(*staremu, 2, IdleCmd);
 
@@ -1148,8 +1142,12 @@ void checkData(HwController* emu, std::map<uint32_t, std::deque<PacketT>>& expec
       }
   }
 
-  // TODO need to check all entries in the map
-  //CHECK(expected.empty());
+  for (const auto& [channel, packets] : expected) {
+    CAPTURE(channel);
+    CAPTURE(packets.size());
+    CAPTURE(packets);
+    CHECK(packets.empty());
+  }
 }
 
 template<>
