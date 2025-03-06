@@ -92,11 +92,8 @@ void StdDataGatherer::execPart2() {
                     newData.clear();
                 }
  
-                //Accumulate data
-                if (nAllRxReadIterations > m_maxConsecutiveRxReads) {
-                    // Create EoI
-                    LoopStatus loopStatusIterationEnd({0}, {LoopStyle::LOOP_STYLE_GLOBAL_FEEDBACK});
-                    loopStatusIterationEnd.is_end_of_iteration = true;
+                // Accumulate data
+                if (count > (100*1024*1024/4) || nAllRxReadIterations > m_maxConsecutiveRxReads) {
 
                     // Push the accumulated chunks for processing
                     for (auto &[id, rdc] : rdcMap) {
@@ -104,6 +101,9 @@ void StdDataGatherer::execPart2() {
                             // Push data out
                             rdc->stat.is_end_of_iteration = false;
                             keeper->getFe(id)->clipRawData.pushData(std::move(rdc));
+                            // Create EoI
+                            LoopStatus loopStatusIterationEnd({0}, {LoopStyle::LOOP_STYLE_GLOBAL_FEEDBACK});
+                            loopStatusIterationEnd.is_end_of_iteration = true;
                             // Send EoI
                             std::unique_ptr<RawDataContainer> cIterEnd = std::make_unique<RawDataContainer>(std::move(loopStatusIterationEnd));
                             keeper->getFe(id)->clipRawData.pushData(std::move(cIterEnd));
