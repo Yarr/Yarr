@@ -2,49 +2,53 @@
 #include "Utils.h"
 #include "logging.h"
 
-
-
- bool OptoUtils::communicateLpGBT(lpgbt_addr, i2c_addr, regname, regval, read){
+ bool OptoUtils::communicateOptoDevice(lpgbt_addr, i2c_addr, regname, regval, read){
   regAddr = getRegaddr();
   data = prepareFrame(addresses);
   readback(communicate)
  }
 
-bool OptoUtils::readLpGBTRegister(uint_32t reg_addr, uint8_t& reg_data){
+bool OptoUtils::readSecondaryDeviceI2C(uint_32t, reg_addr, uint8_t& reg_data){
+  
+}
+
+bool OptoUtils::readWriteReg(uint_32t reg_addr, bool write, int lpgbt_addr, int i2c_addr, uint8_t reg_data = 0){
   std::string i2C_addr_str = std::static_cast<string>(i2c_addr);
 
   // if we're communicating directly to the primary LpGBT, we only need to send one simple register read
   if (lpgbt_addr == m_i2c_addr){
-    communicateLpGBT();
+    communicateOptoDevice(red_addr, reg_data);
   }
   // communicating with secondary LpGBTs via I2C channel through the primary LpGBT
   else {
     uint8_t NBYTE = 2;
-    readWriteOpticalDeviceReg
-    communicateLpGBT("I2CM" + i2c_addr_str + "DATA0", (scl_drive << 7) | (NBYTE << 2) | freq)
-    communicateLpGBT("I2CM" + i2c_addr_str + "CMD", i2c_write_cr)
+    communicateOptoDevice(LPGBT_REGMAP["I2CM" + i2c_addr_str + "DATA0"], (m_scl_drive << 7) | (NBYTE << 2) | m_freq)
+    communicateOptoDevice(LPGBT_REGMAP["I2CM" + i2c_addr_str + "CMD"], m_i2c_write_cr)
 
-    # Send register address
-    communicateLpGBT("I2CM" + i2c_addr_str + "DATA0", divmod(reg_addr,0x100)[1])    # Lower half of register address
-    communicateLpGBT("I2CM" + i2c_addr_str + "DATA1", divmod(reg_addr,0x100)[0])    # Upper half of register address
+    // Send address of register to read
+    communicateOptoDevice(LPGBT_REGMAP["I2CM" + i2c_addr_str + "DATA0"], divmod(reg_addr,0x100)[1])    //Lower half of register address
+    communicateOptoDevice(LPGBT_REGMAP["I2CM" + i2c_addr_str + "DATA1"], divmod(reg_addr,0x100)[0])    //Upper half of register address
+    if (write){
+      communicateOptoDevice(LPGBT_REGMAP["I2CM" + i2c_addr_str + "DATA2"], reg_data)    //Upper half of register address
+    }
 
-    communicateLpGBT("I2CM" + i2c_addr_str + "CMD", i2c_w_multi_4byte0)
-    communicateLpGBT("I2CM" + i2c_addr_str + "ADDRESS", lpgbt_addr)
-    communicateLpGBT("I2CM" + i2c_addr_str + "CMD", i2c_write_multi)    # Initiate send of register address and register value
+    communicateOptoDevice(LPGBT_REGMAP["I2CM" + i2c_addr_str + "CMD"], m_i2c_w_multi_4byte0)
+    communicateOptoDevice(LPGBT_REGMAP["I2CM" + i2c_addr_str + "ADDRESS"], lpgbt_addr)
+    communicateOptoDevice(LPGBT_REGMAP["I2CM" + i2c_addr_str + "CMD"], m_i2c_write_multi)    //Initiate send of register address and register value
 
-    # read answer from I2C device
+    // Read back answer
     NBYTE = 1
-    self.comm_wrapper("I2CM" + i2c_addr_str + "DATA0", (scl_drive << 7) | (NBYTE << 2) | freq)
-    self.comm_wrapper("I2CM" + i2c_addr_str + "CMD", i2c_write_cr)
+    self.comm_wrapper(LPGBT_REGMAP["I2CM" + i2c_addr_str + "DATA0"], (m_scl_drive << 7) | (NBYTE << 2) | m_freq)
+    self.comm_wrapper(LPGBT_REGMAP["I2CM" + i2c_addr_str + "CMD"], m_i2c_write_cr)
 
-    self.comm_wrapper("I2CM" + i2c_addr_str + "ADDRESS", lpgbt_addr)
-    self.comm_wrapper("I2CM" + i2c_addr_str + "CMD", i2c_read_multi)
+    self.comm_wrapper(LPGBT_REGMAP["I2CM" + i2c_addr_str + "ADDRESS"], lpgbt_addr)
+    self.comm_wrapper(LPGBT_REGMAP["I2CM" + i2c_addr_str + "CMD"], m_i2c_read_multi)
 
-    status_value = self.comm_wrapper("I2CM" + i2c_addr_str + "STATUS", None)
+    status_value = self.comm_wrapper(LPGBT_REGMAP["I2CM" + i2c_addr_str + "STATUS"], None)
     self.status_info(status_value)     # Read status register
 
     # Read slave answer from LpGBT master register
-    read_reg, read = self.comm_wrapper("I2CM" + i2c_addr_str + "READ15", None)
+    read_reg, read = self.comm_wrapper(LPGBT_REGMAP["I2CM" + i2c_addr_str + "READ15"], None)
 
   if reg_field is not None:
 
@@ -60,7 +64,6 @@ bool OptoUtils::readLpGBTRegister(uint_32t reg_addr, uint8_t& reg_data){
   logger.debug("Read from %s - %s: %s (%s, %s)", self.device, read_reg, read, hex(read), bin(read))
 
   return read
-
 }
 */
 
@@ -78,9 +81,6 @@ bool OptoUtils::writeGBCRRegister(uint32_t reg_addr, uint8_t& reg_data){
 
 
 }
-
-
-
 
 std::vector<uint8_t> FelixController::prepareICDataFrame(const bool read, const uint16_t reg_addr, const uint8_t i2c_addr, const unsigned int device_version, const std::vector<uint8_t>& data){
   /*
