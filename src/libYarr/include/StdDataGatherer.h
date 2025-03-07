@@ -31,8 +31,8 @@ class StdDataGatherer: public LoopActionBase, public StdDataAction {
         void execPart2() override;
         bool killswitch;
         bool m_passData;
-        uint32_t m_maxConsecutiveRxReads = 4096;
-        uint32_t m_maxRxReadSize = 100*1024*1024/4; // 100MB
+        uint32_t m_maxConsecutiveRxReads = 2048;
+        uint32_t m_maxRxReadSize = 10*1024*1024/4; // 100MB
 };
 
 #endif
