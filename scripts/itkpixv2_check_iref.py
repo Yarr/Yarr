@@ -20,6 +20,10 @@ parser.add_argument(
 args = parser.parse_args()
 log.info(args)
 
+GREEN = "\033[92m"
+RED = "\033[91m"
+RESET = "\033[0m"
+
 # given the connectivity file of the module, return an array with the config files for all FE chips
 def get_chip_config_paths(connectivity_file: Path) -> list[str]:
     # NB: this code assumes that the chip order in the connectivity file is correct
@@ -99,8 +103,8 @@ def fetchIrefs_fromReadRegister(
 def Iref_discrepancy_fixer(Irefs_config, Irefs_register):
     wc_fromRR = get_fourDigit_binary(Irefs_register)
     wc_fromCf = get_fourDigit_binary(Irefs_config)
-    log.info("Current wirebonding configuration TRIM0(pad47)->TRIM3(pad50): %s ('0': wirebonded, '1': open)", wc_fromRR[::-1])
-    log.info("Correct wirebonding configuration TRIM0(pad47)->TRIM3(pad50): %s ('0': wirebonded, '1': open)", wc_fromCf[::-1])
+    log.info("%sCurrent wirebonding configuration TRIM0(pad47)->TRIM3(pad50): %s %s('0': wirebonded, '1': open)", RED, wc_fromRR[::-1], RESET)
+    log.info("%sCorrect wirebonding configuration TRIM0(pad47)->TRIM3(pad50): %s %s('0': wirebonded, '1': open)", GREEN, wc_fromCf[::-1], RESET)
 
 # add the '0' character to the beginning of a string so that the length is 4 for consistent formatting
 def get_fourDigit_binary(number):
@@ -121,10 +125,6 @@ def main():
 
     Irefs_config = fetchIrefs_fromConfig(chip_config_paths)
     Irefs_register = fetchIrefs_fromReadRegister(hw_controller_file, connectivity_file)
-
-    GREEN = "\033[92m"
-    RED = "\033[91m"
-    RESET = "\033[0m"
 
     check = [False] * len(chip_config_paths)
     for i in range(0, len(check), 1):
