@@ -336,7 +336,12 @@ void FelixTxCore::setTrigWordLength(uint32_t length) {
 // write 16x32bit commands that can be broken apart for FELIX
 // for firware version ITK PIXEL regmap 5.0, build date 14-10-2023
 int FelixTxCore::getMaxTrigWordLength(){
-  return 16;
+  if (m_pixFwTrigger){
+    return 16;
+  }
+  else {
+    return 32;
+  }
 }
 
 void FelixTxCore::setTrigWord(uint32_t *words, uint32_t size) {
