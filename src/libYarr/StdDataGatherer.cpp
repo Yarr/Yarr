@@ -111,12 +111,12 @@ void StdDataGatherer::execPart2() {
                     }
                 }
                 rdcMap.clear();
-                SPDLOG_LOGGER_INFO(sdglog, "--> Received {} words in {} iterations!", count, nAllRxReadIterations);
+                SPDLOG_LOGGER_DEBUG(sdglog, "--> Received {} words in {} iterations!", count, nAllRxReadIterations);
                 count = 0;
                 nAllRxReadIterations = 0;
             }
 
-            if (signaled == 1 || killswitch) {
+            if ((signaled == 1 || killswitch) && receivingRxData) {
                 SPDLOG_LOGGER_WARN(sdglog, "Caught interrupt, stopping data taking!");
                 SPDLOG_LOGGER_WARN(sdglog, "Abort might leave data in buffers!");
                 g_tx->toggleTrigAbort();
