@@ -5,26 +5,19 @@
 // # Description: Star N-Point Gain Analysis
 // ################################
 
-// #include <numeric>
 #include <map>
 #include <memory>
 #include <string>
-#include <tuple>
-#include <utility>
 #include <vector>
 #include <unistd.h> // needed to fix linker errors
  
 #include "AllAnalyses.h"
-#include "Histo1d.h"
-#include "Histo2d.h"
-#include "Histo3d.h"
 #include "ScanLoopInfo.h"
-#include "StarChips.h"
+#include "StarChips.h" // IWYU pragma: keep
 #include "StarConversionTools.h"
 #include "StarNPointGainAnalysis.h"
 #include "StdAnalysis.h"
 
-#include "lmcurve.h"
 #include "logging.h"
 
 namespace {

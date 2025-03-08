@@ -40,6 +40,8 @@ class StarStrobeDelayAnalysis : public AnalysisAlgorithm {
         unsigned m_nFailedfit_left{};                    //!< Number of failed left edge fits
 	unsigned m_nFailedfit_right{};                   //!< Number of failed right edge fits
 
+        std::unique_ptr<PixelFeedbackSender> m_fb;
+
         std::vector<double> m_strobeDelayVec;                            //!< Vector of all SD values                
 
         std::map<unsigned, std::unique_ptr<Histo1d>> m_strobeDelayHistos; //!< Map of histograms of occupancy vs strobe delay. Identifier corresponds to the channel number (0-1279 in first row, 1280-2559 in second row). 
@@ -51,6 +53,9 @@ class StarStrobeDelayAnalysis : public AnalysisAlgorithm {
         bool m_dumpDebugSDPlots=false;                    //!< Boolean to dump histograms of occupancy vs strobe delay per channel (every 10 channels for first row only).
 
         float m_sdFraction = 0.57;                        //!< Fraction to pick between rising and falling edge
+
+        void pushData(); /// Take analysis objects and push results
+
 	unsigned findBinPassingThreshold(const Histo1d &h_in, float fraction, bool goesAbove, bool goesBelow) const; //!< Function to find first x-axis value for which y-value goes above/below a certain fraction of the maximum
         // Not const decause of m_nFailedfit_left/right
         std::vector<double> fitScurveForSD(const Histo1d &h_in, bool leftEdge, unsigned nBins, double plateauCenter, const std::vector<double> &strobeDelayVec, const std::vector<double> &occVec); //!< Fit a single s-curve (left ot right edge) on a given range of strobe delay pulse
