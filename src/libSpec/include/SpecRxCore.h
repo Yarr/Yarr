@@ -39,11 +39,6 @@
 #define RX_LOOP_FIFO 0x4
 #define RX_BRIDGE_EMPTY 0x5
 #define RX_CUR_COUNT 0x6
-#define RX_FIFO_BUSY_EN 0xA
-#define RX_FIFO_SIMPLE_MODE 0xB
-#define RX_FIFO_FULL_THRESHOLD 0xC
-#define RX_FIFO_EMPTY_THRESHOLD 0XD
-#define RX_FIFO_MAX_SIZE 2048
 
 class SpecRawData : public RawData {
     public:
@@ -107,12 +102,7 @@ class SpecRxCore : virtual public RxCore, virtual public SpecCom{
 
         void setRxActiveLanes(uint32_t val);
         uint32_t getRxActiveLanes();
-
-        void setRxBusyEnable(uint32_t value);
-        void setRxBusySimpleMode(uint32_t value);
-        void setRxFIFOFullThreshold(uint32_t value);
-        void setRxFIFOEmptyThreshold(uint32_t value);
-
+        
         void setRxDelay(uint32_t lane, uint32_t val);
 
         void checkRxSync() override;

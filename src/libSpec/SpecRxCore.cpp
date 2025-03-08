@@ -129,32 +129,6 @@ uint32_t SpecRxCore::getRxActiveLanes() {
     return SpecCom::readSingle(RX_ADDR | RX_ACTIVE_LANES);
 }
 
-void SpecRxCore::setRxBusyEnable(uint32_t value) {
-    SpecCom::writeSingle(RX_BRIDGE | RX_FIFO_BUSY_EN, value);
-}
-
-void SpecRxCore::setRxBusySimpleMode(uint32_t value) {
-    SpecCom::writeSingle(RX_BRIDGE | RX_FIFO_SIMPLE_MODE, value);
-}
-
-void SpecRxCore::setRxFIFOFullThreshold(uint32_t value) {
-    if(value >= RX_FIFO_MAX_SIZE) {
-        srxlog->error("Error - value {} for RX_FIFO_FULL_THRESHOLD is greater than maximum value {}. Leaving value unset.", value, RX_FIFO_MAX_SIZE);
-    }
-    else {
-        SpecCom::writeSingle(RX_BRIDGE | RX_FIFO_FULL_THRESHOLD, value);
-    }
-}
-
-void SpecRxCore::setRxFIFOEmptyThreshold(uint32_t value) {
-    if(value >= RX_FIFO_MAX_SIZE) {
-        srxlog->error("Error - value {} for RX_FIFO_EMPTY_THRESHOLD is greater than maximum value {}. Leaving value unset.", value, RX_FIFO_MAX_SIZE);
-    }
-    else {
-        SpecCom::writeSingle(RX_BRIDGE | RX_FIFO_EMPTY_THRESHOLD, value);
-    }
-}
-
 void SpecRxCore::setRxDelay(uint32_t lane, uint32_t val) {
     // Select lane and write delay 
     SpecCom::writeSingle(RX_ADDR | RX_LANE_SEL, lane); 
