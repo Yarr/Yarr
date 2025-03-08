@@ -1115,10 +1115,10 @@ void NPointGain::end() {
         nCol, -0.5, nCol-0.5, nRow, -0.5, nRow-0.5,
         m_injections.size(), -0.5, m_injections.size()-0.5);
     auto inputNoiseHisto = std::make_unique<Histo3dT<float>>("InputNoise",
-        nCol, 0.5, nCol-0.5, nRow, 0.5, nRow-0.5,
+        nCol, -0.5, nCol-0.5, nRow, -0.5, nRow-0.5,
         m_injections.size(), -0.5, m_injections.size()-0.5);
     auto gainCurveHisto = std::make_unique<Histo3dT<float>>("GainCurve",
-        nCol, 0.5, nCol-0.5, nRow, 0.5, nRow-0.5,
+        nCol, -0.5, nCol-0.5, nRow, -0.5, nRow-0.5,
         m_injections.size(), -0.5, m_injections.size()-0.5);
 
     // run response curve fit for each channel
