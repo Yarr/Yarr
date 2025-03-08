@@ -159,13 +159,17 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
             else
                 this->setBRAMBusyEnable(1);
 
-            // Configure BRAM full threshold
+            // Configure BRAM full threshold (default 80% fill)
             if(j.contains("BRAMFullThreshold"))
                 this->setBRAMFullThreshold(j["BRAMFullThreshold"]);
+            else
+                this->setBRAMFullThreshold((int)(2048*64*0.8));
 
-            // Configure BRAM empty threshold
+            // Configure BRAM empty threshold (default 40% fill)
             if(j.contains("BRAMEmptyThreshold"))
                 this->setBRAMEmptyThreshold(j["BRAMEmptyThreshold"]);
+            else
+                this->setBRAMEmptyThreshold((int)(2048*64*0.4));
         }
 
         void setupMode() final{

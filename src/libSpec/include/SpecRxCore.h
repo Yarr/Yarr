@@ -102,7 +102,7 @@ class SpecRxCore : virtual public RxCore, virtual public SpecCom{
 
         void setRxActiveLanes(uint32_t val);
         uint32_t getRxActiveLanes();
-        
+
         void setRxDelay(uint32_t lane, uint32_t val);
 
         void checkRxSync() override;
