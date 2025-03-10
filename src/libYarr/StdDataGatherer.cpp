@@ -148,9 +148,9 @@ void StdDataGatherer::execPart2() {
         rdcMap.clear();
 
         // Send last EoI
-        LoopStatus loopStatusIterationEnd({0}, {LoopStyle::LOOP_STYLE_GLOBAL_FEEDBACK});
-        loopStatusIterationEnd.is_end_of_iteration = true;
         for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
+            LoopStatus loopStatusIterationEnd({0}, {LoopStyle::LOOP_STYLE_GLOBAL_FEEDBACK});
+            loopStatusIterationEnd.is_end_of_iteration = true;
             std::unique_ptr<RawDataContainer> cIterEnd = std::make_unique<RawDataContainer>(std::move(loopStatusIterationEnd));
             keeper->getFe(id)->clipRawData.pushData(std::move(cIterEnd));
             keeper->getFe(id)->clipProcFeedback.clearData();
