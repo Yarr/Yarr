@@ -29,7 +29,7 @@ class Itkpixv2ParMaskLoop: public LoopActionBase {
         std::map<FrontEnd*, std::array<std::array<uint16_t, Itkpixv2::n_Row>, Itkpixv2::n_DC> > m_pixRegs;
         int m_maskType;
         bool m_applyEnMask;
-        
+
         void init() override;
         void end() override;
         void execPart1() override;

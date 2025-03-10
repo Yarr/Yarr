@@ -29,6 +29,7 @@ target_link_libraries(Rd53b Scan)
 LIST(APPEND apps
         rd53bConnectivityScan
         rd53bComTest
+	rd53bColumnTest
         rd53bDecodeTool
         rd53bReadRingosc
         rd53bRegSEETest
