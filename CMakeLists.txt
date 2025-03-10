@@ -101,7 +101,6 @@ add_compile_options(-Wno-deprecated)
 add_compile_options(-Wnon-virtual-dtor)
 
 option(BUILD_TESTS "Build the YARR test suite" OFF)
-option(DISABLE_PLOTTING_TOOLS "Disable build of plotting tools" OFF)
 
 set(YARR_FRONT_ENDS_TO_BUILD "Fei4;Rd53a;Star;Rd53b;Itkpixv2"
     CACHE STRING "Semicolon-separated list of controllers to build, or \"all\"")
