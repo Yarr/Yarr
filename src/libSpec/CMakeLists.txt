@@ -25,12 +25,11 @@ LIST(APPEND apps
         specBenchmarkDma
         specBenchmarkSingle
         specComTest
-	switchLPM
+        switchLPM
         eyeDiagram
         dataMergingCheck
         specErrorCheckDma
         specErrorCheckSingle
-        specS6programFpga
         specSoftReset)
 
 foreach (target IN LISTS apps)

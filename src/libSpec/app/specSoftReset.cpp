@@ -4,36 +4,11 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
+#include "logging.h"
+#include "LoggingConfig.h"
+
 #include "SpecCom.h"
 #include "ScanHelper.h"
-
-#define SPEC_GREG_ADDR (0x7 << 14)
-#define SPEC_GREG_SOFTRST 0xF
-
-#define RESET_OPTION_BRAM_CNT 0x1
-#define RESET_OPTION_WSHEXP_CORE 0x2
-#define RESET_OPTION_TX_CORE 0x3
-#define RESET_OPTION_RX_CORE 0x4
-#define RESET_OPTION_RX_BRIDGE 0x5
-#define RESET_OPTION_TRIG_LOGIC 0x6
-#define RESET_OPTION_SPI 0x7
-#define RESET_OPTION_CTRL_REG 0x8
-#define RESET_OPTION_BRAM 0x9
-#define RESET_OPTION_EXCEPT_CTRL_REG 0xE
-#define RESET_OPTION_ALL 0xF
-
-#define SOFTRST_WSHEXP_CORE 0x00000001
-#define SOFTRST_TX_CORE 0x00000002
-#define SOFTRST_RX_CORE 0x00000004
-#define SOFTRST_RX_BRIDGE 0x00000008
-#define SOFTRST_TRIGGER_LOGIC 0x00000020
-#define SOFTRST_SPI 0x00000040
-#define SOFTRST_CTRL_REG 0x00000080
-#define SOFTRST_BRAM 0x00000100
-#define SOFTRST_BRAM_CNT 0x00000200
-#define SOFTRST_ALL 0x000003FF
-#define SOFTRST_EXCEPT_CTRL_REG 0x0000037F
-
 
 void print_help() {
     std::cout << "Usage: ./bin/specSoftReset [-h] [-r <hw_controller_file>] [-o <reset_option>] \n \n"
@@ -55,7 +30,16 @@ void print_help() {
 }
 
 int main(int argc, char **argv) {
+    // Setup logger with some defaults
+    std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
+    spdlog::set_pattern(defaultLogPattern);
+    json j; // empty
+    j["pattern"] = defaultLogPattern;
+    j["log_config"][0]["name"] = "all";
+    j["log_config"][0]["level"] = "info";
+    logging::setupLoggers(j);
     int c;
+    
     int specNum = 0;
     uint32_t resetOption = 1;
     std::string hw_controller_filename = "";
@@ -91,44 +75,55 @@ int main(int argc, char **argv) {
     SpecCom mySpec(specNum);
 
     if (resetOption == RESET_OPTION_BRAM_CNT) {
-        mySpec.writeSingle(SPEC_GREG_ADDR | SPEC_GREG_SOFTRST, SOFTRST_BRAM_CNT);
+        std::cout << "Resetting BRAM Cnt ..." << std::endl;
+        mySpec.writeSingle(SPEC_GREG | SPEC_GREG_SOFTRST, SOFTRST_BRAM_CNT);
     }
 
     if (resetOption == RESET_OPTION_EXCEPT_CTRL_REG) {
-        mySpec.writeSingle(SPEC_GREG_ADDR | SPEC_GREG_SOFTRST, SOFTRST_EXCEPT_CTRL_REG);
+        std::cout << "Resetting ALL but Ctrl regs  ..." << std::endl;
+        mySpec.writeSingle(SPEC_GREG | SPEC_GREG_SOFTRST, SOFTRST_EXCEPT_CTRL_REG);
     }
     
     if (resetOption == RESET_OPTION_ALL) {
-        mySpec.writeSingle(SPEC_GREG_ADDR | SPEC_GREG_SOFTRST, SOFTRST_ALL);
+        std::cout << "Resetting ALL  ..." << std::endl;
+        mySpec.writeSingle(SPEC_GREG | SPEC_GREG_SOFTRST, SOFTRST_ALL);
     }
 
     if (resetOption == RESET_OPTION_WSHEXP_CORE) {
-        mySpec.writeSingle(SPEC_GREG_ADDR | SPEC_GREG_SOFTRST, SOFTRST_WSHEXP_CORE);
+        std::cout << "Resetting Wishbone Cores  ..." << std::endl;
+        mySpec.writeSingle(SPEC_GREG | SPEC_GREG_SOFTRST, SOFTRST_WSHEXP_CORE);
     }
 
     if (resetOption == RESET_OPTION_TX_CORE) {
-        mySpec.writeSingle(SPEC_GREG_ADDR | SPEC_GREG_SOFTRST, SOFTRST_TX_CORE);
+        std::cout << "Resetting Tx Core  ..." << std::endl;
+        mySpec.writeSingle(SPEC_GREG | SPEC_GREG_SOFTRST, SOFTRST_TX_CORE);
     }
 
     if (resetOption == RESET_OPTION_RX_CORE) {
-        mySpec.writeSingle(SPEC_GREG_ADDR | SPEC_GREG_SOFTRST, SOFTRST_RX_CORE);
+        std::cout << "Resetting Rx Core  ..." << std::endl;
+        mySpec.writeSingle(SPEC_GREG | SPEC_GREG_SOFTRST, SOFTRST_RX_CORE);
     }
 
     if (resetOption == RESET_OPTION_RX_BRIDGE) {
-        mySpec.writeSingle(SPEC_GREG_ADDR | SPEC_GREG_SOFTRST, SOFTRST_RX_BRIDGE);
+        std::cout << "Resetting Rx Bridge  ..." << std::endl;
+        mySpec.writeSingle(SPEC_GREG | SPEC_GREG_SOFTRST, SOFTRST_RX_BRIDGE);
     }
 
     if (resetOption == RESET_OPTION_SPI) {
-        mySpec.writeSingle(SPEC_GREG_ADDR | SPEC_GREG_SOFTRST, SOFTRST_SPI);
+        std::cout << "Resetting SPI  ..." << std::endl;
+        mySpec.writeSingle(SPEC_GREG | SPEC_GREG_SOFTRST, SOFTRST_SPI);
     }
 
     if (resetOption == RESET_OPTION_BRAM) {
-        mySpec.writeSingle(SPEC_GREG_ADDR | SPEC_GREG_SOFTRST, SOFTRST_BRAM);
+        std::cout << "Resetting BRAM  ..." << std::endl;
+        mySpec.writeSingle(SPEC_GREG | SPEC_GREG_SOFTRST, SOFTRST_BRAM);
     }
 
     if (resetOption == RESET_OPTION_CTRL_REG) {
-        mySpec.writeSingle(SPEC_GREG_ADDR | SPEC_GREG_SOFTRST, SOFTRST_CTRL_REG);
+        std::cout << "Resetting Ctrl Regs  ..." << std::endl;
+        mySpec.writeSingle(SPEC_GREG | SPEC_GREG_SOFTRST, SOFTRST_CTRL_REG);
     }
-
+    
+    std::cout << "... done!" << std::endl;
     return 0;
 }
