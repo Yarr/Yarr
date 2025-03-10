@@ -11,7 +11,6 @@
 #include <cmath>
 #include <functional>
 #include <tuple>
-#include <iostream>
 
 #include "FrontEnd.h"
 
@@ -94,54 +93,16 @@ class StarCfg : public FrontEndCfg {
   void clearABCchipIDs() { m_ABCchips.clear();}
 
   /// Set value of named register field (either ABC or HCC)
-  void setSubRegisterValue(int chipIndex, std::string subRegName, uint32_t value) {
-    if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
-      return m_hcc.setSubRegisterValue(subRegName, value);
-    } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
-        if (isAbcForInputChannel(chipIndex-1))
-            return abcFromIndex(chipIndex).setSubRegisterValue(subRegName, value);
-    }else {
-      std::cerr << " --> Error: Could not find register \""<< subRegName << "\"" << std::endl;
-    }
-  }
+  void setSubRegisterValue(int chipIndex, std::string subRegName, uint32_t value);
 
   /// Get value of named register field (either ABC or HCC)
-  uint32_t getSubRegisterValue(int chipIndex, std::string subRegName) const {
-    if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
-      return m_hcc.getSubRegisterValue(subRegName);
-    } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
-        if (isAbcForInputChannel(chipIndex-1))
-            return abcFromIndex(chipIndex).getSubRegisterValue(subRegName);
-    }else {
-      std::cerr << " --> Error: Could not find register \""<< subRegName << "\"" << std::endl;
-    }
-    return 0;
-  }
+  uint32_t getSubRegisterValue(int chipIndex, std::string subRegName) const;
 
   /// Get register address for named register field (either ABC or HCC)
-  int getSubRegisterParentAddr(int chipIndex, std::string subRegName) {
-    if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
-      return m_hcc.getSubRegisterParentAddr(subRegName);
-    } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
-      return m_abc_info->getSubRegisterParentAddr(subRegName);
-    }else {
-      std::cerr << " --> Error: Could not find register \""<< subRegName << "\"" << std::endl;
-    }
-    return 0;
-  }
+  int getSubRegisterParentAddr(int chipIndex, std::string subRegName);
 
   /// Get register value for named register field (either ABC or HCC)
-  uint32_t getSubRegisterParentValue(int chipIndex, std::string subRegName) {
-    if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
-      return m_hcc.getSubRegisterParentValue(subRegName);
-    } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
-        if (isAbcForInputChannel(chipIndex-1))
-            return abcFromIndex(chipIndex).getSubRegisterParentValue(subRegName);
-    }else {
-      std::cerr << " --> Error: Could not find register \""<< subRegName << "\"" << std::endl;
-    }
-    return 0;
-  }
+  uint32_t getSubRegisterParentValue(int chipIndex, std::string subRegName);
 
   void maskPixel(unsigned col, unsigned row, bool doAltMask = false) override {}
   unsigned getPixelEn(unsigned col, unsigned row, bool doAltMask = false) override {
