@@ -63,6 +63,8 @@ class ClipBoard {
             queueMutex.lock();
             std::deque<std::unique_ptr<T>> emptyQueue;
             std::swap(dataQueue, emptyQueue);
+            numDataIn = 0;
+            numDataOut = 0;
             queueMutex.unlock();
         }
 
@@ -106,6 +108,7 @@ class ClipBoard {
         }
 
         void reset() {
+            this->clearData();
             doneFlag = false;
             numDataIn = 0;
             numDataOut = 0;
