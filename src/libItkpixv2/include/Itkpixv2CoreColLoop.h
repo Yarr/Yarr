@@ -27,8 +27,11 @@ class Itkpixv2CoreColLoop : public LoopActionBase {
         unsigned m_maxCore;
         bool m_usePToT;
         bool m_disUnused;
+        bool m_resetAtEnd;
+        bool m_ignoreDis;
 
         std::array<uint16_t, 4> m_coreCols;
+        std::vector<std::array<uint16_t, 4>> m_initCoreColsAllChips;
 
         void init() override;
         void end() override;

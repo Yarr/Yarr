@@ -26,6 +26,7 @@ LIST(APPEND apps
         Itkpixv2CheckPulse
         Itkpixv2ConnectivityScan
         Itkpixv2ReadRingosc
+        Itkpixv2ColumnTest
         Itkpixv2EncodeRawData
         )
 

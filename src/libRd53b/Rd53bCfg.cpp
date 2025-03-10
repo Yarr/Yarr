@@ -29,8 +29,51 @@ Rd53bCfg::Rd53bCfg() :
     m_kSenseShuntA(26000),
     m_kSenseShuntD(26000),
     m_kShuntA(1040),
-    m_kShuntD(1040)
+    m_kShuntD(1040),
+    m_nBadPixel({}),
+    m_nBadPixelInitialized(false)
 {}
+
+void Rd53bCfg::maskPixel(unsigned col, unsigned row, bool doAltMask){
+
+    //First check if bad pixel count needs to be initiated
+    if (!(m_nBadPixelInitialized)){
+        int nCoreCol = (n_Col)/8;
+        for (unsigned iCoreCol = 0; iCoreCol < nCoreCol; iCoreCol++){
+            unsigned nBadPixelCount = 0;
+            for (unsigned iPixel = 0; iPixel < 8*n_Row; iPixel++){
+                if (!(this->getEn( 8*iCoreCol + iPixel%8 , iPixel/8 )))
+                    nBadPixelCount ++;
+            }
+            m_nBadPixel[iCoreCol] = nBadPixelCount;
+        }
+        m_nBadPixelInitialized=true;
+    }
+
+    this->setHitbus(col,row,0);
+    //If not already disabled
+    if (this->getEn(col,row) && !doAltMask){ 
+        this->setEn(col,row,0);
+
+        //Add one to count of bad pixels per core column
+        int coreCol = col/8;
+        bool validCoreCol = (coreCol<50) && (coreCol>=0);
+        if(validCoreCol){
+            //Add 1 to count
+            m_nBadPixel[coreCol] += 1;
+
+            //Check if core column register needs update
+            if (m_nBadPixel[coreCol] >= 8*n_Row){
+                std::string name = "EnCoreCol"+std::to_string(coreCol/16);
+                int adj = coreCol/16;
+                int reg = 0;
+                reg = this->getValue(name);
+                this->setValue(name,reg & ~(0x1 << (coreCol-16*adj)));
+            }
+        }
+    } 
+}
+
 
 void Rd53bCfg::enableAll() {
     logger->info("Resetting enable/hitbus pixel mask to all enabled!");
@@ -40,6 +83,9 @@ void Rd53bCfg::enableAll() {
             setHitbus(col, row, 1);
         }
     }
+    m_nBadPixel.fill(0);
+    m_nBadPixelInitialized=true;
+    
 }
 
 double Rd53bCfg::toCharge(double vcal) {

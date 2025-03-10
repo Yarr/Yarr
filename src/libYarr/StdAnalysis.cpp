@@ -29,6 +29,7 @@ namespace {
 }
 
 namespace {
+
     bool oa_registered =
         StdDict::registerAnalysis("OccupancyAnalysis",
                 []() { return std::unique_ptr<AnalysisAlgorithm>(new OccupancyAnalysis());});
@@ -128,6 +129,8 @@ void OccupancyAnalysis::init(const ScanLoopInfo *s) {
     }
 }
 
+
+
 void OccupancyAnalysis::processHistogram(HistogramBase *h) {
     // Check if right Histogram
     if (h->getName() != OccupancyMap::outputName())
@@ -182,6 +185,39 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
             }
         }
 
+        // Core Column Mask:
+        int nColsInCCol = 8;
+        int nBadPixelsInCCol;
+        if (coreColMask){
+            feCfg->enableAll();
+            for (unsigned coreCol = 0; coreCol<50; coreCol++){
+                nBadPixelsInCCol = nColsInCCol*nRow;
+                for (unsigned col = 1; col<=nColsInCCol; col++){
+                    for (unsigned row = 1; row<=nRow; row++){
+                        unsigned i = occMaps[ident]->binNum(coreCol*nColsInCCol+col, row);
+                        if (occMaps[ident]->getBin(i) >= LowThr && occMaps[ident]->getBin(i) <= HighThr) {
+                            nBadPixelsInCCol -= 1;
+                        }
+                    }
+                }
+
+
+
+                // If more than 10% of pixels need to be masked and we are in
+                // core column analysis, assume this is bad core column
+                // TODO Change this to looking at mask loops
+                alog->debug("In core column {} there are {} bad pixels",coreCol+1, nBadPixelsInCCol);
+                if (nBadPixelsInCCol > 0.1 * nColsInCCol * nRow){
+                    for (unsigned iPixel = 0; iPixel < nRow * nColsInCCol; iPixel++){
+                        unsigned col = coreCol * nColsInCCol + iPixel%8;
+                        unsigned row = iPixel/8;
+                        feCfg->maskPixel(col, row);
+                    }
+                    alog->warn("[{}][{}] Turned core Column {} off in config, because it had {} bad pixels", id, feCfg->getName(), coreCol+1,  nBadPixelsInCCol);
+                }
+            }
+        }
+
         alog->info("\033[1m\033[31m[{}][{}] Total number of failing pixels: {}\033[0m", id, feCfg->getName(), failed_cnt);
         output->pushData(std::move(mask)); // TODO push this mask to the specific configuration
         output->pushData(std::move(occMaps[ident]));
@@ -192,14 +228,17 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
     }
 }
 void OccupancyAnalysis::loadConfig(const json &j){
+    if (j.contains("coreColMask")){
+        coreColMask=j["coreColMask"];
+    }
     if (j.contains("createMask")){
         createMask=j["createMask"];
     }
     if (j.contains("LowThr")){
-      LowThr=j["LowThr"];
+        LowThr=j["LowThr"];
     }
     if (j.contains("HighThr")){
-      HighThr=j["HighThr"];
+        HighThr=j["HighThr"];
     }
 }
 
