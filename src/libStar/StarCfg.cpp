@@ -7,6 +7,8 @@
 #include "StarCfg.h"
 #include "StarPreset.h"
 
+#include "AbcNames.h"
+
 #include <iomanip>
 
 #include "logging.h"
@@ -39,7 +41,7 @@ double StarCfg::toCharge(double vcal, bool sCap, bool lCap) { return toCharge(vc
 void StarCfg::enableAll() {
     eachAbc([&](auto &abc) {
         for(int m=0; m<8; m++) {
-          abc.setRegisterValue(ABCStarRegister::MaskInput(m), 0);
+          abc.setRegisterValue(ABCStarRegisters::MaskInput(m), 0);
         }
       });
 }
@@ -91,7 +93,7 @@ void StarCfg::setSubRegisterValue(int chipIndex, std::string subRegName, uint32_
         }
     } else {
         //If looking for an ABC subregister enum
-        if (ABCStarSubRegister::_is_valid(subRegName.c_str())) {
+        if (AbcNames::subRegStringIsValid(subRegName)) {
             if (isAbcForInputChannel(chipIndex-1)) {
                 return abcFromIndex(chipIndex).setSubRegisterValue(subRegName, value);
             }
@@ -112,7 +114,7 @@ uint32_t StarCfg::getSubRegisterValue(int chipIndex, std::string subRegName) con
         }
     } else {
         //If looking for an ABC subregister enum
-        if (ABCStarSubRegister::_is_valid(subRegName.c_str())) {
+        if (AbcNames::subRegStringIsValid(subRegName)) {
             if (isAbcForInputChannel(chipIndex-1)) {
                 return abcFromIndex(chipIndex).getSubRegisterValue(subRegName);
             }
@@ -134,7 +136,7 @@ int StarCfg::getSubRegisterParentAddr(int chipIndex, std::string subRegName)
         }
     } else {
         // If looking for an ABC subregister enum
-        if (ABCStarSubRegister::_is_valid(subRegName.c_str())) {
+        if (AbcNames::subRegStringIsValid(subRegName)) {
             return m_abc_info->getSubRegisterParentAddr(subRegName);
         } else {
             std::cerr << " --> Error: Could not find ABC register \""<< subRegName << "\"" << std::endl;
@@ -155,7 +157,7 @@ uint32_t StarCfg::getSubRegisterParentValue(int chipIndex, std::string subRegNam
         }
     } else {
         //If looking for an ABC subregister enum
-        if (ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
+        if (AbcNames::subRegStringIsValid(subRegName)) {
             if (isAbcForInputChannel(chipIndex-1)) {
                 return abcFromIndex(chipIndex).getSubRegisterParentValue(subRegName);
             }
@@ -237,32 +239,32 @@ void StarCfg::writeConfig(json &j) {
         for(auto &reg_i: abcRegs) {
             auto &info = reg_i.second;
             int addr = info->addr();
+            auto reg = (ABCStarRegister)addr;
 
             // Skip non-writeable, trim and mask registers
-            if(addr==ABCStarRegister::SCReg) {
+            if(reg==ABCStarRegister::SCReg) {
                 continue;
             }
-            if(addr>=ABCStarRegister::MaskInput(0) && addr<=ABCStarRegister::MaskInput(7)) {
+            if(reg>=ABCStarRegisters::MaskInput(0) && reg<=ABCStarRegisters::MaskInput(7)) {
                 continue;
             }
-            if(addr>=ABCStarRegister::CalREG0 && addr<=ABCStarRegister::CalREG7) {
+            if(reg>=ABCStarRegister::CalREG0 && reg<=ABCStarRegister::CalREG7) {
                 continue;
             }
-            if(addr>=ABCStarRegister::STAT0 && addr<=ABCStarRegister::HPR) {
+            if(reg>=ABCStarRegister::STAT0 && reg<=ABCStarRegister::HPR) {
                 continue;
             }
-            if(addr>=ABCStarRegister::TrimLo(0) && addr<=ABCStarRegister::TrimHi(7)) {
+            if(reg>=ABCStarRegisters::TrimLo(0) && reg<=ABCStarRegisters::TrimHi(7)) {
                 continue;
             }
-            if(addr>=ABCStarRegister::HitCountREG0) {
+            if(reg>=ABCStarRegister::HitCountREG0) {
                 continue;
             }
 
-            auto reg = ABCStarRegister::_from_integral(addr);
             uint32_t val = abc.getRegisterValue(reg);
             std::stringstream ss;
             ss << std::hex << std::setw(8) << std::setfill('0') << val;
-            std::string regKey = reg._to_string();
+            std::string regKey = AbcNames::regToString(reg);
             std::string regValue = ss.str();
             regs[histo_index][regKey] = regValue;
 
@@ -526,7 +528,7 @@ void StarCfg::loadConfig(const json &j) {
             uint32_t regValue = valFromJson(i.value());
 
             try {
-                auto addr = ABCStarRegister::_from_string(regName.c_str());
+                auto addr = AbcNames::regFromString(regName).value();
                 for (int iABC = 0; iABC <= highestABC(); iABC++) {
                     if (isAbcForInputChannel(iABC))  {
                         // Doesn't need remapping as common
@@ -580,7 +582,7 @@ void StarCfg::loadConfig(const json &j) {
                 uint32_t regValue = valFromJson(i.value());
 
                 try {
-                    auto addr = ABCStarRegister::_from_string(regName.c_str());
+                    auto addr = AbcNames::regFromString(regName).value();
                     abc.setRegisterValue(addr, regValue);
                     logger->trace("For ABC index {}, reg {} has been set to {:08x}", iABC, regName, regValue);
                 } catch(std::runtime_error &e) {

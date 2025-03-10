@@ -1,5 +1,7 @@
 #include "AbcCfg.h"
 
+#include "AbcNames.h"
+
 #include "logging.h"
 
 namespace {
@@ -165,32 +167,31 @@ AbcStarRegInfo::AbcStarRegInfo(int version) {
     // Build using writeable map
     std::map<unsigned, std::shared_ptr<RegisterInfo>> regMap;
 
-    for (ABCStarRegister reg : ABCStarRegister::_values()) {
-        int addr = reg;
-
+    for (ABCStarRegister reg : AbcNames::listRegs()) {
         if(version == 1 &&
-           ((addr > ABCStarRegs::ADCS3 && addr <= ABCStarRegs::ADCS7)
-            || (addr > ABCStarRegs::CREG1 && addr <= ABCStarRegs::CREG6))) {
+           ((reg > ABCStarRegister::ADCS3 && reg <= ABCStarRegister::ADCS7)
+            || (reg > ABCStarRegister::CREG1 && reg <= ABCStarRegister::CREG6))) {
           continue;
         }
 
+        int addr = (int)reg;
         regMap[addr] = std::make_shared<RegisterInfo>(addr);
     }
 
-    for (ABCStarRegister reg : ABCStarRegister::_values()) {
-        int addr = reg;
-        if((addr == ABCStarRegister::SCReg)
-           || (addr >= ABCStarRegs::STAT0 && addr <= ABCStarRegs::HPR)
-           || addr >= ABCStarRegs::HitCountREG0) {
+    for (ABCStarRegister reg : AbcNames::listRegs()) {
+        if((reg == ABCStarRegister::SCReg)
+           || (reg >= ABCStarRegister::STAT0 && reg <= ABCStarRegister::HPR)
+           || reg >= ABCStarRegister::HitCountREG0) {
           continue;
         }
 
         if(version == 1 &&
-           ((addr > ABCStarRegs::ADCS3 && addr <= ABCStarRegs::ADCS7)
-            || (addr > ABCStarRegs::CREG1 && addr <= ABCStarRegs::CREG6))) {
+           ((reg > ABCStarRegister::ADCS3 && reg <= ABCStarRegister::ADCS7)
+            || (reg > ABCStarRegister::CREG1 && reg <= ABCStarRegister::CREG6))) {
           continue;
         }
 
+        int addr = (int)reg;
         abcWriteMap[addr] = regMap[addr];
     }
 
@@ -199,7 +200,7 @@ AbcStarRegInfo::AbcStarRegInfo(int version) {
 
     for (auto def : subregdefs) {
         auto reg_id = std::get<0>(def);
-        std::string subregname = std::string(reg_id._to_string());
+        std::string subregname = AbcNames::subRegToString(reg_id);
         auto addr = std::get<1>(def);
         auto offset = std::get<2>(def);
         auto width = std::get<3>(def);
@@ -211,6 +212,13 @@ AbcStarRegInfo::AbcStarRegInfo(int version) {
     for(auto &i: regMap) {
       abcregisterMap[i.first] = i.second;
     }
+}
+
+AbcStarRegInfo::SubInfoPtr AbcStarRegInfo::subRegByName(const std::string &subRegName) const
+{
+    // This already throws runtime_error if bad string
+    auto reg_enum = AbcNames::subRegFromString(subRegName).value();
+    return subRegFromEnum(reg_enum);
 }
 
 AbcCfg::AbcCfg(int version)
@@ -228,14 +236,14 @@ void AbcCfg::setupMaps(int version) {
 
     //DD    //Loop over each ABC register in the default list, and create the Register object
     //DD    //Add the location in memory of this Register to the register maps
-    for (ABCStarRegister reg : ABCStarRegister::_values()) {
-        int addr = reg;
-
+    for (const ABCStarRegister &reg : AbcNames::listRegs()) {
         if(version == 1 &&
-           ((addr > ABCStarRegs::ADCS3 && addr <= ABCStarRegs::ADCS7)
-            || (addr > ABCStarRegs::CREG1 && addr <= ABCStarRegs::CREG6))) {
+           ((reg > ABCStarRegister::ADCS3 && reg <= ABCStarRegister::ADCS7)
+            || (reg > ABCStarRegister::CREG1 && reg <= ABCStarRegister::CREG6))) {
           continue;
         }
+
+        int addr = (int)reg;
 
         Register tmp_Reg(m_info->abcregisterMap.at(addr), 0);
         m_registerSet.push_back( std::move(tmp_Reg) ); //Save it to the list
@@ -250,46 +258,52 @@ void AbcCfg::setDefaults(int version) {
     getRegister(ABCStarRegister::SCReg).setValue(0x00000000);
 
     ////#Analog and DCS regs
-    for (unsigned int iReg=ABCStarRegister::ADCS1; iReg<=ABCStarRegister::ADCS7; iReg++) {
+    for (auto r=ABCStarRegister::ADCS1; r<=ABCStarRegister::ADCS7; ++r) {
         if(version == 1 &&
-           (iReg > ABCStarRegs::ADCS3 && iReg <= ABCStarRegs::ADCS7)) {
+           (r > ABCStarRegister::ADCS3 && r <= ABCStarRegister::ADCS7)) {
           continue;
         }
-        getRegister(iReg).setValue(0x00000000);
+        int addr = (int)r;
+        getRegister(addr).setValue(0x00000000);
     }
 
     ////#Congfiguration regs
-    for (unsigned int iReg=ABCStarRegister::CREG0; iReg<=ABCStarRegister::CREG6; iReg++) {
-        if(iReg == ABCStarRegister::CREG0 + 5) {
-            // Skip CREG5 as it's fuse register
+    for (auto r=ABCStarRegister::CREG0; r<=ABCStarRegister::CREG6; ++r) {
+        if((int)r == (int)ABCStarRegister::CREG0 + 5) {
+            // Skip CREG5 as it's fuse register (invalid enum)
             continue;
         }
         if(version == 1 &&
-           (iReg > ABCStarRegs::CREG1 && iReg <= ABCStarRegs::CREG6)) {
+           (r > ABCStarRegister::CREG1 && r <= ABCStarRegister::CREG6)) {
           // Skip v0 only registers
           continue;
         }
-        getRegister(iReg).setValue(0x00000000);
+        int addr = (int)r;
+        getRegister(addr).setValue(0x00000000);
     }
 
     ////# Input (Mask) regs
-    for (unsigned int iReg=ABCStarRegister::MaskInput0; iReg<=ABCStarRegister::MaskInput7; iReg++)
-        getRegister(iReg).setValue(0x00000000);
+    for (auto r=ABCStarRegister::MaskInput0; r<=ABCStarRegister::MaskInput7; ++r) {
+        int addr = (int)r;
+        getRegister(addr).setValue(0x00000000);
+    }
 
     ////# Calibration Enable regs
-    for (unsigned int iReg=ABCStarRegister::CalREG0; iReg<=ABCStarRegister::CalREG7; iReg++)
-        getRegister(iReg).setValue(0xFFFFFFFF);
+    for (auto r=ABCStarRegister::CalREG0; r<=ABCStarRegister::CalREG7; ++r) {
+        int addr = (int)r;
+        getRegister(addr).setValue(0xFFFFFFFF);
+    }
 
     ////# 256 TrimDac regs 4-bit lsb
-    int channel=0;
-    for(int i=ABCStarRegister::TrimDAC0; i<=ABCStarRegister::TrimDAC31;i++){
-        getRegister(i).setValue(0xFFFFFFFF);
+    for(auto r=ABCStarRegister::TrimDAC0; r<=ABCStarRegister::TrimDAC31; ++r){
+        int addr = (int)r;
+        getRegister(addr).setValue(0xFFFFFFFF);
     }
 
     ////# 256 TrimDac regs 1-bit msb
-    channel = 0;
-    for(int i=ABCStarRegister::TrimDAC32; i<=ABCStarRegister::TrimDAC39;i++){
-        getRegister(i).setValue(0x00000000);
+    for(auto r=ABCStarRegister::TrimDAC32; r<=ABCStarRegister::TrimDAC39; ++r){
+        int addr = (int)r;
+        getRegister(addr).setValue(0x00000000);
     }
 }
 
@@ -300,8 +314,8 @@ void AbcCfg::setTrimDACRaw(unsigned channel, int value) {
         return;
     }
 
-    auto lo_reg = ABCStarRegister::TrimLo(channel/8);
-    auto hi_reg = ABCStarRegister::TrimHi(channel/32);
+    auto lo_reg = ABCStarRegisters::TrimLo(channel/8);
+    auto hi_reg = ABCStarRegisters::TrimHi(channel/32);
 
     auto lo_val = value & 0xf;
     auto hi_val = (value >> 4) & 1;
@@ -329,8 +343,8 @@ int AbcCfg::getTrimDACRaw(unsigned channel) const {
         return 0;
     }
 
-    auto lo_reg = ABCStarRegister::TrimLo(channel/8);
-    auto hi_reg = ABCStarRegister::TrimHi(channel/32);
+    auto lo_reg = ABCStarRegisters::TrimLo(channel/8);
+    auto hi_reg = ABCStarRegisters::TrimHi(channel/32);
 
     unsigned lo_offset = (channel * 4) % 32;
     unsigned hi_offset = channel % 32;
@@ -357,7 +371,7 @@ AbcStarRegInfo::SubInfoPtr AbcStarRegInfo::subRegFromEnum(ABCStarSubRegister sub
     try {
         return abcSubRegisterMap_all.at(subReg);
     } catch(std::out_of_range &e) {
-        logger->info("Failed request for subReg: {}", subReg._to_string());
+        logger->info("Failed request for subReg: {}", AbcNames::subRegToString(subReg));
         for(auto &sr: abcSubRegisterMap_all) {
             logger->debug(" Have: {}", sr.first);
         }

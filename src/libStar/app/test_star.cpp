@@ -4,6 +4,7 @@
 #include <tuple>
 #include <set>
 
+#include "AbcNames.h"
 #include "AllHwControllers.h"
 #include "StarCmd.h"
 #include "StarCfg.h"
@@ -187,9 +188,10 @@ uint32_t updateHCCRegister(const std::string& regName, uint32_t value, StarCfg& 
 }
 
 uint32_t updateABCRegister(const std::string& regName, uint32_t value, StarCfg& cfg) {
-  ABCStarRegister addr = ABCStarRegister::_from_string(regName.c_str());
+  ABCStarRegister reg = AbcNames::regFromString(regName).value();
+  uint32_t addr = (uint32_t)reg;
   cfg.eachAbc([&](auto &abc) {
-      abc.setRegisterValue(addr, value);
+      abc.setRegisterValue(reg, value);
     });
 
   return addr;
@@ -872,7 +874,8 @@ bool testABCRegisterAccess(HwController& hwCtrl, StarCfg& cfg, const std::vector
 
     for (const auto& abc : hcc.abcs) {
       // Register MaskInput0
-      success &= testRegisterReadWrite(hwCtrl, ABCStarRegister::MaskInput0, 0xabadcafe, hcc.rx, hcc.hcc_id, abc.second);
+      uint32_t mr = (uint32_t)ABCStarRegister::MaskInput0;
+      success &= testRegisterReadWrite(hwCtrl, mr, 0xabadcafe, hcc.rx, hcc.hcc_id, abc.second);
     }
   }
 
@@ -922,7 +925,8 @@ bool testHitCounts(HwController& hwCtrl, StarCfg& cfg) {
 
   // Read a hit counter register that corresponds to the masked strips
   logger->debug(" Read register HitCountREG63");
-  sendCommand(star.read_abc_register(ABCStarRegister::HitCountREG63), hwCtrl);
+  int cr63 = (int)ABCStarRegister::HitCountREG63;
+  sendCommand(star.read_abc_register(cr63), hwCtrl);
 
   auto data = readData(
     hwCtrl,
@@ -1109,7 +1113,8 @@ bool readABCRegisters(HwController& hwCtrl) {
 
   // Read ABCStar register MaskInput3
   logger->info("Reading ABCStar register MaskInput3");
-  sendCommand(star.read_abc_register(ABCStarRegister::MaskInput3), hwCtrl);
+  int mr3 = (int)ABCStarRegister::MaskInput3;
+  sendCommand(star.read_abc_register(mr3), hwCtrl);
   auto data_abcrr = readData(
     hwCtrl,
     [](RawData& d) {return isPacketType(d, TYP_ABC_RR);}

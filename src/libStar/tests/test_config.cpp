@@ -51,7 +51,7 @@ TEST_CASE("StarCfg", "[star][config]") {
 
       REQUIRE (abc.getABCchipID() == abc_id);
 
-      REQUIRE (abc.getSubRegisterParentAddr("TESTPATT1") == ABCStarRegister::CREG0);
+      REQUIRE ((ABCStarRegister)abc.getSubRegisterParentAddr("TESTPATT1") == ABCStarRegister::CREG0);
 
       abc.setSubRegisterValue("TESTPATT1", 0x5);
       abc.setSubRegisterValue("TESTPATT2", 0xa);
@@ -76,7 +76,7 @@ TEST_CASE("StarCfg", "[star][config]") {
 
   REQUIRE (test_config.getABCchipID(abc_index) == abc_id);
 
-  REQUIRE (test_config.getSubRegisterParentAddr(abc_index, "TESTPATT1") == ABCStarRegister::CREG0);
+  REQUIRE ((ABCStarRegister)test_config.getSubRegisterParentAddr(abc_index, "TESTPATT1") == ABCStarRegister::CREG0);
 
   test_config.setSubRegisterValue(abc_index, "TESTPATT1", 0x5);
   test_config.setSubRegisterValue(abc_index, "TESTPATT2", 0xa);
@@ -116,7 +116,7 @@ TEST_CASE("StarCfg_ABCv1", "[star][config]") {
   test_config.eachAbc([&](AbcCfg &abc) {
       REQUIRE (abc.getABCchipID() == abc_id);
 
-      REQUIRE (abc.getSubRegisterParentAddr("BVREF") == ABCStarRegister::ADCS1);
+      REQUIRE ((ABCStarRegister)abc.getSubRegisterParentAddr("BVREF") == ABCStarRegister::ADCS1);
 
       abc.setSubRegisterValue("BVREF", 0x1f);
       abc.setSubRegisterValue("BIREF", 0x1f);
@@ -169,7 +169,7 @@ TEST_CASE("StarCfgTrims", "[star][config]") {
     // The ones we've updated
     if (r == 2) expected = 0xffff2fff;
 
-    CHECK (test_config.getABCRegister(ABCStarRegister::TrimLo(r), abc_id) == expected);
+    CHECK (test_config.getABCRegister(ABCStarRegisters::TrimLo(r), abc_id) == expected);
   }
 
   for(unsigned r = 0; r < 8; r++) {
@@ -181,7 +181,7 @@ TEST_CASE("StarCfgTrims", "[star][config]") {
     // The ones we've updated
     if (r == 0) expected = 0x00080000;
 
-    CHECK (test_config.getABCRegister(ABCStarRegister::TrimHi(r), abc_id) == expected);
+    CHECK (test_config.getABCRegister(ABCStarRegisters::TrimHi(r), abc_id) == expected);
   }
 
   // Two rows of 128 strips (odd and even)
@@ -211,10 +211,10 @@ TEST_CASE("StarCfgTrims", "[star][config]") {
       case 3: expected = 0xfefedcdc; break;
       }
 
-      CHECK (test_config.getABCRegister(ABCStarRegister::TrimLo(r), abc_id) == expected);
+      CHECK (test_config.getABCRegister(ABCStarRegisters::TrimLo(r), abc_id) == expected);
     } else {
       if(r%2) expected = 0xffffffff;
-      CHECK (test_config.getABCRegister(ABCStarRegister::TrimHi(r-32), abc_id) == expected);
+      CHECK (test_config.getABCRegister(ABCStarRegisters::TrimHi(r-32), abc_id) == expected);
     }
 
   }

@@ -249,14 +249,15 @@ void StarChipsetEmu::doRegReadWrite(LCB::Frame frame) {
 void StarChipsetEmu::writeRegister(const uint32_t data, const uint8_t address,
                                    bool isABC, const unsigned ABCID) {
   if (isABC) {
+    auto reg_e = (ABCStarRegister)address;
     // skip writing if the register is read only
-    if (address == ABCStarRegister::STAT0 or
-        address == ABCStarRegister::STAT1 or
-        address == ABCStarRegister::STAT2 or
-        address == ABCStarRegister::STAT3 or
-        address == ABCStarRegister::STAT4 or
-        address == ABCStarRegister::HPR
-        or (address >= ABCStarRegister::Counter(0) && address <= ABCStarRegister::Counter(63))) {
+    if (reg_e == ABCStarRegister::STAT0 or
+        reg_e == ABCStarRegister::STAT1 or
+        reg_e == ABCStarRegister::STAT2 or
+        reg_e == ABCStarRegister::STAT3 or
+        reg_e == ABCStarRegister::STAT4 or
+        reg_e == ABCStarRegister::HPR
+        or (reg_e >= ABCStarRegisters::Counter(0) && reg_e <= ABCStarRegisters::Counter(63))) {
       logger->warn("A register write command is received for a read-only ABCStar register 0x{:x}. Skip writing.", address);
       return;
     } else {
@@ -503,8 +504,8 @@ void StarChipsetEmu::resetABCSEU() {
 
 void StarChipsetEmu::resetABCHitCounts() {
   m_starCfg->eachAbc([&](auto &abc) {
-      for (unsigned int iReg=ABCStarRegister::HitCountREG0; iReg<=ABCStarRegister::HitCountREG63; iReg++) {
-        abc.setRegisterValue(ABCStarRegister::_from_integral(iReg), 0x00000000);
+      for (auto iReg=ABCStarRegister::HitCountREG0; iReg<=ABCStarRegister::HitCountREG63; ++iReg) {
+        abc.setRegisterValue(iReg, 0x00000000);
       }
     });
 }
@@ -614,7 +615,7 @@ void StarChipsetEmu::doHPR_ABC(LCB::Frame frame, unsigned ichip) {
   //// Build and send HPR packets
   if (lcb_lock_changed or hpr_periodic or hpr_initial) {
     auto packet_abchpr = buildABCRegisterPacket(
-      PacketTypes::ABCHPR, ichip-1, (+ABCStarRegister::HPR)._to_integral(),
+      PacketTypes::ABCHPR, ichip-1, (int)ABCStarRegister::HPR,
       m_starCfg->getABCRegister(ABCStarRegister::HPR, abcID), (abcID&0xf) << 12);
 
     sendPacket(packet_abchpr);
@@ -839,8 +840,8 @@ void StarChipsetEmu::countHits(AbcCfg& abc, const StripData& hits) const {
   for (int ireg = 0; ireg < 64; ++ireg) {
     // Read HitCount Register
     // address
-    unsigned addr = ireg + (+ABCStarRegister::HitCountREG0)._to_integral();
-    auto reg = ABCStarRegister(ABCStarRegs::_from_integral(addr));
+    unsigned addr = ireg + (int)ABCStarRegister::HitCountREG0;
+    auto reg = ABCStarRegister((ABCStarRegister)(addr));
 
     // value
     unsigned counts = abc.getRegisterValue(reg);

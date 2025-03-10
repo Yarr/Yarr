@@ -1,5 +1,6 @@
 add_library(Star SHARED
         AbcCfg.cpp
+        AbcNames.cpp
         AllStarActions.cpp
         HccCfg.cpp
         StarCfg.cpp

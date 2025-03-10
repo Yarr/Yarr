@@ -51,13 +51,15 @@ class StarCfg : public FrontEndCfg {
   }
 
   /// Get value of ABC register (by integer address and ABC communications ID)
-  inline const uint32_t getABCRegister(uint32_t addr, int32_t chipID ) {
-    return getABCRegister(ABCStarRegister(ABCStarRegs::_from_integral(addr)), chipID);
+  inline const uint32_t getABCRegister(uint32_t addr, int32_t chipID )
+  {
+    return getABCRegister((ABCStarRegister)addr, chipID);
   }
 
   /// Set value of ABC register (by integer address and ABC communications ID)
-  inline void setABCRegister(uint32_t addr, uint32_t val, int32_t chipID) {
-    setABCRegister(ABCStarRegister(ABCStarRegs::_from_integral(addr)), val, chipID);
+  inline void setABCRegister(uint32_t addr, uint32_t val, int32_t chipID)
+  {
+    setABCRegister((ABCStarRegister)addr, val, chipID);
   }
 
   /// Get the ID used to communicate with this HCC

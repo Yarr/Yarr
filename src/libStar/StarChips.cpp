@@ -7,6 +7,8 @@
 #include "StarChips.h"
 #include "StarChipsBroadcast.h"
 
+#include "AbcNames.h"
+
 #include <chrono>
 
 #include "logging.h"
@@ -192,7 +194,8 @@ bool StarChips::writeTrims(){
             int this_chipID = abc.getABCchipID();
 
             logger->info("Write ABC {} trim registers", this_chipID);
-            for(unsigned int addr = ABCStarRegister::TrimDAC0; addr <= ABCStarRegister::TrimDAC39; addr++) {
+            for(auto r = ABCStarRegister::TrimDAC0; r <= ABCStarRegister::TrimDAC39; ++r) {
+                unsigned int addr = (unsigned int)r;
                 logger->debug("Writing Register {} for chipID {}", addr, this_chipID);
                 writeABCRegister(addr, abc);
             }
@@ -257,10 +260,11 @@ yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_va
       uint32_t val = (reg_value == 0)?0:0xffffffff;
       logger->trace("Writing {:08x} to mask register for all ABCStar chips.", val);
       eachAbc([&](auto &cfg) {
-          for(int m = ABCStarRegister::MaskInput(0);
-              m <= ABCStarRegister::MaskInput(7); m++) {
-            cfg.setRegisterValue(ABCStarRegister::_from_integral(m), val);
-            sendCmd( write_abc_register(m, val,
+          for(auto m = ABCStarRegisters::MaskInput(0);
+              m <= ABCStarRegisters::MaskInput(7); ++m) {
+            int addr = (int)m;
+            cfg.setRegisterValue(m, val);
+            sendCmd( write_abc_register(addr, val,
                                         getHCCchipID(), cfg.getABCchipID()));
           }
         });
@@ -278,12 +282,12 @@ yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_va
 
       // Now send the register config to the front-ends
       eachAbc([&](auto &cfg) {
-          for(int m = ABCStarRegister::TrimLo(0);
-              m <= ABCStarRegister::TrimHi(7); m++) {
-            writeABCRegister(m, cfg);
+          for(ABCStarRegister m = ABCStarRegisters::TrimLo(0);
+              m <= ABCStarRegisters::TrimHi(7); ++m) {
+            writeABCRegister((int)m, cfg);
           }
         });
-    } else if(!ABCStarSubRegister::_is_valid(subRegName.c_str())) {
+    } else if(!AbcNames::subRegFromString(subRegName).has_value()) {
       logger->error(" --> Error: Could not find ABC sub-register \"{}\"", subRegName);
       return yarrFailure;
     } else {
@@ -339,7 +343,7 @@ void StarChips::writeHCCRegister(int addr) {
 }
 
 void StarChips::writeABCRegister(int addr, AbcCfg &cfg) {
-    uint32_t value = cfg.getRegisterValue(ABCStarRegister::_from_integral(addr));
+    uint32_t value = cfg.getRegisterValue((ABCStarRegister)addr);
     auto id = cfg.getABCchipID();
     logger->debug("Doing ABC ID {} writeRegister {} with value 0x{:08x}", id, addr, value);
     sendCmd(write_abc_register(addr, value, getHCCchipID(), id));

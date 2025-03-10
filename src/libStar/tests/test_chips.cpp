@@ -237,18 +237,18 @@ TEST_CASE("StarChipsNamedTrim", "[star][chips][Trim]") {
     hi_val = 0xffffffff;
   }
 
-  auto read_reg0 = star_fe->getABCRegister(ABCStarRegs::TrimDAC0, abc_id);
+  auto read_reg0 = star_fe->getABCRegister(ABCStarRegister::TrimDAC0, abc_id);
   CHECK (read_reg0 == lo_val);
 
-  auto read_reg32 = star_fe->getABCRegister(ABCStarRegs::TrimDAC32, abc_id);
+  auto read_reg32 = star_fe->getABCRegister(ABCStarRegister::TrimDAC32, abc_id);
   CHECK (read_reg32 == hi_val);
 
   for(int i=0; i<32; i++) {
-    expected_regs.insert(std::make_pair(ABCStarRegister::TrimLo(i), lo_val));
+    expected_regs.insert(std::make_pair((int)ABCStarRegisters::TrimLo(i), lo_val));
   }
 
   for(int i=0; i<8; i++) {
-    expected_regs.insert(std::make_pair(ABCStarRegister::TrimHi(i), hi_val));
+    expected_regs.insert(std::make_pair((int)ABCStarRegisters::TrimHi(i), hi_val));
   }
 
   REQUIRE (tx.buffers.size() > 0);

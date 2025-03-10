@@ -11,34 +11,36 @@
 #include <memory>
 #include <vector>
 
-#include "enum.h"
 #include "StarRegDefs.h"
 #include "StarRegister.h"
 
 // Name different ABC registers that can be used
 //  NB some are not used in V1
-BETTER_ENUM(ABCStarRegs, int,
-    ABC_STAR_REGS
-)
+enum class ABCStarRegister {
+  ABC_STAR_REGS
+};
+
+// Add prefix operator so we can iterate
+// NB: Only to be uses for valid ranges
+inline ABCStarRegister operator ++(ABCStarRegister &r) {
+  r = ((ABCStarRegister) ((int)r + 1));
+  return r;
+}
 
 //Name different ABCv0 subregisters that can be used for configuration, scans, etc.
-
-BETTER_ENUM(ABCStarSubRegister, int,
-    ABC_STAR_SUB_REGS
-)
+enum class ABCStarSubRegister {
+  ABC_STAR_SUB_REGS
+};
 
 /// Representation of the address of an ABCStar register
-class ABCStarRegister : public ABCStarRegs {
-  public:
-    ABCStarRegister(const ABCStarRegs & other) : ABCStarRegs::ABCStarRegs(other) {}
-    ABCStarRegister(const ABCStarRegs::_enumerated & other) : ABCStarRegs::ABCStarRegs(other) {}
-    static  ABCStarRegister MaskInput(int i) { return ABCStarRegs::_from_integral((int)(ABCStarRegs::MaskInput0) + i);}
-    static  ABCStarRegister CalReg(int i) { return ABCStarRegs::_from_integral((int)(ABCStarRegs::CalREG0) + i);}
-    static  ABCStarRegister Counter(int i) { return ABCStarRegs::_from_integral((int)(ABCStarRegs::HitCountREG0) + i);}
+namespace ABCStarRegisters {
+    static  ABCStarRegister MaskInput(int i) { return (ABCStarRegister)((int)(ABCStarRegister::MaskInput0) + i);}
+    static  ABCStarRegister CalReg(int i) { return (ABCStarRegister)((int)(ABCStarRegister::CalREG0) + i);}
+    static  ABCStarRegister Counter(int i) { return (ABCStarRegister)((int)(ABCStarRegister::HitCountREG0) + i);}
     /// 32 registers containing lo 4 bits of trim
-    static  ABCStarRegister TrimLo(int i) { return ABCStarRegs::_from_integral((int)(ABCStarRegs::TrimDAC0) + i);}
+    static  ABCStarRegister TrimLo(int i) { return (ABCStarRegister)((int)(ABCStarRegister::TrimDAC0) + i);}
     /// 8 registers containing hi 1 bits of trim
-    static  ABCStarRegister TrimHi(int i) { return ABCStarRegs::_from_integral((int)(ABCStarRegs::TrimDAC32) + i);}
+    static  ABCStarRegister TrimHi(int i) { return (ABCStarRegister)((int)(ABCStarRegister::TrimDAC32) + i);}
 };
 
 /// Lookup information on ABC Star register map
@@ -59,11 +61,7 @@ class AbcStarRegInfo {
   static std::shared_ptr<const AbcStarRegInfo> instance(int version);
 
   /// Return sub register info for name, throws std::runtime_error
-  SubInfoPtr subRegByName(const std::string &subRegName) const {
-    // This already throws runtime_error if bad string
-    auto reg_enum = ABCStarSubRegister::_from_string(subRegName.c_str());
-    return subRegFromEnum(reg_enum);
-  }
+  SubInfoPtr subRegByName(const std::string &subRegName) const;
 
   /// Return sub register info from enum, throws std::runtime_error
   SubInfoPtr subRegFromEnum(ABCStarSubRegister subReg) const;
@@ -165,16 +163,16 @@ class AbcCfg {
         /// Is channel masked
         bool isMasked(unsigned channel) const {
             uint8_t maskIndex = ((channel & 0x7f) << 1) | ((channel & 0x80) >> 7);
-            int maskReg = ABCStarRegister::MaskInput((maskIndex>>5) & 0x7);
-            uint32_t maskValue = getRegister(maskReg).getValue();
+            auto maskReg = ABCStarRegisters::MaskInput((maskIndex>>5) & 0x7);
+            uint32_t maskValue = getRegister((int)maskReg).getValue();
             return maskValue & (1 << (maskIndex&0x1f));
         }
 
         /// Set mask for strip
         void setMask(unsigned channel, bool mask) {
             uint8_t maskIndex = ((channel & 0x7f) << 1) | ((channel & 0x80) >> 7);
-            int maskReg = ABCStarRegister::MaskInput((maskIndex>>5) & 0x7);
-            auto &reg = getRegister(maskReg);
+            auto maskReg = ABCStarRegisters::MaskInput((maskIndex>>5) & 0x7);
+            auto &reg = getRegister((int)maskReg);
             uint32_t maskValue = reg.getValue();
             uint32_t maskPattern =  1 << (maskIndex&0x1f);
 
