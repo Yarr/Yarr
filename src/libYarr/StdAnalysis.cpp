@@ -2074,8 +2074,8 @@ void ParameterAnalysis::end() {
     alog->trace("ParameterAnalysis end");
     for (unsigned i=0; i<paramCurves.size(); i++) {
         if (m_createMap) {
-            output->pushData(std::move(paramMaps[i]));
+            output->pushData(std::move(paramCurves[i]));
         }
-        output->pushData(std::move(paramCurves[i]));
+        output->pushData(std::move(paramMaps[i]));
     }
 }
