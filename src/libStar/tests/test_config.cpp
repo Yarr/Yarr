@@ -25,11 +25,16 @@ TEST_CASE("StarCfg", "[star][config]") {
 
   // Side-effect of checking it's not abstract is intentional
   StarCfg test_config(abc_version, hcc_version);
+  test_config.clearABCchipIDs();
   test_config.setHCCChipId(4);
   const int abc_id = 14;
   test_config.addABCchipID(abc_id);
 
-  //  REQUIRE (test_config.numABCs() == 1);
+  REQUIRE (test_config.numABCs() == 1);
+
+  auto &a = test_config.abcForInputChannel(0);
+  CHECK( a.getABCchipID() == 14 );
+
   REQUIRE (test_config.getHCCchipID() == 4);
 
   REQUIRE (test_config.getHCCRegister(HCCStarRegister::Delay1) == 0);
@@ -90,10 +95,14 @@ TEST_CASE("StarCfg_ABCv1", "[star][config]") {
   int hcc_version = 0;
 
   StarCfg test_config(abc_version, hcc_version);
+  test_config.clearABCchipIDs();
   test_config.setHCCChipId(4);
 
   const int abc_id = 13;
   test_config.addABCchipID(abc_id);
+
+  auto &a = test_config.abcForInputChannel(0);
+  CHECK( a.getABCchipID() == 13 );
 
   test_config.setABCRegister(ABCStarRegister::CREG0, 0x87654321, abc_id);
   REQUIRE (test_config.getABCRegister(ABCStarRegister::CREG0, abc_id) == 0x87654321);
@@ -130,9 +139,13 @@ TEST_CASE("StarCfgTrims", "[star][config]") {
   int abc_version = 0;
   int hcc_version = 0;
   StarCfg test_config(abc_version, hcc_version);
+  test_config.clearABCchipIDs();
   test_config.setHCCChipId(2);
   const int abc_id = 3;
   test_config.addABCchipID(abc_id);
+
+  auto &a = test_config.abcForInputChannel(0);
+  CHECK( a.getABCchipID() == 3 );
 
   // Default to 15 on all strips
   // Two rows of 128 strips (odd and even)
@@ -269,10 +282,14 @@ TEST_CASE("StarCfg_HCCv1", "[star][config]") {
   int hcc_version = 1;
 
   StarCfg test_config(abc_version, hcc_version);
+  test_config.clearABCchipIDs();
   test_config.setHCCChipId(4);
 
   const int abc_id = 13;
   test_config.addABCchipID(abc_id);
+
+  auto &a = test_config.abcForInputChannel(0);
+  CHECK( a.getABCchipID() == 13 );
 
   test_config.setHCCRegister(HCCStarRegister::PLL1, 0);
   REQUIRE (test_config.getHCCRegister(HCCStarRegister::PLL1) == 0);
@@ -365,4 +382,30 @@ TEST_CASE("StarCfgLoadConfig", "[star][config]") {
 
   CHECK (test_config.getHCCchipID() == hccID);
   CHECK (test_config.getHCCfuseID() == fuseID);
+}
+
+TEST_CASE("Star_AbcHccInputChannelMapping", "[star][config]") {
+  int abc_version = 1;
+  int hcc_version = 1;
+
+  StarCfg test_config(abc_version, hcc_version);
+  test_config.clearABCchipIDs();
+  test_config.setHCCChipId(4);
+
+  test_config.addABCchipID(13);
+
+  CHECK( test_config.isAbcForInputChannel(0) );
+  CHECK( !test_config.isAbcForInputChannel(1) );
+
+  CHECK( test_config.abcForInputChannel(0).getABCchipID() == 13 );
+
+  test_config.addABCchipID(14, 1);
+  CHECK( test_config.isAbcForInputChannel(1) );
+  CHECK( test_config.abcForInputChannel(1).getABCchipID() == 14 );
+
+  test_config.addABCchipID(15, 6);
+  CHECK( !test_config.isAbcForInputChannel(2) );
+  CHECK( test_config.isAbcForInputChannel(6) );
+
+  CHECK( test_config.abcForInputChannel(6).getABCchipID() == 15 );
 }

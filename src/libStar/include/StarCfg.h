@@ -30,7 +30,7 @@ class StarCfg : public FrontEndCfg {
   void configure_ABC_Registers(int chipID);
 
   /// Return value of HCC register
-  uint32_t getHCCRegister(HCCStarRegister addr);
+  uint32_t getHCCRegister(HCCStarRegister addr) const;
 
   /// Set value of HCC register
   void     setHCCRegister(HCCStarRegister addr, uint32_t val);
@@ -42,7 +42,7 @@ class StarCfg : public FrontEndCfg {
   void     setABCRegister(ABCStarRegister addr, uint32_t val, int32_t chipID);
 
   /// Return value of HCC register (integer version)
-  inline const uint32_t getHCCRegister(uint32_t addr) {
+  inline const uint32_t getHCCRegister(uint32_t addr) const {
     return getHCCRegister(HCCStarRegister::_from_integral(addr));
   }
 
@@ -98,7 +98,7 @@ class StarCfg : public FrontEndCfg {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
       return m_hcc.setSubRegisterValue(subRegName, value);
     } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
-        if (abcAtIndex(chipIndex))
+        if (isAbcForInputChannel(chipIndex-1))
             return abcFromIndex(chipIndex).setSubRegisterValue(subRegName, value);
     }else {
       std::cerr << " --> Error: Could not find register \""<< subRegName << "\"" << std::endl;
@@ -106,11 +106,11 @@ class StarCfg : public FrontEndCfg {
   }
 
   /// Get value of named register field (either ABC or HCC)
-  uint32_t getSubRegisterValue(int chipIndex, std::string subRegName) {
+  uint32_t getSubRegisterValue(int chipIndex, std::string subRegName) const {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
       return m_hcc.getSubRegisterValue(subRegName);
     } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
-        if (abcAtIndex(chipIndex))
+        if (isAbcForInputChannel(chipIndex-1))
             return abcFromIndex(chipIndex).getSubRegisterValue(subRegName);
     }else {
       std::cerr << " --> Error: Could not find register \""<< subRegName << "\"" << std::endl;
@@ -135,7 +135,7 @@ class StarCfg : public FrontEndCfg {
     if (!chipIndex && HCCStarSubRegister::_is_valid(subRegName.c_str())) { //If HCC, looking name
       return m_hcc.getSubRegisterParentValue(subRegName);
     } else if (chipIndex && ABCStarSubRegister::_is_valid(subRegName.c_str())) { //If looking for an ABC subregister enum
-        if (abcAtIndex(chipIndex))
+        if (isAbcForInputChannel(chipIndex-1))
             return abcFromIndex(chipIndex).getSubRegisterParentValue(subRegName);
     }else {
       std::cerr << " --> Error: Could not find register \""<< subRegName << "\"" << std::endl;
@@ -143,11 +143,22 @@ class StarCfg : public FrontEndCfg {
     return 0;
   }
 
-  void maskPixel(unsigned col, unsigned row) override {}
-  unsigned getPixelEn(unsigned col, unsigned row) override {
+  void maskPixel(unsigned col, unsigned row, bool doAltMask = false) override {}
+  unsigned getPixelEn(unsigned col, unsigned row, bool doAltMask = false) override {
     return 1; // getPixelEn() was desgined for Pixels, further modification is needed for StarChip
   }
   void enableAll() override;
+
+  /// Is there an ABC associated with HCC input channel
+  bool isAbcForInputChannel(int input_channel) const {
+    assert(input_channel >= 0 && input_channel < HCC_INPUT_CHANNEL_COUNT);
+    return (m_ABCchips.count(input_channel) > 0);
+  }
+
+  /// Return ABC associated with HCC input channel
+  AbcCfg &abcForInputChannel(int hccIC) {
+    return abcFromIndex(hccIC + 1);
+  }
 
   /**
    * Obtain the corresponding charge [e] from the input VCal
@@ -179,14 +190,14 @@ class StarCfg : public FrontEndCfg {
   size_t numABCs() { return m_ABCchips.size(); }
 
   /// Return highest input channel? of connected ABCs (internal?)
-  int highestABC() { 
+  int highestABC() const {
       if (m_ABCchips.size() == 0)
           return -1;
       return m_ABCchips.rbegin()->first; 
   } 
 
   /// Return lowest input channel? of connected ABCs (internal?)
-  int lowestABC() { 
+  int lowestABC() const {
       if (m_ABCchips.size() == 0)
           return -1;
       return m_ABCchips.begin()->first; 
@@ -233,19 +244,14 @@ class StarCfg : public FrontEndCfg {
 
   std::map<unsigned, AbcCfg> m_ABCchips;
 
-  bool abcAtIndex(int chipIndex) const {
-    assert(chipIndex > 0);
-    return (m_ABCchips.count(chipIndex-1) > 0);
-  }
-
   AbcCfg &abcFromIndex(int chipIndex) {
-    assert(abcAtIndex(chipIndex));
+    assert(isAbcForInputChannel(chipIndex-1));
     return m_ABCchips.at(chipIndex-1);
   }
 
   const AbcCfg &abcFromIndex(int chipIndex) const {
     assert(chipIndex > 0);
-    assert(abcAtIndex(chipIndex));
+    assert(isAbcForInputChannel(chipIndex-1));
     return m_ABCchips.at(chipIndex-1);
   }
 

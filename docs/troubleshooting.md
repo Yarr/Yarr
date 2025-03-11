@@ -109,6 +109,38 @@ It could be due to the `git` setting `autocrlf` to be set to `true`.
 Disable this setting with `git config [--global] core.autocrlf false`.
 Then re-clone the repository and recompile.
 
+### DataProcessor Debug Buffer (Rd53b/Itkpixv2)
+
+During scans with Rd53b/Itkpixv2, there can be DataProcessor errors such as the following:
+```log
+[15:32:03:445][ error  ][Itkpixv2DataProcessor][20354]: Expected unfinished stream while ES = 1: 0x9105680010000000 [64 - 2]. Will start a new event... (3)
+[15:32:03:445][ error  ][Itkpixv2DataProcessor][20354]: The ES bit is 0 while the core column number read is zero. Data processed so far are corrupted... Last block 202558040e5580
+```
+
+If these errors are reproducible, more information can be obtained on their source by enabling the **debug buffer**. This is a compile-time option that is enabled using `cmake`, and consists of a buffer of the last `<N>` 64 bit streams recieved by the DataProcessor leading up to the error.
+
+The available parameters are:
+- `-DUSE_ITKPIX_DEBUG_BUFFER`
+  - `0`: Disable debug buffer completely & remove it from compilation
+  - `1`: Enable debug buffer only for segfault-inducing cases (may miss some, in development!)
+  - `2`: Enable debug buffer for all DataProcessor error cases
+- `-DITKPIX_DEBUG_BUFFERSIZE`
+  - `<n>` with `n > 0`: Number of 64 bit streams to save into debug buffer memory.
+
+As an example, to enable the debug buffer for all DataProcessor errors, with 12 saved 64 bit streams, we would run the following compile options:
+
+```bash
+cd build
+cmake3 ../ -DUSE_ITKPIX_DEBUG_BUFFER=2 -DITKPIX_DEBUG_BUFFERSIZE=12
+make -j4 install
+```
+
+The output of the debug buffer is a good way to investigate irregular data processor behavior and find possible bugs in the code. 
+**IMPORTANT**: disable the debug buffer for normal operation, as it slows down the data processor.
+
+
+
+
 ## PCIe Card Troubleshooting
 
 The following points are specific to PCIe cards.
@@ -179,8 +211,10 @@ $ bin/specComTest
 ...
 
 ## RD53B Troubleshooting
+see [RD53A Troubleshooting](#RD53A-troubleshooting)
 
-...
+Note that the SLDO trim registers are named ``SldoTrimA`` and ``SldoTrimD``, respectively, for RD53B.
+
 
 ## RD53A Troubleshooting
 
@@ -194,7 +228,8 @@ $ bin/specComTest
 - Try power-cycling the chip.
 - Make sure the DP cable is plugged into the right ports and you have selected the correct Tx/Rx links in the connectivity.
 - Meausure the analog regulator output voltage, if below 1.1V consider installing a Vref hack (ask experts).
-- Increase or decrease the ``SldoAnalogTrim`` and ``SldoDigitalTrim`` register (try going in steps by 5) or tune them to output 1.2V
+- Increase or decrease the ``SldoAnalogTrim`` and ``SldoDigitalTrim`` register (try going in steps by 5) or tune them to output 1.2V.
+  (Note that the registers are called ``SldoTrimA`` and ``SldoTrimD``, respectively, for RD53B.)
 - Increase or decrease the ``CmlTapBias0`` register (try testing in steps of 100)
 - Try a different kind of DisplayPort cable (typically short is better)
 - Try a better/different kind of power cable (try jiggeling the power cable)

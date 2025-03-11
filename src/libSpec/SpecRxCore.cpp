@@ -65,7 +65,7 @@ std::vector<RawDataPtr> SpecRxCore::readData() {
         if (dma_count%32 != 0)
             dma_count += 32-(dma_count%32);
 
-        SPDLOG_LOGGER_DEBUG(srxlog, "Read data to Addr 0x{:x}, Count {}", dma_addr, dma_count);
+        srxlog->debug("Read data to Addr 0x{:x}, Count {}, Real count {}", dma_addr, dma_count, real_dma_count);
         RawDataPtr data = std::make_shared<RawData>(dma_addr, dma_count);
         if (SpecCom::readDma(dma_addr, data->getBuf(), dma_count)) {
             SPDLOG_LOGGER_CRITICAL(srxlog, "Critical error while readin data ... aborting!!");

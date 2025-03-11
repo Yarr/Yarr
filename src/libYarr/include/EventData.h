@@ -106,7 +106,7 @@ class FrontEndEvent {
 
         uint16_t l1id;
         uint16_t bcid;
-        uint16_t tag;
+        uint32_t tag;
         uint16_t nHits;
         uint16_t nClusters;
         std::vector<FrontEndHit> hits;
@@ -120,7 +120,7 @@ class FrontEndData : public EventDataBase {
     public:
 
         FrontEndData()=default;
-        FrontEndData(LoopStatus& l) : lStat(l) {}
+        FrontEndData(const LoopStatus& l) : lStat(l) {}
         ~FrontEndData() override = default;;
 
         void delLastEvent() {

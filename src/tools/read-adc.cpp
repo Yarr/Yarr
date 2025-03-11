@@ -51,7 +51,10 @@ std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn
         throw std::runtime_error(e.str());
     }
     auto chip_config = chip_configs[fe_num];
-    fe->init(&*hw, FrontEndConnectivity(chip_config["tx"], chip_config["rx"]));
+    unsigned regRx = chip_config["rx"];
+    if(chip_config.contains("regRx")) 
+      regRx = chip_config["regRx"];
+    fe->init(&*hw, FrontEndConnectivity(chip_config["tx"], chip_config["rx"], regRx));
     auto chip_register_file_path = chip_config["__config_path__"];
     fs::path pconfig{chip_register_file_path};
     if(!fs::exists(pconfig)) {
@@ -190,13 +193,17 @@ int main(int argc, char* argv[]) {
         if (shared_vmux){
             auto cfg = dynamic_cast<FrontEndCfg*>(fe.get());
             hw->setCmdEnable(cfg->getTxChannel()); 
-            hw->setRxEnable(cfg->getRxChannel());
+            hw->setRxEnable(cfg->getRegRxChannel());
             hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-            if (fe->readUpdateWriteNamedRegister("MonitorV", high_z) != yarrSuccess) {
-                std::cerr << "ERROR: failed to readUpdateWrite register for " << ichip << "!" << std::endl;
-                error_cnt++;
+	    while(!hw->isCmdEmpty());
+	    std::this_thread::sleep_for(std::chrono::microseconds(100));
+
+	    if (fe->readUpdateWriteNamedRegister("MonitorV", high_z) != yarrSuccess) {
+	      std::cerr << "ERROR: failed to readUpdateWrite register for " << ichip << "!" << std::endl;
+	      error_cnt++;
             }
-        }
+            fe->writeNamedRegister("MonitorV", high_z);
+	}
         fes.push_back(std::make_pair(ichip, std::move(fe)));
     }
 
@@ -208,13 +215,19 @@ int main(int argc, char* argv[]) {
         if (!use_chip_name) {
             if ( chip_idx.size() == 0 || (std::find(chip_idx.begin(), chip_idx.end(), ichip)!= chip_idx.end()) ) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
-                hw->setRxEnable(cfg->getRxChannel());
+                hw->setRxEnable(cfg->getRegRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-                fe->confAdc(monitorV, meas_curr);
+		while(!hw->isCmdEmpty());
+		std::this_thread::sleep_for(std::chrono::microseconds(100));
+
+                if (fe->confAdc(monitorV, meas_curr) != yarrSuccess) {
+                    std::cerr << "ERROR: failed to configure ADC for " << current_chip_name << "!" << std::endl;
+                    error_cnt++;
+                }
                 uint16_t res = 0;
                 if (fe->readNamedRegister("MonitoringDataAdc", res) != yarrSuccess) {
-                    std::cerr << "ERROR: failed to read register for " << current_chip_name << "!" << std::endl;
-                    error_cnt++;
+		  std::cerr << "ERROR: failed to read register for " << current_chip_name << "!" << std::endl;
+		  error_cnt++;
                 }
                 if (return_count) std::cout << res << std::endl;
                 else{
@@ -225,13 +238,19 @@ int main(int argc, char* argv[]) {
         } else {
             if (std::find(chip_name.begin(), chip_name.end(), current_chip_name) != chip_name.end()) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
-                hw->setRxEnable(cfg->getRxChannel());
+                hw->setRxEnable(cfg->getRegRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-                fe->confAdc(monitorV, meas_curr);
+		while(!hw->isCmdEmpty());
+		std::this_thread::sleep_for(std::chrono::microseconds(100));
+
+                if (fe->confAdc(monitorV, meas_curr) != yarrSuccess) {
+                    std::cerr << "ERROR: failed to configure ADC for " << current_chip_name << "!" << std::endl;
+                    error_cnt++;
+                }
                 uint16_t res = 0;
                 if (fe->readNamedRegister("MonitoringDataAdc", res) != yarrSuccess) {
-                    std::cerr << "ERROR: failed to read register for " << current_chip_name << "!" << std::endl;
-                    error_cnt++;
+		  std::cerr << "ERROR: failed to read register for " << current_chip_name << "!" << std::endl;
+		  error_cnt++;
                 }
                 if (return_count) std::cout << res << std::endl;
                 else{
@@ -241,8 +260,6 @@ int main(int argc, char* argv[]) {
             }
         }
     }
-
-    std::cerr << "Done." << std::endl;
 
     return error_cnt;
 }

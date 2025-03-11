@@ -135,8 +135,19 @@ TEST_CASE("NPointGain", "[Yarr][Analysis][NPointGain]") {
         histo_count++;
 
         auto output_name = result->getName();
+        CAPTURE (output_name);
+
+        auto h3 = dynamic_cast<Histo3dT<float>*>(result.get());
+
+        if(h3) {
+          CHECK_THAT (h3->getXbinWidth(), Catch::Matchers::WithinRel(1.0, 1e-5));
+          CHECK_THAT (h3->getYbinWidth(), Catch::Matchers::WithinRel(1.0, 1e-5));
+          CHECK_THAT (h3->getZbinWidth(), Catch::Matchers::WithinRel(1.0, 1e-5));
+        }
+
         if (output_name.find("ResponseFitParams") != std::string::npos) {
             auto h = dynamic_cast<Histo3dT<float>*>(result.get());
+            REQUIRE(h);
 
             REQUIRE(h->size() == nCol*nRow*desiredFitParams.size());
             for (unsigned c = 0; c < 1; c++) {
@@ -156,6 +167,11 @@ TEST_CASE("NPointGain", "[Yarr][Analysis][NPointGain]") {
                     }
                 }
             }
+        } else if (output_name.find("InputNoise") != std::string::npos) {
+            auto h = dynamic_cast<Histo3dT<float>*>(result.get());
+            REQUIRE(h);
+
+            REQUIRE(h->size() == nCol * nRow * injections.size());
         }
     }
 

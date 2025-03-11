@@ -16,7 +16,6 @@
 #include <condition_variable>
 #include <chrono>
 
-#include "RawData.h"
 #include <typeinfo>
 
 template <class T>
@@ -64,6 +63,8 @@ class ClipBoard {
             queueMutex.lock();
             std::deque<std::unique_ptr<T>> emptyQueue;
             std::swap(dataQueue, emptyQueue);
+            numDataIn = 0;
+            numDataOut = 0;
             queueMutex.unlock();
         }
 
@@ -107,6 +108,7 @@ class ClipBoard {
         }
 
         void reset() {
+            this->clearData();
             doneFlag = false;
             numDataIn = 0;
             numDataOut = 0;
@@ -126,9 +128,5 @@ class ClipBoard {
         std::atomic<unsigned> numDataIn;
         std::atomic<unsigned> numDataOut;
 };
-
-template class ClipBoard<RawData>;
-// template class ClipBoard<Fei4Data>;
-
 
 #endif

@@ -59,6 +59,11 @@ void StarStrobeDelayAnalysis::init(const ScanLoopInfo *s) {
                 m_injections = trigLoop->getTrigCnt();
             }
         }
+
+        if (l->isPixelFeedbackLoop()) {
+            alog->debug("Found pixel feedback loop");
+            m_fb = std::make_unique<PixelFeedbackSender>(feedback);
+        }
     }
 
     for (unsigned i=m_strobeDelayMin; i<=m_strobeDelayMax; i+=m_strobeDelayStep) {
@@ -177,12 +182,16 @@ void StarStrobeDelayAnalysis::processHistogram(HistogramBase *h) {
                 }
         }
     }
+
+    if (m_strobeDelayCnt == m_strobeDelayBins) {
+        pushData();
+    }
 }
 
 //! Once all scan inputs have been collected, finds optimal strobe delay for each chip and dumps results and control plots
 /*!
 */
-void StarStrobeDelayAnalysis::end() {
+void StarStrobeDelayAnalysis::pushData() {
 
   // Make histograms of left/right edge for all channels
   auto hDistLeftEdge = std::make_unique<Histo1d>("LeftEdgeDist", m_strobeDelayBins, m_strobeDelayMin-((double)m_strobeDelayStep/2.0), m_strobeDelayMax+((double)m_strobeDelayStep/2.0));
@@ -197,8 +206,12 @@ void StarStrobeDelayAnalysis::end() {
   auto upJD = std::make_unique<StarJsonData>("JsonData_StarStrobeDelayResult");
   upJD->setJsonDataType("JsonData_StarStrobeDelayResult");
 
+  unsigned nChips = (nCol/128);
+
+  auto feedbackData = std::make_unique<Histo2d>("feedback", nChips, 0, nChips, 1, 0, 1);
+
   // For each chip, find max left edge and min right edge then define optimal strobe delay as the 57% point between the two 
-  for (unsigned int iChip=0; iChip<(nCol/128); iChip++){
+  for (unsigned int iChip=0; iChip<nChips; iChip++){
     upJD->initialiseStarChannelsDataAtProp({"ABCStar_" + std::to_string(iChip), "OptimalStrobeDelay"}, 1);
     double maxLeftEdgeForChip = 0.0;
     double minRightEdgeForChip = 100.0;
@@ -229,10 +242,13 @@ void StarStrobeDelayAnalysis::end() {
     alog->debug("  Found optimal strobe delay = {} for chip {}", strobeDelayOpt, iChip);
     upJD->setValForProp({"ABCStar_" + std::to_string(iChip), "OptimalStrobeDelay"}, 0, strobeDelayOpt);   
 
-    // TODO: Write optimal value to STR_DEL in the front end configuration.
-    //       Complicated by working out the mapping from histogram position
-    //       to the right AbcCfg (HccCfg::histoChipMap gets half-way, but
-    //       might need to assume something).
+    // Pass configuration to (eg) StarParamFeedback
+    // The chips in this histogram are in histogram order, and are rearranged
+    // (via histoChipMap) by the front end code.
+    if(m_fb) {
+      alog->info("Feedback strobe delay for chip {}: {}", iChip, strobeDelayOpt);
+    }
+    feedbackData->fill(iChip, 0, strobeDelayOpt);
   } // end loop over chips
 
   double leftEdgeMean = hDistLeftEdge->getMean();
@@ -285,9 +301,15 @@ void StarStrobeDelayAnalysis::end() {
   for (auto i=m_hOccVsStrobeDelayVsChannelPerRow.begin(); i!=m_hOccVsStrobeDelayVsChannelPerRow.end(); i++) {
     output->pushData(std::move((*i).second));
   }
-   
+
+  if(m_fb) {
+    m_fb->feedback(id, std::move(feedbackData));
+  }
 }
 
+void StarStrobeDelayAnalysis::end() {
+  // Nothing to do on shutdown
+}
 
 //! Find first x-axis value for which y-value goes above/below a certain fraction of the maximum
 /*!

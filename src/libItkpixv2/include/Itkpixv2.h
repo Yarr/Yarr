@@ -39,16 +39,6 @@ class Itkpixv2 : public FrontEnd, public Itkpixv2Cfg, public Itkpixv2Cmd{
         yarrStatus checkCom() override;
         yarrStatus hasValidName() override;
 
-        void maskPixel(unsigned col, unsigned row) override {
-            this->setEn(col, row, 0);
-            this->setHitbus(col, row, 0);
-        }
-        
-        unsigned getPixelEn(unsigned col, unsigned row) override {
-            return this->getEn(col, row);
-        }
-
-
         void enableAll() override;
 
         yarrStatus setNamedRegister(std::string name, const uint16_t value) override;
@@ -80,7 +70,7 @@ class Itkpixv2 : public FrontEnd, public Itkpixv2Cfg, public Itkpixv2Cmd{
         uint8_t readChipId();
 
         void runRingOsc(uint16_t duration, bool isBankB);
-        void confAdc(uint16_t MONMUX, bool doCur = false) override;
+        yarrStatus confAdc(uint16_t MONMUX, bool doCur = false) override;
     protected:
     private:
 };

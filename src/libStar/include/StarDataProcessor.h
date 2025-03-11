@@ -1,5 +1,5 @@
-#ifndef ABC_STAR_DATA_PROCESSOR_H
-#define ABC_STAR_DATA_PROCESSOR_H
+#ifndef STAR_DATA_PROCESSOR_H
+#define STAR_DATA_PROCESSOR_H
 
 // #################################
 // # Author:
@@ -9,9 +9,7 @@
 // # Comment:
 // ################################
 
-#include <vector>
 #include <array>
-#include <map>
 #include <thread>
 
 #include "FeDataProcessor.h"
@@ -47,6 +45,8 @@ class StarDataProcessor : public FeDataProcessor {
         void join() override;
         void process() override;
         virtual void process_core();
+
+        std::unique_ptr<EventDataBase> process_event_core(const RawDataContainer &rdc, std::function<void (std::unique_ptr<FeedbackProcessingInfo>)> push_fb) override;
 
     private:
         ClipBoard<RawDataContainer> *input;

@@ -16,6 +16,8 @@
 std::pair<unsigned, unsigned> readABCRRPacket(HwController* ctrl, unsigned maxTries=10) {
   StarChipPacket packet;
 
+  std::optional<std::pair<unsigned, unsigned>> result;
+
   for (unsigned i=0; i<maxTries; i++) {
     CAPTURE(i);
     auto dataVec = ctrl->readData();
@@ -43,9 +45,15 @@ std::pair<unsigned, unsigned> readABCRRPacket(HwController* ctrl, unsigned maxTr
       }
 
       if (packet.getType() == TYP_ABC_RR) {
-        return std::make_pair(packet.address, packet.value);
+        CHECK (!result.has_value());
+
+        result = std::make_pair(packet.address, packet.value);
       }
     }
+  }
+
+  if(result.has_value()) {
+    return *result;
   }
 
   // Shouldn't reach here
@@ -63,6 +71,8 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
   // Two ABCs: ID = 9 and 8
   json chipCfg1;
   chipCfg1["HCC"] = {{"ID", 1}};
+  // Doesn't matter as long as 2 bits are set
+  chipCfg1["HCC"]["subregs"]["ICENABLE"] = 12;
   chipCfg1["ABCs"] = {{"IDs", {9, 8}}};
 
   // Set sub-register "STR_DEL" to different values for ABCs
@@ -80,6 +90,8 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
   // Two ABCs: ID = 1 and 2
   json chipCfg2;
   chipCfg2["HCC"] = {{"ID", 2}};
+  // Doesn't matter as long as 2 bits are set
+  chipCfg2["HCC"]["subregs"]["ICENABLE"] = 12;
   chipCfg2["ABCs"] = {{"IDs", {1, 2}}};
 
   // Set sub-register "STR_DEL" to different values for ABCs

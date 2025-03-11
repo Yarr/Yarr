@@ -72,7 +72,7 @@ void StarChips::setHccId(unsigned hccID) {
   //Let's reset the HCC communications ID.
   //  Use a broadcast write of the required ID+fuse on reg 17
   uint32_t newReg17val = (hccID<<28) | m_fuse_id;
-  sendCmd(write_hcc_register(17, newReg17val, 0xf));
+  sendCmd(write_hcc_register(HCCStarRegister::Addressing, newReg17val, 0xf));
   logger->info("Set HCC ID to {} (sent on reg17 0x{:08x})", hccID, newReg17val);
 }
 
@@ -262,6 +262,25 @@ yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_va
             cfg.setRegisterValue(ABCStarRegister::_from_integral(m), val);
             sendCmd( write_abc_register(m, val,
                                         getHCCchipID(), cfg.getABCchipID()));
+          }
+        });
+    } else if(subRegName == "TRIMs") {
+      // Write the same value to all trim regs
+
+      logger->trace("Writing {:08x} to trim register for all ABCStar chips.", reg_value);
+
+      // Set trim registers in memory
+      for (unsigned row=1; row<=geo.nRow; row++) {
+        for (unsigned col=1; col<=geo.nCol; col++) {
+          setTrimDAC(col, row, reg_value);
+        }
+      }
+
+      // Now send the register config to the front-ends
+      eachAbc([&](auto &cfg) {
+          for(int m = ABCStarRegister::TrimLo(0);
+              m <= ABCStarRegister::TrimHi(7); m++) {
+            writeABCRegister(m, cfg);
           }
         });
     } else if(!ABCStarSubRegister::_is_valid(subRegName.c_str())) {

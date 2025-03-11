@@ -25,18 +25,14 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
 
   REQUIRE (proc);
 
-  ClipBoard<RawDataContainer> rd_cp;
-  ClipBoard<EventDataBase> em_cp;
-
   // Use v1 mapping for simplicity
   int hcc_version = 1;
   StarCfg starCfg(0, hcc_version);
   starCfg.hcc().setSubRegisterValue("ICENABLE", 0x3ff);
 
-  proc->connect(&starCfg, &rd_cp, &em_cp );
+  proc->connect(&starCfg, nullptr, nullptr);
 
   proc->init();
-  proc->run();
 
   alignas(32) uint8_t packet_bytes[] = {
     0x20, 0x06, // Header
@@ -72,16 +68,13 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
 
   std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(LoopStatus()));
   rdc->add(std::move(rd));
-  rd_cp.pushData(std::move(rdc));
 
-  rd_cp.finish();
-
-  proc->join();
+  auto output = proc->process_event_core(*rdc, [](auto f) {});
 
   // No other channels added
-  REQUIRE (!em_cp.empty());
+  REQUIRE (output);
 
-  auto data = em_cp.popData();
+  auto &data = output;
   FrontEndData &rawData = *(FrontEndData*)data.get();
 
   REQUIRE (rawData.events.size() == 1);
@@ -122,7 +115,4 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
     REQUIRE (found_channel_offset == expect_channel_offset);
     REQUIRE (found_strip == expect_strip);
   }
-
-  // Only one thing
-  REQUIRE (em_cp.empty());
 }

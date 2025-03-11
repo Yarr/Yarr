@@ -19,6 +19,8 @@
 #include "Histo2d.h"
 #include "Histo3d.h"
 
+
+
 class OccupancyAnalysis : public AnalysisAlgorithm {
     public:
         OccupancyAnalysis() : AnalysisAlgorithm() {createMask = true; LowThr = 0.0; HighThr = 0.0;}
@@ -32,6 +34,7 @@ class OccupancyAnalysis : public AnalysisAlgorithm {
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         bool createMask;
+	bool coreColMask;
         unsigned n_count;
         unsigned injections;
 	double LowThr, HighThr;
@@ -376,6 +379,8 @@ class NoiseAnalysis : public AnalysisAlgorithm {
         NoiseAnalysis() : AnalysisAlgorithm() {
             createMask = true;
             noiseThr = 1e-6;
+	        doAltMask = false;
+            minOcc = 1; // need at least one hit to mask any pixel, default
         }
         ~NoiseAnalysis() override = default;
 
@@ -386,9 +391,11 @@ class NoiseAnalysis : public AnalysisAlgorithm {
     private:
         unsigned n_trigger;
         std::unique_ptr<Histo2d> occ, tot;
-        std::unique_ptr<Histo1d> tag;
+        std::unique_ptr<Histo1d> tag, totDist;
         bool createMask;
         double noiseThr;
+        bool doAltMask;
+        unsigned minOcc; // minimum absolute occupancy for noise masking
 };
 
 class NoiseTuning : public AnalysisAlgorithm {
@@ -442,28 +449,29 @@ class DelayAnalysis : public AnalysisAlgorithm {
 class ParameterAnalysis : public AnalysisAlgorithm {
     public:
         ParameterAnalysis() : AnalysisAlgorithm() {};
-        ~ParameterAnalysis() override = default;;
+        ~ParameterAnalysis() override = default;
 
         void init(const ScanLoopInfo *s) override;
         void processHistogram(HistogramBase *h) override;
         void end() override;
-	void loadConfig(const json &config) override {}
+        void loadConfig(const json &config) override;
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         unsigned n_count;
         unsigned injections;
-	unsigned paramLoopNo;
-	unsigned paramMin;
-	unsigned paramMax;
-	unsigned paramStep;
+        unsigned paramLoopNo;
+        unsigned paramMin;
+        unsigned paramMax;
+        unsigned paramStep;
         unsigned paramBins;
-	unsigned count;
+        unsigned count;
         std::string paramName;
         std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
         std::map<unsigned, std::unique_ptr<Histo2d>> paramCurves;
         std::map<unsigned, std::unique_ptr<Histo2d>> paramMaps;
 
+        bool m_createMap = false;
 };
 
 #endif
