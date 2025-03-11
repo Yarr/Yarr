@@ -1963,6 +1963,11 @@ void DelayAnalysis::end() {
     }
 }
 
+void ParameterAnalysis::loadConfig(const json &j){
+    if (j.contains("createMap")){
+        m_createMap = j["createMap"];
+    }
+}
 
 void ParameterAnalysis::init(const ScanLoopInfo *s) {
     n_count = 1;
@@ -2068,7 +2073,9 @@ void ParameterAnalysis::processHistogram(HistogramBase *h) {
 void ParameterAnalysis::end() {
     alog->trace("ParameterAnalysis end");
     for (unsigned i=0; i<paramCurves.size(); i++) {
+        if (m_createMap) {
+            output->pushData(std::move(paramCurves[i]));
+        }
         output->pushData(std::move(paramMaps[i]));
-        output->pushData(std::move(paramCurves[i]));
     }
 }

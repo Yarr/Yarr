@@ -449,28 +449,29 @@ class DelayAnalysis : public AnalysisAlgorithm {
 class ParameterAnalysis : public AnalysisAlgorithm {
     public:
         ParameterAnalysis() : AnalysisAlgorithm() {};
-        ~ParameterAnalysis() override = default;;
+        ~ParameterAnalysis() override = default;
 
         void init(const ScanLoopInfo *s) override;
         void processHistogram(HistogramBase *h) override;
         void end() override;
-	void loadConfig(const json &config) override {}
+        void loadConfig(const json &config) override;
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         unsigned n_count;
         unsigned injections;
-	unsigned paramLoopNo;
-	unsigned paramMin;
-	unsigned paramMax;
-	unsigned paramStep;
+        unsigned paramLoopNo;
+        unsigned paramMin;
+        unsigned paramMax;
+        unsigned paramStep;
         unsigned paramBins;
-	unsigned count;
+        unsigned count;
         std::string paramName;
         std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
         std::map<unsigned, std::unique_ptr<Histo2d>> paramCurves;
         std::map<unsigned, std::unique_ptr<Histo2d>> paramMaps;
 
+        bool m_createMap = false;
 };
 
 #endif
