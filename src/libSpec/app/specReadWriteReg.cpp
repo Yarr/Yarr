@@ -221,7 +221,7 @@ int main(int argc, char **argv) {
     jcontroller = ScanHelper::openJsonFile(hw_controller_filename);
     specNum=jcontroller["ctrlCfg"]["cfg"]["specNum"];
 
-    SpecCom mySpec(specNum);
+    SpecCom mySpec(specNum, false);
 
     if(read) {
         uint32_t rValue = mySpec.readSingle(baseAddr | regOption);
