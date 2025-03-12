@@ -97,6 +97,11 @@ public:
   /// @throw std::out_of_range if the function or the parameters are not set
   float convertmVtofC(float threshold, unsigned hccChannel) const;
 
+  /// @brief Convert charge in fC to number of electrons (ENC)
+  /// @param charge Charge in fC
+  /// @return Number of electrons
+  float convertfCtoENC(float charge) const {return charge * fCtoENC;}
+
   /// @brief Set the response fit function, its inverse function, the number of required parameters, and the function name
   /// @param functionName Name of the function. Available options are: linear, polynomial, exponential
   /// @throw std::out_of_range if the function is unavailable
@@ -193,6 +198,9 @@ private:
   /// Number of BCAL values for the charge injection setting.
   /// This is determined by the number of bits of BCAL in AbcCfg.
   static constexpr unsigned NVALBCAL = 512;
+
+  /// Number of electrons (ENC) in one fC
+  static constexpr unsigned fCtoENC = 6250;
 
   /// Threshold calibration for converting BVT to V.
   /// The index of the vector is BVT DAC counts, the entry is the corresponding threshold in V.

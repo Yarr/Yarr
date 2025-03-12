@@ -48,6 +48,10 @@ double StarNPointGainAnalysis::convertThresholdUnit(double thr) {
     return m_convertBVTtomV ? m_conversionTool->convertBVTtomV(thr) : thr;
 }
 
+double StarNPointGainAnalysis::convertInputNoiseUnit(double noise) {
+    return m_conversionTool->convertfCtoENC(noise);
+}
+
 void StarNPointGainAnalysis::loadConfig(const json &j) {
     NPointGain::loadConfig(j);
 
