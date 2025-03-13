@@ -106,61 +106,6 @@ void StarCfg::logMappings() const
     }
 }
 
-uint8_t trimChannelFromHistogramLocation(unsigned col, unsigned row) {
-    ////NOTE: Each chip is divided in 2 row x 128 col. Histogram bins are adjusted based on number of activated chips.
-    ////      Let's say, of the 10 ABC in one hybrid, only chip 0, 4 and 6 are activated, the histogram has 2 rows x 896 (=128*7) cols.
-    ////      i.e Cols 0 to 128 belong to chip_0; Cols 512 to 640 belong to chip_4;  row Cols 768 to 896 belong to chip_6.
-    ////      the trimDAC_4lsb_name for each chip is trimdac_4lsb_<nthRow[2:1]>_<nthCol[128:1]>
-    ////      the trimDAC_1msb_name for each chip is trimdac_1msb_<nthRow[2:1]>_<nthCol[128:1]>
-
-    ////NOTE: numbering in trim registers is slightly different from physical strip order. In the register numbering, bits 7-2 together with bit 0 correspond to the strip location while bit 1 corresponds to the stream/row number
-
-    // Strip position within the row, 0 indexed
-    uint8_t chn_tmp = col % 128;
-    // Conversion to register ordering.
-    uint8_t channel= ((chn_tmp & ~0x1) << 1) + (chn_tmp & 0x1) + 2*row;
-    return channel;
-}
-
-uint8_t chipIndexFromHistogramLocation(unsigned col) {
-    //See NOTE in trimChannelFromHistogramLocation()
-    return (col >> 7);
-}
-
-void StarCfg::setTrimDAC(unsigned col, unsigned row, int value)  {
-
-    uint8_t channel= trimChannelFromHistogramLocation(col, row);
-
-    SPDLOG_LOGGER_TRACE(logger,
-                        "row:{} col:{} channel:{}",
-                        row, col, channel);
-
-    uint8_t chipIndex = chipIndexFromHistogramLocation(col);
-
-    if(isAbcForInputChannel(chipIndex)) {
-        auto &abc = abcForInputChannel(chipIndex);
-        abc.setTrimDACRaw(channel, value);
-    }
-
-}
-
-
-int StarCfg::getTrimDAC(unsigned col, unsigned row) const {
-    uint8_t channel= trimChannelFromHistogramLocation(col, row);
-
-    SPDLOG_LOGGER_TRACE(logger,
-                        "row:{} col:{} channel:{}",
-                        row, col, channel);
-
-    uint8_t chipIndex = chipIndexFromHistogramLocation(col);
-
-    if(isAbcForInputChannel(chipIndex)) {
-        const auto &abc = abcForInputChannel(chipIndex);
-        return abc.getTrimDACRaw(channel);
-    }
-    return 0;
-}
-
 void StarCfg::writeConfig(json &j) {
     logger->debug("Send StarCfg to json");
 

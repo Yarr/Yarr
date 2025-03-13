@@ -105,12 +105,14 @@ void StarChannelFeedback::init() {
                 unsigned nRow = fe->geo.nRow;
                 unsigned nCol = fe->geo.nCol; 
                 m_fb[id] = nullptr;
-                for (unsigned row=1; row<=nRow; row++) {
-                    for (unsigned col=1; col<=nCol; col++) {                        
-                        //Initial TDAC in mid of the range
-                        dynamic_cast<StarChips*>(fe)->setTrimDAC(col, row, 15);
+                auto &star = *dynamic_cast<StarChips*>(fe);
+
+                // Set initial TDAC in mid of the range
+                star.eachAbc([&](auto &cfg) {
+                    for (unsigned chan=0; chan<256; chan++) {
+                        cfg.setTrimDACRaw(chan, 15);
                     }
-                }
+                });
             }
         }
     }

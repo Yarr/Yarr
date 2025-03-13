@@ -188,12 +188,6 @@ class StarCfg : public FrontEndCfg {
    */
   double toCharge(double vcal, bool sCap, bool lCap) override;
 
-  /// Set trim DAC based on col/row in histogram
-  void setTrimDAC(unsigned col, unsigned row, int value);
-
-  /// Get trim DAC based on col/row in histogram
-  int getTrimDAC(unsigned col, unsigned row) const;
-
   /// Save configuration to json
   void writeConfig(json &j) override;
 

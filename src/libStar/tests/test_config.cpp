@@ -149,16 +149,16 @@ TEST_CASE("StarCfgTrims", "[star][config]") {
 
   // Default to 15 on all strips
   // Two rows of 128 strips (odd and even)
-  for(unsigned l = 0; l < 2; l++) {
-    for(unsigned s = 0; s < 128; s++) {
-      CAPTURE (l, s);
+  for(unsigned c = 0; c < 256; c++) {
+    CAPTURE (c);
 
-      CHECK (test_config.getTrimDAC(s, l) == 15);
-    }
+    CHECK (a.getTrimDACRaw(c) == 15);
   }
 
-  test_config.setTrimDAC(9, 1, 18);
-  CHECK (test_config.getTrimDAC(9, 1) == 18);
+  auto fix_order = a.trimRegOrderFromChannel(128 | 9);
+
+  a.setTrimDACRaw(fix_order, 18);
+  CHECK (a.getTrimDACRaw(fix_order) == 18);
 
   for(unsigned r = 0; r < 32; r++) {
     CAPTURE (r);
@@ -187,11 +187,15 @@ TEST_CASE("StarCfgTrims", "[star][config]") {
   // Two rows of 128 strips (odd and even)
   for(unsigned l = 0; l < 2; l++) {
     for(unsigned s = 0; s < 128; s++) {
-      CAPTURE (l, s);
+      // Channel in ABC space
+      unsigned c = s + l * 128;
+      CAPTURE (l, s, c);
+
+      auto order = a.trimRegOrderFromChannel(c);
 
       int set_trim = s%32;
-      test_config.setTrimDAC(s, l, set_trim);
-      CHECK (test_config.getTrimDAC(s, l) == set_trim);
+      a.setTrimDACRaw(order, set_trim);
+      CHECK (a.getTrimDACRaw(order) == set_trim);
     }
   }
 
