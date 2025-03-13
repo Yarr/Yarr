@@ -108,7 +108,7 @@ using namespace specDriver;
 class SpecCom {
     public:
         SpecCom();
-        SpecCom(unsigned int id);
+        SpecCom(unsigned int id, bool do_reset_arg=true);
         ~SpecCom();
 
         bool isInitialized() const;
@@ -145,6 +145,7 @@ class SpecCom {
     private:
         unsigned int specId;
         bool is_initialized;
+        bool do_reset;
         SpecDevice *spec;
         void *bar0, *bar4;
 
