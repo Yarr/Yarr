@@ -252,11 +252,13 @@ class StarCfg : public FrontEndCfg {
 
   std::map<unsigned, AbcCfg> m_ABCchips;
 
+  /// Return ABC via 1-based index into array (not for external use)
   AbcCfg &abcFromIndex(int chipIndex) {
     assert(isAbcForInputChannel(chipIndex-1));
     return m_ABCchips.at(chipIndex-1);
   }
 
+  /// Return ABC via 1-based index into array (not for external use)
   const AbcCfg &abcFromIndex(int chipIndex) const {
     assert(chipIndex > 0);
     assert(isAbcForInputChannel(chipIndex-1));
