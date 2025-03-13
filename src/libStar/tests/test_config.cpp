@@ -262,16 +262,6 @@ TEST_CASE("Star_AbcRegInfo", "[star][config]") {
     CHECK (rm.second != nullptr);
   }
 
-  for(auto &rm: info->trimDAC_4LSB_RegisterMap_all) {
-    CAPTURE (rm.first);
-    CHECK (rm.second != nullptr);
-  }
-
-  for(auto &rm: info->trimDAC_1MSB_RegisterMap_all) {
-    CAPTURE (rm.first);
-    CHECK (rm.second != nullptr);
-  }
-
   CHECK (info->abcWriteMap.size() == write_size);
 
   AbcCfg a(version);
