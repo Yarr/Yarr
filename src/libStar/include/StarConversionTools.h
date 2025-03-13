@@ -144,7 +144,7 @@ public:
 
   /// @brief Set the trim target of an ABC at a given charge injection
   /// @param BCAL Charge injection at which the trim target is set
-  /// @param iABC ABC chip index
+  /// @param iABC ABC chip histogram index
   /// @param targetBVT Trim target in DAC counts
   void setTrimTarget(unsigned BCAL, unsigned iABC, unsigned targetBVT) {
     m_trimTargets[BCAL][iABC] = targetBVT;
@@ -152,14 +152,14 @@ public:
 
   /// @brief Set the trim target at a given charge injection for all ABCs
   /// @param BCAL Charge injection at which the trim targets are set
-  /// @param targetBVTs A map of the trim target for each ABC. The key is the ABC chip index. The value is the trim target in DAC counts.
+  /// @param targetBVTs A map of the trim target for each ABC. The key is the ABC histogram index. The value is the trim target in DAC counts.
   void setTrimTarget(unsigned BCAL, const std::map<unsigned, unsigned>& targetBVTs) {
     m_trimTargets[BCAL] = targetBVTs;
   }
 
   /// @brief Return the trim target of an ABC at a given charge injection
   /// @param BCAL Charge injection at which the trim target is set
-  /// @param iABC ABC chip index
+  /// @param iABC ABC chip histogram index
   /// @return Trim target in DAC counts
   /// @throw std::out_of_range if BCAL or iABC is not in the map
   unsigned getTrimTarget(unsigned BCAL, unsigned iABC) const {
@@ -168,7 +168,7 @@ public:
 
   /// @brief Return the trim targets of all ABCs at a given charge injection
   /// @param BCAL Charge injection at which the trim target is set
-  /// @return A map of the trim target for each ABC. The key is the ABC chip index. The value is the trim target in DAC counts.
+  /// @return A map of the trim target for each ABC. The key is the ABC histogram index. The value is the trim target in DAC counts.
   /// @throw std::out_of_range if BCAL is not in the map
   std::map<unsigned, unsigned> getTrimTarget(unsigned BCAL) const {
     return m_trimTargets.at(BCAL);
@@ -241,7 +241,7 @@ private:
 
   /// A nested map that stores the trim targets for ABCStars with various charge injections
   /// The first key is the charge injection value.
-  /// The second key is the HCCStar input channel number.
+  /// The second key is the histogram index.
   /// The value in the target BVT for trimming.
   std::map<unsigned, std::map<unsigned, unsigned>> m_trimTargets;
 };

@@ -149,6 +149,9 @@ class StarCfg : public FrontEndCfg {
   }
   void enableAll() override;
 
+  /// Report mapping info to logger (for debugging)
+  void logMappings() const;
+
   /// Is there an ABC associated with HCC input channel
   bool isAbcForInputChannel(int input_channel) const {
     assert(input_channel >= 0 && input_channel < HCC_INPUT_CHANNEL_COUNT);
@@ -160,6 +163,20 @@ class StarCfg : public FrontEndCfg {
     return abcFromIndex(hccIC + 1);
   }
 
+  /// Return ABC associated with HCC input channel
+  const AbcCfg &abcForInputChannel(int hccIC) const {
+    return abcFromIndex(hccIC + 1);
+  }
+
+  /// Is there an ABC associated with chip position in histogram.
+  bool isAbcForHistoChip(int histo_chip) const;
+
+  /// Return ABC associated with chip position in histogram.
+  AbcCfg &abcForHistoChip(int histo_chip);
+
+  /// Return ABC associated with chip position in histogram.
+  const AbcCfg &abcForHistoChip(int histo_chip) const;
+
   /**
    * Obtain the corresponding charge [e] from the input VCal
    */
@@ -170,12 +187,6 @@ class StarCfg : public FrontEndCfg {
    * Not fully implmented yet.
    */
   double toCharge(double vcal, bool sCap, bool lCap) override;
-
-  /// Set trim DAC based on col/row in histogram
-  void setTrimDAC(unsigned col, unsigned row, int value);
-
-  /// Get trim DAC based on col/row in histogram
-  int getTrimDAC(unsigned col, unsigned row) const;
 
   /// Save configuration to json
   void writeConfig(json &j) override;
@@ -213,8 +224,11 @@ class StarCfg : public FrontEndCfg {
   /// Return HCC config
   HccCfg &hcc() { return m_hcc; }
 
+  /// Return HCC config
+  const HccCfg &hcc() const { return m_hcc; }
+
   /// Return HCC input channel for ABC communications ID
-  int hccChannelForABCchipID(unsigned int chipID);
+  int hccChannelForABCchipID(unsigned int chipID) const;
 
   StarConversionTools &getStarConversion() {return m_ct;}
 
@@ -244,16 +258,20 @@ class StarCfg : public FrontEndCfg {
 
   std::map<unsigned, AbcCfg> m_ABCchips;
 
+  /// Return ABC via 1-based index into array (not for external use)
   AbcCfg &abcFromIndex(int chipIndex) {
     assert(isAbcForInputChannel(chipIndex-1));
     return m_ABCchips.at(chipIndex-1);
   }
 
+  /// Return ABC via 1-based index into array (not for external use)
   const AbcCfg &abcFromIndex(int chipIndex) const {
     assert(chipIndex > 0);
     assert(isAbcForInputChannel(chipIndex-1));
     return m_ABCchips.at(chipIndex-1);
   }
+
+  int inputChannelForHistoChip(int histo_chip) const;
 
   StarConversionTools m_ct;
 };
