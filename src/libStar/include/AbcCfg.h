@@ -199,6 +199,13 @@ class AbcCfg {
         /// Get trim DAC for particular channel (as calculated by StarCfg)
         int getTrimDACRaw(unsigned channel) const;
 
+        /**
+         * Convert from strip order to ordering as in the trim registers.
+         */
+        uint8_t trimRegOrderFromChannel(uint8_t chn) const {
+            return ((chn & 0x7e) << 1) | (chn & 0x1) | ((chn & 0x80) >> 6);
+        }
+
         /// Is channel masked
         bool isMasked(unsigned channel) const {
             uint8_t maskIndex = ((channel & 0x7f) << 1) | ((channel & 0x80) >> 7);
