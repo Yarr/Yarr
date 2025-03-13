@@ -76,18 +76,18 @@ uint8_t trimChannelFromHistogramLocation(unsigned col, unsigned row) {
     ////      the trimDAC_4lsb_name for each chip is trimdac_4lsb_<nthRow[2:1]>_<nthCol[128:1]>
     ////      the trimDAC_1msb_name for each chip is trimdac_1msb_<nthRow[2:1]>_<nthCol[128:1]>
 
-    ////NOTE: row and col pass from histogram starts from 1, while channel starts from 0
-
     ////NOTE: numbering in trim registers is slightly different from physical strip order. In the register numbering, bits 7-2 together with bit 0 correspond to the strip location while bit 1 corresponds to the stream/row number
 
-    uint8_t chn_tmp = (col-1) % 128; //Physical channel position within the row, 0 indexed
-    uint8_t channel= ((chn_tmp & ~0x1) << 1) + (chn_tmp & 0x1) + 2*(row-1); //Conversion to register ordering.
+    // Strip position within the row, 0 indexed
+    uint8_t chn_tmp = col % 128;
+    // Conversion to register ordering.
+    uint8_t channel= ((chn_tmp & ~0x1) << 1) + (chn_tmp & 0x1) + 2*row;
     return channel;
 }
 
-uint8_t trimIndexFromHistogramLocation(unsigned col, unsigned row) {
+uint8_t chipIndexFromHistogramLocation(unsigned col) {
     //See NOTE in trimChannelFromHistogramLocation()
-    return 1+((col-1) >> 7);
+    return (col >> 7);
 }
 
 void StarCfg::setTrimDAC(unsigned col, unsigned row, int value)  {
@@ -96,12 +96,12 @@ void StarCfg::setTrimDAC(unsigned col, unsigned row, int value)  {
 
     SPDLOG_LOGGER_TRACE(logger,
                         "row:{} col:{} channel:{}",
-                        row-1, col-1, channel);
+                        row, col, channel);
 
-    uint8_t chipIndex = trimIndexFromHistogramLocation(col, row);
+    uint8_t chipIndex = chipIndexFromHistogramLocation(col);
 
-    if(isAbcForInputChannel(chipIndex-1)) {
-        auto &abc = abcFromIndex(chipIndex);
+    if(isAbcForInputChannel(chipIndex)) {
+        auto &abc = abcForInputChannel(chipIndex);
         abc.setTrimDACRaw(channel, value);
     }
 
@@ -113,12 +113,12 @@ int StarCfg::getTrimDAC(unsigned col, unsigned row) const {
 
     SPDLOG_LOGGER_TRACE(logger,
                         "row:{} col:{} channel:{}",
-                        row-1, col-1, channel);
+                        row, col, channel);
 
-    uint8_t chipIndex = trimIndexFromHistogramLocation(col, row);
+    uint8_t chipIndex = chipIndexFromHistogramLocation(col);
 
-    if(isAbcForInputChannel(chipIndex-1)) {
-        const auto &abc = abcFromIndex(chipIndex);
+    if(isAbcForInputChannel(chipIndex)) {
+        const auto &abc = abcForInputChannel(chipIndex);
         return abc.getTrimDACRaw(channel);
     }
     return 0;

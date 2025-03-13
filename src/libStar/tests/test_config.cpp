@@ -153,13 +153,12 @@ TEST_CASE("StarCfgTrims", "[star][config]") {
     for(unsigned s = 0; s < 128; s++) {
       CAPTURE (l, s);
 
-      // Currently expects indices base 1
-      CHECK (test_config.getTrimDAC(s+1, l+1) == 15);
+      CHECK (test_config.getTrimDAC(s, l) == 15);
     }
   }
 
-  test_config.setTrimDAC(10, 2, 18);
-  REQUIRE (test_config.getTrimDAC(10, 2) == 18);
+  test_config.setTrimDAC(9, 1, 18);
+  CHECK (test_config.getTrimDAC(9, 1) == 18);
 
   for(unsigned r = 0; r < 32; r++) {
     CAPTURE (r);
@@ -191,9 +190,8 @@ TEST_CASE("StarCfgTrims", "[star][config]") {
       CAPTURE (l, s);
 
       int set_trim = s%32;
-      // Currently expects indices base 1
-      test_config.setTrimDAC(s+1, l+1, set_trim);
-      CHECK (test_config.getTrimDAC(s+1, l+1) == set_trim);
+      test_config.setTrimDAC(s, l, set_trim);
+      CHECK (test_config.getTrimDAC(s, l) == set_trim);
     }
   }
 

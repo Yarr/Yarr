@@ -270,8 +270,8 @@ yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_va
       logger->trace("Writing {} to trim register for all ABCStar chips.", reg_value);
 
       // Set trim registers in memory
-      for (unsigned row=1; row<=geo.nRow; row++) {
-        for (unsigned col=1; col<=geo.nCol; col++) {
+      for (unsigned row=0; row<geo.nRow; row++) {
+        for (unsigned col=0; col<geo.nCol; col++) {
           setTrimDAC(col, row, reg_value);
         }
       }
