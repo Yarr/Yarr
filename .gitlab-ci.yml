@@ -276,6 +276,8 @@ job_test_strips:
           - ARCH: ['alma9']
   script:
     - bin/test_star configs/controller/emuCfg_star.json -r 0 -t 0
+    # Run a scan involving trim feedback
+    - bin/scanConsole -r configs/controller/emuCfg_star.json -c configs/connectivity/example_star_setup.json -s configs/scans/star/std_tune_trim_at_pedestal.json
 
 job_test_python:
   extends: .test
