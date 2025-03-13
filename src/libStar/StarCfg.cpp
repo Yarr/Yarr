@@ -69,6 +69,43 @@ void StarCfg::setABCRegister(ABCStarRegister addr, uint32_t val, int32_t chipID)
   abc.setRegisterValue(addr, val);
 }
 
+int StarCfg::inputChannelForHistoChip(int histo_abc) const
+{
+    auto chip_map = hcc().histoChipMap();
+    for(int i=0; i<chip_map.size(); i++) {
+        if(chip_map[i] == histo_abc) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+bool StarCfg::isAbcForHistoChip(int histo_chip) const
+{
+    auto ic = inputChannelForHistoChip(histo_chip);
+    return ic != -1;
+}
+
+AbcCfg &StarCfg::abcForHistoChip(int histo_chip)
+{
+    auto ic = inputChannelForHistoChip(histo_chip);
+    return abcForInputChannel(ic);
+}
+
+const AbcCfg &StarCfg::abcForHistoChip(int histo_chip) const
+{
+    auto ic = inputChannelForHistoChip(histo_chip);
+    return abcForInputChannel(ic);
+}
+
+void StarCfg::logMappings() const
+{
+    auto chip_map = hcc().histoChipMap();
+    for(int i=0; i<chip_map.size(); i++) {
+        logger->trace("IC map: {} {}", i, chip_map[i]);
+    }
+}
+
 uint8_t trimChannelFromHistogramLocation(unsigned col, unsigned row) {
     ////NOTE: Each chip is divided in 2 row x 128 col. Histogram bins are adjusted based on number of activated chips.
     ////      Let's say, of the 10 ABC in one hybrid, only chip 0, 4 and 6 are activated, the histogram has 2 rows x 896 (=128*7) cols.

@@ -149,6 +149,9 @@ class StarCfg : public FrontEndCfg {
   }
   void enableAll() override;
 
+  /// Report mapping info to logger (for debugging)
+  void logMappings() const;
+
   /// Is there an ABC associated with HCC input channel
   bool isAbcForInputChannel(int input_channel) const {
     assert(input_channel >= 0 && input_channel < HCC_INPUT_CHANNEL_COUNT);
@@ -164,6 +167,15 @@ class StarCfg : public FrontEndCfg {
   const AbcCfg &abcForInputChannel(int hccIC) const {
     return abcFromIndex(hccIC + 1);
   }
+
+  /// Is there an ABC associated with chip position in histogram.
+  bool isAbcForHistoChip(int histo_chip) const;
+
+  /// Return ABC associated with chip position in histogram.
+  AbcCfg &abcForHistoChip(int histo_chip);
+
+  /// Return ABC associated with chip position in histogram.
+  const AbcCfg &abcForHistoChip(int histo_chip) const;
 
   /**
    * Obtain the corresponding charge [e] from the input VCal
@@ -264,6 +276,8 @@ class StarCfg : public FrontEndCfg {
     assert(isAbcForInputChannel(chipIndex-1));
     return m_ABCchips.at(chipIndex-1);
   }
+
+  int inputChannelForHistoChip(int histo_chip) const;
 
   StarConversionTools m_ct;
 };
