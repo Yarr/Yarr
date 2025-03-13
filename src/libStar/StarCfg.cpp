@@ -44,7 +44,7 @@ void StarCfg::enableAll() {
       });
 }
 
-int StarCfg::hccChannelForABCchipID(unsigned int chipID) {
+int StarCfg::hccChannelForABCchipID(unsigned int chipID) const {
   auto itr = std::find_if(m_ABCchips.begin(), m_ABCchips.end(),
                         [this, chipID](auto &it) { return it.second.getABCchipID() == chipID; });
   return itr->first;

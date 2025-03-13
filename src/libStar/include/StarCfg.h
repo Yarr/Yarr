@@ -160,6 +160,11 @@ class StarCfg : public FrontEndCfg {
     return abcFromIndex(hccIC + 1);
   }
 
+  /// Return ABC associated with HCC input channel
+  const AbcCfg &abcForInputChannel(int hccIC) const {
+    return abcFromIndex(hccIC + 1);
+  }
+
   /**
    * Obtain the corresponding charge [e] from the input VCal
    */
@@ -213,8 +218,11 @@ class StarCfg : public FrontEndCfg {
   /// Return HCC config
   HccCfg &hcc() { return m_hcc; }
 
+  /// Return HCC config
+  const HccCfg &hcc() const { return m_hcc; }
+
   /// Return HCC input channel for ABC communications ID
-  int hccChannelForABCchipID(unsigned int chipID);
+  int hccChannelForABCchipID(unsigned int chipID) const;
 
   StarConversionTools &getStarConversion() {return m_ct;}
 
