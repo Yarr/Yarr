@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
     // Set up hardware config 
     // Not compatible with Felix
     specNum=jcontroller["ctrlCfg"]["cfg"]["specNum"];
-    SpecCom mySpec(specNum);
+    SpecCom mySpec(specNum, false);
     logger->info("Doing data merging test on Spec Card {}", specNum);
 
     hw->setupMode();
@@ -286,6 +286,10 @@ int main(int argc, char **argv) {
     while(!hw->isCmdEmpty()){;}
 
     bool success = true;
+	
+    // Configure error counter
+    mySpec.writeSingle(0x2 << 14 | 0x8, test_size); 
+	mySpec.writeSingle(0x2 << 14 | 0x9, 0); 
 
     logger->info("Loop over primaries:");
     for (auto lane : lanes) {
