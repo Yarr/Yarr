@@ -11,6 +11,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <string>
 
 enum TRIG_CONF_VALUE {
     EXT_TRIGGER = 0x0,
@@ -65,6 +66,12 @@ class TxCore {
         void setClkPeriod(double period) {
             m_clk_period = period;
         }
+
+        // Controller firmware register access
+        // return true if operation is successful, otherwise false
+        virtual bool readFwRegister(const std::string& name, uint64_t& value) { return false; }
+        virtual bool writeFwRegister(const std::string& name, const uint64_t& value) { return false; }
+
     protected:
         TxCore()=default;
         virtual ~TxCore()=default;

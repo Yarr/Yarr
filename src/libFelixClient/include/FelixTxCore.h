@@ -47,8 +47,8 @@ public:
   uint32_t getTrigInCount() override; 	// get the number of triggers in
 
   // virtual here so they can be overriden in a dummy class for the unit test
-  virtual bool readFelixRegister(const std::string&, uint64_t&);
-  virtual bool writeFelixRegister(const std::string&, const std::string&);
+  virtual bool readFwRegister(const std::string&, uint64_t&) override;
+  virtual bool writeFwRegister(const std::string&, const uint64_t&) override;
 
   void loadFWMode(); // retrieve firmware mode from the FELIX register
   FelixTools::FELIX_FW_MODE fwMode(); // get the FELIX firmware mode

@@ -12,7 +12,7 @@ class TestFelixController : public FelixController {
 
 public:
 
-  bool readFelixRegister(const std::string& registerName, uint64_t& value) override {
+  bool readFwRegister(const std::string& registerName, uint64_t& value) override {
     if (m_registers.find(registerName) != m_registers.end()) {
       value = m_registers[registerName];
       return true;
@@ -21,8 +21,8 @@ public:
     }
   }
 
-  bool writeFelixRegister(const std::string& registerName, const std::string& regValue) override {
-    m_registers[registerName] = std::stoull(regValue);
+  bool writeFwRegister(const std::string& registerName, const uint64_t& regValue) override {
+    m_registers[registerName] = regValue;
     return true;
   }
 
