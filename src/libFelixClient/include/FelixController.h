@@ -259,7 +259,7 @@ private:
     /// @param reg_addr Register address (uint32_t)
     /// @param reg_data Register data we're read back (set by reference) (uint8_t&)
     /// @return True if operation is successful
-    bool readLpGBTRegister(uint_32t reg_addr, uint8_t& reg_data);
+    bool readLpGBTRegister(uint32_t reg_addr, uint8_t& reg_data);
 
     /// @brief Write a value to an LpGBT device register
     /// @param reg_addr Register address (uint32_t)
@@ -279,11 +279,15 @@ private:
     /// @return True if operation is successful
     bool writeGBCRRegister(uint32_t reg_addr, uint8_t& reg_data);
 
-  /// @brief Generic function to handle read and write operations to either LpGBT or GBCR devices
-  /// @param reg_addr Address of the register we're trying to access (uint_32t)
-  /// @param 
-  bool readWriteReg(uint_32t reg_addr, bool write, int dev_addr, int i2c_addr, int version, uint8_t& reg_data = 0, std::string dev_type = "lpgbt");
-
+    /// @brief Generic function to handle read and write operations to either LpGBT or GBCR devices
+    /// @param reg_addr Address of the register we're trying to access (uint_32t)
+    /// @param write True if we want to write, false if we want to read (bool)
+    /// @param dev_addr Address of the device we want to write to (uint32_t)
+    /// @param reg_data Data to send (optional if doing a register read, default = 0 if no data provided) (uint8_t&)
+    /// @param i2c_addr Address of I2C communication via primary LpGBT (default = 0) (uint32_t)
+    /// @param version Version of the device (0, 1) (default = 1) (int)
+    /// @param dev_type Type of device ("lpgbt" or "gbcr", default = "lpgbt") (std::string)
+    bool readWriteReg(uint_32t reg_addr, bool write, uint_32t dev_addr, uint8_t& reg_data = 0, uint32_t i2c_addr = m_i2c_addr, int version = m_dev_version, std::string dev_type = "lpgbt");
 };
 
 
