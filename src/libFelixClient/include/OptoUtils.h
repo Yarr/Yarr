@@ -26,6 +26,11 @@ namespace OptoUtils {
     uint32_t m_scldrive{0};
     uint32_t m_i2c_addr{0};
 
+    // Default values, can be specified in connectivity file if different
+    uint32_t m_lpgbt_primary_addr{116};
+    uint32_t m_i2c_addr{0};
+    unsigned int m_lpgbt_version{1};
+
     /*
         Registers
     */
@@ -80,11 +85,11 @@ namespace OptoUtils {
     LPGBT_REGMAP["I2CM2STATUS_V1"] = 0x19B;
     LPGBT_REGMAP["I2CM2READ15_V1"] = 0x1AD;
 
-    /// @brief For a given LpGBT number and FELIX link, finds the LpGBT address
-    /// @param LpGBT_num 0,1,2,3 (unsigned int)
-    /// @param link_num number of associated FELIX link (unsigned int)
-    /// @return Returns the LpGBT address (uint32_t)
-    uint32_t getLpGBTAddress(unsigned int LpGBT_num, unsigned int link_num);
+    /// @brief For a given device type and number (e.g. GBCR #2), return the address
+    /// @param deviceType "GBCR", "LPGBT" accepted (string)
+    /// @param deviceNumber 0,1,2,3 (int)
+    /// @return Returns the device address (uint32_t)
+    uint32_t getDeviceAddress(std::string deviceType, int deviceNumber);
 
     /*
     IC connection send/receive utilities

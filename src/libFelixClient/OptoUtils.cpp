@@ -2,6 +2,21 @@
 #include "Utils.h"
 #include "logging.h"
 
+
+uint32_t OptoUtils::getDeviceAddress(std::string device_type, int device_number, uint32_t lpgbt_primary_addr = 116){
+  uint32_t addr = 0;
+  if (device_type == "GBCR" || "gbcr"){
+    addr = 32 + device_number;
+  }
+  elif (device_type == "LPGBT" || "LpGBT" || "lpgbt"){
+    addr = lpgbt_primary_addr + 1 + device_number;
+  }
+  else {
+    std::cerr << "Invalid provided device type: " << device_type << ", accepted options are GBCR, gbcr, lpgbt, LpGBT, and LPGBT" << std::endl;
+  }
+  return addr;
+}
+
 std::vector<uint8_t> OptoUtils::prepareICDataFrame(const bool read, const uint16_t reg_addr, const uint8_t i2c_addr, const unsigned int device_version, const std::vector<uint8_t>& data){
   /*
     Based on itk-ic-over-netio-next communication wrapper, 
