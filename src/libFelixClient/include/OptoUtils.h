@@ -66,8 +66,8 @@ namespace OptoUtils {
     LPGBT_REGMAP["I2CM0DATA1_V1"] = 0x103;
     LPGBT_REGMAP["I2CM0DATA2_V1"] = 0x104;
     LPGBT_REGMAP["I2CM0CMD_V1"] = 0x106;
-    LPGBT_REGMAP["I2CM0STATUS_V1"] {0x171;
-    LPGBT_REGMAP["I2CM0READ15_V1"] {0x183;
+    LPGBT_REGMAP["I2CM0STATUS_V1"] 0x171;
+    LPGBT_REGMAP["I2CM0READ15_V1"] 0x183;
     
     LPGBT_REGMAP["I2CM1ADDR_V1"] = 0x108;
     LPGBT_REGMAP["I2CM1DATA0_V1"] = 0x109;
@@ -103,7 +103,6 @@ namespace OptoUtils {
     /// @param data Data to send (const std::vector <uint8_t>&)
     /// @return Returns the dataframe to send through the IC channel (std::vector<uint8_t>)
     std::vector<uint8_t> prepareICDataFrame(const bool read, const uint16_t reg_addr, const uint8_t i2c_addr, const unsigned int device_version, const std::vector<uint8_t>& data);
-
 }
 
 #endif

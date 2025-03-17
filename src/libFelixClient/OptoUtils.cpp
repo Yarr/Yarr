@@ -17,7 +17,7 @@ uint32_t OptoUtils::getDeviceAddress(std::string device_type, int device_number,
   return addr;
 }
 
-std::vector<uint8_t> OptoUtils::prepareICDataFrame(const bool read, const uint16_t reg_addr, const uint8_t i2c_addr, const unsigned int device_version, const std::vector<uint8_t>& data){
+std::vector<uint8_t> OptoUtils::prepareICDataFrame(const bool write, const uint16_t reg_addr, const std::vector<uint8_t>& data, const uint8_t i2c_addr, const unsigned int device_version){
   /*
     Based on itk-ic-over-netio-next communication wrapper, 
     source: https://gitlab.cern.ch/itk-felix-sw/itk-ic-over-netio-next/-/blob/master/src/itk-ic-over-netio-next.cc?ref_type=heads
@@ -33,7 +33,7 @@ std::vector<uint8_t> OptoUtils::prepareICDataFrame(const bool read, const uint16
   std::vector<uint8_t> frame = {};
   
   size_t header_size = 6;
-  if(deviceVersion == 0){
+  if(device_version == 0){
     header_size = 7;
   }
   constexpr size_t footer_size = 1;
@@ -44,7 +44,7 @@ std::vector<uint8_t> OptoUtils::prepareICDataFrame(const bool read, const uint16
   }
 
   // The size of the frame we send depends on whether this is a read or write command
-  if(!read)
+  if(write)
     frame.reserve(header_size + data.size() + footer_size);
   else
     frame.reserve(header_size + footer_size);
@@ -52,7 +52,7 @@ std::vector<uint8_t> OptoUtils::prepareICDataFrame(const bool read, const uint16
   if(device_version == 0)
     frame.push_back(0); // Reserved in LpGBT v0
   
-  frame.push_back((i2c_addr << 1) + (read?0x1:0x0)); // GBTX I2C address and read/write bit
+  frame.push_back((i2c_addr << 1) + ((!write)?0x1:0x0)); // GBTX I2C address and read/write bit
   frame.push_back(1); // Command (not used in GBTX v1 + 2)
   frame.push_back(data.size() & 0xFF); // Number of data bytes
   frame.push_back((data.size() >> 8) & 0xFF);
@@ -60,7 +60,7 @@ std::vector<uint8_t> OptoUtils::prepareICDataFrame(const bool read, const uint16
   frame.push_back(reg_addr & 0xFF); // Register (start) address
   frame.push_back(reg_addr >> 8 & 0xFF);
 
-  if(!read){
+  if(write){
     for(auto& val: data){
       frame.push_back(val);
     }
