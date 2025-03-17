@@ -731,7 +731,7 @@ bool FelixTxCore::communicateOverIC(uint64_t fid, const std::vector<uint8_t>& da
     source: https://gitlab.cern.ch/itk-felix-sw/itk-ic-over-netio-next/-/blob/master/src/itk-ic-over-netio-next.cc?ref_type=heads
   */
   std::vector<FelixClientThread::Reply> replies;
-  auto status = client->send_data(fid, dataframe.data(), dataframe.size(), replies); 
+  auto status = fclient->send_data(fid, dataframe.data(), dataframe.size(), replies); 
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
   if (replies.empty()) {
@@ -748,3 +748,16 @@ bool FelixTxCore::communicateOverIC(uint64_t fid, const std::vector<uint8_t>& da
   }
   return success;
  }
+/*
+ // access register (
+
+  send data
+ )
+
+ send along IC(
+
+  check enabled
+  send data
+  )
+
+ */

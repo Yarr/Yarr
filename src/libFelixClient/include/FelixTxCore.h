@@ -3,6 +3,7 @@
 
 #include "TxCore.h"
 #include "FelixTools.h"
+#include "OptoUtils.h"
 
 #include "felix/felix_client_thread.hpp"
 #include "storage.hpp"

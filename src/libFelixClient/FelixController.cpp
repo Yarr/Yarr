@@ -71,6 +71,15 @@ void FelixController::loadConfig(const json &j) {
     fclog->error("Failed to load FelixRxCore config");
     throw je;
   }
+
+  try {
+    auto optoCfg = j["OpticalDevices"];
+    FelixOptoCore::setClient(client);
+    FelixOptoCore::loadConfig(optoCfg);
+  } catch (std::runtime_error &je) {
+    fclog->error("Failed to load FelixOptoCore config");
+    throw je;
+  }
 }
 
 const json FelixController::getStatus() {
@@ -709,6 +718,116 @@ void FelixController::initAllELinkEnableRegMap(std::map<std::string, unsigned>& 
       regMap[regName] = 0;
     }
   }
+}
+
+/*
+Optoboard communication functions
+*/
+
+bool FelixController::communicateLpGBT(const bool read, const uint16_t reg_addr, const std::vector<uint8_t>& data){
+  std::vector<uint8_t> data;
+  bool success = prepareFrame(read, reg_addr, i2c_addr, version, data);
+
+//  readback(sendIC());
+ }
+
+bool FelixController::readWritePrimaryReg(uint_32t reg_addr, bool write, uint8_t& reg_data = 0){
+  // if we're communicating directly to the primary LpGBT, we only need to send one simple register read
+  bool success = 0;
+  if (write){
+    success = communicateOptoDevice(red_addr, reg_data);
+  }
+  else {
+    success = communicateOptoDevice(reg_addr, NONE);
+  }
+  return success;
+}
+
+bool FelixController::readWriteI2CReg(uint_32t reg_addr, bool write, std::string dev_type){
+  // communicating with secondary LpGBTs or GBCRs via I2C channel through the primary LpGBT
+  uint8_t NBYTE = 0;
+  if (dev_type == "lpgbt" && write){
+    NBYTE = 3;
+  }
+  elif (dev_type == "lpgbt" && !write){
+    NBYTE = 2;
+  }
+  elif (dev_type == "gbcr" && write){
+    NBYTE = 2;
+  }
+  elif (dev_type == "gbcr" && !write){
+    NBYTE = 1;
+  }
+  else {
+    std::cerr << "Invalid device type or read/write option provided: " << dev_type << std::endl;
+  }
+
+  std::string i2c_addr_str = "I2CM" + std::static_cast<std::string>(m_i2c_addr);
+  std::string version_str = std::static_cast<std::string>(m_dev_version);
+
+  communicateOptoDevice(LPGBT_REGMAP[i2c_addr_str + "DATA0_V"+version_str], (m_scl_drive << 7) | (NBYTE << 2) | m_freq)
+  communicateOptoDevice(LPGBT_REGMAP[i2c_addr_str + "CMD_V"+version_str], m_i2c_write_cr)
+
+  if (dev_type == "lpgbt"){
+    // Send the address of the register we want to read, and data if we're writing it
+    communicateOptoDevice(LPGBT_REGMAP[i2c_addr_str + "DATA0_V"+version_str], divmod(reg_addr,0x100)[1])    //Lower half of register address
+    communicateOptoDevice(LPGBT_REGMAP[i2c_addr_str + "DATA1_V"+version_str], divmod(reg_addr,0x100)[0])    //Upper half of register address
+    if (write){
+      communicateOptoDevice(LPGBT_REGMAP[i2c_addr_str + "DATA2_V"+version_str], reg_data) // register data
+    }
+  }
+  elif (dev_type == "gbcr"){
+    communicateOptoDevice(LPGBT_REGMAP[i2c_addr_str + "DATA0_V"+version_str], reg_addr);
+    if (write){
+      communicateOptoDevice(LPGBT_REGMAP[i2c_addr_str + "DATA1_V"+version_str], reg_data);
+    }
+  }
+
+  communicateOptoDevice(LPGBT_REGMAP["I2CM" + i2c_addr_str + "CMD_V"+version_str], m_i2c_w_multi_4byte0)
+  communicateOptoDevice(LPGBT_REGMAP["I2CM" + i2c_addr_str + "ADDRESS_V"+version_str], dev_addr)
+  communicateOptoDevice(LPGBT_REGMAP["I2CM" + i2c_addr_str + "CMD_V"+version_str], m_i2c_write_multi)    //Initiate send of register address and register value
+
+  // Read back answer
+  NBYTE = 1;
+  self.comm_wrapper(LPGBT_REGMAP["I2CM" + i2c_addr_str + "DATA0_V"+version_str], (m_scl_drive << 7) | (NBYTE << 2) | m_freq);
+  self.comm_wrapper(LPGBT_REGMAP["I2CM" + i2c_addr_str + "CMD_V"+version_str], m_i2c_write_cr);
+
+  self.comm_wrapper(LPGBT_REGMAP["I2CM" + i2c_addr_str + "ADDRESS_V"+version_str], dev_addr);
+  self.comm_wrapper(LPGBT_REGMAP["I2CM" + i2c_addr_str + "CMD_V"+version_str], m_i2c_read_multi);
+
+  status_value = self.comm_wrapper(LPGBT_REGMAP["I2CM" + i2c_addr_str + "STATUS_V"+version_str], None);
+  self.status_info(status_value);    // Read status register
+
+  // Read answer via from I2C communication
+  read_reg, read = self.comm_wrapper(LPGBT_REGMAP["I2CM" + i2c_addr_str + "READ15_V"+version_str], None);
+
+  return read
+}
+
+bool FelixController::writeLpGBTRegister(uint32_t reg_addr, uint8_t& reg_data){
+  bool write = 1;
+  bool primary_LpGBT = isPrimarLpGBT(reg_addr);
+  if (primary_LpGBT){
+    auto reply = readWritePrimaryReg(reg_addr, write, reg_data);
+  }
+  else {
+    auto reply = readWriteI2CReg()
+  }
+  bool success = checkReply(reply);
+  return success;
+}
+
+bool FelixController::readGBCRRegister(uint32_t reg_addr, uint8_t& reg_data){
+  auto reply = readWriteI2CReg(reg_addr, 0, dev_addr, i2c_addr, reg_data, "gbcr");
+  bool success = checkReply(reply);
+  reg_data = reply.value();
+  return succes;
+}
+
+bool FelixController::writeGBCRRegister(uint32_t reg_addr, uint8_t& reg_data){
+  auto reply = readWriteI2CReg(reg_addr, 1, dev_addr, i2c_addr, reg_data, "gbcr");
+  bool success = checkReply(reply);
+  return success;
 }
 
 

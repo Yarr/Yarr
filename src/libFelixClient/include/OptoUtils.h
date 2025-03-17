@@ -1,39 +1,10 @@
 #ifndef OPTOUTILS_H
 #define OPTOUTILS_H
 
-#include "FelixController.h"
 #include "Utils.h"
 #include "logging.h"
 
 namespace OptoUtils {
-
-    /*
-    Optoboard device communication
-    */
-    /// @brief Read a value from an LpGBT device register
-    /// @param reg_addr Register address (uint32_t)
-    /// @param reg_data Register data we're read back (set by reference) (uint8_t&)
-    /// @return True if operation is successful
-    bool readLpGBTRegister(uint_32t reg_addr, uint8_t& reg_data);
-
-    /// @brief Write a value to an LpGBT device register
-    /// @param reg_addr Register address (uint32_t)
-    /// @param reg_data Register data we want to write (set by reference) (uint8_t&)
-    /// @return True if operation is successful
-    bool writeLpGBTRegister(uint32_t reg_addr, uint8_t& reg_data);
-
-    /// @brief Read a value from a GBCR device register
-    /// @param reg_addr Register address (uint32_t)
-    /// @param reg_data Register data we're read back (set by reference) (uint8_t&)
-    /// @return True if operation is successful
-    uint8_t readGBCRRegister(uint32_t reg_addr, uint8_t& reg_data);
-
-    /// @brief Write a value to a GBCR device register
-    /// @param reg_addr Register address (uint32_t)
-    /// @param reg_data Register data we want to write (set by reference) (uint8_t&)
-    /// @return True if operation is successful
-    bool writeGBCRRegister(uint32_t reg_addr, uint8_t& reg_data);
-
     // I2C parameters, defined in: https://gitlab.cern.ch/bat/optoboard_felix/-/blob/main/src/optoboard_felix/driver/Hardware.py#L55 and lpGBTv1 manual ch. 12.2.1
     uint32_t m_i2c_write_cr{0x0};
     uint32_t m_i2c_write_msk{0x1};
@@ -53,7 +24,6 @@ namespace OptoUtils {
     uint32_t m_i2c_read_multi_ext{0xF};
     uint32_t m_freq{2};
     uint32_t m_scldrive{0};
-
     uint32_t m_i2c_addr{0};
 
     /*
@@ -127,8 +97,14 @@ namespace OptoUtils {
     /// @param deviceVersion LpGBT version (either 0 or 1), affects how the data frame is prepared (const unsigned int)
     /// @param data Data to send (const std::vector <uint8_t>&)
     /// @return Returns the dataframe to send through the IC channel (std::vector<uint8_t>)
-    std::vector<uint8_t> prepareICDataFrame(const bool read, const uint16_t regAddr, const uint8_t i2cAddr, const unsigned int deviceVersion, const std::vector<uint8_t>& data);
+    std::vector<uint8_t> prepareICDataFrame(const bool read, const uint16_t reg_addr, const uint8_t i2c_addr, const unsigned int device_version, const std::vector<uint8_t>& data);
 
 }
 
 #endif
+
+/*
+
+give FID of front end connected to it, use the enable/find IC functions to figure out what the fid is for the lpgbt
+
+*/

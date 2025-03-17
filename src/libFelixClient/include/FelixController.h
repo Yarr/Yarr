@@ -248,7 +248,41 @@ private:
   /// Initiate a map with all elink enable register names on a FELIX device and set their value to 0
   void initAllELinkEnableRegMap(std::map<std::string, unsigned>& regMap, bool toflx, bool tohost);
 
+  /*
+    Optoboard communication tools
+  */
 
+    /*
+    Optoboard device communication
+    */
+    /// @brief Read a value from an LpGBT device register
+    /// @param reg_addr Register address (uint32_t)
+    /// @param reg_data Register data we're read back (set by reference) (uint8_t&)
+    /// @return True if operation is successful
+    bool readLpGBTRegister(uint_32t reg_addr, uint8_t& reg_data);
+
+    /// @brief Write a value to an LpGBT device register
+    /// @param reg_addr Register address (uint32_t)
+    /// @param reg_data Register data we want to write (set by reference) (uint8_t&)
+    /// @return True if operation is successful
+    bool writeLpGBTRegister(uint32_t reg_addr, uint8_t& reg_data);
+
+    /// @brief Read a value from a GBCR device register
+    /// @param reg_addr Register address (uint32_t)
+    /// @param reg_data Register data we're read back (set by reference) (uint8_t&)
+    /// @return True if operation is successful
+    bool readGBCRRegister(uint32_t reg_addr, uint8_t& reg_data);
+
+    /// @brief Write a value to a GBCR device register
+    /// @param reg_addr Register address (uint32_t)
+    /// @param reg_data Register data we want to write (set by reference) (uint8_t&)
+    /// @return True if operation is successful
+    bool writeGBCRRegister(uint32_t reg_addr, uint8_t& reg_data);
+
+  /// @brief Generic function to handle read and write operations to either LpGBT or GBCR devices
+  /// @param reg_addr Address of the register we're trying to access (uint_32t)
+  /// @param 
+  bool readWriteReg(uint_32t reg_addr, bool write, int dev_addr, int i2c_addr, int version, uint8_t& reg_data = 0, std::string dev_type = "lpgbt");
 
 };
 
