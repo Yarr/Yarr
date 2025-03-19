@@ -31,11 +31,11 @@
             "4": {
               "algorithm": "HitsPerEvent",
               "config": {}
-            }
+            },
             "5": {
               "algorithm": "TotDist",
               "config": {}
-            },,
+            },
             "6": {
                 "algorithm": "DataArchiver",
                 "config": {}
