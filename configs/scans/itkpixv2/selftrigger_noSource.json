@@ -31,12 +31,16 @@
             "4": {
               "algorithm": "HitsPerEvent",
               "config": {}
-            },
+            }
             "5": {
+              "algorithm": "TotDist",
+              "config": {}
+            },,
+            "6": {
                 "algorithm": "DataArchiver",
                 "config": {}
             },
-            "n_count": 5
+            "n_count": 6
           },
           "loops": [
             {
