@@ -1,0 +1,122 @@
+#include "SharedClient.h"
+#include "logging.h"
+
+namespace {
+  auto scllog = logging::make_log("SharedClient");
+}
+
+SharedClient::SharedClient(const json &cfg) {
+  FelixClientThread::Config fcConfig;
+  fcConfig.property[FELIX_CLIENT_LOCAL_IP_OR_INTERFACE] = cfg["localIPorInterface"];
+  fcConfig.property[FELIX_CLIENT_LOG_LEVEL] = cfg["logLevel"];
+  fcConfig.property[FELIX_CLIENT_BUS_DIR] = cfg["busDir"];
+  fcConfig.property[FELIX_CLIENT_BUS_GROUP_NAME] = cfg["busGroupName"];
+  fcConfig.property[FELIX_CLIENT_VERBOSE_BUS] = cfg["verboseBus"] ? "True" : "False";
+  fcConfig.property[FELIX_CLIENT_TIMEOUT] = std::to_string(unsigned(cfg["timeout"]));
+  fcConfig.property[FELIX_CLIENT_NETIO_PAGES] = std::to_string(unsigned(cfg["netioPages"]));
+  fcConfig.property[FELIX_CLIENT_NETIO_PAGESIZE] = std::to_string(unsigned(cfg["netioPagesize"]));
+
+  fcConfig.on_init_callback = std::bind(&SharedClient::on_init, this);
+  fcConfig.on_data_callback = std::bind(&SharedClient::on_data_received, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+  fcConfig.on_connect_callback = std::bind(&SharedClient::on_connect, this, std::placeholders::_1);
+  fcConfig.on_disconnect_callback = std::bind(&SharedClient::on_disconnect, this, std::placeholders::_1);
+
+  m_client = std::make_unique<FelixClientThread>(fcConfig);
+}
+
+SharedClient::~SharedClient() = default;
+
+void SharedClient::subscribe(FelixID_t fid, const DataCallback& callback, bool enable) {
+  {
+    std::unique_lock lock(mtx);
+    // register the callback
+    m_callbacks[fid] = callback;
+
+    // enable
+    m_rxEnables[fid] = enable;
+
+    // statistics
+    m_qStats[fid];
+  }
+  m_client->subscribe(fid);
+}
+
+void SharedClient::resubscribe(FelixID_t fid, bool enable) {
+  {
+    std::unique_lock lock(mtx);
+    m_rxEnables[fid] = enable;
+  }
+  m_client->subscribe(fid);
+}
+
+void SharedClient::unsubscribe(FelixID_t fid) {
+  m_client->unsubscribe(fid);
+  {
+    std::unique_lock lock(mtx);
+    m_rxEnables[fid] = false;
+  }
+}
+
+void SharedClient::enableTx(FelixID_t fid) {
+  std::unique_lock lock(mtx);
+  m_txEnables[fid] = true;
+}
+
+void SharedClient::disableTx(FelixID_t fid) {
+  std::unique_lock lock(mtx);
+  m_txEnables[fid] = false;
+}
+
+void SharedClient::enableRx(FelixID_t fid) {
+  std::unique_lock lock(mtx);
+  m_rxEnables[fid] = true;
+}
+
+void SharedClient::disableRx(FelixID_t fid) {
+  std::unique_lock lock(mtx);
+  m_rxEnables[fid] = false;
+}
+
+bool SharedClient::isTxEnabled(FelixID_t fid) {
+  std::shared_lock lock(mtx);
+  return m_txEnables[fid];
+}
+
+bool SharedClient::isRxEnabled(FelixID_t fid) {
+  std::shared_lock lock(mtx);
+  return m_rxEnables[fid];
+}
+
+void SharedClient::on_connect(FelixID_t fid) {
+  scllog->debug("Connect to FELIX link 0x{:x}", fid);
+  try {
+    m_qStats.at(fid).connected = true;
+  } catch (std::out_of_range &e) {
+    scllog->trace("Stats of fid 0x{:x} is not tracked.", fid);
+  }
+}
+
+void SharedClient::on_disconnect(FelixID_t fid) {
+  scllog->debug("Disconnect from FELIX link 0x{:x}", fid);
+  try {
+    m_qStats.at(fid).connected = false;
+  } catch (std::out_of_range &e) {
+    scllog->trace("Stats of fid 0x{:x} is not tracked.", fid);
+  }
+}
+
+void SharedClient::on_data_received(FelixID_t fid, const uint8_t* data, size_t size, uint8_t status) {
+  // skip if the channel is disabled
+  if (not m_rxEnables[fid]) return;
+
+  #define UNLIKELY(x) __builtin_expect(x,0)
+  if (m_last_id != fid) {
+    m_last_it = m_callbacks.find(fid);
+    if (UNLIKELY(m_last_it == m_callbacks.end())) {
+      scllog->warn("No callback was found for FELIX link 0x{:x}", fid);
+      m_last_id = -1;
+      return;
+    }
+    m_last_id = fid;
+  }
+  m_last_it->second(fid, data, size, status);
