@@ -30,7 +30,7 @@ class LoopActionBaseInfo {
 
         /// Is this loop where a trigger is sent
         bool isTriggerLoop() const {
-            return m_style == LOOP_STYLE_TRIGGER;
+            return m_style == LOOP_STYLE_TRIGGER || m_style == LOOP_STYLE_TRIGGER_FEEDBACK;
         }
 
         /// Is this a requiring feedback at the pixel level
@@ -47,6 +47,14 @@ class LoopActionBaseInfo {
          */
         bool isGlobalFeedbackLoop() const {
             return m_style == LOOP_STYLE_GLOBAL_FEEDBACK;
+        }
+
+        /// Does this loop require trigger feedback
+        /*
+         * In this case only simple feedback is provided (feedbackTrigger/TriggerFeedbackParams).
+         */
+        bool isTriggerFeedbackLoop() const {
+            return m_style == LOOP_STYLE_TRIGGER_FEEDBACK;
         }
 
         /// Retrieve loop style directly
