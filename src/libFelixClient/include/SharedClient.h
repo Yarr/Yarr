@@ -51,9 +51,6 @@ class SharedClient {
 
     mutable std::shared_mutex mtx;
 
-    // Per link statistics
-    std::map<FelixID_t, FelixTools::QueueStatistics> m_qStats;
-
     std::map<FelixID_t, bool> m_txEnables;
     std::map<FelixID_t, bool> m_rxEnables;
 

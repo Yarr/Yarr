@@ -34,9 +34,6 @@ void SharedClient::subscribe(FelixID_t fid, const DataCallback& callback, bool e
 
     // enable
     m_rxEnables[fid] = enable;
-
-    // statistics
-    m_qStats[fid];
   }
   m_client->subscribe(fid);
 }
@@ -89,20 +86,10 @@ bool SharedClient::isRxEnabled(FelixID_t fid) {
 
 void SharedClient::on_connect(FelixID_t fid) {
   scllog->debug("Connect to FELIX link 0x{:x}", fid);
-  try {
-    m_qStats.at(fid).connected = true;
-  } catch (std::out_of_range &e) {
-    scllog->trace("Stats of fid 0x{:x} is not tracked.", fid);
-  }
 }
 
 void SharedClient::on_disconnect(FelixID_t fid) {
   scllog->debug("Disconnect from FELIX link 0x{:x}", fid);
-  try {
-    m_qStats.at(fid).connected = false;
-  } catch (std::out_of_range &e) {
-    scllog->trace("Stats of fid 0x{:x} is not tracked.", fid);
-  }
 }
 
 void SharedClient::on_data_received(FelixID_t fid, const uint8_t* data, size_t size, uint8_t status) {
@@ -120,3 +107,4 @@ void SharedClient::on_data_received(FelixID_t fid, const uint8_t* data, size_t s
     m_last_id = fid;
   }
   m_last_it->second(fid, data, size, status);
+}
