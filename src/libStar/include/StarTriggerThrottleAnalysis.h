@@ -73,10 +73,10 @@ private:
     /// The maximum number of triggers not to exceed
     int m_nbTriggersInBunch; //!< Current number of triggers in the bunch
 
-    /// Object used to send feedback to ScanLoop
-    std::unique_ptr<GlobalFeedbackSender> m_feedback;
+    /// Object used to send trigger feedback to ScanLoop
+    std::unique_ptr<TriggerFeedbackSender> m_feedback;
     /// The trigger loop object to request trigger count info
-    StdTriggerAction* m_trigLoop;
+    const StdTriggerAction* m_trigLoop;
 };
 
 #endif

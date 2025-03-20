@@ -7,6 +7,7 @@
 #include "logging.h"
 
 #include "AllAnalyses.h"
+#include "Histo1d.h"
 #include "Histo2d.h"
 #include "StdHistogrammer.h"
 #include "StdTriggerAction.h"
@@ -26,8 +27,9 @@ namespace {
 void StarTriggerThrottleAnalysis::init(const ScanLoopInfo *s) {
   //Getting the scan parameters to keep track of loop statuses/identify outputs
   for (unsigned n=0; n<s->size(); n++) {
-    std::shared_ptr<LoopActionBase> l = s->getLoop(n);
-    if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || (l->isParameterLoop() && !isPOILoop(dynamic_cast<StdParameterLoop*>(l.get()))) )){
+    auto l = s->getLoop(n);
+    if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || (l->isParameterLoop() && !isPOILoop(l)))) {
+      // Parameter loops and feedback
       loops.push_back(n);
     } else {
       unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
@@ -40,7 +42,7 @@ void StarTriggerThrottleAnalysis::init(const ScanLoopInfo *s) {
     }
 
     if (l->isTriggerLoop()) {
-      m_trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
+      m_trigLoop = dynamic_cast<const StdTriggerAction*>(l);
       if(m_trigLoop == nullptr) {
         alog->error("StarTriggerThrottleAnalysis got a trigger loop that can't be cast as it");
       } else {
@@ -50,10 +52,10 @@ void StarTriggerThrottleAnalysis::init(const ScanLoopInfo *s) {
       }
     }
     //Setting feedback for the trigger throttle
-    if (l->isGlobalFeedbackLoop()) {
-      m_feedback.reset(new GlobalFeedbackSender(feedback));
+    if (l->isTriggerFeedbackLoop()) {
+      m_feedback.reset(new TriggerFeedbackSender(feedback));
       if(m_feedback == nullptr) {
-        alog->error("StarTriggerThrottleAnalysis got a GlobalFeedbackLoop that can't be cast as a GlobalFeedbackSender");
+        alog->error("StarTriggerThrottleAnalysis got a TriggerFeedbackLoop that can't be cast as a TriggerFeedbackSender");
       }
     }
   }
@@ -62,9 +64,10 @@ void StarTriggerThrottleAnalysis::init(const ScanLoopInfo *s) {
 void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
     alog->debug("StarTriggerThrottleAnalysis::processHistogram({})", h->getName());
 
-    // Check if right Histogram
-    if (h->getName().find(OccupancyMap::outputName()) != 0)
+    // Only processing occupancy histograms
+    if (h->getName().find(OccupancyMap::outputName()) != 0) {
       return;
+    }
 
     // Select correct output container
     unsigned ident = 0;
@@ -200,9 +203,9 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
       alog->debug("Setting m_nbTriggersInBunch = {} - {} = {}", m_max_ntriggers, m_totNbTriggersSoFar[ident], m_nbTriggersInBunch);
     }
     //Setting the number of triggers in the next bunch and providing feedback
-    m_trigLoop->setTrigCnt(m_nbTriggersInBunch);
+    // m_trigLoop->setTrigCnt(m_nbTriggersInBunch);
     alog->debug("Setting trigger count to {} and calling feedback function", m_nbTriggersInBunch);
-    m_feedback->feedback(this->id, sign, done);
+    m_feedback->feedbackTrigger(this->id, sign + done);
 
     m_occMapOneBunchOfTriggers[ident].reset();
 }
@@ -220,7 +223,7 @@ void StarTriggerThrottleAnalysis::end() {
     trigRecord->setBin(index++, count);
   }
 
-  output->pushData(std::move(triggers));
+  output->pushData(std::move(trigRecord));
 }
 
 void StarTriggerThrottleAnalysis::loadConfig(const json &j) {
