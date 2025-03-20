@@ -157,33 +157,23 @@ unsigned ScanConsoleImpl::getRunNumber() {
 }
 
 
-int ScanConsoleImpl::setupScan() {
-    ScanHelper::banner(logger,"Setup Scan");
-    
-        //check if right type of scan
+int ScanConsoleImpl::setupScan() {    ScanHelper::banner(logger,"Setup Scan");
         
-    for (unsigned int i=0; i<scanCfg["scan"]["loops"].size(); i++) {
-    	
-	std::string loopAction = scanCfg["scan"]["loops"][i]["loopAction"];
-
-      
-        for (unsigned int i=0; i<StdDict::listFrontEnds().size(); i++) {
-        	
-		std::string chipOption = StdDict::listFrontEnds()[i];
-	
-        	
-		if (chipOption == chipType && loopAction.find("Std") == std::string::npos) {
-
-			if (std::search(loopAction.begin(), loopAction.end(), chipOption.begin(), chipOption.end(), [](char a, char b){return std::tolower(a) == std::tolower(b);}) == loopAction.end()) {
-            
-				logger->error("Wrong scan file for chip type, aborting!");
-				return -1;
-				}
-			}
-        	}
+	//check if scan type matches chip type
+     for (unsigned int i=0; i<scanCfg["scan"]["loops"].size(); i++) {
+     	std::string loopAction = scanCfg["scan"]["loops"][i]["loopAction"];
+     	for (unsigned int j=0; j<StdDict::listFrontEnds().size(); j++) {
+     		std::string chipOption = StdDict::listFrontEnds()[j]; 
+     		if (chipOption == chipType && loopAction.find("Std") == std::string::npos) {
+     			if (std::search(loopAction.begin(), loopAction.end(), chipOption.begin(), chipOption.end(), [](char a, char b){return std::tolower(a) == std::tolower(b);}) == loopAction.end()){
+     				logger->error("Wrong scan file for chip type, aborting!");
+     					return -1;
+     				}
+     			}
+                }
         }
         
-
+    
     // Make backup of scan config
 
     // Create backup of current config
