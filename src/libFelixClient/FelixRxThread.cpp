@@ -3,17 +3,17 @@
 #include "FelixRxThread.h"
 #include "logging.h"
 
+#include <cstring> // needed for std::memcpy
+
 namespace {
   auto frtlog = logging::make_log("FelixRxThread");
 }
 
 FelixRxThread::FelixRxThread(
   std::shared_ptr<SharedClient> client, 
-  const std::vector<FelixID_t>& fid_list,
-  ClipBoard<RawData>* data_buffer
+  const std::vector<FelixID_t>& fid_list
 ) 
 : m_client(client)
-, m_rawData(data_buffer)
 {
   for (const auto& fid : fid_list) {
     m_fidStats[fid];
@@ -23,6 +23,25 @@ FelixRxThread::FelixRxThread(
 FelixRxThread::~FelixRxThread() {
   if (thread_ptr and thread_ptr->joinable()) {
     thread_ptr->join();
+  }
+
+  // Unsubscribe from all links
+  for (const auto& [fid, stats] : m_fidStats) {
+    m_client->unsubscribe(fid);
+  }
+
+  // Clean up
+  // delete data that are not read from rawData
+  frtlog->debug("Flush receiver queue...");
+  int count = 0;
+  while (!m_rawData.empty()) {
+    m_rawData.popData();
+    count++;
+  }
+  if (count) {
+    frtlog->debug(" ...done ({} stray data blocks)", count);
+  } else {
+    frtlog->debug(" ...done");
   }
 }
 
@@ -101,5 +120,17 @@ void FelixRxThread::on_data_callback(FelixID_t fid, const uint8_t* data, size_t 
   std::memcpy(rd->getBuf(), data, size);
 
   // push data to the queue
-  m_rawData->pushData(std::move(rd));
+  m_rawData.pushData(std::move(rd));
+}
+
+RawDataPtr FelixRxThread::readData() {
+  frtlog->trace("FelixRxThread::readData");
+  auto rdp = m_rawData.popData();
+
+  if (rdp) {
+    m_total_data_out += 1;
+    m_total_bytes_out += (rdp->getSize()) * sizeof(uint32_t);
+  }
+
+  return rdp;
 }

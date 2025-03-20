@@ -18,8 +18,7 @@ class FelixRxThread {
 
     FelixRxThread(
       std::shared_ptr<SharedClient> client, 
-      const std::vector<FelixID_t>& fid_list,
-      ClipBoard<RawData>* data_buffer
+      const std::vector<FelixID_t>& fid_list
     );
 
     ~FelixRxThread();
@@ -32,15 +31,15 @@ class FelixRxThread {
 
     void flush(bool doflush) { m_doFlushBuffer = doflush; }
 
+    RawDataPtr readData();
+
   private:
 
     std::unique_ptr<std::thread> thread_ptr;
 
     std::shared_ptr<SharedClient> m_client;  
 
-    // For now multiple FelixRxThreads write to the same RawData ClipBoard from FelixRxCore
-    // TODO: separate RawData ClipBoard in FelixRxThread consumed by separate DataProcessors?
-    ClipBoard<RawData>* m_rawData; // owned by FelixRxCore
+    ClipBoard<RawData> m_rawData;
 
     std::atomic<bool> m_doFlushBuffer {false};
 
@@ -49,7 +48,9 @@ class FelixRxThread {
 
     // Receiver queue status
     std::atomic<uint64_t> m_total_data_in {0}; // total number of data received
+    std::atomic<uint64_t> m_total_data_out {0}; // total number of data read out
     std::atomic<uint64_t> m_total_bytes_in {0};
+    std::atomic<uint64_t> m_total_bytes_out {0};
 };
 
 #endif
