@@ -5,9 +5,6 @@
 // # Author:
 // # Email:
 // # Project: Yarr
-// # Description: Star Global Feedback Loop action
-// # Comment: 
-// # Date: Oct 2018
 // ################################
 
 
@@ -19,6 +16,18 @@
 #include "FeedbackBase.h"
 #include "StarChips.h"
 
+/**
+ * Star trigger throttle loop action.
+ *
+ * This class implements triggle throttling with feedback from the Analysis
+ * (for example StarTriggerThrottleAnalysis).
+ *
+ * With no feedback, the loop will repeat it's sub-loops until a maximum is reached.
+ *
+ * With feedback, the loop will adjust the number of triggers in the trigger loop.
+ * Query, how does it access (for example) StarTriggerLoop to increase the number
+ * of triggers.
+ */
 class StarThrottleLoop : public LoopActionBase, public GlobalFeedbackReceiver {
     public:
         StarThrottleLoop();

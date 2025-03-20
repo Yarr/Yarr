@@ -1,22 +1,14 @@
 // #################################
-// // # Author: Olivier Arnaez & Elise Le Boulicaut
-// // # Email: Olivier Arnaez at cern.ch
-// // # Project: Yarr
-// // # Description: Analysis using TriggerThrottleLoop that adjusts the number of triggers per bunch in order to reach a given average occupancy number of hits on the FE
-// // # Comment:
-// // ################################
-//
+// Author: Bruce Gallop
+// Based on previous work by Olivier Arnaez, Elise Le Boulicaut and Ryan Roberts
 
 #include "StarTriggerThrottleAnalysis.h"
 
-// NB if we don't include this, it compiles, but we get a linker error,
-// presumably because it picks up names from C rather than C++
-//#include <cmath>
+#include "logging.h"
 
 #include "AllAnalyses.h"
-#include "logging.h"
-#include "StdHistogrammer.h"
 #include "Histo2d.h"
+#include "StdHistogrammer.h"
 #include "StdTriggerAction.h"
 #include "StdParameterLoop.h"
 
@@ -27,17 +19,11 @@ namespace {
 
 //Registering the analysis algorithm in the registry
 namespace {
-    bool throt_registered = 
+    bool throt_registered =
         StdDict::registerAnalysis("StarTriggerThrottleAnalysis", []() { return std::unique_ptr<AnalysisAlgorithm>(new StarTriggerThrottleAnalysis());});
 }
-  
-//! Initializes the analysis algorithm from the scan parameters
-/*!
-  \param s scan configuration
-*/
-void StarTriggerThrottleAnalysis::init(ScanBase *s) {
-  scan = s;
 
+void StarTriggerThrottleAnalysis::init(const ScanLoopInfo *s) {
   //Getting the scan parameters to keep track of loop statuses/identify outputs
   for (unsigned n=0; n<s->size(); n++) {
     std::shared_ptr<LoopActionBase> l = s->getLoop(n);
@@ -46,37 +32,33 @@ void StarTriggerThrottleAnalysis::init(ScanBase *s) {
     } else {
       unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
       if (l->isParameterLoop()) {
-	cnt++; // Parameter loop interval is inclusive
+        cnt++; // Parameter loop interval is inclusive
       }
-      if (cnt == 0)
-	cnt = 1;
+      if (cnt == 0) {
+        cnt = 1;
+      }
     }
-    
+
     if (l->isTriggerLoop()) {
       m_trigLoop = dynamic_cast<StdTriggerAction*>(l.get());
       if(m_trigLoop == nullptr) {
-	alog->error("StarTriggerThrottleAnalysis got a trigger loop that can't be cast as it");
+        alog->error("StarTriggerThrottleAnalysis got a trigger loop that can't be cast as it");
       } else {
-	//Getting the initial trigger count from the trigger loop parameters
-	m_nbTriggersInBunch = m_trigLoop->getTrigCnt();
-	alog->info("Starting trigger throttling with a bunch of {} triggers.", m_nbTriggersInBunch);
+        //Getting the initial trigger count from the trigger loop parameters
+        m_nbTriggersInBunch = m_trigLoop->getTrigCnt();
+        alog->info("Starting trigger throttling with a bunch of {} triggers.", m_nbTriggersInBunch);
       }
     }
     //Setting feedback for the trigger throttle
     if (l->isGlobalFeedbackLoop()) {
       m_feedback.reset(new GlobalFeedbackSender(feedback));
       if(m_feedback == nullptr) {
-	alog->error("StarTriggerThrottleAnalysis got a GlobalFeedbackLoop that can't be cast as a GlobalFeedbackSender");
+        alog->error("StarTriggerThrottleAnalysis got a GlobalFeedbackLoop that can't be cast as a GlobalFeedbackSender");
       }
     }
   }
 }
 
-
-//! Processes occupancy maps created for each bunch of triggers
-/*!
-  \param h occupancy map corresponding to a bunch of triggers (and a given set of scan parameters values)
-*/
 void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
     alog->debug("StarTriggerThrottleAnalysis::processHistogram({})", h->getName());
 
@@ -92,14 +74,13 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
     std::string name = "OccupancyMap";
     std::string name2 = "OccupancyMapAllBunches";
     for (unsigned n=0; n<loops.size(); n++) {
-	std::shared_ptr<LoopActionBase> l = scan->getLoop(loops[n]);
-	ident += ( (h->getStat().get(loops[n])-l->getMin())/l->getStep() )*offset;
-	offset *= (l->getMax() - l->getMin())/l->getStep() + 1;
+        std::shared_ptr<LoopActionBase> l = scan->getLoop(loops[n]);
+        ident += ( (h->getStat().get(loops[n])-l->getMin())/l->getStep() )*offset;
+        offset *= (l->getMax() - l->getMin())/l->getStep() + 1;
     }
     alog->debug("Continuing with ident {}", ident);
 
-    
-    // Check if histogram exists for this bunch of triggers and this identifier (it should not be the case but who knows), otherwise create it
+    // Create histogram to store bunch info if not yet made for this bin identifier
     if (m_occMapOneBunchOfTriggers[ident] == NULL) {
       Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, h->getStat());
       hh->setXaxisTitle("Column");
@@ -108,7 +89,7 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
       m_occMapOneBunchOfTriggers[ident].reset(hh);
     }
 
-    // Check if total histogram concatenating all bunches of triggers for a given identifier (i.e. set of scan parameters values) exists, otherwise create it
+    // Create "total" histogram (concatenating all bunches of triggers)
     if (m_occMapAllBunches[ident] == NULL) {
       Histo2d *hh = new Histo2d(name2, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, h->getStat());
       hh->setXaxisTitle("Column");
@@ -118,7 +99,7 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
       m_totNbTriggersSoFar[ident]=0;
     }
 
-    // Check if histogram exists in order to contain the occupancies for channels close to saturation, and this identifier (it should not be the case but who knows), otherwise create it
+    // Create saturation histogram (occupancies for channels close to saturation)
     if (m_occMapSaturatedChannels[ident] == NULL) {
       Histo2d *hh = new Histo2d("SaturatedChannels", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, h->getStat());
       hh->setXaxisTitle("Column");
@@ -127,12 +108,11 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
       m_occMapSaturatedChannels[ident].reset(hh);
     }
 
-    
     // Add up input occupancy map histogram
     m_occMapOneBunchOfTriggers[ident]->add(*(Histo2d*)h);
     m_occMapAllBunches[ident]->add(*(Histo2d*)h);
 
-    //Keeping track of how many triggers have been fired so far
+    // Keep track of how many triggers have been fired so far
     m_totNbTriggersSoFar[ident] += m_nbTriggersInBunch;
 
 
@@ -144,19 +124,19 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
     for(unsigned i=0; i<m_occMapOneBunchOfTriggers[ident]->size(); i++) {
       //In case we have channels that were expected to reach saturation and if those are indeed saturated, we use the best estimate of their (relative) occupancy that we kept track of
       if (m_occMapOneBunchOfTriggers[ident]->getBin(i)==255 && m_occMapSaturatedChannels[ident]->getBin(i)) {
-	//alog->trace("Using previously computed relative occupancy for channel #{} = {}", i, m_occMapSaturatedChannels[ident]->getBin(i));
-	m_occMapOneBunchOfTriggers[ident]->setBin(i, m_occMapSaturatedChannels[ident]->getBin(i)*m_nbTriggersInBunch);
-	m_occMapAllBunches[ident]->setBin(i, m_occMapSaturatedChannels[ident]->getBin(i)*m_totNbTriggersSoFar[ident]);
-	nbNoisyChannelsUsingBestEstimate++;
+        //alog->trace("Using previously computed relative occupancy for channel #{} = {}", i, m_occMapSaturatedChannels[ident]->getBin(i));
+        m_occMapOneBunchOfTriggers[ident]->setBin(i, m_occMapSaturatedChannels[ident]->getBin(i)*m_nbTriggersInBunch);
+        m_occMapAllBunches[ident]->setBin(i, m_occMapSaturatedChannels[ident]->getBin(i)*m_totNbTriggersSoFar[ident]);
+        nbNoisyChannelsUsingBestEstimate++;
       }
       //Let's compute the average absolute occupancy over all channels
       aveOccupancy += m_occMapOneBunchOfTriggers[ident]->getBin(i);
       //printing
       double chOccupancy = (m_occMapOneBunchOfTriggers[ident]->getBin(i))/(double)m_nbTriggersInBunch;
       if (chOccupancy==0)
-	nbChannelsAt0++;
+        nbChannelsAt0++;
       if (m_occMapOneBunchOfTriggers[ident]->getBin(i)>127)
-	nbNoisyChannelsCloseToFullCounter++;
+        nbNoisyChannelsCloseToFullCounter++;
     }
     alog->debug("{} channels with 0 occupancy for this bunch of {} triggers", nbChannelsAt0, m_nbTriggersInBunch);
     alog->debug("{} channels with occupancy > 127", nbNoisyChannelsCloseToFullCounter);
@@ -191,8 +171,8 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
 
       //If we're about to double the number of triggers in the next bunch, we keep track of the occupancies for channels that are expected to reach the maximum value allowed by the counter
       for(unsigned i=0; i<m_occMapOneBunchOfTriggers[ident]->size(); i++) {
-	if (m_occMapOneBunchOfTriggers[ident]->getBin(i)>127)
-	  m_occMapSaturatedChannels[ident]->setBin(i, (double)m_occMapAllBunches[ident]->getBin(i)/m_totNbTriggersSoFar[ident]);
+        if (m_occMapOneBunchOfTriggers[ident]->getBin(i)>127)
+          m_occMapSaturatedChannels[ident]->setBin(i, (double)m_occMapAllBunches[ident]->getBin(i)/m_totNbTriggersSoFar[ident]);
       }
     } else if (sign == -1) {
       m_nbTriggersInBunch /= 2;
@@ -243,24 +223,19 @@ void StarTriggerThrottleAnalysis::end() {
   output->pushData(std::move(triggers));
 }
 
-//! Loading the configuration of the throttling from json
-/*!
-  \param j json input configuration
-*/
 void StarTriggerThrottleAnalysis::loadConfig(const json &j) {
-  alog->warn("In loadConfig()");
+    alog->warn("In loadConfig()");
     if (j.contains("parametersOfInterest")) {
         for (unsigned i=0; i<j["parametersOfInterest"].size(); i++) {
             m_parametersOfInterest.push_back(j["parametersOfInterest"][i]);
         }
     }
-    if (!j["target_occ"].empty()) {
+    if (j.contains("target_occ")) {
       m_target_occ = (int)j["target_occ"];
-      alog->warn("having m_target_occ={}", (int)m_target_occ);
+      alog->info("having m_target_occ={}", (int)m_target_occ);
     }
-    if (!j["max_ntriggers"].empty()) {
+    if (j.contains("max_ntriggers")) {
       m_max_ntriggers = (int)j["max_ntriggers"];
-    } else 
-        m_max_ntriggers = 10000;
+    }
 }
-  
+
