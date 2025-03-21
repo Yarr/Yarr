@@ -4,8 +4,6 @@
 #include <map>
 #include <vector>
 
-#include "enum.h"
-
 #include "StarRegister.h"
 #include "StarRegDefs.h"
 
@@ -14,11 +12,15 @@ static const size_t HCC_INPUT_CHANNEL_COUNT = 11;
 static const size_t HCC_INPUT_CHANNEL_BAD_SLOT = 15;
 
 //Different HCC registers that can be used
-BETTER_ENUM(HCCStarRegister, int, HCC_STAR_REGS)
+enum class HCCStarRegister {
+  HCC_STAR_REGS
+};
 
 //Different HCC subregisters that can be used for configuration, scans, etc.
 ////NOTE: If the name is changed here, make sure the corresponding subregister name is also changed in the config json file.
-BETTER_ENUM(HCCStarSubRegister, int, HCC_STAR_SUB_REGS)
+enum class HCCStarSubRegister {
+  HCC_STAR_SUB_REGS
+};
 
 /// Lookup information on HCCStar register map
 class HccStarRegInfo {
@@ -36,11 +38,7 @@ class HccStarRegInfo {
         std::map<unsigned, InfoPtr> hccWriteMap;
 
         /// Return sub register info for name, throws std::runtime_error
-        SubInfoPtr subRegByName(const std::string &subRegName) const {
-          // This already throws runtime_error if bad string
-          auto reg_enum = HCCStarSubRegister::_from_string(subRegName.c_str());
-          return subRegFromEnum(reg_enum);
-        }
+        SubInfoPtr subRegByName(const std::string &subRegName) const;
 
         /// Return sub register info from enum, throws std::runtime_error
         SubInfoPtr subRegFromEnum(HCCStarSubRegister subReg) const {

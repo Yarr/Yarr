@@ -42,12 +42,12 @@ class StarCfg : public FrontEndCfg {
 
   /// Return value of HCC register (integer version)
   inline const uint32_t getHCCRegister(uint32_t addr) const {
-    return getHCCRegister(HCCStarRegister::_from_integral(addr));
+    return getHCCRegister((HCCStarRegister)addr);
   }
 
   /// Set value of HCC register (integer version)
   inline void setHCCRegister(uint32_t addr, uint32_t val) {
-    setHCCRegister(HCCStarRegister::_from_integral(addr), val);
+    setHCCRegister((HCCStarRegister)addr, val);
   }
 
   /// Get value of ABC register (by integer address and ABC communications ID)

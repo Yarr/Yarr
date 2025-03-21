@@ -269,18 +269,19 @@ void StarChipsetEmu::writeRegister(const uint32_t data, const uint8_t address,
       }
     }
   } else {
+    auto reg_e = (HCCStarRegister)address;
     // skip writing if the register is read only
-    if (address == HCCStarRegister::SEU1 or
-        address == HCCStarRegister::SEU2 or
-        address == HCCStarRegister::SEU3 or
-        address == HCCStarRegister::FrameRaw or
-        address == HCCStarRegister::LCBerr or
-        address == HCCStarRegister::ADCStatus or
-        address == HCCStarRegister::Status or
-        address == HCCStarRegister::HPR) {
+    if (reg_e == HCCStarRegister::SEU1 or
+        reg_e == HCCStarRegister::SEU2 or
+        reg_e == HCCStarRegister::SEU3 or
+        reg_e == HCCStarRegister::FrameRaw or
+        reg_e == HCCStarRegister::LCBerr or
+        reg_e == HCCStarRegister::ADCStatus or
+        reg_e == HCCStarRegister::Status or
+        reg_e == HCCStarRegister::HPR) {
       logger->warn("A register write command is received for a read-only HCCStar register 0x{:x}. Skip writing.", address);
       return;
-    } else if (address == HCCStarRegister::Addressing) {
+    } else if (reg_e == HCCStarRegister::Addressing) {
       // special case for dynamic addressing
       // only the top 4 bits are read-write bits and are used as HCC ID
       uint32_t hccid_cur = m_starCfg->getHCCRegister(HCCStarRegister::Addressing);
@@ -578,7 +579,7 @@ void StarChipsetEmu::doHPR_HCC(LCB::Frame frame) {
   //// Build and send the HPR packet
   if (lcb_lock_changed or hpr_periodic or hpr_initial) {
     auto packet_hcchpr = buildHCCRegisterPacket(
-      PacketTypes::HCCHPR, (+HCCStarRegister::HPR)._to_integral(),
+      PacketTypes::HCCHPR, (int)HCCStarRegister::HPR,
       m_starCfg->getHCCRegister(HCCStarRegister::HPR));
 
     sendPacket(packet_hcchpr);

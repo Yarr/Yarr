@@ -8,6 +8,7 @@
 #include "StarPreset.h"
 
 #include "AbcNames.h"
+#include "HccNames.h"
 
 #include <iomanip>
 
@@ -86,7 +87,7 @@ void StarCfg::setSubRegisterValue(int chipIndex, std::string subRegName, uint32_
 {
     if (chipIndex == 0) {
         //If HCC, looking name
-        if(HCCStarSubRegister::_is_valid(subRegName.c_str())) {
+        if(HccNames::subRegStringIsValid(subRegName)) {
             return m_hcc.setSubRegisterValue(subRegName, value);
         } else {
             std::cerr << " --> Error: Could not find HCC register \""<< subRegName << "\"" << std::endl;
@@ -107,7 +108,7 @@ uint32_t StarCfg::getSubRegisterValue(int chipIndex, std::string subRegName) con
 {
     if (chipIndex == 0) {
         // If HCC, look-up name
-        if (HCCStarSubRegister::_is_valid(subRegName.c_str())) {
+        if (HccNames::subRegStringIsValid(subRegName)) {
             return m_hcc.getSubRegisterValue(subRegName);
         } else {
             std::cerr << " --> Error: Could not find HCC sub-register \""<< subRegName << "\"" << std::endl;
@@ -129,7 +130,7 @@ int StarCfg::getSubRegisterParentAddr(int chipIndex, std::string subRegName)
 {
     if (chipIndex == 0) {
         // If HCC, looking name
-        if(HCCStarSubRegister::_is_valid(subRegName.c_str())) {
+        if(HccNames::subRegStringIsValid(subRegName)) {
             return m_hcc.getSubRegisterParentAddr(subRegName);
         } else {
             std::cerr << " --> Error: Could not find HCC register \""<< subRegName << "\"" << std::endl;
@@ -150,7 +151,7 @@ uint32_t StarCfg::getSubRegisterParentValue(int chipIndex, std::string subRegNam
 {
     if (chipIndex == 0) {
         // If HCC, looking name
-        if(HCCStarSubRegister::_is_valid(subRegName.c_str())) {
+        if(HccNames::subRegStringIsValid(subRegName)) {
             return m_hcc.getSubRegisterParentValue(subRegName);
         } else {
             std::cerr << " --> Error: Could not find HCC register \""<< subRegName << "\"" << std::endl;
@@ -209,8 +210,8 @@ void StarCfg::writeConfig(json &j) {
         // Standard rw registers start from 32
         // Don't write status registers
         if(addr >= 32) {
-          auto reg = HCCStarRegister::_from_integral(addr);
-          std::string regKey = reg._to_string();
+          auto reg = HCCStarRegister(addr);
+          std::string regKey = HccNames::regToString(reg);
           uint32_t val = getHCCRegister(reg);
           std::stringstream ss;
           ss << std::hex << std::setw(8) << std::setfill('0') << val;
@@ -396,7 +397,7 @@ void StarCfg::loadConfig(const json &j) {
             logger->trace("Read HCC value {}", regValue);
 
             try {
-                auto addr = HCCStarRegister::_from_string(regName.c_str());
+                auto addr = HccNames::regFromString(regName).value();
                 logger->trace("Set HCC value {} {}", addr, regValue);
                 m_hcc.setRegisterValue(addr, regValue);
                 auto value = m_hcc.getRegisterValue(addr);

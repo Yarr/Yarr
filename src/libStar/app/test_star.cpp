@@ -6,6 +6,7 @@
 
 #include "AbcNames.h"
 #include "AllHwControllers.h"
+#include "HccNames.h"
 #include "StarCmd.h"
 #include "StarCfg.h"
 #include "LCBUtils.h"
@@ -182,9 +183,9 @@ std::tuple<uint32_t, uint32_t> updateABCSubRegister(const std::string& subRegNam
 // Update the register value in the chip config
 // Return the register address in int
 uint32_t updateHCCRegister(const std::string& regName, uint32_t value, StarCfg& cfg) {
-  HCCStarRegister addr = HCCStarRegister::_from_string(regName.c_str());
+  HCCStarRegister addr = HccNames::regFromString(regName).value();
   cfg.setHCCRegister(addr, value);
-  return addr;
+  return (int)addr;
 }
 
 uint32_t updateABCRegister(const std::string& regName, uint32_t value, StarCfg& cfg) {
@@ -536,7 +537,7 @@ bool checkHPRs(HwController& hwCtrl,
 
     // Should not be necessary except for the emulator, but toggle the TestHPR
     // bit anyway in case HPR was stopped previously
-    sendCommand(star.write_hcc_register(HCCStarRegister::Pulse, 0x2), hwCtrl);
+    sendCommand(star.write_hcc_register((int)HCCStarRegister::Pulse, 0x2), hwCtrl);
 
     std::function<bool(RawData&)> filter_hpr = [rx](RawData& d) {
       return isPacketType(d, TYP_HCC_HPR) and isFromChannel(d, rx);
@@ -593,12 +594,12 @@ bool probeHCCs(
     hwCtrl.setCmdEnable(tx);
 
     // Toggle bit 2 in register Pulse to load serial number into register Addressing
-    sendCommand(star.write_hcc_register(HCCStarRegister::Pulse, 0x4), hwCtrl);
+    sendCommand(star.write_hcc_register((int)HCCStarRegister::Pulse, 0x4), hwCtrl);
 
     // Scan through the Rx channels and look for response
     for (auto rx : rxChannels) {
       // Read the register Addressing
-      sendCommand(star.read_hcc_register(HCCStarRegister::Addressing), hwCtrl);
+      sendCommand(star.read_hcc_register((int)HCCStarRegister::Addressing), hwCtrl);
 
       auto data = readData(
         hwCtrl,
@@ -624,7 +625,7 @@ bool probeHCCs(
         if (setID) {
           // Set HCC ID to nHCC
           uint32_t address = (nHCC << 28) | (fuseID & 0x00ffffff);
-          sendCommand(star.write_hcc_register(HCCStarRegister::Addressing, address), hwCtrl);
+          sendCommand(star.write_hcc_register((int)HCCStarRegister::Addressing, address), hwCtrl);
           logger->info(" Set its ID to 0x{:x}", nHCC);
           hccID = nHCC;
         }
@@ -853,7 +854,7 @@ bool testHCCRegisterAccess(HwController& hwCtrl, const std::vector<Hybrid>& hccS
 
   for (const auto& hcc : hccStars) {
     // Register ErrCfg
-    success &= testRegisterReadWrite(hwCtrl, HCCStarRegister::ErrCfg, 0xdeadbeef, hcc.rx, hcc.hcc_id);
+    success &= testRegisterReadWrite(hwCtrl, (uint32_t)HCCStarRegister::ErrCfg, 0xdeadbeef, hcc.rx, hcc.hcc_id);
   }
 
   return success;

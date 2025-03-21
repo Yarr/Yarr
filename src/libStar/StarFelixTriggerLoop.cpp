@@ -371,7 +371,7 @@ void StarFelixTriggerLoop::makeTrickleSequence() {
 
   // Add some register commands as pre-buffering for the command decoder
   // Read HCC OPmode register
-  auto hccRR = LCB_FELIX::read_hcc_register(HCCStarRegister::OPmode);
+  auto hccRR = LCB_FELIX::read_hcc_register((int)HCCStarRegister::OPmode);
   trickleSeq_pre.insert(trickleSeq_pre.end(), hccRR.begin(), hccRR.end());
 
   // Stop hit counters

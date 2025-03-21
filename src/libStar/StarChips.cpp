@@ -8,6 +8,7 @@
 #include "StarChipsBroadcast.h"
 
 #include "AbcNames.h"
+#include "HccNames.h"
 
 #include <chrono>
 
@@ -74,7 +75,7 @@ void StarChips::setHccId(unsigned hccID) {
   //Let's reset the HCC communications ID.
   //  Use a broadcast write of the required ID+fuse on reg 17
   uint32_t newReg17val = (hccID<<28) | m_fuse_id;
-  sendCmd(write_hcc_register(HCCStarRegister::Addressing, newReg17val, 0xf));
+  sendCmd(write_hcc_register((int)HCCStarRegister::Addressing, newReg17val, 0xf));
   logger->info("Set HCC ID to {} (sent on reg17 0x{:08x})", hccID, newReg17val);
 }
 
@@ -247,7 +248,7 @@ yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_va
   //if we deal with a setting for the HCC, look up in register map.
   if (strPrefix=="HCC_") {
     auto subRegName = name.substr(4);
-    if(!HCCStarSubRegister::_is_valid(subRegName.c_str())) {
+    if(!HccNames::subRegStringIsValid(subRegName)) {
       logger->error(" --> Error: Could not find HCC sub-register \"{}\"", subRegName);
       return yarrFailure;
     } else {
@@ -337,7 +338,7 @@ void StarChips::readRegisters(){
 }
 
 void StarChips::writeHCCRegister(int addr) {
-    uint32_t value = m_hcc.getRegisterValue(HCCStarRegister::_from_integral(addr));
+    uint32_t value = m_hcc.getRegisterValue(HCCStarRegister(addr));
     logger->debug("Doing HCC write register with value 0x{:08x} from registerMap[addr={}]", value, addr);
     sendCmd(write_hcc_register(addr, value, getHCCchipID()));
 }

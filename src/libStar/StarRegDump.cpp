@@ -9,6 +9,7 @@
 #include "logging.h"
 
 #include "AbcNames.h"
+#include "HccNames.h"
 
 namespace {
     auto logger = logging::make_log("StarRegDump");
@@ -48,9 +49,11 @@ void StarRegDump::execPart1() {
                 ((StarChips*) fe)->sendCmd( ((StarChips*) fe)->read_abc_register((int)reg));
             }
 
-            for (size_t index = 0; index < HCCStarRegister::_size(); ++index) {
-                logger->trace(HCCStarRegister::_names()[index]);
-                ((StarChips*) fe)->sendCmd( ((StarChips*) fe)->read_hcc_register(HCCStarRegister::_values()[index]));
+            auto &hccList = HccNames::listRegs();
+            for (size_t index = 0; index < hccList.size(); ++index) {
+                auto &reg = hccList[index];
+                logger->trace(HccNames::regToString(reg));
+                ((StarChips*) fe)->sendCmd( ((StarChips*) fe)->read_hcc_register((int)reg));
             }
         } else {
                 logger->trace(m_addr);

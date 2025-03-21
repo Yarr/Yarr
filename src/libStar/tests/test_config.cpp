@@ -288,7 +288,7 @@ TEST_CASE("StarCfg_HCCv1", "[star][config]") {
 
   HccCfg &hcc = test_config.hcc();
 
-  REQUIRE (hcc.getSubRegisterParentAddr("EPLLPHASE160") == HCCStarRegister::PLL1);
+  REQUIRE (hcc.getSubRegisterParentAddr("EPLLPHASE160") == (int)HCCStarRegister::PLL1);
 
   hcc.setSubRegisterValue("EPLLICP", 0xf);
   hcc.setSubRegisterValue("EPLLCAP", 0x3);

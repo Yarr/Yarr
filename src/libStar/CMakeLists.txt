@@ -3,6 +3,7 @@ add_library(Star SHARED
         AbcNames.cpp
         AllStarActions.cpp
         HccCfg.cpp
+        HccNames.cpp
         StarCfg.cpp
         StarChannelFeedback.cpp
         StarChips.cpp
