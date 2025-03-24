@@ -60,15 +60,8 @@ class AbcStarRegInfo {
 
   static std::shared_ptr<const AbcStarRegInfo> instance(int version);
 
-  /// Return sub register info for name, throws std::runtime_error
-  SubInfoPtr subRegByName(const std::string &subRegName) const;
-
   /// Return sub register info from enum, throws std::runtime_error
   SubInfoPtr subRegFromEnum(ABCStarSubRegister subReg) const;
-
-  int getSubRegisterParentAddr(std::string subRegName) const {
-    return subRegByName(subRegName)->getRegAddress();
-  }
 
   int getSubRegisterParentAddr(ABCStarSubRegister subReg) const {
     return subRegFromEnum(subReg)->getRegAddress();
@@ -121,24 +114,10 @@ class AbcCfg {
         }
 
         /// Set the value of a register field for this ABC
-        void setSubRegisterValue(std::string subRegName, uint32_t value) {
-            auto info = m_info->subRegByName(subRegName);
-            auto &reg = getRegister(info->m_regAddress);
-            reg.getSubRegister(info).updateValue(value);
-        }
-
-        /// Set the value of a register field for this ABC
         void setSubRegisterValue(ABCStarSubRegister subReg, uint32_t value) {
             auto info = m_info->subRegFromEnum(subReg);
             auto &reg = getRegister(info->m_regAddress);
             reg.getSubRegister(info).updateValue(value);
-        }
-
-        /// Get the value of a register field for this ABC
-        uint32_t getSubRegisterValue(std::string subRegName) const {
-            auto info = m_info->subRegByName(subRegName);
-            auto &reg = getRegister(info->m_regAddress);
-            return reg.getSubRegister(info).getValue();
         }
 
         /// Get the value of a register field for this ABC
@@ -148,20 +127,9 @@ class AbcCfg {
             return reg.getSubRegister(info).getValue();
         }
 
-        /// Lookup the register address for a named register field
-        int getSubRegisterParentAddr(std::string subRegName) const {
-            return m_info->getSubRegisterParentAddr(subRegName);
-        }
-
         /// Lookup the register address for a register field
         int getSubRegisterParentAddr(ABCStarSubRegister subReg) const {
             return m_info->getSubRegisterParentAddr(subReg);
-        }
-
-        /// Find the full register contents for a named register field
-        uint32_t getSubRegisterParentValue(std::string subRegName) const {
-            auto info = m_info->subRegByName(subRegName);
-            return getRegister(info->m_regAddress).getValue();
         }
 
         /// Find the full register contents for a register field

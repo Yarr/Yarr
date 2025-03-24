@@ -311,10 +311,3 @@ void HccCfg::setRegisterValue(HCCStarRegister addr, uint32_t val) {
     throw std::out_of_range("Attempt to set value for bad HCC register");
   }
 }
-
-HccStarRegInfo::SubInfoPtr HccStarRegInfo::subRegByName(const std::string &subRegName) const
-{
-    // This already throws runtime_error if bad string
-    auto reg_enum = HccNames::subRegFromString(subRegName).value();
-    return subRegFromEnum(reg_enum);
-}

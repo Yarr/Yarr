@@ -37,9 +37,6 @@ class HccStarRegInfo {
         /// The list of registers to write to
         std::map<unsigned, InfoPtr> hccWriteMap;
 
-        /// Return sub register info for name, throws std::runtime_error
-        SubInfoPtr subRegByName(const std::string &subRegName) const;
-
         /// Return sub register info from enum, throws std::runtime_error
         SubInfoPtr subRegFromEnum(HCCStarSubRegister subReg) const {
           try {
@@ -95,22 +92,10 @@ class HccCfg {
             m_hccID = hccID;
         }
 
-        /// Set value of named register field
-        void setSubRegisterValue(std::string subRegName, uint32_t value) {
-            auto info = m_info->subRegByName(subRegName);
-            m_registerMap.at(info->m_regAddress)->getSubRegister(info).updateValue(value);
-        }
-
         /// Set value of register field
         void setSubRegisterValue(HCCStarSubRegister subReg, uint32_t value) {
             auto info = m_info->subRegFromEnum(subReg);
             m_registerMap.at(info->m_regAddress)->getSubRegister(info).updateValue(value);
-        }
-
-        /// Get value of named register field
-        uint32_t getSubRegisterValue(std::string subRegName) const {
-            auto info = m_info->subRegByName(subRegName);
-            return m_registerMap.at(info->m_regAddress)->getSubRegister(info).getValue();
         }
 
         /// Get value of register field
@@ -119,22 +104,10 @@ class HccCfg {
             return m_registerMap.at(info->m_regAddress)->getSubRegister(info).getValue();
         }
 
-        /// Retrieve address of register corresponding to named register field
-        int getSubRegisterParentAddr(std::string subRegName) const {
-            auto info = m_info->subRegByName(subRegName);
-            return info->getRegAddress();
-        }
-
         /// Retrieve address of register corresponding to register field
         int getSubRegisterParentAddr(HCCStarSubRegister subReg) const {
             auto info = m_info->subRegFromEnum(subReg);
             return info->getRegAddress();
-        }
-
-        /// Retrieve full value of register containing named register field
-        uint32_t getSubRegisterParentValue(std::string subRegName) const {
-            auto info = m_info->subRegByName(subRegName);
-            return m_registerMap.at(info->m_regAddress)->getValue();
         }
 
         /// Retrieve full value of register containing register field

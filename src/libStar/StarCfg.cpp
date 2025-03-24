@@ -83,71 +83,6 @@ int StarCfg::inputChannelForHistoChip(int histo_abc) const
     return -1;
 }
 
-void StarCfg::setSubRegisterValue(int chipIndex, std::string subRegName, uint32_t value)
-{
-    if (chipIndex == 0) {
-        //If HCC, looking name
-        if(HccNames::subRegStringIsValid(subRegName)) {
-            return m_hcc.setSubRegisterValue(subRegName, value);
-        } else {
-            std::cerr << " --> Error: Could not find HCC register \""<< subRegName << "\"" << std::endl;
-        }
-    } else {
-        //If looking for an ABC subregister enum
-        if (AbcNames::subRegStringIsValid(subRegName)) {
-            if (isAbcForInputChannel(chipIndex-1)) {
-                return abcFromIndex(chipIndex).setSubRegisterValue(subRegName, value);
-            }
-        } else {
-            std::cerr << " --> Error: Could not find ABC register \""<< subRegName << "\"" << std::endl;
-        }
-    }
-}
-
-uint32_t StarCfg::getSubRegisterValue(int chipIndex, std::string subRegName) const
-{
-    if (chipIndex == 0) {
-        // If HCC, look-up name
-        if (HccNames::subRegStringIsValid(subRegName)) {
-            return m_hcc.getSubRegisterValue(subRegName);
-        } else {
-            std::cerr << " --> Error: Could not find HCC sub-register \""<< subRegName << "\"" << std::endl;
-        }
-    } else {
-        //If looking for an ABC subregister enum
-        if (AbcNames::subRegStringIsValid(subRegName)) {
-            if (isAbcForInputChannel(chipIndex-1)) {
-                return abcFromIndex(chipIndex).getSubRegisterValue(subRegName);
-            }
-        } else {
-            std::cerr << " --> Error: Could not find ABC sub-register \""<< subRegName << "\"" << std::endl;
-        }
-    }
-    return 0;
-}
-
-int StarCfg::getSubRegisterParentAddr(int chipIndex, std::string subRegName)
-{
-    if (chipIndex == 0) {
-        // If HCC, looking name
-        if(HccNames::subRegStringIsValid(subRegName)) {
-            auto reg = HccNames::subRegFromString(subRegName).value();
-            return m_hcc.getSubRegisterParentAddr(reg);
-        } else {
-            std::cerr << " --> Error: Could not find HCC register \""<< subRegName << "\"" << std::endl;
-        }
-    } else {
-        // If looking for an ABC subregister enum
-        if (AbcNames::subRegStringIsValid(subRegName)) {
-            auto reg = AbcNames::subRegFromString(subRegName).value();
-            return m_abc_info->getSubRegisterParentAddr(reg);
-        } else {
-            std::cerr << " --> Error: Could not find ABC register \""<< subRegName << "\"" << std::endl;
-        }
-    }
-    return 0;
-}
-
 int StarCfg::getHCCSubRegisterParentAddr(HCCStarSubRegister subReg)
 {
     return m_hcc.getSubRegisterParentAddr(subReg);
@@ -162,30 +97,6 @@ int StarCfg::getABCSubRegisterParentAddr(int chipIndex, ABCStarSubRegister subRe
 }
 
 /// Get register value for named register field (either ABC or HCC)
-uint32_t StarCfg::getSubRegisterParentValue(int chipIndex, std::string subRegName)
-{
-    if (chipIndex == 0) {
-        // If HCC, looking name
-        if(HccNames::subRegStringIsValid(subRegName)) {
-            auto reg = HccNames::subRegFromString(subRegName).value();
-            return m_hcc.getSubRegisterParentValue(reg);
-        } else {
-            std::cerr << " --> Error: Could not find HCC register \""<< subRegName << "\"" << std::endl;
-        }
-    } else {
-        //If looking for an ABC subregister enum
-        if (AbcNames::subRegStringIsValid(subRegName)) {
-            auto reg = AbcNames::subRegFromString(subRegName).value();
-            if (isAbcForInputChannel(chipIndex-1)) {
-                return abcFromIndex(chipIndex).getSubRegisterParentValue(reg);
-            }
-        } else {
-            std::cerr << " --> Error: Could not find ABC register \""<< subRegName << "\"" << std::endl;
-        }
-    }
-    return 0;
-}
-
 uint32_t StarCfg::getHCCSubRegisterParentValue(HCCStarSubRegister subReg)
 {
     return m_hcc.getSubRegisterParentValue(subReg);

@@ -214,13 +214,6 @@ AbcStarRegInfo::AbcStarRegInfo(int version) {
     }
 }
 
-AbcStarRegInfo::SubInfoPtr AbcStarRegInfo::subRegByName(const std::string &subRegName) const
-{
-    // This already throws runtime_error if bad string
-    auto reg_enum = AbcNames::subRegFromString(subRegName).value();
-    return subRegFromEnum(reg_enum);
-}
-
 AbcCfg::AbcCfg(int version)
   : m_abcID(0),
     m_registerMap{},
