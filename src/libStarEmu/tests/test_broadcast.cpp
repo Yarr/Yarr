@@ -189,7 +189,7 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
   CAPTURE(addr1);
   CAPTURE(val1);
 
-  dummyCfg.setABCRegister(addr1, val1, 0xf);
+  dummyCfg.setABCRegisterByID(addr1, val1, 0xf);
   // Expected STR_DEL: 12
   REQUIRE(dummyCfg.getABCSubRegisterValue(1, ABCStarSubRegister::STR_DEL) == 12);
 
@@ -201,7 +201,7 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
   CAPTURE(addr2);
   CAPTURE(val2);
 
-  dummyCfg.setABCRegister(addr2, val2, 0xf);
+  dummyCfg.setABCRegisterByID(addr2, val2, 0xf);
   // Expected STR_DEL: 21
   REQUIRE(dummyCfg.getABCSubRegisterValue(1, ABCStarSubRegister::STR_DEL) == 21);
 
@@ -213,7 +213,7 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
   CAPTURE(addr3);
   CAPTURE(val3);
 
-  dummyCfg.setABCRegister(addr3, val3, 0xf);
+  dummyCfg.setABCRegisterByID(addr3, val3, 0xf);
   // Expected STR_DEL: 13
   REQUIRE(dummyCfg.getABCSubRegisterValue(1, ABCStarSubRegister::STR_DEL) == 13);
 
@@ -224,7 +224,7 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
   CAPTURE(addr4);
   CAPTURE(val4);
 
-  dummyCfg.setABCRegister(addr4, val4, 0xf);
+  dummyCfg.setABCRegisterByID(addr4, val4, 0xf);
   // Expected STR_DEL: 30
   REQUIRE(dummyCfg.getABCSubRegisterValue(1, ABCStarSubRegister::STR_DEL) == 30);
 }

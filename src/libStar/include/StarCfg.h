@@ -25,9 +25,6 @@ class StarCfg : public FrontEndCfg {
   StarCfg(int abc_version, int hcc_version);
   ~StarCfg() override;
 
-  //Function to make all Registers for the ABC
-  void configure_ABC_Registers(int chipID);
-
   /// Return value of HCC register
   uint32_t getHCCRegister(HCCStarRegister addr) const;
 
@@ -35,10 +32,10 @@ class StarCfg : public FrontEndCfg {
   void     setHCCRegister(HCCStarRegister addr, uint32_t val);
 
   /// Get value of ABC register (by ABC communications ID)
-  uint32_t getABCRegister(ABCStarRegister addr, int32_t chipID );
+  uint32_t getABCRegisterByID(ABCStarRegister addr, int32_t chipID );
 
   /// Set value of ABC register (by ABC communications ID)
-  void     setABCRegister(ABCStarRegister addr, uint32_t val, int32_t chipID);
+  void     setABCRegisterByID(ABCStarRegister addr, uint32_t val, int32_t chipID);
 
   /// Return value of HCC register (integer version)
   inline const uint32_t getHCCRegister(uint32_t addr) const {
@@ -51,15 +48,15 @@ class StarCfg : public FrontEndCfg {
   }
 
   /// Get value of ABC register (by integer address and ABC communications ID)
-  inline const uint32_t getABCRegister(uint32_t addr, int32_t chipID )
+  inline const uint32_t getABCRegisterByID(uint32_t addr, int32_t chipID )
   {
-    return getABCRegister((ABCStarRegister)addr, chipID);
+    return getABCRegisterByID((ABCStarRegister)addr, chipID);
   }
 
   /// Set value of ABC register (by integer address and ABC communications ID)
-  inline void setABCRegister(uint32_t addr, uint32_t val, int32_t chipID)
+  inline void setABCRegisterByID(uint32_t addr, uint32_t val, int32_t chipID)
   {
-    setABCRegister((ABCStarRegister)addr, val, chipID);
+    setABCRegisterByID((ABCStarRegister)addr, val, chipID);
   }
 
   /// Get the ID used to communicate with this HCC

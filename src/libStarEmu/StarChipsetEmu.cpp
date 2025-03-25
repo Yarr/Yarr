@@ -262,7 +262,7 @@ void StarChipsetEmu::writeRegister(const uint32_t data, const uint8_t address,
       return;
     } else {
       try {
-        m_starCfg->setABCRegister(address, data, ABCID);
+        m_starCfg->setABCRegisterByID(address, data, ABCID);
       } catch (std::out_of_range &e) {
         logger->warn("Unexpected out of range for register write of ABCStar register 0x{:x}. Skip writing.", address);
         return;
@@ -322,7 +322,7 @@ void StarChipsetEmu::readRegister(const uint8_t address, bool isABC,
     // read register
     unsigned data;
     try {
-      data = m_starCfg->getABCRegister(address, ABCID);
+      data = m_starCfg->getABCRegisterByID(address, ABCID);
     } catch(std::out_of_range &e) {
       // non-existant register
       data = 0xffffffff;
@@ -617,7 +617,7 @@ void StarChipsetEmu::doHPR_ABC(LCB::Frame frame, unsigned ichip) {
   if (lcb_lock_changed or hpr_periodic or hpr_initial) {
     auto packet_abchpr = buildABCRegisterPacket(
       PacketTypes::ABCHPR, ichip-1, (int)ABCStarRegister::HPR,
-      m_starCfg->getABCRegister(ABCStarRegister::HPR, abcID), (abcID&0xf) << 12);
+      m_starCfg->getABCRegisterByID(ABCStarRegister::HPR, abcID), (abcID&0xf) << 12);
 
     sendPacket(packet_abchpr);
 
@@ -661,7 +661,7 @@ void StarChipsetEmu::setABCStarHPR(LCB::Frame frame, int abcID) {
     LCB_SCmd_Err << 15 | LCB_ErrCnt_Ovfl << 14 | LCB_Decode_Err << 13 |
     LCB_Locked << 12 | ADC_dat;
 
-  m_starCfg->setABCRegister(ABCStarRegister::HPR, hprWord, abcID);
+  m_starCfg->setABCRegisterByID(ABCStarRegister::HPR, hprWord, abcID);
 }
 
 //
