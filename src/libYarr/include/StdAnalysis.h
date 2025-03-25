@@ -23,7 +23,12 @@
 
 class OccupancyAnalysis : public AnalysisAlgorithm {
     public:
-        OccupancyAnalysis() : AnalysisAlgorithm() {createMask = true; LowThr = 0.0; HighThr = 0.0;}
+        OccupancyAnalysis() : AnalysisAlgorithm() {
+            createMask = true;
+            LowThr = 0.0;
+            HighThr = 0.0;
+            coreColMask = false;
+        }
         ~OccupancyAnalysis() override = default;
 
         void init(const ScanLoopInfo *s) override;
@@ -34,7 +39,7 @@ class OccupancyAnalysis : public AnalysisAlgorithm {
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         bool createMask;
-	bool coreColMask;
+	    bool coreColMask;
         unsigned n_count;
         unsigned injections;
 	double LowThr, HighThr;
