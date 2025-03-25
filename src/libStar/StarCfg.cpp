@@ -88,12 +88,9 @@ int StarCfg::getHCCSubRegisterParentAddr(HCCStarSubRegister subReg)
     return m_hcc.getSubRegisterParentAddr(subReg);
 }
 
-int StarCfg::getABCSubRegisterParentAddr(int chipIndex, ABCStarSubRegister subReg)
+int StarCfg::getABCSubRegisterParentAddr(ABCStarSubRegister subReg)
 {
-    if (isAbcForInputChannel(chipIndex-1)) {
-        return m_abc_info->getSubRegisterParentAddr(subReg);
-    }
-    return 0;
+    return m_abc_info->getSubRegisterParentAddr(subReg);
 }
 
 /// Get register value for named register field (either ABC or HCC)

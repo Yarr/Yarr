@@ -117,8 +117,8 @@ class StarCfg : public FrontEndCfg {
   /// Get register address for HCC register field
   int getHCCSubRegisterParentAddr(HCCStarSubRegister subReg);
 
-  /// Get register address for ABC register field (should be input channel?)
-  int getABCSubRegisterParentAddr(int chipIndex, ABCStarSubRegister subReg);
+  /// Get register address for ABC register field
+  int getABCSubRegisterParentAddr(ABCStarSubRegister subReg);
 
   /// Get register value for named register field (HCC)
   uint32_t getHCCSubRegisterParentValue(HCCStarSubRegister subReg);

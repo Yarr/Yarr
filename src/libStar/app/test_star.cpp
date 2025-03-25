@@ -173,7 +173,7 @@ std::tuple<uint32_t, uint32_t> updateABCSubRegister(const std::string& subRegNam
 
   // chipIndex 1 for the first ABC
   int chipIndex = 1;
-  uint32_t addr = cfg.getABCSubRegisterParentAddr(chipIndex, subReg);
+  uint32_t addr = cfg.getABCSubRegisterParentAddr(subReg);
   uint32_t newValue = cfg.getABCSubRegisterParentValue(chipIndex, subReg);
 
   return std::make_tuple(addr, newValue);

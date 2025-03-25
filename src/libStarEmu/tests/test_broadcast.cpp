@@ -166,7 +166,7 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
 
   // Use the global FE to update a sub-register "BCAL" of all FEs
   // BCAL is in the same register as STR_DEL
-  REQUIRE(star1->getABCSubRegisterParentAddr(1, ABCStarSubRegister::BCAL) == star1->getABCSubRegisterParentAddr(1, ABCStarSubRegister::STR_DEL));
+  REQUIRE(star1->getABCSubRegisterParentAddr(ABCStarSubRegister::BCAL) == star1->getABCSubRegisterParentAddr(ABCStarSubRegister::STR_DEL));
 
   bk.getGlobalFe()->writeNamedRegister("ABCs_BCAL", 66);
   while(not emu->isCmdEmpty());

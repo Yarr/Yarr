@@ -79,7 +79,7 @@ TEST_CASE("StarCfg", "[star][config]") {
 
   REQUIRE (test_config.getABCchipID(abc_index) == abc_id);
 
-  REQUIRE ((ABCStarRegister)test_config.getABCSubRegisterParentAddr(abc_index, ABCStarSubRegister::TESTPATT1) == ABCStarRegister::CREG0);
+  REQUIRE ((ABCStarRegister)test_config.getABCSubRegisterParentAddr(ABCStarSubRegister::TESTPATT1) == ABCStarRegister::CREG0);
 
   test_config.setABCSubRegisterValue(abc_index, ABCStarSubRegister::TESTPATT1, 0x5);
   test_config.setABCSubRegisterValue(abc_index, ABCStarSubRegister::TESTPATT2, 0xa);
