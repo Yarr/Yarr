@@ -34,6 +34,11 @@ class SharedClient {
     void disableTx(FelixID_t fid);
     void enableRx(FelixID_t fid);
     void disableRx(FelixID_t fid);
+    // enable/disable all channels
+    void enableTx(); // enable all Tx links
+    void disableTx(); // disable all Tx links
+    void enableRx(); // enable all Rx links
+    void disableRx(); // disable all Rx links
 
     bool isTxEnabled(FelixID_t fid);
     bool isRxEnabled(FelixID_t fid);

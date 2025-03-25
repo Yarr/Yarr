@@ -59,9 +59,23 @@ void SharedClient::enableTx(FelixID_t fid) {
   m_txEnables[fid] = true;
 }
 
+void SharedClient::enableTx() {
+  std::unique_lock lock(mtx);
+  for (auto& [fid, enable] : m_txEnables) {
+    enable = true;
+  }
+}
+
 void SharedClient::disableTx(FelixID_t fid) {
   std::unique_lock lock(mtx);
   m_txEnables[fid] = false;
+}
+
+void SharedClient::disableTx() {
+  std::unique_lock lock(mtx);
+  for (auto& [fid, enable] : m_txEnables) {
+    enable = false;
+  }
 }
 
 void SharedClient::enableRx(FelixID_t fid) {
@@ -69,9 +83,23 @@ void SharedClient::enableRx(FelixID_t fid) {
   m_rxEnables[fid] = true;
 }
 
+void SharedClient::enableRx() {
+  std::unique_lock lock(mtx);
+  for (auto& [fid, enable] : m_rxEnables) {
+    enable = true;
+  }
+}
+
 void SharedClient::disableRx(FelixID_t fid) {
   std::unique_lock lock(mtx);
   m_rxEnables[fid] = false;
+}
+
+void SharedClient::disableRx() {
+  std::unique_lock lock(mtx);
+  for (auto& [fid, enable] : m_rxEnables) {
+    enable = false;
+  }
 }
 
 bool SharedClient::isTxEnabled(FelixID_t fid) {
