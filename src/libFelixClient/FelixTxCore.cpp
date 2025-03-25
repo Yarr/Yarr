@@ -33,12 +33,12 @@ void FelixTxCore::enableChannel(FelixID_t fid) {
     }
   }
 
-  m_enables[fid] = true;
+  fclient->enableTx(fid);
 }
 
 void FelixTxCore::disableChannel(FelixID_t fid) {
   ftlog->debug("Disable Tx link: 0x{:x}", fid);
-  m_enables[fid] = false;
+  fclient->disableTx(fid);
 }
 
 FelixTxCore::FelixID_t FelixTxCore::fid_from_channel(uint32_t chn) {
@@ -64,7 +64,7 @@ bool FelixTxCore::checkChannel(FelixID_t fid) {
     switch(fwMode()){
     case FelixTools::FELIX_FW_MODE::ITK_Pixel: //ITk Pixel firmware
     case FelixTools::FELIX_FW_MODE::ITK_Strip: //ITk Strip firmware
-      fclient->send_data(fid, static_cast<const unsigned char*>(&(m_idleWords[0])), m_idleWords.size(), true); 
+      fclient->getClient()->send_data(fid, static_cast<const unsigned char*>(&(m_idleWords[0])), m_idleWords.size(), true);
       break;
     default:
       ftlog->error("FELIX firmware version not supported in YARR. Try again...");
@@ -78,21 +78,21 @@ bool FelixTxCore::checkChannel(FelixID_t fid) {
   return true;
 }
 
-/// Update FELIX BROADCAST_ENABLE_[00:23] registers based on m_enables
+/// Update FELIX BROADCAST_ENABLE_[00:23] registers based on m_fifo
 void FelixTxCore::updateFelixBroadcastRegs() {
   ftlog->info("Set FELIX broadcast enable registers");
 
   std::map<unsigned, std::bitset<NBITS_BROADCAST_ENABLE>> broadcastRegValueMaps;
   // key: link number; value: BROADCAST_ENABLE_XX value
 
-  for (const auto& [fid, enable] : m_enables) {
+  for (const auto& [fid, fifo] : m_fifo) {
     auto link_id = FelixTools::link_from_fid(fid);
     auto elink = FelixTools::elink_from_fid(fid);
 
     // skip if broadcast virtual elink
     if (link_id == BroadcastLink and elink == BroadcastElink) continue;
 
-    if (enable) {
+    if (fclient->isTxEnabled(fid)) {
       broadcastRegValueMaps[link_id].set(elink);
     } else {
       broadcastRegValueMaps[link_id].reset(elink);
@@ -154,10 +154,7 @@ void FelixTxCore::setCmdEnable(std::vector<uint32_t> chns) {
 }
 
 void FelixTxCore::disableCmd() {
-  for (auto& e : m_enables) {
-    disableChannel(e.first);
-  }
-
+  fclient->disableTx();
   m_numEnabledChns = 0;
 }
 
@@ -170,7 +167,7 @@ bool FelixTxCore::isCmdEmpty() {
   bool is_buffer_empty = true;
   for (const auto& [chn, buffer] : m_fifo) {
     // consider only enabled channels
-    if (not m_enables[chn])
+    if (not fclient->isTxEnabled(chn))
       continue;
 
     if (not buffer.empty()){
@@ -194,7 +191,7 @@ void FelixTxCore::writeFifo(uint32_t value) {
   } else {
     // write value to all enabled channels
     for (auto& [chn, buffer] : m_fifo) {
-      if (m_enables[chn]) {
+      if (fclient->isTxEnabled(chn)) {
         ftlog->trace("FelixTxCore::writeFifo link=0x{:x} val=0x{:08x}", chn, value);
         fillFifo(buffer, value);
       }
@@ -234,8 +231,8 @@ void FelixTxCore::sendFifo(FelixID_t fid, std::vector<uint8_t>& fifo) {
   }
 
   bool flush = true;
-  //fclient->init_send_data(fid);
-  fclient->send_data(fid, fifo.data(), fifo.size(), flush);
+  //fclient->getClient()->init_send_data(fid);
+  fclient->getClient()->send_data(fid, fifo.data(), fifo.size(), flush);
 
   // clear the fifo
   fifo.clear();
@@ -255,7 +252,7 @@ void FelixTxCore::releaseFifo() {
   } else {
     for (auto& [chn, buffer] : m_fifo) {
       // skip disabled channels
-      if (not m_enables[chn])
+      if (not fclient->isTxEnabled(chn))
         continue;
 
       if(buffer.size() > m_bufferSize){
@@ -430,8 +427,8 @@ void FelixTxCore::prepareTrigger() {
     prepareTrigger(m_trigFifo[fid_broadcast]);
 
   } else {
-    for (const auto& [chn, enable] : m_enables) {
-      if (not enable) continue;
+    for (const auto& [chn, fifo] : m_fifo) {
+      if (not fclient->isTxEnabled(chn)) continue;
       prepareTrigger(m_trigFifo[chn]);
     }
   }
@@ -513,7 +510,7 @@ void FelixTxCore::trigger() {
     int nRetriesIfFails=0;
     while (nRetriesIfFails<3) {
       try {
-	fclient->send_data(fid_broadcast, m_trigFifo[fid_broadcast].data(), m_trigFifo[fid_broadcast].size(), flush);
+	fclient->getClient()->send_data(fid_broadcast, m_trigFifo[fid_broadcast].data(), m_trigFifo[fid_broadcast].size(), flush);
 	break;
       } catch (FelixClientResourceNotAvailableException &e) {
 	ftlog->warn("Exception from FelixClient::send_data: {}. Retrying.", e.what());
@@ -528,7 +525,7 @@ void FelixTxCore::trigger() {
 
   } else {
     for (auto& [chn, buffer] : m_trigFifo) {
-      if (not m_enables[chn]) continue;
+      if (not fclient->isTxEnabled(chn)) continue;
 
       ftlog->trace("FIFO[{}][{}]: ", chn, buffer.size());
       for (const auto& word : buffer) {
@@ -539,7 +536,7 @@ void FelixTxCore::trigger() {
       int nRetriesIfFails=0;
       while (nRetriesIfFails<3) {
 	try {
-	  fclient->send_data(chn, buffer.data(), buffer.size(), flush);
+	  fclient->getClient()->send_data(chn, buffer.data(), buffer.size(), flush);
 	  break;
 	} catch (FelixClientResourceNotAvailableException &e) {
 	  ftlog->warn("Exception from FelixClient::send_data: {}. Retrying.", e.what());
@@ -620,7 +617,7 @@ void FelixTxCore::writeConfig(json& j) {
   j["isCmdEmptyWaitTime"] = m_isCmdEmptyWaitTime;
 }
 
-void FelixTxCore::setClient(std::shared_ptr<FelixClientThread> client) {
+void FelixTxCore::setClient(std::shared_ptr<SharedClient> client) {
   fclient = client;
 }
 
@@ -634,7 +631,7 @@ FelixClientThread::Reply FelixTxCore::accessFelixRegister(
   // felix-register can potentially serve multiple devices
   std::vector<FelixClientThread::Reply> replies;
 
-  auto status_summary = fclient->send_cmd(fids, cmd, cmd_args, replies);
+  auto status_summary = fclient->getClient()->send_cmd(fids, cmd, cmd_args, replies);
 
   if (replies.empty()) {
     ftlog->warn("Status: {}", FelixClientThread::to_string(status_summary));

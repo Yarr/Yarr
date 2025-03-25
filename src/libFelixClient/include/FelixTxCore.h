@@ -3,6 +3,7 @@
 
 #include "TxCore.h"
 #include "FelixTools.h"
+#include "SharedClient.h"
 
 #include "felix/felix_client_thread.hpp"
 #include "storage.hpp"
@@ -59,7 +60,7 @@ protected:
 
   void loadConfig(const json &j); 		     // read configuration from json
   void writeConfig(json& j); 		         // write configuration to json
-  void setClient(std::shared_ptr<FelixClientThread> client); // set Felix client
+  void setClient(std::shared_ptr<SharedClient> client); // set Felix client
 
   using FelixID_t = FelixTools::FelixID_t;
 
@@ -86,7 +87,6 @@ protected:
   FelixClientThread::Reply accessFelixRegister(FelixClientThread::Cmd, const std::vector<std::string>&);
   bool checkReply(const FelixClientThread::Reply&);
 
-  std::map<FelixID_t, bool> m_enables; // enable flag for each elink
   std::map<FelixID_t, std::vector<uint8_t> > m_fifo;     // data buffer
   std::map<FelixID_t, std::vector<uint8_t> > m_trigFifo; // buffers for trigger
 
@@ -123,7 +123,7 @@ protected:
   uint8_t m_protocol {0}; // protocol ID
   unsigned m_isCmdEmptyWaitTime {100}; // in milliseconds
 
-  std::shared_ptr<FelixClientThread> fclient;
+  std::shared_ptr<SharedClient> fclient;
 };
 
 #endif
