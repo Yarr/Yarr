@@ -16,20 +16,21 @@ FelixRxCore::~FelixRxCore()
   stopMonitor();
 }
 
-  // Unsubscribe from all links
-  for (const auto& [fid, stats] : m_qStats) {
-    if (stats.connected) {
-      fclient->unsubscribe(fid);
-    }
+void FelixRxCore::initRxChannels(const std::vector<uint32_t>& channels) {
+  frlog->info("Initializing Rx channels");
+  std::vector<std::vector<FelixID_t>> fid_lists(m_nThreads);
+
+  unsigned ithread {0};
+  for (auto chn : channels) {
+    auto fid = fid_from_channel(chn);
+    fid_lists[ithread%m_nThreads].push_back(fid);
+    ithread++;
   }
 
-  // Clean up
-  // delete data that are not read from rawData
-  frlog->debug("Flush receiver queue...");
-  int count = 0;
-  while (!m_rawData.empty()) {
-    m_rawData.popData();
-    count++;
+  // Start threads to subscribe to channels
+  for (unsigned i=0; i<m_nThreads; i++) {
+    m_rxThreads.emplace_back(std::make_unique<FelixRxThread>(m_client, fid_lists[i]));
+    m_rxThreads.back()->run();
   }
 
   if (m_runMonitor) {
@@ -38,23 +39,13 @@ FelixRxCore::~FelixRxCore()
 }
 
 void FelixRxCore::enableChannel(FelixID_t fid) {
-  frlog->debug("Subscribe to Rx link: 0x{:x}", fid);
-  try {
-    fclient->subscribe(fid);
-    m_enables[fid] = true;
-    m_qStats[fid];
-  } catch (std::runtime_error& e) {
-    frlog->warn("Fail to subscribe to Rx link 0x{:x}: {}", fid, e.what());
-  }
+  frlog->debug("Enable Rx link: 0x{:x}", fid);
+  m_client->enableRx(fid);
 }
 
 void FelixRxCore::disableChannel(FelixID_t fid) {
-  frlog->debug("Unsubscribe from Rx link: 0x{:x}", fid);
-  if (m_enables.find(fid) != m_enables.end()) {
-    m_enables[fid] = false;
-  } else {
-    frlog->warn("Rx link 0x{:x} was never enabled", fid);
-  }
+  frlog->debug("Disable Rx link: 0x{:x}", fid);
+  m_client->disableRx(fid);
 }
 
 FelixRxCore::FelixID_t FelixRxCore::fid_from_channel(uint32_t chn) {
@@ -90,9 +81,7 @@ void FelixRxCore::setRxEnable(std::vector<uint32_t> channels) {
 }
 
 void FelixRxCore::disableRx() {
-  for (auto& e : m_enables) {
-    disableChannel(e.first);
-  }
+  m_client->disableRx();
 }
 
 // still needed?
@@ -102,119 +91,41 @@ void FelixRxCore::maskRxEnable(uint32_t val, uint32_t mask) {
 
 void FelixRxCore::flushBuffer() {
   // Flush the receiver queue
-  m_doFlushBuffer = true;
+  for (auto& frt : m_rxThreads) frt->flush(true);
   std::this_thread::sleep_for(std::chrono::milliseconds(m_flushWaitTime));
-  m_doFlushBuffer = false;
+  for (auto& frt : m_rxThreads) frt->flush(false);
 }
 
 std::vector<RawDataPtr> FelixRxCore::readData() {
   frlog->trace("FelixRxCore::readData");
   std::vector<RawDataPtr> dataVec;
 
-  std::unique_ptr<RawData> rdp = m_rawData.popData();
-
-  if (rdp) {
-    m_total_data_out += 1;
-    m_total_bytes_out += (rdp->getSize()) * sizeof(uint32_t);
-
-    dataVec.push_back(std::move(rdp));
+  for (auto& frt : m_rxThreads) {
+    auto data = frt->readData();
+    if (data) {
+      dataVec.push_back(std::move(data));
+    }
   }
 
   return dataVec;
 }
 
-void FelixRxCore::on_data(FelixID_t fid, const uint8_t* data, size_t size, uint8_t status) {
-  // skip if the channel is disabled
-  if (not m_enables[fid])
-    return;
-
-  frlog->trace("Received message from 0x{:x}", fid);
-
-  if (frlog->should_log(spdlog::level::trace)){
-    frlog->trace(" message size: {}", size);
-    for (size_t b=0; b < size; b++) {
-      frlog->trace(" 0x{:x}", data[b]);
-    }
-  }
-
-  // stats
-  m_qStats[fid].messages_received += 1;
-  m_qStats[fid].bytes_received += size;
-
-  if (status == FELIX_STATUS_FW_MALF or status == FELIX_STATUS_SW_MALF) {
-    m_qStats[fid].error += 1;
-  }
-  if (status == FELIX_STATUS_FW_CRC) {
-    m_qStats[fid].crc += 1;
-  }
-  if (status == FELIX_STATUS_FW_TRUNC or status == FELIX_STATUS_SW_TRUNC) {
-    m_qStats[fid].truncated += 1;
-  }
-
-  if (m_doFlushBuffer)
-    return;
-
-  // make RawData from byte array
-  uint32_t numWords = (uint32_t)( (size + 3) / 4 );
-
-  if (numWords == 0)
-    return;
-
-  // increment counters before pushData
-  m_total_data_in += 1;
-  m_total_bytes_in += numWords * sizeof(uint32_t);
-
-  // for now:
-  // channel number consists of 6-bit elink, 13-bit link ID, 1-bit is_virtual
-  uint32_t mychn = (fid >> 16) & 0x000fffff;
-
-  auto rd = std::make_unique<RawData>(mychn, numWords);
-
-  // copy data to RawData's buffer
-  std::memcpy(rd->getBuf(), data, size);
-
-  m_rawData.pushData(std::move(rd));
-}
-
-void FelixRxCore::on_connect(FelixID_t fid) {
-  try {
-    m_qStats.at(fid).connected = true;
-  } catch (std::out_of_range &e) {
-    frlog->trace("Stats of fid 0x{:x} is not tracked.");
-  }
-}
-
-void FelixRxCore::on_disconnect(FelixID_t fid) {
-  try {
-    m_qStats.at(fid).connected = false;
-  } catch (std::out_of_range &e) {
-    // For example, this is an fid used for reading/writing FELIX registers
-    frlog->trace("Stats of fid 0x{:x} is not tracked.");
-  }
-}
-
-void FelixRxCore::setClient(std::shared_ptr<FelixClientThread> client) {
-  fclient = client;
+void FelixRxCore::setClient(std::shared_ptr<SharedClient> client) {
+  m_client = client;
 }
 
 uint32_t FelixRxCore::getDataRate() {
-  double total_byte_rate{0};
-  for (const auto& [fid, stats] : m_qStats) {
-    total_byte_rate += stats.byte_rate;
-  }
-
-  if (total_byte_rate < 0) {
-    // Monitor is not run
-    frlog->warn("Data rates have not been calculated. Call FelixRxCore::runMonitor to check the Rx queue.");
-    return 0;
+  uint32_t data_rate{0};
+  for (auto& frt : m_rxThreads) {
+    data_rate += frt->getDataRate();
   }
   return data_rate;
 }
 
 uint32_t FelixRxCore::getCurCount() {
-  uint64_t cur_cnt = m_total_data_in - m_total_data_out;
-  if (cur_cnt > std::numeric_limits<uint32_t>::max()) {
-    frlog->warn("FelixRxCore: counter overflow");
+  uint32_t cur_cnt{0};
+  for (auto& frt : m_rxThreads) {
+    cur_cnt += frt->getCurCount();
   }
   return cur_cnt;
 }
@@ -260,13 +171,9 @@ void FelixRxCore::loadConfig(const json &j) {
     else frlog->info(" message size limit = unlimited");
   }
 
-  if (j.contains("waitTime")) {
-    m_waitTime = std::chrono::microseconds(j["waitTime"]);
-    frlog->info(" rx wait time = {} microseconds", m_waitTime.count());
-  }
-
-  if (m_runMonitor) {
-    runMonitor();
+  if (j.contains("nthreads")) {
+    m_nThreads = j["nthreads"];
+    frlog->info(" nthreads = {}", m_nThreads);
   }
 }
 
@@ -278,6 +185,7 @@ void FelixRxCore::writeConfig(json &j) {
   j["enableMonitor"] = m_runMonitor;
   j["monitorInterval"] = m_interval_ms;
   j["queueLimitMB"] = m_queue_limit;
+  j["nthreads"] = m_nThreads;
 }
 
 void FelixRxCore::runMonitor(bool print_info) {
