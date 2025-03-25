@@ -301,15 +301,20 @@ namespace ScanHelper {
 
 
     void buildRawDataProcs( std::map<unsigned, std::unique_ptr<FeDataProcessor> > &procs,
+                             const json& scanCfg,
             Bookkeeper &bookie,
             const std::string &chipType) {
         bhlog->info("Loading RawData processors ..");
+        json procConfig;
+        if(scanCfg["scan"].contains("processor")) {
+            procConfig = scanCfg["scan"]["processor"]["config"];
+        }
         for (unsigned id = 0; id<bookie.getNumOfEntries(); id++) {
             auto fe = bookie.getFe(id);
             procs[id] = StdDict::getDataProcessor(chipType);
+            procs[id]->loadConfig(procConfig);
             procs[id]->connect(dynamic_cast<FrontEndCfg*>(fe), &bookie.getFe(id)->clipRawData, &bookie.getFe(id)->clipData);
             procs[id]->connect(&bookie.getFe(id)->clipProcFeedback);
-            // TODO load global processor config
             // TODO load chip specific config
         }
     }

@@ -49,6 +49,7 @@ namespace ScanHelper {
 // TODO would prefer not to need bookie --> deep dependency!
 // TODO Do not want to use the raw pointer ScanBase*
         void buildRawDataProcs( std::map<unsigned, std::unique_ptr<FeDataProcessor> > &procs,
+                                const json& scanCfg,
                            Bookkeeper &bookie,
                            const std::string &chipType);
 
