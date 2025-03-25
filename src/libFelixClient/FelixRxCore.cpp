@@ -1,11 +1,6 @@
 #include "FelixRxCore.h"
 #include "logging.h"
 
-#include "felix/felix_client_status.h"
-
-#include <cstring> // needed for std::memcpy
-#include <limits>
-
 namespace {
   auto frlog = logging::make_log("FelixRxCore");
 }
@@ -14,10 +9,12 @@ FelixRxCore::FelixRxCore() = default;
 
 FelixRxCore::~FelixRxCore()
 {
-  // Stop monitoring if needed
+  for (auto& frt : m_rxThreads) {
+    frt->stop();
+  }
+
   stopMonitor();
-  if (m_monitor_thread.joinable())
-    m_monitor_thread.join();
+}
 
   // Unsubscribe from all links
   for (const auto& [fid, stats] : m_qStats) {
@@ -34,10 +31,9 @@ FelixRxCore::~FelixRxCore()
     m_rawData.popData();
     count++;
   }
-  if (count) {
-    frlog->debug(" ...done ({} stray data blocks)", count);
-  } else {
-    frlog->debug(" ...done");
+
+  if (m_runMonitor) {
+    runMonitor();
   }
 }
 
@@ -139,12 +135,6 @@ void FelixRxCore::on_data(FelixID_t fid, const uint8_t* data, size_t size, uint8
     for (size_t b=0; b < size; b++) {
       frlog->trace(" 0x{:x}", data[b]);
     }
-    frlog->trace(" status: 0x{:x}", status);
-  }
-
-  if (m_maxMessageSize > 0 && size > m_maxMessageSize) {
-    frlog->error("dropping the message, because the size is larger than the allowed maximum: {} > {}", size, m_maxMessageSize);
-    return;
   }
 
   // stats
@@ -218,8 +208,7 @@ uint32_t FelixRxCore::getDataRate() {
     frlog->warn("Data rates have not been calculated. Call FelixRxCore::runMonitor to check the Rx queue.");
     return 0;
   }
-
-  return total_byte_rate;
+  return data_rate;
 }
 
 uint32_t FelixRxCore::getCurCount() {
@@ -286,72 +275,19 @@ void FelixRxCore::writeConfig(json &j) {
   j["connectorID"] = m_cid;
   j["protocol"] = m_protocol;
   j["flushWaitTime"] = m_flushWaitTime;
-  j["enableMonitor"] = m_runMonitor.load();
+  j["enableMonitor"] = m_runMonitor;
   j["monitorInterval"] = m_interval_ms;
   j["queueLimitMB"] = m_queue_limit;
 }
 
 void FelixRxCore::runMonitor(bool print_info) {
-
-  // stop the monitoring loop in case it has been running
-  stopMonitor();
-  if (m_monitor_thread.joinable()) m_monitor_thread.join();
-
-  frlog->debug("Starting monitor thread");
-  m_runMonitor = true;
-
-  m_monitor_thread = std::thread([this, print_info]{
-      if (frlog->should_log(spdlog::level::trace)) {
-        std::stringstream ss;
-        ss << std::this_thread::get_id();
-        frlog->trace("Monitor thread id {}", ss.str());
-      }
-
-      while (m_runMonitor) {
-        // Check data size in the Rx queue
-        uint64_t bytes_in_queue = m_total_bytes_in - m_total_bytes_out;
-        if (bytes_in_queue > m_queue_limit*1e6) {
-          // Too much data to handle. Stop adding data before OOM
-          frlog->critical("Data are not consumed quickly enough!! Stop taking data into Rx queue ...");
-          flushBuffer();
-          continue;
-        }
-
-        // Data rate
-        for (auto& [fid, stats] : m_qStats) {
-          stats.reset_counters();
-        }
-
-        m_t0 = std::chrono::steady_clock::now();
-
-        // wait
-        std::this_thread::sleep_for(std::chrono::milliseconds(m_interval_ms));
-
-        for (auto& [fid, stats] : m_qStats) {
-          std::chrono::duration<double> time = std::chrono::steady_clock::now() - m_t0;
-          stats.msg_rate = stats.messages_received / time.count(); // Hz
-          stats.byte_rate =  stats.bytes_received / time.count(); // B/s
-        }
-
-        if (print_info) {
-          frlog->info("--------------------------------");
-          for (const auto& [fid, stats] : m_qStats) {
-            frlog->info("Rx fid 0x{:x}: data rate = {:.2f} Mb/s  message rate = {:.2f} kHz", fid, stats.byte_rate*8e-6, stats.msg_rate/1000);
-
-            if (stats.error or stats.crc or stats.truncated) {
-              frlog->warn("FELIX errors on fid 0x{:x}: fw/sw errors = {}  crc errors = {}  fw/sw truncations = {}", fid, stats.error, stats.crc, stats.truncated);
-            }
-          }
-
-          frlog->debug("Data size in rx queue: {} MB (in: {} MB, out: {} MB)", (m_total_bytes_in - m_total_bytes_out)/1e6, m_total_bytes_in/1e6, m_total_bytes_out/1e6);
-        }
-
-      } // end of while (m_runMonitor)
-
-      frlog->debug("Rx monitor finished");
-    });
+  for (auto& frt : m_rxThreads) {
+    frt->runMonitor(m_interval_ms, m_queue_limit, print_info);
+  }
 }
 
 void FelixRxCore::stopMonitor() {
-  m_runMonitor = false;
+  for (auto& frt : m_rxThreads) {
+    frt->stopMonitor();
+  }
 }

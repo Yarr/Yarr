@@ -11,9 +11,11 @@ namespace {
 
 FelixRxThread::FelixRxThread(
   std::shared_ptr<SharedClient> client, 
-  const std::vector<FelixID_t>& fid_list
+  const std::vector<FelixID_t>& fid_list,
+  size_t maxMessageSize
 ) 
 : m_client(client)
+, m_maxMessageSize(maxMessageSize)
 {
   for (const auto& fid : fid_list) {
     m_fidStats[fid];
@@ -57,14 +59,12 @@ void FelixRxThread::stop() {
 
 void FelixRxThread::subscribe() {
   for (auto& [fid, qstat]: m_fidStats) {
-    std::stringstream ss;
-    ss << std::this_thread::get_id();
-    frtlog->trace("Thread {} subscribing to fid 0x{:x}", ss.str(), fid);
+    frtlog->debug("Thread {} subscribing to fid 0x{:x}", getThreadID(), fid);
 
     qstat.reset_errors();
     qstat.reset_counters();
 
-    m_client->subscribe(fid, std::bind(&FelixRxThread::on_data_callback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+    m_client->subscribe(fid, std::bind(&FelixRxThread::on_data_callback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4), false); // disable all links first
   }
 }
 
@@ -124,7 +124,7 @@ void FelixRxThread::on_data_callback(FelixID_t fid, const uint8_t* data, size_t 
 }
 
 RawDataPtr FelixRxThread::readData() {
-  frtlog->trace("FelixRxThread::readData");
+  frtlog->debug("FelixRxThread::readData");
   auto rdp = m_rawData.popData();
 
   if (rdp) {
@@ -133,4 +133,91 @@ RawDataPtr FelixRxThread::readData() {
   }
 
   return rdp;
+}
+
+uint32_t FelixRxThread::getDataRate() const {
+  double total_byte_rate{0};
+  for (const auto& [fid, stats] : m_fidStats) {
+    total_byte_rate += stats.byte_rate;
+  }
+
+  if (total_byte_rate < 0) {
+    // Monitor is not run
+    frtlog->warn("Data rates have not been calculated. Call FelixRxThread::runMonitor to check the Rx queue.");
+    return 0;
+  }
+
+  return total_byte_rate;
+}
+
+uint32_t FelixRxThread::getCurCount() const {
+  uint64_t cur_cnt = m_total_data_in - m_total_data_out;
+  if (cur_cnt > std::numeric_limits<uint32_t>::max()) {
+    frtlog->warn("FelixRxThread thread id {}: counter overflow", getThreadID());
+  }
+  return cur_cnt;
+}
+
+void FelixRxThread::runMonitor(uint32_t interval_ms, uint64_t queue_limit, bool print_info) {
+  // stop the monitoring loop in case it has been running
+  stopMonitor();
+
+  frtlog->debug("Starting monitor thread");
+  m_runMonitor = true;
+
+  m_monitor_thread = std::thread([this, interval_ms, queue_limit, print_info]{
+      if (frtlog->should_log(spdlog::level::trace)) {
+        frtlog->trace("Rx thread id {}", getThreadID());
+        std::stringstream ss;
+        ss << std::this_thread::get_id();
+        frtlog->trace("Monitor thread id {}", ss.str());
+      }
+
+      while (m_runMonitor) {
+        // Check data size in the Rx queue
+        uint64_t bytes_in_queue = m_total_bytes_in - m_total_bytes_out;
+        if (bytes_in_queue > queue_limit*1e6) {
+          // Too much data to handle. Stop adding data before OOM
+          frtlog->critical("Data are not consumed quickly enough!! Stop taking data into Rx queue ...");
+          flush(true);
+          continue;
+        }
+
+        // Data rate
+        for (auto& [fid, stats] : m_fidStats) {
+          stats.reset_counters();
+        }
+
+        std::chrono::steady_clock::time_point m_t0 = std::chrono::steady_clock::now();
+
+        // wait
+        std::this_thread::sleep_for(std::chrono::milliseconds(interval_ms));
+
+        for (auto& [fid, stats] : m_fidStats) {
+          std::chrono::duration<double> time = std::chrono::steady_clock::now() - m_t0;
+          stats.msg_rate = stats.messages_received / time.count(); // Hz
+          stats.byte_rate =  stats.bytes_received / time.count(); // B/s
+        }
+
+        if (print_info) {
+          frtlog->info("--------------------------------");
+          for (const auto& [fid, stats] : m_fidStats) {
+            frtlog->info("Rx fid 0x{:x}: data rate = {:.2f} Mb/s  message rate = {:.2f} kHz", fid, stats.byte_rate*8e-6, stats.msg_rate/1000);
+
+            if (stats.error or stats.crc or stats.truncated) {
+              frtlog->warn("FELIX errors on fid 0x{:x}: fw/sw errors = {}  crc errors = {}  fw/sw truncations = {}", fid, stats.error, stats.crc, stats.truncated);
+            }
+          }
+
+          frtlog->debug("Data size in rx queue: {} MB (in: {} MB, out: {} MB)", (m_total_bytes_in - m_total_bytes_out)/1e6, m_total_bytes_in/1e6, m_total_bytes_out/1e6);
+        }
+      } // end of while (m_runMonitor)
+
+      frtlog->debug("Rx monitor finished");
+  });
+}
+
+void FelixRxThread::stopMonitor() {
+  m_runMonitor = false;
+  if (m_monitor_thread.joinable()) m_monitor_thread.join();
 }
