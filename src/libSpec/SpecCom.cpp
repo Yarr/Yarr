@@ -231,7 +231,7 @@ void SpecCom::init() {
 
     if(do_reset) {
         slog->info("Soft resetting all ...");
-        this->writeSingle(SPEC_GREG | SPEC_GREG_SOFTRST, SOFTRST_EXCEPT_CTRL_REG);
+        this->writeSingle(SPEC_GREG | SPEC_GREG_SOFTRST, SOFTRST_BRAM | SOFTRST_BRAM_CNT);
     }
 
     slog->info("Flushing buffers ...");
