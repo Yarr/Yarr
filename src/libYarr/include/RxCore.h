@@ -23,6 +23,7 @@ class RxCore {
         virtual void maskRxEnable(uint32_t val, uint32_t mask) = 0;
         virtual void disableRx() = 0;
         virtual void checkRxSync() {}
+        virtual void initRxChannels(const std::vector<uint32_t>& channels) {}
 
         virtual std::vector<RawDataPtr > readData() = 0;
         virtual void flushBuffer() {}

@@ -16,7 +16,7 @@ public:
   FelixRxCore();
   ~FelixRxCore() override;
 
-  void initRxChannels(const std::vector<uint32_t>& channels);
+  void initRxChannels(const std::vector<uint32_t>& channels) override;
   void setRxEnable(uint32_t val) override;
   void setRxEnable(std::vector<uint32_t> channels) override;
   void disableRx() override;
