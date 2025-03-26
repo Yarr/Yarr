@@ -122,7 +122,7 @@ TEST_CASE("Itkpixv2DataProcessor", "[itkpixv2][data_processor_edge_case]") {
     // High FFFFDEAD rate case
     std::vector<std::vector<uint32_t>> input;
     std::vector<uint32_t> deads;
-    for(int i = 0; i < 10000; i++)
+    for(int i = 0; i < 1000000; i++)
         deads.push_back(0xFFFFDEAD);
     input.push_back(deads);
     std::cout << "HIGH FFFFDEAD RATE CASE" << std::endl;
