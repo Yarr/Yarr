@@ -167,14 +167,17 @@ std::tuple<uint32_t, uint32_t> updateHCCSubRegister(const std::string& subRegNam
 // Assume the register configuration command is always broadcasted to all chips
 std::tuple<uint32_t, uint32_t> updateABCSubRegister(const std::string& subRegName, uint32_t value, StarCfg& cfg) {
   auto subReg = AbcNames::subRegFromString(subRegName).value();
+
+  uint32_t newValue = 0;
+
   cfg.eachAbc([&](auto &abc) {
       abc.setSubRegisterValue(subReg, value);
+
+      // Only last is stored
+      newValue = abc.getSubRegisterParentValue(subReg);
     });
 
-  // chipIndex 1 for the first ABC
-  int chipIndex = 1;
   uint32_t addr = cfg.getABCSubRegisterParentAddr(subReg);
-  uint32_t newValue = cfg.getABCSubRegisterParentValue(chipIndex, subReg);
 
   return std::make_tuple(addr, newValue);
 }
