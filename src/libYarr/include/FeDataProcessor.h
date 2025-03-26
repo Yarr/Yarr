@@ -53,6 +53,15 @@ class FeDataProcessor : public DataProcessor {
          * ends.
          */
         virtual std::unique_ptr<EventDataBase> process_event_core(const RawDataContainer &rdc, std::function<void (std::unique_ptr<FeedbackProcessingInfo>)> push_fb) { return {}; }
+
+        /**
+         * Configure the front-end DataProcessor.
+         *
+         * This is to be used to change parts of the decoding, for instance
+         * enabling reading of raw/direct data, or changing handling for
+         * register reads.
+         */
+        virtual void loadConfig(const json &config) {}
 };
 
 #endif

@@ -29,14 +29,16 @@ namespace {
 
 SpecCom::SpecCom() {
     is_initialized = false;
+    do_reset = true;
     specId = 0;
     fw_vers = 0x0;
     fw_ident = 0x0;
 }
 
-SpecCom::SpecCom(unsigned int id) {
+SpecCom::SpecCom(unsigned int id, bool do_reset_arg) {
     specId = id;
     is_initialized = false;
+    do_reset = do_reset_arg;
     fw_vers = 0x0;
     fw_ident = 0x0;
     try {
@@ -227,8 +229,10 @@ void SpecCom::init() {
     } 
     // TODO decode firmware identifier
 
-    slog->info("Soft resetting all ...");
-    this->writeSingle(SPEC_GREG | SPEC_GREG_SOFTRST, SOFTRST_EXCEPT_CTRL_REG);
+    if(do_reset) {
+        slog->info("Soft resetting all ...");
+        this->writeSingle(SPEC_GREG | SPEC_GREG_SOFTRST, SOFTRST_BRAM | SOFTRST_BRAM_CNT);
+    }
 
     slog->info("Flushing buffers ...");
     this->flushDma();
@@ -408,8 +412,10 @@ void SpecCom::flushDma() {
         if (!bar4)
             exit(-1);
     }
-    // Reset BRAM Counters now as they might be desynced
-    this->writeSingle(SPEC_GREG | SPEC_GREG_SOFTRST, SOFTRST_BRAM_CNT);
+    if(do_reset) {
+        // Reset BRAM Counters now as they might be desynced
+        this->writeSingle(SPEC_GREG | SPEC_GREG_SOFTRST, SOFTRST_BRAM_CNT);
+    }
 
 }
 

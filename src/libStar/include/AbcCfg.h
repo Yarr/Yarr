@@ -94,12 +94,6 @@ class AbcStarRegInfo {
   /// Registers to write in normal operation
   std::map<unsigned, InfoPtr> abcWriteMap;
 
-  //This is a 2D map of each trimDac_32b register to the chip index and trimDAC_4LSB register name.  For example trimDAC4LSB_RegisterMap_all[chip index][NAME]
-  std::map<int, SubInfoPtr> trimDAC_4LSB_RegisterMap_all;
-
-  //This is a 2D map of each trimDac_32b register to the chip index and trimDAC_1MSB register name.  For example trimDAC1LSB_RegisterMap_all[chip index][NAME]
-  std::map<int, SubInfoPtr> trimDAC_1MSB_RegisterMap_all;
-
   static std::shared_ptr<const AbcStarRegInfo> instance(int version);
 
   /// Return sub register info for name, throws std::runtime_error
@@ -198,6 +192,13 @@ class AbcCfg {
 
         /// Get trim DAC for particular channel (as calculated by StarCfg)
         int getTrimDACRaw(unsigned channel) const;
+
+        /**
+         * Convert from strip order to ordering as in the trim registers.
+         */
+        uint8_t trimRegOrderFromChannel(uint8_t chn) const {
+            return ((chn & 0x7e) << 1) | (chn & 0x1) | ((chn & 0x80) >> 6);
+        }
 
         /// Is channel masked
         bool isMasked(unsigned channel) const {
