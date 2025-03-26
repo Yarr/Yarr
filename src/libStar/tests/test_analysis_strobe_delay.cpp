@@ -282,7 +282,7 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
 }
 
 struct SdTestValueInfo {
-    int id;
+    int ic;
     int sd_val;
 };
 
@@ -292,10 +292,10 @@ void check_strobe_values(const FrontEnd &fe,
     REQUIRE(star_fe);
 
     for(const auto &fe_info: info) {
-        // This is the index in StarCfg (1-based as HCC is 0) ???
-        int fe_idx = fe_info.id+1;
-        CAPTURE (fe_info.id, fe_idx, fe_info.sd_val);
-        REQUIRE ( star_fe->getABCSubRegisterValue(fe_idx, ABCStarSubRegister::STR_DEL) == fe_info.sd_val );
+        // This is now looked up by input channel
+        int fe_ic = fe_info.ic;
+        CAPTURE (fe_info.ic, fe_info.sd_val);
+        CHECK ( star_fe->getABCSubRegisterValue(fe_ic, ABCStarSubRegister::STR_DEL) == fe_info.sd_val );
     }
 }
 
@@ -368,7 +368,7 @@ TEST_CASE("StarStrobeDelayFeedback", "[Analysis][Star][SD]") {
 
     // This is what we want to change things to
     for(auto &sd_entry: sd_info) {
-      sd_entry.sd_val = sd_entry.id + 2;
+      sd_entry.sd_val = sd_entry.ic + 2;
     }
 
     // Run scan loops, which wait for the feedback

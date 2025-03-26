@@ -31,11 +31,15 @@ TEST_CASE("StarCfg", "[star][config]") {
   test_config.clearABCchipIDs();
   test_config.setHCCChipId(4);
   const int abc_id = 14;
+  const int abc_input_channel = 0;
+  // Internal index for referring to the ABC
+  const int abc_index = 1;
+
   test_config.addABCchipID(abc_id);
 
   REQUIRE (test_config.numABCs() == 1);
 
-  auto &a = test_config.abcForInputChannel(0);
+  auto &a = test_config.abcForInputChannel(abc_input_channel);
   CHECK( a.getABCchipID() == 14 );
 
   REQUIRE (test_config.getHCCchipID() == 4);
@@ -74,19 +78,16 @@ TEST_CASE("StarCfg", "[star][config]") {
       CHECK_NOTHROW (abc.getSubRegisterValue(good_name));
     });
 
-  // Internal index for referring to the ABC
-  int abc_index = 1;
-
   REQUIRE (test_config.getABCchipID(abc_index) == abc_id);
 
   REQUIRE ((ABCStarRegister)test_config.getABCSubRegisterParentAddr(ABCStarSubRegister::TESTPATT1) == ABCStarRegister::CREG0);
 
-  test_config.setABCSubRegisterValue(abc_index, ABCStarSubRegister::TESTPATT1, 0x5);
-  test_config.setABCSubRegisterValue(abc_index, ABCStarSubRegister::TESTPATT2, 0xa);
-  REQUIRE (test_config.getABCSubRegisterValue(abc_index, ABCStarSubRegister::TESTPATT1) == 0x5);
+  test_config.setABCSubRegisterValue(abc_input_channel, ABCStarSubRegister::TESTPATT1, 0x5);
+  test_config.setABCSubRegisterValue(abc_input_channel, ABCStarSubRegister::TESTPATT2, 0xa);
+  REQUIRE (test_config.getABCSubRegisterValue(abc_input_channel, ABCStarSubRegister::TESTPATT1) == 0x5);
 
   REQUIRE (test_config.getABCRegisterByID(ABCStarRegister::CREG0, abc_id) == creg0_response);
-  REQUIRE (test_config.getABCSubRegisterParentValue(abc_index, ABCStarSubRegister::TESTPATT1) == creg0_response);
+  REQUIRE (test_config.getABCSubRegisterParentValue(abc_input_channel, ABCStarSubRegister::TESTPATT1) == creg0_response);
 
   json j;
   test_config.writeConfig(j);

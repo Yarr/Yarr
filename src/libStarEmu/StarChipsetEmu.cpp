@@ -604,10 +604,12 @@ void StarChipsetEmu::doHPR_ABC(LCB::Frame frame, unsigned ichip) {
   //// Update the HPR register
   setABCStarHPR(frame, abcID);
 
+  int input_channel = ichip - 1;
+
   //// HPR control logic
-  bool testHPR = m_starCfg->getABCSubRegisterValue(ichip, ABCStarSubRegister::TESTHPR);
-  bool stopHPR = m_starCfg->getABCSubRegisterValue(ichip, ABCStarSubRegister::STOPHPR);
-  bool maskHPR = m_starCfg->getABCSubRegisterValue(ichip, ABCStarSubRegister::MASKHPR);
+  bool testHPR = m_starCfg->getABCSubRegisterValue(input_channel, ABCStarSubRegister::TESTHPR);
+  bool stopHPR = m_starCfg->getABCSubRegisterValue(input_channel, ABCStarSubRegister::STOPHPR);
+  bool maskHPR = m_starCfg->getABCSubRegisterValue(input_channel, ABCStarSubRegister::MASKHPR);
 
   bool lcb_lock_changed = testHPR & (!maskHPR);
   bool hpr_periodic = not (hpr_clkcnt%HPRPERIOD) and not stopHPR;
@@ -626,9 +628,9 @@ void StarChipsetEmu::doHPR_ABC(LCB::Frame frame, unsigned ichip) {
 
   //// Update HPR control bits
   if (stopHPR and lcb_lock_changed)
-    m_starCfg->setABCSubRegisterValue(ichip, ABCStarSubRegister::STOPHPR, 0);
+    m_starCfg->setABCSubRegisterValue(input_channel, ABCStarSubRegister::STOPHPR, 0);
   if (testHPR)
-    m_starCfg->setABCSubRegisterValue(ichip, ABCStarSubRegister::TESTHPR, 0);
+    m_starCfg->setABCSubRegisterValue(input_channel, ABCStarSubRegister::TESTHPR, 0);
 }
 
 void StarChipsetEmu::setHCCStarHPR(LCB::Frame frame) {

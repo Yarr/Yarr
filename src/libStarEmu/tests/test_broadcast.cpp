@@ -178,7 +178,8 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
   // A dummy StarCfg object to help extract the sub-register value
   StarCfg dummyCfg(0, 0);
   dummyCfg.setHCCChipId(0xf);
-  dummyCfg.addABCchipID(0xf);
+  int abc_ic = 0;
+  dummyCfg.addABCchipID(0xf, abc_ic);
 
   // Send register read command
   emu->setRxEnable(rx0);
@@ -191,7 +192,7 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
 
   dummyCfg.setABCRegisterByID(addr1, val1, 0xf);
   // Expected STR_DEL: 12
-  REQUIRE(dummyCfg.getABCSubRegisterValue(1, ABCStarSubRegister::STR_DEL) == 12);
+  REQUIRE(dummyCfg.getABCSubRegisterValue(abc_ic, ABCStarSubRegister::STR_DEL) == 12);
 
   // Send register read command
   star1->readABCSubRegister(ABCStarSubRegister::STR_DEL, 8);
@@ -203,7 +204,7 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
 
   dummyCfg.setABCRegisterByID(addr2, val2, 0xf);
   // Expected STR_DEL: 21
-  REQUIRE(dummyCfg.getABCSubRegisterValue(1, ABCStarSubRegister::STR_DEL) == 21);
+  REQUIRE(dummyCfg.getABCSubRegisterValue(abc_ic, ABCStarSubRegister::STR_DEL) == 21);
 
   emu->setRxEnable(rx1);
   star2->readABCSubRegister(ABCStarSubRegister::STR_DEL, 1);
@@ -215,7 +216,7 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
 
   dummyCfg.setABCRegisterByID(addr3, val3, 0xf);
   // Expected STR_DEL: 13
-  REQUIRE(dummyCfg.getABCSubRegisterValue(1, ABCStarSubRegister::STR_DEL) == 13);
+  REQUIRE(dummyCfg.getABCSubRegisterValue(abc_ic, ABCStarSubRegister::STR_DEL) == 13);
 
   star2->readABCSubRegister(ABCStarSubRegister::STR_DEL, 2);
   while(not emu->isCmdEmpty());
@@ -226,5 +227,5 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
 
   dummyCfg.setABCRegisterByID(addr4, val4, 0xf);
   // Expected STR_DEL: 30
-  REQUIRE(dummyCfg.getABCSubRegisterValue(1, ABCStarSubRegister::STR_DEL) == 30);
+  REQUIRE(dummyCfg.getABCSubRegisterValue(abc_ic, ABCStarSubRegister::STR_DEL) == 30);
 }

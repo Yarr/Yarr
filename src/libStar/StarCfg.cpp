@@ -99,12 +99,12 @@ uint32_t StarCfg::getHCCSubRegisterParentValue(HCCStarSubRegister subReg)
     return m_hcc.getSubRegisterParentValue(subReg);
 }
 
-uint32_t StarCfg::getABCSubRegisterParentValue(int chipIndex, ABCStarSubRegister subReg)
+uint32_t StarCfg::getABCSubRegisterParentValue(int input_channel, ABCStarSubRegister subReg)
 {
-    if (isAbcForInputChannel(chipIndex-1)) {
-        return abcFromIndex(chipIndex).getSubRegisterParentValue(subReg);
+    if (isAbcForInputChannel(input_channel)) {
+        return abcForInputChannel(input_channel).getSubRegisterParentValue(subReg);
     } else {
-      std::cerr << " --> No input channel for index " << chipIndex << "\n";
+      std::cerr << " --> No input channel at " << input_channel << "\n";
     }
     return 0;
 }

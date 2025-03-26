@@ -97,9 +97,9 @@ class StarCfg : public FrontEndCfg {
   }
 
   /// Set value of ABC register field
-  void setABCSubRegisterValue(int chipIndex, ABCStarSubRegister subReg, uint32_t value) {
-      if (isAbcForInputChannel(chipIndex-1))
-          abcFromIndex(chipIndex).setSubRegisterValue(subReg, value);
+  void setABCSubRegisterValue(int input_channel, ABCStarSubRegister subReg, uint32_t value) {
+      if (isAbcForInputChannel(input_channel))
+          abcForInputChannel(input_channel).setSubRegisterValue(subReg, value);
   }
 
   /// Get value of HCC register field
@@ -108,9 +108,9 @@ class StarCfg : public FrontEndCfg {
   }
 
   /// Get value of ABC register field
-  uint32_t getABCSubRegisterValue(int chipIndex, ABCStarSubRegister subReg) const {
-    if (isAbcForInputChannel(chipIndex-1))
-        return abcFromIndex(chipIndex).getSubRegisterValue(subReg);
+  uint32_t getABCSubRegisterValue(int input_channel, ABCStarSubRegister subReg) const {
+    if (isAbcForInputChannel(input_channel))
+        return abcForInputChannel(input_channel).getSubRegisterValue(subReg);
     return 0;
   }
 
@@ -123,8 +123,8 @@ class StarCfg : public FrontEndCfg {
   /// Get register value for named register field (HCC)
   uint32_t getHCCSubRegisterParentValue(HCCStarSubRegister subReg);
 
-  /// Get register value for named register field
-  uint32_t getABCSubRegisterParentValue(int chipIndex, ABCStarSubRegister subReg);
+  /// Get register value for named register field (ABC input channel)
+  uint32_t getABCSubRegisterParentValue(int input_channel, ABCStarSubRegister subReg);
 
   void maskPixel(unsigned col, unsigned row, bool doAltMask = false) override {}
   unsigned getPixelEn(unsigned col, unsigned row, bool doAltMask = false) override {
