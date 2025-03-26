@@ -690,6 +690,7 @@ void Rd53bDataProcessor::getPreviousDataBlock()
     }
     _data = &_curInV->data[_rawDataIdx]->get(_wordIdx); // Also roll back the block index and data word pointer
 
+    // Recursive `getPreviousDataBlock` is bounded by size of data container, < 1 million (~segfault threshold)
     if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
         getPreviousDataBlock();
     if (((_data[0] >> 29) & 0x3) != _chipId && _enChipId)
