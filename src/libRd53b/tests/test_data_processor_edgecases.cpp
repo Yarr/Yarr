@@ -94,4 +94,15 @@ TEST_CASE("Rd53bDataProcessor", "[rd53b][data_processor_edgecases]") {
             0xFFFFDEAD, 0xFFFFDEAD      // FFFFDEADs at end of block
         }
     });
+
+    // High FFFFDEAD rate case
+    std::vector<std::vector<uint32_t>> input;
+    std::vector<uint32_t> deads;
+    for(int i = 0; i < 1000000; i++)
+        deads.push_back(0xFFFFDEAD);
+    input.push_back(deads);
+    std::cout << "HIGH FFFFDEAD RATE CASE" << std::endl;
+    process_case(
+        input
+    );
 }
