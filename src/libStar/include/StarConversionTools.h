@@ -74,9 +74,9 @@ public:
   std::pair<float, float> convertBVTtomVwithError(float thrDAC, float err_thrDAC) const;
 
   /// @brief Convert the threshold in DAC counts to mV
-  /// @param BVT Thresold in DAC counts
+  /// @param thrDAC Thresold in DAC counts
   /// @return Threshold in mV
-  float convertBVTtomV(unsigned BVT) const;
+  float convertBVTtomV(float thrDAC) const;
 
   /// @brief Convert the charge injection in DAC counts to fC
   /// @param injDAC Charge injection in DAC counts
