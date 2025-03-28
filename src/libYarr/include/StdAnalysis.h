@@ -23,7 +23,12 @@
 
 class OccupancyAnalysis : public AnalysisAlgorithm {
     public:
-        OccupancyAnalysis() : AnalysisAlgorithm() {createMask = true; LowThr = 0.0; HighThr = 0.0;}
+        OccupancyAnalysis() : AnalysisAlgorithm() {
+            createMask = true;
+            LowThr = 0.0;
+            HighThr = 0.0;
+            coreColMask = false;
+        }
         ~OccupancyAnalysis() override = default;
 
         void init(const ScanLoopInfo *s) override;
@@ -34,7 +39,7 @@ class OccupancyAnalysis : public AnalysisAlgorithm {
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         bool createMask;
-	bool coreColMask;
+	    bool coreColMask;
         unsigned n_count;
         unsigned injections;
 	double LowThr, HighThr;
@@ -224,15 +229,41 @@ class NPointGain : public AnalysisAlgorithm {
         // maps of 2d vectors, one for each injection + channel
         typedef std::map<double,std::vector<std::vector<double>>> InjectionDataMap;
         InjectionDataMap m_thresholdMap;
-        InjectionDataMap m_inputNoiseMap;
+        InjectionDataMap m_outputNoiseMap;
 
-        // conversion functions for injection and threshold units
+        /// @brief Placeholder to convert injection units from DAC counts to the desired unit (e.g. fC)
+        /// @param inj Injection value in DAC counts
+        /// @return Converted injection value
         virtual double convertInjectionUnit(double inj) { return inj; }
+
+        /// @brief Placeholder to convert threshold units from DAC counts to the desired unit (e.g. mV)
+        /// This conversion is applied to both threshold and output noise values.
+        /// @param thr Threshold value in DAC counts
+        /// @return Converted threshold value
         virtual double convertThresholdUnit(double thr) { return thr; }
 
-        // fitting and related functions
+        /// @brief Placeholder to convert input noise units from injection units to the desired unit (e.g. ENC)
+        /// @param noise Input noise value in injection units
+        /// @return Converted input noise value
+        virtual double convertInputNoiseUnit(double noise) { return noise; }
+
+        /// @brief Create a response curve for a given column and row
+        /// @param col Channel column index
+        /// @param row Channel row index
+        /// @return Vector of response values ordered by injection for the given channel
         virtual std::vector<double> createResponseCurve(unsigned col, unsigned row);
+
+        /// @brief Guess the initial fit parameters for the response curve fit
+        /// The parameters for the exponential fit are very dependent on the unit conversions applied
+        /// so these parameters are set to 1. More detailed guesses can be performed in derived classes.
+        /// The parameters for the linear and polynomial fits are determined from the first and last threshold values.
+        /// @param thresholds Vector of response values
+        /// @return Initial guess for fit parameters
         virtual std::vector<double> guessInitialFitParams(const std::vector<double>& thresholds);
+
+        /// @brief Fit the specified response curve given a set of initial parameter guesses
+        /// @param thresholds Vector of response values
+        /// @param fitParams Vector of initial fit parameters (is updated with the fit result)
         virtual void fitResponseCurve(const std::vector<double>& thresholds, std::vector<double>& fitParams);
 
     private:

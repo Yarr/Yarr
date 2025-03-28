@@ -52,34 +52,24 @@ void StarParamFeedback::feedback(unsigned id, std::unique_ptr<Histo2d> h) {
       return;
     }
 
-    // Map from IC to histogram location
-    auto chip_map = fe->hcc().histoChipMap();
-
     for (unsigned histo_abc=0; histo_abc<nABCs; histo_abc++) {
         int bin = histo_abc; // Skip underflow
 
         int new_sd = h->getBin(bin);
 
-        int ic_abc = -1;
-        for(int i=0; i<chip_map.size(); i++) {
-          if(chip_map[i] == histo_abc) {
-            ic_abc = i;
-          }
+        if(!fe->isAbcForHistoChip(histo_abc)) {
+            logger->warn("Failed to find chip for feedback {} {}", histo_abc, new_sd);
+
+            fe->logMappings();
+
+            // Skip to the next chip
+            continue;
         }
 
-        if(ic_abc == -1) {
-          logger->warn("Failed to find chip for feedback {} {} {}", histo_abc, ic_abc, new_sd);
+        AbcCfg &abc = fe->abcForHistoChip(histo_abc);
 
-          for(int i=0; i<chip_map.size(); i++) {
-            logger->trace("IC map: {} {}", i, chip_map[i]);
-          }
-          // Skip to the next chip
-          continue;
-        }
+        logger->trace("Loading feedback at {} (ID {}) {}", histo_abc, abc.getABCchipID(), new_sd);
 
-        logger->trace("Loading feedback {} {} {}", histo_abc, ic_abc, new_sd);
-
-        AbcCfg &abc = fe->abcForInputChannel(ic_abc);
         abc.setSubRegisterValue("STR_DEL", new_sd);
         logger->trace(" Check load {}", abc.getSubRegisterValue("STR_DEL"));
     }

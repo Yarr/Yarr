@@ -25,12 +25,29 @@ class StarNPointGainAnalysis : public NPointGain {
         void loadConfig(const json& config) override;
 
     private:
-        // conversion functions for injection and threshold units
+        /// @brief Convert injection units from BCAL to fC
+        /// @param inj Charge injection in BCAL units
+        /// @return Charge injection in fC
         double convertInjectionUnit(double inj) override;
+
+        /// @brief Convert threshold units from BVT to mV
+        /// This conversion is applied to both response and output noise.
+        /// @param thr Threshold in BVT units
+        /// @return Threshold in mV
         double convertThresholdUnit(double thr) override;
 
-        // fitting and related functions
+        /// @brief Convert input noise units from fC to ENC
+        /// @param noise Input noise in fC
+        /// @return Input noise in ENC
+        double convertInputNoiseUnit(double noise) override;
+
+        /// @brief Guess the initial fit parameters for the response curve fit
+        /// @param thresholds Vector of response values
+        /// @return Initial guess for fit parameters
         std::vector<double> guessInitialFitParams(const std::vector<double>& thresholds) override;
+
+        /// @brief Create an averaged response curve for for each chip
+        /// @return Vector of vectors of averaged response curves (index by [chip][injection])
         std::vector<std::vector<double>> createAverageResponseCurves();
 
         // 128 strips per side per chip
