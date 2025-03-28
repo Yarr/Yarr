@@ -7,6 +7,9 @@
 #include "StarCfg.h"
 #include "StarPreset.h"
 
+#include "AbcNames.h"
+#include "HccNames.h"
+
 #include <iomanip>
 
 #include "logging.h"
@@ -39,7 +42,7 @@ double StarCfg::toCharge(double vcal, bool sCap, bool lCap) { return toCharge(vc
 void StarCfg::enableAll() {
     eachAbc([&](auto &abc) {
         for(int m=0; m<8; m++) {
-          abc.setRegisterValue(ABCStarRegister::MaskInput(m), 0);
+          abc.setRegisterValue(ABCStarRegisters::MaskInput(m), 0);
         }
       });
 }
@@ -60,11 +63,11 @@ void StarCfg::setHCCRegister(HCCStarRegister addr, uint32_t val){
 }
 
 //ABC register accessor functions, converts chipID into chip index
-uint32_t StarCfg::getABCRegister(ABCStarRegister addr, int32_t chipID){
+uint32_t StarCfg::getABCRegisterByID(ABCStarRegister addr, int32_t chipID){
   auto &abc = abcFromChipID(chipID);
   return abc.getRegisterValue(addr);
 }
-void StarCfg::setABCRegister(ABCStarRegister addr, uint32_t val, int32_t chipID){
+void StarCfg::setABCRegisterByID(ABCStarRegister addr, uint32_t val, int32_t chipID){
   auto &abc = abcFromChipID(chipID);
   abc.setRegisterValue(addr, val);
 }
@@ -78,6 +81,32 @@ int StarCfg::inputChannelForHistoChip(int histo_abc) const
         }
     }
     return -1;
+}
+
+int StarCfg::getHCCSubRegisterParentAddr(HCCStarSubRegister subReg)
+{
+    return m_hcc.getSubRegisterParentAddr(subReg);
+}
+
+int StarCfg::getABCSubRegisterParentAddr(ABCStarSubRegister subReg)
+{
+    return m_abc_info->getSubRegisterParentAddr(subReg);
+}
+
+/// Get register value for named register field (either ABC or HCC)
+uint32_t StarCfg::getHCCSubRegisterParentValue(HCCStarSubRegister subReg)
+{
+    return m_hcc.getSubRegisterParentValue(subReg);
+}
+
+uint32_t StarCfg::getABCSubRegisterParentValue(int input_channel, ABCStarSubRegister subReg)
+{
+    if (isAbcForInputChannel(input_channel)) {
+        return abcForInputChannel(input_channel).getSubRegisterParentValue(subReg);
+    } else {
+      std::cerr << " --> No input channel at " << input_channel << "\n";
+    }
+    return 0;
 }
 
 bool StarCfg::isAbcForHistoChip(int histo_chip) const
@@ -121,8 +150,8 @@ void StarCfg::writeConfig(json &j) {
         // Standard rw registers start from 32
         // Don't write status registers
         if(addr >= 32) {
-          auto reg = HCCStarRegister::_from_integral(addr);
-          std::string regKey = reg._to_string();
+          auto reg = HCCStarRegister(addr);
+          std::string regKey = HccNames::regToString(reg);
           uint32_t val = getHCCRegister(reg);
           std::stringstream ss;
           ss << std::hex << std::setw(8) << std::setfill('0') << val;
@@ -151,32 +180,32 @@ void StarCfg::writeConfig(json &j) {
         for(auto &reg_i: abcRegs) {
             auto &info = reg_i.second;
             int addr = info->addr();
+            auto reg = (ABCStarRegister)addr;
 
             // Skip non-writeable, trim and mask registers
-            if(addr==ABCStarRegister::SCReg) {
+            if(reg==ABCStarRegister::SCReg) {
                 continue;
             }
-            if(addr>=ABCStarRegister::MaskInput(0) && addr<=ABCStarRegister::MaskInput(7)) {
+            if(reg>=ABCStarRegisters::MaskInput(0) && reg<=ABCStarRegisters::MaskInput(7)) {
                 continue;
             }
-            if(addr>=ABCStarRegister::CalREG0 && addr<=ABCStarRegister::CalREG7) {
+            if(reg>=ABCStarRegister::CalREG0 && reg<=ABCStarRegister::CalREG7) {
                 continue;
             }
-            if(addr>=ABCStarRegister::STAT0 && addr<=ABCStarRegister::HPR) {
+            if(reg>=ABCStarRegister::STAT0 && reg<=ABCStarRegister::HPR) {
                 continue;
             }
-            if(addr>=ABCStarRegister::TrimLo(0) && addr<=ABCStarRegister::TrimHi(7)) {
+            if(reg>=ABCStarRegisters::TrimLo(0) && reg<=ABCStarRegisters::TrimHi(7)) {
                 continue;
             }
-            if(addr>=ABCStarRegister::HitCountREG0) {
+            if(reg>=ABCStarRegister::HitCountREG0) {
                 continue;
             }
 
-            auto reg = ABCStarRegister::_from_integral(addr);
             uint32_t val = abc.getRegisterValue(reg);
             std::stringstream ss;
             ss << std::hex << std::setw(8) << std::setfill('0') << val;
-            std::string regKey = reg._to_string();
+            std::string regKey = AbcNames::regToString(reg);
             std::string regValue = ss.str();
             regs[histo_index][regKey] = regValue;
 
@@ -308,7 +337,7 @@ void StarCfg::loadConfig(const json &j) {
             logger->trace("Read HCC value {}", regValue);
 
             try {
-                auto addr = HCCStarRegister::_from_string(regName.c_str());
+                auto addr = HccNames::regFromString(regName).value();
                 logger->trace("Set HCC value {} {}", addr, regValue);
                 m_hcc.setRegisterValue(addr, regValue);
                 auto value = m_hcc.getRegisterValue(addr);
@@ -335,10 +364,12 @@ void StarCfg::loadConfig(const json &j) {
             std::string subRegName = i.key();
             uint32_t subRegValue = valFromJson(i.value());
 
-            auto regPre = m_hcc.getSubRegisterParentValue(subRegName);
-            m_hcc.setSubRegisterValue(subRegName, subRegValue);
-            auto retrieved = m_hcc.getSubRegisterValue(subRegName);
-            auto regPost = m_hcc.getSubRegisterParentValue(subRegName);
+            auto subReg = HccNames::subRegFromString(subRegName).value();
+
+            auto regPre = m_hcc.getSubRegisterParentValue(subReg);
+            m_hcc.setSubRegisterValue(subReg, subRegValue);
+            auto retrieved = m_hcc.getSubRegisterValue(subReg);
+            auto regPost = m_hcc.getSubRegisterParentValue(subReg);
             logger->trace("Load from JSON: For HCC, {} has been set to {} (check {}) {:08x} -> {:08x}", subRegName, subRegValue, retrieved, regPre, regPost);
         } 
     }
@@ -440,7 +471,7 @@ void StarCfg::loadConfig(const json &j) {
             uint32_t regValue = valFromJson(i.value());
 
             try {
-                auto addr = ABCStarRegister::_from_string(regName.c_str());
+                auto addr = AbcNames::regFromString(regName).value();
                 for (int iABC = 0; iABC <= highestABC(); iABC++) {
                     if (isAbcForInputChannel(iABC))  {
                         // Doesn't need remapping as common
@@ -494,7 +525,7 @@ void StarCfg::loadConfig(const json &j) {
                 uint32_t regValue = valFromJson(i.value());
 
                 try {
-                    auto addr = ABCStarRegister::_from_string(regName.c_str());
+                    auto addr = AbcNames::regFromString(regName).value();
                     abc.setRegisterValue(addr, regValue);
                     logger->trace("For ABC index {}, reg {} has been set to {:08x}", iABC, regName, regValue);
                 } catch(std::runtime_error &e) {
@@ -540,10 +571,11 @@ void StarCfg::loadConfig(const json &j) {
                 std::string subRegName = i.key();
                 uint32_t subRegValue = valFromJson(i.value());
 
-                auto regPre = abc.getSubRegisterParentValue(subRegName);
-                abc.setSubRegisterValue(subRegName, subRegValue);
-                auto retrieved = abc.getSubRegisterValue(subRegName);
-                auto regPost = abc.getSubRegisterParentValue(subRegName);
+                auto subReg = AbcNames::subRegFromString(subRegName).value();
+                auto regPre = abc.getSubRegisterParentValue(subReg);
+                abc.setSubRegisterValue(subReg, subRegValue);
+                auto retrieved = abc.getSubRegisterValue(subReg);
+                auto regPost = abc.getSubRegisterParentValue(subReg);
                 logger->trace("Load from JSON: For ABC index {}, {} has been set to {} (check {}) {:08x} -> {:08x}", iABC, subRegName, subRegValue, retrieved, regPre, regPost);
             }
         } // Loop over ABCs

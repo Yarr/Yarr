@@ -38,7 +38,7 @@ TEST_CASE("CheckBuildHistoMap", "[star][histo_map]") {
   CAPTURE (hcc_version, hcc_input_enables);
 
   HccCfg hcc(hcc_version);
-  hcc.setSubRegisterValue("ICENABLE", hcc_input_enables);
+  hcc.setSubRegisterValue(HCCStarSubRegister::ICENABLE, hcc_input_enables);
 
   auto chip_map = hcc.histoChipMap();
 
