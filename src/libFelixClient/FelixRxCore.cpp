@@ -171,6 +171,11 @@ void FelixRxCore::loadConfig(const json &j) {
     else frlog->info(" message size limit = unlimited");
   }
 
+  if (j.contains("waitTime")) {
+    m_waitTime = std::chrono::microseconds(j["waitTime"]);
+    frlog->info(" rx wait time = {} microseconds", m_waitTime.count());
+  }
+
   if (j.contains("nthreads")) {
     m_nThreads = j["nthreads"];
     frlog->info(" nthreads = {}", m_nThreads);
