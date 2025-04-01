@@ -119,6 +119,8 @@ int main(int argc, char **argv) {
     jlog["log_config"][1]["level"] = "info";
     jlog["log_config"][2]["name"] = "FelixRxCore";
     jlog["log_config"][2]["level"] = "info";
+    jlog["log_config"][3]["name"] = "FelixRxThread";
+    jlog["log_config"][3]["level"] = "info";
     logging::setupLoggers(jlog);
   } else {
     try {
