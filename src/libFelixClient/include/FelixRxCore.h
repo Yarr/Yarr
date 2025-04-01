@@ -59,10 +59,12 @@ protected:
   unsigned m_nThreads {1};
 
   // Monitoring
-  bool m_runMonitor {false};
+  std::thread m_monitor_thread;
+  std::atomic<bool> m_runMonitor {false};
   uint32_t m_interval_ms {1000}; // monitoring interval in ms
   uint64_t m_queue_limit {4000}; // MB
   size_t m_maxMessageSize {0}; // if set to >0, on_data drops messages with larger sizes
+  std::chrono::steady_clock::time_point m_t0; // clock used for time measurement
 };
 
 #endif

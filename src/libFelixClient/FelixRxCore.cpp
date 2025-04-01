@@ -115,10 +115,17 @@ void FelixRxCore::setClient(std::shared_ptr<SharedClient> client) {
 }
 
 uint32_t FelixRxCore::getDataRate() {
-  uint32_t data_rate{0};
+  double data_rate{0};
   for (auto& frt : m_rxThreads) {
     data_rate += frt->getDataRate();
   }
+
+  if (data_rate <= 0) {
+    // Monitor is not run
+    frlog->warn("Data rates have not been calculated. Call FelixRxCore::runMonitor to check the Rx queue.");
+    return 0;
+  }
+
   return data_rate;
 }
 
@@ -187,20 +194,64 @@ void FelixRxCore::writeConfig(json &j) {
   j["connectorID"] = m_cid;
   j["protocol"] = m_protocol;
   j["flushWaitTime"] = m_flushWaitTime;
-  j["enableMonitor"] = m_runMonitor;
+  j["enableMonitor"] = m_runMonitor.load();
   j["monitorInterval"] = m_interval_ms;
   j["queueLimitMB"] = m_queue_limit;
   j["nthreads"] = m_nThreads;
 }
 
 void FelixRxCore::runMonitor(bool print_info) {
-  for (auto& frt : m_rxThreads) {
-    frt->runMonitor(m_interval_ms, m_queue_limit, print_info);
-  }
+  // stop the monitoring loop in case it has been running
+  stopMonitor();
+
+  frlog->debug("Starting monitor thread");
+  m_runMonitor = true;
+
+  m_monitor_thread = std::thread([this, print_info]{
+    if (frlog->should_log(spdlog::level::trace)) {
+      std::stringstream ss;
+      ss << "0x" << std::hex << std::this_thread::get_id();
+      frlog->trace("Monitor thread id {}", ss.str());
+    }
+
+    while (m_runMonitor) {
+      // Check data size in each Rx queue
+      for (auto& frt : m_rxThreads) {
+        if (frt->getCurBytes() > m_queue_limit*1e6) {
+          // Too much data to handle. Stop adding data before OOM
+          frlog->critical("Rx thread {}: data are not consumed quickly enough!! Stop taking data into Rx queue ...", frt->getThreadID());
+          frt->flush(true);
+        }
+      }
+
+      // Data rate
+      m_t0 = std::chrono::steady_clock::now();
+      for (auto& frt : m_rxThreads) {
+        frt->resetStatistics();
+      }
+
+      // wait
+      std::this_thread::sleep_for(std::chrono::milliseconds(m_interval_ms));
+
+      std::chrono::duration<double> time = std::chrono::steady_clock::now() - m_t0;
+      for (auto& frt : m_rxThreads) {
+        frt->computeRates(time.count());
+      }
+
+      if (print_info) {
+        frlog->info("--------------------------------");
+        for (auto& frt : m_rxThreads) {
+          frt->reportStatistics();
+        }
+      }
+
+    } // end of while (m_runMonitor)
+
+    frlog->debug("Rx monitor finished");
+  });
 }
 
 void FelixRxCore::stopMonitor() {
-  for (auto& frt : m_rxThreads) {
-    frt->stopMonitor();
-  }
+  m_runMonitor = false;
+  if (m_monitor_thread.joinable()) m_monitor_thread.join();
 }

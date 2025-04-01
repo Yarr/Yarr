@@ -33,9 +33,11 @@ class FelixRxThread {
 
     uint32_t getDataRate() const;
     uint32_t getCurCount() const;
+    uint32_t getCurBytes() const;
 
-    void runMonitor(uint32_t interval_ms, uint64_t queue_limit, bool print_info=false);
-    void stopMonitor();
+    void resetStatistics();
+    void computeRates(const double& time);
+    void reportStatistics();
 
     std::vector<FelixID_t> getFIDs() const {
       std::vector<FelixID_t> fids;
@@ -47,7 +49,7 @@ class FelixRxThread {
 
     std::string getThreadID() const {
       std::stringstream ss;
-      ss << thread_ptr->get_id();
+      ss << "0x" << std::hex << thread_ptr->get_id();
       return ss.str();
     }
 
@@ -68,9 +70,6 @@ class FelixRxThread {
     std::atomic<uint64_t> m_total_bytes_out {0};
 
     std::map<FelixID_t, FelixTools::QueueStatistics> m_fidStats; // link statistics
-
-    std::thread m_monitor_thread;
-    std::atomic<bool> m_runMonitor {false};
 
     size_t m_maxMessageSize {0}; // if set to >0, on_data drops messages with larger sizes
 
