@@ -166,6 +166,7 @@ int main(int argc, char **argv) {
   // Subscribe to elinks
   if (not elinks_rx.empty()) {
     try {
+      hwCtrl->initRxChannels(elinks_rx);
       hwCtrl->setRxEnable(elinks_rx);
     } catch (std::runtime_error& e) {
       logger->error("Fail to subscribe: {}", e.what());
