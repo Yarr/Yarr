@@ -29,6 +29,11 @@ void FelixRxCore::initRxChannels(const std::vector<uint32_t>& channels) {
 
   // Start threads to subscribe to channels
   for (unsigned i=0; i<m_nThreads; i++) {
+    if (fid_lists[i].empty()) {
+      // skip in case there are more threads than fids
+      continue;
+    }
+
     m_rxThreads.emplace_back(std::make_unique<FelixRxThread>(m_client, fid_lists[i]));
     m_rxThreads.back()->run();
   }
