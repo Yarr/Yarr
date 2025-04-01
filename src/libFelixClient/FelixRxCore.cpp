@@ -70,6 +70,11 @@ FelixRxCore::FelixID_t FelixRxCore::fid_from_channel(uint32_t chn) {
 }
 
 void FelixRxCore::setRxEnable(uint32_t val) {
+  if (m_rxThreads.empty()) {
+    frlog->error("No thread is subscribed to Rx channels. Need to run FelxiRxCore::initRxChannels first to subscribe to all links.");
+    return;
+  }
+
   disableRx();
 
   auto fid = fid_from_channel(val);
@@ -77,6 +82,11 @@ void FelixRxCore::setRxEnable(uint32_t val) {
 }
 
 void FelixRxCore::setRxEnable(std::vector<uint32_t> channels) {
+  if (m_rxThreads.empty()) {
+    frlog->error("No thread is subscribed to Rx channels. Need to run FelxiRxCore::initRxChannels first to subscribe to all links.");
+    return;
+  }
+
   disableRx();
 
   for (auto chn : channels) {
