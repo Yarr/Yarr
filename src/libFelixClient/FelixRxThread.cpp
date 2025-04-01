@@ -61,7 +61,7 @@ void FelixRxThread::stop() {
 
 void FelixRxThread::subscribe() {
   for (auto& [fid, qstat]: m_fidStats) {
-    frtlog->debug("Thread 0x{:x} subscribing to fid 0x{:x}", getThreadID(), fid);
+    frtlog->debug("Thread {} subscribing to fid 0x{:x}", getThreadID(), fid);
 
     qstat.reset_errors();
     qstat.reset_counters();
@@ -126,7 +126,7 @@ void FelixRxThread::on_data_callback(FelixID_t fid, const uint8_t* data, size_t 
 }
 
 RawDataPtr FelixRxThread::readData() {
-  frtlog->debug("FelixRxThread::readData");
+  frtlog->trace("FelixRxThread::readData");
   auto rdp = m_rawData.popData();
 
   if (rdp) {
