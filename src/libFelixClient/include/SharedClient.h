@@ -26,7 +26,7 @@ class SharedClient {
 
     FelixClientThread* getClient() { return m_client.get(); }
 
-    void subscribe(FelixID_t fid, const DataCallback& callback, bool enable=true);
+    void subscribe(FelixID_t fid, const DataCallback& callback);
     void resubscribe(FelixID_t fid, bool enable=true);
     void unsubscribe(FelixID_t fid);
 

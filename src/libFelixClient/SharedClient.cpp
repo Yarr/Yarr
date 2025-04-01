@@ -26,79 +26,76 @@ SharedClient::SharedClient(const json &cfg) {
 
 SharedClient::~SharedClient() = default;
 
-void SharedClient::subscribe(FelixID_t fid, const DataCallback& callback, bool enable) {
+void SharedClient::subscribe(FelixID_t fid, const DataCallback& callback) {
   {
     std::unique_lock lock(mtx);
     // register the callback
     m_callbacks[fid] = callback;
-
-    // enable
-    m_rxEnables[fid] = enable;
   }
   m_client->subscribe(fid);
 }
 
 void SharedClient::resubscribe(FelixID_t fid, bool enable) {
-  {
-    std::unique_lock lock(mtx);
-    m_rxEnables[fid] = enable;
-  }
   m_client->subscribe(fid);
 }
 
 void SharedClient::unsubscribe(FelixID_t fid) {
   m_client->unsubscribe(fid);
-  {
-    std::unique_lock lock(mtx);
-    m_rxEnables[fid] = false;
-  }
 }
 
 void SharedClient::enableTx(FelixID_t fid) {
   std::unique_lock lock(mtx);
   m_txEnables[fid] = true;
+  scllog->trace("Enable Tx link 0x{:x}", fid);
 }
 
 void SharedClient::enableTx() {
   std::unique_lock lock(mtx);
   for (auto& [fid, enable] : m_txEnables) {
-    enable = true;
+    m_txEnables[fid] = true;
+    scllog->trace("Enable Tx link 0x{:x}", fid);
   }
 }
 
 void SharedClient::disableTx(FelixID_t fid) {
   std::unique_lock lock(mtx);
   m_txEnables[fid] = false;
+  scllog->trace("Disable Tx link 0x{:x}", fid);
 }
 
 void SharedClient::disableTx() {
   std::unique_lock lock(mtx);
   for (auto& [fid, enable] : m_txEnables) {
-    enable = false;
+    m_txEnables[fid] = false;
+    scllog->trace("Disable Tx link 0x{:x}", fid);
   }
 }
 
 void SharedClient::enableRx(FelixID_t fid) {
   std::unique_lock lock(mtx);
   m_rxEnables[fid] = true;
+  scllog->trace("Enable Rx link 0x{:x}", fid);
 }
 
 void SharedClient::enableRx() {
   std::unique_lock lock(mtx);
   for (auto& [fid, enable] : m_rxEnables) {
-    enable = true;
+    m_rxEnables[fid] = true;
+    scllog->trace("Enable Rx link 0x{:x}", fid);
   }
 }
 
 void SharedClient::disableRx(FelixID_t fid) {
   std::unique_lock lock(mtx);
   m_rxEnables[fid] = false;
+  scllog->trace("Disable Rx link 0x{:x}", fid);
 }
 
 void SharedClient::disableRx() {
   std::unique_lock lock(mtx);
   for (auto& [fid, enable] : m_rxEnables) {
-    enable = false;
+    m_rxEnables[fid] = false;
+    scllog->trace("Disable Rx link 0x{:x}", fid);
   }
 }
 

@@ -19,6 +19,7 @@ FelixRxThread::FelixRxThread(
 {
   for (const auto& fid : fid_list) {
     m_fidStats[fid];
+    m_client->disableRx(fid);
   }
 }
 
@@ -29,6 +30,7 @@ FelixRxThread::~FelixRxThread() {
 
   // Unsubscribe from all links
   for (const auto& [fid, stats] : m_fidStats) {
+    m_client->disableRx(fid);
     m_client->unsubscribe(fid);
   }
 
@@ -64,7 +66,7 @@ void FelixRxThread::subscribe() {
     qstat.reset_errors();
     qstat.reset_counters();
 
-    m_client->subscribe(fid, std::bind(&FelixRxThread::on_data_callback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4), false); // disable all links first
+    m_client->subscribe(fid, std::bind(&FelixRxThread::on_data_callback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
   }
 }
 
