@@ -223,7 +223,8 @@ void run_without_clipboard(StarCfg &cfg, FeDataProcessor &proc, int iterations, 
         // Start from scratch on each iteration, but already read the count
         index += sizeof(uint32_t);
 
-        std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(LoopStatus({1}, {LOOP_STYLE_MASK})));
+        RawDataContainer rdc(LoopStatus({1}, {LOOP_STYLE_MASK}));
+
         for (unsigned k = 0; k < n_buffer; k++) {
             struct Data {
                 uint64_t timestamp;
@@ -244,10 +245,10 @@ void run_without_clipboard(StarCfg &cfg, FeDataProcessor &proc, int iterations, 
             index += sizeof(uint8_t) * data.nbytes;
             RawDataPtr rd = std::make_shared<RawData>(0, std::move(edata));
 
-            rdc->add(std::move(rd));
+            rdc.add(std::move(rd));
         }
 
-        proc.process_event_core(*rdc, [](auto){});
+        proc.process_event_core(rdc, [](auto){});
         done_count ++;
 
         check_log();
