@@ -13,7 +13,9 @@
 #include "logging.h"
 #include "LoggingConfig.h"
 
+namespace {
 auto logger = logging::make_log("benchmark_dataprocessing_star");
+}
 
 void run_with_clipboard(StarCfg &cfg, FeDataProcessor &proc, int iterations, std::vector<uint8_t> &buffer);
 void run_without_clipboard(StarCfg &cfg, FeDataProcessor &proc, int iterations, std::vector<uint8_t> &buffer);
