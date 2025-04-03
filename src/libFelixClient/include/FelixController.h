@@ -281,13 +281,24 @@ private:
 
     /// @brief Generic function to handle read and write operations to either LpGBT or GBCR devices
     /// @param reg_addr Address of the register we're trying to access (uint_32t)
+    /// @param data The data we want to send or receive (const std::vector<uint8_t>&)
     /// @param write True if we want to write, false if we want to read (bool)
-    /// @param dev_addr Address of the device we want to write to (uint32_t)
-    /// @param reg_data Data to send (optional if doing a register read, default = 0 if no data provided) (uint8_t&)
     /// @param i2c_addr Address of I2C communication via primary LpGBT (default = 0) (uint32_t)
     /// @param version Version of the device (0, 1) (default = 1) (int)
-    /// @param dev_type Type of device ("lpgbt" or "gbcr", default = "lpgbt") (std::string)
-    bool readWriteReg(uint_32t reg_addr, bool write, uint_32t dev_addr, uint8_t& reg_data = 0, uint32_t i2c_addr = m_i2c_addr, int version = m_dev_version, std::string dev_type = "lpgbt");
+    /// @return True if operation successful (if reading, the data vector is written by reference)
+    bool communicateLpGBT(const uint16_t reg_addr, const std::vector<uint8_t>& data, const bool write, uint32_t i2c_addr, int version)
+
+    /// @brief Handles reads/writes of LpGBTs or GBCRs
+    /// @param reg_addr Address of register we want to read/write (uint32_t)
+    /// @param write Whether we will read or write (true for write, false for read) (bool)
+    /// @param dev_addr Address of the device
+    /// @param reg_data Data we want to send or read back (uint8_t&, default value 0)
+    /// @param i2c_addr I2C Address of device we want to write along (uint32_t, default value is m_i2c_addr variable)
+    /// @param version Version of LpGBT or GBCR (int, default m_dev_version variable)
+    /// @param dev_type Type of device, options "lpgbt" or "gbcr" (std::string, default "lpgbt")
+    /// @return True if operation successful
+    bool FelixController::readWriteReg(uint_32t reg_addr, bool write, uint_32t dev_addr, uint8_t& reg_data = 0, uint32_t i2c_addr = m_i2c_addr, int version = m_dev_version, std::string dev_type = "lpgbt"){
+
 };
 
 
