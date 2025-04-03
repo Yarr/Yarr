@@ -88,21 +88,22 @@ namespace OptoUtils {
     /// @brief For a given device type and number (e.g. GBCR #2), return the address
     /// @param deviceType "GBCR", "LPGBT" accepted (string)
     /// @param deviceNumber 0,1,2,3 (int)
+    /// @param lpgbt_primary_addr default value is 116 (uint32_t)
     /// @return Returns the device address (uint32_t)
-    uint32_t getDeviceAddress(std::string deviceType, int deviceNumber);
+    uint32_t getDeviceAddress(std::string device_type, int device_number, uint32_t lpgbt_primary_addr = 116);
 
     /*
     IC connection send/receive utilities
     */
 
     /// @brief Constructs the dataframe to send over an IC channel (used for example in LpGBT register reads)
-    /// @param read Whether we will be reading or writing data (const bool, true for read, false for write)
+    /// @param write Whether we will be reading or writing data (const bool, true for write, false for read)
     /// @param regAddr Address of the register to read (const uint16_t)
+    /// @param data The data we want to send (const std::vector<uint8_t>&)
     /// @param i2cAddr I2C address to send data along, for optoboard communication, address of primary LpGBT (const uint8_t)
     /// @param deviceVersion LpGBT version (either 0 or 1), affects how the data frame is prepared (const unsigned int)
-    /// @param data Data to send (const std::vector <uint8_t>&)
     /// @return Returns the dataframe to send through the IC channel (std::vector<uint8_t>)
-    std::vector<uint8_t> prepareICDataFrame(const bool read, const uint16_t reg_addr, const uint8_t i2c_addr, const unsigned int device_version, const std::vector<uint8_t>& data);
+    std::vector<uint8_t> prepareICDataFrame(const bool write, const uint16_t reg_addr, const std::vector<uint8_t>& data, const uint8_t i2c_addr, const unsigned int device_version);
 }
 
 #endif
