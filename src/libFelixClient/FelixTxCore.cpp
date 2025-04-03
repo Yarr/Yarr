@@ -722,10 +722,9 @@ FelixTools::FELIX_FW_MODE FelixTxCore::fwMode() {
   return m_fwMode;
 }
 
-
 // add in the comments which fid this is, IC or front end FID
 // might want to move to tx
-bool FelixTxCore::communicateOverIC(uint64_t fid, const std::vector<uint8_t>& data){
+FelixClientThread::Reply FelixTxCore::communicateOverIC(uint64_t fid, const std::vector<uint8_t>& dataframe){
   /*
     Based on itk-ic-over-netio-next communication wrapper, 
     source: https://gitlab.cern.ch/itk-felix-sw/itk-ic-over-netio-next/-/blob/master/src/itk-ic-over-netio-next.cc?ref_type=heads
@@ -735,29 +734,9 @@ bool FelixTxCore::communicateOverIC(uint64_t fid, const std::vector<uint8_t>& da
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
   if (replies.empty()) {
-    fclog->warn("Status: {}", FelixClientThread::to_string(status_summary));
+    ftlog->warn("Status: {}", FelixClientThread::to_string(status_summary));
     throw std::runtime_error("No replies in communicateOverIC.");
   }
 
-  // The current setup assumes the controller only handles one FELIX device (with m_did and m_cid)
-  // replies.size() should also be the same as fids.size() for send_cmd()
-  assert(replies.size()==1);
-  bool success = checkReply(replies[0]);
-  if (!success){
-    fclog->warn("Read register unsuccessful for fid {}",fid)
-  }
-  return success;
+  return replies;
  }
-/*
- // access register (
-
-  send data
- )
-
- send along IC(
-
-  check enabled
-  send data
-  )
-
- */
