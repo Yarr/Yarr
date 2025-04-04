@@ -722,8 +722,7 @@ FelixTools::FELIX_FW_MODE FelixTxCore::fwMode() {
   return m_fwMode;
 }
 
-// add in the comments which fid this is, IC or front end FID
-// might want to move to tx
+
 FelixClientThread::Reply FelixTxCore::communicateOverIC(uint64_t fid, const std::vector<uint8_t>& dataframe){
   /*
     Based on itk-ic-over-netio-next communication wrapper, 

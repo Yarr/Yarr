@@ -24,7 +24,6 @@ namespace OptoUtils {
     uint32_t m_i2c_read_multi_ext{0xF};
     uint32_t m_freq{2};
     uint32_t m_scldrive{0};
-    uint32_t m_i2c_addr{0};
 
     // Default values, can be specified in connectivity file if different
     uint32_t m_lpgbt_primary_addr{116};
@@ -103,7 +102,7 @@ namespace OptoUtils {
     /// @param i2cAddr I2C address to send data along, for optoboard communication, address of primary LpGBT (const uint8_t)
     /// @param deviceVersion LpGBT version (either 0 or 1), affects how the data frame is prepared (const unsigned int)
     /// @return Returns the dataframe to send through the IC channel (std::vector<uint8_t>)
-    std::vector<uint8_t> prepareICDataFrame(const bool write, const uint16_t reg_addr, const std::vector<uint8_t>& data, const uint8_t i2c_addr, const unsigned int device_version);
+std::vector<uint8_t> prepareICDataFrame(const bool write, const uint16_t reg_addr, const std::vector<uint8_t>& data, const uint8_t i2c_addr, const unsigned int device_version);
 }
 
 #endif

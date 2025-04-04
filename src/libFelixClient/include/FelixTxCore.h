@@ -131,7 +131,7 @@ private:
   /// @param fid The FIC of the IC channel (uint64_t)
   /// @param data The dataframe to be sent (const std::vector<uint8_t>&)
   /// @return Whether the operation was successful (bool)
-  FelixClientThread::Reply sendIC(uint64_t fid, const std::vector<uint8_t>& data);
+  FelixClientThread::Reply communicateOverIC(uint64_t fid, const std::vector<uint8_t>& dataframe);
 };
 
 #endif
