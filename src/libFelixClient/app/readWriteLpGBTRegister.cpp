@@ -30,13 +30,12 @@ int main(int argc, char **argv) {
     std::string regname = "";
     std::string regfield = "";
     std::string regval_str = "";
-    const char* const short_options = "r:n:f:v";
+    const char* const short_options = "r:c:a:h";
     const option long_options[] = {
         {"help",no_argument,nullptr,'h'},
         {"r",required_argument,nullptr,'r'},
-        {"regname",required_argument,nullptr,'n'},
-        {"regfield",required_argument,nullptr,'f'},
-        {"regval",required_argument,nullptr,'v'},
+        {"c", requred_argument, nullptr, 'c'},
+        {"regaddr", required_argument, nullptr, 'a'},
         {nullptr, no_argument, nullptr, 0}
     };
     while ((c = getopt_long(argc, argv, short_options, long_options,nullptr)) != -1) {
@@ -47,14 +46,11 @@ int main(int argc, char **argv) {
 		case 'r':
             hw_controller_filename = optarg;
             break;
-        case 'n' :
-            regname = optarg;
+        case 'c' :
+            connectivity_filename = optarg;
             break;
-        case 'f' :
-            regfield = optarg;
-            break;
-        case 'v' :
-            regval_str = optarg;
+        case 'a' :
+            regaddr = optarg;
             break;
 	    default:
             logger->critical("Invalid command line parameter(s) given! See help message for instructions:");
@@ -83,6 +79,20 @@ int main(int argc, char **argv) {
         }
     }
 
+    // Configure connectivity, use to get rx
+    if (connectivity_filename != ""){
+        fs::path connectivity_path{connectivity_filename};
+        if(!fs::exists(connectivity_path)) {
+            std::cerr << "ERROR: Provided connectivity file (=" << connectivity_filename << ") does not exist" << std::endl;
+        }
+        connectivity_pathname = connectivity_filename.substr(0, connectivity_filename.find_last_of("/"));
+    }
+    auto jconn = ScanHelper::openJsonFile(connectivity_filename);
+
+    auto chip_configs = jconn["chips"];
+    int rx = chip_configs[0]["rx"]
+
+
     // Configure controller
     json jctrl;
     try {
@@ -105,25 +115,12 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    bool success = true;
     // read register
-    if (regValue_str.empty()) {
-        success = hwCtrl->readLpGBTRegister(regname, regfield, regval)
-        if (!success){
-            std::cerr << "ERROR reading register " << regname << ", " << regfield << std::endl;
-        }
-        else {
-            std::cout << std::endl;
-            std::cout << regName << " = 0x" << std::hex << regval << std::endl;
-            std::cout << std::endl;
-        }
-    } 
-    // write register
-    else {
-        bool success = hwCtrl->writeLpGBTRegister(regName, regfield, regval_str);
-        if (!success){
-            std::cerr << "ERROR reading register " << regname << ", " << regfield << std::endl;
-        }
-    }
+    uint32_t regval = -1;
+    hwCtrl->readLpGBTRegister(regaddr, regval, rx);
+    std::cout << std::endl;
+    std::cout << "register with address "  << regaddr << "has value " << " = 0x" << std::hex << regval << std::endls;
+    std::cout << std::endl;
+
     return 0;
 }
