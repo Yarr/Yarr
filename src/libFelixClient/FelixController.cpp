@@ -81,7 +81,7 @@ const json FelixController::getStatus() {
   bool read_good = false;
 
   // card type
-  if ( FelixTxCore::readFwRegister("CARD_TYPE", reg_value) ) {
+  if ( readFwRegister("CARD_TYPE", reg_value) ) {
     switch (reg_value) {
     case 0x2c5:
       j_status["card_type"] = "FLX709";
@@ -102,7 +102,7 @@ const json FelixController::getStatus() {
   }
 
   // register map version
-  if ( FelixTxCore::readFwRegister("REG_MAP_VERSION", reg_value) ) {
+  if ( readFwRegister("REG_MAP_VERSION", reg_value) ) {
     // 0xabcd => version ab.cd
     int major = (reg_value >> 8) & 0xff;
     int minor = reg_value & 0xff;
@@ -111,7 +111,7 @@ const json FelixController::getStatus() {
 
   /*
   // firmware git hash
-  if ( FelixTxCore::readFwRegister("GIT_HASH", reg_value) ) {
+  if ( readFwRegister("GIT_HASH", reg_value) ) {
     j_status["firmware_git_hash"] = Utils::hexify(reg_value);
   }
 
@@ -121,12 +121,12 @@ const json FelixController::getStatus() {
   */
 
   // firmware git tag
-  if ( FelixTxCore::readFwRegister("GIT_TAG", reg_value) ) {
+  if ( readFwRegister("GIT_TAG", reg_value) ) {
     j_status["firmware_git_tag"] = Utils::hexify(reg_value);
   }
 
   // firmware mode
-  if ( FelixTxCore::readFwRegister("FIRMWARE_MODE", reg_value) ) {
+  if ( readFwRegister("FIRMWARE_MODE", reg_value) ) {
     switch (reg_value) {
     case 0:
       j_status["firmware_mode"] = "GBT mode";
@@ -165,12 +165,20 @@ const json FelixController::getStatus() {
   }
 
   // XADC temperature monitor for the FPGA CORE
-  if ( FelixTxCore::readFwRegister("FPGA_CORE_TEMP", reg_value) ) {
+  if ( readFwRegister("FPGA_CORE_TEMP", reg_value) ) {
     float temp_C = ((reg_value* 502.9098)/4096)-273.8195;
     j_status["fpga_core_temperature"] = temp_C;
   }
 
   return j_status;
+}
+
+bool FelixController::readFwRegister(const std::string& registerName, uint64_t& value) {
+  return FelixTxCore::readFwRegister(registerName, value);
+}
+
+bool FelixController::writeFwRegister(const std::string& registerName, const uint64_t& regValue) {
+  return FelixTxCore::writeFwRegister(registerName, regValue);
 }
 
 // E-link control
@@ -319,7 +327,7 @@ unsigned FelixController::getELinkWidthNBits(uint64_t fid) {
 
   std::string regName = FelixTools::getELinkWidthRegName(fid, fwMode());
   uint64_t regValue;
-  if ( FelixTxCore::readFwRegister(regName, regValue) ) {
+  if ( readFwRegister(regName, regValue) ) {
     fclog->debug(" {} = 0x{:x}", regName, regValue);
     nbits_w = 2 << (regValue & 0x7);
   }
@@ -550,7 +558,7 @@ bool FelixController::checkRegValue(const std::string& regName, unsigned value, 
 
   // read the register
   uint64_t regValue;
-  if ( FelixTxCore::readFwRegister(regName, regValue) ) {
+  if ( readFwRegister(regName, regValue) ) {
     // check against value
     if (mask) {
       // only compare the bits masked by mask to value
@@ -614,7 +622,7 @@ bool FelixController::setRegValue(const std::string& regName, unsigned value, un
 
   if (mask) {
     // read the register first
-    bool readSuccess = FelixTxCore::readFwRegister(regName, regValueOld);
+    bool readSuccess = readFwRegister(regName, regValueOld);
 
     if (not readSuccess) {
       fclog->error("Failed to set register {}: cannot access its current value", regName);
@@ -628,7 +636,7 @@ bool FelixController::setRegValue(const std::string& regName, unsigned value, un
     regValueNew = value;
   }
 
-  bool writeSuccess = FelixTxCore::writeFwRegister(regName, regValueNew);
+  bool writeSuccess = writeFwRegister(regName, regValueNew);
   if (writeSuccess) {
     if (mask) {
       fclog->debug(" {} = 0x{:x} (old value: 0x{:x})", regName, regValueNew, regValueOld);

@@ -18,6 +18,10 @@ public:
   void loadConfig(json const &j) override;
   const json getStatus() override;
 
+  // virtual here so they can be overriden in a dummy class for the unit test
+  virtual bool readFwRegister(const std::string &name, uint64_t &value) override;
+  virtual bool writeFwRegister(const std::string &name, const uint64_t &value) override;
+
   /*
   E-link control
   */
