@@ -46,6 +46,14 @@ int OptoUtils::getDeviceNum(int rx){
     return num;
 }
 
+bool OptoUtils::isPrimaryLpGBT(int rx){
+  is_primary = false;
+  if (getDeviceNum(rx)==0){
+    is_primary = true;
+  }
+  return is_primary;
+}
+
 
 std::vector<uint8_t> OptoUtils::prepareICDataFrame(const bool write, const uint16_t reg_addr, const std::vector<uint8_t>& data, const uint8_t i2c_addr, const unsigned int device_version){
   /*
