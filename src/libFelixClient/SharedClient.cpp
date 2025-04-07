@@ -3,6 +3,7 @@
 
 namespace {
   auto scllog = logging::make_log("SharedClient");
+  auto sctimer = logging::make_log("SharedClientTimer");
 }
 
 SharedClient::SharedClient(const json &cfg) {
@@ -121,6 +122,8 @@ void SharedClient::on_data_received(FelixID_t fid, const uint8_t* data, size_t s
   // skip if the channel is disabled
   if (not m_rxEnables[fid]) return;
 
+  sctimer->trace("SharedClient::on_data_received start fid=0x{:x} size={}", fid, size);
+
   #define UNLIKELY(x) __builtin_expect(x,0)
   if (m_last_id != fid) {
     m_last_it = m_callbacks.find(fid);
@@ -132,4 +135,5 @@ void SharedClient::on_data_received(FelixID_t fid, const uint8_t* data, size_t s
     m_last_id = fid;
   }
   m_last_it->second(fid, data, size, status);
+  sctimer->trace("SharedClient::on_data_received done fid=0x{:x}", fid);
 }

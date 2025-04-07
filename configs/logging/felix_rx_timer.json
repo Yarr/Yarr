@@ -1,0 +1,10 @@
+{
+  "sinks": [
+      {"name": "file", "level": "trace", "file_name": "felix_rx_timer.log",
+      "pattern": "%M:%S.%F %v"}
+  ],
+  "log_config": [
+      {"name": "FelixRxThreadTimer", "level": "trace", "sink": "file"},
+      {"name": "SharedClientTimer", "level": "trace", "sink": "file"}
+  ]
+}
