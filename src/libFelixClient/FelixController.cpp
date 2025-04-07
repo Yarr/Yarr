@@ -715,7 +715,7 @@ Optoboard communication functions
 */
 void FelixController::communicateLpGBT(const uint16_t reg_addr, const std::vector<uint8_t>& data, const bool write, uint64_t fid, uint32_t i2c_addr, int version){
   std::vector<uint8_t> netio_frame;
-  netio_frame = prepareICDataFrame(write, reg_addr, data, i2c_addr, version);
+  netio_frame = OptoUtils::prepareICDataFrame(write, reg_addr, data, i2c_addr, version);
 
   bool success = false;
   try {
@@ -735,7 +735,7 @@ void FelixController::communicateLpGBT(const uint16_t reg_addr, const std::vecto
   }
  }
 
-void FelixController::readWriteOptoReg(uint_32t reg_addr, bool write, uint_32t dev_addr, uint64_t fid, uint8_t& reg_data, uint32_t i2c_addr = m_i2c_addr, int version = m_lpgbt_version, std::string dev_type = "lpgbt", bool primary = true){
+void FelixController::readWriteOptoReg(uint32_t reg_addr, bool write, uint32_t dev_addr, uint64_t fid, uint8_t& reg_data, uint32_t i2c_addr = OptoUtils::m_i2c_addr, int version = OptoUtils::m_lpgbt_version, std::string dev_type = "lpgbt", bool primary = true){
   // if we're communicating directly to the primary LpGBT, we only need to send one simple register read
   if (primary){  
     communicateLpGBT(reg_addr, reg_data, write, fid, i2c_addr, version);
@@ -764,7 +764,7 @@ void FelixController::readWriteOptoReg(uint_32t reg_addr, bool write, uint_32t d
     std::string version_str = std::static_cast<std::string>(dev_version);
 
     communicateLpGBT(LPGBT_REGMAP[i2c_addr_str+"DATA0_V"+version_str], (m_scl_drive << 7) | (NBYTE << 2) | m_freq, 1, fid, i2c_addr, version);
-    communicateLpGBT(LPGBT_REGMAP[i2c_addr_str+"CMD_V"+version_str], m_i2c_write_cr, 1, fid, i2c_addr, version);
+    communicateLpGBT(LPGBT_REGMAP[i2c_addr_str+"CMD_V"+version_str], OptoUtils::OptoUtils::m_i2c_write_cr, 1, fid, i2c_addr, version);
 
     if (dev_type == "lpgbt"){
       // Send the address of the register we want to read, and data if we're writing it
@@ -781,17 +781,17 @@ void FelixController::readWriteOptoReg(uint_32t reg_addr, bool write, uint_32t d
       }
     }
 
-    communicateLpGBT(LPGBT_REGMAP[i2c_addr_str + "CMD_V"+version_str], m_i2c_w_multi_4byte0, 1, fid, i2c_addr, version);
+    communicateLpGBT(LPGBT_REGMAP[i2c_addr_str + "CMD_V"+version_str], OptoUtils::m_i2c_w_multi_4byte0, 1, fid, i2c_addr, version);
     communicateLpGBT(LPGBT_REGMAP[i2c_addr_str + "ADDRESS_V"+version_str], dev_addr, 1, fid, i2c_addr, version);
-    communicateLpGBT(LPGBT_REGMAP[i2c_addr_str + "CMD_V"+version_str], m_i2c_write_multi, 1, fid, i2c_addr, version) ;   //Initiate send of register address and register value
+    communicateLpGBT(LPGBT_REGMAP[i2c_addr_str + "CMD_V"+version_str], OptoUtils::m_i2c_write_multi, 1, fid, i2c_addr, version) ;   //Initiate send of register address and register value
 
     // Read back answer
     NBYTE = 1;
-    communicateLpGBT(LPGBT_REGMAP[i2c_addr_str + "DATA0_V"+version_str], (m_scl_drive << 7) | (NBYTE << 2) | m_freq, 1, fid, i2c_addr, version);
-    communicateLpGBT(LPGBT_REGMAP[i2c_addr_str + "CMD_V"+version_str], m_i2c_write_cr, 1, fid, i2c_addr, version);
+    communicateLpGBT(LPGBT_REGMAP[i2c_addr_str + "DATA0_V"+version_str], (OptoUtils::m_scl_drive << 7) | (NBYTE << 2) | OptoUtils::m_freq, 1, fid, i2c_addr, version);
+    communicateLpGBT(LPGBT_REGMAP[i2c_addr_str + "CMD_V"+version_str], OptoUtils::m_i2c_write_cr, 1, fid, i2c_addr, version);
 
     communicateLpGBT(LPGBT_REGMAP[i2c_addr_str + "ADDRESS_V"+version_str], dev_addr, 1, fid, i2c_addr, version);
-    communicateLpGBT(LPGBT_REGMAP[i2c_addr_str + "CMD_V"+version_str], m_i2c_read_multi, 1, fid, i2c_addr, version);
+    communicateLpGBT(LPGBT_REGMAP[i2c_addr_str + "CMD_V"+version_str], OptoUtils::m_i2c_read_multi, 1, fid, i2c_addr, version);
 
     uint32_t status = 0;
     communicateLpGBT(LPGBT_REGMAP[i2c_addr_str + "STATUS_V"+version_str], status, 0, fid, i2c_addr, version);
@@ -805,24 +805,29 @@ void FelixController::readWriteOptoReg(uint_32t reg_addr, bool write, uint_32t d
   }
 }
 
-void FelixController::readLpGBTRegister(uint32_t reg_addr, uint8_t& reg_data, uint64_t ic_fid, uint32_t dev_addr, uint32_t i2c_addr = m_i2c_addr, int version = m_lpgbt_version){
-  bool is_primary = isPrimaryLpGBT(reg_addr);
+
+void FelixController::readLpGBTRegister(uint32_t reg_addr, uint8_t& reg_data, int rx, uint32_t i2c_addr = OptoUtils::m_i2c_addr, int version = OptoUtils::m_lpgbt_version){
+  uint32_t dev_addr = getDeviceAddress("lpgbt", rx);
+  // get ic fid
+  uint64_t ic_fid = fid_from_channel(rx);
+  setICEnable(ic_fid);
+  bool is_primary = isPrimaryLpGBT(rx);
   readWriteOptoReg(reg_addr, 0, dev_addr, ic_fid, reg_data, i2c_addr, version, "lpgbt", is_primary);
 }
-
-void FelixController::writeLpGBTRegister(uint32_t reg_addr, uint8_t& reg_data, uint64_t ic_fid, uint32_t dev_addr, uint32_t i2c_addr = m_i2c_addr, int version = m_lpgbt_version){
+/*
+void FelixController::writeLpGBTRegister(uint32_t reg_addr, uint8_t& reg_data, , uint32_t dev_addr, uint32_t i2c_addr = OptoUtils::m_i2c_addr, int version = OptoUtils::m_lpgbt_version){
   bool is_primary = isPrimaryLpGBT(reg_addr);
   readWriteOptoReg(reg_addr, 1, dev_addr, ic_fid, reg_data, i2c_addr, version, "lpgbt", is_primary);
 }
 
-void FelixController::readGBCRRegister(uint32_t reg_addr, uint8_t& reg_data, uint64_t ic_fid, uint32_t dev_addr, uint32_t i2c_addr = m_i2c_addr, int version = m_lpgbt_version){
+void FelixController::readGBCRRegister(uint32_t reg_addr, uint8_t& reg_data, uint64_t ic_fid, uint32_t dev_addr, uint32_t i2c_addr = OptoUtils::m_i2c_addr, int version = OptoUtils::m_lpgbt_version){
   readWriteOptoReg(reg_addr, 0, dev_addr, ic_fid, reg_data, i2c_addr, version, "gbcr", 0);
 }
 
-void FelixController::writeGBCRRegister(uint32_t reg_addr, uint8_t& reg_data, uint64_t ic_fid, uint32_t dev_addr, uint32_t i2c_addr = m_i2c_addr, int version = m_lpgbt_version){
+void FelixController::writeGBCRRegister(uint32_t reg_addr, uint8_t& reg_data, uint64_t ic_fid, uint32_t dev_addr, uint32_t i2c_addr = OptoUtils::m_i2c_addr, int version = OptoUtils::m_lpgbt_version){
   readWriteOptoReg(reg_addr, 1, dev_addr, ic_fid, reg_data, i2c_addr, version, "gbcr", 0);
 }
-
+*/
 bool felix_registered = StdDict::registerHwController(
   "FelixClient",
   []() {return std::unique_ptr<HwController>(new FelixController);}
