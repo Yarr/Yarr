@@ -86,10 +86,15 @@ namespace OptoUtils {
 
     /// @brief For a given device type and number (e.g. GBCR #2), return the address
     /// @param deviceType "GBCR", "LPGBT" accepted (string)
-    /// @param deviceNumber 0,1,2,3 (int)
+    /// @param rx From front-end device controller file
     /// @param lpgbt_primary_addr default value is 116 (uint32_t)
     /// @return Returns the device address (uint32_t)
-    uint32_t getDeviceAddress(std::string device_type, int device_number, uint32_t lpgbt_primary_addr = 116);
+    uint32_t getDeviceAddress(std::string device_type, int rx, uint32_t lpgbt_primary_addr = 116);
+
+    int getFELIXLinkForLpGBT(int rx);
+
+    int getDeviceNum(int rx);
+
 
     /*
     IC connection send/receive utilities

@@ -3,7 +3,8 @@
 #include "logging.h"
 
 
-uint32_t OptoUtils::getDeviceAddress(std::string device_type, int device_number, uint32_t lpgbt_primary_addr = 116){
+uint32_t OptoUtils::getDeviceAddress(std::string device_type, int rx, uint32_t lpgbt_primary_addr = 116){
+  int device_number = getDeviceNumber(rx);
   uint32_t addr = 0;
   if (device_type == "GBCR" || "gbcr"){
     addr = 32 + device_number;
@@ -16,6 +17,35 @@ uint32_t OptoUtils::getDeviceAddress(std::string device_type, int device_number,
   }
   return addr;
 }
+/*
+    getLink: Returns the FELIX link corresponding to a particular chip
+        @param: rx (int): rx value for chip in connectivity file
+        @return: link (int): FELIX link number
+
+    Each lpGBT on the optoboard corresponds to one FELIX link
+    Each lpGBT has six input lines from the front-end (egroups)
+    The front-end rx values that map to these egroups count in increments of 4 and increase by 64 each lpGBT
+    ex: lpGBT 1 (primary) has rx = {0,4,8,12,16,20}, link 00
+        lpGBT 2 (secondary) has rx = {64,68,72,76,80,84}, link 01
+
+    Calculate link number by integer dividing the rx by 64
+    Note: This code currently only supports systems with one optoboard
+
+    ex: rx = 76 should be link 01
+        int(76 / 64) = 1
+*/
+int OptoUtils::getFELIXLinkForLpGBT(int rx){
+  int link = rx/64;
+  return link;
+}
+
+int OptoUtils::getDeviceNum(int rx){
+    // 4 LpGBT per optoboard, so links 0, 1, 2, 3 should be LpGBTs 0,1,2,3, links 4,5,6,7 should be LpGBTs 0,1,2,3, etc.
+    int link = getFELIXLinkForLpGBT(rx);
+    int num = link/4;
+    return num;
+}
+
 
 std::vector<uint8_t> OptoUtils::prepareICDataFrame(const bool write, const uint16_t reg_addr, const std::vector<uint8_t>& data, const uint8_t i2c_addr, const unsigned int device_version){
   /*
