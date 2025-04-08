@@ -157,22 +157,21 @@ unsigned ScanConsoleImpl::getRunNumber() {
 }
 
 
-int ScanConsoleImpl::setupScan() {    ScanHelper::banner(logger,"Setup Scan");
-        
-	//check if scan type matches chip type
-     for (unsigned int i=0; i<scanCfg["scan"]["loops"].size(); i++) {
-     	std::string loopAction = scanCfg["scan"]["loops"][i]["loopAction"];
-     	for (unsigned int j=0; j<StdDict::listFrontEnds().size(); j++) {
-     		std::string chipOption = StdDict::listFrontEnds()[j]; 
-     		if (chipOption == chipType && loopAction.find("Std") == std::string::npos) {
-     			if (std::search(loopAction.begin(), loopAction.end(), chipOption.begin(), chipOption.end(), [](char a, char b){return std::tolower(a) == std::tolower(b);}) == loopAction.end()){
-     				logger->error("Wrong scan file for chip type, aborting!");
-     					return -1;
-     				}
-     			}
-                }
-        }
-        
+int ScanConsoleImpl::setupScan() {    
+	ScanHelper::banner(logger,"Setup Scan");
+
+    //check if correct scan using the loop registry
+    for (unsigned int i=0; i<scanCfg["scan"]["loops"].size(); i++) {
+	std::string loopAction = scanCfg["scan"]["loops"][i]["loopAction"];
+	std::shared_ptr<LoopActionBase> action = StdDict::getLoopAction(loopAction);
+	if (action == nullptr) {
+		logger->error("This scan contains an unbuilt loop {}, aborting!", loopAction);
+		return -1;
+	}else if (std::search(loopAction.begin(), loopAction.end(), chipType.begin(), chipType.end(), [](char a, char b){return std::tolower(a) == std::tolower(b);}) == loopAction.end() && loopAction.find("Std") == std::string::npos){
+		logger->error("This scan contains incorrect loops for the chipType (standard loops assumed to contain Std), aborting!");
+		return -1;
+	}
+    }
     
     // Make backup of scan config
 

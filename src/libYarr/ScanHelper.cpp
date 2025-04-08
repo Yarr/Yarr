@@ -213,6 +213,13 @@ namespace ScanHelper {
                     shlog->error("Error opening chip config: {}", e.what());
                     throw (std::runtime_error("buildChips failure"));
                 }
+                //check if correct config for chipType
+		if (!cfg.contains(chipType)) {
+		       shlog->info("Wrong config for chipType");	
+			throw (std::runtime_error("Wrong config for chipType"));
+		}else{ 
+			shlog->info("Correct config for chipType");
+		}
                 chip["__config_data__"] = cfg;
             } else {
                 shlog->warn("Config file not found, creating new file from defaults!");
