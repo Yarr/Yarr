@@ -525,7 +525,33 @@ void Rd53bDataProcessor::process_core()
     }
 }
 
-bool Rd53bDataProcessor::getNextDataBlock()
+bool Rd53bDataProcessor::getNextDataBlock() {
+    // Set data_pre
+    if(unlikely(_data == nullptr)) {
+        // Fake error frame, should never decode this
+        _data_pre[0] = 0xFF800000;
+        _data_pre[1] = 0x00000000;
+    }
+    else {
+        _data_pre[0] = _data[0];
+        _data_pre[1] = _data[1];
+    }
+
+    bool good = getNextDataBlockImpl();
+    while (good && ((_data_t[0] == 0xFFFFDEAD && _data_t[1] == 0xFFFFDEAD) || (((_data_t[0] >> 29) & 0x3) != _chipId && _enChipId))) {
+        good = getNextDataBlockImpl();
+    }
+
+    // Not able to update data block
+    if (!good)
+        return false;
+
+    // Upate the data pointer.
+    _data = _data_t;
+    return good;
+}
+
+bool Rd53bDataProcessor::getNextDataBlockImpl()
 {
     if (_curInV != nullptr && _curInV->size() > 0)
     {
@@ -534,11 +560,8 @@ bool Rd53bDataProcessor::getNextDataBlock()
         {
             _rawDataIdx = 0;
             _wordIdx = 0;
-            _data = &_curInV->data[0]->get(0);
-            if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
-                 return getNextDataBlock();
-            if (((_data[0] >> 29) & 0x3) != _chipId && _enChipId)
-                 return getNextDataBlock();
+            _data_t = &_curInV->data[0]->get(0);
+
             return true;
         }
         _wordIdx += 2; // Increase block index
@@ -588,16 +611,6 @@ bool Rd53bDataProcessor::getNextDataBlock()
         // Keep track of last block
         if (_curInV != nullptr && _curInV->size() > 0)
         {
-            if(unlikely(_data == nullptr)) {
-                // Fake error frame, should never decode this
-                _data_pre[0] = 0x7F800000;
-                _data_pre[1] = 0x00000000;
-            }
-            else {
-                _data_pre[0] = _data[0];
-                _data_pre[1] = _data[1];
-            }
-
             // Push out data accumulated so far
             if (_events > 0)
             {
@@ -646,17 +659,9 @@ bool Rd53bDataProcessor::getNextDataBlock()
         for (unsigned c = 0; c < _curInV->size(); c++)
             _wordCount += _curInV->data[c]->getSize();
     }
-
-    uint32_t *_data_t = &_curInV->data[_rawDataIdx]->get(_wordIdx);
-
-    // Skip special symbols
-    if (_data_t[0] == 0xFFFFDEAD && _data_t[1] == 0xFFFFDEAD)
-        return getNextDataBlock();
-    if (((_data_t[0] >> 29) & 0x3) != _chipId && _enChipId)
-        return getNextDataBlock();
     
     // Upate the data pointer. Note the meaning of block index is the first block that is *unprocessed*
-    _data = &_curInV->data[_rawDataIdx]->get(_wordIdx);
+    _data_t = &_curInV->data[_rawDataIdx]->get(_wordIdx);
 
 #if USE_ITKPIX_DEBUG_BUFFER > 0
     _debugBuffer[_debugIdx] = _data[0];
@@ -685,6 +690,7 @@ void Rd53bDataProcessor::getPreviousDataBlock()
     }
     _data = &_curInV->data[_rawDataIdx]->get(_wordIdx); // Also roll back the block index and data word pointer
 
+    // Recursive `getPreviousDataBlock` is bounded by size of data container, < 1 million (~segfault threshold)
     if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
         getPreviousDataBlock();
     if (((_data[0] >> 29) & 0x3) != _chipId && _enChipId)

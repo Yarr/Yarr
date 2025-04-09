@@ -13,6 +13,7 @@ post_build_debug_library(Yarr)
 add_library(Scan SHARED
         AllAnalyses.cpp
         AllChips.cpp
+        AllConfigurations.cpp
         AllHistogrammers.cpp
         AllHwControllers.cpp
         AllProcessors.cpp
@@ -24,6 +25,7 @@ add_library(Scan SHARED
         DataProcessor.cpp
         EventData.cpp
         FeedbackBase.cpp
+        FileConfiguration.cpp
         FrontEnd.cpp
         HistogramAlgorithm.cpp
         HistogramBase.cpp

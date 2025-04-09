@@ -77,10 +77,10 @@ void StarCounterLoop::execPart1() {
         auto fe = keeper->getFe(id);
         SPDLOG_LOGGER_DEBUG(logger, fe->isActive());
         if (!fe->isActive()) {continue;}
-        ((StarChips*) fe)->setAndWriteABCSubRegister("ENCOUNT", 1, 0xf);
+        ((StarChips*) fe)->setAndWriteABCSubRegister(ABCStarSubRegister::ENCOUNT, 1, 0xf);
         SPDLOG_LOGGER_DEBUG(logger, "Did ENCOUNT");
-        ((StarChips*) fe)->setAndWriteABCSubRegister("PR_ENABLE", 0, 0xf);
-        ((StarChips*) fe)->setAndWriteABCSubRegister("LP_ENABLE", 0, 0xf);
+        ((StarChips*) fe)->setAndWriteABCSubRegister(ABCStarSubRegister::PR_ENABLE, 0, 0xf);
+        ((StarChips*) fe)->setAndWriteABCSubRegister(ABCStarSubRegister::LP_ENABLE, 0, 0xf);
         ((StarChips*) fe)->sendCmd(LCB::fast_command(LCB::FastCmdType::ABC_HIT_COUNT_RESET,0));
         SPDLOG_LOGGER_DEBUG(logger, "Reset sent, sending start");
         ((StarChips*) fe)->sendCmd(LCB::fast_command(LCB::FastCmdType::ABC_HIT_COUNT_START,4));

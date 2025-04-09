@@ -101,7 +101,6 @@ add_compile_options(-Wno-deprecated)
 add_compile_options(-Wnon-virtual-dtor)
 
 option(BUILD_TESTS "Build the YARR test suite" OFF)
-option(DISABLE_PLOTTING_TOOLS "Disable build of plotting tools" OFF)
 
 set(YARR_FRONT_ENDS_TO_BUILD "Fei4;Rd53a;Star;Rd53b;Itkpixv2"
     CACHE STRING "Semicolon-separated list of controllers to build, or \"all\"")
@@ -155,8 +154,10 @@ if(BUILD_TESTS)
     message(STATUS "Building the YARR test suite" )
     enable_testing()
 endif()
-set(TARGET_INSTALL_AREA ${PROJECT_SOURCE_DIR})
-set(SHARED_INSTALL_AREA ${PROJECT_SOURCE_DIR}/installed/)
+
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set_property(CACHE CMAKE_INSTALL_PREFIX PROPERTY VALUE "${PROJECT_SOURCE_DIR}")
+endif()
 
 function(post_build_debug_library name)
   add_custom_command(TARGET ${name}
@@ -167,7 +168,7 @@ function(post_build_debug_library name)
   )
 
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lib${name}.so.debug
-    DESTINATION ${TARGET_INSTALL_AREA}/lib
+	  DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
     )
 endfunction(post_build_debug_library)
 
@@ -180,14 +181,14 @@ function(post_build_debug_executable name)
   )
 
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${name}.debug
-    DESTINATION ${TARGET_INSTALL_AREA}/bin
+	  DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
     )
 endfunction(post_build_debug_executable)
 
 include(cmake/CMakeLists.txt.external)
 add_subdirectory(src)
 
-install(DIRECTORY ${PROJECT_BINARY_DIR}/bin DESTINATION ${TARGET_INSTALL_AREA}  FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+install(DIRECTORY ${PROJECT_BINARY_DIR}/bin DESTINATION ${CMAKE_INSTALL_PREFIX}  FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
     WORLD_EXECUTE WORLD_READ GROUP_EXECUTE GROUP_READ  )
-install(DIRECTORY ${PROJECT_BINARY_DIR}/lib DESTINATION ${TARGET_INSTALL_AREA}  FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+install(DIRECTORY ${PROJECT_BINARY_DIR}/lib DESTINATION ${CMAKE_INSTALL_PREFIX}  FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
     WORLD_EXECUTE WORLD_READ GROUP_EXECUTE GROUP_READ  )

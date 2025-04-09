@@ -17,6 +17,8 @@
 #include "RawData.h"
 #include "HccCfg.h"
 
+class StarDataProcessorImpl;
+
 /**
    Process Star front-end data to generate hits.
 
@@ -39,12 +41,15 @@ class StarDataProcessor : public FeDataProcessor {
         /// Connect this instance to data for a particular FrontEnd
         void connect(FrontEndCfg *feCfg, ClipBoard<RawDataContainer> *arg_input, ClipBoard<EventDataBase> *arg_output) override;
         void connect(ClipBoard<FeedbackProcessingInfo> *arg_proc_status) override {statusFb = arg_proc_status;}
-    
+
         void init() override;
+        void loadConfig(const json &config) override;
         void run() override;
         void join() override;
         void process() override;
         virtual void process_core();
+
+        std::unique_ptr<EventDataBase> process_event_core(const RawDataContainer &rdc, std::function<void (std::unique_ptr<FeedbackProcessingInfo>)> push_fb) override;
 
     private:
         ClipBoard<RawDataContainer> *input;
@@ -55,6 +60,8 @@ class StarDataProcessor : public FeDataProcessor {
 
         /// Map from HCC input channel (0-10) number to histogram slot
         std::array<uint8_t, HCC_INPUT_CHANNEL_COUNT> chip_map;
+
+        std::unique_ptr<StarDataProcessorImpl> pimpl;
 };
 
 #endif

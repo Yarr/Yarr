@@ -128,6 +128,37 @@ An example configuration set to communicate with multiple FEs looks like this:
 ```
 Each chip is given its own configuration file named, labeled under `config`. In this example, the 2nd chip (tx/rx 1 is disabled) but all remaining chips are enabled.
 
+To override specific parameters in the chip configuration without modifying the original config files, you can use the `GlobalOverwrite` field in each chip entry. This is especially useful when you want to apply the same modification to multiple chips during testing.
+
+Only **enabled** chips that include a valid `GlobalOverwrite` file path will be affected. It is also possible to assign different `GlobalOverwrite` files to different chips. 
+
+**Example:**
+```json
+{
+    "chipType": "RD53B",
+    "chips": [
+        {
+            "config": "configs/rd53b_test.json",
+            "tx": 0,
+            "rx": 0,
+            "enable": 1,
+            "GlobalOverwrite": "configs/overwrite.json"
+        }
+    ]
+}
+```
+Only parameters that are already present in the original chip configuration will be overwritten. The chip configuration files will be permanently overwritten. If a parameter from the `GlobalOverwrite` file is not found in the chip config, a warning will be printed and the parameter will be skipped. You can only overwrite the `GlobalConfig` parameters. An example of the `overwrite.json` file looks like this:
+```json
+{
+    "RD53B": {
+        "GlobalConfig": {
+            "SerSelOut0": 2,
+            "SerSelOut1": 3
+        }
+    }
+}
+```
+
 #### Configuration for multiple FE chips with each FE sharing one command line
 An example of this type of configuration is:
 ```json

@@ -4,12 +4,15 @@
 
 #include "AllProcessors.h"
 #include "StarCfg.h"
+#include "StarProcessor.h"
 
 #include "EventData.h"
 #include <memory>
 
 TEST_CASE("StarDataProcessor", "[star][data_processor]") {
   std::shared_ptr<FeDataProcessor> proc;
+
+  bool use_base_zero = false;
 
   SECTION("Star") {
     proc = StdDict::getDataProcessor("Star");
@@ -23,20 +26,35 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
     proc = StdDict::getDataProcessor("Star_vH1A1");
   }
 
-  REQUIRE (proc);
+  SECTION("Star_PPB_template") {
+    proc = StdDict::getDataProcessor("Star_vH1A1");
+    json j;
+    j["use_template"] = true;
+    proc->loadConfig(j);
+  }
 
-  ClipBoard<RawDataContainer> rd_cp;
-  ClipBoard<EventDataBase> em_cp;
+  SECTION("Star_PPB_template_base0") {
+    use_base_zero = true;
+
+    proc = StdDict::getDataProcessor("Star_vH1A1");
+    json j;
+    j["use_template"] = true;
+    j["zero_base"] = true;
+    proc->loadConfig(j);
+  }
+
+  CAPTURE (use_base_zero);
+
+  REQUIRE (proc);
 
   // Use v1 mapping for simplicity
   int hcc_version = 1;
   StarCfg starCfg(0, hcc_version);
-  starCfg.hcc().setSubRegisterValue("ICENABLE", 0x3ff);
+  starCfg.hcc().setSubRegisterValue(HCCStarSubRegister::ICENABLE, 0x3ff);
 
-  proc->connect(&starCfg, &rd_cp, &em_cp );
+  proc->connect(&starCfg, nullptr, nullptr);
 
   proc->init();
-  proc->run();
 
   alignas(32) uint8_t packet_bytes[] = {
     0x20, 0x06, // Header
@@ -72,16 +90,13 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
 
   std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(LoopStatus()));
   rdc->add(std::move(rd));
-  rd_cp.pushData(std::move(rdc));
 
-  rd_cp.finish();
-
-  proc->join();
+  auto output = proc->process_event_core(*rdc, [](auto f) {});
 
   // No other channels added
-  REQUIRE (!em_cp.empty());
+  REQUIRE (output);
 
-  auto data = em_cp.popData();
+  auto &data = output;
   FrontEndData &rawData = *(FrontEndData*)data.get();
 
   REQUIRE (rawData.events.size() == 1);
@@ -95,9 +110,14 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
 
   for(auto &hit: first.hits) {
     // Remove offset to base 1
-    uint16_t packed = hit.col - 1;
-    if((hit.row-1) == 1) {
+    uint16_t packed = hit.col - (use_base_zero?0:1);
+    size_t check_row = hit.row - (use_base_zero?0:1);
+    CAPTURE(hit.row, hit.col);
+    CAPTURE(check_row);
+    if(check_row == 1) {
       packed |= 0x8000;
+    } else {
+      CHECK (check_row == 0);
     }
     out_hits.push_back(packed);
 
@@ -107,6 +127,7 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
   REQUIRE (out_hits.size() == expected.size());
   std::sort(out_hits.begin(), out_hits.end());
 
+  CAPTURE (out_hits, expected);
   for(size_t index=0; index<out_hits.size(); index++) {
     CAPTURE (index);
     bool found_row = out_hits[index] & 0x8000;
@@ -118,11 +139,159 @@ TEST_CASE("StarDataProcessor", "[star][data_processor]") {
 
     CAPTURE (found_row, found_channel_offset, found_strip, expect_row, expect_channel_offset, expect_strip);
 
-    REQUIRE (found_row == expect_row);
-    REQUIRE (found_channel_offset == expect_channel_offset);
-    REQUIRE (found_strip == expect_strip);
+    CHECK (found_row == expect_row);
+    CHECK (found_channel_offset == expect_channel_offset);
+    CHECK (found_strip == expect_strip);
+  }
+}
+
+TEST_CASE("StarDataProcessorPrintTemplate", "[star][data_processor]") {
+  std::vector<uint8_t> bytes;
+  std::string expected;
+
+  // In each section test particular template function
+  SECTION("Nothing") {
+    expected = "Parse error: Not enough words\n";
   }
 
-  // Only one thing
-  REQUIRE (em_cp.empty());
+  SECTION("Error Info") {
+    std::string header = "Packet type is TYP_LP\nPacket info: BCID 3 (0), L0ID 0\n";
+
+    std::string error_marker = "We received an error block 0x77F4!\nReceived packet errors for the following channels:\n";
+
+    std::string abc_map = "  ABC Error: 4\n  BCID Error: 2 9\n  L0tag Error: 0 7\n  Timeout Error: 5\n";
+
+    expected = header + error_marker + abc_map;
+
+    bytes = {
+      0x20, 0x06, // Header
+      0x77, 0xf4, // Error marker
+      0x01, 0x02, // 12 bits for each of 4 types
+      0x04, 0x08,
+      0x10, 0x20,
+      0x6f, 0xed, // Trailer
+    };
+  }
+
+  SECTION("Data Header") {
+    expected = "Packet info: BCID 3 (0), L0ID 0\n";
+
+    expected = "Packet type is TYP_LP\n" + expected;
+
+    bytes = {
+      0x20, 0x06, // Header
+      0x6f, 0xed,  // Trailer
+    };
+  }
+
+  SECTION("Data No cluster") {
+    expected = "Packet's abc clusters are:\n  -) Empty chip (2)\n";
+
+    // Surrounding
+    expected = "Packet type is TYP_LP\nPacket info: BCID 3 (0), L0ID 0\n" + expected;
+
+    bytes = {
+      0x20, 0x06, // Header
+      0x13, 0xfe,
+      0x6f, 0xed  // Trailer
+    };
+  }
+
+  SECTION("Data Cluster") {
+    expected = "Packet's abc clusters are:\n  0) InputChannel: 9, Address: 0xe5, Next Strip Pattern: 000.\n";
+
+    expected = "Packet type is TYP_LP\nPacket info: BCID 3 (0), L0ID 0\n" + expected;
+
+    bytes = {
+      0x20, 0x06, // Header
+      0x4f, 0x28, // Hit input channel 9, 0xe5 only
+      0x6f, 0xed  // Trailer
+    };
+  }
+
+  SECTION("ABC Read") {
+    expected = " ABC 0 ABC status 9141 Address: 51 value: 0000000c\n";
+
+    expected = "Packet type is TYP_ABC_RR\n" + expected;
+
+    bytes = {
+      0x40, 0x33,
+      0x00, 0x00,
+      0x00, 0x00,
+      0xc9, 0x14,
+      0x10
+    };
+  }
+
+  SECTION("ABC HPR Read") {
+    expected = " ABC 0 ABC status 9149 Address: 63 value: 78551fff\n";
+
+    expected = "Packet type is TYP_ABC_HPR\n" + expected;
+
+    bytes = {
+      0xd0, 0x3f,
+      0x07, 0x85,
+      0x51, 0xff,
+      0xf9, 0x14,
+      0x90,
+    };
+  }
+
+  SECTION("HCC Read") {
+    expected = " Address: 3 value: 74b78557\n";
+
+    expected = "Packet type is TYP_HCC_RR\n" + expected;
+
+    bytes = {
+      0x80, 0x37,
+      0x4b, 0x78,
+      0x55, 0x70,
+    };
+  }
+
+  SECTION("HCC HPR Read") {
+    expected = " Address: 15 value: 57850079\n";
+
+    expected = "Packet type is TYP_HCC_HPR\n" + expected;
+
+    bytes = {
+      0xe0, 0xf5,
+      0x78, 0x50,
+      0x07, 0x90,
+    };
+  }
+
+  SECTION("Transparent") {
+    expected = "ABC transparent 0: 0010001000000101101111111110011111111111011111111111011111111111\n";
+
+    expected = "Packet type is TYP_ABC_TRANSP\n" + expected;
+
+    bytes = {
+      0x70, 0x22,
+      0x05, 0xbf,
+      0xe7, 0xff,
+      0x7f, 0xf7,
+      0xff,
+    };
+  }
+
+  CAPTURE (bytes);
+
+  std::stringstream oss;
+  PrintProc proc(oss);
+
+  StarProcessPacket(bytes.data(), bytes.data() + bytes.size(), proc);
+  std::string output = oss.str();
+  CHECK (output == expected);
+  CHECK (output.size() == expected.size());
+  for (int i=0; i<output.size(); i++) {
+    CAPTURE(i);
+    if(i) {
+      CAPTURE(output[i-1]);
+    }
+    if(i<output.size()-1) {
+      CAPTURE(output[i+1]);
+    }
+    CHECK(output[i] == expected[i]);
+  }
 }

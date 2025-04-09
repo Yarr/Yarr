@@ -13,7 +13,7 @@
 
 // Create logger
 namespace {
-  auto logger = logging::make_log("Itkpixv2Cfg");
+    auto logger = logging::make_log("Itkpixv2Cfg");
 }
 
 Itkpixv2Cfg::Itkpixv2Cfg() :
@@ -29,8 +29,50 @@ Itkpixv2Cfg::Itkpixv2Cfg() :
     m_kSenseShuntA(26000),
     m_kSenseShuntD(26000),
     m_kShuntA(1000),
-    m_kShuntD(1000)
+    m_kShuntD(1000),
+    m_nBadPixel({}),
+    m_nBadPixelInitialized(false)
 {}
+
+void Itkpixv2Cfg::maskPixel(unsigned col, unsigned row, bool doAltMask){
+    //First check if bad pixel count needs to be initiated
+    if (!(m_nBadPixelInitialized)){
+        int nCoreCol = (n_Col)/8;
+        for (unsigned iCoreCol = 0; iCoreCol < nCoreCol; iCoreCol++){
+            unsigned nBadPixelCount = 0;
+            for (unsigned iPixel = 0; iPixel < 8*n_Row; iPixel++){
+                if (!(this->getEn( 8*iCoreCol + iPixel%8 , iPixel/8 )))
+                    nBadPixelCount ++;
+            }
+            m_nBadPixel[iCoreCol] = nBadPixelCount;
+        }
+        m_nBadPixelInitialized=true;
+    }
+
+    this->setHitbus(col,row,0);
+    //If not already disabled
+    if (this->getEn(col,row) && !doAltMask){ 
+        this->setEn(col,row,0);
+
+        //Add one to count of bad pixels per core column
+        int coreCol = col/8;
+        bool validCoreCol = (coreCol<50) && (coreCol>=0);
+        if(validCoreCol){
+            //Add 1 to count
+            m_nBadPixel[coreCol] += 1;
+
+            //Check if core column register needs update
+            if (m_nBadPixel[coreCol] >= 8*n_Row){
+                std::string name = "EnCoreCol"+std::to_string(coreCol/16);
+                int adj = coreCol/16;
+                int reg = 0;
+                reg = this->getValue(name);
+                this->setValue(name,reg & ~(0x1 << (coreCol-16*adj)));
+            }
+        }
+    } 
+}
+
 
 void Itkpixv2Cfg::enableAll() {
     logger->info("Resetting enable/hitbus pixel mask to all enabled!");
@@ -40,6 +82,8 @@ void Itkpixv2Cfg::enableAll() {
             setHitbus(col, row, 1);
         }
     }
+    m_nBadPixel.fill(0);
+    m_nBadPixelInitialized=true;
 }
 
 double Itkpixv2Cfg::toCharge(double vcal) {
@@ -91,16 +135,16 @@ void Itkpixv2Cfg::loadConfig(const json &j) {
         auto &jparams = j["ITKPIXV2"]["Parameter"];
         if (jparams.contains("Name"))
             name = jparams["Name"];
-    
+
         if (jparams.contains("ChipId"))
             m_chipId = jparams["ChipId"];
-    
+
         if (jparams.contains("InjCap"))
             m_injCap = jparams["InjCap"];
-   
+
         if (jparams.contains("EnforceNameIdCheck"))
             enforceChipIdInName = jparams["EnforceNameIdCheck"];
-    
+
         if (jparams.contains("NfDSLDO"))
             m_nf[0] = jparams["NfDSLDO"];
 
@@ -148,7 +192,7 @@ void Itkpixv2Cfg::loadConfig(const json &j) {
         if (jparams.contains("NtcCalPar")) {
             if (jparams["NtcCalPar"].size() == m_ntcCalPar.size()) {
                 for (unsigned i = 0; i < m_ntcCalPar.size(); i++) {
-                  m_ntcCalPar[i] = jparams["NtcCalPar"][i];
+                    m_ntcCalPar[i] = jparams["NtcCalPar"][i];
                 }
             }
         }

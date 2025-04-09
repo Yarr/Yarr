@@ -182,7 +182,7 @@ int ScanConsoleImpl::setupScan() {
     }
     // TODO not to use the raw pointer!
     try {
-        ScanHelper::buildRawDataProcs(procs, *bookie, chipType);
+        ScanHelper::buildRawDataProcs(procs, scanCfg, *bookie, chipType);
         ScanHelper::buildHistogrammers(histogrammers, scanCfg, *bookie, scanOpts.outputDir);
         ScanHelper::buildAnalyses(analyses, scanCfg, *bookie, scanBase.get(),
                                   &fbData, scanOpts.mask_opt, scanOpts.outputDir,

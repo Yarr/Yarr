@@ -111,7 +111,7 @@ TEST_CASE("StarEmulatorID", "[star][emulator]") {
   // read any HCC register
   // default value is: HCCStarRegister::OPmode]->setValue(0x00020001)
   // OPmode reg is 41 (in hex = 0x29)
-  sendCommand(*emu, star.read_hcc_register(HCCStarRegister::OPmode, default_hccID));
+  sendCommand(*emu, star.read_hcc_register((int)HCCStarRegister::OPmode, default_hccID));
   expected[1].push_back("Packet type TYP_HCC_RR, ABC 0, Address 29, Value 00020001\n");
 
   // change hccID
@@ -122,22 +122,22 @@ TEST_CASE("StarEmulatorID", "[star][emulator]") {
   // try to read with the old hccID
   // m_registerMap[HCCStarRegister::ExtRst]->setValue(0x00710003);
   // ExtRst 45 (= 0x2d)
-  sendCommand(*emu, star.read_hcc_register(HCCStarRegister::ExtRst, default_hccID));
+  sendCommand(*emu, star.read_hcc_register((int)HCCStarRegister::ExtRst, default_hccID));
   // this does not fail, because default ID = 0xf = broadcast ID
   expected[1].push_back("Packet type TYP_HCC_RR, ABC 0, Address 2d, Value 00710003\n");
 
   uint32_t wrong_hccID = 2;
-  sendCommand(*emu, star.read_hcc_register(HCCStarRegister::ExtRst, wrong_hccID));
+  sendCommand(*emu, star.read_hcc_register((int)HCCStarRegister::ExtRst, wrong_hccID));
   // this must return no reply
 
   // new hccID:
   // m_registerMap[HCCStarRegister::ADCcfg]->setValue(0x00406600)
   // ADCcfg is 48 (hex = 0x30)
-  sendCommand(*emu, star.read_hcc_register(HCCStarRegister::ADCcfg, new_hccID));
+  sendCommand(*emu, star.read_hcc_register((int)HCCStarRegister::ADCcfg, new_hccID));
   expected[1].push_back("Packet type TYP_HCC_RR, ABC 0, Address 30, Value 00406600\n");
 
   // new hccID, test the addressing register (17) again
-  sendCommand(*emu, star.read_hcc_register(HCCStarRegister::Addressing, new_hccID));
+  sendCommand(*emu, star.read_hcc_register((int)HCCStarRegister::Addressing, new_hccID));
   expected[1].push_back("Packet type TYP_HCC_RR, ABC 0, Address 11, Value 10000000\n");
 
   emu->releaseFifo();
@@ -288,11 +288,7 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     // Send another trigger: it should not increase any hit counters
     emu->writeFifo((LCB::l0a_mask(1, 16, false) << 16) + LCB::IDLE);
 
-    for (int i = 0; i < 5; i++) {
-      // Skip the comparison of these cluster packets
-      // Test of physics packets is done elsewhere
-      expected[1].push_back(mask_pattern);
-    }
+    // No cluster packets since LP_Enable is 0
 
     // Check the hit counts
     // HitCountREG0
@@ -406,7 +402,7 @@ TEST_CASE("StarEmulatorHPR", "[star][emulator]") {
 
   StarCmd star;
 
-  typedef std::vector<uint8_t> PacketCompare;
+  typedef std::vector<uint8_t> PacketCompare;
 
   std::map<uint32_t, std::deque<PacketCompare>> expected;
 
@@ -510,6 +506,8 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
   json tmpRegCfg1;
   tmpRegCfg1["HCC"] = {{"ID", 3}};
   tmpRegCfg1["ABCs"] = {{"IDs", {1, 2}}};
+  // Tell HCC which input channels are connected
+  tmpRegCfg1["HCC"]["subregs"]["ICENABLE"] = 3;
   std::ofstream tmpRegFile1("test_star_1.json");
   tmpRegFile1 << std::setw(4) << tmpRegCfg1;
   tmpRegFile1.close();
@@ -518,6 +516,8 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
   json tmpRegCfg2;
   tmpRegCfg2["HCC"] = {{"ID", 4}};
   tmpRegCfg2["ABCs"] = {{"IDs", {7}}};
+  // Tell HCC which input channels are connected
+  tmpRegCfg2["HCC"]["subregs"]["ICENABLE"] = 1;
   std::ofstream tmpRegFile2("test_star_2.json");
   tmpRegFile2 << std::setw(4) << tmpRegCfg2;
   tmpRegFile2.close();
@@ -526,6 +526,8 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
   json tmpRegCfg3;
   tmpRegCfg3["HCC"] = {{"ID", 5}};
   tmpRegCfg3["ABCs"] = {{"IDs", {2 ,4, 7}}};
+  // Tell HCC which input channels are connected
+  tmpRegCfg3["HCC"]["subregs"]["ICENABLE"] = 7;
   std::ofstream tmpRegFile3("test_star_3.json");
   tmpRegFile3 << std::setw(4) << tmpRegCfg3;
   tmpRegFile3.close();
@@ -600,8 +602,8 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
     auto readABCCmd_hcc3 = star.read_abc_register(23, 3, 0xf);
     sendCommand(*emu, readABCCmd_hcc3);
     // Expect two ABC RR packets from ABC 1 and 2
-    expected[rx_fe1].push_back({rx_fe1, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf1, 0x00, 0x00}});
-    expected[rx_fe1].push_back({rx_fe1, {0x41, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
+    expected[rx_fe1].push_back({rx_fe1, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
+    expected[rx_fe1].push_back({rx_fe1, {0x41, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf1, 0x00, 0x00}});
 
     emu->releaseFifo();
     while(!emu->isCmdEmpty());
@@ -619,7 +621,8 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
     auto readABCCmd_5_7 = star.read_abc_register(0x17, 5, 7);
     sendCommand(*emu, readABCCmd_5_7);
 
-    expected[rx_fe3].push_back({rx_fe3, {0x42, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf7, 0x00, 0x00}});
+    // ABC 7 is now IC 0 (auto map from HCC v0)
+    expected[rx_fe3].push_back({rx_fe3, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf7, 0x00, 0x00}});
 
     emu->releaseFifo();
     while(!emu->isCmdEmpty());
@@ -630,16 +633,16 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
     sendCommand(*emu, readABCCmd_mask7);
 
     // Two ABC RR packets from ABC 1 and 2 on HCC 3
-    expected[rx_fe1].push_back({rx_fe1, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf1, 0x00, 0x00}});
-    expected[rx_fe1].push_back({rx_fe1, {0x41, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
+    expected[rx_fe1].push_back({rx_fe1, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
+    expected[rx_fe1].push_back({rx_fe1, {0x41, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf1, 0x00, 0x00}});
 
     // One ABC RR packet from ABC 7 on HCC 4
     expected[rx_fe2].push_back({rx_fe2, {0x40, 0x17, 0x0d, 0xea, 0xdb, 0xee, 0xf7, 0x00, 0x00}});
 
     // Three ABC RR packet from ABC 2, 4, 7 on HCC 5
-    expected[rx_fe3].push_back({rx_fe3, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
+    expected[rx_fe3].push_back({rx_fe3, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf7, 0x00, 0x00}});
     expected[rx_fe3].push_back({rx_fe3, {0x41, 0x17, 0x0a, 0xa0, 0x45, 0x1a, 0xa4, 0x00, 0x00}});
-    expected[rx_fe3].push_back({rx_fe3, {0x42, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf7, 0x00, 0x00}});
+    expected[rx_fe3].push_back({rx_fe3, {0x42, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
   }
 
   emu->releaseFifo();
@@ -887,9 +890,7 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
 
   // Load emulator configuration
   json cfg;
-  cfg["type"] = "emu_Star";
-  cfg["cfg"]  = json::object();
-  cfg["cfg"]["chipCfg"] = tmpFileName;
+  cfg["chipCfg"] = tmpFileName;
 
   staremu->loadConfig(cfg);
 
@@ -966,7 +967,7 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
   // Set the the HCC ID to e.g. 10 so it would respond to an R3 command
   // (default serial number from HCC register 17 is 0 in the emulator)
   uint8_t hccID = 10; // module #5
-  auto writeHCCCmd_id = star.write_hcc_register(17, hccID<<24);
+  auto writeHCCCmd_id = star.write_hcc_register(17, hccID<<28);
   sendCommand(*staremu, 0, writeHCCCmd_id);
   sendCommand(*staremu, 2, IdleCmd);
 
@@ -1141,8 +1142,12 @@ void checkData(HwController* emu, std::map<uint32_t, std::deque<PacketT>>& expec
       }
   }
 
-  // TODO need to check all entries in the map
-  //CHECK(expected.empty());
+  for (const auto& [channel, packets] : expected) {
+    CAPTURE(channel);
+    CAPTURE(packets.size());
+    CAPTURE(packets);
+    CHECK(packets.empty());
+  }
 }
 
 template<>
