@@ -713,29 +713,49 @@ void FelixController::initAllELinkEnableRegMap(std::map<std::string, unsigned>& 
 /*
 Optoboard communication functions
 */
-void FelixController::communicateLpGBT(const uint16_t reg_addr, const std::vector<uint8_t>& data, const bool write, uint64_t fid, uint32_t i2c_addr, int version){
+void FelixController::communicateLpGBT(const uint16_t reg_addr, const uint8_t& data, const bool write, uint64_t fid, uint32_t i2c_addr, int version){
   std::vector<uint8_t> netio_frame;
   netio_frame = OptoUtils::prepareICDataFrame(write, reg_addr, data, i2c_addr, version);
 
+  std::size_t first_ic_payload_byte = 0;
+  if (version == 0){
+    first_ic_payload_byte == OptoUtils::FIRST_IC_PAYLOAD_BYTE_V0;
+  }
+  else {
+    first_ic_payload_byte == OptoUtils::FIRST_IC_PAYLOAD_BYTE_V1;
+  }
+
   bool success = false;
   try {
-    auto reply = communicateOverIC(fid, netio_frame);
-    success = checkReply(reply);
-    // if we're reading, store the value from the reply
-    if (!write){
-      data = reply.value;
+    FelixRxCore::flushBuffer();
+    FelixTxCore::sendIC(fid, data);
+    auto reply = FelixRxCore::readData();
+    RawDataPtr reply_vec;
+    for(auto const &v : reply){
+           // Find raw data for this address
+      if (v->get(0) != 0xffffdead) {
+        reply_vec = v;
+        if(!(v->getSize() >= 2)) {
+          fclog->error("read or write operation failed, received wrong number of words in buffer({})", v->getSize());
+          continue;
+        }
+
+      int item = 1; // these are wrong
+      int nbits = 1; // these are wrong
+      int bitindex = 1; // these are wrong 
+      int Mask = (0xFF >> (8-nbits)) << bitindex;
+      int tmpReply = Mask & reply_vec->get(first_ic_payload_byte); // this is wroooong
+      //data = tmpReply >> bitindex;
+      }
     }
   }
+
   catch (std::runtime_error &e){
     fclog->error(e.what());
   }
-
-  if (not success){
-    fclog->error("Failed to read or write to register with address {}", reg_addr);
-  }
  }
 
-void FelixController::readWriteOptoReg(uint32_t reg_addr, bool write, uint32_t dev_addr, uint64_t fid, uint8_t& reg_data, uint32_t i2c_addr = OptoUtils::m_i2c_addr, int version = OptoUtils::m_lpgbt_version, std::string dev_type = "lpgbt", bool primary = true){
+void FelixController::readWriteOptoReg(uint32_t reg_addr, bool write, uint32_t dev_addr, uint64_t fid, uint8_t& reg_data, uint32_t i2c_addr, unsigned int version, std::string dev_type , bool primary){
   // if we're communicating directly to the primary LpGBT, we only need to send one simple register read
   if (primary){  
     communicateLpGBT(reg_addr, reg_data, write, fid, i2c_addr, version);

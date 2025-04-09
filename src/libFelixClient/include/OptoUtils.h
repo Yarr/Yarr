@@ -7,6 +7,12 @@
 #include "logging.h"
 
 namespace OptoUtils {
+    constexpr static std::size_t NUM_BYTES_IC_HEADER_V0{7};          ///< First 7 bytes of IC reply are header
+    constexpr static std::size_t NUM_BYTES_IC_HEADER_V1{6};          ///< First 7 bytes of IC reply are header
+    constexpr static std::size_t NUM_PARITY_BYTES_IC_TRAILER{1};  ///< Last byte of IC reply is parity word
+    constexpr static std::size_t FIRST_IC_PAYLOAD_BYTE_V0{NUM_BYTES_IC_HEADER_V0};
+    constexpr static std::size_t FIRST_IC_PAYLOAD_BYTE_V1{NUM_BYTES_IC_HEADER_V1};
+
     // I2C parameters, defined in: https://gitlab.cern.ch/bat/optoboard_felix/-/blob/main/src/optoboard_felix/driver/Hardware.py#L55 and lpGBTv1 manual ch. 12.2.1
     uint32_t m_i2c_write_cr{0x0};
     uint32_t m_i2c_write_msk{0x1};

@@ -55,7 +55,7 @@ bool OptoUtils::isPrimaryLpGBT(int rx){
 }
 
 
-std::vector<uint8_t> OptoUtils::prepareICDataFrame(const bool write, const uint16_t reg_addr, const std::vector<uint8_t>& data, const uint8_t i2c_addr, const unsigned int device_version){
+std::vector<uint8_t> OptoUtils::prepareICDataFrame(const bool write, const uint16_t reg_addr, const uint8_t& data, const uint8_t i2c_addr, const unsigned int device_version){
   /*
     Based on itk-ic-over-netio-next communication wrapper, 
     source: https://gitlab.cern.ch/itk-felix-sw/itk-ic-over-netio-next/-/blob/master/src/itk-ic-over-netio-next.cc?ref_type=heads

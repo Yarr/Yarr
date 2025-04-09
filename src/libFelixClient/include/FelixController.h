@@ -284,7 +284,7 @@ private:
     /// @param i2c_addr Address of I2C communication via primary LpGBT (default = 0) (uint32_t)
     /// @param version Version of the device (0, 1) (default = 1) (int)
     /// @return True if operation successful (if reading, the data vector is written by reference)
-    void communicateLpGBT(const uint16_t reg_addr, const std::vector<uint8_t>& data, const bool write, uint64_t fid, uint32_t i2c_addr, int version);
+    void communicateLpGBT(const uint16_t reg_addr, const uint8_t& data, const bool write, uint64_t fid, uint32_t i2c_addr, int version);
 
     /// @brief Handles reads/writes of LpGBTs or GBCRs
     /// @param reg_addr Address of register we want to read/write (uint32_t)
@@ -295,8 +295,8 @@ private:
     /// @param version Version of LpGBT or GBCR (int, default OptoUtils::m_dev_version variable)
     /// @param dev_type Type of device, options "lpgbt" or "gbcr" (std::string, default "lpgbt")
     /// @return True if operation successful
-    void readWriteOptoReg(uint32_t reg_addr, bool write, uint32_t dev_addr, uint64_t fid, uint8_t& reg_data, uint32_t i2c_addr = OptoUtils::m_i2c_addr, int version = OptoUtils::m_lpgbt_version, std::string dev_type = "lpgbt", bool primary = true);
-};
+    void readWriteOptoReg(uint32_t reg_addr, bool write, uint32_t dev_addr, uint64_t fid, uint8_t& reg_data, uint32_t i2c_addr = OptoUtils::m_i2c_addr, unsigned int version = OptoUtils::m_lpgbt_version, std::string dev_type = "lpgbt", bool primary = true);
+    };
 
 
 /// namespace and then static const variables for the different registers 

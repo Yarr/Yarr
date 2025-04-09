@@ -723,19 +723,17 @@ FelixTools::FELIX_FW_MODE FelixTxCore::fwMode() {
 }
 
 
-FelixClientThread::Reply FelixTxCore::communicateOverIC(uint64_t fid, const std::vector<uint8_t>& dataframe){
+void FelixTxCore::sendIC(uint64_t fid, const std::vector<uint8_t>& dataframe){
   /*
     Based on itk-ic-over-netio-next communication wrapper, 
     source: https://gitlab.cern.ch/itk-felix-sw/itk-ic-over-netio-next/-/blob/master/src/itk-ic-over-netio-next.cc?ref_type=heads
   */
-  std::vector<FelixClientThread::Reply> replies;
-  auto status = fclient->send_data(fid, dataframe.data(), dataframe.size(), replies); 
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-  if (replies.empty()) {
-    ftlog->warn("Status: {}", FelixClientThread::to_string(status_summary));
-    throw std::runtime_error("No replies in communicateOverIC.");
+  bool flush = true;
+  try {
+    fclient->send_data(fid, dataframe.data(), dataframe.size(), flush);
   }
-
-  return replies;
+  catch (FelixClientResourceNotAvailableException &e) {
+	  ftlog->warn("Exception from FelixClient::send_data: {}. Retrying.", e.what());
+	  std::this_thread::sleep_for(std::chrono::microseconds(m_isCmdEmptyWaitTime));
  }
+}
