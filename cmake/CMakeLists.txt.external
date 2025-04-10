@@ -240,7 +240,7 @@ function(YARR_ADD_SPDLOG)
        FetchContent_Declare(
            spdlog
            GIT_REPOSITORY  https://gitlab.cern.ch/atlas-sw-misc/spdlog.git
-           GIT_TAG v1.9.2.x
+           GIT_TAG v1.15.2
        )
     
        FetchContent_Populate(spdlog)
