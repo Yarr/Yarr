@@ -340,7 +340,6 @@ void StarCfg::loadConfig(const json &j) {
 
             try {
                 auto addr = HccNames::regFromString(regName).value();
-                logger->trace("Set HCC value {} {}", addr, regValue);
                 m_hcc.setRegisterValue(addr, regValue);
                 auto value = m_hcc.getRegisterValue(addr);
                 logger->trace("From JSON: Set HCC {} reg {} to {:08x} check {:08x}",

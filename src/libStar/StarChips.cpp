@@ -83,17 +83,17 @@ void StarChips::setHccId(unsigned hccID) {
 }
 
 void StarChips::resetHCCStars() {
-    logger->debug("Sending fast command #{} HCC_REG_RESET", LCB::HCC_REG_RESET);
+    logger->debug("Sending fast command #{} HCC_REG_RESET", std::to_string(LCB::HCC_REG_RESET));
     this->sendCmd(LCB::fast_command(LCB::HCC_REG_RESET, 0) );
 }
 
 void StarChips::resetABCStars() {
 	uint8_t delay = 0; //2 bits BC delay
 
-	logger->debug("Sending fast command #{} ABC_REG_RESET", LCB::ABC_REG_RESET);
+	logger->debug("Sending fast command #{} ABC_REG_RESET", std::to_string(LCB::ABC_REG_RESET));
 	sendCmd(LCB::fast_command(LCB::ABC_REG_RESET, delay) );
 
-	logger->debug("Sending fast command #{} ABC_SLOW_COMMAND_RESET", LCB::ABC_SLOW_COMMAND_RESET);
+	logger->debug("Sending fast command #{} ABC_SLOW_COMMAND_RESET", std::to_string(LCB::ABC_SLOW_COMMAND_RESET));
 	sendCmd(LCB::fast_command(LCB::ABC_SLOW_COMMAND_RESET, delay) );
 
 	// TODO: This should be done somewhere, but only after we're
@@ -105,7 +105,7 @@ void StarChips::resetABCStars() {
 void StarChips::resetAllHard(){
 	logger->info("Global reseting all HCC and ABC on the same LCB control segment");
 
-    logger->debug("Sending fast command #{} LOGIC_RESET", LCB::LOGIC_RESET);
+    logger->debug("Sending fast command #{} LOGIC_RESET", std::to_string(LCB::LOGIC_RESET));
     sendCmd(LCB::fast_command(LCB::LOGIC_RESET, 0) );
 
     // Reset HCCs
@@ -129,7 +129,7 @@ void StarChips::resetAllHard(){
     resetABCStars();
 
     // Star PR&LP to ABCs
-    logger->debug("Sending fast command #{} HCC_START_PRLP", LCB::HCC_START_PRLP);
+    logger->debug("Sending fast command #{} HCC_START_PRLP", std::to_string(LCB::HCC_START_PRLP));
 	sendCmd(LCB::fast_command(LCB::HCC_START_PRLP, 0) );
 }
 
@@ -142,7 +142,7 @@ void StarChips::configure() {
 
 	this->writeRegisters();
 
-    logger->debug("Sending fast command #{} LOGIC_RESET", LCB::LOGIC_RESET);
+    logger->debug("Sending fast command #{} LOGIC_RESET", std::to_string(LCB::LOGIC_RESET));
     sendCmd(LCB::fast_command(LCB::LOGIC_RESET, 0) );
 
     logger->debug("Sending lonely_BCR");
