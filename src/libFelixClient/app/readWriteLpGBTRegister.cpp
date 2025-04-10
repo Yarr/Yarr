@@ -5,6 +5,9 @@
 #include "ScanOpts.h"
 
 #include <iostream>
+#include <getopt.h>
+#include <filesystem>
+namespace fs = std::filesystem;
 
 namespace {
     auto logger = logging::make_log("readWriteLpGBTRegister");
@@ -26,15 +29,15 @@ int main(int argc, char **argv) {
 
     int c = 0;
     std::string hw_controller_filename = "";
+    std::string connectivity_filename = "";
 
-    std::string regname = "";
-    std::string regfield = "";
-    std::string regval_str = "";
+    int regaddr = 0;
+
     const char* const short_options = "r:c:a:h";
     const option long_options[] = {
         {"help",no_argument,nullptr,'h'},
         {"r",required_argument,nullptr,'r'},
-        {"c", requred_argument, nullptr, 'c'},
+        {"c", required_argument, nullptr, 'c'},
         {"regaddr", required_argument, nullptr, 'a'},
         {nullptr, no_argument, nullptr, 0}
     };
@@ -50,7 +53,7 @@ int main(int argc, char **argv) {
             connectivity_filename = optarg;
             break;
         case 'a' :
-            regaddr = optarg;
+            regaddr = std::stoi(optarg);
             break;
 	    default:
             logger->critical("Invalid command line parameter(s) given! See help message for instructions:");
@@ -58,7 +61,6 @@ int main(int argc, char **argv) {
             return -1;
 	    }
     }
-
     // Configure logger
     if (logCfg.empty()) { // default
         ScanOpts options;
@@ -79,6 +81,7 @@ int main(int argc, char **argv) {
         }
     }
 
+    std::string connectivity_pathname = "";
     // Configure connectivity, use to get rx
     if (connectivity_filename != ""){
         fs::path connectivity_path{connectivity_filename};
@@ -90,13 +93,13 @@ int main(int argc, char **argv) {
     auto jconn = ScanHelper::openJsonFile(connectivity_filename);
 
     auto chip_configs = jconn["chips"];
-    int rx = chip_configs[0]["rx"]
+    int rx = chip_configs[3]["rx"];
 
 
     // Configure controller
     json jctrl;
     try {
-        jctrl = ScanHelper::openJsonFile(ctrlCfg);
+        jctrl = ScanHelper::openJsonFile(hw_controller_filename);
         if (jctrl["ctrlCfg"]["type"] != "FelixClient") {
         logger->critical("The controller type is not FelixClient.");
         return -1;
@@ -114,12 +117,15 @@ int main(int argc, char **argv) {
         logger->error("Failed to load controller config: {}", e.what());
         return -1;
     }
+    std::cout << "rx is: " << rx << std::endl;
 
     // read register
-    uint32_t regval = -1;
+    uint8_t regval = -1;
+    std::cout << " addr is " << regaddr << std::endl;
+    
     hwCtrl->readLpGBTRegister(regaddr, regval, rx);
     std::cout << std::endl;
-    std::cout << "register with address "  << regaddr << "has value " << " = 0x" << std::hex << regval << std::endls;
+    std::cout << "register with address "  << regaddr << "has value " << " = 0x" << std::hex << regval << std::endl;
     std::cout << std::endl;
 
     return 0;
