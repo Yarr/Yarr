@@ -4,7 +4,7 @@
 #include "HwController.h"
 #include "FelixRxCore.h"
 #include "FelixTxCore.h"
-#include "OptoUtils.h"
+
 
 #include "felix/felix_client_thread.hpp"
 
@@ -18,6 +18,50 @@ public:
 
   void loadConfig(json const &j) override;
   const json getStatus() override;
+
+  class LpGBT{
+    public:
+      LpGBT(uint8_t arg_version, uint16_t arg_i2c_addr, uint16_t arg_dev_addr){
+        version = arg_version;
+        i2c_addr = arg_i2c_addr;
+        dev_addr = arg_dev_addr;
+      };
+
+      virtual ~LpGBT() = default;
+
+      /*
+        Accessor Functions
+      */
+      
+      virtual inline uint8_t getVersion(){
+        return version;
+      }
+      virtual inline uint16_t getI2CAddr(){
+        return i2c_addr;
+      };
+      virtual inline uint16_t getDevAddr(){
+        return dev_addr;
+      };
+
+      /*
+        Mutator Functions
+      */
+      virtual inline void setVersion(uint8_t arg_version){
+        version = arg_version;
+      };
+      virtual inline void setI2CAddr(uint16_t arg_i2c_addr){
+        i2c_addr = arg_i2c_addr;
+      };
+      virtual inline void setDevAddr(uint16_t arg_dev_addr){
+        dev_addr = arg_dev_addr;
+      };
+
+    private:
+      uint8_t version;
+      uint16_t i2c_addr;
+      uint16_t dev_addr;
+  }
+
 
   /*
   E-link control
@@ -174,31 +218,28 @@ public:
   /*
   Optoboard device communication
   */
-  /// @brief Read a value from an LpGBT device register
-  /// @param regname Name of register (string)
-  /// @param regfield Name of register field (string)
-  /// @return Value of register (uint8_t)
-  uint8_t readLpGBTRegister(std::string regname, std::string regfield);
 
-  /// @brief Write a value to an LpGBT device register
-  /// @param regname Name of register (string)
-  /// @param regfield Name of register field (string)
-  /// @param regdata Data to write/read back, set by reference
-  /// @return True if the operation is successful
-  bool writeLpGBTRegister(std::string regname, std::string regfield, uint8_t regdata);
+    /// @brief Read a value from an LpGBT device register
+    /// @param reg_addr Register address (uint32_t)
+    /// @param reg_data Register data we're read back (set by reference) (uint8_t&)
+    void readLpGBTRegister(int reg_addr, uint8_t& reg_data, int rx, uint32_t i2c_addr = OptoUtils::m_i2c_addr, int version = OptoUtils::m_lpgbt_version);
+    /*
+        /// @brief Write a value to an LpGBT device register
+        /// @param reg_addr Register address (uint32_t)
+        /// @param reg_data Register data we want to write (set by reference) (uint8_t&)
+        void writeLpGBTRegister(uint32_t reg_addr, uint8_t& reg_data, uint32_t dev_addr, uint64_t ic_fid,uint32_t dev_addr, uint32_t i2c_addr = OptoUtils::m_i2c_addr, int version = OptoUtils::m_lpgbt_version);
+    
+        /// @brief Read a value from a GBCR device register
+        /// @param reg_addr Register address (uint32_t)
+        /// @param reg_data Register data we're read back (set by reference) (uint8_t&)
+        void readGBCRRegister(uint32_t reg_addr, uint8_t& reg_data, uint32_t dev_addr, uint64_t ic_fid, uint32_t dev_addr, uint32_t i2c_addr = OptoUtils::m_i2c_addr, int version = OptoUtils::m_lpgbt_version);
+    
+        /// @brief Write a value to a GBCR device register
+        /// @param reg_addr Register address (uint32_t)
+        /// @param reg_data Register data we want to write (set by reference) (uint8_t&)
+        void writeGBCRRegister(uint32_t reg_addr, uint8_t& reg_data, uint32_t dev_addr, uint64_t ic_fid, uint32_t dev_addr, uint32_t i2c_addr = OptoUtils::m_i2c_addr, int version = OptoUtils::m_lpgbt_version);
+    */
 
-  /// @brief Read a value from a GBCR device register
-  /// @param regname Name of register (string)
-  /// @param regfield Name of register field (string)
-  /// @return Value of register (uint8_t)
-  uint8_t readGBCRRegister(std::string regname, std::string regfield);
-
-  /// @brief Write a value to a GBCR device register
-  /// @param regname Name of register (string)
-  /// @param regfield Name of register field (string)
-  /// @param regdata Data to write/read back, set by reference
-  /// @return True if the operation is successful
-  bool writeGBCRRegister(std::string regname, std::string regfield, uint8_t regdata);
 
 private:
 
@@ -256,26 +297,7 @@ private:
     /*
     Optoboard device communication
     */
-    /// @brief Read a value from an LpGBT device register
-    /// @param reg_addr Register address (uint32_t)
-    /// @param reg_data Register data we're read back (set by reference) (uint8_t&)
-  void readLpGBTRegister(uint32_t reg_addr, uint8_t& reg_data, int rx, uint32_t i2c_addr = OptoUtils::m_i2c_addr, int version = OptoUtils::m_lpgbt_version);
-/*
-    /// @brief Write a value to an LpGBT device register
-    /// @param reg_addr Register address (uint32_t)
-    /// @param reg_data Register data we want to write (set by reference) (uint8_t&)
-    void writeLpGBTRegister(uint32_t reg_addr, uint8_t& reg_data, uint32_t dev_addr, uint64_t ic_fid,uint32_t dev_addr, uint32_t i2c_addr = OptoUtils::m_i2c_addr, int version = OptoUtils::m_lpgbt_version);
 
-    /// @brief Read a value from a GBCR device register
-    /// @param reg_addr Register address (uint32_t)
-    /// @param reg_data Register data we're read back (set by reference) (uint8_t&)
-    void readGBCRRegister(uint32_t reg_addr, uint8_t& reg_data, uint32_t dev_addr, uint64_t ic_fid, uint32_t dev_addr, uint32_t i2c_addr = OptoUtils::m_i2c_addr, int version = OptoUtils::m_lpgbt_version);
-
-    /// @brief Write a value to a GBCR device register
-    /// @param reg_addr Register address (uint32_t)
-    /// @param reg_data Register data we want to write (set by reference) (uint8_t&)
-    void writeGBCRRegister(uint32_t reg_addr, uint8_t& reg_data, uint32_t dev_addr, uint64_t ic_fid, uint32_t dev_addr, uint32_t i2c_addr = OptoUtils::m_i2c_addr, int version = OptoUtils::m_lpgbt_version);
-*/
     /// @brief Generic function to handle read and write operations to either LpGBT or GBCR devices
     /// @param reg_addr Address of the register we're trying to access (uint_32t)
     /// @param data The data we want to send or receive (const std::vector<uint8_t>&)
@@ -284,7 +306,7 @@ private:
     /// @param i2c_addr Address of I2C communication via primary LpGBT (default = 0) (uint32_t)
     /// @param version Version of the device (0, 1) (default = 1) (int)
     /// @return True if operation successful (if reading, the data vector is written by reference)
-    void communicateLpGBT(const uint16_t reg_addr, const uint8_t& data, const bool write, uint64_t fid, uint32_t i2c_addr, int version);
+    void communicateLpGBT(const int reg_addr, uint8_t& data, const bool write, uint64_t fid, uint32_t i2c_addr, int version);
 
     /// @brief Handles reads/writes of LpGBTs or GBCRs
     /// @param reg_addr Address of register we want to read/write (uint32_t)
@@ -295,7 +317,7 @@ private:
     /// @param version Version of LpGBT or GBCR (int, default OptoUtils::m_dev_version variable)
     /// @param dev_type Type of device, options "lpgbt" or "gbcr" (std::string, default "lpgbt")
     /// @return True if operation successful
-    void readWriteOptoReg(uint32_t reg_addr, bool write, uint32_t dev_addr, uint64_t fid, uint8_t& reg_data, uint32_t i2c_addr = OptoUtils::m_i2c_addr, unsigned int version = OptoUtils::m_lpgbt_version, std::string dev_type = "lpgbt", bool primary = true);
+    void readWriteOptoReg(int reg_addr, bool write, uint32_t dev_addr, uint64_t fid, uint8_t& reg_data, uint32_t i2c_addr = OptoUtils::m_i2c_addr, unsigned int version = OptoUtils::m_lpgbt_version, std::string dev_type = "lpgbt", bool primary = true);
     };
 
 
