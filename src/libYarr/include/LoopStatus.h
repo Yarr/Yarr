@@ -44,7 +44,6 @@ class LoopStatus {
         size_t size() const { return statVec.size(); }
         unsigned get(unsigned i) const { return statVec[i]; }
         
-        size_t styleSize() const { return styleVec.size(); }
         unsigned getStyle(unsigned i) const { return styleVec[i]; }
 
         bool operator==(const LoopStatus &l){

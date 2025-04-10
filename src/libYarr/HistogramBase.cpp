@@ -13,7 +13,7 @@ auto hlog = logging::make_log("HistogramBase");
 LoopStatus statusFromJson(const json &j, const LoopStatus &input)
 {
     std::vector<LoopStyle> styleVec;
-    for (unsigned int i=0; i<input.styleSize(); i++) {
+    for (unsigned int i=0; i<input.size(); i++) {
         styleVec.push_back((LoopStyle)input.getStyle(i));
     }
     std::vector<unsigned> statVec;
