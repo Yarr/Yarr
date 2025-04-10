@@ -3,13 +3,13 @@
 #include "logging.h"
 
 
-uint32_t OptoUtils::getDeviceAddress(std::string device_type, int rx, uint32_t lpgbt_primary_addr = 116){
-  int device_number = getDeviceNumber(rx);
+uint32_t OptoUtils::getDeviceAddress(std::string device_type, int rx, uint32_t lpgbt_primary_addr){
+  int device_number = getDeviceNum(rx);
   uint32_t addr = 0;
   if (device_type == "GBCR" || "gbcr"){
     addr = 32 + device_number;
   }
-  elif (device_type == "LPGBT" || "LpGBT" || "lpgbt"){
+  else if (device_type == "LPGBT" || "LpGBT" || "lpgbt"){
     addr = lpgbt_primary_addr + 1 + device_number;
   }
   else {
@@ -47,7 +47,7 @@ int OptoUtils::getDeviceNum(int rx){
 }
 
 bool OptoUtils::isPrimaryLpGBT(int rx){
-  is_primary = false;
+  bool is_primary = false;
   if (getDeviceNum(rx)==0){
     is_primary = true;
   }
@@ -55,7 +55,7 @@ bool OptoUtils::isPrimaryLpGBT(int rx){
 }
 
 
-std::vector<uint8_t> OptoUtils::prepareICDataFrame(const bool write, const uint16_t reg_addr, const uint8_t& data, const uint8_t i2c_addr, const unsigned int device_version){
+std::vector<uint8_t> OptoUtils::prepareICDataFrame(const bool write, const uint16_t reg_addr, const uint8_t& data, const uint16_t data_size, const uint16_t i2c_addr, const uint8_t device_version){
   /*
     Based on itk-ic-over-netio-next communication wrapper, 
     source: https://gitlab.cern.ch/itk-felix-sw/itk-ic-over-netio-next/-/blob/master/src/itk-ic-over-netio-next.cc?ref_type=heads
@@ -76,14 +76,14 @@ std::vector<uint8_t> OptoUtils::prepareICDataFrame(const bool write, const uint1
   }
   constexpr size_t footer_size = 1;
 
-  if (device_version == 1 && data.size() > 511 ){
-    std::cerr << "Size of data packet is too large to send for this version of LpGBT (v.1), maximum size is 511, current size is " << data.size()<< std::endl;
+  if (device_version == 1 && data_size > 511 ){
+    std::cerr << "Size of data packet is too large to send for this version of LpGBT (v.1), maximum size is 511, current size is " << data_size << std::endl;
     return frame;
   }
 
   // The size of the frame we send depends on whether this is a read or write command
   if(write)
-    frame.reserve(header_size + data.size() + footer_size);
+    frame.reserve(header_size + data_size + footer_size);
   else
     frame.reserve(header_size + footer_size);
 
@@ -92,16 +92,14 @@ std::vector<uint8_t> OptoUtils::prepareICDataFrame(const bool write, const uint1
   
   frame.push_back((i2c_addr << 1) + ((!write)?0x1:0x0)); // GBTX I2C address and read/write bit
   frame.push_back(1); // Command (not used in GBTX v1 + 2)
-  frame.push_back(data.size() & 0xFF); // Number of data bytes
-  frame.push_back((data.size() >> 8) & 0xFF);
+  frame.push_back(data_size & 0xFF); // Number of data bytes
+  frame.push_back(data_size >> 8);
   
   frame.push_back(reg_addr & 0xFF); // Register (start) address
-  frame.push_back(reg_addr >> 8 & 0xFF);
+  frame.push_back(reg_addr >> 8);
 
   if(write){
-    for(auto& val: data){
-      frame.push_back(val);
-    }
+    frame.insert(frame.end(), data, data + data_size);
   }
 
   // For GBTx, skip first 2 bytes in parity check (see above)
