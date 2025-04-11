@@ -72,7 +72,7 @@ void FelixRxThread::subscribe() {
 }
 
 void FelixRxThread::on_data_callback(FelixID_t fid, const uint8_t* data, size_t size, uint8_t status) {
-  frttimer->trace("FelixRxThread::on_data_callback start fid=0x{:x} size={}", fid, size);
+  frttimer->trace("FelixRxThread::on_data_callback,start,{},0x{:x},{}", getThreadID(), fid, size);
   frtlog->trace("Received message from 0x{:x}", fid);
 
   if (frtlog->should_log(spdlog::level::trace)) {
@@ -126,7 +126,7 @@ void FelixRxThread::on_data_callback(FelixID_t fid, const uint8_t* data, size_t 
   // push data to the queue
   m_rawData.pushData(std::move(rd));
 
-  frttimer->trace("FelixRxThread::on_data_callback done fid=0x{:x}", fid);
+  frttimer->trace("FelixRxThread::on_data_callback,done,{},0x{:x},{}", getThreadID(), fid, size);
 }
 
 RawDataPtr FelixRxThread::readData() {

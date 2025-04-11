@@ -23,6 +23,9 @@ SharedClient::SharedClient(const json &cfg) {
   fcConfig.on_disconnect_callback = std::bind(&SharedClient::on_disconnect, this, std::placeholders::_1);
 
   m_client = std::make_unique<FelixClientThread>(fcConfig);
+
+  // timer log header
+  sctimer->trace("function,start_or_done,thread,fid,bytes");
 }
 
 SharedClient::~SharedClient() = default;
@@ -122,7 +125,11 @@ void SharedClient::on_data_received(FelixID_t fid, const uint8_t* data, size_t s
   // skip if the channel is disabled
   if (not m_rxEnables[fid]) return;
 
-  sctimer->trace("SharedClient::on_data_received start fid=0x{:x} size={}", fid, size);
+  if (sctimer->should_log(spdlog::level::trace)) {
+    std::stringstream ss_tid;
+    ss_tid << "0x" << std::hex << std::this_thread::get_id();
+    sctimer->trace("SharedClient::on_data_received,start,{},0x{:x},{}", ss_tid.str(), fid, size);
+  }
 
   #define UNLIKELY(x) __builtin_expect(x,0)
   if (m_last_id != fid) {
@@ -135,5 +142,9 @@ void SharedClient::on_data_received(FelixID_t fid, const uint8_t* data, size_t s
     m_last_id = fid;
   }
   m_last_it->second(fid, data, size, status);
-  sctimer->trace("SharedClient::on_data_received done fid=0x{:x}", fid);
+  if (sctimer->should_log(spdlog::level::trace)) {
+    std::stringstream ss_tid;
+    ss_tid << "0x" << std::hex << std::this_thread::get_id();
+    sctimer->trace("SharedClient::on_data_received,done,{},0x{:x},{}", ss_tid.str(), fid, size);
+  }
 }
