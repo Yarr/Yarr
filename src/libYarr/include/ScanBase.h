@@ -21,9 +21,6 @@
 #include "ClipBoard.h"
 #include "RawData.h"
 
-
-#include "Bookkeeper.h"
-
 #include "storage.hpp"
 
 #include "ScanLoopInfo.h"
