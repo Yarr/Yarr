@@ -34,7 +34,7 @@ void LoopActionBase::setup(LoopStatusMaster *stat, Bookkeeper *k) {
 	keeper = k;
 }
 
-void LoopActionBase::setNext(shared_ptr<LoopActionBase>& ptr) {
+void LoopActionBase::setNext(std::shared_ptr<LoopActionBase>& ptr) {
     m_inner = ptr;
 }
 

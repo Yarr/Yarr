@@ -20,8 +20,6 @@
 
 #include "storage.hpp"
 
-using std::shared_ptr;
-
 class Bookkeeper;
 class FrontEnd;
 
@@ -31,7 +29,7 @@ class LoopActionBase : public LoopActionBaseInfo {
         virtual ~LoopActionBase() = default;
 
         void setup(LoopStatusMaster *stat, Bookkeeper *k);
-        void setNext(shared_ptr<LoopActionBase>& ptr);
+        void setNext(std::shared_ptr<LoopActionBase>& ptr);
         void execute();
 
         std::type_index type() {
@@ -68,7 +66,7 @@ class LoopActionBase : public LoopActionBaseInfo {
         void execStep();
         void run();
 
-        shared_ptr<LoopActionBase> m_inner;
+        std::shared_ptr<LoopActionBase> m_inner;
 };
 
 #endif
