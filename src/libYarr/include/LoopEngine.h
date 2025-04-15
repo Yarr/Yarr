@@ -11,6 +11,12 @@
 #include "TxCore.h"
 #include "RxCore.h"
 
+#include <memory>
+
+#include "LoopStatus.h"
+
+class Bookkeeper;
+class LoopActionBase;
 
 typedef EngineTBase< std::vector< std::shared_ptr<LoopActionBase> > > Engine;
 
