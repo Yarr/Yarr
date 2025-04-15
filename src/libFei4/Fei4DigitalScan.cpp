@@ -8,6 +8,8 @@
 
 #include "Fei4DigitalScan.h"
 
+#include "StdDataLoop.h"
+
 #include "ScanFactory.h"
 
 namespace Fei4ScansRegistry {
