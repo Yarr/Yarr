@@ -9,6 +9,7 @@
 #include <iostream>
 
 #include "Bookkeeper.h"
+#include "TxCore.h"
 
 #include "logging.h"
 

@@ -7,6 +7,7 @@
 #include <iomanip>
 
 #include "Bookkeeper.h"
+#include "TxCore.h"
 
 #include "logging.h"
 

@@ -17,6 +17,7 @@
 #include "EventDataBase.h"
 #include "HwController.h"
 #include "FrontEndGeometry.h"
+#include "RawData.h"
 
 #include "storage.hpp"
 

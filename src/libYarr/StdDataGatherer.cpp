@@ -15,6 +15,8 @@
 #include "logging.h"
 
 #include "Bookkeeper.h"
+#include "RxCore.h"
+#include "TxCore.h"
 
 using Clock = std::chrono::steady_clock;
 
