@@ -22,6 +22,9 @@
 
 class Bookkeeper;
 class FrontEnd;
+class LoopStatusMaster;
+class RxCore;
+class TxCore;
 
 class LoopActionBase : public LoopActionBaseInfo {
     public:

@@ -24,6 +24,9 @@
 #include "RxCore.h"
 #include "StdTriggerAction.h"
 
+class RxCore;
+class TxCore;
+
 struct BookEntry {
     std::unique_ptr<FrontEnd> fe;
 

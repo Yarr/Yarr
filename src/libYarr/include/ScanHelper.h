@@ -26,9 +26,14 @@
 #include "ScanOpts.h"
 #include "ScanBase.h"
 
+class AnalysisDataProcessor;
 class Bookkeeper;
+class FeDataProcessor;
 class FrontEndCfg;
 class FrontEndGeometry;
+class HistoDataProcessor;
+class HwController;
+class ScanBase;
 
 namespace ScanHelper {
         // A 2D vector of int to store algorithm indices for all tiers of analyses

@@ -21,6 +21,7 @@
 
 #include "storage.hpp"
 
+class HwController;
 class RxCore;
 
 // Status enum
