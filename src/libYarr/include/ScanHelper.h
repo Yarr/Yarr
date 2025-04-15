@@ -11,12 +11,7 @@
 
 #include <string>
 
-#include "AnalysisDataProcessor.h"
-#include "FeDataProcessor.h"
 #include "FeedbackBase.h"
-#include "FrontEnd.h"
-#include "HistoDataProcessor.h"
-#include "HwController.h"
 #include "ScanLoopInfo.h"
 #include "Utils.h"
 
@@ -24,7 +19,6 @@
 #include "logging.h"
 
 #include "ScanOpts.h"
-#include "ScanBase.h"
 
 class AnalysisDataProcessor;
 class Bookkeeper;

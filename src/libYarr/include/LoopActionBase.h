@@ -13,9 +13,6 @@
 #include <string>
 #include <array>
 
-#include "TxCore.h"
-#include "RxCore.h"
-#include "LoopStatus.h"
 #include "LoopActionBaseInfo.h"
 
 #include "storage.hpp"

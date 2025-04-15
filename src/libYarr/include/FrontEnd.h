@@ -15,7 +15,6 @@
 #include "ClipBoard.h"
 #include "HistogramBase.h"
 #include "EventDataBase.h"
-#include "HwController.h"
 #include "FrontEndGeometry.h"
 #include "RawData.h"
 

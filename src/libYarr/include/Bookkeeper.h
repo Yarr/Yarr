@@ -13,15 +13,12 @@
 #include <memory>
 #include <thread>
 
-#include "RawData.h"
 #include "EventDataBase.h"
 #include "HistogramBase.h"
 #include "ResultBase.h"
 #include "ClipBoard.h"
 
 #include "FrontEnd.h"
-#include "TxCore.h"
-#include "RxCore.h"
 #include "StdTriggerAction.h"
 
 class RxCore;
