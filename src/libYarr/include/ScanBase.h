@@ -28,6 +28,10 @@
 
 #include "ScanLoopInfo.h"
 
+class Bookkeeper;
+class RxCore;
+class TxCore;
+
 class ScanBase : public ScanLoopInfo {
     public:
         ScanBase(Bookkeeper *k);

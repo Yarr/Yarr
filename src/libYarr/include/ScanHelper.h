@@ -27,6 +27,10 @@
 #include "ScanOpts.h"
 #include "ScanBase.h"
 
+class Bookkeeper;
+class FrontEndCfg;
+class FrontEndGeometry;
+
 namespace ScanHelper {
         // A 2D vector of int to store algorithm indices for all tiers of analyses
         using AlgoTieredIndex = std::vector<std::vector<int>>;

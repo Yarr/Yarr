@@ -20,6 +20,8 @@
 
 #include "storage.hpp"
 
+class RxCore;
+
 // Status enum
 enum yarrStatus {
     yarrSuccess = 0,

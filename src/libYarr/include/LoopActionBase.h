@@ -23,6 +23,9 @@
 
 using std::shared_ptr;
 
+class Bookkeeper;
+class FrontEnd;
+
 class LoopActionBase : public LoopActionBaseInfo {
     public:
         explicit LoopActionBase(LoopStyle s);
