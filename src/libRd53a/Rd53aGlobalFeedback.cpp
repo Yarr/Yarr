@@ -9,6 +9,8 @@
 
 #include "Rd53aGlobalFeedback.h"
 
+#include "Bookkeeper.h"
+
 #include "logging.h"
 
 namespace {

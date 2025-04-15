@@ -2,6 +2,7 @@
 
 #include "ScanHelper.h"
 #include "AllChips.h"
+#include "Bookkeeper.h"
 #include "ScanFactory.h"
 
 #include "EmptyHw.h"

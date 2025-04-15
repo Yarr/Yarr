@@ -4,6 +4,7 @@
 
 #include "AllChips.h"
 #include "AllStdActions.h"
+#include "Bookkeeper.h"
 #include "FeedbackBase.h"
 #include "ScanFactory.h"
 

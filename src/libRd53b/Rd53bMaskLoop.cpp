@@ -8,6 +8,8 @@
 
 #include "Rd53bMaskLoop.h"
 
+#include "Bookkeeper.h"
+
 #include "logging.h"
 
 namespace {

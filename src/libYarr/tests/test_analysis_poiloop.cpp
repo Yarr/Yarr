@@ -1,6 +1,7 @@
 #include "catch.hpp"
 
 #include "AllChips.h"
+#include "Bookkeeper.h"
 #include "ScanFactory.h"
 #include "LoopActionBase.h"
 #include "AnalysisAlgorithm.h"
