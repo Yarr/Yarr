@@ -8,6 +8,8 @@
 
 #include <iostream>
 
+#include "Bookkeeper.h"
+
 #include "logging.h"
 
 namespace {

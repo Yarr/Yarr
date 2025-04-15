@@ -9,6 +9,7 @@
 #include "logging.h"
 
 #include "AbcNames.h"
+#include "Bookkeeper.h"
 #include "HccNames.h"
 
 namespace {

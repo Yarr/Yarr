@@ -1,5 +1,7 @@
 #include "StarMaskLoop.h"
 
+#include "Bookkeeper.h"
+
 #include <iomanip>
 
 #include "logging.h"

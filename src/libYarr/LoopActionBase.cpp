@@ -6,6 +6,8 @@
 
 #include "LoopActionBase.h"
 
+#include "Bookkeeper.h"
+
 #include "logging.h"
 
 namespace {

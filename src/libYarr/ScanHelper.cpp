@@ -16,6 +16,7 @@ namespace fs = std::filesystem;
 #include "AllHwControllers.h"
 #include "AllProcessors.h"
 #include "AllStdActions.h"
+#include "Bookkeeper.h"
 
 #include "AnalysisAlgorithm.h"
 #include "Configuration.h"

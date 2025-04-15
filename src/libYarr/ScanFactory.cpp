@@ -12,6 +12,7 @@
 #include <iostream>
 
 #include "AllStdActions.h"
+#include "Bookkeeper.h"
 #include "StdTriggerAction.h"
 #include "ClassRegistry.h"
 

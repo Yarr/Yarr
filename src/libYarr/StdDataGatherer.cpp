@@ -14,6 +14,8 @@
 
 #include "logging.h"
 
+#include "Bookkeeper.h"
+
 using Clock = std::chrono::steady_clock;
 
 namespace {
