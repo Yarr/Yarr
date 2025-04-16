@@ -207,7 +207,7 @@ print(df_thread_proc)
 print(df_fid_proc)
 
 # plot
-def plot_benchmark_df(benchmark_df, filename):
+def plot_benchmark_df(benchmark_df, filename, title=""):
 
     funcname, keyname = benchmark_df.index.names
 
@@ -219,8 +219,8 @@ def plot_benchmark_df(benchmark_df, filename):
 
         ax = benchmark_df.unstack(funcname).plot.barh(
             y=colname, 
-            title=f"{fieldname} per {keyname}",
-            xlabel = unit,
+            title=title,
+            xlabel = f"{fieldname} {unit}",
         )
         ax.bar_label(ax.containers[0])
         ax.bar_label(ax.containers[1])
@@ -230,7 +230,7 @@ def plot_benchmark_df(benchmark_df, filename):
         fig.savefig(filename+f"_{fieldname}.png")
         plt.close(fig)
 
-plot_benchmark_df(df_thread_input, os.path.join(outputdir, "input_per_thread"))
-plot_benchmark_df(df_fid_input, os.path.join(outputdir, "input_per_fid"))
-plot_benchmark_df(df_thread_proc, os.path.join(outputdir, "proc_per_thread"))
-plot_benchmark_df(df_fid_proc, os.path.join(outputdir, "proc_per_fid"))
+plot_benchmark_df(df_thread_input, os.path.join(outputdir, "input_per_thread"), "Input")
+plot_benchmark_df(df_fid_input, os.path.join(outputdir, "input_per_fid"), "Input")
+plot_benchmark_df(df_thread_proc, os.path.join(outputdir, "proc_per_thread"), "Processing")
+plot_benchmark_df(df_fid_proc, os.path.join(outputdir, "proc_per_fid"), "Processing")
