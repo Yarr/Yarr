@@ -18,8 +18,6 @@
 #include "FrontEndGeometry.h"
 #include "RawData.h"
 
-#include "FrontEndCfg.h"
-
 class HwController;
 class RxCore;
 

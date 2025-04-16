@@ -8,9 +8,11 @@
 #include "StarPreset.h"
 
 #include "AbcNames.h"
+#include "FrontEnd.h"
 #include "HccNames.h"
 
 #include <iomanip>
+#include <iostream>
 
 #include "logging.h"
 

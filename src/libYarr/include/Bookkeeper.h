@@ -21,6 +21,7 @@
 #include "FrontEnd.h"
 #include "StdTriggerAction.h"
 
+class FrontEndCfg;
 class RxCore;
 class TxCore;
 

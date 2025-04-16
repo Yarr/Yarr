@@ -7,6 +7,8 @@
 #include "FrontEnd.h"
 #include "RawData.h"
 
+class FrontEndCfg;
+
 /**
  * Data processor of front end data.
  *

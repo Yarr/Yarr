@@ -10,6 +10,7 @@
 
 #include "Bookkeeper.h"
 #include "AllChips.h"
+#include "FrontEndCfg.h"
 
 #include "logging.h"
 

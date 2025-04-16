@@ -8,6 +8,8 @@
 
 #include "FrontEnd.h"
 
+#include "FrontEndCfg.h"
+
 bool FrontEnd::isActive() const {
 	return active;
 }
