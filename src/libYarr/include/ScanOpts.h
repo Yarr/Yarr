@@ -31,6 +31,7 @@ struct ScanOpts {
     std::string commandLineStr;
     std::string progName;
     bool doResetBeforeScan = true;
+    bool doConfigureBeforeScan = true;
     bool makeGraph = false;
 };
 #endif //YARR_SCANOPTS_H
