@@ -9,6 +9,7 @@
 #include "HistogramAlgorithm.h"
 
 #include "EventData.h"
+#include "HistogramProcessor.h"
 
 #include "logging.h"
 
