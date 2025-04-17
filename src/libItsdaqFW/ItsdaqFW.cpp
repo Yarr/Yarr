@@ -39,7 +39,7 @@ void ItsdaqFWController::loadConfig(const json &j) {
   }
 
   int rPort = 60000;
-  if(j.contains("localPort")) {
+  if(j.contains("remotePort")) {
     rPort = j["remotePort"];
   }
 

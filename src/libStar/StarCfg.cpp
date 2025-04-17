@@ -445,7 +445,7 @@ void StarCfg::loadConfig(const json &j) {
     }
 
     if(abc_arr_length != enables_count) {
-      logger->warn("While loading, count from IDs {} doesn't match IC enables in HCC {}", abc_arr_length, enables_count);
+      logger->warn("While loading, count from IDs (or fuse IDs) {} doesn't match IC enables in HCC {}", abc_arr_length, enables_count);
     }
 
     //We need to null check these later. If it's empty, we already returned.
