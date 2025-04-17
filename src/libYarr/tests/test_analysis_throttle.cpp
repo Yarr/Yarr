@@ -22,55 +22,87 @@ namespace {
       ScanFactory::addLoop(l);
     }
   };
-// class GlobalFeedbackBase {
-//     public:
-//         virtual ~GlobalFeedbackBase() = default;
-//         virtual void feedback(unsigned channel, double sign, bool last) = 0;
-//         virtual void feedbackBinary(unsigned channel, double sign, bool last) = 0; // TODO Algorithm should be selected in scan
-//         virtual void feedbackStep(unsigned channel, double sign, bool last) {}
-// };
 
-  class MyReceiver : public GlobalFeedbackReceiver {
+  class MyReceiver : public TriggerFeedbackReceiver {
     public:
       MyReceiver(FeedbackClipboardMap &fe) {
         connectClipboard(&fe);
       }
 
-      void feedback(unsigned channel, double sign, bool last) override {}
-      void feedbackBinary(unsigned channel, double sign, bool last) override {}
-      void feedbackStep(unsigned channel, double sign, bool last) override {}
-    //     /// Wait for feedback to be received and apply it
-    //     void waitForFeedback(unsigned ch);
+      void feedbackTrigger(unsigned channel, uint32_t code) override {}
 
     // private:
     //     FeedbackClipboardMap *clip;
   };
 
+  // A simple analysis algorithm that generates feedback
+  class MyAnalyzer : public AnalysisAlgorithm {
+    std::unique_ptr<TriggerFeedbackSender> m_feedback;
+
+  public:
+    MyAnalyzer() : AnalysisAlgorithm() {}
+    ~MyAnalyzer() {}
+
+    void init(const ScanLoopInfo *s) override {
+      // n_count = 1;
+      for (unsigned n=0; n<s->size(); n++) {
+        auto l = s->getLoop(n);
+        if (l->isTriggerFeedbackLoop()) {
+          m_feedback.reset(new TriggerFeedbackSender(feedback));
+        }
+      }
+    }
+
+    // void loadConfig(const json &j) override {
+    //   for (unsigned i=0; i<j["parametersOfInterest"].size(); i++) {
+    //     m_parametersOfInterest.push_back(j["parametersOfInterest"][i]);
+    //   }
+    // }
+
+    void processHistogram(HistogramBase *h) override {
+      if (h->getName() != "myHisto")
+        return;
+
+      auto h1 = dynamic_cast<Histo1d*>(h);
+      int info = h1->getBin(0);
+
+      m_feedback->feedbackTrigger(this->id, info);
+    }
+
+  // private:
+  //   std::vector<unsigned> loops;
+  //   std::vector<unsigned> loopMax;
+  //   unsigned n_count;
+
+  //   std::map<unsigned, std::unique_ptr<Histo1d>> hMap;
+  //   std::map<unsigned, unsigned> innerCnt;
+  };
 }
 
-TEST_CASE("AnalysisTriggerThrottle", "[Analysis][trigger_throttle]") {
+// Test generation of trigger feedback
+TEST_CASE("AnalysisTriggerThrottle", "[Analysis][trigger_feedback]") {
 
     ClipBoard<HistogramBase> input;
     ClipBoard<HistogramBase> output;
 
     int max_histo_push = 10;
-    int histo_occ = 10;
+    // int histo_occ = 10;
 
     json throttleCfg;
 
     SECTION ("Default") {
     }
 
-    SECTION ("Small occ") {
-      throttleCfg["target_occ"] = 4;
-    }
+    // SECTION ("Small occ") {
+    //   throttleCfg["target_occ"] = 4;
+    // }
 
-    SECTION ("Small trigs") {
-      throttleCfg["target_trigs"] = 200;
-    }
+    // SECTION ("Small trigs") {
+    //   throttleCfg["target_trigs"] = 200;
+    // }
 
-    logger->debug("Throttle test with {}", [&]() -> std::string {
-        std::stringstream ss; ss << throttleCfg; return ss.str(); }());
+    logger->debug("Throttle test with config {}", [&]() -> std::string {
+      std::stringstream ss; ss << throttleCfg; return ss.str(); }());
 
     EmptyHw empty;
     Bookkeeper bookie(&empty, &empty);
@@ -81,13 +113,13 @@ TEST_CASE("AnalysisTriggerThrottle", "[Analysis][trigger_throttle]") {
     AnalysisProcessor analysis(rx_channel);
 
     {
-      auto throttler = StdDict::getAnalysis("TriggerThrottleAnalysis");
+      auto proc = std::make_unique<MyAnalyzer>();
 
-      REQUIRE (throttler);
+      REQUIRE (proc);
 
-      throttler->loadConfig(throttleCfg);
+      proc->loadConfig(throttleCfg);
 
-      analysis.addAlgorithm(std::move(throttler));
+      analysis.addAlgorithm(std::move(proc));
     }
 
     FeedbackClipboardMap fbMap;
@@ -99,20 +131,6 @@ TEST_CASE("AnalysisTriggerThrottle", "[Analysis][trigger_throttle]") {
       logger->debug("Bookie has ID {}", id);
     }
 
-    // Analysis will need to find some loops (eg trigger)    
-    {
-      json scanCfg;
-      scanCfg["scan"]["name"] = "BasicAnalysis";
-
-      // Create Loop objects so they're available to analysis
-      scanCfg["scan"]["loops"][0]["loopAction"] = "StarThrottleLoop";
-      // scanCfg["scan"]["loops"][0]["config"] = throttleCfg;
-      scanCfg["scan"]["loops"][1]["loopAction"] = "StarTriggerLoop";
-      scanCfg["scan"]["loops"][2]["loopAction"] = "StdDataLoop";
-
-      scan.loadConfig(scanCfg);
-    }
-
     auto &fb = fbMap[rx_channel];
 
     analysis.connect(&scan, &input, &output, &fb);
@@ -122,25 +140,22 @@ TEST_CASE("AnalysisTriggerThrottle", "[Analysis][trigger_throttle]") {
     analysis.init();
     analysis.run();
 
-    int nCol = 4;
-    int nRow = 3;
+    int nCol = 1;
 
     for(int i=0; i<max_histo_push; i++) {
-        LoopStatus stat{{1, 2}, {LOOP_STYLE_DATA, LOOP_STYLE_TRIGGER}};
-        auto h = std::make_unique<Histo2d>("OccupancyMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, stat);
+      LoopStatus stat{{1, 2}, {LOOP_STYLE_DATA, LOOP_STYLE_TRIGGER_FEEDBACK}};
+      auto h = std::make_unique<Histo1d>("myHisto", nCol, 0.5, nCol+0.5, stat);
 
-        for(int c=0; c<nCol; c++) {
-            for(int r=0; r<nRow; r++) {
-                h->fill(c, r, histo_occ);
-            }
-        }
+      for(int c=0; c<nCol; c++) {
+        h->fill(c, i);
+      }
 
-        input.pushData(std::move(h));
+      input.pushData(std::move(h));
 
-        if (!output.empty()) {
-          logger->debug("Exit histo loop as have output to check");
-            break;
-        }
+      if (!output.empty()) {
+        logger->debug("Exit histo loop as have output to check");
+        break;
+      }
     }
 
     input.finish();
@@ -149,19 +164,6 @@ TEST_CASE("AnalysisTriggerThrottle", "[Analysis][trigger_throttle]") {
     REQUIRE (!output.empty());
 
     REQUIRE (!fb.empty());
-
-    // auto 
-
-    std::unique_ptr<HistogramBase> result = output.popData();
-
-    // Only one output histogram
-    REQUIRE (output.empty());
-    // output->pushData(std::move(outerOccMaps[ident]));
-
-    CHECK (result->getXaxisTitle() == "Column");
-    CHECK (result->getYaxisTitle() == "Row");
-    CHECK (result->getZaxisTitle() == "Hits");
-    CHECK (result->getName() == "OuterOccupancyMap-1");
 
     // int x = 2, y = 1, z = 3;
     // auto bin = histo_as_3d->binNum(x, y, z);
