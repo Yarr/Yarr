@@ -57,6 +57,22 @@ FelixTxCore::FelixID_t FelixTxCore::fid_from_channel(uint32_t chn) {
     );
 }
 
+FelixTxCore::FelixID_t FelixTxCore::ic_fid_from_channel(uint32_t chn) {
+  // Compute FelixID from did, cid, channel number
+  // for IC in the tx direction (to-flx), we shift the elink by 17 and scale by 64 * the link number
+  uint16_t link_id = FelixTools::link_from_chn(chn);
+  uint8_t link_multiplier = 64;
+  uint8_t elink_offset = 17;
+  uint8_t elink = link_id * link_multiplier+ elink_offset;
+
+  bool is_virtual = false;
+  uint8_t sid = 0;
+  
+  return FelixTools::get_fid(
+    m_did, m_cid, is_virtual, link_id, elink, true, m_protocol, sid
+    );
+}
+
 bool FelixTxCore::checkChannel(FelixID_t fid) {
   ftlog->debug("Try sending data to Tx link: 0x{:x}",fid);
 
@@ -729,6 +745,7 @@ void FelixTxCore::sendIC(uint64_t fid, const std::vector<uint8_t>& dataframe){
   */
   bool flush = true;
 
+  std::cout << "the fid is " << std::hex << fid << std::endl;
   if (m_enables[fid] == false){
     enableChannel(fid);
   }

@@ -21,13 +21,11 @@ public:
 
   class LpGBT{
     public:
-      LpGBT(uint8_t arg_version, uint16_t arg_i2c_addr, uint16_t arg_dev_addr, bool arg_primary, uint64_t arg_tx_fid, uint64_t arg_rx_fid){
+      LpGBT(uint8_t arg_version, uint16_t arg_i2c_addr, uint16_t arg_dev_addr, bool arg_primary){
         version = arg_version;
         i2c_addr = arg_i2c_addr;
         dev_addr = arg_dev_addr;
         primary = arg_primary;
-        tx_fid = arg_tx_fid;
-        rx_fid = arg_rx_fid;
       };
 
       virtual ~LpGBT() = default;
@@ -48,12 +46,6 @@ public:
       virtual inline bool getPrimary(){
         return primary;
       }
-      virtual inline uint32_t getTxFid(){
-        return tx_fid;
-      }
-      virtual inline uint32_t getRxFid(){
-        return rx_fid;
-      }
 
       /*
         Mutator Functions
@@ -69,12 +61,6 @@ public:
       }
       virtual inline void setPrimary(bool arg_primary){
         primary = arg_primary;
-      }
-      virtual inline void setTxFid(uint64_t arg_tx_fid){
-        tx_fid = arg_tx_fid;
-      }
-      virtual inline void setRxFid(uint64_t arg_rx_fid){
-        rx_fid = arg_rx_fid;
       }
 
     private:
@@ -245,7 +231,7 @@ public:
     /// @brief Read a value from an LpGBT device register
     /// @param reg_addr Register address (uint32_t)
     /// @param reg_data Register data we're read back (set by reference) (uint8_t&)
-    void readLpGBTRegister(int reg_addr, uint8_t& reg_data, int rx, LpGBT* lpgbt);
+    void readLpGBTRegister(int reg_addr, uint8_t reg_data, uint64_t rx_fid, uint64_t tx_fid);
     /*
         /// @brief Write a value to an LpGBT device register
         /// @param reg_addr Register address (uint32_t)
@@ -267,7 +253,7 @@ public:
 private:
 
   std::shared_ptr<FelixClientThread> client;
-
+  std::vector<LpGBT> lpgbt_list;
 
   // Felix client callbacks
   void on_init() {}
@@ -329,7 +315,7 @@ private:
     /// @param i2c_addr Address of I2C communication via primary LpGBT (default = 0) (uint32_t)
     /// @param version Version of the device (0, 1) (default = 1) (int)
     /// @return True if operation successful (if reading, the data vector is written by reference)
-    void communicateLpGBT(const int reg_addr, uint8_t& data, const bool write, LpGBT* lpgbt);
+    void communicateLpGBT(const uint16_t reg_addr, uint8_t data, const uint16_t data_size, const bool write, uint64_t tx_fid);
 
     /// @brief Handles reads/writes of LpGBTs or GBCRs
     /// @param reg_addr Address of register we want to read/write (uint32_t)
@@ -340,7 +326,7 @@ private:
     /// @param version Version of LpGBT or GBCR (int, default OptoUtils::m_dev_version variable)
     /// @param dev_type Type of device, options "lpgbt" or "gbcr" (std::string, default "lpgbt")
     /// @return True if operation successful
-    void readWriteOptoReg(int reg_addr, bool write, uint8_t& reg_data, LpGBT* lpgbt, std::string type = "lpgbt");
+    void readWriteOptoReg(int reg_addr, bool write, uint8_t reg_data, uint16_t data_size, uint64_t tx_fid);
     };
 
 

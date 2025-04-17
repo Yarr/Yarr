@@ -94,6 +94,7 @@ int main(int argc, char **argv) {
 
     auto chip_configs = jconn["chips"];
     int rx = chip_configs[3]["rx"];
+    int tx = chip_configs[3]["tx"];
 
 
     // Configure controller
@@ -117,15 +118,17 @@ int main(int argc, char **argv) {
         logger->error("Failed to load controller config: {}", e.what());
         return -1;
     }
-    std::cout << "rx is: " << rx << std::endl;
+    auto* flxCtrlPtr = dynamic_cast<FelixController*>(hwCtrl.get());
 
     // read register
-    uint8_t regval = -1;
-    std::cout << " addr is " << regaddr << std::endl;
-    
-    hwCtrl->readLpGBTRegister(regaddr, regval, rx);
+    uint8_t regval = 0;
+
+    uint64_t rx_ic_fid = flxCtrlPtr->FelixRxCore::ic_fid_from_channel(rx);
+    uint64_t tx_ic_fid = flxCtrlPtr->FelixTxCore::ic_fid_from_channel(tx);
+
+    hwCtrl->readLpGBTRegister(regaddr, regval, rx_ic_fid, tx_ic_fid);
     std::cout << std::endl;
-    std::cout << "register with address "  << regaddr << "has value " << " = 0x" << std::hex << regval << std::endl;
+    std::cout << "register with address "  << regaddr << " has value " << " = 0x" << std::hex << regval << std::endl;
     std::cout << std::endl;
 
     return 0;

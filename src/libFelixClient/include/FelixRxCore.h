@@ -34,6 +34,7 @@ public:
   void stopMonitor();
 
   FelixTools::FelixID_t fid_from_channel(uint32_t chn);
+  FelixTools::FelixID_t ic_fid_from_channel(uint32_t chn); // get the ic fid from the channel number
 
 protected:
 
@@ -80,6 +81,7 @@ protected:
   uint32_t m_interval_ms {1000}; // monitoring interval in ms
   uint64_t m_queue_limit {4000}; // MB
   size_t m_maxMessageSize {0}; // if set to >0, on_data drops messages with larger sizes
+
 
   double msg_rate {-1}; // message rate
   double byte_rate {-1}; // total data rate

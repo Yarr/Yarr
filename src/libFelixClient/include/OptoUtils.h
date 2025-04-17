@@ -36,7 +36,6 @@ namespace OptoUtils {
     constexpr static  uint32_t m_freq{2};
     constexpr static uint32_t m_scldrive{0};
 
-
     /*
         Registers
     */
@@ -95,7 +94,7 @@ namespace OptoUtils {
     /// @param rx From front-end device controller file
     /// @param lpgbt_primary_addr default value is 116 (uint32_t)
     /// @return Returns the device address (uint32_t)
-    uint32_t getDeviceAddress(std::string device_type, int rx, uint32_t lpgbt_primary_addr = m_lpgbt_primary_addr);
+   //uint32_t getDeviceAddress(std::string device_type, int rx, uint32_t lpgbt_primary_addr);
 
     int getFELIXLinkForLpGBT(int rx);
 
@@ -114,9 +113,9 @@ namespace OptoUtils {
     /// @param i2cAddr I2C address to send data along, for optoboard communication, address of primary LpGBT (const uint8_t)
     /// @param deviceVersion LpGBT version (either 0 or 1), affects how the data frame is prepared (const unsigned int)
     /// @return Returns the dataframe to send through the IC channel (std::vector<uint8_t>)
-    std::vector<uint8_t> prepareICDataFrame(const bool write, const int reg_addr, const std::vector<uint8_t>& data, const uint8_t i2c_addr, const unsigned int device_version);
-}
 
+    std::vector<uint8_t> prepareICDataFrame(const bool write, const uint16_t reg_addr, const uint8_t data, const uint16_t data_size);
+}
 #endif
 
 /*
