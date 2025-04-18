@@ -142,7 +142,7 @@ int ScanConsoleImpl::loadConfig(const char *config){
     spdlog::info("Configuring logger ...");
     logging::setupLoggers(loggerConfig);
     json j = json::parse(config);
-    json scanConsoleConfig = j["config"];
+    scanConsoleConfig = j["config"];
     runCounter=j["runCounter"];
     ctrlCfg=scanConsoleConfig["ctrlConfig"];
     chipConfig=scanConsoleConfig["chipConfig"];
