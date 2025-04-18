@@ -56,6 +56,74 @@ bool OptoUtils::isPrimaryLpGBT(int rx){
 }
 
 
+const lpgbt_item_t* OptoUtils::getLpGBTRegisterByName(const char* regname, uint8_t version) {
+  // Get the correct item list based on the version
+  const lpgbt_item_t* reg_list = 0;
+  if (version == 0){
+    reg_list = LPGBTv0_ITEM;
+  }
+  else if(version == 1){
+    reg_list = LPGBTv1_ITEM;
+  }
+  else {
+    std::cerr << "Invalid version provided: " << std::hex << static_cast<int>(version) << " version, only accepted values are 0 and 1." << std::endl;
+  }
+
+  const lpgbt_item_t*item = &reg_list[0];
+  // loop through every item in the list
+  bool no_match_found = false;
+  while(strlen(item->name) != 0) {
+    if(strcmp(item->name, regname) == 0){
+        no_match_found = false;
+        break;
+      }
+    else {
+      no_match_found = true;
+    }
+    ++item;
+  }
+
+  if (no_match_found){
+    std::cerr << "No match was found for register name " << regname << " in the register list" << std::endl;
+  }
+
+  return item;
+}
+
+const lpgbt_item_t* OptoUtils::getLpGBTRegisterByAddr(uint16_t reg_addr, uint8_t version){
+  // Get the correct item list based on the version
+  const lpgbt_item_t* reg_list = 0;
+  if (version == 0){
+    reg_list = LPGBTv0_ITEM;
+  }
+  else if(version == 1){
+    reg_list = LPGBTv1_ITEM;
+  }
+  else {
+    std::cerr << "Invalid version provided: " << std::hex << static_cast<int>(version) << " version, only accepted values are 0 and 1." << std::endl;
+  }
+
+  const lpgbt_item_t*item = &reg_list[0];
+  // loop through every item in the list
+  bool no_match_found = false;
+  while(strlen(item->name) != 0) {
+    if(item->addr == reg_addr){
+        no_match_found = false;
+        break;
+      }
+    else {
+      no_match_found = true;
+    }
+    ++item;
+  }
+
+  if (no_match_found){
+    std::cerr << "No match was found for register with address " << reg_addr << " in the register list" << std::endl;
+  }
+
+  return item;
+}
+
 std::vector<uint8_t> OptoUtils::prepareICDataFrame(const bool write, const uint16_t reg_addr, const uint8_t data, const uint16_t data_size){
   /*
     Based on itk-ic-over-netio-next communication wrapper, 
