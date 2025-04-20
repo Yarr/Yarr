@@ -3,12 +3,30 @@ add_library(Yarr SHARED
         )
 
 target_include_directories(Yarr PRIVATE ../libUtil/include)
-target_include_directories(Yarr PUBLIC ./include)
+target_include_directories(Yarr PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
 target_link_libraries(Yarr ${CONTROLLERS})
 target_link_libraries(Yarr ${FRONT_ENDS})
 target_link_options(Yarr PUBLIC -Wl,--no-as-needed)
 
 post_build_debug_library(Yarr)
+
+install(TARGETS Yarr
+    EXPORT YarrTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}  # For DLLs on Windows
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
+
+install(DIRECTORY include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING 
+        PATTERN "*.h"
+        PATTERN "*.hpp"
+)
 
 add_library(Scan SHARED
         AllAnalyses.cpp
@@ -47,7 +65,10 @@ add_library(Scan SHARED
         StdRepeater.cpp
         YarrDiagram.cpp)
 target_include_directories(Scan PRIVATE ../libUtil/include)
-target_include_directories(Scan PUBLIC ./include)
+target_include_directories(Scan PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
 target_link_libraries(Scan Util pthread)
 
 post_build_debug_library(Scan)
@@ -55,3 +76,19 @@ post_build_debug_library(Scan)
 if (BUILD_TESTS)
     add_subdirectory(tests)
 endif ()
+
+install(TARGETS Scan
+    EXPORT YarrTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
+
+install(DIRECTORY include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING 
+        PATTERN "*.h"
+        PATTERN "*.hpp"
+)
+

@@ -27,7 +27,10 @@ add_library(Star SHARED
 
 post_build_debug_library(Star)
 target_include_directories(Star PRIVATE ../libYarr/include)
-target_include_directories(Star PUBLIC ./include)
+target_include_directories(Star PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
 target_link_libraries(Star Scan)
 
 LIST(APPEND apps test_star makeLCBSequence benchmark_data_processor_star printStarSubRegisters)
@@ -41,3 +44,18 @@ endforeach ()
 if (BUILD_TESTS)
     add_subdirectory(tests)
 endif ()
+
+install(TARGETS Star ${apps}
+    EXPORT YarrTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}  # For DLLs on Windows
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
+
+install(DIRECTORY include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING 
+        PATTERN "*.h"
+        PATTERN "*.hpp"
+)

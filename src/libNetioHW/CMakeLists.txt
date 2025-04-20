@@ -11,7 +11,10 @@ add_dependencies(NetioHW felixbase4 netio4 tbb_2020)
 post_build_debug_library(NetioHW)
 target_include_directories(NetioHW PRIVATE ../libYarr/include)
 target_include_directories(NetioHW PRIVATE ../libUtil/include)
-target_include_directories(NetioHW PUBLIC ./include)
+target_include_directories(NetioHW PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
 target_link_libraries(NetioHW PRIVATE netio tbb)
 
 LIST(APPEND apps testNetioHw netio_bridge)
@@ -20,3 +23,18 @@ foreach (target IN LISTS apps)
     target_link_libraries(${target} Yarr)
     post_build_debug_executable(${target})
 endforeach ()
+
+install(TARGETS NetioHW ${apps}
+    EXPORT YarrTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}  # For DLLs on Windows
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
+
+install(DIRECTORY include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING 
+        PATTERN "*.h"
+        PATTERN "*.hpp"
+)

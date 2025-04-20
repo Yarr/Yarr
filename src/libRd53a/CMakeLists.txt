@@ -19,6 +19,24 @@ add_library(Rd53a SHARED
 post_build_debug_library(Rd53a)
 target_include_directories(Rd53a PRIVATE ../libYarr/include)
 target_include_directories(Rd53a PRIVATE ../libUtil/include)
-target_include_directories(Rd53a PUBLIC ./include)
+target_include_directories(Rd53a PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
 target_link_libraries(Rd53a Scan)
+
+install(TARGETS Rd53a
+    EXPORT YarrTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}  # For DLLs on Windows
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
+
+install(DIRECTORY include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING 
+        PATTERN "*.h"
+        PATTERN "*.hpp"
+)
 

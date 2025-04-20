@@ -9,4 +9,22 @@ add_library(ItsdaqFW SHARED
 post_build_debug_library(ItsdaqFW)
 target_include_directories(ItsdaqFW PRIVATE ../libYarr/include)
 target_include_directories(ItsdaqFW PRIVATE ../libUtil/include)
-target_include_directories(ItsdaqFW PUBLIC ./include)
+target_include_directories(ItsdaqFW PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
+install(TARGETS ItsdaqFW
+    EXPORT YarrTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}  # For DLLs on Windows
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
+
+install(DIRECTORY include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING 
+        PATTERN "*.h"
+        PATTERN "*.hpp"
+)

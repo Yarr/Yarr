@@ -1,8 +1,6 @@
 cmake_minimum_required (VERSION 3.14)
 
-project (YARR LANGUAGES CXX)
-set (YARR_VERSION_MAJOR 1)
-set (YARR_VERSION_MINOR 0)
+project (YARR LANGUAGES CXX VERSION 1.0)
 set (CMAKE_CXX_STANDARD 17)
 
 execute_process(
@@ -74,9 +72,10 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Build dirs
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+include(GNUInstallDirs)
+#set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+#set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 # Set RPATH to find shlib relative to executable
 SET(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
@@ -188,7 +187,26 @@ endfunction(post_build_debug_executable)
 include(cmake/CMakeLists.txt.external)
 add_subdirectory(src)
 
-install(DIRECTORY ${PROJECT_BINARY_DIR}/bin DESTINATION ${CMAKE_INSTALL_PREFIX}  FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
-    WORLD_EXECUTE WORLD_READ GROUP_EXECUTE GROUP_READ  )
-install(DIRECTORY ${PROJECT_BINARY_DIR}/lib DESTINATION ${CMAKE_INSTALL_PREFIX}  FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
-    WORLD_EXECUTE WORLD_READ GROUP_EXECUTE GROUP_READ  )
+    
+include(CMakePackageConfigHelpers)
+configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/YarrConfig.cmake.in
+                              ${CMAKE_CURRENT_BINARY_DIR}/YarrConfig.cmake
+                              INSTALL_DESTINATION cmake
+                              )
+
+write_basic_package_version_file(YarrConfigVersion.cmake
+                                 VERSION ${PROJECT_VERSION}
+                                 COMPATIBILITY AnyNewerVersion)
+
+# Install the export set for use with the install-tree
+install(EXPORT YarrTargets
+  NAMESPACE Yarr::
+  DESTINATION cmake
+  COMPONENT dev)
+
+install(FILES
+  "${PROJECT_BINARY_DIR}/YarrConfig.cmake"
+  "${PROJECT_BINARY_DIR}/YarrConfigVersion.cmake"
+  DESTINATION cmake
+  COMPONENT dev)
+

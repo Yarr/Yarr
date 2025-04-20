@@ -17,7 +17,10 @@ add_library(Spec SHARED
 post_build_debug_library(Spec)
 target_include_directories(Spec PRIVATE ../libYarr/include)
 target_include_directories(Spec PRIVATE ../libUtil/include)
-target_include_directories(Spec PUBLIC ./include)
+target_include_directories(Spec PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
 
 LIST(APPEND apps
 	specReadWriteReg
@@ -37,3 +40,18 @@ foreach (target IN LISTS apps)
     target_link_libraries(${target} Yarr)
     post_build_debug_executable(${target})
 endforeach ()
+
+install(TARGETS Spec ${apps}
+    EXPORT YarrTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}  # For DLLs on Windows
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
+
+install(DIRECTORY include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING 
+        PATTERN "*.h"
+        PATTERN "*.hpp"
+)
