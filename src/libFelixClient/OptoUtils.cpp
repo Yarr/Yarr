@@ -2,7 +2,7 @@
 #include "Utils.h"
 #include "logging.h"
 
-/*
+
 uint32_t OptoUtils::getDeviceAddress(std::string device_type, int rx, uint32_t lpgbt_primary_addr){
   int device_number = getDeviceNum(rx);
   uint32_t addr = 0;
@@ -17,7 +17,7 @@ uint32_t OptoUtils::getDeviceAddress(std::string device_type, int rx, uint32_t l
   }
   return addr;
 }
-*/
+
 /*
     getLink: Returns the FELIX link corresponding to a particular chip
         @param: rx (int): rx value for chip in connectivity file
@@ -54,7 +54,6 @@ bool OptoUtils::isPrimaryLpGBT(int rx){
   }
   return is_primary;
 }
-
 
 const lpgbt_item_t* OptoUtils::getLpGBTRegisterByName(const char* regname, uint8_t version) {
   // Get the correct item list based on the version
@@ -124,7 +123,7 @@ const lpgbt_item_t* OptoUtils::getLpGBTRegisterByAddr(uint16_t reg_addr, uint8_t
   return item;
 }
 
-std::vector<uint8_t> OptoUtils::prepareICDataFrame(const bool write, const uint16_t reg_addr, const uint8_t data, const uint16_t data_size){
+std::vector<uint8_t> OptoUtils::prepareICDataFrame(const bool write, const uint16_t reg_addr, const uint8_t data, const uint16_t data_size, uint8_t version, uint16_t dev_addr){
   /*
     Based on itk-ic-over-netio-next communication wrapper, 
     source: https://gitlab.cern.ch/itk-felix-sw/itk-ic-over-netio-next/-/blob/master/src/itk-ic-over-netio-next.cc?ref_type=heads
@@ -136,18 +135,16 @@ std::vector<uint8_t> OptoUtils::prepareICDataFrame(const bool write, const uint1
      * data: if we're writing, we send the data to write, if not we skip this
      * footer: register address, parity check
   */
-  uint8_t device_version = 1;
-  uint8_t i2c_addr = 116;
   bool read = !write;
   std::vector<uint8_t> frame = {};
   
   size_t header_size = 6;
-  if(device_version == 0){
+  if(version == 0){
     header_size = 7;
   }
   constexpr size_t footer_size = 1;
 
-  if (device_version == 1 && data_size > 511 ){
+  if (version == 1 && data_size > 511 ){
     std::cerr << "Size of data packet is too large to send for this version of LpGBT (v.1), maximum size is 511, current size is " << data_size << std::endl;
     return frame;
   }
@@ -158,13 +155,11 @@ std::vector<uint8_t> OptoUtils::prepareICDataFrame(const bool write, const uint1
   else
     frame.reserve(header_size + footer_size);
 
-  if(device_version == 0){
+  if(version == 0){
     frame.push_back(0); // Reserved in LpGBT v0
   }
-
-  std::cout << "what the hell " << std::hex << ((i2c_addr << 1) + (read?0x1:0x0)) <<std::endl;
   
-  frame.push_back((i2c_addr << 1) + (read?0x1:0x0)); // GBTX I2C address and read/write bit
+  frame.push_back((dev_addr << 1) + (read?0x1:0x0)); // GBTX I2C address and read/write bit
   frame.push_back(1); // Command (not used in GBTX v1 + 2)
   frame.push_back(data_size & 0xFF); // Number of data bytes
   frame.push_back((data_size >> 8) & 0xFF);
@@ -173,12 +168,11 @@ std::vector<uint8_t> OptoUtils::prepareICDataFrame(const bool write, const uint1
   frame.push_back((reg_addr >> 8) & 0xFF);
 
   if(write){
-    frame.insert(frame.end(), data, data + data_size);
+    frame.push_back(data);
   }
-
   // For GBTx, skip first 2 bytes in parity check (see above)
   std::size_t NUM_PARITY_BYTES_SKIP{0};
-  if(device_version == 0){
+  if(version == 0){
     NUM_PARITY_BYTES_SKIP=2;
   }
   uint8_t parity = 0;

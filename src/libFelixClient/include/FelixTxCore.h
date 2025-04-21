@@ -131,7 +131,7 @@ protected:
   /// @param fid The FIC of the IC channel (uint64_t)
   /// @param data The dataframe to be sent (const std::vector<uint8_t>&)
   /// @return Whether the operation was successful (bool)
-  void sendIC(uint64_t fid, const std::vector<uint8_t>& dataframe);
+  void sendIC(uint64_t fid, const std::vector<uint8_t> dataframe);
   };
 
 #endif
