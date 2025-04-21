@@ -19,7 +19,7 @@ public:
     int init(int argc, char *argv[]);
     int init(const std::vector<std::string> &args);
     int loadConfig();
-    int loadConfig(const json &config);
+    static int loadConfig(const json &config);
     int loadConfig(const char *config);
     unsigned getRunNumber();
     int setupScan();
@@ -28,6 +28,7 @@ public:
     int initHardware();
     void cleanup();
     std::string getResults();
+    std::string getConfig();
     void getResults(json &result);
     void run();
     void dump();
