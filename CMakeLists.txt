@@ -35,8 +35,8 @@ execute_process(
 )
 string(TIMESTAMP BUILD_TIME "%Y-%m-%d %H:%M:%S UTC" UTC)
 configure_file(
-        ${CMAKE_SOURCE_DIR}/src/libYarr/include/yarr_version.h.in
-        ${CMAKE_SOURCE_DIR}/src/libYarr/include/yarr_version.h
+        ${PROJECT_SOURCE_DIR}/src/libYarr/include/yarr_version.h.in
+        ${PROJECT_BINARY_DIR}/src/libYarr/include/yarr_version.h
 )
 
 # minimum required gcc version
@@ -151,9 +151,18 @@ if(BUILD_TESTS)
     enable_testing()
 endif()
 
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set_property(CACHE CMAKE_INSTALL_PREFIX PROPERTY VALUE "${PROJECT_SOURCE_DIR}")
+
+
+option(YARR_FORCE_OWN_INSTALL_PREFIX "Force Yarr to use its own install prefix even as subdirectory" OFF)
+
+if(NOT YARR_FORCE_OWN_INSTALL_PREFIX AND NOT CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+    # Being added via add_subdirectory: inherit parent's prefix
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}" CACHE PATH "Install path" FORCE)
+elseif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    # Only set the install prefix if it hasn’t already been set by a parent project
+    set_property(CACHE CMAKE_INSTALL_PREFIX PROPERTY VALUE "${PROJECT_SOURCE_DIR}")
 endif()
+
 
 function(post_build_debug_library name)
   add_custom_command(TARGET ${name}
@@ -164,7 +173,7 @@ function(post_build_debug_library name)
   )
 
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lib${name}.so.debug
-	  DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+	  DESTINATION ${CMAKE_INSTALL_LIBDIR}
     )
 endfunction(post_build_debug_library)
 
@@ -177,7 +186,7 @@ function(post_build_debug_executable name)
   )
 
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${name}.debug
-	  DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+	  DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
 endfunction(post_build_debug_executable)
 
@@ -207,7 +216,11 @@ install(FILES
   DESTINATION cmake
 )
 
-file(REAL_PATH "${CMAKE_SOURCE_DIR}" ABS_SOURCE_DIR)
+message(STATUS "YARR will be installed to: ${CMAKE_INSTALL_PREFIX}")
+install(CODE "message(STATUS \"Installing YARR to: ${CMAKE_INSTALL_PREFIX}\")")
+
+
+file(REAL_PATH "${CMAKE_BINARY_DIR}" ABS_SOURCE_DIR)
 file(REAL_PATH "${CMAKE_INSTALL_PREFIX}" ABS_INSTALL_PREFIX)
 
 file(RELATIVE_PATH REL_PATH_FROM_SRC_TO_INSTALL "${ABS_SOURCE_DIR}" "${ABS_INSTALL_PREFIX}")
@@ -219,6 +232,7 @@ if(REL_PATH_FROM_SRC_TO_INSTALL MATCHES "^[.][.]")
         DESTINATION configs
         USE_SOURCE_PERMISSIONS
     )
+    message(WARNING "Installating configs")
 else()
     message(WARNING "Skipping configs/ install because install prefix is inside the source directory.")
 endif()

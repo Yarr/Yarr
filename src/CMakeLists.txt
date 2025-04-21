@@ -1,7 +1,5 @@
 YARR_ADD_EXTERNAL_DEPS()
 
-# Level below which logger macros are not enabled
-add_definitions(-DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_${YARR_ACTIVE_LOGGER_LEVEL})
 
 add_subdirectory(libUtil)
 add_subdirectory(libYarr)

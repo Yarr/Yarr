@@ -93,10 +93,32 @@ function(YARR_ADD_EXTERNAL_DEPS)
         spdlog
         GIT_REPOSITORY  https://gitlab.cern.ch/atlas-sw-misc/spdlog.git
         GIT_TAG v1.9.2.x
-        SOURCE_SUBDIR  spdlog
     )
     FetchContent_MakeAvailable(spdlog)
-    include_directories(${CMAKE_CURRENT_BINARY_DIR}/../_deps/spdlog-src/include)
+
+   # Create a custom header-only target for spdlog as the export does not work properly in version 1.9.2.x To be re-visited if it gets updated.
+   add_library(yarrspdlog INTERFACE)
+
+   target_include_directories(yarrspdlog INTERFACE
+      "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
+      "$<BUILD_INTERFACE:${spdlog_SOURCE_DIR}/include>"
+   )
+
+   # Dependencies of yarrspdlog
+   find_package(Threads)
+   target_link_libraries(yarrspdlog INTERFACE Threads::Threads)
+
+   # Level below which logger macros are not enabled
+   target_compile_definitions(yarrspdlog INTERFACE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_${YARR_ACTIVE_LOGGER_LEVEL})
+
+   # Export the target manually
+   install(TARGETS yarrspdlog EXPORT YarrTargets)
+
+   # Install the headers and the target
+
+   install(DIRECTORY ${spdlog_SOURCE_DIR}/include/
+      DESTINATION ${CMAKE_INSTALL_PREFIX}/include
+   )
 
 endfunction()
 

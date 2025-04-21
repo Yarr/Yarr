@@ -69,11 +69,20 @@ job_build_and_test_out_of_source:
   stage: build
   script:
     - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-    - CXXFLAGS=-Werror cmake3 -S . -B /tmp/build -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=cmake/linux-gcc
-    - cmake3 --build /tmp/build -j$(nproc)
-    - cmake3 --install /tmp/build
-    - CTEST_OUTPUT_ON_FAILURE=1 cmake3 --build /tmp/build --target test
-    - /tmp/build/bin/scanConsole -k
+    - CXXFLAGS=-Werror cmake3 -S . -B /tmp/build-yarr -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=cmake/linux-gcc -DCMAKE_INSTALL_PREFIX=/tmp/install-yarr
+    - cmake3 --build /tmp/build-yarr -j$(nproc)
+    - cmake3 --install /tmp/build-yarr
+    - export Yarr_DIR=/tmp/install-yarr/cmake
+    - ctest --output-on-failure --test-dir /tmp/build-yarr/
+    - /tmp/install-yarr/bin/scanConsole -k
+    - cmake -S tests/find_package_test -B /tmp/build-YarrFindPackageTest -DCMAKE_TOOLCHAIN_FILE=../../cmake/linux-gcc  --DCMAKE_INSTALL_PREFIX=/tmp/install-YarrFindPackageTest
+    - cmake --build /tmp/build-YarrFindPackageTest -j$(nproc)
+    - cmake --install /tmp/build-YarrFindPackageTest/
+    - /tmp/install-YarrFindPackageTest/bin/YarrFindPackageTest
+    - cmake -S tests/add_subdirectory_test -B /tmp/build-YarrAddSubdirectoryTest -DCMAKE_TOOLCHAIN_FILE=../../cmake/linux-gcc  --DCMAKE_INSTALL_PREFIX=/tmp/install-YarrAddSubdirectoryTest
+    - cmake --build /tmp/build-YarrAddSubdirectoryTest -j$(nproc)
+    - cmake --install /tmp/build-YarrAddSubdirectoryTest/
+    - /tmp/install-YarrAddSubdirectoryTest/bin/YarrAddSubdirectoryTest
 
 job_build_clang:
   extends: .build_matrix
