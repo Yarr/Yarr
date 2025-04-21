@@ -8,13 +8,11 @@ add_library(FelixClient SHARED
         )
 
 add_dependencies(FelixClient felix_client_thread)
-target_include_directories(FelixClient PRIVATE ../libYarr/include)
-target_include_directories(FelixClient PRIVATE ../libUtil/include)
 target_include_directories(FelixClient PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-target_link_libraries(FelixClient PRIVATE felix-client-thread)
+target_link_libraries(FelixClient PRIVATE felix-client-thread PUBLIC Yarr_interface Util_interface)
 
 LIST(APPEND apps readWriteLpGBTRegister testFelixClient felixRegister elinkConfig)
 foreach (target IN LISTS apps)

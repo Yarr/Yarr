@@ -7,14 +7,11 @@ add_library(Itkpixv2Emu SHARED
 )
 
 post_build_debug_library(Itkpixv2Emu)
-target_include_directories(Itkpixv2Emu PRIVATE ../libYarr/include)
-target_include_directories(Itkpixv2Emu PRIVATE ../libUtil/include)
-target_include_directories(Itkpixv2Emu PRIVATE ../libEmu/include)
 target_include_directories(Itkpixv2Emu PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-target_link_libraries(Itkpixv2Emu Itkpixv2 Emu)
+target_link_libraries(Itkpixv2Emu Itkpixv2 Emu Yarr_interface Util_interface)
 
 install(TARGETS Itkpixv2Emu
     EXPORT YarrTargets

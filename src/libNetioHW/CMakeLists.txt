@@ -9,13 +9,11 @@ add_library(NetioHW SHARED
 
 add_dependencies(NetioHW felixbase4 netio4 tbb_2020)
 post_build_debug_library(NetioHW)
-target_include_directories(NetioHW PRIVATE ../libYarr/include)
-target_include_directories(NetioHW PRIVATE ../libUtil/include)
 target_include_directories(NetioHW PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-target_link_libraries(NetioHW PRIVATE netio tbb)
+target_link_libraries(NetioHW PRIVATE netio tbb PUBLIC Yarr_interface Util_interface)
 
 LIST(APPEND apps testNetioHw netio_bridge)
 foreach (target IN LISTS apps)

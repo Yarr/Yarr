@@ -7,12 +7,11 @@ add_library(ItsdaqFW SHARED
         UdpSocket.cpp
         )
 post_build_debug_library(ItsdaqFW)
-target_include_directories(ItsdaqFW PRIVATE ../libYarr/include)
-target_include_directories(ItsdaqFW PRIVATE ../libUtil/include)
 target_include_directories(ItsdaqFW PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
+target_link_libraries(ItsdaqFW Yarr_interface Util_interface)
 
 install(TARGETS ItsdaqFW
     EXPORT Yarr_ItsdaqFWTargets

@@ -5,14 +5,11 @@ add_library(Rd53aEmu SHARED
 )
 
 post_build_debug_library(Rd53aEmu)
-target_include_directories(Rd53aEmu PRIVATE ../libYarr/include)
-target_include_directories(Rd53aEmu PRIVATE ../libUtil/include)
-target_include_directories(Rd53aEmu PRIVATE ../libEmu/include)
 target_include_directories(Rd53aEmu PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-target_link_libraries(Rd53aEmu Rd53a Emu)
+target_link_libraries(Rd53aEmu PUBLIC Rd53a Emu Yarr_interface Util_interface)
 
 install(TARGETS Rd53aEmu
     EXPORT Yarr_Rd53aEmuTargets

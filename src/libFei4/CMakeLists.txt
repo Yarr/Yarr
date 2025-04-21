@@ -24,13 +24,11 @@ add_library(Fei4 SHARED
         Fei4TriggerLoop.cpp)
 
 post_build_debug_library(Fei4)
-target_include_directories(Fei4 PRIVATE ../libYarr/include)
-target_include_directories(Fei4 PRIVATE ../libUtil/include)
 target_include_directories(Fei4 PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-target_link_libraries(Fei4 Scan)
+target_link_libraries(Fei4 Scan Yarr_interface Util_interface)
 
 LIST(APPEND apps fei4ReadRegister)
 foreach (target IN LISTS apps)

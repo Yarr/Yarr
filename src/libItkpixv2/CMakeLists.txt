@@ -17,13 +17,11 @@ add_library(Itkpixv2 SHARED
         Itkpixv2Encoder.cpp)
 
 post_build_debug_library(Itkpixv2)
-target_include_directories(Itkpixv2 PRIVATE ../libYarr/include)
-target_include_directories(Itkpixv2 PRIVATE ../libUtil/include)
 target_include_directories(Itkpixv2 PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-target_link_libraries(Itkpixv2 Scan)
+target_link_libraries(Itkpixv2 Scan Yarr_interface Util_interface)
 
 LIST(APPEND apps
         Itkpixv2CheckPulse

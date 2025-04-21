@@ -5,14 +5,11 @@ add_library(StarEmu SHARED
 )
 
 post_build_debug_library(StarEmu)
-target_include_directories(StarEmu PRIVATE ../libYarr/include)
-target_include_directories(StarEmu PRIVATE ../libUtil/include)
-target_include_directories(StarEmu PRIVATE ../libEmu/include)
 target_include_directories(StarEmu PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-target_link_libraries(StarEmu Star Emu)
+target_link_libraries(StarEmu Star Emu Yarr_interface Util_interface)
 
 if (BUILD_TESTS)
     add_subdirectory(tests)

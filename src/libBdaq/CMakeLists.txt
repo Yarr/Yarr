@@ -16,14 +16,13 @@ add_library(Bdaq SHARED
         BdaqTxCore.cpp)
 
 post_build_debug_library(Bdaq)
-target_include_directories(Bdaq PRIVATE ../libYarr/include)
-target_include_directories(Bdaq PRIVATE ../libUtil/include)
 target_include_directories(Bdaq PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-target_link_libraries(Bdaq Boost::system)
+target_link_libraries(Bdaq PUBLIC Yarr_interface Util_interface)
+target_link_libraries(Bdaq PUBLIC Boost::system)
 
 install(TARGETS Bdaq
     EXPORT Yarr_BdaqTargets
