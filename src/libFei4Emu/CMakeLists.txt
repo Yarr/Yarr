@@ -15,12 +15,17 @@ target_include_directories(Fei4Emu PUBLIC
 target_link_libraries(Fei4Emu Fei4 Emu)
 
 install(TARGETS Fei4Emu
-    EXPORT YarrTargets
+    EXPORT Yarr_Fei4EmuTargets
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}  # For DLLs on Windows
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   )
+  
+install(EXPORT Yarr_Fei4EmuTargets
+  NAMESPACE Yarr::
+  DESTINATION cmake
+)
 
 install(DIRECTORY include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}

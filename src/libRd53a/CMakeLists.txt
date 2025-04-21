@@ -26,12 +26,17 @@ target_include_directories(Rd53a PUBLIC
 target_link_libraries(Rd53a Scan)
 
 install(TARGETS Rd53a
-    EXPORT YarrTargets
+    EXPORT Yarr_Rd53aTargets
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}  # For DLLs on Windows
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   )
+  
+install(EXPORT Yarr_Rd53aTargets
+  NAMESPACE Yarr::
+  DESTINATION cmake
+)
 
 install(DIRECTORY include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}

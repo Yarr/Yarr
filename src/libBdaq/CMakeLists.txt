@@ -26,12 +26,17 @@ target_include_directories(Bdaq PUBLIC
 target_link_libraries(Bdaq Boost::system)
 
 install(TARGETS Bdaq
-    EXPORT YarrTargets
+    EXPORT Yarr_BdaqTargets
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}  # For DLLs on Windows
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   )
+  
+install(EXPORT Yarr_BdaqTargets
+  NAMESPACE Yarr::
+  DESTINATION cmake
+)
 
 install(DIRECTORY include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}

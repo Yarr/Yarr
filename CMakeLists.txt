@@ -73,9 +73,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Build dirs
 include(GNUInstallDirs)
-#set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
-#set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
-#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 # Set RPATH to find shlib relative to executable
 SET(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
@@ -202,11 +199,27 @@ write_basic_package_version_file(YarrConfigVersion.cmake
 install(EXPORT YarrTargets
   NAMESPACE Yarr::
   DESTINATION cmake
-  COMPONENT dev)
+)
 
 install(FILES
   "${PROJECT_BINARY_DIR}/YarrConfig.cmake"
   "${PROJECT_BINARY_DIR}/YarrConfigVersion.cmake"
   DESTINATION cmake
-  COMPONENT dev)
+)
+
+file(REAL_PATH "${CMAKE_SOURCE_DIR}" ABS_SOURCE_DIR)
+file(REAL_PATH "${CMAKE_INSTALL_PREFIX}" ABS_INSTALL_PREFIX)
+
+file(RELATIVE_PATH REL_PATH_FROM_SRC_TO_INSTALL "${ABS_SOURCE_DIR}" "${ABS_INSTALL_PREFIX}")
+
+# Check if the install prefix is *within* the source directory (not just string match)
+if(REL_PATH_FROM_SRC_TO_INSTALL MATCHES "^[.][.]")
+    # Not a subdir of source: safe to install
+    install(DIRECTORY configs/
+        DESTINATION configs
+        USE_SOURCE_PERMISSIONS
+    )
+else()
+    message(WARNING "Skipping configs/ install because install prefix is inside the source directory.")
+endif()
 
