@@ -745,7 +745,6 @@ void FelixTxCore::sendIC(uint64_t fid, const std::vector<uint8_t> dataframe){
   */
   bool flush = true;
 
-  std::cout << "the fid is " << std::hex << fid << std::endl;
   if (m_enables[fid] == false){
     enableChannel(fid);
   }

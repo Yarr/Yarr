@@ -201,18 +201,19 @@ public:
         void writeGBCRRegister(uint32_t reg_addr, uint8_t& reg_data, uint32_t dev_addr, uint64_t ic_fid, uint32_t dev_addr, uint32_t i2c_addr = OptoUtils::m_i2c_addr, int version = OptoUtils::m_lpgbt_version);
     */
 
-    class LpGBT{
+    class OptoDevice{
       public:
-        LpGBT(uint8_t arg_version, uint16_t arg_i2c_addr, uint16_t arg_dev_addr, bool arg_primary, uint64_t arg_tx_fid, uint64_t arg_rx_fid){
+        OptoDevice(uint8_t arg_version, uint16_t arg_i2c_addr, uint16_t arg_dev_addr, std::string arg_dev_type, uint8_t arg_dev_num, uint64_t arg_tx_fid, uint64_t arg_rx_fid){
           version = arg_version;
           i2c_addr = arg_i2c_addr;
           dev_addr = arg_dev_addr;
-          primary = arg_primary;
+          dev_num = arg_dev_num;
+          dev_type = arg_dev_type;
           tx_fid = arg_tx_fid;
           rx_fid = arg_rx_fid;
         };
   
-        virtual ~LpGBT() = default;
+        virtual ~OptoDevice() = default;
   
         /*
           Accessor Functions
@@ -239,6 +240,13 @@ public:
           return rx_fid;
         }
   
+        virtual inline uint8_t getDevNum(){
+          return dev_num;
+        }
+
+        virtual inline std::string getDevType(){
+          return dev_type;
+        }
         /*
           Mutator Functions
         */
@@ -263,6 +271,14 @@ public:
           rx_fid = arg_rx_fid;
         }
 
+        virtual inline void setDevNum(uint8_t arg_dev_num){
+          dev_num = arg_dev_num;
+        }
+
+        virtual inline void setDevType(std::string arg_dev_type){
+          dev_type = arg_dev_type;
+        }
+
       private:
         uint8_t version;
         uint16_t i2c_addr;
@@ -270,11 +286,13 @@ public:
         bool primary;
         uint64_t tx_fid;
         uint64_t rx_fid;
+        std::string dev_type;
+        uint8_t dev_num;
     };
 
 private:
   std::shared_ptr<FelixClientThread> client;
-  std::vector<LpGBT> lpgbt_list;
+  std::vector<OptoDevice> lpgbt_list;
 
   // Felix client callbacks
   void on_init() {}
@@ -333,7 +351,7 @@ private:
   /// @param i2c_addr Address of I2C communication via primary LpGBT (default = 0) (uint32_t)
   /// @param version Version of the device (0, 1) (default = 1) (int)
   /// @return True if operation successful (if reading, the data vector is written by reference)
-  void communicateLpGBT(const lpgbt_item_t* reg, uint8_t& data, const bool write, LpGBT* lpgbt);
+  void communicateLpGBT(const lpgbt_item_t* reg, uint8_t& data, const bool write, OptoDevice* lpgbt);
 
   /// @brief Handles reads/writes of LpGBTs or GBCRs
   /// @param reg_addr Address of register we want to read/write (uint32_t)
@@ -344,7 +362,7 @@ private:
   /// @param version Version of LpGBT or GBCR (int, default OptoUtils::m_dev_version variable)
   /// @param dev_type Type of device, options "lpgbt" or "gbcr" (std::string, default "lpgbt")
   /// @return True if operation successful
-  void readWriteOptoReg(const lpgbt_item_t* reg, uint8_t& reg_data, bool write, LpGBT* lpgbt);
+  void readWriteOptoReg(const lpgbt_item_t* reg, uint8_t& reg_data, bool write, OptoDevice* lpgbt);
   
 };
 

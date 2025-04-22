@@ -33,7 +33,7 @@ namespace OptoUtils {
     constexpr static uint32_t m_i2c_read_multi{0xD};
     constexpr static  uint32_t m_i2c_write_multi_ext{0xE};
     constexpr static  uint32_t m_i2c_read_multi_ext{0xF};
-    constexpr static  uint32_t m_freq{2};
+    constexpr static uint32_t m_freq{2};
     constexpr static uint32_t m_scldrive{0};
 
     constexpr static uint8_t LPGBT_VERSION{1};
