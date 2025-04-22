@@ -211,6 +211,10 @@ public:
           dev_type = arg_dev_type;
           tx_fid = arg_tx_fid;
           rx_fid = arg_rx_fid;
+
+          if (arg_dev_type != "lpgbt" && arg_dev_type != "gbcr"){
+            std::cerr << "Invalid device type, accepted options are lpgbt or gbcr" << std::endl;
+          }
         };
   
         virtual ~OptoDevice() = default;
@@ -228,9 +232,6 @@ public:
         virtual inline uint16_t getDevAddr(){
           return dev_addr;
         }
-        virtual inline bool getPrimary(){
-          return primary;
-        }
 
         virtual inline uint64_t getTxFid(){
           return tx_fid;
@@ -247,6 +248,18 @@ public:
         virtual inline std::string getDevType(){
           return dev_type;
         }
+
+        virtual inline uint16_t getPrimaryAddr(){
+          if (dev_num == 0){
+            return dev_addr;
+          }
+          else {
+            if (dev_type == "lpgbt")
+              return (dev_addr - dev_num);
+            else
+              return (32 + dev_num);
+          }
+        }
         /*
           Mutator Functions
         */
@@ -258,9 +271,6 @@ public:
         }
         virtual inline void setDevAddr(uint16_t arg_dev_addr){
           dev_addr = arg_dev_addr;
-        }
-        virtual inline void setPrimary(bool arg_primary){
-          primary = arg_primary;
         }
 
         virtual inline void setTxFid(uint64_t arg_tx_fid){

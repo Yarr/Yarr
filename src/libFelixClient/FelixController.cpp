@@ -715,17 +715,14 @@ void FelixController::initAllELinkEnableRegMap(std::map<std::string, unsigned>& 
 Optoboard communication functions
 */
 void FelixController::communicateLpGBT(const lpgbt_item_t* reg, uint8_t& data, const bool write, OptoDevice* lpgbt){
-  // make sure the ic channels are enabled
-  setICEnable(lpgbt->getRxFid());
-  FelixRxCore::enableChannel(lpgbt->getRxFid());
- 
-  setICEnable(lpgbt->getTxFid());
-  FelixTxCore::enableChannel(lpgbt->getTxFid());
-
   std::vector<uint8_t> netio_frame;
 
-  netio_frame = OptoUtils::prepareICDataFrame(write, reg->addr, data, 1, lpgbt->getVersion(), lpgbt->getDevAddr());
-
+  netio_frame = OptoUtils::prepareICDataFrame(write, reg->addr, data, 1, lpgbt->getVersion(), lpgbt->getPrimaryAddr());
+  /*
+  for (int i = 0; i < netio_frame.size(); i++){
+    std::cout << "netio frame at " << i << " is " << std::hex << static_cast<int>(netio_frame[i]) << std::endl;
+  }
+  */
   unsigned int first_ic_payload_byte = 0;
   if (lpgbt->getVersion() == 0){
     first_ic_payload_byte = OptoUtils::FIRST_IC_PAYLOAD_BYTE_V0;
@@ -748,11 +745,13 @@ void FelixController::communicateLpGBT(const lpgbt_item_t* reg, uint8_t& data, c
     if (reply.size() > 0){
       uint32_t index_32 = first_ic_payload_byte % 4; // find the index for the data
       uint32_t at_block = reply[0]->get(1); // get the data block
+      //std::cout << "the data block we have is " << std::hex << at_block << std::endl;
       uint32_t mask = (0xFF << (8 * index_32)); // define the mask to get the value
       uint32_t value = (mask & at_block) >> (8*index_32); // apply the mask
+      //std::cout << "the value is " << std::hex << value << std::endl;
       if (!write)
         data = value;
-      else{
+      else {
         if (data != value){
           std::cerr << "Incorrect value written, wrote " << std::hex << static_cast<int>(value)  << " instead of the provided value " << std::hex << static_cast<int>(data) << std::endl;
         }
@@ -761,7 +760,6 @@ void FelixController::communicateLpGBT(const lpgbt_item_t* reg, uint8_t& data, c
     else {
       fclog->error("No reply received when accessing register with address {} at fid {}", reg->addr, lpgbt->getTxFid());
     }
-
   }
   catch (std::runtime_error &e){
     fclog->error(e.what());
@@ -775,7 +773,7 @@ void FelixController::readWriteOptoReg(const lpgbt_item_t* reg, uint8_t& reg_dat
   }
   
   // communicating with secondary LpGBTs or GBCRs via I2C channel through the primary LpGBT
-  /*
+  
   else {
     uint8_t NBYTE = 0;
 
@@ -805,7 +803,7 @@ void FelixController::readWriteOptoReg(const lpgbt_item_t* reg, uint8_t& reg_dat
 
     uint8_t data0_val = (OptoUtils::m_scldrive << 7) | (NBYTE << 2) | OptoUtils::m_freq;
     uint8_t cmd_val = OptoUtils::m_i2c_write_cr;
-
+    
     communicateLpGBT(data0, data0_val, 1, lpgbt);
     communicateLpGBT(cmd, cmd_val, 1, lpgbt);
 
@@ -855,16 +853,24 @@ void FelixController::readWriteOptoReg(const lpgbt_item_t* reg, uint8_t& reg_dat
     }
 
     // Read answer via from I2C communication
-    communicateLpGBT(read15, reg_data, 0, lpgbt);
+    uint8_t readback = 0;
+    communicateLpGBT(read15, readback, 0, lpgbt);
+    //reg_data = (readback << reg->bitindex) & ((2*reg->nbits) - 1);
+    reg_data = readback;
   }
-  */
-
 }
 
 bool FelixController::readLpGBTRegister(int reg_addr, uint8_t& reg_data, uint64_t rx_ic_fid, uint64_t tx_ic_fid){
   // find the LpGBT
   // for now we'll make it a default guy, will add in reading it out from the controller, check if it's in the list etc.
-  OptoDevice* lpgbt = new OptoDevice(OptoUtils::LPGBT_VERSION, OptoUtils::I2C_ADDR, OptoUtils::LPGBT_ADDR, "lpgbt", 0, tx_ic_fid, rx_ic_fid);
+  OptoDevice* lpgbt = new OptoDevice(OptoUtils::LPGBT_VERSION, OptoUtils::I2C_ADDR, 117, "lpgbt", 1, tx_ic_fid, rx_ic_fid);
+
+    // make sure the ic channels are enabled
+    setICEnable(lpgbt->getRxFid());
+    FelixRxCore::enableChannel(lpgbt->getRxFid());
+   
+    setICEnable(lpgbt->getTxFid());
+    FelixTxCore::enableChannel(lpgbt->getTxFid());
 
   const lpgbt_item_t* reg = OptoUtils::getLpGBTRegisterByAddr(reg_addr, lpgbt->getVersion());
 
@@ -881,7 +887,14 @@ bool FelixController::readLpGBTRegister(int reg_addr, uint8_t& reg_data, uint64_
 bool FelixController::readLpGBTRegister(const char* reg_name, uint8_t& reg_data, uint64_t rx_ic_fid, uint64_t tx_ic_fid){
   // find the LpGBT
   // for now we'll make it a default guy, will add in reading it out from the controller, check if it's in the list etc.
-  OptoDevice* lpgbt = new OptoDevice(OptoUtils::LPGBT_VERSION, OptoUtils::I2C_ADDR, OptoUtils::LPGBT_ADDR, "lpgbt", 0, tx_ic_fid, rx_ic_fid);
+  OptoDevice* lpgbt = new OptoDevice(OptoUtils::LPGBT_VERSION, OptoUtils::I2C_ADDR, 117, "lpgbt", 1, tx_ic_fid, rx_ic_fid);
+
+    // make sure the ic channels are enabled
+    setICEnable(lpgbt->getRxFid());
+    FelixRxCore::enableChannel(lpgbt->getRxFid());
+   
+    setICEnable(lpgbt->getTxFid());
+    FelixTxCore::enableChannel(lpgbt->getTxFid());
 
   const lpgbt_item_t* reg = OptoUtils::getLpGBTRegisterByName(reg_name, lpgbt->getVersion());
 
@@ -898,7 +911,15 @@ bool FelixController::readLpGBTRegister(const char* reg_name, uint8_t& reg_data,
 bool FelixController::writeLpGBTRegister(int reg_addr, uint8_t& reg_data, uint64_t rx_ic_fid, uint64_t tx_ic_fid){
   // find the LpGBT
   // for now we'll make it a default guy, will add in reading it out from the controller, check if it's in the list etc.
-  OptoDevice* lpgbt = new OptoDevice(OptoUtils::LPGBT_VERSION, OptoUtils::I2C_ADDR, OptoUtils::LPGBT_ADDR, "lpgbt", 0, tx_ic_fid, rx_ic_fid);
+  OptoDevice* lpgbt = new OptoDevice(OptoUtils::LPGBT_VERSION, OptoUtils::I2C_ADDR, 117, "lpgbt", 1, tx_ic_fid, rx_ic_fid);
+
+    // make sure the ic channels are enabled
+    setICEnable(lpgbt->getRxFid());
+    FelixRxCore::enableChannel(lpgbt->getRxFid());
+   
+    setICEnable(lpgbt->getTxFid());
+    FelixTxCore::enableChannel(lpgbt->getTxFid());
+
   const lpgbt_item_t* reg = OptoUtils::getLpGBTRegisterByAddr(reg_addr, lpgbt->getVersion());
 
   try {
@@ -914,7 +935,15 @@ bool FelixController::writeLpGBTRegister(int reg_addr, uint8_t& reg_data, uint64
 bool FelixController::writeLpGBTRegister(const char* reg_name, uint8_t& reg_data, uint64_t rx_ic_fid, uint64_t tx_ic_fid){
   // find the LpGBT
   // for now we'll make it a default guy, will add in reading it out from the controller, check if it's in the list etc.
-  OptoDevice* lpgbt = new OptoDevice(OptoUtils::LPGBT_VERSION, OptoUtils::I2C_ADDR, OptoUtils::LPGBT_ADDR, "lpgbt", 0, tx_ic_fid, rx_ic_fid);
+  OptoDevice* lpgbt = new OptoDevice(OptoUtils::LPGBT_VERSION, OptoUtils::I2C_ADDR, 117, "lpgbt", 1, tx_ic_fid, rx_ic_fid);
+
+    // make sure the ic channels are enabled
+    setICEnable(lpgbt->getRxFid());
+    FelixRxCore::enableChannel(lpgbt->getRxFid());
+   
+    setICEnable(lpgbt->getTxFid());
+    FelixTxCore::enableChannel(lpgbt->getTxFid());
+
   const lpgbt_item_t* reg = OptoUtils::getLpGBTRegisterByName(reg_name, lpgbt->getVersion());
 
   try {
