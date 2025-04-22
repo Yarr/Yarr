@@ -11,13 +11,15 @@ namespace fs = std::filesystem;
 
 #include "AllAnalyses.h"
 #include "AllChips.h"
+#include "AllConfigurations.h"
 #include "AllHistogrammers.h"
 #include "AllHwControllers.h"
 #include "AllProcessors.h"
 #include "AllStdActions.h"
 
 #include "AnalysisAlgorithm.h"
-#include "HistogramAlgorithm.h"
+#include "Configuration.h"
+#include "HistogramProcessor.h"
 #include "StdHistogrammer.h" // needed for special handling of DataArchiver
 #include "StdAnalysis.h" // needed for special handling of HistogramArchiver
 #include "ScanFactory.h"
@@ -145,112 +147,181 @@ namespace ScanHelper {
         return hwCtrl;
     }
 
+    std::string loadChipConfigs(json &config) {
+        return loadChipConfigs(config, false, "", "");
+    }
+
     std::string loadChipConfigs(json &config, bool createConfig) {
-        return loadChipConfigs(config, createConfig, "");
+        return loadChipConfigs(config, createConfig, "", "");
     }
 
-    std::string loadChipConfigs(json &config, const bool &createConfig, const std::string &dir) {
-        std::string chipType;
-        if (!config.contains("chipType") || !config.contains("chips")) {
-            shlog->error("Invalid config, chip type or chips not specified!");
-            throw (std::runtime_error("buildChips failure"));
-        }
-        chipType = config["chipType"];
-        shlog->info("Chip type: {}", chipType);
-        shlog->info("Chip count {}", config["chips"].size());
-        // Loop over chips
-        for (unsigned i = 0; i < config["chips"].size(); i++) {
-            shlog->info("Loading chip #{}", i);
-            json &chip = config["chips"][i];
-            if (!chip.contains("enable") || !chip.contains("config")) {
-                shlog->error("Connectivity config for chip #{} malformed, skipping!", i);
-                continue;
-            }
-
-            if (chip["enable"] == 0) {
-                shlog->warn(" ... chip not enabled, skipping!");
-                continue;
-            }
-            // Check if config path is:
-            // - relative to exectuteable (default)
-            // - relative to connectivity file
-            // - absolute
-            // - relative to "YARR_CONFIG_PATH" env var
-            // - database (TODO)
-            std::string chipConfigPath;
-            bool pullFromDb = false;
-            if (chip.contains("path")) {
-                if (chip["path"] == "relToExec") {
-                    chipConfigPath = chip["config"];
-                } else if (chip["path"] == "relToCon") {
-                    chipConfigPath = dir + "/" + std::string(chip["config"]);
-                } else if (chip["path"] == "abs") {
-                    chipConfigPath = chip["config"];
-                } else if (chip["path"] == "relToYarrPath") {
-                    std::string yarr_path = "";
-                    if (std::getenv("YARR_CONFIG_PATH"))
-                        yarr_path = std::string(std::getenv("YARR_CONFIG_PATH"));
-                    chipConfigPath = yarr_path + "/" + std::string(chip["config"]);
-                } else if (chip["path"] == "db") {
-                    pullFromDb = true;
-                }
-            } else {
-                // default is relative to exec
-                chipConfigPath = chip["config"];
-            }
-            chip["__config_path__"] = chipConfigPath;
-
-            // TODO should be a shared pointer
-            auto fe=StdDict::getFrontEnd(chipType);
-            auto *feCfg = dynamic_cast<FrontEndCfg *>(fe.get());
-            if (std::filesystem::exists(chipConfigPath)) {
-                // Load config
-                shlog->info("Loading config file: {}", chipConfigPath);
-                json cfg;
-                try {
-                    cfg = ScanHelper::openJsonFile(chipConfigPath);
-                } catch (std::runtime_error &e) {
-                    shlog->error("Error opening chip config: {}", e.what());
-                    throw (std::runtime_error("buildChips failure"));
-                }
-                //check if correct config for chipType
-		if (!cfg.contains(chipType)) {
-		       shlog->info("Wrong config for chipType");	
-			throw (std::runtime_error("Wrong config for chipType"));
-		}else{ 
-			shlog->info("Correct config for chipType");
-		}
-                chip["__config_data__"] = cfg;
-            } else {
-                shlog->warn("Config file not found, creating new file from defaults!");
-                // Rename in case of multiple default configs
-                feCfg->setName(feCfg->getName() + "_" + std::to_string((int) chip["rx"]));
-                shlog->warn("Creating new config of FE {} at {}", feCfg->getName(), chipConfigPath);
-                json jTmp;
-                feCfg->writeConfig(jTmp);
-                chip["__config_data__"] = jTmp;
-                if(createConfig) {
-                    if(chip["enable"] == 1) {
-                        std::ofstream oFTmp(chipConfigPath);
-                        oFTmp << std::setw(4) << jTmp;
-                        oFTmp.close();
-                    }
-                }
-            }
-        }
-        return chipType;
+    std::string loadChipConfigs(json &config, bool createConfig, const std::string &dir) {
+        // Default configuration service (interpreted by AllConfigurations)
+        return loadChipConfigs(config, createConfig, dir, "");
     }
+
+    std::string loadChipConfigs(json &config, bool createConfig, const std::string &dir, const std::string &configService) {
+      auto configuration = StdDict::getConfiguration(configService);
+      std::string chipType;
+      if (!config.contains("chipType") || !config.contains("chips")) {
+          shlog->error("Invalid config, chip type or chips not specified!");
+          throw (std::runtime_error("buildChips failure"));
+      }
+
+      chipType = config["chipType"];
+      shlog->info("Chip type: {}", chipType);
+      shlog->info("Chip count {}", config["chips"].size());
+
+      // Loop over chips
+      for (unsigned i = 0; i < config["chips"].size(); i++) {
+          shlog->info("Loading chip #{}", i);
+          json &chip = config["chips"][i];
+
+          if (!chip.contains("enable") || !chip.contains("config")) {
+              shlog->error("Connectivity config for chip #{} malformed, skipping!", i);
+              continue;
+          }
+
+          if (chip["enable"] == 0) {
+              shlog->warn(" ... chip not enabled, skipping!");
+              continue;
+          }
+
+          std::string chipConfigPath;
+          std::string globalConfigPath;
+          bool pullFromDb = false;
+
+          // Resolve chip configuration path
+          if (chip.contains("path")) {
+              if (chip["path"] == "relToExec") {
+                  chipConfigPath = chip["config"];
+              } else if (chip["path"] == "relToCon") {
+                  chipConfigPath = dir + "/" + std::string(chip["config"]);
+              } else if (chip["path"] == "abs") {
+                  chipConfigPath = chip["config"];
+              } else if (chip["path"] == "relToYarrPath") {
+                  std::string yarr_path = "";
+                  if (std::getenv("YARR_CONFIG_PATH")) {
+                      yarr_path = std::string(std::getenv("YARR_CONFIG_PATH"));
+                  }
+                  chipConfigPath = yarr_path + "/" + std::string(chip["config"]);
+              } else if (chip["path"] == "db") {
+                  pullFromDb = true;
+              }
+          } else {
+              chipConfigPath = chip["config"];
+          }
+          chip["__config_path__"] = chipConfigPath;
+
+          // Resolve GlobalOverwrite path
+          if (chip.contains("globalOverwrite")) {
+              if (chip.contains("path")) {
+                  if (chip["path"] == "relToExec") {
+                      globalConfigPath = chip["globalOverwrite"];
+                  } else if (chip["path"] == "relToCon") {
+                      globalConfigPath = dir + "/" + std::string(chip["globalOverwrite"]);
+                  } else if (chip["path"] == "abs") {
+                      globalConfigPath = chip["globalOverwrite"];
+                  } else if (chip["path"] == "relToYarrPath") {
+                      std::string yarr_path = "";
+                      if (std::getenv("YARR_CONFIG_PATH")) {
+                          yarr_path = std::string(std::getenv("YARR_CONFIG_PATH"));
+                      }
+                      globalConfigPath = yarr_path + "/" + std::string(chip["globalOverwrite"]);
+                  } else if (chip["path"] == "db") {
+                      pullFromDb = true;
+                  }
+              } else {
+                  globalConfigPath = chip["globalOverwrite"];
+              }
+          }
+          chip["__global_config_path__"] = globalConfigPath;
+
+          // Load config
+          shlog->info("Loading config file: {}", chipConfigPath);
+          json cfg = configuration->getFrontEndConfig(chipConfigPath);
+          if (cfg == "default") {
+              shlog->warn("Making defulat config for {}!", chipType);
+              auto fe = StdDict::getFrontEnd(chipType);
+              auto *feCfg = dynamic_cast<FrontEndCfg *>(fe.get());
+
+              // Rename in case of multiple default configs
+              feCfg->setName(feCfg->getName() + "_" + std::to_string((int)chip["rx"]));
+              shlog->warn("Creating new config of FE {} at {}", feCfg->getName(), chipConfigPath);
+              cfg = json{};
+              feCfg->writeConfig(cfg);
+
+              if (createConfig && chip["enable"] == 1) {
+                  std::ofstream oFTmp(chipConfigPath);
+                  oFTmp << std::setw(4) << cfg;
+                  oFTmp.close();
+              }
+          }
+
+          chip["__config_data__"] = cfg;
+
+          // Load GlobalOverwrite, if specified
+          if (std::filesystem::exists(globalConfigPath)) {
+              shlog->info("Loading global overwrite config file: {}", globalConfigPath);
+              json cfg;
+              try {
+                  cfg = ScanHelper::openJsonFile(globalConfigPath);
+              } catch (std::runtime_error &e) {
+                  shlog->error("Error opening chip config: {}", e.what());
+                  throw (std::runtime_error("buildChips failure"));
+              }
+              chip["__global_data__"] = cfg;
+          }else {
+            shlog->info("GlobalConfig overwrite file not found, skipping overwrite.");
+          }
+
+
+          // Ensure we navigate to "GlobalConfig" inside both configurations
+            if (chip["__config_data__"].contains(chipType) &&
+            chip["__config_data__"][chipType].contains("GlobalConfig") &&
+            chip["__global_data__"].contains(chipType) &&
+            chip["__global_data__"][chipType].contains("GlobalConfig")) {
+
+
+            json &chipGlobalConfig = chip["__config_data__"][chipType]["GlobalConfig"];
+            json &overwriteGlobalConfig = chip["__global_data__"][chipType]["GlobalConfig"];
+
+            // Apply overwrites only to existing keys inside "GlobalConfig"
+            for (auto &[key, value] : overwriteGlobalConfig.items()) {
+              if (chipGlobalConfig.contains(key)) {
+                chipGlobalConfig[key] = value;
+                shlog->info("Overwriting parameter '{}' inside GlobalConfig with value: {}", key, value.dump());
+              } else {
+                shlog->warn("Parameter '{}' not found in chip GlobalConfig, skipping overwrite.", key);
+              }
+            }
+          } else {
+            if (std::filesystem::exists(globalConfigPath)) {
+            shlog->warn("The structure of your json file(s) may be wrong. Skipping overwrite.");
+            }
+          }
+
+      }
+      return chipType;
+  }
+
+
 
     void buildRawDataProcs( std::map<unsigned, std::unique_ptr<FeDataProcessor> > &procs,
+                             const json& scanCfg,
             Bookkeeper &bookie,
             const std::string &chipType) {
         bhlog->info("Loading RawData processors ..");
+        json procConfig;
+        if(scanCfg["scan"].contains("processor")) {
+            procConfig = scanCfg["scan"]["processor"]["config"];
+        }
         for (unsigned id = 0; id<bookie.getNumOfEntries(); id++) {
             auto fe = bookie.getFe(id);
             procs[id] = StdDict::getDataProcessor(chipType);
+            procs[id]->loadConfig(procConfig);
             procs[id]->connect(dynamic_cast<FrontEndCfg*>(fe), &bookie.getFe(id)->clipRawData, &bookie.getFe(id)->clipData);
             procs[id]->connect(&bookie.getFe(id)->clipProcFeedback);
-            // TODO load global processor config
             // TODO load chip specific config
         }
     }
@@ -287,7 +358,7 @@ namespace ScanHelper {
                     locked = (int)chip["locked"];
                 feCfg->setLocked(locked);
             }
-            
+
             // Check for hidden clipboard monitor parameter, and start them if true
             if (chip.contains("clipboardMonitor")) {
                 if(chip["clipboardMonitor"] > 0) {
@@ -299,7 +370,7 @@ namespace ScanHelper {
             std::string  cfgFile=chipConfigPath.substr(botDirPos, chipConfigPath.length());
             feCfgMap[bookie.getId(bookie.getLastFe())] = {chipConfigPath, cfgFile};
         }
-        
+
         // Check for hidden config-level parameter clipboardMonitorRefreshTime
         if(config.contains("clipboardMonitorRefreshTime"))
             bookie.setFeClipboardMonitorRefreshTime((unsigned)config["clipboardMonitorRefreshTime"]);
@@ -311,15 +382,9 @@ namespace ScanHelper {
 
 
     int loadConfigFile(const ScanOpts &scanOpts, bool writeConfig, json &config) {
+        auto configuration = StdDict::getConfiguration(scanOpts.configurationType);
         // load controller configs
-        json ctrlCfg;
-        try {
-            ctrlCfg = ScanHelper::openJsonFile(scanOpts.ctrlCfgPath);
-        } catch(std::runtime_error &e) {
-            shlog->error("Error opening controller config ({}): {}",
-                    scanOpts.ctrlCfgPath, e.what());
-            throw (std::runtime_error("loadConfigFile failure"));
-        }
+        json ctrlCfg = configuration->getControllerConfiguration(scanOpts.ctrlCfgPath);
 
         if(!ctrlCfg.contains("ctrlCfg")) {
             shlog->critical("#ERROR# missing controller config");
@@ -355,24 +420,28 @@ namespace ScanHelper {
         }
 
         // load FE configs
-        json chipConfig=json::array();
-        for (std::string const &sTmp: scanOpts.cConfigPaths) {
-            json feconfig;
-            try {
-                feconfig = ScanHelper::openJsonFile(sTmp);
-            } catch (std::runtime_error &e) {
-                shlog->critical("#ERROR# opening connectivity or chip configs ({}): {}", sTmp, e.what());
-                return -1;
+        json chipConfig = configuration->getConnectivity(scanOpts.cConfigPaths);
+
+        if(chipConfig.size() != scanOpts.cConfigPaths.size()) {
+            // Should be earlier message
+            shlog->critical("#ERROR# opening connectivity failed");
+            return -1;
+        }
+
+        for (json &feconfig: chipConfig) {
+            std::string path;
+            // If it might be relevant, config service can add where it was read from
+            if (feconfig.contains("_read_path")) {
+                path = feconfig["_read_path"];
             }
-            loadChipConfigs(feconfig, writeConfig, Utils::dirFromPath(sTmp));
-            chipConfig.push_back(feconfig);
+            loadChipConfigs(feconfig, writeConfig, Utils::dirFromPath(path), scanOpts.configurationType);
         }
 
         // Load scans
         json scan;
         try {
             if (!scanOpts.scanType.empty())
-                scan = openJsonFile(scanOpts.scanType);
+                scan = configuration->getScanConfiguration(scanOpts.scanType);
         } catch (std::runtime_error &e) {
             shlog->critical("#ERROR# opening scan config: {}", e.what());
             return -1;
@@ -411,7 +480,7 @@ namespace ScanHelper {
                         if(!status) {
                             bhlog->error("Unable to open DataArchiver output file \"{}\"", output_filename);
                             throw std::runtime_error("Can't open requested output data file \"" + output_filename + "\"");
-                        } 
+                        }
                     }
                     if(histo) {
                         histo->loadConfig(subHistoCfg);

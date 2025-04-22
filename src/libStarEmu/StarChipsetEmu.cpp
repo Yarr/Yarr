@@ -249,37 +249,39 @@ void StarChipsetEmu::doRegReadWrite(LCB::Frame frame) {
 void StarChipsetEmu::writeRegister(const uint32_t data, const uint8_t address,
                                    bool isABC, const unsigned ABCID) {
   if (isABC) {
+    auto reg_e = (ABCStarRegister)address;
     // skip writing if the register is read only
-    if (address == ABCStarRegister::STAT0 or
-        address == ABCStarRegister::STAT1 or
-        address == ABCStarRegister::STAT2 or
-        address == ABCStarRegister::STAT3 or
-        address == ABCStarRegister::STAT4 or
-        address == ABCStarRegister::HPR
-        or (address >= ABCStarRegister::Counter(0) && address <= ABCStarRegister::Counter(63))) {
+    if (reg_e == ABCStarRegister::STAT0 or
+        reg_e == ABCStarRegister::STAT1 or
+        reg_e == ABCStarRegister::STAT2 or
+        reg_e == ABCStarRegister::STAT3 or
+        reg_e == ABCStarRegister::STAT4 or
+        reg_e == ABCStarRegister::HPR
+        or (reg_e >= ABCStarRegisters::Counter(0) && reg_e <= ABCStarRegisters::Counter(63))) {
       logger->warn("A register write command is received for a read-only ABCStar register 0x{:x}. Skip writing.", address);
       return;
     } else {
       try {
-        m_starCfg->setABCRegister(address, data, ABCID);
+        m_starCfg->setABCRegisterByID(address, data, ABCID);
       } catch (std::out_of_range &e) {
         logger->warn("Unexpected out of range for register write of ABCStar register 0x{:x}. Skip writing.", address);
         return;
       }
     }
   } else {
+    auto reg_e = (HCCStarRegister)address;
     // skip writing if the register is read only
-    if (address == HCCStarRegister::SEU1 or
-        address == HCCStarRegister::SEU2 or
-        address == HCCStarRegister::SEU3 or
-        address == HCCStarRegister::FrameRaw or
-        address == HCCStarRegister::LCBerr or
-        address == HCCStarRegister::ADCStatus or
-        address == HCCStarRegister::Status or
-        address == HCCStarRegister::HPR) {
+    if (reg_e == HCCStarRegister::SEU1 or
+        reg_e == HCCStarRegister::SEU2 or
+        reg_e == HCCStarRegister::SEU3 or
+        reg_e == HCCStarRegister::FrameRaw or
+        reg_e == HCCStarRegister::LCBerr or
+        reg_e == HCCStarRegister::ADCStatus or
+        reg_e == HCCStarRegister::Status or
+        reg_e == HCCStarRegister::HPR) {
       logger->warn("A register write command is received for a read-only HCCStar register 0x{:x}. Skip writing.", address);
       return;
-    } else if (address == HCCStarRegister::Addressing) {
+    } else if (reg_e == HCCStarRegister::Addressing) {
       // special case for dynamic addressing
       // only the top 4 bits are read-write bits and are used as HCC ID
       uint32_t hccid_cur = m_starCfg->getHCCRegister(HCCStarRegister::Addressing);
@@ -309,15 +311,18 @@ void StarChipsetEmu::readRegister(const uint8_t address, bool isABC,
 
     // HCCStar channel number
     unsigned ich = m_starCfg->hccChannelForABCchipID(ABCID);
-    if (ich >= m_starCfg->numABCs()) {
-      logger->warn("Cannot find an ABCStar chip with ID = {}", ABCID);
+    if (ich >= HCC_INPUT_CHANNEL_COUNT) {
+      logger->warn("Cannot find an ABCStar chip with ID = {} ({})", ABCID, ich);
+      m_starCfg->eachAbc([&](auto &abc) {
+        logger->trace("Have ID {}", abc.getABCchipID());
+      });
       return;
     }
 
     // read register
     unsigned data;
     try {
-      data = m_starCfg->getABCRegister(address, ABCID);
+      data = m_starCfg->getABCRegisterByID(address, ABCID);
     } catch(std::out_of_range &e) {
       // non-existant register
       data = 0xffffffff;
@@ -377,8 +382,9 @@ void StarChipsetEmu::execute_command_sequence() {
 
     // If cmd_abcID is '1111' i.e. broadcast address, read all ABCs
     if ((cmd_abcID & 0xf) == 0xf and m_isForABC) {
-      for (size_t index=1; index <= m_starCfg->numABCs(); ++index)
-        readRegister(reg_addr, true, m_starCfg->getABCchipID(index));
+      m_starCfg->eachAbc([&](auto &abc) {
+        readRegister(reg_addr, true, abc.getABCchipID());
+      });
     } else {
       readRegister(reg_addr, m_isForABC, cmd_abcID);
     }
@@ -399,8 +405,9 @@ void StarChipsetEmu::execute_command_sequence() {
     // write register
     // If cmd_abcID is '1111' i.e. broadcast address, write all ABCs
     if ((cmd_abcID & 0xf) == 0xf and m_isForABC) {
-      for (int index=1; index <= m_starCfg->numABCs(); ++index)
-        writeRegister(data, reg_addr, true, m_starCfg->getABCchipID(index));
+      m_starCfg->eachAbc([&](auto &abc) {
+        writeRegister(data, reg_addr, true, abc.getABCchipID());
+      });
     } else {
       writeRegister(data, reg_addr, m_isForABC, cmd_abcID);
     }
@@ -471,14 +478,14 @@ void StarChipsetEmu::logicReset() {
   hpr_clkcnt = HPRPERIOD/2;
   std::fill(hpr_sent.begin(), hpr_sent.end(), false);
 
-  (m_starCfg->hcc()).setSubRegisterValue("TESTHPR", 0);
-  (m_starCfg->hcc()).setSubRegisterValue("STOPHPR", 0);
-  (m_starCfg->hcc()).setSubRegisterValue("MASKHPR", 0);
+  (m_starCfg->hcc()).setSubRegisterValue(HCCStarSubRegister::TESTHPR, 0);
+  (m_starCfg->hcc()).setSubRegisterValue(HCCStarSubRegister::STOPHPR, 0);
+  (m_starCfg->hcc()).setSubRegisterValue(HCCStarSubRegister::MASKHPR, 0);
 
   m_starCfg->eachAbc([&](auto &abc) {
-      abc.setSubRegisterValue("TESTHPR", 0);
-      abc.setSubRegisterValue("STOPHPR", 0);
-      abc.setSubRegisterValue("MASKHPR", 0);
+      abc.setSubRegisterValue(ABCStarSubRegister::TESTHPR, 0);
+      abc.setSubRegisterValue(ABCStarSubRegister::STOPHPR, 0);
+      abc.setSubRegisterValue(ABCStarSubRegister::MASKHPR, 0);
     });
 
   clearFEData();
@@ -498,8 +505,8 @@ void StarChipsetEmu::resetABCSEU() {
 
 void StarChipsetEmu::resetABCHitCounts() {
   m_starCfg->eachAbc([&](auto &abc) {
-      for (unsigned int iReg=ABCStarRegister::HitCountREG0; iReg<=ABCStarRegister::HitCountREG63; iReg++) {
-        abc.setRegisterValue(ABCStarRegister::_from_integral(iReg), 0x00000000);
+      for (auto iReg=ABCStarRegister::HitCountREG0; iReg<=ABCStarRegister::HitCountREG63; ++iReg) {
+        abc.setRegisterValue(iReg, 0x00000000);
       }
     });
 }
@@ -536,6 +543,9 @@ void StarChipsetEmu::doHPR(LCB::Frame frame) {
   doHPR_HCC(frame);
 
   for (unsigned ichip = 1; ichip <= m_starCfg->numABCs(); ++ichip) {
+    if(!m_starCfg->isAbcForInputChannel(ichip-1)) {
+      continue;
+    }
     doHPR_ABC(frame, ichip);
   }
 
@@ -548,9 +558,9 @@ void StarChipsetEmu::doHPR_HCC(LCB::Frame frame) {
   setHCCStarHPR(frame);
 
   //// HPR control logic
-  bool testHPR = m_starCfg->getSubRegisterValue(0, "TESTHPR");
-  bool stopHPR = m_starCfg->getSubRegisterValue(0, "STOPHPR");
-  bool maskHPR = m_starCfg->getSubRegisterValue(0, "MASKHPR");
+  bool testHPR = m_starCfg->getHCCSubRegisterValue(HCCStarSubRegister::TESTHPR);
+  bool stopHPR = m_starCfg->getHCCSubRegisterValue(HCCStarSubRegister::STOPHPR);
+  bool maskHPR = m_starCfg->getHCCSubRegisterValue(HCCStarSubRegister::MASKHPR);
 
   // Assume for now in the software emulation LCB is always locked and only
   // testHPR bit can trigger the one-time pulse to send an HPR packet
@@ -569,7 +579,7 @@ void StarChipsetEmu::doHPR_HCC(LCB::Frame frame) {
   //// Build and send the HPR packet
   if (lcb_lock_changed or hpr_periodic or hpr_initial) {
     auto packet_hcchpr = buildHCCRegisterPacket(
-      PacketTypes::HCCHPR, (+HCCStarRegister::HPR)._to_integral(),
+      PacketTypes::HCCHPR, (int)HCCStarRegister::HPR,
       m_starCfg->getHCCRegister(HCCStarRegister::HPR));
 
     sendPacket(packet_hcchpr);
@@ -581,11 +591,11 @@ void StarChipsetEmu::doHPR_HCC(LCB::Frame frame) {
   // Reset stopHPR to zero (i.e. resume the periodic HPR packet transmission)
   // if lcb_lock_changed
   if (stopHPR and lcb_lock_changed)
-    m_starCfg->setSubRegisterValue(0, "STOPHPR", 0);
+    m_starCfg->setHCCSubRegisterValue(HCCStarSubRegister::STOPHPR, 0);
 
   // Reset testHPR bit to zero if it is one
   if (testHPR)
-    m_starCfg->setSubRegisterValue(0, "TESTHPR", 0);
+    m_starCfg->setHCCSubRegisterValue(HCCStarSubRegister::TESTHPR, 0);
 }
 
 void StarChipsetEmu::doHPR_ABC(LCB::Frame frame, unsigned ichip) {
@@ -594,10 +604,12 @@ void StarChipsetEmu::doHPR_ABC(LCB::Frame frame, unsigned ichip) {
   //// Update the HPR register
   setABCStarHPR(frame, abcID);
 
+  int input_channel = ichip - 1;
+
   //// HPR control logic
-  bool testHPR = m_starCfg->getSubRegisterValue(ichip, "TESTHPR");
-  bool stopHPR = m_starCfg->getSubRegisterValue(ichip, "STOPHPR");
-  bool maskHPR = m_starCfg->getSubRegisterValue(ichip, "MASKHPR");
+  bool testHPR = m_starCfg->getABCSubRegisterValue(input_channel, ABCStarSubRegister::TESTHPR);
+  bool stopHPR = m_starCfg->getABCSubRegisterValue(input_channel, ABCStarSubRegister::STOPHPR);
+  bool maskHPR = m_starCfg->getABCSubRegisterValue(input_channel, ABCStarSubRegister::MASKHPR);
 
   bool lcb_lock_changed = testHPR & (!maskHPR);
   bool hpr_periodic = not (hpr_clkcnt%HPRPERIOD) and not stopHPR;
@@ -606,8 +618,8 @@ void StarChipsetEmu::doHPR_ABC(LCB::Frame frame, unsigned ichip) {
   //// Build and send HPR packets
   if (lcb_lock_changed or hpr_periodic or hpr_initial) {
     auto packet_abchpr = buildABCRegisterPacket(
-      PacketTypes::ABCHPR, ichip-1, (+ABCStarRegister::HPR)._to_integral(),
-      m_starCfg->getABCRegister(ABCStarRegister::HPR, abcID), (abcID&0xf) << 12);
+      PacketTypes::ABCHPR, ichip-1, (int)ABCStarRegister::HPR,
+      m_starCfg->getABCRegisterByID(ABCStarRegister::HPR, abcID), (abcID&0xf) << 12);
 
     sendPacket(packet_abchpr);
 
@@ -616,9 +628,9 @@ void StarChipsetEmu::doHPR_ABC(LCB::Frame frame, unsigned ichip) {
 
   //// Update HPR control bits
   if (stopHPR and lcb_lock_changed)
-    m_starCfg->setSubRegisterValue(ichip, "STOPHPR", 0);
+    m_starCfg->setABCSubRegisterValue(input_channel, ABCStarSubRegister::STOPHPR, 0);
   if (testHPR)
-    m_starCfg->setSubRegisterValue(ichip, "TESTHPR", 0);
+    m_starCfg->setABCSubRegisterValue(input_channel, ABCStarSubRegister::TESTHPR, 0);
 }
 
 void StarChipsetEmu::setHCCStarHPR(LCB::Frame frame) {
@@ -651,7 +663,7 @@ void StarChipsetEmu::setABCStarHPR(LCB::Frame frame, int abcID) {
     LCB_SCmd_Err << 15 | LCB_ErrCnt_Ovfl << 14 | LCB_Decode_Err << 13 |
     LCB_Locked << 12 | ADC_dat;
 
-  m_starCfg->setABCRegister(ABCStarRegister::HPR, hprWord, abcID);
+  m_starCfg->setABCRegisterByID(ABCStarRegister::HPR, hprWord, abcID);
 }
 
 //
@@ -660,7 +672,7 @@ void StarChipsetEmu::setABCStarHPR(LCB::Frame frame, int abcID) {
 void StarChipsetEmu::doL0A(bool bcr, uint8_t l0a_mask, uint8_t l0a_tag) {
   logger->debug("Receive an L0A command: BCR = {}, L0A mask = {:b}, L0A tag = 0x{:x}", bcr, l0a_mask, l0a_tag);
 
-  bool trig_mode = m_starCfg->getSubRegisterValue(0, "TRIGMODE"); // TRIGMODEC?
+  bool trig_mode = m_starCfg->getHCCSubRegisterValue(HCCStarSubRegister::TRIGMODE); // TRIGMODEC?
   logger->debug("Trigger mode is {}", trig_mode ? "single-level" : "multi-level");
 
   // An LCB frame covers 4 BCs
@@ -686,7 +698,7 @@ void StarChipsetEmu::doL0A(bool bcr, uint8_t l0a_mask, uint8_t l0a_tag) {
           this->countHits(abc, hits);
 
           // form clusters
-          if (abc.getSubRegisterValue("LP_ENABLE")) {
+          if (abc.getSubRegisterValue(ABCStarSubRegister::LP_ENABLE)) {
             auto abc_clusters = this->getClusters(abc, hits);
             clusters.push_back(abc_clusters);
           }
@@ -727,10 +739,12 @@ void StarChipsetEmu::doL0A(bool bcr, uint8_t l0a_mask, uint8_t l0a_tag) {
 }
 
 void StarChipsetEmu::doPRLP(uint8_t mask, uint8_t l0tag) {
-  bool trig_mode = m_starCfg->getSubRegisterValue(0, "TRIGMODE"); // TRIGMODEC?
+  bool trig_mode = m_starCfg->getHCCSubRegisterValue(HCCStarSubRegister::TRIGMODE); // TRIGMODEC?
   if (trig_mode) { // single-level
     logger->critical("doPRLP is called while the trigger mode is single level");
     return;
+  } else {
+    logger->debug("Receive a R3L1 command: mask = {:b}, L0 tag = 0x{:x}", mask, l0tag);
   }
 
   bool isPR;
@@ -752,12 +766,12 @@ void StarChipsetEmu::doPRLP(uint8_t mask, uint8_t l0tag) {
 
   // for each ABC
   m_starCfg->eachAbc([this, l0tag, isPR, &bcid, &clusters](auto& abc) {
-      if (isPR and not abc.getSubRegisterValue("PR_ENABLE")) {
+      if (isPR and not abc.getSubRegisterValue(ABCStarSubRegister::PR_ENABLE)) {
         // Skip if a R3 command for PR packets is received but PR_ENABLE is 0
         return;
       }
 
-      if (not isPR and not abc.getSubRegisterValue("LP_ENABLE")) {
+      if (not isPR and not abc.getSubRegisterValue(ABCStarSubRegister::LP_ENABLE)) {
         // Skip if an L1 command for LP packets is received but LP_ENABLE is 0
         return;
       }
@@ -822,15 +836,15 @@ unsigned int StarChipsetEmu::countTriggers(LCB::Frame frame) {
 void StarChipsetEmu::countHits(AbcCfg& abc, const StripData& hits) const {
   if (not m_startHitCount) return;
 
-  bool EnCount = abc.getSubRegisterValue("ENCOUNT");
+  bool EnCount = abc.getSubRegisterValue(ABCStarSubRegister::ENCOUNT);
   if (not EnCount) return;
 
   // HitCountReg0-63: four channels per register
   for (int ireg = 0; ireg < 64; ++ireg) {
     // Read HitCount Register
     // address
-    unsigned addr = ireg + (+ABCStarRegister::HitCountREG0)._to_integral();
-    auto reg = ABCStarRegister(ABCStarRegs::_from_integral(addr));
+    unsigned addr = ireg + (int)ABCStarRegister::HitCountREG0;
+    auto reg = ABCStarRegister((ABCStarRegister)(addr));
 
     // value
     unsigned counts = abc.getRegisterValue(reg);
@@ -1036,7 +1050,7 @@ std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_Tes
   uint8_t bcid = 0;
 
   // enable
-  bool TestPulseEnable = abc.getSubRegisterValue("TEST_PULSE_ENABLE");
+  bool TestPulseEnable = abc.getSubRegisterValue(ABCStarSubRegister::TEST_PULSE_ENABLE);
   if (not TestPulseEnable)
     return std::make_pair(bcid, hits);
 
@@ -1044,7 +1058,7 @@ std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_Tes
   StripData masks = getMasks(abc);
 
   // Two test pulse options: determined by bit 18 of ABC register CREG0
-  bool testPattEnable = abc.getSubRegisterValue("TESTPATT_ENABLE");
+  bool testPattEnable = abc.getSubRegisterValue(ABCStarSubRegister::TESTPATT_ENABLE);
   if (testPattEnable) { // Use test pattern
     // Need to check four slots in m_l0buffer_lite: from l0addr to l0addr-3
     for (unsigned ibit=0; ibit<4; ibit++) {
@@ -1056,8 +1070,8 @@ std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_Tes
         bcid = pulse.to_ulong() & 0xff;
 
         // testPatt1 if mask bit is 0, otherwise testPatt2
-        uint8_t testPatt1 = abc.getSubRegisterValue("TESTPATT1");
-        uint8_t testPatt2 = abc.getSubRegisterValue("TESTPATT2");
+        uint8_t testPatt1 = abc.getSubRegisterValue(ABCStarSubRegister::TESTPATT1);
+        uint8_t testPatt2 = abc.getSubRegisterValue(ABCStarSubRegister::TESTPATT2);
 
         StripData patt1_ibit(0); // Initialize all bits to zero
         if ( (testPatt1>>ibit)&1 ) {
@@ -1103,12 +1117,12 @@ std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_Cal
   uint8_t pulsetype = (pulse.to_ulong()>>8) & 3;
 
   //assert(TM==0)
-  bool CalPulseEnable = abc.getSubRegisterValue("CALPULSE_ENABLE");
+  bool CalPulseEnable = abc.getSubRegisterValue(ABCStarSubRegister::CALPULSE_ENABLE);
 
   // Charge injection DAC
   uint16_t BCAL;
   if (pulsetype == 1 and CalPulseEnable) {
-    BCAL = abc.getSubRegisterValue("BCAL");
+    BCAL = abc.getSubRegisterValue(ABCStarSubRegister::BCAL);
     //assert(bcid == (l0addr&0xff));
   } else { // No calibration pulse. Hits could still be recorded due to noise.
     BCAL = 0;
@@ -1118,11 +1132,11 @@ std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_Cal
 
   // Threshold DAC
   // BVT: 8 bits, 0 - -550 mV
-  uint8_t BVT = abc.getSubRegisterValue("BVT");
+  uint8_t BVT = abc.getSubRegisterValue(ABCStarSubRegister::BVT);
 
   // Trim Range
   // BTRANGE: 5 bits, 50 mV - 230 mV
-  uint8_t BTRANGE = abc.getSubRegisterValue("BTRANGE");
+  uint8_t BTRANGE = abc.getSubRegisterValue(ABCStarSubRegister::BTRANGE);
 
   // Calibration enables for each strip channel
   auto enables = getCalEnables(abc);
@@ -1149,7 +1163,7 @@ std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_Cal
 unsigned StarChipsetEmu::getL0BufferAddr(const AbcCfg& abc, uint8_t cmdBC) const {
   // L0A latency from ABCStar register CREG2
   // 9 bits
-  unsigned l0_latency = abc.getSubRegisterValue("LATENCY");
+  unsigned l0_latency = abc.getSubRegisterValue(ABCStarSubRegister::LATENCY);
 
   // cmdBC = 0, 1, 2, or 3 from trigger command
   // address of m_l0buffer_lite that associates to cmdBC
@@ -1159,7 +1173,7 @@ unsigned StarChipsetEmu::getL0BufferAddr(const AbcCfg& abc, uint8_t cmdBC) const
 
 std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::getFEData(const AbcCfg& abc, unsigned l0addr) {
   // Mode of operation
-  uint8_t TM = abc.getSubRegisterValue("TM");
+  uint8_t TM = abc.getSubRegisterValue(ABCStarSubRegister::TM);
   if (TM == 0) { // Normal data taking
     return generateFEData_CaliPulse(abc, l0addr);
   } else if (TM == 1) { // Static test mode
@@ -1171,8 +1185,8 @@ std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::getFEData(const Ab
 
 std::vector<uint16_t> StarChipsetEmu::getClusters(const AbcCfg& abc, const StripData& hits) {
   // max clusters
-  bool maxcluster_en = abc.getSubRegisterValue("MAX_CLUSTER_ENABLE");
-  uint8_t maxcluster = maxcluster_en ? abc.getSubRegisterValue("MAX_CLUSTER") : 63;
+  bool maxcluster_en = abc.getSubRegisterValue(ABCStarSubRegister::MAX_CLUSTER_ENABLE);
+  uint8_t maxcluster = maxcluster_en ? abc.getSubRegisterValue(ABCStarSubRegister::MAX_CLUSTER) : 63;
   return clusterFinder(hits, maxcluster);
 }
 

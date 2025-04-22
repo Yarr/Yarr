@@ -142,7 +142,7 @@ int ScanConsoleImpl::loadConfig(const char *config){
     spdlog::info("Configuring logger ...");
     logging::setupLoggers(loggerConfig);
     json j = json::parse(config);
-    json scanConsoleConfig = j["config"];
+    scanConsoleConfig = j["config"];
     runCounter=j["runCounter"];
     ctrlCfg=scanConsoleConfig["ctrlConfig"];
     chipConfig=scanConsoleConfig["chipConfig"];
@@ -152,7 +152,7 @@ int ScanConsoleImpl::loadConfig(const char *config){
     return 0;
 }
 
-unsigned ScanConsoleImpl::getRunNumber() {
+unsigned ScanConsoleImpl::getRunNumber() const {
     return runCounter;
 }
 
@@ -195,7 +195,7 @@ int ScanConsoleImpl::setupScan() {
     }
     // TODO not to use the raw pointer!
     try {
-        ScanHelper::buildRawDataProcs(procs, *bookie, chipType);
+        ScanHelper::buildRawDataProcs(procs, scanCfg, *bookie, chipType);
         ScanHelper::buildHistogrammers(histogrammers, scanCfg, *bookie, scanOpts.outputDir);
         ScanHelper::buildAnalyses(analyses, scanCfg, *bookie, scanBase.get(),
                                   &fbData, scanOpts.mask_opt, scanOpts.outputDir,
@@ -504,6 +504,13 @@ std::string ScanConsoleImpl::getResults() {
     getResults(result);
     std::string str = result.dump();
     return str;
+}
+
+std::string ScanConsoleImpl::getConfig() {
+    json result;
+    result["config"] = scanConsoleConfig;
+    result["runCounter"] = runCounter;
+    return  result.dump(0);
 }
 
 void ScanConsoleImpl::getResults(json &result) {

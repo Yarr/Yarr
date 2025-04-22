@@ -55,18 +55,33 @@ void StarChannelFeedback::feedback(unsigned id, std::unique_ptr<Histo2d> h) {
         fbDoneMap[id] = true;
     } else {
         m_fb[id] = std::move(h);
-        for (unsigned row=1; row<=nRow; row++) {
-            for (unsigned col=1; col<=nCol; col++) {
-                int sign = m_fb[id]->getBin(m_fb[id]->binNum(col, row));
 
-                //getTrimDAC and setTrimDAC use an old histogram layout converting here for now
-                int v = fe->getTrimDAC(col, row);
-                logger->trace("row {}, col {}, v {}, sign {}",row,col,v,sign);
+        auto chip_map = fe->hcc().histoChipMap();
+        unsigned nABCs = nCol / 128;
 
-                v = v + ((m_steps[m_cur])*sign);
-                if (v<min) v = min;
-                if (v>max) v = max;
-                fe->setTrimDAC(col, row, v);
+        for (unsigned histo_abc=0; histo_abc<nABCs; histo_abc++) {
+            AbcCfg &abc = fe->abcForHistoChip(histo_abc);
+
+            for (unsigned chan=0; chan<128; chan++) {
+                unsigned histo_col = 1 + histo_abc * 128 + chan;
+                for (unsigned row=1; row<=nRow; row++) {
+                    uint8_t abc_chan = chan + ((row-1) * 128);
+
+                    int sign = m_fb[id]->getBin(m_fb[id]->binNum(histo_col, row));
+
+                    //getTrimDAC and setTrimDAC use an old histogram layout converting here for now
+
+                    uint8_t trimOrder = abc.trimRegOrderFromChannel(abc_chan);
+
+                    int v = abc.getTrimDACRaw(trimOrder);
+                    logger->trace("row {}, col {}, trim {}, v {}, sign {}",row,histo_col, trimOrder, v,sign);
+
+                    v = v + ((m_steps[m_cur])*sign);
+                    if (v<min) v = min;
+                    if (v>max) v = max;
+
+                    abc.setTrimDACRaw(trimOrder, v);
+                }
             }
         }
     }
@@ -90,12 +105,14 @@ void StarChannelFeedback::init() {
                 unsigned nRow = fe->geo.nRow;
                 unsigned nCol = fe->geo.nCol; 
                 m_fb[id] = nullptr;
-                for (unsigned row=1; row<=nRow; row++) {
-                    for (unsigned col=1; col<=nCol; col++) {                        
-                        //Initial TDAC in mid of the range
-                        dynamic_cast<StarChips*>(fe)->setTrimDAC(col, row, 15);
+                auto &star = *dynamic_cast<StarChips*>(fe);
+
+                // Set initial TDAC in mid of the range
+                star.eachAbc([&](auto &cfg) {
+                    for (unsigned chan=0; chan<256; chan++) {
+                        cfg.setTrimDACRaw(chan, 15);
                     }
-                }
+                });
             }
         }
     }

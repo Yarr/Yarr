@@ -7,6 +7,9 @@
 #include "StarCfg.h"
 #include "StarPreset.h"
 
+#include "AbcNames.h"
+#include "HccNames.h"
+
 #include <iomanip>
 
 #include "logging.h"
@@ -39,12 +42,12 @@ double StarCfg::toCharge(double vcal, bool sCap, bool lCap) { return toCharge(vc
 void StarCfg::enableAll() {
     eachAbc([&](auto &abc) {
         for(int m=0; m<8; m++) {
-          abc.setRegisterValue(ABCStarRegister::MaskInput(m), 0);
+          abc.setRegisterValue(ABCStarRegisters::MaskInput(m), 0);
         }
       });
 }
 
-int StarCfg::hccChannelForABCchipID(unsigned int chipID) {
+int StarCfg::hccChannelForABCchipID(unsigned int chipID) const {
   auto itr = std::find_if(m_ABCchips.begin(), m_ABCchips.end(),
                         [this, chipID](auto &it) { return it.second.getABCchipID() == chipID; });
   return itr->first;
@@ -60,68 +63,76 @@ void StarCfg::setHCCRegister(HCCStarRegister addr, uint32_t val){
 }
 
 //ABC register accessor functions, converts chipID into chip index
-uint32_t StarCfg::getABCRegister(ABCStarRegister addr, int32_t chipID){
+uint32_t StarCfg::getABCRegisterByID(ABCStarRegister addr, int32_t chipID){
   auto &abc = abcFromChipID(chipID);
   return abc.getRegisterValue(addr);
 }
-void StarCfg::setABCRegister(ABCStarRegister addr, uint32_t val, int32_t chipID){
+void StarCfg::setABCRegisterByID(ABCStarRegister addr, uint32_t val, int32_t chipID){
   auto &abc = abcFromChipID(chipID);
   abc.setRegisterValue(addr, val);
 }
 
-uint8_t trimChannelFromHistogramLocation(unsigned col, unsigned row) {
-    ////NOTE: Each chip is divided in 2 row x 128 col. Histogram bins are adjusted based on number of activated chips.
-    ////      Let's say, of the 10 ABC in one hybrid, only chip 0, 4 and 6 are activated, the histogram has 2 rows x 896 (=128*7) cols.
-    ////      i.e Cols 0 to 128 belong to chip_0; Cols 512 to 640 belong to chip_4;  row Cols 768 to 896 belong to chip_6.
-    ////      the trimDAC_4lsb_name for each chip is trimdac_4lsb_<nthRow[2:1]>_<nthCol[128:1]>
-    ////      the trimDAC_1msb_name for each chip is trimdac_1msb_<nthRow[2:1]>_<nthCol[128:1]>
-
-    ////NOTE: row and col pass from histogram starts from 1, while channel starts from 0
-
-    ////NOTE: numbering in trim registers is slightly different from physical strip order. In the register numbering, bits 7-2 together with bit 0 correspond to the strip location while bit 1 corresponds to the stream/row number
-
-    uint8_t chn_tmp = (col-1) % 128; //Physical channel position within the row, 0 indexed
-    uint8_t channel= ((chn_tmp & ~0x1) << 1) + (chn_tmp & 0x1) + 2*(row-1); //Conversion to register ordering.
-    return channel;
-}
-
-uint8_t trimIndexFromHistogramLocation(unsigned col, unsigned row) {
-    //See NOTE in trimChannelFromHistogramLocation()
-    return 1+((col-1) >> 7);
-}
-
-void StarCfg::setTrimDAC(unsigned col, unsigned row, int value)  {
-
-    uint8_t channel= trimChannelFromHistogramLocation(col, row);
-
-    SPDLOG_LOGGER_TRACE(logger,
-                        "row:{} col:{} channel:{}",
-                        row-1, col-1, channel);
-
-    uint8_t chipIndex = trimIndexFromHistogramLocation(col, row);
-
-    if(abcAtIndex(chipIndex)) {
-        auto &abc = abcFromIndex(chipIndex);
-        abc.setTrimDACRaw(channel, value);
+int StarCfg::inputChannelForHistoChip(int histo_abc) const
+{
+    auto chip_map = hcc().histoChipMap();
+    for(int i=0; i<chip_map.size(); i++) {
+        if(chip_map[i] == histo_abc) {
+            return i;
+        }
     }
-
+    return -1;
 }
 
+int StarCfg::getHCCSubRegisterParentAddr(HCCStarSubRegister subReg)
+{
+    return m_hcc.getSubRegisterParentAddr(subReg);
+}
 
-int StarCfg::getTrimDAC(unsigned col, unsigned row) const {
-    uint8_t channel= trimChannelFromHistogramLocation(col, row);
+int StarCfg::getABCSubRegisterParentAddr(ABCStarSubRegister subReg)
+{
+    return m_abc_info->getSubRegisterParentAddr(subReg);
+}
 
-    SPDLOG_LOGGER_TRACE(logger,
-                        "row:{} col:{} channel:{}",
-                        row-1, col-1, channel);
+/// Get register value for named register field (either ABC or HCC)
+uint32_t StarCfg::getHCCSubRegisterParentValue(HCCStarSubRegister subReg)
+{
+    return m_hcc.getSubRegisterParentValue(subReg);
+}
 
-    uint8_t chipIndex = trimIndexFromHistogramLocation(col, row);
-
-    if(abcAtIndex(chipIndex)) {
-        const auto &abc = abcFromIndex(chipIndex);
-        return abc.getTrimDACRaw(channel);
+uint32_t StarCfg::getABCSubRegisterParentValue(int input_channel, ABCStarSubRegister subReg)
+{
+    if (isAbcForInputChannel(input_channel)) {
+        return abcForInputChannel(input_channel).getSubRegisterParentValue(subReg);
+    } else {
+      std::cerr << " --> No input channel at " << input_channel << "\n";
     }
     return 0;
+}
+
+bool StarCfg::isAbcForHistoChip(int histo_chip) const
+{
+    auto ic = inputChannelForHistoChip(histo_chip);
+    return ic != -1;
+}
+
+AbcCfg &StarCfg::abcForHistoChip(int histo_chip)
+{
+    auto ic = inputChannelForHistoChip(histo_chip);
+    return abcForInputChannel(ic);
+}
+
+const AbcCfg &StarCfg::abcForHistoChip(int histo_chip) const
+{
+    auto ic = inputChannelForHistoChip(histo_chip);
+    return abcForInputChannel(ic);
+}
+
+void StarCfg::logMappings() const
+{
+    auto chip_map = hcc().histoChipMap();
+    for(int i=0; i<chip_map.size(); i++) {
+        logger->trace("IC map: {} {}", i, chip_map[i]);
+    }
 }
 
 void StarCfg::writeConfig(json &j) {
@@ -139,8 +150,8 @@ void StarCfg::writeConfig(json &j) {
         // Standard rw registers start from 32
         // Don't write status registers
         if(addr >= 32) {
-          auto reg = HCCStarRegister::_from_integral(addr);
-          std::string regKey = reg._to_string();
+          auto reg = HCCStarRegister(addr);
+          std::string regKey = HccNames::regToString(reg);
           uint32_t val = getHCCRegister(reg);
           std::stringstream ss;
           ss << std::hex << std::setw(8) << std::setfill('0') << val;
@@ -154,43 +165,49 @@ void StarCfg::writeConfig(json &j) {
     // Store until we know which are not common
     std::vector<std::map<std::string, std::string>> regs(highestABC()+1);
 
+    auto chip_map = m_hcc.histoChipMap();
+
     for (int iABC = 0; iABC <= highestABC(); iABC++) {
-        if (!abcAtIndex(iABC+1))
+        if (!isAbcForInputChannel(iABC))
             continue;
-        auto &abc = abcFromIndex(iABC+1);
-        j["ABCs"]["IDs"][iABC] = abc.getABCchipID();
+        auto &abc = abcForInputChannel(iABC);
+        int histo_index = chip_map[iABC];
+        if(histo_index == HCC_INPUT_CHANNEL_BAD_SLOT) {
+          continue;
+        }
+        j["ABCs"]["IDs"][histo_index] = abc.getABCchipID();
 
         for(auto &reg_i: abcRegs) {
             auto &info = reg_i.second;
             int addr = info->addr();
+            auto reg = (ABCStarRegister)addr;
 
             // Skip non-writeable, trim and mask registers
-            if(addr==ABCStarRegister::SCReg) {
+            if(reg==ABCStarRegister::SCReg) {
                 continue;
             }
-            if(addr>=ABCStarRegister::MaskInput(0) && addr<=ABCStarRegister::MaskInput(7)) {
+            if(reg>=ABCStarRegisters::MaskInput(0) && reg<=ABCStarRegisters::MaskInput(7)) {
                 continue;
             }
-            if(addr>=ABCStarRegister::CalREG0 && addr<=ABCStarRegister::CalREG7) {
+            if(reg>=ABCStarRegister::CalREG0 && reg<=ABCStarRegister::CalREG7) {
                 continue;
             }
-            if(addr>=ABCStarRegister::STAT0 && addr<=ABCStarRegister::HPR) {
+            if(reg>=ABCStarRegister::STAT0 && reg<=ABCStarRegister::HPR) {
                 continue;
             }
-            if(addr>=ABCStarRegister::TrimLo(0) && addr<=ABCStarRegister::TrimHi(7)) {
+            if(reg>=ABCStarRegisters::TrimLo(0) && reg<=ABCStarRegisters::TrimHi(7)) {
                 continue;
             }
-            if(addr>=ABCStarRegister::HitCountREG0) {
+            if(reg>=ABCStarRegister::HitCountREG0) {
                 continue;
             }
 
-            auto reg = ABCStarRegister::_from_integral(addr);
             uint32_t val = abc.getRegisterValue(reg);
             std::stringstream ss;
             ss << std::hex << std::setw(8) << std::setfill('0') << val;
-            std::string regKey = reg._to_string();
+            std::string regKey = AbcNames::regToString(reg);
             std::string regValue = ss.str();
-            regs[iABC][regKey] = regValue;
+            regs[histo_index][regKey] = regValue;
 
             if(iABC == lowestABC()) {
                 common[regKey] = regValue;
@@ -212,13 +229,13 @@ void StarCfg::writeConfig(json &j) {
                 continue;
             }
 
-            j["ABCs"]["masked"][iABC].push_back(m);
+            j["ABCs"]["masked"][histo_index].push_back(m);
         }
         if(sameTrims) {
-            j["ABCs"]["trims"][iABC] = trims[0];
+            j["ABCs"]["trims"][histo_index] = trims[0];
         } else {
             for(int m=0; m<256; m++) {
-                j["ABCs"]["trims"][iABC][m] = trims[m];
+                j["ABCs"]["trims"][histo_index][m] = trims[m];
             }
         }
     }
@@ -320,7 +337,7 @@ void StarCfg::loadConfig(const json &j) {
             logger->trace("Read HCC value {}", regValue);
 
             try {
-                auto addr = HCCStarRegister::_from_string(regName.c_str());
+                auto addr = HccNames::regFromString(regName).value();
                 logger->trace("Set HCC value {} {}", addr, regValue);
                 m_hcc.setRegisterValue(addr, regValue);
                 auto value = m_hcc.getRegisterValue(addr);
@@ -347,12 +364,25 @@ void StarCfg::loadConfig(const json &j) {
             std::string subRegName = i.key();
             uint32_t subRegValue = valFromJson(i.value());
 
-            auto regPre = m_hcc.getSubRegisterParentValue(subRegName);
-            m_hcc.setSubRegisterValue(subRegName, subRegValue);
-            auto retrieved = m_hcc.getSubRegisterValue(subRegName);
-            auto regPost = m_hcc.getSubRegisterParentValue(subRegName);
+            auto subReg = HccNames::subRegFromString(subRegName).value();
+
+            auto regPre = m_hcc.getSubRegisterParentValue(subReg);
+            m_hcc.setSubRegisterValue(subReg, subRegValue);
+            auto retrieved = m_hcc.getSubRegisterValue(subReg);
+            auto regPost = m_hcc.getSubRegisterParentValue(subReg);
             logger->trace("Load from JSON: For HCC, {} has been set to {} (check {}) {:08x} -> {:08x}", subRegName, subRegValue, retrieved, regPre, regPost);
         } 
+    }
+
+    // Map from input channels to histo location
+    auto chip_map = m_hcc.histoChipMap();
+
+    // Count enabled chips for later consistency check
+    int enables_count = 0;
+    for(auto &i: chip_map) {
+      if(i==HCC_INPUT_CHANNEL_BAD_SLOT)
+        continue;
+      enables_count ++;
     }
 
     // Clear list in case loading twice
@@ -368,7 +398,7 @@ void StarCfg::loadConfig(const json &j) {
 
     unsigned abc_arr_length = 0;
 
-    // Load the IDs
+    // Load the IDs (presented in histogram order)
     if (abcs.contains("IDs")) {
         auto &ids = abcs["IDs"];
         abc_arr_length = ids.size();
@@ -376,7 +406,19 @@ void StarCfg::loadConfig(const json &j) {
             auto &id = ids[iABC];
             if (id.is_null())
                 continue;
-            addABCchipID(id, iABC);
+
+            int ic_abc = -1;
+            for(int i=0; i<chip_map.size(); i++) {
+              if(chip_map[i] == iABC) {
+                ic_abc = i;
+              }
+            }
+            if(ic_abc == -1) {
+              logger->warn("While loading no mapping for ID {} found in HCC map at {}", (int)id, iABC);
+              continue;
+            }
+
+            addABCchipID(id, ic_abc);
         }
     }
 
@@ -402,6 +444,10 @@ void StarCfg::loadConfig(const json &j) {
         return; //No ABCs to load
     }
 
+    if(abc_arr_length != enables_count) {
+      logger->warn("While loading, count from IDs (or fuse IDs) {} doesn't match IC enables in HCC {}", abc_arr_length, enables_count);
+    }
+
     //We need to null check these later. If it's empty, we already returned.
     auto &ids = abcs["IDs"];
 
@@ -425,9 +471,10 @@ void StarCfg::loadConfig(const json &j) {
             uint32_t regValue = valFromJson(i.value());
 
             try {
-                auto addr = ABCStarRegister::_from_string(regName.c_str());
+                auto addr = AbcNames::regFromString(regName).value();
                 for (int iABC = 0; iABC <= highestABC(); iABC++) {
-                    if (abcAtIndex(iABC+1))  {
+                    if (isAbcForInputChannel(iABC))  {
+                        // Doesn't need remapping as common
                         auto &abc = abcFromIndex(iABC+1);
                         abc.setRegisterValue(addr, regValue);
                     }
@@ -463,7 +510,13 @@ void StarCfg::loadConfig(const json &j) {
                 return;
             }
 
-            auto &abc = abcFromIndex(iABC+1);
+            int ic_abc = -1;
+            for(int i=0; i<chip_map.size(); i++) {
+              if(chip_map[i] == iABC) {
+                ic_abc = i;
+              }
+            }
+            auto &abc = abcForInputChannel(ic_abc);
 
             auto b = chipRegs.begin();
             auto e = chipRegs.end();
@@ -472,7 +525,7 @@ void StarCfg::loadConfig(const json &j) {
                 uint32_t regValue = valFromJson(i.value());
 
                 try {
-                    auto addr = ABCStarRegister::_from_string(regName.c_str());
+                    auto addr = AbcNames::regFromString(regName).value();
                     abc.setRegisterValue(addr, regValue);
                     logger->trace("For ABC index {}, reg {} has been set to {:08x}", iABC, regName, regValue);
                 } catch(std::runtime_error &e) {
@@ -504,7 +557,13 @@ void StarCfg::loadConfig(const json &j) {
                 return;
             }
 
-            auto &abc = abcFromIndex(iABC+1);
+            int ic_abc = -1;
+            for(int i=0; i<chip_map.size(); i++) {
+              if(chip_map[i] == iABC) {
+                ic_abc = i;
+              }
+            }
+            auto &abc = abcForInputChannel(ic_abc);
 
             auto b = chipSubRegs.begin();
             auto e = chipSubRegs.end();
@@ -512,10 +571,11 @@ void StarCfg::loadConfig(const json &j) {
                 std::string subRegName = i.key();
                 uint32_t subRegValue = valFromJson(i.value());
 
-                auto regPre = abc.getSubRegisterParentValue(subRegName);
-                abc.setSubRegisterValue(subRegName, subRegValue);
-                auto retrieved = abc.getSubRegisterValue(subRegName);
-                auto regPost = abc.getSubRegisterParentValue(subRegName);
+                auto subReg = AbcNames::subRegFromString(subRegName).value();
+                auto regPre = abc.getSubRegisterParentValue(subReg);
+                abc.setSubRegisterValue(subReg, subRegValue);
+                auto retrieved = abc.getSubRegisterValue(subReg);
+                auto regPost = abc.getSubRegisterParentValue(subReg);
                 logger->trace("Load from JSON: For ABC index {}, {} has been set to {} (check {}) {:08x} -> {:08x}", iABC, subRegName, subRegValue, retrieved, regPre, regPost);
             }
         } // Loop over ABCs
@@ -535,8 +595,15 @@ void StarCfg::loadConfig(const json &j) {
                 continue;
             auto &maskedStrips = maskArray[iABC];
 
+            int ic_abc = -1;
+            for(int i=0; i<chip_map.size(); i++) {
+              if(chip_map[i] == iABC) {
+                ic_abc = i;
+              }
+            }
+
+            auto &abc = abcForInputChannel(ic_abc);
             for(int strip: maskedStrips) {
-                auto &abc = abcFromIndex(iABC+1);
                 abc.setMask(strip, true);
             }
         }
@@ -546,7 +613,7 @@ void StarCfg::loadConfig(const json &j) {
         auto &trimArray = abcs["trims"];
 
         if(trimArray.size() != abc_arr_length) {
-            logger->error("ABCs/trims array size does not match number of ABCs");
+            logger->error("ABCs/trims array size {} does not match number of ABCs {}", trimArray.size(), abc_arr_length);
             return;
         }
 
@@ -554,7 +621,15 @@ void StarCfg::loadConfig(const json &j) {
         for (size_t iABC = 0; iABC < abc_arr_length; iABC++) {
             if (ids[iABC].is_null())
                 continue;
-            auto &abc = abcFromIndex(iABC+1);
+
+            int ic_abc = -1;
+            for(int i=0; i<chip_map.size(); i++) {
+              if(chip_map[i] == iABC) {
+                ic_abc = i;
+              }
+            }
+
+            auto &abc = abcForInputChannel(ic_abc);
 
             auto &chipValue = trimArray[iABC];
             if(chipValue.is_number()) {

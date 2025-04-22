@@ -11,72 +11,36 @@
 #include <memory>
 #include <vector>
 
-#include "enum.h"
+#include "StarRegDefs.h"
 #include "StarRegister.h"
 
 // Name different ABC registers that can be used
 //  NB some are not used in V1
-BETTER_ENUM(ABCStarRegs, int,
-            SCReg=0, ADCS1=1, ADCS2=2, ADCS3=3, ADCS4=4, ADCS5=5, ADCS6=6, ADCS7=7,
-            MaskInput0=16, MaskInput1=17, MaskInput2=18, MaskInput3=19, MaskInput4=20, MaskInput5=21, MaskInput6=22, MaskInput7=23,
-            CREG0=32, CREG1=33, CREG2=34, CREG3=35, CREG4=36,
-            /* CREG5=37,  */ // This is used for fusing only
-            CREG6=38,
-            STAT0=48, STAT1=49, STAT2=50, STAT3=51, STAT4=52, HPR=63,
-            TrimDAC0=64, TrimDAC1=65, TrimDAC2=66, TrimDAC3=67, TrimDAC4=68, TrimDAC5=69, TrimDAC6=70, TrimDAC7=71, TrimDAC8=72, TrimDAC9=73, TrimDAC10=74, TrimDAC11=75, TrimDAC12=76, TrimDAC13=77, TrimDAC14=78, TrimDAC15=79, TrimDAC16=80, TrimDAC17=81, TrimDAC18=82, TrimDAC19=83, TrimDAC20=84, TrimDAC21=85, TrimDAC22=86, TrimDAC23=87, TrimDAC24=88, TrimDAC25=89, TrimDAC26=90, TrimDAC27=91, TrimDAC28=92, TrimDAC29=93, TrimDAC30=94, TrimDAC31=95, TrimDAC32=96, TrimDAC33=97, TrimDAC34=98, TrimDAC35=99, TrimDAC36=100, TrimDAC37=101, TrimDAC38=102, TrimDAC39=103,
-            CalREG0=104, CalREG1=105, CalREG2=106, CalREG3=107, CalREG4=108, CalREG5=109, CalREG6=110, CalREG7=111,
-            HitCountREG0=128, HitCountREG1=129, HitCountREG2=130, HitCountREG3=131, HitCountREG4=132, HitCountREG5=133, HitCountREG6=134, HitCountREG7=135, HitCountREG8=136, HitCountREG9=137, HitCountREG10=138, HitCountREG11=139, HitCountREG12=140, HitCountREG13=141, HitCountREG14=142, HitCountREG15=143, HitCountREG16=144, HitCountREG17=145, HitCountREG18=146, HitCountREG19=147, HitCountREG20=148, HitCountREG21=149, HitCountREG22=150, HitCountREG23=151, HitCountREG24=152, HitCountREG25=153, HitCountREG26=154, HitCountREG27=155, HitCountREG28=156, HitCountREG29=157, HitCountREG30=158, HitCountREG31=159, HitCountREG32=160, HitCountREG33=161, HitCountREG34=162, HitCountREG35=163, HitCountREG36=164, HitCountREG37=165, HitCountREG38=166, HitCountREG39=167, HitCountREG40=168, HitCountREG41=169, HitCountREG42=170, HitCountREG43=171, HitCountREG44=172, HitCountREG45=173, HitCountREG46=174, HitCountREG47=175, HitCountREG48=176, HitCountREG49=177, HitCountREG50=178, HitCountREG51=179, HitCountREG52=180, HitCountREG53=181, HitCountREG54=182, HitCountREG55=183, HitCountREG56=184, HitCountREG57=185, HitCountREG58=186, HitCountREG59=187, HitCountREG60=188, HitCountREG61=189, HitCountREG62=190, HitCountREG63=191)
+enum class ABCStarRegister {
+  ABC_STAR_REGS
+};
+
+// Add prefix operator so we can iterate
+// NB: Only to be uses for valid ranges
+inline ABCStarRegister operator ++(ABCStarRegister &r) {
+  r = ((ABCStarRegister) ((int)r + 1));
+  return r;
+}
 
 //Name different ABCv0 subregisters that can be used for configuration, scans, etc.
-
-BETTER_ENUM(ABCStarSubRegister, int,
-            RRFORCE=1, WRITEDISABLE, STOPHPR, TESTHPR, EFUSEL, LCBERRCNTCLR,
-            BVREF, BIREF, B8BREF, BTRANGE,
-            BVT, COMBIAS, BIFEED, BIPRE,
-            STR_DEL_R, STR_DEL, BCAL, BCAL_RANGE,
-            ADC_BIAS, ADC_CH, ADC_ENABLE,
-            D_S, D_LOW, D_EN_CTRL,
-            BTMUX, BTMUXD, A_S, A_EN_CTRL,
-            TEST_PULSE_ENABLE, ENCOUNT, MASKHPR, PR_ENABLE, LP_ENABLE, RRMODE, TM, TESTPATT_ENABLE, TESTPATT1, TESTPATT2,
-            CURRDRIV, CALPULSE_ENABLE, CALPULSE_POLARITY,
-            LATENCY, BCFLAG_ENABLE, BCOFFSET,
-            DETMODE, MAX_CLUSTER, MAX_CLUSTER_ENABLE,
-            EN_CLUSTER_EMPTY, EN_CLUSTER_FULL, EN_CLUSTER_OVFL, EN_REGFIFO_EMPTY, EN_REGFIFO_FULL, EN_REGFIFO_OVFL, EN_LPFIFO_EMPTY, EN_LPFIFO_FULL, EN_PRFIFO_EMPTY, EN_PRFIFO_FULL, EN_LCB_LOCKED, EN_LCB_DECODE_ERR, EN_LCB_ERRCNT_OVFL, EN_LCB_SCMD_ERR,
-            // DOFUSE, // Not needed
-            LCB_ERRCOUNT_THR,
-
-            // New for ABCStarV1
-            // SCREG
-            ADCRESET,
-
-            // DCS1
-            DIS_CLK, LCB_SELF_TEST_ENABLE,
-
-            // DCS2
-            DATA_IDLE, EN_GLITCH_A, EN_GLITCH_B, EN_GLITCH_C, EN_GLITCH_V, EN_GLITCH_ADC, RING_OSC_EN,
-
-            // DCS3
-            BTMUX_DEC, A_S_DEC, A_LOW, D_S_DEC, EN_OUT_DECODER,
-
-            // CFG1
-            DTESTOUTSEL,
-            // DOFUSEADDR
-            V0_READOUT_MODE, DIS_CLKS_EN,
-            READOUT_TIMEOUT_ENABLE
-)
+enum class ABCStarSubRegister {
+  ABC_STAR_SUB_REGS
+};
 
 /// Representation of the address of an ABCStar register
-class ABCStarRegister : public ABCStarRegs {
-  public:
-    ABCStarRegister(const ABCStarRegs & other) : ABCStarRegs::ABCStarRegs(other) {}
-    ABCStarRegister(const ABCStarRegs::_enumerated & other) : ABCStarRegs::ABCStarRegs(other) {}
-    static  ABCStarRegister MaskInput(int i) { return ABCStarRegs::_from_integral((int)(ABCStarRegs::MaskInput0) + i);}
-    static  ABCStarRegister CalReg(int i) { return ABCStarRegs::_from_integral((int)(ABCStarRegs::CalREG0) + i);}
-    static  ABCStarRegister Counter(int i) { return ABCStarRegs::_from_integral((int)(ABCStarRegs::HitCountREG0) + i);}
+namespace ABCStarRegisters {
+    static  ABCStarRegister MaskInput(int i) { return (ABCStarRegister)((int)(ABCStarRegister::MaskInput0) + i);}
+    static  ABCStarRegister CalReg(int i) { return (ABCStarRegister)((int)(ABCStarRegister::CalREG0) + i);}
+    static  ABCStarRegister Counter(int i) { return (ABCStarRegister)((int)(ABCStarRegister::HitCountREG0) + i);}
     /// 32 registers containing lo 4 bits of trim
-    static  ABCStarRegister TrimLo(int i) { return ABCStarRegs::_from_integral((int)(ABCStarRegs::TrimDAC0) + i);}
+    static  ABCStarRegister TrimLo(int i) { return (ABCStarRegister)((int)(ABCStarRegister::TrimDAC0) + i);}
     /// 8 registers containing hi 1 bits of trim
-    static  ABCStarRegister TrimHi(int i) { return ABCStarRegs::_from_integral((int)(ABCStarRegs::TrimDAC32) + i);}
+    static  ABCStarRegister TrimHi(int i) { return (ABCStarRegister)((int)(ABCStarRegister::TrimDAC32) + i);}
 };
 
 /// Lookup information on ABC Star register map
@@ -94,26 +58,13 @@ class AbcStarRegInfo {
   /// Registers to write in normal operation
   std::map<unsigned, InfoPtr> abcWriteMap;
 
-  //This is a 2D map of each trimDac_32b register to the chip index and trimDAC_4LSB register name.  For example trimDAC4LSB_RegisterMap_all[chip index][NAME]
-  std::map<int, SubInfoPtr> trimDAC_4LSB_RegisterMap_all;
-
-  //This is a 2D map of each trimDac_32b register to the chip index and trimDAC_1MSB register name.  For example trimDAC1LSB_RegisterMap_all[chip index][NAME]
-  std::map<int, SubInfoPtr> trimDAC_1MSB_RegisterMap_all;
-
   static std::shared_ptr<const AbcStarRegInfo> instance(int version);
-
-  /// Return sub register info for name, throws std::runtime_error
-  SubInfoPtr subRegByName(const std::string &subRegName) const {
-    // This already throws runtime_error if bad string
-    auto reg_enum = ABCStarSubRegister::_from_string(subRegName.c_str());
-    return subRegFromEnum(reg_enum);
-  }
 
   /// Return sub register info from enum, throws std::runtime_error
   SubInfoPtr subRegFromEnum(ABCStarSubRegister subReg) const;
 
-  int getSubRegisterParentAddr(std::string subRegName) const {
-    return subRegByName(subRegName)->getRegAddress();
+  int getSubRegisterParentAddr(ABCStarSubRegister subReg) const {
+    return subRegFromEnum(subReg)->getRegAddress();
   }
 
   /// The sub-reg map is accessible, but is const so can't be updated
@@ -163,27 +114,27 @@ class AbcCfg {
         }
 
         /// Set the value of a register field for this ABC
-        void setSubRegisterValue(std::string subRegName, uint32_t value) {
-            auto info = m_info->subRegByName(subRegName);
+        void setSubRegisterValue(ABCStarSubRegister subReg, uint32_t value) {
+            auto info = m_info->subRegFromEnum(subReg);
             auto &reg = getRegister(info->m_regAddress);
             reg.getSubRegister(info).updateValue(value);
         }
 
         /// Get the value of a register field for this ABC
-        uint32_t getSubRegisterValue(std::string subRegName) const {
-            auto info = m_info->subRegByName(subRegName);
+        uint32_t getSubRegisterValue(ABCStarSubRegister subReg) const {
+            auto info = m_info->subRegFromEnum(subReg);
             auto &reg = getRegister(info->m_regAddress);
             return reg.getSubRegister(info).getValue();
         }
 
-        /// Lookup the register address for a named register field
-        int getSubRegisterParentAddr(std::string subRegName) const {
-            return m_info->getSubRegisterParentAddr(subRegName);
+        /// Lookup the register address for a register field
+        int getSubRegisterParentAddr(ABCStarSubRegister subReg) const {
+            return m_info->getSubRegisterParentAddr(subReg);
         }
 
-        /// Find the full register contents for a named register field
-        uint32_t getSubRegisterParentValue(std::string subRegName) const {
-            auto info = m_info->subRegByName(subRegName);
+        /// Find the full register contents for a register field
+        uint32_t getSubRegisterParentValue(ABCStarSubRegister subReg) const {
+            auto info = m_info->subRegFromEnum(subReg);
             return getRegister(info->m_regAddress).getValue();
         }
 
@@ -199,19 +150,26 @@ class AbcCfg {
         /// Get trim DAC for particular channel (as calculated by StarCfg)
         int getTrimDACRaw(unsigned channel) const;
 
+        /**
+         * Convert from strip order to ordering as in the trim registers.
+         */
+        uint8_t trimRegOrderFromChannel(uint8_t chn) const {
+            return ((chn & 0x7e) << 1) | (chn & 0x1) | ((chn & 0x80) >> 6);
+        }
+
         /// Is channel masked
         bool isMasked(unsigned channel) const {
             uint8_t maskIndex = ((channel & 0x7f) << 1) | ((channel & 0x80) >> 7);
-            int maskReg = ABCStarRegister::MaskInput((maskIndex>>5) & 0x7);
-            uint32_t maskValue = getRegister(maskReg).getValue();
+            auto maskReg = ABCStarRegisters::MaskInput((maskIndex>>5) & 0x7);
+            uint32_t maskValue = getRegister((int)maskReg).getValue();
             return maskValue & (1 << (maskIndex&0x1f));
         }
 
         /// Set mask for strip
         void setMask(unsigned channel, bool mask) {
             uint8_t maskIndex = ((channel & 0x7f) << 1) | ((channel & 0x80) >> 7);
-            int maskReg = ABCStarRegister::MaskInput((maskIndex>>5) & 0x7);
-            auto &reg = getRegister(maskReg);
+            auto maskReg = ABCStarRegisters::MaskInput((maskIndex>>5) & 0x7);
+            auto &reg = getRegister((int)maskReg);
             uint32_t maskValue = reg.getValue();
             uint32_t maskPattern =  1 << (maskIndex&0x1f);
 
