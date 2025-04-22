@@ -177,13 +177,13 @@ public:
     /// @brief Read a value from an LpGBT device register
     /// @param reg_addr Register address (uint32_t)
     /// @param reg_data Register data we're read back (set by reference) (uint8_t&)
-    bool readLpGBTRegister(int reg_addr, uint8_t reg_data, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
+    bool readLpGBTRegister(int reg_addr, uint8_t& reg_data, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
 
-    bool readLpGBTRegister(const char* reg_name, uint8_t reg_data, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
+    bool readLpGBTRegister(const char* reg_name, uint8_t& reg_data, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
 
-    bool writeLpGBTRegister(int reg_addr, uint8_t reg_data, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
+    bool writeLpGBTRegister(int reg_addr, uint8_t& reg_data, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
 
-    bool writeLpGBTRegister(const char* reg_name, uint8_t reg_data, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
+    bool writeLpGBTRegister(const char* reg_name, uint8_t& reg_data, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
     /*
         /// @brief Write a value to an LpGBT device register
         /// @param reg_addr Register address (uint32_t)
@@ -333,7 +333,7 @@ private:
   /// @param i2c_addr Address of I2C communication via primary LpGBT (default = 0) (uint32_t)
   /// @param version Version of the device (0, 1) (default = 1) (int)
   /// @return True if operation successful (if reading, the data vector is written by reference)
-  void communicateLpGBT(const lpgbt_item_t* reg, uint8_t data, const bool write, LpGBT* lpgbt);
+  void communicateLpGBT(const lpgbt_item_t* reg, uint8_t& data, const bool write, LpGBT* lpgbt);
 
   /// @brief Handles reads/writes of LpGBTs or GBCRs
   /// @param reg_addr Address of register we want to read/write (uint32_t)
@@ -344,7 +344,7 @@ private:
   /// @param version Version of LpGBT or GBCR (int, default OptoUtils::m_dev_version variable)
   /// @param dev_type Type of device, options "lpgbt" or "gbcr" (std::string, default "lpgbt")
   /// @return True if operation successful
-  void readWriteOptoReg(const lpgbt_item_t* reg, bool write, uint8_t reg_data, LpGBT* lpgbt);
+  void readWriteOptoReg(const lpgbt_item_t* reg, uint8_t& reg_data, bool write, LpGBT* lpgbt);
   
 };
 
