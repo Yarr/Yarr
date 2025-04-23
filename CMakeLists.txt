@@ -158,9 +158,11 @@ option(YARR_FORCE_OWN_INSTALL_PREFIX "Force Yarr to use its own install prefix e
 if(NOT YARR_FORCE_OWN_INSTALL_PREFIX AND NOT CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     # Being added via add_subdirectory: inherit parent's prefix
     set(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}" CACHE PATH "Install path" FORCE)
+    message("Installation will be done at ${CMAKE_INSTALL_PREFIX} as Yarr has been included by add_subdirectory into another project")
 elseif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    # Only set the install prefix if it hasn’t already been set by a parent project
+    # Only set the install prefix if it hasn’t already been set by a parent project and if it is the default path
     set_property(CACHE CMAKE_INSTALL_PREFIX PROPERTY VALUE "${PROJECT_SOURCE_DIR}")
+    message("Installation will be done in-tree as no location other than the default location has been chosen.")
 endif()
 
 

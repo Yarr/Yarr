@@ -21,8 +21,7 @@ endif()
 
 add_executable(scanConsole scan_cli.cpp)
 post_build_debug_executable(scanConsole)
-target_link_libraries(scanConsole Yarr)
-target_link_libraries(scanConsole Scan)
+target_link_libraries(scanConsole Yarr Scan)
  
 foreach (target IN LISTS tools)
     add_executable(${target} ${target}.cpp)
@@ -35,7 +34,7 @@ foreach (target hw_read_test hw_write_test)
     target_link_libraries(${target} Util)
 endforeach()
 
-install(TARGETS ${tools}
+install(TARGETS scanConsole ${tools}
     EXPORT YarrTargets
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
