@@ -74,13 +74,12 @@ job_build_and_test_out_of_source:
     - cmake3 --install /tmp/build-yarr
     - export Yarr_DIR=/tmp/install-yarr/cmake
     - ctest --output-on-failure --test-dir /tmp/build-yarr/
-    - ls /tmp/install-yarr/bin/
     - /tmp/install-yarr/bin/scanConsole -k
-    - cmake -S tests/find_package_test -B /tmp/build-YarrFindPackageTest -DCMAKE_TOOLCHAIN_FILE=../../cmake/linux-gcc  --DCMAKE_INSTALL_PREFIX=/tmp/install-YarrFindPackageTest
+    - cmake -S tests/find_package_test -B /tmp/build-YarrFindPackageTest -DCMAKE_TOOLCHAIN_FILE=../../cmake/linux-gcc  -DCMAKE_INSTALL_PREFIX=/tmp/install-YarrFindPackageTest
     - cmake --build /tmp/build-YarrFindPackageTest -j$(nproc)
     - cmake --install /tmp/build-YarrFindPackageTest/
     - /tmp/install-YarrFindPackageTest/bin/YarrFindPackageTest
-    - cmake -S tests/add_subdirectory_test -B /tmp/build-YarrAddSubdirectoryTest -DCMAKE_TOOLCHAIN_FILE=../../cmake/linux-gcc  --DCMAKE_INSTALL_PREFIX=/tmp/install-YarrAddSubdirectoryTest
+    - cmake -S tests/add_subdirectory_test -B /tmp/build-YarrAddSubdirectoryTest -DCMAKE_TOOLCHAIN_FILE=../../cmake/linux-gcc  -DCMAKE_INSTALL_PREFIX=/tmp/install-YarrAddSubdirectoryTest
     - cmake --build /tmp/build-YarrAddSubdirectoryTest -j$(nproc)
     - cmake --install /tmp/build-YarrAddSubdirectoryTest/
     - /tmp/install-YarrAddSubdirectoryTest/bin/YarrAddSubdirectoryTest
