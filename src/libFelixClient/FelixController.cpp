@@ -836,7 +836,6 @@ void FelixController::readWriteOptoReg(const lpgbt_item_t* reg, uint8_t& reg_dat
 
   // if we're communicating directly to the primary LpGBT, we only need to send one simple register read
   if (lpgbt->isPrimary() == 0 && lpgbt->getDevType() == "lpgbt"){
-    std::cout << " it's primary" << std::endl;
     communicateLpGBT(reg, reg_data, write, lpgbt);
   }
   

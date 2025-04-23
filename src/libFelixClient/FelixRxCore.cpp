@@ -77,21 +77,6 @@ FelixRxCore::FelixID_t FelixRxCore::fid_from_channel(uint32_t chn) {
     );
 }
 
-FelixRxCore::FelixID_t FelixRxCore::ic_fid_from_channel(uint32_t chn) {
-  // Compute FelixID from did, cid, channel number
-  // for IC in the rx direction (to-host), the designated egroup is 6 and epath is 1 for IC communcication
-  uint16_t link_id = FelixTools::link_from_chn(chn);
-  uint8_t link_multiplier = 64;
-  uint8_t elink_offset = 25;
-  uint8_t elink = link_id* link_multiplier + elink_offset;
-  bool is_virtual = false;
-  uint8_t sid = 0;
-
-  return FelixTools::get_fid(
-    m_did, m_cid, is_virtual, link_id, elink, false, m_protocol, sid
-    );
-}
-
 void FelixRxCore::setRxEnable(uint32_t val) {
   disableRx();
 

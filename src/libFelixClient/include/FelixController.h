@@ -384,7 +384,6 @@ private:
   /// @param data The data we want to send or receive (uint8_t&)
   /// @param write True if we want to write, false if we want to read (bool)
   /// @param lpgbt OptoDevice (OptoDevice*)
-  /// @return True if operation successful (if reading, the data vector is written by reference)
   void communicateLpGBT(const lpgbt_item_t* reg, uint8_t& data, const bool write, OptoDevice* lpgbt);
 
   /// @brief Handles reads/writes of LpGBTs or GBCRs
@@ -392,7 +391,6 @@ private:
   /// @param reg_data The data we want to write or read back (uint8_t&)
   /// @param write True if we want to write, false if we want to read (bool)
   /// @param lpgbt Opto device (OptoDevice*)
-  /// @return True if operation successful
   void readWriteOptoReg(const lpgbt_item_t* reg, uint8_t& reg_data, bool write, OptoDevice* lpgbt);
   
 };
