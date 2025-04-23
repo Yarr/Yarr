@@ -89,7 +89,7 @@ void ItsdaqHandler::SendOpcode(uint16_t opcode, uint16_t *data, uint16_t length)
   int extras = 8;
   std::vector<uint16_t> buffer(extras + length);
 
-  uint16_t send_seq = 0x1234;
+  static uint16_t send_seq = 0x1234;
 
   buffer[0] = 0x8765;
   buffer[1] = send_seq;
@@ -98,6 +98,8 @@ void ItsdaqHandler::SendOpcode(uint16_t opcode, uint16_t *data, uint16_t length)
   buffer[4] = opcode;
   buffer[5] = ~send_seq;
   buffer[6] = length*2;
+
+  send_seq ++;
 
   std::copy(data, data+length, &buffer[7]);
 
