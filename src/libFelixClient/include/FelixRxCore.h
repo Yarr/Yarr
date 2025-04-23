@@ -82,7 +82,6 @@ protected:
   uint64_t m_queue_limit {4000}; // MB
   size_t m_maxMessageSize {0}; // if set to >0, on_data drops messages with larger sizes
 
-
   double msg_rate {-1}; // message rate
   double byte_rate {-1}; // total data rate
   std::chrono::steady_clock::time_point m_t0; // clock used for time measurement
