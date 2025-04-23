@@ -19,10 +19,15 @@ auto logger = logging::make_log("ItsdaqFW::UDP");
  *  ifconfig eth1 192.168.222.100 netmask 255.255.255.0
  */
 
-UdpSocket::UdpSocket(uint32_t remote, uint16_t srcPort, uint16_t dstPort)
-  : shutting_down(false)  
+ UdpSocket::UdpSocket(uint32_t remote, uint16_t srcPort, uint16_t dstPort)
+ : shutting_down(false)  
 {
   setup(remote, srcPort, dstPort);
+} 
+
+UdpSocket::UdpSocket()
+  : shutting_down(false)  
+{
 } 
 
 UdpSocket::~UdpSocket()
@@ -33,6 +38,11 @@ UdpSocket::~UdpSocket()
 
 void UdpSocket::setup(uint32_t remote, int srcPort, int dstPort)
 {
+  if(sock_fd != 0) {
+    logger->debug("Close previously open UDP socket {}", sock_fd);
+    close(sock_fd);
+  }
+
   sourcePort = srcPort;
   destinationPort = dstPort;
 
