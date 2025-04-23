@@ -4,6 +4,8 @@ add_library(Yarr SHARED
 
 target_include_directories(Yarr PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    # for the yarr_version.h which is created in the binary tree
+    $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/libYarr/include> 
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 target_link_libraries(Yarr ${CONTROLLERS})
