@@ -34,7 +34,7 @@ public:
   void stopMonitor();
 
   FelixTools::FelixID_t fid_from_channel(uint32_t chn);
-  FelixTools::FelixID_t ic_fid_from_channel(uint32_t chn); // get the ic fid from the channel number
+  FelixTools::FelixID_t ic_fid_from_channel(uint32_t chn); // get the fid for ic communication from the channel number
 
 protected:
 

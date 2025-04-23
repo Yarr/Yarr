@@ -16,6 +16,8 @@
 std::pair<unsigned, unsigned> readABCRRPacket(HwController* ctrl, unsigned maxTries=10) {
   StarChipPacket packet;
 
+  std::optional<std::pair<unsigned, unsigned>> result;
+
   for (unsigned i=0; i<maxTries; i++) {
     CAPTURE(i);
     auto dataVec = ctrl->readData();
@@ -43,9 +45,15 @@ std::pair<unsigned, unsigned> readABCRRPacket(HwController* ctrl, unsigned maxTr
       }
 
       if (packet.getType() == TYP_ABC_RR) {
-        return std::make_pair(packet.address, packet.value);
+        CHECK (!result.has_value());
+
+        result = std::make_pair(packet.address, packet.value);
       }
     }
+  }
+
+  if(result.has_value()) {
+    return *result;
   }
 
   // Shouldn't reach here
@@ -63,6 +71,8 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
   // Two ABCs: ID = 9 and 8
   json chipCfg1;
   chipCfg1["HCC"] = {{"ID", 1}};
+  // Doesn't matter as long as 2 bits are set
+  chipCfg1["HCC"]["subregs"]["ICENABLE"] = 12;
   chipCfg1["ABCs"] = {{"IDs", {9, 8}}};
 
   // Set sub-register "STR_DEL" to different values for ABCs
@@ -80,6 +90,8 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
   // Two ABCs: ID = 1 and 2
   json chipCfg2;
   chipCfg2["HCC"] = {{"ID", 2}};
+  // Doesn't matter as long as 2 bits are set
+  chipCfg2["HCC"]["subregs"]["ICENABLE"] = 12;
   chipCfg2["ABCs"] = {{"IDs", {1, 2}}};
 
   // Set sub-register "STR_DEL" to different values for ABCs
@@ -154,7 +166,7 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
 
   // Use the global FE to update a sub-register "BCAL" of all FEs
   // BCAL is in the same register as STR_DEL
-  REQUIRE(star1->getSubRegisterParentAddr(1,"BCAL") == star1->getSubRegisterParentAddr(1,"STR_DEL"));
+  REQUIRE(star1->getABCSubRegisterParentAddr(ABCStarSubRegister::BCAL) == star1->getABCSubRegisterParentAddr(ABCStarSubRegister::STR_DEL));
 
   bk.getGlobalFe()->writeNamedRegister("ABCs_BCAL", 66);
   while(not emu->isCmdEmpty());
@@ -166,53 +178,54 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
   // A dummy StarCfg object to help extract the sub-register value
   StarCfg dummyCfg(0, 0);
   dummyCfg.setHCCChipId(0xf);
-  dummyCfg.addABCchipID(0xf);
+  int abc_ic = 0;
+  dummyCfg.addABCchipID(0xf, abc_ic);
 
   // Send register read command
   emu->setRxEnable(rx0);
-  star1->readABCSubRegister("STR_DEL", 9);
+  star1->readABCSubRegister(ABCStarSubRegister::STR_DEL, 9);
   while(not emu->isCmdEmpty());
   // Read RR packet
   auto [addr1, val1] = readABCRRPacket(emu.get());
   CAPTURE(addr1);
   CAPTURE(val1);
 
-  dummyCfg.setABCRegister(addr1, val1, 0xf);
+  dummyCfg.setABCRegisterByID(addr1, val1, 0xf);
   // Expected STR_DEL: 12
-  REQUIRE(dummyCfg.getSubRegisterValue(1, "STR_DEL") == 12);
+  REQUIRE(dummyCfg.getABCSubRegisterValue(abc_ic, ABCStarSubRegister::STR_DEL) == 12);
 
   // Send register read command
-  star1->readABCSubRegister("STR_DEL", 8);
+  star1->readABCSubRegister(ABCStarSubRegister::STR_DEL, 8);
   while(not emu->isCmdEmpty());
   // Read RR packet
   auto [addr2, val2] = readABCRRPacket(emu.get());
   CAPTURE(addr2);
   CAPTURE(val2);
 
-  dummyCfg.setABCRegister(addr2, val2, 0xf);
+  dummyCfg.setABCRegisterByID(addr2, val2, 0xf);
   // Expected STR_DEL: 21
-  REQUIRE(dummyCfg.getSubRegisterValue(1, "STR_DEL") == 21);
+  REQUIRE(dummyCfg.getABCSubRegisterValue(abc_ic, ABCStarSubRegister::STR_DEL) == 21);
 
   emu->setRxEnable(rx1);
-  star2->readABCSubRegister("STR_DEL", 1);
+  star2->readABCSubRegister(ABCStarSubRegister::STR_DEL, 1);
   while(not emu->isCmdEmpty());
   // Read RR packet
   auto [addr3, val3] = readABCRRPacket(emu.get());
   CAPTURE(addr3);
   CAPTURE(val3);
 
-  dummyCfg.setABCRegister(addr3, val3, 0xf);
+  dummyCfg.setABCRegisterByID(addr3, val3, 0xf);
   // Expected STR_DEL: 13
-  REQUIRE(dummyCfg.getSubRegisterValue(1, "STR_DEL") == 13);
+  REQUIRE(dummyCfg.getABCSubRegisterValue(abc_ic, ABCStarSubRegister::STR_DEL) == 13);
 
-  star2->readABCSubRegister("STR_DEL", 2);
+  star2->readABCSubRegister(ABCStarSubRegister::STR_DEL, 2);
   while(not emu->isCmdEmpty());
   // Read RR packets
   auto [addr4, val4] = readABCRRPacket(emu.get());
   CAPTURE(addr4);
   CAPTURE(val4);
 
-  dummyCfg.setABCRegister(addr4, val4, 0xf);
+  dummyCfg.setABCRegisterByID(addr4, val4, 0xf);
   // Expected STR_DEL: 30
-  REQUIRE(dummyCfg.getSubRegisterValue(1, "STR_DEL") == 30);
+  REQUIRE(dummyCfg.getABCSubRegisterValue(abc_ic, ABCStarSubRegister::STR_DEL) == 30);
 }

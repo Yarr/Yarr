@@ -50,6 +50,32 @@ enum SPEC_DMA_STATUS {
 #define SPEC_GREG_FWVERS 0x6
 #define SPEC_GREG_FWIDENT 0x7
 
+#define SPEC_GREG_SOFTRST 0xF
+
+#define RESET_OPTION_BRAM_CNT 0x1
+#define RESET_OPTION_WSHEXP_CORE 0x2
+#define RESET_OPTION_TX_CORE 0x3
+#define RESET_OPTION_RX_CORE 0x4
+#define RESET_OPTION_RX_BRIDGE 0x5
+#define RESET_OPTION_TRIG_LOGIC 0x6
+#define RESET_OPTION_SPI 0x7
+#define RESET_OPTION_CTRL_REG 0x8
+#define RESET_OPTION_BRAM 0x9
+#define RESET_OPTION_EXCEPT_CTRL_REG 0xE
+#define RESET_OPTION_ALL 0xF
+
+#define SOFTRST_WSHEXP_CORE 0x00000001
+#define SOFTRST_TX_CORE 0x00000002
+#define SOFTRST_RX_CORE 0x00000004
+#define SOFTRST_RX_BRIDGE 0x00000008
+#define SOFTRST_TRIGGER_LOGIC 0x00000020
+#define SOFTRST_SPI 0x00000040
+#define SOFTRST_CTRL_REG 0x00000080
+#define SOFTRST_BRAM 0x00000100
+#define SOFTRST_BRAM_CNT 0x00000200
+#define SOFTRST_ALL 0x000003FF
+#define SOFTRST_EXCEPT_CTRL_REG 0x0000037F
+
 const static std::string specIdentHw[] = {"undefined", "Trenz TEF1001_R1", "Trenz TEF1001_R2",
     "PLDA XpressK7 160", "PLDA XpressK7 325", "Xilinx KC705", "Numato Nereid K7-160"};
 const static std::string specIdentChip[] = {"undefined", "FE-I4", "FE65-P2", "RD53A/B/C", "ABC/HCCStar"};
@@ -58,7 +84,13 @@ const static std::string specIdentSpeed[] = {"undefined", "160Mbps", "320Mbps", 
 const static std::string specIdentChCfg[] = {"undefined", "4x4", "16x1", "8x4", "32x1", "3x4 TLU", "3x4 Ext Trig", "12x1 TLU", "12x1 Ext Trig"};
 const static uint32_t specIdentLaneCfg[] = {0, 4, 1, 4, 1, 4, 4, 1, 1};
 
-static std::map<uint16_t, std::string> specIdentFw = {{0xe7985d6, "v1.4.0"},{0x4256c32, "v1.3.1"},{0x2779a56, "v1.3"}, {0x4d9ff6d, "v1.2.1"}, {0x1493b73, "v1.1.1"}};
+static std::map<uint16_t, std::string> specIdentFw = {
+    {0x7b14549, "v1.5.0"},
+    {0xe7985d6, "v1.4.0"},
+    {0x4256c32, "v1.3.1"},
+    {0x2779a56, "v1.3"},
+    {0x4d9ff6d, "v1.2.1"},
+    {0x1493b73, "v1.1.1"}};
 
 struct dma_linked_list {
     uint32_t carrier_start;
@@ -76,7 +108,7 @@ using namespace specDriver;
 class SpecCom {
     public:
         SpecCom();
-        SpecCom(unsigned int id);
+        SpecCom(unsigned int id, bool do_reset_arg=true);
         ~SpecCom();
 
         bool isInitialized() const;
@@ -97,12 +129,6 @@ class SpecCom {
 
         int writeDma(uint32_t off, uint32_t *data, size_t words);
         int readDma(uint32_t off, uint32_t *data, size_t words);
-
-        int progFpga(const void *data, size_t size);
-        uint32_t readEeprom(uint8_t * buffer, uint32_t len);
-        uint32_t writeEeprom(uint8_t * buffer, uint32_t len, uint32_t offs);
-        void createSbeFile(std::string fnKeyword, uint8_t * buffer, uint32_t length);
-        void getSbeFile(std::string pathname, uint8_t * buffer, uint32_t length);
     protected:
         void flushDma();
 
@@ -119,6 +145,7 @@ class SpecCom {
     private:
         unsigned int specId;
         bool is_initialized;
+        bool do_reset;
         SpecDevice *spec;
         void *bar0, *bar4;
 

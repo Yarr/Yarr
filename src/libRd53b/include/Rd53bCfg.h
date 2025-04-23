@@ -20,11 +20,8 @@ class Rd53bCfg : public FrontEndCfg, public Rd53bGlobalCfg, public Rd53bPixelCfg
     public:
         Rd53bCfg();
 
-        void maskPixel(unsigned col, unsigned row, bool doAltMask = false) override {
-            if (!doAltMask) this->setEn(col, row, 0);
-            this->setHitbus(col, row, 0);
-        }
-
+        
+        void maskPixel(unsigned col, unsigned row, bool doAltMask = false) override;
         unsigned getPixelEn(unsigned col, unsigned row, bool doAltMask = false) override {
             if(doAltMask)
                 return this->getHitbus(col, row);
@@ -77,6 +74,8 @@ class Rd53bCfg : public FrontEndCfg, public Rd53bGlobalCfg, public Rd53bPixelCfg
         float m_kShuntA;                              // kFactor of the analog shunt circuit
         float m_kShuntD;                              // kFactor of the digital shunt circuit
         std::array<float, 3> m_ntcCalPar;                 // Steinhart coefficients
+        std::array<unsigned, 50> m_nBadPixel;                  // Count of how many bad pixels per core column
+        bool m_nBadPixelInitialized;
 };
 
 #endif

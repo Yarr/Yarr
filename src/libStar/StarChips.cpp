@@ -7,6 +7,9 @@
 #include "StarChips.h"
 #include "StarChipsBroadcast.h"
 
+#include "AbcNames.h"
+#include "HccNames.h"
+
 #include <chrono>
 
 #include "logging.h"
@@ -72,7 +75,7 @@ void StarChips::setHccId(unsigned hccID) {
   //Let's reset the HCC communications ID.
   //  Use a broadcast write of the required ID+fuse on reg 17
   uint32_t newReg17val = (hccID<<28) | m_fuse_id;
-  sendCmd(write_hcc_register(17, newReg17val, 0xf));
+  sendCmd(write_hcc_register((int)HCCStarRegister::Addressing, newReg17val, 0xf));
   logger->info("Set HCC ID to {} (sent on reg17 0x{:08x})", hccID, newReg17val);
 }
 
@@ -192,7 +195,8 @@ bool StarChips::writeTrims(){
             int this_chipID = abc.getABCchipID();
 
             logger->info("Write ABC {} trim registers", this_chipID);
-            for(unsigned int addr = ABCStarRegister::TrimDAC0; addr <= ABCStarRegister::TrimDAC39; addr++) {
+            for(auto r = ABCStarRegister::TrimDAC0; r <= ABCStarRegister::TrimDAC39; ++r) {
+                unsigned int addr = (unsigned int)r;
                 logger->debug("Writing Register {} for chipID {}", addr, this_chipID);
                 writeABCRegister(addr, abc);
             }
@@ -244,11 +248,12 @@ yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_va
   //if we deal with a setting for the HCC, look up in register map.
   if (strPrefix=="HCC_") {
     auto subRegName = name.substr(4);
-    if(!HCCStarSubRegister::_is_valid(subRegName.c_str())) {
+    if(!HccNames::subRegStringIsValid(subRegName)) {
       logger->error(" --> Error: Could not find HCC sub-register \"{}\"", subRegName);
       return yarrFailure;
     } else {
-      setAndWriteHCCSubRegister(subRegName, reg_value);
+      auto subRegEnum = HccNames::subRegFromString(subRegName).value();
+      setAndWriteHCCSubRegister(subRegEnum, reg_value);
     }
   } else  if (strPrefix=="ABCs") {
     auto subRegName = name.substr(5); // Including _
@@ -257,39 +262,41 @@ yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_va
       uint32_t val = (reg_value == 0)?0:0xffffffff;
       logger->trace("Writing {:08x} to mask register for all ABCStar chips.", val);
       eachAbc([&](auto &cfg) {
-          for(int m = ABCStarRegister::MaskInput(0);
-              m <= ABCStarRegister::MaskInput(7); m++) {
-            cfg.setRegisterValue(ABCStarRegister::_from_integral(m), val);
-            sendCmd( write_abc_register(m, val,
+          for(auto m = ABCStarRegisters::MaskInput(0);
+              m <= ABCStarRegisters::MaskInput(7); ++m) {
+            int addr = (int)m;
+            cfg.setRegisterValue(m, val);
+            sendCmd( write_abc_register(addr, val,
                                         getHCCchipID(), cfg.getABCchipID()));
           }
         });
     } else if(subRegName == "TRIMs") {
       // Write the same value to all trim regs
 
-      logger->trace("Writing {:08x} to trim register for all ABCStar chips.", reg_value);
+      logger->trace("Writing {} to trim register for all ABCStar chips.", reg_value);
 
       // Set trim registers in memory
-      for (unsigned row=1; row<=geo.nRow; row++) {
-        for (unsigned col=1; col<=geo.nCol; col++) {
-          setTrimDAC(col, row, reg_value);
-        }
-      }
+      eachAbc([&](auto &cfg) {
+          for (unsigned chan=0; chan<256; chan++) {
+              cfg.setTrimDACRaw(chan, reg_value);
+          }
+      });
 
       // Now send the register config to the front-ends
       eachAbc([&](auto &cfg) {
-          for(int m = ABCStarRegister::TrimLo(0);
-              m <= ABCStarRegister::TrimHi(7); m++) {
-            writeABCRegister(m, cfg);
+          for(ABCStarRegister m = ABCStarRegisters::TrimLo(0);
+              m <= ABCStarRegisters::TrimHi(7); ++m) {
+            writeABCRegister((int)m, cfg);
           }
         });
-    } else if(!ABCStarSubRegister::_is_valid(subRegName.c_str())) {
+    } else if(!AbcNames::subRegFromString(subRegName).has_value()) {
       logger->error(" --> Error: Could not find ABC sub-register \"{}\"", subRegName);
       return yarrFailure;
     } else {
       logger->trace("Writing {} on setting '{}' for all ABCStar chips.", reg_value, name);
+      auto abcRegEnum = AbcNames::subRegFromString(subRegName).value();
       eachAbc([&](auto &cfg) {
-          setAndWriteABCSubRegister(subRegName, cfg, reg_value);
+          setAndWriteABCSubRegister(abcRegEnum, cfg, reg_value);
         });
     }
   }
@@ -333,13 +340,13 @@ void StarChips::readRegisters(){
 }
 
 void StarChips::writeHCCRegister(int addr) {
-    uint32_t value = m_hcc.getRegisterValue(HCCStarRegister::_from_integral(addr));
+    uint32_t value = m_hcc.getRegisterValue(HCCStarRegister(addr));
     logger->debug("Doing HCC write register with value 0x{:08x} from registerMap[addr={}]", value, addr);
     sendCmd(write_hcc_register(addr, value, getHCCchipID()));
 }
 
 void StarChips::writeABCRegister(int addr, AbcCfg &cfg) {
-    uint32_t value = cfg.getRegisterValue(ABCStarRegister::_from_integral(addr));
+    uint32_t value = cfg.getRegisterValue((ABCStarRegister)addr);
     auto id = cfg.getABCchipID();
     logger->debug("Doing ABC ID {} writeRegister {} with value 0x{:08x}", id, addr, value);
     sendCmd(write_abc_register(addr, value, getHCCchipID(), id));

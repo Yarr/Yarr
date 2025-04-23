@@ -6,7 +6,7 @@ YARR is a readout system based around the concept of moving intelligence from th
 * Simple PCIe Carrier Cards (SPEC): XpressK7 160/325, Trenz TEF1001 R1/R2, Numato Nereid K7 and Xilinx KC705
 * FELIX + NETIO
 * FELIX-STAR + NETIO-NEXT
-* BDAQ Hardware 
+* BDAQ Hardware
 
 The currently supported readout chips are:
 
@@ -32,27 +32,36 @@ Support for YARR can be found in the [YARR Matter Most channel.](https://matterm
 
 ## Folder Structure
 ```bash
-.
-|-- configs : Config templates
-|-- doc : Documentation
-|-- src : Main software dir
-    |-- kernel : Custom PCIe kernel driver
-    |-- libBdaq : BDAQ hw driver
-    |-- libEmu : FE Emulator hw driver
-    |-- libFei4 : FE-I4B implementation
-    |-- libStar : Strips Star implementation
-    |-- libNetioHW : FELIX driver
-    |-- libFelixClient: FELIX driver for felix-star and NetIO-next
-    |-- libRd53a: RD53a implementation
-    |-- libRd53b: RD53B/ItkPixV1 implementation
-    |-- libItkpixv2: RD53C/ItkPixV2 implementation
-    |-- libSpec : PCIe hw driver
-    |-- libUtil : Suppert library
-    |-- libYarr : YARR core libraries 
-    |-- tools : Main executeables
-    `-- util : Utility scrips and files
-|-- plotting : Scripts to interface with extenral libraries (e.g. ROOT), primarily to produce plots
-`-- scripts : bash scripts for setup or automation
+├── configs : templates and examples for various config files
+│   ├── connectivity
+│   ├── controller
+│   ├── defaults
+│   ├── emulator
+│   ├── logging
+│   ├── scans : scan config for various front-end types
+├── docs : this documentation
+├── python : python scripts using bindings
+├── scripts : various other scripts for QoL
+├── src : main source code
+│   ├── libBdaq : BDAQ platform controller
+│   ├── libEmu : Front-End Emulator library
+│   ├── libFei4 : FEI4 front-end library
+│   ├── libFei4Emu : FEI4 emulator
+│   ├── libFelixClient : FELIX client thread platform controller
+│   ├── libItkpixv2 : ITkPixV2 front-end library
+│   ├── libItkpixv2Emu : ITkPixV2 emulator
+│   ├── libItsdaqFW : ITSDAQ platform controller
+│   ├── libNetioHW : FELIX NetIO platform controller
+│   ├── libRd53a : RD53A fron-end library
+│   ├── libRd53aEmu : RD53A emulator
+│   ├── libRd53b : RD53B front-end library
+│   ├── libSpec : SPEC platform controller
+│   ├── libStar : STAR chips (HCC, ABC) front-end library
+│   ├── libStarEmu : STAR chips emulator
+│   ├── libUtil : utilities
+│   ├── libYarr : Primary Yarr library
+│   ├── python : python bindings
+│   ├── tools : Primary Yarr executeables
 ```
 
 

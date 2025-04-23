@@ -20,6 +20,12 @@
     "loops": [
       {
         "config": {
+            "parameter":"STR_DEL"
+        },
+        "loopAction": "StarParamFeedback"
+      },
+      {
+        "config": {
             "max": 63,
             "min": 0,
             "step": 1,

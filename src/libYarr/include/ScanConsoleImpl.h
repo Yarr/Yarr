@@ -31,13 +31,14 @@ public:
     int loadConfig();
     static int loadConfig(const json &config) {return 0;};
     int loadConfig(const char *config);
-    unsigned getRunNumber();
+    unsigned getRunNumber() const;
     int setupScan();
     int configure();
     void plot();
     int initHardware();
     void cleanup();
     std::string getResults();
+    std::string getConfig();
     void getResults(json &result);
     static std::vector<std::string> getLog(std::size_t lim) {return logging::getLog(lim);}
     void run();

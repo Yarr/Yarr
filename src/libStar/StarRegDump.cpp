@@ -8,6 +8,9 @@
 
 #include "logging.h"
 
+#include "AbcNames.h"
+#include "HccNames.h"
+
 namespace {
     auto logger = logging::make_log("StarRegDump");
 }
@@ -38,15 +41,19 @@ void StarRegDump::execPart1() {
         if (m_addr == -1) { //Default to looping over all regs
 
             logger->trace("Dumping all regs");
-          
-            for (size_t index = 0; index < ABCStarRegs::_size(); ++index) {
-                logger->trace(ABCStarRegs::_names()[index]);
-                ((StarChips*) fe)->sendCmd( ((StarChips*) fe)->read_abc_register(ABCStarRegs::_values()[index]));
+
+            auto &abcList = AbcNames::listRegs();
+            for (size_t index = 0; index < abcList.size(); ++index) {
+                auto &reg = abcList[index];
+                logger->trace(AbcNames::regToString(reg));
+                ((StarChips*) fe)->sendCmd( ((StarChips*) fe)->read_abc_register((int)reg));
             }
 
-            for (size_t index = 0; index < HCCStarRegister::_size(); ++index) {
-                logger->trace(HCCStarRegister::_names()[index]);
-                ((StarChips*) fe)->sendCmd( ((StarChips*) fe)->read_hcc_register(HCCStarRegister::_values()[index]));
+            auto &hccList = HccNames::listRegs();
+            for (size_t index = 0; index < hccList.size(); ++index) {
+                auto &reg = hccList[index];
+                logger->trace(HccNames::regToString(reg));
+                ((StarChips*) fe)->sendCmd( ((StarChips*) fe)->read_hcc_register((int)reg));
             }
         } else {
                 logger->trace(m_addr);

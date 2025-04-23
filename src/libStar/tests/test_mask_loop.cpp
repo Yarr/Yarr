@@ -55,6 +55,8 @@ std::unique_ptr<CapturePacketsTxCore> runWithConfig(json &j) {
   auto fe = StdDict::getFrontEnd("Star");
   {
     auto sfe = dynamic_cast<StarCfg*> (fe.get());
+    sfe->clearABCchipIDs();
+
     REQUIRE(sfe);
     sfe->addABCchipID(3);
   }

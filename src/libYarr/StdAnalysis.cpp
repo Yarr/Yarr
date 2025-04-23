@@ -29,6 +29,7 @@ namespace {
 }
 
 namespace {
+
     bool oa_registered =
         StdDict::registerAnalysis("OccupancyAnalysis",
                 []() { return std::unique_ptr<AnalysisAlgorithm>(new OccupancyAnalysis());});
@@ -128,6 +129,8 @@ void OccupancyAnalysis::init(const ScanLoopInfo *s) {
     }
 }
 
+
+
 void OccupancyAnalysis::processHistogram(HistogramBase *h) {
     // Check if right Histogram
     if (h->getName() != OccupancyMap::outputName())
@@ -182,6 +185,39 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
             }
         }
 
+        // Core Column Mask:
+        int nColsInCCol = 8;
+        int nBadPixelsInCCol;
+        if (coreColMask){
+            feCfg->enableAll();
+            for (unsigned coreCol = 0; coreCol<50; coreCol++){
+                nBadPixelsInCCol = nColsInCCol*nRow;
+                for (unsigned col = 1; col<=nColsInCCol; col++){
+                    for (unsigned row = 1; row<=nRow; row++){
+                        unsigned i = occMaps[ident]->binNum(coreCol*nColsInCCol+col, row);
+                        if (occMaps[ident]->getBin(i) >= LowThr && occMaps[ident]->getBin(i) <= HighThr) {
+                            nBadPixelsInCCol -= 1;
+                        }
+                    }
+                }
+
+
+
+                // If more than 10% of pixels need to be masked and we are in
+                // core column analysis, assume this is bad core column
+                // TODO Change this to looking at mask loops
+                alog->debug("In core column {} there are {} bad pixels",coreCol+1, nBadPixelsInCCol);
+                if (nBadPixelsInCCol > 0.1 * nColsInCCol * nRow){
+                    for (unsigned iPixel = 0; iPixel < nRow * nColsInCCol; iPixel++){
+                        unsigned col = coreCol * nColsInCCol + iPixel%8;
+                        unsigned row = iPixel/8;
+                        feCfg->maskPixel(col, row);
+                    }
+                    alog->warn("[{}][{}] Turned core Column {} off in config, because it had {} bad pixels", id, feCfg->getName(), coreCol+1,  nBadPixelsInCCol);
+                }
+            }
+        }
+
         alog->info("\033[1m\033[31m[{}][{}] Total number of failing pixels: {}\033[0m", id, feCfg->getName(), failed_cnt);
         output->pushData(std::move(mask)); // TODO push this mask to the specific configuration
         output->pushData(std::move(occMaps[ident]));
@@ -192,14 +228,17 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
     }
 }
 void OccupancyAnalysis::loadConfig(const json &j){
+    if (j.contains("coreColMask")){
+        coreColMask=j["coreColMask"];
+    }
     if (j.contains("createMask")){
         createMask=j["createMask"];
     }
     if (j.contains("LowThr")){
-      LowThr=j["LowThr"];
+        LowThr=j["LowThr"];
     }
     if (j.contains("HighThr")){
-      HighThr=j["HighThr"];
+        HighThr=j["HighThr"];
     }
 }
 
@@ -1024,16 +1063,12 @@ void NPointGain::processHistogram(HistogramBase *h) {
     std::string hname = h->getName();
     std::string prefix = hname.substr(0, hname.find("-"));
 
-    // pick storage container and conversion function based on input histogram
+    // pick storage container based on input histogram
     InjectionDataMap* container;
-    std::function<double(double)> conversion;
     if (prefix == "ThresholdMap") {
         container = &m_thresholdMap;
-        // bind the threshold conversion function to the class instance with one placeholder arg
-        conversion = std::bind(&NPointGain::convertThresholdUnit, this, std::placeholders::_1);
     } else if (prefix == "NoiseMap") {
-        container = &m_inputNoiseMap;
-        conversion = [](double x) { return x; }; // no conversion for input noise
+        container = &m_outputNoiseMap;
     } else {
         return;
     }
@@ -1051,7 +1086,7 @@ void NPointGain::processHistogram(HistogramBase *h) {
     for (unsigned col = 0; col < nCol; col++) {
         for (unsigned row = 0; row < nRow; row++) {
             int binNum = histo->binNum(col+1, row+1);
-            (*container)[inj][col][row] = conversion(histo->getBin(binNum));
+            (*container)[inj][col][row] = convertThresholdUnit(histo->getBin(binNum));
         }
     }
 }
@@ -1078,8 +1113,8 @@ std::vector<double> NPointGain::guessInitialFitParams(const std::vector<double>&
             fitParams.push_back(0.);
         }
     } else {
-        // exponential is a bit trickier, so just leave zero for now
-        fitParams = std::vector<double>(m_respFuncNParamsMap[m_respFuncName], 0.);
+        // exponential is a bit trickier, so just leave ones for now
+        fitParams = std::vector<double>(m_respFuncNParamsMap[m_respFuncName], 1.);
     }
 
     return fitParams;
@@ -1094,6 +1129,10 @@ void NPointGain::fitResponseCurve(const std::vector<double>& thresholds, std::ve
         fitParams.size(), fitParams.data(),
         m_injections.size(), m_injections.data(), thresholds.data(),
         m_respFunc, &control, &status);
+
+    if (status.outcome > 3) {
+        alog->warn("Fit failed with status {}: {}", status.outcome, lm_infmsg[status.outcome]);
+    }
 }
 
 void NPointGain::end() {
@@ -1105,7 +1144,7 @@ void NPointGain::end() {
 
     // output histograms
     // injectionHisto maps index in 3rd histo dimension to injection value for
-    // thresholdHisto and inputNoiseHisto
+    // thresholdHisto, input/outputNoiseHisto, and gainCurveHisto
     auto injectionHisto = std::make_unique<Histo1d>("InjectionValues",
         m_injections.size(), -0.5, m_injections.size()-0.5);
     auto fitParamsHisto = std::make_unique<Histo3dT<float>>("ResponseFitParams",
@@ -1114,13 +1153,16 @@ void NPointGain::end() {
     auto thresholdHisto = std::make_unique<Histo3dT<float>>("Thresholds",
         nCol, -0.5, nCol-0.5, nRow, -0.5, nRow-0.5,
         m_injections.size(), -0.5, m_injections.size()-0.5);
-    auto inputNoiseHisto = std::make_unique<Histo3dT<float>>("InputNoise",
-        nCol, 0.5, nCol-0.5, nRow, 0.5, nRow-0.5,
+    auto outputNoiseHisto = std::make_unique<Histo3dT<float>>("OutputNoise",
+        nCol, -0.5, nCol-0.5, nRow, -0.5, nRow-0.5,
         m_injections.size(), -0.5, m_injections.size()-0.5);
     auto gainCurveHisto = std::make_unique<Histo3dT<float>>("GainCurve",
-        nCol, 0.5, nCol-0.5, nRow, 0.5, nRow-0.5,
+        nCol, -0.5, nCol-0.5, nRow, -0.5, nRow-0.5,
         m_injections.size(), -0.5, m_injections.size()-0.5);
-
+    auto inputNoiseHisto = std::make_unique<Histo3dT<float>>("InputNoise",
+        nCol, -0.5, nCol-0.5, nRow, -0.5, nRow-0.5,
+        m_injections.size(), -0.5, m_injections.size()-0.5);
+    
     // run response curve fit for each channel
     for (unsigned col = 0; col < nCol; col++) {
         for (unsigned row = 0; row < nRow; row++) {
@@ -1134,9 +1176,16 @@ void NPointGain::end() {
 
             for (unsigned injIdx = 0; injIdx < m_injections.size(); injIdx++) {
                 double inj = m_injections[injIdx];
+                double gain = m_gainConvFunc(inj, fitParams.data());
+                double outputNoise = m_outputNoiseMap[inj][col][row];
+
                 thresholdHisto->fill(col, row, injIdx, m_thresholdMap[inj][col][row]);
-                inputNoiseHisto->fill(col, row, injIdx, m_inputNoiseMap[inj][col][row]);
-                gainCurveHisto->fill(col, row, injIdx, m_gainConvFunc(inj, fitParams.data()));
+                outputNoiseHisto->fill(col, row, injIdx, outputNoise);
+                gainCurveHisto->fill(col, row, injIdx, gain);
+
+                if (gain > 0){
+                    inputNoiseHisto->fill(col, row, injIdx, convertInputNoiseUnit(outputNoise / gain));
+                }
             }
         }
     }
@@ -1148,8 +1197,9 @@ void NPointGain::end() {
     output->pushData(std::move(injectionHisto));
     output->pushData(std::move(fitParamsHisto));
     output->pushData(std::move(thresholdHisto));
-    output->pushData(std::move(inputNoiseHisto));
+    output->pushData(std::move(outputNoiseHisto));
     output->pushData(std::move(gainCurveHisto));
+    output->pushData(std::move(inputNoiseHisto));
 }
 
 void OccGlobalThresholdTune::init(const ScanLoopInfo *s) {
@@ -1924,6 +1974,11 @@ void DelayAnalysis::end() {
     }
 }
 
+void ParameterAnalysis::loadConfig(const json &j){
+    if (j.contains("createMap")){
+        m_createMap = j["createMap"];
+    }
+}
 
 void ParameterAnalysis::init(const ScanLoopInfo *s) {
     n_count = 1;
@@ -2029,7 +2084,9 @@ void ParameterAnalysis::processHistogram(HistogramBase *h) {
 void ParameterAnalysis::end() {
     alog->trace("ParameterAnalysis end");
     for (unsigned i=0; i<paramCurves.size(); i++) {
+        if (m_createMap) {
+            output->pushData(std::move(paramCurves[i]));
+        }
         output->pushData(std::move(paramMaps[i]));
-        output->pushData(std::move(paramCurves[i]));
     }
 }

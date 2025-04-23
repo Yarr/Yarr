@@ -78,7 +78,9 @@ class specReg {
                     {0x22, "EXT_TRIGGER_READ_COUNT"},
                     {0x23, "EXT_TRIGGER_FULL_COUNT"},
                     {0x24, "TX_CHANNEL_SEL"},
-                    {0x25, "TX_SERIAL_TRIG_COUNT"}
+                    {0x25, "TX_SERIAL_TRIG_COUNT"},
+                    {0x26, "BRAM_FULL_THRESHOLD"},
+                    {0x27, "BRAM_EMPTY_THRESHOLD"}
                 }},
             {"RX_CORE", {
                     {0x0, "RX_ENABLE"},
@@ -102,7 +104,14 @@ class specReg {
                     {0x3, "DATA_RATE"},
                     {0x4, "RX_VALID_LOCAL"},
                     {0x5, "FIFO_EMPTY"},
-                    {0x6, "DMA_CUR_COUNT"}
+                    {0x6, "DMA_CUR_COUNT"},
+                    {0x7, "FIFO_BUSY"},
+                    {0x8, "FIFO_BUSY_CYCLE_CNT"},
+                    {0x9, "FIFO_BUSY_CNT"},
+                    {0xA, "FIFO_BUSY_EN"},
+                    {0xB, "FIFO_BUSY_SIMPLE_MODE"},
+                    {0xC, "FIFO_FULL_THRESHOLD"},
+                    {0xD, "FIFO_EMPTY_THRESHOLD"}
                 }},
             {"TRIGGER_LOGIC", {
                     {0x0, "TRIG_MASK"},
@@ -212,7 +221,7 @@ int main(int argc, char **argv) {
     jcontroller = ScanHelper::openJsonFile(hw_controller_filename);
     specNum=jcontroller["ctrlCfg"]["cfg"]["specNum"];
 
-    SpecCom mySpec(specNum);
+    SpecCom mySpec(specNum, false);
 
     if(read) {
         uint32_t rValue = mySpec.readSingle(baseAddr | regOption);

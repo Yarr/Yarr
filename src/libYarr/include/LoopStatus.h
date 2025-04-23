@@ -6,7 +6,9 @@
 #ifndef LOOPSTATUS_H
 #define LOOPSTATUS_H
 
+#include <array>
 #include <iostream>
+#include <stdexcept>
 #include <vector>
 #include <map>
 
@@ -33,18 +35,35 @@ enum LoopStyle {
 
 /// Store of position within the scan hierarchy
 class LoopStatus {
-   private:
-        std::vector<unsigned> statVec;
-        std::vector<LoopStyle> styleVec;
+    private:
+        static const size_t MAX_LOOP_SIZE = 8;
+
+        size_t statCount{};
+        std::array<unsigned, MAX_LOOP_SIZE> statVec;
+        std::array<LoopStyle, MAX_LOOP_SIZE> styleVec;
 
     public:
         LoopStatus()=default;
 
-        LoopStatus(const std::vector<unsigned> &&vec, const std::vector<LoopStyle> &vec2) : statVec(vec), styleVec(vec2) {}
-        size_t size() const { return statVec.size(); }
+        LoopStatus(std::initializer_list<unsigned> vec, std::initializer_list<LoopStyle> vec_s) : statCount(vec.size())
+        {
+            if(statCount > MAX_LOOP_SIZE) {
+                throw std::logic_error("Too many loops");
+            }
+            std::copy(vec.begin(), vec.end(), statVec.begin());
+            std::copy(vec_s.begin(), vec_s.end(), styleVec.begin());
+        }
+        LoopStatus(const std::vector<unsigned> &vec, const std::vector<LoopStyle> &vec_s) : statCount(vec.size())
+        {
+            if(statCount > MAX_LOOP_SIZE) {
+                throw std::logic_error("Too many loops");
+            }
+          std::copy(vec.begin(), vec.end(), statVec.begin());
+          std::copy(vec_s.begin(), vec_s.end(), styleVec.begin());
+        }
+        size_t size() const { return statCount; }
         unsigned get(unsigned i) const { return statVec[i]; }
         
-        size_t styleSize() const { return styleVec.size(); }
         unsigned getStyle(unsigned i) const { return styleVec[i]; }
 
         bool operator==(const LoopStatus &l){
@@ -63,7 +82,7 @@ class LoopStatusMaster {
         LoopStatus& operator=(const LoopStatus &l) = delete;
 
         /// Used to take a snapshot of where we are
-        LoopStatus record() const { return LoopStatus{std::move(statVec), styleVec}; }
+        LoopStatus record() const { return LoopStatus(statVec, styleVec); }
 
         void init(unsigned i) {
             statVec.resize(i);
