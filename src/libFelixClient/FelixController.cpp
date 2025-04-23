@@ -820,17 +820,23 @@ void FelixController::communicateLpGBT(const lpgbt_item_t* reg, uint8_t& data, c
 
 void FelixController::readWriteOptoReg(const lpgbt_item_t* reg, uint8_t& reg_data, bool write, OptoDevice* lpgbt){
   // Check if the fids are already enabled, if not, enable them
-  if (FelixRxCore::m_enables[lpgbt->getRxFid()] == false){
-    setICEnable(lpgbt->getRxFid());
-    FelixRxCore::enableChannel(lpgbt->getRxFid());
+  try {
+    if (!FelixRxCore::m_enables[lpgbt->getRxFid()]){
+      setICEnable(lpgbt->getRxFid());
+      FelixRxCore::enableChannel(lpgbt->getRxFid());
+    }
+    if (!FelixTxCore::m_enables[lpgbt->getTxFid()]){
+      setICEnable(lpgbt->getTxFid());
+      FelixTxCore::enableChannel(lpgbt->getTxFid());
+    }
   }
-  if (FelixTxCore::m_enables[lpgbt->getTxFid()] == false){
-    setICEnable(lpgbt->getTxFid());
-    FelixTxCore::enableChannel(lpgbt->getTxFid());
+  catch (std::runtime_error &e){
+    fclog->error(e.what());
   }
 
   // if we're communicating directly to the primary LpGBT, we only need to send one simple register read
   if (lpgbt->isPrimary() == 0 && lpgbt->getDevType() == "lpgbt"){
+    std::cout << " it's primary" << std::endl;
     communicateLpGBT(reg, reg_data, write, lpgbt);
   }
   
@@ -950,7 +956,6 @@ bool FelixController::readLpGBTRegister(const char* reg_name, uint8_t& reg_data,
     lpgbt = newDefaultOptoDevice(dev_addr, "lpgbt", rx_ic_fid, tx_ic_fid);
   }
   else {
-    std::cout << " getting one from list " << std::endl;
     lpgbt = getOptoDeviceInList(rx_ic_fid, dev_addr);
   }
   const lpgbt_item_t* reg = OptoUtils::getLpGBTRegisterByName(reg_name, lpgbt->getVersion());
