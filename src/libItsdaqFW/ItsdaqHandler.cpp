@@ -18,6 +18,8 @@ auto logger = logging::make_log("ItsdaqFW::Handler");
 /// Private implementation (keep details out of header file)
 class ItsdaqPrivate {
 public:
+  ItsdaqPrivate() {}
+
   ItsdaqPrivate(uint32_t remote_IP,
                 uint16_t srcPort, uint16_t dstPort)
     : sock(remote_IP, srcPort, dstPort),
@@ -30,7 +32,20 @@ public:
   ~ItsdaqPrivate();
 
   void reconfigure(uint32_t remote_IP, uint16_t srcPort, uint16_t dstPort) {
+    if(running) {
+      logger->debug("Shutdown receiver to switch config");
+
+      running = false;
+      receiver.join();
+    }
+
     sock.setup(remote_IP, srcPort, dstPort);
+
+    logger->debug("Restart receiver with new config");
+
+    running = true;
+    partial_buffer.clear();
+    receiver = std::thread( [&] () { ReceiverMain(); });
   }
 
   UdpSocket sock;
@@ -51,6 +66,10 @@ private:
   void ReceiverMain();
 };
 
+ItsdaqHandler::ItsdaqHandler() :
+    priv(new ItsdaqPrivate())
+{
+}
 ItsdaqHandler::ItsdaqHandler(uint32_t remote_IP,
                              uint16_t srcPort, uint16_t dstPort) :
   priv(new ItsdaqPrivate(remote_IP, srcPort, dstPort))
