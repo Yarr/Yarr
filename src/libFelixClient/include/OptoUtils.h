@@ -36,46 +36,31 @@ namespace OptoUtils {
     constexpr static uint32_t m_freq{2};
     constexpr static uint32_t m_scldrive{0};
 
-    constexpr static uint8_t LPGBT_VERSION{1};
-    constexpr static uint16_t I2C_ADDR{0};
-    constexpr static uint16_t LPGBT_ADDR{116};
-    constexpr static bool LPGBT_PRIMARY{1};
-
-
-    /*
-        Registers
-    */
-
-    /// @brief For a given device type and number (e.g. GBCR #2), return the address
-    /// @param deviceType "GBCR", "LPGBT" accepted (string)
-    /// @param rx From front-end device controller file
-    /// @param lpgbt_primary_addr default value is 116 (uint32_t)
-    /// @return Returns the device address (uint32_t)
-    uint32_t getDeviceAddress(std::string device_type, int rx, uint32_t lpgbt_primary_addr);
-
-    int getFELIXLinkForLpGBT(int rx);
-
-    int getDeviceNum(int rx);
-
-    bool isPrimaryLpGBT(int rx);
-
+    constexpr static uint8_t DEFAULT_LPGBT_VERSION{1};
+    constexpr static uint16_t DEFAULT_I2C_ADDR{0};
+    constexpr static uint16_t DEFAULT_LPGBT_PRIMARY_ADDR{116};
+    
+    /// @brief Returns a pointer to a member of the lpgbt_item_t class which defines lpgbt register properties
+    /// @param name Name of the register (const char*)
+    /// @param version LpGBT version (either 0 or 1) (uint8_t)
+    /// @return Returns a pointer to a member of the lpgbt_item_t class
     const lpgbt_item_t* getLpGBTRegisterByName(const char* name, uint8_t version);
 
-    const lpgbt_item_t* getLpGBTRegisterByAddr(uint16_t reg_addr, uint8_t version);
 
-    /*
-    IC connection send/receive utilities
-    */
+    /// @brief Returns a pointer to a member of the lpgbt_item_t class which defines lpgbt register properties
+    /// @param regAddr Address of the register (uint16_t)
+    /// @param version LpGBT version (either 0 or 1) (uint8_t)
+    /// @return Returns a pointer to a member of the lpgbt_item_t class
+    const lpgbt_item_t* getLpGBTRegisterByAddr(uint16_t reg_addr, uint8_t version);
 
     /// @brief Constructs the dataframe to send over an IC channel (used for example in LpGBT register reads)
     /// @param write Whether we will be reading or writing data (const bool, true for write, false for read)
     /// @param regAddr Address of the register to read (const uint16_t)
-    /// @param data The data we want to send (const std::vector<uint8_t>&)
-    /// @param i2cAddr I2C address to send data along, for optoboard communication, address of primary LpGBT (const uint8_t)
-    /// @param deviceVersion LpGBT version (either 0 or 1), affects how the data frame is prepared (const unsigned int)
+    /// @param data The data we want to send (uint8_t)
+    /// @param version LpGBT version (either 0 or 1), affects how the data frame is prepared (uint8_t)
+    /// @param devAddr Address of LpGBT device (uint16_t)
     /// @return Returns the dataframe to send through the IC channel (std::vector<uint8_t>)
-
-    std::vector<uint8_t> prepareICDataFrame(const bool write, const uint16_t reg_addr, const uint8_t data, const uint16_t data_size, uint8_t version, uint16_t dev_addr);
+    std::vector<uint8_t> prepareICDataFrame(const bool write, const uint16_t reg_addr, const uint8_t data, uint8_t version, uint16_t dev_addr);
 }
 #endif
 
