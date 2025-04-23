@@ -197,10 +197,14 @@ void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
         continue;
       }
     } else {
-	// Good data, wait for end and
-	// store good data into partial_buffer
-	partial_buffer.push_back(thisWord);
-	continue;
+      // Good data, wait for end and
+      // store good data into partial_buffer
+      partial_buffer.push_back(thisWord);
+
+      // If the last word, then check for events
+      if(i!= wordCount-1) {
+        continue;
+      }
     }
 
 
