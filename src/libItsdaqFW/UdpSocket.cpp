@@ -92,6 +92,7 @@ void UdpSocket::setup(uint32_t remote, int srcPort, int dstPort)
   // Could also specify device
   sin.sin_addr.s_addr = htonl(INADDR_ANY); // Don't care
   // sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // For testing
+  sin.sin_addr.s_addr = addr_ip4;
 
   int bindResult;
 
