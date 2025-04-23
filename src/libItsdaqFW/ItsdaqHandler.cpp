@@ -143,11 +143,20 @@ ItsdaqPrivate::~ItsdaqPrivate() {
     auto data = rawData.popData();
     count ++;
   }
+
   if(count) {
     logger->debug(" ...done ({} stray data blocks)", count);
   } else {
     logger->debug(" ...done");
   }
+
+  if(!partial_buffer.empty()) {
+    logger->debug(" Part of packet is not processed");
+    for(auto &w: partial_buffer) {
+      logger->debug("  {:016x}", w);
+    }
+  }
+
 }
 
 void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
@@ -255,6 +264,10 @@ void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
 
     startOffset = i;
     partial_buffer.clear();
+  }
+
+  if(!partial_buffer.empty()) {
+    logger->trace("QueueData: Partial data, storing to next packet");
   }
 }
 
