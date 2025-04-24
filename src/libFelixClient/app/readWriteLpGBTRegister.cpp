@@ -14,9 +14,9 @@ namespace fs = std::filesystem;
 
 namespace {
     void printHelp() {
-        std::cout << "Write a value to an LpGBT register by either providing a register address or register name" << std::endl;
-        std::cout << "Write by Name Usage: writeLpGBTRegister -r HW_CONFIG -n \"REGNAME\" -v REGVAL -R RX_FID -T TX_FID -d DEVICE_ADDRESS" << std::endl;
-        std::cout << "Write by Address Usage: writeLpGBTRegister -r HW_CONFIG -a REGADDR -v REGVAL -R RX_FID -T TX_FID -d DEVICE_ADDRESS" << std::endl;
+        std::cout << "Read LpGBT register by either providing a register address or register name" << std::endl;
+        std::cout << "Read by Name Usage: readLpGBTRegister -r HW_CONFIG -n \"REGNAME\" -R RX_FID -T TX_FID -d DEVICE_ADDRESS" << std::endl;
+        std::cout << "Read by Address Usage: readLpGBTRegister -r HW_CONFIG -a REGADDR -R RX_FID -T TX_FID -d DEVICE_ADDRESS" << std::endl;
         std::cout << " -h : Show this help." << std::endl;
     }
 }
@@ -30,6 +30,7 @@ int main(int argc, char **argv) {
     std::string regname = "";
     uint16_t regaddr = 0;
     uint8_t regval = 0;
+    bool write = false;
 
     while ((c = getopt(argc, argv, "hr:n:a:v:R:T:d:")) != -1) {
         switch (c) {
@@ -47,6 +48,7 @@ int main(int argc, char **argv) {
             break;
         case 'v':
             regval = std::stoi(optarg);
+            write = true;
             break;
         case 'R':
             rx_fid = std::stoull(optarg);
@@ -85,13 +87,26 @@ int main(int argc, char **argv) {
     }
     auto* flxCtrlPtr = dynamic_cast<FelixController*>(hwCtrl.get());
 
-    if (regname == ""){
-        std::cout << "Writing value 0x" << std::hex << static_cast<int>(regval) << " to register with address " << regaddr << std::endl;
-        hwCtrl->writeLpGBTRegister(regaddr, regval, devaddr, rx_fid, tx_fid);
+
+    if (!write){
+        if (regname == ""){
+            hwCtrl->readLpGBTRegister(regaddr, regval, devaddr, rx_fid, tx_fid);
+            std::cout << "Register with address " << regaddr << " read to have value 0x" << std::hex << static_cast<int>(regval) << std::endl;
+        }
+        else {
+            hwCtrl->readLpGBTRegister((regname).c_str(), regval, devaddr, rx_fid, tx_fid);
+            std::cout << "Register with name " << regname << " read to have value 0x" << std::hex << static_cast<int>(regval) << std::endl;
+        }
     }
     else {
-        std::cout << "Writing value 0x" << std::hex << static_cast<int>(regval) << " to register with name " << regname << std::endl;
-        hwCtrl->writeLpGBTRegister((regname).c_str(), regval, devaddr, rx_fid, tx_fid);
+        if (regname == ""){
+            std::cout << "Writing value " << std::hex << static_cast<int>(regval) << " to register with address " << regaddr << std::endl;
+            hwCtrl->writeLpGBTRegister(regaddr, regval, devaddr, rx_fid, tx_fid);
+        }
+        else {
+            std::cout << "Writing value " << std::hex << static_cast<int>(regval) << " to register with name " << regname << std::endl;
+            hwCtrl->writeLpGBTRegister((regname).c_str(), regval, devaddr, rx_fid, tx_fid);
+        }
     }
     return 0;
 }
