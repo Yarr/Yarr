@@ -9,6 +9,7 @@
 #include "Rd53bTriggerLoop.h"
 
 #include "Bookkeeper.h"
+#include "HwController.h"
 
 #include "logging.h"
 

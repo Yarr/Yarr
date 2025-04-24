@@ -1,6 +1,7 @@
 #include "Itkpixv2ReadRegLoop.h"
 
 #include "Bookkeeper.h"
+#include "HwController.h"
 
 #include "logging.h"
 

@@ -1,6 +1,7 @@
 #include "Rd53bReadRegLoop.h"
 
 #include "Bookkeeper.h"
+#include "HwController.h"
 
 #include "logging.h"
 

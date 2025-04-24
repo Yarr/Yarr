@@ -10,6 +10,7 @@
 #include "Itkpixv2.h"
 
 #include "logging.h"
+#include "HwController.h"
 
 // Create logger
 namespace {

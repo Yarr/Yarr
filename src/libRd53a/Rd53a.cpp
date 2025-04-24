@@ -8,6 +8,7 @@
 // ################################
 
 #include "AllChips.h"
+#include "HwController.h"
 #include "Rd53a.h"
 #include "RawData.h"
 
