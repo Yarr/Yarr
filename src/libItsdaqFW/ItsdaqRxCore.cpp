@@ -61,7 +61,8 @@ void ItsdaqRxCore::init() {
     }
 
     if((std::chrono::steady_clock::now() - t) > std::chrono::seconds(1)) {
-      logger->critical("Didn't receive status opcode response from itsdaq FW, check configuration");
+      logger->critical("Didn't receive status opcode response from itsdaq FW, check configuration {} {}",
+                       m_h.LatestStatus().empty(), m_h.LatestSysStatus().empty());
       exit(-1);
     }
   }

@@ -19,10 +19,15 @@ auto logger = logging::make_log("ItsdaqFW::UDP");
  *  ifconfig eth1 192.168.222.100 netmask 255.255.255.0
  */
 
-UdpSocket::UdpSocket(uint32_t remote, uint16_t srcPort, uint16_t dstPort)
-  : shutting_down(false)  
+ UdpSocket::UdpSocket(uint32_t remote, uint16_t srcPort, uint16_t dstPort)
+ : shutting_down(false)  
 {
   setup(remote, srcPort, dstPort);
+} 
+
+UdpSocket::UdpSocket()
+  : shutting_down(false)  
+{
 } 
 
 UdpSocket::~UdpSocket()
@@ -33,6 +38,11 @@ UdpSocket::~UdpSocket()
 
 void UdpSocket::setup(uint32_t remote, int srcPort, int dstPort)
 {
+  if(sock_fd != 0) {
+    logger->debug("Close previously open UDP socket {}", sock_fd);
+    close(sock_fd);
+  }
+
   sourcePort = srcPort;
   destinationPort = dstPort;
 
@@ -82,6 +92,7 @@ void UdpSocket::setup(uint32_t remote, int srcPort, int dstPort)
   // Could also specify device
   sin.sin_addr.s_addr = htonl(INADDR_ANY); // Don't care
   // sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // For testing
+  sin.sin_addr.s_addr = addr_ip4;
 
   int bindResult;
 
