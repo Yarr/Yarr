@@ -79,9 +79,49 @@ set(CMAKE_SKIP_BUILD_RPATH FALSE)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+#set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
 
-list(APPEND CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
+#list(APPEND CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
+# Clear existing RPATHs to be safe
+
+# Loop over all targets
+get_property(all_targets GLOBAL PROPERTY TARGETS)
+
+foreach(target IN LISTS all_targets)
+    if (NOT target MATCHES "^Yarr::")
+        continue()
+    endif()
+    
+    # Skip imported targets (you can't get usage requirements from those reliably)
+    get_target_property(is_imported ${target} IMPORTED)
+    if (is_imported)
+        continue()
+    endif()
+
+    # Get all link directories from INTERFACE_LINK_DIRECTORIES
+    get_target_property(link_dirs ${target} INTERFACE_LINK_DIRECTORIES)
+    if (NOT link_dirs)
+        continue()
+    endif()
+
+    foreach(dir IN LISTS link_dirs)
+        file(REAL_PATH "${dir}" resolved_dir)
+
+        # Add to RPATH only if it's not part of the install prefix
+        if(NOT resolved_dir MATCHES "^${CMAKE_INSTALL_PREFIX}")
+            list(APPEND CMAKE_INSTALL_RPATH "${resolved_dir}")
+        endif()
+    endforeach()
+endforeach()
+
+# Optionally show the result for debugging
+message(STATUS "Final install RPATH: ${CMAKE_INSTALL_RPATH}")
+
+# Remove duplicates
+list(REMOVE_DUPLICATES CMAKE_INSTALL_RPATH)
+
+
 
 
 add_compile_options(-g)
