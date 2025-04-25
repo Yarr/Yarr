@@ -1,7 +1,13 @@
 cmake_minimum_required (VERSION 3.14)
 
 project (YARR LANGUAGES CXX VERSION 1.0)
-set (CMAKE_CXX_STANDARD 17)
+
+set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard")
+option(FORCE_CXX_STANDARD "Use C++ standard" ON)
+if(FORCE_YARR_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON CACHE BOOL "Require the specified C++ standard")
+  set(CMAKE_CXX_EXTENSIONS OFF CACHE BOOL "Disable compiler-specific extensions")
+endif()
 
 execute_process(
         COMMAND git rev-parse HEAD
