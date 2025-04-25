@@ -219,7 +219,7 @@ public:
 
     bool writeGBCRRegister(const char* reg_name, uint8_t& reg_data, uint16_t dev_addr, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
     */
-
+protected:
     class OptoDevice{
       public:
         OptoDevice(uint8_t arg_version, uint16_t arg_i2c_addr, uint16_t arg_dev_addr, uint16_t arg_dev_primary_addr, std::string arg_dev_type, uint64_t arg_tx_fid, uint64_t arg_rx_fid){
