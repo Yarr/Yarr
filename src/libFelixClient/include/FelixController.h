@@ -210,15 +210,6 @@ public:
     /// @return True if successful, false if not (bool)
     bool writeLpGBTRegister(const char* reg_name, uint8_t& reg_data, uint16_t dev_addr, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
 
-    /*
-    bool readGBCRRegister(int reg_addr, uint8_t& reg_data, uint16_t dev_addr, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
-
-    bool readGBCRRegister(const char* reg_name, uint8_t& reg_data, uint16_t dev_addr, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
-
-    bool writeGBCRRegister(int reg_addr, uint8_t& reg_data, uint16_t dev_addr, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
-
-    bool writeGBCRRegister(const char* reg_name, uint8_t& reg_data, uint16_t dev_addr, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
-    */
 protected:
     class OptoDevice{
       public:
