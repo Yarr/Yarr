@@ -2,6 +2,15 @@
 #include "Utils.h"
 #include "logging.h"
 
+const uint16_t OptoUtils::getLpGBTAddress(uint8_t number, uint16_t primary_address){
+  if (number > 3){
+    std::cerr << "Invalid number provided, possible options are 0, 1, 2, 3" << std::endl;
+    return 0;
+  }
+  // lpgbt numbering scheme is each successive device increases from the primary address
+  return number + primary_address;
+}
+
 const lpgbt_item_t* OptoUtils::getLpGBTRegisterByName(const char* regname, uint8_t version) {
   // Get the correct item list based on the version
   const lpgbt_item_t* reg_list = 0;

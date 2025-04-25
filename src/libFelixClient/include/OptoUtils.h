@@ -39,6 +39,12 @@ namespace OptoUtils {
     constexpr static uint8_t DEFAULT_LPGBT_VERSION{1};
     constexpr static uint16_t DEFAULT_I2C_ADDR{0};
     constexpr static uint16_t DEFAULT_LPGBT_PRIMARY_ADDR{116};
+
+    /// @brief Returns the device address from a provided LpGBT number and primary LpGBT address
+    /// @param number The LpGBT number (0, 1, 2, 3) (uint8_t)
+    /// @param primary_address The address of the primary LpGBT (default 116) (uint16_t)
+    /// @return The LpGBT address (uint16_t)
+    const uint16_t getLpGBTAddress(uint8_t number, uint16_t primary_address);
     
     /// @brief Returns a pointer to a member of the lpgbt_item_t class which defines lpgbt register properties
     /// @param name Name of the register (const char*)
