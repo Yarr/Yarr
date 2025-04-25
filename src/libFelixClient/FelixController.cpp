@@ -85,7 +85,7 @@ void FelixController::loadConfig(const json &j) {
 
       uint64_t tx_fid = std::stoull(tx_fid_str);
       uint64_t rx_fid = std::stoull(rx_fid_str);
-      m_opto_dev_list.push_back(new OptoDevice(version, i2c_addr, dev_addr, dev_primary_addr, type, tx_fid, rx_fid));
+      m_opto_dev_list.emplace_back(std::make_unique<OptoDevice>(version, i2c_addr, dev_addr, dev_primary_addr, type, tx_fid, rx_fid));
     }
   }
 
@@ -735,8 +735,8 @@ Optoboard communication functions
 */
 bool FelixController::optoDeviceInList(uint64_t rx_ic_fid, uint16_t dev_addr){
   bool in_list = false;
-  for (int i = 0; i < m_opto_dev_list.size(); i++){
-    if (m_opto_dev_list[i]->getRxFid() == rx_ic_fid && m_opto_dev_list[i]->getDevAddr() == dev_addr){
+  for (const auto& dev : m_opto_dev_list){
+    if (dev->getRxFid() == rx_ic_fid && dev->getDevAddr() == dev_addr){
       in_list = true;
       break;
     }
@@ -745,25 +745,27 @@ bool FelixController::optoDeviceInList(uint64_t rx_ic_fid, uint16_t dev_addr){
 }
 
 FelixController::OptoDevice* FelixController::getOptoDeviceInList(uint64_t rx_ic_fid, uint16_t dev_addr){
-  OptoDevice* dev = nullptr;
-  for (int i = 0; i < m_opto_dev_list.size(); i++){
-    if (m_opto_dev_list[i]->getRxFid() == rx_ic_fid && m_opto_dev_list[i]->getDevAddr() == dev_addr){
-      dev = m_opto_dev_list[i];
+  for (const auto& dev : m_opto_dev_list){
+    if (dev->getRxFid() == rx_ic_fid && dev->getDevAddr() == dev_addr){
+      return dev.get();
     }
   }
 
-  if (dev == nullptr) {
-    std::cerr << "Opto device not found in list, returning a nullpointer" << std::endl;
-  }
-  return dev;
+  std::cerr << "Opto device not found in list, returning a nullpointer" << std::endl;
+  return nullptr;
 }
 
 FelixController::OptoDevice* FelixController::newDefaultOptoDevice(uint16_t dev_addr, std::string type, uint64_t rx_ic_fid, uint64_t tx_ic_fid){
-  OptoDevice* defaultDevice = new OptoDevice(OptoUtils::DEFAULT_LPGBT_VERSION, OptoUtils::DEFAULT_I2C_ADDR, dev_addr, OptoUtils::DEFAULT_LPGBT_PRIMARY_ADDR, type, tx_ic_fid, rx_ic_fid);
+  // Make sure first it doesn't already exist
   if (!optoDeviceInList(rx_ic_fid, dev_addr)){
-    m_opto_dev_list.push_back(defaultDevice);
+    m_opto_dev_list.emplace_back(std::make_unique<OptoDevice>(OptoUtils::DEFAULT_LPGBT_VERSION, OptoUtils::DEFAULT_I2C_ADDR, dev_addr, OptoUtils::DEFAULT_LPGBT_PRIMARY_ADDR, type, tx_ic_fid, rx_ic_fid));
   }
-  return defaultDevice;
+  // Print message if it already exists
+  else {
+    std::cout << " Device already exists in the list!  Returning matching device" << std::endl;
+  }
+  // Return a raw pointer corresponding to the new default object
+  return getOptoDeviceInList(rx_ic_fid, dev_addr);
 }
 
 void FelixController::communicateLpGBT(const lpgbt_item_t* reg, uint8_t& data, const bool write, OptoDevice* lpgbt){
@@ -818,7 +820,7 @@ void FelixController::communicateLpGBT(const lpgbt_item_t* reg, uint8_t& data, c
   }
  }
 
-void FelixController::readWriteOptoReg(const lpgbt_item_t* reg, uint8_t& reg_data, bool write, OptoDevice* lpgbt){
+void FelixController::readWriteOptoReg(const lpgbt_item_t* reg , uint8_t& reg_data, bool write, OptoDevice* lpgbt){
   // Check if the fids are already enabled, if not, enable them
   try {
     if (!FelixRxCore::m_enables[lpgbt->getRxFid()]){
@@ -835,12 +837,11 @@ void FelixController::readWriteOptoReg(const lpgbt_item_t* reg, uint8_t& reg_dat
   }
 
   // if we're communicating directly to the primary LpGBT, we only need to send one simple register read
-  if (lpgbt->isPrimary() == 0 && lpgbt->getDevType() == "lpgbt"){
+  if (lpgbt->isPrimary() && lpgbt->getDevType() == "lpgbt"){
     communicateLpGBT(reg, reg_data, write, lpgbt);
   }
-  
+
   // communicating with secondary LpGBTs or GBCRs via I2C channel through the primary LpGBT
-  
   else {
     uint8_t NBYTE = 0;
 
@@ -938,7 +939,6 @@ bool FelixController::readLpGBTRegister(int reg_addr, uint8_t& reg_data, uint16_
   }
   
   const lpgbt_item_t* reg = OptoUtils::getLpGBTRegisterByAddr(reg_addr, lpgbt->getVersion());
-
   try {
     readWriteOptoReg(reg, reg_data, 0, lpgbt);
     return true;
@@ -957,6 +957,7 @@ bool FelixController::readLpGBTRegister(const char* reg_name, uint8_t& reg_data,
   else {
     lpgbt = getOptoDeviceInList(rx_ic_fid, dev_addr);
   }
+
   const lpgbt_item_t* reg = OptoUtils::getLpGBTRegisterByName(reg_name, lpgbt->getVersion());
 
   try {
@@ -977,6 +978,7 @@ bool FelixController::writeLpGBTRegister(int reg_addr, uint8_t& reg_data, uint16
   else {
     lpgbt = getOptoDeviceInList(rx_ic_fid, dev_addr);
   }
+
   const lpgbt_item_t* reg = OptoUtils::getLpGBTRegisterByAddr(reg_addr, lpgbt->getVersion());
 
   try {
@@ -997,6 +999,7 @@ bool FelixController::writeLpGBTRegister(const char* reg_name, uint8_t& reg_data
   else {
     lpgbt = getOptoDeviceInList(rx_ic_fid, dev_addr);
   }
+
   const lpgbt_item_t* reg = OptoUtils::getLpGBTRegisterByName(reg_name, lpgbt->getVersion());
 
   try {
@@ -1010,7 +1013,7 @@ bool FelixController::writeLpGBTRegister(const char* reg_name, uint8_t& reg_data
 }
 /*
 bool FelixController::readGBCRRegister(int reg_addr, uint8_t& reg_data, uint16_t dev_addr, uint64_t rx_ic_fid, uint64_t tx_ic_fid){
-  OptoDevice* gbcr = nullptr;
+  OptoDevice* gbcr;
   if (!optoDeviceInList(rx_ic_fid, dev_addr)){
     gbcr = newDefaultOptoDevice(dev_addr, "gbcr", rx_ic_fid, tx_ic_fid);
   }
@@ -1030,7 +1033,7 @@ bool FelixController::readGBCRRegister(int reg_addr, uint8_t& reg_data, uint16_t
 }
 
 bool FelixController::readGBCRRegister(const char* reg_name, uint8_t& reg_data, uint16_t dev_addr, uint64_t rx_ic_fid, uint64_t tx_ic_fid){
-  OptoDevice* gbcr = nullptr;
+  OptoDevice* gbcr;
   if (!optoDeviceInList(rx_ic_fid, dev_addr)){
     gbcr = newDefaultOptoDevice(dev_addr, "gbcr", rx_ic_fid, tx_ic_fid);
   }
@@ -1050,7 +1053,7 @@ bool FelixController::readGBCRRegister(const char* reg_name, uint8_t& reg_data, 
 }
 
 bool FelixController::writeGBCRRegister(int reg_addr, uint8_t& reg_data, uint16_t dev_addr, uint64_t rx_ic_fid, uint64_t tx_ic_fid){
-  OptoDevice* gbcr = nullptr;
+  OptoDevice* gbcr;
   if (!optoDeviceInList(rx_ic_fid, dev_addr)){
     gbcr = newDefaultOptoDevice(dev_addr, "gbcr", rx_ic_fid, tx_ic_fid);
   }
@@ -1070,7 +1073,7 @@ bool FelixController::writeGBCRRegister(int reg_addr, uint8_t& reg_data, uint16_
 }
 
 bool FelixController::writeGBCRRegister(const char* reg_name, uint8_t& reg_data, uint16_t dev_addr, uint64_t rx_ic_fid, uint64_t tx_ic_fid){
-  OptoDevice* gbcr = nullptr;
+  OptoDevice* gbcr;
   if (!optoDeviceInList(rx_ic_fid, dev_addr)){
     gbcr = newDefaultOptoDevice(dev_addr, "gbcr", rx_ic_fid, tx_ic_fid);
   }

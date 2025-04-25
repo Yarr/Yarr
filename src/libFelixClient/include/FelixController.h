@@ -309,7 +309,7 @@ public:
 
 private:
   std::shared_ptr<FelixClientThread> client;
-  std::vector<OptoDevice*> m_opto_dev_list;
+  std::vector<std::unique_ptr<OptoDevice>> m_opto_dev_list;
 
   // Felix client callbacks
   void on_init() {}
@@ -368,7 +368,7 @@ private:
   /// @brief Returns a pointer to a member of the OptoDevice class found in the m_opto_dev_list
   /// @param rx_ic_fid The fid of the ic channel for rx (uint64_t)
   /// @param dev_addr Address of the device (uint16_t)
-  /// @return Pointer to optical device object (OptoDevice*)
+  /// @return Raw pointer to optical device object (OptoDevice* )
   OptoDevice* getOptoDeviceInList(uint64_t rx_ic_fid, uint16_t dev_addr);
 
   /// @brief Defines and returns a pointer to a new member of the OptoDevice class, adds object to m_opto_dev_list variable
@@ -376,7 +376,7 @@ private:
   /// @param type Type of device: lpgbt or gbcr accepted (std::string)
   /// @param rx_ic_fid The fid of the ic channel for rx (uint64_t)
   /// @param tx_ic_fid The fid of the ic channel for tx (uint64_t)
-  /// @return Pointer to new optical device object (OptoDevice*)
+  /// @return Raw pointer to new optical device object (OptoDevice*)
   OptoDevice* newDefaultOptoDevice(uint16_t dev_addr, std::string type, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
 
   /// @brief Generic function to handle read and write operations to either LpGBT or GBCR devices
