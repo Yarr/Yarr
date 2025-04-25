@@ -14,9 +14,11 @@ namespace fs = std::filesystem;
 
 namespace {
     void printHelp() {
-        std::cout << "Read LpGBT register by either providing a register address or register name" << std::endl;
+        std::cout << "Read or write LpGBT register by either providing a register address or register name" << std::endl;
         std::cout << "Read by Name Usage: readLpGBTRegister -r HW_CONFIG -n \"REGNAME\" -R RX_FID -T TX_FID -d DEVICE_ADDRESS" << std::endl;
         std::cout << "Read by Address Usage: readLpGBTRegister -r HW_CONFIG -a REGADDR -R RX_FID -T TX_FID -d DEVICE_ADDRESS" << std::endl;
+        std::cout << "Write by Name Usage: readLpGBTRegister -r HW_CONFIG -n \"REGNAME\" -v REGVAL -R RX_FID -T TX_FID -d DEVICE_ADDRESS" << std::endl;
+        std::cout << "Write by Address Usage: readLpGBTRegister -r HW_CONFIG -a REGADDR -v REGVAL -R RX_FID -T TX_FID -d DEVICE_ADDRESS" << std::endl;
         std::cout << " -h : Show this help." << std::endl;
     }
 }
