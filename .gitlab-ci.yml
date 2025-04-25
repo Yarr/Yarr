@@ -70,6 +70,7 @@ job_build_and_test_out_of_source:
   script:
     - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
     - cmake3 --version
+    - export YARR_PROJECT_DIR=`pwd`
     - CXXFLAGS=-Werror cmake3 -S . -B /tmp/build-yarr -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=cmake/linux-gcc -DCMAKE_INSTALL_PREFIX=/tmp/install-yarr
     - cmake3 --build /tmp/build-yarr -j$(nproc)
     - cmake3 --install /tmp/build-yarr
@@ -86,6 +87,11 @@ job_build_and_test_out_of_source:
     - cmake3 --build /tmp/build-YarrAddSubdirectoryTest -j$(nproc)
     - cmake3 --install /tmp/build-YarrAddSubdirectoryTest/
     - /tmp/install-YarrAddSubdirectoryTest/bin/YarrAddSubdirectoryTest
+    - mkdir /tmp/build-YarrExternalSuperbuildTest
+    - cmake3 -S tests/external_project_superbuild_test -B /tmp/build-YarrExternalSuperbuildTest -DCMAKE_TOOLCHAIN_FILE=../../cmake/linux-gcc  -DCMAKE_INSTALL_PREFIX=/tmp/install-YarrExternalSuperbuildTest -DYARR_PROJECT_DIR=$YARR_PROJECT_DIR
+    - cmake3 --build /tmp/build-YarrExternalSuperbuildTest -j$(nproc)
+    - cmake3 --install /tmp/build-YarrExternalSuperbuildTest/
+    - /tmp/install-YarrExternalSuperbuildTest/bin/YarrConsumerTest
 
 job_build_clang:
   extends: .build_matrix
