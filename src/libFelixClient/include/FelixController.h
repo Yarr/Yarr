@@ -369,12 +369,12 @@ private:
   /// @return Raw pointer to optical device object (OptoDevice* )
   OptoDevice* getOptoDeviceInList(uint64_t rx_ic_fid, uint16_t dev_addr);
 
-  /// @brief Returns a pointer to a member of the OptoDevice class found in the m_opto_dev_list
+  /// @brief Returns the primary address of a particular opto device
   /// @param rx_ic_fid The fid of the ic channel for rx (uint64_t)
   /// @param tx_ic_fid The fid of the ic channel for tx (uint64_t)
   /// @param type The type of the device (lpgbt or gbcr) (std::string)
-  /// @return Raw pointer to optical device object (OptoDevice* )
-  OptoDevice* getOptoDeviceInList(uint64_t rx_ic_fid, uint32_t tx_ic_fid, std::string type);
+  /// @return primary device address (uint16_t)
+  uint16_t getOptoDevPrimaryAddr(uint64_t rx_ic_fid, uint32_t tx_ic_fid, std::string type);
 
   /// @brief Defines and returns a pointer to a new member of the OptoDevice class, adds object to m_opto_dev_list variable
   /// @param dev_addr Address of the device (uint16_t)
