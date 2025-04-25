@@ -92,6 +92,11 @@ job_build_and_test_out_of_source:
     - cmake3 --build /tmp/build-YarrExternalSuperbuildTest -j$(nproc)
     - cmake3 --install /tmp/build-YarrExternalSuperbuildTest/
     - /tmp/install-YarrExternalSuperbuildTest/bin/YarrConsumerTest
+    - mkdir /tmp/build-YarrFetchContentTest
+    - cmake3 -S tests/fetch_content_test -B /tmp/build-YarrFetchContentTest -DCMAKE_TOOLCHAIN_FILE=../../cmake/linux-gcc  -DCMAKE_INSTALL_PREFIX=/tmp/install-YarrFetchContentTest -DYARR_PROJECT_DIR=$YARR_PROJECT_DIR
+    - cmake3 --build /tmp/build-YarrFetchContentTest -j$(nproc)
+    - cmake3 --install /tmp/build-YarrFetchContentTest/
+    - /tmp/install-YarrFetchContentTest/bin/YarrFetchContentTest
 
 job_build_clang:
   extends: .build_matrix
