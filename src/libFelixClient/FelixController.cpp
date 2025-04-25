@@ -745,13 +745,14 @@ bool FelixController::optoDeviceInList(uint64_t rx_ic_fid, uint16_t dev_addr){
 }
 
 FelixController::OptoDevice* FelixController::getOptoDeviceInList(uint64_t rx_ic_fid, uint16_t dev_addr){
+  fclog->debug("Obtaining Opto Device with fid 0x{:x} and address 0x{:x}",rx_ic_fid, dev_addr);
   for (const auto& dev : m_opto_dev_list){
     if (dev->getRxFid() == rx_ic_fid && dev->getDevAddr() == dev_addr){
       return dev.get();
     }
   }
 
-  std::cerr << "Opto device not found in list, returning a nullpointer" << std::endl;
+  fclog->error("Opto device not found in list, returning a nullpointer");
   return nullptr;
 }
 
@@ -759,24 +760,33 @@ FelixController::OptoDevice* FelixController::newDefaultOptoDevice(uint16_t dev_
   // Make sure first it doesn't already exist
   if (!optoDeviceInList(rx_ic_fid, dev_addr)){
     m_opto_dev_list.emplace_back(std::make_unique<OptoDevice>(OptoUtils::DEFAULT_LPGBT_VERSION, OptoUtils::DEFAULT_I2C_ADDR, dev_addr, OptoUtils::DEFAULT_LPGBT_PRIMARY_ADDR, type, tx_ic_fid, rx_ic_fid));
+    fclog->debug("Creating a new opto device with rx fid 0x{:x} and address 0x{:x}",rx_ic_fid, dev_addr);
   }
   // Print message if it already exists
   else {
-    std::cout << " Device already exists in the list!  Returning matching device" << std::endl;
+    fclog->info(" Device already exists in the list!  Returning matching device");
   }
   // Return a raw pointer corresponding to the new default object
   return getOptoDeviceInList(rx_ic_fid, dev_addr);
 }
 
 void FelixController::communicateLpGBT(const lpgbt_item_t* reg, uint8_t& data, const bool write, OptoDevice* lpgbt){
-  std::vector<uint8_t> netio_frame;
-
-  netio_frame = OptoUtils::prepareICDataFrame(write, reg->addr, data, lpgbt->getVersion(), lpgbt->getPrimaryAddr());
-  /*
-  for (int i = 0; i < netio_frame.size(); i++){
-    std::cout << "netio frame at " << i << " is " << std::hex << static_cast<int>(netio_frame[i]) << std::endl;
+  if (write){
+    fclog->debug("Writing value {:x} to register {} with address 0x{:x} on device with address 0x{:x}", data, reg->name, reg->addr, lpgbt->getDevAddr());
   }
-  */
+  else {
+    fclog->debug("Reading value register {} with address 0x{:x} on device with address 0x{:x}", reg->name, reg->addr, lpgbt->getDevAddr());
+  }
+  std::vector<uint8_t> netio_frame;
+  fclog->debug("Preparing netio frame");
+  netio_frame = OptoUtils::prepareICDataFrame(write, reg->addr, data, lpgbt->getVersion(), lpgbt->getPrimaryAddr());
+
+  if (fclog->should_log(spdlog::level::debug)){
+    for (int i = 0; i < netio_frame.size(); i++){
+      fclog->debug("netio frame at {} is {:x}", i, netio_frame[i]);
+    }
+  }
+  
   unsigned int first_ic_payload_byte = 0;
   if (lpgbt->getVersion() == 0){
     first_ic_payload_byte = OptoUtils::FIRST_IC_PAYLOAD_BYTE_V0;
@@ -799,15 +809,15 @@ void FelixController::communicateLpGBT(const lpgbt_item_t* reg, uint8_t& data, c
     if (reply.size() > 0){
       uint32_t index_32 = first_ic_payload_byte % 4; // find the index for the data
       uint32_t at_block = reply[0]->get(1); // get the data block
-      //std::cout << "the data block we have is " << std::hex << at_block << std::endl;
+      fclog->debug("The data block we have is 0x{:x}",at_block);
       uint32_t mask = (0xFF << (8 * index_32)); // define the mask to get the value
       uint32_t value = (mask & at_block) >> (8*index_32); // apply the mask
-      //std::cout << "the value is " << std::hex << value << std::endl;
+      fclog->debug("The value is 0x{:x}", value);
       if (!write)
         data = value;
       else {
         if (data != value){
-          std::cerr << "Incorrect value written, wrote " << std::hex << static_cast<int>(value)  << " instead of the provided value " << std::hex << static_cast<int>(data) << std::endl;
+          fclog->error("Incorrect value written, wrote 0x{:x} instead of the provided value  0x{:x}", value, data);
         }
       }
     }
@@ -838,11 +848,13 @@ void FelixController::readWriteOptoReg(const lpgbt_item_t* reg , uint8_t& reg_da
 
   // if we're communicating directly to the primary LpGBT, we only need to send one simple register read
   if (lpgbt->isPrimary() && lpgbt->getDevType() == "lpgbt"){
+    fclog->debug("Accessing primary LpGBT");
     communicateLpGBT(reg, reg_data, write, lpgbt);
   }
 
   // communicating with secondary LpGBTs or GBCRs via I2C channel through the primary LpGBT
   else {
+    fclog->debug("Communicating over I2C");
     uint8_t NBYTE = 0;
 
     if (lpgbt->getDevType() == "lpgbt" && write){
@@ -917,7 +929,7 @@ void FelixController::readWriteOptoReg(const lpgbt_item_t* reg , uint8_t& reg_da
     communicateLpGBT(status_reg, status, 0, lpgbt);
 
     if (!status){
-      std::cerr<< "I2C readback status failed: " << status << std::endl;
+      fclog->error("I2C readback status failed: {} ", status);
     }
 
     // Read answer via from I2C communication
