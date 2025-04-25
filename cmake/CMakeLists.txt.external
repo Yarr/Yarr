@@ -10,6 +10,7 @@ function(YARR_ADD_TBB)
 
     ExternalProject_Add (
         tbb_2020
+        PATCH_COMMAND patch -p1 ${CMAKE_CURRENT_BINARY_DIR}/external/src/tbb_2020/include/tbb/task.h ${PROJECT_SOURCE_DIR}/cmake/0001-TBB-GCC13.patch
         GIT_REPOSITORY https://github.com/intel/tbb.git
         GIT_TAG 2020_U2
         UPDATE_COMMAND ""

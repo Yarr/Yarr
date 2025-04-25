@@ -1,0 +1,19 @@
+*** include/tbb/task.h	Sun Apr 20 11:45:21 2025
+--- task.h	Sun Apr 20 12:02:23 2025
+***************
+*** 249,255 ****
+  #if __TBB_TASK_PRIORITY
+          //! Pointer to the next offloaded lower priority task.
+          /** Used to maintain a list of offloaded tasks inside the scheduler. **/
+!         task* next_offloaded;
+  #endif
+  
+  #if __TBB_PREVIEW_RESUMABLE_TASKS
+--- 249,255 ----
+  #if __TBB_TASK_PRIORITY
+          //! Pointer to the next offloaded lower priority task.
+          /** Used to maintain a list of offloaded tasks inside the scheduler. **/
+!         tbb::task* next_offloaded;
+  #endif
+  
+  #if __TBB_PREVIEW_RESUMABLE_TASKS
