@@ -8,6 +8,7 @@
 
 #include "Itkpixv2CoreColLoop.h"
 
+#include "Bookkeeper.h"
 #include "Itkpixv2.h"
 #include "logging.h"
 

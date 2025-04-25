@@ -5,6 +5,8 @@
 
 #include "LoopEngine.h"
 
+#include "LoopActionBase.h"
+
 // Our LoopEngine will take care of distributing the global Fe to each loop item
 LoopEngine::LoopEngine(Bookkeeper *k) {
     g_bk = k;

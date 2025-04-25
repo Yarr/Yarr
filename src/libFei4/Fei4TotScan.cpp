@@ -9,6 +9,7 @@
 #include "Fei4TotScan.h"
 
 #include "ScanFactory.h"
+#include "StdDataLoop.h"
 
 namespace Fei4ScansRegistry {
   using StdDict::registerScan;

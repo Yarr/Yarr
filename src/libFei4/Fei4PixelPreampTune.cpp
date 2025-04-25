@@ -9,6 +9,7 @@
 #include "Fei4PixelPreampTune.h"
 
 #include "ScanFactory.h"
+#include "StdDataLoop.h"
 
 namespace Fei4ScansRegistry {
   using StdDict::registerScan;

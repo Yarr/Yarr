@@ -11,6 +11,10 @@
 #include <algorithm>
 #include <set>
 
+#include "Bookkeeper.h"
+#include "RxCore.h"
+#include "TxCore.h"
+
 #include "logging.h"
 
 using Clock = std::chrono::steady_clock;

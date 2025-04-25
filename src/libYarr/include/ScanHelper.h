@@ -11,13 +11,7 @@
 
 #include <string>
 
-#include "AnalysisDataProcessor.h"
-#include "Bookkeeper.h"
-#include "FeDataProcessor.h"
 #include "FeedbackBase.h"
-#include "FrontEnd.h"
-#include "HistoDataProcessor.h"
-#include "HwController.h"
 #include "ScanLoopInfo.h"
 #include "Utils.h"
 
@@ -25,7 +19,15 @@
 #include "logging.h"
 
 #include "ScanOpts.h"
-#include "ScanBase.h"
+
+class AnalysisDataProcessor;
+class Bookkeeper;
+class FeDataProcessor;
+class FrontEndCfg;
+class FrontEndGeometry;
+class HistoDataProcessor;
+class HwController;
+class ScanBase;
 
 namespace ScanHelper {
         // A 2D vector of int to store algorithm indices for all tiers of analyses

@@ -9,6 +9,8 @@
 #include "AllChips.h"
 #include "Fei4.h"
 
+#include "HwController.h"
+
 #include "logging.h"
 
 namespace {

@@ -8,6 +8,9 @@
 // ################################
 
 #include "StarChannelFeedback.h"
+
+#include "Bookkeeper.h"
+#include "TxCore.h"
 #include "logging.h"
 
 namespace {

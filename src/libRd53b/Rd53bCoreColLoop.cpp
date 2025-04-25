@@ -9,6 +9,7 @@
 #include "Rd53bCoreColLoop.h"
 
 #include "Rd53b.h"
+#include "Bookkeeper.h"
 #include "logging.h"
 
 namespace {

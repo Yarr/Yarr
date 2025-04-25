@@ -9,7 +9,9 @@
 #include "logging.h"
 
 #include "AbcNames.h"
+#include "Bookkeeper.h"
 #include "HccNames.h"
+#include "TxCore.h"
 
 namespace {
     auto logger = logging::make_log("StarRegDump");

@@ -9,6 +9,7 @@
 
 #include "AllChips.h"
 #include "Rd53b.h"
+#include "HwController.h"
 
 #include "logging.h"
 

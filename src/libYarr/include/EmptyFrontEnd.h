@@ -8,6 +8,8 @@
 
 #include "FrontEnd.h"
 
+#include "HwController.h"
+
 class EmptyFrontEndCfg : public FrontEndCfg {
     public:
         EmptyFrontEndCfg() = default;

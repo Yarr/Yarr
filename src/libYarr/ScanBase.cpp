@@ -8,6 +8,8 @@
 
 #include "ScanBase.h"
 
+#include "Bookkeeper.h"
+
 ScanBase::ScanBase(Bookkeeper *k) : engine(k) {
     g_bk = k;
     g_tx = k->tx;

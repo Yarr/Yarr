@@ -15,10 +15,13 @@
 #include "ClipBoard.h"
 #include "HistogramBase.h"
 #include "EventDataBase.h"
-#include "HwController.h"
 #include "FrontEndGeometry.h"
+#include "RawData.h"
 
 #include "storage.hpp"
+
+class HwController;
+class RxCore;
 
 // Status enum
 enum yarrStatus {

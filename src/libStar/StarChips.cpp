@@ -10,6 +10,9 @@
 #include "AbcNames.h"
 #include "HccNames.h"
 
+#include "HwController.h"
+#include "TxCore.h"
+
 #include <chrono>
 
 #include "logging.h"

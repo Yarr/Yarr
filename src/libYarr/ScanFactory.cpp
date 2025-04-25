@@ -12,7 +12,9 @@
 #include <iostream>
 
 #include "AllStdActions.h"
+#include "Bookkeeper.h"
 #include "StdTriggerAction.h"
+#include "TxCore.h"
 #include "ClassRegistry.h"
 
 #include "logging.h"

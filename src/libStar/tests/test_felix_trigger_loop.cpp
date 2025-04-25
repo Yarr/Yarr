@@ -2,6 +2,7 @@
 #include <memory>
 
 #include "AllStdActions.h"
+#include "Bookkeeper.h"
 #include "EmptyHw.h"
 #include "LCBUtils.h"
 #include "LCBFwUtils.h"

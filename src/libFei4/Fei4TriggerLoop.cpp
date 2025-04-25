@@ -6,6 +6,8 @@
 #include "Fei4TriggerLoop.h"
 #include <unistd.h>
 
+#include "Bookkeeper.h"
+
 #include "logging.h"
 
 namespace {
