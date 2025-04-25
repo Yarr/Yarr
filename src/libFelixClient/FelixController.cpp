@@ -744,10 +744,37 @@ bool FelixController::optoDeviceInList(uint64_t rx_ic_fid, uint16_t dev_addr){
   return in_list;
 }
 
+// Note several devices may be listed with these properties, this function is mainly used to obtain the primary lpgbt address
+// which will be common between the different devices that may share these fids
+bool FelixController::optoDeviceInList(uint64_t rx_ic_fid, uint64_t tx_ic_fid, std::string type){
+  bool in_list = false;
+  for (const auto& dev : m_opto_dev_list){
+    if (dev->getRxFid() == rx_ic_fid && dev->getTxFid() == tx_ic_fid && dev->getDevType() == type){
+      in_list = true;
+      break;
+    }
+  }
+  return in_list;
+}
+
 FelixController::OptoDevice* FelixController::getOptoDeviceInList(uint64_t rx_ic_fid, uint16_t dev_addr){
-  fclog->debug("Obtaining Opto Device with fid 0x{:x} and address 0x{:x}",rx_ic_fid, dev_addr);
+  fclog->debug("Obtaining Opto Device with rx fid 0x{:x} and address 0x{:x}",rx_ic_fid, dev_addr);
   for (const auto& dev : m_opto_dev_list){
     if (dev->getRxFid() == rx_ic_fid && dev->getDevAddr() == dev_addr){
+      return dev.get();
+    }
+  }
+
+  fclog->error("Opto device not found in list, returning a nullpointer");
+  return nullptr;
+}
+
+// Note several devices may be listed with these properties, this function is mainly used to obtain the primary lpgbt address
+// which will be common between the different devices that may share these fids
+FelixController::OptoDevice* FelixController::getOptoDeviceInList(uint64_t rx_ic_fid, uint32_t tx_ic_fid, std::string type){
+  fclog->debug("Obtaining Opto Device with rx fid 0x{:x}, tx fid 0x{:x}, and type {}",rx_ic_fid, tx_ic_fid, type);
+  for (const auto& dev : m_opto_dev_list){
+    if (dev->getRxFid() == rx_ic_fid && dev->getTxFid() == tx_ic_fid && dev->getDevType() == type){
       return dev.get();
     }
   }
