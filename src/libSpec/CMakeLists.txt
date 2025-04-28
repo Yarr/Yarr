@@ -15,13 +15,12 @@ add_library(Spec SHARED
         UserMemory.cpp)
 
 post_build_debug_library(Spec)
-target_include_directories(Spec PRIVATE ../libYarr/include)
 target_include_directories(Spec PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-target_link_libraries(Spec Util_interface)
+target_link_libraries(Spec PRIVATE Util_interface Yarr_interface)
 
 LIST(APPEND apps
 	specReadWriteReg
