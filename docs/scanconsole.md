@@ -185,6 +185,15 @@ An example of this type of configuration is:
 ```
 In the above configuration, the command will be sent using tx0 but each chip uses its own rx line.
 
+### Re-running a scan
+
+The configuration for a scan is logged along with the scan results in the data directory.
+This, together with referring to json fragments means you can rerun a scan with the same
+configuration using:
+
+```
+bin/scanConsole -r data/last_scan/scanLog.json#/ctrlCfg -c data/last_scan/scanLog.json#/connectivity/0 -s path/to/scan.json
+```
 
 ### Scan Config
 
