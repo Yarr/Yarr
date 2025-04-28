@@ -23,7 +23,6 @@ install(TARGETS Itkpixv2Emu
 
 install(DIRECTORY include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    FILES_MATCHING 
+    FILES_MATCHING
         PATTERN "*.h"
-        PATTERN "*.hpp"
 )

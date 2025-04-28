@@ -33,5 +33,4 @@ install(DIRECTORY include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     FILES_MATCHING 
         PATTERN "*.h"
-        PATTERN "*.hpp"
 )

@@ -48,14 +48,13 @@ install(TARGETS Fei4 ${apps}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}  # For DLLs on Windows
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   )
-  
+
 install(EXPORT Yarr_Fei4Targets
   NAMESPACE Yarr::
   DESTINATION cmake
 )
 install(DIRECTORY include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    FILES_MATCHING 
+    FILES_MATCHING
         PATTERN "*.h"
-        PATTERN "*.hpp"
 )

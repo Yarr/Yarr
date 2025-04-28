@@ -25,9 +25,8 @@ install(TARGETS Yarr
 
 install(DIRECTORY include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    FILES_MATCHING 
+    FILES_MATCHING
         PATTERN "*.h"
-        PATTERN "*.hpp"
 )
 
 # add interface only target to resolve cyclical dependency in a cleaner way (until CMAKE 3.27 which offers a different mechanism)
@@ -106,8 +105,7 @@ install(TARGETS Scan
 
 install(DIRECTORY include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    FILES_MATCHING 
+    FILES_MATCHING
         PATTERN "*.h"
-        PATTERN "*.hpp"
 )
 
