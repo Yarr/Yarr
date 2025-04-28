@@ -30,7 +30,7 @@ target_include_directories(Star PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-target_link_libraries(Star Scan)
+target_link_libraries(Star PUBLIC Scan)
 target_link_libraries(Star PRIVATE Yarr_interface)
 
 LIST(APPEND apps test_star makeLCBSequence benchmark_data_processor_star printStarSubRegisters)

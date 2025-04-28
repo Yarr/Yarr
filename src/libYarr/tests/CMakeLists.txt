@@ -1,5 +1,4 @@
 add_executable(testYarr
-        ../../libUtil/tests/main.cpp
         test_analysis_throttle.cpp
         test_event_data.cpp
         test_front_end.cpp
@@ -19,6 +18,7 @@ add_executable(testYarr
         test_npointgain.cpp
 )
 
-target_link_libraries(testYarr Scan Yarr)
+target_link_libraries(testYarr PUBLIC Scan Yarr)
+target_link_libraries(testYarr PRIVATE mainTest)
 add_test(testYarr ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/testYarr)
 post_build_debug_executable(testYarr)
