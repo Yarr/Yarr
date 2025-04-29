@@ -755,7 +755,6 @@ bool FelixController::optoDeviceInList(uint64_t rx_ic_fid, uint64_t tx_ic_fid, s
       break;
     }
   }
-  fclog->debug("Device with rx ic fid 0x{:x}, tx ic fid 0x{:x} and type {} is not in the list", rx_ic_fid, tx_ic_fid, type);
   return in_list;
 }
 
