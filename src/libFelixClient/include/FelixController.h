@@ -210,6 +210,26 @@ public:
     /// @return True if successful, false if not (bool)
     bool writeLpGBTRegister(const char* reg_name, uint8_t& reg_data, uint16_t dev_addr, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
 
+    /// @brief Returns the primary address of a particular opto device
+    /// @param rx_ic_fid The fid of the ic channel for rx (uint64_t)
+    /// @param tx_ic_fid The fid of the ic channel for tx (uint64_t)
+    /// @param type The type of the device (lpgbt or gbcr) (std::string)
+    /// @return primary device address (uint16_t)
+    uint16_t getOptoDevPrimaryAddr(uint64_t rx_ic_fid, uint32_t tx_ic_fid, std::string type);
+
+    /// @brief Checks if a member of the OptoDevice class exists in the m_opto_dev_list
+    /// @param rx_ic_fid The fid of the ic channel for rx (uint64_t)
+    /// @param dev_addr Address of the device (uint16_t)
+    /// @return True if in list, false if not (bool)
+    bool optoDeviceInList(uint64_t rx_ic_fid, uint16_t dev_addr);
+
+    /// @brief Checks if a member of the OptoDevice class exists in the m_opto_dev_list
+    /// @param rx_ic_fid The fid of the ic channel for rx (uint64_t)
+    /// @param tx_ic_fid The fid of the ic channel for tx (uint64_t)
+    /// @param type The type of the device (lpgbt or gbcr) (std::string)
+    /// @return True if in list, false if not (bool)
+    bool optoDeviceInList(uint64_t rx_ic_fid, uint64_t tx_ic_fid, std::string type);
+    
 protected:
     class OptoDevice{
       public:
@@ -350,18 +370,7 @@ private:
   Optoboard device communication
   */
 
-  /// @brief Checks if a member of the OptoDevice class exists in the m_opto_dev_list
-  /// @param rx_ic_fid The fid of the ic channel for rx (uint64_t)
-  /// @param dev_addr Address of the device (uint16_t)
-  /// @return True if in list, false if not (bool)
-  bool optoDeviceInList(uint64_t rx_ic_fid, uint16_t dev_addr);
 
-  /// @brief Checks if a member of the OptoDevice class exists in the m_opto_dev_list
-  /// @param rx_ic_fid The fid of the ic channel for rx (uint64_t)
-  /// @param tx_ic_fid The fid of the ic channel for tx (uint64_t)
-  /// @param type The type of the device (lpgbt or gbcr) (std::string)
-  /// @return True if in list, false if not (bool)
-  bool optoDeviceInList(uint64_t rx_ic_fid, uint64_t tx_ic_fid, std::string type);
 
   /// @brief Returns a pointer to a member of the OptoDevice class found in the m_opto_dev_list
   /// @param rx_ic_fid The fid of the ic channel for rx (uint64_t)
@@ -369,12 +378,6 @@ private:
   /// @return Raw pointer to optical device object (OptoDevice* )
   OptoDevice* getOptoDeviceInList(uint64_t rx_ic_fid, uint16_t dev_addr);
 
-  /// @brief Returns the primary address of a particular opto device
-  /// @param rx_ic_fid The fid of the ic channel for rx (uint64_t)
-  /// @param tx_ic_fid The fid of the ic channel for tx (uint64_t)
-  /// @param type The type of the device (lpgbt or gbcr) (std::string)
-  /// @return primary device address (uint16_t)
-  uint16_t getOptoDevPrimaryAddr(uint64_t rx_ic_fid, uint32_t tx_ic_fid, std::string type);
 
   /// @brief Defines and returns a pointer to a new member of the OptoDevice class, adds object to m_opto_dev_list variable
   /// @param dev_addr Address of the device (uint16_t)
