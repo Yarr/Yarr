@@ -751,9 +751,11 @@ bool FelixController::optoDeviceInList(uint64_t rx_ic_fid, uint64_t tx_ic_fid, s
   for (const auto& dev : m_opto_dev_list){
     if (dev->getRxFid() == rx_ic_fid && dev->getTxFid() == tx_ic_fid && dev->getDevType() == type){
       in_list = true;
+      fclog->debug("Device with rx ic fid 0x{:x}, tx ic fid 0x{:x} and type {} is in the list", rx_ic_fid, tx_ic_fid, type);
       break;
     }
   }
+  fclog->debug("Device with rx ic fid 0x{:x}, tx ic fid 0x{:x} and type {} is not in the list", rx_ic_fid, tx_ic_fid, type);
   return in_list;
 }
 
@@ -764,14 +766,13 @@ FelixController::OptoDevice* FelixController::getOptoDeviceInList(uint64_t rx_ic
       return dev.get();
     }
   }
-
   fclog->error("Opto device not found in list, returning a nullpointer");
   return nullptr;
 }
 
 // Note several devices may be listed with these properties, this function is mainly used to obtain the primary lpgbt address
 // which will be common between the different devices that may share these fids
-uint16_t FelixController::getOptoDevPrimaryAddr(uint64_t rx_ic_fid, uint32_t tx_ic_fid, std::string type){
+uint16_t FelixController::getOptoDevPrimaryAddr(uint64_t rx_ic_fid, uint64_t tx_ic_fid, std::string type){
   fclog->debug("Obtaining Opto Device with rx fid 0x{:x}, tx fid 0x{:x}, and type {}",rx_ic_fid, tx_ic_fid, type);
   for (const auto& dev : m_opto_dev_list){
     if (dev->getRxFid() == rx_ic_fid && dev->getTxFid() == tx_ic_fid && dev->getDevType() == type){
