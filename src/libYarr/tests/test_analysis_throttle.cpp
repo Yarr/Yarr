@@ -11,31 +11,56 @@
 #include "logging.h"
 
 namespace {
+  const int RX_CHANNEL = 0;
   auto logger = logging::make_log("test_analysis_throttle");
 
-  /// Wrapper so we can manually add loops
+  /// Wrapper so we can manually add our test action
   class MyScan : public ScanFactory {
   public:
     MyScan(Bookkeeper &k, FeedbackClipboardMap &fb) : ScanFactory(&k, &fb){}
 
     void addLoop(std::shared_ptr<LoopActionBase> l) {
+      ptr = l;
       ScanFactory::addLoop(l);
     }
+
+    std::weak_ptr<LoopActionBase> ptr;
   };
 
-  class MyReceiver : public TriggerFeedbackReceiver {
+  /// Loop action to receive trigger feedback (and record for testing)
+  class MyReceiver : public LoopActionBase, public TriggerFeedbackReceiver {
     public:
-      MyReceiver(FeedbackClipboardMap &fe) {
+      MyReceiver(FeedbackClipboardMap &fe, int stop_at)
+        : LoopActionBase(LOOP_STYLE_TRIGGER_FEEDBACK),
+          stop_at_value(stop_at)
+      {
         connectClipboard(&fe);
       }
 
-      void feedbackTrigger(unsigned channel, uint32_t code) override {}
+      void feedbackTrigger(unsigned channel, uint32_t code) override {
+          logger->trace("Feedback trigger {}", code);
+          feedback_count ++;
+          latest_code = code;
+      }
 
-    // private:
-    //     FeedbackClipboardMap *clip;
+      void execPart2() {
+          logger->trace("End of loop wait for feedback");
+
+          waitForFeedback(RX_CHANNEL);
+
+          logger->warn("part2 Compare {} {}", latest_code, stop_at_value);
+
+          if(latest_code == stop_at_value) {
+              m_done = true;
+          }
+      }
+
+      uint32_t latest_code{};
+      size_t feedback_count = 0;
+      int stop_at_value{};
   };
 
-  // A simple analysis algorithm that generates feedback
+  /// A simple analysis algorithm that generates feedback
   class MyAnalyzer : public AnalysisAlgorithm {
     std::unique_ptr<TriggerFeedbackSender> m_feedback;
 
@@ -53,64 +78,55 @@ namespace {
       }
     }
 
-    // void loadConfig(const json &j) override {
-    //   for (unsigned i=0; i<j["parametersOfInterest"].size(); i++) {
-    //     m_parametersOfInterest.push_back(j["parametersOfInterest"][i]);
-    //   }
-    // }
-
     void processHistogram(HistogramBase *h) override {
       if (h->getName() != "myHisto")
         return;
 
+      histo_count ++;
+
       auto h1 = dynamic_cast<Histo1d*>(h);
       int info = h1->getBin(0);
 
+      REQUIRE(m_feedback);
+
+      logger->trace("Send feedback {}", info);
       m_feedback->feedbackTrigger(this->id, info);
     }
 
-  // private:
-  //   std::vector<unsigned> loops;
-  //   std::vector<unsigned> loopMax;
-  //   unsigned n_count;
-
-  //   std::map<unsigned, std::unique_ptr<Histo1d>> hMap;
-  //   std::map<unsigned, unsigned> innerCnt;
+    unsigned histo_count;
   };
 }
 
-// Test generation of trigger feedback
+// Test generation of trigger feedback (no analysis is checked)
 TEST_CASE("AnalysisTriggerThrottle", "[Analysis][trigger_feedback]") {
-
     ClipBoard<HistogramBase> input;
-    ClipBoard<HistogramBase> output;
+    ClipBoard<HistogramBase> output_unused;
 
     int max_histo_push = 10;
-    // int histo_occ = 10;
 
     json throttleCfg;
 
     SECTION ("Default") {
     }
 
-    // SECTION ("Small occ") {
-    //   throttleCfg["target_occ"] = 4;
-    // }
-
-    // SECTION ("Small trigs") {
-    //   throttleCfg["target_trigs"] = 200;
-    // }
-
-    logger->debug("Throttle test with config {}", [&]() -> std::string {
-      std::stringstream ss; ss << throttleCfg; return ss.str(); }());
-
     EmptyHw empty;
     Bookkeeper bookie(&empty, &empty);
 
-    int rx_channel = 0;
+    FeedbackClipboardMap fbMap;
+
+    MyScan scan(bookie, fbMap);
+
+    // Set up loop config with trigger feedback
+
+    // Test action is not in the registry, add it by hand.
+    {
+      std::unique_ptr<LoopActionBase> r
+        = std::make_unique<MyReceiver>(fbMap, max_histo_push - 1);
+      scan.addLoop(std::move(r));
+    }
 
     // This is for one FE
-    AnalysisProcessor analysis(rx_channel);
+    AnalysisProcessor analysis(RX_CHANNEL);
 
     {
       auto proc = std::make_unique<MyAnalyzer>();
@@ -122,53 +138,57 @@ TEST_CASE("AnalysisTriggerThrottle", "[Analysis][trigger_feedback]") {
       analysis.addAlgorithm(std::move(proc));
     }
 
-    FeedbackClipboardMap fbMap;
+    auto &fb = fbMap[RX_CHANNEL];
 
-    // Need scan loops to lookup trigger loop
-    ScanFactory scan(&bookie, &fbMap);
-
-    for (unsigned id=0; id<bookie.getNumOfEntries(); id++ ) {
-      logger->debug("Bookie has ID {}", id);
-    }
-
-    auto &fb = fbMap[rx_channel];
-
-    analysis.connect(&scan, &input, &output, &fb);
-
-    MyReceiver recv(fbMap);
+    analysis.connect(&scan, &input, &output_unused, &fb);
 
     analysis.init();
+
+    // Runs until the input signals it is complete
     analysis.run();
 
     int nCol = 1;
 
-    for(int i=0; i<max_histo_push; i++) {
-      LoopStatus stat{{1, 2}, {LOOP_STYLE_DATA, LOOP_STYLE_TRIGGER_FEEDBACK}};
-      auto h = std::make_unique<Histo1d>("myHisto", nCol, 0.5, nCol+0.5, stat);
+    std::thread scanner([&] { scan.run(); });
 
+    for(int i=0; i<max_histo_push; i++) {
+      LoopStatus stat{{2}, {LOOP_STYLE_TRIGGER_FEEDBACK}};
+      auto h = std::make_unique<Histo1d>("myHisto", nCol, -0.5, nCol-0.5, stat);
+
+      logger->trace("Send histo {}", i);
       for(int c=0; c<nCol; c++) {
         h->fill(c, i);
       }
 
       input.pushData(std::move(h));
-
-      if (!output.empty()) {
-        logger->debug("Exit histo loop as have output to check");
-        break;
-      }
     }
 
+    // End of histograms sent from analysis algorithm
     input.finish();
+
+    scanner.join();
+
     analysis.join();
 
-    REQUIRE (!output.empty());
+    // All feedback should have been read by the receiver
+    CHECK (fb.empty());
 
-    REQUIRE (!fb.empty());
+    // Both clipboards received the same amount of data
+    CHECK (input.getNumDataIn() == max_histo_push);
+    CHECK (fb.getNumDataIn() == max_histo_push);
 
-    // int x = 2, y = 1, z = 3;
-    // auto bin = histo_as_3d->binNum(x, y, z);
-    // CAPTURE (x, y, z, bin);
+    CHECK (input.getNumDataOut() == max_histo_push);
+    CHECK (fb.getNumDataOut() == max_histo_push);
 
-    // float val = 1;
-    // REQUIRE (histo_as_3d->getBin(bin) == val);
+    // Check that the feedback receiver received the correct number of histograms
+    REQUIRE (!scan.ptr.expired());
+    auto sh = scan.ptr.lock();
+    REQUIRE (sh.get());
+
+    auto fb_loop = dynamic_cast<MyReceiver*>(sh.get());
+
+    REQUIRE (fb_loop);
+
+    CHECK (fb_loop->feedback_count == max_histo_push);
+    CHECK (fb_loop->latest_code == max_histo_push - 1);
 }
