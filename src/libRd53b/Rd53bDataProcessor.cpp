@@ -548,6 +548,7 @@ bool Rd53bDataProcessor::getNextDataBlock() {
 
     // Upate the data pointer.
     _data = _data_t;
+    _dataPtrCpy = _dataPtrCpy_t;
     return good;
 }
 
@@ -561,6 +562,7 @@ bool Rd53bDataProcessor::getNextDataBlockImpl()
             _rawDataIdx = 0;
             _wordIdx = 0;
             _data_t = &_curInV->data[0]->get(0);
+            _dataPtrCpy_t = _curInV->data[0];
 
             return true;
         }
@@ -662,6 +664,7 @@ bool Rd53bDataProcessor::getNextDataBlockImpl()
     
     // Upate the data pointer. Note the meaning of block index is the first block that is *unprocessed*
     _data_t = &_curInV->data[_rawDataIdx]->get(_wordIdx);
+    _dataPtrCpy_t = _curInV->data[_rawDataIdx];
 
 #if USE_ITKPIX_DEBUG_BUFFER > 0
     _debugBuffer[_debugIdx] = _data[0];
@@ -689,6 +692,7 @@ void Rd53bDataProcessor::getPreviousDataBlock()
         _wordIdx = _curInV->data[_rawDataIdx]->getSize() - 2;
     }
     _data = &_curInV->data[_rawDataIdx]->get(_wordIdx); // Also roll back the block index and data word pointer
+    _dataPtrCpy = _curInV->data[_rawDataIdx];
 
     // Recursive `getPreviousDataBlock` is bounded by size of data container, < 1 million (~segfault threshold)
     if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
