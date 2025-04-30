@@ -807,13 +807,18 @@ void FelixController::communicateLpGBT(const lpgbt_item_t* reg, uint8_t& data, c
   std::vector<uint8_t> netio_frame;
   fclog->debug("Preparing netio frame");
   netio_frame = OptoUtils::prepareICDataFrame(write, reg->addr, data, lpgbt->getVersion(), lpgbt->getPrimaryAddr());
+  
+  // LpGBT registers have sub-fields with different bit indexes
+  // we need these later to calculate the correct result but currently we need the main bit index
+  // in order to properly parse the result from the register 
+  const lpgbt_item_t* reg_primary = OptoUtils::getLpGBTRegisterByAddr(reg->addr, lpgbt->getVersion());
 
   if (fclog->should_log(spdlog::level::debug)){
     for (int i = 0; i < netio_frame.size(); i++){
       fclog->debug("netio frame at {} is {:x}", i, netio_frame[i]);
     }
   }
-  
+
   unsigned int first_ic_payload_byte = 0;
   if (lpgbt->getVersion() == 0){
     first_ic_payload_byte = OptoUtils::FIRST_IC_PAYLOAD_BYTE_V0;
@@ -830,15 +835,18 @@ void FelixController::communicateLpGBT(const lpgbt_item_t* reg, uint8_t& data, c
     // raw data pointers have buffers, addresses, sizes, etc. stored
     // def. in libYARR/include/RawData.h
     std::vector<RawDataPtr> reply = FelixRxCore::readData();
+
     // reply is 64 bits long, saved in two buffers of size 32 bits
     // The first ic payload byte is either 6 or 7, depending on the version,
     // which is stored in the second buffer of the reply (reply[0]->get(1))
     if (reply.size() > 0){
       uint32_t index_32 = first_ic_payload_byte % 4; // find the index for the data
       uint32_t at_block = reply[0]->get(1); // get the data block
-      fclog->debug("The data block we have is 0x{:x}",at_block);
+      //fclog->info("The data block we have is 0x{:x}",at_block);
       uint32_t mask = (0xFF << (8 * index_32)); // define the mask to get the value
-      uint32_t value = (mask & at_block) >> (8*index_32); // apply the mask
+      uint8_t tmpvalue = (mask & at_block) >> (8*index_32); // apply the mask
+      uint8_t bitmask = (0xFF>>(8-reg_primary->nbits)) << reg_primary->bitindex;
+      uint8_t value = tmpvalue & bitmask; // at this point, tmpvalue will be a uint8_t
       fclog->debug("The value is 0x{:x}", value);
       if (!write)
         data = value;
@@ -961,30 +969,7 @@ void FelixController::readWriteOptoReg(const lpgbt_item_t* reg , uint8_t& reg_da
 
     // Read answer via from I2C communication
     uint8_t readback = 0;
-    communicateLpGBT(read15, readback, 0, lpgbt);
-    
-    //reg_data = (readback << reg->bitindex) & static_cast<int>(((pow(2,reg->nbits)) - 1));
-    reg_data = readback;
-  }
-}
-
-bool FelixController::readLpGBTRegister(int reg_addr, uint8_t& reg_data, uint16_t dev_addr, uint64_t rx_ic_fid, uint64_t tx_ic_fid){
-  OptoDevice* lpgbt = nullptr;
-  if (!optoDeviceInList(rx_ic_fid, dev_addr)){
-    lpgbt = newDefaultOptoDevice(dev_addr, "lpgbt", rx_ic_fid, tx_ic_fid);
-  }
-  else {
-    lpgbt = getOptoDeviceInList(rx_ic_fid, dev_addr);
-  }
-  
-  const lpgbt_item_t* reg = OptoUtils::getLpGBTRegisterByAddr(reg_addr, lpgbt->getVersion());
-  try {
-    readWriteOptoReg(reg, reg_data, 0, lpgbt);
-    return true;
-  }
-  catch (std::runtime_error &e){
-    fclog->error(e.what());
-    return false;
+    communicateLpGBT(read15, reg_data, 0, lpgbt);
   }
 }
 
@@ -999,38 +984,26 @@ bool FelixController::readLpGBTRegister(const char* reg_name, uint8_t& reg_data,
 
   const lpgbt_item_t* reg = OptoUtils::getLpGBTRegisterByName(reg_name, lpgbt->getVersion());
 
+  uint8_t readback;
   try {
-    readWriteOptoReg(reg, reg_data, 0, lpgbt);
-    return true;
+    readWriteOptoReg(reg, readback, 0, lpgbt);
   }
   catch (std::runtime_error &e){
     fclog->error(e.what());
     return false;
   }
-}
 
-bool FelixController::writeLpGBTRegister(int reg_addr, uint8_t& reg_data, uint16_t dev_addr, uint64_t rx_ic_fid, uint64_t tx_ic_fid){
-  OptoDevice* lpgbt = nullptr;
-  if (!optoDeviceInList(rx_ic_fid, dev_addr)){
-    lpgbt = newDefaultOptoDevice(dev_addr, "lpgbt", rx_ic_fid, tx_ic_fid);
+  // If we're reading off a register that is a sub-field of another register we need to apply a mask to the response
+  if (OptoUtils::regField(reg)){
+    reg_data = OptoUtils::applyRegfieldReadMask(reg, readback);
   }
   else {
-    lpgbt = getOptoDeviceInList(rx_ic_fid, dev_addr);
+    reg_data = readback;
   }
-
-  const lpgbt_item_t* reg = OptoUtils::getLpGBTRegisterByAddr(reg_addr, lpgbt->getVersion());
-
-  try {
-    readWriteOptoReg(reg, reg_data, 1, lpgbt);
-    return true;
-  }
-  catch (std::runtime_error &e){
-    fclog->error(e.what());
-    return false;
-  }
+  return true;
 }
 
-bool FelixController::writeLpGBTRegister(const char* reg_name, uint8_t& reg_data, uint16_t dev_addr, uint64_t rx_ic_fid, uint64_t tx_ic_fid){
+bool FelixController::writeLpGBTRegister(const char* reg_name, uint8_t reg_data, uint16_t dev_addr, uint64_t rx_ic_fid, uint64_t tx_ic_fid){
   OptoDevice* lpgbt = nullptr;
   if (!optoDeviceInList(rx_ic_fid, dev_addr)){
     lpgbt = newDefaultOptoDevice(dev_addr, "lpgbt", rx_ic_fid, tx_ic_fid);
@@ -1041,14 +1014,32 @@ bool FelixController::writeLpGBTRegister(const char* reg_name, uint8_t& reg_data
 
   const lpgbt_item_t* reg = OptoUtils::getLpGBTRegisterByName(reg_name, lpgbt->getVersion());
 
+  uint8_t write_data = reg_data;
+
+  // If the register we're writing to is part of a register subfield, we need to make sure we're writing to the correct bits in the bitstream
+  // The following is the procedure for this:
+  if (OptoUtils::regField(reg)){
+    // Get the full readout from the total register
+    const lpgbt_item_t* reg_primary = OptoUtils::getLpGBTRegisterByAddr(reg->addr, lpgbt->getVersion());
+    uint8_t current_data = 0;
+    try {
+      readWriteOptoReg(reg, current_data, 0, lpgbt);
+    }
+    catch (std::runtime_error &e){
+      fclog->error(e.what());
+      return false;
+    }
+    write_data = OptoUtils::applyRegfieldWriteMask(reg, reg_data, current_data, lpgbt->getVersion());
+  }
+
   try {
-    readWriteOptoReg(reg, reg_data, 1, lpgbt);
-    return true;
+    readWriteOptoReg(reg, write_data, 1, lpgbt);
   }
   catch (std::runtime_error &e){
     fclog->error(e.what());
     return false;
   }
+  return true;
 }
 
 bool felix_registered = StdDict::registerHwController(

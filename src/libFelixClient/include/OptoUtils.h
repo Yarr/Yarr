@@ -59,6 +59,31 @@ namespace OptoUtils {
     /// @return Returns a pointer to a member of the lpgbt_item_t class
     const lpgbt_item_t* getLpGBTRegisterByAddr(uint16_t reg_addr, uint8_t version);
 
+    /// @brief Returns teh bitmask corresponding to a particular register field
+    /// @param item lpgbt item (register) (const lpgbt_item_t*)
+    /// @param version version of the lpgbt (uint8_t)
+    /// @return the bitmask (uint8_t)
+    uint8_t getRegBitmask(const lpgbt_item_t* item, uint8_t version);
+
+    /// @brief Determines if a provided register is a regfield (sub-field of a total register in memory)
+    /// @param item lpgbt item (register) (const lpgbt_item_t*)
+    /// @return True if a regfield, false if not (bool)
+    bool regField(const lpgbt_item_t* item);
+
+    /// @brief Returns a value we've read after applying a regfield mask
+    /// @param item lpgbt item (register) (const lpgbt_item_t*)
+    /// @param reg_data the data we need to apply a mask to (uint8_t)
+    /// @return The masked data (uint8_t)
+    uint8_t applyRegfieldReadMask(const lpgbt_item_t* item, uint8_t reg_data);
+
+    /// @brief Returns a value to write after applying a regfield mask
+    /// @param item lpgbt item (register) (const lpgbt_item_t*)
+    /// @param data the data we need to apply a mask to (uint8_t)
+    /// @param current_data The current readout of the register (uint8_t)
+    /// @param version The lpgbt version (uint8_t)
+    /// @return The masked value (uint8_t)
+    uint8_t applyRegfieldWriteMask(const lpgbt_item_t* item, uint8_t data, uint8_t current_data, uint8_t version);
+
     /// @brief Constructs the dataframe to send over an IC channel (used for example in LpGBT register reads)
     /// @param write Whether we will be reading or writing data (const bool, true for write, false for read)
     /// @param regAddr Address of the register to read (const uint16_t)

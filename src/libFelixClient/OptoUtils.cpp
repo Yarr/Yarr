@@ -79,6 +79,62 @@ const lpgbt_item_t* OptoUtils::getLpGBTRegisterByAddr(uint16_t reg_addr, uint8_t
   return item;
 }
 
+uint8_t OptoUtils::getRegBitmask(const lpgbt_item_t* reg, uint8_t version){
+  uint8_t bitmask = 0;
+  uint8_t current_bitmask = 0;
+  // We need to get the bitmasks of every register in the register field and use those to contruct ours
+  // Get the correct item list based on the version
+  const lpgbt_item_t* reg_list = 0;
+  if (version == 0){
+    reg_list = LPGBTv0_ITEM;
+  }
+  else if(version == 1){
+    reg_list = LPGBTv1_ITEM;
+  }
+  else {
+    std::cerr << "Invalid version provided: " << std::hex << static_cast<int>(version) << " version, only accepted values are 0 and 1." << std::endl;
+  }
+
+  const lpgbt_item_t*item = &reg_list[0];
+  // loop through every item in the list
+  while(strlen(item->name)!= 0) {
+    if (item->addr == reg->addr && item->name != reg->name && regField(item)){ // we want the bitmasks of every register but ours
+        current_bitmask = (uint8_t)((pow(2,item->bitindex)) * ((pow(2,item->nbits)) - 1));
+        bitmask = bitmask | current_bitmask;
+      }
+    ++item;
+  }
+
+  return bitmask;
+}
+
+bool OptoUtils::regField(const lpgbt_item_t* item){
+  for (int i = 0; i < strlen(item->name); i++){
+    if ((item->name)[i] == '_'){
+      return true;
+    }
+  }
+  return false;
+}
+
+uint8_t OptoUtils::applyRegfieldReadMask(const lpgbt_item_t* reg, uint8_t reg_data){
+  uint8_t masked_data = 0;
+  masked_data = (reg_data >> reg->bitindex) & (uint8_t)(((pow(2,reg->nbits)) - 1));
+  return masked_data;
+}
+
+uint8_t OptoUtils::applyRegfieldWriteMask(const lpgbt_item_t* reg, uint8_t reg_data, uint8_t current_data, uint8_t version){
+  uint8_t write_val = 0;
+  uint8_t bitmask = getRegBitmask(reg, version);
+  uint8_t cleared_mask = 0;
+  
+  // Clear out the previous data in the correct position in the register bitstream
+  cleared_mask = current_data & bitmask;
+  write_val = cleared_mask | (reg_data << reg->bitindex);
+
+  return write_val;
+}
+
 std::vector<uint8_t> OptoUtils::prepareICDataFrame(const bool write, const uint16_t reg_addr, const uint8_t data, uint8_t version, uint16_t dev_addr){
   /*
     Based on itk-ic-over-netio-next communication wrapper, 

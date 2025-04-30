@@ -13,16 +13,16 @@
 namespace fs = std::filesystem;
 
 namespace {
+    auto logger = logging::make_log("readWriteLpGBTRegister");
+
     void printHelp() {
-        std::cout << "Read or write LpGBT register by either providing a register address or register name" << std::endl;
-        std::cout << "Read by Name Usage: readLpGBTRegister -r HW_CONFIG -n \"REGNAME\" -R RX_FID -T TX_FID -d DEVICE_ADDRESS" << std::endl;
-        std::cout << "Read by Address Usage: readLpGBTRegister -r HW_CONFIG -a REGADDR -R RX_FID -T TX_FID -d DEVICE_ADDRESS" << std::endl;
-        std::cout << "Write by Name Usage: readLpGBTRegister -r HW_CONFIG -n \"REGNAME\" -v REGVAL -R RX_FID -T TX_FID -d DEVICE_ADDRESS" << std::endl;
-        std::cout << "Write by Address Usage: readLpGBTRegister -r HW_CONFIG -a REGADDR -v REGVAL -R RX_FID -T TX_FID -d DEVICE_ADDRESS" << std::endl;
+        std::cout << "Read or write LpGBT register by providing a register name" << std::endl;
+        std::cout << "Read Usage: readLpGBTRegister -r HW_CONFIG -n \"REGNAME\" -R RX_FID -T TX_FID -d DEVICE_ADDRESS" << std::endl;
+        std::cout << "Write Usage: readLpGBTRegister -r HW_CONFIG -n \"REGNAME\" -v REGVAL -R RX_FID -T TX_FID -d DEVICE_ADDRESS" << std::endl;
         std::cout << " -h : Show this help." << std::endl;
     }
 }
-
+  
 int main(int argc, char **argv) {
     int c = 0;
     std::string hw_controller_filename = "";
@@ -30,11 +30,10 @@ int main(int argc, char **argv) {
     uint64_t rx_fid = 0;
     uint64_t tx_fid = 0;
     std::string regname = "";
-    uint16_t regaddr = 0;
     uint8_t regval = 0;
     bool write = false;
 
-    while ((c = getopt(argc, argv, "hr:n:a:v:R:T:d:")) != -1) {
+    while ((c = getopt(argc, argv, "hr:n:v:R:T:d:")) != -1) {
         switch (c) {
         case 'h':
             printHelp();
@@ -44,9 +43,6 @@ int main(int argc, char **argv) {
             break;
         case 'n':
             regname = optarg;
-            break;
-        case 'a':
-            regaddr = std::stoi(optarg);
             break;
         case 'v':
             regval = std::stoi(optarg);
@@ -66,6 +62,17 @@ int main(int argc, char **argv) {
             return -1;
 	    }
     }
+
+    // Configure logger
+    // default
+    ScanOpts options;
+    json jlog;
+    jlog["pattern"] = options.defaultLogPattern;
+    jlog["log_config"][0]["name"] = "all";
+    jlog["log_config"][0]["level"] = "error";
+    logging::setupLoggers(jlog);
+
+
     // Configure controller
     json jctrl;
     try {
@@ -89,26 +96,13 @@ int main(int argc, char **argv) {
     }
     auto* flxCtrlPtr = dynamic_cast<FelixController*>(hwCtrl.get());
 
-
     if (!write){
-        if (regname == ""){
-            hwCtrl->readLpGBTRegister(regaddr, regval, devaddr, rx_fid, tx_fid);
-            std::cout << "Register with address " << regaddr << " read to have value 0x" << std::hex << static_cast<int>(regval) << std::endl;
-        }
-        else {
-            hwCtrl->readLpGBTRegister((regname).c_str(), regval, devaddr, rx_fid, tx_fid);
-            std::cout << "Register with name " << regname << " read to have value 0x" << std::hex << static_cast<int>(regval) << std::endl;
-        }
+        hwCtrl->readLpGBTRegister((regname).c_str(), regval, devaddr, rx_fid, tx_fid);
+        std::cout << "Register with name " << regname << " read to have value 0x" << std::hex << static_cast<int>(regval) << std::endl;
     }
     else {
-        if (regname == ""){
-            std::cout << "Writing value " << std::hex << static_cast<int>(regval) << " to register with address " << regaddr << std::endl;
-            hwCtrl->writeLpGBTRegister(regaddr, regval, devaddr, rx_fid, tx_fid);
-        }
-        else {
-            std::cout << "Writing value " << std::hex << static_cast<int>(regval) << " to register with name " << regname << std::endl;
-            hwCtrl->writeLpGBTRegister((regname).c_str(), regval, devaddr, rx_fid, tx_fid);
-        }
+        std::cout << "Writing value " << std::hex << static_cast<int>(regval) << " to register with name " << regname << std::endl;
+        hwCtrl->writeLpGBTRegister((regname).c_str(), regval, devaddr, rx_fid, tx_fid);
     }
     return 0;
 }

@@ -173,16 +173,6 @@ public:
   /*
   Optoboard device communication
   */
-
-    /// @brief Read a value from an LpGBT device register (providing address)
-    /// @param reg_addr Register address (int)
-    /// @param reg_data Register data we are reading back (set by reference) (uint8_t&)
-    /// @param dev_addr Address of lpgbt (uint16_t)
-    /// @param rx_ic_fid The fid of the ic channel for rx (uint64_t)
-    /// @param tx_ic_fid The fid of the ic channel for tx (uint64_t)
-    /// @return True if successful, false if not (bool)
-    bool readLpGBTRegister(int reg_addr, uint8_t& reg_data, uint16_t dev_addr, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
-
     /// @brief Read a value from an LpGBT device register (providing name)
     /// @param reg_name Register name (std::string)
     /// @param reg_data Register data we are reading back (set by reference) (uint8_t&)
@@ -192,23 +182,14 @@ public:
     /// @return True if successful, false if not (bool)
     bool readLpGBTRegister(const char* reg_name, uint8_t& reg_data, uint16_t dev_addr, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
 
-    /// @brief Write a value to an LpGBT device register (providing address)
-    /// @param reg_addr Register address (int)
-    /// @param reg_data Register data we are writing (uint8_t&)
-    /// @param dev_addr Address of lpgbt (uint16_t)
-    /// @param rx_ic_fid The fid of the ic channel for rx (uint64_t)
-    /// @param tx_ic_fid The fid of the ic channel for tx (uint64_t)
-    /// @return True if successful, false if not (bool)
-    bool writeLpGBTRegister(int reg_addr, uint8_t& reg_data, uint16_t dev_addr, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
-
     /// @brief Write a value to an LpGBT device register (providing name)
     /// @param reg_name Register name (std::string)
-    /// @param reg_data Register data we are writing (uint8_t&)
+    /// @param reg_data Register data we are writing (uint8_t)
     /// @param dev_addr Address of lpgbt (uint16_t)
     /// @param rx_ic_fid The fid of the ic channel for rx (uint64_t)
     /// @param tx_ic_fid The fid of the ic channel for tx (uint64_t)
     /// @return True if successful, false if not (bool)
-    bool writeLpGBTRegister(const char* reg_name, uint8_t& reg_data, uint16_t dev_addr, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
+    bool writeLpGBTRegister(const char* reg_name, uint8_t reg_data, uint16_t dev_addr, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
 
     /// @brief Returns the primary address of a particular opto device
     /// @param rx_ic_fid The fid of the ic channel for rx (uint64_t)
