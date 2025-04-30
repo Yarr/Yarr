@@ -6,6 +6,7 @@
 #include "AllStdActions.h"
 #include "Bookkeeper.h"
 #include "FeedbackBase.h"
+#include "FrontEndConnectivity.h"
 #include "ScanFactory.h"
 
 #include "logging.h"
