@@ -511,17 +511,13 @@ uint32_t Itkpixv2::getEfuses() {
     itkpix_efuse_codec::EfuseData efuse_data_old = itkpix_efuse_codec::EfuseData{itkpix_efuse_codec::decodeOldFormat(efuse_data_raw)};
 
     uint32_t chip_sn = efuse_data.chip_sn();
-    uint32_t chip_sn_old = efuse_data_old.chip_sn();
+    logger->info("Chip serial number obtained from e-fuse data: 0x{:x}", chip_sn );
 
-    // https://gitlab.cern.ch/YARR/YARR/-/issues/166
-    if (chip_sn > 0x16000) {
-        logger->info("Chip serial number obtained from e-fuse data: 0x{:x}", chip_sn );
-        return chip_sn;
-    } else {
-        logger->info("Chip serial number decoded with old format from e-fuse data: 0x{:x}", chip_sn_old);
-        return chip_sn_old;
-    }
-    return yarrFailure;
+    // Test for error correction
+    if (chip_sn != ((efuse_data_raw >> 8) & 0xFFFFF))
+        logger->warn("Chip serial number decoded from e-fuse did not match parity bits, tried to error correct.");
+
+    return chip_sn;
 }
 
 std::pair<uint32_t, uint32_t> Itkpixv2::decodeSingleRegRead(uint32_t higher, uint32_t lower) {

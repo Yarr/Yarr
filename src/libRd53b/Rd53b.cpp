@@ -498,7 +498,7 @@ yarrStatus Rd53b::hasValidName() {
         logger->error("Chip serial number decoded from e-fuse data (0x{:x}) does not appear in Chip \"name\" field (\"{}\") in loaded configuration  for chip with ChipId = {}", efuse, name, m_chipId);
        	return yarrFailure;
     }
-    logger->info("Chip serial number obtained from e-fuse data: 0x{:x}", efuse );
+    logger->info("Matched chip serial number: 0x{:x}", efuse );
     return yarrSuccess;
 }
 
@@ -522,14 +522,25 @@ uint32_t Rd53b::getEfuses() {
     uint32_t chip_sn = efuse_data.chip_sn();
     uint32_t chip_sn_old = efuse_data_old.chip_sn();
 
-    // https://gitlab.cern.ch/YARR/YARR/-/issues/166
-    if (chip_sn > 0x16000) {
+    // Test for error correction
+    // ITkPixV1 wafer probing used two different parity encoding and switched in the beginning of pre-production
+    if (chip_sn != ((efuse_data_raw >> 8) & 0xFFFFF)) { 
+        logger->warn("Chip serial number decoded from e-fuse did not match parity bits, tried to error correct.");
+        if (chip_sn_old != ((efuse_data_raw >> 8) & 0xFFFFF)) {
+            logger->warn("Also decoding with old format did not match parity bits, returning error corrected new version.");
+            logger->info("Chip serial number obtained from e-fuse data: 0x{:x}", chip_sn );
+            return chip_sn;
+        } else {
+            // This is likely the case for wafers probed before Oct 2021 (wafer ID is not chronological)
+            logger->info("Decoding efuse with old decoding did not have parity errors, using old decoding!");
+            logger->info("Chip serial number decoded with old format from e-fuse data: 0x{:x}", chip_sn_old);
+            return chip_sn_old;
+        }
+    } else {
         logger->info("Chip serial number obtained from e-fuse data: 0x{:x}", chip_sn );
         return chip_sn;
-    } else {
-        logger->info("Chip serial number decoded with old format from e-fuse data: 0x{:x}", chip_sn_old);
-        return chip_sn_old;
     }
+    
     return yarrFailure;
 }
 
