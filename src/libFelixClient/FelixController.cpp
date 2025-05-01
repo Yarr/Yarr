@@ -75,16 +75,36 @@ void FelixController::loadConfig(const json &j) {
   if (j.contains("OptoDevices")){
     size_t n_devs = j["OptoDevices"].size();
     for(size_t i; i < n_devs; i++){
-      uint8_t version = j["OptoDevices"][i]["version"];
-      uint16_t i2c_addr = j["OptoDevices"][i]["i2cAddr"];
-      uint16_t dev_addr = j["OptoDevices"][i]["devAddr"];
-      uint16_t dev_primary_addr = j["OptoDevices"][i]["devPrimaryAddr"];
-      std::string type = j["OptoDevices"][i]["type"];
-      std::string tx_fid_str = j["OptoDevices"][i]["txFid"];
-      std::string rx_fid_str = j["OptoDevices"][i]["rxFid"];
+      const json& dev = j["OptoDevices"][i];
 
-      uint64_t tx_fid = std::stoull(tx_fid_str);
-      uint64_t rx_fid = std::stoull(rx_fid_str);
+      // assume defaults, set to any provided values
+      uint8_t version = OptoUtils::DEFAULT_LPGBT_VERSION;
+      uint16_t i2c_addr = OptoUtils::DEFAULT_I2C_ADDR;
+      uint16_t dev_addr = OptoUtils::DEFAULT_LPGBT_PRIMARY_ADDR;
+      uint16_t dev_primary_addr = OptoUtils::DEFAULT_LPGBT_PRIMARY_ADDR;
+      std::string type = "lpgbt";
+      uint64_t tx_fid = FelixTxCore::ic_fid_from_channel(0);
+      uint64_t rx_fid = FelixRxCore::ic_fid_from_channel(0);
+
+      if (dev.contains("version"))
+        version = j["OptoDevices"][i]["version"];
+      if (dev.contains("i2cAddr"))
+        i2c_addr = j["OptoDevices"][i]["i2cAddr"];
+      if (dev.contains("devAddr"))
+        dev_addr = j["OptoDevices"][i]["devAddr"];
+      if (dev.contains("devPrimaryAddr"))
+        dev_primary_addr = j["OptoDevices"][i]["devPrimaryAddr"];
+      if (dev.contains("type"))
+        type = j["OptoDevices"][i]["type"];
+      if (dev.contains("txFid")){
+        std::string tx_fid_str = j["OptoDevices"][i]["txFid"];
+        tx_fid = std::stoull(tx_fid_str);
+      }
+      if (dev.contains("rxFid")){
+        std::string rx_fid_str = j["OptoDevices"][i]["rxFid"];
+        rx_fid = std::stoull(rx_fid_str);
+      }
+
       m_opto_dev_list.emplace_back(std::make_unique<OptoDevice>(version, i2c_addr, dev_addr, dev_primary_addr, type, tx_fid, rx_fid));
     }
   }
