@@ -24,6 +24,15 @@ namespace {
 }
   
 int main(int argc, char **argv) {
+    // Configure logger
+    // default
+    ScanOpts options;
+    json jlog;
+    jlog["pattern"] = options.defaultLogPattern;
+    jlog["log_config"][0]["name"] = "all";
+    jlog["log_config"][0]["level"] = "info";
+    logging::setupLoggers(jlog);
+
     int c = 0;
     std::string hw_controller_filename = "";
     uint16_t devaddr = 0;
@@ -58,31 +67,21 @@ int main(int argc, char **argv) {
             devaddr = std::stoi(optarg);
             break;
 		default:
-            std::cerr << " Invalid arguments provided" << std::endl;
+            logger->error(" Invalid arguments provided");
             return -1;
 	    }
     }
-
-    // Configure logger
-    // default
-    ScanOpts options;
-    json jlog;
-    jlog["pattern"] = options.defaultLogPattern;
-    jlog["log_config"][0]["name"] = "all";
-    jlog["log_config"][0]["level"] = "error";
-    logging::setupLoggers(jlog);
-
 
     // Configure controller
     json jctrl;
     try {
         jctrl = ScanHelper::openJsonFile(hw_controller_filename);
         if (jctrl["ctrlCfg"]["type"] != "FelixClient") {
-            std::cerr << "The controller type is not FelixClient." << std::endl;
+            logger->error("The controller type is not FelixClient.");
             return -1;
         }
     } catch (std::runtime_error &e) {
-        std::cerr << "Cannot open controller config: " << e.what()  << std::endl;
+        logger->error("Cannot open controller config: {}", e.what());
         return -1;
     }
 
@@ -91,17 +90,17 @@ int main(int argc, char **argv) {
     try {
         hwCtrl->loadConfig(jctrl["ctrlCfg"]["cfg"]);
     } catch (std::runtime_error &e) {
-        std::cerr << "Failed to load controller config: " << e.what() << std::endl;
+        logger->error("Failed to load controller config: {}",e.what());
         return -1;
     }
     auto* flxCtrlPtr = dynamic_cast<FelixController*>(hwCtrl.get());
 
     if (!write){
         hwCtrl->readLpGBTRegister((regname).c_str(), regval, devaddr, rx_fid, tx_fid);
-        std::cout << "Register with name " << regname << " read to have value 0x" << std::hex << static_cast<int>(regval) << std::endl;
+        logger->info("Register with name {} read to have value 0x{:x}",regname, regval);
     }
     else {
-        std::cout << "Writing value " << std::hex << static_cast<int>(regval) << " to register with name " << regname << std::endl;
+        logger->info("Writing value 0x{:x} to register with name {}", regval, regname);
         hwCtrl->writeLpGBTRegister((regname).c_str(), regval, devaddr, rx_fid, tx_fid);
     }
     return 0;

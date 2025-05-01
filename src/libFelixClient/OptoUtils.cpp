@@ -2,9 +2,13 @@
 #include "Utils.h"
 #include "logging.h"
 
+namespace {
+  auto optolog = logging::make_log("OptoUtils.cpp");
+}
+
 const uint16_t OptoUtils::getLpGBTAddress(uint8_t number, uint16_t primary_address){
   if (number > 3){
-    std::cerr << "Invalid number provided, possible options are 0, 1, 2, 3" << std::endl;
+    optolog->error("Invalid number provided, possible options are 0, 1, 2, 3");
     return 0;
   }
   // lpgbt numbering scheme is each successive device increases from the primary address
@@ -21,7 +25,7 @@ const lpgbt_item_t* OptoUtils::getLpGBTRegisterByName(const char* regname, uint8
     reg_list = LPGBTv1_ITEM;
   }
   else {
-    std::cerr << "Invalid version provided: " << std::hex << static_cast<int>(version) << " version, only accepted values are 0 and 1." << std::endl;
+    optolog->error("Invalid version provided: {:x}, only accepted values are 0 and 1.", version);
   }
 
   const lpgbt_item_t*item = &reg_list[0];
@@ -39,7 +43,7 @@ const lpgbt_item_t* OptoUtils::getLpGBTRegisterByName(const char* regname, uint8
   }
 
   if (no_match_found){
-    std::cerr << "No match was found for register name " << regname << " in the register list" << std::endl;
+    optolog->error("No match was found for register name {} in the register list", regname);
   }
 
   return item;
@@ -55,7 +59,7 @@ const lpgbt_item_t* OptoUtils::getLpGBTRegisterByAddr(uint16_t reg_addr, uint8_t
     reg_list = LPGBTv1_ITEM;
   }
   else {
-    std::cerr << "Invalid version provided: " << std::hex << static_cast<int>(version) << " version, only accepted values are 0 and 1." << std::endl;
+    optolog->error("Invalid version provided: {:x}, only accepted values are 0 and 1.", version);
   }
 
   const lpgbt_item_t*item = &reg_list[0];
@@ -73,7 +77,7 @@ const lpgbt_item_t* OptoUtils::getLpGBTRegisterByAddr(uint16_t reg_addr, uint8_t
   }
 
   if (no_match_found){
-    std::cerr << "No match was found for register with address " << reg_addr << " in the register list" << std::endl;
+    optolog->error("No match was found for register with address {} in the register list", reg_addr);
   }
 
   return item;
@@ -92,7 +96,7 @@ uint8_t OptoUtils::getRegBitmask(const lpgbt_item_t* reg, uint8_t version){
     reg_list = LPGBTv1_ITEM;
   }
   else {
-    std::cerr << "Invalid version provided: " << std::hex << static_cast<int>(version) << " version, only accepted values are 0 and 1." << std::endl;
+    optolog->error("Invalid version provided: {:x}, only accepted values are 0 and 1.", version);
   }
 
   const lpgbt_item_t*item = &reg_list[0];
