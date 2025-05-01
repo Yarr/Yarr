@@ -8,6 +8,7 @@
 #include "Rd53bHistogrammer.h"
 #include "AllAnalyses.h"
 #include "Bookkeeper.h"
+#include "FrontEndCfg.h"
 #include "StdHistogrammer.h" // knowledge of other analyses/etc
 #include "StdTriggerAction.h"
 #include "logging.h"

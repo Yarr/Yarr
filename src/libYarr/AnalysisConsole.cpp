@@ -4,6 +4,7 @@
 #include "AllChips.h"
 #include "AllStdActions.h"
 #include "ClipBoard.h"
+#include "FrontEndCfg.h"
 #include "ScanHelper.h"
 
 #include "logging.h"

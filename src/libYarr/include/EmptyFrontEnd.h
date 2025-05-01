@@ -7,6 +7,7 @@
 // ################################
 
 #include "FrontEnd.h"
+#include "FrontEndCfg.h"
 
 #include "HwController.h"
 

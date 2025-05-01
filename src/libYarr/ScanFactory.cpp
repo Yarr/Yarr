@@ -13,6 +13,7 @@
 
 #include "AllStdActions.h"
 #include "Bookkeeper.h"
+#include "FrontEndCfg.h"
 #include "StdTriggerAction.h"
 #include "TxCore.h"
 #include "ClassRegistry.h"

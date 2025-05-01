@@ -11,7 +11,7 @@ namespace fs = std::filesystem;
 #include "storage.hpp"
 // YARR
 #include "HwController.h"
-#include "FrontEnd.h"
+#include "FrontEndCfg.h"
 #include "AllChips.h"
 #include "ScanHelper.h"
 #include "Utils.h"

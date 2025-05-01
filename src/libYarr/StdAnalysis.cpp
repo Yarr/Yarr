@@ -12,7 +12,7 @@
 #include <cmath>
 
 #include "AllAnalyses.h"
-#include "FrontEnd.h"
+#include "FrontEndCfg.h"
 #include "Histo1d.h"
 #include "Histo2d.h"
 #include "Histo3d.h"

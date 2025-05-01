@@ -17,6 +17,7 @@
 #include "AllStdActions.h"
 #include "Bookkeeper.h"
 #include "FeedbackBase.h"
+#include "FrontEndCfg.h"
 #include "ScanBase.h"
 #include "DBHandler.h"
 
