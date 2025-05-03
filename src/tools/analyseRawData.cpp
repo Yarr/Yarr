@@ -3,6 +3,7 @@
 #include <array>
 #include <memory>
 
+#include "ClusterData.h"
 #include "EventData.h"
 #include "Histo1d.h"
 #include "Histo2d.h"
@@ -254,16 +255,16 @@ int main(int argc, char* argv[])
                     old_bcid2 = multiEvent->bcid;
                 }
 
-                if (multiEvent->nHits > 0) {
-                    multiEvent->doClustering();
-                    clustersPerEvent.fill(multiEvent->clusters.size());
+                auto clusters = doClustering(*multiEvent);
+                if (clusters.size() > 0) {
+                    clustersPerEvent.fill(clusters.size());
                     nonZero_cnt++;
                     for (auto hit : multiEvent->hits) {
                         occupancy.fill(hit.col, hit.row);
                     }
                 }
 
-                for (auto cluster : multiEvent->clusters) {
+                for (auto &cluster : clusters) {
                     hitsPerCluster.fill(cluster.nHits);
                     if (cluster.nHits > 1) {
                         clusterColLength.fill(cluster.getColLength());
@@ -272,14 +273,14 @@ int main(int argc, char* argv[])
                     }
                 }
 
-                if (multiEvent->clusters.size() > 0 && plotIt < 100) {
+                if (clusters.size() > 0 && plotIt < 100) {
                     if (eventScreen == NULL) {
                         eventScreen = new Histo2d((std::to_string(nonZero_cnt) + "-eventScreen"), 400, 0.5, 400.5, 192, 0.5, 192.5);
                         eventScreen->setXaxisTitle("Column");
                         eventScreen->setYaxisTitle("Row");
                         eventScreen->setZaxisTitle("ToT");
                     }
-                    for (auto cluster: multiEvent->clusters) {
+                    for (auto &cluster: clusters) {
                         for (auto hit : cluster.hits) {
                             eventScreen->fill(hit->col, hit->row, hit->tot);
                         }
