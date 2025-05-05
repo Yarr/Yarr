@@ -857,6 +857,7 @@ void FelixController::communicateLpGBT(const lpgbt_item_t* reg, uint8_t& data, c
       std::vector<RawDataPtr> reply = FelixRxCore::readData();
       while (reply.size() == 0){
         reply = FelixRxCore::readData();
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
       }
       FelixRxCore::flushBuffer();
       // reply is 64 bits long, saved in two buffers of size 32 bits
