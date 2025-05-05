@@ -847,43 +847,50 @@ void FelixController::communicateLpGBT(const lpgbt_item_t* reg, uint8_t& data, c
     first_ic_payload_byte = OptoUtils::FIRST_IC_PAYLOAD_BYTE_V1;
   }
 
-  try {
-    FelixRxCore::flushBuffer();
-    FelixTxCore::sendIC(lpgbt->getTxFid(), netio_frame);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  int num_tries = 0;
+  bool success = false;
+  while (!success && num_tries < 4){
+    try {
+      FelixRxCore::flushBuffer();
+      FelixTxCore::sendIC(lpgbt->getTxFid(), netio_frame);
 
-    // raw data pointers have buffers, addresses, sizes, etc. stored
-    // def. in libYARR/include/RawData.h
-    std::vector<RawDataPtr> reply = FelixRxCore::readData();
-
-    // reply is 64 bits long, saved in two buffers of size 32 bits
-    // The first ic payload byte is either 6 or 7, depending on the version,
-    // which is stored in the second buffer of the reply (reply[0]->get(1))
-    if (reply.size() > 0){
-      uint32_t index_32 = first_ic_payload_byte % 4; // find the index for the data
-      uint32_t at_block = reply[0]->get(1); // get the data block
-      //fclog->info("The data block we have is 0x{:x}",at_block);
-      uint32_t mask = (0xFF << (8 * index_32)); // define the mask to get the value
-      uint8_t tmpvalue = (mask & at_block) >> (8*index_32); // apply the mask
-      uint8_t bitmask = (0xFF>>(8-reg_primary->nbits)) << reg_primary->bitindex;
-      uint8_t value = tmpvalue & bitmask; // at this point, tmpvalue will be a uint8_t
-      fclog->debug("The value is 0x{:x}", value);
-      if (!write)
-        data = value;
-      else {
-        if (data != value){
-          fclog->error("Incorrect value written, wrote 0x{:x} instead of the provided value  0x{:x}", value, data);
+      std::vector<RawDataPtr> reply = FelixRxCore::readData();
+      while (reply.size() == 0){
+        reply = FelixRxCore::readData();
+      }
+      FelixRxCore::flushBuffer();
+      // reply is 64 bits long, saved in two buffers of size 32 bits
+      // The first ic payload byte is either 6 or 7, depending on the version,
+      // which is stored in the second buffer of the reply (reply[0]->get(1))
+      if (reply.size() > 0){
+        uint32_t index_32 = first_ic_payload_byte % 4; // find the index for the data
+        uint32_t at_block = reply[0]->get(1); // get the data block
+        //fclog->info("The data block we have is 0x{:x}",at_block);
+        uint32_t mask = (0xFF << (8 * index_32)); // define the mask to get the value
+        uint8_t tmpvalue = (mask & at_block) >> (8*index_32); // apply the mask
+        uint8_t bitmask = (0xFF>>(8-reg_primary->nbits)) << reg_primary->bitindex;
+        uint8_t value = tmpvalue & bitmask; // at this point, tmpvalue will be a uint8_t
+        fclog->debug("The value is 0x{:x}", value);
+        success = true;
+        if (!write)
+          data = value;
+        else {
+          if (data != value){
+            fclog->error("Incorrect value written, wrote 0x{:x} instead of the provided value  0x{:x}", value, data);
+            num_tries++;
+            fclog->error("Trying again to write 0x{:x}, number of attempts taken: {}", data, num_tries);
+          }
         }
       }
+      else {
+        fclog->error("No reply received when accessing register with address {} at fid {}", reg->addr, lpgbt->getTxFid());
+      }
     }
-    else {
-      fclog->error("No reply received when accessing register with address {} at fid {}", reg->addr, lpgbt->getTxFid());
+    catch (std::runtime_error &e){
+      fclog->error(e.what());
     }
   }
-  catch (std::runtime_error &e){
-    fclog->error(e.what());
-  }
- }
+}
 
 void FelixController::readWriteOptoReg(const lpgbt_item_t* reg , uint8_t& reg_data, bool write, OptoDevice* lpgbt){
   // Check if the fids are already enabled, if not, enable them
