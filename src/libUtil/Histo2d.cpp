@@ -267,10 +267,15 @@ void Histo2d::toJson(json &j) const{
     for (unsigned i=0; i<lStat.size(); i++)
         j["loopStatus"][i] = (lStat.get(i));
 
-    for (unsigned int y=0; y<ybins; y++) {
-        for (unsigned int x=0; x<xbins; x++) {
-            j["Data"][x][y] = data[x+(y*xbins)] ;
+    if(xbins) {
+        j["Data"] = std::vector<json>(xbins);
+    }
+    for (unsigned int x=0; x<xbins; x++) {
+        std::vector<float> line(ybins);
+        for (unsigned int y=0; y<ybins; y++) {
+          line[y] = data[x+(y*xbins)];
         }
+        j["Data"][x] = line;
     }
 }
 
