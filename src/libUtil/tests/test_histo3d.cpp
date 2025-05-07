@@ -208,7 +208,7 @@ TEST_CASE("Histogram3dUint16OK", "[Histo3d]") {
   testSaveLoad(histo, info);
 }
 
-TEST_CASE("BenchmarkHisto3d") {
+TEST_CASE("BenchmarkHisto3d", "[!benchmark]") {
   Histo3d histo("BENCH", 10, 0, 10, 10, 0, 10, 10, 0, 10);
 
   for(int i=0; i<10; i++) {

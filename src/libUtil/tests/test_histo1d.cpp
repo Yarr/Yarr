@@ -98,7 +98,7 @@ TEST_CASE("Histogram1dOK", "[Histo1d]") {
   testSaveLoad(histo, info);
 }
 
-TEST_CASE("BenchmarkHisto1D") {
+TEST_CASE("BenchmarkHisto1D", "[!benchmark]") {
   Histo1d histo("BENCH", 100, 0, 100);
 
   for(int i=0; i<100; i++) {

@@ -180,7 +180,7 @@ TEST_CASE("Histogram2dProfile", "[Histo2d]") {
   CHECK (p->getBin(1) == check * 2);
 }
 
-TEST_CASE("BenchmarkHisto2d") {
+TEST_CASE("BenchmarkHisto2d", "[!benchmark]") {
   Histo2d histo("BENCH", 100, 0, 100, 100, 0, 100);
 
   for(int i=0; i<100; i++) {
