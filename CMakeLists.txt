@@ -291,8 +291,89 @@ if(REL_PATH_FROM_SRC_TO_INSTALL MATCHES "^[.][.]")
         DESTINATION configs
         USE_SOURCE_PERMISSIONS
     )
-    message(WARNING "Installating configs")
+    message(WARNING "Installing configs")
 else()
     message(WARNING "Skipping configs/ install because install prefix is inside the source directory.")
 endif()
+
+function(collect_and_group_targets result)
+  set(allTargets "")
+
+  # Get all targets in the current directory
+  get_property(current_targets DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} PROPERTY BUILDSYSTEM_TARGETS)
+  list(APPEND allTargets ${current_targets})
+
+  # Now get all subdirectories
+  get_property(subdirs DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} PROPERTY SUBDIRECTORIES)
+  foreach(subdir ${subdirs})
+    # Enter the subdir and collect its targets recursively
+    set(subTargets "")
+    set(CMAKE_CURRENT_BINARY_DIR ${subdir})
+    collect_and_group_targets(subTargets)
+    list(APPEND allTargets ${subTargets})
+  endforeach()
+
+  # Return result to parent
+  set(${result} "${allTargets}" PARENT_SCOPE)
+endfunction()
+
+
+# summary of targets
+collect_and_group_targets(allTargets)
+
+# Prepare lists
+set(libraries "")
+set(executables "")
+set(interface_libraries "")
+set(other_targets "")
+
+foreach(tgt ${allTargets})
+  get_target_property(type ${tgt} TYPE)
+  if(NOT type)
+    set(type "UNKNOWN")
+  endif()
+
+  if(type STREQUAL "STATIC_LIBRARY" OR type STREQUAL "SHARED_LIBRARY" OR type STREQUAL "MODULE_LIBRARY")
+    list(APPEND libraries ${tgt})
+  elseif(type STREQUAL "EXECUTABLE")
+    list(APPEND executables ${tgt})
+  elseif(type STREQUAL "INTERFACE_LIBRARY")
+    list(APPEND interface_libraries ${tgt})
+  else()
+    list(APPEND other_targets "${tgt} (${type})")
+  endif()
+endforeach()
+
+
+message(STATUS "==== Project Targets Summary ====")
+
+if(libraries)
+  message(STATUS "Libraries:")
+  foreach(lib ${libraries})
+    message(STATUS "  - ${lib}")
+  endforeach()
+endif()
+
+if(interface_libraries)
+  message(STATUS "Interface Libraries:")
+  foreach(lib ${interface_libraries})
+    message(STATUS "  - ${lib}")
+  endforeach()
+endif()
+
+if(executables)
+  message(STATUS "Executables:")
+  foreach(exe ${executables})
+    message(STATUS "  - ${exe}")
+  endforeach()
+endif()
+
+if(other_targets)
+  message(STATUS "Other Targets:")
+  foreach(other ${other_targets})
+    message(STATUS "  - ${other}")
+  endforeach()
+endif()
+
+message(STATUS "==================================")
 
