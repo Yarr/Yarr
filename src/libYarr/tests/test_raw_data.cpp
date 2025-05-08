@@ -34,3 +34,20 @@ TEST_CASE("SimpleRawData", "[raw_data]") {
     // Should be pointing to a copy of the data, not the original vector
     CHECK(raw_copy.getBuf() != copy_data_ptr);
 }
+
+TEST_CASE("RawDataBenchmarks", "[raw_data][!benchmark]") {
+    RawData pre_size(4, 100);
+    std::vector<uint32_t> move_vector(100);
+
+    BENCHMARK ("MoveRawData") {
+      RawData raw_move(4, std::move(move_vector));
+      return raw_move;
+    };
+
+    std::vector<uint32_t> copy_vector(100);
+
+    BENCHMARK ("CopyRawData") {
+      RawData raw_copy(4, copy_vector);
+      return raw_copy;
+    };
+}
