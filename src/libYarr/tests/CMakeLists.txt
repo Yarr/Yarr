@@ -10,6 +10,7 @@ add_executable(testYarr
         test_l1dist.cpp
         test_l13d.cpp
         test_occupancy.cpp
+        test_raw_data.cpp
         test_tot3d.cpp
         test_tot_dist.cpp
         test_analysis_chain.cpp
