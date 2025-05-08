@@ -24,6 +24,9 @@ public:
   void maskRxEnable(uint32_t val, uint32_t mask) override;
 
   void flushBuffer() override;
+
+  // Clears out the m_rawData vector
+  // This vector stores incoming data read in the onData() function
   void clearRawData();
   std::vector<RawDataPtr> readData() override;
 
