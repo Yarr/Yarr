@@ -24,6 +24,7 @@ public:
   void maskRxEnable(uint32_t val, uint32_t mask) override;
 
   void flushBuffer() override;
+  void clearRawData();
   std::vector<RawDataPtr> readData() override;
 
   uint32_t getDataRate() override;

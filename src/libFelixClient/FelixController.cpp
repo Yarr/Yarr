@@ -852,6 +852,7 @@ void FelixController::communicateLpGBT(const lpgbt_item_t* reg, uint8_t& data, c
   while (!success && num_tries < 4){
     try {
       FelixRxCore::flushBuffer();
+      FelixRxCore::clearRawData();
       FelixTxCore::sendIC(lpgbt->getTxFid(), netio_frame);
 
       std::vector<RawDataPtr> reply = FelixRxCore::readData();

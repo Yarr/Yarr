@@ -127,6 +127,14 @@ void FelixRxCore::flushBuffer() {
   m_doFlushBuffer = false;
 }
 
+void FelixRxCore::clearRawData(){
+  // Clear out the raw data stored in m_rawData
+  frlog->debug("Emptying out the raw data buffer");
+  while (!m_rawData.empty()) {
+    m_rawData.popData();
+  }
+}
+
 std::vector<RawDataPtr> FelixRxCore::readData() {
   frlog->trace("FelixRxCore::readData");
   std::vector<RawDataPtr> dataVec;
