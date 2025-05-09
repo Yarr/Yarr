@@ -51,3 +51,15 @@ TEST_CASE("RawDataBenchmarks", "[raw_data][!benchmark]") {
       return raw_copy;
     };
 }
+
+TEST_CASE("RawDataContainerBenchmarks", "[raw_data][!benchmark]") {
+    LoopStatus empty{};
+
+    RawDataContainer container(std::move(empty));
+
+    BENCHMARK ("PushRawDataToContainer") {
+        auto raw_move = std::make_shared<RawData>(4, 0);
+        container.add(raw_move);
+        return container;
+    };
+}
