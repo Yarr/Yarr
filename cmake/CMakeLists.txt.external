@@ -5,6 +5,7 @@ include(FetchContent)
 # TBB
 function(YARR_ADD_TBB)
     if (TARGET tbb_2020)
+        message(WARNING "already defined")
         return()
     endif()
 

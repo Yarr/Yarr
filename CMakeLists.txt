@@ -2,13 +2,56 @@ cmake_minimum_required (VERSION 3.14)
 
 project (YARR LANGUAGES CXX VERSION 1.0)
 
-set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard")
-option(YARR_FORCE_CXX_STANDARD "Use C++ standard" OFF)
-if(YARR_FORCE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD_REQUIRED ON CACHE BOOL "Require the specified C++ standard")
-  set(CMAKE_CXX_EXTENSIONS OFF CACHE BOOL "Disable compiler-specific extensions")
+# compiler settings 
+# set C++ version as 17 - CMake does not support to set a minimum version globally (only per target) but
+# if a higher version is requested by setting CMAKE_CXX_STANDARD it will be used instead
+set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to use")
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# FIXME Is this not already covered by requesting C++17? Otherwise the specific CMake compiler capability check should be used.
+# minimum required gcc version
+if(NOT MIN_GCC_VERSION)
+  set(MIN_GCC_VERSION 9)
 endif()
 
+# check for minimum required gcc and clang versions
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS ${MIN_GCC_VERSION})
+        message(FATAL_ERROR "GCC version must be at least ${MIN_GCC_VERSION}!")
+    endif()
+elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 11.0)
+        message(FATAL_ERROR "Clang version must be at least 11.0!")
+    endif()
+else()
+    message(WARNING "You are using an unsupported compiler! Compilation has only been tested with Clang and GCC.")
+endif()
+
+# needs always the debug version in order to produce the stripped debug info - until something native gets introduced in CMake
+add_compile_options(-g)
+
+if(CMAKE_BUILD_TYPE MATCHES Asan)
+    add_compile_options(-fsanitize=address -fsanitize=undefined)
+    add_link_options(-fsanitize=address -fsanitize=undefined)
+elseif(CMAKE_BUILD_TYPE MATCHES Debug)
+    # Don't optimize
+elseif(CMAKE_BUILD_TYPE MATCHES Coverage)
+#  Be sure not to use optimization for proper codecoverage results
+    add_compile_options(--coverage)
+    add_link_options(--coverage)
+else()
+    add_compile_options(-O2)
+endif()
+
+add_compile_options(
+  $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wfatal-errors>
+  $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wno-deprecated>
+  $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wnon-virtual-dtor>
+)
+
+
+# Get version information from GIT
 execute_process(
         COMMAND git rev-parse HEAD
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
@@ -45,10 +88,6 @@ configure_file(
         ${PROJECT_BINARY_DIR}/src/libYarr/include/yarr_version.h
 )
 
-# minimum required gcc version
-if(NOT MIN_GCC_VERSION)
-  set(MIN_GCC_VERSION 9)
-endif()
 
 # Debug buffer and buffersize for Rd53b/Itkpixv2
 if(DEFINED USE_ITKPIX_DEBUG_BUFFER)
@@ -61,23 +100,11 @@ if(DEFINED ITKPIX_DEBUG_BUFFERSIZE)
     message(STATUS "Set ITKPIX_DEBUG_BUFFERSIZE=${ITKPIX_DEBUG_BUFFERSIZE}")
 endif()
 
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS ${MIN_GCC_VERSION})
-        message(FATAL_ERROR "GCC version must be at least ${MIN_GCC_VERSION}!")
-    endif()
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 11.0)
-        message(FATAL_ERROR "Clang version must be at least 11.0!")
-    endif()
-else()
-    message(WARNING "You are using an unsupported compiler! Compilation has only been tested with Clang and GCC.")
-endif()
-
 
 # Export compile commands JSON
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Build dirs
+# Standard install dir layout
 include(GNUInstallDirs)
 
 # Set RPATH
@@ -119,32 +146,12 @@ foreach(target IN LISTS all_targets)
     endforeach()
 endforeach()
 
-# Optionally show the result for debugging
+# Show the result for debugging
 message(STATUS "Final install RPATH: ${CMAKE_INSTALL_RPATH}")
 
 # Remove duplicates
 list(REMOVE_DUPLICATES CMAKE_INSTALL_RPATH)
 
-
-
-
-add_compile_options(-g)
-
-if(CMAKE_BUILD_TYPE MATCHES Asan)
-    add_compile_options(-fsanitize=address -fsanitize=undefined)
-    add_link_options(-fsanitize=address -fsanitize=undefined)
-elseif(CMAKE_BUILD_TYPE MATCHES Debug)
-    # Don't optimize
-elseif(CMAKE_BUILD_TYPE MATCHES Coverage)
-#  Be sure not to use optimization for proper codecoverage results
-    add_compile_options(--coverage)
-    add_link_options(--coverage)
-else()
-    add_compile_options(-O2)
-endif()
-add_compile_options(-Wfatal-errors)
-add_compile_options(-Wno-deprecated)
-add_compile_options(-Wnon-virtual-dtor)
 
 option(BUILD_TESTS "Build the YARR test suite" OFF)
 
@@ -200,8 +207,6 @@ if(BUILD_TESTS)
     message(STATUS "Building the YARR test suite" )
     enable_testing()
 endif()
-
-
 
 option(YARR_FORCE_OWN_INSTALL_PREFIX "Force Yarr to use its own install prefix even as subdirectory" OFF)
 
@@ -271,55 +276,71 @@ install(FILES
 message(STATUS "YARR will be installed to: ${CMAKE_INSTALL_PREFIX}")
 install(CODE "message(STATUS \"Installing YARR to: ${CMAKE_INSTALL_PREFIX}\")")
 
+function(detect_in_tree_install OUT_VAR)
+    if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13")
+        # Use reliable real path resolution if available
+        file(REAL_PATH "${CMAKE_SOURCE_DIR}" ABS_SOURCE_DIR)
+        file(REAL_PATH "${CMAKE_BINARY_DIR}" ABS_BINARY_DIR)
+        file(REAL_PATH "${CMAKE_INSTALL_PREFIX}" ABS_INSTALL_PREFIX)
+    else() # FIXME Remove workaround after CC7 drop
+        get_filename_component(ABS_SOURCE_DIR "${CMAKE_SOURCE_DIR}" ABSOLUTE)
+        get_filename_component(ABS_BINARY_DIR "${CMAKE_BINARY_DIR}" ABSOLUTE)
+        get_filename_component(ABS_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}" ABSOLUTE)
+    endif()
 
-# FIXME Remove workaround after CC7 drop
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.19")
-    file(REAL_PATH "${CMAKE_BINARY_DIR}" ABS_SOURCE_DIR)
-    file(REAL_PATH "${CMAKE_INSTALL_PREFIX}" ABS_INSTALL_PREFIX)
+    # Check if install prefix is within source or binary dir
+    string(FIND "${ABS_INSTALL_PREFIX}" "${ABS_SOURCE_DIR}" SOURCE_POS)
+    string(FIND "${ABS_INSTALL_PREFIX}" "${ABS_BINARY_DIR}" BINARY_POS)
+
+    if(SOURCE_POS EQUAL 0 OR BINARY_POS EQUAL 0)
+        set(${OUT_VAR} TRUE PARENT_SCOPE)
+    else()
+        set(${OUT_VAR} FALSE PARENT_SCOPE)
+    endif()
+endfunction()
+detect_in_tree_install(IS_IN_TREE_INSTALL)
+
+if(IS_IN_TREE_INSTALL)
+    message(WARNING "Skipping configs/ install because in-tree install detected")
 else()
-    get_filename_component(ABS_SOURCE_DIR "${CMAKE_BINARY_DIR}" ABSOLUTE)
-    get_filename_component(ABS_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}" ABSOLUTE)
-endif()
-# FIXME Remove workaround after CC7 drop
-
-file(RELATIVE_PATH REL_PATH_FROM_SRC_TO_INSTALL "${ABS_SOURCE_DIR}" "${ABS_INSTALL_PREFIX}")
-
-# Check if the install prefix is *within* the source directory (not just string match)
-if(REL_PATH_FROM_SRC_TO_INSTALL MATCHES "^[.][.]")
-    # Not a subdir of source: safe to install
     install(DIRECTORY configs/
         DESTINATION configs
         USE_SOURCE_PERMISSIONS
     )
-    message(WARNING "Installing configs")
-else()
-    message(WARNING "Skipping configs/ install because install prefix is inside the source directory.")
+    message("Installing configs")
 endif()
 
-function(collect_and_group_targets result)
+function(collect_and_group_all_targets result)
   set(allTargets "")
 
-  # Get all targets in the current directory
-  get_property(current_targets DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} PROPERTY BUILDSYSTEM_TARGETS)
-  list(APPEND allTargets ${current_targets})
+  # --- Collect directory-local targets recursively ---
+  function(_collect_targets_recursive dir out_var)
+    get_property(local_targets DIRECTORY "${dir}" PROPERTY BUILDSYSTEM_TARGETS)
+    list(APPEND all_local_targets ${local_targets})
 
-  # Now get all subdirectories
-  get_property(subdirs DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} PROPERTY SUBDIRECTORIES)
-  foreach(subdir ${subdirs})
-    # Enter the subdir and collect its targets recursively
-    set(subTargets "")
-    set(CMAKE_CURRENT_BINARY_DIR ${subdir})
-    collect_and_group_targets(subTargets)
-    list(APPEND allTargets ${subTargets})
-  endforeach()
+    get_property(subdirs DIRECTORY "${dir}" PROPERTY SUBDIRECTORIES)
+    foreach(subdir IN LISTS subdirs)
+      _collect_targets_recursive("${subdir}" sub_targets)
+      list(APPEND all_local_targets ${sub_targets})
+    endforeach()
 
-  # Return result to parent
+    set(${out_var} "${all_local_targets}" PARENT_SCOPE)
+  endfunction()
+
+  # Get recursive local targets
+  _collect_targets_recursive("${CMAKE_CURRENT_BINARY_DIR}" localTargets)
+
+  # Get global targets (like IMPORTED GLOBAL targets)
+  get_property(globalTargets GLOBAL PROPERTY TARGETS)
+
+  # Merge and remove duplicates
+  list(APPEND allTargets ${localTargets} ${globalTargets})
+  list(REMOVE_DUPLICATES allTargets)
+
   set(${result} "${allTargets}" PARENT_SCOPE)
 endfunction()
-
-
 # summary of targets
-collect_and_group_targets(allTargets)
+collect_and_group_all_targets(allTargets)
 
 # Prepare lists
 set(libraries "")
