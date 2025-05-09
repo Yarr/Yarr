@@ -18,7 +18,9 @@ Supported minimum CMake version: 3.14.
 Here a short summary of the installation with a focus on installation as a dependency. Yarr can be installed into a separate directory from the build directory by setting the standard CMAKE_INSTALL_PREFIX during configuration:
 
 cmake -S /path/to/yarr -B /path/to/build -DCMAKE_INSTALL_PREFIX=/desired/install/path
+
 cmake --build /path/to/build
+
 cmake --install /path/to/build
 
 The install will place:
@@ -55,8 +57,10 @@ cmake -DYarr_DIR=/path/to/install/cmake ...
 
 If one wants to embed Yarr directly as a subproject (for development or tight coupling), it can be added via:
 
+```
 add_subdirectory(/path/to/yarr)
 target_link_libraries(MyTarget PRIVATE Yarr::Yarr Yarr::Spec Yarr::Util)
+```
 
 No installation is needed in this case. All targets get automatically exposed to the master project and be default all of the master project will be applied.
 
@@ -64,6 +68,7 @@ No installation is needed in this case. All targets get automatically exposed to
 
 One can also use FetchContent to fetch Yarr at configure time:
 
+```
 include(FetchContent)
 
 FetchContent_Declare(
@@ -75,6 +80,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(Yarr)
 
 target_link_libraries(MyTarget PRIVATE Yarr::Yarr Yarr::Spec Yarr::Util)
+```
 
 FetchContent does not perform a full installation step — Yarr becomes part of the master project’s build tree and all targets get exposed.
 
@@ -82,6 +88,7 @@ FetchContent does not perform a full installation step — Yarr becomes part of 
 
 One can also use the older ExternalProject_Add which can be useful for a super build approach. I.e. 
 
+```
 ExternalProject_Add(Yarr
   SOURCE_DIR /path/to/local/yarr # or GIT_REPOSITORY https://gitlab.cern.ch/YARR/YARR.git
   CMAKE_ARGS
@@ -89,6 +96,7 @@ ExternalProject_Add(Yarr
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
   INSTALL_COMMAND ${CMAKE_COMMAND} --install . --prefix ${YARR_INSTALL_DIR}
 )
+```
 
 In this case the installation is isolated and one has to use find_package or inject directly the directories. For an example of the super build architecture have a look at the external_project_superbuild test.
 
@@ -128,7 +136,7 @@ The following CMake targets are exported by Yarr (executables not listed; fully 
 These are organized into CMake components, so one can selectively request them using find_package(Yarr COMPONENTS ...).
 
 This is the dependency graph:
-![yarr libraries dependency graph](/images/yarr_lib_dependency.png)
+![yarr libraries dependency graph](images/yarr_lib_dependency.png)
 
 Dependency graph created by:
 - cmake --graphviz=yarr_lib_dependency.dot ..

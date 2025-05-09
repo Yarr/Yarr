@@ -277,7 +277,7 @@ message(STATUS "YARR will be installed to: ${CMAKE_INSTALL_PREFIX}")
 install(CODE "message(STATUS \"Installing YARR to: ${CMAKE_INSTALL_PREFIX}\")")
 
 function(detect_in_tree_install OUT_VAR)
-    if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13")
+    if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.19")
         # Use reliable real path resolution if available
         file(REAL_PATH "${CMAKE_SOURCE_DIR}" ABS_SOURCE_DIR)
         file(REAL_PATH "${CMAKE_BINARY_DIR}" ABS_BINARY_DIR)
@@ -315,8 +315,10 @@ function(collect_and_group_all_targets result)
 
   # --- Collect directory-local targets recursively ---
   function(_collect_targets_recursive dir out_var)
-    get_property(local_targets DIRECTORY "${dir}" PROPERTY BUILDSYSTEM_TARGETS)
-    list(APPEND all_local_targets ${local_targets})
+    if(IS_DIRECTORY "${dir}")
+      get_property(local_targets DIRECTORY "${dir}" PROPERTY BUILDSYSTEM_TARGETS)
+      list(APPEND all_local_targets ${local_targets})
+    endif()
 
     get_property(subdirs DIRECTORY "${dir}" PROPERTY SUBDIRECTORIES)
     foreach(subdir IN LISTS subdirs)
@@ -328,7 +330,9 @@ function(collect_and_group_all_targets result)
   endfunction()
 
   # Get recursive local targets
-  _collect_targets_recursive("${CMAKE_CURRENT_BINARY_DIR}" localTargets)
+  if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.19")
+     _collect_targets_recursive("${CMAKE_CURRENT_BINARY_DIR}" localTargets)
+  endif()
 
   # Get global targets (like IMPORTED GLOBAL targets)
   get_property(globalTargets GLOBAL PROPERTY TARGETS)
