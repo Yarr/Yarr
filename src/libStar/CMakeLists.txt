@@ -55,7 +55,7 @@ install(TARGETS Star ${apps}
 
 install(EXPORT Yarr_StarTargets
   NAMESPACE Yarr::
-  DESTINATION cmake
+  DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}
 )
 
 install(DIRECTORY include/

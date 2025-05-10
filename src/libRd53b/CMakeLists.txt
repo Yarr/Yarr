@@ -60,7 +60,7 @@ install(TARGETS Rd53b ${apps}
 
 install(EXPORT Yarr_Rd53bTargets
   NAMESPACE Yarr::
-  DESTINATION cmake
+  DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}
 )
 
 install(DIRECTORY include/

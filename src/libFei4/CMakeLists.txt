@@ -51,7 +51,7 @@ install(TARGETS Fei4 ${apps}
 
 install(EXPORT Yarr_Fei4Targets
   NAMESPACE Yarr::
-  DESTINATION cmake
+  DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}
 )
 install(DIRECTORY include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}

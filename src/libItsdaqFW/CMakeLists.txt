@@ -23,7 +23,7 @@ install(TARGETS ItsdaqFW
 
 install(EXPORT Yarr_ItsdaqFWTargets
   NAMESPACE Yarr::
-  DESTINATION cmake
+  DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}
 )
 
 install(DIRECTORY include/

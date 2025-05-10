@@ -35,7 +35,7 @@ install(TARGETS FelixClient ${apps}
 
 install(EXPORT Yarr_FelixClientTargets
   NAMESPACE Yarr::
-  DESTINATION cmake
+  DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}
 )
 
 install(DIRECTORY include/

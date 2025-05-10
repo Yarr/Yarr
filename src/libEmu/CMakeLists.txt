@@ -26,7 +26,7 @@ install(TARGETS Emu
   
 install(EXPORT Yarr_EmuTargets
   NAMESPACE Yarr::
-  DESTINATION cmake
+  DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}
 )
 
 install(DIRECTORY include/

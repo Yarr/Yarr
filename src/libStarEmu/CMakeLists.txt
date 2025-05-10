@@ -25,7 +25,7 @@ install(TARGETS StarEmu
 
 install(EXPORT Yarr_StarEmuTargets
   NAMESPACE Yarr::
-  DESTINATION cmake
+  DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}
 )
 
 install(DIRECTORY include/

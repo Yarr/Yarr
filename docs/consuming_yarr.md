@@ -31,7 +31,7 @@ The install will place:
 
 - CMake package config files into ${CMAKE_INSTALL_PREFIX}/cmake
 
-Default if no install path is set is an in-tree install. Yarr will try to avoid overwriting files which are under git control ie not all parts will be installed. If Yarr is added with add_subdirectory (or FetchContent) to a parent project then by default the parent project install path will be used for installation. This behaviour can be overriden by setting YARR_FORCE_OWN_INSTALL_PREFIX to true (install in own source directory even if a sub build was detected).
+Default if no install path is set is an in-source install. Yarr will try to avoid overwriting files which are under git control ie not all parts will be installed. If Yarr is added with add_subdirectory (or FetchContent) to a parent project then by default the parent project install path will be used for installation. This behaviour can be overriden by setting YARR_FORCE_OWN_INSTALL_PREFIX to true (install in own source directory even if a sub build was detected).
     
 By default C++17 will be used but another version can be set and forced by (e.g.):
 
@@ -62,7 +62,7 @@ add_subdirectory(/path/to/yarr)
 target_link_libraries(MyTarget PRIVATE Yarr::Yarr Yarr::Spec Yarr::Util)
 ```
 
-No installation is needed in this case. All targets get automatically exposed to the master project and be default all of the master project will be applied.
+No installation is needed in this case. All targets get automatically exposed to the parent project and be default all of the parent project will be applied.
 
 ## FetchContent
 
@@ -82,7 +82,7 @@ FetchContent_MakeAvailable(Yarr)
 target_link_libraries(MyTarget PRIVATE Yarr::Yarr Yarr::Spec Yarr::Util)
 ```
 
-FetchContent does not perform a full installation step — Yarr becomes part of the master project’s build tree and all targets get exposed.
+FetchContent does not perform a full installation step — Yarr becomes part of the parent project’s build tree and all targets get exposed.
 
 ## ExternalProject_Add
 

@@ -21,7 +21,7 @@ install(TARGETS Rd53aEmu
 
 install(EXPORT Yarr_Rd53aEmuTargets
   NAMESPACE Yarr::
-  DESTINATION cmake
+  DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}
 )
 
 install(DIRECTORY include/

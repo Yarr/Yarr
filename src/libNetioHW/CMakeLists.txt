@@ -32,7 +32,7 @@ install(TARGETS NetioHW ${apps}
 
 install(EXPORT Yarr_NetioHWTargets
   NAMESPACE Yarr::
-  DESTINATION cmake
+  DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}
 )
 
 install(DIRECTORY include/
