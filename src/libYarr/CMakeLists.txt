@@ -87,7 +87,7 @@ target_include_directories(Scan PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-target_link_libraries(Scan Util Util_interface)
+target_link_libraries(Scan Util)
 
 post_build_debug_library(Scan)
 
