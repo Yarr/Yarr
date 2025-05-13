@@ -56,17 +56,6 @@ job_build_all:
       - python
   script:
     - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-    - |
-      if [ "$ARCH" = "cc7" ]; then
-        echo "Installing with yum..."
-        yum install -y patch
-      elif [ "$ARCH" = "alma9" ]; then
-        echo "Installing with dnf..."
-        dnf install -y patch
-      else
-        echo "Unknown architecture: $ARCH"
-        exit 1
-      fi
     - mkdir  build
     - cd build
     - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DENABLE_PYTHON=On
