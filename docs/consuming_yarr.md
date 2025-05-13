@@ -17,11 +17,13 @@ Supported minimum CMake version: 3.14.
 
 Here a short summary of the installation with a focus on installation as a dependency. Yarr can be installed into a separate directory from the build directory by setting the standard CMAKE_INSTALL_PREFIX during configuration:
 
+```
 cmake -S /path/to/yarr -B /path/to/build -DCMAKE_INSTALL_PREFIX=/desired/install/path
 
 cmake --build /path/to/build
 
 cmake --install /path/to/build
+```
 
 The install will place:
 
@@ -35,7 +37,9 @@ Default if no install path is set is an in-source install. Yarr will try to avoi
     
 By default C++17 will be used but another version can be set and forced by (e.g.):
 
-- -DCMAKE_CXX_STANDARD=17
+```
+-DCMAKE_CXX_STANDARD=17
+```
 
 # How to consume Yarr as a dependency
 
@@ -45,13 +49,17 @@ Yarr supports several consumption methods which should cover most of the standar
 
 After (separate) installation one can consume Yarr using:
 
+```
 find_package(Yarr REQUIRED COMPONENTS Spec Util)
 
 target_link_libraries(MyTarget PRIVATE Yarr::Yarr Yarr::Spec Yarr::Util)
+```
 
 One must set CMAKE_PREFIX_PATH or Yarr_DIR if CMake cannot automatically find it:
 
+```
 cmake -DYarr_DIR=/path/to/install/cmake ...
+```
 
 ## add_subdirectory()
 
