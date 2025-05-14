@@ -179,3 +179,28 @@ TEST_CASE("Histogram2dProfile", "[Histo2d]") {
   CHECK (p->getBin(0) == check);
   CHECK (p->getBin(1) == check * 2);
 }
+
+TEST_CASE("BenchmarkHisto2d", "[!benchmark]") {
+  Histo2d histo("BENCH", 100, 0, 100, 100, 0, 100);
+
+  for(int i=0; i<100; i++) {
+    for(int j=0; j<100; j++) {
+      histo.fill(i, j, random());
+    }
+  }
+  
+  BENCHMARK ("ToJson") {
+    json j;
+    histo.toJson(j);
+    return j;
+  };
+
+  json jdata;
+  histo.toJson(jdata);
+  
+  BENCHMARK ("FromJson") {
+    Histo2d out("OUT", 100, 0, 100, 100, 0, 100);
+    out.fromJson(jdata);
+    return out;
+  };
+}

@@ -175,8 +175,7 @@ void Histo1d::toJson(json &j) const {
     for (unsigned i=0; i<lStat.size(); i++)
         j["loopStatus"][i] = (lStat.get(i));
 
-    for (unsigned int i=0; i<bins; i++)
-        j["Data"][i] = data[i];
+    j["Data"] = data;
 }
 
 void Histo1d::toFile(const std::string &prefix, const std::string &dir, bool jsonType) const{

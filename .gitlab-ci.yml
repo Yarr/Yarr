@@ -279,6 +279,19 @@ job_test_strips:
     # Run a scan involving trim feedback
     - bin/scanConsole -r configs/controller/emuCfg_star.json -c configs/connectivity/example_star_setup.json -s configs/scans/star/std_tune_trim_at_pedestal.json
 
+job_test_benchmark:
+  extends: .test
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['alma9']
+  script:
+    - bin/testUtil '[!benchmark]' > testUtils.benchmark
+  artifacts:
+    paths:
+      - '*.benchmark'
+
 job_test_python:
   extends: .test
   needs:

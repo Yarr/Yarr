@@ -301,11 +301,20 @@ void Histo3dT<DataT>::toJson(json &j) const {
     for (unsigned i=0; i<lStat.size(); i++)
         j["loopStatus"][i] = (lStat.get(i));
 
-    for (unsigned int z=0; z<zbins; z++) {
-	for (unsigned int y=0; y<ybins; y++) {
-        	for (unsigned int x=0; x<xbins; x++) {
-            		j["Data"][x][y][z] = data[ (y+(x*ybins))*zbins + z ];
-        	}
+    if(xbins) {
+        j["Data"] = std::vector<json>(xbins);
+    }
+    for (unsigned int x=0; x<xbins; x++) {
+        if(ybins) {
+            j["Data"][x] = std::vector<json>(ybins);
+        }
+        for (unsigned int y=0; y<ybins; y++) {
+            if(zbins) {
+                j["Data"][x][y] = std::vector<json>(zbins);
+            }
+            for (unsigned int z=0; z<zbins; z++) {
+                j["Data"][x][y][z] = data[ (y+(x*ybins))*zbins + z ];
+            }
         }
     }
 }
