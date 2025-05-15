@@ -222,10 +222,6 @@ protected:
           dev_type = arg_dev_type;
           tx_fid = arg_tx_fid;
           rx_fid = arg_rx_fid;
-
-          if (arg_dev_type != "lpgbt" && arg_dev_type != "gbcr"){
-            std::cerr << "Invalid device type, accepted options are lpgbt or gbcr" << std::endl;
-          }
         };
   
         virtual ~OptoDevice() = default;
