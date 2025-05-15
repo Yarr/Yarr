@@ -574,14 +574,14 @@ void AnalysisConsoleImpl::reportTimings() const {
 void printHelp() {
     std::cout << "Analysis console help:\n";
     std::cout << " -h: Shows this help.\n";
-    std::cout << " -s <scan_type> : Scan config\n";
-    std::cout << " -c fe_config.json : Provide initial front end configuration\n";
-    std::cout << " -y fe_type : FrontEnd config type\n";
-    std::cout << " -t <target_charge> [<tot_target>] : Set target values for threshold/charge (and tot).\n";
     std::cout << " -p: Enable plotting of results.\n";
-    std::cout << " -o <dir> : Output directory. (Default ./data/reanalysis)\n";
-    std::cout << " -m <int> : 0 = pixel masking disabled, 1 = start with fresh pixel mask, default = pixel masking enabled\n";
+    std::cout << " -c fe_config.json : Provide initial front end configuration\n";
     std::cout << " -l <log_cfg.json> : Provide logger configuration.\n";
+    std::cout << " -m <int> : 0 = pixel masking disabled, 1 = start with fresh pixel mask, default = pixel masking enabled\n";
+    std::cout << " -o <dir> : Output directory. (Default ./data/reanalysis)\n";
+    std::cout << " -s <scan_type> : Scan config\n";
+    std::cout << " -t <target_charge> [<tot_target>] : Set target values for threshold/charge (and tot).\n";
+    std::cout << " -y fe_type : FrontEnd config type\n";
 }
 
 int AnalysisConsoleImpl::init() {

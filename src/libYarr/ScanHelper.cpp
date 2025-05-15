@@ -985,25 +985,25 @@ namespace ScanHelper {
         std::string dbUserCfgPath = defaultDbDirPath();
 
         std::cout << "Help:" << std::endl;
-        std::cout << " -h: Shows this." << std::endl;
-        std::cout << " --version: Print version." << std::endl;
-        std::cout << " -s <scan_type> : Scan config" << std::endl;
-        std::cout << " -c <connectivity.json> [<cfg2.json> ...]: Provide connectivity configuration, can take multiple arguments." << std::endl;
-        std::cout << " -r <ctrl.json> Provide controller configuration." << std::endl;
-        std::cout << " -t <target_charge> [<tot_target>] : Set target values for threshold/charge (and tot)." << std::endl;
-        std::cout << " -p: Enable plotting of results." << std::endl;
+        std::cout << " -h, --help: Shows this." << std::endl;
+        std::cout << " -v, --version: Print version." << std::endl;
         std::cout << " -g: Enable making data pipeline graph." << std::endl;
-        std::cout << " -o <dir> : Output directory. (Default ./data/)" << std::endl;
-        std::cout << " -m <int> : 0 = pixel masking disabled, 1 = start with fresh pixel mask, default = pixel masking enabled" << std::endl;
         std::cout << " -k: Report known items (Scans, Hardware etc.)\n";
-        std::cout << " -W: Enable using Local DB." << std::endl;
+        std::cout << " -p: Enable plotting of results." << std::endl;
+        std::cout << " -z, --skip-reset: Disable sending global front-end reset command prior to running the scan." << std::endl;
+        std::cout << " -I: Set interactive mode." << std::endl;
+        std::cout << " -Q: Set QC scan mode." << std::endl;
+        std::cout << " -c <connectivity.json> [<cfg2.json> ...]: Provide connectivity configuration, can take multiple arguments." << std::endl;
         std::cout << " -d <database.json> : Provide database configuration. (Default " << dbCfgPath << ")" << std::endl;
         std::cout << " -i <site.json> : Provide site configuration. (Default " << dbSiteCfgPath << ")" << std::endl;
-        std::cout << " -u <user.json> : Provide user configuration. (Default " << dbUserCfgPath << ")" << std::endl;
         std::cout << " -l <log_cfg.json> : Provide logger configuration." << std::endl;
-        std::cout << " -Q: Set QC scan mode." << std::endl;
-        std::cout << " -I: Set interactive mode." << std::endl;
-        std::cout << " --skip-reset: Disable sending global front-end reset command prior to running the scan." << std::endl;
+        std::cout << " -m <int> : 0 = pixel masking disabled, 1 = start with fresh pixel mask, default = pixel masking enabled" << std::endl;
+        std::cout << " -o <dir> : Output directory. (Default ./data/)" << std::endl;
+        std::cout << " -r <ctrl.json> Provide controller configuration." << std::endl;
+        std::cout << " -s <scan_type> : Scan config" << std::endl;
+        std::cout << " -t <target_charge> [<tot_target>] : Set target values for threshold/charge (and tot)." << std::endl;
+        std::cout << " -u <user.json> : Provide user configuration. (Default " << dbUserCfgPath << ")" << std::endl;
+        std::cout << " -W: Enable using Local DB." << std::endl;
     }
 
     int parseOptions(int argc, char *argv[], ScanOpts &scanOpts) {
