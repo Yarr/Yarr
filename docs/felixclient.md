@@ -100,7 +100,7 @@ Optionally, if a user desires to handle communication with an Optoboard device o
   }
 }
 ```
-Where each LpGBT or GBCR object can be added under the field `"OpticalDevices"`.  Each parameter is optional and if no value is provided a defalt is chosen.  Descriptions of each variable and the default values are provided below:
+Where each LpGBT or GBCR object can be added under the field `"OpticalDevices"`.  Each parameter is optional and if no value is provided a default is chosen.  Descriptions of each variable and the default values are provided below:
 
 `version` - The version of the device, either LpGBT or GBCR.  [Default = 1]
 
