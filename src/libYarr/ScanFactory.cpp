@@ -14,6 +14,7 @@
 #include "AllStdActions.h"
 #include "Bookkeeper.h"
 #include "FrontEndCfg.h"
+#include "FrontEndClipBoards.h"
 #include "StdTriggerAction.h"
 #include "TxCore.h"
 #include "ClassRegistry.h"

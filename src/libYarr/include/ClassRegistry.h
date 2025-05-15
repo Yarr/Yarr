@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <map>
+#include <stdexcept>
 #include <string>
 
 template <typename T, typename... A>

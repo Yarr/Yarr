@@ -9,14 +9,11 @@
 // # Comment: Combined multiple FE 
 // ################################
 
+#include <memory>
 #include <string>
 #include <utility>
 
-#include "ClipBoard.h"
-#include "HistogramBase.h"
-#include "EventDataBase.h"
 #include "FrontEndGeometry.h"
-#include "RawData.h"
 
 class HwController;
 class RxCore;
@@ -43,21 +40,13 @@ typedef struct FeedbackProcessingInfo
 } FeedbackProcessingInfo;
 
 class Bookkeeper;
+class FrontEndClipBoards;
 class FrontEndConnectivity;
-
-/// Clipboards to buffer data between processors
-struct FrontEndClipBoards {
-    ClipBoard<RawDataContainer> clipRawData;
-    ClipBoard<EventDataBase> clipData;
-    ClipBoard<HistogramBase> clipHisto;
-    ClipBoard<FeedbackProcessingInfo> clipProcFeedback;
-    std::vector<std::unique_ptr<ClipBoard<HistogramBase>> > clipResult;
-};
 
 class FrontEnd {
     public:
         FrontEnd();
-        virtual ~FrontEnd() = default;
+        virtual ~FrontEnd();
         
         virtual void init(HwController *arg_core, const FrontEndConnectivity& fe_cfg)=0;
 
@@ -65,7 +54,7 @@ class FrontEnd {
 		bool isActive() const;
 		void setActive(bool active);
         virtual void makeGlobal(){};
-        virtual std::unique_ptr<FrontEnd> getGlobal() {return nullptr;}
+        virtual std::unique_ptr<FrontEnd> getGlobal();
         virtual void connectBookkeeper(Bookkeeper* k){};
        
         virtual void configure()=0;

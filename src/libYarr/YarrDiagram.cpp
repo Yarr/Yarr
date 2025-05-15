@@ -4,6 +4,8 @@
 #include <typeinfo>
 #include <iomanip>
 
+#include "FrontEndClipBoards.h"
+
 void YarrDiagram::makeDiagram(
   Bookkeeper& keeper,
   const std::map<unsigned, std::unique_ptr<FeDataProcessor>>& data_procs,

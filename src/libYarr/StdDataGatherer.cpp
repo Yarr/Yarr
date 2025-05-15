@@ -15,6 +15,7 @@
 #include "logging.h"
 
 #include "Bookkeeper.h"
+#include "FrontEndClipBoards.h"
 #include "RxCore.h"
 #include "TxCore.h"
 

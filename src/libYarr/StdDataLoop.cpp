@@ -12,6 +12,7 @@
 #include <set>
 
 #include "Bookkeeper.h"
+#include "FrontEndClipBoards.h"
 #include "RxCore.h"
 #include "TxCore.h"
 

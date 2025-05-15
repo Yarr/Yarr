@@ -18,6 +18,7 @@
 #include "Bookkeeper.h"
 #include "FeedbackBase.h"
 #include "FrontEndCfg.h"
+#include "FrontEndClipBoards.h"
 #include "ScanBase.h"
 #include "DBHandler.h"
 

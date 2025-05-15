@@ -11,6 +11,7 @@
 #include "Bookkeeper.h"
 #include "AllChips.h"
 #include "FrontEndCfg.h"
+#include "FrontEndClipBoards.h"
 
 #include "logging.h"
 
