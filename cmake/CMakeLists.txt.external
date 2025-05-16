@@ -129,40 +129,62 @@ function(YARR_ADD_FELIX_CLIENT)
 
 endfunction()
 
+option(YARR_USE_FETCHCONTENT_SPDLOG "Use FetchContent to get spdlog if not found" ON)
+option(YARR_FORCE_FETCHCONTENT_SPDLOG "Force FetchContent even if spdlog is found" OFF)
+
 function(YARR_ADD_EXTERNAL_DEPS)
-    # spdlog
-    FetchContent_Declare(
-        spdlog
-        GIT_REPOSITORY  https://gitlab.cern.ch/atlas-sw-misc/spdlog.git
-        GIT_TAG v1.9.2.x
-    )
+
+    # Skip everything if the target already exists as it was already added by the parent project (likely).
+    if(TARGET yarrspdlog OR TARGET spdlog::spdlog)
+        message(STATUS "Using existing spdlog target (yarrspdlog or spdlog::spdlog already defined). Added by parent project?")
+        return()
+    endif()
+        
+    if(NOT YARR_FORCE_FETCHCONTENT_SPDLOG)
+        find_package(spdlog QUIET)
+    endif()
     
-   FetchContent_Populate(spdlog)
+    if(YARR_FORCE_FETCHCONTENT_SPDLOG OR (NOT spdlog_FOUND AND YARR_USE_FETCHCONTENT_SPDLOG))
+       FetchContent_Declare(
+           spdlog
+           GIT_REPOSITORY  https://gitlab.cern.ch/atlas-sw-misc/spdlog.git
+           GIT_TAG v1.9.2.x
+       )
+    
+       FetchContent_Populate(spdlog)
 
-   # Create a custom header-only target for spdlog as the export does not work properly in version 1.9.2.x To be re-visited if it gets updated.
-   add_library(yarrspdlog INTERFACE)
+       # Create a custom header-only target for spdlog as the export does not work properly in version 1.9.2.x To be re-visited if it gets updated.
+       add_library(yarrspdlog INTERFACE)
 
-   target_include_directories(yarrspdlog INTERFACE
-      "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
-      "$<BUILD_INTERFACE:${spdlog_SOURCE_DIR}/include>"
-   )
+       target_include_directories(yarrspdlog INTERFACE
+          "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+          "$<BUILD_INTERFACE:${spdlog_SOURCE_DIR}/include>"
+       )
 
-   # Dependencies of yarrspdlog
-   find_package(Threads)
-   target_link_libraries(yarrspdlog INTERFACE Threads::Threads)
+       # Dependencies of yarrspdlog
+       find_package(Threads)
+       target_link_libraries(yarrspdlog INTERFACE Threads::Threads)
 
-   # Level below which logger macros are not enabled
-   target_compile_definitions(yarrspdlog INTERFACE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_${YARR_ACTIVE_LOGGER_LEVEL})
+       # Level below which logger macros are not enabled
+       target_compile_definitions(yarrspdlog INTERFACE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_${YARR_ACTIVE_LOGGER_LEVEL})
 
-   # Export the target manually
-   install(TARGETS yarrspdlog EXPORT YarrTargets)
+       # Export the target manually
+       install(TARGETS yarrspdlog EXPORT YarrTargets)
 
-   # Install the headers and the target
+       # Install the headers and the target
 
-   install(DIRECTORY ${spdlog_SOURCE_DIR}/include/
-      DESTINATION ${CMAKE_INSTALL_PREFIX}/include
-   )
+       install(DIRECTORY ${spdlog_SOURCE_DIR}/include/
+          DESTINATION ${CMAKE_INSTALL_PREFIX}/include
+       )
+       elseif(spdlog_FOUND)
+           message(STATUS "Using system or parent-project provided spdlog")
 
+           add_library(yarrspdlog INTERFACE)
+           target_link_libraries(yarrspdlog INTERFACE spdlog::spdlog)
+           target_compile_definitions(yarrspdlog INTERFACE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_${YARR_ACTIVE_LOGGER_LEVEL})
+       else()
+           message(FATAL_ERROR "spdlog not found and neither forced nor allowed to fetch it (check YARR_USE_FETCHCONTENT_SPDLOG and YARR_FORCE_FETCHCONTENT_SPDLOG)")
+       endif()
 endfunction()
 
 function(YARR_ADD_PYBIND11)
