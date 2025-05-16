@@ -7,17 +7,17 @@ add_library(FelixClient SHARED
         OptoUtils.cpp
         )
 
-add_dependencies(FelixClient felix_client_thread)
+#add_dependencies(FelixClient felixclientthread)
 target_include_directories(FelixClient PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-target_link_libraries(FelixClient PRIVATE felix-client-thread PUBLIC Yarr_interface Util_interface)
+target_link_libraries(FelixClient PUBLIC Yarr_interface Util_interface felix-client-thread)
 
 LIST(APPEND apps readWriteLpGBTRegister testFelixClient felixRegister elinkConfig)
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)
-    target_link_libraries(${target} Yarr)
+    target_link_libraries(${target} Yarr FelixClient)
     post_build_debug_executable(${target})
 endforeach ()
 

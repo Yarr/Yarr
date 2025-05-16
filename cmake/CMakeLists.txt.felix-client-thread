@@ -4,10 +4,22 @@ project(felix-client-thread LANGUAGES CXX VERSION 0.0.1)
 
 include(GNUInstallDirs)
 
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+find_package(Threads REQUIRED)
+
+set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+
+# assuming that it was imported by git sub module and not checking
+add_subdirectory(felix-interface)
+
 add_library(felix-client-thread SHARED src/felix_client_thread.cpp)
-target_link_libraries(felix-client-thread dl pthread)
-target_include_directories(felix-client-thread PRIVATE ${CMAKE_SOURCE_DIR}/felix-interface)
-target_include_directories(felix-client-thread PRIVATE  ${CMAKE_SOURCE_DIR})
+target_link_libraries(felix-client-thread PUBLIC ${CMAKE_DL_LIBS} Threads::Threads )
+target_link_libraries(felix-client-thread PUBLIC felix-interface)
+target_include_directories(felix-client-thread PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
    
 install(TARGETS felix-client-thread
     EXPORT felix-client-threadTargets
@@ -18,13 +30,15 @@ install(TARGETS felix-client-thread
   )
 
 install(DIRECTORY felix/
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/felix
     FILES_MATCHING
         PATTERN "*.hpp"
 )
 
 # Install the export set for use with the install-tree
 install(EXPORT felix-client-threadTargets
-  NAMESPACE felix::
+  NAMESPACE felix-client-thread::
   DESTINATION cmake
 )
+
+
