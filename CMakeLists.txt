@@ -77,8 +77,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 get_git_version_info()
 string(TIMESTAMP BUILD_TIME "%Y-%m-%d %H:%M:%S UTC" UTC)
 configure_file(
-        ${PROJECT_SOURCE_DIR}/src/libYarr/include/yarr_version.h.in
-        ${PROJECT_BINARY_DIR}/src/libYarr/include/yarr_version.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/libYarr/include/yarr_version.h.in
+        ${CMAKE_CURRENT_BINARY_DIR}/src/libYarr/include/yarr_version.h
 )
 # get version information from GIT ---------------------------------------------------------------------------------------
 
