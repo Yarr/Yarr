@@ -1,4 +1,4 @@
-YARR_ADD_EXTERNAL_DEPS()
+YARR_ADD_SPDLOG()
 
 
 add_subdirectory(libUtil)

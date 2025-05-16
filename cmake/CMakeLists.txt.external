@@ -2,6 +2,8 @@
 include(ExternalProject)
 include(FetchContent)
 
+include(cmake/SupportFunctionsLibrary.cmake)
+
 # TBB
 function(YARR_ADD_TBB)
     if (TARGET tbb_2020)
@@ -132,19 +134,45 @@ endfunction()
 option(YARR_USE_FETCHCONTENT_SPDLOG "Use FetchContent to get spdlog if not found" ON)
 option(YARR_FORCE_FETCHCONTENT_SPDLOG "Force FetchContent even if spdlog is found" OFF)
 
-function(YARR_ADD_EXTERNAL_DEPS)
+function(YARR_ADD_SPDLOG)
 
     # Skip everything if the target already exists as it was already added by the parent project (likely).
-    if(TARGET yarrspdlog OR TARGET spdlog::spdlog)
-        message(STATUS "Using existing spdlog target (yarrspdlog or spdlog::spdlog already defined). Added by parent project?")
+    if(TARGET yarrspdlog)
+        message(STATUS "Using existing spdlog target: yarrspdlog is already defined which indicates that at some point the function YARR_ADD_EXTERNAL_DEPS gets called for a second time.")
         return()
     endif()
-        
-    if(NOT YARR_FORCE_FETCHCONTENT_SPDLOG)
-        find_package(spdlog QUIET)
+    
+    if(TARGET spdlog::spdlog)
+        message(STATUS "Using existing spdlog target (yarrspdlog or spdlog::spdlog already defined). Added by parent project?")
+        if(NOT CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+            message(STATUS "Yes, seems like YARR is getting built by another project by using add_subdirectory() or FetchContent(). Strong indication that this is where we got spdlog.")
+        else()
+            message(STATUS "No, it has to be something else.")
+        endif()
+        message(STATUS "In any case defining yarrspdlog using the existing spdlog::spdlog target.")
+        add_library(yarrspdlog INTERFACE)
+        target_link_libraries(yarrspdlog INTERFACE spdlog::spdlog)
+        target_compile_definitions(yarrspdlog INTERFACE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_${YARR_ACTIVE_LOGGER_LEVEL})        
+        return()
     endif()
     
-    if(YARR_FORCE_FETCHCONTENT_SPDLOG OR (NOT spdlog_FOUND AND YARR_USE_FETCHCONTENT_SPDLOG))
+    if(NOT YARR_FORCE_FETCHCONTENT_SPDLOG)
+        message(STATUS "Trying to find system spdlog.")
+        find_package(spdlog QUIET)
+        if(spdlog_FOUND)
+            message(STATUS "Using system provided spdlog")
+
+            add_library(yarrspdlog INTERFACE)
+            target_link_libraries(yarrspdlog INTERFACE spdlog::spdlog)
+            target_compile_definitions(yarrspdlog INTERFACE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_${YARR_ACTIVE_LOGGER_LEVEL})
+            return()
+         else()
+             message(STATUS "No system spdlog found.")
+         endif()
+    endif()
+    
+    if(YARR_USE_FETCHCONTENT_SPDLOG)
+       message(STATUS "Downloading spdlog library.")
        FetchContent_Declare(
            spdlog
            GIT_REPOSITORY  https://gitlab.cern.ch/atlas-sw-misc/spdlog.git
@@ -176,15 +204,9 @@ function(YARR_ADD_EXTERNAL_DEPS)
        install(DIRECTORY ${spdlog_SOURCE_DIR}/include/
           DESTINATION ${CMAKE_INSTALL_PREFIX}/include
        )
-       elseif(spdlog_FOUND)
-           message(STATUS "Using system or parent-project provided spdlog")
-
-           add_library(yarrspdlog INTERFACE)
-           target_link_libraries(yarrspdlog INTERFACE spdlog::spdlog)
-           target_compile_definitions(yarrspdlog INTERFACE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_${YARR_ACTIVE_LOGGER_LEVEL})
-       else()
-           message(FATAL_ERROR "spdlog not found and neither forced nor allowed to fetch it (check YARR_USE_FETCHCONTENT_SPDLOG and YARR_FORCE_FETCHCONTENT_SPDLOG)")
-       endif()
+       return()
+    endif()
+    message(FATAL_ERROR "spdlog not found and either failed no not allowed to fetch it (check YARR_USE_FETCHCONTENT_SPDLOG and YARR_FORCE_FETCHCONTENT_SPDLOG)")
 endfunction()
 
 function(YARR_ADD_PYBIND11)
