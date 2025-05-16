@@ -122,8 +122,7 @@ function(YARR_ADD_FELIX_CLIENT)
         GIT_TAG master
         UPDATE_COMMAND ""
         PATCH_COMMAND 
-             cp ${PROJECT_SOURCE_DIR}/cmake/CMakeLists.txt.felix-client-thread CMakeLists.txt &&
-             cp ${PROJECT_SOURCE_DIR}/cmake/CMakeLists.txt.felix-interface felix-interface/CMakeLists.txt 
+             cp ${PROJECT_SOURCE_DIR}/cmake/CMakeLists.txt.felix-client-thread CMakeLists.txt 
         )
         
    FetchContent_MakeAvailable(felixclientthread)
