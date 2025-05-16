@@ -54,6 +54,9 @@ job_build_all:
       - bin
       - lib
       - python
+  before_script:
+    - git config --global user.email "ci@example.com"
+    - git config --global user.name "CI Runner"
   script:
     - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
     - mkdir  build
