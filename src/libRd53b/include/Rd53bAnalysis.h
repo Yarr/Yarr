@@ -61,7 +61,7 @@ class ToaAnalysis : public AnalysisAlgorithm {
 
     public :
         ToaAnalysis() : AnalysisAlgorithm() {};
-        ~ToaAnalysis() override = default;;
+        ~ToaAnalysis() override = default;
 
         void init(const ScanLoopInfo *s) override;
         void processHistogram(HistogramBase* h) override;

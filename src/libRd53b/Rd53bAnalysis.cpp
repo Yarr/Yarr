@@ -36,7 +36,7 @@ namespace {
 void FrontEndScopeAnalysis::loadConfig(const json &j) {
 
     if(j.contains("doPulseShapeMap")) {
-        m_doPulseShapeMap = static_cast<bool>(j["doPulseShapeMap"]);;
+        m_doPulseShapeMap = static_cast<bool>(j["doPulseShapeMap"]);
     } else {
         m_doPulseShapeMap = false;
     }

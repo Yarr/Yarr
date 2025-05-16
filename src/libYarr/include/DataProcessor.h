@@ -12,7 +12,7 @@
 class DataProcessor {
     public:
         DataProcessor();
-        virtual ~DataProcessor() = default;;
+        virtual ~DataProcessor() = default;
 
         virtual void init() {}
         virtual void process() {}
