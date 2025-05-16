@@ -22,6 +22,7 @@ add_library(Scan SHARED
         AnalysisConsole.cpp
         Bookkeeper.cpp
         Clipboard.cpp
+        ClusterData.cpp
         DataProcessor.cpp
         EventData.cpp
         FeedbackBase.cpp
