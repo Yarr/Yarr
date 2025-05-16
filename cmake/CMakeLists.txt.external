@@ -142,6 +142,8 @@ function(YARR_ADD_SPDLOG)
         return()
     endif()
     
+    
+    set(YARR_USE_FETCHED_SPDLOG FALSE)
     if(TARGET spdlog::spdlog)
         message(STATUS "Using existing spdlog target (yarrspdlog or spdlog::spdlog already defined). Added by parent project?")
         if(NOT CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
@@ -149,11 +151,23 @@ function(YARR_ADD_SPDLOG)
         else()
             message(STATUS "No, it has to be something else.")
         endif()
+        
         message(STATUS "In any case defining yarrspdlog using the existing spdlog::spdlog target.")
         add_library(yarrspdlog INTERFACE)
         target_link_libraries(yarrspdlog INTERFACE spdlog::spdlog)
         target_compile_definitions(yarrspdlog INTERFACE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_${YARR_ACTIVE_LOGGER_LEVEL})
-        install(TARGETS yarrspdlog EXPORT YarrTargets)        
+        
+        # Prevent spdlog::spdlog from being treated as transitive for install
+        set_property(TARGET yarrspdlog PROPERTY
+            INTERFACE_LINK_LIBRARIES ""
+        )
+        
+        target_link_libraries(yarrspdlog INTERFACE
+            $<BUILD_INTERFACE:spdlog::spdlog>
+        )
+        
+        install(TARGETS yarrspdlog EXPORT YarrTargets)
+        
         return()
     endif()
     
@@ -166,7 +180,18 @@ function(YARR_ADD_SPDLOG)
             add_library(yarrspdlog INTERFACE)
             target_link_libraries(yarrspdlog INTERFACE spdlog::spdlog)
             target_compile_definitions(yarrspdlog INTERFACE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_${YARR_ACTIVE_LOGGER_LEVEL})
+            
+            # Prevent spdlog::spdlog from being treated as transitive for install
+            set_property(TARGET yarrspdlog PROPERTY
+                INTERFACE_LINK_LIBRARIES ""
+            )
+        
+            target_link_libraries(yarrspdlog INTERFACE
+                $<BUILD_INTERFACE:spdlog::spdlog>
+            )
+            
             install(TARGETS yarrspdlog EXPORT YarrTargets)
+            
             return()
          else()
              message(STATUS "No system spdlog found.")
@@ -206,6 +231,7 @@ function(YARR_ADD_SPDLOG)
        install(DIRECTORY ${spdlog_SOURCE_DIR}/include/
           DESTINATION ${CMAKE_INSTALL_PREFIX}/include
        )
+       set(YARR_USE_FETCHED_SPDLOG TRUE)
        return()
     endif()
     message(FATAL_ERROR "spdlog not found and either failed no not allowed to fetch it (check YARR_USE_FETCHCONTENT_SPDLOG and YARR_FORCE_FETCHCONTENT_SPDLOG)")

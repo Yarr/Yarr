@@ -22,6 +22,12 @@ set(_YARR_KNOWN_COMPONENTS
 # dependencies that are always needed
 find_package(Threads REQUIRED)
 
+if(NOT YARR_USE_FETCHED_SPDLOG)
+  include(CMakeFindDependencyMacro)
+  message(STATUS "YARR has not been built with an integrated spdlog. This dependency has to be provided separately.")
+  find_dependency(spdlog REQUIRED)
+endif()
+
 # version and base targets
 include("${CMAKE_CURRENT_LIST_DIR}/YarrConfigVersion.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/YarrTargets.cmake")
