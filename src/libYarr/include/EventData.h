@@ -86,7 +86,7 @@ class FrontEndEvent {
             nHits = 0;
             nClusters = 0;
         }
-        ~FrontEndEvent() = default;;
+        ~FrontEndEvent() = default;
         void addEvent(const FrontEndEvent& event) {
             hits.insert(hits.end(), event.hits.begin(), event.hits.end());
             nHits += event.nHits;
@@ -121,7 +121,7 @@ class FrontEndData : public EventDataBase {
 
         FrontEndData()=default;
         FrontEndData(const LoopStatus& l) : lStat(l) {}
-        ~FrontEndData() override = default;;
+        ~FrontEndData() override = default;
 
         void delLastEvent() {
             events.pop_back();

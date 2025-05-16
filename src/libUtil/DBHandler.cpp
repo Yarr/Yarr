@@ -205,7 +205,7 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir, bool i_back, bo
 	    }
 	}
 
-        std::string cmd = m_upload_command + " " + i_option + " " + result_dir;;
+        std::string cmd = m_upload_command + " " + i_option + " " + result_dir;
         if (m_db_cfg_path!="")            cmd = cmd + " --database " + m_db_cfg_path;
         if (m_qc)                         cmd = cmd + " --QC";
         if (m_interactive&&i_interactive) cmd = cmd + " --interactive";

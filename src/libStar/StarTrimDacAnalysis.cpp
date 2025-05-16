@@ -197,7 +197,7 @@ std::map<int, double> StarTrimDacAnalysis::findTargetThresholds(const std::map<u
                   if (mult > maxMultForChipOverTrimRanges)
                     maxMultForChipOverTrimRanges = mult;
                 }
-                multForAllChips[thr] += maxMultForChipOverTrimRanges;;
+                multForAllChips[thr] += maxMultForChipOverTrimRanges;
                 hNTrimmable->fill(thr, maxMultForChipOverTrimRanges);
                 if (maxMultForChipOverTrimRanges > maxMultOverAllThresholds) {
                         maxMultOverAllThresholds = maxMultForChipOverTrimRanges;
@@ -273,7 +273,7 @@ void StarTrimDacAnalysis::makeSummaryPlotsForChip(const std::map<unsigned, std::
                                         TrimRangeTrimDac oldTrimDAC=defaultTrimDAC;
                                         hDistThrBef->fill(mapThresholdVsTrimDacVsChannelNumber.at(iChannelInTrimMap).at(oldTrimDAC));
                                         if (newTrimDAC!=-999){
-                                          TrimRangeTrimDac newTrimRangeTrimDac(bestTrimRange,abs(newTrimDAC));;
+                                          TrimRangeTrimDac newTrimRangeTrimDac(bestTrimRange,abs(newTrimDAC));
                                           hDistThrTrimmed->fill(mapThresholdVsTrimDacVsChannelNumber.at(iChannelInTrimMap).at(newTrimRangeTrimDac));
                                         }
                                         else {

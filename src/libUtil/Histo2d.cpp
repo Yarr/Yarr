@@ -369,7 +369,7 @@ bool Histo2d::fromJson(const json &j) {
         for (unsigned int y=0; y<ybins; y++) {
             for (unsigned int x=0; x<xbins; x++) {
                 auto index = x+(y*xbins);
-                double d = j["Data"][x][y];;
+                double d = j["Data"][x][y];
                 data[index] = d;
                 if(d > 0.0) {
                     m_isFilled[index] = true;
