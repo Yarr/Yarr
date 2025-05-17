@@ -19,5 +19,14 @@ add_executable(testStar
         )
 target_link_libraries(testStar PUBLIC Yarr)
 target_link_libraries(testStar PRIVATE mainTest)
-add_test(testStar ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/testStar)
+
+add_test(NAME testStar COMMAND testStar)
 post_build_debug_executable(testStar)
+
+install(TARGETS testStar
+    EXPORT YarrTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}  # For DLLs on Windows
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
