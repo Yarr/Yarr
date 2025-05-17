@@ -74,8 +74,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # internal global state tracking variables  ---------------------------------------------------------------------------------------
 
-# Top-level declarations (default to OFF or empty)
-set(YARR_HAS_BUILTIN_SPDLOG FALSE )
+# tracking whether spdlog was fetched and built or whether it gets provided somehow externally
+if(NOT DEFINED YARR_HAS_BUILTIN_SPDLOG)
+    set(YARR_HAS_BUILTIN_SPDLOG FALSE )
+endif()
 
 # internal global state tracking variables  ---------------------------------------------------------------------------------------
 

@@ -131,21 +131,25 @@ function(YARR_ADD_FELIX_CLIENT)
 
 endfunction()
 
+include(CMakeDependentOption)
 option(YARR_USE_FETCHCONTENT_SPDLOG "Use FetchContent to get spdlog if not found" ON)
-option(YARR_FORCE_FETCHCONTENT_SPDLOG "Force FetchContent even if spdlog is found" OFF)
+cmake_dependent_option(YARR_FORCE_FETCHCONTENT_SPDLOG "Force FetchContent even if spdlog is found" OFF YARR_USE_FETCHCONTENT_SPDLOG OFF)
+
+# Consistency checks
+if(YARR_FORCE_FETCHCONTENT_SPDLOG AND NOT YARR_USE_FETCHCONTENT_SPDLOG)
+  message(FATAL_ERROR "YARR_FORCE_FETCHCONTENT_SPDLOG requires YARR_USE_FETCHCONTENT_SPDLOG to be ON.")
+endif()
 
 function(YARR_ADD_SPDLOG)
 
     # Skip everything if the target already exists as it was already added by the parent project (likely).
     if(TARGET yarrspdlog)
-        message(STATUS "Using existing spdlog target: yarrspdlog is already defined which indicates that at some point the function YARR_ADD_EXTERNAL_DEPS gets called for a second time.")
+        message(STATUS "Using existing spdlog target: yarrspdlog is already defined which indicates that at some point the function YARR_ADD_EXTERNAL_DEPS gets called for a second time. Re-running cmake configure step?")
         return()
     endif()
     
-    
-    set(YARR_HAS_BUILTIN_SPDLOG FALSE)
     if(TARGET spdlog::spdlog)
-        message(STATUS "Using existing spdlog target (yarrspdlog or spdlog::spdlog already defined). Added by parent project?")
+        message(STATUS "Using existing spdlog target (spdlog::spdlog already defined). Added by parent project?")
         if(NOT CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
             message(STATUS "Yes, seems like YARR is getting built by another project by using add_subdirectory() or FetchContent(). Strong indication that this is where we got spdlog.")
         else()
@@ -168,6 +172,7 @@ function(YARR_ADD_SPDLOG)
         
         install(TARGETS yarrspdlog EXPORT YarrTargets)
         
+        set(YARR_HAS_BUILTIN_SPDLOG FALSE)
         return()
     endif()
     
@@ -192,6 +197,7 @@ function(YARR_ADD_SPDLOG)
             
             install(TARGETS yarrspdlog EXPORT YarrTargets)
             
+            set(YARR_HAS_BUILTIN_SPDLOG FALSE)    
             return()
          else()
              message(STATUS "No system spdlog found.")
