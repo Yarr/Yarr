@@ -195,7 +195,7 @@ function(YARR_ADD_SPDLOG)
         
         install(TARGETS yarrspdlog EXPORT YarrTargets)
         
-        set(YARR_HAS_BUILTIN_SPDLOG FALSE)
+        set(YARR_HAS_BUILTIN_SPDLOG FALSE CACHE INTERNAL "Whether Yarr provides its own spdlog")
         return()
     endif()
     
@@ -220,7 +220,7 @@ function(YARR_ADD_SPDLOG)
             
             install(TARGETS yarrspdlog EXPORT YarrTargets)
             
-            set(YARR_HAS_BUILTIN_SPDLOG FALSE)    
+            set(YARR_HAS_BUILTIN_SPDLOG FALSE CACHE INTERNAL "Whether Yarr provides its own spdlog")    
             return()
          else()
              message(STATUS "No system spdlog found.")
@@ -260,7 +260,7 @@ function(YARR_ADD_SPDLOG)
        install(DIRECTORY ${spdlog_SOURCE_DIR}/include/
           DESTINATION ${CMAKE_INSTALL_PREFIX}/include
        )
-       set(YARR_HAS_BUILTIN_SPDLOG TRUE)
+       set(YARR_HAS_BUILTIN_SPDLOG TRUE CACHE INTERNAL "Whether Yarr provides its own spdlog")
        return()
     endif()
     message(FATAL_ERROR "spdlog not found and either failed no not allowed to fetch it (check YARR_USE_FETCHCONTENT_SPDLOG and YARR_FORCE_FETCHCONTENT_SPDLOG)")
