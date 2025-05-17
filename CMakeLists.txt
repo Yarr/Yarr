@@ -72,6 +72,13 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # set global options  ---------------------------------------------------------------------------------------
 
+# internal global state tracking variables  ---------------------------------------------------------------------------------------
+
+# Top-level declarations (default to OFF or empty)
+set(YARR_USED_FETCHED_SPDLOG FALSE )
+
+# internal global state tracking variables  ---------------------------------------------------------------------------------------
+
 # get version information from GIT ---------------------------------------------------------------------------------------
 
 get_git_version_info()
@@ -229,7 +236,6 @@ endif()
 include(cmake/CMakeLists.txt.external)
 add_subdirectory(src)
 
-    
 include(CMakePackageConfigHelpers)
 configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/YarrConfig.cmake.in
                               ${CMAKE_CURRENT_BINARY_DIR}/YarrConfig.cmake
@@ -266,6 +272,6 @@ endif()
 
 # list all targets for info purposes ---------------------------------------------------------------------------------------
 
-print_all_targets()
+# print_all_targets()
 
 # list all targets for info purposes ---------------------------------------------------------------------------------------
