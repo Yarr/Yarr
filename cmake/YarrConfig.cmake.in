@@ -22,7 +22,11 @@ set(_YARR_KNOWN_COMPONENTS
 # dependencies that are always needed
 find_package(Threads REQUIRED)
 
-if(NOT YARR_USE_FETCHED_SPDLOG)
+set(YARR_HAS_BUILTIN_SPDLOG @YARR_HAS_BUILTIN_SPDLOG@)
+
+if(YARR_HAS_BUILTIN_SPDLOG)
+  message(STATUS "This YARR comes with an integrated spdlog library.")
+else()
   include(CMakeFindDependencyMacro)
   message(STATUS "YARR has not been built with an integrated spdlog. This dependency has to be provided separately.")
   find_dependency(spdlog REQUIRED)

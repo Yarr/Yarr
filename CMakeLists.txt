@@ -75,7 +75,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # internal global state tracking variables  ---------------------------------------------------------------------------------------
 
 # Top-level declarations (default to OFF or empty)
-set(YARR_USED_FETCHED_SPDLOG FALSE )
+set(YARR_HAS_BUILTIN_SPDLOG FALSE )
 
 # internal global state tracking variables  ---------------------------------------------------------------------------------------
 
@@ -272,6 +272,10 @@ endif()
 
 # list all targets for info purposes ---------------------------------------------------------------------------------------
 
-# print_all_targets()
+option(YARR_DEBUG_PRINT_TARGETS "Print all targets and their properties" OFF)
+
+if(YARR_DEBUG_PRINT_TARGETS)
+    print_all_targets()
+endif()
 
 # list all targets for info purposes ---------------------------------------------------------------------------------------

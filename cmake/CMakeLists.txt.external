@@ -143,7 +143,7 @@ function(YARR_ADD_SPDLOG)
     endif()
     
     
-    set(YARR_USE_FETCHED_SPDLOG FALSE)
+    set(YARR_HAS_BUILTIN_SPDLOG FALSE)
     if(TARGET spdlog::spdlog)
         message(STATUS "Using existing spdlog target (yarrspdlog or spdlog::spdlog already defined). Added by parent project?")
         if(NOT CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
@@ -231,7 +231,7 @@ function(YARR_ADD_SPDLOG)
        install(DIRECTORY ${spdlog_SOURCE_DIR}/include/
           DESTINATION ${CMAKE_INSTALL_PREFIX}/include
        )
-       set(YARR_USE_FETCHED_SPDLOG TRUE)
+       set(YARR_HAS_BUILTIN_SPDLOG TRUE)
        return()
     endif()
     message(FATAL_ERROR "spdlog not found and either failed no not allowed to fetch it (check YARR_USE_FETCHCONTENT_SPDLOG and YARR_FORCE_FETCHCONTENT_SPDLOG)")
