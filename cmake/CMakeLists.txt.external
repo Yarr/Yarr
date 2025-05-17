@@ -140,6 +140,29 @@ if(YARR_FORCE_FETCHCONTENT_SPDLOG AND NOT YARR_USE_FETCHCONTENT_SPDLOG)
   message(FATAL_ERROR "YARR_FORCE_FETCHCONTENT_SPDLOG requires YARR_USE_FETCHCONTENT_SPDLOG to be ON.")
 endif()
 
+# Determine the mode as a string (for caching and comparison)
+if(YARR_FORCE_FETCHCONTENT_SPDLOG)
+  set(YARR_SPDLOG_BACKEND "FORCE_FETCHCONTENT")
+elseif(YARR_USE_FETCHCONTENT_SPDLOG)
+  set(YARR_SPDLOG_BACKEND "FETCH_IF_NOT_FOUND")
+else()
+  set(YARR_SPDLOG_BACKEND "FIND_PACKAGE")
+endif()
+
+# Save this mode to the cache
+set(YARR_SPDLOG_BACKEND ${YARR_SPDLOG_BACKEND} CACHE STRING "How spdlog was integrated in the build")
+
+# Compare against previous config if already defined
+if(DEFINED YARR_SPDLOG_BACKEND_PREV)
+    if(NOT YARR_SPDLOG_BACKEND STREQUAL YARR_SPDLOG_BACKEND_PREV)
+        message(WARNING "Changing spdlog backend integration mode from ${YARR_SPDLOG_BACKEND_PREV} to ${YARR_SPDLOG_BACKEND}. This may cause problems if the build directory is not cleaned. Consider removing your build dir or clearing the CMake cache.")
+    endif()
+endif()
+
+# Save the current mode for future comparisons
+set(YARR_SPDLOG_BACKEND_PREV ${YARR_SPDLOG_BACKEND} CACHE INTERNAL "Previous spdlog integration mode")
+
+
 function(YARR_ADD_SPDLOG)
 
     # Skip everything if the target already exists as it was already added by the parent project (likely).
