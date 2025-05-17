@@ -366,7 +366,7 @@ bool Histo3dT<DataT>::fromFile(const std::string &filename) {
     std::string line;
     std::getline(file, line);
     if (line.find("Histo3d") == std::string::npos) {
-        std::cerr << "ERROR: Tried loading 3d Histogram from file " << filename << ", but file has non or incorrect header" << std::endl;
+        hlog->error("ERROR: Tried loading 3d Histogram from file {}, but file has non or incorrect header", filename);
         file.close();
         return false;
     } else {
