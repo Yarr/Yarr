@@ -1,3 +1,5 @@
+#include <filesystem>
+
 #include "AllConfigurations.h"
 
 #include "logging.h"
