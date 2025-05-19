@@ -288,6 +288,7 @@ job_test_benchmark:
           - ARCH: ['alma9']
   script:
     - bin/testUtil '[!benchmark]' > testUtils.benchmark
+    - . scripts/run_strips_benchmarks.sh > star_processor_benchmarks.benchmark
   artifacts:
     paths:
       - '*.benchmark'
