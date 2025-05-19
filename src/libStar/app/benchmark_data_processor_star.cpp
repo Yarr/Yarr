@@ -124,15 +124,17 @@ void run_with_clipboard(StarCfg &cfg, FeDataProcessor &proc, int iterations, std
 
     std::thread proc_thread([&proc]() { proc.process(); });
 
+    uint32_t data_count = *((uint32_t *) &buffer[0]);
+
     std::size_t nbits{};
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     for (unsigned i = 0; i < iterations; i++) {
         uint32_t index = 0;
-        uint32_t n = *((uint32_t *) &buffer[index]);
+        // Skip data_count
         index += sizeof(uint32_t);
         // logger->info("Loading {} packets", n);
         std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(LoopStatus({1}, {LOOP_STYLE_MASK})));
-        for (unsigned k = 0; k < n; k++) {
+        for (unsigned k = 0; k < data_count; k++) {
             struct Data {
                 uint64_t timestamp;
                 uint64_t id;
@@ -187,6 +189,8 @@ void run_with_clipboard(StarCfg &cfg, FeDataProcessor &proc, int iterations, std
     logger->info("Numbers of bits: {} ", nbits);
     logger->info("Time [us]: {}", elapsed_us);
     logger->info("Throughput with clipboard [Gbps]: {}", rate);
+    logger->info("Iterations/s [Hz]: {}", iterations/(elapsed_us*1e-6));
+    logger->info("Packets ({})/s [Hz]: {}", data_count, (iterations*data_count)/(elapsed_us*1e-6));
     rd_cp.finish();
 
     proc_thread.join();
@@ -255,4 +259,6 @@ void run_without_clipboard(StarCfg &cfg, FeDataProcessor &proc, int iterations, 
     logger->info("Numbers of bits: {} ", nbits);
     logger->info("Time [us]: {}", elapsed_us);
     logger->info("Throughput without clipboard [Gbps]: {}", rate);
+    logger->info("Iterations/s [Hz]: {}", iterations/(elapsed_us*1e-6));
+    logger->info("Packets ({})/s [Hz]: {}", n_buffer, (iterations*n_buffer)/(elapsed_us*1e-6));
 }
