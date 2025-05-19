@@ -534,7 +534,7 @@ bool FelixController::disableAllELinks(bool toflx) {
 }
 
 bool FelixController::setELinkWidthNBits(uint64_t fid, unsigned nbits) {
-  fclog->debug("Set FID 0x{:x} width to {} bits", nbits);
+  fclog->debug("Set FID 0x{:x} width to {} bits", fid, nbits);
 
   std::string regName = FelixTools::getELinkWidthRegName(fid, fwMode());
   unsigned regValue = (__builtin_ctz(nbits) - 1) & 0x7; // 3 bits
