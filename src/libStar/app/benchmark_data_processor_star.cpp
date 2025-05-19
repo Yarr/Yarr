@@ -26,7 +26,10 @@ std::vector<uint8_t> read_file(const std::string &file_name) {
     std::error_code ec;
     std::filesystem::path name(file_name);
     auto len = std::filesystem::file_size(name, ec);
-    if(ec) return {};
+    if(ec)  {
+        logger->error("Failed to open event data file: {}", file_name);
+        return {};
+    }
     buffer = std::vector<uint8_t>(len);
     std::ifstream in(name, std::ios::binary);
     in.read(reinterpret_cast<char*>(buffer.data()), len);
@@ -88,6 +91,11 @@ int main(int argc, char *argv[]) {
         std::cout << "Too many parameters\n";
         printHelp();
         return 0;
+    }
+
+    if(file_name.empty()) {
+        std::cout << "No file given to load data from\n";
+        return 1;
     }
 
     auto buffer = read_file(file_name);
