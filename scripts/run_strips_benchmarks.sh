@@ -2,7 +2,7 @@ TEST_DATA_DIR=/tmp/test_strips_data
 
 mkdir -p ${TEST_DATA_DIR}
 
-for TYPE in basic empty full empty_counters full_counters
+for TYPE in basic empty full empty_counters full_counters hpr
 do
   echo "Running benchmark for packet type: ${TYPE}"
   TEST_FILE=${TEST_DATA_DIR}/data_file_${TYPE}.bin
