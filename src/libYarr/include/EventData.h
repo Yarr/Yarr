@@ -31,6 +31,18 @@ struct FrontEndHit {
     };
 };
 
+inline bool operator==(const FrontEndHit &lhs, const FrontEndHit &rhs)
+{
+    return lhs.col == rhs.col
+         && lhs.row == rhs.row
+         && lhs.tot == rhs.tot;
+}
+
+inline bool operator!=(const FrontEndHit &lhs, const FrontEndHit &rhs)
+{
+    return ! (lhs == rhs);
+}
+
 class FrontEndEvent {
 
     public:

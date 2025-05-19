@@ -1,6 +1,7 @@
 add_executable(testYarr
         ../../libUtil/tests/main.cpp
         test_analysis_throttle.cpp
+        test_event_data.cpp
         test_front_end.cpp
         test_histogrammer.cpp
         test_histogram_load.cpp
