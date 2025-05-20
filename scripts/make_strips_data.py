@@ -68,6 +68,24 @@ def make_empty_counters():
             # print(packets)
     return packets
 
+def make_hcc_hpr():
+    packet_bytes = [
+        0xe0, 0xf5, 0x78, 0x50, 0x07, 0x90, 0x7f
+    ]
+    return packet_bytes
+
+def make_abc_hpr(a):
+    packet_bytes = [
+        0xd0, 0x3f, 0x07, 0x85, 0x51, 0xff, 0x0f, 0xf9, 0x14, 0x90,
+    ]
+    packet_bytes[0] |= a
+    return packet_bytes
+
+def make_hpr_packets():
+    packets = [make_hcc_hpr()]
+    packets.extend(make_abc_hpr(a) for a in range(10))
+    return packets
+
 def fill_32(pb):
     while len(pb) % 4 != 0:
         pb.append(0)
@@ -85,6 +103,8 @@ def make_data(pk_type, out_name, repetitions):
         multi_packet_bytes = make_empty_counters()
     elif pk_type == "full_counters":
         multi_packet_bytes = make_full_counters()
+    elif pk_type == "hpr":
+        multi_packet_bytes = make_hpr_packets()
     else:
         raise Exception(f"Packet type '{pk_type}' not recognised")
 
