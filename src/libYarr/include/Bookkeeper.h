@@ -9,14 +9,11 @@
 // # Comment: Global container for data
 // ################################
 
-#include <mutex>
+#include <map>
 #include <memory>
+#include <mutex>
 #include <thread>
-
-#include "EventDataBase.h"
-#include "HistogramBase.h"
-#include "ResultBase.h"
-#include "ClipBoard.h"
+#include <vector>
 
 #include "FrontEnd.h"
 #include "StdTriggerAction.h"

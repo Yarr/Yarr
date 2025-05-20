@@ -14,6 +14,7 @@
 #include "AllStdActions.h"
 #include "Bookkeeper.h"
 #include "FrontEndCfg.h"
+#include "FrontEndClipBoards.h"
 #include "StdTriggerAction.h"
 #include "TxCore.h"
 #include "ClassRegistry.h"
@@ -36,7 +37,7 @@ void ScanFactory::preScan() {
     sflog->info("Entering pre scan phase ...");
     for (unsigned id=0; id<g_bk->getNumOfEntries(); id ++) {
         FrontEnd *fe = g_bk->getFe(id);
-        fe->clipRawData.reset();
+        fe->clipboards().clipRawData.reset();
     }
 
     g_tx->setCmdEnable(g_bk->getTxMask());

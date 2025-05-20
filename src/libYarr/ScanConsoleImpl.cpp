@@ -18,6 +18,7 @@
 #include "Bookkeeper.h"
 #include "FeedbackBase.h"
 #include "FrontEndCfg.h"
+#include "FrontEndClipBoards.h"
 #include "ScanBase.h"
 #include "DBHandler.h"
 
@@ -452,8 +453,9 @@ void ScanConsoleImpl::cleanup() {
         // store output results (if any)
         if(analyses.empty()) continue;
         logger->info("-> Storing output results of FE {}", feCfg->getRxChannel());
-        if (fe->clipResult.empty()) continue;
-        auto &output = *(fe->clipResult.back());
+        auto &fe_cp = fe->clipboards();
+        if (fe_cp.clipResult.empty()) continue;
+        auto &output = *(fe_cp.clipResult.back());
         std::string name = feCfg->getName();
         if (output.empty()) {
             logger->warn(
@@ -511,7 +513,7 @@ void ScanConsoleImpl::getResults(json &result) {
             json jTmp;
             feCfg->writeConfig(jTmp);
             frontends[name]["configs"] = jTmp;
-            auto &output = *(fe->clipResult.back());
+            auto &output = *(fe->clipboards().clipResult.back());
             json histos;
             while (!output.empty()) {
                 json h;
@@ -539,7 +541,7 @@ void ScanConsoleImpl::run() {
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
         auto fe = bookie->getFe(id);
         if (fe->isActive()) {
-          fe->clipRawData.finish();
+            fe->clipboards().clipRawData.finish();
         }
     }
 
@@ -555,7 +557,7 @@ void ScanConsoleImpl::run() {
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
         auto fe = bookie->getFe(id);
         if (fe->isActive()) {
-          fe->clipData.finish();
+            fe->clipboards().clipData.finish();
         }
     }
 
@@ -569,7 +571,7 @@ void ScanConsoleImpl::run() {
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
         auto fe = bookie->getFe(id);
         if (fe->isActive()) {
-          fe->clipHisto.finish();
+            fe->clipboards().clipHisto.finish();
         }
     }
 
@@ -579,7 +581,7 @@ void ScanConsoleImpl::run() {
       for (unsigned i=0; i<ana.second.size(); i++) {
         ana.second[i]->join();
         // Also declare done for its output ClipBoard
-        fe->clipResult.at(i)->finish();
+        fe->clipboards().clipResult.at(i)->finish();
       }
     }
     // join clipboard monitor
