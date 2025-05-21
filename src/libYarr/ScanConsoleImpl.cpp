@@ -292,10 +292,6 @@ int ScanConsoleImpl::configure() {
     // Wait for rx to sync with FE stream
     // TODO Check RX sync
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
-
-    // Initialize Rx channels
-    hwCtrl->initRxChannels(bookie->getRxMaskUnique());
-
     hwCtrl->flushBuffer();
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
         auto fe = bookie->getFe(id);

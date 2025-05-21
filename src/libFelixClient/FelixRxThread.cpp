@@ -11,27 +11,22 @@ namespace {
 }
 
 FelixRxThread::FelixRxThread(
-  std::shared_ptr<SharedClient> client, 
-  const std::vector<FelixID_t>& fid_list,
+  FelixClientThread::Config fcConfig, // make a copy
   size_t maxMessageSize
-) 
-: m_client(client)
-, m_maxMessageSize(maxMessageSize)
+) : m_maxMessageSize(maxMessageSize)
 {
-  for (const auto& fid : fid_list) {
-    m_fidStats[fid];
-    m_client->disableRx(fid);
-  }
+  // Callbacks
+  fcConfig.on_init_callback = std::bind(&FelixRxThread::on_init, this);
+  fcConfig.on_data_callback = std::bind(&FelixRxThread::on_data_received, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+  fcConfig.on_connect_callback = std::bind(&FelixRxThread::on_connect, this, std::placeholders::_1);
+  fcConfig.on_disconnect_callback = std::bind(&FelixRxThread::on_disconnect, this, std::placeholders::_1);
+
+  m_client = std::make_unique<FelixClientThread>(fcConfig);
 }
 
 FelixRxThread::~FelixRxThread() {
-  if (thread_ptr and thread_ptr->joinable()) {
-    thread_ptr->join();
-  }
-
   // Unsubscribe from all links
   for (const auto& [fid, stats] : m_fidStats) {
-    m_client->disableRx(fid);
     m_client->unsubscribe(fid);
   }
 
@@ -50,28 +45,56 @@ FelixRxThread::~FelixRxThread() {
   }
 }
 
-void FelixRxThread::run() {
-  thread_ptr = std::make_unique<std::thread>(&FelixRxThread::subscribe, this);
+void FelixRxThread::subscribe(FelixID_t fid, bool enable) {
+  frtlog->debug("Thread {} subscribing to fid 0x{:x}", getThreadID(), fid);
+
+  m_enables[fid] = enable;
+
+  m_fidStats[fid];
+  m_fidStats[fid].reset_errors();
+  m_fidStats[fid].reset_counters();
+
+  m_client->subscribe(fid);
 }
 
-void FelixRxThread::stop() {
-  if (thread_ptr and thread_ptr->joinable()) {
-    thread_ptr->join();
+void FelixRxThread::enableChannel(FelixID_t fid) {
+  m_enables[fid] = true;
+  frtlog->trace("Enable Rx link 0x{:x}", fid);
+}
+
+void FelixRxThread::enableChannel() {
+  for (const auto& [fid, stats] : m_fidStats) {
+    m_enables[fid] = true;
+    frtlog->trace("Enable Rx link 0x{:x}", fid);
   }
 }
 
-void FelixRxThread::subscribe() {
-  for (auto& [fid, qstat]: m_fidStats) {
-    frtlog->debug("Thread {} subscribing to fid 0x{:x}", getThreadID(), fid);
+void FelixRxThread::disableChannel(FelixID_t fid) {
+  m_enables[fid] = false;
+  frtlog->trace("Disable Rx link 0x{:x}", fid);
+}
 
-    qstat.reset_errors();
-    qstat.reset_counters();
-
-    m_client->subscribe(fid, std::bind(&FelixRxThread::on_data_callback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+void FelixRxThread::disableChannel() {
+  for (const auto& [fid, stats] : m_fidStats) {
+    m_enables[fid] = false;
+    frtlog->trace("Disable Rx link 0x{:x}", fid);
   }
 }
 
-void FelixRxThread::on_data_callback(FelixID_t fid, const uint8_t* data, size_t size, uint8_t status) {
+void FelixRxThread::on_init() {}
+
+void FelixRxThread::on_connect(FelixID_t fid) {
+  frtlog->debug("Thread {} connected to fid 0x{:x}", getThreadID(), fid);
+}
+
+void FelixRxThread::on_disconnect(FelixID_t fid) {
+  frtlog->debug("Thread {} disconnected from fid 0x{:x}", getThreadID(), fid);
+}
+
+void FelixRxThread::on_data_received(FelixID_t fid, const uint8_t* data, size_t size, uint8_t status) {
+  // skip if the channel is disabled
+  if (not m_enables[fid]) return;
+
   frttimer->trace("FelixRxThread::on_data_callback,start,{},0x{:x},{}", getThreadID(), fid, size);
   frtlog->trace("Received message from 0x{:x}", fid);
 

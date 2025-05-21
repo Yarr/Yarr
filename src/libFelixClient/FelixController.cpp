@@ -1,3 +1,6 @@
+#include "felix/felix_client_thread.hpp"
+#include "felix/felix_client_properties.h"
+
 #include "AllHwControllers.h"
 #include "FelixController.h"
 
@@ -10,26 +13,33 @@ namespace {
 }
 
 void FelixController::loadConfig(const json &j) {
-  try {
-    client = std::make_shared<SharedClient>(j["FelixClient"]);
-  } catch (std::runtime_error &fce) {
-    fclog->error("Failed to construct Felix client");
-    throw fce;
-  }
+
+  // FelixClientThread configuration
+  auto clientCfg = j["FelixClient"];
+
+  FelixClientThread::Config fcConfig;
+  // Properties
+  // See https://gitlab.cern.ch/atlas-tdaq-felix/felix-interface/-/blob/master/felix/felix_client_properties.h
+  fcConfig.property[FELIX_CLIENT_LOCAL_IP_OR_INTERFACE] = clientCfg["localIPorInterface"];
+  fcConfig.property[FELIX_CLIENT_LOG_LEVEL] = clientCfg["logLevel"];
+  fcConfig.property[FELIX_CLIENT_BUS_DIR] = clientCfg["busDir"];
+  fcConfig.property[FELIX_CLIENT_BUS_GROUP_NAME] = clientCfg["busGroupName"];
+  fcConfig.property[FELIX_CLIENT_VERBOSE_BUS] = clientCfg["verboseBus"] ? "True" : "False";
+  fcConfig.property[FELIX_CLIENT_TIMEOUT] = std::to_string(unsigned(clientCfg["timeout"]));
+  fcConfig.property[FELIX_CLIENT_NETIO_PAGES] = std::to_string(unsigned(clientCfg["netioPages"]));
+  fcConfig.property[FELIX_CLIENT_NETIO_PAGESIZE] = std::to_string(unsigned(clientCfg["netioPagesize"]));
 
   try {
-    auto txCfg = j["ToFLX"];
-    FelixTxCore::setClient(client);
-    FelixTxCore::loadConfig(txCfg);
+    FelixTxCore::loadConfig(j);
+    FelixTxCore::setClient(fcConfig);
   } catch (std::runtime_error &je) {
     fclog->error("Failed to load FelixTxCore config");
     throw je;
   }
 
   try {
-    auto rxCfg = j["ToHost"];
-    FelixRxCore::setClient(client);
-    FelixRxCore::loadConfig(rxCfg);
+    FelixRxCore::loadConfig(j);
+    FelixRxCore::setClient(fcConfig);
   } catch (std::runtime_error &je) {
     fclog->error("Failed to load FelixRxCore config");
     throw je;

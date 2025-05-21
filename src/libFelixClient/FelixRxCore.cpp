@@ -9,48 +9,36 @@ FelixRxCore::FelixRxCore() = default;
 
 FelixRxCore::~FelixRxCore()
 {
-  for (auto& frt : m_rxThreads) {
-    frt->stop();
-  }
-
   stopMonitor();
-}
-
-void FelixRxCore::initRxChannels(const std::vector<uint32_t>& channels) {
-  frlog->info("Initializing Rx channels");
-  std::vector<std::vector<FelixID_t>> fid_lists(m_nThreads);
-
-  unsigned ithread {0};
-  for (auto chn : channels) {
-    auto fid = fid_from_channel(chn);
-    fid_lists[ithread%m_nThreads].push_back(fid);
-    ithread++;
-  }
-
-  // Start threads to subscribe to channels
-  for (unsigned i=0; i<m_nThreads; i++) {
-    if (fid_lists[i].empty()) {
-      // skip in case there are more threads than fids
-      continue;
-    }
-
-    m_rxThreads.emplace_back(std::make_unique<FelixRxThread>(m_client, fid_lists[i]));
-    m_rxThreads.back()->run();
-  }
-
-  if (m_runMonitor) {
-    runMonitor();
-  }
 }
 
 void FelixRxCore::enableChannel(FelixID_t fid) {
   frlog->debug("Enable Rx link: 0x{:x}", fid);
-  m_client->enableRx(fid);
+
+  if (not m_subscribeMap[fid]) {
+    // subscribe to the elink
+    try {
+      m_rxThreads[m_nfids%m_nThreads]->subscribe(fid, true); // subscribe and enable
+      m_fidThreadMap[fid] = m_nfids%m_nThreads;
+      m_subscribeMap[fid] = true;
+      m_nfids++;
+    } catch (std::runtime_error& e) {
+      frlog->warn("Fail to subscribe to Rx link 0x{:x}: {}", fid, e.what());
+    }
+  } else {
+    // already subscribed
+    frlog->trace("Rx link 0x{:x} already subscribed", fid);
+    m_rxThreads[m_fidThreadMap[fid]]->enableChannel(fid);
+  }
 }
 
 void FelixRxCore::disableChannel(FelixID_t fid) {
   frlog->debug("Disable Rx link: 0x{:x}", fid);
-  m_client->disableRx(fid);
+  if (not m_subscribeMap[fid]) {
+    frlog->warn("Rx link 0x{:x} was never subscribed", fid);
+  } else {
+    m_rxThreads[m_fidThreadMap[fid]]->disableChannel(fid);
+  }
 }
 
 FelixRxCore::FelixID_t FelixRxCore::fid_from_channel(uint32_t chn) {
@@ -70,11 +58,6 @@ FelixRxCore::FelixID_t FelixRxCore::fid_from_channel(uint32_t chn) {
 }
 
 void FelixRxCore::setRxEnable(uint32_t val) {
-  if (m_rxThreads.empty()) {
-    frlog->error("No thread is subscribed to Rx channels. Need to run FelxiRxCore::initRxChannels first to subscribe to all links.");
-    return;
-  }
-
   disableRx();
 
   auto fid = fid_from_channel(val);
@@ -82,11 +65,6 @@ void FelixRxCore::setRxEnable(uint32_t val) {
 }
 
 void FelixRxCore::setRxEnable(std::vector<uint32_t> channels) {
-  if (m_rxThreads.empty()) {
-    frlog->error("No thread is subscribed to Rx channels. Need to run FelxiRxCore::initRxChannels first to subscribe to all links.");
-    return;
-  }
-
   disableRx();
 
   for (auto chn : channels) {
@@ -96,7 +74,9 @@ void FelixRxCore::setRxEnable(std::vector<uint32_t> channels) {
 }
 
 void FelixRxCore::disableRx() {
-  m_client->disableRx();
+  for (auto& frt : m_rxThreads) {
+    frt->disableChannel();
+  }
 }
 
 // still needed?
@@ -123,10 +103,6 @@ std::vector<RawDataPtr> FelixRxCore::readData() {
   }
 
   return dataVec;
-}
-
-void FelixRxCore::setClient(std::shared_ptr<SharedClient> client) {
-  m_client = client;
 }
 
 uint32_t FelixRxCore::getDataRate() {
@@ -201,6 +177,16 @@ void FelixRxCore::loadConfig(const json &j) {
   if (j.contains("nthreads")) {
     m_nThreads = j["nthreads"];
     frlog->info(" nthreads = {}", m_nThreads);
+  }
+}
+
+void FelixRxCore::setClient(const FelixClientThread::Config& fcConfig) {
+  for (unsigned t=0; t<m_nThreads; t++) {
+    m_rxThreads.emplace_back(std::make_unique<FelixRxThread>(fcConfig, m_maxMessageSize));
+  }
+
+  if (m_runMonitor) {
+    runMonitor();
   }
 }
 

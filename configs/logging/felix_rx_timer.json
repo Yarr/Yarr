@@ -4,7 +4,6 @@
       "pattern": "%M:%S.%F,%v"}
   ],
   "log_config": [
-      {"name": "FelixRxThreadTimer", "level": "trace", "sink": "file"},
-      {"name": "SharedClientTimer", "level": "trace", "sink": "file"}
+      {"name": "FelixRxThreadTimer", "level": "trace", "sink": "file"}
   ]
 }

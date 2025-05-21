@@ -5,7 +5,10 @@
 #include <map>
 #include <thread>
 
-#include "SharedClient.h"
+// felix client
+#include "felix/felix_client_thread.hpp"
+#include "felix/felix_client_properties.h"
+
 #include "FelixTools.h"
 #include "RawData.h"
 #include "ClipBoard.h"
@@ -16,16 +19,16 @@ class FelixRxThread {
 
     using FelixID_t = FelixTools::FelixID_t;
 
-    FelixRxThread(
-      std::shared_ptr<SharedClient> client,
-      const std::vector<FelixID_t>& fid_list,
-      size_t maxMessageSize = 0
-    );
-
+    FelixRxThread(FelixClientThread::Config fcConfig, size_t maxMessageSize);
     ~FelixRxThread();
 
-    void run();
-    void stop();
+    void subscribe(FelixID_t fid, bool enable=true);
+    void unsubscribe(FelixID_t fid);
+
+    void enableChannel(FelixID_t fid);
+    void enableChannel();
+    void disableChannel(FelixID_t fid);
+    void disableChannel();
 
     void flush(bool doflush) { m_doFlushBuffer = doflush; }
 
@@ -49,15 +52,13 @@ class FelixRxThread {
 
     std::string getThreadID() const {
       std::stringstream ss;
-      ss << "0x" << std::hex << thread_ptr->get_id();
+      ss << "0x" << std::hex << std::this_thread::get_id();
       return ss.str();
     }
 
   private:
 
-    std::unique_ptr<std::thread> thread_ptr;
-
-    std::shared_ptr<SharedClient> m_client;  
+    std::unique_ptr<FelixClientThread> m_client;
 
     ClipBoard<RawData> m_rawData;
 
@@ -69,12 +70,15 @@ class FelixRxThread {
     std::atomic<uint64_t> m_total_bytes_in {0};
     std::atomic<uint64_t> m_total_bytes_out {0};
 
+    std::map<FelixID_t, bool> m_enables; // enable flag for each elink
     std::map<FelixID_t, FelixTools::QueueStatistics> m_fidStats; // link statistics
 
     size_t m_maxMessageSize {0}; // if set to >0, on_data drops messages with larger sizes
 
-    void subscribe();
-    void on_data_callback(FelixID_t fid, const uint8_t* data, size_t size, uint8_t status);
+    void on_init();
+    void on_connect(FelixID_t fid);
+    void on_disconnect(FelixID_t fid);
+    void on_data_received(FelixID_t fid, const uint8_t* data, size_t size, uint8_t status);
 };
 
 #endif

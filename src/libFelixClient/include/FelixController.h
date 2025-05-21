@@ -4,7 +4,6 @@
 #include "HwController.h"
 #include "FelixRxCore.h"
 #include "FelixTxCore.h"
-#include "SharedClient.h"
 
 #include "storage.hpp"
 
@@ -170,8 +169,6 @@ public:
   bool setELinkWidthMbps(const std::vector<uint64_t>& fids, unsigned bandwidth);
 
 private:
-
-  std::shared_ptr<SharedClient> client;
 
   /*
   E-Link control utilities

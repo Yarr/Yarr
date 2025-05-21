@@ -1,6 +1,8 @@
 #ifndef FELIXRXCORE_H
 #define FELIXRXCORE_H
 
+#include "felix/felix_client_thread.hpp"
+
 #include "storage.hpp"
 
 #include "RxCore.h"
@@ -16,7 +18,6 @@ public:
   FelixRxCore();
   ~FelixRxCore() override;
 
-  void initRxChannels(const std::vector<uint32_t>& channels) override;
   void setRxEnable(uint32_t val) override;
   void setRxEnable(std::vector<uint32_t> channels) override;
   void disableRx() override;
@@ -40,7 +41,7 @@ protected:
 
   void writeConfig(json &j);
   void loadConfig(const json &j);
-  void setClient(std::shared_ptr<SharedClient> client); // set Felix client
+  void setClient(const FelixClientThread::Config& fcConfig); // set Felix clients
 
   // Channel control
   void enableChannel(FelixID_t fid);
@@ -53,10 +54,12 @@ protected:
   uint16_t m_cid {0}; // connector ID; 0x0000 reserved for local IDs
   uint8_t m_protocol {0}; // protocol ID
 
-  // Felix client
-  std::shared_ptr<SharedClient> m_client;
-  std::vector<std::unique_ptr<FelixRxThread>> m_rxThreads;
+  // Felix clients
   unsigned m_nThreads {1};
+  std::vector<std::unique_ptr<FelixRxThread>> m_rxThreads;
+  unsigned m_nfids {0}; // current number of elinks that are subscribed
+  std::map<FelixID_t, unsigned> m_fidThreadMap; // map of Felix ID to thread index
+  std::map<FelixID_t, bool> m_subscribeMap; // map of Felix ID to subscription status
 
   // Monitoring
   std::thread m_monitor_thread;
