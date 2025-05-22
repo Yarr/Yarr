@@ -3,6 +3,7 @@
 #include <getopt.h>
 
 #include "logging.h"
+#include "LoggingConfig.h"
 
 #include "AllHwControllers.h"
 #include "ScanHelper.h"
@@ -36,13 +37,16 @@ Config parseOptions(int argc, char* argv[]) {
       };
 
     int opt;
-    while ((opt = getopt(argc, argv, "hc:r:")) != -1) {
+    while ((opt = getopt_long(argc, argv, "hc:d:r:", long_options, nullptr)) != -1) {
         switch (opt) {
             case 'h':
                 printHelp();
                 break;
             case 'c':
                 config.controllerConfig = optarg;
+                break;
+            case 'd':
+                config.dataFile = optarg;
                 break;
             case 'r':
                 optind -= 1;
@@ -61,10 +65,21 @@ Config parseOptions(int argc, char* argv[]) {
                 exit(EXIT_FAILURE);
         }
     }
+
+    if(config.read_channels.empty()) {
+        config.read_channels.push_back(0);
+    }
+
     return config;
 }
 
 int main(int argc, char* argv[]) {
+    json loggerConfig;
+    loggerConfig["pattern"] = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";
+    loggerConfig["log_config"][0]["name"] = "all";
+    loggerConfig["log_config"][0]["level"] = "info";
+    loggerConfig["outputDir"] = "";
+    logging::setupLoggers(loggerConfig);
 
     Config c = parseOptions(argc, argv);
 
@@ -90,7 +105,12 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::fstream data_file(c.controllerConfig, std::ios::out | std::ios::binary);
+    std::fstream data_file(c.dataFile, std::ios::out | std::ios::binary);
+
+    if(!data_file.is_open()) {
+        std::cerr << "Failed to open output data file: " << c.dataFile << "\n";
+        return 1;
+    }
 
     RxCore &rxCore = *hwCtrl;
 
@@ -99,8 +119,8 @@ int main(int argc, char* argv[]) {
     while(1) {
         auto d = rxCore.readData();
         if (d.empty()) {
-            logger->error("No data received");
-            break;
+            // logger->warn("No data received");
+            continue;
         }
 
         for(const auto &dd: d) {
