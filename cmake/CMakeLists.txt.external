@@ -73,25 +73,28 @@ function(YARR_ADD_TBB)
 endfunction()
 
 function(YARR_ADD_NETIO)
-    if (TARGET netio4)
-        return()
-    endif()
-
+#    if (TARGET netio4)
+#        return()
+#    endif()
+message(STATUS "testing")
     # NetIO
-    ExternalProject_Add (
-        netio4
+    FetchContent_Declare (
+        netio
         GIT_REPOSITORY https://:@gitlab.cern.ch:8443/atlas-tdaq-felix/netio.git
         GIT_TAG netio-11-01-00
-        UPDATE_COMMAND ""
-        PATCH_COMMAND cp ${PROJECT_SOURCE_DIR}/cmake/CMakeLists.txt.netio ${CMAKE_CURRENT_BINARY_DIR}/external/src/netio4/CMakeLists.txt
-        INSTALL_COMMAND ""
-        PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
+        PATCH_COMMAND
+            git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch001.txt &&
+            git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch002.txt &&
+            git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch003.txt &&
+            git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch004.txt &&
+            git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch005.txt &&
+            git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch006.txt &&
+            git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch007.txt &&
+            git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch008.txt &&
+            cp ${PROJECT_SOURCE_DIR}/cmake/CMakeLists.txt.netio CMakeLists.txt 
         CMAKE_ARGS "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}" -DCMAKE_CXX_FLAGS=-fPIC
-        DEPENDS tbb_2020
         )
-
-    include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/netio4)
-    link_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/netio4-build)
+     FetchContent_MakeAvailable(netio)
 endfunction()
 
 function(YARR_ADD_FELIX)
@@ -110,7 +113,7 @@ function(YARR_ADD_FELIX)
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
         PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
-        DEPENDS netio4
+#        DEPENDS netio4
         )
 
     include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/felixbase4)
