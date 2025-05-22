@@ -19,11 +19,17 @@ class FelixRxThread {
 
     using FelixID_t = FelixTools::FelixID_t;
 
-    FelixRxThread(FelixClientThread::Config fcConfig, size_t maxMessageSize);
+    FelixRxThread(FelixClientThread::Config fcConfig, const std::vector<FelixID_t>& fid_list, size_t maxMessageSize);
     ~FelixRxThread();
 
-    void subscribe(FelixID_t fid, bool enable=true);
-    void unsubscribe(FelixID_t fid);
+    void run();
+    void stop();
+
+    void subscribe();
+    void unsubscribe();
+
+    bool allConnected() const;
+    bool allDisconnected() const;
 
     void enableChannel(FelixID_t fid);
     void enableChannel();
@@ -52,11 +58,13 @@ class FelixRxThread {
 
     std::string getThreadID() const {
       std::stringstream ss;
-      ss << "0x" << std::hex << std::this_thread::get_id();
+      ss << "0x" << std::hex << thread_ptr->get_id();
       return ss.str();
     }
 
   private:
+
+    std::unique_ptr<std::thread> thread_ptr;
 
     std::unique_ptr<FelixClientThread> m_client;
 

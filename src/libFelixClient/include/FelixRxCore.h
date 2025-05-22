@@ -18,6 +18,7 @@ public:
   FelixRxCore();
   ~FelixRxCore() override;
 
+  void initRxChannels(const std::vector<uint32_t>& channels) override;
   void setRxEnable(uint32_t val) override;
   void setRxEnable(std::vector<uint32_t> channels) override;
   void disableRx() override;
@@ -57,9 +58,8 @@ protected:
   // Felix clients
   unsigned m_nThreads {1};
   std::vector<std::unique_ptr<FelixRxThread>> m_rxThreads;
-  unsigned m_nfids {0}; // current number of elinks that are subscribed
+  FelixClientThread::Config m_fcConfig; // Felix client configuration
   std::map<FelixID_t, unsigned> m_fidThreadMap; // map of Felix ID to thread index
-  std::map<FelixID_t, bool> m_subscribeMap; // map of Felix ID to subscription status
 
   // Monitoring
   std::thread m_monitor_thread;

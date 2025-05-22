@@ -12,6 +12,7 @@ namespace {
 
 FelixRxThread::FelixRxThread(
   FelixClientThread::Config fcConfig, // make a copy
+  const std::vector<FelixID_t>& fid_list,
   size_t maxMessageSize
 ) : m_maxMessageSize(maxMessageSize)
 {
@@ -22,9 +23,18 @@ FelixRxThread::FelixRxThread(
   fcConfig.on_disconnect_callback = std::bind(&FelixRxThread::on_disconnect, this, std::placeholders::_1);
 
   m_client = std::make_unique<FelixClientThread>(fcConfig);
+
+  // FID list
+  for (const auto& fid : fid_list) {
+    m_fidStats[fid];
+    m_enables[fid] = false;
+  }
 }
 
 FelixRxThread::~FelixRxThread() {
+  stop();
+  disableChannel();
+
   // Unsubscribe from all links
   for (const auto& [fid, stats] : m_fidStats) {
     m_client->unsubscribe(fid);
@@ -45,16 +55,51 @@ FelixRxThread::~FelixRxThread() {
   }
 }
 
-void FelixRxThread::subscribe(FelixID_t fid, bool enable) {
-  frtlog->debug("Thread {} subscribing to fid 0x{:x}", getThreadID(), fid);
+void FelixRxThread::run() {
+  thread_ptr = std::make_unique<std::thread>(&FelixRxThread::subscribe, this);
+}
 
-  m_enables[fid] = enable;
+void FelixRxThread::stop() {
+  if (thread_ptr and thread_ptr->joinable()) {
+    thread_ptr->join();
+  }
+}
 
-  m_fidStats[fid];
-  m_fidStats[fid].reset_errors();
-  m_fidStats[fid].reset_counters();
+void FelixRxThread::subscribe() {
+  std::stringstream thread_ss;
+  thread_ss << "0x" << std::hex << std::this_thread::get_id();
 
-  m_client->subscribe(fid);
+  for (const auto& [fid, stats] : m_fidStats) {
+    frtlog->debug("Thread {} subscribing to fid 0x{:x}", thread_ss.str(), fid);
+    m_fidStats[fid].reset_errors();
+    m_fidStats[fid].reset_counters();
+
+    m_client->subscribe(fid);
+  }
+}
+
+void FelixRxThread::unsubscribe() {
+  std::stringstream thread_ss;
+  thread_ss << "0x" << std::hex << std::this_thread::get_id();
+
+  for (const auto& [fid, stats] : m_fidStats) {
+    frtlog->debug("Thread {} unsubscribing from fid 0x{:x}", thread_ss.str(), fid);
+    m_client->unsubscribe(fid);
+  }
+}
+
+bool FelixRxThread::allConnected() const {
+  for (const auto& [fid, stats] : m_fidStats) {
+    if (!stats.connected) return false;
+  }
+  return true;
+}
+
+bool FelixRxThread::allDisconnected() const {
+  for (const auto& [fid, stats] : m_fidStats) {
+    if (stats.connected) return false;
+  }
+  return true;
 }
 
 void FelixRxThread::enableChannel(FelixID_t fid) {
@@ -84,18 +129,29 @@ void FelixRxThread::disableChannel() {
 void FelixRxThread::on_init() {}
 
 void FelixRxThread::on_connect(FelixID_t fid) {
-  frtlog->debug("Thread {} connected to fid 0x{:x}", getThreadID(), fid);
+  m_fidStats[fid].connected = true;
+
+  std::stringstream thread_ss;
+  thread_ss << "0x" << std::hex << std::this_thread::get_id();
+  frtlog->debug("Thread {} connected to fid 0x{:x}", thread_ss.str(), fid);
 }
 
 void FelixRxThread::on_disconnect(FelixID_t fid) {
-  frtlog->debug("Thread {} disconnected from fid 0x{:x}", getThreadID(), fid);
+  m_fidStats[fid].connected = false;
+
+  std::stringstream thread_ss;
+  thread_ss << "0x" << std::hex << std::this_thread::get_id();
+  frtlog->debug("Thread {} disconnected from fid 0x{:x}", thread_ss.str(), fid);
 }
 
 void FelixRxThread::on_data_received(FelixID_t fid, const uint8_t* data, size_t size, uint8_t status) {
   // skip if the channel is disabled
   if (not m_enables[fid]) return;
 
-  frttimer->trace("FelixRxThread::on_data_callback,start,{},0x{:x},{}", getThreadID(), fid, size);
+  std::stringstream thread_ss;
+  thread_ss << "0x" << std::hex << std::this_thread::get_id();
+
+  frttimer->trace("FelixRxThread::on_data_callback,start,{},0x{:x},{}", thread_ss.str(), fid, size);
   frtlog->trace("Received message from 0x{:x}", fid);
 
   if (frtlog->should_log(spdlog::level::trace)) {
@@ -149,7 +205,7 @@ void FelixRxThread::on_data_received(FelixID_t fid, const uint8_t* data, size_t 
   // push data to the queue
   m_rawData.pushData(std::move(rd));
 
-  frttimer->trace("FelixRxThread::on_data_callback,done,{},0x{:x},{}", getThreadID(), fid, size);
+  frttimer->trace("FelixRxThread::on_data_callback,done,{},0x{:x},{}", thread_ss.str(), fid, size);
 }
 
 RawDataPtr FelixRxThread::readData() {
