@@ -20,6 +20,7 @@ const std::vector<ABCStarRegister> &listRegs();
 std::optional<ABCStarSubRegister> subRegFromString(const std::string &n);
 bool subRegStringIsValid(const std::string &n);
 std::string subRegToString(ABCStarSubRegister r);
+const std::vector<ABCStarSubRegister> &listSubRegs();
 
 }
 

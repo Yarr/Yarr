@@ -29,7 +29,7 @@ target_include_directories(Star PRIVATE ../libYarr/include)
 target_include_directories(Star PUBLIC ./include)
 target_link_libraries(Star Scan)
 
-LIST(APPEND apps test_star makeLCBSequence benchmark_data_processor_star)
+LIST(APPEND apps test_star makeLCBSequence benchmark_data_processor_star printStarSubRegisters)
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)
     target_link_libraries(${target} Yarr)
