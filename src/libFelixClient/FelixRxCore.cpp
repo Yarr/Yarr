@@ -3,6 +3,7 @@
 
 namespace {
   auto frlog = logging::make_log("FelixRxCore");
+  auto frctimer = logging::make_log("FelixRxCoreTimer");
 }
 
 FelixRxCore::FelixRxCore() = default;
@@ -181,6 +182,9 @@ void FelixRxCore::loadConfig(const json &j) {
 }
 
 void FelixRxCore::setClient(const FelixClientThread::Config& fcConfig) {
+  // timer header
+  frctimer->trace("function,start_or_done,thread,fid,bytes");
+
   for (unsigned t=0; t<m_nThreads; t++) {
     m_rxThreads.emplace_back(std::make_unique<FelixRxThread>(fcConfig, m_maxMessageSize));
   }

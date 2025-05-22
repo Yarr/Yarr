@@ -4,6 +4,7 @@
       "pattern": "%M:%S.%F,%v"}
   ],
   "log_config": [
+      {"name": "FelixRxCoreTimer", "level": "trace", "sink": "file"},
       {"name": "FelixRxThreadTimer", "level": "trace", "sink": "file"}
   ]
 }
