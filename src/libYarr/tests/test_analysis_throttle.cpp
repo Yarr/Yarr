@@ -43,7 +43,7 @@ namespace {
           latest_code = code;
       }
 
-      void execPart2() {
+      void execPart2() override {
           logger->trace("End of loop wait for feedback");
 
           waitForFeedback(RX_CHANNEL);
