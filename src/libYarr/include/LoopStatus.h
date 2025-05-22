@@ -27,6 +27,8 @@ enum LoopStyle {
     LOOP_STYLE_PIXEL_FEEDBACK,
     /// Waits for coarse grained feedback from analysis
     LOOP_STYLE_GLOBAL_FEEDBACK,
+    /// Trigger loop that waits for feedback from analysis
+    LOOP_STYLE_TRIGGER_FEEDBACK,
     /// Loop action that has no other effect on scan
     LOOP_STYLE_NOP,
     /// Sentinel
