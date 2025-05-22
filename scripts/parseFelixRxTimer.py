@@ -222,8 +222,8 @@ def plot_benchmark_df(benchmark_df, filename, title=""):
             title=title,
             xlabel = f"{fieldname} {unit}",
         )
-        ax.bar_label(ax.containers[0])
-        ax.bar_label(ax.containers[1])
+        for label in ax.containers:
+            ax.bar_label(label)
 
         fig = ax.get_figure()
         fig.tight_layout()
