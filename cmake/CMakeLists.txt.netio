@@ -23,7 +23,7 @@ target_include_directories(netio PUBLIC
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-target_link_libraries(netio rt tbb)
+target_link_libraries(netio rt tbb::tbb)
 
 install(TARGETS netio
     EXPORT netioTargets
