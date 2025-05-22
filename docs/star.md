@@ -201,4 +201,12 @@ An example of the non-reverse S-curve and the charge (``ABCs_BCAL``) occupancy m
 ![S-curve pixel-like Th. scan](images/MGF_star_fullmodule_pixellikethresholdscan_ABCs_BCAL.png)
 ![Occupancy map pixel-like Th. scan](images/MGF_star_fullmodule_pixellikethresholdscan_ABCs_BCAL_Map.png)
 
+## Printing Subregister Values from Configuration Files
 
+By default, YARR outputs chip configs in terms of only register values.
+For easier human readability, `printStarSubRegisters` can convert a chip config into subregister values.
+`printStarSubRegisters` is a program that, given a chip config (and ABC/HCC versions) as input, will print out the values of all ABC/HCC registers and subregisters.
+
+```
+./bin/printStarSubRegisters -c [CHIP_CONFIG] -r [HCC_VERSION] -a [ABC_VERSION]
+```

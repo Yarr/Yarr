@@ -53,4 +53,18 @@ std::string subRegToString(ABCStarSubRegister r)
     return ABCStarSubRegisterEnum::_from_integral((int)r)._to_string();
 }
 
+std::vector<ABCStarSubRegister> make_subreg_list() {
+    std::vector<ABCStarSubRegister> l;
+    auto vals = ABCStarSubRegisterEnum::_values();
+    for(auto &v: vals) {
+        l.push_back((ABCStarSubRegister)(int)v);
+    }
+    return l;
+}
+
+const std::vector<ABCStarSubRegister> &listSubRegs() {
+    static std::vector<ABCStarSubRegister> regs = make_subreg_list();
+    return regs;
+}
+
 }
