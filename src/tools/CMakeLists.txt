@@ -11,6 +11,8 @@ list(APPEND tools
         test_json
         dumpRawDataToText
         checkTriggerTags
+        test_read
+        test_write
         )
 
 if (NOT "${TARGET_ARCH}" MATCHES "arm*")
@@ -28,3 +30,7 @@ foreach (target IN LISTS tools)
     target_link_libraries(${target} Yarr)
     target_link_libraries(${target} Scan)
 endforeach ()
+
+foreach (target test_read test_write)
+    target_link_libraries(${target} Util)
+endforeach()
