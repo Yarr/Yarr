@@ -30,7 +30,8 @@ void FelixController::loadConfig(const json &j) {
   fcConfig.property[FELIX_CLIENT_NETIO_PAGESIZE] = std::to_string(unsigned(clientCfg["netioPagesize"]));
 
   try {
-    FelixTxCore::loadConfig(j);
+    auto txCfg = j["ToFLX"];
+    FelixTxCore::loadConfig(txCfg);
     FelixTxCore::setClient(fcConfig);
   } catch (std::runtime_error &je) {
     fclog->error("Failed to load FelixTxCore config");
@@ -38,7 +39,8 @@ void FelixController::loadConfig(const json &j) {
   }
 
   try {
-    FelixRxCore::loadConfig(j);
+    auto rxCfg = j["ToHost"];
+    FelixRxCore::loadConfig(rxCfg);
     FelixRxCore::setClient(fcConfig);
   } catch (std::runtime_error &je) {
     fclog->error("Failed to load FelixRxCore config");
