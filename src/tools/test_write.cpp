@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream>
+
 #include <getopt.h>
+#include <signal.h>
 
 #include "logging.h"
 #include "LoggingConfig.h"
@@ -10,6 +12,8 @@
 
 namespace {
     auto logger = logging::make_log("test_write");
+
+    std::atomic<bool> stop_signalled{false};
 }
 
 struct Config {
@@ -114,17 +118,26 @@ int main(int argc, char* argv[]) {
 
     TxCore &txCore = *hwCtrl;
 
+    signal(SIGINT, [](int signum){
+        stop_signalled = true;
+        logger->info("Received signal {}, stopping...", signum);
+    });
+
     txCore.setCmdEnable(c.write_channels);
 
     static const size_t BUFFER_SIZE = 1000; 
     std::array<uint8_t, BUFFER_SIZE> buffer;
-    while(1) {
+
+    using clk = std::chrono::steady_clock;
+    clk::time_point start_time = std::chrono::steady_clock::now();
+    uint32_t packet_count = 0;
+
+    while(!stop_signalled) {
         if(data_file.eof()) {
-            logger->info("End of file reached, resetting file pointer");
+            logger->debug("End of file reached, resetting file pointer");
             data_file.clear();
             data_file.seekg(0, std::ios::beg);
         }
-        logger->info("At file offset {}", data_file.tellg());
 
         struct {
                 uint32_t adr;
@@ -132,7 +145,6 @@ int main(int argc, char* argv[]) {
         } header;
 
         data_file.read((char *)&header, sizeof(header));
-        logger->info("Read header: adr = {:08x}, size = {}", header.adr, header.size);
 
         if(header.size > BUFFER_SIZE) {
             logger->error("Data size {} is too large from header", header.size);
@@ -151,5 +163,14 @@ int main(int argc, char* argv[]) {
             txCore.writeFifo(data[i]);
         }
         txCore.releaseFifo();
+        packet_count ++;
     }
+
+    clk::time_point end_time = std::chrono::steady_clock::now();
+    auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    logger->info("Packet count: {}", packet_count);
+    logger->info("Elapsed time: {} ms", elapsed_time);
+    logger->info("Packet rate: {} kHz", packet_count/(double)elapsed_time);
+
+    return 0;
 }

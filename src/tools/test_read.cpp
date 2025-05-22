@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream>
+
 #include <getopt.h>
+#include <signal.h>
 
 #include "logging.h"
 #include "LoggingConfig.h"
@@ -73,6 +75,8 @@ Config parseOptions(int argc, char* argv[]) {
     return config;
 }
 
+std::atomic<bool> stop_signalled{false};
+
 int main(int argc, char* argv[]) {
     json loggerConfig;
     loggerConfig["pattern"] = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";
@@ -114,9 +118,18 @@ int main(int argc, char* argv[]) {
 
     RxCore &rxCore = *hwCtrl;
 
+    signal(SIGINT, [](int signum){
+        stop_signalled = true;
+        logger->info("Received signal {}, stopping...", signum);
+    });
+
     rxCore.setRxEnable(c.read_channels);
 
-    while(1) {
+    using clk = std::chrono::steady_clock;
+    clk::time_point start_time = std::chrono::steady_clock::now();
+    uint32_t packet_count = 0;
+
+    while(!stop_signalled) {
         auto d = rxCore.readData();
         if (d.empty()) {
             // logger->warn("No data received");
@@ -124,6 +137,7 @@ int main(int argc, char* argv[]) {
         }
 
         for(const auto &dd: d) {
+            packet_count ++;
             // Write to file
             struct {
                 uint32_t adr;
@@ -134,4 +148,12 @@ int main(int argc, char* argv[]) {
             data_file.write(reinterpret_cast<const char*>(dd->getBuf()), dd->getSize() * sizeof(uint32_t));
         }
     }
+
+    clk::time_point end_time = std::chrono::steady_clock::now();
+    auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    logger->info("Packet count: {}", packet_count);
+    logger->info("Elapsed time: {} ms", elapsed_time);
+    logger->info("Packet rate: {} kHz", packet_count/(double)elapsed_time);
+
+    return 0;
 }
