@@ -414,6 +414,12 @@ bool Histo3dT<DataT>::fromFile(const std::string &filename) {
 
 template<typename DataT>
 void Histo3dT<DataT>::plot(const std::string &prefix, const std::string &dir) const {
+    if(true) {
+        // It's difficult to know how to plot 3d data
+        hlog->info("Skip plotting 3d data in {}", HistogramBase::name);
+        return;
+    }
+
     hlog->info("Plotting {}", HistogramBase::name);
     // Put raw histo data in tmp file
     std::string tmp_name = std::string(getenv("USER")) + "/tmp_yarr_histo2d_" + prefix;
