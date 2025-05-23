@@ -292,7 +292,7 @@ yarrStatus Rd53b::readRegister(Rd53bRegDefault Rd53bGlobalCfg::*ref, uint16_t &v
 
 	    auto [id, received_address, register_value] = Rd53b::decodeSingleRegReadID(data->get(0), data->get(1));
 	    chipId = id; // chipId is read from the chip wirebonded ID, m_chipId is set in the chip config file
-	    if(id == (m_chipId&0x3)) {
+	    if(m_chipId > 15 || id == (m_chipId&0x3)) { // only compare if not broadcasting
 	      if(received_address != (this->*ref).addr()) {
 		logger->error("readRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
 		continue;
