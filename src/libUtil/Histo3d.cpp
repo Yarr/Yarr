@@ -361,6 +361,25 @@ void Histo3dT<DataT>::toFile(const std::string &prefix, const std::string &dir, 
 
 template<typename DataT>
 bool Histo3dT<DataT>::fromFile(const std::string &filename) {
+    {
+        std::fstream jfile(filename, std::fstream::in);
+        if (!jfile.is_open()) {
+            hlog->error("Could not open file {}", filename);
+            return false;
+        }
+
+        try {
+            json j = json::parse(jfile);
+            if(fromJson(j)) {
+                return true;
+            }
+        } catch (json::parse_error &e) {
+            hlog->warn("Could not parse json file {}", filename);
+            // Drop through to read as normal file
+        }
+        jfile.close();
+    }
+
     std::fstream file(filename, std::fstream::in);
     // Check for header
     std::string line;
