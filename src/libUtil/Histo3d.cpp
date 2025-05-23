@@ -321,14 +321,14 @@ void Histo3dT<DataT>::toJson(json &j) const {
 
 template<typename DataT>
 void Histo3dT<DataT>::toFile(const std::string &prefix, const std::string &dir, bool jsonType) const {
-    std::string filename = dir + prefix + "_" + name + ".dat";
-    std::fstream file(filename, std::fstream::out | std::fstream::trunc);
-
+    std::string filename = dir + prefix + "_" + name;
     if (jsonType) {
         filename += ".json";
     } else {
         filename += ".dat";
     }
+    std::fstream file(filename, std::fstream::out | std::fstream::trunc);
+
     json j;
     // jsonType
     if (jsonType) {
