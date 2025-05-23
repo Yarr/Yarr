@@ -204,18 +204,18 @@ void GraphErrors::plot(const std::string &prefix, const std::string &dir) const 
   output += ".png";
 
   std::string input;
-  input += "$'set terminal png size 1280, 1024;";
+  input += "\"set terminal png size 1280, 1024;";
   input += "unset key;";
-  input += "set title \"" + name + "\";";
-  input += "set xlabel \"" + xAxisTitle + "\";";
-  input += "set ylabel \"" + yAxisTitle + "\";";
+  input += "set title '" + name + "';";
+  input += "set xlabel '" + xAxisTitle + "';";
+  input += "set ylabel '" + yAxisTitle + "';";
   input += "set offsets graph 0.1, graph 0.1, graph 0.1, graph 0.1;";
-  input += "plot \\'-\\' using 1:2";
+  input += "plot '-' using 1:2";
   if (this->hasXerrs() and this->hasYerrs()) input += ":3:4 with xyerrorbars";
   else if (this->hasXerrs()) input += ":3 with xerrors";
   else if (this->hasYerrs()) input += ":4 with yerrors";
-  input += " pointtype 7 lc rgb \"black\";";
-  input += "'";
+  input += " pointtype 7 lc rgb 'black';";
+  input += "\"";
 
   std::string cmd = "gnuplot -e " + input + " > " + output + "\n";
   FILE *gnu = popen(cmd.c_str(), "w");

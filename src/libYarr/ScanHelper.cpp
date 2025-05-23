@@ -523,7 +523,7 @@ namespace ScanHelper {
                     std::size_t nHistos = histoCfg.size();
                     for (int j=0; j<nHistos; j++) {
                         std::string algo_name = histoCfg[j]["algorithm"];
-                        add_histo(algo_name, histoCfg[std::to_string(j)]["config"]);
+                        add_histo(algo_name, histoCfg[j]["config"]);
                     }
                 }
                 histogrammer.setMapSize(fe->geo.nCol, fe->geo.nRow);

@@ -2042,19 +2042,8 @@ void ParameterAnalysis::processHistogram(HistogramBase *h) {
         for (unsigned row=1; row<=nRow; row++) {
             unsigned bin = hh->binNum(col, row);
             if (hh->getBin(bin) != 0) {
-                // Select correct output containe
-                unsigned long ident = bin;
-                unsigned long offset = nCol*nRow;
+                // Select correct output container
                 unsigned param = hh->getStat().get(paramLoopNo);
-                // Determine identifier
-                std::string name = "Param";
-                name += "-" + std::to_string(col) + "-" + std::to_string(row);
-                // Check for other loops
-                for (unsigned n=0; n<loops.size(); n++) {
-                    ident += hh->getStat().get(loops[n])*offset;
-                    offset *= loopMax[n];
-                    name += "-" + std::to_string(hh->getStat().get(loops[n]));
-                }
 
                 // Check if Histogram exists
                 if (paramMaps[outerIdent] == nullptr) {
