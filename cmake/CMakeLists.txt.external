@@ -103,20 +103,16 @@ function(YARR_ADD_FELIX)
     endif()
 
     # FELIX
-    ExternalProject_Add (
+    FetchContent_Declare (
         felixbase4
         GIT_REPOSITORY https://:@gitlab.cern.ch:8443/atlas-tdaq-felix/felixbase.git
         GIT_TAG felix-4.0.x
-        UPDATE_COMMAND ""
-        PATCH_COMMAND ""
-        INSTALL_COMMAND ""
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-        PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
+        PATCH_COMMAND
+           cp ${PROJECT_SOURCE_DIR}/cmake/CMakeLists.txt.felixbase4 CMakeLists.txt 
 #        DEPENDS netio4
         )
 
-    include_directories(${CMAKE_CURRENT_BINARY_DIR}/external/src/felixbase4)
+    FetchContent_MakeAvailable(felixbase4)
 endfunction()
 
 function(YARR_ADD_FELIX_CLIENT)

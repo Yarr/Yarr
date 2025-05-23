@@ -1,0 +1,35 @@
+cmake_minimum_required(VERSION 3.15)
+
+project(felixbase4 LANGUAGES CXX VERSION 0.0.1)
+
+include(GNUInstallDirs)
+
+find_package(netio)
+
+add_library(felixbase4 INTERFACE)
+target_include_directories(felixbase4 INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
+target_link_libraries(felixbase4 INTERFACE netio)
+   
+install(TARGETS felixbase4
+    EXPORT felixbase4Targets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
+
+install(DIRECTORY felixbase/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/felixbase
+    FILES_MATCHING
+        PATTERN "*.hpp"
+)
+
+# Install the export set for use with the install-tree
+install(EXPORT felixbase4Targets
+  NAMESPACE felixbase4::
+  DESTINATION cmake
+)
