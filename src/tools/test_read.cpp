@@ -105,14 +105,14 @@ int main(int argc, char* argv[]) {
     }
 
     if (hwCtrl == nullptr) {
-        std::cerr << "Failed to create hardware controller for: " << c.controllerConfig << std::endl;
+        logger->error("Failed to create hardware controller for: {}", c.controllerConfig);
         return 1;
     }
 
     std::fstream data_file(c.dataFile, std::ios::out | std::ios::binary);
 
     if(!data_file.is_open()) {
-        std::cerr << "Failed to open output data file: " << c.dataFile << "\n";
+        logger->error("Failed to open output data file: {}", c.dataFile);
         return 1;
     }
 
