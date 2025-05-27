@@ -1,8 +1,8 @@
-#include <iostream>
+#include <csignal>
 #include <fstream>
+#include <iostream>
 
 #include <getopt.h>
-#include <signal.h>
 
 #include "logging.h"
 #include "LoggingConfig.h"
