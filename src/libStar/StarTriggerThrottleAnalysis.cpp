@@ -83,15 +83,6 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
     }
     alog->debug("Continuing with ident {}", ident);
 
-    // Create histogram to store bunch info if not yet made for this bin identifier
-    if (m_occMapOneBunchOfTriggers[ident] == NULL) {
-      Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, h->getStat());
-      hh->setXaxisTitle("Column");
-      hh->setYaxisTitle("Row");
-      hh->setZaxisTitle("Hits");
-      m_occMapOneBunchOfTriggers[ident].reset(hh);
-    }
-
     // Create "total" histogram (concatenating all bunches of triggers)
     if (m_occMapAllBunches[ident] == NULL) {
       Histo2d *hh = new Histo2d(name2, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, h->getStat());
@@ -111,9 +102,10 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
       m_occMapSaturatedChannels[ident].reset(hh);
     }
 
+    auto curr_occ = dynamic_cast<const Histo2d *>(h);
+
     // Add up input occupancy map histogram
-    m_occMapOneBunchOfTriggers[ident]->add(*(Histo2d*)h);
-    m_occMapAllBunches[ident]->add(*(Histo2d*)h);
+    m_occMapAllBunches[ident]->add(*curr_occ);
 
     // Keep track of how many triggers have been fired so far
     m_totNbTriggersSoFar[ident] += m_nbTriggersInBunch;
@@ -124,28 +116,29 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
     alog->debug("About to start loop to determine sign");
     double aveOccupancy = 0.;
     unsigned int nbChannelsAt0=0, nbNoisyChannelsCloseToFullCounter=0, nbNoisyChannelsUsingBestEstimate=0;
-    for(unsigned i=0; i<m_occMapOneBunchOfTriggers[ident]->size(); i++) {
+    for(unsigned i=0; i<curr_occ->size(); i++) {
       //In case we have channels that were expected to reach saturation and if those are indeed saturated, we use the best estimate of their (relative) occupancy that we kept track of
-      if (m_occMapOneBunchOfTriggers[ident]->getBin(i)==255 && m_occMapSaturatedChannels[ident]->getBin(i)) {
+      auto curr_val = curr_occ->getBin(i);
+      if (curr_val==255 && m_occMapSaturatedChannels[ident]->getBin(i)) {
         //alog->trace("Using previously computed relative occupancy for channel #{} = {}", i, m_occMapSaturatedChannels[ident]->getBin(i));
-        m_occMapOneBunchOfTriggers[ident]->setBin(i, m_occMapSaturatedChannels[ident]->getBin(i)*m_nbTriggersInBunch);
+        curr_val = m_occMapSaturatedChannels[ident]->getBin(i)*m_nbTriggersInBunch;
         m_occMapAllBunches[ident]->setBin(i, m_occMapSaturatedChannels[ident]->getBin(i)*m_totNbTriggersSoFar[ident]);
         nbNoisyChannelsUsingBestEstimate++;
       }
       //Let's compute the average absolute occupancy over all channels
-      aveOccupancy += m_occMapOneBunchOfTriggers[ident]->getBin(i);
+      aveOccupancy += curr_val;
       //printing
-      double chOccupancy = (m_occMapOneBunchOfTriggers[ident]->getBin(i))/(double)m_nbTriggersInBunch;
+      double chOccupancy = curr_val/(double)m_nbTriggersInBunch;
       if (chOccupancy==0)
         nbChannelsAt0++;
-      if (m_occMapOneBunchOfTriggers[ident]->getBin(i)>127)
+      if (curr_val>127)
         nbNoisyChannelsCloseToFullCounter++;
     }
     alog->debug("{} channels with 0 occupancy for this bunch of {} triggers", nbChannelsAt0, m_nbTriggersInBunch);
     alog->debug("{} channels with occupancy > 127", nbNoisyChannelsCloseToFullCounter);
     alog->debug("{} channels using previously computed best estimate", nbNoisyChannelsUsingBestEstimate);
     //Computing the average relative (per trigger) occupancy over the whole FE
-    aveOccupancy /= (double)(m_occMapOneBunchOfTriggers[ident]->size());
+    aveOccupancy /= (double)(curr_occ->size());
     aveOccupancy /= (double)m_nbTriggersInBunch;
     alog->debug("average relative (i.e. per trigger) occupancy for this bunch of triggers = {}", aveOccupancy);
     //Computing the average obtained absolute efficiency so far
@@ -173,8 +166,8 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
       alog->debug("Setting trigger count to {} for next bunch", m_nbTriggersInBunch);
 
       //If we're about to double the number of triggers in the next bunch, we keep track of the occupancies for channels that are expected to reach the maximum value allowed by the counter
-      for(unsigned i=0; i<m_occMapOneBunchOfTriggers[ident]->size(); i++) {
-        if (m_occMapOneBunchOfTriggers[ident]->getBin(i)>127)
+      for(unsigned i=0; i<curr_occ->size(); i++) {
+        if (curr_occ->getBin(i)>127)
           m_occMapSaturatedChannels[ident]->setBin(i, (double)m_occMapAllBunches[ident]->getBin(i)/m_totNbTriggersSoFar[ident]);
       }
     } else if (sign == -1) {
@@ -206,8 +199,6 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
     // m_trigLoop->setTrigCnt(m_nbTriggersInBunch);
     alog->debug("Setting trigger count to {} and calling feedback function", m_nbTriggersInBunch);
     m_feedback->feedbackTrigger(this->id, sign + done);
-
-    m_occMapOneBunchOfTriggers[ident].reset();
 }
 
 void StarTriggerThrottleAnalysis::end() {

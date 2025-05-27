@@ -59,8 +59,6 @@ private:
     /// Indices of the relevant scan parameter loops
     std::vector<unsigned> loops;
 
-    //!< Occupancy maps filled for each bunch of triggers, indexed by an identifier of the set of scan parameter values
-    std::map<unsigned, std::unique_ptr<Histo2d>> m_occMapOneBunchOfTriggers;
     //!< Occupancy maps concatenating all bunches of triggers, indexed by an identifier of the set of scan parameter values
     std::map<unsigned, std::unique_ptr<Histo2d>> m_occMapAllBunches;
     //!< Occupancy maps for channels that are close to saturation (i.e. counter reaching max value -255- in a given bunch of triggers), indexed by an identifier of the set of scan parameter values
