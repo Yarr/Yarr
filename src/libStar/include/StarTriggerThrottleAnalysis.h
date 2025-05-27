@@ -57,6 +57,7 @@ public:
 
 private:
     unsigned buildIdent(const LoopStatus &ls);
+    void endBin(const LoopStatus &ls);
 
     /// Indices of loops to use in ident
     std::vector<unsigned> ident_loops;

@@ -167,6 +167,14 @@ TEST_CASE("StarTriggerThrottleAnalysis", "[Analysis][Star][Throttle]")
         input.pushData(std::move(hist));
     }
 
+    // Add end bin marker (from StarTriggerLoop) Type TBD
+    LoopStatus endStat{{0}, {LOOP_STYLE_TRIGGER_FEEDBACK}};
+    auto complete_hist = std::make_unique<Histo2d>("TriggerComplete",
+                                          1, 0, 1,
+                                          1, 0, 1,
+                                          endStat);
+    input.pushData(std::move(complete_hist));
+
     input.finish();
     analysis.join();
 
@@ -208,7 +216,8 @@ TEST_CASE("StarTriggerThrottleAnalysis", "[Analysis][Star][Throttle]")
             REQUIRE (hh != nullptr);
 
             // Only one bin
-            CHECK (hh->size() == 1);
+            int exp_size = histo_count != 0;
+            CHECK (hh->size() == exp_size);
             CHECK (hh->getBin(0) == trig_count);
         } else if(output_name.find("OccupancyMapAllBunches") == 0) {
             CHECK (result->getXaxisTitle() == "Column");

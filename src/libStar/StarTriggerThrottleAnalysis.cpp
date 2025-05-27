@@ -69,8 +69,30 @@ unsigned StarTriggerThrottleAnalysis::buildIdent(const LoopStatus &ls) {
     return ident;
 }
 
+void StarTriggerThrottleAnalysis::endBin(const LoopStatus &ls) {
+    auto ident = buildIdent(ls);
+
+    alog->debug("Done!");
+    if(!m_occMapAllBunches[ident]) {
+      alog->warn("No data at end bin for {}", ident);
+      return;
+    }
+
+    m_occMapAllBunches[ident]->scale(1./m_totNbTriggersSoFar[ident]);
+
+    //Dump output plots
+    output->pushData(std::move(m_occMapAllBunches[ident]));
+
+    m_occMapAllBunches[ident] = nullptr;
+}
+
 void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
     alog->debug("StarTriggerThrottleAnalysis::processHistogram({})", h->getName());
+    // Only processing occupancy histograms
+    if (h->getName() == "TriggerComplete") {
+      endBin(h->getStat());
+      return;
+    }
 
     // Only processing occupancy histograms
     if (h->getName().find(OccupancyMap::outputName()) != 0) {
@@ -166,9 +188,6 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
       sign = 0;
     }
 
-    //Deciding whether we're done with these scan parameters, because we reached the target occupancy
-    bool done = totAveOcc > m_target_occ;
-
     //Setting the number of triggers in the next bunch
     alog->trace("Throttling trigger with {} nbTriggersInBunch, sign {}. Total ntrig {}.",nbTriggersInBunch,sign, m_totNbTriggersSoFar[ident]);
     if (sign == 1) {
@@ -177,21 +196,6 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
         if (curr_occ->getBin(i)>127)
           m_occMapSaturatedChannels[ident]->setBin(i, (double)m_occMapAllBunches[ident]->getBin(i)/m_totNbTriggersSoFar[ident]);
       }
-    }
-
-    //If we're done with these scan parameters then we compute the relative occupancy map and reinitialize occupancy maps and total number of triggers for the scan parameters
-    if (done) {
-      alog->debug("Done!");
-      m_occMapAllBunches[ident]->scale(1./m_totNbTriggersSoFar[ident]);
-
-      //Dump output plots
-      output->pushData(std::move(m_occMapAllBunches[ident]));
-
-      m_occMapAllBunches[ident] = nullptr;
-      /*//We need at least as many triggers as the target occupancy for the next set of scan parameters
-      if (nbTriggersInBunch<m_target_occ)
-      nbTriggersInBunch = m_target_occ;*/
-      nbTriggersInBunch=256; //We restart at 256 in order to make sure no channel will be saturated for the first bunch
     }
 
     alog->debug("Calling feedback function {} {}", this->id, sign);
