@@ -72,6 +72,11 @@ TEST_CASE("StarTriggerThrottleAnalysis", "[Analysis][Star][Throttle]")
        TestSetup{{40, 40, 40, 40}, {80, 80, 80, 80},
                  {1, 1, unsigned(-1), unsigned(-1)}, {}},
 
+       // Change target
+       TestSetup{{5}, {10}, {0}, {{"target_occ", 10}}},
+       TestSetup{{5}, {10}, {(unsigned)-1}, {{"target_occ", 2}}},
+       TestSetup{{5}, {10}, {1}, {{"target_occ", 40}}},
+
        // Default params (last, without a comma)
        TestSetup{}
        );
@@ -79,6 +84,11 @@ TEST_CASE("StarTriggerThrottleAnalysis", "[Analysis][Star][Throttle]")
     unsigned histo_count = info.occ_sequence.size();
 
     CAPTURE (histo_count);
+
+    if(!info.trig_count_sequence.empty()) {
+      CHECK ( histo_count == info.trig_count_sequence.size() );
+    }
+    CHECK ( histo_count == info.feedback_sequence.size() );
 
     EmptyHw empty;
     Bookkeeper bookie(&empty, &empty);
@@ -134,7 +144,8 @@ TEST_CASE("StarTriggerThrottleAnalysis", "[Analysis][Star][Throttle]")
     for(unsigned i=0; i<histo_count; i++) {
         if(!info.trig_count_sequence.empty()) {
             while(!input.empty()) {
-              // logger->debug("Wait for histo to be processed before setting trigger count");
+              logger->debug("Wait for histo to be processed before setting trigger count");
+              std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
 
             auto l = scan.getLoop(0);
