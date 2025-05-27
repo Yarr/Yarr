@@ -84,8 +84,10 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
     unsigned ident = buildIdent(h->getStat());
 
     // Determine identifier as a function of the scan parameters
-    std::string name = "OccupancyMap";
     std::string name2 = "OccupancyMapAllBunches";
+
+    alog->debug("Histogram from {} triggers for ident {}.",
+                nbTriggersInBunch, ident);
 
     // Create "total" histogram (concatenating all bunches of triggers)
     if (m_occMapAllBunches[ident] == nullptr) {
@@ -151,10 +153,13 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
     short sign = 1;
     //Deciding on whether the nb of triggers in the next bunch is enough to reach the target
     if ((totAveOcc + 0.9*aveOccupancy*nbTriggersInBunch/2.)>m_target_occ) { //If we expect to reach the target occupancy with half of the current nb triggers (with a 10% margin) then we divide the nb of triggers in the next bunch by 2
-      alog->debug("Setting sign to -1");
+      alog->debug("Setting sign to -1 {} + {} > {}",
+                  totAveOcc, 0.9*aveOccupancy*nbTriggersInBunch/2.,
+                  m_target_occ);
       sign = -1;
     } else if ((aveOccupancy*nbTriggersInBunch + totAveOcc)<m_target_occ){ //Otherwise, if we expect to be still far from the target we multiply it by 2
-      alog->debug("Setting sign to 1");
+      alog->debug("Setting sign to 1 {} {} < {}",
+                  aveOccupancy*nbTriggersInBunch, totAveOcc, m_target_occ);
       sign = 1;
     } else {
       alog->debug("Setting sign to 0"); //Otherwise we stay as we are
