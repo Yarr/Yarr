@@ -2,6 +2,8 @@ list(APPEND tools
         analyseRawData
         createConfig
         dbAccessor
+        hw_read_test
+        hw_write_test
         makeFei4PixelModelCfg
         makeRd53aPixelModelCfg
         replot
@@ -11,8 +13,6 @@ list(APPEND tools
         test_json
         dumpRawDataToText
         checkTriggerTags
-        test_read
-        test_write
         )
 
 if (NOT "${TARGET_ARCH}" MATCHES "arm*")
@@ -31,6 +31,6 @@ foreach (target IN LISTS tools)
     target_link_libraries(${target} Scan)
 endforeach ()
 
-foreach (target test_read test_write)
+foreach (target hw_read_test hw_write_test)
     target_link_libraries(${target} Util)
 endforeach()

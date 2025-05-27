@@ -11,25 +11,35 @@
 #include "ScanHelper.h"
 
 namespace {
-    auto logger = logging::make_log("test_read");
+    auto logger = logging::make_log("hw_write_test");
+
+    std::atomic<bool> stop_signalled{false};
 }
 
 struct Config {
     std::string controllerConfig;
     std::string dataFile;
-    std::vector<uint32_t> read_channels;
+    std::vector<uint32_t> write_channels;
 };
 
 void printHelp() {
-    std::cerr << "Usage: test_read -c <controller_config> -r <read_channel>\n";
+    std::cerr << "Usage: hw_write_test -c <controller_config> -w <write_channel>\n";
+    std::cerr << "  Direct write from file to HwController\n";
     std::cerr << "Options:\n";
     std::cerr << "  -h, --help    Show this help message\n";
     std::cerr << "  -c, --controller-config <file>      Path to the controller configuration file\n";
-    std::cerr << "  -d, --data-file <file>              Path to file containing packet data\n";
-    std::cerr << "  -r, --read-channel <channel> <channel>     Channel numbers to read\n";
+    std::cerr << "  -d, --data-file <file>              Path to file to read data to hardware\n";
+    std::cerr << "  -w, --write-channel <channel> <channel>     Channel numbers to write\n";
 }
 
 Config parseOptions(int argc, char* argv[]) {
+    json loggerConfig;
+    loggerConfig["pattern"] = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";
+    loggerConfig["log_config"][0]["name"] = "all";
+    loggerConfig["log_config"][0]["level"] = "info";
+    loggerConfig["outputDir"] = "";
+    logging::setupLoggers(loggerConfig);
+
     Config config;
 
     const struct option long_options[] =
@@ -39,7 +49,7 @@ Config parseOptions(int argc, char* argv[]) {
       };
 
     int opt;
-    while ((opt = getopt_long(argc, argv, "hc:d:r:", long_options, nullptr)) != -1) {
+    while ((opt = getopt_long(argc, argv, "hc:d:w:", long_options, nullptr)) != -1) {
         switch (opt) {
             case 'h':
                 printHelp();
@@ -50,12 +60,12 @@ Config parseOptions(int argc, char* argv[]) {
             case 'd':
                 config.dataFile = optarg;
                 break;
-            case 'r':
+            case 'w':
                 optind -= 1;
                 for (; optind < argc && *argv[optind] != '-'; optind += 1) {
                   try {
                     // Try parsing as number and throw if not
-                    config.read_channels.push_back(std::stoi(optarg));
+                    config.write_channels.push_back(std::stoi(optarg));
                   } catch(std::exception &e) {
                     break;
                   }
@@ -67,25 +77,23 @@ Config parseOptions(int argc, char* argv[]) {
                 exit(EXIT_FAILURE);
         }
     }
-
-    if(config.read_channels.empty()) {
-        config.read_channels.push_back(0);
-    }
-
     return config;
 }
 
-std::atomic<bool> stop_signalled{false};
-
 int main(int argc, char* argv[]) {
-    json loggerConfig;
-    loggerConfig["pattern"] = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";
-    loggerConfig["log_config"][0]["name"] = "all";
-    loggerConfig["log_config"][0]["level"] = "info";
-    loggerConfig["outputDir"] = "";
-    logging::setupLoggers(loggerConfig);
 
     Config c = parseOptions(argc, argv);
+
+    if(c.dataFile.empty()) {
+        logger->error("No data file given to load data from");
+        return 1;
+    }
+
+    std::fstream data_file(c.dataFile, std::ios::in | std::ios::binary);
+    if (!data_file.is_open()) {
+        logger->error("Failed to open input data file: {}", c.dataFile);
+        return 1;
+    }
 
     std::unique_ptr<HwController> hwCtrl = nullptr;
     if(c.controllerConfig.empty()) {
@@ -105,48 +113,58 @@ int main(int argc, char* argv[]) {
     }
 
     if (hwCtrl == nullptr) {
-        logger->error("Failed to create hardware controller for: {}", c.controllerConfig);
+        std::cerr << "Failed to create hardware controller for: " << c.controllerConfig << "\n";
         return 1;
     }
 
-    std::fstream data_file(c.dataFile, std::ios::out | std::ios::binary);
-
-    if(!data_file.is_open()) {
-        logger->error("Failed to open output data file: {}", c.dataFile);
-        return 1;
-    }
-
-    RxCore &rxCore = *hwCtrl;
+    TxCore &txCore = *hwCtrl;
 
     signal(SIGINT, [](int signum){
         stop_signalled = true;
         logger->info("Received signal {}, stopping...", signum);
     });
 
-    rxCore.setRxEnable(c.read_channels);
+    txCore.setCmdEnable(c.write_channels);
+
+    static const size_t BUFFER_SIZE = 1000; 
+    std::array<uint8_t, BUFFER_SIZE> buffer;
 
     using clk = std::chrono::steady_clock;
     clk::time_point start_time = std::chrono::steady_clock::now();
     uint32_t packet_count = 0;
 
     while(!stop_signalled) {
-        auto d = rxCore.readData();
-        if (d.empty()) {
-            // logger->warn("No data received");
-            continue;
+        if(data_file.eof()) {
+            logger->debug("End of file reached, resetting file pointer");
+            data_file.clear();
+            data_file.seekg(0, std::ios::beg);
         }
 
-        for(const auto &dd: d) {
-            packet_count ++;
-            // Write to file
-            struct {
+        struct {
                 uint32_t adr;
                 uint32_t size;
-            } header {dd->getAdr(),  dd->getSize()};
+        } header;
 
-            data_file.write((const char *)&header, sizeof(header));
-            data_file.write(reinterpret_cast<const char*>(dd->getBuf()), dd->getSize() * sizeof(uint32_t));
+        data_file.read((char *)&header, sizeof(header));
+
+        if(header.size > BUFFER_SIZE) {
+            logger->error("Data size {} is too large from header", header.size);
+            exit(1);
         }
+        data_file.read((char *)buffer.data(), header.size);
+
+        if(std::find(c.write_channels.begin(), c.write_channels.end(), header.adr) == c.write_channels.end()) {
+            logger->error("Channel {:08x} not in configured channels", header.adr);
+            exit(1);
+        }
+        txCore.setCmdEnable(header.adr);
+
+        uint32_t *data = (uint32_t*)buffer.data();
+        for(size_t i = 0; i < header.size; ++i) {
+            txCore.writeFifo(data[i]);
+        }
+        txCore.releaseFifo();
+        packet_count ++;
     }
 
     clk::time_point end_time = std::chrono::steady_clock::now();
