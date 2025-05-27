@@ -30,15 +30,8 @@ void StarTriggerThrottleAnalysis::init(const ScanLoopInfo *s) {
     auto l = s->getLoop(n);
     if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || (l->isParameterLoop() && !isPOILoop(l)))) {
       // Parameter loops and feedback
-      loops.push_back(n);
-    } else {
-      unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
-      if (l->isParameterLoop()) {
-        cnt++; // Parameter loop interval is inclusive
-      }
-      if (cnt == 0) {
-        cnt = 1;
-      }
+      ident_loops.push_back(n);
+      loopMax.push_back((unsigned)l->getMax());
     }
 
     if (l->isTriggerLoop()) {
@@ -61,6 +54,21 @@ void StarTriggerThrottleAnalysis::init(const ScanLoopInfo *s) {
   }
 }
 
+unsigned StarTriggerThrottleAnalysis::buildIdent(const LoopStatus &ls) {
+    // Select correct output container
+    unsigned ident = 0;
+    unsigned offset = 1;
+
+    // Determine identifier as a function of the scan parameters
+    for (unsigned n=0; n<ident_loops.size(); n++) {
+        auto loop_val = ls.get(ident_loops[n]);
+        ident += loop_val*offset;
+        offset *= loopMax[n];
+    }
+
+    return ident;
+}
+
 void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
     alog->debug("StarTriggerThrottleAnalysis::processHistogram({})", h->getName());
 
@@ -70,21 +78,14 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
     }
 
     // Select correct output container
-    unsigned ident = 0;
-    unsigned offset = 1;
+    unsigned ident = buildIdent(h->getStat());
 
     // Determine identifier as a function of the scan parameters
     std::string name = "OccupancyMap";
     std::string name2 = "OccupancyMapAllBunches";
-    for (unsigned n=0; n<loops.size(); n++) {
-        std::shared_ptr<LoopActionBase> l = scan->getLoop(loops[n]);
-        ident += ( (h->getStat().get(loops[n])-l->getMin())/l->getStep() )*offset;
-        offset *= (l->getMax() - l->getMin())/l->getStep() + 1;
-    }
-    alog->debug("Continuing with ident {}", ident);
 
     // Create "total" histogram (concatenating all bunches of triggers)
-    if (m_occMapAllBunches[ident] == NULL) {
+    if (m_occMapAllBunches[ident] == nullptr) {
       Histo2d *hh = new Histo2d(name2, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, h->getStat());
       hh->setXaxisTitle("Column");
       hh->setYaxisTitle("Row");
@@ -94,7 +95,7 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
     }
 
     // Create saturation histogram (occupancies for channels close to saturation)
-    if (m_occMapSaturatedChannels[ident] == NULL) {
+    if (m_occMapSaturatedChannels[ident] == nullptr) {
       Histo2d *hh = new Histo2d("SaturatedChannels", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, h->getStat());
       hh->setXaxisTitle("Column");
       hh->setYaxisTitle("Row");

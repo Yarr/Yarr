@@ -14,7 +14,7 @@ class Histo2d;
  *
  * This class implements an analysis algorithm with feedback to the ScanLoop.
  * Based on the occupancy of the histogram, a signal is sent to the
- * StarThrottleLoop.
+ * StarTriggerLoop.
  *
  * Between the two, the goal is to adjust the number of triggers
  * so that are reasonable number are histogrammed for the current occupancy.
@@ -56,8 +56,12 @@ public:
     void loadConfig(const json &config) override;
 
 private:
-    /// Indices of the relevant scan parameter loops
-    std::vector<unsigned> loops;
+    unsigned buildIdent(const LoopStatus &ls);
+
+    /// Indices of loops to use in ident
+    std::vector<unsigned> ident_loops;
+    /// Sizes of loops to use in ident
+    std::vector<unsigned> loopMax;
 
     //!< Occupancy maps concatenating all bunches of triggers, indexed by an identifier of the set of scan parameter values
     std::map<unsigned, std::unique_ptr<Histo2d>> m_occMapAllBunches;
