@@ -2,6 +2,7 @@
 
 #include "AllAnalyses.h"
 #include "Bookkeeper.h"
+#include "FeedbackBase.h"
 #include "FrontEndClipBoards.h"
 #include "Histo1d.h"
 #include "ScanFactory.h"
@@ -15,15 +16,16 @@ namespace {
 auto logger = logging::make_log("test_analysis_throttle_trigger");
 
 struct TestSetup {
-  int chip_count{1};
-
   // Description of occupancy in each of a sequence of input histograms
-  std::vector<int> occ_sequence{2};
+  std::vector<int> occ_sequence{};
 
-  json analysisCfg;
+  std::vector<int> trig_count_sequence{};
 
   // What feedback vals to expect
-  std::vector<uint32_t> feedback_sequence{1};
+  std::vector<uint32_t> feedback_sequence{};
+
+  // Configuration for StarTriggerThrottleAnalysis
+  json analysisCfg;
 };
 
 /// Trivial implementation of scan loop info
@@ -64,14 +66,19 @@ TEST_CASE("StarTriggerThrottleAnalysis", "[Analysis][Star][Throttle]")
 {
     TestSetup info = GENERATE
       (
-       TestSetup{},
-       TestSetup{2, {}}
+       // High occupancy so immediately complete
+       TestSetup{{200}, {300}, {unsigned(-1)}, {}},
+       // Low trigger rate so request more
+       TestSetup{{40, 40, 40, 40}, {80, 80, 80, 80},
+                 {1, 1, unsigned(-1), unsigned(-1)}, {}},
+
+       // Default params (last, without a comma)
+       TestSetup{}
        );
 
     unsigned histo_count = info.occ_sequence.size();
 
     CAPTURE (histo_count);
-    CAPTURE (info.chip_count);
 
     EmptyHw empty;
     Bookkeeper bookie(&empty, &empty);
@@ -81,7 +88,8 @@ TEST_CASE("StarTriggerThrottleAnalysis", "[Analysis][Star][Throttle]")
     // This is for one FE
     AnalysisProcessor analysis(RX_CHANNEL);
 
-    int nCol = 128 * info.chip_count;
+    int chip_count = 1;
+    int nCol = 128 * chip_count;
     int nRow = 2;
 
     {
@@ -110,8 +118,9 @@ TEST_CASE("StarTriggerThrottleAnalysis", "[Analysis][Star][Throttle]")
     // Output from  analysis
     ClipBoard<HistogramBase> output;
 
+    // Record what analysis feeds back to trigger
     FeedbackClipboard fbcp;
-    
+
     analysis.connect(&scan, &input, &output, &fbcp);
 
     analysis.init();
@@ -119,7 +128,23 @@ TEST_CASE("StarTriggerThrottleAnalysis", "[Analysis][Star][Throttle]")
     // Runs until input is done
     analysis.run();
 
+    unsigned trig_count = 0;
+    unsigned occ_count = 0;
+
     for(unsigned i=0; i<histo_count; i++) {
+        if(!info.trig_count_sequence.empty()) {
+            while(!input.empty()) {
+              // logger->debug("Wait for histo to be processed before setting trigger count");
+            }
+
+            auto l = scan.getLoop(0);
+            auto tc = dynamic_cast<const StdTriggerAction*>(l);
+            auto t = const_cast<StdTriggerAction*>(tc);
+            auto ntrigs = info.trig_count_sequence[i];
+            t->setTrigCnt(ntrigs);
+            trig_count += ntrigs;
+        }
+
         LoopStatus stat{{i}, {LOOP_STYLE_TRIGGER_FEEDBACK}};
         auto hist = std::make_unique<Histo2d>("OccupancyMap",
                                                 nCol, 0.5, nCol + 0.5,
@@ -131,6 +156,8 @@ TEST_CASE("StarTriggerThrottleAnalysis", "[Analysis][Star][Throttle]")
         // Based on occ_sequence
         auto occ = info.occ_sequence[i];
 
+        occ_count += occ;
+
         for(int c=0; c<nCol; c++) {
           for(int r=0; r<nRow; r++) {
             hist->fill(c + 1, r + 1, occ);
@@ -138,16 +165,25 @@ TEST_CASE("StarTriggerThrottleAnalysis", "[Analysis][Star][Throttle]")
         }
 
         input.pushData(std::move(hist));
-
-        if (!output.empty()) {
-            logger->debug("Exit histo loop as have output to check");
-            break;
-        }
     }
-    // PixelFeedbackSender send(&fb[feUid]);
 
     input.finish();
     analysis.join();
+
+    if(histo_count) {
+      CHECK (!fbcp.empty());
+    }
+
+    for(unsigned fb_it = 0; fb_it < info.feedback_sequence.size(); fb_it ++) {
+      CAPTURE(fb_it);
+      auto &fb_exp = info.feedback_sequence[fb_it];
+      CHECK(!fbcp.empty());
+      std::unique_ptr<FeedbackParams> fb = fbcp.popData();
+      CHECK(fb->trigger().info == fb_exp);
+    }
+
+    // Checked contents, should now be empty
+    CHECK (fbcp.empty());
 
     REQUIRE (!output.empty());
 
@@ -161,7 +197,7 @@ TEST_CASE("StarTriggerThrottleAnalysis", "[Analysis][Star][Throttle]")
 
         CAPTURE (output_name);
 
-        histo_count ++;
+        out_histo_count ++;
 
         if(output_name.find("NumTriggers") == 0) {
             CHECK (result->getXaxisTitle() == "x");
@@ -171,8 +207,21 @@ TEST_CASE("StarTriggerThrottleAnalysis", "[Analysis][Star][Throttle]")
             auto hh = dynamic_cast<Histo1d*>(result.get());
             REQUIRE (hh != nullptr);
 
-            CHECK (hh->size() == histo_count);
-            CHECK (hh->getBin(0) == 2);
+            // Only one bin
+            CHECK (hh->size() == 1);
+            CHECK (hh->getBin(0) == trig_count);
+        } else if(output_name.find("OccupancyMapAllBunches") == 0) {
+            CHECK (result->getXaxisTitle() == "Column");
+            CHECK (result->getYaxisTitle() == "Row");
+            CHECK (result->getZaxisTitle() == "Hits");
+
+            auto hh = dynamic_cast<Histo2d*>(result.get());
+            REQUIRE (hh != nullptr);
+
+            // Strips in one ASIC
+            CHECK (hh->size() == 256);
+            CAPTURE (occ_count, trig_count);
+            CHECK (hh->getBin(0) == Catch::Approx(occ_count / double(trig_count)));
         } else {
             // Info about any other data
             CAPTURE (result->getXaxisTitle());
@@ -188,5 +237,6 @@ TEST_CASE("StarTriggerThrottleAnalysis", "[Analysis][Star][Throttle]")
         }
     }
 
-    CHECK (out_histo_count == 1);
+    // OccupancyMapAllBunches only created if there are histos
+    CHECK (out_histo_count == 1 + (histo_count != 0));
 }
