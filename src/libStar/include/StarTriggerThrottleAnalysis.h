@@ -72,8 +72,6 @@ private:
 
     /// The target (average) occupancy to reach
     unsigned m_target_occ=128;
-    /// The maximum number of triggers not to exceed
-    unsigned m_max_ntriggers=10000;
 
     /// Object used to send trigger feedback to ScanLoop
     std::unique_ptr<TriggerFeedbackSender> m_feedback;

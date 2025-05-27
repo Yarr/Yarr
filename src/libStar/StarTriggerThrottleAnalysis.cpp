@@ -161,10 +161,10 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
     }
 
     //Deciding whether we're done with these scan parameters, either because we reached the target occupancy or we reached the maximum number of triggers
-    bool done = m_totNbTriggersSoFar[ident] >= m_max_ntriggers || (totAveOcc > m_target_occ);
+    bool done = totAveOcc > m_target_occ;
 
     //Setting the number of triggers in the next bunch
-    alog->trace("Throttling trigger with {} nbTriggersInBunch, sign {}. Total ntrig {}. Max {}.",nbTriggersInBunch,sign, m_totNbTriggersSoFar[ident], m_max_ntriggers);
+    alog->trace("Throttling trigger with {} nbTriggersInBunch, sign {}. Total ntrig {}.",nbTriggersInBunch,sign, m_totNbTriggersSoFar[ident]);
     if (sign == 1) {
       nbTriggersInBunch *= 2;
       alog->debug("Setting trigger count to {} for next bunch", nbTriggersInBunch);
@@ -178,9 +178,6 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
       nbTriggersInBunch /= 2;
       alog->debug("Setting trigger count to {} for next bunch", nbTriggersInBunch);
     }
-    //Let's make sure that we won't exceed the maximum number of triggers allowed
-    if (nbTriggersInBunch>=m_max_ntriggers)
-      nbTriggersInBunch = m_max_ntriggers;
 
     //If we're done with these scan parameters then we compute the relative occupancy map and reinitialize occupancy maps and total number of triggers for the scan parameters
     if (done) {
@@ -195,12 +192,8 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
       if (nbTriggersInBunch<m_target_occ)
       nbTriggersInBunch = m_target_occ;*/
       nbTriggersInBunch=256; //We restart at 256 in order to make sure no channel will be saturated for the first bunch
-    } else if (nbTriggersInBunch+m_totNbTriggersSoFar[ident] > m_max_ntriggers) { //Otherwise we make sure of not exceeding the max number of triggers allowed
-      nbTriggersInBunch = m_max_ntriggers - m_totNbTriggersSoFar[ident];
-      alog->debug("Setting nbTriggersInBunch = {} - {} = {}", m_max_ntriggers, m_totNbTriggersSoFar[ident], nbTriggersInBunch);
     }
-    //Setting the number of triggers in the next bunch and providing feedback
-    // m_trigLoop->setTrigCnt(nbTriggersInBunch);
+
     alog->debug("Setting trigger count to {} and calling feedback function", nbTriggersInBunch);
     m_feedback->feedbackTrigger(this->id, sign + done);
 }
@@ -231,9 +224,6 @@ void StarTriggerThrottleAnalysis::loadConfig(const json &j) {
     if (j.contains("target_occ")) {
       m_target_occ = (int)j["target_occ"];
       alog->info("having m_target_occ={}", (int)m_target_occ);
-    }
-    if (j.contains("max_ntriggers")) {
-      m_max_ntriggers = (int)j["max_ntriggers"];
     }
 }
 
