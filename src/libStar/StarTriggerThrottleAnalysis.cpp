@@ -39,9 +39,9 @@ void StarTriggerThrottleAnalysis::init(const ScanLoopInfo *s) {
       if(m_trigLoop == nullptr) {
         alog->error("StarTriggerThrottleAnalysis got a trigger loop that can't be cast as it");
       } else {
-        //Getting the initial trigger count from the trigger loop parameters
-        m_nbTriggersInBunch = m_trigLoop->getTrigCnt();
-        alog->info("Starting trigger throttling with a bunch of {} triggers.", m_nbTriggersInBunch);
+        // Logging the initial trigger count from the trigger loop parameters
+        auto startTriggers = m_trigLoop->getTrigCnt();
+        alog->info("Starting trigger throttling with a bunch of {} triggers.", startTriggers);
       }
     }
     //Setting feedback for the trigger throttle
@@ -77,6 +77,9 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
       return;
     }
 
+    // Number of triggers for this histogram
+    unsigned nbTriggersInBunch = m_trigLoop->getTrigCnt();
+
     // Select correct output container
     unsigned ident = buildIdent(h->getStat());
 
@@ -109,7 +112,7 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
     m_occMapAllBunches[ident]->add(*curr_occ);
 
     // Keep track of how many triggers have been fired so far
-    m_totNbTriggersSoFar[ident] += m_nbTriggersInBunch;
+    m_totNbTriggersSoFar[ident] += nbTriggersInBunch;
 
 
     //Determining the sign of change of the number of triggers in the next bunch by looking at the average occupancy in the last bunch of triggers
@@ -122,34 +125,34 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
       auto curr_val = curr_occ->getBin(i);
       if (curr_val==255 && m_occMapSaturatedChannels[ident]->getBin(i)) {
         //alog->trace("Using previously computed relative occupancy for channel #{} = {}", i, m_occMapSaturatedChannels[ident]->getBin(i));
-        curr_val = m_occMapSaturatedChannels[ident]->getBin(i)*m_nbTriggersInBunch;
+        curr_val = m_occMapSaturatedChannels[ident]->getBin(i)*nbTriggersInBunch;
         m_occMapAllBunches[ident]->setBin(i, m_occMapSaturatedChannels[ident]->getBin(i)*m_totNbTriggersSoFar[ident]);
         nbNoisyChannelsUsingBestEstimate++;
       }
       //Let's compute the average absolute occupancy over all channels
       aveOccupancy += curr_val;
       //printing
-      double chOccupancy = curr_val/(double)m_nbTriggersInBunch;
+      double chOccupancy = curr_val/(double)nbTriggersInBunch;
       if (chOccupancy==0)
         nbChannelsAt0++;
       if (curr_val>127)
         nbNoisyChannelsCloseToFullCounter++;
     }
-    alog->debug("{} channels with 0 occupancy for this bunch of {} triggers", nbChannelsAt0, m_nbTriggersInBunch);
+    alog->debug("{} channels with 0 occupancy for this bunch of {} triggers", nbChannelsAt0, nbTriggersInBunch);
     alog->debug("{} channels with occupancy > 127", nbNoisyChannelsCloseToFullCounter);
     alog->debug("{} channels using previously computed best estimate", nbNoisyChannelsUsingBestEstimate);
     //Computing the average relative (per trigger) occupancy over the whole FE
     aveOccupancy /= (double)(curr_occ->size());
-    aveOccupancy /= (double)m_nbTriggersInBunch;
+    aveOccupancy /= (double)nbTriggersInBunch;
     alog->debug("average relative (i.e. per trigger) occupancy for this bunch of triggers = {}", aveOccupancy);
     //Computing the average obtained absolute efficiency so far
     double totAveOcc = m_occMapAllBunches[ident]->getMean();
     alog->debug("average absolute occupancy so far = {}", totAveOcc);
     //Deciding on whether the nb of triggers in the next bunch is enough to reach the target
-    if ((totAveOcc + 0.9*aveOccupancy*m_nbTriggersInBunch/2.)>m_target_occ) { //If we expect to reach the target occupancy with half of the current nb triggers (with a 10% margin) then we divide the nb of triggers in the next bunch by 2
+    if ((totAveOcc + 0.9*aveOccupancy*nbTriggersInBunch/2.)>m_target_occ) { //If we expect to reach the target occupancy with half of the current nb triggers (with a 10% margin) then we divide the nb of triggers in the next bunch by 2
       alog->debug("Setting sign to -1");
       sign = -1;
-    } else if ((aveOccupancy*m_nbTriggersInBunch + totAveOcc)<m_target_occ){ //Otherwise, if we expect to be still far from the target we multiply it by 2
+    } else if ((aveOccupancy*nbTriggersInBunch + totAveOcc)<m_target_occ){ //Otherwise, if we expect to be still far from the target we multiply it by 2
       alog->debug("Setting sign to 1");
       sign = 1;
     } else {
@@ -161,10 +164,10 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
     bool done = m_totNbTriggersSoFar[ident] >= m_max_ntriggers || (totAveOcc > m_target_occ);
 
     //Setting the number of triggers in the next bunch
-    alog->trace("Throttling trigger with {} m_nbTriggersInBunch, sign {}. Total ntrig {}. Max {}.",m_nbTriggersInBunch,sign, m_totNbTriggersSoFar[ident], m_max_ntriggers);
+    alog->trace("Throttling trigger with {} nbTriggersInBunch, sign {}. Total ntrig {}. Max {}.",nbTriggersInBunch,sign, m_totNbTriggersSoFar[ident], m_max_ntriggers);
     if (sign == 1) {
-      m_nbTriggersInBunch *= 2;
-      alog->debug("Setting trigger count to {} for next bunch", m_nbTriggersInBunch);
+      nbTriggersInBunch *= 2;
+      alog->debug("Setting trigger count to {} for next bunch", nbTriggersInBunch);
 
       //If we're about to double the number of triggers in the next bunch, we keep track of the occupancies for channels that are expected to reach the maximum value allowed by the counter
       for(unsigned i=0; i<curr_occ->size(); i++) {
@@ -172,12 +175,12 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
           m_occMapSaturatedChannels[ident]->setBin(i, (double)m_occMapAllBunches[ident]->getBin(i)/m_totNbTriggersSoFar[ident]);
       }
     } else if (sign == -1) {
-      m_nbTriggersInBunch /= 2;
-      alog->debug("Setting trigger count to {} for next bunch", m_nbTriggersInBunch);
+      nbTriggersInBunch /= 2;
+      alog->debug("Setting trigger count to {} for next bunch", nbTriggersInBunch);
     }
     //Let's make sure that we won't exceed the maximum number of triggers allowed
-    if (m_nbTriggersInBunch>=m_max_ntriggers)
-      m_nbTriggersInBunch = m_max_ntriggers;
+    if (nbTriggersInBunch>=m_max_ntriggers)
+      nbTriggersInBunch = m_max_ntriggers;
 
     //If we're done with these scan parameters then we compute the relative occupancy map and reinitialize occupancy maps and total number of triggers for the scan parameters
     if (done) {
@@ -189,16 +192,16 @@ void StarTriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
 
       m_occMapAllBunches[ident] = nullptr;
       /*//We need at least as many triggers as the target occupancy for the next set of scan parameters
-      if (m_nbTriggersInBunch<m_target_occ)
-      m_nbTriggersInBunch = m_target_occ;*/
-      m_nbTriggersInBunch=256; //We restart at 256 in order to make sure no channel will be saturated for the first bunch
-    } else if (m_nbTriggersInBunch+m_totNbTriggersSoFar[ident] > m_max_ntriggers) { //Otherwise we make sure of not exceeding the max number of triggers allowed
-      m_nbTriggersInBunch = m_max_ntriggers - m_totNbTriggersSoFar[ident];
-      alog->debug("Setting m_nbTriggersInBunch = {} - {} = {}", m_max_ntriggers, m_totNbTriggersSoFar[ident], m_nbTriggersInBunch);
+      if (nbTriggersInBunch<m_target_occ)
+      nbTriggersInBunch = m_target_occ;*/
+      nbTriggersInBunch=256; //We restart at 256 in order to make sure no channel will be saturated for the first bunch
+    } else if (nbTriggersInBunch+m_totNbTriggersSoFar[ident] > m_max_ntriggers) { //Otherwise we make sure of not exceeding the max number of triggers allowed
+      nbTriggersInBunch = m_max_ntriggers - m_totNbTriggersSoFar[ident];
+      alog->debug("Setting nbTriggersInBunch = {} - {} = {}", m_max_ntriggers, m_totNbTriggersSoFar[ident], nbTriggersInBunch);
     }
     //Setting the number of triggers in the next bunch and providing feedback
-    // m_trigLoop->setTrigCnt(m_nbTriggersInBunch);
-    alog->debug("Setting trigger count to {} and calling feedback function", m_nbTriggersInBunch);
+    // m_trigLoop->setTrigCnt(nbTriggersInBunch);
+    alog->debug("Setting trigger count to {} and calling feedback function", nbTriggersInBunch);
     m_feedback->feedbackTrigger(this->id, sign + done);
 }
 
