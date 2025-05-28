@@ -1,7 +1,9 @@
 #include "StarChipsetEmu.h"
 
 #include <iomanip>
+#include <random>
 
+#include "AbcNames.h"
 #include "ScanHelper.h"
 #include "logging.h"
 
@@ -94,6 +96,55 @@ public:
   }
 };
 
+/**
+ * Emulate analog FE using configured occupancy.
+ */
+class SimpleOccupancyGenerator : public StripGenerator {
+  ABCStarSubRegister sub_reg;
+
+  std::vector<float> occupancy_map;
+
+  std::random_device rd{};
+  std::mt19937 gen{rd()};
+  std::uniform_real_distribution<> dis{0.0, 1.0};
+
+public:
+  SimpleOccupancyGenerator(const json &cfg) {
+    logger->debug("Configuring SimpleOccupancyGenerator");
+    std::string var = cfg["variable"];
+
+    auto subRegOpt = AbcNames::subRegFromString(var);
+    if(!subRegOpt.has_value()) {
+      logger->error("Variable {} does not name an ABC sub-reg", var);
+      throw std::runtime_error("Bad variable in config");
+    }
+
+    sub_reg = subRegOpt.value();
+    if(!cfg.contains("occupancies")) {
+      logger->error("No occupancies for simple occupancy config");
+      throw std::runtime_error("Bad 'occupancies' emu config");
+    }
+    auto occs = cfg["occupancies"];
+    occupancy_map = occs.template get<std::vector<float>>();
+  }
+
+  void fill_hits(StripData &hits, const AbcCfg &abc, bool cal_pulse) override {
+    auto curr_val = abc.getSubRegisterValue(sub_reg);
+
+    float occupancy = 0.0f;
+
+    if(curr_val < occupancy_map.size()) {
+      occupancy = occupancy_map[curr_val];
+    }
+
+    // Loop over 256 strips
+    for (int istrip = 0; istrip < 256; ++istrip) {
+      bool stripHit = dis(gen) < occupancy;
+      hits.set(istrip, stripHit);
+    }
+  }
+};
+
 StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
                                const std::string& json_emu_file_path,
                                std::unique_ptr<StarCfg> regCfg,
@@ -138,7 +189,18 @@ StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
 StarChipsetEmu::~StarChipsetEmu() = default;
 
 void StarChipsetEmu::configureGenerator(const json &jEmu) {
-    m_generator = std::make_unique<AnalogueModelGenerator>(jEmu);
+    if(jEmu.contains("generator")) {
+      auto gen_config = jEmu["generator"];
+      // Configure emulator occupancy based on a simple register value
+      if(gen_config.contains("type")) {
+        std::string gen_type = gen_config["type"];
+        if(gen_type == "simple_var") {
+          m_generator = std::make_unique<SimpleOccupancyGenerator>(gen_config);
+        }
+      }
+    } else {
+      m_generator = std::make_unique<AnalogueModelGenerator>(jEmu);
+    }
 }
 
 void StarChipsetEmu::sendPacket(uint8_t *byte_s, uint8_t *byte_e) {
