@@ -1981,21 +1981,12 @@ void ParameterAnalysis::loadConfig(const json &j){
 }
 
 void ParameterAnalysis::init(const ScanLoopInfo *s) {
-    n_count = 1;
     alog->info("ParameterAnalysis init");
     for (unsigned n=0; n<s->size(); n++) {
         auto l = s->getLoop(n);
         if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || l->isParameterLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
-        } else {
-            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
-            if (l->isParameterLoop()) {
-                cnt++; // Parameter loop interval is inclusive
-            }
-            if (cnt == 0)
-                cnt = 1;
-            n_count = n_count*cnt;
         }
 
         // Parameter Loop
