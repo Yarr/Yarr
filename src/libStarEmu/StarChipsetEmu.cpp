@@ -58,13 +58,8 @@ StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
       logger->error("Error opening emulator config: {}", e.what());
       throw(std::runtime_error("StarChipsetEmu::StarChipsetEmu failure"));
     }
-    // Initialize FE strip array from config json
-    for (size_t istrip = 0; istrip < 256; ++istrip) {
-      m_stripArray[istrip].setValue(jEmu["vthreshold_mean"][istrip],
-                                    jEmu["vthreshold_sigma"][istrip],
-                                    jEmu["noise_occupancy_mean"][istrip],
-                                    jEmu["noise_occupancy_sigma"][istrip]);
-    }
+
+    configureGenerator(jEmu);
   }
 
   // HPR
@@ -74,6 +69,16 @@ StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
 }
 
 StarChipsetEmu::~StarChipsetEmu() = default;
+
+void StarChipsetEmu::configureGenerator(const json &jEmu) {
+    // Initialize FE strip array from config json
+    for (size_t istrip = 0; istrip < 256; ++istrip) {
+      m_stripArray[istrip].setValue(jEmu["vthreshold_mean"][istrip],
+                                    jEmu["vthreshold_sigma"][istrip],
+                                    jEmu["noise_occupancy_mean"][istrip],
+                                    jEmu["noise_occupancy_sigma"][istrip]);
+    }
+}
 
 void StarChipsetEmu::sendPacket(uint8_t *byte_s, uint8_t *byte_e) {
     size_t byte_length = byte_e - byte_s;

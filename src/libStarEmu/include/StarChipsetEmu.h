@@ -52,6 +52,8 @@ private:
     sendPacket(&(*std::begin(iterable)), &(*std::end(iterable)));
   }
 
+  void configureGenerator(const json &jEmu);
+
   /// Send response packet (excluding SOP/EOP)
   void sendPacket(uint8_t *byte_s, uint8_t *byte_e);
 
