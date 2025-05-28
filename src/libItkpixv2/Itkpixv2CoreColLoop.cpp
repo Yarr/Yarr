@@ -34,7 +34,6 @@ Itkpixv2CoreColLoop::Itkpixv2CoreColLoop() : LoopActionBase(LOOP_STYLE_MASK){
 }
 
 void Itkpixv2CoreColLoop::init() {
-    logger->debug("init()");
     SPDLOG_LOGGER_TRACE(logger, "");
     m_done = false;
     m_cur = 0;
@@ -81,7 +80,6 @@ void Itkpixv2CoreColLoop::execPart1() {
 }
 
 void Itkpixv2CoreColLoop::execPart2() {
-    logger->debug("execPart2()");
     SPDLOG_LOGGER_TRACE(logger, "");
     m_cur += step;
     if (!(m_cur < m_nSteps)) m_done = true;
@@ -97,7 +95,7 @@ void Itkpixv2CoreColLoop::execPart2() {
 
 void Itkpixv2CoreColLoop::end() {
     logger->debug("end()");
-
+    // TODO return to original config
     // When in core column test, set all to enable
     if (m_disUnused && m_ignoreDis){
         int iChannel=0;
@@ -133,7 +131,7 @@ void Itkpixv2CoreColLoop::end() {
                 fe->writeNamedRegister(registerName, m_initCoreColsAllChips[iChannel][iReg]); // write the register
             }
 
-            iChannel++; //incraese chip index if chip was active
+            iChannel++; //increase chip index if chip was active
 
             while(!g_tx->isCmdEmpty()) {}
         }
