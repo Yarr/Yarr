@@ -18,6 +18,14 @@ namespace StarEmuNS {
   using StripData = std::bitset<NStrips>;
 }
 
+/// Generate analogue hit patterns
+class StripGenerator {
+public:
+  virtual ~StripGenerator() = default;
+
+  virtual void fill_hits(StarEmuNS::StripData &hits, const AbcCfg &abc, bool cal_pulse) = 0;
+};
+
 /**
  * Emulation of one HCCStar and its connected ABCStars.
  */
@@ -173,9 +181,8 @@ private:
   // HCCStar and ABCStar configurations
   std::unique_ptr<StarCfg> m_starCfg;
 
-  ////////////////////////////////////////
-  // Analog FE
-  std::array<StripModel, StarEmuNS::NStrips> m_stripArray;
+  /// Generator of analogue hits based on parameters
+  std::unique_ptr<StripGenerator> m_generator;
 };
 
 #endif //__STAR_CHIPSET_EMU_H__

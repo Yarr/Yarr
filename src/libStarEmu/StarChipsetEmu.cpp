@@ -35,6 +35,61 @@ StarEmuNS::StripData getMasks(const AbcCfg& abc);
 
 using namespace StarEmuNS; // eg StripData
 
+/**
+ * Emulate analog FE using StripModel.
+ */
+class AnalogueModelGenerator : public StripGenerator {
+  std::array<StripModel, NStrips> m_stripArray;
+public:
+  AnalogueModelGenerator(const json &cfg) {
+    logger->debug("Configuring AnalogueModelGenerator");
+    // Initialize FE strip array from config json
+    for (size_t istrip = 0; istrip < 256; ++istrip) {
+      m_stripArray[istrip].setValue(cfg["vthreshold_mean"][istrip],
+                                    cfg["vthreshold_sigma"][istrip],
+                                    cfg["noise_occupancy_mean"][istrip],
+                                    cfg["noise_occupancy_sigma"][istrip]);
+    }
+  }
+
+  void fill_hits(StripData &hits, const AbcCfg &abc, bool cal_pulse) override {
+    bool CalPulseEnable = abc.getSubRegisterValue(ABCStarSubRegister::CALPULSE_ENABLE);
+
+    // Charge injection DAC
+    uint16_t BCAL;
+    if (cal_pulse and CalPulseEnable) {
+      BCAL = abc.getSubRegisterValue(ABCStarSubRegister::BCAL);
+      //assert(bcid == (l0addr&0xff));
+    } else { // No calibration pulse. Hits could still be recorded due to noise.
+      BCAL = 0;
+    }
+
+    // Threshold DAC
+    // BVT: 8 bits, 0 - -550 mV
+    uint8_t BVT = abc.getSubRegisterValue(ABCStarSubRegister::BVT);
+
+    // Trim Range
+    // BTRANGE: 5 bits, 50 mV - 230 mV
+    uint8_t BTRANGE = abc.getSubRegisterValue(ABCStarSubRegister::BTRANGE);
+
+    // Calibration enables for each strip channel
+    auto enables = getCalEnables(abc);
+
+    // Loop over 256 strips
+    for (int istrip = 0; istrip < 256; ++istrip) {
+      // TrimDAC
+      uint8_t TrimDAC = abc.getTrimDACRaw(istrip);
+
+      if (not enables[istrip]) {
+        BCAL = 0;
+      }
+
+      bool aHit = m_stripArray[istrip].calculateHit(BCAL, BVT, TrimDAC, BTRANGE);
+      hits.set(istrip, aHit);
+    }
+  }
+};
+
 StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
                                const std::string& json_emu_file_path,
                                std::unique_ptr<StarCfg> regCfg,
@@ -77,13 +132,7 @@ StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
 StarChipsetEmu::~StarChipsetEmu() = default;
 
 void StarChipsetEmu::configureGenerator(const json &jEmu) {
-    // Initialize FE strip array from config json
-    for (size_t istrip = 0; istrip < 256; ++istrip) {
-      m_stripArray[istrip].setValue(jEmu["vthreshold_mean"][istrip],
-                                    jEmu["vthreshold_sigma"][istrip],
-                                    jEmu["noise_occupancy_mean"][istrip],
-                                    jEmu["noise_occupancy_sigma"][istrip]);
-    }
+    m_generator = std::make_unique<AnalogueModelGenerator>(jEmu);
 }
 
 void StarChipsetEmu::sendPacket(uint8_t *byte_s, uint8_t *byte_e) {
@@ -1132,41 +1181,13 @@ std::pair<uint8_t, StripData> StarChipsetEmu::generateFEData_CaliPulse(const Abc
   uint8_t pulsetype = (pulse.to_ulong()>>8) & 3;
 
   //assert(TM==0)
-  bool CalPulseEnable = abc.getSubRegisterValue(ABCStarSubRegister::CALPULSE_ENABLE);
 
-  // Charge injection DAC
-  uint16_t BCAL;
-  if (pulsetype == 1 and CalPulseEnable) {
-    BCAL = abc.getSubRegisterValue(ABCStarSubRegister::BCAL);
-    //assert(bcid == (l0addr&0xff));
-  } else { // No calibration pulse. Hits could still be recorded due to noise.
-    BCAL = 0;
+  if (pulsetype == 1) {
     // assign BCID
     bcid = l0addr & 0xff;
   }
 
-  // Threshold DAC
-  // BVT: 8 bits, 0 - -550 mV
-  uint8_t BVT = abc.getSubRegisterValue(ABCStarSubRegister::BVT);
-
-  // Trim Range
-  // BTRANGE: 5 bits, 50 mV - 230 mV
-  uint8_t BTRANGE = abc.getSubRegisterValue(ABCStarSubRegister::BTRANGE);
-
-  // Calibration enables for each strip channel
-  auto enables = getCalEnables(abc);
-
-  // Loop over 256 strips
-  for (int istrip = 0; istrip < 256; ++istrip) {
-    // TrimDAC
-    uint8_t TrimDAC = abc.getTrimDACRaw(istrip);
-
-    if (not enables[istrip])
-      BCAL = 0;
-
-    bool aHit = m_stripArray[istrip].calculateHit(BCAL, BVT, TrimDAC, BTRANGE);
-    hits.set(istrip, aHit);
-  }
+  m_generator->fill_hits(hits, abc, pulsetype == 1);
 
   // apply masks
   auto masks = getMasks(abc);
