@@ -1978,6 +1978,9 @@ void ParameterAnalysis::loadConfig(const json &j){
     if (j.contains("createMap")){
         m_createMap = j["createMap"];
     }
+    if (j.contains("targetLoopIndex")){
+        paramLoopNo = j["targetLoopIndex"];
+    }
 }
 
 void ParameterAnalysis::init(const ScanLoopInfo *s) {
@@ -2012,6 +2015,10 @@ void ParameterAnalysis::init(const ScanLoopInfo *s) {
                 injections = trigLoop->getTrigCnt();
             }
         }
+    }
+
+    if(paramLoopNo >= s->size()) {
+      alog->error("ParameterAnalysis: no parameter loop found");
     }
 }
 

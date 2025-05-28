@@ -490,7 +490,7 @@ class ParameterAnalysis : public AnalysisAlgorithm {
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
         unsigned injections;
-        unsigned paramLoopNo;
+        unsigned paramLoopNo{0xffffffff};
         unsigned paramMin;
         unsigned paramMax;
         unsigned paramStep;
