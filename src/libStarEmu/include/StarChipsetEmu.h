@@ -12,6 +12,12 @@
 
 class StarCfg;
 
+namespace StarEmuNS {
+  // FE data format
+  static constexpr unsigned NStrips = 256;
+  using StripData = std::bitset<NStrips>;
+}
+
 /**
  * Emulation of one HCCStar and its connected ABCStars.
  */
@@ -43,8 +49,7 @@ public:
 private:
 
   // FE data format
-  static constexpr unsigned NStrips = 256;
-  using StripData = std::bitset<NStrips>;
+  using StripData = StarEmuNS::StripData;
 
   /////////////////////////////////////////////
   /// Send response packet (excluding SOP/EOP)
@@ -104,9 +109,6 @@ private:
   std::pair<uint8_t,StripData> generateFEData_StaticTest(const AbcCfg&, unsigned);
   std::pair<uint8_t,StripData> generateFEData_TestPulse(const AbcCfg&, unsigned);
   std::pair<uint8_t,StripData> generateFEData_CaliPulse(const AbcCfg&, unsigned);
-
-  StripData getMasks(const AbcCfg& abc);
-  StripData getCalEnables(const AbcCfg& abc);
 
   /// Utilities
   bool getParity_8bits(uint8_t);
@@ -173,7 +175,7 @@ private:
 
   ////////////////////////////////////////
   // Analog FE
-  std::array<StripModel, NStrips> m_stripArray;
+  std::array<StripModel, StarEmuNS::NStrips> m_stripArray;
 };
 
 #endif //__STAR_CHIPSET_EMU_H__

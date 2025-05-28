@@ -27,7 +27,13 @@ std::ostream &operator <<(std::ostream &os, print_hex_type<T> v) {
 }
 
 auto logger = logging::make_log("StarChipsetEmu");
-}
+
+StarEmuNS::StripData getCalEnables(const AbcCfg& abc);
+StarEmuNS::StripData getMasks(const AbcCfg& abc);
+
+} // End anon namespace
+
+using namespace StarEmuNS; // eg StripData
 
 StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
                                const std::string& json_emu_file_path,
@@ -904,7 +910,9 @@ void StarChipsetEmu::fillL0Buffer() {
   }
 }
 
-StarChipsetEmu::StripData StarChipsetEmu::getMasks(const AbcCfg& abc) {
+namespace {
+
+StripData getMasks(const AbcCfg& abc) {
   // mask registers
   unsigned maskinput0 = abc.getRegisterValue(ABCStarRegister::MaskInput0);
   unsigned maskinput1 = abc.getRegisterValue(ABCStarRegister::MaskInput1);
@@ -973,7 +981,7 @@ StarChipsetEmu::StripData StarChipsetEmu::getMasks(const AbcCfg& abc) {
   return masks;
 }
 
-StarChipsetEmu::StripData StarChipsetEmu::getCalEnables(const AbcCfg& abc) {
+StripData getCalEnables(const AbcCfg& abc) {
   // Calibration enable registers
   unsigned calenable0 = abc.getRegisterValue(ABCStarRegister::CalREG0);
   unsigned calenable1 = abc.getRegisterValue(ABCStarRegister::CalREG1);
@@ -1042,7 +1050,9 @@ StarChipsetEmu::StripData StarChipsetEmu::getCalEnables(const AbcCfg& abc) {
   return enables;
 }
 
-std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_StaticTest(const AbcCfg& abc, unsigned l0addr) {
+} // End anon
+
+std::pair<uint8_t, StripData> StarChipsetEmu::generateFEData_StaticTest(const AbcCfg& abc, unsigned l0addr) {
   // Use mask bits as the hit pattern in Static Test mode
   StripData masks = getMasks(abc);
 
@@ -1050,7 +1060,7 @@ std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_Sta
   return std::make_pair(bcid, masks);
 }
 
-std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_TestPulse(const AbcCfg& abc, unsigned l0addr) {
+std::pair<uint8_t, StripData> StarChipsetEmu::generateFEData_TestPulse(const AbcCfg& abc, unsigned l0addr) {
   StripData hits;
   uint8_t bcid = 0;
 
@@ -1111,7 +1121,7 @@ std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_Tes
   return std::make_pair(bcid, hits);
 }
 
-std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_CaliPulse(const AbcCfg& abc, unsigned l0addr) {
+std::pair<uint8_t, StripData> StarChipsetEmu::generateFEData_CaliPulse(const AbcCfg& abc, unsigned l0addr) {
   StripData hits;
 
   // read the L0 pipeline
@@ -1176,7 +1186,7 @@ unsigned StarChipsetEmu::getL0BufferAddr(const AbcCfg& abc, uint8_t cmdBC) const
   return (L0BufDepth + m_bccnt - 4 + cmdBC - l0_latency) % L0BufDepth;
 }
 
-std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::getFEData(const AbcCfg& abc, unsigned l0addr) {
+std::pair<uint8_t, StripData> StarChipsetEmu::getFEData(const AbcCfg& abc, unsigned l0addr) {
   // Mode of operation
   uint8_t TM = abc.getSubRegisterValue(ABCStarSubRegister::TM);
   if (TM == 0) { // Normal data taking
