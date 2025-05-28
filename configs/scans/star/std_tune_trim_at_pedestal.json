@@ -22,15 +22,14 @@
         "config": {
           "max": 31,
           "min": 0,
-          "steps": [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+          "steps": [16,14,8,7,4,4,3,3,2,2,1,1,1,1],
 	  "resetTdac": true
-
         },
         "loopAction": "StarChannelFeedback"
       },      
       {
         "config": {
-          "trig_count": 5000,
+          "trig_count": 50,
           "trig_frequency": 1000,
           "trig_time": 0,
           "l0_latency": 30,
