@@ -145,6 +145,63 @@ public:
   }
 };
 
+/**
+ * Emulate analog FE using configured occupancy based on trim.
+ */
+class SimpleTrimGenerator : public StripGenerator {
+  std::vector<float> occupancy_map;
+
+  std::random_device rd{};
+  std::mt19937 gen{rd()};
+  std::uniform_real_distribution<> dis{0.0, 1.0};
+
+public:
+  SimpleTrimGenerator(const json &cfg) {
+    logger->debug("Configuring SimpleTrimGenerator");
+    if(!cfg.contains("occupancies")) {
+      logger->error("No occupancies for simple trim occupancy config");
+      throw std::runtime_error("Bad 'occupancies' emu config");
+    }
+    auto occs = cfg["occupancies"];
+    occupancy_map = occs.template get<std::vector<float>>();
+  }
+
+  void fill_hits(StripData &hits, const AbcCfg &abc, bool cal_pulse) override {
+    std::array<uint32_t, 32> lo_trim;
+    std::array<uint32_t, 8> hi_trim;
+
+    for(size_t t=0; t<32; t++) {
+      lo_trim[t] = abc.getRegisterValue(ABCStarRegisters::TrimLo(t));
+    }
+    for(size_t t=0; t<8; t++) {
+      hi_trim[t] = abc.getRegisterValue(ABCStarRegisters::TrimHi(t));
+    }
+
+    // Loop over 256 strips (copied from getTrimDACRaw)
+    for (unsigned istrip = 0; istrip < 256; ++istrip) {
+      unsigned lo_offset = (istrip * 4) % 32;
+      unsigned hi_offset = istrip % 32;
+
+      uint32_t lo_reg_value = lo_trim[istrip/8];
+      uint32_t hi_reg_value = hi_trim[istrip/32];
+
+      auto lo_val = (lo_reg_value >> lo_offset) & 0xf;
+      auto hi_val = (hi_reg_value >> hi_offset) & 1;
+
+      int trim_val = (hi_val<<4) | lo_val;
+
+      float occupancy = 0.0f;
+
+      if(trim_val < occupancy_map.size()) {
+        occupancy = occupancy_map[trim_val];
+      }
+
+      bool stripHit = dis(gen) < occupancy;
+      hits.set(istrip, stripHit);
+    }
+  }
+};
+
 StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
                                const std::string& json_emu_file_path,
                                std::unique_ptr<StarCfg> regCfg,
@@ -196,6 +253,8 @@ void StarChipsetEmu::configureGenerator(const json &jEmu) {
         std::string gen_type = gen_config["type"];
         if(gen_type == "simple_var") {
           m_generator = std::make_unique<SimpleOccupancyGenerator>(gen_config);
+        } else if(gen_type == "simple_trim_var") {
+          m_generator = std::make_unique<SimpleTrimGenerator>(gen_config);
         }
       }
     } else {
