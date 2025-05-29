@@ -277,7 +277,6 @@ int ScanConsoleImpl::configure() {
             // Select correct channel
             hwCtrl->setCmdEnable(feCfg->getTxChannel());
             // Configure
-            bookie->getGlobalFe()->resetAllHard();
             bookie->getFe(id)->configure();
             // Wait for fifo to be empty
             std::this_thread::sleep_for(std::chrono::microseconds(100));
