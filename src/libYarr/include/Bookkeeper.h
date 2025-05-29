@@ -9,20 +9,18 @@
 // # Comment: Global container for data
 // ################################
 
-#include <mutex>
+#include <map>
 #include <memory>
+#include <mutex>
 #include <thread>
-
-#include "RawData.h"
-#include "EventDataBase.h"
-#include "HistogramBase.h"
-#include "ResultBase.h"
-#include "ClipBoard.h"
+#include <vector>
 
 #include "FrontEnd.h"
-#include "TxCore.h"
-#include "RxCore.h"
 #include "StdTriggerAction.h"
+
+class FrontEndCfg;
+class RxCore;
+class TxCore;
 
 struct BookEntry {
     std::unique_ptr<FrontEnd> fe;

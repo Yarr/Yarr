@@ -1,5 +1,3 @@
-#include <vector>
-
 #include "catch.hpp"
 #include "StarConversionTools.h"
 
@@ -13,6 +11,7 @@ TEST_CASE("StarConversionTools", "[star][json]") {
 
     // Threshold
     REQUIRE_THAT(ct.convertBVTtomV(1), Catch::Matchers::WithinAbs(3.7674, 1e-5));
+    REQUIRE_THAT(ct.convertBVTtomV(1.5), Catch::Matchers::WithinAbs(5.1306, 1e-5));
 
     // Charge injection
     REQUIRE_THAT(ct.convertBCALtofC(100), Catch::Matchers::WithinAbs(1.953125, 1e-7));
@@ -33,8 +32,11 @@ TEST_CASE("StarConversionTools", "[star][json]") {
 
       ct.loadConfig(cfg);
 
+      REQUIRE_THAT(ct.convertBVTtomV(-0.1), Catch::Matchers::WithinAbs(-1, 1e-5));
       REQUIRE_THAT(ct.convertBVTtomV(0), Catch::Matchers::WithinAbs(-0.423025, 1e-5));
+      REQUIRE_THAT(ct.convertBVTtomV(0.5), Catch::Matchers::WithinAbs(1.039727, 1e-5));
       REQUIRE_THAT(ct.convertBVTtomV(255), Catch::Matchers::WithinAbs(581.005601, 0.001));
+      REQUIRE_THAT(ct.convertBVTtomV(255.1), Catch::Matchers::WithinAbs(-1, 1e-5));
     }
 
     SECTION("points") {
@@ -50,8 +52,10 @@ TEST_CASE("StarConversionTools", "[star][json]") {
       // Extrapolation
       REQUIRE_THAT(ct.convertBVTtomV(0), Catch::Matchers::WithinAbs(-25./4, 0.001));
       REQUIRE_THAT(ct.convertBVTtomV(25), Catch::Matchers::WithinAbs(575./8, 0.001));
+      REQUIRE_THAT(ct.convertBVTtomV(25.5), Catch::Matchers::WithinAbs(587.5/8, 0.001));
       REQUIRE_THAT(ct.convertBVTtomV(70), Catch::Matchers::WithinAbs(210., 0.001));
       REQUIRE_THAT(ct.convertBVTtomV(150), Catch::Matchers::WithinAbs(450., 0.001));
+      REQUIRE_THAT(ct.convertBVTtomV(256), Catch::Matchers::WithinAbs(-1, 1e-5));
     }
   }
 

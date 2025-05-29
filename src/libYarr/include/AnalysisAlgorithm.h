@@ -8,6 +8,8 @@
 #include "HistogramBase.h"
 #include "ScanLoopInfo.h"
 
+class FrontEndCfg;
+
 /**
  * Process sequence of histograms.
  * 

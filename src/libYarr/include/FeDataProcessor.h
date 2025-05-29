@@ -3,9 +3,16 @@
 
 #include "DataProcessor.h"
 
+#include <functional>
+
 #include "ClipBoard.h"
+#include "EventDataBase.h"
 #include "FrontEnd.h"
 #include "RawData.h"
+
+#include "storage.hpp"
+
+class FrontEndCfg;
 
 /**
  * Data processor of front end data.

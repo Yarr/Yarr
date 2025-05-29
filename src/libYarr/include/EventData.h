@@ -31,44 +31,6 @@ struct FrontEndHit {
     };
 };
 
-class FrontEndCluster {
-    public :
-        FrontEndCluster() { nHits = 0; }
-        ~FrontEndCluster() = default;
-
-        void addHit(FrontEndHit* hit) {
-            hits.push_back(hit);
-            nHits++;
-        }
-        unsigned getColLength() {
-            int min = 99999;
-            int max = -1;
-            for (unsigned ii = 0; ii < hits.size(); ii++) {
-                if ((int)hits[ii]->col > max)
-                    max = hits[ii]->col;
-                if ((int)hits[ii]->col < min)
-                    min = hits[ii]->col;
-            } // ii
-            return (max-min+1);
-        }
-
-        unsigned getRowWidth() {
-            int min = 99999;
-            int max = -1;
-            for (unsigned ii = 0; ii < hits.size(); ii++) {
-                if ((int)hits[ii]->row > max)
-                    max = hits[ii]->row;
-                if ((int)hits[ii]->row < min)
-                    min = hits[ii]->row;
-            } // ii
-            return (max-min+1);
-        }
-
-        unsigned nHits;
-        std::vector<FrontEndHit*> hits;
-
-}; // class FrontEndCluster
-
 class FrontEndEvent {
 
     public:
@@ -77,16 +39,14 @@ class FrontEndEvent {
             l1id = 0;
             bcid = 0;
             nHits = 0;
-            nClusters = 0;
         }
         FrontEndEvent(unsigned arg_tag, unsigned arg_l1id, unsigned arg_bcid) {
             tag = arg_tag;
             l1id = arg_l1id;
             bcid = arg_bcid;
             nHits = 0;
-            nClusters = 0;
         }
-        ~FrontEndEvent() = default;;
+        ~FrontEndEvent() = default;
         void addEvent(const FrontEndEvent& event) {
             hits.insert(hits.end(), event.hits.begin(), event.hits.end());
             nHits += event.nHits;
@@ -100,7 +60,6 @@ class FrontEndEvent {
             nHits++;
         }
 
-        void doClustering();
         void toFileBinary(std::fstream &handle) const;
         void fromFileBinary(std::fstream &handle);
 
@@ -108,10 +67,7 @@ class FrontEndEvent {
         uint16_t bcid;
         uint32_t tag;
         uint16_t nHits;
-        uint16_t nClusters;
         std::vector<FrontEndHit> hits;
-        std::vector<FrontEndCluster> clusters;
-
 }; // class Event
 
 
@@ -121,7 +77,7 @@ class FrontEndData : public EventDataBase {
 
         FrontEndData()=default;
         FrontEndData(const LoopStatus& l) : lStat(l) {}
-        ~FrontEndData() override = default;;
+        ~FrontEndData() override = default;
 
         void delLastEvent() {
             events.pop_back();

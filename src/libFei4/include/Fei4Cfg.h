@@ -13,7 +13,7 @@
 #include <fstream>
 #include <cmath>
 
-#include "FrontEnd.h"
+#include "FrontEndCfg.h"
 #include "Fei4GlobalCfg.h"
 #include "Fei4PixelCfg.h"
 

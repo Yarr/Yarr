@@ -1,7 +1,9 @@
 #include "catch.hpp"
 
 #include "AllChips.h"
+#include "Bookkeeper.h"
 #include "ScanFactory.h"
+#include "FrontEndClipBoards.h"
 #include "LoopActionBase.h"
 #include "AnalysisAlgorithm.h"
 #include "Histo1d.h"
@@ -253,7 +255,7 @@ TEST_CASE("AnalysisPOILoops", "[Analysis]") {
   // The last loop "MyHistoGenerator" is not in the registry. Add it by hand.
   std::unique_ptr<LoopActionBase> hgen = std::make_unique<MyHistoGenerator>();
   // Connect histo clipboard
-  static_cast<MyHistoGenerator*>(hgen.get())->connect(&(bookie.getEntry(uid).fe->clipHisto));
+  static_cast<MyHistoGenerator*>(hgen.get())->connect(&(bookie.getEntry(uid).fe->clipboards().clipHisto));
   // This loop directly writes to the input ClipBoard of the analysis chain
   // It bypasses DataProcessors and Histogrammers, which are not the test targets here.
   scan.addLoop(std::move(hgen));
@@ -277,8 +279,9 @@ TEST_CASE("AnalysisPOILoops", "[Analysis]") {
   analyses.emplace_back(new AnalysisProcessor(uid));
 
   // Create ClipBoard for its output and make connections
-  bookie.getEntry(uid).fe->clipResult.emplace_back(new ClipBoard<HistogramBase>());
-  analyses[0]->connect(&scan, &(bookie.getEntry(uid).fe->clipHisto), bookie.getEntry(uid).fe->clipResult.back().get(), nullptr);
+  auto &cp = bookie.getEntry(uid).fe->clipboards();
+  cp.clipResult.emplace_back(new ClipBoard<HistogramBase>());
+  analyses[0]->connect(&scan, &(cp.clipHisto), cp.clipResult.back().get(), nullptr);
 
   // Add algorithm MyAnalyzer
   auto algo1 = std::make_unique<MyAnalyzer>();
@@ -289,8 +292,8 @@ TEST_CASE("AnalysisPOILoops", "[Analysis]") {
   analyses.emplace_back(new AnalysisProcessor(uid));
 
   // Create and connect result ClipBoard
-  bookie.getEntry(uid).fe->clipResult.emplace_back(new ClipBoard<HistogramBase>());
-  analyses[1]->connect(&scan, bookie.getEntry(uid).fe->clipResult[0].get(), bookie.getEntry(uid).fe->clipResult[1].get(), nullptr, true);
+  cp.clipResult.emplace_back(new ClipBoard<HistogramBase>());
+  analyses[1]->connect(&scan, cp.clipResult[0].get(), cp.clipResult[1].get(), nullptr, true);
 
   // Add algorithm MyOtherAnalyzer
   auto algo2 = std::make_unique<MyOtherAnalyzer>();
@@ -312,15 +315,15 @@ TEST_CASE("AnalysisPOILoops", "[Analysis]") {
 
   ////
   // Join threads
-  bookie.getEntry(uid).fe->clipHisto.finish();
+  cp.clipHisto.finish();
 
   for (unsigned i=0; i<analyses.size(); ++i) {
     analyses[i]->join();
-    bookie.getEntry(uid).fe->clipResult[i]->finish();
+    cp.clipResult[i]->finish();
   }
 
   // Check the final output
-  auto &output = *(bookie.getEntry(uid).fe->clipResult.back());
+  auto &output = *(cp.clipResult.back());
 
   REQUIRE (!output.empty());
 

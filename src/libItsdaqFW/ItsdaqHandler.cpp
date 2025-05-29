@@ -18,6 +18,8 @@ auto logger = logging::make_log("ItsdaqFW::Handler");
 /// Private implementation (keep details out of header file)
 class ItsdaqPrivate {
 public:
+  ItsdaqPrivate() {}
+
   ItsdaqPrivate(uint32_t remote_IP,
                 uint16_t srcPort, uint16_t dstPort)
     : sock(remote_IP, srcPort, dstPort),
@@ -30,7 +32,20 @@ public:
   ~ItsdaqPrivate();
 
   void reconfigure(uint32_t remote_IP, uint16_t srcPort, uint16_t dstPort) {
+    if(running) {
+      logger->debug("Shutdown receiver to switch config");
+
+      running = false;
+      receiver.join();
+    }
+
     sock.setup(remote_IP, srcPort, dstPort);
+
+    logger->debug("Restart receiver with new config");
+
+    running = true;
+    partial_buffer.clear();
+    receiver = std::thread( [&] () { ReceiverMain(); });
   }
 
   UdpSocket sock;
@@ -51,6 +66,10 @@ private:
   void ReceiverMain();
 };
 
+ItsdaqHandler::ItsdaqHandler() :
+    priv(new ItsdaqPrivate())
+{
+}
 ItsdaqHandler::ItsdaqHandler(uint32_t remote_IP,
                              uint16_t srcPort, uint16_t dstPort) :
   priv(new ItsdaqPrivate(remote_IP, srcPort, dstPort))
@@ -70,7 +89,7 @@ void ItsdaqHandler::SendOpcode(uint16_t opcode, uint16_t *data, uint16_t length)
   int extras = 8;
   std::vector<uint16_t> buffer(extras + length);
 
-  uint16_t send_seq = 0x1234;
+  static uint16_t send_seq = 0x1234;
 
   buffer[0] = 0x8765;
   buffer[1] = send_seq;
@@ -79,6 +98,8 @@ void ItsdaqHandler::SendOpcode(uint16_t opcode, uint16_t *data, uint16_t length)
   buffer[4] = opcode;
   buffer[5] = ~send_seq;
   buffer[6] = length*2;
+
+  send_seq ++;
 
   std::copy(data, data+length, &buffer[7]);
 
@@ -122,11 +143,20 @@ ItsdaqPrivate::~ItsdaqPrivate() {
     auto data = rawData.popData();
     count ++;
   }
+
   if(count) {
     logger->debug(" ...done ({} stray data blocks)", count);
   } else {
     logger->debug(" ...done");
   }
+
+  if(!partial_buffer.empty()) {
+    logger->debug(" Part of packet is not processed");
+    for(auto &w: partial_buffer) {
+      logger->debug("  {:016x}", w);
+    }
+  }
+
 }
 
 void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
@@ -167,10 +197,14 @@ void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
         continue;
       }
     } else {
-	// Good data, wait for end and
-	// store good data into partial_buffer
-	partial_buffer.push_back(thisWord);
-	continue;
+      // Good data, wait for end and
+      // store good data into partial_buffer
+      partial_buffer.push_back(thisWord);
+
+      // If the last word, then check for events
+      if(i!= wordCount-1) {
+        continue;
+      }
     }
 
 
@@ -234,6 +268,10 @@ void ItsdaqPrivate::QueueData(uint16_t *start, size_t len) {
 
     startOffset = i;
     partial_buffer.clear();
+  }
+
+  if(!partial_buffer.empty()) {
+    logger->trace("QueueData: Partial data, storing to next packet");
   }
 }
 

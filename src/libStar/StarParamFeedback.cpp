@@ -4,6 +4,9 @@
 // ################################
 
 #include "StarParamFeedback.h"
+
+#include "Bookkeeper.h"
+#include "TxCore.h"
 #include "logging.h"
 
 namespace {
@@ -70,8 +73,8 @@ void StarParamFeedback::feedback(unsigned id, std::unique_ptr<Histo2d> h) {
 
         logger->trace("Loading feedback at {} (ID {}) {}", histo_abc, abc.getABCchipID(), new_sd);
 
-        abc.setSubRegisterValue("STR_DEL", new_sd);
-        logger->trace(" Check load {}", abc.getSubRegisterValue("STR_DEL"));
+        abc.setSubRegisterValue(ABCStarSubRegister::STR_DEL, new_sd);
+        logger->trace(" Check load {}", abc.getSubRegisterValue(ABCStarSubRegister::STR_DEL));
     }
     fbDoneMap[id] = true;
 }

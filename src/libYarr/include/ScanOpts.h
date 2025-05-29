@@ -9,6 +9,8 @@
 struct ScanOpts {
     std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";
     bool scan_config_provided = false;
+    /// Backend configuration service to use
+    std::string configurationType="File";
     std::string scanType;
     std::vector<std::string> cConfigPaths;
     std::string outputDir = "./data/";
@@ -29,6 +31,7 @@ struct ScanOpts {
     std::string commandLineStr;
     std::string progName;
     bool doResetBeforeScan = true;
+    bool doConfigureBeforeScan = true;
     bool makeGraph = false;
 };
 #endif //YARR_SCANOPTS_H

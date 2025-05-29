@@ -34,7 +34,7 @@ int ScanConsole::loadConfig() {
 }
 
 int ScanConsole::loadConfig(const json &config) {
-    return pimpl->loadConfig(config);
+    return ScanConsoleImpl::loadConfig(config);
 }
 int ScanConsole::loadConfig(const char *config) {
     return pimpl->loadConfig(config);
@@ -82,4 +82,8 @@ void ScanConsole::dump() {
 
 std::vector<std::string> ScanConsole::getLog(std::size_t lim) {
     return ScanConsoleImpl::getLog(lim);
+}
+
+std::string ScanConsole::getConfig() {
+    return pimpl->getConfig();
 }

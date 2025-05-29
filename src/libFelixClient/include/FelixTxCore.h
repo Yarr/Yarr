@@ -54,7 +54,9 @@ public:
   FelixTools::FELIX_FW_MODE fwMode(); // get the FELIX firmware mode
 
   FelixTools::FelixID_t fid_from_channel(uint32_t chn); // covert channel number to fid
+  FelixTools::FelixID_t ic_fid_from_channel(uint32_t chn); // get the ic fid from the channel number
 
+  
 protected:
 
   void loadConfig(const json &j); 		     // read configuration from json

@@ -4,6 +4,8 @@
 #include "StarCfg.h"
 #include "LCBUtils.h"
 #include "StripModel.h"
+#include "ClipBoard.h"
+#include "RawData.h"
 
 #include <queue>
 #include <bitset>

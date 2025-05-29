@@ -8,6 +8,8 @@
 
 #include <queue>
 #include "Fei4.h"
+
+#include "Bookkeeper.h"
 #include "LoopActionBase.h"
 #include "FeedbackBase.h"
 

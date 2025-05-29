@@ -1,6 +1,7 @@
 #include "catch.hpp"
 
 #include "AllHistogrammers.h"
+#include "HistogramProcessor.h"
 #include "EventData.h"
 #include "Histo1d.h"
 

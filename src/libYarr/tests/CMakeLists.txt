@@ -1,9 +1,11 @@
 add_executable(testYarr
         ../../libUtil/tests/main.cpp
+        test_analysis_throttle.cpp
         test_front_end.cpp
         test_histogrammer.cpp
         test_histogram_load.cpp
         test_hits_per_event.cpp
+        test_json_access.cpp       
         test_l1dist.cpp
         test_l13d.cpp
         test_occupancy.cpp
