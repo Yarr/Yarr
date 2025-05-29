@@ -17,7 +17,7 @@ enum class PacketTypes {
   * @param bc_counter Low 8 bits of internal BCID counter.
   */
 std::vector<uint8_t> buildPhysicsPacket
-  (const std::vector<std::vector<uint16_t>>& clusters,
+  (const std::vector<std::pair<unsigned, std::vector<uint16_t>>>& clusters,
    PacketTypes typ, uint8_t l0_tag, uint8_t bc_counter);
 
 /**

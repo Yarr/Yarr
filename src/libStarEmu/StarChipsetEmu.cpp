@@ -301,7 +301,7 @@ bool getParity_8bits(uint8_t val) {
 }
 
 std::vector<uint8_t> buildPhysicsPacket(
-  const std::vector<std::vector<uint16_t>>& allClusters,
+  const std::vector<std::pair<unsigned, std::vector<uint16_t>>>& allClusters,
   PacketTypes typ, uint8_t l0tag, uint8_t bc_count)
 {
   uint16_t endOfPacket=0x6fed;
@@ -319,12 +319,15 @@ std::vector<uint8_t> buildPhysicsPacket(
   data_packets.push_back(header & 0xff);
 
   ///////////////////
-  // ABCStar clusters
-  for (size_t ichannel=0; ichannel<allClusters.size(); ++ichannel) {
-    for ( uint16_t cluster : allClusters[ichannel]) {
+  // ABCStar clusters indexed by array order
+  for (size_t ichip=0; ichip<allClusters.size(); ++ichip) {
+    auto abc_id = allClusters[ichip].first;
+    auto &clusters = allClusters[ichip].second;
+    unsigned input_chan = abc_id; // Temporary for merge
+    for ( uint16_t cluster : clusters) {
       // cluster bits:
       // "0" + 4-bit channel number + 11-bit cluster dropping the last cluster bit
-      uint16_t clusterbits = (ichannel & 0xf)<<11 | (cluster & 0x7ff);
+      uint16_t clusterbits = (input_chan & 0xf)<<11 | (cluster & 0x7ff);
       data_packets.push_back((clusterbits>>8) & 0xff);
       data_packets.push_back(clusterbits & 0xff);
     }
@@ -910,7 +913,7 @@ void StarChipsetEmu::doL0A(bool bcr, uint8_t l0a_mask, uint8_t l0a_tag) {
 
     if (trig_mode) { // single-level trigger
       // clusters
-      std::vector<std::vector<uint16_t>> clusters;
+      std::vector<std::pair<unsigned, std::vector<uint16_t>>> clusters;
       uint8_t bcid;
 
       // for each ABC
@@ -927,7 +930,8 @@ void StarChipsetEmu::doL0A(bool bcr, uint8_t l0a_mask, uint8_t l0a_tag) {
           // form clusters
           if (abc.getSubRegisterValue(ABCStarSubRegister::LP_ENABLE)) {
             auto abc_clusters = this->getClusters(abc, hits);
-            clusters.push_back(abc_clusters);
+            auto chip_id = abc.getABCchipID();
+            clusters.push_back(std::make_pair(chip_id, abc_clusters));
           }
         });
 
@@ -988,7 +992,7 @@ void StarChipsetEmu::doPRLP(uint8_t mask, uint8_t l0tag) {
   }
 
   // clusters
-  std::vector<std::vector<uint16_t>> clusters;
+  std::vector<std::pair<unsigned, std::vector<uint16_t>>> clusters;
   uint8_t bcid;
 
   // for each ABC
@@ -1019,7 +1023,8 @@ void StarChipsetEmu::doPRLP(uint8_t mask, uint8_t l0tag) {
       StripData hits;
       std::tie(bcid, hits) = this->getFEData(abc, l0addr);
       auto abc_clusters = this->getClusters(abc, hits);
-      clusters.push_back(abc_clusters);
+      auto chip_id = abc.getABCchipID();
+      clusters.push_back(std::make_pair(chip_id, abc_clusters));
     });
 
   // build and send data packet
