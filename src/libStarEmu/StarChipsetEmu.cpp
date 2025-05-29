@@ -41,6 +41,10 @@ using namespace StarEmuNS; // eg StripData
 class AnalogueModelGenerator : public StripGenerator {
   std::array<StripModel, NStrips> m_stripArray;
 public:
+  AnalogueModelGenerator() {
+    logger->debug("Configuring AnalogueModelGenerator (default)");
+  }
+
   AnalogueModelGenerator(const json &cfg) {
     logger->debug("Configuring AnalogueModelGenerator");
     // Initialize FE strip array from config json
@@ -121,6 +125,8 @@ StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
     }
 
     configureGenerator(jEmu);
+  } else {
+    m_generator = std::make_unique<AnalogueModelGenerator>();
   }
 
   // HPR
