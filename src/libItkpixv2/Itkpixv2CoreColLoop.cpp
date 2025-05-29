@@ -96,45 +96,29 @@ void Itkpixv2CoreColLoop::execPart2() {
 void Itkpixv2CoreColLoop::end() {
     logger->debug("end()");
     // TODO return to original config
-    // When in core column test, set all to enable
-    if (m_disUnused && m_ignoreDis){
-        int iChannel=0;
-        for (unsigned id =0; id<keeper->getNumOfEntries(); id++){
-            auto fe = keeper->getFe(id);
-            if (!(fe->getActive()))
-                continue;
 
-            std::array<int,4> allOn = {65535,65535,65535,63};
-            auto m_feCfg = dynamic_cast<Itkpixv2Cfg*>(fe);
-            g_tx->setCmdEnable(m_feCfg->getTxChannel());
-            for (int iReg=0; iReg<4; iReg++){
+    int iChannel=0;
+    for (unsigned id =0; id<keeper->getNumOfEntries(); id++){
+        auto fe = keeper->getFe(id);
+        if (!(fe->getActive()))
+            continue;
+
+        auto m_feCfg = dynamic_cast<Itkpixv2Cfg*>(fe);
+        g_tx->setCmdEnable(m_feCfg->getTxChannel());
+
+        for (int iReg=0; iReg<4; iReg++){
+            std::string registerName = "EnCoreCol"+std::to_string(iReg);
+            // When in core column test, set all to enable
+            if (m_disUnused && m_ignoreDis){
+                std::array<int,4> allOn = {65535,65535,65535,63};
                 uint16_t toSet = allOn[iReg];
-                std::string registerName = "EnCoreCol"+std::to_string(iReg);
                 fe->writeNamedRegister(registerName,toSet);
+            } else {
+                fe->writeNamedRegister(registerName, m_initCoreColsAllChips[iChannel][iReg]);
             }
-            iChannel++;
-            while(!g_tx->isCmdEmpty()) {}
-
         }
-    } else {
-    // set the core columns back to original
-        int iChannel=0;
-        for (unsigned id =0; id<keeper->getNumOfEntries(); id++){
-            auto fe = keeper->getFe(id);
-            if (!(fe->getActive()))
-                continue;
-
-            auto m_feCfg = dynamic_cast<Itkpixv2Cfg*>(fe); //get the front end config for the chip
-            g_tx->setCmdEnable(m_feCfg->getTxChannel()); //enable writing to
-            for (int iReg=0; iReg<4; iReg++){ //For Encorecol0,1,2,3
-                std::string registerName = "EnCoreCol"+std::to_string(iReg);
-                fe->writeNamedRegister(registerName, m_initCoreColsAllChips[iChannel][iReg]); // write the register
-            }
-
-            iChannel++; //increase chip index if chip was active
-
-            while(!g_tx->isCmdEmpty()) {}
-        }
+        iChannel++;
+        while(!g_tx->isCmdEmpty()) {}
     }
 }
 
@@ -210,7 +194,6 @@ void Itkpixv2CoreColLoop::setCores() {
                 fe->writeNamedRegister(registerName,toSet); // write the register
             }
             iChannel++; //increase chip index if chip was active
-
             while(!g_tx->isCmdEmpty()) {}
 
         }
