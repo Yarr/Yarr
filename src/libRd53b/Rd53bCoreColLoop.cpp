@@ -101,7 +101,7 @@ void Rd53bCoreColLoop::end() {
         if (!(fe->getActive()))
             continue;
 
-        auto m_feCfg = dynamic_cast<Itkpixv2Cfg*>(fe);
+        auto m_feCfg = dynamic_cast<Rd53bCfg*>(fe);
         g_tx->setCmdEnable(m_feCfg->getTxChannel());
 
         for (int iReg=0; iReg<4; iReg++){
