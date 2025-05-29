@@ -4,7 +4,7 @@
       "0": {
         "algorithm": "NoiseAnalysis",
         "config": {
-            "createMask": true
+          "createMask": false
         }
       },
       "n_count": 1
@@ -52,7 +52,7 @@
           "edgeMode": false,
           "trigMultiplier": 16
         },
-        "loopAction": "Itkpixv2TriggerLoop"
+        "loopAction": "Rd53bTriggerLoop"
       },
       {
         "loopAction": "StdDataGatherer"
