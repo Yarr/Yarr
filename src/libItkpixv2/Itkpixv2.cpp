@@ -292,7 +292,7 @@ yarrStatus Itkpixv2::readRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, ui
 
                 auto [id, received_address, register_value] = Itkpixv2::decodeSingleRegReadID(data->get(0), data->get(1));
                 chipId = id; // chipId is read from the chip wirebonded ID, m_chipId is set in the chip config file
-                if(id == (m_chipId&0x3)) {
+                if(m_chipId > 15 || id == (m_chipId&0x3)) { // only compare if not broadcasting
                     if(received_address != (this->*ref).addr()) {
                         logger->error("readRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
                         return yarrFailure;
@@ -309,7 +309,7 @@ yarrStatus Itkpixv2::readRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, ui
         }
     }
 
-    logger->error("readRegister failed, did not received register readback data from chip with chipId {}", m_chipId);
+    logger->error("readRegister failed, did not receive register readback data from chip with chipId {}", m_chipId);
     return yarrFailure;
 }
 
@@ -621,13 +621,13 @@ uint32_t Itkpixv2::readEfusesRaw() {
 }
 
 uint8_t Itkpixv2::readChipId() {
-    uint16_t _ = 0;
-    uint8_t id = 15;
-    if (readRegister(&Itkpixv2::EfuseReadData0, _, id) != yarrSuccess) {
-        logger->warn("Failed to readback E-fuse 0 data for chip with {}", m_chipId);
+    uint16_t value = 0; // register value of ChipIdSense is the 4-bit chip ID
+    uint8_t _id = 15; // this gives you the 2-LSB from register read
+    if (readRegister(&Itkpixv2::ChipIdSense, value, _id) != yarrSuccess) {
+        logger->warn("Failed to readback ChipIdSense for chip with {}", m_chipId);
         return 255;
     }
-    return id;
+    return value;
 }
 
 yarrStatus Itkpixv2::confAdc(uint16_t MONMUX, bool doCur) {
