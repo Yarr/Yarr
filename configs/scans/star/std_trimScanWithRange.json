@@ -55,8 +55,8 @@
       },
       {
         "config": {
-          "trig_count": 500,
-          "trig_frequency": 250,
+          "trig_count": 50,
+          "trig_frequency": 500,
           "trig_time": 0,
           "l0_latency": 20,
           "extTrigger": false,
