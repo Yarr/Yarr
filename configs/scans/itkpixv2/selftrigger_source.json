@@ -3,9 +3,9 @@
     "analysis": {
       "0": {
         "algorithm": "NoiseAnalysis",
-	  "config": {
+         "config": {
               "createMask": false
-	  }
+          }
       },
       "n_count": 1
     },
