@@ -30,6 +30,7 @@ Rd53bCoreColLoop::Rd53bCoreColLoop() : LoopActionBase(LOOP_STYLE_MASK){
     m_usePToT = false;
     m_disUnused = false;
     m_ignoreDis = false;
+    m_skipDis = false;
 }
 
 void Rd53bCoreColLoop::init() {
@@ -37,30 +38,29 @@ void Rd53bCoreColLoop::init() {
     m_done = false;
     m_cur = 0;
 
-    if(m_ignoreDis){
-        m_initCoreColsAllChips.clear();
-        Rd53bCfg *m_feCfg;
-        std::array<uint16_t, 4> m_initCoreColsSingle = {0x0, 0x0, 0x0, 0x0};
-        for (unsigned id =0; id<keeper->getNumOfEntries(); id++){
-            auto fe = keeper->getFe(id);
-            if (fe->getActive()){
-                auto m_feCfg = dynamic_cast<Rd53bCfg*>(fe);
-                m_initCoreColsSingle[0] = m_feCfg->EnCoreCol0.read();
-                m_initCoreColsSingle[1] = m_feCfg->EnCoreCol1.read();
-                m_initCoreColsSingle[2] = m_feCfg->EnCoreCol2.read();
-                m_initCoreColsSingle[3] = m_feCfg->EnCoreCol3.read();
-                m_initCoreColsAllChips.push_back(m_initCoreColsSingle);
-            }
+    // record the initial EnCoreCol for all chips in the FE configs
+    m_initCoreColsAllChips.clear();
+    Rd53bCfg *m_feCfg;
+    std::array<uint16_t, 4> m_initCoreColsSingle = {0x0, 0x0, 0x0, 0x0};
+    for (unsigned id =0; id<keeper->getNumOfEntries(); id++){
+        auto fe = keeper->getFe(id);
+        if (fe->getActive()){
+            auto m_feCfg = dynamic_cast<Rd53bCfg*>(fe);
+            m_initCoreColsSingle[0] = m_feCfg->EnCoreCol0.read();
+            m_initCoreColsSingle[1] = m_feCfg->EnCoreCol1.read();
+            m_initCoreColsSingle[2] = m_feCfg->EnCoreCol2.read();
+            m_initCoreColsSingle[3] = m_feCfg->EnCoreCol3.read();
+            m_initCoreColsAllChips.push_back(m_initCoreColsSingle);
         }
+    }
 
-        int iChannel =0;
-        for (auto channel: keeper->getTxMask()){
-            for (int iReg=0; iReg<4; iReg++)
-            {	
-                logger->debug("Initially, for channel {} EnCoreCol{} set to {} ",iChannel,iReg,m_initCoreColsAllChips[iChannel][iReg]);
-            }
-            iChannel++;
+    int iChannel =0;
+    for (auto channel: keeper->getTxMask()){
+        for (int iReg=0; iReg<4; iReg++)
+        {
+            logger->debug("Initially, for channel {} EnCoreCol{} set to {} ",iChannel,iReg,m_initCoreColsAllChips[iChannel][iReg]);
         }
+        iChannel++;
     }
 }
 
@@ -95,26 +95,28 @@ void Rd53bCoreColLoop::execPart2() {
 void Rd53bCoreColLoop::end() {
     // TODO return to original config
 
-    // When in core column test, set all to enable
-    if (m_disUnused and m_ignoreDis){
-        int iChannel=0;
-        for (unsigned id =0; id<keeper->getNumOfEntries(); id++){
-            auto fe = keeper->getFe(id);
-            if (!(fe->getActive()))
-                continue;
+    int iChannel=0;
+    for (unsigned id =0; id<keeper->getNumOfEntries(); id++){
+        auto fe = keeper->getFe(id);
+        if (!(fe->getActive()))
+            continue;
 
-            std::array<int,4> allOn = {65535,65535,65535,63};
-            auto m_feCfg = dynamic_cast<Rd53bCfg*>(fe);
-            g_tx->setCmdEnable(m_feCfg->getTxChannel());
-            for (int iReg=0; iReg<4; iReg++){
+        auto m_feCfg = dynamic_cast<Rd53bCfg*>(fe);
+        g_tx->setCmdEnable(m_feCfg->getTxChannel());
+
+        for (int iReg=0; iReg<4; iReg++){
+            std::string registerName = "EnCoreCol"+std::to_string(iReg);
+            // When in core column test, set all to enable
+            if (m_disUnused && m_ignoreDis){
+                std::array<int,4> allOn = {65535,65535,65535,63};
                 uint16_t toSet = allOn[iReg];
-                std::string registerName = "EnCoreCol"+std::to_string(iReg);
                 fe->writeNamedRegister(registerName,toSet);
+            } else {
+                fe->writeNamedRegister(registerName, m_initCoreColsAllChips[iChannel][iReg]);
             }
-            iChannel++;
-            while(!g_tx->isCmdEmpty()) {}
-
         }
+        iChannel++;
+        while(!g_tx->isCmdEmpty()) {}
     }
 }
 
@@ -125,8 +127,9 @@ void Rd53bCoreColLoop::writeConfig(json &j) {
     j["nSteps"] = m_nSteps;
     j["usePToT"] = m_usePToT;
     j["resetAtEnd"] = m_resetAtEnd;
+    j["disableUnused"] = m_disUnused;
     j["ignoreDisabled"] = m_ignoreDis;
-    
+    j["skipDisabled"] = m_skipDis;
 }
 
 void Rd53bCoreColLoop::loadConfig(const json &j) {
@@ -146,10 +149,12 @@ void Rd53bCoreColLoop::loadConfig(const json &j) {
         m_resetAtEnd = j["resetAtEnd"];
     if (j.contains("ignoreDisabled"))
         m_ignoreDis = j["ignoreDisabled"];
+    if (j.contains("skipDisabled"))
+        m_skipDis = j["skipDisabled"];
     min = 0;
     max = m_nSteps;
     if (m_nSteps > (m_maxCore-m_minCore) )
-	    logger->warn("The number of steps {} is larger than the numbner of cores {}-{}", m_nSteps, m_maxCore, m_minCore);
+        logger->warn("The number of steps {} is larger than the numbner of cores {}-{}", m_nSteps, m_maxCore, m_minCore);
 }
 
 void Rd53bCoreColLoop::setCores() {
@@ -166,9 +171,10 @@ void Rd53bCoreColLoop::setCores() {
         while(!g_tx->isCmdEmpty()) {}
     }
 
-    //Turn off columns that were originally off in chip config
-    //set cmd disable
-    if (m_disUnused && m_ignoreDis){
+    // Turn off columns that were originally off in chip config
+    // Requires the core column loop to be the outermost loop, otherwise the initial config gets reset at each mask stage
+    // set cmd disable
+    if (m_disUnused and (m_ignoreDis or m_skipDis)){
         int iChannel=0;
         for (unsigned id =0; id<keeper->getNumOfEntries(); id++){
             auto fe = keeper->getFe(id);

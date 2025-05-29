@@ -996,6 +996,7 @@ namespace ScanHelper {
         std::cout << " -g: Enable making data pipeline graph." << std::endl;
         std::cout << " -k: Report known items (Scans, Hardware etc.)\n";
         std::cout << " -p: Enable plotting of results." << std::endl;
+        std::cout << " -y, --skip-config: Disable configuring front-ends prior to running the scan." << std::endl;
         std::cout << " -z, --skip-reset: Disable sending global front-end reset command prior to running the scan." << std::endl;
         std::cout << " -I: Set interactive mode." << std::endl;
         std::cout << " -Q: Set QC scan mode." << std::endl;
@@ -1010,6 +1011,8 @@ namespace ScanHelper {
         std::cout << " -t <target_charge> [<tot_target>] : Set target values for threshold/charge (and tot)." << std::endl;
         std::cout << " -u <user.json> : Provide user configuration. (Default " << dbUserCfgPath << ")" << std::endl;
         std::cout << " -W: Enable using Local DB." << std::endl;
+        std::cout << " --skip-config: Disable configuring front-ends prior to running the scan." << std::endl;
+        std::cout << " --skip-reset: Disable sending global front-end reset command prior to running the scan." << std::endl;
     }
 
     int parseOptions(int argc, char *argv[], ScanOpts &scanOpts) {
@@ -1021,14 +1024,15 @@ namespace ScanHelper {
         scanOpts.progName=argv[0];
         const struct option long_options[] =
         {
-            {"skip-reset", no_argument, 0, 'z'},
             {"help", no_argument, 0, 'h'},
             {"version", no_argument, 0, 'v'},
+            {"skip-config", no_argument, 0, 'y'},
+            {"skip-reset", no_argument, 0, 'z'},
             {0, 0, 0, 0}};
         int c;
         while (true) {
             int opt_index=0;
-            c = getopt_long(argc, argv, "ghkpvzIQc:d:i:l:m:o:r:s:t:u:W:", long_options, &opt_index);
+            c = getopt_long(argc, argv, "ghkpvyzIQc:d:i:l:m:o:r:s:t:u:W:", long_options, &opt_index);
             int count = 0;
             if(c == -1) break;
             switch (c) {
@@ -1047,6 +1051,9 @@ namespace ScanHelper {
                 case 'v':
                     std::cout << yarr::version::get().dump(4) << std::endl;
                     return 0;
+                case 'y':
+                    scanOpts.doConfigureBeforeScan = false;
+                    break;
                 case 'z':
                     scanOpts.doResetBeforeScan = false;
                     break;
@@ -1110,7 +1117,7 @@ namespace ScanHelper {
                     break;
                 case 'W': // Write to DB
                     scanOpts.dbUse = true;
-		    scanOpts.dbTag = std::string(optarg);
+                    scanOpts.dbTag = std::string(optarg);
                     break;
                 case '?':
                     if (optopt == 's') {
