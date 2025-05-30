@@ -290,7 +290,7 @@ uint32_t HccCfg::getRegisterValue(HCCStarRegister addr) const {
   try {
     return getRegister(addr).getValue();
   } catch(std::out_of_range &e) {
-    logger->info("Failed request for get HCC reg: {}", addr._to_string());
+    logger->info("Failed request for get HCC reg: {}", HccNames::regToString(addr));
     for(auto &rm: m_registerMap) {
       logger->debug("Have: {}", rm.first);
     }
@@ -303,7 +303,7 @@ void HccCfg::setRegisterValue(HCCStarRegister addr, uint32_t val) {
   try {
     getRegister(addr).setValue(val);
   } catch(std::out_of_range &e) {
-    logger->info("Failed request for set HCC reg: {}", addr._to_string());
+    logger->info("Failed request for set HCC reg: {}", HccNames::regToString(addr));
     for(auto &rm: m_registerMap) {
       logger->debug("Have: {}", rm.first);
     }
