@@ -69,6 +69,57 @@ An example controller configuration file is provided in `configs/controller/feli
 The fields under `"FelixClient"` are the ones required by the FelixClientThread and are passed to its constructor.
 **In particular, the value of `"bus_dir"` must point to the FELIX bus directory created and updated by active felix-star processes.**
 
+Optionally, if a user desires to handle communication with an Optoboard device or standalone LpGBT, an extra field can be added to the controller configuration, as follows:
+```json
+{
+  "ctrlCfg": {
+    "type": "FelixClient",
+    "cfg": {
+      ...
+      "OpticalDevices": [
+        {
+          "version": 1,
+          "i2cAddr": 0,
+          "devAddr": 116,
+          "devPrimaryAddr": 116,
+          "type": "lpgbt",
+          "txFid": 1152922810278051840,
+          "rxFid": 1152922810278543360
+        },
+        {
+          "version": 1,
+          "i2cAddr": 0,
+          "devAddr": 117,
+          "devPrimaryAddr": 116,
+          "type": "lpgbt",
+          "txFid": 1152922810278051840,
+          "rxFid": 1152922810278543360
+        }
+      ]
+    }
+  }
+}
+```
+Where each LpGBT or GBCR object can be added under the field `"OpticalDevices"`.  Each parameter is optional and if no value is provided a default is chosen.  Descriptions of each variable and the default values are provided below:
+
+`version` - The version of the device, either LpGBT or GBCR.  [Default = 1]
+
+`i2cAddr` - The i2c acdress of the device.  Note i2c communication is used when multiple optical devices are connected (as in the case of an optoboard), and all communication is sent via the primary device down through the i2c channel to the secondary devices.  [Default = 0]
+
+`devAddr` - The address of the device [Default = 116]
+
+`devPrimaryAddr` - For a system with several devices connected to a single primary device (eg. an optoboard), the address of the primary device through which i2c communication will be used to send and receive data to secondary devices. [Default = 116]
+
+`type` - The type of optical device, acceptable options are "lpgbt" and "gbcr" [Default = "lpgbt"]
+
+`txFid` - The ic fid (unique FELIX ID) to be used for communication in the tx direction [Default = fid for tx = 0]
+
+`rxFid` - The ic fid (unique FELIX ID) to be used for communication in the rx direction [Default = fid for rx = 0]
+
+Note that the tx and rx fids for ic communication can be determined using the functions: 
+`FelixTxCore::ic_fid_from_channel(tx_value)` and `FelixRxCore::ic_fid_from_channel(rx_value)`
+
+
 Assuming e-link 0 and 1 are valid Rx and Tx channels, respectively, and are both enabled:
 
 - To test basic data transmission to and from FELIX:
@@ -197,6 +248,26 @@ bin/elinkConfig set configs/controller/felix_client.json -c <connectivity.json> 
 - Turn off all elinks in a connectivity config:
 ```
 bin/elinkConfig off -c <connectivity.json>
+```
+
+#### [readWriteLpGBTRegister](../src/libFelixClient/app/readWriteLpGBTRegister.cpp)
+`readWriteLpGBTRegister` can be used to read or write a register from an LpGBT device.
+
+Note that if no variables are provided for the LpGBT in the controller configuration (see above example), default values will be chosen.  All default values are listed in the namespace [OptoUtils.h](../src/libFelixClient/include/OptoUtils.h).  This namespace also provides tools for determining LpGBT addresses and private functions for accessing different LpGBT registers.  A list of all available LpGBT registers is provided in the register maps [lpgbt-items-v0.h](../src/libFelixClient/include/lpgbt-items-v0.h) and [lpgt-items-v1.h](../src/libFelixClient/include/lpgbt-items-v1.h). 
+
+To run: 
+```
+bin/readWriteLpGBTRegister [OPTIONS...]
+```
+Available options:
+```
+ -r : Path to controller configuration file.
+ -n : Register name to read or write.
+ -v : Optional parameter, register value to write. If no value provided, register will be read.
+ -R : FID for communication in rx direction.
+ -T : FID for communication in tx direction.
+ -d : Device address for the LpGBT we want to access.
+ -h : Display a help message to print out options and usage information.
 ```
 
 ## TODO

@@ -3,6 +3,7 @@
 
 #include "TxCore.h"
 #include "FelixTools.h"
+#include "OptoUtils.h"
 
 #include "felix/felix_client_thread.hpp"
 #include "storage.hpp"
@@ -126,6 +127,11 @@ protected:
   unsigned m_isCmdEmptyWaitTime {100}; // in milliseconds
 
   std::shared_ptr<FelixClientThread> fclient;
-};
+
+  /// @brief Send a command over an IC channel, useful for example in LpGBT register writing
+  /// @param fid The FIC of the IC channel (uint64_t)
+  /// @param data The dataframe to be sent (const std::vector<uint8_t>&)
+  void sendIC(uint64_t fid, const std::vector<uint8_t> dataframe);
+  };
 
 #endif

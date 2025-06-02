@@ -742,3 +742,22 @@ FelixTools::FELIX_FW_MODE FelixTxCore::fwMode() {
   }
   return m_fwMode;
 }
+
+void FelixTxCore::sendIC(uint64_t fid, const std::vector<uint8_t> dataframe){
+  /*
+    Based on itk-ic-over-netio-next communication wrapper, 
+    source: https://gitlab.cern.ch/itk-felix-sw/itk-ic-over-netio-next/-/blob/master/src/itk-ic-over-netio-next.cc?ref_type=heads
+  */
+  bool flush = true;
+
+  if (m_enables[fid] == false){
+    enableChannel(fid);
+  }
+  try {
+    fclient->send_data(fid, dataframe.data(), dataframe.size(), flush);
+  }
+  catch (FelixClientResourceNotAvailableException &e) {
+	  ftlog->warn("Exception from FelixClient::send_data: {}. Retrying.", e.what());
+	  std::this_thread::sleep_for(std::chrono::microseconds(m_isCmdEmptyWaitTime));
+ }
+}
