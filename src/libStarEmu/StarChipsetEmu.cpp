@@ -50,7 +50,7 @@ public:
   AnalogueModelGenerator(const json &cfg) {
     logger->debug("Configuring AnalogueModelGenerator");
     // Initialize FE strip array from config json
-    for (size_t istrip = 0; istrip < 256; ++istrip) {
+    for (size_t istrip = 0; istrip < NStrips; ++istrip) {
       m_stripArray[istrip].setValue(cfg["vthreshold_mean"][istrip],
                                     cfg["vthreshold_sigma"][istrip],
                                     cfg["noise_occupancy_mean"][istrip],
@@ -81,8 +81,8 @@ public:
     // Calibration enables for each strip channel
     auto enables = getCalEnables(abc);
 
-    // Loop over 256 strips
-    for (int istrip = 0; istrip < 256; ++istrip) {
+    // Loop over each strip
+    for (int istrip = 0; istrip < NStrips; ++istrip) {
       // TrimDAC
       uint8_t TrimDAC = abc.getTrimDACRaw(istrip);
 
@@ -137,8 +137,8 @@ public:
       occupancy = occupancy_map[curr_val];
     }
 
-    // Loop over 256 strips
-    for (int istrip = 0; istrip < 256; ++istrip) {
+    // Loop over each strip
+    for (int istrip = 0; istrip < NStrips; ++istrip) {
       bool stripHit = dis(gen) < occupancy;
       hits.set(istrip, stripHit);
     }
@@ -177,8 +177,8 @@ public:
       hi_trim[t] = abc.getRegisterValue(ABCStarRegisters::TrimHi(t));
     }
 
-    // Loop over 256 strips (copied from getTrimDACRaw)
-    for (unsigned istrip = 0; istrip < 256; ++istrip) {
+    // Loop over all strips (copied from getTrimDACRaw)
+    for (unsigned istrip = 0; istrip < NStrips; ++istrip) {
       unsigned lo_offset = (istrip * 4) % 32;
       unsigned hi_offset = istrip % 32;
 
