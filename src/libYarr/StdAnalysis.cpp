@@ -246,7 +246,7 @@ void TotAnalysis::loadConfig(const json &config) {
 
     // check for valid ToT histogram bin configuration
     if (config.contains("tot_bins")) {
-        auto j_bins = config["tot_bins"];
+        auto &j_bins = config["tot_bins"];
         if(j_bins.contains("n_bins") && j_bins.contains("x_lo") && j_bins.contains("x_hi")) {
             tot_bins_n = static_cast<unsigned>(j_bins["n_bins"]);
             tot_bins_x_lo = static_cast<float>(j_bins["x_lo"]);
@@ -261,7 +261,7 @@ void TotAnalysis::loadConfig(const json &config) {
 
     // check for valid ToT sigma histogram bin configuration
     if (config.contains("tot_sigma_bins")) {
-        auto j_bins = config["tot_sigma_bins"];
+        auto &j_bins = config["tot_sigma_bins"];
         if(j_bins.contains("n_bins") && j_bins.contains("x_lo") && j_bins.contains("x_hi")) {
             tot_sigma_bins_n = static_cast<unsigned>(j_bins["n_bins"]);
             tot_sigma_bins_x_lo = static_cast<float>(j_bins["x_lo"]);
@@ -1308,7 +1308,7 @@ void OccPixelThresholdTune::loadConfig(const json &j){
             return;
         }
         m_occLowCut.clear();
-        for(auto i: j["occLowCut"]){
+        for(auto &i: j["occLowCut"]){
             m_occLowCut.push_back(i);
         }
     }
@@ -1318,7 +1318,7 @@ void OccPixelThresholdTune::loadConfig(const json &j){
             return;
         }
         m_occHighCut.clear();
-        for(auto i: j["occHighCut"]){
+        for(auto &i: j["occHighCut"]){
           m_occHighCut.push_back(i);
         }
     }
