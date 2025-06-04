@@ -97,3 +97,26 @@ TEST_CASE("Histogram1dOK", "[Histo1d]") {
 
   testSaveLoad(histo, info);
 }
+
+TEST_CASE("BenchmarkHisto1D", "[!benchmark]") {
+  Histo1d histo("BENCH", 100, 0, 100);
+
+  for(int i=0; i<100; i++) {
+    histo.fill(i, random());
+  }
+  
+  BENCHMARK ("ToJson") {
+    json j;
+    histo.toJson(j);
+    return j;
+  };
+
+  json jdata;
+  histo.toJson(jdata);
+  
+  BENCHMARK ("FromJson") {
+    Histo1d out("OUT", 100, 0, 100);
+    out.fromJson(jdata);
+    return out;
+  };
+}

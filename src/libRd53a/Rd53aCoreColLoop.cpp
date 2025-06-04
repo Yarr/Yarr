@@ -7,6 +7,7 @@
 // ################################
 
 #include "Rd53aCoreColLoop.h"
+#include "Bookkeeper.h"
 #include "FrontEnd.h"
 #include "Rd53a.h"
 

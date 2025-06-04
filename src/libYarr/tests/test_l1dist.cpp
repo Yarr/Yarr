@@ -6,36 +6,23 @@
 
 TEST_CASE("HistogramL1Dist", "[Histogrammer][L1Dist]") {
     // This is for one FE
-    std::unique_ptr<HistoDataProcessor> histo(new HistogrammerProcessor);
-    auto& histogrammer = static_cast<HistogrammerProcessor&>(*histo);
+    auto algo = StdDict::getHistogrammer("L1Dist");
+    REQUIRE (algo);
 
-    ClipBoard<EventDataBase> input;
-    ClipBoard<HistogramBase> output;
+    auto data = std::make_unique<FrontEndData>();
+    data->newEvent(1, 2, 3);
+    data->curEvent->addHit(1, 2, 3);
 
-    histogrammer.connect(&input, &output);
+    // Create output histogram
+    algo->create(data->lStat);
 
-    histogrammer.addHistogrammer(StdDict::getHistogrammer("L1Dist"));
-    // histogrammer.addHistogrammer(new L1Dist());
+    algo->processEvent(data.get());
 
-    histogrammer.init();
-    histogrammer.run();
-
-    {
-        auto data = std::make_unique<FrontEndData>();
-        data->newEvent(1, 2, 3);
-        data->curEvent->addHit(1, 2, 3);
-        input.pushData(std::move(data));
-    }
-
-    input.finish();
-    histogrammer.join();
-
-    REQUIRE (!output.empty());
-
-    std::unique_ptr<HistogramBase> result = output.popData();
+    std::unique_ptr<HistogramBase> result = algo->getHisto();
+    REQUIRE (result);
 
     // Only one thing
-    REQUIRE (output.empty());
+    REQUIRE (!algo->getHisto());
 
     REQUIRE (result->getXaxisTitle() == "L1A");
     REQUIRE (result->getYaxisTitle() == "Hits");

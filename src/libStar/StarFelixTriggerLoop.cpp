@@ -1,4 +1,6 @@
 #include "StarFelixTriggerLoop.h"
+
+#include "Bookkeeper.h"
 #include "LCBUtils.h"
 #include "LCBFwUtils.h"
 #include "AbcCfg.h"

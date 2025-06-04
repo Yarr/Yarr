@@ -11,7 +11,7 @@
 
 #include <iostream>
 
-#include "FrontEnd.h"
+#include "FrontEndCfg.h"
 #include "Rd53aGlobalCfg.h"
 #include "Rd53aPixelCfg.h"
 #include "Constants.h"

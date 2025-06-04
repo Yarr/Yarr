@@ -20,6 +20,7 @@ const std::vector<HCCStarRegister> &listRegs();
 std::optional<HCCStarSubRegister> subRegFromString(const std::string &n);
 bool subRegStringIsValid(const std::string &n);
 std::string subRegToString(HCCStarSubRegister r);
+const std::vector<HCCStarSubRegister> &listSubRegs();
 
 }
 

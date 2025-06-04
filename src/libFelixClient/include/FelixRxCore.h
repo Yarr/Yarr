@@ -24,6 +24,10 @@ public:
   void maskRxEnable(uint32_t val, uint32_t mask) override;
 
   void flushBuffer() override;
+
+  // Clears out the m_rawData vector
+  // This vector stores incoming data read in the onData() function
+  void clearRawData();
   std::vector<RawDataPtr> readData() override;
 
   uint32_t getDataRate() override;
@@ -34,6 +38,7 @@ public:
   void stopMonitor();
 
   FelixTools::FelixID_t fid_from_channel(uint32_t chn);
+  FelixTools::FelixID_t ic_fid_from_channel(uint32_t chn); // get the fid for ic communication from the channel number
 
 protected:
 

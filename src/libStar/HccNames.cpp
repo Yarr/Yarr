@@ -53,4 +53,18 @@ std::string subRegToString(HCCStarSubRegister r)
     return HCCStarSubRegisterEnum::_from_integral((int)r)._to_string();
 }
 
+std::vector<HCCStarSubRegister> make_subreg_list() {
+    std::vector<HCCStarSubRegister> l;
+    auto vals = HCCStarSubRegisterEnum::_values();
+    for(auto &v: vals) {
+        l.push_back((HCCStarSubRegister)(int)v);
+    }
+    return l;
+}
+
+const std::vector<HCCStarSubRegister> &listSubRegs() {
+    static std::vector<HCCStarSubRegister> regs = make_subreg_list();
+    return regs;
+}
+
 }

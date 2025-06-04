@@ -1,0 +1,68 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "NoiseAnalysis",
+        "config": {
+          "createMask": false
+        }
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "1": {
+        "algorithm": "TotMap",
+        "config": {}
+      },
+      "2": {
+        "algorithm": "Tot2Map",
+        "config": {}
+      },
+      "3": {
+        "algorithm": "TotDist",
+        "config": {}
+      },
+      "4": {
+        "algorithm": "TagDist",
+        "config": {}
+      },
+      "5": {
+        "algorithm": "HitsPerEvent",
+        "config": {}
+      },
+      "6": {
+        "algorithm": "DataArchiver",
+        "config": {}
+      },
+      "n_count": 6
+    },
+    "loops": [
+      {
+        "config": {
+          "count": 0,
+          "delay": 58,
+          "extTrigger": false,
+          "frequency": 12000,
+          "noInject": true,
+          "time": 60,
+          "edgeMode": false,
+          "trigMultiplier": 16
+        },
+        "loopAction": "Itkpixv2TriggerLoop"
+      },
+      {
+        "loopAction": "StdDataGatherer"
+      }
+    ],
+    "name": "NoiseScan",
+    "prescan": {
+        "InjVcalDiff": 0,
+        "InjDigEn": 0,
+        "Latency": 56
+    }
+  }
+}

@@ -8,6 +8,8 @@
 
 #include "Itkpixv2PixelFeedback.h"
 
+#include "Bookkeeper.h"
+
 #include "logging.h"
 
 namespace {

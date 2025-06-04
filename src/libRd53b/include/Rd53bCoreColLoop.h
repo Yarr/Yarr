@@ -27,6 +27,7 @@ class Rd53bCoreColLoop : public LoopActionBase {
         bool m_disUnused;
         bool m_resetAtEnd;
         bool m_ignoreDis;
+        bool m_skipDis;
 
         std::array<uint16_t, 4> m_coreCols;
         std::vector<std::array<uint16_t, 4>> m_initCoreColsAllChips;

@@ -50,10 +50,9 @@ void DBHandler::initialize(std::string i_db_cfg_path, std::string i_command, boo
     std::size_t pathPos;
     if ( i_command.find('/')!=std::string::npos) pathPos = i_command.find_last_of('/');
     else pathPos = i_command.size();
-    std::string yarr_bin_path=i_command.substr(0,pathPos);
-    m_upload_command   = yarr_bin_path + "/../localdb/bin/localdbtool-upload";
-    m_retrieve_command = yarr_bin_path + "/../localdb/bin/localdbtool-retrieve";
-    m_influx_command   = yarr_bin_path + "/../localdb/bin/influxdbtool-retrieve";
+    m_upload_command   = "localdbtool-upload";
+    m_retrieve_command = "localdbtool-retrieve";
+    m_influx_command   = "influxdbtool-retrieve";
 
     return;
 }
@@ -193,11 +192,11 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir, bool i_back, bo
 		    result += buffer.data();
 	    }
 	    auto rc = pclose(pipe);
-	    
+
 	    if( std::atoi( result.c_str() ) <= 2 ) {
 		break;
 	    }
-	    
+
 	    dlog->info( ("Waiting for other uploading process to complete... (" + std::to_string( wait/1000 ) + "s)").c_str() );
 	    std::this_thread::sleep_for(std::chrono::milliseconds( wait ));
 	    wait *= 2;
@@ -205,8 +204,8 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir, bool i_back, bo
 		wait = 10000;
 	    }
 	}
-	
-        std::string cmd = m_upload_command + " " + i_option + " " + result_dir;;
+
+        std::string cmd = m_upload_command + " " + i_option + " " + result_dir;
         if (m_db_cfg_path!="")            cmd = cmd + " --database " + m_db_cfg_path;
         if (m_qc)                         cmd = cmd + " --QC";
         if (m_interactive&&i_interactive) cmd = cmd + " --interactive";
@@ -528,8 +527,7 @@ int DBHandler::checkCommand(std::string i_opt) {
     cmd = cmd + " test 1> /dev/null";
     if (system(cmd.c_str())!=0) {
         dlog->error("Local DB command: '{}' wasn't found or exited with errors", tool);
-        dlog->error("Set Local DB function by:");
-        dlog->error("    YARR/localdb/setup_db.sh");
+        dlog->error("Do you have module-qc-database-tools installed?");
         return 1;
     }
     return 0;

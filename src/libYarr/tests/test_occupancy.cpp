@@ -5,36 +5,23 @@
 #include "Histo2d.h"
 
 TEST_CASE("HistogramOccupancyMap", "[Histogrammer][OccupancyMap]") {
-    // This is for one FE
-    std::unique_ptr<HistoDataProcessor> histo(new HistogrammerProcessor);
-    auto& histogrammer = static_cast<HistogrammerProcessor&>(*histo);
+    auto algo = StdDict::getHistogrammer("OccupancyMap");
 
-    ClipBoard<EventDataBase> input;
-    ClipBoard<HistogramBase> output;
+    auto data = std::make_unique<FrontEndData>();
+    data->newEvent(1, 2, 3);
+    data->curEvent->addHit(1, 2, 3);
 
-    histogrammer.connect(&input, &output);
+    // Create output histogram
+    algo->create(data->lStat);
 
-    histogrammer.addHistogrammer(StdDict::getHistogrammer("OccupancyMap"));
+    algo->processEvent(data.get());
 
-    histogrammer.init();
-    histogrammer.run();
+    std::unique_ptr<HistogramBase> result = algo->getHisto();
 
-    {
-        auto data = std::make_unique<FrontEndData>();
-        data->newEvent(1, 2, 3);
-        data->curEvent->addHit(1, 2, 3);
-        input.pushData(std::move(data));
-    }
-
-    input.finish();
-    histogrammer.join();
-
-    REQUIRE (!output.empty());
-
-    std::unique_ptr<HistogramBase> result = output.popData();
+    REQUIRE (result);
 
     // Only one thing
-    REQUIRE (output.empty());
+    REQUIRE (!algo->getHisto());
 
     REQUIRE (result->getXaxisTitle() == "Column");
     REQUIRE (result->getYaxisTitle() == "Row");

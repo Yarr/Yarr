@@ -2,7 +2,10 @@
   "scan": {
     "analysis": {
       "0": {
-        "algorithm": "NoiseAnalysis"
+        "algorithm": "NoiseAnalysis",
+        "config": {
+            "createMask": true
+        }
       },
       "n_count": 1
     },

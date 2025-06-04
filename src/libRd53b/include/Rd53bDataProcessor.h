@@ -43,8 +43,10 @@ public:
     void join() override;
     void process() override;
 
-    const uint32_t *_data; // Pointer to one data block
+    uint32_t *_data; // Pointer to one data block
+    RawDataPtr _dataPtrCpy; // Copy of shared pointer to data object _data points to
     uint32_t *_data_t;     // Internal state variable
+    RawDataPtr _dataPtrCpy_t; // Copy of shared pointer to data object _data points to
     int _wordIdx;          // Index of the word under processing
     unsigned _bitIdx;	   // Index of the first bit in datablock which is not processed yet. It starts from 0. The first half thus ends at 31, and the 2nd starts at 32
     int _rawDataIdx;       // Index of the raw data within each raw data container. Note it can be negative (means going back to previous container)

@@ -10,6 +10,7 @@
 #include "Itkpixv2.h"
 
 #include "logging.h"
+#include "HwController.h"
 
 // Create logger
 namespace {
@@ -291,7 +292,7 @@ yarrStatus Itkpixv2::readRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, ui
 
                 auto [id, received_address, register_value] = Itkpixv2::decodeSingleRegReadID(data->get(0), data->get(1));
                 chipId = id; // chipId is read from the chip wirebonded ID, m_chipId is set in the chip config file
-                if(id == (m_chipId&0x3)) {
+                if(m_chipId > 15 || id == (m_chipId&0x3)) { // only compare if not broadcasting
                     if(received_address != (this->*ref).addr()) {
                         logger->error("readRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
                         return yarrFailure;
@@ -308,7 +309,7 @@ yarrStatus Itkpixv2::readRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, ui
         }
     }
 
-    logger->error("readRegister failed, did not received register readback data from chip with chipId {}", m_chipId);
+    logger->error("readRegister failed, did not receive register readback data from chip with chipId {}", m_chipId);
     return yarrFailure;
 }
 
@@ -510,17 +511,13 @@ uint32_t Itkpixv2::getEfuses() {
     itkpix_efuse_codec::EfuseData efuse_data_old = itkpix_efuse_codec::EfuseData{itkpix_efuse_codec::decodeOldFormat(efuse_data_raw)};
 
     uint32_t chip_sn = efuse_data.chip_sn();
-    uint32_t chip_sn_old = efuse_data_old.chip_sn();
+    logger->info("Chip serial number obtained from e-fuse data: 0x{:x}", chip_sn );
 
-    // https://gitlab.cern.ch/YARR/YARR/-/issues/166
-    if (chip_sn > 0x16000) {
-        logger->info("Chip serial number obtained from e-fuse data: 0x{:x}", chip_sn );
-        return chip_sn;
-    } else {
-        logger->info("Chip serial number decoded with old format from e-fuse data: 0x{:x}", chip_sn_old);
-        return chip_sn_old;
-    }
-    return yarrFailure;
+    // Test for error correction
+    if (chip_sn != ((efuse_data_raw >> 8) & 0xFFFFF))
+        logger->warn("Chip serial number decoded from e-fuse did not match parity bits, tried to error correct.");
+
+    return chip_sn;
 }
 
 std::pair<uint32_t, uint32_t> Itkpixv2::decodeSingleRegRead(uint32_t higher, uint32_t lower) {
@@ -624,13 +621,13 @@ uint32_t Itkpixv2::readEfusesRaw() {
 }
 
 uint8_t Itkpixv2::readChipId() {
-    uint16_t _ = 0;
-    uint8_t id = 15;
-    if (readRegister(&Itkpixv2::EfuseReadData0, _, id) != yarrSuccess) {
-        logger->warn("Failed to readback E-fuse 0 data for chip with {}", m_chipId);
+    uint16_t value = 0; // register value of ChipIdSense is the 4-bit chip ID
+    uint8_t _id = 15; // this gives you the 2-LSB from register read
+    if (readRegister(&Itkpixv2::ChipIdSense, value, _id) != yarrSuccess) {
+        logger->warn("Failed to readback ChipIdSense for chip with {}", m_chipId);
         return 255;
     }
-    return id;
+    return value;
 }
 
 yarrStatus Itkpixv2::confAdc(uint16_t MONMUX, bool doCur) {

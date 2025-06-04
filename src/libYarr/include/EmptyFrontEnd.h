@@ -7,6 +7,9 @@
 // ################################
 
 #include "FrontEnd.h"
+#include "FrontEndCfg.h"
+
+#include "HwController.h"
 
 class EmptyFrontEndCfg : public FrontEndCfg {
     public:

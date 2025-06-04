@@ -1,0 +1,17 @@
+{
+  "sinks": [
+    {
+      "name": "file",
+      "level": "trace",
+      "file_name": "test_star_probe.out",
+      "pattern": "%v"
+    }
+  ],
+  "log_config": [
+    {
+      "name": "test_star_ids",
+      "level": "trace",
+      "sink": "file"
+    }
+  ]
+}

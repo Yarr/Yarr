@@ -12,6 +12,8 @@
 #include <typeinfo>
 #include <cstddef>
 
+#include "Bookkeeper.h"
+
 namespace {
   auto logger = logging::make_log("Rd53aTwoParameterLoop");
 }

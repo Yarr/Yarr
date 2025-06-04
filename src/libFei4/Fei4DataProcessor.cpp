@@ -72,7 +72,7 @@ void Fei4DataProcessor::process_core() {
             continue;
 
         // Create Output Container
-        std::unique_ptr<FrontEndData> curOut(new FrontEndData(curInV->stat));;
+        std::unique_ptr<FrontEndData> curOut(new FrontEndData(curInV->stat));
         int events = 0;
 
         unsigned size = curInV->size();

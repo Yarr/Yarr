@@ -1,7 +1,9 @@
 #include "StarChipsetEmu.h"
 
 #include <iomanip>
+#include <random>
 
+#include "AbcNames.h"
 #include "ScanHelper.h"
 #include "logging.h"
 
@@ -27,7 +29,178 @@ std::ostream &operator <<(std::ostream &os, print_hex_type<T> v) {
 }
 
 auto logger = logging::make_log("StarChipsetEmu");
-}
+
+StarEmuNS::StripData getCalEnables(const AbcCfg& abc);
+StarEmuNS::StripData getMasks(const AbcCfg& abc);
+
+} // End anon namespace
+
+using namespace StarEmuNS; // eg StripData
+
+/**
+ * Emulate analog FE using StripModel.
+ */
+class AnalogueModelGenerator : public StripGenerator {
+  std::array<StripModel, NStrips> m_stripArray;
+public:
+  AnalogueModelGenerator() {
+    logger->debug("Configuring AnalogueModelGenerator (default)");
+  }
+
+  AnalogueModelGenerator(const json &cfg) {
+    logger->debug("Configuring AnalogueModelGenerator");
+    // Initialize FE strip array from config json
+    for (size_t istrip = 0; istrip < NStrips; ++istrip) {
+      m_stripArray[istrip].setValue(cfg["vthreshold_mean"][istrip],
+                                    cfg["vthreshold_sigma"][istrip],
+                                    cfg["noise_occupancy_mean"][istrip],
+                                    cfg["noise_occupancy_sigma"][istrip]);
+    }
+  }
+
+  void fill_hits(StripData &hits, const AbcCfg &abc, bool cal_pulse) override {
+    bool CalPulseEnable = abc.getSubRegisterValue(ABCStarSubRegister::CALPULSE_ENABLE);
+
+    // Charge injection DAC
+    uint16_t BCAL;
+    if (cal_pulse and CalPulseEnable) {
+      BCAL = abc.getSubRegisterValue(ABCStarSubRegister::BCAL);
+      //assert(bcid == (l0addr&0xff));
+    } else { // No calibration pulse. Hits could still be recorded due to noise.
+      BCAL = 0;
+    }
+
+    // Threshold DAC
+    // BVT: 8 bits, 0 - -550 mV
+    uint8_t BVT = abc.getSubRegisterValue(ABCStarSubRegister::BVT);
+
+    // Trim Range
+    // BTRANGE: 5 bits, 50 mV - 230 mV
+    uint8_t BTRANGE = abc.getSubRegisterValue(ABCStarSubRegister::BTRANGE);
+
+    // Calibration enables for each strip channel
+    auto enables = getCalEnables(abc);
+
+    // Loop over each strip
+    for (int istrip = 0; istrip < NStrips; ++istrip) {
+      // TrimDAC
+      uint8_t TrimDAC = abc.getTrimDACRaw(istrip);
+
+      if (not enables[istrip]) {
+        BCAL = 0;
+      }
+
+      bool aHit = m_stripArray[istrip].calculateHit(BCAL, BVT, TrimDAC, BTRANGE);
+      hits.set(istrip, aHit);
+    }
+  }
+};
+
+/**
+ * Emulate analog FE using configured occupancy.
+ */
+class SimpleOccupancyGenerator : public StripGenerator {
+  ABCStarSubRegister sub_reg;
+
+  std::vector<float> occupancy_map;
+
+  std::random_device rd{};
+  std::mt19937 gen{rd()};
+  std::uniform_real_distribution<> dis{0.0, 1.0};
+
+public:
+  SimpleOccupancyGenerator(const json &cfg) {
+    logger->debug("Configuring SimpleOccupancyGenerator");
+    std::string var = cfg["variable"];
+
+    auto subRegOpt = AbcNames::subRegFromString(var);
+    if(!subRegOpt.has_value()) {
+      logger->error("Variable {} does not name an ABC sub-reg", var);
+      throw std::runtime_error("Bad variable in config");
+    }
+
+    sub_reg = subRegOpt.value();
+    if(!cfg.contains("occupancies")) {
+      logger->error("No occupancies for simple occupancy config");
+      throw std::runtime_error("Bad 'occupancies' emu config");
+    }
+    auto occs = cfg["occupancies"];
+    occupancy_map = occs.template get<std::vector<float>>();
+  }
+
+  void fill_hits(StripData &hits, const AbcCfg &abc, bool cal_pulse) override {
+    auto curr_val = abc.getSubRegisterValue(sub_reg);
+
+    float occupancy = 0.0f;
+
+    if(curr_val < occupancy_map.size()) {
+      occupancy = occupancy_map[curr_val];
+    }
+
+    // Loop over each strip
+    for (int istrip = 0; istrip < NStrips; ++istrip) {
+      bool stripHit = dis(gen) < occupancy;
+      hits.set(istrip, stripHit);
+    }
+  }
+};
+
+/**
+ * Emulate analog FE using configured occupancy based on trim.
+ */
+class SimpleTrimGenerator : public StripGenerator {
+  std::vector<float> occupancy_map;
+
+  std::random_device rd{};
+  std::mt19937 gen{rd()};
+  std::uniform_real_distribution<> dis{0.0, 1.0};
+
+public:
+  SimpleTrimGenerator(const json &cfg) {
+    logger->debug("Configuring SimpleTrimGenerator");
+    if(!cfg.contains("occupancies")) {
+      logger->error("No occupancies for simple trim occupancy config");
+      throw std::runtime_error("Bad 'occupancies' emu config");
+    }
+    auto occs = cfg["occupancies"];
+    occupancy_map = occs.template get<std::vector<float>>();
+  }
+
+  void fill_hits(StripData &hits, const AbcCfg &abc, bool cal_pulse) override {
+    std::array<uint32_t, 32> lo_trim;
+    std::array<uint32_t, 8> hi_trim;
+
+    for(size_t t=0; t<32; t++) {
+      lo_trim[t] = abc.getRegisterValue(ABCStarRegisters::TrimLo(t));
+    }
+    for(size_t t=0; t<8; t++) {
+      hi_trim[t] = abc.getRegisterValue(ABCStarRegisters::TrimHi(t));
+    }
+
+    // Loop over all strips (copied from getTrimDACRaw)
+    for (unsigned istrip = 0; istrip < NStrips; ++istrip) {
+      unsigned lo_offset = (istrip * 4) % 32;
+      unsigned hi_offset = istrip % 32;
+
+      uint32_t lo_reg_value = lo_trim[istrip/8];
+      uint32_t hi_reg_value = hi_trim[istrip/32];
+
+      auto lo_val = (lo_reg_value >> lo_offset) & 0xf;
+      auto hi_val = (hi_reg_value >> hi_offset) & 1;
+
+      int trim_val = (hi_val<<4) | lo_val;
+
+      float occupancy = 0.0f;
+
+      if(trim_val < occupancy_map.size()) {
+        occupancy = occupancy_map[trim_val];
+      }
+
+      bool stripHit = dis(gen) < occupancy;
+      hits.set(istrip, stripHit);
+    }
+  }
+};
 
 StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
                                const std::string& json_emu_file_path,
@@ -58,13 +231,10 @@ StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
       logger->error("Error opening emulator config: {}", e.what());
       throw(std::runtime_error("StarChipsetEmu::StarChipsetEmu failure"));
     }
-    // Initialize FE strip array from config json
-    for (size_t istrip = 0; istrip < 256; ++istrip) {
-      m_stripArray[istrip].setValue(jEmu["vthreshold_mean"][istrip],
-                                    jEmu["vthreshold_sigma"][istrip],
-                                    jEmu["noise_occupancy_mean"][istrip],
-                                    jEmu["noise_occupancy_sigma"][istrip]);
-    }
+
+    configureGenerator(jEmu);
+  } else {
+    m_generator = std::make_unique<AnalogueModelGenerator>();
   }
 
   // HPR
@@ -74,6 +244,23 @@ StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
 }
 
 StarChipsetEmu::~StarChipsetEmu() = default;
+
+void StarChipsetEmu::configureGenerator(const json &jEmu) {
+    if(jEmu.contains("generator")) {
+      auto gen_config = jEmu["generator"];
+      // Configure emulator occupancy based on a simple register value
+      if(gen_config.contains("type")) {
+        std::string gen_type = gen_config["type"];
+        if(gen_type == "simple_var") {
+          m_generator = std::make_unique<SimpleOccupancyGenerator>(gen_config);
+        } else if(gen_type == "simple_trim_var") {
+          m_generator = std::make_unique<SimpleTrimGenerator>(gen_config);
+        }
+      }
+    } else {
+      m_generator = std::make_unique<AnalogueModelGenerator>(jEmu);
+    }
+}
 
 void StarChipsetEmu::sendPacket(uint8_t *byte_s, uint8_t *byte_e) {
     size_t byte_length = byte_e - byte_s;
@@ -899,7 +1086,9 @@ void StarChipsetEmu::fillL0Buffer() {
   }
 }
 
-StarChipsetEmu::StripData StarChipsetEmu::getMasks(const AbcCfg& abc) {
+namespace {
+
+StripData getMasks(const AbcCfg& abc) {
   // mask registers
   unsigned maskinput0 = abc.getRegisterValue(ABCStarRegister::MaskInput0);
   unsigned maskinput1 = abc.getRegisterValue(ABCStarRegister::MaskInput1);
@@ -968,7 +1157,7 @@ StarChipsetEmu::StripData StarChipsetEmu::getMasks(const AbcCfg& abc) {
   return masks;
 }
 
-StarChipsetEmu::StripData StarChipsetEmu::getCalEnables(const AbcCfg& abc) {
+StripData getCalEnables(const AbcCfg& abc) {
   // Calibration enable registers
   unsigned calenable0 = abc.getRegisterValue(ABCStarRegister::CalREG0);
   unsigned calenable1 = abc.getRegisterValue(ABCStarRegister::CalREG1);
@@ -1037,7 +1226,9 @@ StarChipsetEmu::StripData StarChipsetEmu::getCalEnables(const AbcCfg& abc) {
   return enables;
 }
 
-std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_StaticTest(const AbcCfg& abc, unsigned l0addr) {
+} // End anon
+
+std::pair<uint8_t, StripData> StarChipsetEmu::generateFEData_StaticTest(const AbcCfg& abc, unsigned l0addr) {
   // Use mask bits as the hit pattern in Static Test mode
   StripData masks = getMasks(abc);
 
@@ -1045,7 +1236,7 @@ std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_Sta
   return std::make_pair(bcid, masks);
 }
 
-std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_TestPulse(const AbcCfg& abc, unsigned l0addr) {
+std::pair<uint8_t, StripData> StarChipsetEmu::generateFEData_TestPulse(const AbcCfg& abc, unsigned l0addr) {
   StripData hits;
   uint8_t bcid = 0;
 
@@ -1106,7 +1297,7 @@ std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_Tes
   return std::make_pair(bcid, hits);
 }
 
-std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_CaliPulse(const AbcCfg& abc, unsigned l0addr) {
+std::pair<uint8_t, StripData> StarChipsetEmu::generateFEData_CaliPulse(const AbcCfg& abc, unsigned l0addr) {
   StripData hits;
 
   // read the L0 pipeline
@@ -1117,41 +1308,13 @@ std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::generateFEData_Cal
   uint8_t pulsetype = (pulse.to_ulong()>>8) & 3;
 
   //assert(TM==0)
-  bool CalPulseEnable = abc.getSubRegisterValue(ABCStarSubRegister::CALPULSE_ENABLE);
 
-  // Charge injection DAC
-  uint16_t BCAL;
-  if (pulsetype == 1 and CalPulseEnable) {
-    BCAL = abc.getSubRegisterValue(ABCStarSubRegister::BCAL);
-    //assert(bcid == (l0addr&0xff));
-  } else { // No calibration pulse. Hits could still be recorded due to noise.
-    BCAL = 0;
+  if (pulsetype == 1) {
     // assign BCID
     bcid = l0addr & 0xff;
   }
 
-  // Threshold DAC
-  // BVT: 8 bits, 0 - -550 mV
-  uint8_t BVT = abc.getSubRegisterValue(ABCStarSubRegister::BVT);
-
-  // Trim Range
-  // BTRANGE: 5 bits, 50 mV - 230 mV
-  uint8_t BTRANGE = abc.getSubRegisterValue(ABCStarSubRegister::BTRANGE);
-
-  // Calibration enables for each strip channel
-  auto enables = getCalEnables(abc);
-
-  // Loop over 256 strips
-  for (int istrip = 0; istrip < 256; ++istrip) {
-    // TrimDAC
-    uint8_t TrimDAC = abc.getTrimDACRaw(istrip);
-
-    if (not enables[istrip])
-      BCAL = 0;
-
-    bool aHit = m_stripArray[istrip].calculateHit(BCAL, BVT, TrimDAC, BTRANGE);
-    hits.set(istrip, aHit);
-  }
+  m_generator->fill_hits(hits, abc, pulsetype == 1);
 
   // apply masks
   auto masks = getMasks(abc);
@@ -1171,7 +1334,7 @@ unsigned StarChipsetEmu::getL0BufferAddr(const AbcCfg& abc, uint8_t cmdBC) const
   return (L0BufDepth + m_bccnt - 4 + cmdBC - l0_latency) % L0BufDepth;
 }
 
-std::pair<uint8_t, StarChipsetEmu::StripData> StarChipsetEmu::getFEData(const AbcCfg& abc, unsigned l0addr) {
+std::pair<uint8_t, StripData> StarChipsetEmu::getFEData(const AbcCfg& abc, unsigned l0addr) {
   // Mode of operation
   uint8_t TM = abc.getSubRegisterValue(ABCStarSubRegister::TM);
   if (TM == 0) { // Normal data taking
