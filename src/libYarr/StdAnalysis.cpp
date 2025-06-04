@@ -2021,6 +2021,7 @@ void ParameterAnalysis::init(const ScanLoopInfo *s) {
     }
 
     if(paramLoopNo >= s->size()) {
+      paramLoopNo = 0xffffffff;
       alog->error("ParameterAnalysis: no parameter loop found");
     }
 }
@@ -2030,7 +2031,7 @@ void ParameterAnalysis::processHistogram(HistogramBase *h) {
     if (h->getName() != OccupancyMap::outputName())
         return;
 
-    if(paramLoopNo >= s->size()) {
+    if(paramLoopNo == 0xffffffff) {
         // Already printed error in init
         return;
     }
