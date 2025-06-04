@@ -1993,7 +1993,7 @@ void ParameterAnalysis::init(const ScanLoopInfo *s) {
             loopMax.push_back((unsigned)l->getMax());
         }
 
-        // Parameter Loop
+        // Parameter loop of interest
         if (l->isParameterLoop() || paramLoopNo == n) {
             paramLoopNo = n;
             paramMax = l->getMax();
@@ -2002,8 +2002,9 @@ void ParameterAnalysis::init(const ScanLoopInfo *s) {
             paramBins = (paramMax-paramMin)/paramStep;
             auto paramLoop = dynamic_cast<const StdParameterAction*>(l);
             if(paramLoop == nullptr) {
-                alog->error("ParameterAnalysis: loop declared as parameter loop does not have a name");
-                paramName = "DefaultParam";
+                // In case targetLoopIndex points to non-parameter loop
+                alog->info("ParameterAnalysis: loop declared as parameter loop does not have a name");
+                paramName = "Loop"+std::to_string(paramLoopNo);
             } else {
                 paramName = paramLoop->getParName();
             }
@@ -2028,6 +2029,11 @@ void ParameterAnalysis::processHistogram(HistogramBase *h) {
     // Check if right Histogram
     if (h->getName() != OccupancyMap::outputName())
         return;
+
+    if(paramLoopNo >= s->size()) {
+        // Already printed error in init
+        return;
+    }
 
     Histo2d *hh = (Histo2d*) h;
 
