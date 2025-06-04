@@ -147,8 +147,9 @@ void FelixRxCore::flushBuffer() {
 void FelixRxCore::clearRawData(){
   // Clear out the raw data stored in m_rawData
   frlog->debug("Emptying out the raw data buffer");
-  while (!m_rawData.empty()) {
-    m_rawData.popData();
+  // Should we disable all channels first?
+  for (auto& frt : m_rxThreads) {
+    frt->clearRawData();
   }
 }
 

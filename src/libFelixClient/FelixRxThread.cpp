@@ -204,6 +204,13 @@ void FelixRxThread::on_data_received(FelixID_t fid, const uint8_t* data, size_t 
   m_rawData.pushData(std::move(rd));
 }
 
+void FelixRxThread::clearRawData() {
+  // Clear data buffer
+  while (not m_rawData.empty()) {
+    m_rawData.popData();
+  }
+}
+
 RawDataPtr FelixRxThread::readData() {
   frtlog->trace("FelixRxThread::readData");
   auto rdp = m_rawData.popData();

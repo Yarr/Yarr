@@ -38,6 +38,8 @@ class FelixRxThread {
 
     void flush(bool doflush) { m_doFlushBuffer = doflush; }
 
+    void clearRawData();
+
     RawDataPtr readData();
 
     uint32_t getDataRate() const;
