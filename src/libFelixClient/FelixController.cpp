@@ -872,11 +872,11 @@ void FelixController::communicateLpGBT(const lpgbt_item_t* reg, uint8_t& data, c
 void FelixController::readWriteOptoReg(const lpgbt_item_t* reg , uint8_t& reg_data, bool write, OptoDevice* lpgbt){
   // Check if the fids are already enabled, if not, enable them
   try {
-    if (!FelixRxCore::m_enables[lpgbt->getRxFid()]){
+    if (!FelixRxCore::channelIsEnabled(lpgbt->getRxFid())){
       setICEnable(lpgbt->getRxFid());
       FelixRxCore::enableChannel(lpgbt->getRxFid());
     }
-    if (!FelixTxCore::m_enables[lpgbt->getTxFid()]){
+    if (!FelixTxCore::channelIsEnabled(lpgbt->getTxFid())){
       setICEnable(lpgbt->getTxFid());
       FelixTxCore::enableChannel(lpgbt->getTxFid());
     }

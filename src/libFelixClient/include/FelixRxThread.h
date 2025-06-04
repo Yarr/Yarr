@@ -36,6 +36,8 @@ class FelixRxThread {
     void disableChannel(FelixID_t fid);
     void disableChannel();
 
+    bool channelIsEnabled(FelixID_t fid) { return m_enables[fid]; }
+
     void flush(bool doflush) { m_doFlushBuffer = doflush; }
 
     void clearRawData();

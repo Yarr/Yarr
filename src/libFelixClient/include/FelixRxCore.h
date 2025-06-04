@@ -53,6 +53,10 @@ protected:
   void enableChannel(FelixID_t fid);
   void disableChannel(FelixID_t fid);
 
+  bool channelIsEnabled(FelixID_t fid) {
+    return m_rxThreads[m_fidThreadMap[fid]]->channelIsEnabled(fid);
+  }
+
   unsigned m_flushWaitTime {50}; // in milliseconds
 
   // For Felix ID
