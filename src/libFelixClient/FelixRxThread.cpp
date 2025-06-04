@@ -7,7 +7,6 @@
 
 namespace {
   auto frtlog = logging::make_log("FelixRxThread");
-  auto frttimer = logging::make_log("FelixRxThreadTimer");
 }
 
 FelixRxThread::FelixRxThread(
@@ -151,7 +150,6 @@ void FelixRxThread::on_data_received(FelixID_t fid, const uint8_t* data, size_t 
   std::stringstream thread_ss;
   thread_ss << "0x" << std::hex << std::this_thread::get_id();
 
-  frttimer->trace("FelixRxThread::on_data_callback,start,{},0x{:x},{}", thread_ss.str(), fid, size);
   frtlog->trace("Received message from 0x{:x}", fid);
 
   if (frtlog->should_log(spdlog::level::trace)) {
@@ -204,8 +202,6 @@ void FelixRxThread::on_data_received(FelixID_t fid, const uint8_t* data, size_t 
 
   // push data to the queue
   m_rawData.pushData(std::move(rd));
-
-  frttimer->trace("FelixRxThread::on_data_callback,done,{},0x{:x},{}", thread_ss.str(), fid, size);
 }
 
 RawDataPtr FelixRxThread::readData() {
