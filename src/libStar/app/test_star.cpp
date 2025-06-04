@@ -4,7 +4,9 @@
 #include <tuple>
 #include <set>
 
+#include "AbcNames.h"
 #include "AllHwControllers.h"
+#include "HccNames.h"
 #include "StarCmd.h"
 #include "StarCfg.h"
 #include "LCBUtils.h"
@@ -18,6 +20,8 @@
 
 namespace {
   auto logger = logging::make_log("test_star");
+  // A second logger for recording HCC and ABC IDs after probing
+  auto logger_id = logging::make_log("test_star_ids");
 
   StarCmd star;
 
@@ -40,9 +44,9 @@ namespace {
   */
   std::map<std::string, std::vector<std::string>> sequenceMap = {
       {"Full", {
-          "checkHPRs", "probeHCCs", "testHCCRegister",
+          "checkHCCHPRs", "probeHCCs", "testHCCRegister",
           "configureHCC",
-          "probeABCs", "testABCRegister",
+          "checkABCHPRs", "probeABCs", "testABCRegister",
           "configureABC",
           "testHitCounts",
           "testDataPacketsStatic",
@@ -72,10 +76,10 @@ namespace {
         Probe the front end ASICs
       */
       {"Probe", {
-          "checkHPRs", "probeHCCs",
+          "checkHCCHPRs", "probeHCCs",
           // In case resets were sent, HCCs need to be reconfigured to talk to ABCs
           "configureHCCIfReset", // only if doResets set
-          "probeABCs",
+          "checkABCHPRs", "probeABCs",
         }},
 
       /*
@@ -152,44 +156,42 @@ void sendCommand(uint16_t cmd, HwController& hwCtrl) {
 
 // Update the sub-register value in the star config
 // Return the address and new register value to be sent to the chips
-std::tuple<uint32_t, uint32_t> updateHCCSubRegister(const std::string& subRegName, uint32_t value, StarCfg& cfg) {
-  // chipIndex 0 for HCC
-  int chipIndex = 0;
-  cfg.setSubRegisterValue(chipIndex, subRegName, value);
+std::tuple<uint32_t, uint32_t> updateHCCSubRegister(HCCStarSubRegister subReg, uint32_t value, StarCfg& cfg) {
+  cfg.setHCCSubRegisterValue(subReg, value);
 
-  uint32_t addr = cfg.getSubRegisterParentAddr(chipIndex, subRegName);
-  uint32_t newValue = cfg.getSubRegisterParentValue(chipIndex, subRegName);
+  uint32_t addr = cfg.getHCCSubRegisterParentAddr(subReg);
+  uint32_t newValue = cfg.getHCCSubRegisterParentValue(subReg);
 
   return std::make_tuple(addr, newValue);
 }
 
 // Assume the register configuration command is always broadcasted to all chips
-std::tuple<uint32_t, uint32_t> updateABCSubRegister(const std::string& subRegName, uint32_t value, StarCfg& cfg) {
+std::tuple<uint32_t, uint32_t> updateABCSubRegister(ABCStarSubRegister subReg, uint32_t value, StarCfg& cfg) {
+  uint32_t newValue = 0;
 
   cfg.eachAbc([&](auto &abc) {
-      abc.setSubRegisterValue(subRegName, value);
+      abc.setSubRegisterValue(subReg, value);
+
+      // Only last is stored
+      newValue = abc.getSubRegisterParentValue(subReg);
     });
 
-  // chipIndex 1 for the first ABC
-  int chipIndex = 1;
-  uint32_t addr = cfg.getSubRegisterParentAddr(chipIndex, subRegName);
-  uint32_t newValue = cfg.getSubRegisterParentValue(chipIndex, subRegName);
+  uint32_t addr = cfg.getABCSubRegisterParentAddr(subReg);
 
   return std::make_tuple(addr, newValue);
 }
 
 // Update the register value in the chip config
 // Return the register address in int
-uint32_t updateHCCRegister(const std::string& regName, uint32_t value, StarCfg& cfg) {
-  HCCStarRegister addr = HCCStarRegister::_from_string(regName.c_str());
+uint32_t updateHCCRegister(HCCStarRegister addr, uint32_t value, StarCfg& cfg) {
   cfg.setHCCRegister(addr, value);
-  return addr;
+  return (int)addr;
 }
 
-uint32_t updateABCRegister(const std::string& regName, uint32_t value, StarCfg& cfg) {
-  ABCStarRegister addr = ABCStarRegister::_from_string(regName.c_str());
+uint32_t updateABCRegister(ABCStarRegister reg, uint32_t value, StarCfg& cfg) {
+  uint32_t addr = (uint32_t)reg;
   cfg.eachAbc([&](auto &abc) {
-      abc.setRegisterValue(addr, value);
+      abc.setRegisterValue(reg, value);
     });
 
   return addr;
@@ -409,34 +411,34 @@ void configureHCC(HwController& hwCtrl, StarCfg& cfg, bool reset) {
 
   // Register Delay1: delays for signals to ABCStars
   uint32_t val_delay1 = 0x02400000;
-  uint32_t addr_delay1 = updateHCCRegister("Delay1", val_delay1, cfg);
+  uint32_t addr_delay1 = updateHCCRegister(HCCStarRegister::Delay1, val_delay1, cfg);
   sendCommand(star.write_hcc_register(addr_delay1, val_delay1), hwCtrl);
 
   // Register Delay2, Delay3: delays for data from ABCStar
   uint32_t val_delay2 = 0x44444444;
-  uint32_t addr_delay2 = updateHCCRegister("Delay2", val_delay2, cfg);
+  uint32_t addr_delay2 = updateHCCRegister(HCCStarRegister::Delay2, val_delay2, cfg);
   sendCommand(star.write_hcc_register(addr_delay2, val_delay2), hwCtrl);
 
   uint32_t val_delay3 = 0x00000444;
-  uint32_t addr_delay3 = updateHCCRegister("Delay3", val_delay3, cfg);
+  uint32_t addr_delay3 = updateHCCRegister(HCCStarRegister::Delay3, val_delay3, cfg);
   sendCommand(star.write_hcc_register(addr_delay3, val_delay3), hwCtrl);
 
   // Register DRV1: enable driver and currents
   uint32_t val_drv1 = 0x0fffffff;
-  uint32_t addr_drv1 = updateHCCRegister("DRV1", val_drv1, cfg);
+  uint32_t addr_drv1 = updateHCCRegister(HCCStarRegister::DRV1, val_drv1, cfg);
   sendCommand(star.write_hcc_register(addr_drv1, val_drv1), hwCtrl);
 
   // Register ICenable: enable input channels
   uint32_t val_icen = 0x000007ff;
-  uint32_t addr_icen = updateHCCRegister("ICenable", val_icen, cfg);
+  uint32_t addr_icen = updateHCCRegister(HCCStarRegister::ICenable, val_icen, cfg);
   sendCommand(star.write_hcc_register(addr_icen, val_icen), hwCtrl);
 
   if (reset) {
     // Register ExtRst/ExtRstC: external reset for ABCStars
     uint32_t val_extrst = 0x00000001;
 
-    uint32_t addr_extrst = updateHCCRegister("ExtRst", val_extrst, cfg);
-    uint32_t addr_extrstc = updateHCCRegister("ExtRstC", val_extrst, cfg);
+    uint32_t addr_extrst = updateHCCRegister(HCCStarRegister::ExtRst, val_extrst, cfg);
+    uint32_t addr_extrstc = updateHCCRegister(HCCStarRegister::ExtRstC, val_extrst, cfg);
 
     sendCommand(star.write_hcc_register(addr_extrst, val_extrst), hwCtrl);
     sendCommand(star.write_hcc_register(addr_extrstc, val_extrst), hwCtrl);
@@ -451,8 +453,8 @@ void configureHCC_PacketTransp(HwController& hwCtrl, StarCfg& cfg, bool reset) {
   // Register OPmode/OPmodeC
   uint32_t val_mode = 0x00020201;
 
-  uint32_t addr_mode = updateHCCRegister("OPmode", val_mode, cfg);
-  uint32_t addr_modec = updateHCCRegister("OPmodeC", val_mode, cfg);
+  uint32_t addr_mode = updateHCCRegister(HCCStarRegister::OPmode, val_mode, cfg);
+  uint32_t addr_modec = updateHCCRegister(HCCStarRegister::OPmodeC, val_mode, cfg);
 
   sendCommand(star.write_hcc_register(addr_mode, val_mode), hwCtrl);
   sendCommand(star.write_hcc_register(addr_modec, val_mode), hwCtrl);
@@ -465,7 +467,7 @@ void configureHCC_FullTransp(HwController& hwCtrl, StarCfg& cfg, bool reset, uns
   // Register ICenable
   inChn = inChn & 0xf;
   unsigned val_icen = (inChn << 16) + (1 << inChn);
-  uint32_t addr_icen = updateHCCRegister("ICenable", val_icen, cfg);
+  uint32_t addr_icen = updateHCCRegister(HCCStarRegister::ICenable, val_icen, cfg);
   sendCommand(star.write_hcc_register(addr_icen, val_icen), hwCtrl);
 
   // Set to full transparent mode
@@ -473,8 +475,8 @@ void configureHCC_FullTransp(HwController& hwCtrl, StarCfg& cfg, bool reset, uns
   // Register OPmode/OPmodeC
   uint32_t val_mode = 0x00020301;
 
-  uint32_t addr_mode = updateHCCRegister("OPmode", val_mode, cfg);
-  uint32_t addr_modec = updateHCCRegister("OPmodeC", val_mode, cfg);
+  uint32_t addr_mode = updateHCCRegister(HCCStarRegister::OPmode, val_mode, cfg);
+  uint32_t addr_modec = updateHCCRegister(HCCStarRegister::OPmodeC, val_mode, cfg);
 
   sendCommand(star.write_hcc_register(addr_mode, val_mode), hwCtrl);
   sendCommand(star.write_hcc_register(addr_modec, val_mode), hwCtrl);
@@ -491,33 +493,33 @@ void configureABC(HwController& hwCtrl, StarCfg& cfg, bool reset) {
   logger->info("Broadcast ABCStar configurations");
 
   // Set RR mode to 1
-  auto [addr_rr, val_rr] = updateABCSubRegister("RRMODE", 1, cfg);
+  auto [addr_rr, val_rr] = updateABCSubRegister(ABCStarSubRegister::RRMODE, 1, cfg);
   sendCommand(star.write_abc_register(addr_rr, val_rr), hwCtrl);
 
   // Enable LP
-  auto [addr_lp, val_lp] = updateABCSubRegister("LP_ENABLE", 1, cfg);
+  auto [addr_lp, val_lp] = updateABCSubRegister(ABCStarSubRegister::LP_ENABLE, 1, cfg);
   sendCommand(star.write_abc_register(addr_lp, val_lp), hwCtrl);
 
   // Enable PR
-  auto [addr_pr, val_pr] = updateABCSubRegister("PR_ENABLE", 1, cfg);
+  auto [addr_pr, val_pr] = updateABCSubRegister(ABCStarSubRegister::PR_ENABLE, 1, cfg);
   sendCommand(star.write_abc_register(addr_pr, val_pr), hwCtrl);
 
   // Set some mask registers to some nonzero value
   // MaskInput3
   logger->debug(" Set MaskInput3 to 0xfffe0000");
   uint32_t val_mask3 = 0xfffe0000;
-  uint32_t addr_mask3 = updateABCRegister("MaskInput3", val_mask3, cfg);
+  uint32_t addr_mask3 = updateABCRegister(ABCStarRegister::MaskInput3, val_mask3, cfg);
   sendCommand(star.write_abc_register(addr_mask3, val_mask3), hwCtrl);
 
   // MaskInput7
   logger->debug(" Set MaskInput7 to 0xff000000");
   uint32_t val_mask7 = 0xff000000;
-  uint32_t addr_mask7 = updateABCRegister("MaskInput7", val_mask7, cfg);
+  uint32_t addr_mask7 = updateABCRegister(ABCStarRegister::MaskInput7, val_mask7, cfg);
   sendCommand(star.write_abc_register(addr_mask7, val_mask7), hwCtrl);
 }
 
 // Test steps
-bool checkHPRs(HwController& hwCtrl,
+bool checkHCCHPRs(HwController& hwCtrl,
                const std::vector<uint32_t>& rxChannels,
                bool reset)
 {
@@ -534,7 +536,7 @@ bool checkHPRs(HwController& hwCtrl,
 
     // Should not be necessary except for the emulator, but toggle the TestHPR
     // bit anyway in case HPR was stopped previously
-    sendCommand(star.write_hcc_register(HCCStarRegister::Pulse, 0x2), hwCtrl);
+    sendCommand(star.write_hcc_register((int)HCCStarRegister::Pulse, 0x2), hwCtrl);
 
     std::function<bool(RawData&)> filter_hpr = [rx](RawData& d) {
       return isPacketType(d, TYP_HCC_HPR) and isFromChannel(d, rx);
@@ -591,12 +593,12 @@ bool probeHCCs(
     hwCtrl.setCmdEnable(tx);
 
     // Toggle bit 2 in register Pulse to load serial number into register Addressing
-    sendCommand(star.write_hcc_register(HCCStarRegister::Pulse, 0x4), hwCtrl);
+    sendCommand(star.write_hcc_register((int)HCCStarRegister::Pulse, 0x4), hwCtrl);
 
     // Scan through the Rx channels and look for response
     for (auto rx : rxChannels) {
       // Read the register Addressing
-      sendCommand(star.read_hcc_register(HCCStarRegister::Addressing), hwCtrl);
+      sendCommand(star.read_hcc_register((int)HCCStarRegister::Addressing), hwCtrl);
 
       auto data = readData(
         hwCtrl,
@@ -617,12 +619,13 @@ bool probeHCCs(
         uint32_t hccID = (packet.value & 0xf0000000) >> 28; // top four bits
         uint32_t fuseID = packet.value & 0x00ffffff; // lowest 24 bits
         logger->info("Found HCCStar @ Tx = {} Rx = {}: ID = 0x{:x} eFuse ID = 0x{:06x}", tx, rx, hccID, fuseID);
+        logger_id->trace("HCCStar @ Tx = {} Rx = {}: ID = 0x{:x} eFuse ID = 0x{:06x}", tx, rx, hccID, fuseID);
         hasHCCTx = true;
 
         if (setID) {
           // Set HCC ID to nHCC
           uint32_t address = (nHCC << 28) | (fuseID & 0x00ffffff);
-          sendCommand(star.write_hcc_register(HCCStarRegister::Addressing, address), hwCtrl);
+          sendCommand(star.write_hcc_register((int)HCCStarRegister::Addressing, address), hwCtrl);
           logger->info(" Set its ID to 0x{:x}", nHCC);
           hccID = nHCC;
         }
@@ -650,8 +653,9 @@ bool probeHCCs(
   return true;
 }
 
-bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars, bool reset) {
-  bool hasABCStar = false;
+bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars, bool reset) {
+  bool receivedABCHPR = false;
+  bool hprGood = true;
 
   if (reset) {
     sendCommand(LCB::fast_command(LCB::ABC_REG_RESET, 0), hwCtrl);
@@ -665,10 +669,8 @@ bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars
     hwCtrl.setRxEnable(hcc.rx);
 
     // Toggle the TestHPR bit in case of the emulator or HPR was previously stopped
-    auto [addr_sc, val_sc] = updateABCSubRegister("TESTHPR", 1, cfg);
+    auto [addr_sc, val_sc] = updateABCSubRegister(ABCStarSubRegister::TESTHPR, 1, cfg);
     sendCommand(star.write_abc_register(addr_sc, val_sc), hwCtrl);
-
-    unsigned activeInChannels = 0;
 
     std::function<bool(RawData&)> filter_abchpr = [&hcc](RawData& d) {
       return isPacketType(d, TYP_ABC_HPR) and isFromChannel(d, hcc.rx);
@@ -678,45 +680,140 @@ bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars
     auto rdc = readAllData(hwCtrl, filter_abchpr, timeout);
 
     for (unsigned c = 0; c < rdc.size(); c++) {
-        RawDataPtr d = rdc.data[c];
+      RawDataPtr d = rdc.data[c];
       StarChipPacket packet;
 
       if ( packetFromRawData(packet, *d) ) {
         logger->error("Packet parse failed");
+        continue;
+      }
+
+      logger->trace(" Received an HPR packet from ABCStar");
+      receivedABCHPR = true;
+
+      // check the input channel
+      uint32_t abc_chn = packet.channel_abc;
+      // get the chipID from the top four bits of the 16-bit status word
+      uint32_t abcid = (packet.abc_status >> 12) & 0xf;
+
+      if ( hcc.abcs.find(abc_chn) != hcc.abcs.end() ) {
+        // already reported the HPR on this channel. skip.
+        continue;
+      }
+
+      // HPR from a new channel
+      hcc.abcs[abc_chn] = abcid;
+      logger->info(" Received an HPR packet from the ABCStar on channel {} with chipID {}", abc_chn, abcid);
+
+      // print the HPR packet
+      std::stringstream os;
+      packet.print_more(os);
+      std::string str = os.str();
+      str.erase(str.end()-1); // strip the extra \n
+      logger->debug(" Received HPR packet: {}", str);
+
+      // check flags in HPR
+      bool lcb_scmd_err = packet.value & (1<<15);
+      if (lcb_scmd_err) logger->warn(" LCB slow command error");
+
+      bool lcb_errcnt_ovfl = packet.value & (1<<14);
+      if (lcb_errcnt_ovfl) logger->warn(" LCB error count overflow");
+
+      bool lcb_decode_err = packet.value & (1<<13);
+      if (lcb_decode_err) logger->warn(" LCB decode error");
+
+      bool lcb_locked = packet.value & (1<<12);
+      if(lcb_locked) {
+        logger->debug(" LCB locked");
       } else {
-        logger->trace(" Received an HPR packet from ABCStar");
-        hasABCStar = true;
-
-        // check the input channel
-        uint32_t abc_chn = packet.channel_abc;
-        // get the chipID from the top four bits of the 16-bit status word
-        uint32_t abcid = (packet.abc_status >> 12) & 0xf;
-
-        if ( hcc.abcs.find(abc_chn) == hcc.abcs.end() ) {
-          // new channel
-          hcc.abcs[abc_chn] = abcid;
-          logger->info(" Received an HPR packet from the ABCStar on channel {} with chipID {}", abc_chn, abcid);
-          activeInChannels |= (1 << abc_chn);
-
-          // print the HPR packet
-          std::stringstream os;
-          packet.print_more(os);
-          std::string str = os.str();
-          str.erase(str.end()-1); // strip the extra \n
-          logger->debug(" Received HPR packet: {}", str);
-        }
+        logger->error(" LCB NOT locked");
+        hprGood = false;
       }
 
     } // end of data container loop
 
-    if (not activeInChannels) {
-      logger->warn("No ABCStar data from HCCStar {}", hcc.hcc_id);
-    }
+  } // end of HCC loop
 
-    // Update HCC register ICenable
-    logger->debug("Set register ICenable on HCCStar {} to 0x{:08x}", hcc.hcc_id, activeInChannels);
-    uint32_t addr_en = updateHCCRegister("ICenable", activeInChannels, cfg);
-    sendCommand(star.write_hcc_register(addr_en, activeInChannels, hcc.hcc_id), hwCtrl);
+  if (not receivedABCHPR) {
+    logger->error("No HPR packet from ABCStar received from any HCCStars");
+  }
+
+  // Restore channel enable flags
+  enableConnectedChannels(hwCtrl, hccStars);
+
+  return receivedABCHPR and hprGood;
+}
+
+bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars) {
+  bool hasABCStar = false;
+
+  for (auto& hcc : hccStars) {
+    logger->info("Probing ABCStars on HCCStar {}", hcc.hcc_id);
+    logger_id->trace("HCCStar {}", hcc.hcc_id);
+
+    // Enable the tx and rx channel
+    hwCtrl.setCmdEnable(hcc.tx);
+    hwCtrl.setRxEnable(hcc.rx);
+
+    unsigned activeInChannels = 0;
+
+    // Read ABC efuse IDs
+    // Toggle the EFUSEL bit first to load the 24b efuse bits to the register STAT2
+    auto [addr_ef, val_ef] = updateABCSubRegister(ABCStarSubRegister::EFUSEL, 1, cfg);
+    sendCommand(star.write_abc_register(addr_ef, val_ef), hwCtrl);
+
+    // Broadcast the command to read the STAT2 registers of all ABCs associated with this HCC
+    int stat2 = (int)ABCStarRegister::STAT2;
+    sendCommand(star.read_abc_register(stat2), hwCtrl);
+
+    // Read all the RR packets
+    uint32_t timeout = 1000; // milliseconds
+    auto rdc_rr = readAllData(
+      hwCtrl,
+      [&](RawData& d) {return isPacketType(d, TYP_ABC_RR) and isFromChannel(d, hcc.rx);},
+      timeout
+    );
+
+    for (unsigned c = 0; c < rdc_rr.size(); c++) {
+      RawDataPtr d = rdc_rr.data[c];
+      StarChipPacket packet;
+      if ( packetFromRawData(packet, *d) ) {
+        logger->error("Packet parse failed");
+        continue;
+      }
+
+      logger->trace(" Received a Register Read packet from ABCStar");
+
+      // check the input channel
+      uint32_t abc_chn = packet.channel_abc;
+      // get the chipID from the top four bits of the 16-bit status word
+      uint32_t abcid = (packet.abc_status >> 12) & 0xf;
+
+      // Add abcid to hcc.abcs in case checkABCHPRs has not been called previously
+      if ( hcc.abcs.find(abc_chn) == hcc.abcs.end() ) {
+        hcc.abcs[abc_chn] = abcid;
+      }
+
+      // Update the active input channel mask
+      activeInChannels |= (1 << abc_chn);
+
+      // efuseID
+      uint32_t abcFuseID = packet.value & 0x00ffffff; // lowest 24 bits
+      //uint32_t abcStarVer = (packet.value & 0xff000000) >> 28; // top 8 bits
+      logger->info(" Found ABCStar on HCCStar {}: Input channel = {} ABC ID = {} eFuse = 0x{:06x}", hcc.hcc_id, abc_chn, abcid, abcFuseID);
+      logger_id->trace(" ABCStar: Input channel = {} ABC ID = {} eFuse = 0x{:06x}", abc_chn, abcid, abcFuseID);
+    } // end of data container loop
+
+    if (activeInChannels) {
+      hasABCStar = true;
+
+      // Update HCC register ICenable
+      logger->debug("Set register ICenable on HCCStar {} to 0x{:08x}", hcc.hcc_id, activeInChannels);
+      uint32_t addr_en = updateHCCRegister(HCCStarRegister::ICenable, activeInChannels, cfg);
+      sendCommand(star.write_hcc_register(addr_en, activeInChannels, hcc.hcc_id), hwCtrl);
+    } else {
+      logger->error(" Found no ABCStar from HCCStar {}", hcc.hcc_id);
+    }
   } // end of HCC loop
 
   if (not hasABCStar) {
@@ -851,7 +948,7 @@ bool testHCCRegisterAccess(HwController& hwCtrl, const std::vector<Hybrid>& hccS
 
   for (const auto& hcc : hccStars) {
     // Register ErrCfg
-    success &= testRegisterReadWrite(hwCtrl, HCCStarRegister::ErrCfg, 0xdeadbeef, hcc.rx, hcc.hcc_id);
+    success &= testRegisterReadWrite(hwCtrl, (uint32_t)HCCStarRegister::ErrCfg, 0xdeadbeef, hcc.rx, hcc.hcc_id);
   }
 
   return success;
@@ -861,7 +958,7 @@ bool testABCRegisterAccess(HwController& hwCtrl, StarCfg& cfg, const std::vector
   logger->info("Test ABCStar register read & write");
 
   // Set RR mode to 1
-  auto [addr_rr, val_rr] = updateABCSubRegister("RRMODE", 1, cfg);
+  auto [addr_rr, val_rr] = updateABCSubRegister(ABCStarSubRegister::RRMODE, 1, cfg);
   sendCommand(star.write_abc_register(addr_rr, val_rr), hwCtrl);
 
   bool success = not hccStars.empty();
@@ -872,7 +969,8 @@ bool testABCRegisterAccess(HwController& hwCtrl, StarCfg& cfg, const std::vector
 
     for (const auto& abc : hcc.abcs) {
       // Register MaskInput0
-      success &= testRegisterReadWrite(hwCtrl, ABCStarRegister::MaskInput0, 0xabadcafe, hcc.rx, hcc.hcc_id, abc.second);
+      uint32_t mr = (uint32_t)ABCStarRegister::MaskInput0;
+      success &= testRegisterReadWrite(hwCtrl, mr, 0xabadcafe, hcc.rx, hcc.hcc_id, abc.second);
     }
   }
 
@@ -885,19 +983,19 @@ bool testHitCounts(HwController& hwCtrl, StarCfg& cfg) {
   // Enable hit counters
   logger->debug(" Enable hit counters and set TM to 1 (static test mode)");
   // TM: 1
-  auto [addr_tm, val_tm] = updateABCSubRegister("TM", 1, cfg);
+  auto [addr_tm, val_tm] = updateABCSubRegister(ABCStarSubRegister::TM, 1, cfg);
   sendCommand(star.write_abc_register(addr_tm, val_tm), hwCtrl);
   // RR mode: 1
-  auto [addr_rr, val_rr] = updateABCSubRegister("RRMODE", 1, cfg);
+  auto [addr_rr, val_rr] = updateABCSubRegister(ABCStarSubRegister::RRMODE, 1, cfg);
   sendCommand(star.write_abc_register(addr_rr, val_rr), hwCtrl);
   // EnCount: 1
-  auto [addr_cnt, val_cnt] = updateABCSubRegister("ENCOUNT", 1, cfg);
+  auto [addr_cnt, val_cnt] = updateABCSubRegister(ABCStarSubRegister::ENCOUNT, 1, cfg);
   sendCommand(star.write_abc_register(addr_cnt, val_cnt), hwCtrl);
   // LP_ENABLE: 0
-  auto [addr_lp, val_lp] = updateABCSubRegister("LP_ENABLE", 0, cfg);
+  auto [addr_lp, val_lp] = updateABCSubRegister(ABCStarSubRegister::LP_ENABLE, 0, cfg);
   sendCommand(star.write_abc_register(addr_lp, val_lp), hwCtrl);
   // PR_ENABLE: 0
-  auto [addr_pr, val_pr] = updateABCSubRegister("PR_ENABLE", 0, cfg);
+  auto [addr_pr, val_pr] = updateABCSubRegister(ABCStarSubRegister::PR_ENABLE, 0, cfg);
   sendCommand(star.write_abc_register(addr_pr, val_pr), hwCtrl);
 
   // Reset and start ABCStar hit counters
@@ -922,7 +1020,8 @@ bool testHitCounts(HwController& hwCtrl, StarCfg& cfg) {
 
   // Read a hit counter register that corresponds to the masked strips
   logger->debug(" Read register HitCountREG63");
-  sendCommand(star.read_abc_register(ABCStarRegister::HitCountREG63), hwCtrl);
+  int cr63 = (int)ABCStarRegister::HitCountREG63;
+  sendCommand(star.read_abc_register(cr63), hwCtrl);
 
   auto data = readData(
     hwCtrl,
@@ -966,19 +1065,19 @@ bool testDataPacketsStatic(HwController& hwCtrl, StarCfg& cfg) {
   // Static test mode first
   logger->debug(" Set TM to 1 and enable LP and PR");
   // TM: 1
-  auto [addr_tm, val_tm] = updateABCSubRegister("TM", 1, cfg);
+  auto [addr_tm, val_tm] = updateABCSubRegister(ABCStarSubRegister::TM, 1, cfg);
   sendCommand(star.write_abc_register(addr_tm, val_tm), hwCtrl);
   // RR mode: 1
-  auto [addr_rr, val_rr] = updateABCSubRegister("RRMODE", 1, cfg);
+  auto [addr_rr, val_rr] = updateABCSubRegister(ABCStarSubRegister::RRMODE, 1, cfg);
   sendCommand(star.write_abc_register(addr_rr, val_rr), hwCtrl);
   // EnCount: 0
-  auto [addr_cnt, val_cnt] = updateABCSubRegister("ENCOUNT", 0, cfg);
+  auto [addr_cnt, val_cnt] = updateABCSubRegister(ABCStarSubRegister::ENCOUNT, 0, cfg);
   sendCommand(star.write_abc_register(addr_cnt, val_cnt), hwCtrl);
   // LP_ENABLE: 1
-  auto [addr_lp, val_lp] = updateABCSubRegister("LP_ENABLE", 1, cfg);
+  auto [addr_lp, val_lp] = updateABCSubRegister(ABCStarSubRegister::LP_ENABLE, 1, cfg);
   sendCommand(star.write_abc_register(addr_lp, val_lp), hwCtrl);
   // PR_ENABLE: 1
-  auto [addr_pr, val_pr] = updateABCSubRegister("PR_ENABLE", 1, cfg);
+  auto [addr_pr, val_pr] = updateABCSubRegister(ABCStarSubRegister::PR_ENABLE, 1, cfg);
   sendCommand(star.write_abc_register(addr_pr, val_pr), hwCtrl);
 
   // Enable PR & LP
@@ -1018,35 +1117,35 @@ bool testDataPacketsPulse(HwController& hwCtrl, StarCfg& cfg) {
   // Test pulse mode
   logger->debug(" Set TM to 2 and enable test pulse");
   // TM: 2
-  auto [addr_tm, val_tm] = updateABCSubRegister("TM", 2, cfg);
+  auto [addr_tm, val_tm] = updateABCSubRegister(ABCStarSubRegister::TM, 2, cfg);
   sendCommand(star.write_abc_register(addr_tm, val_tm), hwCtrl);
   // RR mode: 1
-  auto [addr_rr, val_rr] = updateABCSubRegister("RRMODE", 1, cfg);
+  auto [addr_rr, val_rr] = updateABCSubRegister(ABCStarSubRegister::RRMODE, 1, cfg);
   sendCommand(star.write_abc_register(addr_rr, val_rr), hwCtrl);
   // EnCount: 0
-  auto [addr_cnt, val_cnt] = updateABCSubRegister("ENCOUNT", 0, cfg);
+  auto [addr_cnt, val_cnt] = updateABCSubRegister(ABCStarSubRegister::ENCOUNT, 0, cfg);
   sendCommand(star.write_abc_register(addr_cnt, val_cnt), hwCtrl);
   // LP_ENABLE: 1
-  auto [addr_lp, val_lp] = updateABCSubRegister("LP_ENABLE", 1, cfg);
+  auto [addr_lp, val_lp] = updateABCSubRegister(ABCStarSubRegister::LP_ENABLE, 1, cfg);
   sendCommand(star.write_abc_register(addr_lp, val_lp), hwCtrl);
   // PR_ENABLE: 1
-  auto [addr_pr, val_pr] = updateABCSubRegister("PR_ENABLE", 1, cfg);
+  auto [addr_pr, val_pr] = updateABCSubRegister(ABCStarSubRegister::PR_ENABLE, 1, cfg);
   sendCommand(star.write_abc_register(addr_pr, val_pr), hwCtrl);
   // TEST_PULSE_ENABLE: 1
-  auto [addr_tp, val_tp] = updateABCSubRegister("TEST_PULSE_ENABLE", 1, cfg);
+  auto [addr_tp, val_tp] = updateABCSubRegister(ABCStarSubRegister::TEST_PULSE_ENABLE, 1, cfg);
   sendCommand(star.write_abc_register(addr_tp, val_tp), hwCtrl);
 
   // Set the L0 pipeline latency to a smaller value: 15
   uint32_t abc_latency = 15;
   logger->debug(" Set L0 latency to {}", abc_latency);
-  auto [addr_lat, val_lat] = updateABCSubRegister("LATENCY", abc_latency, cfg);
+  auto [addr_lat, val_lat] = updateABCSubRegister(ABCStarSubRegister::LATENCY, abc_latency, cfg);
   sendCommand(star.write_abc_register(addr_lat, val_lat), hwCtrl);
 
   // Set BCIDrstDelay of the HCC so we won't get BCID errors
   // L0 latency - 2 for ABCStar v0; L0 latency - 6 for ABCStar v1
   // Get ABC version from StarCfg?
   uint32_t bcdelay = abc_latency - 2;
-  auto [addr_delay, val_delay] = updateHCCSubRegister("BCIDRSTDELAY", bcdelay, cfg);
+  auto [addr_delay, val_delay] = updateHCCSubRegister(HCCStarSubRegister::BCIDRSTDELAY, bcdelay, cfg);
   sendCommand(star.write_hcc_register(addr_delay, val_delay), hwCtrl);
 
   // BC reset
@@ -1109,7 +1208,8 @@ bool readABCRegisters(HwController& hwCtrl) {
 
   // Read ABCStar register MaskInput3
   logger->info("Reading ABCStar register MaskInput3");
-  sendCommand(star.read_abc_register(ABCStarRegister::MaskInput3), hwCtrl);
+  int mr3 = (int)ABCStarRegister::MaskInput3;
+  sendCommand(star.read_abc_register(mr3), hwCtrl);
   auto data_abcrr = readData(
     hwCtrl,
     [](RawData& d) {return isPacketType(d, TYP_ABC_RR);}
@@ -1314,7 +1414,7 @@ int main(int argc, char *argv[]) {
     std::map<std::string, std::function<bool (HwController&)>>
       tests = {
       // Read HCCStar HPRs
-      {"checkHPRs", [&](auto &h) {return checkHPRs(h, rxChannels, doResets);}},
+      {"checkHCCHPRs", [&](auto &h) {return checkHCCHPRs(h, rxChannels, doResets);}},
       // Probe HCCs
       {"probeHCCs", [&](auto &h) {return probeHCCs(h, hccStars, txChannels, rxChannels, setHccId);}},
       // Test HCCStar register read and write
@@ -1324,11 +1424,14 @@ int main(int argc, char *argv[]) {
       {"configureHCC", [&](auto &h) {configureHCC(h, starCfg, doResets); return true;}},
       {"configureHCCIfReset", [&](auto &h) {if(doResets) configureHCC(h, starCfg, doResets); return true;}},
       // configure HCC into the Packet Transparent mode
-      {"configureHCCForPacketTransp", [&](auto &h) {configureHCC_PacketTransp(*hwCtrl, starCfg, doResets); return true; }},
-      {"configureHCCForFullTransp", [&](auto &h) {configureHCC_FullTransp(*hwCtrl, starCfg, doResets, inChannel); return true; }},
+      {"configureHCCForPacketTransp", [&](auto &h) {configureHCC_PacketTransp(h, starCfg, doResets); return true; }},
+      {"configureHCCForFullTransp", [&](auto &h) {configureHCC_FullTransp(h, starCfg, doResets, inChannel); return true; }},
 
       // Probe ABCStars via reading ABCStar HPRs
-      {"probeABCs", [&](auto &h) {return probeABCs(h, starCfg, hccStars, doResets);}},
+      // Check ABCStar HPRs
+      {"checkABCHPRs", [&](auto &h) {return checkABCHPRs(h, starCfg, hccStars, doResets);}},
+      // Probe ABCStars on each HCCStar
+      {"probeABCs", [&](auto &h) {return probeABCs(h, starCfg, hccStars);}},
       // Test ABCStar register read and write
       {"testABCRegister", [&](auto &h) {return testABCRegisterAccess(h, starCfg, hccStars);}},
 

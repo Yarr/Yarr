@@ -1,16 +1,6 @@
 # Plotting tools
 include(ExternalProject)
 include(FetchContent)
-function(YARR_ADD_PLOTTING)
-    ExternalProject_Add (
-        plotting_tools
-        GIT_REPOSITORY https://gitlab.cern.ch/YARR/utilities/plotting-tools.git
-        GIT_TAG master
-        CMAKE_ARGS "-DTARGET_INSTALL_AREA=${CMAKE_INSTALL_PREFIX}"
-        PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
-	INSTALL_COMMAND make install
-        )
-endfunction()
 
 # TBB
 function(YARR_ADD_TBB)
@@ -20,6 +10,7 @@ function(YARR_ADD_TBB)
 
     ExternalProject_Add (
         tbb_2020
+        PATCH_COMMAND git apply ${PROJECT_SOURCE_DIR}/cmake/0001-TBB-GCC13.patch
         GIT_REPOSITORY https://github.com/intel/tbb.git
         GIT_TAG 2020_U2
         UPDATE_COMMAND ""
@@ -122,17 +113,3 @@ function(YARR_ADD_PYBIND11)
        add_subdirectory(${pybind11_SOURCE_DIR} ${pybind11_BINARY_DIR})
    endif()
 endfunction()
-
-# Plotting Tools
-if (NOT DISABLE_PLOTTING_TOOLS)
-set(CMAKE_MESSAGE_LOG_LEVEL "ERROR")
-find_package(ROOT COMPONENTS Hist Graf)
-set(CMAKE_MESSAGE_LOG_LEVEL "STATUS")
-if (${ROOT_FOUND})
-    YARR_ADD_PLOTTING()
-    MESSAGE(STATUS "Compiling plotting tools!")
-    MESSAGE(STATUS "ROOT requires CXXFLAGS: ${ROOT_CXX_FLAGS}" )
-else (${ROOT_FOUND})
-    MESSAGE(STATUS "Could not locate ROOT. Will not compile plotting tools!")
-endif (${ROOT_FOUND})
-endif ()

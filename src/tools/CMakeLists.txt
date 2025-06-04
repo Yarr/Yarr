@@ -2,6 +2,8 @@ list(APPEND tools
         analyseRawData
         createConfig
         dbAccessor
+        hw_read_test
+        hw_write_test
         makeFei4PixelModelCfg
         makeRd53aPixelModelCfg
         replot
@@ -28,3 +30,7 @@ foreach (target IN LISTS tools)
     target_link_libraries(${target} Yarr)
     target_link_libraries(${target} Scan)
 endforeach ()
+
+foreach (target hw_read_test hw_write_test)
+    target_link_libraries(${target} Util)
+endforeach()

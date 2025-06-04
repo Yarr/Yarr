@@ -3,9 +3,9 @@
     "analysis": {
       "0": {
         "algorithm": "NoiseAnalysis",
-	  "config": {
+         "config": {
               "createMask": false
-	  }
+          }
       },
       "n_count": 1
     },
@@ -34,7 +34,11 @@
         "algorithm": "HitsPerEvent",
         "config": {}
       },
-      "n_count": 1
+      "6": {
+        "algorithm": "TotDist",
+        "config": {}
+      },
+      "n_count": 7
     },
     "loops": [
       {

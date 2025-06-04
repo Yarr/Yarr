@@ -7,6 +7,7 @@
 
 #include "AllHwControllers.h"
 #include "AllChips.h"
+#include "FrontEndCfg.h"
 #include "Bookkeeper.h"
 #include "AnalysisDataProcessor.h"
 #include "HistoDataProcessor.h"

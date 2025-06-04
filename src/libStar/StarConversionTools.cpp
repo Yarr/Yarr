@@ -219,24 +219,32 @@ std::pair<float, float> StarConversionTools::convertBVTtomVwithError(float thrDA
       }
     }
   }
-  //alog->debug("Converted from DAC to mV: {} +/- {} (DAC) -> {} +/- {} (mV)", thrDAC, err_thrDAC, thrConverted, err_thrConverted);
+
   return std::make_pair(thrConverted, err_thrConverted);
 }
 
-float StarConversionTools::convertBVTtomV(unsigned thrDAC) const {
-  float thrmV = -1;
-
+float StarConversionTools::convertBVTtomV(float thrDAC) const {
   if (m_thrCal.empty()) {
-    // Default conversion from BVT to mV if no configuration is provided
-    // Taken from https://gitlab.cern.ch/atlas-itk-strips-daq/itsdaq-sw/-/blob/master/macros/abc_star/ResponseCurvePlot.cpp#L1343
-    thrmV = 2.7264 * thrDAC + 1.041;
-
-  } else if (thrDAC < m_thrCal.size()) {
-    // From the calibration config
-    thrmV = m_thrCal[thrDAC] * 1000; // convert V to mV
+    // default conversion if no config is provided
+    // taken from https://gitlab.cern.ch/atlas-itk-strips-daq/itsdaq-sw/-/blob/master/macros/abc_star/ResponseCurvePlot.cpp#L1343
+    return 2.7264 * thrDAC + 1.041;
+  } else if (thrDAC >= 0 && thrDAC <= m_thrCal.size() - 1) {
+    unsigned floor = std::floor(thrDAC);
+    unsigned ceil = std::ceil(thrDAC);
+    if (floor == ceil){
+      // thrDAC is an integer, so it should exist in map
+      return m_thrCal[floor] * 1000;
+    } else {
+      // thrDAC is a float and our calibration is filled
+      // so we linearly interpolate between nearest points
+      float slope = m_thrCal[ceil] - m_thrCal[floor];
+      float remainder = thrDAC - floor;
+      return (slope * remainder + m_thrCal[floor]) * 1000;
+    }
+  } else {
+    alog->warn("Threshold conversion configuration was provided, but conversion for BVT {} is outside bounds. Returning -1.", thrDAC);
+    return -1;
   }
-
-  return thrmV;
 }
 
 float StarConversionTools::convertBCALtofC(unsigned injDAC) const {

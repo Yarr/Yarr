@@ -2,6 +2,7 @@
 #include <memory>
 
 #include "AllStdActions.h"
+#include "Bookkeeper.h"
 #include "LCBUtils.h"
 #include "Utils.h"
 #include "StarSeqGenerator.h"

@@ -7,6 +7,8 @@
 // yarr
 #include "Rd53bHistogrammer.h"
 #include "AllAnalyses.h"
+#include "Bookkeeper.h"
+#include "FrontEndCfg.h"
 #include "StdHistogrammer.h" // knowledge of other analyses/etc
 #include "StdTriggerAction.h"
 #include "logging.h"
@@ -34,7 +36,7 @@ namespace {
 void FrontEndScopeAnalysis::loadConfig(const json &j) {
 
     if(j.contains("doPulseShapeMap")) {
-        m_doPulseShapeMap = static_cast<bool>(j["doPulseShapeMap"]);;
+        m_doPulseShapeMap = static_cast<bool>(j["doPulseShapeMap"]);
     } else {
         m_doPulseShapeMap = false;
     }

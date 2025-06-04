@@ -5,6 +5,7 @@ add_library(FelixClient SHARED
         FelixRxCore.cpp
         FelixTools.cpp
         FelixRxThread.cpp
+        OptoUtils.cpp
         )
 
 add_dependencies(FelixClient felix_client_thread)
@@ -13,7 +14,7 @@ target_include_directories(FelixClient PRIVATE ../libUtil/include)
 target_include_directories(FelixClient PUBLIC ./include)
 target_link_libraries(FelixClient PRIVATE felix-client-thread)
 
-LIST(APPEND apps testFelixClient felixRegister elinkConfig)
+LIST(APPEND apps readWriteLpGBTRegister testFelixClient felixRegister elinkConfig)
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)
     target_link_libraries(${target} Yarr)

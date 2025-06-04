@@ -2,7 +2,9 @@
 #include <memory>
 
 #include "AllStdActions.h"
+#include "Bookkeeper.h"
 #include "EmptyHw.h"
+#include "FrontEndConnectivity.h"
 #include "LCBUtils.h"
 #include "LCBFwUtils.h"
 #include "StarFelixTriggerLoop.h"

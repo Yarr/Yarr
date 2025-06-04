@@ -17,7 +17,7 @@
 #include "LoggingConfig.h"
 
 #include "AllChips.h"
-#include "FrontEnd.h"
+#include "FrontEndCfg.h"
 
 auto logger = logging::make_log("cfgCreator");
 

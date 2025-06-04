@@ -17,6 +17,8 @@
 #include "AllStdActions.h"
 #include "Bookkeeper.h"
 #include "FeedbackBase.h"
+#include "FrontEndCfg.h"
+#include "FrontEndClipBoards.h"
 #include "ScanBase.h"
 #include "DBHandler.h"
 
@@ -142,7 +144,7 @@ int ScanConsoleImpl::loadConfig(const char *config){
     spdlog::info("Configuring logger ...");
     logging::setupLoggers(loggerConfig);
     json j = json::parse(config);
-    json scanConsoleConfig = j["config"];
+    scanConsoleConfig = j["config"];
     runCounter=j["runCounter"];
     ctrlCfg=scanConsoleConfig["ctrlConfig"];
     chipConfig=scanConsoleConfig["chipConfig"];
@@ -152,7 +154,7 @@ int ScanConsoleImpl::loadConfig(const char *config){
     return 0;
 }
 
-unsigned ScanConsoleImpl::getRunNumber() {
+unsigned ScanConsoleImpl::getRunNumber() const {
     return runCounter;
 }
 
@@ -182,7 +184,7 @@ int ScanConsoleImpl::setupScan() {
     }
     // TODO not to use the raw pointer!
     try {
-        ScanHelper::buildRawDataProcs(procs, *bookie, chipType);
+        ScanHelper::buildRawDataProcs(procs, scanCfg, *bookie, chipType);
         ScanHelper::buildHistogrammers(histogrammers, scanCfg, *bookie, scanOpts.outputDir);
         ScanHelper::buildAnalyses(analyses, scanCfg, *bookie, scanBase.get(),
                                   &fbData, scanOpts.mask_opt, scanOpts.outputDir,
@@ -258,10 +260,7 @@ int ScanConsoleImpl::configure() {
     bookie->initGlobalFe(chipType);
     bookie->getGlobalFe()->init(&*hwCtrl, FrontEndConnectivity(0,0));
 
-    ScanHelper::banner(logger,"Configure FEs");
-
     cfg_start = std::chrono::steady_clock::now();
-
     // Before configuring each FE, broadcast reset to all tx channels
     // Enable all tx channels
     hwCtrl->setCmdEnable(bookie->getTxMaskUnique());
@@ -270,21 +269,26 @@ int ScanConsoleImpl::configure() {
     if(scanOpts.doResetBeforeScan) {
         bookie->getGlobalFe()->resetAllHard();
     }
-
-    for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
-        auto feCfg = bookie->getFeCfg(id);
-        logger->info("Configuring {}", feCfg->getName());
-        // Select correct channel
-        hwCtrl->setCmdEnable(feCfg->getTxChannel());
-        // Configure
-        bookie->getFe(id)->configure();
-        // Wait for fifo to be empty
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
-        while(!hwCtrl->isCmdEmpty());
-    }
-    cfg_end = std::chrono::steady_clock::now();
-    logger->info("Sent configuration to all FEs in {} ms!",
+    if (scanOpts.doConfigureBeforeScan) {
+        ScanHelper::banner(logger,"Configure FEs");
+        for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
+            auto feCfg = bookie->getFeCfg(id);
+            logger->info("Configuring {}", feCfg->getName());
+            // Select correct channel
+            hwCtrl->setCmdEnable(feCfg->getTxChannel());
+            // Configure
+            bookie->getFe(id)->configure();
+            // Wait for fifo to be empty
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
+            while(!hwCtrl->isCmdEmpty());
+        }
+        cfg_end = std::chrono::steady_clock::now();
+        logger->info("Sent configuration to all FEs in {} ms!",
                  std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count());
+    } else {
+        logger->info("Skip configuring FEs!");
+    }
+
 
     hwCtrl->setCmdEnable(bookie->getTxMaskUnique());
     // send global/broadcast soft reset post config
@@ -455,8 +459,9 @@ void ScanConsoleImpl::cleanup() {
         // store output results (if any)
         if(analyses.empty()) continue;
         logger->info("-> Storing output results of FE {}", feCfg->getRxChannel());
-        if (fe->clipResult.empty()) continue;
-        auto &output = *(fe->clipResult.back());
+        auto &fe_cp = fe->clipboards();
+        if (fe_cp.clipResult.empty()) continue;
+        auto &output = *(fe_cp.clipResult.back());
         std::string name = feCfg->getName();
         if (output.empty()) {
             logger->warn(
@@ -497,6 +502,13 @@ std::string ScanConsoleImpl::getResults() {
     return str;
 }
 
+std::string ScanConsoleImpl::getConfig() {
+    json result;
+    result["config"] = scanConsoleConfig;
+    result["runCounter"] = runCounter;
+    return  result.dump(0);
+}
+
 void ScanConsoleImpl::getResults(json &result) {
     json frontends;
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
@@ -507,7 +519,7 @@ void ScanConsoleImpl::getResults(json &result) {
             json jTmp;
             feCfg->writeConfig(jTmp);
             frontends[name]["configs"] = jTmp;
-            auto &output = *(fe->clipResult.back());
+            auto &output = *(fe->clipboards().clipResult.back());
             json histos;
             while (!output.empty()) {
                 json h;
@@ -535,7 +547,7 @@ void ScanConsoleImpl::run() {
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
         auto fe = bookie->getFe(id);
         if (fe->isActive()) {
-          fe->clipRawData.finish();
+            fe->clipboards().clipRawData.finish();
         }
     }
 
@@ -551,7 +563,7 @@ void ScanConsoleImpl::run() {
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
         auto fe = bookie->getFe(id);
         if (fe->isActive()) {
-          fe->clipData.finish();
+            fe->clipboards().clipData.finish();
         }
     }
 
@@ -565,7 +577,7 @@ void ScanConsoleImpl::run() {
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
         auto fe = bookie->getFe(id);
         if (fe->isActive()) {
-          fe->clipHisto.finish();
+            fe->clipboards().clipHisto.finish();
         }
     }
 
@@ -575,7 +587,7 @@ void ScanConsoleImpl::run() {
       for (unsigned i=0; i<ana.second.size(); i++) {
         ana.second[i]->join();
         // Also declare done for its output ClipBoard
-        fe->clipResult.at(i)->finish();
+        fe->clipboards().clipResult.at(i)->finish();
       }
     }
     // join clipboard monitor
@@ -589,12 +601,16 @@ void ScanConsoleImpl::run() {
     hwCtrl->disableCmd();
     hwCtrl->disableRx();
     ScanHelper::banner(logger,"Timing");
-    logger->info("-> Configuration: {} ms", std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count());
+    if (scanOpts.doConfigureBeforeScan) {
+        logger->info("-> Configuration: {} ms", std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count());
+        scanLog["stopwatch"]["config"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count();
+    } else {
+        scanLog["stopwatch"]["config"] = 0;
+    }
     logger->info("-> Scan:          {} ms", std::chrono::duration_cast<std::chrono::milliseconds>(scan_done-scan_start).count());
     logger->info("-> Processing:    {} ms", std::chrono::duration_cast<std::chrono::milliseconds>(processor_done-scan_done).count());
     logger->info("-> Analysis:      {} ms", std::chrono::duration_cast<std::chrono::milliseconds>(all_done-processor_done).count());
 
-    scanLog["stopwatch"]["config"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(cfg_end-cfg_start).count();
     scanLog["stopwatch"]["scan"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(scan_done-scan_start).count();
     scanLog["stopwatch"]["processing"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(processor_done-scan_done).count();
     scanLog["stopwatch"]["analysis"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(all_done-processor_done).count();

@@ -10,6 +10,7 @@ namespace fs = std::filesystem;
 #endif
 
 #include "AllChips.h"
+#include "FrontEndCfg.h"
 #include "ScanHelper.h"
 
 void bounce_check(json &j, std::string fe_name) {

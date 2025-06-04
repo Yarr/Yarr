@@ -5,6 +5,8 @@
 
 #include "Fei4DcLoop.h"
 
+#include "Bookkeeper.h"
+
 #include "logging.h"
 
 namespace {

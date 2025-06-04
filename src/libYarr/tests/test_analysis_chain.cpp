@@ -2,7 +2,10 @@
 
 #include "ScanHelper.h"
 #include "AllChips.h"
+#include "AnalysisDataProcessor.h"
+#include "Bookkeeper.h"
 #include "ScanFactory.h"
+#include "FrontEndClipBoards.h"
 
 #include "EmptyHw.h"
 #include "EmptyFrontEnd.h"
@@ -101,21 +104,22 @@ TEST_CASE("AnalysisChainIO", "[Analysis]") {
   occmap->setBin(1, 43);
 
   std::unique_ptr<HistogramBase> h(occmap);
-  bookie.getLastFe()->clipHisto.pushData(std::move(h));
+  auto &cp = bookie.getLastFe()->clipboards();
+  cp.clipHisto.pushData(std::move(h));
 
   // The input histogram should be processed by the OccupancyAnalysis
   // The other two algorithms should do nothing but only pass the output of OccupancyAnalysis to the downstream
 
   // Join threads
-  bookie.getLastFe()->clipHisto.finish();
+  cp.clipHisto.finish();
 
   for (unsigned i=0; i<AnalysisProcessors.size(); ++i) {
     AnalysisProcessors[i]->join();
-    bookie.getLastFe()->clipResult.at(i)->finish();
+    cp.clipResult.at(i)->finish();
   }
 
   // Check the final output
-  auto &output = *(bookie.getLastFe()->clipResult.back());
+  auto &output = *(cp.clipResult.back());
 
   REQUIRE (!output.empty());
 

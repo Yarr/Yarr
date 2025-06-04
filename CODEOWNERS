@@ -4,7 +4,6 @@
 /configs/ @bgallop @ztao @mamirono @theim
 /docker/ @bgallop @wittgen @theim
 /docs/ @bgallop @ztao @mamirono @theim @ztao @arastogi
-/localdb/ @hoide @gstark
 /scripts/ @bgallop @wittgen @theim
 
 /src/libBdaq/ @wlkakhi

@@ -301,25 +301,34 @@ void Histo3dT<DataT>::toJson(json &j) const {
     for (unsigned i=0; i<lStat.size(); i++)
         j["loopStatus"][i] = (lStat.get(i));
 
-    for (unsigned int z=0; z<zbins; z++) {
-	for (unsigned int y=0; y<ybins; y++) {
-        	for (unsigned int x=0; x<xbins; x++) {
-            		j["Data"][x][y][z] = data[ (y+(x*ybins))*zbins + z ];
-        	}
+    if(xbins) {
+        j["Data"] = std::vector<json>(xbins);
+    }
+    for (unsigned int x=0; x<xbins; x++) {
+        if(ybins) {
+            j["Data"][x] = std::vector<json>(ybins);
+        }
+        for (unsigned int y=0; y<ybins; y++) {
+            if(zbins) {
+                j["Data"][x][y] = std::vector<json>(zbins);
+            }
+            for (unsigned int z=0; z<zbins; z++) {
+                j["Data"][x][y][z] = data[ (y+(x*ybins))*zbins + z ];
+            }
         }
     }
 }
 
 template<typename DataT>
 void Histo3dT<DataT>::toFile(const std::string &prefix, const std::string &dir, bool jsonType) const {
-    std::string filename = dir + prefix + "_" + name + ".dat";
-    std::fstream file(filename, std::fstream::out | std::fstream::trunc);
-
+    std::string filename = dir + prefix + "_" + name;
     if (jsonType) {
         filename += ".json";
     } else {
         filename += ".dat";
     }
+    std::fstream file(filename, std::fstream::out | std::fstream::trunc);
+
     json j;
     // jsonType
     if (jsonType) {
@@ -352,12 +361,31 @@ void Histo3dT<DataT>::toFile(const std::string &prefix, const std::string &dir, 
 
 template<typename DataT>
 bool Histo3dT<DataT>::fromFile(const std::string &filename) {
+    {
+        std::fstream jfile(filename, std::fstream::in);
+        if (!jfile.is_open()) {
+            hlog->error("Could not open file {}", filename);
+            return false;
+        }
+
+        try {
+            json j = json::parse(jfile);
+            if(fromJson(j)) {
+                return true;
+            }
+        } catch (json::parse_error &e) {
+            hlog->warn("Could not parse json file {}", filename);
+            // Drop through to read as normal file
+        }
+        jfile.close();
+    }
+
     std::fstream file(filename, std::fstream::in);
     // Check for header
     std::string line;
     std::getline(file, line);
     if (line.find("Histo3d") == std::string::npos) {
-        std::cerr << "ERROR: Tried loading 3d Histogram from file " << filename << ", but file has non or incorrect header" << std::endl;
+        hlog->error("ERROR: Tried loading 3d Histogram from file {}, but file has non or incorrect header", filename);
         file.close();
         return false;
     } else {
@@ -386,6 +414,12 @@ bool Histo3dT<DataT>::fromFile(const std::string &filename) {
 
 template<typename DataT>
 void Histo3dT<DataT>::plot(const std::string &prefix, const std::string &dir) const {
+    if(true) {
+        // It's difficult to know how to plot 3d data
+        hlog->info("Skip plotting 3d data in {}", HistogramBase::name);
+        return;
+    }
+
     hlog->info("Plotting {}", HistogramBase::name);
     // Put raw histo data in tmp file
     std::string tmp_name = std::string(getenv("USER")) + "/tmp_yarr_histo2d_" + prefix;

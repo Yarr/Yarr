@@ -1,6 +1,12 @@
 #include "AllStdActions.h"
 #include "ClassRegistry.h"
 
+#include "StdDataLoop.h"
+#include "StdDataGatherer.h"
+#include "StdDataAction.h"
+#include "StdRepeater.h"
+#include "StdParameterLoop.h"
+
 #include "logging.h"
 
 namespace {

@@ -14,6 +14,11 @@
 
 #include "logging.h"
 
+#include "Bookkeeper.h"
+#include "FrontEndClipBoards.h"
+#include "RxCore.h"
+#include "TxCore.h"
+
 using Clock = std::chrono::steady_clock;
 
 namespace {
@@ -100,14 +105,15 @@ void StdDataGatherer::execPart2() {
                     if (rdc->size() > 0) { // Only push when not empty
                         // Push data out
                         rdc->stat.is_end_of_iteration = false;
-                        keeper->getFe(id)->clipRawData.pushData(std::move(rdc));
+                        auto &cp = keeper->getFe(id)->clipboards();
+                        cp.clipRawData.pushData(std::move(rdc));
                         // Create EoI
                         LoopStatus loopStatusIterationEnd({0}, {LoopStyle::LOOP_STYLE_GLOBAL_FEEDBACK});
                         loopStatusIterationEnd.is_end_of_iteration = true;
                         // Send EoI
                         std::unique_ptr<RawDataContainer> cIterEnd = std::make_unique<RawDataContainer>(std::move(loopStatusIterationEnd));
-                        keeper->getFe(id)->clipRawData.pushData(std::move(cIterEnd));
-                        keeper->getFe(id)->clipProcFeedback.clearData();
+                        cp.clipRawData.pushData(std::move(cIterEnd));
+                        cp.clipProcFeedback.clearData();
                     }
                 }
                 rdcMap.clear();
@@ -142,7 +148,7 @@ void StdDataGatherer::execPart2() {
         for (auto &[id, rdc] : rdcMap) {
             if (rdc->size() > 0) {
                 rdc->stat.is_end_of_iteration = false;
-                keeper->getFe(id)->clipRawData.pushData(std::move(rdc));
+                keeper->getFe(id)->clipboards().clipRawData.pushData(std::move(rdc));
             }
         }
         rdcMap.clear();
@@ -152,8 +158,9 @@ void StdDataGatherer::execPart2() {
             LoopStatus loopStatusIterationEnd({0}, {LoopStyle::LOOP_STYLE_GLOBAL_FEEDBACK});
             loopStatusIterationEnd.is_end_of_iteration = true;
             std::unique_ptr<RawDataContainer> cIterEnd = std::make_unique<RawDataContainer>(std::move(loopStatusIterationEnd));
-            keeper->getFe(id)->clipRawData.pushData(std::move(cIterEnd));
-            keeper->getFe(id)->clipProcFeedback.clearData();
+            auto &cp = keeper->getEntry(id).fe->clipboards();
+            cp.clipRawData.pushData(std::move(cIterEnd));
+            cp.clipProcFeedback.clearData();
         }
     }
     else {

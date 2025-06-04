@@ -9,6 +9,7 @@
 #include "Fei4NoiseScan.h"
 
 #include "ScanFactory.h"
+#include "StdDataGatherer.h"
 
 namespace Fei4ScansRegistry {
   using StdDict::registerScan;

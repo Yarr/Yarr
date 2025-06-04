@@ -15,7 +15,6 @@ public:
 
   void loadConfig(json const &j) override;
   const json getStatus() override;
-
   /*
   E-link control
   */
@@ -168,7 +167,133 @@ public:
   /// @return True if the operation is successful
   bool setELinkWidthMbps(const std::vector<uint64_t>& fids, unsigned bandwidth);
 
+  /*
+  Optoboard device communication
+  */
+    /// @brief Read a value from an LpGBT device register (providing name)
+    /// @param reg_name Register name (std::string)
+    /// @param reg_data Register data we are reading back (set by reference) (uint8_t&)
+    /// @param dev_addr Address of lpgbt (uint16_t)
+    /// @param rx_ic_fid The fid of the ic channel for rx (uint64_t)
+    /// @param tx_ic_fid The fid of the ic channel for tx (uint64_t)
+    /// @return True if successful, false if not (bool)
+    bool readLpGBTRegister(const char* reg_name, uint8_t& reg_data, uint16_t dev_addr, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
+
+    /// @brief Write a value to an LpGBT device register (providing name)
+    /// @param reg_name Register name (std::string)
+    /// @param reg_data Register data we are writing (uint8_t)
+    /// @param dev_addr Address of lpgbt (uint16_t)
+    /// @param rx_ic_fid The fid of the ic channel for rx (uint64_t)
+    /// @param tx_ic_fid The fid of the ic channel for tx (uint64_t)
+    /// @return True if successful, false if not (bool)
+    bool writeLpGBTRegister(const char* reg_name, uint8_t reg_data, uint16_t dev_addr, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
+
+    /// @brief Returns the primary address of a particular opto device
+    /// @param rx_ic_fid The fid of the ic channel for rx (uint64_t)
+    /// @param tx_ic_fid The fid of the ic channel for tx (uint64_t)
+    /// @param type The type of the device (lpgbt or gbcr) (std::string)
+    /// @return primary device address (uint16_t)
+    uint16_t getOptoDevPrimaryAddr(uint64_t rx_ic_fid, uint64_t tx_ic_fid, std::string type);
+
+    /// @brief Checks if a member of the OptoDevice class exists in the m_opto_dev_list
+    /// @param rx_ic_fid The fid of the ic channel for rx (uint64_t)
+    /// @param dev_addr Address of the device (uint16_t)
+    /// @return True if in list, false if not (bool)
+    bool optoDeviceInList(uint64_t rx_ic_fid, uint16_t dev_addr);
+
+    /// @brief Checks if a member of the OptoDevice class exists in the m_opto_dev_list
+    /// @param rx_ic_fid The fid of the ic channel for rx (uint64_t)
+    /// @param tx_ic_fid The fid of the ic channel for tx (uint64_t)
+    /// @param type The type of the device (lpgbt or gbcr) (std::string)
+    /// @return True if in list, false if not (bool)
+    bool optoDeviceInList(uint64_t rx_ic_fid, uint64_t tx_ic_fid, std::string type);
+
+protected:
+    class OptoDevice{
+      public:
+        OptoDevice(uint8_t arg_version, uint16_t arg_i2c_addr, uint16_t arg_dev_addr, uint16_t arg_dev_primary_addr, std::string arg_dev_type, uint64_t arg_tx_fid, uint64_t arg_rx_fid){
+          version = arg_version;
+          i2c_addr = arg_i2c_addr;
+          dev_addr = arg_dev_addr;
+          dev_primary_addr = arg_dev_primary_addr;
+          dev_type = arg_dev_type;
+          tx_fid = arg_tx_fid;
+          rx_fid = arg_rx_fid;
+        };
+  
+        virtual ~OptoDevice() = default;
+  
+        /*
+          Accessor Functions
+        */
+
+        virtual inline uint8_t getVersion(){
+          return version;
+        }
+        virtual inline uint16_t getI2CAddr(){
+          return i2c_addr;
+        }
+        virtual inline uint16_t getDevAddr(){
+          return dev_addr;
+        }
+        virtual inline uint16_t getPrimaryAddr(){
+          return dev_primary_addr;
+        }
+        virtual inline uint64_t getTxFid(){
+          return tx_fid;
+        }
+        virtual inline uint64_t getRxFid(){
+          return rx_fid;
+        }
+        virtual inline std::string getDevType(){
+          return dev_type;
+        }
+        virtual inline bool isPrimary(){
+          if (dev_addr == dev_primary_addr){
+            return true;
+          }
+          else
+            return false;
+        }
+        /*
+          Mutator Functions
+        */
+        virtual inline void setVersion(uint8_t arg_version){
+          version = arg_version;
+        }
+        virtual inline void setI2CAddr(uint16_t arg_i2c_addr){
+          i2c_addr = arg_i2c_addr;
+        }
+        virtual inline void setDevAddr(uint16_t arg_dev_addr){
+          dev_addr = arg_dev_addr;
+        }
+        virtual inline void setPrimaryAddr(uint16_t arg_dev_primary_addr){
+          dev_primary_addr = arg_dev_primary_addr;
+        }
+        virtual inline void setTxFid(uint64_t arg_tx_fid){
+          tx_fid = arg_tx_fid;
+        }
+
+        virtual inline void setRxFid(uint64_t arg_rx_fid){
+          rx_fid = arg_rx_fid;
+        }
+
+        virtual inline void setDevType(std::string arg_dev_type){
+          dev_type = arg_dev_type;
+        }
+
+      private:
+        uint8_t version;
+        uint16_t i2c_addr;
+        uint16_t dev_addr;
+        uint16_t dev_primary_addr;
+        uint64_t tx_fid;
+        uint64_t rx_fid;
+        std::string dev_type;
+    };
+
 private:
+  std::vector<std::unique_ptr<OptoDevice>> m_opto_dev_list;
 
   /*
   E-Link control utilities
@@ -198,6 +323,45 @@ private:
 
   /// Initiate a map with all elink enable register names on a FELIX device and set their value to 0
   void initAllELinkEnableRegMap(std::map<std::string, unsigned>& regMap, bool toflx, bool tohost);
+
+  /*
+  Optoboard device communication
+  */
+
+
+
+  /// @brief Returns a pointer to a member of the OptoDevice class found in the m_opto_dev_list
+  /// @param rx_ic_fid The fid of the ic channel for rx (uint64_t)
+  /// @param dev_addr Address of the device (uint16_t)
+  /// @return Raw pointer to optical device object (OptoDevice* )
+  OptoDevice* getOptoDeviceInList(uint64_t rx_ic_fid, uint16_t dev_addr);
+
+
+  /// @brief Defines and returns a pointer to a new member of the OptoDevice class, adds object to m_opto_dev_list variable
+  /// @param dev_addr Address of the device (uint16_t)
+  /// @param type Type of device: lpgbt or gbcr accepted (std::string)
+  /// @param rx_ic_fid The fid of the ic channel for rx (uint64_t)
+  /// @param tx_ic_fid The fid of the ic channel for tx (uint64_t)
+  /// @return Raw pointer to new optical device object (OptoDevice*)
+  OptoDevice* newDefaultOptoDevice(uint16_t dev_addr, std::string type, uint64_t rx_ic_fid, uint64_t tx_ic_fid);
+
+  /// @brief Generic function to handle read and write operations to either LpGBT or GBCR devices
+  /// @param reg The register item (lpgbt_item_t*)
+  /// @param data The data we want to send or receive (uint8_t&)
+  /// @param write True if we want to write, false if we want to read (bool)
+  /// @param lpgbt OptoDevice (OptoDevice*)
+  void communicateLpGBT(const lpgbt_item_t* reg, uint8_t& data, const bool write, OptoDevice* lpgbt);
+
+  /// @brief Handles reads/writes of LpGBTs or GBCRs
+  /// @param reg The register item (lpgbt_item_t*)
+  /// @param reg_data The data we want to write or read back (uint8_t&)
+  /// @param write True if we want to write, false if we want to read (bool)
+  /// @param lpgbt Opto device (OptoDevice*)
+  void readWriteOptoReg(const lpgbt_item_t* reg, uint8_t& reg_data, bool write, OptoDevice* lpgbt);
+  
 };
+
+
+/// namespace and then static const variables for the different registers 
 
 #endif

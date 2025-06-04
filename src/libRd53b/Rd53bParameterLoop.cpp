@@ -8,6 +8,8 @@
 
 #include "Rd53bParameterLoop.h"
 
+#include "Bookkeeper.h"
+
 #include "logging.h"
 
 namespace {

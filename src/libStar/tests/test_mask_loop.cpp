@@ -2,6 +2,7 @@
 
 #include "AllChips.h"
 #include "AllStdActions.h"
+#include "Bookkeeper.h"
 #include "LCBUtils.h"
 #include "StarCfg.h"
 #include "Utils.h"

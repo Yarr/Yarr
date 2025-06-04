@@ -18,6 +18,7 @@
 
 #include "ScanHelper.h"
 #include "Bookkeeper.h"
+#include "HwController.h"
 
 #include "Rd53b.h"
 

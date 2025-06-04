@@ -345,7 +345,7 @@ void Itkpixv2GlobalCfg::init() {
     //108
     SerInvTap.init          ( 108, &m_cfg[ 108], 6,  2, 1); regMap["SerInvTap"] = &Itkpixv2GlobalCfg::SerInvTap;
     SerEnTap.init           ( 108, &m_cfg[ 108], 4,  2, 1); regMap["SerEnTap"] = &Itkpixv2GlobalCfg::SerEnTap;
-    SerEnLane.init          ( 108, &m_cfg[ 108], 0,  4, 8); regMap["SerEnLane"] = &Itkpixv2GlobalCfg::SerEnLane;
+    SerEnLane.init          ( 108, &m_cfg[ 108], 0,  4, 15); regMap["SerEnLane"] = &Itkpixv2GlobalCfg::SerEnLane;
     //109
     CmlBias2.init           ( 109, &m_cfg[ 109], 0, 10, 0); regMap["CmlBias2"] = &Itkpixv2GlobalCfg::CmlBias2;
     //110

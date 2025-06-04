@@ -11,22 +11,17 @@
 
 #include <vector>
 #include <memory>
-#include <map>
-#include <typeindex>
 
-#include "TxCore.h"
-#include "RxCore.h"
 #include "LoopEngine.h"
 #include "LoopActionBase.h"
-#include "ClipBoard.h"
-#include "RawData.h"
-
-
-#include "Bookkeeper.h"
 
 #include "storage.hpp"
 
 #include "ScanLoopInfo.h"
+
+class Bookkeeper;
+class RxCore;
+class TxCore;
 
 class ScanBase : public ScanLoopInfo {
     public:

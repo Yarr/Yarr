@@ -111,7 +111,7 @@ TEST_CASE("StarEmulatorID", "[star][emulator]") {
   // read any HCC register
   // default value is: HCCStarRegister::OPmode]->setValue(0x00020001)
   // OPmode reg is 41 (in hex = 0x29)
-  sendCommand(*emu, star.read_hcc_register(HCCStarRegister::OPmode, default_hccID));
+  sendCommand(*emu, star.read_hcc_register((int)HCCStarRegister::OPmode, default_hccID));
   expected[1].push_back("Packet type TYP_HCC_RR, ABC 0, Address 29, Value 00020001\n");
 
   // change hccID
@@ -122,22 +122,22 @@ TEST_CASE("StarEmulatorID", "[star][emulator]") {
   // try to read with the old hccID
   // m_registerMap[HCCStarRegister::ExtRst]->setValue(0x00710003);
   // ExtRst 45 (= 0x2d)
-  sendCommand(*emu, star.read_hcc_register(HCCStarRegister::ExtRst, default_hccID));
+  sendCommand(*emu, star.read_hcc_register((int)HCCStarRegister::ExtRst, default_hccID));
   // this does not fail, because default ID = 0xf = broadcast ID
   expected[1].push_back("Packet type TYP_HCC_RR, ABC 0, Address 2d, Value 00710003\n");
 
   uint32_t wrong_hccID = 2;
-  sendCommand(*emu, star.read_hcc_register(HCCStarRegister::ExtRst, wrong_hccID));
+  sendCommand(*emu, star.read_hcc_register((int)HCCStarRegister::ExtRst, wrong_hccID));
   // this must return no reply
 
   // new hccID:
   // m_registerMap[HCCStarRegister::ADCcfg]->setValue(0x00406600)
   // ADCcfg is 48 (hex = 0x30)
-  sendCommand(*emu, star.read_hcc_register(HCCStarRegister::ADCcfg, new_hccID));
+  sendCommand(*emu, star.read_hcc_register((int)HCCStarRegister::ADCcfg, new_hccID));
   expected[1].push_back("Packet type TYP_HCC_RR, ABC 0, Address 30, Value 00406600\n");
 
   // new hccID, test the addressing register (17) again
-  sendCommand(*emu, star.read_hcc_register(HCCStarRegister::Addressing, new_hccID));
+  sendCommand(*emu, star.read_hcc_register((int)HCCStarRegister::Addressing, new_hccID));
   expected[1].push_back("Packet type TYP_HCC_RR, ABC 0, Address 11, Value 10000000\n");
 
   emu->releaseFifo();

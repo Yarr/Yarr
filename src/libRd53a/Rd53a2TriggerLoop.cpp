@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include "Bookkeeper.h"
 
 #include "logging.h"
 

@@ -1,4 +1,6 @@
 #include "StarFelixTriggerLoop.h"
+
+#include "Bookkeeper.h"
 #include "LCBUtils.h"
 #include "LCBFwUtils.h"
 #include "AbcCfg.h"
@@ -327,7 +329,8 @@ std::vector<uint8_t> StarFelixTriggerLoop::getHitCounterSegment() {
   // configuration registers on FELIX could be set accordingly.
 
   // Loop over hit counter registers
-  for (unsigned addr = ABCStarRegister::HitCountREG0; addr <= ABCStarRegister::HitCountREG63; addr++) {
+  for (auto reg = ABCStarRegister::HitCountREG0; reg <= ABCStarRegister::HitCountREG63; ++reg) {
+    unsigned addr = (unsigned)reg;
     auto rr = LCB_FELIX::read_abc_register(addr);
     readHitCounts.insert(readHitCounts.end(), rr.begin(), rr.end());
 
@@ -370,7 +373,7 @@ void StarFelixTriggerLoop::makeTrickleSequence() {
 
   // Add some register commands as pre-buffering for the command decoder
   // Read HCC OPmode register
-  auto hccRR = LCB_FELIX::read_hcc_register(HCCStarRegister::OPmode);
+  auto hccRR = LCB_FELIX::read_hcc_register((int)HCCStarRegister::OPmode);
   trickleSeq_pre.insert(trickleSeq_pre.end(), hccRR.begin(), hccRR.end());
 
   // Stop hit counters

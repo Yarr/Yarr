@@ -9,7 +9,7 @@
 /// Wrap UDP socket to send recieve ITSDAQ format packets
 class UdpSocket {
   // the socket
-  int sock_fd;
+  int sock_fd{};
 
   int sourcePort;
   int destinationPort;
@@ -25,6 +25,9 @@ class UdpSocket {
 
   /// Open UDP socket sending to destination
   UdpSocket(uint32_t dest_addr, uint16_t srcPort, uint16_t destPort);
+
+  /// Socket to be configured later
+  UdpSocket();
 
   /// Close socket
   ~UdpSocket();
