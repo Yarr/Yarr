@@ -187,11 +187,23 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
   REQUIRE (emu);
 
   json cfg;
+
+  // Run in PPA and PPB mode
+  int asic_version = GENERATE ( 0, 1 );
+
+  CAPTURE (asic_version);
+
+  if(asic_version == 0) {
+    cfg["abcVersion"] = 0;
+    cfg["hccVersion"] = 0;
+  } else {
+    cfg["abcVersion"] = 1;
+    cfg["hccVersion"] = 1;
+  }
+
   emu->loadConfig(cfg);
 
   StarCmd star;
-
-  int asic_version = 0;
 
   // Build register pattern for enables
   AbcCfg ena_abc(asic_version);
@@ -229,7 +241,9 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
   sendCommand(*emu, writeHCCCmd_StopHPROn);
   // ABC MaskHPR on, also set RRmode, LP Enable, and PR Enable to 1
   auto def_val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
-  CHECK (def_val == 0x740);
+  if(asic_version == 0) {
+    CHECK (def_val == 0x740);
+  }
   setEnables(*emu, star, ena_abc);
   // ABC StopHPR on
   std::array<LCB::Frame, 9> writeABCCmd_StopHPROn = star.write_abc_register(0, 0x00000004);
@@ -298,7 +312,9 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     // (And MaskHPR = 1, LP_Enable = 1, PR_Enable = 1, RRMode = 1)
     ena_abc.setSubRegisterValue(ABCStarSubRegister::TM, 1);
     auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
-    CHECK (val == 0x10740);
+    if(asic_version == 0) {
+      CHECK (val == 0x10740);
+    }
     setEnables(*emu, star, ena_abc);
 
     // Set mask registers
@@ -328,7 +344,9 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     ena_abc.setSubRegisterValue(ABCStarSubRegister::PR_ENABLE, 0);
     ena_abc.setSubRegisterValue(ABCStarSubRegister::ENCOUNT, 1);
     auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
-    CHECK (val == 0x10460);
+    if(asic_version == 0) {
+      CHECK (val == 0x10460);
+    }
     setEnables(*emu, star, ena_abc);
 
     // Set a mask register
@@ -376,7 +394,9 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
       ena_abc.setSubRegisterValue(ABCStarSubRegister::TM, 1);
       ena_abc.setSubRegisterValue(ABCStarSubRegister::ENCOUNT, 1);
       auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
-      CHECK (val == 0x10760);
+      if(asic_version == 0) {
+        CHECK (val == 0x10760);
+      }
       setEnables(*emu, star, ena_abc);
 
       // Expect an LP packet:
@@ -395,7 +415,9 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
       // Enable LP, disable hit counters
       ena_abc.setSubRegisterValue(ABCStarSubRegister::TM, 1);
       auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
-      CHECK (val == 0x10740);
+      if(asic_version == 0) {
+        CHECK (val == 0x10740);
+      }
       setEnables(*emu, star, ena_abc);
 
       // Expect an LP packet with a hit at strip 0
@@ -413,7 +435,9 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
       ena_abc.setSubRegisterValue(ABCStarSubRegister::ENCOUNT, 1);
       ena_abc.setSubRegisterValue(ABCStarSubRegister::TM, 1);
       auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
-      CHECK (val == 0x10460);
+      if(asic_version == 0) {
+        CHECK (val == 0x10460);
+      }
       setEnables(*emu, star, ena_abc);
 
       // No LP packets since LP_ENABLE is 0
@@ -439,7 +463,9 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     ena_abc.setSubRegisterValue(ABCStarSubRegister::TM, 2);
     ena_abc.setSubRegisterValue(ABCStarSubRegister::TEST_PULSE_ENABLE, 1);
     auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
-    CHECK (val == 0x20750);
+    if(asic_version == 0) {
+      CHECK (val == 0x20750);
+    }
     setEnables(*emu, star, ena_abc);
 
     // Set a mask register so we are expecting a non-empty cluster packet
@@ -761,13 +787,24 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
   json cfg;
   cfg["chipCfg"] = tmpFileName;
 
+  // Run in PPA and PPB mode
+  int asic_version = GENERATE ( 0, 1 );
+
+  CAPTURE (asic_version);
+
+  if(asic_version == 0) {
+    cfg["abcVersion"] = 0;
+    cfg["hccVersion"] = 0;
+  } else {
+    cfg["abcVersion"] = 1;
+    cfg["hccVersion"] = 1;
+  }
+
   emu->loadConfig(cfg);
 
   remove(tmpFileName.c_str());
 
   StarCmd star;
-
-  int asic_version = 0;
 
   // Build register pattern for enables
   AbcCfg ena_abc(asic_version);
@@ -792,7 +829,9 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
   sendCommand(*emu, writeHCCCmd_StopHPR);
   // Also LPEnable = 1, PREnable = 1, RRmode = 1
   auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
-  REQUIRE (val == 0x740);
+  if(asic_version == 0) {
+    REQUIRE (val == 0x740);
+  }
   setEnables(*emu, star, ena_abc);
   auto writeABCCmd_StopHPR = star.write_abc_register(0, 0x00000004);
   sendCommand(*emu, writeABCCmd_StopHPR);
@@ -923,7 +962,9 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
     // (And MaskHPR = 1, LP_Enable = 1, PR_Enable = 1, RRMode = 1)
     ena_abc.setSubRegisterValue(ABCStarSubRegister::TM, 1);
     auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
-    REQUIRE (val == 0x10740);
+    if(asic_version == 0) {
+      REQUIRE (val == 0x10740);
+    }
     setEnables(*emu, star, ena_abc);
 
     // Write 0xfffe0000 to MaskInput3 so we will have a non-empty cluster
@@ -1040,7 +1081,9 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
   // tx (channel 0)
   // MaskHPR = 1, LP_Enable = 1, PR_Enable = 1, RRMode = 1
   auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
-  REQUIRE (val == 0x00000740);
+  if(asic_version == 0) {
+    REQUIRE (val == 0x00000740);
+  }
   setEnablesChannel(*staremu, 0, star, ena_abc);
   // tx2 (channel 2)
   sendCommand(*staremu, 2, IdleCmd);
@@ -1095,7 +1138,9 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
     ena_abc.setSubRegisterValue(ABCStarSubRegister::TM, 2);
     ena_abc.setSubRegisterValue(ABCStarSubRegister::TEST_PULSE_ENABLE, 1);
     auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
-    REQUIRE (val == 0x00020750);
+    if(asic_version == 0) {
+      REQUIRE (val == 0x00020750);
+    }
     setEnablesChannel(*staremu, 0, star, ena_abc);
     sendCommand(*staremu, 2, IdleCmd);
 
@@ -1117,7 +1162,9 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
     ena_abc.setSubRegisterValue(ABCStarSubRegister::TM, 2);
     ena_abc.setSubRegisterValue(ABCStarSubRegister::TEST_PULSE_ENABLE, 1);
     auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
-    REQUIRE (val == 0x00020550);
+    if(asic_version == 0) {
+      REQUIRE (val == 0x00020550);
+    }
     setEnablesChannel(*staremu, 0, star, ena_abc);
     sendCommand(*staremu, 2, IdleCmd);
 
@@ -1138,7 +1185,9 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
     ena_abc.setSubRegisterValue(ABCStarSubRegister::TM, 2);
     ena_abc.setSubRegisterValue(ABCStarSubRegister::TEST_PULSE_ENABLE, 1);
     auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
-    REQUIRE (val == 0x00020650);
+    if(asic_version == 0) {
+      REQUIRE (val == 0x00020650);
+    }
     setEnablesChannel(*staremu, 0, star, ena_abc);
 
     sendCommand(*staremu, 2, IdleCmd);
@@ -1157,7 +1206,9 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
     ena_abc.setSubRegisterValue(ABCStarSubRegister::TM, 2);
     ena_abc.setSubRegisterValue(ABCStarSubRegister::TEST_PULSE_ENABLE, 1);
     auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
-    REQUIRE (val == 0x00020450);
+    if(asic_version == 0) {
+      REQUIRE (val == 0x00020450);
+    }
     setEnablesChannel(*staremu, 0, star, ena_abc);
     sendCommand(*staremu, 2, IdleCmd);
 
