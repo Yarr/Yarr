@@ -10,6 +10,7 @@
 #include "StarChips.h"
 #include "EmuController.h"
 #include "StarEmu.h"
+#include "Utils.h"
 
 void sendCommand(TxCore &hw, const std::array<uint16_t, 9> &cmd) {
   hw.writeFifo((LCB::IDLE << 16) + LCB::IDLE);
@@ -1142,11 +1143,11 @@ void checkData(HwController* emu, std::map<uint32_t, std::deque<PacketT>>& expec
       }
   }
 
-  for (const auto& [channel, packets] : expected) {
+  for (const auto& [channel, expected_packets] : expected) {
     CAPTURE(channel);
-    CAPTURE(packets.size());
-    CAPTURE(packets);
-    CHECK(packets.empty());
+    CAPTURE(expected_packets.size());
+    CAPTURE(expected_packets);
+    CHECK(expected_packets.empty());
   }
 }
 
@@ -1178,15 +1179,21 @@ template<>
 void compareOutputs<std::vector<uint8_t>>(RawData* data, const std::vector<uint8_t>& expected_packet)
 {
   CAPTURE (expected_packet);
+  std::vector<std::string> hex_packet;
+  for(auto c: expected_packet) {
+    hex_packet.push_back(Utils::hexify(c));
+  }
+  CAPTURE (hex_packet);
   for(size_t w=0; w<data->getSize(); w++) {
     for(int i=0; i<4;i++){
       uint8_t byte = (data->get(w)>>(i*8))&0xff;
       int index = w*4+i;
-      CAPTURE (w, i, index, (int)byte);
+      INFO ( "(index) " << index << " = (w) " << w << " * 4 + (i) " << i );
       //CHECK (expected_packet.size() > index);
       if(expected_packet.size() > index) {
         auto exp = expected_packet[index];
-        CAPTURE ((int)exp);
+        CAPTURE (Utils::hexify(byte));
+        CAPTURE (Utils::hexify(exp));
         CHECK ((int)byte == (int)exp);
       }
     } // i
