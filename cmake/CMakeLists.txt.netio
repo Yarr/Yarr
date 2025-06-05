@@ -4,6 +4,8 @@ project(netio LANGUAGES CXX VERSION 0.8.0)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+include(GNUInstallDirs)
+set(CMAKE_CONFIG_INSTALL_PATH ${CMAKE_INSTALL_LIBDIR}/cmake/netio)
 
 set(VERSION_STRING ${CMAKE_PROJECT_VERSION})
 configure_file(
@@ -41,9 +43,30 @@ install(DIRECTORY netio/
 
 # Install the export set for use with the install-tree
 install(EXPORT netioTargets
-  NAMESPACE yarr::
+  NAMESPACE netio::
   DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}
 )
+
+include(CMakePackageConfigHelpers)
+
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/netioConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+configure_package_config_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/netioConfig.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/netioConfig.cmake"
+    INSTALL_DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}
+)
+
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/netioConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/netioConfigVersion.cmake"
+    DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}
+)
+
 
 set(NETIO_TEST_SOURCES test/test_main.cpp test/test_backend.cpp  test/test_buffer.cpp
     test/test_event_loop.cpp test/test_message.cpp  test/test_serialization.cpp test/test_sockets.cpp )

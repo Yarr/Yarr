@@ -82,6 +82,7 @@ function(YARR_ADD_NETIO)
         netio
         GIT_REPOSITORY https://:@gitlab.cern.ch:8443/atlas-tdaq-felix/netio.git
         GIT_TAG netio-11-01-00
+        UPDATE_COMMAND ""
         PATCH_COMMAND
             git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch001.txt &&
             git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch002.txt &&
@@ -91,7 +92,8 @@ function(YARR_ADD_NETIO)
             git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch006.txt &&
             git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch007.txt &&
             git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch008.txt &&
-            cp ${PROJECT_SOURCE_DIR}/cmake/CMakeLists.txt.netio CMakeLists.txt 
+            cp ${PROJECT_SOURCE_DIR}/cmake/CMakeLists.txt.netio CMakeLists.txt &&
+            cp ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netioConfig.cmake.in netioConfig.cmake.in
         CMAKE_ARGS "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}" -DCMAKE_CXX_FLAGS=-fPIC
         )
      FetchContent_MakeAvailable(netio)
@@ -101,6 +103,9 @@ function(YARR_ADD_FELIX)
     if (TARGET felixbase4)
         return()
     endif()
+    
+    # Ensure netio is added before felixbase4
+    YARR_ADD_NETIO()
 
     # FELIX
     FetchContent_Declare (

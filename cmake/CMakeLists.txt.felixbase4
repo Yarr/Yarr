@@ -4,7 +4,11 @@ project(felixbase4 LANGUAGES CXX VERSION 0.0.1)
 
 include(GNUInstallDirs)
 
-find_package(netio)
+# Check whether target already exists which means that we have been likely added by Fetch_Content or similar. Otherwise try to find netio as installed package or if CMAKE_PREFIX_PATH is set
+if(NOT TARGET netio)
+  find_package(netio REQUIRED) 
+endif()
+
 
 add_library(felixbase4 INTERFACE)
 target_include_directories(felixbase4 INTERFACE
@@ -12,7 +16,7 @@ target_include_directories(felixbase4 INTERFACE
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-target_link_libraries(felixbase4 INTERFACE netio)
+target_link_libraries(felixbase4 INTERFACE netio tbb::tbb)
    
 install(TARGETS felixbase4
     EXPORT felixbase4Targets
