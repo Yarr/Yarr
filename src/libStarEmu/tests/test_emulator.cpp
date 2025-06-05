@@ -335,10 +335,10 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     // l0tag = 4 + 3
     // bc count at L0A frame = 148; trigger command on 148-1; latency = 0
     // => 8-bit BCID = 0x93; 4-bit BCID in the packet = 0b0110
-    std::vector<std::vector<uint16_t>> cluster_data{
+    std::array<std::vector<uint16_t>, HCC_INPUT_CHANNEL_COUNT> cluster_data;
+    cluster_data[0] =
       {0x05c7, 0x01cf, 0x05e7, 0x01ee, 0x07c7,
-       0x03cf, 0x07e7, 0x03ee}
-    };
+       0x03cf, 0x07e7, 0x03ee};
     expected[1].push_back(buildPhysicsPacket(cluster_data, PacketTypes::LP, 0x07, 0x93));
   }
 
