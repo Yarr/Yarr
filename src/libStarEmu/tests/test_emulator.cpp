@@ -6,11 +6,14 @@
 #include "LCBUtils.h"
 #include "StarCmd.h"
 #include "StarChipPacket.h"
+#include "StarPackets.h"
 #include "AllHwControllers.h"
 #include "StarChips.h"
 #include "EmuController.h"
 #include "StarEmu.h"
 #include "Utils.h"
+
+using namespace StarPackets;
 
 void sendCommand(TxCore &hw, const std::array<uint16_t, 9> &cmd) {
   hw.writeFifo((LCB::IDLE << 16) + LCB::IDLE);
@@ -193,10 +196,12 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
 
   // Will still receive one initial HPR packet from HCC and one from each ABC
   // HCC HPR with Idle frame
-  expected[1].push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
+  expected[1].push_back(buildHCCRegisterPacket
+                        (PacketTypes::HCCHPR, 0xf, 0x7855002b));
   // ABC HPR with Idle frame
   // (By default the emulator has only one hard-coded ABC with ID = 15 for now)
-  expected[1].push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+  expected[1].push_back(buildABCRegisterPacket
+                        (PacketTypes::ABCHPR, 0, 0x3f, 0x78555fff, 0xf000));
 
   // Reset BC counters
   emu->writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(0, 0, true));
@@ -211,7 +216,7 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     sendCommand(*emu, readHCCCmd);
 
     // HCCStar register 48 (ADCcfg) is initialized to 0x00406600 
-    expected[1].push_back({0x83, 0x00, 0x04, 0x06, 0x60, 0x00});
+    expected[1].push_back(buildHCCRegisterPacket(PacketTypes::HCCRegRd, 0x30, 0x00406600));
   }
 
   SECTION("Read HCCStar short") {
@@ -221,7 +226,7 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     emu->writeFifo((readHCCCmd[2] << 16) + readHCCCmd[8]);
 
     // HCCStar register 44 (Cfg2) is initialized to 0x0000018e
-    expected[1].push_back({0x82, 0xc0, 0x00, 0x00, 0x18, 0xe0});
+    expected[1].push_back(buildHCCRegisterPacket(PacketTypes::HCCRegRd, 0x2c, 0x0000018e));
   }
 
   SECTION("Read ABCStar interposed") {
@@ -241,9 +246,10 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     // At the time of the L0A frame, bc count = 56; L0 latency is set to 400
     // => 8-bit BCID = (512 + 56-1 - 400) & 0xff = 0xa7
     // 4-bit BCID in the packet: 0b1111
-    expected[1].push_back({0x20, 0x3f, 0x03, 0xfe, 0x6f, 0xed});
+    std::vector<uint16_t> raw_cluster_data{0x3fe};
+    expected[1].push_back(buildPhysicsPacket(raw_cluster_data, PacketTypes::LP, 0x03, 0x1f));
     // ABCStar register 34 (CREG2): 0x00000190
-    expected[1].push_back({0x40, 0x22, 0x00, 0x00, 0x00, 0x19, 0x0f, 0x00, 0x00});
+    expected[1].push_back(buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x22, 0x00000190, 0xf000));
   }
 
   SECTION("Mask Registers") {
