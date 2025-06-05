@@ -33,6 +33,15 @@ void sendCommand(EmuTxCore<StarChips> &hw, uint32_t channel, const std::array<ui
   hw.writeFifo(channel, (cmd[8] << 16) + LCB::IDLE);
 }
 
+void setEnables(HwController &emu, StarCmd &star, const AbcCfg &abc) {
+  // All in the same register
+  auto addr = abc.getSubRegisterParentAddr(ABCStarSubRegister::LP_ENABLE);
+  auto val = abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
+
+  // Set LP_Enable to 1
+  sendCommand(emu, star.write_abc_register(addr, val));
+}
+
 template<typename PacketT>
 void compareOutputs(RawData* data, const PacketT& expected_packet);
 
@@ -50,6 +59,17 @@ TEST_CASE("StarEmulatorParsing", "[star][emulator]") {
 
   StarCmd star;
 
+  int asic_version = 0;
+
+  // Build register pattern for enables
+  AbcCfg ena_abc(asic_version);
+
+  // Set defaults
+  ena_abc.setSubRegisterValue(ABCStarSubRegister::MASKHPR, 1);
+  ena_abc.setSubRegisterValue(ABCStarSubRegister::LP_ENABLE, 1);
+  ena_abc.setSubRegisterValue(ABCStarSubRegister::PR_ENABLE, 1);
+  ena_abc.setSubRegisterValue(ABCStarSubRegister::RRMODE, 1);
+
   typedef std::string PacketCompare;
 
   // What data to expect, and how to mask the comparison
@@ -57,7 +77,8 @@ TEST_CASE("StarEmulatorParsing", "[star][emulator]") {
 
   SECTION("Read HCCStar interposed") {
     // Set LP_Enable to 1
-    sendCommand(*emu, star.write_abc_register(32, 0x00000740));
+    CHECK ( ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE) == 0x740);
+    setEnables(*emu, star, ena_abc);
 
     // read another HCCStar register
     std::array<LCB::Frame, 9> readHCCCmd2 = star.read_hcc_register(17);
@@ -162,6 +183,17 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
 
   StarCmd star;
 
+  int asic_version = 0;
+
+  // Build register pattern for enables
+  AbcCfg ena_abc(asic_version);
+
+  // Set defaults
+  ena_abc.setSubRegisterValue(ABCStarSubRegister::MASKHPR, 1);
+  ena_abc.setSubRegisterValue(ABCStarSubRegister::LP_ENABLE, 1);
+  ena_abc.setSubRegisterValue(ABCStarSubRegister::PR_ENABLE, 1);
+  ena_abc.setSubRegisterValue(ABCStarSubRegister::RRMODE, 1);
+
   typedef std::vector<uint8_t> PacketCompare;
 
   // What data to expect, and how to mask the comparison
@@ -188,8 +220,9 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
   std::array<LCB::Frame, 9> writeHCCCmd_StopHPROn = star.write_hcc_register(16, 0x00000001);
   sendCommand(*emu, writeHCCCmd_StopHPROn);
   // ABC MaskHPR on, also set RRmode, LP Enable, and PR Enable to 1
-  std::array<LCB::Frame, 9> writeABCCmd_MaskHPROn = star.write_abc_register(32, 0x00000740);
-  sendCommand(*emu, writeABCCmd_MaskHPROn);
+  auto def_val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
+  CHECK (def_val == 0x740);
+  setEnables(*emu, star, ena_abc);
   // ABC StopHPR on
   std::array<LCB::Frame, 9> writeABCCmd_StopHPROn = star.write_abc_register(0, 0x00000004);
   sendCommand(*emu, writeABCCmd_StopHPROn);
@@ -255,8 +288,10 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
   SECTION("Mask Registers") {
     // Switch to static test mode: TM = 1
     // (And MaskHPR = 1, LP_Enable = 1, PR_Enable = 1, RRMode = 1)
-    std::array<LCB::Frame, 9> writeABCCmd_TM = star.write_abc_register(32, 0x00010740);
-    sendCommand(*emu, writeABCCmd_TM);
+    ena_abc.setSubRegisterValue(ABCStarSubRegister::TM, 1);
+    auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
+    CHECK (val == 0x10740);
+    setEnables(*emu, star, ena_abc);
 
     // Set mask registers
     std::array<LCB::Frame, 9> writeABCCmd_MaskInput3 = star.write_abc_register(19, 0xfffe0000);
@@ -280,8 +315,13 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
   SECTION("Hit Counters") {
     // Switch to static test mode (TM = 1) and enable hit counters
     // (And MaskHPR = 1, LP_Enable = 0, PR_Enable = 0, RRMode = 1)
-    std::array<LCB::Frame, 9> writeABCCmd_TM = star.write_abc_register(32, 0x00010460);
-    sendCommand(*emu, writeABCCmd_TM);
+    ena_abc.setSubRegisterValue(ABCStarSubRegister::TM, 1);
+    ena_abc.setSubRegisterValue(ABCStarSubRegister::LP_ENABLE, 0);
+    ena_abc.setSubRegisterValue(ABCStarSubRegister::PR_ENABLE, 0);
+    ena_abc.setSubRegisterValue(ABCStarSubRegister::ENCOUNT, 1);
+    auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
+    CHECK (val == 0x10460);
+    setEnables(*emu, star, ena_abc);
 
     // Set a mask register
     std::array<LCB::Frame, 9> writeABCCmd_MaskInput0 = star.write_abc_register(16, 0xffffffff);
@@ -325,7 +365,11 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     SECTION("Double Count") { // Both LP_Enable and EnCount are 1
       // MarkHPR = 1, RRMode = 1, TM = 1 (static test mode)
       // LP_Enable = 1, PR_Enable = 1, EnCount = 1
-      sendCommand(*emu, star.write_abc_register(32, 0x00010760));
+      ena_abc.setSubRegisterValue(ABCStarSubRegister::TM, 1);
+      ena_abc.setSubRegisterValue(ABCStarSubRegister::ENCOUNT, 1);
+      auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
+      CHECK (val == 0x10760);
+      setEnables(*emu, star, ena_abc);
 
       // Expect an LP packet:
       // tag = 0+3;
@@ -341,7 +385,10 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
 
     SECTION("LP only") {
       // Enable LP, disable hit counters
-      sendCommand(*emu, star.write_abc_register(32, 0x00010740));
+      ena_abc.setSubRegisterValue(ABCStarSubRegister::TM, 1);
+      auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
+      CHECK (val == 0x10740);
+      setEnables(*emu, star, ena_abc);
 
       // Expect an LP packet with a hit at strip 0
       std::vector<uint16_t> clusters{0};
@@ -353,7 +400,13 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
 
     SECTION("Hit counts only") {
       // Disable LP, enable hit counters
-      sendCommand(*emu, star.write_abc_register(32, 0x00010460));
+      ena_abc.setSubRegisterValue(ABCStarSubRegister::LP_ENABLE, 0);
+      ena_abc.setSubRegisterValue(ABCStarSubRegister::PR_ENABLE, 0);
+      ena_abc.setSubRegisterValue(ABCStarSubRegister::ENCOUNT, 1);
+      ena_abc.setSubRegisterValue(ABCStarSubRegister::TM, 1);
+      auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
+      CHECK (val == 0x10460);
+      setEnables(*emu, star, ena_abc);
 
       // No LP packets since LP_ENABLE is 0
 
@@ -375,8 +428,11 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
   SECTION("L0 Latency") {
     // Switch to test pulse mode: TM = 2, TestPulseEnable = 1
     // (And MaskHPR = 1, LP_Enable = 1, PR_Enable = 1, RRMode = 1)
-    std::array<LCB::Frame, 9> writeABCCmd_cfg = star.write_abc_register(32, 0x00020750);
-    sendCommand(*emu, writeABCCmd_cfg);
+    ena_abc.setSubRegisterValue(ABCStarSubRegister::TM, 2);
+    ena_abc.setSubRegisterValue(ABCStarSubRegister::TEST_PULSE_ENABLE, 1);
+    auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
+    CHECK (val == 0x20750);
+    setEnables(*emu, star, ena_abc);
 
     // Set a mask register so we are expecting a non-empty cluster packet
     std::array<LCB::Frame, 9> writeABCCmd_mask = star.write_abc_register(16, 0x00000001);
@@ -703,6 +759,17 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
 
   StarCmd star;
 
+  int asic_version = 0;
+
+  // Build register pattern for enables
+  AbcCfg ena_abc(asic_version);
+
+  // Set defaults
+  ena_abc.setSubRegisterValue(ABCStarSubRegister::MASKHPR, 1);
+  ena_abc.setSubRegisterValue(ABCStarSubRegister::LP_ENABLE, 1);
+  ena_abc.setSubRegisterValue(ABCStarSubRegister::PR_ENABLE, 1);
+  ena_abc.setSubRegisterValue(ABCStarSubRegister::RRMODE, 1);
+
   typedef std::pair<uint32_t, std::vector<uint8_t>> PacketCompare;
 
   std::map<uint32_t, std::deque<PacketCompare>> expected;
@@ -715,8 +782,10 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
   sendCommand(*emu, writeHCCCmd_MaskHPR);
   auto writeHCCCmd_StopHPR = star.write_hcc_register(16, 0x00000001);
   sendCommand(*emu, writeHCCCmd_StopHPR);
-  auto writeABCCmd_MaskHPR = star.write_abc_register(32, 0x00000740); // Also LPEnable = 1, PREnable = 1, RRmode = 1
-  sendCommand(*emu, writeABCCmd_MaskHPR);
+  // Also LPEnable = 1, PREnable = 1, RRmode = 1
+  auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
+  REQUIRE (val == 0x740);
+  setEnables(*emu, star, ena_abc);
   auto writeABCCmd_StopHPR = star.write_abc_register(0, 0x00000004);
   sendCommand(*emu, writeABCCmd_StopHPR);
 
@@ -844,8 +913,10 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
 
     // Switch to the static test mode (TM = 1)
     // (And MaskHPR = 1, LP_Enable = 1, PR_Enable = 1, RRMode = 1)
-    auto writeABCCmd_TM = star.write_abc_register(32, 0x00010740);
-    sendCommand(*emu, writeABCCmd_TM);
+    ena_abc.setSubRegisterValue(ABCStarSubRegister::TM, 1);
+    auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
+    REQUIRE (val == 0x10740);
+    setEnables(*emu, star, ena_abc);
 
     // Write 0xfffe0000 to MaskInput3 so we will have a non-empty cluster
     auto writeABCCmd_mask3 = star.write_abc_register(19, 0xfffe0000);
@@ -922,6 +993,17 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
 
   StarCmd star;
 
+  int asic_version = 0;
+
+  // Build register pattern for enables
+  AbcCfg ena_abc(asic_version);
+
+  // Set defaults
+  ena_abc.setSubRegisterValue(ABCStarSubRegister::ENCOUNT, 0);
+  ena_abc.setSubRegisterValue(ABCStarSubRegister::MASKHPR, 1);
+  ena_abc.setSubRegisterValue(ABCStarSubRegister::LP_ENABLE, 1);
+  ena_abc.setSubRegisterValue(ABCStarSubRegister::PR_ENABLE, 1);
+  ena_abc.setSubRegisterValue(ABCStarSubRegister::RRMODE, 1);
   typedef std::vector<uint8_t> PacketCompare;
   std::map<uint32_t, std::deque<PacketCompare>> expected;
 
