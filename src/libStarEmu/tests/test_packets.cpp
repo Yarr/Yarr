@@ -37,11 +37,12 @@ TEST_CASE("StarEmulatorPacketGenerate", "[star][emulator]")
 
   SECTION ("LP") {
     {
-      std::vector<uint16_t> empty_data;
-      auto empty_lp_data = buildPhysicsPacket({empty_data}, PacketTypes::PR, 0x7f, 0xff);
+      std::vector<uint16_t> empty_chip;
+      std::vector<std::vector<uint16_t>> empty_data{empty_chip};
+      auto empty_lp_data = buildPhysicsPacket(empty_data, PacketTypes::PR, 0x7f, 0xff);
 
-      // Double check the 6FED
-      std::vector<uint8_t> exp_data{0x17, 0xfe, 0x6f, 0xed};
+      // If there are no ICs enabled then the packet disappears
+      std::vector<uint8_t> exp_data{};
       CAPTURE(hexify(empty_lp_data), hexify(exp_data));
       CHECK( empty_lp_data == exp_data);
     }
