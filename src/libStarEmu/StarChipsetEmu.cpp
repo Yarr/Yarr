@@ -302,13 +302,15 @@ bool getParity_8bits(uint8_t val) {
 
 std::vector<uint8_t> buildPhysicsPacket(
   const std::vector<std::vector<uint16_t>>& allClusters,
-  PacketTypes typ, uint8_t l0tag, uint8_t bc_count, uint16_t endOfPacket) {
+  PacketTypes typ, uint8_t l0tag, uint8_t bc_count)
+{
+  uint16_t endOfPacket=0x6fed;
   std::vector<uint8_t> data_packets;
 
   ///////////////////
   // Header: 16 bits
   bool errorflag = 0; // for now
-  // BCID: lowest 3 bits of 8-bit  + 1 parity bit 
+  // BCID: lowest 3 bits of 8-bit  + 1 parity bit
   bool bc_parity = getParity_8bits(bc_count);
   // packet type (4b) + flag error (1b) + L0tag (7b) + BCID (4b)
   uint16_t header = ((uint8_t)typ << 12) | errorflag << 11 | (l0tag & 0x7f) << 4 | (bc_count&7) << 1 | bc_parity;
@@ -339,6 +341,38 @@ std::vector<uint8_t> buildPhysicsPacket(
     data_packets.push_back((endOfPacket>>8) & 0xff);
     data_packets.push_back(endOfPacket & 0xff);
   }
+
+  return data_packets;
+}
+
+// Raw clusters version
+std::vector<uint8_t> buildPhysicsPacket(
+  const std::vector<uint16_t>& cluster_data,
+  PacketTypes typ, uint8_t l0tag, uint8_t bc_count)
+{
+  uint16_t endOfPacket=0x6fed;
+
+  std::vector<uint8_t> data_packets;
+
+  ///////////////////
+  // Header: 16 bits
+  bool errorflag = 0; // for now
+  // BCID: lowest 3 bits of 8-bit  + 1 parity bit
+  bool bc_parity = getParity_8bits(bc_count);
+  // packet type (4b) + flag error (1b) + L0tag (7b) + BCID (4b)
+  uint16_t header = ((uint8_t)typ << 12) | errorflag << 11 | (l0tag & 0x7f) << 4 | (bc_count&7) << 1 | bc_parity;
+
+  data_packets.push_back((header>>8) & 0xff);
+  data_packets.push_back(header & 0xff);
+
+  for ( uint16_t clusterbits : cluster_data) {
+    data_packets.push_back((clusterbits>>8) & 0xff);
+    data_packets.push_back(clusterbits & 0xff);
+  }
+
+  // Add the end of packet pattern
+  data_packets.push_back((endOfPacket>>8) & 0xff);
+  data_packets.push_back(endOfPacket & 0xff);
 
   return data_packets;
 }
