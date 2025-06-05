@@ -1189,6 +1189,14 @@ void compareOutputs<std::vector<uint8_t>>(RawData* data, const std::vector<uint8
   for(auto c: expected_packet) {
     hex_packet.push_back(Utils::hexify(c));
   }
+  std::vector<std::string> hex_data;
+  for(size_t w=0; w<data->getSize(); w++) {
+    for(int i=0; i<4;i++){
+      uint8_t byte = (data->get(w)>>(i*8))&0xff;
+      hex_data.push_back(Utils::hexify(byte));
+    }
+  }
+  CAPTURE (hex_data);
   CAPTURE (hex_packet);
   for(size_t w=0; w<data->getSize(); w++) {
     for(int i=0; i<4;i++){
