@@ -5,6 +5,7 @@
 
 #include "AbcNames.h"
 #include "ScanHelper.h"
+#include "StarPackets.h"
 #include "logging.h"
 
 namespace {
@@ -36,6 +37,7 @@ StarEmuNS::StripData getMasks(const AbcCfg& abc);
 } // End anon namespace
 
 using namespace StarEmuNS; // eg StripData
+using namespace StarPackets;
 
 /**
  * Emulate analog FE using StripModel.
@@ -286,17 +288,19 @@ void StarChipsetEmu::sendPacket(uint8_t *byte_s, uint8_t *byte_e) {
     m_rxbuffer->pushData(std::move(data));
 }
 
+
+namespace StarPackets {
 //
 // Build data packets
 //
-bool StarChipsetEmu::getParity_8bits(uint8_t val) {
+bool getParity_8bits(uint8_t val) {
   val ^= val >> 4;
   val ^= val >> 2;
   val ^= val >> 1;
   return val&1;
 }
 
-std::vector<uint8_t> StarChipsetEmu::buildPhysicsPacket(
+std::vector<uint8_t> buildPhysicsPacket(
   const std::vector<std::vector<uint16_t>>& allClusters,
   PacketTypes typ, uint8_t l0tag, uint8_t bc_count, uint16_t endOfPacket) {
   std::vector<uint8_t> data_packets;
@@ -339,7 +343,7 @@ std::vector<uint8_t> StarChipsetEmu::buildPhysicsPacket(
   return data_packets;
 }
 
-std::vector<uint8_t> StarChipsetEmu::buildABCRegisterPacket(
+std::vector<uint8_t> buildABCRegisterPacket(
   PacketTypes typ, uint8_t input_channel, uint8_t reg_addr, unsigned reg_data,
   uint16_t reg_status) {
 
@@ -364,8 +368,8 @@ std::vector<uint8_t> StarChipsetEmu::buildABCRegisterPacket(
   return data_packets;
 }
 
-std::vector<uint8_t> StarChipsetEmu::buildHCCRegisterPacket(
-  PacketTypes typ, uint8_t reg_addr, unsigned reg_data) {
+std::vector<uint8_t> buildHCCRegisterPacket(
+  PacketTypes typ, uint8_t reg_addr, uint32_t reg_data) {
 
   std::vector<uint8_t> data_packets;
   
@@ -379,6 +383,8 @@ std::vector<uint8_t> StarChipsetEmu::buildHCCRegisterPacket(
 
   return data_packets;
 }
+
+} // End StarPackets namespace
 
 //
 // Register commands

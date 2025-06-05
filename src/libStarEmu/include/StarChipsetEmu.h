@@ -33,11 +33,6 @@ public:
 class StarChipsetEmu {
 public:
 
-  enum class PacketTypes {
-    PR = 1, LP = 2, ABCRegRd = 4, ABCPacketTransRegRd = 7, HCCRegRd = 8,
-    ABCFullTransRegRd = 11, ABCHPR = 13, HCCHPR = 14
-  };
-
   StarChipsetEmu(ClipBoard<RawData>* rx, const std::string& json_emu_file_path,
                  std::unique_ptr<StarCfg> regCfg, unsigned hpr_period,
                  int abc_version, int hcc_version);
@@ -69,14 +64,6 @@ private:
 
   /// Send response packet (excluding SOP/EOP)
   void sendPacket(uint8_t *byte_s, uint8_t *byte_e);
-
-  /// Build data packet
-  std::vector<uint8_t> buildPhysicsPacket(
-    const std::vector<std::vector<uint16_t>>&, PacketTypes, uint8_t, uint8_t,
-    uint16_t endOfPacket=0x6fed);
-  std::vector<uint8_t> buildABCRegisterPacket(PacketTypes, uint8_t, uint8_t,
-                                              unsigned, uint16_t);
-  std::vector<uint8_t> buildHCCRegisterPacket(PacketTypes, uint8_t, unsigned);
 
   /// Register R/W commands
   void execute_command_sequence();
@@ -119,7 +106,6 @@ private:
   std::pair<uint8_t,StripData> generateFEData_CaliPulse(const AbcCfg&, unsigned);
 
   /// Utilities
-  bool getParity_8bits(uint8_t);
   bool getBit_128b(uint8_t, uint64_t, uint64_t);
   void setBit_128b(uint8_t, bool, uint64_t&, uint64_t&);
 
