@@ -427,9 +427,9 @@ TEST_CASE("StarEmulatorHPR", "[star][emulator]") {
   }
 
   // HCC HPR with Idle frame
-  expected[1].push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
+  expected[1].push_back(buildHCCRegisterPacket(PacketTypes::HCCHPR, 0xf, 0x7855002b));
   // ABC HPR with Idle frame
-  expected[1].push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+  expected[1].push_back(buildABCRegisterPacket(PacketTypes::ABCHPR, 0, 0x3f, 0x78555fff, 0xf000));
 
   SECTION("Periodic") {
     // Wait another 80 BCs for a second set of HPRs
@@ -437,8 +437,8 @@ TEST_CASE("StarEmulatorHPR", "[star][emulator]") {
       emu->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
     }
 
-    expected[1].push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
-    expected[1].push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+    expected[1].push_back(buildHCCRegisterPacket(PacketTypes::HCCHPR, 0xf, 0x7855002b));
+    expected[1].push_back(buildABCRegisterPacket(PacketTypes::ABCHPR, 0, 0x3f, 0x78555fff, 0xf000));
   }
 
   SECTION("StopHPR") {
@@ -451,7 +451,7 @@ TEST_CASE("StarEmulatorHPR", "[star][emulator]") {
       emu->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
     }
 
-    expected[1].push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+    expected[1].push_back(buildABCRegisterPacket(PacketTypes::ABCHPR, 0, 0x3f, 0x78555fff, 0xf000));
   }
 
   SECTION("TestHPR") {
@@ -459,15 +459,15 @@ TEST_CASE("StarEmulatorHPR", "[star][emulator]") {
     std::array<LCB::Frame, 9> writeABCCmd_TestHPR = star.write_abc_register(0, 0x00000008);
     sendCommand(*emu, writeABCCmd_TestHPR);
 
-    expected[1].push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+    expected[1].push_back(buildABCRegisterPacket(PacketTypes::ABCHPR, 0, 0x3f, 0x78555fff, 0xf000));
 
     // Wait a bit, and there should be the regular periodic HPR packets
     for (int j = 0; j < 4; j++) {
       emu->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
     }
 
-    expected[1].push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
-    expected[1].push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+    expected[1].push_back(buildHCCRegisterPacket(PacketTypes::HCCHPR, 0xf, 0x7855002b));
+    expected[1].push_back(buildABCRegisterPacket(PacketTypes::ABCHPR, 0, 0x3f, 0x78555fff, 0xf000));
   }
 
   SECTION("MaskHPR") {
@@ -480,8 +480,8 @@ TEST_CASE("StarEmulatorHPR", "[star][emulator]") {
       emu->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
     }
 
-    expected[1].push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
-    expected[1].push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+    expected[1].push_back(buildHCCRegisterPacket(PacketTypes::HCCHPR, 0xf, 0x7855002b));
+    expected[1].push_back(buildABCRegisterPacket(PacketTypes::ABCHPR, 0, 0x3f, 0x78555fff, 0xf000));
 
     // Now set HCC TestHPR bit to 1.
     // No extra HCC HPR is expected since the HCC MaskHPR is on
@@ -493,8 +493,8 @@ TEST_CASE("StarEmulatorHPR", "[star][emulator]") {
       emu->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
     }
 
-    expected[1].push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
-    expected[1].push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+    expected[1].push_back(buildHCCRegisterPacket(PacketTypes::HCCHPR, 0xf, 0x7855002b));
+    expected[1].push_back(buildABCRegisterPacket(PacketTypes::ABCHPR, 0, 0x3f, 0x78555fff, 0xf000));
   }
 
   emu->releaseFifo();
@@ -721,13 +721,14 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
   for (unsigned i=0; i<nchannels; i++) {
     uint32_t chn_rx = 2*i+1;
     // hcc hpr with idle frame
-    expected[chn_rx].push_back({chn_rx, {0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0}});
+    expected[chn_rx].push_back({chn_rx, buildHCCRegisterPacket(PacketTypes::HCCHPR, 0xf, 0x7855002b)});
   }
 
   for (unsigned i=0; i<nchannels; i++) {
     uint32_t chn_rx = 2*i+1;
     // abc hpr with idle frame
-    expected[chn_rx].push_back({chn_rx, {0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00}});
+    expected[chn_rx].push_back({chn_rx,
+        buildABCRegisterPacket(PacketTypes::ABCHPR, 0, 0x3f, 0x78555fff, 0xf000)});
   }
 
   emu->releaseFifo();
@@ -955,9 +956,9 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
 
   // Expect to receive initial HPR packets
   // HCC HPR with Idle frame
-  expected[1].push_back({0xe0, 0xf7, 0x85, 0x50, 0x02, 0xb0});
+  expected[1].push_back(buildHCCRegisterPacket(PacketTypes::HCCHPR, 0xf, 0x7855002b));
   // ABC HPR with Idle frame
-  expected[1].push_back({0xd0, 0x3f, 0x07, 0x85, 0x55, 0xff, 0xff, 0x00, 0x00});
+  expected[1].push_back(buildABCRegisterPacket(PacketTypes::ABCHPR, 0, 0x3f, 0x78555fff, 0xf000));
 
   // Switch to multi-level trigger mode
   // Register 41 OPmode bit 0
