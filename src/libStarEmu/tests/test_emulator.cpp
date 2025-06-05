@@ -332,7 +332,8 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
       // BCID: at the time of L0A, bc count = 7; L0 latency = 0; so 8-bit BCID = 7 - 4 = 0x3. The 4-bit BCID in the packet = 0b0110;
       // clusters = {0x0000}: only the strip #0 has a hit
       // end of packet: 0x6fed
-      expected[1].push_back({0x20, 0x36, 0x00, 0x00, 0x6f, 0xed});
+      std::vector<uint16_t> clusters{0};
+      expected[1].push_back(buildPhysicsPacket(clusters, PacketTypes::LP, 0x03, 3));
 
       // Also expect value 0x00000001 from reading the hit counter register 0x80
       expected[1].push_back(buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x80, 0x00000001, 0xf000));
@@ -343,7 +344,8 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
       sendCommand(*emu, star.write_abc_register(32, 0x00010740));
 
       // Expect an LP packet with a hit at strip 0
-      expected[1].push_back({0x20, 0x36, 0x00, 0x00, 0x6f, 0xed});
+      std::vector<uint16_t> clusters{0};
+      expected[1].push_back(buildPhysicsPacket(clusters, PacketTypes::LP, 0x03, 3));
 
       // Register read from hit counter register 0x80 should have value 0
       expected[1].push_back(buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x80, 0x00000000, 0xf000));
@@ -391,7 +393,8 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     // Physics packet: l0tag = 20 + 3
     // bc count = 156 when L0A command received; trigger on 156-1; latency = 3
     // 8-bit BCID = 152 (0x98) => 4-bit BCID in the packet = 0b0001
-    expected[1].push_back({0x21, 0x71, 0x00, 0x00, 0x6f, 0xed});
+    std::vector<uint16_t> clusters{0};
+    expected[1].push_back(buildPhysicsPacket(clusters, PacketTypes::LP, 0x17, 152));
   }
 
   emu->releaseFifo();
@@ -869,13 +872,16 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
 
     // Cluster bytes from MaskInput3 value 0xfffe0000:
     // {0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee}
+    std::vector<uint16_t> clusters{0x05c7, 0x01cf, 0x05e7, 0x01ee};
     // L0tag from the trigger words: l0tag = 4 (input tag) + 3 (BC offset)
+    uint8_t l0 = 7;
+    uint8_t bc = 0x17;
     // And two packets from rx channel 5 (corresponding to tx 4)
     // Expect two physics packets from rx channel 3 (corresponding to tx 2)
-    expected[3].push_back({3, {0x20,0x7e, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b1110
-    expected[5].push_back({5, {0x20,0x7e, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b1110
-    expected[3].push_back({3, {0x20,0x7e, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b1110
-    expected[5].push_back({5, {0x20,0x7e, 0x05,0xc7, 0x01,0xcf, 0x05,0xe7, 0x01,0xee, 0x6f,0xed}}); // bcid = 0b1110
+    expected[3].push_back({3, buildPhysicsPacket(clusters, PacketTypes::LP, l0, bc)});
+    expected[5].push_back({5, buildPhysicsPacket(clusters, PacketTypes::LP, l0, bc)});
+    expected[3].push_back({3, buildPhysicsPacket(clusters, PacketTypes::LP, l0, bc)});
+    expected[5].push_back({5, buildPhysicsPacket(clusters, PacketTypes::LP, l0, bc)});
 
     // Join trigger process when it is done
     while(!emu->isTrigDone());
@@ -989,6 +995,9 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
   sendCommand(*staremu, 0, writeHCCCmd_id);
   sendCommand(*staremu, 2, IdleCmd);
 
+  // Empty cluster data (chip 0)
+  std::vector<uint16_t> clusters{0x0};
+
   SECTION("LPEnable=1 PREnable=1") {
     // Switch to test pulse mode: TM = 2, TestPulseEnable = 1
     // MaskHPR = 1, LP_Enable = 1, PR_Enable = 1, RRMode = 1
@@ -997,13 +1006,13 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
 
     // Expected packets from the test sequence below
     // First a PR packet: tag = 42 (0x2a); 4-bit BCID = 0b0110
-    expected[1].push_back({0x12, 0xa6, 0x00, 0x00, 0x6f, 0xed});
+    expected[1].push_back(buildPhysicsPacket(clusters, PacketTypes::PR, 0x2a, 0x3));
 
     // A second PR packet: tag = 66 (0x42), 4-bit BCID = 0b1111
-    expected[1].push_back({0x14, 0x2f, 0x00, 0x00, 0x6f, 0xed});
+    expected[1].push_back(buildPhysicsPacket(clusters, PacketTypes::PR, 0x42, 0x1f));
 
     // Followed by an LP packet with tag = 42 (0x2a), 4-bit BCID = 0b0110
-    expected[1].push_back({0x22, 0xa6, 0x00, 0x00, 0x6f, 0xed});
+    expected[1].push_back(buildPhysicsPacket(clusters, PacketTypes::LP, 0x2a, 3));
   }
 
   SECTION("LPEnable=0 PREnable=1") {
@@ -1014,10 +1023,10 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
 
     // Expected packets from the test sequence below
     // First a PR packet: tag = 42 (0x2a); 4-bit BCID = 0b0110
-    expected[1].push_back({0x12, 0xa6, 0x00, 0x00, 0x6f, 0xed});
+    expected[1].push_back(buildPhysicsPacket(clusters, PacketTypes::PR, 0x2a, 3));
 
     // A second PR packet: tag = 66 (0x42), 4-bit BCID = 0b1111
-    expected[1].push_back({0x14, 0x2f, 0x00, 0x00, 0x6f, 0xed});
+    expected[1].push_back(buildPhysicsPacket(clusters, PacketTypes::PR, 0x42, 0x1f));
 
     // No more LP packet since LP_ENABLE is 0
   }
@@ -1031,7 +1040,7 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
     // No PR packets since PR_ENABLE is 0
 
     // Expect an LP packet with tag = 42 (0x2a), 4-bit BCID = 0b0110
-    expected[1].push_back({0x22, 0xa6, 0x00, 0x00, 0x6f, 0xed});
+    expected[1].push_back(buildPhysicsPacket(clusters, PacketTypes::LP, 0x2a, 0x3));
   }
 
   SECTION("LPEnable=0 PREnable=0") {
