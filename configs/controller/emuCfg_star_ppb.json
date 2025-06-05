@@ -1,0 +1,12 @@
+{
+    "ctrlCfg" : {
+        "type": "emu_Star",
+        "cfg" : {
+            "hprPeriod" : 40000,
+            "hccVersion": 1,
+            "abcVersion": 1,
+            "feCfg" : "configs/emulator/emu_fe0_star.json",
+            "chipCfg" : "configs/connectivity/example_star_setup_ppb.json"
+        }
+    }
+}
