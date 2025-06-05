@@ -270,7 +270,11 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     // l0tag = 4 + 3
     // bc count at L0A frame = 148; trigger command on 148-1; latency = 0
     // => 8-bit BCID = 0x93; 4-bit BCID in the packet = 0b0110
-    expected[1].push_back({0x20, 0x76, 0x05, 0xc7, 0x01, 0xcf, 0x05, 0xe7, 0x01, 0xee, 0x07, 0xc7, 0x03, 0xcf, 0x07, 0xe7, 0x03, 0xee, 0x6f, 0xed});
+    std::vector<std::vector<uint16_t>> cluster_data{
+      {0x05c7, 0x01cf, 0x05e7, 0x01ee, 0x07c7,
+       0x03cf, 0x07e7, 0x03ee}
+    };
+    expected[1].push_back(buildPhysicsPacket(cluster_data, PacketTypes::LP, 0x07, 0x93));
   }
 
   SECTION("Hit Counters") {
@@ -303,14 +307,14 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     emu->writeFifo((readABCCmd_hitcnt0[0] << 16) + readABCCmd_hitcnt0[1]);
     emu->writeFifo((readABCCmd_hitcnt0[2] << 16) + readABCCmd_hitcnt0[8]);
     // HitCountREG0 for channel 0 to 3 is expected to be 0x04040404
-    expected[1].push_back({0x40, 0x80, 0x00, 0x40, 0x40, 0x40, 0x4f, 0x00, 0x00});
+    expected[1].push_back(buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x80, 0x04040404, 0xf000));
 
     // HitCountREG63
     std::array<LCB::Frame, 9> readABCCmd_hitcnt63 = star.read_abc_register(191);
     emu->writeFifo((readABCCmd_hitcnt63[0] << 16) + readABCCmd_hitcnt63[1]);
     emu->writeFifo((readABCCmd_hitcnt63[2] << 16) + readABCCmd_hitcnt63[8]);
     // HitCountREG63 for channel 252 - 255 is expected be 0x00000000
-    expected[1].push_back({0x40, 0xbf, 0x00, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x00});
+    expected[1].push_back(buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0xbf, 0x00000000, 0xf000));
   }
 
   SECTION("LPEnable and EnCount") {
@@ -331,7 +335,7 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
       expected[1].push_back({0x20, 0x36, 0x00, 0x00, 0x6f, 0xed});
 
       // Also expect value 0x00000001 from reading the hit counter register 0x80
-      expected[1].push_back({0x40, 0x80, 0x00, 0x00, 0x00, 0x00, 0x1f, 0x00, 0x00});
+      expected[1].push_back(buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x80, 0x00000001, 0xf000));
     }
 
     SECTION("LP only") {
@@ -342,7 +346,7 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
       expected[1].push_back({0x20, 0x36, 0x00, 0x00, 0x6f, 0xed});
 
       // Register read from hit counter register 0x80 should have value 0
-      expected[1].push_back({0x40, 0x80, 0x00, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x00});
+      expected[1].push_back(buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x80, 0x00000000, 0xf000));
     }
 
     SECTION("Hit counts only") {
@@ -352,7 +356,7 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
       // No LP packets since LP_ENABLE is 0
 
       // Register read from hit counter register 0x80 should have value 1
-      expected[1].push_back({0x40, 0x80, 0x00, 0x00, 0x00, 0x00, 0x1f, 0x00, 0x00});
+      expected[1].push_back(buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x80, 0x00000001, 0xf000));
     }
 
     // Reset and start hit counters
@@ -578,7 +582,7 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
     // Read only the HCC with ID = 3
     auto readHCCCmd_3_reg47 = star.read_hcc_register(47, 3);
     sendCommand(*emu, readHCCCmd_3_reg47);
-    expected[rx_fe1].push_back({rx_fe1, {0x82, 0xfa, 0xbc, 0xda, 0xbc, 0xd0}});
+    expected[rx_fe1].push_back({rx_fe1, buildHCCRegisterPacket(PacketTypes::HCCRegRd, 0x2f, 0xabcdabcd)});
 
     // Write 0xdeadbeef to register 47 of the HCC with ID = 4
     auto writeHCCCmd_4_reg47 = star.write_hcc_register(47, 0xdeadbeef, 4);
@@ -593,11 +597,11 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
     sendCommand(*emu, readHCCCmd_47);
     
     // HCC 3: register 47 is still 0xabcdabcd
-    expected[rx_fe1].push_back({rx_fe1, {0x82, 0xfa, 0xbc, 0xda, 0xbc, 0xd0}});
+    expected[rx_fe1].push_back({rx_fe1, buildHCCRegisterPacket(PacketTypes::HCCRegRd, 0x2f, 0xabcdabcd)});
     // HCC 4: register 47 should be 0xdeadbeef
-    expected[rx_fe2].push_back({rx_fe2, {0x82, 0xfd, 0xea, 0xdb, 0xee, 0xf0}});
+    expected[rx_fe2].push_back({rx_fe2, buildHCCRegisterPacket(PacketTypes::HCCRegRd, 0x2f, 0xdeadbeef)});
     // HCC 5: register 47 should be 0xcafebabe
-    expected[rx_fe3].push_back({rx_fe3, {0x82, 0xfc, 0xaf, 0xeb, 0xab, 0xe0}});
+    expected[rx_fe3].push_back({rx_fe3, buildHCCRegisterPacket(PacketTypes::HCCRegRd, 0x2f, 0xcafebabe)});
   }
 
   SECTION("ABCStar Write and Read") {
@@ -609,8 +613,8 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
     auto readABCCmd_hcc3 = star.read_abc_register(23, 3, 0xf);
     sendCommand(*emu, readABCCmd_hcc3);
     // Expect two ABC RR packets from ABC 1 and 2
-    expected[rx_fe1].push_back({rx_fe1, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
-    expected[rx_fe1].push_back({rx_fe1, {0x41, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf1, 0x00, 0x00}});
+    expected[rx_fe1].push_back({rx_fe1, buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x17, 0xff7ff7ff, 0x2000)});
+    expected[rx_fe1].push_back({rx_fe1, buildABCRegisterPacket(PacketTypes::ABCRegRd, 1, 0x17, 0xff7ff7ff, 0x1000)});
 
     emu->releaseFifo();
     while(!emu->isCmdEmpty());
@@ -629,7 +633,7 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
     sendCommand(*emu, readABCCmd_5_7);
 
     // ABC 7 is now IC 0 (auto map from HCC v0)
-    expected[rx_fe3].push_back({rx_fe3, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf7, 0x00, 0x00}});
+    expected[rx_fe3].push_back({rx_fe3, buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x17, 0xff7ff7ff, 0x7000)});
 
     emu->releaseFifo();
     while(!emu->isCmdEmpty());
@@ -640,16 +644,22 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
     sendCommand(*emu, readABCCmd_mask7);
 
     // Two ABC RR packets from ABC 1 and 2 on HCC 3
-    expected[rx_fe1].push_back({rx_fe1, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
-    expected[rx_fe1].push_back({rx_fe1, {0x41, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf1, 0x00, 0x00}});
+    expected[rx_fe1].push_back({rx_fe1,
+        buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x17, 0xff7ff7ff, 0x2000)});
+    expected[rx_fe1].push_back({rx_fe1,
+        buildABCRegisterPacket(PacketTypes::ABCRegRd, 1, 0x17, 0xff7ff7ff, 0x1000)});
 
     // One ABC RR packet from ABC 7 on HCC 4
-    expected[rx_fe2].push_back({rx_fe2, {0x40, 0x17, 0x0d, 0xea, 0xdb, 0xee, 0xf7, 0x00, 0x00}});
+    expected[rx_fe2].push_back({rx_fe2,
+        buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x17, 0xdeadbeef, 0x7000)});
 
     // Three ABC RR packet from ABC 2, 4, 7 on HCC 5
-    expected[rx_fe3].push_back({rx_fe3, {0x40, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf7, 0x00, 0x00}});
-    expected[rx_fe3].push_back({rx_fe3, {0x41, 0x17, 0x0a, 0xa0, 0x45, 0x1a, 0xa4, 0x00, 0x00}});
-    expected[rx_fe3].push_back({rx_fe3, {0x42, 0x17, 0x0f, 0xf7, 0xff, 0x7f, 0xf2, 0x00, 0x00}});
+    expected[rx_fe3].push_back({rx_fe3,
+        buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x17, 0xff7ff7ff, 0x7000)});
+    expected[rx_fe3].push_back({rx_fe3,
+        buildABCRegisterPacket(PacketTypes::ABCRegRd, 1, 0x17, 0xaa0451aa, 0x4000)});
+    expected[rx_fe3].push_back({rx_fe3,
+        buildABCRegisterPacket(PacketTypes::ABCRegRd, 2, 0x17, 0xff7ff7ff, 0x2000)});
   }
 
   emu->releaseFifo();
@@ -736,7 +746,7 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
     // Expect to read back the default value 0x00406600 from all HCCStars
     for (unsigned i=0; i<nchannels; i++) {
       uint32_t chn_rx = 2*i+1;
-      expected[chn_rx].push_back({chn_rx, {0x83, 0x00, 0x04, 0x06, 0x60, 0x00}});
+      expected[chn_rx].push_back({chn_rx, buildHCCRegisterPacket(PacketTypes::HCCRegRd, 0x30, 0x00406600)});
     }
 
     emu->releaseFifo();
@@ -762,7 +772,7 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
     sendCommand(*emu, readABCCmd_mask7);
 
     // Expect to receive data only from rx channel 3
-    expected[3].push_back({3, {0x40, 0x17, 0x0d, 0xea, 0xdb, 0xee, 0xff, 0x00, 0x00}});
+    expected[3].push_back({3, buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x17, 0xdeadbeef, 0xf000)});
 
     emu->releaseFifo();
     while(!emu->isCmdEmpty());
@@ -779,9 +789,9 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
     // Should receive data only from rx channel 1.
     // Two data packets are expected:
     // One is from the previous MaskInput7 read command: the register read packet was pushed to the rx buffer but had not been read out since the rx channel was disabled.
-    expected[1].push_back({1, {0x40, 0x17, 0x0d, 0xea, 0xdb, 0xee, 0xff, 0x00, 0x00}});
+    expected[1].push_back({1, buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x17, 0xdeadbeef, 0xf000)});
     // The second packet is from the MaskInput6 read command.
-    expected[1].push_back({1, {0x40, 0x16, 0x0c, 0xaf, 0xeb, 0xab, 0xef, 0x00, 0x00}});
+    expected[1].push_back({1, buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x16, 0xcafebabe, 0xf000)});
 
     emu->releaseFifo();
     while(!emu->isCmdEmpty());
@@ -814,9 +824,9 @@ TEST_CASE("StarEmuLatorMultiChannel", "[star][emulator]") {
       unsigned chn_tx = 2*i;
       unsigned chn_rx = 2*i+1;
       if (chn_tx == 2)
-        expected[chn_rx].push_back({chn_rx, {0x40, 0x10, 0x0d, 0xec, 0xaf, 0xba, 0xdf, 0x00, 0x00}});
+        expected[chn_rx].push_back({chn_rx, buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x10, 0xdecafbad, 0xf000)});
       else
-        expected[chn_rx].push_back({chn_rx, {0x40, 0x10, 0x00, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x00}});
+        expected[chn_rx].push_back({chn_rx, buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x10, 0x00000000, 0xf000)});
     }
 
     emu->releaseFifo();
