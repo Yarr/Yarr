@@ -85,7 +85,26 @@ namespace {
     bool throt_registered = 
         StdDict::registerAnalysis("TriggerThrottleAnalysis",
                 []() { return std::unique_ptr<AnalysisAlgorithm>(new TriggerThrottleAnalysis());});
+
+/// Create 2D histogram matching FrontEnd geometry
+std::unique_ptr<Histo2d> createHistoMap(const std::string &name, const std::string &zAxis, unsigned nCol, unsigned nRow) {
+    auto histo = std::make_unique<Histo2d>(name, nCol, 0.5, nCol + 0.5, nRow, 0.5, nRow + 0.5);
+    histo->setXaxisTitle("Column");
+    histo->setYaxisTitle("Row");
+    histo->setZaxisTitle(zAxis);
+    return histo;
 }
+
+/// Create 2D histogram matching FrontEnd geometry, including Loop position
+std::unique_ptr<Histo2d> createHistoMap(const std::string &name, const std::string &zAxis, unsigned nCol, unsigned nRow, const LoopStatus &stat) {
+    auto histo = std::make_unique<Histo2d>(name, nCol, 0.5, nCol + 0.5, nRow, 0.5, nRow + 0.5, stat);
+    histo->setXaxisTitle("Column");
+    histo->setYaxisTitle("Row");
+    histo->setZaxisTitle(zAxis);
+    return histo;
+}
+
+} // End of anonymous namespace
 
 void HistogramArchiver::init(const ScanLoopInfo *s) {
 }
@@ -155,10 +174,7 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
 
     // Check if Histogram exists
     if (occMaps[ident] == nullptr) {
-        std::unique_ptr<Histo2d> hh(new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
-        hh->setXaxisTitle("Column");
-        hh->setYaxisTitle("Row");
-        hh->setZaxisTitle("Hits");
+        std::unique_ptr<Histo2d> hh{createHistoMap(name, "Hits", nCol, nRow)};
         occMaps[ident] = std::move(hh);
     }
 
@@ -167,10 +183,7 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
     innerCnt[ident]++;
     // Got all data, finish up Analysis
     if (innerCnt[ident] == n_count) {
-        std::unique_ptr<Histo2d> mask(new Histo2d(name2, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
-        mask->setXaxisTitle("Column");
-        mask->setYaxisTitle("Rows");
-        mask->setZaxisTitle("Enable");
+        std::unique_ptr<Histo2d> mask{createHistoMap(name2, "Enable", nCol, nRow)};
 
         unsigned failed_cnt = 0;
         for(unsigned col=1; col<=nCol; col++) {
@@ -344,23 +357,13 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
 
     // Check if Histogram exists
     if (occMaps[ident] == nullptr) {
-        Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
-        hh->setXaxisTitle("Column");
-        hh->setYaxisTitle("Row");
-        hh->setZaxisTitle("Hits");
-        occMaps[ident].reset(hh);
+        occMaps[ident] = createHistoMap(name, "Hits", nCol, nRow);
         occInnerCnt[ident] = 0;
-        hh = new Histo2d(name2, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
-        hh->setXaxisTitle("Column");
-        hh->setYaxisTitle("Row");
-        hh->setZaxisTitle("{/Symbol S}(ToT)");
-        totMaps[ident].reset(hh);
+
+        totMaps[ident] = createHistoMap(name2, "{/Symbol S}(ToT)", nCol, nRow);
         totInnerCnt[ident] = 0;
-        hh = new Histo2d(name3, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
-        hh->setXaxisTitle("Column");
-        hh->setYaxisTitle("Row");
-        hh->setZaxisTitle("{/Symbol S}(ToT^2)");
-        tot2Maps[ident].reset(hh);
+
+        tot2Maps[ident] = createHistoMap(name2, "{/Symbol S}(ToT^2)", nCol, nRow);
         tot2InnerCnt[ident] = 0;
     }
 
@@ -406,22 +409,11 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
     if (occInnerCnt[ident] == n_count &&
             totInnerCnt[ident] == n_count &&
             tot2InnerCnt[ident] == n_count) {
-        std::unique_ptr<Histo2d> meanTotMap(new Histo2d("MeanTotMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
-        meanTotMap->setXaxisTitle("Column");
-        meanTotMap->setYaxisTitle("Row");
-        meanTotMap->setZaxisTitle("Mean ToT ["+tot_unit+"]");
-        std::unique_ptr<Histo2d> sumTotMap(new Histo2d("SumTotMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
-        sumTotMap->setXaxisTitle("Column");
-        sumTotMap->setYaxisTitle("Row");
-        sumTotMap->setZaxisTitle("Mean ToT ["+tot_unit+"]");
-        std::unique_ptr<Histo2d> sumTot2Map(new Histo2d("MeanTot2Map-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
-        sumTot2Map->setXaxisTitle("Column");
-        sumTot2Map->setYaxisTitle("Row");
-        sumTot2Map->setZaxisTitle("Mean ToT^2 ["+tot_unit+"^2]");
-        std::unique_ptr<Histo2d> sigmaTotMap(new Histo2d("SigmaTotMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
-        sigmaTotMap->setXaxisTitle("Column");
-        sigmaTotMap->setYaxisTitle("Row");
-        sigmaTotMap->setZaxisTitle("Sigma ToT ["+tot_unit+"]");
+        std::unique_ptr<Histo2d> meanTotMap = createHistoMap("MeanTotMap-"+std::to_string(ident), "Mean ToT ["+tot_unit+"]", nCol, nRow);
+        std::unique_ptr<Histo2d> sumTotMap = createHistoMap("SumTotMap-"+std::to_string(ident), "Mean ToT ["+tot_unit+"]", nCol, nRow);
+        std::unique_ptr<Histo2d> sumTot2Map = createHistoMap("MeanTot2Map-"+std::to_string(ident), "Mean ToT^2 ["+tot_unit+"^2]", nCol, nRow);
+        std::unique_ptr<Histo2d> sigmaTotMap = createHistoMap("SigmaTotMap-"+std::to_string(ident), "Sigma ToT ["+tot_unit+"]", nCol, nRow);
+
         std::unique_ptr<Histo1d> meanTotDist(new Histo1d("MeanTotDist-"+std::to_string(ident), tot_bins_n, tot_bins_x_lo + 0.5, tot_bins_x_hi + 0.5));
         meanTotDist->setXaxisTitle("Mean ToT ["+tot_unit+"]");
         meanTotDist->setYaxisTitle("Number of Pixels");
@@ -484,7 +476,7 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
 
         if (pixelFb != nullptr) {
             double targetTot = target_tot;
-            auto fbHisto = std::make_unique<Histo2d>("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
+            auto fbHisto = createHistoMap("feedback", "z", nCol, nRow);
             for (unsigned i=0; i<meanTotMap->size(); i++) {
                 int sign = 0;
                 double mean = meanTotMap->getBin(i);
@@ -732,34 +724,18 @@ bool ScurveFitter::fitSuccess(const double (&fit_params)[n_fit_params], const do
 }
 
 void ScurveFitter::createFitResultHistograms(const unsigned long& outerIdent, const LoopStatus& loopStatus) {
-    auto hh2 = std::make_unique<Histo2d>("ThresholdMap-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, loopStatus);
-    hh2->setXaxisTitle("Column");
-    hh2->setYaxisTitle("Row");
-    hh2->setZaxisTitle("Threshold [e]");
-    thrMap[outerIdent] = std::move(hh2);
-
-    hh2 = std::make_unique<Histo2d>("NoiseMap-"+std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, loopStatus);
-    hh2->setXaxisTitle("Column");
-    hh2->setYaxisTitle("Row");
-    hh2->setZaxisTitle("Noise [e]");
-    sigMap[outerIdent] = std::move(hh2);
+    thrMap[outerIdent] = createHistoMap("ThresholdMap-" + std::to_string(outerIdent),
+                             "Threshold [e]", nCol, nRow, loopStatus);
+    sigMap[outerIdent] = createHistoMap("NoiseMap-"+std::to_string(outerIdent), "Noise [e]", nCol, nRow, loopStatus);
 
     auto hh1 = std::make_unique<Histo1d>("Chi2Dist-"+std::to_string(outerIdent), 51, chi2Min-0.025, chi2Max+0.025, loopStatus);
     hh1->setXaxisTitle("Fit Chi/ndf");
     hh1->setYaxisTitle("Number of Pixels");
     chiDist[outerIdent] = std::move(hh1);
 
-    hh2 = std::make_unique<Histo2d>("Chi2Map-"+std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, loopStatus);
-    hh2->setXaxisTitle("Column");
-    hh2->setYaxisTitle("Row");
-    hh2->setZaxisTitle("Chi2");
-    chi2Map[outerIdent] = std::move(hh2);
+    chi2Map[outerIdent] = createHistoMap("Chi2Map-"+std::to_string(outerIdent), "Chi2", nCol, nRow, loopStatus);
 
-    hh2 = std::make_unique<Histo2d>("StatusMap-"+std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, loopStatus);
-    hh2->setXaxisTitle("Column");
-    hh2->setYaxisTitle("Row");
-    hh2->setZaxisTitle("Fit Status");
-    statusMap[outerIdent] = std::move(hh2);
+    statusMap[outerIdent] = createHistoMap("StatusMap-"+std::to_string(outerIdent), "Fit Status", nCol, nRow, loopStatus);
 
     hh1 = std::make_unique<Histo1d>("StatusDist-"+std::to_string(outerIdent), 11, -0.5, 10.5, loopStatus);
     hh1->setXaxisTitle("Fit Status ");
@@ -890,18 +866,12 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
         }
 
         if (step[outerIdent] == nullptr) {
-            auto hh2 = std::make_unique<Histo2d>("StepMap-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
-            hh2->setXaxisTitle("Column");
-            hh2->setYaxisTitle("Row");
-            hh2->setZaxisTitle("TDAC change");
+            auto hh2 = createHistoMap("StepMap-" + std::to_string(outerIdent), "TDAC change", nCol, nRow);
             step[outerIdent] = std::move(hh2);
         }
 
         if (deltaThr[outerIdent] == nullptr) {
-            auto hh2 = std::make_unique<Histo2d>("DeltaThreshold-" + std::to_string(outerIdent), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
-            hh2->setXaxisTitle("Column");
-            hh2->setYaxisTitle("Row");
-            hh2->setZaxisTitle("Delta Threshold [e]");
+            auto hh2 = createHistoMap("DeltaThreshold-" + std::to_string(outerIdent), "Delta Threshold [e]", nCol, nRow);
             deltaThr[outerIdent] = std::move(hh2);
         }
 
@@ -1336,11 +1306,7 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
 
     // Check if Histogram exists
     if (occMaps[ident] == nullptr) {
-        Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
-        hh->setXaxisTitle("Column");
-        hh->setYaxisTitle("Row");
-        hh->setZaxisTitle("Hits");
-        occMaps[ident].reset(hh);
+        occMaps[ident] = createHistoMap(name, "Hits", nCol, nRow);
         //Histo1d *hhh = new Histo1d(name2, injections+1, -0.5, injections+0.5, typeid(this));
         // Ignore first and last bin to dismiss masked or not functioning pixels
         Histo1d *hhh = new Histo1d(name2, injections-1, 0.5, injections-0.5);
@@ -1461,11 +1427,7 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
 
     // Check if Histogram exists
     if (occMaps[ident] == nullptr) {
-        Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
-        hh->setXaxisTitle("Column");
-        hh->setYaxisTitle("Row");
-        hh->setZaxisTitle("Hits");
-        occMaps[ident].reset(hh);
+        occMaps[ident]= createHistoMap(name, "Hits", nCol, nRow);
     }
 
     // Add up Histograms
@@ -1475,7 +1437,7 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
     // Got all data, finish up Analysis
     if (innerCnt[ident] == n_count) {
         double mean = 0;
-        auto fbHisto = std::make_unique<Histo2d>("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
+        auto fbHisto = createHistoMap("feedback", "z", nCol, nRow);
         std::unique_ptr<Histo1d> occDist(new Histo1d(name2, injections-1, 0.5, injections-0.5));
         occDist->setXaxisTitle("Occupancy");
         occDist->setYaxisTitle("Number of Pixels");
@@ -1618,18 +1580,10 @@ void TagAnalysis::processHistogram(HistogramBase *h) {
         tagHistos[ident].reset(h);
         tagDistInnerCnt[ident] = 0;
 
-        Histo2d *hh = new Histo2d(name2, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
-        hh->setXaxisTitle("Column");
-        hh->setYaxisTitle("Row");
-        hh->setZaxisTitle("Tag");
-        tagMaps[ident].reset(hh);
+        tagMaps[ident] = createHistoMap(name2, "Tag", nCol, nRow);
         tagMapInnerCnt[ident] = 0;
 
-        hh = new Histo2d(name3, nCol, 0.5, nCol + 0.5, nRow, 0.5, nRow + 0.5);
-        hh->setXaxisTitle("Column");
-        hh->setYaxisTitle("Row");
-        hh->setZaxisTitle("Hits");
-        occMaps[ident].reset(hh);
+        occMaps[ident] = createHistoMap(name3, "Hits", nCol, nRow);
         occInnerCnt[ident] = 0;
     }
 
@@ -1649,10 +1603,7 @@ void TagAnalysis::processHistogram(HistogramBase *h) {
 
     // Got all data, finish up Analysis
     if (tagDistInnerCnt[ident] == n_count && tagMapInnerCnt[ident] == n_count && occInnerCnt[ident] == n_count) {
-        std::unique_ptr<Histo2d> meanTagMap(new Histo2d("MeanTagMap-"+std::to_string(ident), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
-        meanTagMap->setXaxisTitle("Column");
-        meanTagMap->setYaxisTitle("Row");
-        meanTagMap->setZaxisTitle("Mean Tag");
+        auto meanTagMap = createHistoMap("MeanTagMap-"+std::to_string(ident), "Mean Tag", nCol, nRow);
 
         meanTagMap->add(*tagMaps[ident]);
         meanTagMap->divide(*occMaps[ident]);
@@ -1732,17 +1683,13 @@ void TotDistPlotter::processHistogram(HistogramBase *h) {
 
 void NoiseAnalysis::init(const ScanLoopInfo *s) {
     // We assume the nosie scan only has one trigger and data loop
-    occ = std::make_unique<Histo2d>("Occupancy", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
-    occ->setXaxisTitle("Col");
-    occ->setYaxisTitle("Row");
-    occ->setZaxisTitle("Hits");
+    occ = createHistoMap("Occupancy", "Hits", nCol, nRow);
     tag = std::make_unique<Histo1d>("TagDist", 257, -0.5, 256.5);
     tag->setXaxisTitle("Tag");
     tag->setYaxisTitle("Hits");
-    tot = std::make_unique<Histo2d>("TotMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
-    tot->setXaxisTitle("Col");
-    tot->setYaxisTitle("Row");
-    tot->setZaxisTitle("Averaged ToT");
+
+    tot = createHistoMap("TotMap", "Averaged ToT", nCol, nRow);
+
     totDist = std::make_unique<Histo1d>("TotDist", 16, 0.5, 16.5);
     totDist->setXaxisTitle("ToT [bc]");
     totDist->setYaxisTitle("Hits");
@@ -1784,15 +1731,11 @@ void NoiseAnalysis::loadConfig(const json &j){
 }
 
 void NoiseAnalysis::end() {
-    std::unique_ptr<Histo2d> noiseOcc(new Histo2d("NoiseOccupancy", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
-    noiseOcc->setXaxisTitle("Col");
-    noiseOcc->setYaxisTitle("Row");
-    noiseOcc->setZaxisTitle("Noise Occupancy hits/bc");
+    auto noiseOcc = createHistoMap("NoiseOccupancy", "Noise Occupancy hits/bc", nCol, nRow);
 
-    std::unique_ptr<Histo2d> mask(new Histo2d(doAltMask ? "AltNoiseMask" : "NoiseMask", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
-    mask->setXaxisTitle("Col");
-    mask->setYaxisTitle("Row");
-    mask->setZaxisTitle(doAltMask ? "AltMask" : "Mask");
+    auto mask = createHistoMap(doAltMask ? "AltNoiseMask" : "NoiseMask",
+                              doAltMask ? "AltMask" : "Mask",
+                              nCol, nRow);
 
     noiseOcc->add(&*occ);
     noiseOcc->scale(1.0/(double)n_trigger);
@@ -1885,14 +1828,9 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
         name += "-" + std::to_string(h->getStat().get(loops[n]));
     }
 
-
     if (occMaps[ident] == nullptr) {
-        Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
-        hh->setXaxisTitle("Column");
-        hh->setYaxisTitle("Row");
-        hh->setZaxisTitle("Hits");
         innerCnt[ident] = 0;
-        occMaps[ident].reset(hh);
+        occMaps[ident] = createHistoMap(name, "Hits", nCol, nRow);
     }
 
     //Easy make it pretty
@@ -1918,7 +1856,7 @@ void NoiseTuning::processHistogram(HistogramBase *h) {
         }
 
         if (pixelFb != nullptr) { // Pixel Threshold Tuning
-            auto fbHisto = std::make_unique<Histo2d>("feedback", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
+            auto fbHisto = createHistoMap("feedback", "z", nCol, nRow);
             SPDLOG_LOGGER_TRACE(alog, "");
             unsigned pixelWoHits = 0;
             for (unsigned i=0; i<occMaps[ident]->size(); i++) {
@@ -2025,16 +1963,10 @@ void DelayAnalysis::processHistogram(HistogramBase *h) {
                     // Got all data, finish up Analysis
                     if (delay == delayMax) { // TODO hardcoded
                         if (delayMap == nullptr) {
-                            delayMap = std::make_unique<Histo2d>("DelayMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
-                            delayMap->setXaxisTitle("Col");
-                            delayMap->setYaxisTitle("Row");
-                            delayMap->setZaxisTitle("Mean Delay");
+                            delayMap = createHistoMap("DelayMap", "Mean Delay", nCol, nRow);
                         }
                         if (rmsMap == nullptr) {
-                            rmsMap = std::make_unique<Histo2d>("RmsMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
-                            rmsMap->setXaxisTitle("Col");
-                            rmsMap->setYaxisTitle("Row");
-                            rmsMap->setZaxisTitle("RMS");
+                            rmsMap = createHistoMap("RmsMap", "RMS", nCol, nRow);
                         }
                         if (histos[ident]->getMean() > 0 && histos[ident]->getMean() < 256) {
                             delayMap->setBin(ident, histos[ident]->getMean());
