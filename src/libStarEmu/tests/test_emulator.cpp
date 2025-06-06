@@ -285,13 +285,20 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
   }
 
   SECTION("Read ABCStar interposed") {
+    // Set register 34 (CREG2) to 0x00000190
+    uint8_t test_address = 0x22;
+    uint32_t test_value = 0x00000190;
+    if(asic_version == 1) {
+      // No CREG2 in ABCStarv1
+      test_address = 0x21;
+    }
+    CAPTURE((int)test_address);
     // Write an ABCStar register first
     // (So its value is known here and does not depend on the default/reset)
-    // Set register 34 (CREG2) to 0x00000190
-    std::array<LCB::Frame, 9> writeABCCmd_reg = star.write_abc_register(34, 0x00000190);
+    std::array<LCB::Frame, 9> writeABCCmd_reg = star.write_abc_register(test_address, test_value);
     sendCommand(*emu, writeABCCmd_reg);
     // Read this register
-    std::array<LCB::Frame, 9> readABCCmd =  star.read_abc_register(34); // 0x22
+    std::array<LCB::Frame, 9> readABCCmd =  star.read_abc_register(test_address);
     emu->writeFifo((readABCCmd[0] << 16) + readABCCmd[1]);
     // The read command is interupted by an L0A
     emu->writeFifo((LCB::l0a_mask(1, 0, false) << 16) + readABCCmd[2]);
@@ -303,8 +310,7 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     // 4-bit BCID in the packet: 0b1111
     std::vector<uint16_t> raw_cluster_data{0x3fe};
     expected[1].push_back(buildPhysicsPacket(raw_cluster_data, PacketTypes::LP, 0x03, 0x1f));
-    // ABCStar register 34 (CREG2): 0x00000190
-    expected[1].push_back(buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x22, 0x00000190, 0xf000));
+    expected[1].push_back(buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, test_address, test_value, 0xf000));
   }
 
   SECTION("Mask Registers") {
@@ -473,8 +479,14 @@ TEST_CASE("StarEmulatorBytes", "[star][emulator]") {
     sendCommand(*emu, writeABCCmd_mask);
 
     // Configure trigger latency to be 3 BC
-    std::array<LCB::Frame, 9> writeABCCmd_lat = star.write_abc_register(34, 0x00000003);
-    sendCommand(*emu, writeABCCmd_lat);
+    if(asic_version == 0) {
+      std::array<LCB::Frame, 9> writeABCCmd_lat = star.write_abc_register(34, 0x00000003);
+      sendCommand(*emu, writeABCCmd_lat);
+    } else {
+      // On v1 it's the same reg as the others
+      ena_abc.setSubRegisterValue(ABCStarSubRegister::LATENCY, 3);
+      setEnables(*emu, star, ena_abc);
+    }
 
     // Send a digital pulse command, followed by an L0A three BC later
     emu->writeFifo((LCB::IDLE << 16) + LCB::IDLE);
