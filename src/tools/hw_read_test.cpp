@@ -124,6 +124,7 @@ int main(int argc, char* argv[]) {
         logger->info("Received signal {}, stopping...", signum);
     });
 
+    rxCore.initRxChannels(c.read_channels);
     rxCore.setRxEnable(c.read_channels);
 
     using clk = std::chrono::steady_clock;
