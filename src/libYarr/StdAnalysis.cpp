@@ -86,6 +86,22 @@ namespace {
         StdDict::registerAnalysis("TriggerThrottleAnalysis",
                 []() { return std::unique_ptr<AnalysisAlgorithm>(new TriggerThrottleAnalysis());});
 
+/// Create general 2D histogram
+std::unique_ptr<Histo2d> createHisto2d(const std::string &name,
+     const std::string &xname, size_t xcount, double xlow, double xhigh,
+     const std::string &yname, size_t ycount, double ylow, double yhigh,
+     const std::string &zname)
+{
+    auto histo = std::make_unique<Histo2d>
+            (name,
+             xcount, xlow, xhigh,
+             ycount, ylow, yhigh);
+    histo->setXaxisTitle(xname);
+    histo->setYaxisTitle(yname);
+    histo->setZaxisTitle(zname);
+    return histo;
+}
+
 /// Create 2D histogram matching FrontEnd geometry
 std::unique_ptr<Histo2d> createHistoMap(const std::string &name, const std::string &zAxis, unsigned nCol, unsigned nRow) {
     auto histo = std::make_unique<Histo2d>(name, nCol, 0.5, nCol + 0.5, nRow, 0.5, nRow + 0.5);
@@ -372,11 +388,11 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         double chargeMax = feCfg->toCharge(vcalMax, useScap, useLcap);
         double chargeStep = feCfg->toCharge(vcalStep, useScap, useLcap);
 
-        Histo2d *hh = new Histo2d("ChargeVsTotMap", vcalBins+1, chargeMin-chargeStep/2, chargeMax+chargeStep/2, tot_bins_n * 10, tot_bins_x_lo + 0.5, tot_bins_x_hi + 0.5);
-        hh->setXaxisTitle("Injected Charge [e]");
-        hh->setYaxisTitle("ToT");
-        hh->setZaxisTitle("Pixels");
-        chargeVsTotMap.reset(hh);
+        auto hh = createHisto2d("ChargeVsTotMap",
+                                "Injected Charge [e]", vcalBins+1, chargeMin-chargeStep/2, chargeMax+chargeStep/2,
+                                "ToT", tot_bins_n * 10, tot_bins_x_lo + 0.5, tot_bins_x_hi + 0.5,
+                                "Pixels");
+        chargeVsTotMap = std::move(hh);
     }
 
     if (pixelTotMap == nullptr && hasVcalLoop) {
@@ -384,11 +400,11 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         double chargeMaxp = feCfg->toCharge(vcalMax, useScap, useLcap);
         double chargeStepp = feCfg->toCharge(vcalStep, useScap, useLcap);
 
-        Histo2d *pp2 = new Histo2d("PixelTotMap", nCol*nRow, 0, nCol*nRow, vcalBins+1, chargeMinp-chargeStepp/2, chargeMaxp+chargeStepp/2);
-        pp2->setXaxisTitle("Pixels");
-        pp2->setYaxisTitle("Injected Charge [e]");
-        pp2->setZaxisTitle("avg ToT");
-        pixelTotMap.reset(pp2);
+        auto pp2 = createHisto2d("PixelTotMap",
+                                 "Pixels", nCol*nRow, 0, nCol*nRow,
+                                 "Injected Charge [e]", vcalBins+1, chargeMinp-chargeStepp/2, chargeMaxp+chargeStepp/2,
+                                 "avg ToT");
+        pixelTotMap = std::move(pp2);
     }
 
     // Gather Histogram
@@ -532,8 +548,8 @@ void TotAnalysis::end() {
 
         int Nmessage = 0;  //boolean to be used for a message to user; in presence of middle holes, user may wish to use finer injQ steps.
 
-        std::unique_ptr<Histo2d> measQOut ( new Histo2d("measQOut", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5) );
-        std::unique_ptr<Histo2d> measQRMSOut ( new Histo2d("measQRMSOut", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5) );
+        auto measQOut = createHisto2d("measQOut", "x", nRow*nCol, 0, nRow*nCol, "y", 15, 0.5, 15.5, "z");
+        auto measQRMSOut = createHisto2d("measQRMSOut", "x", nRow*nCol, 0, nRow*nCol, "y", 15, 0.5, 15.5, "z");
         for (unsigned n=0; n<nCol*nRow; n++) {
             if (feCfg->getPixelEn((n/nRow), (n%nRow)) == 0) { //if pixel isn't masked
                 // int anyzero = 0;
@@ -2072,18 +2088,18 @@ void ParameterAnalysis::processHistogram(HistogramBase *h) {
 
                 // Check if Histogram exists
                 if (paramMaps[outerIdent] == nullptr) {
-                    Histo2d *hhh = new Histo2d(paramName+postfix, paramBins+1, paramMin-((double)paramStep/2.0), paramMax+((double)paramStep/2.0), injections-1, 0.5, injections-0.5);
-                    hhh->setXaxisTitle(paramName);
-                    hhh->setYaxisTitle("Occupancy");
-                    hhh->setZaxisTitle("Number of pixels");
-                    paramMaps[outerIdent].reset(hhh);
+                    auto hhh = createHisto2d(paramName,
+                         paramName, paramBins+1, paramMin-((double)paramStep/2.0), paramMax+((double)paramStep/2.0),
+                         "Occupancy", injections-1, 0.5, injections-0.5,
+                         "Number of pixels");
+                    paramMaps[outerIdent] = std::move(hhh);
                 }
                 if (paramCurves[outerIdent] == nullptr) {
-                    Histo2d *hhh = new Histo2d(paramName + "_Map"+postfix, nCol*nRow, -0.5, nCol*nRow-0.5, paramBins+1, paramMin-((double)paramStep/2.0), paramMax+((double)paramStep/2.0));
-                    hhh->setXaxisTitle("Channel Number");
-                    hhh->setYaxisTitle(paramName);
-                    hhh->setZaxisTitle("Number of Hits");
-                    paramCurves[outerIdent].reset(hhh);
+                    auto hhh = createHisto2d(paramName + "_Map",
+                         "Channel Number", nCol*nRow, -0.5, nCol*nRow-0.5,
+                         paramName, paramBins+1, paramMin-((double)paramStep/2.0), paramMax+((double)paramStep/2.0),
+                         "Number of Hits");
+                    paramCurves[outerIdent] = std::move(hhh);
                 }
 
                 // Add up Histograms
