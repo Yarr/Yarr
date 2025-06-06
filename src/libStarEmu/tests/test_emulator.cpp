@@ -1214,6 +1214,34 @@ TEST_CASE("StarEmulatorVersions", "[star][emulator]") {
   checkData(emu.get(), expected);
 }
 
+// Capture packet info
+template<typename PacketT>
+std::string print_packet(const PacketT &c) {
+  std::stringstream ss;
+  ss << "Packet " << c;
+  return ss.str();
+}
+
+template<>
+std::string print_packet(const std::pair<uint32_t, std::vector<uint8_t>> &c) {
+  std::stringstream ss;
+  ss << "Packet " << c.first << ":";
+  for(auto &e: c.second) {
+    ss << " " << Utils::hexify(e);
+  }
+  return ss.str();
+}
+
+template<>
+std::string print_packet(const std::vector<uint8_t> &c) {
+  std::stringstream ss;
+  ss << "Packet ";
+  for(auto &e: c) {
+    ss << " " << Utils::hexify(e);
+  }
+  return ss.str();
+}
+
 template<typename PacketT>
 void checkData(HwController* emu, std::map<uint32_t, std::deque<PacketT>>& expected, const PacketT *const mask_pattern)
 {
@@ -1255,6 +1283,13 @@ void checkData(HwController* emu, std::map<uint32_t, std::deque<PacketT>>& expec
     CAPTURE(channel);
     CAPTURE(expected_packets.size());
     CAPTURE(expected_packets);
+
+    std::vector<std::string> exp_data;
+    for(auto &p: expected_packets) {
+      exp_data.push_back(print_packet(p));
+    }
+    CAPTURE (exp_data);
+
     CHECK(expected_packets.empty());
   }
 }
