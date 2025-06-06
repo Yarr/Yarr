@@ -143,19 +143,19 @@ std::unique_ptr<Histo3d> createHisto3d(const std::string &name,
     return histo;
 }
 
-/// Create general 3D histogram (float)
-std::unique_ptr<Histo3dT<float>> createHisto3dFloat(const std::string &name,
-     const std::string &xname, size_t xcount, double xlow, double xhigh,
-     const std::string &yname, size_t ycount, double ylow, double yhigh,
+/// Create 3D histogram (float) matching frontend geometry
+std::unique_ptr<Histo3dT<float>> createHistoMap3d(const std::string &name,
+     size_t nCol, size_t nRow,
      const std::string &zname, size_t zcount, double zlow, double zhigh)
 {
+    // NB these are base 0 axes
     auto histo = std::make_unique<Histo3dT<float>>
             (name,
-             xcount, xlow, xhigh,
-             ycount, ylow, yhigh,
+             nCol, -0.5, nCol-0.5,
+             nRow, -0.5, nRow-0.5,
              zcount, zlow, zhigh);
-    histo->setXaxisTitle(xname);
-    histo->setYaxisTitle(yname);
+    histo->setXaxisTitle("Column");
+    histo->setYaxisTitle("Row");
     histo->setZaxisTitle(zname);
     return histo;
 }
@@ -1181,25 +1181,20 @@ void NPointGain::fitResponseCurve(const std::vector<double>& thresholds, std::ve
 void NPointGain::writeOutputHistograms() {
     auto injectionHisto = createHisto1d("InjectionValues",
         "x", m_injections.size(), -0.5, m_injections.size()-0.5, "y");
-    auto fitParamsHisto = createHisto3dFloat("ResponseFitParams",
-                            "x", nCol, -0.5, nCol-0.5,
-                            "y", nRow, -0.5, nRow-0.5,
+    auto fitParamsHisto = createHistoMap3d("ResponseFitParams",
+                            nCol, nRow,
                             "z", m_respFuncNParams, -0.5, m_respFuncNParams-0.5);
-    auto thresholdHisto = createHisto3dFloat("Thresholds",
-                            "x", nCol, -0.5, nCol-0.5,
-                            "y", nRow, -0.5, nRow-0.5,
+    auto thresholdHisto = createHistoMap3d("Thresholds",
+                            nCol, nRow,
                             "z", m_injections.size(), -0.5, m_injections.size()-0.5);
-    auto outputNoiseHisto = createHisto3dFloat("OutputNoise",
-                            "x", nCol, -0.5, nCol-0.5,
-                            "y", nRow, -0.5, nRow-0.5,
+    auto outputNoiseHisto = createHistoMap3d("OutputNoise",
+                            nCol, nRow,
                             "z", m_injections.size(), -0.5, m_injections.size()-0.5);
-    auto gainCurveHisto = createHisto3dFloat("GainCurve",
-                            "x", nCol, -0.5, nCol-0.5,
-                            "y", nRow, -0.5, nRow-0.5,
+    auto gainCurveHisto = createHistoMap3d("GainCurve",
+                            nCol, nRow,
                             "z", m_injections.size(), -0.5, m_injections.size()-0.5);
-    auto inputNoiseHisto = createHisto3dFloat("InputNoise",
-                            "x", nCol, -0.5, nCol-0.5,
-                            "y", nRow, -0.5, nRow-0.5,
+    auto inputNoiseHisto = createHistoMap3d("InputNoise",
+                            nCol, nRow,
                             "z", m_injections.size(), -0.5, m_injections.size()-0.5);
 
     for (unsigned injIdx = 0; injIdx < m_injections.size(); injIdx++) {
