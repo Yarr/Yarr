@@ -126,13 +126,30 @@ std::unique_ptr<Histo2d> createHisto2d(const std::string &name,
     return histo;
 }
 
-/// Create general 3D histogram
+/// Create general 3D histogram (16-bit)
 std::unique_ptr<Histo3d> createHisto3d(const std::string &name,
      const std::string &xname, size_t xcount, double xlow, double xhigh,
      const std::string &yname, size_t ycount, double ylow, double yhigh,
      const std::string &zname, size_t zcount, double zlow, double zhigh)
 {
     auto histo = std::make_unique<Histo3d>
+            (name,
+             xcount, xlow, xhigh,
+             ycount, ylow, yhigh,
+             zcount, zlow, zhigh);
+    histo->setXaxisTitle(xname);
+    histo->setYaxisTitle(yname);
+    histo->setZaxisTitle(zname);
+    return histo;
+}
+
+/// Create general 3D histogram (float)
+std::unique_ptr<Histo3dT<float>> createHisto3dFloat(const std::string &name,
+     const std::string &xname, size_t xcount, double xlow, double xhigh,
+     const std::string &yname, size_t ycount, double ylow, double yhigh,
+     const std::string &zname, size_t zcount, double zlow, double zhigh)
+{
+    auto histo = std::make_unique<Histo3dT<float>>
             (name,
              xcount, xlow, xhigh,
              ycount, ylow, yhigh,
@@ -1164,21 +1181,26 @@ void NPointGain::fitResponseCurve(const std::vector<double>& thresholds, std::ve
 void NPointGain::writeOutputHistograms() {
     auto injectionHisto = createHisto1d("InjectionValues",
         "x", m_injections.size(), -0.5, m_injections.size()-0.5, "y");
-    auto fitParamsHisto = std::make_unique<Histo3dT<float>>("ResponseFitParams",
-        nCol, -0.5, nCol-0.5, nRow, -0.5, nRow-0.5,
-        m_respFuncNParams, -0.5, m_respFuncNParams-0.5);
-    auto thresholdHisto = std::make_unique<Histo3dT<float>>("Thresholds",
-        nCol, -0.5, nCol-0.5, nRow, -0.5, nRow-0.5,
-        m_injections.size(), -0.5, m_injections.size()-0.5);
-    auto outputNoiseHisto = std::make_unique<Histo3dT<float>>("OutputNoise",
-        nCol, -0.5, nCol-0.5, nRow, -0.5, nRow-0.5,
-        m_injections.size(), -0.5, m_injections.size()-0.5);
-    auto gainCurveHisto = std::make_unique<Histo3dT<float>>("GainCurve",
-        nCol, -0.5, nCol-0.5, nRow, -0.5, nRow-0.5,
-        m_injections.size(), -0.5, m_injections.size()-0.5);
-    auto inputNoiseHisto = std::make_unique<Histo3dT<float>>("InputNoise",
-        nCol, -0.5, nCol-0.5, nRow, -0.5, nRow-0.5,
-        m_injections.size(), -0.5, m_injections.size()-0.5);
+    auto fitParamsHisto = createHisto3dFloat("ResponseFitParams",
+                            "x", nCol, -0.5, nCol-0.5,
+                            "y", nRow, -0.5, nRow-0.5,
+                            "z", m_respFuncNParams, -0.5, m_respFuncNParams-0.5);
+    auto thresholdHisto = createHisto3dFloat("Thresholds",
+                            "x", nCol, -0.5, nCol-0.5,
+                            "y", nRow, -0.5, nRow-0.5,
+                            "z", m_injections.size(), -0.5, m_injections.size()-0.5);
+    auto outputNoiseHisto = createHisto3dFloat("OutputNoise",
+                            "x", nCol, -0.5, nCol-0.5,
+                            "y", nRow, -0.5, nRow-0.5,
+                            "z", m_injections.size(), -0.5, m_injections.size()-0.5);
+    auto gainCurveHisto = createHisto3dFloat("GainCurve",
+                            "x", nCol, -0.5, nCol-0.5,
+                            "y", nRow, -0.5, nRow-0.5,
+                            "z", m_injections.size(), -0.5, m_injections.size()-0.5);
+    auto inputNoiseHisto = createHisto3dFloat("InputNoise",
+                            "x", nCol, -0.5, nCol-0.5,
+                            "y", nRow, -0.5, nRow-0.5,
+                            "z", m_injections.size(), -0.5, m_injections.size()-0.5);
 
     for (unsigned injIdx = 0; injIdx < m_injections.size(); injIdx++) {
         double inj = m_injections[injIdx];
