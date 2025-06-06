@@ -114,6 +114,23 @@ std::unique_ptr<Histo2d> createHisto2d(const std::string &name,
     return histo;
 }
 
+/// Create general 3D histogram
+std::unique_ptr<Histo3d> createHisto3d(const std::string &name,
+     const std::string &xname, size_t xcount, double xlow, double xhigh,
+     const std::string &yname, size_t ycount, double ylow, double yhigh,
+     const std::string &zname, size_t zcount, double zlow, double zhigh)
+{
+    auto histo = std::make_unique<Histo3d>
+            (name,
+             xcount, xlow, xhigh,
+             ycount, ylow, yhigh,
+             zcount, zlow, zhigh);
+    histo->setXaxisTitle(xname);
+    histo->setYaxisTitle(yname);
+    histo->setZaxisTitle(zname);
+    return histo;
+}
+
 /// Create 2D histogram matching FrontEnd geometry
 std::unique_ptr<Histo2d> createHistoMap(const std::string &name, const std::string &zAxis, unsigned nCol, unsigned nRow) {
     auto histo = std::make_unique<Histo2d>(name, nCol, 0.5, nCol + 0.5, nRow, 0.5, nRow + 0.5);
@@ -557,7 +574,7 @@ void TotAnalysis::end() {
         }
 
         //extracting ToT-to-charge data now
-        std::unique_ptr<Histo3d> measQtemp ( new Histo3d("measQtemp", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5, vcalBins+1,  injQMin-injQStep/2.0, injQMax+injQStep/2.0) );
+        auto measQtemp = createHisto3d("measQtemp", "x", nRow*nCol, 0, nRow*nCol, "y", 15, 0.5, 15.5, "z", vcalBins+1,  injQMin-injQStep/2.0, injQMax+injQStep/2.0);
 
         int Nmessage = 0;  //boolean to be used for a message to user; in presence of middle holes, user may wish to use finer injQ steps.
 
