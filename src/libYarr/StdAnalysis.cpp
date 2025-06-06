@@ -86,6 +86,18 @@ namespace {
         StdDict::registerAnalysis("TriggerThrottleAnalysis",
                 []() { return std::unique_ptr<AnalysisAlgorithm>(new TriggerThrottleAnalysis());});
 
+/// Create general 1D histogram
+std::unique_ptr<Histo1d> createHisto1d(const std::string &name,
+     const std::string &xname, size_t xcount, double xlow, double xhigh,
+     const std::string &yname)
+{
+    auto histo = std::make_unique<Histo1d>
+            (name, xcount, xlow, xhigh);
+    histo->setXaxisTitle(xname);
+    histo->setYaxisTitle(yname);
+    return histo;
+}
+
 /// Create general 2D histogram
 std::unique_ptr<Histo2d> createHisto2d(const std::string &name,
      const std::string &xname, size_t xcount, double xlow, double xhigh,
@@ -430,13 +442,14 @@ void TotAnalysis::processHistogram(HistogramBase *h) {
         std::unique_ptr<Histo2d> sumTot2Map = createHistoMap("MeanTot2Map-"+std::to_string(ident), "Mean ToT^2 ["+tot_unit+"^2]", nCol, nRow);
         std::unique_ptr<Histo2d> sigmaTotMap = createHistoMap("SigmaTotMap-"+std::to_string(ident), "Sigma ToT ["+tot_unit+"]", nCol, nRow);
 
-        std::unique_ptr<Histo1d> meanTotDist(new Histo1d("MeanTotDist-"+std::to_string(ident), tot_bins_n, tot_bins_x_lo + 0.5, tot_bins_x_hi + 0.5));
-        meanTotDist->setXaxisTitle("Mean ToT ["+tot_unit+"]");
-        meanTotDist->setYaxisTitle("Number of Pixels");
-        std::unique_ptr<Histo1d> sigmaTotDist(new Histo1d("SigmaTotDist-"+std::to_string(ident), tot_sigma_bins_n, tot_sigma_bins_x_lo, tot_sigma_bins_x_hi));
-        sigmaTotDist->setXaxisTitle("Sigma ToT ["+tot_unit+"]");
-        sigmaTotDist->setYaxisTitle("Number of Pixels");
-        std::unique_ptr<Histo1d> tempMeanTotDist(new Histo1d("MeanTotDistFine-"+std::to_string(ident), tot_bins_n*10, tot_bins_x_lo + 0.05, tot_bins_x_hi + 0.05));
+        auto meanTotDist = createHisto1d("MeanTotDist-"+std::to_string(ident),
+                        "Mean ToT ["+tot_unit+"]", tot_bins_n, tot_bins_x_lo + 0.5, tot_bins_x_hi + 0.5,
+                        "Number of Pixels");
+        auto sigmaTotDist = createHisto1d("SigmaTotDist-"+std::to_string(ident),
+                        "Sigma ToT ["+tot_unit+"]", tot_sigma_bins_n, tot_sigma_bins_x_lo, tot_sigma_bins_x_hi,
+                        "Number of Pixels");
+        auto tempMeanTotDist = createHisto1d("MeanTotDistFine-"+std::to_string(ident),
+                         "x", tot_bins_n*10, tot_bins_x_lo + 0.05, tot_bins_x_hi + 0.05, "y");
 
         meanTotMap->add(*totMaps[ident]);
         meanTotMap->divide(*occMaps[ident]);
@@ -525,9 +538,9 @@ void TotAnalysis::end() {
         double injQMin = feCfg->toCharge(vcalMin, useScap, useLcap);
         double injQMax = feCfg->toCharge(vcalMax, useScap, useLcap);
         double injQStep = feCfg->toCharge(vcalStep, useScap, useLcap);
-        std::unique_ptr<Histo1d> avgTotVsCharge( new Histo1d("avgTotVsCharge", vcalBins+1, injQMin-injQStep/2.0, injQMax+injQStep/2.0));
-        avgTotVsCharge->setXaxisTitle("Injected Charge [e]");
-        avgTotVsCharge->setYaxisTitle("avg ToT");
+        auto avgTotVsCharge = createHisto1d("avgTotVsCharge",
+                                            "Injected Charge [e]", vcalBins+1, injQMin-injQStep/2.0, injQMax+injQStep/2.0,
+                                            "avg ToT");
 
         for (unsigned k=0; k<avgTotVsCharge->size(); k++) {
             double injQ = feCfg->toCharge(vcalMin+k*vcalStep, useScap, useLcap);
@@ -1325,10 +1338,8 @@ void OccGlobalThresholdTune::processHistogram(HistogramBase *h) {
         occMaps[ident] = createHistoMap(name, "Hits", nCol, nRow);
         //Histo1d *hhh = new Histo1d(name2, injections+1, -0.5, injections+0.5, typeid(this));
         // Ignore first and last bin to dismiss masked or not functioning pixels
-        Histo1d *hhh = new Histo1d(name2, injections-1, 0.5, injections-0.5);
-        hhh->setXaxisTitle("Occupancy");
-        hhh->setYaxisTitle("Number of Pixels");
-        occDists[ident].reset(hhh);
+        auto hhh = createHisto1d(name2, "Occupancy", injections-1, 0.5, injections-0.5, "Number of Pixels");
+        occDists[ident] = std::move(hhh);
         innerCnt[ident] = 0;
     }
 
@@ -1454,9 +1465,7 @@ void OccPixelThresholdTune::processHistogram(HistogramBase *h) {
     if (innerCnt[ident] == n_count) {
         double mean = 0;
         auto fbHisto = createHistoMap("feedback", "z", nCol, nRow);
-        std::unique_ptr<Histo1d> occDist(new Histo1d(name2, injections-1, 0.5, injections-0.5));
-        occDist->setXaxisTitle("Occupancy");
-        occDist->setYaxisTitle("Number of Pixels");
+        auto occDist = createHisto1d(name2, "Occupancy", injections-1, 0.5, injections-0.5, "Number of Pixels");
         for (unsigned i=0; i<fbHisto->size(); i++) {
             double occ = occMaps[ident]->getBin(i);
             if ((occ/(double)injections) > m_occHighCut.at(m_cutIndex)) {
@@ -1528,10 +1537,7 @@ void L1Analysis::processHistogram(HistogramBase *h) {
 
     // Check if Histogram exists
     if (l1Histos[ident] == nullptr) {
-        Histo1d *hh = new Histo1d(name, 16, -0.5, 15.5);
-        hh->setXaxisTitle("L1Id");
-        hh->setYaxisTitle("Hits");
-        l1Histos[ident].reset(hh);
+        l1Histos[ident] = createHisto1d(name, "L1Id", 16, -0.5, 15.5, "Hits");
         innerCnt[ident] = 0;
     }
 
@@ -1590,10 +1596,7 @@ void TagAnalysis::processHistogram(HistogramBase *h) {
 
     // Check if Histogram exists
     if (tagHistos[ident] == nullptr) {
-        Histo1d *h = new Histo1d(name, 257, -0.5, 256.5);
-        h->setXaxisTitle("Tag");
-        h->setYaxisTitle("Hits");
-        tagHistos[ident].reset(h);
+        tagHistos[ident] = createHisto1d(name, "Tag", 257, -0.5, 256.5, "Hits");
         tagDistInnerCnt[ident] = 0;
 
         tagMaps[ident] = createHistoMap(name2, "Tag", nCol, nRow);
@@ -1680,10 +1683,7 @@ void TotDistPlotter::processHistogram(HistogramBase *h) {
 
     // Check if Histogram exists
     if (tot[ident] == nullptr) {
-        Histo1d *hh = new Histo1d(name, 16, 0.5, 16.5);
-        hh->setXaxisTitle("ToT [bc]");
-        hh->setYaxisTitle("Hits");
-        tot[ident].reset(hh);
+        tot[ident] = createHisto1d(name, "ToT [bc]", 16, 0.5, 16.5, "Hits");
         innerCnt[ident] = 0;
     }
 
@@ -1700,15 +1700,12 @@ void TotDistPlotter::processHistogram(HistogramBase *h) {
 void NoiseAnalysis::init(const ScanLoopInfo *s) {
     // We assume the nosie scan only has one trigger and data loop
     occ = createHistoMap("Occupancy", "Hits", nCol, nRow);
-    tag = std::make_unique<Histo1d>("TagDist", 257, -0.5, 256.5);
-    tag->setXaxisTitle("Tag");
-    tag->setYaxisTitle("Hits");
+
+    tag = createHisto1d("TagDist", "Tag", 257, -0.5, 256.5, "Hits");
 
     tot = createHistoMap("TotMap", "Averaged ToT", nCol, nRow);
 
-    totDist = std::make_unique<Histo1d>("TotDist", 16, 0.5, 16.5);
-    totDist->setXaxisTitle("ToT [bc]");
-    totDist->setYaxisTitle("Hits");
+    totDist = createHisto1d("TotDist", "ToT [bc]", 16, 0.5, 16.5, "Hits");
     n_trigger = 0;
 }
 
@@ -1964,10 +1961,8 @@ void DelayAnalysis::processHistogram(HistogramBase *h) {
 
                     // Check if Histogram exists
                     if (histos[ident] == nullptr) {
-                        Histo1d *hhh = new Histo1d(name, 256, -0.5, 255.5); // TODO hardcoded
-                        hhh->setXaxisTitle("Delay");
-                        hhh->setYaxisTitle("Occupancy");
-                        histos[ident].reset(hhh);
+                        // TODO hardcoded
+                        histos[ident] = createHisto1d(name, "Delay", 256, -0.5, 255.5, "Occupancy");
                         innerCnt[ident] = 0;
                         count++;
                     }
