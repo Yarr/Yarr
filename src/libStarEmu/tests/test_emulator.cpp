@@ -42,6 +42,14 @@ void setEnables(HwController &emu, StarCmd &star, const AbcCfg &abc) {
   sendCommand(emu, star.write_abc_register(addr, val));
 }
 
+void setEnablesChannel(EmuTxCore<StarChips> &hw, uint32_t channel, StarCmd &star, const AbcCfg &abc) {
+  // All in the same register
+  auto addr = abc.getSubRegisterParentAddr(ABCStarSubRegister::LP_ENABLE);
+  auto val = abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
+
+  sendCommand(hw, channel, star.write_abc_register(addr, val));
+}
+
 template<typename PacketT>
 void compareOutputs(RawData* data, const PacketT& expected_packet);
 
@@ -1031,8 +1039,9 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
 
   // tx (channel 0)
   // MaskHPR = 1, LP_Enable = 1, PR_Enable = 1, RRMode = 1
-  auto writeABCCmd_MaskHPR = star.write_abc_register(32, 0x00000740);
-  sendCommand(*staremu, 0, writeABCCmd_MaskHPR);
+  auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
+  REQUIRE (val == 0x00000740);
+  setEnablesChannel(*staremu, 0, star, ena_abc);
   // tx2 (channel 2)
   sendCommand(*staremu, 2, IdleCmd);
 
@@ -1083,7 +1092,11 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
   SECTION("LPEnable=1 PREnable=1") {
     // Switch to test pulse mode: TM = 2, TestPulseEnable = 1
     // MaskHPR = 1, LP_Enable = 1, PR_Enable = 1, RRMode = 1
-    sendCommand(*staremu, 0, star.write_abc_register(32, 0x00020750));
+    ena_abc.setSubRegisterValue(ABCStarSubRegister::TM, 2);
+    ena_abc.setSubRegisterValue(ABCStarSubRegister::TEST_PULSE_ENABLE, 1);
+    auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
+    REQUIRE (val == 0x00020750);
+    setEnablesChannel(*staremu, 0, star, ena_abc);
     sendCommand(*staremu, 2, IdleCmd);
 
     // Expected packets from the test sequence below
@@ -1100,7 +1113,12 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
   SECTION("LPEnable=0 PREnable=1") {
     // Switch to test pulse mode: TM = 2, TestPulseEnable = 1
     // MaskHPR = 1, LP_Enable = 0, PR_Enable = 1, RRMode = 1
-    sendCommand(*staremu, 0, star.write_abc_register(32, 0x00020550));
+    ena_abc.setSubRegisterValue(ABCStarSubRegister::LP_ENABLE, 0);
+    ena_abc.setSubRegisterValue(ABCStarSubRegister::TM, 2);
+    ena_abc.setSubRegisterValue(ABCStarSubRegister::TEST_PULSE_ENABLE, 1);
+    auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
+    REQUIRE (val == 0x00020550);
+    setEnablesChannel(*staremu, 0, star, ena_abc);
     sendCommand(*staremu, 2, IdleCmd);
 
     // Expected packets from the test sequence below
@@ -1116,7 +1134,13 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
   SECTION("LPEnable=1 PREnable=0") {
     // Switch to test pulse mode: TM = 2, TestPulseEnable = 1
     // MaskHPR = 1, LP_Enable = 1, PR_Enable = 0, RRMode = 1
-    sendCommand(*staremu, 0, star.write_abc_register(32, 0x00020650));
+    ena_abc.setSubRegisterValue(ABCStarSubRegister::PR_ENABLE, 0);
+    ena_abc.setSubRegisterValue(ABCStarSubRegister::TM, 2);
+    ena_abc.setSubRegisterValue(ABCStarSubRegister::TEST_PULSE_ENABLE, 1);
+    auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
+    REQUIRE (val == 0x00020650);
+    setEnablesChannel(*staremu, 0, star, ena_abc);
+
     sendCommand(*staremu, 2, IdleCmd);
 
     // No PR packets since PR_ENABLE is 0
@@ -1128,7 +1152,13 @@ TEST_CASE("StarEmulatorR3L1", "[star][emulator]") {
   SECTION("LPEnable=0 PREnable=0") {
     // Switch to test pulse mode: TM = 2, TestPulseEnable = 1
     // MaskHPR = 1, LP_Enable = 0, PR_Enable = 0, RRMode = 1
-    sendCommand(*staremu, 0, star.write_abc_register(32, 0x00020450));
+    ena_abc.setSubRegisterValue(ABCStarSubRegister::LP_ENABLE, 0);
+    ena_abc.setSubRegisterValue(ABCStarSubRegister::PR_ENABLE, 0);
+    ena_abc.setSubRegisterValue(ABCStarSubRegister::TM, 2);
+    ena_abc.setSubRegisterValue(ABCStarSubRegister::TEST_PULSE_ENABLE, 1);
+    auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
+    REQUIRE (val == 0x00020450);
+    setEnablesChannel(*staremu, 0, star, ena_abc);
     sendCommand(*staremu, 2, IdleCmd);
 
     // Expect no PR packets nor LP packets
