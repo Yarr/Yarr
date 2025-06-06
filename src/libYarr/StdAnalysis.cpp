@@ -98,6 +98,18 @@ std::unique_ptr<Histo1d> createHisto1d(const std::string &name,
     return histo;
 }
 
+/// Create general 1D histogram with LoopStatus
+std::unique_ptr<Histo1d> createHisto1d(const std::string &name,
+     const std::string &xname, size_t xcount, double xlow, double xhigh,
+     const std::string &yname, const LoopStatus &stat)
+{
+    auto histo = std::make_unique<Histo1d>
+            (name, xcount, xlow, xhigh, stat);
+    histo->setXaxisTitle(xname);
+    histo->setYaxisTitle(yname);
+    return histo;
+}
+
 /// Create general 2D histogram
 std::unique_ptr<Histo2d> createHisto2d(const std::string &name,
      const std::string &xname, size_t xcount, double xlow, double xhigh,
@@ -774,23 +786,17 @@ void ScurveFitter::createFitResultHistograms(const unsigned long& outerIdent, co
                              "Threshold [e]", nCol, nRow, loopStatus);
     sigMap[outerIdent] = createHistoMap("NoiseMap-"+std::to_string(outerIdent), "Noise [e]", nCol, nRow, loopStatus);
 
-    auto hh1 = std::make_unique<Histo1d>("Chi2Dist-"+std::to_string(outerIdent), 51, chi2Min-0.025, chi2Max+0.025, loopStatus);
-    hh1->setXaxisTitle("Fit Chi/ndf");
-    hh1->setYaxisTitle("Number of Pixels");
+    auto hh1 = createHisto1d("Chi2Dist-"+std::to_string(outerIdent), "Fit Chi/ndf", 51, chi2Min-0.025, chi2Max+0.025, "Number of Pixels", loopStatus);
     chiDist[outerIdent] = std::move(hh1);
 
     chi2Map[outerIdent] = createHistoMap("Chi2Map-"+std::to_string(outerIdent), "Chi2", nCol, nRow, loopStatus);
 
     statusMap[outerIdent] = createHistoMap("StatusMap-"+std::to_string(outerIdent), "Fit Status", nCol, nRow, loopStatus);
 
-    hh1 = std::make_unique<Histo1d>("StatusDist-"+std::to_string(outerIdent), 11, -0.5, 10.5, loopStatus);
-    hh1->setXaxisTitle("Fit Status ");
-    hh1->setYaxisTitle("Number of Pixels");
+    hh1 = createHisto1d("StatusDist-"+std::to_string(outerIdent), "Fit Status", 11, -0.5, 10.5, "Number of Pixels", loopStatus);
     statusDist[outerIdent] = std::move(hh1);
 
-    hh1 = std::make_unique<Histo1d>("TimePerFitDist-"+std::to_string(outerIdent), 201, -1, 401, loopStatus);
-    hh1->setXaxisTitle("Fit Time [us]");
-    hh1->setYaxisTitle("Number of Pixels");
+    hh1 = createHisto1d("TimePerFitDist-"+std::to_string(outerIdent), "Fit Time [us]", 201, -1, 401, "Number of Pixels", loopStatus);
     timeDist[outerIdent] = std::move(hh1);
 }
 
@@ -831,9 +837,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 
                 // Check if Histogram exists
                 if (histos[ident] == nullptr) {
-                    auto hhh = std::make_unique<Histo1d>(name, vcalBins+1, vcalMin-((double)vcalStep/2.0), vcalMax+((double)vcalStep/2.0));
-                    hhh->setXaxisTitle("Vcal");
-                    hhh->setYaxisTitle("Occupancy");
+                    auto hhh = createHisto1d(name, "Vcal", vcalBins+1, vcalMin-((double)vcalStep/2.0), vcalMax+((double)vcalStep/2.0), "Occupancy");
                     histos[ident] = std::move(hhh);
                     innerCnt[ident] = 0;
                 }
@@ -990,9 +994,9 @@ void ScurveFitter::end() {
             bins = (xhigh-xlow)/bin_width;
 
 
-            auto hh1 = std::make_unique<Histo1d>("ThresholdDist-" + std::to_string(i), bins, xlow, xhigh);
-            hh1->setXaxisTitle("Threshold [e]");
-            hh1->setYaxisTitle("Number of Pixels");
+            auto hh1 = createHisto1d("ThresholdDist-" + std::to_string(i),
+                                     "Threshold [e]", bins, xlow, xhigh,
+                                     "Number of Pixels");
             thrDist[i] = std::move(hh1);
 
             bin_width = 5;
@@ -1010,9 +1014,7 @@ void ScurveFitter::end() {
             }
             bins = (xhigh-xlow)/bin_width;
 
-            hh1 = std::make_unique<Histo1d>("NoiseDist-" + std::to_string(i), bins, xlow, xhigh);
-            hh1->setXaxisTitle("Noise [e]");
-            hh1->setYaxisTitle("Number of Pixels");
+            hh1 = createHisto1d("NoiseDist-" + std::to_string(i), "Noise [e]", bins, xlow, xhigh, "Number of Pixels");
             sigDist[i] = std::move(hh1);
 
             for(unsigned bin=0; bin<(nCol*nRow); bin++) {
@@ -1160,8 +1162,8 @@ void NPointGain::fitResponseCurve(const std::vector<double>& thresholds, std::ve
 }
 
 void NPointGain::writeOutputHistograms() {
-    auto injectionHisto = std::make_unique<Histo1d>("InjectionValues",
-        m_injections.size(), -0.5, m_injections.size()-0.5);
+    auto injectionHisto = createHisto1d("InjectionValues",
+        "x", m_injections.size(), -0.5, m_injections.size()-0.5, "y");
     auto fitParamsHisto = std::make_unique<Histo3dT<float>>("ResponseFitParams",
         nCol, -0.5, nCol-0.5, nRow, -0.5, nRow-0.5,
         m_respFuncNParams, -0.5, m_respFuncNParams-0.5);
