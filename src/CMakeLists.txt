@@ -1,13 +1,10 @@
 YARR_ADD_SPDLOG()
 
-
 add_subdirectory(libUtil)
 add_subdirectory(libYarr)
+
 # controllers
 foreach(controller IN LISTS CONTROLLERS)
-   if(controller MATCHES "NetioHW")
-      YARR_ADD_TBB()
-   endif()
    message(STATUS "Building controller ${controller}" )
    add_subdirectory(lib${controller})
 endforeach()

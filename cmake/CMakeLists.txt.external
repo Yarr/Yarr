@@ -92,8 +92,9 @@ function(YARR_ADD_NETIO)
             git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch006.txt &&
             git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch007.txt &&
             git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch008.txt &&
-            cp ${PROJECT_SOURCE_DIR}/cmake/CMakeLists.txt.netio CMakeLists.txt &&
-            cp ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netioConfig.cmake.in netioConfig.cmake.in
+            cp ${PROJECT_SOURCE_DIR}/cmake/netio4patches/CMakeLists.txt.netio CMakeLists.txt &&
+            cp ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netioConfig.cmake.in netioConfig.cmake.in &&
+            cp ${PROJECT_SOURCE_DIR}/cmake/netio4patches/FindLIBFABRIC.cmake FindLIBFABRIC.cmake
         CMAKE_ARGS "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}" -DCMAKE_CXX_FLAGS=-fPIC
         )
      FetchContent_MakeAvailable(netio)
@@ -114,7 +115,6 @@ function(YARR_ADD_FELIX)
         GIT_TAG felix-4.0.x
         PATCH_COMMAND
            cp ${PROJECT_SOURCE_DIR}/cmake/CMakeLists.txt.felixbase4 CMakeLists.txt 
-#        DEPENDS netio4
         )
 
     FetchContent_MakeAvailable(felixbase4)

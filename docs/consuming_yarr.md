@@ -111,6 +111,7 @@ In this case the installation is isolated and one has to use find_package or inj
 # Exported Targets and Components
 
 The following CMake targets are exported by Yarr (executables not listed; fully printed during cmake execution):
+
 | Name space | Target              | Type                       | Comments                                                     | Component   |
 |------------|---------------------|----------------------------|--------------------------------------------------------------|-------------|
 | Yarr::     | Scan                | dynamic library            |                                                              |             |
@@ -149,3 +150,25 @@ This is the dependency graph:
 Dependency graph created by:
 - cmake --graphviz=yarr_lib_dependency.dot ..
 - dot -Tpng -o yarr_lib_dependency.png yarr_lib_dependency.dot
+
+# Options and Dependencies
+## YARR general
+spdlog
+## Python
+pybind11
+## BDAQ
+BDAQ requires the BOOST::system library.
+## NetioHW
+NetioHW depends on felixbase4, netio4 and tbb. A patched cmake build file is used for most dependencies. netio4 depends on libfabric and some tests depend on ZeroMQ. Tests are by default not built and have to be enabled using the option "NETIO4_BUILD_TESTS" which means that ZeroMQ is be fault not required. felixbase4 depends also on its own directly on netio4.
+
+If a target libfabric::libfabric is provided by a parent project it will be used. This target has been defined here as libfabric is autotools based and does not provide any cmake integration. Otherwise it tries to find an installed version of the libfabric library using the PKG system (can be steered by adjusting PKG_CONFIG_PATH) or searching standard system paths as fallback. If the library is not found on the system or if the option "NETIO4_FORCE_USE_BUILTIN_LIBFABRIC" is set to true, a standalone version will be downloaded and built and the target libfabric::libfabric will provide the static version to the netio4 library. Neither the libfabric library nor its target are installed and only used by netio4.
+
+For ZeroMQ a similar strategy is used although it is simpler as ZeroMQ is cmake based and offers proper export functionality. If the standard ZeroMQ target libzmq is found - provided by a parent project - then it will be used. Otherwise it will be attempted to find a system version of the library unless the variable "NETIO4_FORCE_USE_BUILTIN_ZEROMQ" is set. As a last ressort the library will be downloaded, built and installed. An internal target netio4zmq is defined in all cases but neither netio4zmq nor libzmq are exported.
+
+The netio library's target netio and the targets for the test binaries (if built) are exported and be used be downstream consumers. A namespace netio:: is defined. Installation of netio is defined in cmake/CMakeLists.txt.external and encapsulated in a function which is called by "YARR_ADD_NETIO()". Multiple calls are harmless.
+
+tbb
+
+FELIX depends on netop
+## FelixClient
+felix client thread which felix-interface
