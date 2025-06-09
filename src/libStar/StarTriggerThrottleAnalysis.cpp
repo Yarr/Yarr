@@ -28,8 +28,8 @@ void StarTriggerThrottleAnalysis::init(const ScanLoopInfo *s) {
   //Getting the scan parameters to keep track of loop statuses/identify outputs
   for (unsigned n=0; n<s->size(); n++) {
     auto l = s->getLoop(n);
-    if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || (l->isParameterLoop() && !isPOILoop(l)))) {
-      // Parameter loops and feedback
+    if (isPOILoop(l)) {
+      // Data for parameter of interest goes in different analysis bins
       ident_loops.push_back(n);
       loopMax.push_back((unsigned)l->getMax());
     }
@@ -46,10 +46,7 @@ void StarTriggerThrottleAnalysis::init(const ScanLoopInfo *s) {
     }
     //Setting feedback for the trigger throttle
     if (l->isTriggerFeedbackLoop()) {
-      m_feedback.reset(new TriggerFeedbackSender(feedback));
-      if(m_feedback == nullptr) {
-        alog->error("StarTriggerThrottleAnalysis got a TriggerFeedbackLoop that can't be cast as a TriggerFeedbackSender");
-      }
+      m_feedback = std::make_unique<TriggerFeedbackSender>(feedback);
     }
   }
 }
@@ -219,7 +216,7 @@ void StarTriggerThrottleAnalysis::end() {
 }
 
 void StarTriggerThrottleAnalysis::loadConfig(const json &j) {
-    alog->warn("In loadConfig()");
+    alog->info("Loading analysis config");
     if (j.contains("parametersOfInterest")) {
         for (unsigned i=0; i<j["parametersOfInterest"].size(); i++) {
             m_parametersOfInterest.push_back(j["parametersOfInterest"][i]);
