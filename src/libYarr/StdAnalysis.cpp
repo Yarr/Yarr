@@ -509,7 +509,7 @@ void TotAnalysis::end() {
         }
 
         //extracting ToT-to-charge data now
-        auto measQtemp = createHisto3d("measQtemp", "x", nRow*nCol, 0, nRow*nCol, "y", 15, 0.5, 15.5, "z", vcalBins+1,  injQMin-injQStep/2.0, injQMax+injQStep/2.0);
+        auto measQtemp = createHisto3d<uint16_t>("measQtemp", "x", nRow*nCol, 0, nRow*nCol, "y", 15, 0.5, 15.5, "z", vcalBins+1,  injQMin-injQStep/2.0, injQMax+injQStep/2.0);
 
         int Nmessage = 0;  //boolean to be used for a message to user; in presence of middle holes, user may wish to use finer injQ steps.
 
@@ -1087,19 +1087,19 @@ void NPointGain::fitResponseCurve(const std::vector<double>& thresholds, std::ve
 void NPointGain::writeOutputHistograms() {
     auto injectionHisto = createHisto1d("InjectionValues",
         "x", m_injections.size(), -0.5, m_injections.size()-0.5, "y");
-    auto fitParamsHisto = createHistoMap3d("ResponseFitParams",
+    auto fitParamsHisto = createHistoMap3d<float>("ResponseFitParams",
                             nCol, nRow,
                             "z", m_respFuncNParams, -0.5, m_respFuncNParams-0.5);
-    auto thresholdHisto = createHistoMap3d("Thresholds",
+    auto thresholdHisto = createHistoMap3d<float>("Thresholds",
                             nCol, nRow,
                             "z", m_injections.size(), -0.5, m_injections.size()-0.5);
-    auto outputNoiseHisto = createHistoMap3d("OutputNoise",
+    auto outputNoiseHisto = createHistoMap3d<float>("OutputNoise",
                             nCol, nRow,
                             "z", m_injections.size(), -0.5, m_injections.size()-0.5);
-    auto gainCurveHisto = createHistoMap3d("GainCurve",
+    auto gainCurveHisto = createHistoMap3d<float>("GainCurve",
                             nCol, nRow,
                             "z", m_injections.size(), -0.5, m_injections.size()-0.5);
-    auto inputNoiseHisto = createHistoMap3d("InputNoise",
+    auto inputNoiseHisto = createHistoMap3d<float>("InputNoise",
                             nCol, nRow,
                             "z", m_injections.size(), -0.5, m_injections.size()-0.5);
 
