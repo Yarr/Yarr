@@ -3,7 +3,6 @@
 
 namespace {
   auto frlog = logging::make_log("FelixRxCore");
-  auto frctimer = logging::make_log("FelixRxCoreTimer");
 }
 
 FelixRxCore::FelixRxCore() = default;
@@ -15,9 +14,6 @@ FelixRxCore::~FelixRxCore()
 
 void FelixRxCore::initRxChannels(const std::vector<uint32_t>& channels) {
   frlog->info("Initializing Rx channels");
-
-  // timer header
-  frctimer->trace("function,start_or_done,thread,fid,bytes");
 
   std::vector<std::vector<FelixID_t>> fid_lists(m_nThreads);
 
