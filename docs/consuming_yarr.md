@@ -153,9 +153,9 @@ Dependency graph created by:
 
 # Options and Dependencies
 ## YARR general
-spdlog
+YARR is using currently a patched spdlog version. It defines an own target ALIAS called yarrspdlog. If a target spdlog::spdlog is already available due to being integrated in another project it will be used. Otherwise it will an installed version unless the variable "YARR_FORCE_FETCHCONTENT_SPDLOG" is set to true. As the last resort the patched version is installed. Both the yarrspdlog ALIAS as well as the real target SPDLOG::SPDLOG in case YARR install it on its own are provided to downstream users.
 ## Python
-pybind11
+If the python bindings are enabled by "YARR_ENABLE_PYTHON" pybind11 is downloaded and added to the YARR project making it directly available. Installation is called by the internal function "YARR_ADD_PYBIND11()".
 ## BDAQ
 BDAQ requires the BOOST::system library.
 ## NetioHW
@@ -165,10 +165,10 @@ If a target libfabric::libfabric is provided by a parent project it will be used
 
 For ZeroMQ a similar strategy is used although it is simpler as ZeroMQ is cmake based and offers proper export functionality. If the standard ZeroMQ target libzmq is found - provided by a parent project - then it will be used. Otherwise it will be attempted to find a system version of the library unless the variable "NETIO4_FORCE_USE_BUILTIN_ZEROMQ" is set. As a last ressort the library will be downloaded, built and installed. An internal target netio4zmq is defined in all cases but neither netio4zmq nor libzmq are exported.
 
-The netio library's target netio and the targets for the test binaries (if built) are exported and be used be downstream consumers. A namespace netio:: is defined. Installation of netio is defined in cmake/CMakeLists.txt.external and encapsulated in a function which is called by "YARR_ADD_NETIO()". Multiple calls are harmless.
+The netio library's target netio and the targets for the test binaries (if requested to be built) are exported and be used be downstream consumers. A namespace netio:: is defined. Installation of netio is defined in cmake/CMakeLists.txt.external and encapsulated in a function which is called by "YARR_ADD_NETIO()". Multiple calls are harmless.
 
-tbb
+tbb in the 2020 version before oneAPI is downloaded and built using the function "YARR_ADD_TBB()". The build system is completely patched as it did not support cmake export in that version yet. Three targets are defined: tbb::tbb, tbb::tbbmalloc and tbb::tbbmalloc_proxy providing the static version. The targets are not made available to downstream users.
 
-FELIX depends on netop
+felixbase4 depends on netio4. It is downloaded and installed using the function "YARR_ADD_FELIX()". The target felixbase4 in the namespace felixbase4 is defined and made available to downstream users.
 ## FelixClient
-felix client thread which felix-interface
+FelixClient depends on felix-clien-thread which is installed by the function "YARR_ADD_FELIX_CLIENT()". 
