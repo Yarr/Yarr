@@ -133,6 +133,7 @@ job_build_felix_check:
     paths:
       - cc_tests
   script:
+    - date
     - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
     - mkdir  build
     - cd build
