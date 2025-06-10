@@ -59,7 +59,7 @@ job_build_all:
     - git config --global user.name "CI Runner"
   script:
     - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-    - dnf -y install autoconf automake
+    - dnf -y install autoconf automake libtool
     - mkdir  build
     - cd build
     - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DENABLE_PYTHON=On
@@ -73,7 +73,7 @@ job_build_and_test_out_of_source:
   stage: build
   script:
     - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-    - dnf -y install autoconf automake
+    - dnf -y install autoconf automake libtool
     - cmake3 --version
     - export YARR_PROJECT_DIR=`pwd`
     - CXXFLAGS=-Werror cmake3 -S . -B /tmp/build-yarr -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=cmake/linux-gcc -DCMAKE_INSTALL_PREFIX=/tmp/install-yarr
