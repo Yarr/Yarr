@@ -17,6 +17,6 @@ endforeach()
 
 add_subdirectory(tools)
 
-if(ENABLE_PYTHON)
+if(YARR_ENABLE_PYTHON)
    add_subdirectory(python)
 endif()
