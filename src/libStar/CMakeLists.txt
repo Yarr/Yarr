@@ -21,6 +21,7 @@ add_library(Star SHARED
         StarSeqGenerator.cpp
         StarStrobeDelayAnalysis.cpp
         StarTriggerLoop.cpp
+        StarTriggerThrottleAnalysis.cpp
         StarTrimDacAnalysis.cpp
 )
 
