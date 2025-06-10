@@ -33,13 +33,13 @@ void sendCommand(EmuTxCore<StarChips> &hw, uint32_t channel, const std::array<ui
   hw.writeFifo(channel, (cmd[8] << 16) + LCB::IDLE);
 }
 
-void setEnables(HwController &emu, StarCmd &star, const AbcCfg &abc) {
+void setEnables(HwController &emu, StarCmd &star, const AbcCfg &abc, int hcc_id = 15) {
   // All in the same register
   auto addr = abc.getSubRegisterParentAddr(ABCStarSubRegister::LP_ENABLE);
   auto val = abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
 
   // Set LP_Enable to 1
-  sendCommand(emu, star.write_abc_register(addr, val));
+  sendCommand(emu, star.write_abc_register(addr, val, hcc_id));
 }
 
 void setEnablesChannel(EmuTxCore<StarChips> &hw, uint32_t channel, StarCmd &star, const AbcCfg &abc) {
@@ -615,6 +615,19 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
 
   REQUIRE (emu);
 
+  int asic_version = GENERATE ( 0, 1 );
+
+  CAPTURE (asic_version);
+
+  // Build register pattern for enables
+  AbcCfg ena_abc(asic_version);
+
+  // Set defaults
+  ena_abc.setSubRegisterValue(ABCStarSubRegister::MASKHPR, 1);
+  ena_abc.setSubRegisterValue(ABCStarSubRegister::LP_ENABLE, 1);
+  ena_abc.setSubRegisterValue(ABCStarSubRegister::PR_ENABLE, 1);
+  ena_abc.setSubRegisterValue(ABCStarSubRegister::RRMODE, 1);
+
   //////////////////////////
   // Set up configurations
   // Three HCCStars with ID 3, 4, 5
@@ -643,7 +656,7 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
   tmpRegCfg3["HCC"] = {{"ID", 5}};
   tmpRegCfg3["ABCs"] = {{"IDs", {2 ,4, 7}}};
   // Tell HCC which input channels are connected
-  tmpRegCfg3["HCC"]["subregs"]["ICENABLE"] = 7;
+  tmpRegCfg3["HCC"]["subregs"]["ICENABLE"] = 0x15;
   std::ofstream tmpRegFile3("test_star_3.json");
   tmpRegFile3 << std::setw(4) << tmpRegCfg3;
   tmpRegFile3.close();
@@ -666,6 +679,15 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
   // EmuController config
   json cfg;
   cfg["chipCfg"] = tmpChipFname;
+
+  if(asic_version == 0) {
+    cfg["abcVersion"] = 0;
+    cfg["hccVersion"] = 0;
+  } else {
+    cfg["abcVersion"] = 1;
+    cfg["hccVersion"] = 1;
+  }
+
   emu->loadConfig(cfg);
 
   // Clean up
@@ -759,12 +781,49 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
         buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x17, 0xdeadbeef, 0x7000)});
 
     // Three ABC RR packet from ABC 2, 4, 7 on HCC 5
+    // These ABCs are on input channels 0, 2, 4
     expected[rx_fe3].push_back({rx_fe3,
         buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x17, 0xff7ff7ff, 0x7000)});
     expected[rx_fe3].push_back({rx_fe3,
-        buildABCRegisterPacket(PacketTypes::ABCRegRd, 1, 0x17, 0xaa0451aa, 0x4000)});
+        buildABCRegisterPacket(PacketTypes::ABCRegRd, 2, 0x17, 0xaa0451aa, 0x4000)});
     expected[rx_fe3].push_back({rx_fe3,
-        buildABCRegisterPacket(PacketTypes::ABCRegRd, 2, 0x17, 0xff7ff7ff, 0x2000)});
+        buildABCRegisterPacket(PacketTypes::ABCRegRd, 4, 0x17, 0xff7ff7ff, 0x2000)});
+  }
+
+  SECTION("Get Data") {
+    // Switch to static test mode: TM = 1
+    // (And MaskHPR = 1, LP_Enable = 1, PR_Enable = 1, RRMode = 1)
+    ena_abc.setSubRegisterValue(ABCStarSubRegister::TM, 1);
+    auto val = ena_abc.getSubRegisterParentValue(ABCStarSubRegister::LP_ENABLE);
+    if(asic_version == 0) {
+      CHECK (val == 0x10740);
+    }
+
+    // Enable data from one HCC
+    setEnables(*emu, star, ena_abc, 5);
+
+    // Set mask registers
+    std::array<LCB::Frame, 9> writeABCCmd_MaskInput3 = star.write_abc_register(19, 0xfffe0000);
+    sendCommand(*emu, writeABCCmd_MaskInput3);
+    std::array<LCB::Frame, 9> writeABCCmd_MaskInput7 = star.write_abc_register(23, 0xfffe0000);
+    sendCommand(*emu, writeABCCmd_MaskInput7);
+
+    // Send an L0A
+    emu->writeFifo((LCB::IDLE << 16) + LCB::l0a_mask(1, 4, false));
+
+    // l0tag = 4 + 3
+    // bc count at L0A frame = 148; trigger command on 148-1; latency = 0
+    // => 8-bit BCID = 0x93; 4-bit BCID in the packet = 0b0110
+    std::array<std::vector<uint16_t>, HCC_INPUT_CHANNEL_COUNT> cluster_data;
+    std::vector<uint16_t> hit_clusters = 
+      {0x05c7, 0x01cf, 0x05e7, 0x01ee, 0x07c7,
+       0x03cf, 0x07e7, 0x03ee};
+
+    // Expect the same hits from each IC
+    cluster_data[0] = hit_clusters;
+    cluster_data[2] = hit_clusters;
+    cluster_data[4] = hit_clusters;
+    expected[rx_fe3].push_back({rx_fe3, buildPhysicsPacket(cluster_data, PacketTypes::LP, 0x07, 0x93)});
   }
 
   emu->releaseFifo();
