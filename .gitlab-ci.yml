@@ -61,7 +61,7 @@ job_build_all:
     - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
     - |
       if [ "$ARCH" = "cc7" ]; then
-        yum -y install autoconf automake libtool
+        yum -y install autoconf automake libtool glibc-headers kernel-headers
       else
         dnf -y install autoconf automake libtool
       fi
@@ -80,7 +80,7 @@ job_build_and_test_out_of_source:
     - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
     - |
       if [ "$ARCH" = "cc7" ]; then
-        yum -y install autoconf automake libtool
+        yum -y install autoconf automake libtool glibc-headers kernel-headers
       else
         dnf -y install autoconf automake libtool
       fi
