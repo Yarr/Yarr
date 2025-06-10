@@ -233,6 +233,8 @@ if(BUILD_TESTS)
     enable_testing()
 endif()
 
+option(YARR_ENABLE_PYTHON "Build python bindings" OFF)
+
 # setting build options ---------------------------------------------------------------------------------------
 
 # finally include all source, create package config files and install ---------------------------------------------------------------
