@@ -740,8 +740,14 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
     auto readABCCmd_hcc3 = star.read_abc_register(23, 3, 0xf);
     sendCommand(*emu, readABCCmd_hcc3);
     // Expect two ABC RR packets from ABC 1 and 2
-    expected[rx_fe1].push_back({rx_fe1, buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x17, 0xff7ff7ff, 0x2000)});
-    expected[rx_fe1].push_back({rx_fe1, buildABCRegisterPacket(PacketTypes::ABCRegRd, 1, 0x17, 0xff7ff7ff, 0x1000)});
+    int stat0 = 0x2000;
+    int stat1 = 0x1000;
+    if(asic_version == 1) {
+      stat0 = 0x1000;
+      stat1 = 0x2000;
+    }
+    expected[rx_fe1].push_back({rx_fe1, buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x17, 0xff7ff7ff, stat0)});
+    expected[rx_fe1].push_back({rx_fe1, buildABCRegisterPacket(PacketTypes::ABCRegRd, 1, 0x17, 0xff7ff7ff, stat1)});
 
     emu->releaseFifo();
     while(!emu->isCmdEmpty());
@@ -760,7 +766,11 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
     sendCommand(*emu, readABCCmd_5_7);
 
     // ABC 7 is now IC 0 (auto map from HCC v0)
-    expected[rx_fe3].push_back({rx_fe3, buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x17, 0xff7ff7ff, 0x7000)});
+    int id0 = 0;
+    if(asic_version == 1) {
+      id0 = 4;
+    }
+    expected[rx_fe3].push_back({rx_fe3, buildABCRegisterPacket(PacketTypes::ABCRegRd, id0, 0x17, 0xff7ff7ff, 0x7000)});
 
     emu->releaseFifo();
     while(!emu->isCmdEmpty());
@@ -772,9 +782,9 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
 
     // Two ABC RR packets from ABC 1 and 2 on HCC 3
     expected[rx_fe1].push_back({rx_fe1,
-        buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x17, 0xff7ff7ff, 0x2000)});
+        buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x17, 0xff7ff7ff, stat0)});
     expected[rx_fe1].push_back({rx_fe1,
-        buildABCRegisterPacket(PacketTypes::ABCRegRd, 1, 0x17, 0xff7ff7ff, 0x1000)});
+        buildABCRegisterPacket(PacketTypes::ABCRegRd, 1, 0x17, 0xff7ff7ff, stat1)});
 
     // One ABC RR packet from ABC 7 on HCC 4
     expected[rx_fe2].push_back({rx_fe2,
@@ -782,12 +792,19 @@ TEST_CASE("StarEmulatorMultiChip", "[star][emulator]") {
 
     // Three ABC RR packet from ABC 2, 4, 7 on HCC 5
     // These ABCs are on input channels 0, 2, 4
+    int stat3_0 = 0x7000;
+    int stat3_1 = 0x4000;
+    int stat3_2 = 0x2000;
+    if(asic_version == 1) {
+      stat3_0 = 0x2000;
+      stat3_2 = 0x7000;
+    }
     expected[rx_fe3].push_back({rx_fe3,
-        buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x17, 0xff7ff7ff, 0x7000)});
+        buildABCRegisterPacket(PacketTypes::ABCRegRd, 0, 0x17, 0xff7ff7ff, stat3_0)});
     expected[rx_fe3].push_back({rx_fe3,
-        buildABCRegisterPacket(PacketTypes::ABCRegRd, 2, 0x17, 0xaa0451aa, 0x4000)});
+        buildABCRegisterPacket(PacketTypes::ABCRegRd, 2, 0x17, 0xaa0451aa, stat3_1)});
     expected[rx_fe3].push_back({rx_fe3,
-        buildABCRegisterPacket(PacketTypes::ABCRegRd, 4, 0x17, 0xff7ff7ff, 0x2000)});
+        buildABCRegisterPacket(PacketTypes::ABCRegRd, 4, 0x17, 0xff7ff7ff, stat3_2)});
   }
 
   SECTION("Get Data") {

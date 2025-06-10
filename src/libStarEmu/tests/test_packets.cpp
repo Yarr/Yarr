@@ -50,12 +50,12 @@ TEST_CASE("StarEmulatorPacketGenerate", "[star][emulator]")
 
     {
       // IC 0
-      std::vector<uint16_t> ic0{0x078f, 0x038f, 0x07af, 0x03af};
+      std::vector<uint16_t> ic0{0x78f, 0x38f, 0x7af, 0x3af};
       // IC 1
-      std::vector<uint16_t> ic1{0x0f8f, 0x0b8f, 0x0faf, 0x0baf};
+      std::vector<uint16_t> ic1{0x78f, 0x38f, 0x7af, 0x3af};
       // IC 2
-      std::vector<uint16_t> ic2{0x178f, 0x138f, 0x17af, 0x13af,
-                                0x17cf, 0x13cf, 0x17ee, 0x13ee};
+      std::vector<uint16_t> ic2{0x78f, 0x38f, 0x7af, 0x3af,
+                                0x7cf, 0x3cf, 0x7ee, 0x3ee};
       std::array<std::vector<uint16_t>, HCC_INPUT_CHANNEL_COUNT> clusters;
       clusters[0] = ic0;
       clusters[1] = ic1;
