@@ -67,6 +67,7 @@ job_build_all:
       fi
     - mkdir  build
     - cd build
+    - |
       if [ "$ARCH" = "cc7" ]; then
         cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DENABLE_PYTHON=On -DLIBFABRIC_CONFIGURE_OPTS="--disable-lpp" -DYARR_ENABLE_PYTHON=off
       else
