@@ -34,7 +34,7 @@ install(TARGETS Bdaq
   
 install(EXPORT Yarr_BdaqTargets
   NAMESPACE Yarr::
-  DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}
+  DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}/Yarr
 )
 
 install(DIRECTORY include/

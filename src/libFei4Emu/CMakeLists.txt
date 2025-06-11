@@ -21,7 +21,7 @@ install(TARGETS Fei4Emu
 
 install(EXPORT Yarr_Fei4EmuTargets
   NAMESPACE Yarr::
-  DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}
+  DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}/Yarr
 )
 
 install(DIRECTORY include/

@@ -5,7 +5,6 @@ project(netio LANGUAGES CXX VERSION 0.8.0)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 include(GNUInstallDirs)
-set(CMAKE_CONFIG_INSTALL_PATH ${CMAKE_INSTALL_LIBDIR}/cmake/netio)
 
 set(VERSION_STRING ${CMAKE_PROJECT_VERSION})
 configure_file(
@@ -190,7 +189,7 @@ install(DIRECTORY netio/
 # Install the export set for use with the install-tree
 install(EXPORT netioTargets
   NAMESPACE netio::
-  DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}
+  DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}/netio
 )
 
 include(CMakePackageConfigHelpers)
@@ -204,13 +203,13 @@ write_basic_package_version_file(
 configure_package_config_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/netioConfig.cmake.in
     "${CMAKE_CURRENT_BINARY_DIR}/netioConfig.cmake"
-    INSTALL_DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}
+    INSTALL_DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}/netio
 )
 
 install(FILES
     "${CMAKE_CURRENT_BINARY_DIR}/netioConfig.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/netioConfigVersion.cmake"
-    DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}
+    DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}/netio
 )
 
 if(NETIO4_BUILD_TESTS)

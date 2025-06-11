@@ -51,7 +51,7 @@ install(TARGETS Spec ${apps}
 
 install(EXPORT Yarr_SpecTargets
   NAMESPACE Yarr::
-  DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}
+  DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}/Yarr
 )
 
 install(DIRECTORY include/

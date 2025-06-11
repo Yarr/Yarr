@@ -244,7 +244,7 @@ add_subdirectory(src)
 include(CMakePackageConfigHelpers)
 configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/YarrConfig.cmake.in
                               ${CMAKE_CURRENT_BINARY_DIR}/YarrConfig.cmake
-                              INSTALL_DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}
+                              INSTALL_DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}/Yarr
                               )
 
 write_basic_package_version_file(YarrConfigVersion.cmake
@@ -254,13 +254,13 @@ write_basic_package_version_file(YarrConfigVersion.cmake
 # Install the export set for use with the install-tree
 install(EXPORT YarrTargets
   NAMESPACE Yarr::
-  DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}
+  DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}/Yarr
 )
 
 install(FILES
   "${PROJECT_BINARY_DIR}/YarrConfig.cmake"
   "${PROJECT_BINARY_DIR}/YarrConfigVersion.cmake"
-  DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}
+  DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}/Yarr
 )
 
 if(IS_IN_TREE_INSTALL)
