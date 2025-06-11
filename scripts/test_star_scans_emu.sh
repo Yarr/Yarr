@@ -23,6 +23,7 @@ CONNECTIVITY=configs/connectivity/example_star_setup_ppb.json
 
 CONTROLLER=configs/controller/starEmu/emuCfg_star_gen_trim.json
 SCAN_CFG=configs/scans/star/std_tune_trim_at_pedestal.json
+SCAN_CFG=configs/scans/star/full_scan_trim_at_pedestal.json
 
 runScan
 
