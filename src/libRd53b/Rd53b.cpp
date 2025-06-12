@@ -13,6 +13,8 @@
 
 #include "logging.h"
 
+#include <thread>
+
 // Create logger
 namespace {
   auto logger = logging::make_log("Rd53b");
