@@ -295,3 +295,74 @@ TEST_CASE("StarDataProcessorPrintTemplate", "[star][data_processor]") {
     CHECK(output[i] == expected[i]);
   }
 }
+
+namespace {
+
+struct TC {
+  std::vector<uint32_t> input;
+  std::vector<std::pair<uint16_t, uint16_t>> output;
+};
+
+}
+
+TEST_CASE("StarDataProcessorRaw", "[star][data_processor]") {
+  // Use default, no difference for ASIC versions
+  std::shared_ptr<FeDataProcessor> proc
+    = StdDict::getDataProcessor("Star");
+
+  REQUIRE (proc);
+
+  json j;
+  j["raw_bits"] = true;
+  proc->loadConfig(j);
+
+  proc->init();
+
+  auto tc = GENERATE
+    (
+     TC{{0x87654321}, {{0x8765, 0x4321}}},
+     TC{{0x1, 2, 3, 4}, {{0, 0x1}, {0, 0x2}, {0, 0x3}, {0, 0x4}}}
+    );
+
+  size_t len = tc.input.size();
+
+  RawDataPtr rd = std::make_shared<RawData>(0, len);
+  uint32_t *buffer = rd->getBuf();
+  std::copy(tc.input.data(), tc.input.data()+len, buffer);
+
+  std::unique_ptr<RawDataContainer> rdc(new RawDataContainer(LoopStatus()));
+  rdc->add(std::move(rd));
+
+  auto output = proc->process_event_core(*rdc, [](auto f) {});
+
+  // No other channels added
+  REQUIRE (output);
+
+  auto data = dynamic_cast<FrontEndData*>(output.get());
+  REQUIRE (data);
+
+  FrontEndData &rawData = *data;
+
+  REQUIRE (rawData.events.size() == 1);
+
+  auto &event = rawData.events.front();
+  CHECK (event.l1id == 0xffff);
+  CHECK (event.bcid == 0xffff);
+
+  std::vector<uint16_t> out_hits;
+
+  CHECK ( event.hits.size() == tc.output.size() );
+
+  for(size_t o=0; o<event.hits.size(); o++) {
+    auto &hit = event.hits[o];
+    CAPTURE(hit.row, hit.col);
+
+    auto &exp = tc.output[o];
+
+    CHECK (hit.row == exp.first);
+    CHECK (hit.col == exp.second);
+
+    // Marker
+    CHECK (hit.tot == 0xffff);
+  }
+}
