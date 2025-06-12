@@ -156,7 +156,7 @@ endif()
 
 detect_in_tree_install(IS_IN_TREE_INSTALL)
 if(IS_IN_TREE_INSTALL)
-    set(CMAKE_CONFIG_INSTALL_PATH lib/cmake)
+    set(CMAKE_CONFIG_INSTALL_PATH ${CMAKE_INSTALL_LIBDIR}/cmake)
 else()
     set(CMAKE_CONFIG_INSTALL_PATH cmake)
 endif()
