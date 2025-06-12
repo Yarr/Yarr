@@ -12,6 +12,8 @@
 #include "logging.h"
 #include "HwController.h"
 
+#include <thread>
+
 // Create logger
 namespace {
   auto logger = logging::make_log("Itkpixv2");
