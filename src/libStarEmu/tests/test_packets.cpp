@@ -37,8 +37,9 @@ TEST_CASE("StarEmulatorPacketGenerate", "[star][emulator]")
 
   SECTION ("LP") {
     {
+      std::array<std::vector<uint16_t>, HCC_INPUT_CHANNEL_COUNT> empty_data;
       std::vector<uint16_t> empty_chip;
-      std::vector<std::vector<uint16_t>> empty_data{empty_chip};
+      empty_data[0] = empty_chip;
       auto empty_lp_data = buildPhysicsPacket(empty_data, PacketTypes::PR, 0x7f, 0xff);
 
       // If there are no ICs enabled then the packet disappears
@@ -48,17 +49,21 @@ TEST_CASE("StarEmulatorPacketGenerate", "[star][emulator]")
     }
 
     {
+      // IC 0
+      std::vector<uint16_t> ic0{0x78f, 0x38f, 0x7af, 0x3af};
+      // IC 1
+      std::vector<uint16_t> ic1{0x78f, 0x38f, 0x7af, 0x3af};
+      // IC 2
+      std::vector<uint16_t> ic2{0x78f, 0x38f, 0x7af, 0x3af,
+                                0x7cf, 0x3cf, 0x7ee, 0x3ee};
+      std::array<std::vector<uint16_t>, HCC_INPUT_CHANNEL_COUNT> clusters;
+      clusters[0] = ic0;
+      clusters[1] = ic1;
+      clusters[2] = ic2;
+
       // Long (LP) packet (30 hits on 10 chips)
       auto some_lp_data = buildPhysicsPacket
-        ({
-          // IC 0
-          {0x078f, 0x038f, 0x07af, 0x03af},
-          // IC 1
-          {0x0f8f, 0x0b8f, 0x0faf, 0x0baf},
-          // IC 2
-          {0x178f, 0x138f, 0x17af, 0x13af,
-           0x17cf, 0x13cf, 0x17ee, 0x13ee},
-        }, PacketTypes::LP, 0x7f, 0xff);
+        (clusters, PacketTypes::LP, 0x7f, 0xff);
 
       std::vector<uint8_t> exp_data{
         0x27, 0xfe,
