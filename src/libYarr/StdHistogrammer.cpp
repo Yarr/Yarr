@@ -55,6 +55,10 @@ namespace {
       StdDict::registerHistogrammer("TagDist",
                                 []() { return std::unique_ptr<HistogramAlgorithm>(new TagDist());});
 
+    bool tag_occupancy_registered =
+      StdDict::registerHistogrammer("TagOccupancyMap",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new TagOccupancyMap());});
+
     bool l13d_registered =
       StdDict::registerHistogrammer("L13d",
                                 []() { return std::unique_ptr<HistogramAlgorithm>(new L13d());});
@@ -199,6 +203,44 @@ void TagMap::processEvent(FrontEndData *data) {
             for (const FrontEndHit &curHit: curEvent.hits) {   
                 if(curHit.tot > 0)
                     h->fill(curHit.col, curHit.row, curEvent.tag);
+            }
+        }
+    }
+}
+
+void TagOccupancyMap::loadConfig(const json &cfg)
+{
+  try {
+    cfg.at("tag_count").get_to(tag_count);
+  } catch(json::out_of_range &) {
+    // Leave at default
+  }
+
+  if(tag_count > 256) {
+    // Hard-coded by 8-bit mask in processEvent
+    alog->warn("TagOccupancyMap: Fixing limit of tag_count to 256");
+    tag_count = 256;
+  }
+}
+
+void TagOccupancyMap::create(const LoopStatus &stat) {
+    h = new Histo3d(outputName(),
+                    nCol, 0.5, nCol+0.5,
+                    nRow, 0.5, nRow+0.5,
+                    tag_count, -0.5, tag_count - 0.5,
+                    stat);
+    h->setXaxisTitle("Column");
+    h->setYaxisTitle("Row");
+    h->setZaxisTitle("Tag");
+    r.reset(h);
+}
+
+void TagOccupancyMap::processEvent(FrontEndData *data) {
+    for (const FrontEndEvent &curEvent: data->events) {
+        if (curEvent.nHits > 0) {
+            for (const FrontEndHit &curHit: curEvent.hits) {
+                if(curHit.tot > 0)
+                    h->fill(curHit.col, curHit.row, curEvent.tag & 0xff);
             }
         }
     }
