@@ -52,7 +52,7 @@ job_build_all:
   artifacts:
     paths:
       - bin
-      - lib
+      - lib64
       - python
   before_script:
     - git config --global user.email "ci@example.com"
