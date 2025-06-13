@@ -128,19 +128,24 @@ The following CMake targets are exported by Yarr (executables not listed; fully 
 | Yarr::     | Fei4Emu             | dynamic library            |                                                              | Fei4Emu     |
 | Yarr::     | Itkpixv2            | dynamic library            |                                                              | Itkpixv2    |
 | Yarr::     | Itkpixv2Emu         | dynamic library            |                                                              | Itkpixv2Emu |
+| Yarr::     | ItsdaqFW            | dynamic library            |                                                              | ItsdaqFW    |
 | Yarr::     | Rd53a               | dynamic library            |                                                              | Rd53a       |
 | Yarr::     | Rd53aEmu            | dynamic library            |                                                              | Rd53aEmu    |
 | Yarr::     | Rd53b               | dynamic library            |                                                              | Rd53b       |
 | Yarr::     | Star                | dynamic library            |                                                              | Star        |
 | Yarr::     | StarEmu             | dynamic library            |                                                              | StarEmu     |
-| tbb::      | tbb                 | imported static library    |                                                              |             |
-| tbb::      | malloc              | imported static library    |                                                              |             |
-| tbb::      | malloc_proxy        | imported static library    |                                                              |             |
-|            | yarrspdlog          | imported interface library |                                                              |             |
+| Yarr::     | _pyyarr             | dynamic library            |                                                              |             |
+|            | felixbase4          | imported interface library | needed for NetioHW                                           |             |
+|            | felix-interface     | imported interface library | needed for FelixCLient                                       |             |
+| tbb::      | tbb                 | imported static library    | needed for NetioHW                                           |             |
+| tbb::      | malloc              | imported static library    | needed for NetioHW                                           |             |
+| tbb::      | malloc_proxy        | imported static library    | needed for NetioHW                                           |             |
+|            | felix-client-thread | imported dynamic library   | needed for FelixClient                                       |             |
+|            | netio               | imported dynamic library   | needed for NetioHW                                           |             |
+|            | pybind11_headers    | imported interface library | only if python bindings are enabled                          |             |
+|            | yarrspdlog          | imported interface library | needed by Yarr, currently modified version                   |             |
 |            | tbb_2020            | utility target             | for ExternalProject_Add only; makes tbb:: available          |             |
-|            | felix_client_thread | utility target             | for ExternalProject_Add only                                 |             |
-|            | netio4              | utility target             | for ExternalProject_Add only                                 |             |
-|            | felixbase4          | utility target             | for ExternalProject_Add only                                 |             |
+|            | libfabric_ext_build | utility target             | for ExternalProject_Add only; if built-in libfabric for NetioHW |          |
 
 These are organized into CMake components, so one can selectively request them using find_package(Yarr COMPONENTS ...).
 
@@ -148,6 +153,7 @@ This is the dependency graph:
 ![yarr libraries dependency graph](images/yarr_lib_dependency.png)
 
 Dependency graph created by:
+
 - cmake --graphviz=yarr_lib_dependency.dot ..
 - dot -Tpng -o yarr_lib_dependency.png yarr_lib_dependency.dot
 
@@ -171,4 +177,4 @@ tbb in the 2020 version before oneAPI is downloaded and built using the function
 
 felixbase4 depends on netio4. It is downloaded and installed using the function "YARR_ADD_FELIX()". The target felixbase4 in the namespace felixbase4 is defined and made available to downstream users.
 ## FelixClient
-FelixClient depends on felix-clien-thread which is installed by the function "YARR_ADD_FELIX_CLIENT()". 
+FelixClient depends on felix-client-thread which is installed by the function "YARR_ADD_FELIX_CLIENT()" together with its dependency felix-interface. Both of the build systems are patched and the export the targets "felix-client-thread" and "felix-interface" both within the namespace "felix::".
