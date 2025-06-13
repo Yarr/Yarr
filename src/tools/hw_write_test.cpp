@@ -65,7 +65,7 @@ Config parseOptions(int argc, char* argv[]) {
                 for (; optind < argc && *argv[optind] != '-'; optind += 1) {
                   try {
                     // Try parsing as number and throw if not
-                    config.write_channels.push_back(std::stoi(optarg));
+                    config.write_channels.push_back(std::stoi(argv[optind]));
                   } catch(std::exception &e) {
                     break;
                   }
