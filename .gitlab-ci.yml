@@ -52,7 +52,7 @@ job_build_all:
   artifacts:
     paths:
       - bin
-      - lib64
+      - lib
       - python
   before_script:
     - git config --global user.email "ci@example.com"
@@ -159,7 +159,7 @@ job_build_none:
     - cmake -S . -B build -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;StarEmu;Rd53aEmu;FelixClient" -DYARR_FRONT_ENDS_TO_BUILD="Rd53a;Star;Rd53b;Itkpixv2" -DDISABLE_PLOTTING_TOOLS=On -DYARR_EMULATORS_TO_BUILD="StarEmu;Rd53aEmu"  -DYARR_ENABLE_PYTHON=On  ..
     - cmake --build build -j$(nproc)
     - cmake --install build
-    - cp -r Dockerfile bin lib python installed/
+    - cp -r Dockerfile bin lib64 python installed/
 
 job_build_felix:
   extends: .build_felix
