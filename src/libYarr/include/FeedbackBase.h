@@ -59,10 +59,13 @@ struct FeedbackParams {
 typedef ClipBoard<FeedbackParams> FeedbackClipboard;
 typedef std::map<unsigned, FeedbackClipboard> FeedbackClipboardMap;
 
+/** Feedback of global configuration */
 class GlobalFeedbackBase {
     public:
         virtual ~GlobalFeedbackBase() = default;
+        /** Used to implement "step down" feedback */
         virtual void feedback(unsigned channel, double sign, bool last) = 0;
+        /** Used to implement binary search */
         virtual void feedbackBinary(unsigned channel, double sign, bool last) = 0; // TODO Algorithm should be selected in scan
         virtual void feedbackStep(unsigned channel, double sign, bool last) {}
 };
@@ -99,9 +102,11 @@ class GlobalFeedbackSender : public GlobalFeedbackBase {
         FeedbackClipboard *clip;
 };
 
+/** Feedback of pixel level data (via histogram) */
 class PixelFeedbackBase {
     public:
         virtual ~PixelFeedbackBase() = default;
+        /** Feedback histogram for FrontEnd channel */
         virtual void feedback(unsigned channel, std::unique_ptr<Histo2d> h) {};
         virtual void feedbackStep(unsigned channel, std::unique_ptr<Histo2d> h) {};
 };

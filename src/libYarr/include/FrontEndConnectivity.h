@@ -55,12 +55,18 @@ class FrontEndConnectivity {
 
     virtual ~FrontEndConnectivity()= default;
 
+    /** Return rx channel */
     unsigned getChannel() const {return rxChannel;}
+    /** Return tx channel */
     unsigned getTxChannel() const {return txChannel;}
+    /** Return rx channel */
     unsigned getRxChannel() const {return rxChannel;}
+    /** Return rx channel for register data */
     unsigned getRegRxChannel() const {return regRxChannel;}
 
+    /** Set tx and rx channels to the same value */
     void setChannel(unsigned channel) {txChannel = channel; rxChannel = channel;}
+    /** Set tx and rx channels */
     void setChannel(unsigned arg_txChannel, unsigned arg_rxChannel) {txChannel = arg_txChannel; rxChannel = arg_rxChannel;}
     void setChannel(unsigned arg_txChannel, unsigned arg_rxChannel, unsigned arg_regRxChannel) {txChannel = arg_txChannel; rxChannel = arg_rxChannel; regRxChannel = arg_regRxChannel;}
     void setChannel(const FrontEndConnectivity &cfg) {setChannel(cfg.getTxChannel(), cfg.getRxChannel(), cfg.getRegRxChannel());}

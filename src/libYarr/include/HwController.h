@@ -14,8 +14,14 @@
 
 #include "storage.hpp"
 
+/**
+ * Abstract hardware controller.
+ *
+ * Use TxCore and RxCore.
+ */
 class HwController : virtual public TxCore, virtual public RxCore {
     public:
+        /** Configure controller */
         virtual void loadConfig(const json &j) = 0 ;
         
         virtual void setupMode() {}

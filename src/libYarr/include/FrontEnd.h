@@ -43,6 +43,9 @@ class Bookkeeper;
 class FrontEndClipBoards;
 class FrontEndConnectivity;
 
+/**
+ * Representation of a FrontEnd ASIC.
+ */
 class FrontEnd {
     public:
         FrontEnd();
@@ -50,13 +53,20 @@ class FrontEnd {
         
         virtual void init(HwController *arg_core, const FrontEndConnectivity& fe_cfg)=0;
 
+        /** Synonym for isActive */
         bool getActive() const;
-		bool isActive() const;
-		void setActive(bool active);
+
+        /** Is this chip active */
+        bool isActive() const;
+        /** Change active state */
+        void setActive(bool active);
+
+        /** Make this represent a global ASIC */
         virtual void makeGlobal(){};
         virtual std::unique_ptr<FrontEnd> getGlobal();
         virtual void connectBookkeeper(Bookkeeper* k){};
        
+        /** Send configuration to FrontEnd ASIC(s). */
         virtual void configure()=0;
         virtual yarrStatus checkCom() {return yarrSuccess;}
         virtual yarrStatus hasValidName() { return yarrSuccess; }
