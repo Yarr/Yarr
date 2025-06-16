@@ -11,6 +11,9 @@ nav:
     - Firmware Trigger Tagging Guide: trigger_tagging.md
     - External PCIe: pcie_ext.md
     - ScanConsole: scanconsole.md
+    - ScanLoops: scan_loops.md
+    - ScanHistograms: scan_histogrammers.md
+    - ScanAnalyses: scan_analyses.md
     - FE-I4: fei4.md
     - FE65-P2: fe65p2.md
     - RD53A: rd53a.md
