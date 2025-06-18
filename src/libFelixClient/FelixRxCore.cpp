@@ -15,6 +15,10 @@ FelixRxCore::~FelixRxCore()
 void FelixRxCore::initRxChannels(const std::vector<uint32_t>& channels) {
   frlog->info("Initializing Rx channels");
 
+  if (m_nThreads > channels.size()) {
+    frlog->warn("The number of requested threads ({}) is larger than the number of Rx channels ({}). Only {} threads will be created.", m_nThreads, channels.size(), channels.size());
+  }
+
   std::vector<std::vector<FelixID_t>> fid_lists(m_nThreads);
 
   unsigned ithread {0};
