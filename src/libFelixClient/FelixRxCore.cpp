@@ -33,8 +33,8 @@ void FelixRxCore::initRxChannels(const std::vector<uint32_t>& channels) {
     m_rxThreads.emplace_back(std::make_unique<FelixRxThread>(m_fcConfig, fid_lists[i], m_maxMessageSize));
   }
 
-  for (unsigned i=0; i<m_nThreads; i++) {
-    m_rxThreads[i]->run();
+  for (auto& frt : m_rxThreads) {
+    frt->run();
   }
 
   // Wait all fids to be connected
