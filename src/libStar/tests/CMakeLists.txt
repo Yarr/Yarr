@@ -1,5 +1,4 @@
 add_executable(testStar
-        ../../libUtil/tests/main.cpp
         test_analysis_strobe_delay.cpp
         test_analysis_trim.cpp
         test_analysis_scurvefitter.cpp
@@ -18,6 +17,16 @@ add_executable(testStar
         test_conversion_tool.cpp
         test_felix_trigger_loop.cpp
         )
-target_link_libraries(testStar Yarr)
-add_test(testStar ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/testStar)
+target_link_libraries(testStar PUBLIC Yarr)
+target_link_libraries(testStar PRIVATE mainTest)
+
+add_test(NAME testStar COMMAND testStar)
 post_build_debug_executable(testStar)
+
+install(TARGETS testStar
+    EXPORT YarrTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}  # For DLLs on Windows
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )

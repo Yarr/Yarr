@@ -1,0 +1,2 @@
+include(GNUInstallDirs)
+set(CMAKE_CONFIG_INSTALL_PATH ${CMAKE_INSTALL_LIBDIR}/cmake/felixbase4)

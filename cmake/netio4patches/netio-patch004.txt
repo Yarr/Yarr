@@ -1,0 +1,12 @@
+diff --git a/src/main_pingpong.cpp b/src/main_pingpong.cpp
+index dbd9bd9..e77cb59 100644
+--- a/src/main_pingpong.cpp
++++ b/src/main_pingpong.cpp
+@@ -1,6 +1,7 @@
+ #include <iostream>
+ #include <chrono>
+ #include <unistd.h>
++#include <string.h>
+ 
+ #include "netio/netio.hpp"
+ 

@@ -1,5 +1,4 @@
 add_executable(testYarr
-        ../../libUtil/tests/main.cpp
         test_analysis_throttle.cpp
         test_event_data.cpp
         test_front_end.cpp
@@ -19,6 +18,16 @@ add_executable(testYarr
         test_npointgain.cpp
 )
 
-target_link_libraries(testYarr Scan Yarr)
-add_test(testYarr ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/testYarr)
+target_link_libraries(testYarr PUBLIC Scan Yarr)
+target_link_libraries(testYarr PRIVATE mainTest)
+
+add_test(NAME testYarr COMMAND testYarr)
 post_build_debug_executable(testYarr)
+
+install(TARGETS testYarr
+    EXPORT YarrTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}  # For DLLs on Windows
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
