@@ -3,7 +3,8 @@ ARG FELIX_VERSION=latest
 FROM gitlab-registry.cern.ch/atlas-itk-pixel-systemtest/itk-demo-sw/felix-baseimage:${FELIX_VERSION}
 RUN mkdir /yarr/
 COPY bin /yarr/bin
-COPY lib /yarr/lib
+COPY lib64 /yarr/lib64
+COPY lib64 /yarr/lib
 COPY python /yarr/python
 
 RUN echo -e "\n# Export yarr ENV variables" >> /config/.bashrc && \
