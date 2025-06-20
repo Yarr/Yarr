@@ -32,6 +32,7 @@ namespace FelixTools {
   // Take from https://gitlab.cern.ch/atlas-tdaq-felix/ftools/-/blob/master/src/flxdefs.h
   constexpr unsigned BLOCK_LNK_MASK = 0x07C0;
   constexpr unsigned BLOCK_LNK_SHIFT = 6;
+  constexpr unsigned BLOCK_ELINK_MASK = 0x003F;
   constexpr unsigned BLOCK_EGROUP_MASK_LPGBT = 0x001C;
   constexpr unsigned BLOCK_EGROUP_SHIFT_LPGBT = 2;
   constexpr unsigned BLOCK_EPATH_MASK_LPGBT = 0x0003;
@@ -89,7 +90,7 @@ namespace FelixTools {
   /// @param chn Channel number (link ID and elink number)
   /// @return Elink number
   inline uint8_t elink_from_chn(uint32_t chn) {
-    return chn & (BLOCK_EGROUP_MASK_LPGBT | BLOCK_EPATH_MASK_LPGBT);
+    return chn & BLOCK_ELINK_MASK; // lowest 6 bits
   }
 
   /// @brief Get egroup from elink number
