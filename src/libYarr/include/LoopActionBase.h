@@ -19,6 +19,9 @@
 
 class Bookkeeper;
 class FrontEnd;
+template<typename T>
+class ClipBoard;
+class HistogramBase;
 class LoopStatusMaster;
 class RxCore;
 class TxCore;
@@ -41,7 +44,12 @@ class LoopActionBase : public LoopActionBaseInfo {
         explicit LoopActionBase(LoopStyle s);
         virtual ~LoopActionBase() = default;
 
-        /// Attach to system
+        /**
+         * Attach to information about scan engine.
+         *
+         * @param stat Stores the current loop position.
+         * @param k Reference to bookkeeper.
+         */
         void setup(LoopStatusMaster *stat, Bookkeeper *k);
 
         /// Set the inner loop
@@ -90,6 +98,8 @@ class LoopActionBase : public LoopActionBaseInfo {
 		Bookkeeper *keeper;
 
         std::type_index loopType;
+
+        ClipBoard<HistogramBase> *loopHistos;
 
     private:
         void execStep();
