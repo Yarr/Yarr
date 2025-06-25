@@ -44,6 +44,11 @@ class RxCore {
             return m_waitTime;
         }
 
+        // Controller firmware register access
+        // return true if operation is successful, otherwise false
+        virtual bool readFwRegister(const std::string& name, uint64_t& value) { return false; }
+        virtual bool writeFwRegister(const std::string& name, const uint64_t& value) { return false; }
+
     protected:
         RxCore()=default;
         virtual ~RxCore()=default;

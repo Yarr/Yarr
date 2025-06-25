@@ -101,14 +101,14 @@ int main(int argc, char **argv) {
 
   if (regValue_str.empty()) {
     // Register read
-    if (hwCtrl->readFelixRegister(regName, regValue)) {
+    if (hwCtrl->FelixTxCore::readFwRegister(regName, regValue)) {
       std::cout << std::endl;
       std::cout << regName << " = 0x" << std::hex << regValue << std::endl;
       std::cout << std::endl;
     }
   } else {
     // Register write
-    hwCtrl->writeFelixRegister(regName, regValue_str);
+    hwCtrl->FelixTxCore::writeFwRegister(regName, std::stoull(regValue_str));
   }
 
   return 0;

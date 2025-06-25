@@ -119,7 +119,7 @@ void FelixTxCore::updateFelixBroadcastRegs() {
   for (const auto& [linkId, bRegValue] : broadcastRegValueMaps) {
     std::stringstream brdcstRegName;
     brdcstRegName << "BROADCAST_ENABLE_" << std::setfill('0') << std::setw(2) << linkId;
-    writeFelixRegister( brdcstRegName.str(), std::to_string(bRegValue.to_ullong()) );
+    writeFwRegister( brdcstRegName.str(), bRegValue.to_ullong() );
   }
 }
 
@@ -682,7 +682,7 @@ bool FelixTxCore::checkReply(const FelixClientThread::Reply& reply) {
   return goodReply;
 }
 
-bool FelixTxCore::readFelixRegister(
+bool FelixTxCore::readFwRegister(
   const std::string& registerName, uint64_t& value)
 {
   ftlog->debug("Read FELIX register {}", registerName);
@@ -704,16 +704,16 @@ bool FelixTxCore::readFelixRegister(
   return success;
 }
 
-bool FelixTxCore::writeFelixRegister(
-  const std::string& registerName, const std::string& regValue
+bool FelixTxCore::writeFwRegister(
+  const std::string& registerName, const uint64_t& regValue
 )
 {
-  ftlog->debug("Write value {} to FELIX register {}", regValue, registerName);
+  ftlog->debug("Write value 0x{:x} to FELIX register {}", regValue, registerName);
 
   bool success = false;
 
   try {
-    auto reply = accessFelixRegister(FelixClientThread::Cmd::SET, {registerName, regValue});
+    auto reply = accessFelixRegister(FelixClientThread::Cmd::SET, {registerName, std::to_string(regValue)});
     success = checkReply(reply);
   } catch (std::runtime_error &e) {
     ftlog->error(e.what());
@@ -728,7 +728,7 @@ bool FelixTxCore::writeFelixRegister(
 
 void FelixTxCore::loadFWMode() {
   uint64_t regValue;
-  bool success = readFelixRegister("FIRMWARE_MODE", regValue);
+  bool success = readFwRegister("FIRMWARE_MODE", regValue);
   if (success) {
     m_fwMode = static_cast<FelixTools::FELIX_FW_MODE>(regValue);
   } else {
