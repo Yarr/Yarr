@@ -1,26 +1,15 @@
 add_library(Fei4 SHARED
         AllFei4Actions.cpp
-        Fei4AnalogScan.cpp
         Fei4Cfg.cpp
         Fei4Cmd.cpp
         Fei4.cpp
         Fei4DataProcessor.cpp
         Fei4DcLoop.cpp
-        Fei4DigitalScan.cpp
         Fei4GlobalCfg.cpp
         Fei4GlobalFeedback.cpp
-        Fei4GlobalPreampRetune.cpp
-        Fei4GlobalPreampTune.cpp
-        Fei4GlobalThresholdTune.cpp
         Fei4MaskLoop.cpp
-        Fei4NoiseScan.cpp
         Fei4ParameterLoop.cpp
         Fei4PixelCfg.cpp
-        Fei4PixelPreampTune.cpp
-        Fei4PixelThresholdTune.cpp
-        Fei4Selftrigger.cpp
-        Fei4ThresholdScan.cpp
-        Fei4TotScan.cpp
         Fei4TriggerLoop.cpp)
 
 post_build_debug_library(Fei4)
