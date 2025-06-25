@@ -935,12 +935,6 @@ namespace ScanHelper {
         }
     }
 
-    void listScans() {
-        for(std::string &scan_name: StdDict::listScans()) {
-            std::cout << "  " << scan_name << "\n";
-        }
-    }
-
     void listControllers() {
         for(auto &h: StdDict::listHwControllers()) {
             std::cout << "  " << h << std::endl;
@@ -968,9 +962,6 @@ namespace ScanHelper {
 
         std::cout << " Known histogram algorithms:\n";
         listHistogrammers();
-
-        std::cout << " Known Scans:\n";
-        listScans();
 
         std::cout << " Known ScanLoop actions:\n";
         listScanLoopActions();

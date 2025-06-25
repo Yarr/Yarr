@@ -123,7 +123,6 @@ namespace ScanHelper {
        void banner(std::shared_ptr<spdlog::logger> &logger, const std::string &msg);
        void listChips();
        void listProcessors();
-       void listScans();
        void listControllers();
        void listScanLoopActions();
        void listKnown();
