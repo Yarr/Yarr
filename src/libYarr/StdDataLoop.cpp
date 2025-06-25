@@ -13,6 +13,7 @@
 
 #include "Bookkeeper.h"
 #include "FrontEndClipBoards.h"
+#include "Histo1d.h"
 #include "RxCore.h"
 #include "TxCore.h"
 
@@ -41,6 +42,28 @@ void StdDataLoop::init() {
 
 void StdDataLoop::end() {
     SPDLOG_LOGGER_TRACE(sdllog, "");
+    auto loopCount = m_stats.size();
+    const size_t STAT_COUNT = 4;
+
+    std::array<std::unique_ptr<Histo1d>, STAT_COUNT> histos
+      {std::make_unique<Histo1d>("StdDataLoop_DataSize",
+                                 loopCount, -0.5, loopCount - 0.5),
+       std::make_unique<Histo1d>("StdDataLoop_DataCount",
+                                 loopCount, -0.5, loopCount - 0.5),
+       std::make_unique<Histo1d>("StdDataLoop_ReadCount",
+                                 loopCount, -0.5, loopCount - 0.5),
+       std::make_unique<Histo1d>("StdDataLoop_LoopTime",
+                                 loopCount, -0.5, loopCount - 0.5),
+      };
+
+    for(size_t l=0; l<loopCount; l++) {
+      for(size_t s=0; s<STAT_COUNT; s++) {
+        histos[s]->fill(l, m_stats[l][s]);
+      }
+    }
+    for(size_t s=0; s<STAT_COUNT; s++) {
+      loopHistos->pushData(std::move(histos[s]));
+    }
 }
 
 void StdDataLoop::execPart1() {
@@ -54,6 +77,7 @@ void StdDataLoop::execPart2() {
     SPDLOG_LOGGER_TRACE(sdllog, "");
     unsigned allRawDataCount = 0;
     unsigned nAllRxReadIterations = 0;
+    unsigned nAllRxReadBlocks = 0;
     uint32_t triggerIsDone = 0;
 
     // the RX channels that actually received data, and expect feedback
@@ -104,6 +128,7 @@ void StdDataLoop::execPart2() {
             newData = g_rx->readData();  // read the data from HW controller
             nAllRxReadIterations++;
             nReadsInCurrentRxCycle++;
+            nAllRxReadBlocks += newData.size();
 
             if (newData.size() > 0) {
                 for (auto &dataChunk : newData) {
@@ -260,6 +285,9 @@ void StdDataLoop::execPart2() {
         cp.clipRawData.pushData(std::move(cIterEnd));
         cp.clipProcFeedback.reset();
     }
+
+    // Record stats array (published by end())
+    m_stats.push_back({(float)allRawDataCount, (float)nAllRxReadBlocks, (float)nAllRxReadIterations, (float)timeElapsed.count()});
 
     // report the average channel occupancy data
     for (auto &[id, receivedTriggers] : channelReceivedTriggersCnt) {
