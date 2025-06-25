@@ -25,7 +25,22 @@ namespace {
     auto sdllog = logging::make_log("StdDataLoop");
 }
 
-StdDataLoop::StdDataLoop() : LoopActionBase(LOOP_STYLE_DATA) {
+namespace StdDataLoopDetail {
+  struct LoopStat {
+    unsigned raw_data_count;
+    unsigned rx_block_read_count;
+    unsigned rx_read_iterations;
+    long loop_time_us;
+  };
+
+  struct Stats {
+    std::vector<LoopStat> loop_stats;
+  };
+}
+
+StdDataLoop::StdDataLoop() : LoopActionBase(LOOP_STYLE_DATA),
+                             m_stats{std::make_unique<StdDataLoopDetail::Stats>()}
+{
     loopType = typeid(this);
     min = 0;
     max = 0;
@@ -42,7 +57,7 @@ void StdDataLoop::init() {
 
 void StdDataLoop::end() {
     SPDLOG_LOGGER_TRACE(sdllog, "");
-    auto loopCount = m_stats.size();
+    auto loopCount = m_stats->loop_stats.size();
     const size_t STAT_COUNT = 4;
 
     std::array<std::unique_ptr<Histo1d>, STAT_COUNT> histos
@@ -57,8 +72,16 @@ void StdDataLoop::end() {
       };
 
     for(size_t l=0; l<loopCount; l++) {
+      auto &loop_stat = m_stats->loop_stats[l];
+      std::array<float, STAT_COUNT> d
+        {
+          (float)loop_stat.raw_data_count,
+          (float)loop_stat.rx_block_read_count,
+          (float)loop_stat.rx_read_iterations,
+          (float)loop_stat.loop_time_us,
+        };
       for(size_t s=0; s<STAT_COUNT; s++) {
-        histos[s]->fill(l, m_stats[l][s]);
+        histos[s]->fill(l, d[s]);
       }
     }
     for(size_t s=0; s<STAT_COUNT; s++) {
@@ -287,7 +310,7 @@ void StdDataLoop::execPart2() {
     }
 
     // Record stats array (published by end())
-    m_stats.push_back({(float)allRawDataCount, (float)nAllRxReadBlocks, (float)nAllRxReadIterations, (float)timeElapsed.count()});
+    m_stats->loop_stats.push_back({allRawDataCount, nAllRxReadBlocks, nAllRxReadIterations, timeElapsed.count()});
 
     // report the average channel occupancy data
     for (auto &[id, receivedTriggers] : channelReceivedTriggersCnt) {

@@ -12,6 +12,10 @@
 #include "ClipBoard.h"
 #include "RawData.h"
 
+namespace StdDataLoopDetail {
+struct Stats;
+};
+
 /**
  * Wait for completion of burst and collect data from RxCore.
  */
@@ -36,7 +40,7 @@ class StdDataLoop: public LoopActionBase, public StdDataAction {
         uint32_t m_triggersLostTolerance = 0; // allowed number of lost triggers
 
         /// Record of stats per loop
-        std::vector<std::array<float, 4>> m_stats;
+        std::unique_ptr<StdDataLoopDetail::Stats> m_stats;
 };
 
 #endif
