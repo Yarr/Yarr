@@ -16,6 +16,11 @@
 
 #include "storage.hpp"
 
+namespace HwControllerFeatures {
+  /// Feature is present if the getStatus method is updated with stats during the run
+  static const std::string STATS_IN_STATUS{"STATS_IN_STATUS"};
+}
+
 /**
  * Abstract hardware controller.
  *
