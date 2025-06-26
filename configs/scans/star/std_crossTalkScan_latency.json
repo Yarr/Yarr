@@ -1,0 +1,73 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "OccupancyAnalysis",
+        "storeInputHisto": 1,
+        "config": {}
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      },
+      "n_count": 1
+    },
+    "loops": [
+      {
+        "config": {
+          "max": 30,
+          "min": 30,
+          "step": 1,
+          "parameter": "ABCs_BVT"
+        },
+        "loopAction": "StdParameterLoop"
+      },
+      {
+        "config": {
+          "max": 17,
+          "min": 15,
+          "step": 1,
+          "FEloop": true,
+          "parameter": "ABCs_LATENCY"
+        },
+        "loopAction": "StdParameterLoop"
+      },
+      {
+        "config": {
+          "trig_count": 100,
+          "trig_frequency": 50000,
+          "trig_time": 0,
+          "l0_latency": 20,
+          "noInject": false,
+	        "globalTricklePulse": false,
+	        "useHitCount": false
+        },
+        "loopAction": "StarFelixTriggerLoop"
+      },
+      {
+        "config": {
+          "total_iteration_time_us": 5000000,
+          "triggersLostTolerance": 0,
+          "n_consecutive_rx_reads_before_processing": 1,
+          "average_data_processing_time_us": 10
+        },
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "crossTalkScan",
+    "prescan": {
+      "ABCs_MASKHPR": 1,
+      "ABCs_STOPHPR": 1,
+      "HCC_MASKHPR": 1,
+      "HCC_STOPHPR": 1,
+      "ABCs_PR_ENABLE": 1,
+      "ABCs_LP_ENABLE": 1,
+      "ABCs_DETMODE": 1,
+      "ABCs_CALPULSE_ENABLE": 1,
+      "ABCs_CALPULSE_POLARITY": 0
+    }
+  }
+}
