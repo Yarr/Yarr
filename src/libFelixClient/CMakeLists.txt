@@ -4,6 +4,7 @@ add_library(FelixClient SHARED
         FelixTxCore.cpp
         FelixRxCore.cpp
         FelixTools.cpp
+        FelixRxThread.cpp
         OptoUtils.cpp
         )
 

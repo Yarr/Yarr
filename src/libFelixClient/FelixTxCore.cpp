@@ -80,7 +80,7 @@ bool FelixTxCore::checkChannel(FelixID_t fid) {
     switch(fwMode()){
     case FelixTools::FELIX_FW_MODE::ITK_Pixel: //ITk Pixel firmware
     case FelixTools::FELIX_FW_MODE::ITK_Strip: //ITk Strip firmware
-      fclient->send_data(fid, static_cast<const unsigned char*>(&(m_idleWords[0])), m_idleWords.size(), true); 
+      fclient->send_data(fid, static_cast<const unsigned char*>(&(m_idleWords[0])), m_idleWords.size(), true);
       break;
     default:
       ftlog->error("FELIX firmware version not supported in YARR. Try again...");
@@ -250,7 +250,7 @@ void FelixTxCore::sendFifo(FelixID_t fid, std::vector<uint8_t>& fifo) {
   }
 
   bool flush = true;
-  //fclient->init_send_data(fid);
+  //fclient->getClient()->init_send_data(fid);
   fclient->send_data(fid, fifo.data(), fifo.size(), flush);
 
   // clear the fifo
@@ -550,7 +550,7 @@ void FelixTxCore::trigger() {
       for (const auto& word : buffer) {
         ftlog->trace(" {:02x}", word&0xff);
       }
-      
+
       bool flush = true;
       int nRetriesIfFails=0;
       while (nRetriesIfFails<3) {
@@ -636,8 +636,8 @@ void FelixTxCore::writeConfig(json& j) {
   j["isCmdEmptyWaitTime"] = m_isCmdEmptyWaitTime;
 }
 
-void FelixTxCore::setClient(std::shared_ptr<FelixClientThread> client) {
-  fclient = client;
+void FelixTxCore::setClient(const FelixClientThread::Config& fcConfig) {
+  fclient = std::make_unique<FelixClientThread>(fcConfig);
 }
 
 FelixClientThread::Reply FelixTxCore::accessFelixRegister(

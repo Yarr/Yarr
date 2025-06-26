@@ -61,7 +61,7 @@ protected:
 
   void loadConfig(const json &j); 		     // read configuration from json
   void writeConfig(json& j); 		         // write configuration to json
-  void setClient(std::shared_ptr<FelixClientThread> client); // set Felix client
+  void setClient(const FelixClientThread::Config& fcConfig); // set Felix client
 
   using FelixID_t = FelixTools::FelixID_t;
 
@@ -69,6 +69,7 @@ protected:
   void enableChannel(FelixID_t fid);
   void disableChannel(FelixID_t fid);
   bool checkChannel(FelixID_t fid);
+  bool channelIsEnabled(FelixID_t fid) { return m_enables[fid]; }
 
   void fillFifo(std::vector<uint8_t>& fifo, uint32_t value);
   void prepareFifo(std::vector<uint8_t>& fifo);
@@ -125,12 +126,12 @@ protected:
   uint8_t m_protocol {0}; // protocol ID
   unsigned m_isCmdEmptyWaitTime {100}; // in milliseconds
 
-  std::shared_ptr<FelixClientThread> fclient;
+  std::unique_ptr<FelixClientThread> fclient;
 
   /// @brief Send a command over an IC channel, useful for example in LpGBT register writing
   /// @param fid The FIC of the IC channel (uint64_t)
   /// @param data The dataframe to be sent (const std::vector<uint8_t>&)
   void sendIC(uint64_t fid, const std::vector<uint8_t> dataframe);
-  };
+};
 
 #endif
