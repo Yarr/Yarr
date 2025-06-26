@@ -30,6 +30,7 @@ StdParameterLoop::StdParameterLoop() : LoopActionBase(LOOP_STYLE_PARAMETER) {
 void StdParameterLoop::init() {
     m_done = false;
     m_cur = min;
+    SPDLOG_LOGGER_DEBUG(spllog, "In StdParameterLoop::init for {} at -> {}", parName, m_cur);
     this->writePar();
 }
 
