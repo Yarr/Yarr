@@ -347,7 +347,7 @@ void RawDataHistogram::loadConfig(const json &config)
 }
 
 void RawDataHistogram::create(const LoopStatus &stat) {
-    h = new Histo1d(outputName(), width, -0.5, width - 0.5, stat);
+    h = new Histo1d(outputName(), width, offset - 0.5, offset + width - 0.5, stat);
     h->setXaxisTitle("Bits");
     h->setYaxisTitle("Accumulator");
     r.reset(h);
@@ -391,7 +391,7 @@ void RawDataHistogram::processEvent(FrontEndData *data) {
 
             for(uint32_t bit=bit_start; bit<bit_end; bit++) {
                 if(word & (1<<(31-bit))) {
-                    h->fill((word_index * 32 + bit) - offset);
+                    h->fill(word_index * 32 + bit);
                 }
             }
         }
