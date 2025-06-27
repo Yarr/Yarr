@@ -1,6 +1,8 @@
 #include "catch.hpp"
 #include "logging.h"
 
+#include <bitset>
+
 #include "AllHistogrammers.h"
 #include "EventData.h"
 #include "Histo1d.h"
@@ -135,4 +137,100 @@ TEST_CASE("HistogramRawData", "[Histogrammer][RawData]") {
         CHECK ( histo_as_1d->getBin(1) == Catch::Approx(offset+1) );
       }
     }
+}
+
+TEST_CASE("HistogramRawDataBounds", "[Histogrammer][RawData]") {
+    auto algo = StdDict::getHistogrammer("RawData");
+
+    struct TCB {
+      json cfg;
+      uint32_t width;
+      // Input data, multiples of 32
+      uint32_t len;
+      // Expected count
+      uint32_t count;
+    };
+
+    auto tc = GENERATE
+      (
+       // Check with histogram around same length as input
+       TCB{json{{"width", 4}}, 4, 1, 4},
+       TCB{json{{"width", 31}}, 31, 1, 31},
+       TCB{json{{"width", 32}}, 32, 1, 32},
+       TCB{json{{"width", 33}}, 33, 1, 32},
+       TCB{json{{"width", 40}}, 40, 1, 32},
+
+       TCB{json{{"offset", 0}}, 32, 1, 32},
+       TCB{json{{"offset", 4}}, 32, 1, 28},
+       TCB{json{{"offset", 31}}, 32, 1, 1},
+       TCB{json{{"offset", 32}}, 32, 1, 0},
+       TCB{json{{"offset", 33}}, 32, 1, 0},
+       TCB{json{{"offset", 0}}, 32, 2, 32},
+       TCB{json{{"offset", 4}}, 32, 2, 32},
+       TCB{json{{"offset", 31}}, 32, 2, 32},
+       TCB{json{{"offset", 32}}, 32, 2, 32},
+       TCB{json{{"offset", 33}}, 32, 2, 31},
+
+       TCB{json{{"width", 31}, {"offset", 1}}, 31, 1, 31},
+       TCB{json{{"width", 32}, {"offset", 1}}, 32, 1, 31},
+       TCB{json{{"width", 32}, {"offset", 32}}, 32, 2, 32},
+
+       // Histogram much wider than data
+       TCB{json{{"width", 100}}, 100, 1, 32},
+       TCB{json{{"width", 100}, {"offset", 1}}, 100, 1, 31},
+       TCB{json{{"width", 100}, {"offset", 31}}, 100, 1, 1},
+
+       // Fixed param with different input size
+       TCB{json{{"width", 10}, {"offset", 30}}, 10, 0, 0},
+       TCB{json{{"width", 10}, {"offset", 30}}, 10, 1, 2},
+       TCB{json{{"width", 10}, {"offset", 30}}, 10, 2, 10},
+       TCB{json{{"width", 10}, {"offset", 100}}, 10, 1, 0}
+       );
+
+    algo->loadConfig(tc.cfg);
+    CAPTURE ( tc.width );
+
+    auto data = std::make_unique<FrontEndData>();
+    data->newEvent(0, 0, 0); // Ignored
+
+    // All 1s
+    int input_len = tc.len;
+    CAPTURE ( input_len );
+    for(int i=0; i<input_len; i++) {
+      data->curEvent->addHit(FrontEndHit{0xffff, 0xffff});
+    }
+
+    // Create output histogram
+    algo->create(data->lStat);
+
+    algo->processEvent(data.get());
+
+    std::unique_ptr<HistogramBase> result = algo->getHisto();
+    REQUIRE (result);
+
+    CHECK (result->getXaxisTitle() == "Bits");
+    CHECK (result->getYaxisTitle() == "Accumulator");
+
+    auto histo_as_1d = dynamic_cast<Histo1d *>(&*result);
+
+    REQUIRE ( histo_as_1d );
+
+    CAPTURE ( histo_as_1d->size() );
+    CAPTURE ( histo_as_1d->getEntries() );
+
+    std::bitset<64> bins;
+    
+    for(unsigned b=0; b<histo_as_1d->size(); b++) {
+      if(histo_as_1d->getBin(b)>0.5) {
+        // Reverse order we print
+        bins.set(63-b);
+      }
+    }
+
+    CAPTURE ( bins );
+
+    CHECK ( histo_as_1d->getEntries() == tc.count );
+    CHECK ( histo_as_1d->size() == tc.width );
+    CHECK ( histo_as_1d->getUnderflow() == Catch::Approx(0.0) );
+    CHECK ( histo_as_1d->getOverflow() == Catch::Approx(0.0) );
 }
