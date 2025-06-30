@@ -207,7 +207,6 @@ int main(int argc, char **argv) {
             if (mode=="4-to-1"){
                 fe->writeNamedRegister("ServiceBlockEn", 1);
                 if (chip_id == 12 || chip_id==13 || chip_id==14){ // Secondaries
-                    fe->writeNamedRegister("EnChipId", 1);
                     fe->writeNamedRegister("CdrClkSel", 2);
                     fe->writeNamedRegister("CmlBias0", 500);
                     fe->writeNamedRegister("CmlBias1", 0);
@@ -248,13 +247,7 @@ int main(int argc, char **argv) {
                     fe->writeNamedRegister("DataMergeOutMux2", 2);
                     fe->writeNamedRegister("DataMergeOutMux3", 3);
                     logger->info("Setting up {} as secondary for 2-to-1 merging", name);
-                } else if (chip_id==13){ // Primary
-                    fe->writeNamedRegister("DataMergeEn", 0);
-                    fe->writeNamedRegister("DataMergeEnBond", 1);
-                    fe->writeNamedRegister("ServiceBlockEn", 1);
-                    logger->info("Setting up {} as primary for 2-to-1 merging", name);
-                    lanes.push_back(dynamic_cast<FrontEndCfg*>(&*fe)->getRxChannel());
-                } else if (chip_id==15){ // Primary
+                } else if (chip_id==13 || chip_id==15){ // Primaries
                     fe->writeNamedRegister("DataMergeEn", 0);
                     fe->writeNamedRegister("DataMergeEnBond", 1);
                     fe->writeNamedRegister("ServiceBlockEn", 1);
