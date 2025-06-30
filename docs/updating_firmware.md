@@ -18,7 +18,7 @@ The yellow boxes with the “X” indicate good data transmission (over the fini
 
 ## Guide for switching to 1.28 Gbps
 
-Following the instructions in [FPGA Setup](pcie.md), download the latest version of the firmware using the [flash.sh](http://yarr.web.cern.ch/yarr/firmware/flash.sh) script (don't forget to source vivado). 
+Following the instructions in [FPGA Setup](pcie_ext.md), download the latest version of the firmware using the [flash.sh](http://yarr.web.cern.ch/yarr/firmware/flash.sh) script (don't forget to source vivado). 
 
 ```bash
  wget --backups=1 http://yarr.web.cern.ch/yarr/firmware/flash.sh

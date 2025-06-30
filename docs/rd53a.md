@@ -61,7 +61,7 @@ All subsequent scans assume single chip operation; however, when testing triplet
 Here are some things to be mindful of as you are planning on running with multiple RD53a:
 
 - multiple PCIexpress cards: each PCIexpress card has its own `specNum`; therefore, the user needs to creat one specCfg-rd53a.json per PCIExpress card.
-- setting up the configuration for whether each RD53a receives its own command or will share a command line. Both of these instances are described in [ScanConsole](scanconsole).
+- setting up the configuration for whether each RD53a receives its own command or will share a command line. Both of these instances are described in [ScanConsole](scanconsole.md).
 - setting up the correct chipId for each RD53a in a triplet or a quad. After running a scan or just running scanConsole without running a scan, a configuration for each chip will be created. The `ChipId` for each FE will be set to 0 (default). You must change this value to match the wire-bonded value in each configuration. 
 
 ### Running scans with multiple chips
@@ -73,11 +73,11 @@ In the above example, chip with tx/rx 1 did not receive valid data.
 
 ### Additional configuration changes for quad modules
 
-To run quad modules, you need to set up the chips such that all 4 chips share one command line. This is further described in [ScanConsole](scanconsole). In order to distinguish different chips, communication is done via chip IDs which are set via wirebonds on a quad module. The corresponding values have to be set in the chip configurations as well:
+To run quad modules, you need to set up the chips such that all 4 chips share one command line. This is further described in [ScanConsole](scanconsole.md). In order to distinguish different chips, communication is done via chip IDs which are set via wirebonds on a quad module. The corresponding values have to be set in the chip configurations as well:
 
 - `ChipId`: the ChipId for each chip should be set according to wirebonding map and the silk screen on the module PCB (Chip1: `1`, Chip2: `2`, Chip3: `3`, Chip4: `4`)
 
-Depending on how many lanes per chip you read out, the correct [firmware](fw_guide/#channel-configuration) is needed too. On an RD53A quad module PCB only 3 out of 4 lanes per chip are connected.
+Depending on how many lanes per chip you read out, the correct [firmware](fw_guide.md#channel-configuration) is needed too. On an RD53A quad module PCB only 3 out of 4 lanes per chip are connected.
 
 If you have a 4-display port adaptor card, the correct controller configuration file shall be used to read out all connected lanes:
 ``specCfg-rd53a-4x3.json``
@@ -108,7 +108,7 @@ To create the default chip configuration without running a scan:
 bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json
 ```
 
-More general information about how to use the scanConsole, can be found on the main page: [ScanConsole](scanconsole). This page details each of the configuration settings. 
+More general information about how to use the scanConsole, can be found on the main page: [ScanConsole](scanconsole.md). This page details each of the configuration settings. 
 
 In case you run into problems or have abnormal results please consult the troubleshooting page here: [Troubleshooting](troubleshooting)
 
