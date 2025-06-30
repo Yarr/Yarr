@@ -30,7 +30,7 @@
           "max": 17,
           "min": 15,
           "step": 1,
-          "FEloop": true,
+          "activeLoop": true,
           "parameter": "ABCs_LATENCY"
         },
         "loopAction": "StdParameterLoop"
@@ -42,17 +42,16 @@
           "trig_time": 0,
           "l0_latency": 20,
           "noInject": false,
-	        "globalTricklePulse": false,
 	        "useHitCount": false
         },
         "loopAction": "StarFelixTriggerLoop"
       },
       {
         "config": {
-          "total_iteration_time_us": 5000000,
+          "maxIterationTime": 5000000,
           "triggersLostTolerance": 0,
-          "n_consecutive_rx_reads_before_processing": 1,
-          "average_data_processing_time_us": 10
+          "maxConsecutiveRxReads": 1,
+          "averageDataProcessingTime": 10
         },
         "loopAction": "StdDataLoop"
       }
