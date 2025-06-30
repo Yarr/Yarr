@@ -24,7 +24,7 @@ StdParameterLoop::StdParameterLoop() : LoopActionBase(LOOP_STYLE_PARAMETER) {
     step = 1;
     m_waitTime = std::chrono::microseconds(0);
     m_cur = 0;
-    m_FEloop = false;
+    m_activeLoop = false;
 }
 
 void StdParameterLoop::init() {
@@ -56,7 +56,7 @@ void StdParameterLoop::end() {
 }
 
 void StdParameterLoop::writePar() {
-    if (!m_FEloop){
+    if (!m_activeLoop){
         SPDLOG_LOGGER_DEBUG(spllog, "Writing to global FE");
         keeper->getGlobalFe()->writeNamedRegister(parName, m_cur);
     }
@@ -83,7 +83,7 @@ void StdParameterLoop::writeConfig(json &j) {
     j["step"] = step;
     j["parameter"] = parName;
     j["waitTime"] = m_waitTime.count();
-    j["FEloop"] = m_FEloop;
+    j["activeLoop"] = m_activeLoop;
 }
 
 void StdParameterLoop::loadConfig(const json &j) {
@@ -100,6 +100,6 @@ void StdParameterLoop::loadConfig(const json &j) {
     if (j.contains("waitTime")) {
         m_waitTime = std::chrono::microseconds(j["waitTime"]);
     }
-    if (j.contains("FEloop"))
-        m_FEloop = j["FEloop"];
+    if (j.contains("activeLoop"))
+        m_activeLoop = j["activeLoop"];
 }
