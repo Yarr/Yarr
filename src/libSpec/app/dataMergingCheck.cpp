@@ -202,6 +202,7 @@ int main(int argc, char **argv) {
             int chip_id=jchip[chipType]["Parameter"]["ChipId"];
 
             fe->writeNamedRegister("EnChipId", 1);
+            fe->writeNamedRegister("SerEnLane", 15);
             // Check which data merging mode we want to test 
             if (mode=="4-to-1"){
                 fe->writeNamedRegister("ServiceBlockEn", 1);
@@ -240,7 +241,6 @@ int main(int argc, char **argv) {
                     fe->writeNamedRegister("CdrClkSel", 2);
                     fe->writeNamedRegister("CmlBias0", 500);
                     fe->writeNamedRegister("CmlBias1", 0);
-                    fe->writeNamedRegister("SerEnLane", 15);
                     fe->writeNamedRegister("SerSelOut0", 1);
                     fe->writeNamedRegister("SerSelOut1", 1);
                     fe->writeNamedRegister("DataMergeOutMux0", 1);
