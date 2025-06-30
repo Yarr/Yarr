@@ -391,7 +391,7 @@ int ScanConsoleImpl::initHardware() {
     // Loop chip configs
     for(json const& config : chipConfig){
         try {
-            chipType = ScanHelper::buildChips(config, *bookie, &*hwCtrl, feCfgMap);
+            chipType = ScanHelper::buildChips(config, *bookie, &*hwCtrl, feCfgMap, logger);
         } catch (std::runtime_error &e) {
             logger->critical("#ERROR# loading chip config: {}", e.what());
             return -1;

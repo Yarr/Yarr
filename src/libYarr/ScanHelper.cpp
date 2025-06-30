@@ -345,7 +345,7 @@ namespace ScanHelper {
     }
 
     std::string buildChips(const json &config, Bookkeeper &bookie, HwController *hwCtrl,
-            std::map<unsigned, std::array<std::string,2>> &feCfgMap) {
+            std::map<unsigned, std::array<std::string,2>> &feCfgMap, std::shared_ptr<spdlog::logger> &logger) {
         const std::string &chipType = config["chipType"];
         shlog->info("Chip type: {}", chipType);
         shlog->info("Chip count {}", config["chips"].size());
@@ -378,10 +378,10 @@ namespace ScanHelper {
             }
             if (chip.contains("active")) {
                 bool active = false;
-                if (chip["active"].is_boolean())
+                if (!chip["active"].is_boolean())
+                    logger->warn("WARNING 'active' flag should be a boolean");
+                else 
                     active = chip["active"];
-                if (chip["active"].is_number())
-                    active = (int)chip["active"];
                 bookie.getLastFe()->setActive(active);
             }
 
