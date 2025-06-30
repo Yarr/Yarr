@@ -17,8 +17,6 @@ The currently supported readout chips are:
 * ITkPixV2 (RD53C)
 * ABC/HCC STAR
 
-There is very preliminary support for Star chips (strips).
-
 ## Support
 
 Support for YARR can be found in the [YARR Matter Most channel.](https://mattermost.web.cern.ch/yarr/ "YARR MatterMost")

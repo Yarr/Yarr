@@ -10,24 +10,27 @@ nav:
     - Updating to 1.28 Gbps: updating_firmware.md
     - Firmware Trigger Tagging Guide: trigger_tagging.md
     - External PCIe: pcie_ext.md
-    - ScanConsole: scanconsole.md
-    - ScanLoops: scan_loops.md
-    - ScanHistograms: scan_histogrammers.md
-    - ScanAnalyses: scan_analyses.md
-    - FE-I4: fei4.md
-    - FE65-P2: fe65p2.md
-    - RD53A: rd53a.md
-    - RD53B (ITkPix v1): rd53b.md
-    - RD53C (ITkPix v2): itkpixv2.md
-    - RD53 common info: rd53.md
-    - Star: star.md
+    - Scan Console:
+          - ScanConsole Command: scanconsole.md
+          - Scan Loops: scan_loops.md
+          - Scan Histograms: scan_histogrammers.md
+          - Scan Analyses: scan_analyses.md
+    - FrontEnds:
+          - FE-I4: fei4.md
+          - FE65-P2: fe65p2.md
+          - RD53A: rd53a.md
+          - RD53B (ITkPix v1): rd53b.md
+          - RD53C (ITkPix v2): itkpixv2.md
+          - RD53 common info: rd53.md
+          - Star: star.md
     - LocalDB: https://atlas-itk-pixel-localdb.docs.cern.ch/
     - Plotting Tools: plotting.md
     - Logging configuration: logging.md
-    - FelixClient: felixclient.md
-    - NetIO: netio.md
-    - BDAQ Hardware: bdaq.md
-    - ITSDAQ FW: itsdaq.md
+    - Hardware controllers:
+          - FelixClient: felixclient.md
+          - NetIO: netio.md
+          - BDAQ Hardware: bdaq.md
+          - ITSDAQ FW: itsdaq.md
     - AnalysisConsole: analysisconsole.md
     - Troubleshooting: troubleshooting.md
     - Emulator: emulator.md
