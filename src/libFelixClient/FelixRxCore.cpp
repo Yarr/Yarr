@@ -215,7 +215,7 @@ void FelixRxCore::loadConfig(const json &j) {
 
   if (j.contains("enableMonitor")) {
     m_runMonitor = j["enableMonitor"];
-    frlog->info(" run monitor = {}", m_runMonitor);
+    frlog->info(" run monitor = {}", m_runMonitor.load());
   }
   if (j.contains("monitorInterval")) {
     m_interval_ms = j["monitorInterval"];

@@ -266,7 +266,7 @@ void FelixRxThread::reportStatistics() {
     frtlog->info("Rx fid 0x{:x}: data rate = {:.2f} Mb/s  message rate = {:.2f} kHz", fid, stats.byte_rate*8e-6, stats.msg_rate/1000);
 
     if (stats.error or stats.crc or stats.truncated) {
-      frtlog->warn("FELIX errors on fid 0x{:x}: fw/sw errors = {}  crc errors = {}  fw/sw truncations = {}", fid, stats.error, stats.crc, stats.truncated);
+      frtlog->warn("FELIX errors on fid 0x{:x}: fw/sw errors = {}  crc errors = {}  fw/sw truncations = {}", fid, stats.error.load(), stats.crc.load(), stats.truncated.load());
     }
   }
 
