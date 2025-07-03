@@ -154,7 +154,9 @@ job_build_test_gcc_15:
     - apt-get install -y cmake make
     - mkdir build
     - cd build
-    - cmake .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=OFF
+    # Excluding bdaq as boost is missing
+    - export CONTROLLERS="Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Itkpixv2Emu;NetioHW;FelixClient;ItsdaqFW"
+    - cmake .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=${CONTROLLERS} -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=OFF
     - make install -j$(nproc)
     - CTEST_OUTPUT_ON_FAILURE=1 make test
     - cd ..
