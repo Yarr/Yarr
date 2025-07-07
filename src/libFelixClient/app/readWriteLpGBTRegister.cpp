@@ -1,4 +1,5 @@
 #include "FelixController.h"
+#include "FelixTools.h"
 #include "logging.h"
 #include "LoggingConfig.h"
 #include "ScanHelper.h"
@@ -71,6 +72,10 @@ int main(int argc, char **argv) {
             return -1;
 	    }
     }
+
+    // Report
+    logger->debug("rx_fid: 0x{:016x}, {}", rx_fid, FelixTools::print_fid(rx_fid));
+    logger->debug("tx_fid: 0x{:016x}, {}", tx_fid, FelixTools::print_fid(tx_fid));
 
     // Configure controller
     json jctrl;
