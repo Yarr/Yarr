@@ -614,6 +614,11 @@ void ScanConsoleImpl::run() {
     scanLog["stopwatch"]["scan"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(scan_done-scan_start).count();
     scanLog["stopwatch"]["processing"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(processor_done-scan_done).count();
     scanLog["stopwatch"]["analysis"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(all_done-processor_done).count();
+
+    if(hwCtrl->hasFeature(HwControllerFeatures::STATS_IN_STATUS)) {
+      scanLog["ctrlPostScanStatus"] = hwCtrl->getStatus();
+    }
+
     hwCtrl.reset();
     scanLog["finishTime"] = (int)std::time(nullptr);
 
