@@ -18,12 +18,15 @@ namespace {
 
     void printHelp() {
         std::cout << "Read or write LpGBT register by providing a register name" << std::endl;
-        std::cout << "Read Usage: readLpGBTRegister -r HW_CONFIG -n \"REGNAME\" -R RX_FID -T TX_FID -d DEVICE_ADDRESS" << std::endl;
-        std::cout << "Write Usage: readLpGBTRegister -r HW_CONFIG -n \"REGNAME\" -v REGVAL -R RX_FID -T TX_FID -d DEVICE_ADDRESS" << std::endl;
+        std::cout << "Read Usage: readWriteLpGBTRegister -r HW_CONFIG -n \"REGNAME\" -R RX_FID -T TX_FID -d DEVICE_ADDRESS" << std::endl;
+        std::cout << "Write Usage: readWriteLpGBTRegister -r HW_CONFIG -n \"REGNAME\" -v REGVAL -R RX_FID -T TX_FID -d DEVICE_ADDRESS" << std::endl;
         std::cout << " -h : Show this help." << std::endl;
+        std::cout << "For example:\n";
+        std::cout << "  readWriteLpGBTRegister -r configs/felix_config.json -n \"CHIPID\" -R 0x18000000 -T 0x18000000 -d 0\n";
+        std::cout << "  readWriteLpGBTRegister -r configs/felix_config.json -n \"EPRX3CONTROL\" -v 5 -R 0x18000000 -T 0x18000000 -d 0\n";
     }
 }
-  
+
 int main(int argc, char **argv) {
     // Configure logger
     // default
@@ -48,29 +51,36 @@ int main(int argc, char **argv) {
         case 'h':
             printHelp();
             return 0;
-		case 'r':
+        case 'r':
             hw_controller_filename = optarg;
             break;
         case 'n':
             regname = optarg;
             break;
         case 'v':
-            regval = std::stoi(optarg);
+            regval = std::stoi(optarg, 0, 0);
             write = true;
             break;
         case 'R':
-            rx_fid = std::stoull(optarg);
+            rx_fid = std::stoull(optarg, 0, 0);
             break;
         case 'T':
-            tx_fid = std::stoull(optarg);
+            tx_fid = std::stoull(optarg, 0, 0);
             break;
         case 'd':
             devaddr = std::stoi(optarg);
             break;
-		default:
+        default:
             logger->error(" Invalid arguments provided");
+            printHelp();
             return -1;
-	    }
+        }
+    }
+
+    if(optind != argc) {
+      logger->error("Invalid extra arguments provided");
+      printHelp();
+      return -1;
     }
 
     // Report
