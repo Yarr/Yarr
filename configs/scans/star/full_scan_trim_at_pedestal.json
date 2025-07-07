@@ -1,0 +1,63 @@
+{
+  "scan": {
+    "analysis": [
+      {
+        "algorithm": "ScurveFitter",
+        "config": {
+          "parametersOfInterest": [
+            "ABCs_TRIMs"
+          ]
+        }
+      },
+      {
+        "algorithm": "ParameterAnalysis",
+        "config": {
+          "createMap": true
+        }
+      }
+    ],
+    "histogrammer": [
+      {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      }
+    ],
+    "loops": [
+      {
+        "config": {
+          "min": 0,
+          "max": 31,
+          "parameter": "ABCs_TRIMs"
+        },
+        "loopAction": "StdParameterLoop"
+      },
+      {
+        "config": {
+          "trig_count": 50,
+          "trig_frequency": 1000,
+          "trig_time": 0,
+          "l0_latency": 30,
+          "extTrigger": false,
+          "noInject": true
+        },
+        "loopAction": "StarTriggerLoop"
+      },
+      {
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "DebugScanTrimAtPedestal",
+    "prescan": {
+      "ABCs_PR_ENABLE": 1,
+      "ABCs_LP_ENABLE": 1,
+      "ABCs_BTRANGE": 6,
+      "ABCs_DETMODE": 0,
+      "ABCs_MASKHPR": 1,
+      "ABCs_STOPHPR": 1,
+      "ABCs_BVT": 15,
+      "ABCs_COMBIAS": 16,
+      "HCC_MASKHPR": 1,
+      "HCC_STOPHPR": 1
+    }
+  }
+}
