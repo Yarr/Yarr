@@ -62,22 +62,22 @@ void FelixController::loadConfig(const json &j) {
       uint64_t rx_fid = FelixRxCore::ic_fid_from_channel(0);
 
       if (dev.contains("version"))
-        version = j["OptoDevices"][i]["version"];
+        version = dev["version"];
       if (dev.contains("i2cAddr"))
-        i2c_addr = j["OptoDevices"][i]["i2cAddr"];
+        i2c_addr = dev["i2cAddr"];
       if (dev.contains("devAddr"))
-        dev_addr = j["OptoDevices"][i]["devAddr"];
+        dev_addr = dev["devAddr"];
       if (dev.contains("devPrimaryAddr"))
-        dev_primary_addr = j["OptoDevices"][i]["devPrimaryAddr"];
+        dev_primary_addr = dev["devPrimaryAddr"];
       if (dev.contains("type"))
-        type = j["OptoDevices"][i]["type"];
+        type = dev["type"];
       if (dev.contains("txFid")){
-        std::string tx_fid_str = j["OptoDevices"][i]["txFid"];
-        tx_fid = std::stoull(tx_fid_str);
+        std::string tx_fid_str = dev["txFid"];
+        tx_fid = std::stoull(tx_fid_str, 0, 0);
       }
       if (dev.contains("rxFid")){
-        std::string rx_fid_str = j["OptoDevices"][i]["rxFid"];
-        rx_fid = std::stoull(rx_fid_str);
+        std::string rx_fid_str = dev["rxFid"];
+        rx_fid = std::stoull(rx_fid_str, 0, 0);
       }
 
       m_opto_dev_list.emplace_back(std::make_unique<OptoDevice>(version, i2c_addr, dev_addr, dev_primary_addr, type, tx_fid, rx_fid));
