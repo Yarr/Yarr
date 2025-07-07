@@ -1,0 +1,11 @@
+diff --git a/test/test_event_loop.cpp b/test/test_event_loop.cpp
+index 775ecc1..28e2ffd 100644
+--- a/test/test_event_loop.cpp
++++ b/test/test_event_loop.cpp
+@@ -1,5 +1,6 @@
+ #include "catch/catch.hpp"
+ #include <unistd.h>
++#include <cstring>
+ #include "netio/netio.hpp"
+ 
+ using namespace netio;

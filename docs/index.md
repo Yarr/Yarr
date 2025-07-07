@@ -6,7 +6,7 @@ YARR is a readout system based around the concept of moving intelligence from th
 * Simple PCIe Carrier Cards (SPEC): XpressK7 160/325, Trenz TEF1001 R1/R2, Numato Nereid K7 and Xilinx KC705
 * FELIX + NETIO
 * FELIX-STAR + NETIO-NEXT
-* BDAQ Hardware 
+* BDAQ Hardware
 
 The currently supported readout chips are:
 
@@ -40,7 +40,6 @@ Support for YARR can be found in the [YARR Matter Most channel.](https://matterm
 │   ├── logging
 │   ├── scans : scan config for various front-end types
 ├── docs : this documentation
-├── localdb : scripts to interface with local db
 ├── python : python scripts using bindings
 ├── scripts : various other scripts for QoL
 ├── src : main source code
@@ -50,7 +49,7 @@ Support for YARR can be found in the [YARR Matter Most channel.](https://matterm
 │   ├── libFei4Emu : FEI4 emulator
 │   ├── libFelixClient : FELIX client thread platform controller
 │   ├── libItkpixv2 : ITkPixV2 front-end library
-│   ├── libItkpixv2Emu : ITkPixV2 emulator 
+│   ├── libItkpixv2Emu : ITkPixV2 emulator
 │   ├── libItsdaqFW : ITSDAQ platform controller
 │   ├── libNetioHW : FELIX NetIO platform controller
 │   ├── libRd53a : RD53A fron-end library
@@ -59,10 +58,10 @@ Support for YARR can be found in the [YARR Matter Most channel.](https://matterm
 │   ├── libSpec : SPEC platform controller
 │   ├── libStar : STAR chips (HCC, ABC) front-end library
 │   ├── libStarEmu : STAR chips emulator
-│   ├── libUtil : utilities 
+│   ├── libUtil : utilities
 │   ├── libYarr : Primary Yarr library
 │   ├── python : python bindings
-│   ├── tools : Primary Yarr executeables 
+│   ├── tools : Primary Yarr executeables
 ```
 
 

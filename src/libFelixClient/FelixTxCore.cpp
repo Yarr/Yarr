@@ -57,6 +57,22 @@ FelixTxCore::FelixID_t FelixTxCore::fid_from_channel(uint32_t chn) {
     );
 }
 
+FelixTxCore::FelixID_t FelixTxCore::ic_fid_from_channel(uint32_t chn) {
+  // Compute FelixID from did, cid, channel number
+  // for IC in the tx direction (to-flx), we shift the elink by 17 and scale by 64 * the link number
+  uint16_t link_id = FelixTools::link_from_chn(chn);
+  uint8_t link_multiplier = 64;
+  uint8_t elink_offset = 17;
+  uint8_t elink = link_id * link_multiplier+ elink_offset;
+
+  bool is_virtual = false;
+  uint8_t sid = 0;
+  
+  return FelixTools::get_fid(
+    m_did, m_cid, is_virtual, link_id, elink, true, m_protocol, sid
+    );
+}
+
 bool FelixTxCore::checkChannel(FelixID_t fid) {
   ftlog->debug("Try sending data to Tx link: 0x{:x}",fid);
 
@@ -64,7 +80,7 @@ bool FelixTxCore::checkChannel(FelixID_t fid) {
     switch(fwMode()){
     case FelixTools::FELIX_FW_MODE::ITK_Pixel: //ITk Pixel firmware
     case FelixTools::FELIX_FW_MODE::ITK_Strip: //ITk Strip firmware
-      fclient->send_data(fid, static_cast<const unsigned char*>(&(m_idleWords[0])), m_idleWords.size(), true); 
+      fclient->send_data(fid, static_cast<const unsigned char*>(&(m_idleWords[0])), m_idleWords.size(), true);
       break;
     default:
       ftlog->error("FELIX firmware version not supported in YARR. Try again...");
@@ -234,7 +250,7 @@ void FelixTxCore::sendFifo(FelixID_t fid, std::vector<uint8_t>& fifo) {
   }
 
   bool flush = true;
-  //fclient->init_send_data(fid);
+  //fclient->getClient()->init_send_data(fid);
   fclient->send_data(fid, fifo.data(), fifo.size(), flush);
 
   // clear the fifo
@@ -534,7 +550,7 @@ void FelixTxCore::trigger() {
       for (const auto& word : buffer) {
         ftlog->trace(" {:02x}", word&0xff);
       }
-      
+
       bool flush = true;
       int nRetriesIfFails=0;
       while (nRetriesIfFails<3) {
@@ -620,8 +636,8 @@ void FelixTxCore::writeConfig(json& j) {
   j["isCmdEmptyWaitTime"] = m_isCmdEmptyWaitTime;
 }
 
-void FelixTxCore::setClient(std::shared_ptr<FelixClientThread> client) {
-  fclient = client;
+void FelixTxCore::setClient(const FelixClientThread::Config& fcConfig) {
+  fclient = std::make_unique<FelixClientThread>(fcConfig);
 }
 
 FelixClientThread::Reply FelixTxCore::accessFelixRegister(
@@ -725,4 +741,23 @@ FelixTools::FELIX_FW_MODE FelixTxCore::fwMode() {
     loadFWMode();
   }
   return m_fwMode;
+}
+
+void FelixTxCore::sendIC(uint64_t fid, const std::vector<uint8_t> dataframe){
+  /*
+    Based on itk-ic-over-netio-next communication wrapper, 
+    source: https://gitlab.cern.ch/itk-felix-sw/itk-ic-over-netio-next/-/blob/master/src/itk-ic-over-netio-next.cc?ref_type=heads
+  */
+  bool flush = true;
+
+  if (m_enables[fid] == false){
+    enableChannel(fid);
+  }
+  try {
+    fclient->send_data(fid, dataframe.data(), dataframe.size(), flush);
+  }
+  catch (FelixClientResourceNotAvailableException &e) {
+	  ftlog->warn("Exception from FelixClient::send_data: {}. Retrying.", e.what());
+	  std::this_thread::sleep_for(std::chrono::microseconds(m_isCmdEmptyWaitTime));
+ }
 }

@@ -4,11 +4,27 @@
 #include "StarCfg.h"
 #include "LCBUtils.h"
 #include "StripModel.h"
+#include "ClipBoard.h"
+#include "RawData.h"
 
 #include <queue>
 #include <bitset>
 
 class StarCfg;
+
+namespace StarEmuNS {
+  // FE data format
+  static constexpr unsigned NStrips = 256;
+  using StripData = std::bitset<NStrips>;
+}
+
+/// Generate analogue hit patterns
+class StripGenerator {
+public:
+  virtual ~StripGenerator() = default;
+
+  virtual void fill_hits(StarEmuNS::StripData &hits, const AbcCfg &abc, bool cal_pulse) = 0;
+};
 
 /**
  * Emulation of one HCCStar and its connected ABCStars.
@@ -16,11 +32,6 @@ class StarCfg;
 
 class StarChipsetEmu {
 public:
-
-  enum class PacketTypes {
-    PR = 1, LP = 2, ABCRegRd = 4, ABCPacketTransRegRd = 7, HCCRegRd = 8,
-    ABCFullTransRegRd = 11, ABCHPR = 13, HCCHPR = 14
-  };
 
   StarChipsetEmu(ClipBoard<RawData>* rx, const std::string& json_emu_file_path,
                  std::unique_ptr<StarCfg> regCfg, unsigned hpr_period,
@@ -41,8 +52,7 @@ public:
 private:
 
   // FE data format
-  static constexpr unsigned NStrips = 256;
-  using StripData = std::bitset<NStrips>;
+  using StripData = StarEmuNS::StripData;
 
   /////////////////////////////////////////////
   /// Send response packet (excluding SOP/EOP)
@@ -50,16 +60,10 @@ private:
     sendPacket(&(*std::begin(iterable)), &(*std::end(iterable)));
   }
 
+  void configureGenerator(const json &jEmu);
+
   /// Send response packet (excluding SOP/EOP)
   void sendPacket(uint8_t *byte_s, uint8_t *byte_e);
-
-  /// Build data packet
-  std::vector<uint8_t> buildPhysicsPacket(
-    const std::vector<std::vector<uint16_t>>&, PacketTypes, uint8_t, uint8_t,
-    uint16_t endOfPacket=0x6fed);
-  std::vector<uint8_t> buildABCRegisterPacket(PacketTypes, uint8_t, uint8_t,
-                                              unsigned, uint16_t);
-  std::vector<uint8_t> buildHCCRegisterPacket(PacketTypes, uint8_t, unsigned);
 
   /// Register R/W commands
   void execute_command_sequence();
@@ -101,11 +105,7 @@ private:
   std::pair<uint8_t,StripData> generateFEData_TestPulse(const AbcCfg&, unsigned);
   std::pair<uint8_t,StripData> generateFEData_CaliPulse(const AbcCfg&, unsigned);
 
-  StripData getMasks(const AbcCfg& abc);
-  StripData getCalEnables(const AbcCfg& abc);
-
   /// Utilities
-  bool getParity_8bits(uint8_t);
   bool getBit_128b(uint8_t, uint64_t, uint64_t);
   void setBit_128b(uint8_t, bool, uint64_t&, uint64_t&);
 
@@ -167,9 +167,8 @@ private:
   // HCCStar and ABCStar configurations
   std::unique_ptr<StarCfg> m_starCfg;
 
-  ////////////////////////////////////////
-  // Analog FE
-  std::array<StripModel, NStrips> m_stripArray;
+  /// Generator of analogue hits based on parameters
+  std::unique_ptr<StripGenerator> m_generator;
 };
 
 #endif //__STAR_CHIPSET_EMU_H__

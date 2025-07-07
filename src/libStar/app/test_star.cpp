@@ -20,6 +20,8 @@
 
 namespace {
   auto logger = logging::make_log("test_star");
+  // A second logger for recording HCC and ABC IDs after probing
+  auto logger_id = logging::make_log("test_star_ids");
 
   StarCmd star;
 
@@ -42,9 +44,9 @@ namespace {
   */
   std::map<std::string, std::vector<std::string>> sequenceMap = {
       {"Full", {
-          "checkHPRs", "probeHCCs", "testHCCRegister",
+          "checkHCCHPRs", "probeHCCs", "testHCCRegister",
           "configureHCC",
-          "probeABCs", "testABCRegister",
+          "checkABCHPRs", "probeABCs", "testABCRegister",
           "configureABC",
           "testHitCounts",
           "testDataPacketsStatic",
@@ -74,10 +76,10 @@ namespace {
         Probe the front end ASICs
       */
       {"Probe", {
-          "checkHPRs", "probeHCCs",
+          "checkHCCHPRs", "probeHCCs",
           // In case resets were sent, HCCs need to be reconfigured to talk to ABCs
           "configureHCCIfReset", // only if doResets set
-          "probeABCs",
+          "checkABCHPRs", "probeABCs",
         }},
 
       /*
@@ -517,7 +519,7 @@ void configureABC(HwController& hwCtrl, StarCfg& cfg, bool reset) {
 }
 
 // Test steps
-bool checkHPRs(HwController& hwCtrl,
+bool checkHCCHPRs(HwController& hwCtrl,
                const std::vector<uint32_t>& rxChannels,
                bool reset)
 {
@@ -617,6 +619,7 @@ bool probeHCCs(
         uint32_t hccID = (packet.value & 0xf0000000) >> 28; // top four bits
         uint32_t fuseID = packet.value & 0x00ffffff; // lowest 24 bits
         logger->info("Found HCCStar @ Tx = {} Rx = {}: ID = 0x{:x} eFuse ID = 0x{:06x}", tx, rx, hccID, fuseID);
+        logger_id->trace("HCCStar @ Tx = {} Rx = {}: ID = 0x{:x} eFuse ID = 0x{:06x}", tx, rx, hccID, fuseID);
         hasHCCTx = true;
 
         if (setID) {
@@ -650,8 +653,9 @@ bool probeHCCs(
   return true;
 }
 
-bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars, bool reset) {
-  bool hasABCStar = false;
+bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars, bool reset) {
+  bool receivedABCHPR = false;
+  bool hprGood = true;
 
   if (reset) {
     sendCommand(LCB::fast_command(LCB::ABC_REG_RESET, 0), hwCtrl);
@@ -668,8 +672,6 @@ bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars
     auto [addr_sc, val_sc] = updateABCSubRegister(ABCStarSubRegister::TESTHPR, 1, cfg);
     sendCommand(star.write_abc_register(addr_sc, val_sc), hwCtrl);
 
-    unsigned activeInChannels = 0;
-
     std::function<bool(RawData&)> filter_abchpr = [&hcc](RawData& d) {
       return isPacketType(d, TYP_ABC_HPR) and isFromChannel(d, hcc.rx);
     };
@@ -678,45 +680,140 @@ bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars
     auto rdc = readAllData(hwCtrl, filter_abchpr, timeout);
 
     for (unsigned c = 0; c < rdc.size(); c++) {
-        RawDataPtr d = rdc.data[c];
+      RawDataPtr d = rdc.data[c];
       StarChipPacket packet;
 
       if ( packetFromRawData(packet, *d) ) {
         logger->error("Packet parse failed");
+        continue;
+      }
+
+      logger->trace(" Received an HPR packet from ABCStar");
+      receivedABCHPR = true;
+
+      // check the input channel
+      uint32_t abc_chn = packet.channel_abc;
+      // get the chipID from the top four bits of the 16-bit status word
+      uint32_t abcid = (packet.abc_status >> 12) & 0xf;
+
+      if ( hcc.abcs.find(abc_chn) != hcc.abcs.end() ) {
+        // already reported the HPR on this channel. skip.
+        continue;
+      }
+
+      // HPR from a new channel
+      hcc.abcs[abc_chn] = abcid;
+      logger->info(" Received an HPR packet from the ABCStar on channel {} with chipID {}", abc_chn, abcid);
+
+      // print the HPR packet
+      std::stringstream os;
+      packet.print_more(os);
+      std::string str = os.str();
+      str.erase(str.end()-1); // strip the extra \n
+      logger->debug(" Received HPR packet: {}", str);
+
+      // check flags in HPR
+      bool lcb_scmd_err = packet.value & (1<<15);
+      if (lcb_scmd_err) logger->warn(" LCB slow command error");
+
+      bool lcb_errcnt_ovfl = packet.value & (1<<14);
+      if (lcb_errcnt_ovfl) logger->warn(" LCB error count overflow");
+
+      bool lcb_decode_err = packet.value & (1<<13);
+      if (lcb_decode_err) logger->warn(" LCB decode error");
+
+      bool lcb_locked = packet.value & (1<<12);
+      if(lcb_locked) {
+        logger->debug(" LCB locked");
       } else {
-        logger->trace(" Received an HPR packet from ABCStar");
-        hasABCStar = true;
-
-        // check the input channel
-        uint32_t abc_chn = packet.channel_abc;
-        // get the chipID from the top four bits of the 16-bit status word
-        uint32_t abcid = (packet.abc_status >> 12) & 0xf;
-
-        if ( hcc.abcs.find(abc_chn) == hcc.abcs.end() ) {
-          // new channel
-          hcc.abcs[abc_chn] = abcid;
-          logger->info(" Received an HPR packet from the ABCStar on channel {} with chipID {}", abc_chn, abcid);
-          activeInChannels |= (1 << abc_chn);
-
-          // print the HPR packet
-          std::stringstream os;
-          packet.print_more(os);
-          std::string str = os.str();
-          str.erase(str.end()-1); // strip the extra \n
-          logger->debug(" Received HPR packet: {}", str);
-        }
+        logger->error(" LCB NOT locked");
+        hprGood = false;
       }
 
     } // end of data container loop
 
-    if (not activeInChannels) {
-      logger->warn("No ABCStar data from HCCStar {}", hcc.hcc_id);
-    }
+  } // end of HCC loop
 
-    // Update HCC register ICenable
-    logger->debug("Set register ICenable on HCCStar {} to 0x{:08x}", hcc.hcc_id, activeInChannels);
-    uint32_t addr_en = updateHCCRegister(HCCStarRegister::ICenable, activeInChannels, cfg);
-    sendCommand(star.write_hcc_register(addr_en, activeInChannels, hcc.hcc_id), hwCtrl);
+  if (not receivedABCHPR) {
+    logger->error("No HPR packet from ABCStar received from any HCCStars");
+  }
+
+  // Restore channel enable flags
+  enableConnectedChannels(hwCtrl, hccStars);
+
+  return receivedABCHPR and hprGood;
+}
+
+bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars) {
+  bool hasABCStar = false;
+
+  for (auto& hcc : hccStars) {
+    logger->info("Probing ABCStars on HCCStar {}", hcc.hcc_id);
+    logger_id->trace("HCCStar {}", hcc.hcc_id);
+
+    // Enable the tx and rx channel
+    hwCtrl.setCmdEnable(hcc.tx);
+    hwCtrl.setRxEnable(hcc.rx);
+
+    unsigned activeInChannels = 0;
+
+    // Read ABC efuse IDs
+    // Toggle the EFUSEL bit first to load the 24b efuse bits to the register STAT2
+    auto [addr_ef, val_ef] = updateABCSubRegister(ABCStarSubRegister::EFUSEL, 1, cfg);
+    sendCommand(star.write_abc_register(addr_ef, val_ef), hwCtrl);
+
+    // Broadcast the command to read the STAT2 registers of all ABCs associated with this HCC
+    int stat2 = (int)ABCStarRegister::STAT2;
+    sendCommand(star.read_abc_register(stat2), hwCtrl);
+
+    // Read all the RR packets
+    uint32_t timeout = 1000; // milliseconds
+    auto rdc_rr = readAllData(
+      hwCtrl,
+      [&](RawData& d) {return isPacketType(d, TYP_ABC_RR) and isFromChannel(d, hcc.rx);},
+      timeout
+    );
+
+    for (unsigned c = 0; c < rdc_rr.size(); c++) {
+      RawDataPtr d = rdc_rr.data[c];
+      StarChipPacket packet;
+      if ( packetFromRawData(packet, *d) ) {
+        logger->error("Packet parse failed");
+        continue;
+      }
+
+      logger->trace(" Received a Register Read packet from ABCStar");
+
+      // check the input channel
+      uint32_t abc_chn = packet.channel_abc;
+      // get the chipID from the top four bits of the 16-bit status word
+      uint32_t abcid = (packet.abc_status >> 12) & 0xf;
+
+      // Add abcid to hcc.abcs in case checkABCHPRs has not been called previously
+      if ( hcc.abcs.find(abc_chn) == hcc.abcs.end() ) {
+        hcc.abcs[abc_chn] = abcid;
+      }
+
+      // Update the active input channel mask
+      activeInChannels |= (1 << abc_chn);
+
+      // efuseID
+      uint32_t abcFuseID = packet.value & 0x00ffffff; // lowest 24 bits
+      //uint32_t abcStarVer = (packet.value & 0xff000000) >> 28; // top 8 bits
+      logger->info(" Found ABCStar on HCCStar {}: Input channel = {} ABC ID = {} eFuse = 0x{:06x}", hcc.hcc_id, abc_chn, abcid, abcFuseID);
+      logger_id->trace(" ABCStar: Input channel = {} ABC ID = {} eFuse = 0x{:06x}", abc_chn, abcid, abcFuseID);
+    } // end of data container loop
+
+    if (activeInChannels) {
+      hasABCStar = true;
+
+      // Update HCC register ICenable
+      logger->debug("Set register ICenable on HCCStar {} to 0x{:08x}", hcc.hcc_id, activeInChannels);
+      uint32_t addr_en = updateHCCRegister(HCCStarRegister::ICenable, activeInChannels, cfg);
+      sendCommand(star.write_hcc_register(addr_en, activeInChannels, hcc.hcc_id), hwCtrl);
+    } else {
+      logger->error(" Found no ABCStar from HCCStar {}", hcc.hcc_id);
+    }
   } // end of HCC loop
 
   if (not hasABCStar) {
@@ -1317,7 +1414,7 @@ int main(int argc, char *argv[]) {
     std::map<std::string, std::function<bool (HwController&)>>
       tests = {
       // Read HCCStar HPRs
-      {"checkHPRs", [&](auto &h) {return checkHPRs(h, rxChannels, doResets);}},
+      {"checkHCCHPRs", [&](auto &h) {return checkHCCHPRs(h, rxChannels, doResets);}},
       // Probe HCCs
       {"probeHCCs", [&](auto &h) {return probeHCCs(h, hccStars, txChannels, rxChannels, setHccId);}},
       // Test HCCStar register read and write
@@ -1327,11 +1424,14 @@ int main(int argc, char *argv[]) {
       {"configureHCC", [&](auto &h) {configureHCC(h, starCfg, doResets); return true;}},
       {"configureHCCIfReset", [&](auto &h) {if(doResets) configureHCC(h, starCfg, doResets); return true;}},
       // configure HCC into the Packet Transparent mode
-      {"configureHCCForPacketTransp", [&](auto &h) {configureHCC_PacketTransp(*hwCtrl, starCfg, doResets); return true; }},
-      {"configureHCCForFullTransp", [&](auto &h) {configureHCC_FullTransp(*hwCtrl, starCfg, doResets, inChannel); return true; }},
+      {"configureHCCForPacketTransp", [&](auto &h) {configureHCC_PacketTransp(h, starCfg, doResets); return true; }},
+      {"configureHCCForFullTransp", [&](auto &h) {configureHCC_FullTransp(h, starCfg, doResets, inChannel); return true; }},
 
       // Probe ABCStars via reading ABCStar HPRs
-      {"probeABCs", [&](auto &h) {return probeABCs(h, starCfg, hccStars, doResets);}},
+      // Check ABCStar HPRs
+      {"checkABCHPRs", [&](auto &h) {return checkABCHPRs(h, starCfg, hccStars, doResets);}},
+      // Probe ABCStars on each HCCStar
+      {"probeABCs", [&](auto &h) {return probeABCs(h, starCfg, hccStars);}},
       // Test ABCStar register read and write
       {"testABCRegister", [&](auto &h) {return testABCRegisterAccess(h, starCfg, hccStars);}},
 

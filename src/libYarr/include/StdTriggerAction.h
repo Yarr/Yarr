@@ -13,9 +13,9 @@ class StdTriggerAction {
 
         virtual uint32_t getExpEvents() { return getTrigCnt(); }
 
-        virtual ~StdTriggerAction() = default;;
+        virtual ~StdTriggerAction() = default;
     protected:
-        uint32_t m_trigCnt;
+        uint32_t m_trigCnt{};
 };
 
 #endif

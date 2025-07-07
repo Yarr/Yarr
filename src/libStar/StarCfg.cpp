@@ -8,9 +8,11 @@
 #include "StarPreset.h"
 
 #include "AbcNames.h"
+#include "FrontEnd.h"
 #include "HccNames.h"
 
 #include <iomanip>
+#include <iostream>
 
 #include "logging.h"
 
@@ -338,7 +340,6 @@ void StarCfg::loadConfig(const json &j) {
 
             try {
                 auto addr = HccNames::regFromString(regName).value();
-                logger->trace("Set HCC value {} {}", addr, regValue);
                 m_hcc.setRegisterValue(addr, regValue);
                 auto value = m_hcc.getRegisterValue(addr);
                 logger->trace("From JSON: Set HCC {} reg {} to {:08x} check {:08x}",
@@ -445,7 +446,7 @@ void StarCfg::loadConfig(const json &j) {
     }
 
     if(abc_arr_length != enables_count) {
-      logger->warn("While loading, count from IDs {} doesn't match IC enables in HCC {}", abc_arr_length, enables_count);
+      logger->warn("While loading, count from IDs (or fuse IDs) {} doesn't match IC enables in HCC {}", abc_arr_length, enables_count);
     }
 
     //We need to null check these later. If it's empty, we already returned.

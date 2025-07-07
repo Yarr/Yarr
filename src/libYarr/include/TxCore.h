@@ -25,33 +25,59 @@ enum TRIG_LOGIC_MODE_VALUE {
     MODE_EUDET_TAG = 0x2
 };
 
+/**
+ * Core DAQ interface, tx side.
+ *
+ * Represents one DAQ card with some number of channels.
+ */
 class TxCore {
     public:
-        // Write to FE interface
+        /// Write word to internal FIFO
         virtual void writeFifo(uint32_t) = 0;
+        /// Send contents of FIFO to FE interface
         virtual void releaseFifo() = 0;
+        /// Set channel enable mask for commands
         virtual void setCmdEnable(uint32_t) = 0;
         virtual void setCmdEnable(std::vector<uint32_t>) = 0;
         virtual void disableCmd() = 0;
+        /// Get channel mask
         virtual uint32_t getCmdEnable() = 0;
+        /// Is command sending complete
         virtual bool isCmdEmpty() = 0;
 
+        /**
+         * Repeat triggers (aka burster).
+         */
         // Word repeater TODO: move to seperate class?
         virtual void setTrigEnable(uint32_t value) = 0;
+        /// Are triggers being repeated
         virtual uint32_t getTrigEnable() = 0;
+        /// Change trig enable value. Add bits in value, remove bits in mask
         virtual void maskTrigEnable(uint32_t value, uint32_t mask) = 0;
+        /// Is trigger burst complete?
         virtual bool isTrigDone() = 0;
 
-        // return the maximum length of a trigger sequence (e.g. for spec card 32, for FELIX controller 16)
-        // function can be overridden within controllers
-        virtual int getMaxTrigWordLength() {return 32;};
+        /**
+         * Return the maximum length of a trigger sequence.
+         *
+         * For example for spec card 32, for FELIX controller 16.
+         * This can be overridden by controller implementation.
+         */
+        virtual int getMaxTrigWordLength() {return 32;}
 
+        /// Configure how to end trigger burst.
         virtual void setTrigConfig(enum TRIG_CONF_VALUE cfg) = 0;
-        virtual void setTrigFreq(double freq) = 0; // in Hz
+        /// Set trigger burster frequency
+        virtual void setTrigFreq(double freq) = 0;
+        /// How many triggers in a burst.
         virtual void setTrigCnt(uint32_t count) = 0;
+        /// Set burst time.
         virtual void setTrigTime(double time) = 0; // in s
+        /// How many bits? to send each time
         virtual void setTrigWordLength(uint32_t length) = 0; // From Msb
+        /// Configure setting
         virtual void setTrigWord(uint32_t *word, uint32_t length) = 0; // 4 words, start at Msb
+        /// Stop sending triggers
         virtual void toggleTrigAbort() = 0;
 
         // Software AZ (for select hw controllers)
@@ -59,8 +85,10 @@ class TxCore {
 
         // Trigger interface
         virtual void setTriggerLogicMask(uint32_t mask) = 0;
+        /// Set what to record about a trigger
         virtual void setTriggerLogicMode(enum TRIG_LOGIC_MODE_VALUE mode) = 0;
         virtual void resetTriggerLogic() = 0;
+        /// Get the number of triggers in
         virtual uint32_t getTrigInCount() = 0;
 
         void setClkPeriod(double period) {

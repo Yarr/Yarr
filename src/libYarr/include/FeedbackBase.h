@@ -20,9 +20,22 @@ struct PixelFeedbackParams {
     std::unique_ptr<Histo2d> histo;
 };
 
+/**
+ * Feedback on trigger from analysis.
+ *
+ * Primarily this will be one of the following:
+ *  * Sufficient triggers have been received
+ *  * Insufficient triggers have been received
+ */
+struct TriggerFeedbackParams {
+    uint32_t info;
+};
+
 struct FeedbackParams {
     bool step;
     bool binary;
+
+    using Variant = std::variant<GlobalFeedbackParams, PixelFeedbackParams, TriggerFeedbackParams>;
 
     PixelFeedbackParams &pixel() {
         return std::get<PixelFeedbackParams>(data);
@@ -32,9 +45,13 @@ struct FeedbackParams {
         return std::get<GlobalFeedbackParams>(data);
     }
 
-    std::variant<GlobalFeedbackParams, PixelFeedbackParams> data;
+    TriggerFeedbackParams &trigger() {
+        return std::get<TriggerFeedbackParams>(data);
+    }
 
-    FeedbackParams(bool step, bool binary, std::variant<GlobalFeedbackParams, PixelFeedbackParams> &&data)
+    Variant data;
+
+    FeedbackParams(bool step, bool binary, Variant &&data)
       : step(step), binary(binary), data(std::move(data)) {}
 };
 
@@ -42,10 +59,13 @@ struct FeedbackParams {
 typedef ClipBoard<FeedbackParams> FeedbackClipboard;
 typedef std::map<unsigned, FeedbackClipboard> FeedbackClipboardMap;
 
+/** Feedback of global configuration */
 class GlobalFeedbackBase {
     public:
         virtual ~GlobalFeedbackBase() = default;
+        /** Used to implement "step down" feedback */
         virtual void feedback(unsigned channel, double sign, bool last) = 0;
+        /** Used to implement binary search */
         virtual void feedbackBinary(unsigned channel, double sign, bool last) = 0; // TODO Algorithm should be selected in scan
         virtual void feedbackStep(unsigned channel, double sign, bool last) {}
 };
@@ -82,9 +102,11 @@ class GlobalFeedbackSender : public GlobalFeedbackBase {
         FeedbackClipboard *clip;
 };
 
+/** Feedback of pixel level data (via histogram) */
 class PixelFeedbackBase {
     public:
         virtual ~PixelFeedbackBase() = default;
+        /** Feedback histogram for FrontEnd channel */
         virtual void feedback(unsigned channel, std::unique_ptr<Histo2d> h) {};
         virtual void feedbackStep(unsigned channel, std::unique_ptr<Histo2d> h) {};
 };
@@ -115,6 +137,39 @@ class PixelFeedbackSender : public PixelFeedbackBase {
 
         void feedback(unsigned channel, std::unique_ptr<Histo2d> h) override;
         void feedbackStep(unsigned channel, std::unique_ptr<Histo2d> h) override;
+
+    private:
+        FeedbackClipboard *clip;
+};
+
+
+class TriggerFeedbackBase {
+    public:
+        virtual ~TriggerFeedbackBase() = default;
+        virtual void feedbackTrigger(unsigned channel, uint32_t h) = 0;
+};
+
+class TriggerFeedbackReceiver : public TriggerFeedbackBase {
+    public:
+        TriggerFeedbackReceiver() : clip(nullptr) {}
+
+        void connectClipboard(FeedbackClipboardMap *fe);
+
+    protected:
+        bool isConnected() const { return clip != nullptr; }
+
+        /// Wait for feedback to be received and apply it
+        void waitForFeedback(unsigned ch);
+
+    private:
+        FeedbackClipboardMap *clip;
+};
+
+class TriggerFeedbackSender : public TriggerFeedbackBase {
+    public:
+        TriggerFeedbackSender(FeedbackClipboard *fb);
+
+        void feedbackTrigger(unsigned channel, uint32_t h) override;
 
     private:
         FeedbackClipboard *clip;

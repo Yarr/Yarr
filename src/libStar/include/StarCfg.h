@@ -12,7 +12,7 @@
 #include <functional>
 #include <tuple>
 
-#include "FrontEnd.h"
+#include "FrontEndCfg.h"
 
 #include "AbcCfg.h"
 #include "HccCfg.h"

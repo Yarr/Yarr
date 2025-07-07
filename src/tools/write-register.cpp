@@ -20,7 +20,7 @@ namespace fs = std::filesystem;
 
 // YARR
 #include "HwController.h"
-#include "FrontEnd.h"
+#include "FrontEndCfg.h"
 #include "AllChips.h"
 #include "ScanHelper.h" // openJson
 #include "Utils.h"

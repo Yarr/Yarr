@@ -7,6 +7,7 @@
 #define FEI4PARAMETERLOOP_H
 
 #include "Fei4.h"
+#include "Bookkeeper.h"
 #include "LoopActionBase.h"
 
 #include "logging.h"

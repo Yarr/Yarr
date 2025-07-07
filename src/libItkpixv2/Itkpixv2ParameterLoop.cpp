@@ -8,6 +8,8 @@
 
 #include "Itkpixv2ParameterLoop.h"
 
+#include "Bookkeeper.h"
+
 #include "logging.h"
 
 namespace {

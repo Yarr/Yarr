@@ -199,4 +199,25 @@ $ make install
 $ cd ..
 ```
 
+Some of the options and dependencies are described in [the instructions how to use YARR as a dependency](consuming_yarr.md). Overview of most option switches:
+
+| option | default | comment | depends on option  |
+|------------|------|---------------|----------------------------|
+| BUILD_TESTS:BOOL | OFF | Build the YARR test suite | |
+| CMAKE_BUILD_TYPE:STRING | "" | Standard CMake setting: used by Yarr as always a release with stripped debug infos is built| |
+| CMAKE_CXX_STANDARD:STRING | 17 | Standard CMake setting: C++ standard to use | |
+| CMAKE_INSTALL_PREFIX:PATH | in source tree | Standard CMake setting: install path prefix, standard in source installation tries not overwrite anything, better to do an out-of-tree installation | |
+| LIBFABRIC_CONFIGURE_OPTS:STRING | "" | Extra configure options for in-built libfabric (just in case) | NetioHW enabled and builtin libfabric needed or forced |
+| NETIO4_BUILD_TESTS:BOOL | OFF | Build netio4 executables | NetioHW enabled |
+| NETIO4_FORCE_USE_BUILTIN_LIBFABRIC:BOOL | ON | Force built-in libfabric instead of system provided | NetioHW enabled |
+| NETIO4_FORCE_USE_BUILTIN_ZEROMQ:BOOL | ON | Force built-in ZeroMQ instead of system provided | NetioHW enabled and netio4 tests enabled | 
+| YARR_ACTIVE_LOGGER_LEVEL:STRING | DEBUG | SPDLOG_ACTIVE_LEVEL below which logger macros are disabled at build time. One of TRACE, DEBUG, INFO, WARN, ERROR, CRITICAL, OFF. | |
+| YARR_CONTROLLERS_TO_BUILD:STRING | all | Semicolon-separated list of controllers to build, or "all". | |
+| YARR_DEBUG_PRINT_TARGETS:BOOL | ON | Prints all targets and their properties. Useful for debugging and for writing a dependency on Yarr. | |
+| YARR_EMULATORS_TO_BUILD:STRING | "StarEmu;Fei4Emu;Rd53aEmu;Itkpixv2Emu" | Front-end specific emulators to build (if Emu in controller list). | Emu in YARR_CONTROLLERS_TO_BUILD |
+| YARR_ENABLE_PYTHON:BOOL | ON | Build python bindings | |
+| YARR_FORCE_FETCHCONTENT_SPDLOG:BOOL | OFF | Force built-in spdlog | |
+| YARR_FORCE_OWN_INSTALL_PREFIX:BOOL | OFF | Force Yarr to use own install prefix even as subdirectory | |
+| YARR_FRONT_ENDS_TO_BUILD:STRING | "Fei4;Rd53a;Star;Rd53b;Itkpixv2" | Semicolon-separated list of controllers to build, or "all" | |
+| YARR_USE_FETCHCONTENT_SPDLOG:BOOL | ON | Use FetchContent to get spdlog if not found. | |
 

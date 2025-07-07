@@ -6,7 +6,7 @@
 #include "ClipBoard.h"
 #include "FeedbackBase.h"
 #include "HistogramBase.h"
-#include "ScanBase.h"
+#include "ScanLoopInfo.h"
 
 class AnalysisDataProcessor : public DataProcessor {
     public:

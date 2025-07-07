@@ -1,5 +1,8 @@
 #include "StarMaskLoop.h"
 
+#include "Bookkeeper.h"
+#include "TxCore.h"
+
 #include <iomanip>
 
 #include "logging.h"

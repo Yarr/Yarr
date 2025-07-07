@@ -11,13 +11,7 @@
 
 #include <string>
 
-#include "AnalysisDataProcessor.h"
-#include "Bookkeeper.h"
-#include "FeDataProcessor.h"
 #include "FeedbackBase.h"
-#include "FrontEnd.h"
-#include "HistoDataProcessor.h"
-#include "HwController.h"
 #include "ScanLoopInfo.h"
 #include "Utils.h"
 
@@ -25,7 +19,15 @@
 #include "logging.h"
 
 #include "ScanOpts.h"
-#include "ScanBase.h"
+
+class AnalysisDataProcessor;
+class Bookkeeper;
+class FeDataProcessor;
+class FrontEndCfg;
+class FrontEndGeometry;
+class HistoDataProcessor;
+class HwController;
+class ScanBase;
 
 namespace ScanHelper {
         // A 2D vector of int to store algorithm indices for all tiers of analyses
@@ -39,8 +41,22 @@ namespace ScanHelper {
         std::string buildChips(const json &j, Bookkeeper &bookie, HwController *hwCtrl,
                                std::map<unsigned, std::array<std::string, 2>> &feCfgMap);
         
-        std::string loadChipConfigs(json &j, const bool &createConfig, const std::string &dir);
-        std::string loadChipConfigs(json &j, bool createConfig=false);
+        /**
+         * Build all front ends from the chips data.
+         *
+         * @param j Description of configuration to be loaded.
+         * @param createConfig If set and a default config is requested, save the default.
+         * @param dir Directory to be used in case of relative paths
+         * @param serviceName Configuration service to use
+         */
+        std::string loadChipConfigs(json &j, bool createConfig, const std::string &dir, const std::string &serviceName);
+        /// Call loadChipConfigs with default service (use local files)
+        std::string loadChipConfigs(json &j, bool createConfig, const std::string &dir);
+        /// Call loadChipConfigs with default service and relative path
+        std::string loadChipConfigs(json &j, bool createConfig);
+        /// Call loadChipConfigs with default path and don't createConfig
+        std::string loadChipConfigs(json &j);
+
         int loadConfigFile(const ScanOpts &scanOpts, bool writeConfig, json &config);
 // TODO Do not want to use the raw pointer ScanBase*
         void buildHistogrammers( std::map<unsigned, std::unique_ptr<HistoDataProcessor>>& histogrammers, const json &scanConfig,
@@ -107,7 +123,6 @@ namespace ScanHelper {
        void banner(std::shared_ptr<spdlog::logger> &logger, const std::string &msg);
        void listChips();
        void listProcessors();
-       void listScans();
        void listControllers();
        void listScanLoopActions();
        void listKnown();

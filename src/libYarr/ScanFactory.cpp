@@ -12,7 +12,11 @@
 #include <iostream>
 
 #include "AllStdActions.h"
+#include "Bookkeeper.h"
+#include "FrontEndCfg.h"
+#include "FrontEndClipBoards.h"
 #include "StdTriggerAction.h"
+#include "TxCore.h"
 #include "ClassRegistry.h"
 
 #include "logging.h"
@@ -33,7 +37,7 @@ void ScanFactory::preScan() {
     sflog->info("Entering pre scan phase ...");
     for (unsigned id=0; id<g_bk->getNumOfEntries(); id ++) {
         FrontEnd *fe = g_bk->getFe(id);
-        fe->clipRawData.reset();
+        fe->clipboards().clipRawData.reset();
     }
 
     g_tx->setCmdEnable(g_bk->getTxMask());
@@ -121,35 +125,5 @@ void ScanFactory::loadConfig(const json &scanCfg) {
         } else {
             sflog->warn("~~~ Config empty.");
         }
-    }
-                    
-
-}
-
-namespace StdDict {
-    typedef ClassRegistry<ScanBase, Bookkeeper *> OurRegistry;
-
-    static OurRegistry &registry() {
-        static OurRegistry instance;
-        return instance;
-    }
-
-    bool registerScan(std::string name,
-                      std::function<std::unique_ptr<ScanBase>(Bookkeeper *k)> f)
-    {
-      return registry().registerClass(name, f);
-
-    }
-
-    std::unique_ptr<ScanBase> getScan(std::string name, Bookkeeper *b) {
-        auto result = registry().makeClass(name, b);
-        if(result == nullptr) {
-            sflog->error("No Scan class matching '{}' found", name);
-        }
-        return result;
-    }
-
-    std::vector<std::string> listScans() {
-        return registry().listClasses();
     }
 }

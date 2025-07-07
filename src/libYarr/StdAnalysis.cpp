@@ -12,7 +12,7 @@
 #include <cmath>
 
 #include "AllAnalyses.h"
-#include "FrontEnd.h"
+#include "FrontEndCfg.h"
 #include "Histo1d.h"
 #include "Histo2d.h"
 #include "Histo3d.h"
@@ -1978,28 +1978,23 @@ void ParameterAnalysis::loadConfig(const json &j){
     if (j.contains("createMap")){
         m_createMap = j["createMap"];
     }
+    if (j.contains("targetLoopIndex")){
+        paramLoopNo = j["targetLoopIndex"];
+    }
 }
 
 void ParameterAnalysis::init(const ScanLoopInfo *s) {
-    n_count = 1;
     alog->info("ParameterAnalysis init");
+    paramName = "UnknownParam";
     for (unsigned n=0; n<s->size(); n++) {
         auto l = s->getLoop(n);
-        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || l->isParameterLoop())) {
+        if (!(paramLoopNo == n || l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || l->isParameterLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
-        } else {
-            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
-            if (l->isParameterLoop()) {
-                cnt++; // Parameter loop interval is inclusive
-            }
-            if (cnt == 0)
-                cnt = 1;
-            n_count = n_count*cnt;
         }
 
-        // Parameter Loop
-        if (l->isParameterLoop()) {
+        // Parameter loop of interest
+        if (l->isParameterLoop() || paramLoopNo == n) {
             paramLoopNo = n;
             paramMax = l->getMax();
             paramMin = l->getMin();
@@ -2007,7 +2002,9 @@ void ParameterAnalysis::init(const ScanLoopInfo *s) {
             paramBins = (paramMax-paramMin)/paramStep;
             auto paramLoop = dynamic_cast<const StdParameterAction*>(l);
             if(paramLoop == nullptr) {
-                alog->error("ParameterAnalysis: loop declared as parameter loop does not have a name");
+                // In case targetLoopIndex points to non-parameter loop
+                alog->info("ParameterAnalysis: loop declared as parameter loop does not have a name");
+                paramName = "Loop"+std::to_string(paramLoopNo);
             } else {
                 paramName = paramLoop->getParName();
             }
@@ -2022,6 +2019,11 @@ void ParameterAnalysis::init(const ScanLoopInfo *s) {
             }
         }
     }
+
+    if(paramLoopNo >= s->size()) {
+      paramLoopNo = 0xffffffff;
+      alog->error("ParameterAnalysis: no parameter loop found");
+    }
 }
 
 void ParameterAnalysis::processHistogram(HistogramBase *h) {
@@ -2029,43 +2031,39 @@ void ParameterAnalysis::processHistogram(HistogramBase *h) {
     if (h->getName() != OccupancyMap::outputName())
         return;
 
+    if(paramLoopNo == 0xffffffff) {
+        // Already printed error in init
+        return;
+    }
+
     Histo2d *hh = (Histo2d*) h;
 
     unsigned long outerIdent = 0;
     unsigned long outerOffset = 1;
+    std::string postfix;
     for (unsigned n=0; n<loops.size(); n++) {
         outerIdent += hh->getStat().get(loops[n])*outerOffset;
         outerOffset *= loopMax[n];
+        postfix += "-" + std::to_string(h->getStat().get(loops[n]));
     }
 
     for(unsigned col=1; col<=nCol; col++) {
         for (unsigned row=1; row<=nRow; row++) {
             unsigned bin = hh->binNum(col, row);
             if (hh->getBin(bin) != 0) {
-                // Select correct output containe
-                unsigned long ident = bin;
-                unsigned long offset = nCol*nRow;
+                // Select correct output container
                 unsigned param = hh->getStat().get(paramLoopNo);
-                // Determine identifier
-                std::string name = "Param";
-                name += "-" + std::to_string(col) + "-" + std::to_string(row);
-                // Check for other loops
-                for (unsigned n=0; n<loops.size(); n++) {
-                    ident += hh->getStat().get(loops[n])*offset;
-                    offset *= loopMax[n];
-                    name += "-" + std::to_string(hh->getStat().get(loops[n]));
-                }
 
                 // Check if Histogram exists
                 if (paramMaps[outerIdent] == nullptr) {
-                    Histo2d *hhh = new Histo2d(paramName, paramBins+1, paramMin-((double)paramStep/2.0), paramMax+((double)paramStep/2.0), injections-1, 0.5, injections-0.5);
+                    Histo2d *hhh = new Histo2d(paramName+postfix, paramBins+1, paramMin-((double)paramStep/2.0), paramMax+((double)paramStep/2.0), injections-1, 0.5, injections-0.5);
                     hhh->setXaxisTitle(paramName);
                     hhh->setYaxisTitle("Occupancy");
                     hhh->setZaxisTitle("Number of pixels");
                     paramMaps[outerIdent].reset(hhh);
                 }
                 if (paramCurves[outerIdent] == nullptr) {
-                    Histo2d *hhh = new Histo2d(paramName + "_Map", nCol*nRow, -0.5, nCol*nRow-0.5, paramBins+1, paramMin-((double)paramStep/2.0), paramMax+((double)paramStep/2.0));
+                    Histo2d *hhh = new Histo2d(paramName + "_Map"+postfix, nCol*nRow, -0.5, nCol*nRow-0.5, paramBins+1, paramMin-((double)paramStep/2.0), paramMax+((double)paramStep/2.0));
                     hhh->setXaxisTitle("Channel Number");
                     hhh->setYaxisTitle(paramName);
                     hhh->setZaxisTitle("Number of Hits");

@@ -3,6 +3,7 @@
 
 #include "TxCore.h"
 #include "FelixTools.h"
+#include "OptoUtils.h"
 
 #include "felix/felix_client_thread.hpp"
 #include "storage.hpp"
@@ -46,20 +47,21 @@ public:
   void resetTriggerLogic() override; 	// reset the trigger logic
   uint32_t getTrigInCount() override; 	// get the number of triggers in
 
-  // virtual here so they can be overriden in a dummy class for the unit test
-  virtual bool readFwRegister(const std::string&, uint64_t&) override;
-  virtual bool writeFwRegister(const std::string&, const uint64_t&) override;
+  bool readFwRegister(const std::string&, uint64_t&) override;
+  bool writeFwRegister(const std::string&, const uint64_t&) override;
 
   void loadFWMode(); // retrieve firmware mode from the FELIX register
   FelixTools::FELIX_FW_MODE fwMode(); // get the FELIX firmware mode
 
   FelixTools::FelixID_t fid_from_channel(uint32_t chn); // covert channel number to fid
+  FelixTools::FelixID_t ic_fid_from_channel(uint32_t chn); // get the ic fid from the channel number
 
+  
 protected:
 
   void loadConfig(const json &j); 		     // read configuration from json
   void writeConfig(json& j); 		         // write configuration to json
-  void setClient(std::shared_ptr<FelixClientThread> client); // set Felix client
+  void setClient(const FelixClientThread::Config& fcConfig); // set Felix client
 
   using FelixID_t = FelixTools::FelixID_t;
 
@@ -67,6 +69,7 @@ protected:
   void enableChannel(FelixID_t fid);
   void disableChannel(FelixID_t fid);
   bool checkChannel(FelixID_t fid);
+  bool channelIsEnabled(FelixID_t fid) { return m_enables[fid]; }
 
   void fillFifo(std::vector<uint8_t>& fifo, uint32_t value);
   void prepareFifo(std::vector<uint8_t>& fifo);
@@ -123,7 +126,12 @@ protected:
   uint8_t m_protocol {0}; // protocol ID
   unsigned m_isCmdEmptyWaitTime {100}; // in milliseconds
 
-  std::shared_ptr<FelixClientThread> fclient;
+  std::unique_ptr<FelixClientThread> fclient;
+
+  /// @brief Send a command over an IC channel, useful for example in LpGBT register writing
+  /// @param fid The FIC of the IC channel (uint64_t)
+  /// @param data The dataframe to be sent (const std::vector<uint8_t>&)
+  void sendIC(uint64_t fid, const std::vector<uint8_t> dataframe);
 };
 
 #endif

@@ -3,6 +3,7 @@
 #include "AllAnalyses.h"
 #include "AllChips.h"
 #include "Bookkeeper.h"
+#include "FrontEndClipBoards.h"
 #include "GraphErrors.h"
 #include "Histo1d.h"
 #include "JsonData.h"
@@ -431,7 +432,8 @@ TEST_CASE("StarStrobeDelayFeedback", "[Analysis][Star][SD]") {
 
     scan.run();
 
-    fe.clipRawData.finish();
+    auto &cp = bookie.getEntry(feUid).fe->clipboards();
+    cp.clipRawData.finish();
 
     t.join();
 

@@ -366,7 +366,7 @@ AbcStarRegInfo::SubInfoPtr AbcStarRegInfo::subRegFromEnum(ABCStarSubRegister sub
     } catch(std::out_of_range &e) {
         logger->info("Failed request for subReg: {}", AbcNames::subRegToString(subReg));
         for(auto &sr: abcSubRegisterMap_all) {
-            logger->debug(" Have: {}", sr.first);
+            logger->debug(" Have: {}", AbcNames::subRegToString(sr.first));
         }
         throw std::out_of_range("Attempt to get info for bad ABC sub register");
     }

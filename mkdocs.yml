@@ -4,6 +4,7 @@ nav:
     - Home: index.md
     - Hardware/PC guide: hw_guide.md
     - SW Installation: install.md
+    - Using YARR as a library: consuming_yarr.md
     - Kernel Driver: kernel_driver.md
     - PCIe Firmware/Hardware: fw_guide.md
     - Updating to 1.28 Gbps: updating_firmware.md
@@ -16,7 +17,7 @@ nav:
     - RD53B: rd53b.md
     - ITkPixV2: itkpixv2.md
     - Star: star.md
-    - Local DB: localdb.md
+    - LocalDB: https://atlas-itk-pixel-localdb.docs.cern.ch/
     - Plotting Tools: plotting.md
     - Logging configuration: logging.md
     - FelixClient: felixclient.md

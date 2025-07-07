@@ -12,6 +12,9 @@
 #include "ClipBoard.h"
 #include "RawData.h"
 
+/**
+ * Wait for completion of burst and collect data from RxCore.
+ */
 class StdDataLoop: public LoopActionBase, public StdDataAction {
     public:
         StdDataLoop();

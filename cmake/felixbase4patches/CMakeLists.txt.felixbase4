@@ -1,0 +1,59 @@
+cmake_minimum_required(VERSION 3.15)
+
+project(felixbase4 LANGUAGES CXX VERSION 0.0.1)
+
+include(GNUInstallDirs)
+
+# Check whether target already exists which means that we have been likely added by Fetch_Content or similar. Otherwise try to find netio as installed package or if CMAKE_PREFIX_PATH is set
+if(NOT TARGET netio)
+  find_package(netio REQUIRED) 
+endif()
+
+
+add_library(felixbase4 INTERFACE)
+target_include_directories(felixbase4 INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
+target_link_libraries(felixbase4 INTERFACE netio tbb::tbb)
+   
+install(TARGETS felixbase4
+    EXPORT felixbase4Targets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
+
+install(DIRECTORY felixbase4/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/felixbase4
+    FILES_MATCHING
+        PATTERN "*.hpp"
+)
+
+# Install the export set for use with the install-tree
+install(EXPORT felixbase4Targets
+  NAMESPACE felixbase4::
+  DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}/felixbase4
+)
+
+include(CMakePackageConfigHelpers)
+
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/felixbase4ConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+configure_package_config_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/felixbase4Config.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/felixbase4Config.cmake"
+    INSTALL_DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}/felixbase4
+)
+
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/felixbase4Config.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/felixbase4ConfigVersion.cmake"
+    DESTINATION ${CMAKE_CONFIG_INSTALL_PATH}/felixbase4
+)

@@ -1,0 +1,12 @@
+diff --git a/test/test_message.cpp b/test/test_message.cpp
+index 4d53647..c3256e8 100644
+--- a/test/test_message.cpp
++++ b/test/test_message.cpp
+@@ -1,6 +1,7 @@
+ #include "catch/catch.hpp"
+ #include "netio/netio.hpp"
+ 
++#include <cstring>
+ #include <string>
+ 
+ using namespace netio;

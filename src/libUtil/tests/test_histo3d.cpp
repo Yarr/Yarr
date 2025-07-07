@@ -207,3 +207,30 @@ TEST_CASE("Histogram3dUint16OK", "[Histo3d]") {
 
   testSaveLoad(histo, info);
 }
+
+TEST_CASE("BenchmarkHisto3d", "[!benchmark]") {
+  Histo3d histo("BENCH", 10, 0, 10, 10, 0, 10, 10, 0, 10);
+
+  for(int i=0; i<10; i++) {
+    for(int j=0; j<10; j++) {
+      for(int k=0; k<10; k++) {
+	histo.fill(i, j, k, random());
+      }
+    }
+  }
+  
+  BENCHMARK ("ToJson") {
+    json j;
+    histo.toJson(j);
+    return j;
+  };
+
+  json jdata;
+  histo.toJson(jdata);
+  
+  BENCHMARK ("FromJson") {
+    Histo3d out("OUT", 10, 0, 10, 10, 0, 10, 10, 0, 10);
+    out.fromJson(jdata);
+    return out;
+  };
+}

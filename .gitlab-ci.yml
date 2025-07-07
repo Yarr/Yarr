@@ -54,26 +54,69 @@ job_build_all:
       - bin
       - lib
       - python
+  before_script:
+    - git config --global user.email "ci@example.com"
+    - git config --global user.name "CI Runner"
   script:
     - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+    - |
+      if [ "$ARCH" = "cc7" ]; then
+        yum -y install autoconf automake libtool glibc-headers kernel-headers glibc-devel
+      else
+        dnf -y install autoconf automake libtool
+      fi
     - mkdir  build
     - cd build
-    - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DENABLE_PYTHON=On
+    - |
+      if [ "$ARCH" = "cc7" ]; then
+        cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DENABLE_PYTHON=On -DLIBFABRIC_CONFIGURE_OPTS="--disable-lpp" -DYARR_ENABLE_PYTHON=off
+      else
+        cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DENABLE_PYTHON=On -DLIBFABRIC_CONFIGURE_OPTS="--disable-lpp" -DYARR_ENABLE_PYTHON=on
+      fi
     - make install -j$(nproc)
     - CTEST_OUTPUT_ON_FAILURE=1 make test
-    - bin/scanConsole -k
     - cd ..
+    - bin/scanConsole -k
 
 job_build_and_test_out_of_source:
   extends: .build_matrix
   stage: build
   script:
     - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-    - CXXFLAGS=-Werror cmake3 -S . -B /tmp/build -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=cmake/linux-gcc
-    - cmake3 --build /tmp/build -j$(nproc)
-    - cmake3 --install /tmp/build
-    - CTEST_OUTPUT_ON_FAILURE=1 cmake3 --build /tmp/build --target test
-    - /tmp/build/bin/scanConsole -k
+    - |
+      if [ "$ARCH" = "cc7" ]; then
+        yum -y install autoconf automake libtool glibc-headers kernel-headers glibc-devel
+      else
+        dnf -y install autoconf automake libtool
+      fi
+    - cmake3 --version
+    - export YARR_PROJECT_DIR=`pwd`
+    - CXXFLAGS=-Werror cmake3 -S . -B /tmp/build-yarr -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=cmake/linux-gcc -DCMAKE_INSTALL_PREFIX=/tmp/install-yarr
+    - cmake3 --build /tmp/build-yarr -j$(nproc)
+    - cmake3 --install /tmp/build-yarr
+    - export Yarr_DIR=/tmp/install-yarr/cmake
+    - ctest --output-on-failure --test-dir /tmp/build-yarr/
+    - /tmp/install-yarr/bin/scanConsole -k
+    - mkdir /tmp/build-YarrFindPackageTest
+    - cmake3 -S tests/find_package_test -B /tmp/build-YarrFindPackageTest -DCMAKE_TOOLCHAIN_FILE=../../cmake/linux-gcc  -DCMAKE_INSTALL_PREFIX=/tmp/install-YarrFindPackageTest
+    - cmake3 --build /tmp/build-YarrFindPackageTest -j$(nproc)
+    - cmake3 --install /tmp/build-YarrFindPackageTest/
+    - /tmp/install-YarrFindPackageTest/bin/YarrFindPackageTest
+    - mkdir /tmp/build-YarrAddSubdirectoryTest
+    - cmake3 -S tests/add_subdirectory_test -B /tmp/build-YarrAddSubdirectoryTest -DCMAKE_TOOLCHAIN_FILE=../../cmake/linux-gcc  -DCMAKE_INSTALL_PREFIX=/tmp/install-YarrAddSubdirectoryTest
+    - cmake3 --build /tmp/build-YarrAddSubdirectoryTest -j$(nproc)
+    - cmake3 --install /tmp/build-YarrAddSubdirectoryTest/
+    - /tmp/install-YarrAddSubdirectoryTest/bin/YarrAddSubdirectoryTest
+    - mkdir /tmp/build-YarrExternalSuperbuildTest
+    - cmake3 -S tests/external_project_superbuild_test -B /tmp/build-YarrExternalSuperbuildTest -DCMAKE_TOOLCHAIN_FILE=../../cmake/linux-gcc  -DCMAKE_INSTALL_PREFIX=/tmp/install-YarrExternalSuperbuildTest -DYARR_PROJECT_DIR=$YARR_PROJECT_DIR
+    - cmake3 --build /tmp/build-YarrExternalSuperbuildTest -j$(nproc)
+    - cmake3 --install /tmp/build-YarrExternalSuperbuildTest/
+    - /tmp/install-YarrExternalSuperbuildTest/bin/YarrConsumerTest
+    - mkdir /tmp/build-YarrFetchContentTest
+    - cmake3 -S tests/fetch_content_test -B /tmp/build-YarrFetchContentTest -DCMAKE_TOOLCHAIN_FILE=../../cmake/linux-gcc  -DCMAKE_INSTALL_PREFIX=/tmp/install-YarrFetchContentTest -DYARR_PROJECT_DIR=$YARR_PROJECT_DIR
+    - cmake3 --build /tmp/build-YarrFetchContentTest -j$(nproc)
+    - cmake3 --install /tmp/build-YarrFetchContentTest/
+    - /tmp/install-YarrFetchContentTest/bin/YarrFetchContentTest
 
 job_build_clang:
   extends: .build_matrix
@@ -98,6 +141,7 @@ job_build_none:
     - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD= -DYARR_FRONT_ENDS_TO_BUILD= -DYARR_ACTIVE_LOGGER_LEVEL=OFF
     - make install -j$(nproc)
     - CTEST_OUTPUT_ON_FAILURE=1 make test
+    - cd ..
     - bin/scanConsole -k
 
 .build_felix:
@@ -112,10 +156,10 @@ job_build_none:
     - git clone https://gitlab.cern.ch/atlas-tdaq-felix/cmake_tdaq
     - source cmake_tdaq/bin/setup.sh
     - mkdir installed
-    - cmake -S . -B build -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;StarEmu;Rd53aEmu;FelixClient" -DYARR_FRONT_ENDS_TO_BUILD="Rd53a;Star;Rd53b;Itkpixv2" -DDISABLE_PLOTTING_TOOLS=On -DYARR_EMULATORS_TO_BUILD="StarEmu;Rd53aEmu"  -DENABLE_PYTHON=On  ..
+    - cmake -S . -B build -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;StarEmu;Rd53aEmu;FelixClient" -DYARR_FRONT_ENDS_TO_BUILD="Rd53a;Star;Rd53b;Itkpixv2" -DDISABLE_PLOTTING_TOOLS=On -DYARR_EMULATORS_TO_BUILD="StarEmu;Rd53aEmu"  -DYARR_ENABLE_PYTHON=On  ..
     - cmake --build build -j$(nproc)
     - cmake --install build
-    - cp -r Dockerfile bin lib python installed/
+    - cp -r Dockerfile bin lib64 python installed/
 
 job_build_felix:
   extends: .build_felix
@@ -133,6 +177,7 @@ job_build_felix_check:
     paths:
       - cc_tests
   script:
+    - date
     - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
     - mkdir  build
     - cd build
@@ -276,8 +321,23 @@ job_test_strips:
           - ARCH: ['alma9']
   script:
     - bin/test_star configs/controller/emuCfg_star.json -r 0 -t 0
-    # Run a scan involving trim feedback
-    - bin/scanConsole -r configs/controller/emuCfg_star.json -c configs/connectivity/example_star_setup.json -s configs/scans/star/std_tune_trim_at_pedestal.json
+    # Run a few scans
+    - bash scripts/test_star_scans_emu.sh
+
+job_test_benchmark:
+  extends: .test
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['alma9']
+  script:
+    - bin/testUtil '[!benchmark]' > testUtils.benchmark
+    - bin/testYarr '[!benchmark]' > testYarr.benchmark
+    - . scripts/run_strips_benchmarks.sh > star_processor_benchmarks.benchmark
+  artifacts:
+    paths:
+      - '*.benchmark'
 
 job_test_python:
   extends: .test

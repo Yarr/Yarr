@@ -4,7 +4,10 @@
 
 #include "AllChips.h"
 #include "AllStdActions.h"
+#include "Bookkeeper.h"
 #include "FeedbackBase.h"
+#include "FrontEndClipBoards.h"
+#include "FrontEndConnectivity.h"
 #include "ScanFactory.h"
 
 #include "logging.h"
@@ -115,7 +118,7 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
     // Skip pre/post scan
     scan.run();
 
-    bookie.getEntry(feUid).fe->clipRawData.finish();
+    bookie.getEntry(feUid).fe->clipboards().clipRawData.finish();
 
     t.join();
 
@@ -195,7 +198,7 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
     // Skip pre/post scan
     scan.run();
 
-    bookie.getEntry(feUid).fe->clipRawData.finish();
+    bookie.getEntry(feUid).fe->clipboards().clipRawData.finish();
 
     t.join();
 

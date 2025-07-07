@@ -489,14 +489,12 @@ class ParameterAnalysis : public AnalysisAlgorithm {
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
-        unsigned n_count;
         unsigned injections;
-        unsigned paramLoopNo;
+        unsigned paramLoopNo{0xffffffff};
         unsigned paramMin;
         unsigned paramMax;
         unsigned paramStep;
         unsigned paramBins;
-        unsigned count;
         std::string paramName;
         std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
         std::map<unsigned, std::unique_ptr<Histo2d>> paramCurves;
