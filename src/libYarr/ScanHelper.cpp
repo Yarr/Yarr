@@ -376,6 +376,15 @@ namespace ScanHelper {
                     locked = (int)chip["locked"];
                 feCfg->setLocked(locked);
             }
+            if (chip.contains("active")) {
+                bool active = false;
+                if (!chip["active"].is_boolean()) {
+                    shlog->warn("WARNING 'active' flag should be a boolean");
+                } else {
+                    active = chip["active"];
+                }
+                bookie.getLastFe()->setActive(active);
+            }
 
             // Check for hidden clipboard monitor parameter, and start them if true
             if (chip.contains("clipboardMonitor")) {

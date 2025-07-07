@@ -29,6 +29,7 @@ class StdParameterLoop : public LoopActionBase, public StdParameterAction {
 
         unsigned m_cur;
         std::chrono::microseconds m_waitTime;
+        bool m_activeLoop;
 };
 
 #endif
