@@ -48,46 +48,6 @@ Preferred mode for testing should be LDO mode.
 
 ## DAQ specifics for ITkPixV2
 
-## Data transmission 
-
-Before running any other scans (from firmware release 1.4.0 onwards), it is necessary to set the correct sampling delay setting for the deserialiser to ensure good data transmission. A detailed description can be found in [Guide for Updating Firmware](updating_firmware.md). This is done using an eye diagram measurement, which can also quantify the data transmission quality. The scan is run as: 
-
-```bash
-Usage: ./bin/eyeDiagram [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-t <test_size>] [-s]
-
-Options:
-  -h                   Display this help message.
-  -r <hw_controller_file>   Specify hardware controller JSON path.
-  -c <connectivity_file>    Specify connectivity config JSON path.
-  -t <test_size>            Specify the error counter test size.
-  -s                   Skip chip configuration.
-  -n                   Don't update the controller condfig with the best delay values
-  -v                   Print out and store raw error counter values.
-```
-
-For example: 
-```bash
-./bin/eyeDiagram -r configs/controller/specCfg-itkpixv2-16x1.json -c configs/connectivity/example_itkpixv2_setup.json 
-```
-
-This scan has to be run before running any other scan, and it will save the best delay setting to the controller config file. A script for plotting the eye diagram is also provided (``scripts/plot_eyediagram.py``), and an example of an eye diagram is shown below. 
-
-![Example of eye diagram.](images/eye_diagram.png)
-
-No data transmission errors within the given test period are indicated in yellow and marked by an "X", and the center of the eye is chosen as the sampling delay setting. The best setting will depend on the chip, as well as specifics of the setup, such as FPGA, cable lengths, etc, so it has to be run every time something changes in the setup. 
-
-
-### Readout Speed
-
-The readout speed that the chip is confgured to has to match the readout speed of the firmware (which is fixed). In order to chanege the readout frequency of the chip one has to change the ``CdrClkSel`` register. These settings correspond to the different readout frequencies (the value is the divider from 1.28Gbps):
-
-- ``0`` : 1280Mbps
-- ``1`` : 640Mbps
-- ``2`` : 320Mbps
-- ``3`` : 160Mbps
-
-Recommended is 1.28 Gbps.
-
 ### Number Data Lanes
 
 Choose the number of active data lanes according to your setup and firmware. This can be chosen via the ``AuroraActiveLanes`` register where each bit represents one lane.
