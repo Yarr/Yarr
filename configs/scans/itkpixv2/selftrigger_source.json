@@ -15,30 +15,30 @@
         "config": {}
       },
       "1": {
-        "algorithm": "DataArchiver",
-        "config": {}
-      },
-      "2": {
         "algorithm": "TotMap",
         "config": {}
       },
-      "3": {
+      "2": {
         "algorithm": "Tot2Map",
         "config": {}
       },
-      "4": {
+      "3": {
         "algorithm": "TagDist",
         "config": {}
       },
-      "5": {
+      "4": {
         "algorithm": "HitsPerEvent",
         "config": {}
       },
-      "6": {
+      "5": {
         "algorithm": "TotDist",
         "config": {}
       },
-      "n_count": 7
+      "6": {
+          "algorithm": "DataArchiver",
+          "config": {}
+      },
+      "n_count": 6
     },
     "loops": [
       {
