@@ -85,7 +85,7 @@ For further information for the questionnaire see the section below for more inf
 
 #### Trenz TEF1001
 
-The Trenz TEF1001 comes in two revisions which can be identified by the label on the card.
+The Trenz TEF1001 comes in three revisions which can be identified by the label on the card.
 Specific information about the cards can be found on their [wiki](https://wiki.trenz-electronic.de/display/PD/TEF1001+TRM).
 
 ##### TEF1001-01 (revision 1)
