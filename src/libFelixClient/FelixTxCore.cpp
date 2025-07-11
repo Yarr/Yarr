@@ -59,11 +59,9 @@ FelixTxCore::FelixID_t FelixTxCore::fid_from_channel(uint32_t chn) {
 
 FelixTxCore::FelixID_t FelixTxCore::ic_fid_from_channel(uint32_t chn) {
   // Compute FelixID from did, cid, channel number
-  // for IC in the tx direction (to-flx), we shift the elink by 17 and scale by 64 * the link number
+  // for IC in the tx direction (to-flx), we shift the elink by 17
   uint16_t link_id = FelixTools::link_from_chn(chn);
-  uint8_t link_multiplier = 64;
-  uint8_t elink_offset = 17;
-  uint8_t elink = link_id * link_multiplier+ elink_offset;
+  uint8_t elink = 17;
 
   bool is_virtual = false;
   uint8_t sid = 0;
