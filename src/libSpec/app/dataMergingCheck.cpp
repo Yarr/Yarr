@@ -24,7 +24,7 @@ constexpr const char* COLOR_GREEN = "\033[32m";
 constexpr const char* COLOR_RESET = "\033[0m";
 
 void printHelp() {
-    std::cout << "./bin/dataMergingScan [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-t <test_size>] [-m <mode>] [-q]\n\n"
+    std::cout << "./bin/dataMergingCheck [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-t <test_size>] [-m <mode>] [-q]\n\n"
         << "Options:\n"
         << "  -h                        Display this help message.\n"
         << "  -r <hw_controller_file>   Specify hardware controller JSON path.\n"
