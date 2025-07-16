@@ -26,7 +26,11 @@ Bookkeeper::Bookkeeper(TxCore *arg_tx, RxCore *arg_rx) {
     target_tot = 10;
     target_charge = 16000;
     target_threshold = 3000;
+    loop_histograms = std::make_unique<ClipBoard<HistogramBase>>();
 }
+
+// Here instead of header so things like unique_ptr work with only fwd declarations
+Bookkeeper::~Bookkeeper() = default;
 
 void Bookkeeper::initGlobalFe(const std::string& chipType) {
     std::unique_ptr<FrontEnd> fe_tmp = StdDict::getFrontEnd(chipType);
@@ -233,4 +237,9 @@ void Bookkeeper::feClipboardMonitor() {
         std::this_thread::sleep_for(std::chrono::microseconds(clipboardMonitorRefreshTime)); // microseconds  
     }
     SPDLOG_LOGGER_INFO(blog, "Joined clipboard monitor thread");
+}
+
+ClipBoard<HistogramBase> &Bookkeeper::getLoopHistograms()
+{
+    return *loop_histograms;
 }

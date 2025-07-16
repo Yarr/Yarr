@@ -21,6 +21,9 @@
 class FrontEndCfg;
 class RxCore;
 class TxCore;
+template<typename T>
+class ClipBoard;
+class HistogramBase;
 
 struct BookEntry {
     std::unique_ptr<FrontEnd> fe;
@@ -47,7 +50,7 @@ class Bookkeeper {
     public:
         /** Establish Bookkeeper with a TxCore and RxCore */
         Bookkeeper(TxCore *arg_tx, RxCore *arg_rx);
-        ~Bookkeeper() = default;
+        ~Bookkeeper();
 
         /** Add Global FrontEnd */
         void initGlobalFe(std::unique_ptr<FrontEnd> fe) {g_fe = std::move(fe);}
@@ -141,6 +144,8 @@ class Bookkeeper {
         /** Add FrontEnd to clipboard monitor thread. */
         void addFeClipboardMonitor(unsigned arg_id, std::string arg_name);
 
+        ClipBoard<HistogramBase> &getLoopHistograms();
+
     private:
         void feClipboardMonitor();
 
@@ -160,6 +165,7 @@ class Bookkeeper {
         unsigned clipboardMonitorRefreshTime;
         bool runClipboardMonitor;
 
+        std::unique_ptr<ClipBoard<HistogramBase>> loop_histograms;
         std::unique_ptr<std::thread> clipboardMonitorThread_ptr;
         std::vector<unsigned> clipboardMonitorFeIDs;
         std::vector<std::string> clipboardMonitorFeNames;

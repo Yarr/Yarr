@@ -12,6 +12,10 @@
 #include "ClipBoard.h"
 #include "RawData.h"
 
+namespace StdDataLoopDetail {
+struct Stats;
+};
+
 /**
  * Wait for completion of burst and collect data from RxCore.
  */
@@ -34,6 +38,9 @@ class StdDataLoop: public LoopActionBase, public StdDataAction {
         uint32_t m_maxConsecutiveRxReads = 2; // the same logic as in StdDataGatherer: we don't want to stuck in a continuous stream of Rx Data
         std::chrono::microseconds m_averageDataProcessingTime{100};
         uint32_t m_triggersLostTolerance = 0; // allowed number of lost triggers
+
+        /// Record of stats per loop
+        std::unique_ptr<StdDataLoopDetail::Stats> m_stats;
 };
 
 #endif

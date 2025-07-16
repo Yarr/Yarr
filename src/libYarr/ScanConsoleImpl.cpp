@@ -480,6 +480,17 @@ void ScanConsoleImpl::cleanup() {
         } // while
     } // i
 
+    auto &lh = bookie->getLoopHistograms();
+    while(!lh.empty()) {
+      auto histo = lh.popData();
+      // only create the image files if asked to
+      if(scanOpts.doPlots) {
+        histo->plot("LoopPlot", scanOpts.outputDir);
+      }
+      // always dump the data
+      histo->toFile("LoopPlot", scanOpts.outputDir);
+    } // while
+
     logger->info("Finishing run: {}", runCounter);
     // Register test info into database
     if (scanOpts.dbUse) {
