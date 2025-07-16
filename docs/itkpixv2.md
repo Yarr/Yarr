@@ -48,46 +48,6 @@ Preferred mode for testing should be LDO mode.
 
 ## DAQ specifics for ITkPixV2
 
-## Data transmission 
-
-Before running any other scans (from firmware release 1.4.0 onwards), it is necessary to set the correct sampling delay setting for the deserialiser to ensure good data transmission. A detailed description can be found in [Guide for Updating Firmware](updating_firmware.md). This is done using an eye diagram measurement, which can also quantify the data transmission quality. The scan is run as: 
-
-```bash
-Usage: ./bin/eyeDiagram [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-t <test_size>] [-s]
-
-Options:
-  -h                   Display this help message.
-  -r <hw_controller_file>   Specify hardware controller JSON path.
-  -c <connectivity_file>    Specify connectivity config JSON path.
-  -t <test_size>            Specify the error counter test size.
-  -s                   Skip chip configuration.
-  -n                   Don't update the controller condfig with the best delay values
-  -v                   Print out and store raw error counter values.
-```
-
-For example: 
-```bash
-./bin/eyeDiagram -r configs/controller/specCfg-itkpixv2-16x1.json -c configs/connectivity/example_itkpixv2_setup.json 
-```
-
-This scan has to be run before running any other scan, and it will save the best delay setting to the controller config file. A script for plotting the eye diagram is also provided (``scripts/plot_eyediagram.py``), and an example of an eye diagram is shown below. 
-
-![Example of eye diagram.](images/eye_diagram.png)
-
-No data transmission errors within the given test period are indicated in yellow and marked by an "X", and the center of the eye is chosen as the sampling delay setting. The best setting will depend on the chip, as well as specifics of the setup, such as FPGA, cable lengths, etc, so it has to be run every time something changes in the setup. 
-
-
-### Readout Speed
-
-The readout speed that the chip is confgured to has to match the readout speed of the firmware (which is fixed). In order to chanege the readout frequency of the chip one has to change the ``CdrClkSel`` register. These settings correspond to the different readout frequencies (the value is the divider from 1.28Gbps):
-
-- ``0`` : 1280Mbps
-- ``1`` : 640Mbps
-- ``2`` : 320Mbps
-- ``3`` : 160Mbps
-
-Recommended is 1.28 Gbps.
-
 ### Number Data Lanes
 
 Choose the number of active data lanes according to your setup and firmware. This can be chosen via the ``AuroraActiveLanes`` register where each bit represents one lane.
@@ -97,7 +57,7 @@ Typically 16x1 firmware uses one lane ``AuroraActiveLanes = 1`` and 4x4 firmware
 
 The general structure of the scanConsole command is:
 ```bash
-./bin/scanConsole -r configs/controller/specCfg-itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/<type of scan>.json -p
+./bin/scanConsole -r configs/controller/specCfg-rd53b-16x1.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/<type of scan>.json -p
 ```
 
 which specifies the controller (`-r`), the chip list and chip type (`-c`), and the scan (`-s`). The option `-p` selects plotting so plots are produced after the scans.
@@ -121,9 +81,9 @@ After ``std_digitalscan`` (depends on exact config):
 
 We recommend the following tuning routine:
 
-1. Tune global threshold to 1200e
+1. Tune global threshold to 1200e (overtune by 200e)
 2. Tune global preamp to 7 ToT @ 6000e
-3. Tune global threshold to 1200e
+3. Tune global threshold to 1200e (overtune by 200e)
 4. Tune pixel threshold to 1000e
 
 ## Active Lanes
@@ -134,16 +94,16 @@ Three registers are involved in configuring how many lanes should be used for th
 
 - ``AuroraActiveLanes``: determines how many lanes are used to transmit data (does not disable the physical link), possible values 1,3,7,15 to select 1, 2, 3, and 4 lane readout.
 - ``DataMergeOutMux0/1/2/3``: selects which physical lane a logical lane will be transmitted on (allows us to re-reoute data in case the hardware wiring does not match the nominal lane order). Possible values 0, 1, 2, 3.
-- ``SerLaneEn``: eneables/disables the serializer in a physical lane (0 to enable, 1 to disable)
+- ``SerEnLane``: eneables/disables the serializer in a physical lane (0 to enable, 1 to disable); all lanes can be left enabled (default 15)
 
 When using the YARR-PCIe cards and SCC, possible values are:
 
-| Number of Lanes | ``AuroraActiveLanes`` | ``SerLaneEn`` | ``DataMergeOutMux0/1/2/3`` |
-| ----- | --------- | ----------- | --------------- |
-| 4 | 15 | 15 | 3, 2, 1, 0 |
-| 3 | 7 | 14 | 3, 2, 1, 0 |
-| 2 | 3 | 12 | 3, 2, 1, 0 |
-| 1 | 1 | 8 | 3, 2, 1, 0 |
+| Number of Lanes | ``AuroraActiveLanes`` | ``SerEnLane`` | ``DataMergeOutMux0/1/2/3`` |
+| --------------- | --------------------- | ------------- | -------------------------- |
+| 4               | 15                    | 15            | 3, 2, 1, 0                 |
+| 3               |  7                    | 14            | 3, 2, 1, 0                 |
+| 2               |  3                    | 12            | 3, 2, 1, 0                 |
+| 1               |  1                    |  8            | 3, 2, 1, 0                 |
 
 Please note that the number of active lanes might also need to be specified in the controller config to inform the firmware about how many lanes are used for the readout.
 
@@ -151,13 +111,10 @@ Please note that the number of active lanes might also need to be specified in t
 
 TODO
 
-# Testing with ITkPixV2 Quad Modules
+## Testing with ITkPixV2 Quad Modules
 
-TODO
+### Tuning Routine
 
-## Testing with ITkPixV2
-
-Tuning routine:
 - std_digitalscan
 - std_analogscan
 - std_tune_globalthreshold (target 1200e)
@@ -168,7 +125,7 @@ Tuning routine:
 - std_totscan (target 6000e)
 
 
-## Configuration files with 1-DisplayPort Data Adapter Card
+### Configuration files with 1-DisplayPort Data Adapter Card
 
 The DisplayPort is connected to Port A of the Ohio cars. Note that DisplayPort pins are connected to:
 - pins 1,3 correspond to channel 0
@@ -192,21 +149,21 @@ Connectivity file when DisplayPort cable is connected to Port A of the Ohio card
         "config" : "configs/itkpixv2_1DPQuad04_Chip2.json",
         "tx" : 0,
         "rx" : 1,
-        "enable" : 0,
+        "enable" : 1,
         "locked" : 0
     },
     {
         "config" : "configs/itkpixv2_1DPQuad04_Chip3.json",
         "tx" : 0,
         "rx" : 0,
-        "enable" : 0,
+        "enable" : 1,
         "locked" : 0
     },
     {
         "config" : "configs/itkpixv2_1DPQuad04_Chip4.json",
         "tx" : 0,
         "rx" : 3,
-        "enable" : 0,
+        "enable" : 1,
         "locked" : 0
     }
 ]
@@ -215,9 +172,48 @@ Connectivity file when DisplayPort cable is connected to Port A of the Ohio card
 
 Summary table of Chip configs:
 
-| #Chip | `ChipID` | `DataMergeOutMux0/1/2/3` | `SerEnLane` | 
-| :---: | :---: | :---: | :---: |
-| Chip1 | 12 | 2/3/0/1 | 4 |
-| Chip2 | 13 | 0/1/2/3 | 1 |
-| Chip3 | 14 | 1/2/3/0 | 8 |
-| Chip4 | 15 | 0/1/2/3 | 1 |
+| #Chip | `ChipID` | `DataMergeOutMux0/1/2/3` | `AuroraActiveLanes` |
+| :---: | :------: | :----------------------: | :-----------------: |
+| Chip1 | 12       | 2/3/0/1                  | 1                   |
+| Chip2 | 13       | 0/1/2/3                  | 1                   |
+| Chip3 | 14       | 1/2/3/0                  | 1                   |
+| Chip4 | 15       | 0/1/2/3                  | 1                   |
+
+
+## Disabling FEs
+
+The default values for the FEs in the chip configuration are
+
+- `EnCoreCol0`: 65535; enables each bit in core columns 1--16
+- `EnCoreCol1`: 65535; enables each bit in core columns 17--32
+- `EnCoreCol2`: 65535; enables each bit in core columns 33--48
+- `EnCoreCol3`: 63;    enables each bit in core columns 49--54 (ITkPix has only 50 core columns, the last 4 bits are reserved for the CMS chip)
+
+To disable a FE, you need to set the appropriate `EnCoreCol` to 0.
+
+
+## Scripts and Apps
+
+### Check Iref Bonds (only for ITkPix v2)
+
+ITkPix v2 has the ability to sense bonded wires, thus it is possible to read back wirebonded Iref bonds using a python script:
+
+```
+python scripts/itkpixv2_check_iref.py -r configs/controller/specCfg-rd53b-16x1.json -c configs/connectivity/example_itkpixv2_setup.json
+```
+
+**Example:**
+
+```
+INFO: IREF obtained from config: [6, 9, 7, 8]
+INFO: Running eye diagram and configuring the chips...
+INFO: Reading wirebonded IREF...
+INFO: IREF obtained from wirebonds: [6, 1, 7, 8]
+INFO: Iref for chip 1 matches expected value? 6 = 6 True
+INFO: Iref for chip 2 matches expected value? 9 = 1 False
+INFO: Current wirebonding configuration TRIM0(pad47)->TRIM3(pad50): 1000 ('0': wirebonded, '1': open)
+INFO: Correct wirebonding configuration TRIM0(pad47)->TRIM3(pad50): 1001 ('0': wirebonded, '1': open)
+INFO: Iref for chip 3 matches expected value? 7 = 7 True
+INFO: Iref for chip 4 matches expected value? 8 = 8 True
+INFO: [True, False, True, True]
+```
