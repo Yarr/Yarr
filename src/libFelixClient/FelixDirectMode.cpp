@@ -5,6 +5,8 @@
 #include "FelixTxCore.h"
 #include "TxCore.h"
 
+#include "AllStdActions.h"
+
 #include <iomanip>
 
 #include "logging.h"
@@ -14,6 +16,16 @@
 
 namespace {
     auto logger = logging::make_log("FelixDirectMode");
+}
+
+namespace FelixLoopsRegistry {
+
+using StdDict::registerLoopAction;
+
+bool direct_loop_registered = registerLoopAction
+  ("FelixDirectMode",
+   []() { return std::unique_ptr<LoopActionBase>(new FelixDirectMode); });
+
 }
 
 FelixDirectMode::FelixDirectMode()
@@ -108,12 +120,38 @@ void FelixDirectMode::writeConfig(json &config) {
 }
 
 void FelixDirectMode::loadConfig(const json &config) {
-    m_capture_length = config["captureLength"];
+    if(config.contains("captureLength")) {
+        m_capture_length = config["captureLength"];
+    }
 
     m_start_source_mask = config["startSourceMask"];
 
     logger->debug("Loaded FelixDirectMode configuration length {} and source mask {:08b}",
                   m_capture_length, m_start_source_mask);
+
+    static const std::string bit_names[] = {
+      "!Idle", "Idle", "SOP", "EOP", "Low", "High", "ByteLow", "ByteHigh",
+      "", "", "", "", "", "", "", "None"
+    };
+
+    std::vector<std::string> bits;
+
+    for(unsigned i=0; i<16; i++) {
+      if(m_start_source_mask & (1<<i)) {
+        bits.push_back(bit_names[i]);
+      }
+    }
+
+    std::string bit_string;
+
+    for(size_t i=0; i<bits.size(); i++) {
+      if(!bit_string.empty()) {
+        bit_string += "|";
+      }
+      bit_string += bits[i];
+    }
+
+    logger->debug(" source mask bits {}", bit_string);
 
     if(m_capture_length > 15) {
         logger->warn("Capture length too big (0-15)");
