@@ -240,4 +240,31 @@ class HitsPerEvent : public HistogramAlgorithm {
     private:
         Histo1d *h;
 };
+
+/**
+ * Build histogram of event data interpreted from raw bits.
+ */
+class RawDataHistogram : public HistogramAlgorithm {
+    public:
+        RawDataHistogram() : HistogramAlgorithm() {
+            r = nullptr;
+        }
+
+        ~RawDataHistogram() override = default;
+
+        void create(const LoopStatus &stat) override;
+
+        void processEvent(FrontEndData *data) override;
+
+        void loadConfig(const json &config) override;
+
+        static std::string outputName() { return "RawData"; }
+
+    private:
+        Histo1d *h{};
+
+        /// Width in bits
+        size_t width{32};
+        size_t offset{0};
+};
 #endif

@@ -66,6 +66,10 @@ namespace {
     bool hpe_registered =
       StdDict::registerHistogrammer("HitsPerEvent",
                                 []() { return std::unique_ptr<HistogramAlgorithm>(new HitsPerEvent());});
+
+    bool raw_registered =
+      StdDict::registerHistogrammer("RawData",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new RawDataHistogram());});
 }
 
 bool DataArchiver::open(std::string filename) {
@@ -329,5 +333,67 @@ void HitsPerEvent::processEvent(FrontEndData *data) {
     // Event Loop
     for (const FrontEndEvent &curEvent: data->events) {
         h->fill(curEvent.nHits);
+    }
+}
+
+void RawDataHistogram::loadConfig(const json &config)
+{
+    try {
+        config.at("width").get_to(width);
+    } catch(json::out_of_range &) {}
+    try {
+        config.at("offset").get_to(offset);
+    } catch(json::out_of_range &) {}
+}
+
+void RawDataHistogram::create(const LoopStatus &stat) {
+    h = new Histo1d(outputName(), width, offset - 0.5, offset + width - 0.5, stat);
+    h->setXaxisTitle("Bits");
+    h->setYaxisTitle("Accumulator");
+    r.reset(h);
+}
+
+void RawDataHistogram::processEvent(FrontEndData *data) {
+    size_t word_start = offset / 32;
+    size_t word_end = (offset+width+31) / 32;
+    size_t bit_first = offset % 32;
+    size_t bit_last = ((offset+width-1) % 32) + 1;
+
+    for (const FrontEndEvent &curEvent: data->events) {
+        auto h_size = curEvent.hits.size();
+        if(h_size < word_start) {
+          continue;
+        }
+
+        size_t w_start = word_start;
+        size_t w_end = word_end;
+        size_t b_first = bit_first;
+        size_t b_last = bit_last;
+
+        if(h_size <= word_end) {
+          w_end = h_size;
+          if(h_size < word_end) {
+            b_last = 32;
+          } else if(b_last != 32) {
+            b_last = std::min(((offset+31) % 32) + 1, b_last);
+          }
+        }
+
+        for(size_t word_index = w_start; word_index < w_end; word_index ++) {
+            const FrontEndHit &curHit = curEvent.hits[word_index];
+            uint32_t word = curHit.row;
+            word = (word << 16) | curHit.col;
+
+            size_t bit_start = word_index == w_start
+              ? b_first : 0;
+            size_t bit_end = word_index == (w_end-1)
+              ? b_last : 32;
+
+            for(uint32_t bit=bit_start; bit<bit_end; bit++) {
+                if(word & (1<<(31-bit))) {
+                    h->fill(word_index * 32 + bit);
+                }
+            }
+        }
     }
 }

@@ -29,6 +29,11 @@ void process_data_template(RawData &curIn,
                   FeedbackProcessingInfo &curStatus,
                   const std::array<uint8_t, 11> &chip_map);
 
+void process_raw_data(RawData &curIn,
+                      FrontEndData &curOut,
+                      FeedbackProcessingInfo &curStatus,
+                      const std::array<uint8_t, 11> &chip_map);
+
 bool star_proc_registered =
   StdDict::registerDataProcessor("Star", []() { return std::unique_ptr<FeDataProcessor>(new StarDataProcessor());});
 bool star_proc_registered_0 =
@@ -71,6 +76,9 @@ void StarDataProcessor::loadConfig(const json &config)
     } else {
       pimpl->proc_data = process_data_template<>;
     }
+  }
+  if(config.contains("raw_bits") && config["raw_bits"]) {
+      pimpl->proc_data = process_raw_data;
   }
 }
 
@@ -397,6 +405,30 @@ void process_data_template(RawData &curIn,
       StarProcessPacket(start, end, printer);
       logger->trace("{}", os.str());
     }
+}
+
+void process_raw_data(RawData &curIn,
+                      FrontEndData &curOut,
+                      FeedbackProcessingInfo &curStatus,
+                      const std::array<uint8_t, 11> &chip_map)
+{
+  // Not event data
+  curOut.newEvent(0xffffffff, 0xffffffff, 0xffffffff);
+
+  curStatus.packet_size = curIn.getSize();
+  curStatus.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_Control;
+  curStatus.bcid = 0xffffffff;
+
+  const uint32_t *start = curIn.getBuf();
+  const uint32_t *end = start + curIn.getSize();
+
+  for(auto w = start; w != end; w ++) {
+    FrontEndHit d{};
+    d.row = (*w >> 16) & 0xffff;
+    d.col = (*w) & 0xffff;
+    d.tot = 0xffff; // Some kind of flag that this is bit data
+    curOut.curEvent->addHit(d);
+  }
 }
 
 // Need to instantiate something to register the logger
