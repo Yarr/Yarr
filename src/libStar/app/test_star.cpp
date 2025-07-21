@@ -1404,6 +1404,7 @@ int main(int argc, char *argv[]) {
 
     // Enable Rx channels
     hwCtrl->disableRx();
+    hwCtrl->initRxChannels(rxChannels);
     hwCtrl->setRxEnable(rxChannels);
 
     // Tests
