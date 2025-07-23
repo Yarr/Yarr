@@ -60,26 +60,19 @@ void FelixDirectMode::setMode(int mask, int length)
 
 void FelixDirectMode::setLinksEnable(int enable)
 {
-  auto *ftx = dynamic_cast<FelixTxCore*>(g_tx);
-  if(!ftx) {
-    logger->error("FelixDirectMode: not using FelixClient hardware controller");
-    return;
-  }
-
   for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
     auto &fe = keeper->getEntry(id);
 
     auto rx_chan = fe.rxChannel;
 
-    auto fid = ftx->fid_from_channel(rx_chan);
-    auto elink = FelixTools::elink_from_chn(rx_chan);
-    auto egroup = FelixTools::egroup_from_elink(elink);
+    auto link = FelixTools::link_from_chn(rx_chan);
+    auto egroup = FelixTools::egroup_from_elink(rx_chan);
 
     // Use formatter from spdlog
     std::string reg_name = fmt::format("DECODING_LINK{:02}_EGROUP{}_CTRL_PATH_ENCODING",
-                                       elink, egroup);
+                                       link, egroup);
 
-    g_tx->writeFwRegister(reg_name, 0);
+    g_tx->writeFwRegister(reg_name, enable);
   }
 }
 
