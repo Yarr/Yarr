@@ -6,7 +6,9 @@
 .vscode
 
 /bin/
+/include/
 /lib/
+/lib64/
 /python/
 /build/
 /data/
