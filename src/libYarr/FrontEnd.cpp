@@ -32,6 +32,18 @@ void FrontEnd::setActive(bool arg_active) {
 	active = arg_active;
 }
 
+bool FrontEnd::isActiveLoop() const {
+	return activeLoop;
+}
+
+bool FrontEnd::getActiveLoop() const {
+	return this->activeLoop;
+}
+
+void FrontEnd::setActiveLoop(bool arg_activeLoop) {
+	activeLoop = arg_activeLoop;
+}
+
 std::tuple<json, std::vector<json>> FrontEndCfg::getPreset(const std::string& systemType) {
 	throw std::runtime_error("No presets defined");
 }

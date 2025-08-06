@@ -61,6 +61,13 @@ class FrontEnd {
         /** Change active state */
         void setActive(bool active);
 
+         /** Synonym for isActiveLoop */
+        bool getActiveLoop() const;
+        /** Is this chip active (for parameter loops) */
+        bool isActiveLoop() const;
+        /** Change active state (for parameter loops) */
+        void setActiveLoop(bool activeLoop);
+
         /** Make this represent a global ASIC */
         virtual void makeGlobal(){};
         virtual std::unique_ptr<FrontEnd> getGlobal();
@@ -99,6 +106,7 @@ class FrontEnd {
     protected:
         std::unique_ptr<FrontEndClipBoards> m_clipboards;
         bool active;
+        bool activeLoop;
         RxCore *m_rxcore;
 };
 
