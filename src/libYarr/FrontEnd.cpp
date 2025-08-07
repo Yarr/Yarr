@@ -36,10 +36,6 @@ bool FrontEnd::isActiveLoop() const {
 	return activeLoop;
 }
 
-bool FrontEnd::getActiveLoop() const {
-	return this->activeLoop;
-}
-
 void FrontEnd::setActiveLoop(bool arg_activeLoop) {
 	activeLoop = arg_activeLoop;
 }

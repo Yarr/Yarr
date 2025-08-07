@@ -61,8 +61,6 @@ class FrontEnd {
         /** Change active state */
         void setActive(bool active);
 
-         /** Synonym for isActiveLoop */
-        bool getActiveLoop() const;
         /** Is this chip active (for parameter loops) */
         bool isActiveLoop() const;
         /** Change active state (for parameter loops) */
