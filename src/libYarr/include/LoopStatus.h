@@ -60,18 +60,37 @@ class LoopStatus {
             std::copy(vec.begin(), vec.end(), statVec.begin());
             std::copy(vec_s.begin(), vec_s.end(), styleVec.begin());
         }
+
         LoopStatus(const std::vector<unsigned> &vec, const std::vector<LoopStyle> &vec_s) : statCount(vec.size())
         {
             if(statCount > MAX_LOOP_SIZE) {
                 throw std::logic_error("Too many loops");
             }
-          std::copy(vec.begin(), vec.end(), statVec.begin());
-          std::copy(vec_s.begin(), vec_s.end(), styleVec.begin());
+            std::copy(vec.begin(), vec.end(), statVec.begin());
+            std::copy(vec_s.begin(), vec_s.end(), styleVec.begin());
         }
+
         size_t size() const { return statCount; }
-        unsigned get(unsigned i) const { return statVec[i]; }
-        
-        unsigned getStyle(unsigned i) const { return styleVec[i]; }
+        uint8_t get(unsigned i) const { return statVec[i]; }
+        LoopStyle getStyle(unsigned i) const { return styleVec[i]; }
+
+        using UID = uint64_t;
+        UID uniqueID() const {
+            UID id = 0;
+            for (size_t i = 0; i < statCount; i++) {
+                if (styleVec[i] == LOOP_STYLE_PARAMETER) {
+                    id |= (static_cast<UID>(statVec[i] & 0xff) << (i * 8));
+                }
+            }
+            return id;
+        }
+        UID maskedUniqueID(std::vector<unsigned> loopsToMask) {
+            UID id = uniqueID();
+            for (size_t i = 0; i < loopsToMask.size(); i++) {
+                id &= ~(0xff << (i * 8));
+            }
+            return id;
+        }
 
         /** Compare with another LoopStatus */
         bool operator==(const LoopStatus &l){
