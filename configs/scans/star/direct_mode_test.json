@@ -1,5 +1,10 @@
 {
   "scan": {
+    "processor": {
+      "config": {
+        "raw_bits": true
+      }
+    },
     "analysis": [
       {
         "algorithm": "ParameterAnalysis",
