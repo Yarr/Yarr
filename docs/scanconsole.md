@@ -200,7 +200,7 @@ For example, consider the following config:
             "tx" : 0,
             "rx" : 0,
             "enable" : 1,
-            "locked" : 0,
+            "locked" : false,
             "active": true,
         },
         {
@@ -208,13 +208,13 @@ For example, consider the following config:
             "tx" : 0,
             "rx" : 1,
             "enable" : 1,
-            "locked" : 0,
+            "locked" : false,
             "active": false
         }
     ]
 }
 ```
-In this case, `ChipA` will function as normal. `ChipB` will be configured, but its data will not be saved and no analysis will be run for it. 
+In this case, `ChipA` will function as normal. `ChipB` will be configured, but its data will not be processed and no analysis will be run for it. 
 
 The `"activeLoop"` flag can be used to prevent a `StdParameterLoop` from changing the registers for the given FE. 
 Consider the following example: 
@@ -228,7 +228,7 @@ Consider the following example:
             "tx" : 0,
             "rx" : 0,
             "enable" : 1,
-            "locked" : 0,
+            "locked" : false,
             "activeLoop": true,
         },
         {
@@ -236,7 +236,7 @@ Consider the following example:
             "tx" : 0,
             "rx" : 1,
             "enable" : 1,
-            "locked" : 0,
+            "locked" : false,
             "activeLoop": false
         }
     ]
