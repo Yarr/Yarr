@@ -63,7 +63,7 @@ void StarSCurveFitAnalysis::processHistogram(HistogramBase *h) {
 
     LoopStatus loopStatus = occupancy->getStat();
     unsigned poiLoopValue = loopStatus.get(m_POILoopIndex);
-    LoopStatus::UID id = loopStatus.maskedUniqueID({m_POILoopIndex});
+    LoopStatus::UID id = loopStatus.maskedUniqueID(m_POILoopIndex);
 
     if (m_sCurves.find(id) == m_sCurves.end()) {
         m_sCurves[id] = std::vector<std::vector<double>>(nRow*nCol, std::vector<double>(m_POILoopSteps, 0.0));

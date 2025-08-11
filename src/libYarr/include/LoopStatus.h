@@ -6,6 +6,7 @@
 #ifndef LOOPSTATUS_H
 #define LOOPSTATUS_H
 
+#include <algorithm>
 #include <array>
 #include <iostream>
 #include <stdexcept>
@@ -75,21 +76,46 @@ class LoopStatus {
         LoopStyle getStyle(unsigned i) const { return styleVec[i]; }
 
         using UID = uint64_t;
+
         UID uniqueID() const {
-            UID id = 0;
+            UID uid = 0;
+            std::hash<unsigned> hasher;
             for (size_t i = 0; i < statCount; i++) {
                 if (styleVec[i] == LOOP_STYLE_PARAMETER) {
-                    id |= (static_cast<UID>(statVec[i] & 0xff) << (i * 8));
+                    uid ^= hasher(statVec[i]) + 0x9e3779b9 + (uid << 6) + (uid >> 2);
                 }
             }
-            return id;
+            return uid;
         }
-        UID maskedUniqueID(std::vector<unsigned> loopsToMask) {
-            UID id = uniqueID();
-            for (size_t i = 0; i < loopsToMask.size(); i++) {
-                id &= ~(0xff << (i * 8));
+
+        UID maskedUniqueID(unsigned loopToMask) {
+            UID uid = 0;
+            std::hash<unsigned> hasher;
+            for (size_t i = 0; i < statCount; i++) {
+                if (i == loopToMask) {
+                    continue;
+                }
+
+                if (styleVec[i] == LOOP_STYLE_PARAMETER) {
+                    uid ^= hasher(statVec[i]) + 0x9e3779b9 + (uid << 6) + (uid >> 2);
+                }
             }
-            return id;
+            return uid;
+        }
+
+        UID maskedUniqueID(std::vector<unsigned> loopsToMask) {
+            UID uid = 0;
+            std::hash<unsigned> hasher;
+            for (size_t i = 0; i < statCount; i++) {
+                if (std::find(loopsToMask.begin(), loopsToMask.end(), i) != loopsToMask.end()) {
+                    continue;
+                }
+
+                if (styleVec[i] == LOOP_STYLE_PARAMETER) {
+                    uid ^= hasher(statVec[i]) + 0x9e3779b9 + (uid << 6) + (uid >> 2);
+                }
+            }
+            return uid;
         }
 
         /** Compare with another LoopStatus */
