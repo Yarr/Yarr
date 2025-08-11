@@ -1,5 +1,5 @@
-#ifndef STAR_NPOINTGAIN_ANALYSIS_H
-#define STAR_NPOINTGAIN_ANALYSIS_H
+#ifndef STAR_SCURVEFIT_ANALYSIS_H
+#define STAR_SCURVEFIT_ANALYSIS_H
 
 // #################################
 // # Author: Ryan Quinn
