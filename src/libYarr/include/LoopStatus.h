@@ -49,6 +49,8 @@ class LoopStatus {
         std::array<unsigned, MAX_LOOP_SIZE> statVec;
         std::array<LoopStyle, MAX_LOOP_SIZE> styleVec;
 
+        friend struct std::hash<LoopStatus>;
+
     public:
         /** Create LoopStatus */
         LoopStatus()=default;
@@ -75,55 +77,50 @@ class LoopStatus {
         uint8_t get(unsigned i) const { return statVec[i]; }
         LoopStyle getStyle(unsigned i) const { return styleVec[i]; }
 
-        using UID = uint64_t;
-
-        UID uniqueID() const {
-            UID uid = 0;
-            std::hash<unsigned> hasher;
-            for (size_t i = 0; i < statCount; i++) {
-                if (styleVec[i] == LOOP_STYLE_PARAMETER) {
-                    uid ^= hasher(statVec[i]) + 0x9e3779b9 + (uid << 6) + (uid >> 2);
-                }
-            }
-            return uid;
+        LoopStatus mask(int loopToMask) {
+            LoopStatus masked;
+            std::copy(statVec.begin(), statVec.end(), masked.statVec.begin());
+            std::copy(styleVec.begin(), styleVec.end(), masked.styleVec.begin());
+            masked.statVec[loopToMask] = 0;
+            masked.styleVec[loopToMask] = LOOP_STYLE_NOP;
+            return masked;
         }
 
-        UID maskedUniqueID(unsigned loopToMask) {
-            UID uid = 0;
-            std::hash<unsigned> hasher;
-            for (size_t i = 0; i < statCount; i++) {
-                if (i == loopToMask) {
-                    continue;
-                }
-
-                if (styleVec[i] == LOOP_STYLE_PARAMETER) {
-                    uid ^= hasher(statVec[i]) + 0x9e3779b9 + (uid << 6) + (uid >> 2);
-                }
+        LoopStatus mask(const std::vector<int> &loopsToMask) {
+            LoopStatus masked;
+            std::copy(statVec.begin(), statVec.end(), masked.statVec.begin());
+            std::copy(styleVec.begin(), styleVec.end(), masked.styleVec.begin());
+            for (int i : loopsToMask) {
+                masked.statVec[i] = 0;
+                masked.styleVec[i] = LOOP_STYLE_NOP;
             }
-            return uid;
-        }
-
-        UID maskedUniqueID(std::vector<unsigned> loopsToMask) {
-            UID uid = 0;
-            std::hash<unsigned> hasher;
-            for (size_t i = 0; i < statCount; i++) {
-                if (std::find(loopsToMask.begin(), loopsToMask.end(), i) != loopsToMask.end()) {
-                    continue;
-                }
-
-                if (styleVec[i] == LOOP_STYLE_PARAMETER) {
-                    uid ^= hasher(statVec[i]) + 0x9e3779b9 + (uid << 6) + (uid >> 2);
-                }
-            }
-            return uid;
+            return masked;
         }
 
         /** Compare with another LoopStatus */
         bool operator==(const LoopStatus &l){
                 return statVec == l.statVec;
         }
+        bool operator<(const LoopStatus &l){
+                return statVec < l.statVec;
+        }
 
         bool is_end_of_iteration = true;
+};
+
+// specialized std::hash for LoopStatus
+template<>
+struct std::hash<LoopStatus> {
+    std::size_t operator()(const LoopStatus& stat) const noexcept {
+        std::size_t h = 0;
+        std::hash<unsigned> hasher;
+        for (size_t i = 0; i < stat.statCount; i++) {
+            if (stat.statVec[i] == LOOP_STYLE_PARAMETER) {
+                h ^= hasher(stat.statVec[i]) + 0x9e3779b9 + (h << 6) + (h >> 2);
+            }
+        }
+        return h;
+    }
 };
 
 /**
