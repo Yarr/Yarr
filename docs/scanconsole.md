@@ -185,6 +185,65 @@ An example of this type of configuration is:
 ```
 In the above configuration, the command will be sent using tx0 but each chip uses its own rx line.
 
+#### Active and inactive FEs
+
+The `"active"` flag can be used to determine whether a given FE's data will be analysed. 
+
+For example, consider the following config:
+```json
+{
+    "chipType" : "RD53A",
+    "chips" : [
+
+        {
+            "config" : "configs/rd53a_Quad_ChipA.json",
+            "tx" : 0,
+            "rx" : 0,
+            "enable" : 1,
+            "locked" : 0,
+            "active": true,
+        },
+        {
+            "config" : "configs/rd53a_Quad_ChipB.json",
+            "tx" : 0,
+            "rx" : 1,
+            "enable" : 1,
+            "locked" : 0,
+            "active": false
+        }
+    ]
+}
+```
+In this case, `ChipA` will function as normal. `ChipB` will be configured, but its data will not be saved and no analysis will be run for it. 
+
+The `"activeLoop"` flag can be used to prevent a `StdParameterLoop` from changing the registers for the given FE. 
+Consider the following example: 
+```json
+{
+    "chipType" : "RD53A",
+    "chips" : [
+
+        {
+            "config" : "configs/rd53a_Quad_ChipA.json",
+            "tx" : 0,
+            "rx" : 0,
+            "enable" : 1,
+            "locked" : 0,
+            "activeLoop": true,
+        },
+        {
+            "config" : "configs/rd53a_Quad_ChipB.json",
+            "tx" : 0,
+            "rx" : 1,
+            "enable" : 1,
+            "locked" : 0,
+            "activeLoop": false
+        }
+    ]
+}
+```
+In this case, `ChipB` will be configured and its data will be collected and analysed. However, if a `StdParameterLoop` in the scan config has `"checkActiveLoop": true`, then that parameter will not be changed for `ChipB` throughout the scan.
+
 ### Re-running a scan
 
 The configuration for a scan is logged along with the scan results in the data directory.
