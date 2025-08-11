@@ -116,6 +116,7 @@ struct std::hash<LoopStatus> {
         std::hash<unsigned> hasher;
         for (size_t i = 0; i < stat.statCount; i++) {
             if (stat.statVec[i] == LOOP_STYLE_PARAMETER) {
+                // copied from boost::hash_combine
                 h ^= hasher(stat.statVec[i]) + 0x9e3779b9 + (h << 6) + (h >> 2);
             }
         }
