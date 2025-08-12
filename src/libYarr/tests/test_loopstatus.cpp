@@ -80,3 +80,10 @@ TEST_CASE("LoopStatus Masked UID", "[Yarr][LoopStatus]") {
     REQUIRE(id == expected);
   }
 }
+
+TEST_CASE("LoopStatus String", "[Yarr][LoopStatus]") {
+  std::vector<unsigned> loops = {1, 2, 3};
+  std::vector<LoopStyle> styles = {LOOP_STYLE_PARAMETER, LOOP_STYLE_DATA, LOOP_STYLE_TRIGGER};
+  LoopStatus stat(loops, styles);
+  REQUIRE(stat.toString() == "1-2-3");
+}

@@ -110,6 +110,18 @@ class LoopStatus {
             return id;
         }
 
+        std::string toString() const {
+            std::string result;
+            for (size_t i = 0; i < statCount; ++i) {
+                result += std::to_string(statVec[i]);
+                result += "-";
+            }
+            if (!result.empty()) {
+                result.pop_back();  // Remove trailing dash
+            }
+            return result;
+        }
+
         /** Compare with another LoopStatus */
         bool operator==(const LoopStatus &l){
                 return statVec == l.statVec;
