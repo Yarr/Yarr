@@ -76,12 +76,12 @@ class LoopStatus {
         uint8_t get(unsigned i) const { return statVec[i]; }
         LoopStyle getStyle(unsigned i) const { return styleVec[i]; }
 
-        using UID = std::bitset<sizeof(unsigned)*MAX_LOOP_SIZE>;
+        using UID = std::bitset<sizeof(unsigned)*8*MAX_LOOP_SIZE>;
 
         UID uniqueID() {
             UID id = 0;
             for (size_t i = 0; i < statCount; ++i) {
-                id |= static_cast<UID>(statVec[i]) << (i * sizeof(unsigned));
+                id |= static_cast<UID>(statVec[i]) << (i * sizeof(unsigned) * 8);
             }
             return id;
         }
@@ -93,7 +93,7 @@ class LoopStatus {
                     continue;
                 }
 
-                id |= static_cast<UID>(statVec[i]) << (i * sizeof(unsigned));
+                id |= static_cast<UID>(statVec[i]) << (i * sizeof(unsigned) * 8);
             }
             return id;
         }
