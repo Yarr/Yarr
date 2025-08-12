@@ -34,6 +34,7 @@ void StarSCurveFitAnalysis::init(const ScanLoopInfo *s) {
         if (isPOILoop(loop)) {
             m_POILoopIndex = loopIndex;
             m_POILoopSteps = (loop->getMax() - loop->getMin()) / loop->getStep();
+            m_POILoopMax = loop->getMax();
         }
     }
 }
@@ -75,8 +76,17 @@ void StarSCurveFitAnalysis::processHistogram(HistogramBase *h) {
             m_sCurves[id][row*nCol + col][poiLoopValue] = occupancy->getBin(bin);
         }
     }
+
+    if (loopStatus.get(m_POILoopIndex) != m_POILoopMax) {
+        return;
+    }
+
+    // do s-curve fits
+
+    // output works as before, just need to attach our loopStatus object
+    auto hout = std::make_unique<Histo2d>("dummy", 1, 0, 1, 1, 0, 1, loopStatus);
+    output->pushData(std::move(hout));
 }
 
 
-void StarSCurveFitAnalysis::end() {
-}
+void StarSCurveFitAnalysis::end() {}

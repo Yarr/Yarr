@@ -24,6 +24,7 @@ class StarSCurveFitAnalysis : public AnalysisAlgorithm {
     private:
         unsigned m_POILoopIndex = 0;
         unsigned m_POILoopSteps = 0;
+        unsigned m_POILoopMax = 0;
 
         std::unordered_map<LoopStatus::UID, std::vector<std::vector<double>>> m_sCurves;
 };
