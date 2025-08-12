@@ -105,7 +105,7 @@ class LoopStatus {
                     continue;
                 }
 
-                id |= static_cast<UID>(statVec[i] & 0xff) << (i * 8);
+                id |= static_cast<UID>(statVec[i]) << (i * sizeof(unsigned) * 8);
             }
             return id;
         }
