@@ -49,8 +49,6 @@ class LoopStatus {
         std::array<unsigned, MAX_LOOP_SIZE> statVec;
         std::array<LoopStyle, MAX_LOOP_SIZE> styleVec;
 
-        friend struct std::hash<LoopStatus>;
-
     public:
         /** Create LoopStatus */
         LoopStatus()=default;
