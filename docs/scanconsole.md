@@ -67,7 +67,7 @@ Example of a connectivity config:
             "tx" : 0,
             "rx" : 0,
             "enable" : 1,
-            "locked" : 0
+            "locked" : false
         },
         {
             "config" : "configs/rd53a_test_1.json",
@@ -75,7 +75,7 @@ Example of a connectivity config:
             "tx" : 1,
             "rx" : 1,
             "enable" : 0,
-            "locked" : 0
+            "locked" : false
         }
     ]
 }
@@ -107,21 +107,21 @@ An example configuration set to communicate with multiple FEs looks like this:
             "tx" : 0,
             "rx" : 0,
             "enable" : 1,
-            "locked" : 0
+            "locked" : false
         },
         {
             "config" : "configs/rd53a_TripletA_IndCmdChipB.json",
             "tx" : 1,
             "rx" : 1,
             "enable" : 0,
-            "locked" : 0
+            "locked" : false
         },
         {
             "config" : "configs/rd53a_TripletA_IndCmdChipC.json",
             "tx" : 2,
             "rx" : 2,
             "enable" : 1,
-            "locked" : 0
+            "locked" : false
         }
     ]
 }
@@ -171,14 +171,14 @@ An example of this type of configuration is:
             "tx" : 0,
             "rx" : 0,
             "enable" : 1,
-            "locked" : 0
+            "locked" : false
         },
         {
             "config" : "configs/rd53a_Quad_ChipB.json",
             "tx" : 0,
             "rx" : 1,
             "enable" : 1,
-            "locked" : 0
+            "locked" : false
         }
     ]
 }
