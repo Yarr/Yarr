@@ -77,51 +77,46 @@ class LoopStatus {
         uint8_t get(unsigned i) const { return statVec[i]; }
         LoopStyle getStyle(unsigned i) const { return styleVec[i]; }
 
-        LoopStatus mask(int loopToMask) {
-            LoopStatus masked;
-            std::copy(statVec.begin(), statVec.end(), masked.statVec.begin());
-            std::copy(styleVec.begin(), styleVec.end(), masked.styleVec.begin());
-            masked.statVec[loopToMask] = 0;
-            masked.styleVec[loopToMask] = LOOP_STYLE_NOP;
-            return masked;
+        using UID = uint64_t;
+
+        UID uniqueID() {
+            UID id = 0;
+            for (size_t i = 0; i < statCount; ++i) {
+                id |= static_cast<UID>(statVec[i] & 0xff) << (i * 8);
+            }
+            return id;
         }
 
-        LoopStatus mask(const std::vector<int> &loopsToMask) {
-            LoopStatus masked;
-            std::copy(statVec.begin(), statVec.end(), masked.statVec.begin());
-            std::copy(styleVec.begin(), styleVec.end(), masked.styleVec.begin());
-            for (int i : loopsToMask) {
-                masked.statVec[i] = 0;
-                masked.styleVec[i] = LOOP_STYLE_NOP;
+        UID maskedUniqueID(size_t loopToMask) {
+            UID id = 0;
+            for (size_t i = 0; i < statCount; ++i) {
+                if (i == loopToMask) {
+                    continue;
+                }
+
+                id |= static_cast<UID>(statVec[i] & 0xff) << (i * 8);
             }
-            return masked;
+            return id;
+        }
+
+        UID maskedUniqueID(const std::vector<size_t> &loopsToMask) {
+            UID id = 0;
+            for (size_t i = 0; i < statCount; ++i) {
+                if (std::find(loopsToMask.begin(), loopsToMask.end(), i) != loopsToMask.end()) {
+                    continue;
+                }
+
+                id |= static_cast<UID>(statVec[i] & 0xff) << (i * 8);
+            }
+            return id;
         }
 
         /** Compare with another LoopStatus */
         bool operator==(const LoopStatus &l){
                 return statVec == l.statVec;
         }
-        bool operator<(const LoopStatus &l){
-                return statVec < l.statVec;
-        }
 
         bool is_end_of_iteration = true;
-};
-
-// specialized std::hash for LoopStatus
-template<>
-struct std::hash<LoopStatus> {
-    std::size_t operator()(const LoopStatus& stat) const noexcept {
-        std::size_t h = 0;
-        std::hash<unsigned> hasher;
-        for (size_t i = 0; i < stat.statCount; i++) {
-            if (stat.statVec[i] == LOOP_STYLE_PARAMETER) {
-                // copied from boost::hash_combine
-                h ^= hasher(stat.statVec[i]) + 0x9e3779b9 + (h << 6) + (h >> 2);
-            }
-        }
-        return h;
-    }
 };
 
 /**

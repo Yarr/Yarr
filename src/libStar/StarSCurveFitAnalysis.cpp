@@ -63,21 +63,20 @@ void StarSCurveFitAnalysis::processHistogram(HistogramBase *h) {
 
     LoopStatus loopStatus = occupancy->getStat();
     unsigned poiLoopValue = loopStatus.get(m_POILoopIndex);
-    LoopStatus maskedStatus = loopStatus.mask(m_POILoopIndex);
+    LoopStatus::UID id = loopStatus.maskedUniqueID(m_POILoopIndex);
 
-    if (m_sCurves.find(maskedStatus) == m_sCurves.end()) {
-        m_sCurves[maskedStatus] = std::vector<std::vector<double>>(nRow*nCol, std::vector<double>(m_POILoopSteps, 0.0));
+    if (m_sCurves.find(id) == m_sCurves.end()) {
+        m_sCurves[id] = std::vector<std::vector<double>>(nRow*nCol, std::vector<double>(m_POILoopSteps, 0.0));
     }
 
     for (unsigned row = 0; row < nRow; row++) {
         for (unsigned col = 0; col < nCol; col++) {
             int bin = occupancy->binNum(row+1, col+1);
-            m_sCurves[maskedStatus][row*nCol + col][poiLoopValue] = occupancy->getBin(bin);
+            m_sCurves[id][row*nCol + col][poiLoopValue] = occupancy->getBin(bin);
         }
     }
 }
 
 
 void StarSCurveFitAnalysis::end() {
-    // actually do the s-curve fits
 }
