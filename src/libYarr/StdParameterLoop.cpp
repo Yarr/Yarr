@@ -24,7 +24,6 @@ StdParameterLoop::StdParameterLoop() : LoopActionBase(LOOP_STYLE_PARAMETER) {
     step = 1;
     m_waitTime = std::chrono::microseconds(0);
     m_cur = 0;
-    m_iter = 0;
     m_activeLoop = false;
 }
 
@@ -35,12 +34,11 @@ void StdParameterLoop::init() {
 }
 
 void StdParameterLoop::execPart1() {
-    SPDLOG_LOGGER_DEBUG(spllog, "ParameterLoop for {} at iteration {} -> {}", parName, m_iter, m_cur);
-    g_stat->set(this, m_iter);
+    SPDLOG_LOGGER_DEBUG(spllog, "ParameterLoop for {} at -> {}", parName, m_cur);
+    g_stat->set(this, m_cur);
 }
 
 void StdParameterLoop::execPart2() {
-    m_iter++;
     m_cur += step;
     if ((int)m_cur > max) {
       m_done = true;
@@ -51,7 +49,6 @@ void StdParameterLoop::execPart2() {
 
 void StdParameterLoop::end() {
     // Reset to min
-    m_iter = 0;
     m_cur = min;
     this->writePar();
 }
