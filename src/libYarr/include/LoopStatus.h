@@ -8,10 +8,11 @@
 
 #include <algorithm>
 #include <array>
+#include <bitset>
 #include <iostream>
+#include <map>
 #include <stdexcept>
 #include <vector>
-#include <map>
 
 class LoopActionBase;
 
@@ -75,12 +76,12 @@ class LoopStatus {
         uint8_t get(unsigned i) const { return statVec[i]; }
         LoopStyle getStyle(unsigned i) const { return styleVec[i]; }
 
-        using UID = uint64_t;
+        using UID = std::bitset<sizeof(unsigned)*MAX_LOOP_SIZE>;
 
         UID uniqueID() {
             UID id = 0;
             for (size_t i = 0; i < statCount; ++i) {
-                id |= static_cast<UID>(statVec[i] & 0xff) << (i * 8);
+                id |= static_cast<UID>(statVec[i]) << (i * sizeof(unsigned));
             }
             return id;
         }
@@ -92,7 +93,7 @@ class LoopStatus {
                     continue;
                 }
 
-                id |= static_cast<UID>(statVec[i] & 0xff) << (i * 8);
+                id |= static_cast<UID>(statVec[i]) << (i * sizeof(unsigned));
             }
             return id;
         }
