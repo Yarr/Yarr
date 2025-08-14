@@ -24,7 +24,7 @@ StdParameterLoop::StdParameterLoop() : LoopActionBase(LOOP_STYLE_PARAMETER) {
     step = 1;
     m_waitTime = std::chrono::microseconds(0);
     m_cur = 0;
-    m_activeLoop = false;
+    m_checkActiveLoop = false;
 }
 
 void StdParameterLoop::init() {
@@ -54,16 +54,16 @@ void StdParameterLoop::end() {
 }
 
 void StdParameterLoop::writePar() {
-    if (!m_activeLoop){
-        SPDLOG_LOGGER_DEBUG(spllog, "Writing to global FE");
+    if (!m_checkActiveLoop){
+        SPDLOG_LOGGER_DEBUG(spllog, "Writing to global FE for parameter {}", parName);
         keeper->getGlobalFe()->writeNamedRegister(parName, m_cur);
     }
     else {
-        SPDLOG_LOGGER_DEBUG(spllog, "Looping over FEs");
+        SPDLOG_LOGGER_DEBUG(spllog, "Looping over FEs for parameter {}", parName);
         for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
             SPDLOG_LOGGER_DEBUG(spllog, "FE # {}", id);
             auto fe = keeper->getFe(id);
-            if(fe->isActive()) {
+            if(fe->isActiveLoop()) {
                 SPDLOG_LOGGER_DEBUG(spllog, "FE is active, writing to it");
                 fe->writeNamedRegister(parName, m_cur);
             }
@@ -81,7 +81,7 @@ void StdParameterLoop::writeConfig(json &j) {
     j["step"] = step;
     j["parameter"] = parName;
     j["waitTime"] = m_waitTime.count();
-    j["activeLoop"] = m_activeLoop;
+    j["checkActiveLoop"] = m_checkActiveLoop;
 }
 
 void StdParameterLoop::loadConfig(const json &j) {
@@ -98,6 +98,6 @@ void StdParameterLoop::loadConfig(const json &j) {
     if (j.contains("waitTime")) {
         m_waitTime = std::chrono::microseconds(j["waitTime"]);
     }
-    if (j.contains("activeLoop"))
-        m_activeLoop = j["activeLoop"];
+    if (j.contains("checkActiveLoop"))
+        m_checkActiveLoop = j["checkActiveLoop"];
 }
