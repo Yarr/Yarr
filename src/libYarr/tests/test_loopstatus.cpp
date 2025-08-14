@@ -40,7 +40,7 @@ TEST_CASE("LoopStatus UID", "[Yarr][LoopStatus]") {
 TEST_CASE("LoopStatus Masked UID", "[Yarr][LoopStatus]") {
 
   SECTION("Single Loop Mask") {
-    std::vector<unsigned> loops = {0xf0f0f0f0, 0xff00ff00, 0xffff0000};
+    std::vector<unsigned> loops = {984239, 8392, 2};
     std::vector<LoopStyle> styles(loops.size(), LOOP_STYLE_PARAMETER);
     size_t loopToMask = 1;
 
@@ -58,7 +58,7 @@ TEST_CASE("LoopStatus Masked UID", "[Yarr][LoopStatus]") {
   }
 
   SECTION("Multiple Loop Mask") {
-    std::vector<unsigned> loops = {0xf0f0f0f0, 0xff00ff00, 0xffff0000};
+    std::vector<unsigned> loops = {293, 90530, 38921};
     std::vector<LoopStyle> styles(loops.size(), LOOP_STYLE_PARAMETER);
     std::vector<size_t> loopsToMask = {0, 2};
 
