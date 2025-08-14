@@ -78,20 +78,32 @@ class LoopStatus {
 
         using UID = std::array<unsigned, MAX_LOOP_SIZE>;
 
+        /// @brief Create a unique ID from the current loop status
+        /// e.g. to be used as the key for a std::map in an analysis.
+        /// Look at maskedUniqueID() if you need to ignore specific loops (e.g. POI loops)
+        /// @return Unique loop status ID
         UID uniqueID() const {
-            // the original statVec array may have uninitialized values which we do not want
-            // so we first initialize this uid to zero.
+            // the original statVec array may have uninitialized values which we do not want,
+            // so we first initialize this uid to zero and don't copy the uninitialized bits
             UID uid{};
             std::copy(statVec.begin(), statVec.begin() + statCount, uid.begin());
             return uid;
         }
 
+        /// @brief Create a unique ID, ignoring the specified loop index
+        /// Useful for masking out loops that an analysis keeps track of on its own, like POI loops
+        /// @param loopToMask Loop index to mask from the UID
+        /// @return Masked unique loop status ID
         UID maskedUniqueID(size_t loopToMask) const {
             UID uid = uniqueID();
             uid[loopToMask] = 0;
             return uid;
         }
 
+        /// @brief Create a unique ID, ignoring the specified loop indices
+        /// Useful for masking out loops that an analysis keeps track of on its own, like POI loops
+        /// @param loopsToMask Loop indices to mask from the UID
+        /// @return Masked unique loop status ID
         UID maskedUniqueID(const std::vector<size_t> &loopsToMask) const {
             UID uid = uniqueID();
             for (auto loop : loopsToMask) {
@@ -100,6 +112,9 @@ class LoopStatus {
             return uid;
         }
 
+        /// @brief Create a dash-separated loop status string
+        /// e.g. to be added to the name of a histogram
+        /// @return Loop status string
         std::string toString() const {
             std::string result;
             for (size_t i = 0; i < statCount; ++i) {
