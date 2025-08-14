@@ -30,10 +30,9 @@ TEST_CASE("LoopStatus UID", "[Yarr][LoopStatus]") {
   LoopStatus::UID id = stat.uniqueID();
 
   // build an expected UID and compare
-  LoopStatus::UID expected;
+  LoopStatus::UID expected{};
   for (size_t i = 0; i < loops.size(); i++) {
-    expected |=
-        (static_cast<LoopStatus::UID>(loops[i]) << (sizeof(unsigned) * 8 * i));
+    expected[i] = loops[i];
   }
   REQUIRE(id == expected);
 }
@@ -48,13 +47,12 @@ TEST_CASE("LoopStatus Masked UID", "[Yarr][LoopStatus]") {
     LoopStatus stat(loops, styles);
     LoopStatus::UID id = stat.maskedUniqueID(loopToMask);
 
-    LoopStatus::UID expected;
+    LoopStatus::UID expected{};
     for (size_t i = 0; i < loops.size(); i++) {
       if (i == loopToMask) {
         continue;
       }
-      expected |= (static_cast<LoopStatus::UID>(loops[i])
-                   << (sizeof(unsigned) * 8 * i));
+      expected[i] = loops[i];
     }
     REQUIRE(id == expected);
   }
@@ -67,15 +65,14 @@ TEST_CASE("LoopStatus Masked UID", "[Yarr][LoopStatus]") {
     LoopStatus stat(loops, styles);
     LoopStatus::UID id = stat.maskedUniqueID(loopsToMask);
 
-    LoopStatus::UID expected;
+    LoopStatus::UID expected{};
     for (size_t i = 0; i < loops.size(); i++) {
       if (std::find(loopsToMask.begin(), loopsToMask.end(), i) !=
           loopsToMask.end()) {
         continue;
       }
 
-      expected |= (static_cast<LoopStatus::UID>(loops[i])
-                   << (sizeof(unsigned) * 8 * i));
+      expected[i] = loops[i];
     }
     REQUIRE(id == expected);
   }

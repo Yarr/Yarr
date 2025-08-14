@@ -76,38 +76,28 @@ class LoopStatus {
         unsigned get(unsigned i) const { return statVec[i]; }
         LoopStyle getStyle(unsigned i) const { return styleVec[i]; }
 
-        using UID = std::bitset<sizeof(unsigned)*8*MAX_LOOP_SIZE>;
+        using UID = std::array<unsigned, MAX_LOOP_SIZE>;
 
         UID uniqueID() const {
-            UID id = 0;
-            for (size_t i = 0; i < statCount; ++i) {
-                id |= static_cast<UID>(statVec[i]) << (i * sizeof(unsigned) * 8);
-            }
-            return id;
+            // the original statVec array may have uninitialized values which we do not want
+            // so we first initialize this uid to zero.
+            UID uid{};
+            std::copy(statVec.begin(), statVec.begin() + statCount, uid.begin());
+            return uid;
         }
 
         UID maskedUniqueID(size_t loopToMask) const {
-            UID id = 0;
-            for (size_t i = 0; i < statCount; ++i) {
-                if (i == loopToMask) {
-                    continue;
-                }
-
-                id |= static_cast<UID>(statVec[i]) << (i * sizeof(unsigned) * 8);
-            }
-            return id;
+            UID uid = uniqueID();
+            uid[loopToMask] = 0;
+            return uid;
         }
 
         UID maskedUniqueID(const std::vector<size_t> &loopsToMask) const {
-            UID id = 0;
-            for (size_t i = 0; i < statCount; ++i) {
-                if (std::find(loopsToMask.begin(), loopsToMask.end(), i) != loopsToMask.end()) {
-                    continue;
-                }
-
-                id |= static_cast<UID>(statVec[i]) << (i * sizeof(unsigned) * 8);
+            UID uid = uniqueID();
+            for (auto loop : loopsToMask) {
+                uid[loop] = 0;
             }
-            return id;
+            return uid;
         }
 
         std::string toString() const {
