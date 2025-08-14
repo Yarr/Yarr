@@ -386,6 +386,16 @@ namespace ScanHelper {
                 bookie.getLastFe()->setActive(active);
             }
 
+            if (chip.contains("activeLoop")) {
+                bool activeLoop = false;
+                if (!chip["activeLoop"].is_boolean()) {
+                    shlog->warn("WARNING 'activeLoop' flag should be a boolean");
+                } else {
+                    activeLoop = chip["activeLoop"];
+                }
+                bookie.getLastFe()->setActiveLoop(activeLoop);
+            }
+
             // Check for hidden clipboard monitor parameter, and start them if true
             if (chip.contains("clipboardMonitor")) {
                 if(chip["clipboardMonitor"] > 0) {
