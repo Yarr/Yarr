@@ -8,6 +8,7 @@
 // ################################
 
 #include "StarChannelFeedback.h"
+#include "StarConstants.h"
 
 #include "Bookkeeper.h"
 #include "TxCore.h"
@@ -60,15 +61,15 @@ void StarChannelFeedback::feedback(unsigned id, std::unique_ptr<Histo2d> h) {
         m_fb[id] = std::move(h);
 
         auto chip_map = fe->hcc().histoChipMap();
-        unsigned nABCs = nCol / 128;
+        unsigned nABCs = nCol / Star::StripsPerABCRow;
 
         for (unsigned histo_abc=0; histo_abc<nABCs; histo_abc++) {
             AbcCfg &abc = fe->abcForHistoChip(histo_abc);
 
-            for (unsigned chan=0; chan<128; chan++) {
-                unsigned histo_col = 1 + histo_abc * 128 + chan;
+            for (unsigned chan=0; chan<Star::StripsPerABCRow; chan++) {
+                unsigned histo_col = 1 + histo_abc * Star::StripsPerABCRow + chan;
                 for (unsigned row=1; row<=nRow; row++) {
-                    uint8_t abc_chan = chan + ((row-1) * 128);
+                    uint8_t abc_chan = chan + ((row-1) * Star::StripsPerABCRow);
 
                     int sign = m_fb[id]->getBin(m_fb[id]->binNum(histo_col, row));
 
@@ -112,7 +113,7 @@ void StarChannelFeedback::init() {
 
                 // Set initial TDAC in mid of the range
                 star.eachAbc([&](auto &cfg) {
-                    for (unsigned chan=0; chan<256; chan++) {
+                    for (unsigned chan=0; chan<Star::StripsPerABC; chan++) {
                         cfg.setTrimDACRaw(chan, 15);
                     }
                 });

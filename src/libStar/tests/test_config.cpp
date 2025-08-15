@@ -2,6 +2,7 @@
 
 #include "AbcNames.h"
 #include "StarCfg.h"
+#include "StarConstants.h"
 
 TEST_CASE("StarCfg", "[star][config]") {
   int abc_version = 2;
@@ -153,7 +154,7 @@ TEST_CASE("StarCfgTrims", "[star][config]") {
 
   // Default to 15 on all strips
   // Two rows of 128 strips (odd and even)
-  for(unsigned c = 0; c < 256; c++) {
+  for(unsigned c = 0; c < Star::StripsPerABC; c++) {
     CAPTURE (c);
 
     CHECK (a.getTrimDACRaw(c) == 15);

@@ -4,6 +4,7 @@
 // # Comment: Star Config class
 // ################################
 
+#include "StarConstants.h"
 #include "StarCfg.h"
 #include "StarPreset.h"
 
@@ -222,9 +223,9 @@ void StarCfg::writeConfig(json &j) {
             }
         }
 
-        std::array<uint8_t, 256> trims;
+        std::array<uint8_t, Star::StripsPerABC> trims;
         bool sameTrims = true;
-        for(int m=0; m<256; m++) {
+        for(int m=0; m<Star::StripsPerABC; m++) {
             trims[m] = abc.getTrimDACRaw(m);
             if(m!=0 && (trims[m] != trims[m-1])) sameTrims = false;
             if(!abc.isMasked(m)) {
@@ -236,7 +237,7 @@ void StarCfg::writeConfig(json &j) {
         if(sameTrims) {
             j["ABCs"]["trims"][histo_index] = trims[0];
         } else {
-            for(int m=0; m<256; m++) {
+            for(int m=0; m<Star::StripsPerABC; m++) {
                 j["ABCs"]["trims"][histo_index][m] = trims[m];
             }
         }
@@ -635,12 +636,12 @@ void StarCfg::loadConfig(const json &j) {
             auto &chipValue = trimArray[iABC];
             if(chipValue.is_number()) {
                 int trim = chipValue;
-                for(int m=0; m<256; m++) {
+                for(int m=0; m<Star::StripsPerABC; m++) {
                     abc.setTrimDACRaw(m, trim);
                 }
             } else {
                 // Not the same
-                for(int m=0; m<256; m++) {
+                for(int m=0; m<Star::StripsPerABC; m++) {
                   int trim = chipValue[m];
                   abc.setTrimDACRaw(m, trim);
                 }
@@ -659,7 +660,7 @@ void StarCfg::loadConfig(const json &j) {
     auto fe = dynamic_cast<FrontEnd*>(this);
     if(fe) {
       // Make histo size match number of configured ABCs
-      fe->geo.nCol = 128 * numABCs();
+      fe->geo.nCol = Star::StripsPerABCRow * numABCs();
     }    
 }
 

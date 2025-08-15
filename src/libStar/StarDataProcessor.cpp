@@ -6,6 +6,7 @@
 #include "AllProcessors.h"
 #include "LoopStatus.h"
 
+#include "StarConstants.h"
 #include "StarChipPacket.h"
 #include "StarProcessor.h"
 #include "StarCfg.h"
@@ -21,18 +22,18 @@ namespace {
 void process_data(RawData &curIn,
                   FrontEndData &curOut,
                   FeedbackProcessingInfo &curStatus,
-                  const std::array<uint8_t, 11> &chip_map);
+                  const std::array<uint8_t, Star::MaxABCsPerHCC> &chip_map);
 
 template<size_t BASE = 1>
 void process_data_template(RawData &curIn,
                   FrontEndData &curOut,
                   FeedbackProcessingInfo &curStatus,
-                  const std::array<uint8_t, 11> &chip_map);
+                  const std::array<uint8_t, Star::MaxABCsPerHCC> &chip_map);
 
 void process_raw_data(RawData &curIn,
                       FrontEndData &curOut,
                       FeedbackProcessingInfo &curStatus,
-                      const std::array<uint8_t, 11> &chip_map);
+                      const std::array<uint8_t, Star::MaxABCsPerHCC> &chip_map);
 
 bool star_proc_registered =
   StdDict::registerDataProcessor("Star", []() { return std::unique_ptr<FeDataProcessor>(new StarDataProcessor());});
@@ -50,7 +51,7 @@ struct StarDataProcessorImpl {
   std::function<void (RawData &curIn,
                       FrontEndData &curOut,
                       FeedbackProcessingInfo &curStatus,
-                      const std::array<uint8_t, 11> &chip_map)> proc_data = process_data;
+                      const std::array<uint8_t, Star::MaxABCsPerHCC> &chip_map)> proc_data = process_data;
 };
 
 StarDataProcessor::StarDataProcessor()
@@ -164,7 +165,7 @@ class MyProc : public EmptyProc {
 
     FrontEndData &curOut;
     FeedbackProcessingInfo &curStatus;
-    const std::array<uint8_t, 11> &chip_map;
+    const std::array<uint8_t, Star::MaxABCsPerHCC> &chip_map;
 
 public:
 
@@ -181,7 +182,7 @@ public:
 
         int row = ((address>>7)&1) + BASE;
 
-        if(input_channel >= HCC_INPUT_CHANNEL_COUNT) {
+        if(input_channel >= Star::MaxABCsPerHCC) {
           logger->warn("Bad input channel {} in cluster",
                        input_channel);
           return;
@@ -195,7 +196,7 @@ public:
         }
         logger->trace("Mapped ic {} to histo {}", input_channel, histo_chip);
 
-        int histo_base = histo_chip * 128;
+        int histo_base = histo_chip * Star::StripsPerABCRow;
 
         // Split hits into two rows of strips
 
@@ -251,7 +252,7 @@ public:
                 int hits = (value>>(8*i)) & 0xff;
                 for(int j=0; j<hits; j++) {
                     curOut.curEvent->addHit( row,
-                                             ic*128+( ((channel>>1)&0x7f)+BASE), 1);
+                                             ic*Star::StripsPerABCRow+( ((channel>>1)&0x7f)+BASE), 1);
                 }
             }
         }
@@ -260,7 +261,7 @@ public:
 public:
     MyProc(FrontEndData &curOut,
            FeedbackProcessingInfo &curStatus,
-           const std::array<uint8_t, 11> &chip_map)
+           const std::array<uint8_t, Star::MaxABCsPerHCC> &chip_map)
       : curOut(curOut),
         curStatus(curStatus),
         chip_map(chip_map)
@@ -274,7 +275,7 @@ public:
 void process_data(RawData &curIn,
                   FrontEndData &curOut,
                   FeedbackProcessingInfo &curStatus,
-                  const std::array<uint8_t, 11> &chip_map) {
+                  const std::array<uint8_t, Star::MaxABCsPerHCC> &chip_map) {
     StarChipPacket packet;
     curStatus.packet_size = curIn.getSize();
 
@@ -315,7 +316,7 @@ void process_data(RawData &curIn,
 
             int row = ((cluster.address>>7)&1)+1;
 
-            if(cluster.input_channel >= HCC_INPUT_CHANNEL_COUNT) {
+            if(cluster.input_channel >= Star::MaxABCsPerHCC) {
               logger->warn("Bad input channel {} in cluster",
                            cluster.input_channel);
               continue;
@@ -327,7 +328,7 @@ void process_data(RawData &curIn,
               continue;
             }
             logger->trace("Mapped ic {} to histo {}", cluster.input_channel, histo_chip);
-            int histo_base = histo_chip * 128;
+            int histo_base = histo_chip * Star::StripsPerABCRow;
 
             // Split hits into two rows of strips
             curOut.curEvent->addHit( row,
@@ -368,7 +369,7 @@ void process_data(RawData &curIn,
                 int hits = (packet.value>>(8*i)) & 0xff;
                 for(int j=0; j<hits; j++)
                     curOut.curEvent->addHit( row,
-                                             packet.channel_abc*128+( ((channel>>1)&0x7f)+1), 1);
+                                             packet.channel_abc*Star::StripsPerABCRow+( ((channel>>1)&0x7f)+1), 1);
             }
         }
     } else if (packetType == TYP_ABC_HPR || packetType == TYP_HCC_HPR) {
@@ -385,7 +386,7 @@ template<size_t BASE>
 void process_data_template(RawData &curIn,
                   FrontEndData &curOut,
                   FeedbackProcessingInfo &curStatus,
-                  const std::array<uint8_t, 11> &chip_map) {
+                  const std::array<uint8_t, Star::MaxABCsPerHCC> &chip_map) {
     curStatus.packet_size = curIn.getSize();
     uint8_t *start = (uint8_t*)curIn.getBuf();
     uint8_t *end = start + (curIn.getSize() * 4);
@@ -410,7 +411,7 @@ void process_data_template(RawData &curIn,
 void process_raw_data(RawData &curIn,
                       FrontEndData &curOut,
                       FeedbackProcessingInfo &curStatus,
-                      const std::array<uint8_t, 11> &chip_map)
+                      const std::array<uint8_t, Star::MaxABCsPerHCC> &chip_map)
 {
   // Not event data
   curOut.newEvent(0xffffffff, 0xffffffff, 0xffffffff);

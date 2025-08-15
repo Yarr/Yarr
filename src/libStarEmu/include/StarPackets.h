@@ -1,7 +1,11 @@
 #ifndef YARR_STAR_PACKETS
 #define YARR_STAR_PACKETS
 
-#include "HccCfg.h"
+#include <array>
+#include <cstdint>
+#include <vector>
+
+#include "StarConstants.h"
 
 namespace StarPackets {
 
@@ -19,7 +23,7 @@ enum class PacketTypes {
   * @param bc_counter Low 8 bits of internal BCID counter.
   */
 std::vector<uint8_t> buildPhysicsPacket
-  (const std::array<std::vector<uint16_t>, HCC_INPUT_CHANNEL_COUNT>& clusters,
+  (const std::array<std::vector<uint16_t>, Star::MaxABCsPerHCC>& clusters,
    PacketTypes typ, uint8_t l0_tag, uint8_t bc_counter);
 
 /**

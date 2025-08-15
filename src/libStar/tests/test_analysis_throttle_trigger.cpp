@@ -6,6 +6,7 @@
 #include "FrontEndClipBoards.h"
 #include "Histo1d.h"
 #include "ScanFactory.h"
+#include "StarConstants.h"
 #include "StdTriggerAction.h"
 
 #include "EmptyHw.h"
@@ -99,8 +100,8 @@ TEST_CASE("StarTriggerThrottleAnalysis", "[Analysis][Star][Throttle]")
     AnalysisProcessor analysis(RX_CHANNEL);
 
     int chip_count = 1;
-    int nCol = 128 * chip_count;
-    int nRow = 2;
+    int nCol = Star::StripsPerABCRow * chip_count;
+    int nRow = Star::RowsPerABC;
 
     {
       auto ana = StdDict::getAnalysis("StarTriggerThrottleAnalysis");
@@ -239,7 +240,7 @@ TEST_CASE("StarTriggerThrottleAnalysis", "[Analysis][Star][Throttle]")
             REQUIRE (hh != nullptr);
 
             // Strips in one ASIC
-            CHECK (hh->size() == 256);
+            CHECK (hh->size() == Star::StripsPerABC);
             CAPTURE (occ_count, trig_count);
             CHECK (hh->getBin(0) == Catch::Approx(occ_count / double(trig_count)));
         } else {

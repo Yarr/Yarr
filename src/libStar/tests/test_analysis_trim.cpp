@@ -6,6 +6,7 @@
 #include "Histo1d.h"
 #include "JsonData.h"
 #include "ScanFactory.h"
+#include "StarConstants.h"
 
 #include "EmptyHw.h"
 
@@ -51,8 +52,8 @@ TEST_CASE("StarTrimDacAnalysis", "[Analysis][Star][Trim]") {
     // This is for one FE
     AnalysisProcessor analysis(rx_channel);
 
-    int nCol = 128 * chip_count;
-    int nRow = 2;
+    int nCol = Star::StripsPerABCRow * chip_count;
+    int nRow = Star::RowsPerABC;
 
     {
       auto ana = StdDict::getAnalysis("StarTrimDacAnalysis");

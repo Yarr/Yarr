@@ -5,6 +5,7 @@
 
 #include "AnalysisAlgorithm.h"
 #include "StdTriggerAction.h"
+#include "StarConstants.h"
 
 class HistogramBase;
 class Histo2d;
@@ -72,7 +73,7 @@ private:
     std::map<unsigned, unsigned long>  m_totNbTriggersSoFar;
 
     /// The target (average) occupancy to reach
-    unsigned m_target_occ=128;
+    unsigned m_target_occ=Star::StripsPerABCRow;
 
     /// Object used to send trigger feedback to ScanLoop
     std::unique_ptr<TriggerFeedbackSender> m_feedback;

@@ -50,9 +50,6 @@ class StarNPointGainAnalysis : public NPointGain {
         /// @return Vector of vectors of averaged response curves (index by [chip][injection])
         std::vector<std::vector<double>> createAverageResponseCurves();
 
-        // 128 strips per side per chip
-        static const unsigned s_stripsPerRow = 128;
-
         // response function and associated parameters
         StarConversionTools* m_conversionTool;
 

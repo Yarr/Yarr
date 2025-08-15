@@ -1,6 +1,8 @@
 #include "catch.hpp"
 #include <sstream>
 
+#include "StarConstants.h"
+
 // Only one test needs std::filesystem
 #if defined(__clang__) || __GNUC__ > 7
 #include <filesystem>
@@ -443,7 +445,7 @@ TEST_CASE("StarJsonAbcTrim", "[star][json]") {
   cfg["ABCs"]["IDs"][1] = 6;
 
   cfg["ABCs"]["trims"][0] = 13;
-  for(int i=0; i<256; i++) {
+  for(int i=0; i<Star::StripsPerABC; i++) {
     cfg["ABCs"]["trims"][1][i] = (i*13)%32;
   }
 

@@ -9,6 +9,7 @@
 #include "Histo3d.h"
 #include "ScanFactory.h"
 #include "StarChips.h"
+#include "StarConstants.h"
 
 namespace {
 auto logger = logging::make_log("test_analysis_npointgain");
@@ -66,8 +67,8 @@ TEST_CASE("StarNPointGainAnalysis", "[Star][Analysis][NPointGain]") {
 
   AnalysisProcessor processor(channel);
 
-  int nCol = 128;
-  int nRow = 2;
+  int nCol = Star::StripsPerABCRow;
+  int nRow = Star::RowsPerABC;
 
   {
     auto analysis = StdDict::getAnalysis("StarNPointGainAnalysis");
@@ -136,7 +137,7 @@ TEST_CASE("StarNPointGainAnalysis", "[Star][Analysis][NPointGain]") {
   CHECK(ctAfter.getResponseFunctionName() == "linear");
 
   // check the StarConversionTools object directly
-  unsigned nABCs = nCol / 128;
+  unsigned nABCs = nCol / Star::StripsPerABCRow;
   for (unsigned abc = 0; abc < nABCs; abc++) {
     auto [name, params] = ctAfter.getResponseParameters(abc);
     CHECK(name == "linear");

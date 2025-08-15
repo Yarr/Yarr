@@ -14,6 +14,7 @@
 #include "AllAnalyses.h"
 #include "ScanLoopInfo.h"
 #include "StarChips.h" // IWYU pragma: keep
+#include "StarConstants.h"
 #include "StarConversionTools.h"
 #include "StarNPointGainAnalysis.h"
 #include "StdAnalysis.h"
@@ -64,7 +65,7 @@ void StarNPointGainAnalysis::loadConfig(const json &j) {
 
 std::vector<std::vector<double>> StarNPointGainAnalysis::createAverageResponseCurves() {
 
-    unsigned nChips = nCol / s_stripsPerRow;
+    unsigned nChips = nCol / Star::StripsPerABCRow;
     unsigned nInj = m_injections.size();
     std::vector<std::vector<double>> averages(nChips, std::vector<double>(nInj));
 
@@ -73,13 +74,13 @@ std::vector<std::vector<double>> StarNPointGainAnalysis::createAverageResponseCu
         for (unsigned chip = 0; chip < nChips; chip++) {
             double sum = 0.;
             for (unsigned row = 0; row < nRow; row++) {
-                for (unsigned strip = 0; strip < s_stripsPerRow; strip++) {
-                    unsigned col = (chip * s_stripsPerRow) + strip;
+                for (unsigned strip = 0; strip < Star::StripsPerABCRow; strip++) {
+                    unsigned col = (chip * Star::StripsPerABCRow) + strip;
                     sum += m_thresholdMap[inj][col][row];
                 }
             }
 
-            averages[chip][injIdx] = sum / (nRow*s_stripsPerRow);
+            averages[chip][injIdx] = sum / (nRow*Star::StripsPerABCRow);
         }
     }
 
@@ -91,7 +92,7 @@ void StarNPointGainAnalysis::end() {
     NPointGain::end();
 
     auto respCurvesByChip = createAverageResponseCurves();
-    for (unsigned chip = 0; chip < (nCol/s_stripsPerRow); chip++) {
+    for (unsigned chip = 0; chip < (nCol/Star::StripsPerABCRow); chip++) {
         // fit chip-avg response curve and fill output configuration
         auto thresholds = respCurvesByChip[chip];
         std::vector<double> fitParams = guessInitialFitParams(thresholds);
