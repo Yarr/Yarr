@@ -3,6 +3,7 @@
 // # Description: StarChips feedback of analysis parameter
 // ################################
 
+#include "StarConstants.h"
 #include "StarParamFeedback.h"
 
 #include "Bookkeeper.h"
@@ -47,7 +48,7 @@ void StarParamFeedback::feedback(unsigned id, std::unique_ptr<Histo2d> h) {
     }
 
     unsigned nCol = fe->geo.nCol;
-    unsigned nABCs = nCol / 128;
+    unsigned nABCs = nCol / Star::StripsPerABCRow;
 
     if(h->getXbins() != nABCs) {
       logger->warn("Expecting {} bins to match chips, got {}",

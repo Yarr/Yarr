@@ -4,10 +4,10 @@
 #include <map>
 #include <vector>
 
+#include "StarConstants.h"
 #include "StarRegister.h"
 #include "StarRegDefs.h"
 
-static const size_t HCC_INPUT_CHANNEL_COUNT = 11;
 /// No mapping for this input channel to histogram slot
 static const size_t HCC_INPUT_CHANNEL_BAD_SLOT = 15;
 
@@ -131,7 +131,7 @@ class HccCfg {
            This is not configurable directly, but is calculated based on
            the HCC version and the contents of the chip enables register.
         */
-        std::array<uint8_t, HCC_INPUT_CHANNEL_COUNT> histoChipMap() const;
+        std::array<uint8_t, Star::MaxABCsPerHCC> histoChipMap() const;
 
     private:
         SubRegister getSubRegister(HCCStarSubRegister r) const {

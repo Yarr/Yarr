@@ -13,6 +13,8 @@
 /build/
 /data/
 /offline/
+/include/
+/lib64/
 yarr_version.h
 analogHits_analogHits.png
 configs/fei4b_test.json

@@ -137,7 +137,7 @@ class StarCfg : public FrontEndCfg {
 
   /// Is there an ABC associated with HCC input channel
   bool isAbcForInputChannel(int input_channel) const {
-    assert(input_channel >= 0 && input_channel < HCC_INPUT_CHANNEL_COUNT);
+    assert(input_channel >= 0 && input_channel < Star::MaxABCsPerHCC);
     return (m_ABCchips.count(input_channel) > 0);
   }
 

@@ -301,7 +301,7 @@ bool getParity_8bits(uint8_t val) {
 }
 
 std::vector<uint8_t> buildPhysicsPacket
-    (const std::array<std::vector<uint16_t>, HCC_INPUT_CHANNEL_COUNT>& allClusters,
+    (const std::array<std::vector<uint16_t>, Star::MaxABCsPerHCC>& allClusters,
      PacketTypes typ, uint8_t l0tag, uint8_t bc_count)
 {
   uint16_t endOfPacket=0x6fed;
@@ -540,7 +540,7 @@ void StarChipsetEmu::readRegister(const uint8_t address, bool isABC,
 
     // HCCStar channel number
     unsigned ich = m_starCfg->hccChannelForABCchipID(ABCID);
-    if (ich >= HCC_INPUT_CHANNEL_COUNT) {
+    if (ich >= Star::MaxABCsPerHCC) {
       logger->warn("Cannot find an ABCStar chip with ID = {} ({})", ABCID, ich);
       m_starCfg->eachAbc([&](auto &abc) {
         logger->trace("Have ID {}", abc.getABCchipID());
@@ -912,7 +912,7 @@ void StarChipsetEmu::doL0A(bool bcr, uint8_t l0a_mask, uint8_t l0a_tag) {
 
     if (trig_mode) { // single-level trigger
       // clusters
-      std::array<std::vector<uint16_t>, HCC_INPUT_CHANNEL_COUNT> clusters;
+      std::array<std::vector<uint16_t>, Star::MaxABCsPerHCC> clusters;
       uint8_t bcid;
 
       // for each ABC
@@ -993,7 +993,7 @@ void StarChipsetEmu::doPRLP(uint8_t mask, uint8_t l0tag) {
   }
 
   // clusters
-  std::array<std::vector<uint16_t>, HCC_INPUT_CHANNEL_COUNT> clusters;
+  std::array<std::vector<uint16_t>, Star::MaxABCsPerHCC> clusters;
   uint8_t bcid;
 
   // for each ABC

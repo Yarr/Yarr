@@ -38,7 +38,7 @@
 // #################################
 
 #include "JsonData.h"
-
+#include "StarConstants.h"
 #include "LoopStatus.h"
 #include "storage.hpp"
 
@@ -66,7 +66,7 @@ public:
        {
               m_jsondata["Type"] = type;
        }; 
-       void initialiseStarChannelsDataAtProp(const PropName &propName, const unsigned int nbVals=128); //!<Initializes a vector of nbVals (usually nbChannels per row)
+       void initialiseStarChannelsDataAtProp(const PropName &propName, const unsigned int nbVals=Star::StripsPerABCRow); //!<Initializes a vector of nbVals (usually nbChannels per row)
        std::optional<double> getValForProp(const PropName &propName, const unsigned int index) const; //!<Returns the data value at index index for property propName
        std::string getStringForProp(const PropName &propName) const; //!<Returns the string value at property propName
        template<class T> void setValForProp(const PropName &propName, const unsigned int index, const T val); //!<Sets the value val for the item at index in the vector of data at propName

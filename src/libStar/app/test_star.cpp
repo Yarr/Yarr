@@ -1312,7 +1312,7 @@ int main(int argc, char *argv[]) {
         break;
       case 'c':
         inChannel = atoi(optarg);
-        if (inChannel > 11) {
+        if (inChannel > Star::MaxABCsPerHCC) {
           spdlog::error("Invalid HCC input channel: {}", inChannel);
           return 1;
         }
