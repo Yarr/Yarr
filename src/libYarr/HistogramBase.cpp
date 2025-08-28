@@ -16,7 +16,7 @@ LoopStatus statusFromJson(const json &j, const LoopStatus &input)
     std::vector<unsigned> statVec;
     for (unsigned int i=0; i<input.size(); i++) {
         // Use loop style from existing data
-        styleVec.push_back((LoopStyle)input.getStyle(i));
+        styleVec.push_back(input.getStyle(i));
         // Use loop status from json
         statVec.push_back(j["loopStatus"][i]);
     }

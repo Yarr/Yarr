@@ -18,6 +18,7 @@ add_executable(testYarr
         test_analysis_poiloop.cpp
         test_poiloop.cpp
         test_npointgain.cpp
+        test_loopstatus.cpp
 )
 
 target_link_libraries(testYarr PUBLIC Scan Yarr)
