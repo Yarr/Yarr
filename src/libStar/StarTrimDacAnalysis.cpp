@@ -78,7 +78,7 @@ void StarTrimDacAnalysis::processHistogram(HistogramBase *h) {
       for (unsigned n=0; n<lStat.size(); n++) {
         if (n!=parTrimRange_loopindex && n!=parTrimDac_loopindex) {
           newLSstat.push_back( lStat.get(n) );
-          newLSstyle.push_back( (LoopStyle) lStat.getStyle(n) );
+          newLSstyle.push_back( lStat.getStyle(n) );
         }
       }
       aggregated_loop_status = std::make_unique<LoopStatus>(std::move(newLSstat), newLSstyle);

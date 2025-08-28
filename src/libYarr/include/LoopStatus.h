@@ -6,11 +6,13 @@
 #ifndef LOOPSTATUS_H
 #define LOOPSTATUS_H
 
+#include <algorithm>
 #include <array>
+#include <bitset>
 #include <iostream>
+#include <map>
 #include <stdexcept>
 #include <vector>
-#include <map>
 
 class LoopActionBase;
 
@@ -60,18 +62,70 @@ class LoopStatus {
             std::copy(vec.begin(), vec.end(), statVec.begin());
             std::copy(vec_s.begin(), vec_s.end(), styleVec.begin());
         }
+
         LoopStatus(const std::vector<unsigned> &vec, const std::vector<LoopStyle> &vec_s) : statCount(vec.size())
         {
             if(statCount > MAX_LOOP_SIZE) {
                 throw std::logic_error("Too many loops");
             }
-          std::copy(vec.begin(), vec.end(), statVec.begin());
-          std::copy(vec_s.begin(), vec_s.end(), styleVec.begin());
+            std::copy(vec.begin(), vec.end(), statVec.begin());
+            std::copy(vec_s.begin(), vec_s.end(), styleVec.begin());
         }
+
         size_t size() const { return statCount; }
         unsigned get(unsigned i) const { return statVec[i]; }
-        
-        unsigned getStyle(unsigned i) const { return styleVec[i]; }
+        LoopStyle getStyle(unsigned i) const { return styleVec[i]; }
+
+        using UID = std::array<unsigned, MAX_LOOP_SIZE>;
+
+        /// @brief Create a unique ID from the current loop status
+        /// e.g. to be used as the key for a std::map in an analysis.
+        /// Look at maskedUniqueID() if you need to ignore specific loops (e.g. POI loops)
+        /// @return Unique loop status ID
+        UID uniqueID() const {
+            // the original statVec array may have uninitialized values which we do not want,
+            // so we first initialize this uid to zero and don't copy the uninitialized bits
+            UID uid{};
+            std::copy(statVec.begin(), statVec.begin() + statCount, uid.begin());
+            return uid;
+        }
+
+        /// @brief Create a unique ID, ignoring the specified loop index
+        /// Useful for masking out loops that an analysis keeps track of on its own, like POI loops
+        /// @param loopToMask Loop index to mask from the UID
+        /// @return Masked unique loop status ID
+        UID maskedUniqueID(size_t loopToMask) const {
+            UID uid = uniqueID();
+            uid[loopToMask] = 0;
+            return uid;
+        }
+
+        /// @brief Create a unique ID, ignoring the specified loop indices
+        /// Useful for masking out loops that an analysis keeps track of on its own, like POI loops
+        /// @param loopsToMask Loop indices to mask from the UID
+        /// @return Masked unique loop status ID
+        UID maskedUniqueID(const std::vector<size_t> &loopsToMask) const {
+            UID uid = uniqueID();
+            for (auto loop : loopsToMask) {
+                uid[loop] = 0;
+            }
+            return uid;
+        }
+
+        /// @brief Create a dash-separated loop status string
+        /// e.g. to be added to the name of a histogram
+        /// @return Loop status string
+        std::string toString() const {
+            std::string result;
+            for (size_t i = 0; i < statCount; ++i) {
+                result += std::to_string(statVec[i]);
+                result += "-";
+            }
+            if (!result.empty()) {
+                result.pop_back();  // Remove trailing dash
+            }
+            return result;
+        }
 
         /** Compare with another LoopStatus */
         bool operator==(const LoopStatus &l){
