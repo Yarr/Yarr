@@ -161,6 +161,14 @@ else()
     set(CMAKE_CONFIG_INSTALL_PATH cmake)
 endif()
 
+if(IS_IN_TDAQ_INSTALL)
+    # Override gnu paths
+    set(CMAKE_INSTALL_LIBDIR ${YARR_INSTALL_BIN_CONFIG}/lib)
+    set(CMAKE_INSTALL_BINDIR ${YARR_INSTALL_BIN_CONFIG}/bin)
+    set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/installed CACHE PATH "Install path" FORCE)
+    message(STATUS "YARR will use binary tag: ${YARR_INSTALL_BIN_CONFIG}")
+endif()
+
 message(STATUS "YARR will be installed to: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "YARR libraries: ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 message(STATUS "YARR executables: ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
