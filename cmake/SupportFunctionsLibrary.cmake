@@ -65,7 +65,13 @@ endfunction()
 
 # debug symbol stripping ---------------------------------------------------------------------------------------
 function(post_build_debug_library name)
+  detect_in_tdaq_install(IS_TDAQ_INSTALL)
   set(our_debug_name lib${name}.so.debug)
+  if(IS_TDAQ_INSTALL)
+    set(lib_dest ${CMAKE_INSTALL_LIBDIR}/.debug)
+  else()
+    set(lib_dest ${CMAKE_INSTALL_LIBDIR})
+  endif()
 
   add_custom_command(TARGET ${name}
     POST_BUILD
@@ -75,12 +81,18 @@ function(post_build_debug_library name)
   )
 
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${our_debug_name}
-	  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+	  DESTINATION ${lib_dest}
     )
 endfunction(post_build_debug_library)
 
 function(post_build_debug_executable name)
+  detect_in_tdaq_install(IS_TDAQ_INSTALL)
   set(our_debug_name ${name}.debug)
+  if(IS_TDAQ_INSTALL)
+    set(bin_dest ${CMAKE_INSTALL_BINDIR}/.debug)
+  else()
+    set(bin_dest ${CMAKE_INSTALL_BINDIR})
+  endif()
 
   add_custom_command(TARGET ${name}
     POST_BUILD
@@ -90,7 +102,7 @@ function(post_build_debug_executable name)
   )
 
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${our_debug_name}
-	  DESTINATION ${CMAKE_INSTALL_BINDIR}
+	  DESTINATION ${bin_dest}
     )
 endfunction(post_build_debug_executable)
 # debug symbol stripping ---------------------------------------------------------------------------------------
