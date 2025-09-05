@@ -65,27 +65,31 @@ endfunction()
 
 # debug symbol stripping ---------------------------------------------------------------------------------------
 function(post_build_debug_library name)
+  set(our_debug_name lib${name}.so.debug)
+
   add_custom_command(TARGET ${name}
     POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:${name}> ${CMAKE_CURRENT_BINARY_DIR}/lib${name}.so.debug
+    COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:${name}> ${CMAKE_CURRENT_BINARY_DIR}/${our_debug_name}
     COMMAND ${CMAKE_STRIP} --strip-debug --strip-unneeded $<TARGET_FILE:${name}>
-    COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=lib${name}.so.debug $<TARGET_FILE:${name}>
+    COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=${our_debug_name} $<TARGET_FILE:${name}>
   )
 
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lib${name}.so.debug
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${our_debug_name}
 	  DESTINATION ${CMAKE_INSTALL_LIBDIR}
     )
 endfunction(post_build_debug_library)
 
 function(post_build_debug_executable name)
+  set(our_debug_name ${name}.debug)
+
   add_custom_command(TARGET ${name}
     POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:${name}> ${CMAKE_CURRENT_BINARY_DIR}/${name}.debug
+    COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:${name}> ${CMAKE_CURRENT_BINARY_DIR}/${our_debug_name}
     COMMAND ${CMAKE_STRIP} --strip-debug --strip-unneeded $<TARGET_FILE:${name}>
-    COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=${name}.debug $<TARGET_FILE:${name}>
+    COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=${our_debug_name} $<TARGET_FILE:${name}>
   )
 
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${name}.debug
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${our_debug_name}
 	  DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
 endfunction(post_build_debug_executable)
