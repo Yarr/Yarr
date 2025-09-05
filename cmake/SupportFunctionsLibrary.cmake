@@ -54,6 +54,15 @@ function(detect_in_tree_install OUT_VAR)
     endif()
 endfunction()
 
+function(detect_in_tdaq_install OUT_VAR)
+    # Checking for configuration of "CMTCONFIG"
+    if(YARR_INSTALL_BIN_CONFIG)
+        set(${OUT_VAR} TRUE PARENT_SCOPE)
+    else()
+        set(${OUT_VAR} FALSE PARENT_SCOPE)
+    endif()
+endfunction()
+
 # debug symbol stripping ---------------------------------------------------------------------------------------
 function(post_build_debug_library name)
   add_custom_command(TARGET ${name}
