@@ -13,6 +13,7 @@
 
 #include "HwController.h"
 #include "AllChips.h"
+#include "AllPlotters.h"
 #include "AllProcessors.h"
 #include "AllStdActions.h"
 #include "Bookkeeper.h"
@@ -28,6 +29,27 @@
 #include "yarr.h"
 
 auto logger = logging::make_log("ScanConsole");
+
+class DefaultPlotter : public Plotter {
+public:
+  void makePlots(bool doPlots, const std::string &outputDir,
+                 const std::string &feName,
+                 const HistogramBase &histo)
+  {
+    // only create the image files if asked to
+    if(doPlots) {
+        histo.plot(feName, outputDir);
+    }
+    // always dump the data
+    histo.toFile(feName, outputDir);
+  }
+};
+
+namespace DefaultPlotting {
+bool default_plotting_registered =
+StdDict::registerPlotter
+  ("Default", []() { return std::unique_ptr<Plotter>(new DefaultPlotter); });
+}
 
 ScanConsoleImpl::ScanConsoleImpl() = default;
 
@@ -471,24 +493,15 @@ void ScanConsoleImpl::cleanup() {
         }
         while(!output.empty()) {
             auto histo = output.popData();
-            // only create the image files if asked to
-            if(scanOpts.doPlots) {
-                histo->plot(name, scanOpts.outputDir);
-            }
-            // always dump the data
-            histo->toFile(name, scanOpts.outputDir);
+
+            runOutputHistogramCallback(name, *histo);
         } // while
     } // i
 
     auto &lh = bookie->getLoopHistograms();
     while(!lh.empty()) {
       auto histo = lh.popData();
-      // only create the image files if asked to
-      if(scanOpts.doPlots) {
-        histo->plot("LoopPlot", scanOpts.outputDir);
-      }
-      // always dump the data
-      histo->toFile("LoopPlot", scanOpts.outputDir);
+      runOutputHistogramCallback("LoopPlot", *histo);
     } // while
 
     logger->info("Finishing run: {}", runCounter);
@@ -504,6 +517,14 @@ void ScanConsoleImpl::cleanup() {
             diagram.toPlot(scanOpts.outputDir + "diagram.png");
         }
     }
+}
+
+void ScanConsoleImpl::runOutputHistogramCallback(const std::string &name,
+                                                 const HistogramBase &histo)
+{
+    auto pp = StdDict::getPlotter(scanOpts.plottingType);
+
+    pp->makePlots(scanOpts.doPlots, scanOpts.outputDir, name, histo);
 }
 
 std::string ScanConsoleImpl::getResults() {
