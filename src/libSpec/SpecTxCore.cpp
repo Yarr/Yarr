@@ -77,7 +77,7 @@ void SpecTxCore::maskTrigEnable(uint32_t value, uint32_t mask) {
 }
 
 void SpecTxCore::setTrigConfig(enum TRIG_CONF_VALUE cfg) {
-    SPDLOG_LOGGER_TRACE(stxlog, "Config {0:x}", cfg);
+    SPDLOG_LOGGER_TRACE(stxlog, "Config {0:x}", (uint32_t)cfg);
     SpecCom::writeSingle(TX_ADDR | TRIG_CONF, (uint32_t) cfg);
 }
 
