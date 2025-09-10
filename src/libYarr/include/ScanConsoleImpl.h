@@ -43,6 +43,9 @@ public:
     static std::vector<std::string> getLog(std::size_t lim) {return logging::getLog(lim);}
     void run();
     void dump();
+
+    void runOutputHistogramCallback(const std::string &name,
+                                    const HistogramBase &histo);
     static void setupLogger(const char *config = nullptr);
     ~ScanConsoleImpl() = default;
 
