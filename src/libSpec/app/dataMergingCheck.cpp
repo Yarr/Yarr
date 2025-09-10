@@ -1,6 +1,7 @@
 #include <cstdint>
 #include <string>
 #include <iomanip>
+#include <unistd.h>
 
 #include <filesystem>
 namespace fs = std::filesystem;

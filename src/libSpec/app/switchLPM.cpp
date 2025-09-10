@@ -1,6 +1,7 @@
 #include <cstdint>
 #include <iostream>
 #include <string>
+#include <unistd.h>
 
 #include "SpecCom.h"
 #include "logging.h"

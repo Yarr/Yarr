@@ -11,6 +11,7 @@
 #include <string>
 #include <fstream>
 #include <iomanip>
+#include <unistd.h>
 
 #include "storage.hpp"
 #include "logging.h"
