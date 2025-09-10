@@ -5,6 +5,7 @@
 #include "ScanOpts.h"
 
 #include <iostream>
+#include <unistd.h>
 
 namespace {
   auto logger = logging::make_log("felixRegisters");
