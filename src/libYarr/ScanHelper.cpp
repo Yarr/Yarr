@@ -462,7 +462,6 @@ namespace ScanHelper {
         bhlog->info("Loading histogrammer ...");
 
         const json &histoCfg = scanCfg["scan"]["histogrammer"];
-        const json &anaCfg = scanCfg["scan"]["analysis"];
 
         for (unsigned id=0; id<bookie.getNumOfEntries(); id++) {
             auto fe = bookie.getFe(id);
@@ -644,14 +643,6 @@ namespace ScanHelper {
         } else {
             indexed = false;
         }
-
-        auto get_algorithm = [indexed, &anaCfg](int index) {
-            if(indexed) {
-                return anaCfg[std::to_string(index)];
-            } else {
-                return anaCfg[index];
-            }
-        };
 
         for (unsigned id=0; id<bookie.getNumOfEntries(); id++ ) {
             auto fe = bookie.getFe(id);

@@ -57,14 +57,14 @@ std::string ScanConsoleImpl::parseConfig(const std::vector<std::string> &args) {
     json result;
     result["status"] = "failed";
     int argc = args.size();
-    char *argv[argc+1];
+    std::vector<char *> argv(argc+1);
     for (int i = 0; i < argc; i++) {
         argv[i] = (char *) args[i].c_str();
     }
     argv[argc] = nullptr; // should be a null terminated array
     ScanOpts options;
     json scanConsoleConfig;
-    int res = ScanHelper::parseOptions(argc, argv, options);
+    int res = ScanHelper::parseOptions(argc, argv.data(), options);
     if (res==1) {
         res = ScanHelper::loadConfigFile(options, false, scanConsoleConfig);
         if (res>=0) {
@@ -86,12 +86,12 @@ int ScanConsoleImpl::init(int argc, char *argv[]) {
 
 int ScanConsoleImpl::init(const std::vector<std::string> &args) {
     int argc =  args.size();
-    char *argv[argc];
+    std::vector<char *> argv(argc);
     for(int i = 0;i<argc; i++) {
         argv[i] = (char *) args[i].c_str();
     }
     ScanOpts options;
-    int res=ScanHelper::parseOptions(argc,argv,options);
+    int res=ScanHelper::parseOptions(argc,argv.data(),options);
     if(res<=0) return res;
     return init(options);
 }

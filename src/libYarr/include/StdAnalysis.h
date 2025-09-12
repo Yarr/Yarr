@@ -208,7 +208,7 @@ class NPointGain : public AnalysisAlgorithm {
         using NPGRespFuncT = double (*)(double, const double *);
         NPGRespFuncT m_respFunc;
         NPGRespFuncT m_gainConvFunc;
-        int m_respFuncNParams;
+        unsigned int m_respFuncNParams;
         std::string m_respFuncName;
         std::map<std::string, NPGRespFuncT> m_respFuncMap = { // response functions
             {"linear", [](double x, const double *par){return par[0] + x*par[1];}},
