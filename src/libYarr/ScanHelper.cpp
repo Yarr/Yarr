@@ -219,6 +219,10 @@ namespace ScanHelper {
           }
           chip["__global_config_path__"] = globalConfigPath;
 
+          if(pullFromDb) {
+              shlog->warn("Pulling from DB not implemented");
+          }
+
           // Load config
           shlog->info("Loading config file: {}", chipConfigPath);
           json cfg = configuration->getFrontEndConfig(chipConfigPath);
@@ -498,13 +502,13 @@ namespace ScanHelper {
                 if(histoCfg.contains("n_count")) {
                     int nHistos = histoCfg["n_count"];
 
-                    for (int j=0; j<nHistos; j++) {
+                    for (unsigned int j=0; j<nHistos; j++) {
                         std::string algo_name = histoCfg[std::to_string(j)]["algorithm"];
                         add_histo(algo_name, histoCfg[std::to_string(j)]["config"]);
                     }
                 } else {
                     std::size_t nHistos = histoCfg.size();
-                    for (int j=0; j<nHistos; j++) {
+                    for (unsigned int j=0; j<nHistos; j++) {
                         std::string algo_name = histoCfg[j]["algorithm"];
                         add_histo(algo_name, histoCfg[j]["config"]);
                     }
@@ -635,15 +639,6 @@ namespace ScanHelper {
             throw(std::runtime_error("buildAnalyses failure"));
         }
 
-        bool indexed;
-
-        // Is this an array of objects, or "n_count" + indexed by string "0"
-        if (anaCfg.contains("n_count")) {
-            indexed = true;
-        } else {
-            indexed = false;
-        }
-
         for (unsigned id=0; id<bookie.getNumOfEntries(); id++ ) {
             auto fe = bookie.getFe(id);
             if (fe->isActive()) {
@@ -684,7 +679,7 @@ namespace ScanHelper {
             }
         };
 
-        int nAnas = indexed ? (size_t)anaCfg["n_count"] : anaCfg.size();
+        unsigned int nAnas = indexed ? (size_t)anaCfg["n_count"] : anaCfg.size();
 
         balog->debug("Found {} analysis!", nAnas);
 
