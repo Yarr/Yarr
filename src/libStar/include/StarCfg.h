@@ -97,7 +97,7 @@ class StarCfg : public FrontEndCfg {
   }
 
   /// Set value of ABC register field
-  void setABCSubRegisterValue(int input_channel, ABCStarSubRegister subReg, uint32_t value) {
+  void setABCSubRegisterValue(unsigned input_channel, ABCStarSubRegister subReg, uint32_t value) {
       if (isAbcForInputChannel(input_channel))
           abcForInputChannel(input_channel).setSubRegisterValue(subReg, value);
   }
@@ -108,7 +108,7 @@ class StarCfg : public FrontEndCfg {
   }
 
   /// Get value of ABC register field
-  uint32_t getABCSubRegisterValue(int input_channel, ABCStarSubRegister subReg) const {
+  uint32_t getABCSubRegisterValue(unsigned input_channel, ABCStarSubRegister subReg) const {
     if (isAbcForInputChannel(input_channel))
         return abcForInputChannel(input_channel).getSubRegisterValue(subReg);
     return 0;
@@ -124,7 +124,7 @@ class StarCfg : public FrontEndCfg {
   uint32_t getHCCSubRegisterParentValue(HCCStarSubRegister subReg);
 
   /// Get register value for named register field (ABC input channel)
-  uint32_t getABCSubRegisterParentValue(int input_channel, ABCStarSubRegister subReg);
+  uint32_t getABCSubRegisterParentValue(unsigned input_channel, ABCStarSubRegister subReg);
 
   void maskPixel(unsigned col, unsigned row, bool doAltMask = false) override {}
   unsigned getPixelEn(unsigned col, unsigned row, bool doAltMask = false) override {
@@ -136,8 +136,8 @@ class StarCfg : public FrontEndCfg {
   void logMappings() const;
 
   /// Is there an ABC associated with HCC input channel
-  bool isAbcForInputChannel(int input_channel) const {
-    assert(input_channel >= 0 && input_channel < Star::MaxABCsPerHCC);
+  bool isAbcForInputChannel(unsigned input_channel) const {
+    assert(input_channel < Star::MaxABCsPerHCC);
     return (m_ABCchips.count(input_channel) > 0);
   }
 
@@ -152,13 +152,13 @@ class StarCfg : public FrontEndCfg {
   }
 
   /// Is there an ABC associated with chip position in histogram.
-  bool isAbcForHistoChip(int histo_chip) const;
+  bool isAbcForHistoChip(unsigned histo_chip) const;
 
   /// Return ABC associated with chip position in histogram.
-  AbcCfg &abcForHistoChip(int histo_chip);
+  AbcCfg &abcForHistoChip(unsigned histo_chip);
 
   /// Return ABC associated with chip position in histogram.
-  const AbcCfg &abcForHistoChip(int histo_chip) const;
+  const AbcCfg &abcForHistoChip(unsigned histo_chip) const;
 
   /**
    * Obtain the corresponding charge [e] from the input VCal
@@ -254,7 +254,7 @@ class StarCfg : public FrontEndCfg {
     return m_ABCchips.at(chipIndex-1);
   }
 
-  int inputChannelForHistoChip(int histo_chip) const;
+  int inputChannelForHistoChip(unsigned histo_chip) const;
 
   StarConversionTools m_ct;
 };

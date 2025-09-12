@@ -34,13 +34,13 @@ enum class ABCStarSubRegister {
 
 /// Representation of the address of an ABCStar register
 namespace ABCStarRegisters {
-    static  ABCStarRegister MaskInput(int i) { return (ABCStarRegister)((int)(ABCStarRegister::MaskInput0) + i);}
-    static  ABCStarRegister CalReg(int i) { return (ABCStarRegister)((int)(ABCStarRegister::CalREG0) + i);}
-    static  ABCStarRegister Counter(int i) { return (ABCStarRegister)((int)(ABCStarRegister::HitCountREG0) + i);}
+    inline ABCStarRegister MaskInput(int i) { return (ABCStarRegister)((int)(ABCStarRegister::MaskInput0) + i);}
+    inline ABCStarRegister CalReg(int i) { return (ABCStarRegister)((int)(ABCStarRegister::CalREG0) + i);}
+    inline ABCStarRegister Counter(int i) { return (ABCStarRegister)((int)(ABCStarRegister::HitCountREG0) + i);}
     /// 32 registers containing lo 4 bits of trim
-    static  ABCStarRegister TrimLo(int i) { return (ABCStarRegister)((int)(ABCStarRegister::TrimDAC0) + i);}
+    inline ABCStarRegister TrimLo(int i) { return (ABCStarRegister)((int)(ABCStarRegister::TrimDAC0) + i);}
     /// 8 registers containing hi 1 bits of trim
-    static  ABCStarRegister TrimHi(int i) { return (ABCStarRegister)((int)(ABCStarRegister::TrimDAC32) + i);}
+    inline ABCStarRegister TrimHi(int i) { return (ABCStarRegister)((int)(ABCStarRegister::TrimDAC32) + i);}
 };
 
 /// Lookup information on ABC Star register map

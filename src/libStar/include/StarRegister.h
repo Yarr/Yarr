@@ -10,9 +10,9 @@
 struct SubRegisterInfo {
         SubRegisterInfo(int regAddress, std::string subRegName, unsigned bOffset, unsigned width)
           : m_regAddress(regAddress),
-            m_subRegName(subRegName),
             m_bOffset(bOffset),
-            m_width(width)
+            m_width(width),
+            m_subRegName(subRegName)
         {}
 
         int m_regAddress;
