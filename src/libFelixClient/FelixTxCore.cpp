@@ -360,7 +360,7 @@ int FelixTxCore::getMaxTrigWordLength(){
 
 void FelixTxCore::setTrigWord(uint32_t *words, uint32_t size) {
   m_trigWords.clear();
-  int maxLength = getMaxTrigWordLength();
+  unsigned maxLength = getMaxTrigWordLength();
   if (size > maxLength && m_pixFwTrigger){
     ftlog->error("Size of {} is greater than the maximum allowed length for this controller {}; note RD53A scans are not compatible with FELIX FW Triggers", size, maxLength);
   }
@@ -487,6 +487,9 @@ void FelixTxCore::doTriggerCnt() {
 	last_trigger += delta;
 	std::this_thread::sleep_until(last_trigger);
       }
+      break;
+    default:
+      // Ignore non-ITK modes
       break;
     }
   }

@@ -113,7 +113,7 @@ uint8_t OptoUtils::getRegBitmask(const lpgbt_item_t* reg, uint8_t version){
 }
 
 bool OptoUtils::regField(const lpgbt_item_t* item){
-  for (int i = 0; i < strlen(item->name); i++){
+  for (unsigned int i = 0; i < strlen(item->name); i++){
     if ((item->name)[i] == '_'){
       return true;
     }

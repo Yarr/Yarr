@@ -53,7 +53,7 @@ void FelixController::loadConfig(const json &j) {
   // If the config contains any optoboard devices, add them to the list
   if (j.contains("OptoDevices")){
     size_t n_devs = j["OptoDevices"].size();
-    for(size_t i; i < n_devs; i++){
+    for(size_t i=0; i < n_devs; i++){
       const json& dev = j["OptoDevices"][i];
 
       // assume defaults, set to any provided values
@@ -96,7 +96,6 @@ const json FelixController::getStatus() {
   json j_status;
 
   uint64_t reg_value;
-  bool read_good = false;
 
   // card type
   if ( readFwRegister("CARD_TYPE", reg_value) ) {
@@ -821,7 +820,7 @@ void FelixController::communicateLpGBT(const lpgbt_item_t* reg, uint8_t& data, c
   const lpgbt_item_t* reg_primary = OptoUtils::getLpGBTRegisterByAddr(reg->addr, lpgbt->getVersion());
 
   if (fclog->should_log(spdlog::level::debug)){
-    for (int i = 0; i < netio_frame.size(); i++){
+    for (size_t i = 0; i < netio_frame.size(); i++){
       fclog->debug("netio frame at {} is {:x}", i, netio_frame[i]);
     }
   }
@@ -984,7 +983,6 @@ void FelixController::readWriteOptoReg(const lpgbt_item_t* reg , uint8_t& reg_da
     }
 
     // Read answer via from I2C communication
-    uint8_t readback = 0;
     communicateLpGBT(read15, reg_data, 0, lpgbt);
   }
 }
@@ -1036,7 +1034,8 @@ bool FelixController::writeLpGBTRegister(const char* reg_name, uint8_t reg_data,
   // The following is the procedure for this:
   if (OptoUtils::regField(reg)){
     // Get the full readout from the total register
-    const lpgbt_item_t* reg_primary = OptoUtils::getLpGBTRegisterByAddr(reg->addr, lpgbt->getVersion());
+    // const lpgbt_item_t* reg_primary = OptoUtils::getLpGBTRegisterByAddr(reg->addr, lpgbt->getVersion());
+
     uint8_t current_data = 0;
     try {
       readWriteOptoReg(reg, current_data, 0, lpgbt);
