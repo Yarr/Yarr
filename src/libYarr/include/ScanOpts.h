@@ -11,6 +11,8 @@ struct ScanOpts {
     bool scan_config_provided = false;
     /// Backend configuration service to use
     std::string configurationType="File";
+    /// Plotting output to use
+    std::string plottingType="Default";
     std::string scanType;
     std::vector<std::string> cConfigPaths;
     std::string outputDir = "./data/";

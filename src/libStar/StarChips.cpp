@@ -4,6 +4,7 @@
 // # Comment: StarChip FrontEnd class
 // ################################
 
+#include "StarConstants.h"
 #include "StarChips.h"
 #include "StarChipsBroadcast.h"
 
@@ -43,8 +44,8 @@ StarChips::StarChips(int abc_version, int hcc_version)
 {
 	m_txcore  = nullptr;
 	active = false;
-	geo.nRow = 2;
-	geo.nCol = 128;
+	geo.nRow = Star::RowsPerABC;
+	geo.nCol = Star::StripsPerABCRow;
 
 
 	//Create dummy configuration as placeholder for globalFe in preScan routines
@@ -149,7 +150,7 @@ void StarChips::configure() {
     sendCmd(LCB::lonely_bcr());
 
     // Make histo size match number of configured ABCs
-    geo.nCol = 128 * numABCs();
+    geo.nCol = Star::StripsPerABCRow * numABCs();
 }
 
 void StarChips::sendCmd(uint16_t cmd){
@@ -280,7 +281,7 @@ yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_va
 
       // Set trim registers in memory
       eachAbc([&](auto &cfg) {
-          for (unsigned chan=0; chan<256; chan++) {
+          for (unsigned chan=0; chan<Star::StripsPerABC; chan++) {
               cfg.setTrimDACRaw(chan, reg_value);
           }
       });

@@ -5,6 +5,7 @@
 // # Description: Strobe Delay Analysis class for Star
 // ################################
 
+#include "StarConstants.h"
 #include "StarStrobeDelayAnalysis.h"
 #include "AllAnalyses.h"
 #include "StarJsonData.h"
@@ -152,12 +153,12 @@ void StarStrobeDelayAnalysis::processHistogram(HistogramBase *h) {
                 m_strobeDelayHistos[ident]->fill(strobeDelay, thisBin);
 
 		// Fill 2D histogram of occupancy vs strobe delay vs channel number for each chip and each row
-		unsigned iChip = (col-1)/128;
-		unsigned iChipRow = iChip*2 + (row-1);
-		unsigned binInChip  = (col-1)%128;
+		unsigned iChip = (col-1)/Star::StripsPerABCRow;
+		unsigned iChipRow = iChip*Star::RowsPerABC + (row-1);
+		unsigned binInChip  = (col-1)%Star::StripsPerABCRow;
 		if (m_hOccVsStrobeDelayVsChannelPerRow[iChipRow] == nullptr) {
 		  std::string name = "OccVsStrobeDelayVsChanChip" + std::to_string(iChip) + "Row" + std::to_string(row);
-		  auto hOccVsSDVsChPerRow = std::make_unique<Histo2d>(name, 128, 0, 128, m_strobeDelayBins, m_strobeDelayMin-((double)m_strobeDelayStep/2.0), m_strobeDelayMax+((double)m_strobeDelayStep/2.0));
+		  auto hOccVsSDVsChPerRow = std::make_unique<Histo2d>(name, Star::StripsPerABCRow, 0, Star::StripsPerABCRow, m_strobeDelayBins, m_strobeDelayMin-((double)m_strobeDelayStep/2.0), m_strobeDelayMax+((double)m_strobeDelayStep/2.0));
 		  hOccVsSDVsChPerRow->setXaxisTitle("Channel number");
 		  hOccVsSDVsChPerRow->setYaxisTitle("Strobe Delay");
 		  hOccVsSDVsChPerRow->setZaxisTitle("Occupancy");
@@ -175,7 +176,7 @@ void StarStrobeDelayAnalysis::processHistogram(HistogramBase *h) {
 		  m_rightEdgeMap[ident] = fitParams[1][0];
 
 		  // Dump SD plots if desired
-		  if (m_dumpDebugSDPlots && row == nRow/2 && col%10 == 0) {
+		  if (m_dumpDebugSDPlots && row == nRow/Star::RowsPerABC && col%10 == 0) {
 		    output->pushData(std::move(m_strobeDelayHistos[ident]));
 		  }
 		  m_strobeDelayHistos[ident].reset(nullptr);
@@ -206,7 +207,7 @@ void StarStrobeDelayAnalysis::pushData() {
   auto upJD = std::make_unique<StarJsonData>("JsonData_StarStrobeDelayResult");
   upJD->setJsonDataType("JsonData_StarStrobeDelayResult");
 
-  unsigned nChips = (nCol/128);
+  unsigned nChips = (nCol/Star::StripsPerABCRow);
 
   auto feedbackData = std::make_unique<Histo2d>("feedback", nChips, 0, nChips, 1, 0, 1);
 
@@ -215,11 +216,11 @@ void StarStrobeDelayAnalysis::pushData() {
     upJD->initialiseStarChannelsDataAtProp({"ABCStar_" + std::to_string(iChip), "OptimalStrobeDelay"}, 1);
     double maxLeftEdgeForChip = 0.0;
     double minRightEdgeForChip = 100.0;
-    for (unsigned row=0; row<2; row++) {
+    for (unsigned row=0; row<Star::RowsPerABC; row++) {
       upJD->initialiseStarChannelsDataAtProp({"ABCStar_" + std::to_string(iChip), "LeftEdge", "Row" + std::to_string(row)});
       upJD->initialiseStarChannelsDataAtProp({"ABCStar_" + std::to_string(iChip), "RightEdge", "Row" + std::to_string(row)});
-      for (unsigned iStrip=0; iStrip<128; iStrip++) {
-	unsigned iChannel = iStrip + row*nCol + 128*iChip;
+      for (unsigned iStrip=0; iStrip<Star::StripsPerABCRow; iStrip++) {
+	unsigned iChannel = iStrip + row*nCol + Star::StripsPerABCRow*iChip;
 	double leftEdgeThisChannel = m_leftEdgeMap.at(iChannel);
 	double rightEdgeThisChannel = m_rightEdgeMap.at(iChannel);
 	hDistLeftEdge->fill(leftEdgeThisChannel);
@@ -267,19 +268,19 @@ void StarStrobeDelayAnalysis::pushData() {
   output->pushData(std::move(hDistRightEdge));
 
   // Output occupancy map vs SD vs channel per chip/row
-  for (unsigned int row=0; row<2; row++){
+  for (unsigned int row=0; row<Star::RowsPerABC; row++){
     auto hOccVsSDVsCh = std::make_unique<Histo2d>("OccVsStrobeDelayVsChan_Row" + std::to_string(row), nCol, 0, nCol, m_strobeDelayBins,  m_strobeDelayMin-((double)m_strobeDelayStep/2.0), m_strobeDelayMax+((double)m_strobeDelayStep/2.0));
-    for (unsigned int iChip=0; iChip<(nCol/128); iChip++) {
-      auto hOccVsStrobeDelayPerRow = m_hOccVsStrobeDelayVsChannelPerRow[iChip*2 + row]->profileY();
+    for (unsigned int iChip=0; iChip<(nCol/Star::StripsPerABCRow); iChip++) {
+      auto hOccVsStrobeDelayPerRow = m_hOccVsStrobeDelayVsChannelPerRow[iChip*Star::RowsPerABC + row]->profileY();
       const unsigned n_par = FIT_N_PAR;
       upJD->initialiseStarChannelsDataAtProp({"ABCStar_" + std::to_string(iChip), "FitParamsLeft", "Row" + std::to_string(row)}, n_par);
       upJD->initialiseStarChannelsDataAtProp({"ABCStar_" + std::to_string(iChip), "FitParamsRight", "Row" + std::to_string(row)}, n_par);
       upJD->initialiseStarChannelsDataAtProp({"ABCStar_" + std::to_string(iChip), "Width", "Row" + std::to_string(row)}, 1);
-      for (unsigned int iStrip=0; iStrip<128; iStrip++){
+      for (unsigned int iStrip=0; iStrip<Star::StripsPerABCRow; iStrip++){
 	for (unsigned int sd=m_strobeDelayMin; sd<=m_strobeDelayMax; sd+=m_strobeDelayStep){
-	  int binNum = m_hOccVsStrobeDelayVsChannelPerRow[iChip*2 + row]->binNum(iStrip, sd);
-	  double binContent = m_hOccVsStrobeDelayVsChannelPerRow[iChip*2 + row]->getBin(binNum);
-	  hOccVsSDVsCh->fill(iChip*128 + iStrip, sd, binContent);
+	  int binNum = m_hOccVsStrobeDelayVsChannelPerRow[iChip*Star::RowsPerABC + row]->binNum(iStrip, sd);
+	  double binContent = m_hOccVsStrobeDelayVsChannelPerRow[iChip*Star::RowsPerABC + row]->getBin(binNum);
+	  hOccVsSDVsCh->fill(iChip*Star::StripsPerABCRow + iStrip, sd, binContent);
 	} // end loop over points
       } // end loop over strips
       std::vector<std::vector<double>> fitParamsPerRow = fitDoubleScurve(*hOccVsStrobeDelayPerRow);

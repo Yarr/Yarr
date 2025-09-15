@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <filesystem>
 namespace fs = std::filesystem;
+#include <unistd.h>
 
 #include "storage.hpp"
 #include "logging.h"

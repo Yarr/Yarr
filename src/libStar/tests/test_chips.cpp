@@ -4,6 +4,7 @@
 
 #include "AllChips.h"
 #include "StarChips.h"
+#include "StarConstants.h"
 
 #include "logging.h"
 
@@ -221,7 +222,7 @@ TEST_CASE("StarChipsNamedTrim", "[star][chips][Trim]") {
   star_fe->writeNamedRegister("ABCs_TRIMs", val);
 
   star_fe->eachAbc( [&](auto &abc) {
-    for(int c=0; c<256; c++) {
+    for(int c=0; c<Star::StripsPerABC; c++) {
       CAPTURE (c);
       CHECK (abc.getTrimDACRaw(c) == val);
     }

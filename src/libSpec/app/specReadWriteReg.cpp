@@ -3,6 +3,7 @@
 #include <string>
 #include <filesystem>
 namespace fs = std::filesystem;
+#include <unistd.h>
 
 #include "SpecCom.h"
 #include "ScanHelper.h"

@@ -9,6 +9,7 @@
 #include "JsonData.h"
 #include "ScanFactory.h"
 #include "StarChips.h"
+#include "StarConstants.h"
 
 #include "EmptyHw.h"
 
@@ -63,8 +64,8 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
     // This is for one FE
     AnalysisProcessor analysis(rx_channel);
 
-    int nCol = 128 * chip_count;
-    int nRow = 2;
+    int nCol = Star::StripsPerABCRow * chip_count;
+    int nRow = Star::RowsPerABC;
 
     {
       auto ana = StdDict::getAnalysis("StarStrobeDelayAnalysis");
@@ -206,7 +207,7 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
 
             CHECK (hh->getXbinWidth() == 1.0);
             CHECK (hh->getYbinWidth() == 1.0);
-            CHECK (hh->getXbins() == 128 * chip_count);
+            CHECK (hh->getXbins() == Star::StripsPerABCRow * chip_count);
             CHECK (hh->getYbins() == bin_count);
         } else if(output_name.find("OccVsStrobeDelayVsChanChip") == 0) {
             if(output_name.find("_pfy") != std::string::npos) {
@@ -229,7 +230,7 @@ TEST_CASE("StarStrobeDelayAnalysis", "[Analysis][Star][SD]") {
 
               CHECK (hh->getXbinWidth() == 1.0);
               CHECK (hh->getYbinWidth() == 1.0);
-              CHECK (hh->getXbins() == 128);
+              CHECK (hh->getXbins() == Star::StripsPerABCRow);
               CHECK (hh->getYbins() == bin_count);
             }
         } else if(output_name.find("StrobeDelay") == 0) {
@@ -343,7 +344,7 @@ TEST_CASE("StarStrobeDelayFeedback", "[Analysis][Star][SD]") {
       }
 
       // Normally set up by StarChips::configre
-      star_fe->geo.nCol = 128 * chip_count;
+      star_fe->geo.nCol = Star::StripsPerABCRow * chip_count;
 
       int ic_mask = 0;
       for(int i=0; i<chip_count; i++) {

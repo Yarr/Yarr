@@ -37,7 +37,7 @@ TEST_CASE("StarEmulatorPacketGenerate", "[star][emulator]")
 
   SECTION ("LP") {
     {
-      std::array<std::vector<uint16_t>, HCC_INPUT_CHANNEL_COUNT> empty_data;
+      std::array<std::vector<uint16_t>, Star::MaxABCsPerHCC> empty_data;
       std::vector<uint16_t> empty_chip;
       empty_data[0] = empty_chip;
       auto empty_lp_data = buildPhysicsPacket(empty_data, PacketTypes::PR, 0x7f, 0xff);
@@ -56,7 +56,7 @@ TEST_CASE("StarEmulatorPacketGenerate", "[star][emulator]")
       // IC 2
       std::vector<uint16_t> ic2{0x78f, 0x38f, 0x7af, 0x3af,
                                 0x7cf, 0x3cf, 0x7ee, 0x3ee};
-      std::array<std::vector<uint16_t>, HCC_INPUT_CHANNEL_COUNT> clusters;
+      std::array<std::vector<uint16_t>, Star::MaxABCsPerHCC> clusters;
       clusters[0] = ic0;
       clusters[1] = ic1;
       clusters[2] = ic2;

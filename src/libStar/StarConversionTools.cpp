@@ -1,5 +1,6 @@
 #include "logging.h"
 
+#include "StarConstants.h"
 #include "StarConversionTools.h"
 
 namespace {
@@ -212,7 +213,7 @@ std::pair<float, float> StarConversionTools::convertBVTtomVwithError(float thrDA
     if(convertBVTtomV(thrBin) > -1.){
       auto remainder = static_cast<float>(thrDAC - thrBin);
       thrConverted = convertBVTtomV(thrBin) + (convertBVTtomV(thrBin+1) - convertBVTtomV(thrBin)) * remainder;
-      if(thrBin < 128){
+      if(thrBin < Star::StripsPerABCRow){
         err_thrConverted = err_thrDAC * (convertBVTtomV(thrBin+1) - convertBVTtomV(thrBin));
       } else{
         err_thrConverted = err_thrDAC * (convertBVTtomV(thrBin) - convertBVTtomV(thrBin-1));

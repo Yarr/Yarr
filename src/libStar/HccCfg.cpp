@@ -234,7 +234,7 @@ void HccCfg::setupMaps(int version) {
   }
 }
 
-std::array<uint8_t, HCC_INPUT_CHANNEL_COUNT> HccCfg::histoChipMap() const {
+std::array<uint8_t, Star::MaxABCsPerHCC> HccCfg::histoChipMap() const {
   // On HCCv0, input channel numbers are reversed
   // On HCCv1, we map histogram slots based on increasing IC number
 
@@ -244,11 +244,11 @@ std::array<uint8_t, HCC_INPUT_CHANNEL_COUNT> HccCfg::histoChipMap() const {
 
   size_t offset = 0;
 
-  std::array<uint8_t, HCC_INPUT_CHANNEL_COUNT> chip_map{};
+  std::array<uint8_t, Star::MaxABCsPerHCC> chip_map{};
   chip_map.fill(HCC_INPUT_CHANNEL_BAD_SLOT);
 
   // logger->trace("Build map from mask: {}", input_enables);
-  for(int index=0; index<11; index++) {
+  for(int index=0; index<Star::MaxABCsPerHCC; index++) {
     int ic = version_1?index:(10-index);
     int mask = 1<<ic;
     if(mask & input_enables) {

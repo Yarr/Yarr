@@ -211,7 +211,7 @@ void listLoggers(bool print_details) {
 std::vector<std::string> getLog(size_t lim) {
   std::vector<std::string> result;
   auto *sink=dynamic_cast<spdlog::sinks::ringbuffer_sink_mt *>(default_sink.get());
-  if(sink) result=sink->pop_formatted(lim);
+  if(sink) result=sink->last_formatted(lim);
   return result;
 }
 

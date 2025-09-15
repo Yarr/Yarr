@@ -53,6 +53,7 @@ add_library(Scan SHARED
         AllConfigurations.cpp
         AllHistogrammers.cpp
         AllHwControllers.cpp
+        AllPlotters.cpp
         AllProcessors.cpp
         AllStdActions.cpp
         AnalysisAlgorithm.cpp

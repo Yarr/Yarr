@@ -5,6 +5,8 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
+#include <unistd.h>
+
 #include "SpecCom.h"
 #include "logging.h"
 #include "LoggingConfig.h"
