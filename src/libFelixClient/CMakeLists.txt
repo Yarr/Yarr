@@ -9,12 +9,23 @@ add_library(FelixClient SHARED
         OptoUtils.cpp
         )
 
+if(YARR_FELIX_BACKEND STREQUAL "FELIX_PROXY")
+  message(STATUS "Using felix-proxy for access to FelixClientThread")
+  target_compile_definitions(FelixClient PUBLIC YARR_CONFIG_FELIX_PROXY=1)
+
+  set(YARR_FELIX_LIB tdaq::felix_proxy tdaq::felix-interface)
+else()
+  set(YARR_FELIX_LIB felix-client-thread)
+endif()
+
 #add_dependencies(FelixClient felixclientthread)
 target_include_directories(FelixClient PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-target_link_libraries(FelixClient PUBLIC Yarr_interface Util_interface felix-client-thread)
+target_link_libraries(FelixClient PUBLIC Yarr_interface Util_interface
+  ${YARR_FELIX_LIB}
+  )
 
 LIST(APPEND apps readWriteLpGBTRegister testFelixClient felixRegister elinkConfig)
 foreach (target IN LISTS apps)
