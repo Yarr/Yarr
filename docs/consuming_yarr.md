@@ -92,6 +92,21 @@ target_link_libraries(MyTarget PRIVATE Yarr::Yarr Yarr::Spec Yarr::Util)
 
 FetchContent does not perform a full installation step — Yarr becomes part of the parent project’s build tree and all targets get exposed.
 
+## Binary config
+
+You can provide a binary configuration tag to install output targets in a tdaq-like
+structure.
+
+```
+set(YARR_INSTALL_BIN_CONFIG "${BINARY_TAG}" CACHE INTERNAL "Pass config to YARR")
+FetchContent_Declare(
+  yarr
+  ...
+)
+```
+
+This includes installing debug info in `$TAG/lib/.debug/libName.so.debug`.
+
 ## ExternalProject_Add
 
 One can also use the older ExternalProject_Add which can be useful for a super build approach. I.e. 
