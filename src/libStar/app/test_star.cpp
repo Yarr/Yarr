@@ -1495,6 +1495,18 @@ int main(int argc, char *argv[]) {
       return 1;
     }
 
+    if(hccStars.empty()) {
+      logger->debug("No hybrid configuration, start with broadcast");
+
+      for(auto t: txChannels) {
+        for(auto r: rxChannels) {
+          logger->debug("Speculative read-write pair TX {} RX {}", t, r);
+          Hybrid h{t, r, 15, {{15, 15}}};
+          hccStars.push_back(h);
+        }
+      }
+    }
+
     if(isupper(testSequence[0])) {
       if(sequenceMap.find(testSequence) != sequenceMap.end()) {
         logger->info("Running test sequence {}", testSequence);
