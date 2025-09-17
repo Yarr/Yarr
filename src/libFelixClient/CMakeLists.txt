@@ -1,6 +1,7 @@
 YARR_ADD_FELIX_CLIENT()
 add_library(FelixClient SHARED
         FelixController.cpp
+        FelixDirectMode.cpp
         FelixTxCore.cpp
         FelixRxCore.cpp
         FelixTools.cpp
