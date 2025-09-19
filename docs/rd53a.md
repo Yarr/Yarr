@@ -110,7 +110,7 @@ bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity
 
 More general information about how to use the scanConsole, can be found on the main page: [ScanConsole](scanconsole.md). This page details each of the configuration settings. 
 
-In case you run into problems or have abnormal results please consult the troubleshooting page here: [Troubleshooting](troubleshooting)
+In case you run into problems or have abnormal results please consult the troubleshooting page here: [Troubleshooting](troubleshooting.md)
 
 ### Tuning routine
 
@@ -128,7 +128,7 @@ Basics tuning routine:
 - `lin_retune_pixelthreshold.json` (1000e again)
 - `lin_tune_finepixelthreshold.json` (1000e again)
 - `syn_tune_globalthreshold.json` (can be as low as 1000e, but keep noise occupancy in check)
-- `std_thresholdscan.json` (verify thresholds, use root plot script for nice plots, see [here](rootscripts))
+- `std_thresholdscan.json` (verify thresholds, use plotting tools for nice plots, see [here](plotting.md))
 - `std_totscan.json` (with target charge equal to MIP, e.g. 12ke)
 - `std_noisescan.json` (measure noise occupancy, will mask noisy pixels, might fail if too noisy)
 
@@ -151,7 +151,7 @@ If you also want to tune the ToT conversion we need to insert those tunings and 
 - `syn_tune_globalthreshold.json` (can be as low as 1000e, but keep noise occupancy in check)
 - `syn_tune_globalpreamp.json` (use mid of the range ToT values, e.g. 10000e at 8ToT)
 - `syn_tune_globalthreshold.json` (can be as low as 1000e, but keep noise occupancy in check)
-- `std_thresholdscan.json` (verify thresholds, use root plot script for nice plots, see [here](rootscripts))
+- `std_thresholdscan.json` (verify thresholds, use plotting tools for nice plots, see [here](plotting.md))
 - `std_totscan.json` (with target charge equal to MIP, e.g. 12ke)
 - `std_noisescan.json` (measure noise occupancy, will mask noisy pixels, might fail if too noisy)
 
@@ -165,7 +165,7 @@ Some general tips when operating RD53A with YARR:
 
 ### Scans
 
-For generic RD53 scans see [this](../rd53/#scans) section.
+For generic RD53 scans see [this](rd53.md#scans) section.
 
 #### Analog scan for only one analog FrontEnd
 
@@ -196,7 +196,7 @@ There are 3 different possibilities for a source scan:
  
 #### Random Trigger
 
-For a random trigger source scan one has to mask digital and analog bad pixels and noisy pixels by running digital, analog and noise scans: run `std_digitalscan` with the `-m 1` option to reset the pixel enable mask (see [commandline arguments](#command-line-arguments)), followed by `std_analogscan` and `std_noisescan` before a source scan with random trigger.
+For a random trigger source scan one has to mask digital and analog bad pixels and noisy pixels by running digital, analog and noise scans: run `std_digitalscan` with the `-m 1` option to reset the pixel enable mask (see [commandline arguments](scanconsole.md#command-line-arguments)), followed by `std_analogscan` and `std_noisescan` before a source scan with random trigger.
 
 When taking data with a radioactive source, modify in `std_noisescan.json`: `"createMask": false` to prevent changing the enable mask, and adjust `"time": 600` in seconds to set the scan duration.
 
@@ -216,7 +216,7 @@ The trigger loop in this scan does not sent an ECR signal during the scan. The s
 
 #### Hit-Or ("self-trigger")
 
-For the "self-triggering" source scan using Hit-Or as a trigger, a second DP-miniDP cable is needed to connect to the second DP port in the SCC and port B on the Ohio card, which should have the [modifications](ohio-rd53a-multi-module-adapter) on port B. The corresponding firmware has to be used and can be obtained from firmware [v0.9.2](https://github.com/Yarr/Yarr-fw/tree/v0.9.2) as the bit files which do not end with ``_4chip.bit``. For the controller configuration, instead of the `specCfg-rd53a.json` `specCfgExtTrigger.json` is to be used. The Hit-Or lines have to be enabled in the chip config:
+For the "self-triggering" source scan using Hit-Or as a trigger, a second DP-miniDP cable is needed to connect to the second DP port in the SCC and port B on the Ohio card, which should have the [modifications](fw_guide.md#modifications) on port B. The corresponding firmware has to be used and can be obtained from firmware [v0.9.2](https://github.com/Yarr/Yarr-fw/tree/v0.9.2) as the bit files which do not end with ``_4chip.bit``. For the controller configuration, instead of the `specCfg-rd53a.json` `specCfgExtTrigger.json` is to be used. The Hit-Or lines have to be enabled in the chip config:
 ```
 "HitOr0MaskDiff0": 65535,
 "HitOr0MaskDiff1": 1,

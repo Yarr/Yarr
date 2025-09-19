@@ -2,26 +2,26 @@
 
 The BDAQ controller adds to Yarr the ability of using the [BDAQ hardware](https://gitlab.cern.ch/silab/bdaq53/-/wikis/Hardware/Readout-Hardware#bdaq53), which is one of the read-out cards supported by the [BDAQ system](https://gitlab.cern.ch/silab/bdaq53), for RD53A testing (RD53B support is under development). The BDAQ controller code is based on the original BDAQ system Python software, plus additional code for making the BDAQ hardware compatible with Yarr. This document will guide you through the needed [software installation](#software-installation) steps and on how to get the system [running](#running).
 
-# Software Installation
+## Software Installation
 
 Adding BDAQ support to the Yarr software requires one extra dependency and enabling the **BDAQ controller** for compilation. To achieve this, follow the instructions ahead.
 
-## Dependencies
+### Dependencies
 
-1. Install the [typical Yarr software dependencies](install.md#dependencies)
+1. Install the [typical Yarr software dependencies](install.md#software-installation)
 1. Install the following extra dependency
 
 ```bash
 $ sudo yum install boost-devel
 ```
 
-## Get the software (clone the git repository)
+### Get the software (clone the git repository)
 
 ```bash
 $ git clone https://github.com/Yarr/Yarr.git Yarr
 ```
 
-## Compile and install the software
+### Compile and install the software
 
 ```bash
 $ cd Yarr
@@ -32,7 +32,7 @@ $ make -j4
 $ make install
 ```
 
-# Running
+## Running
 
 Before running, check the following sections. If everything is already set, one can jump to the [examples](#examples) below.
 
@@ -45,46 +45,46 @@ Running into trouble? Refer to:
 1. [Troubleshooting](#troubleshooting)
 2. [BDAQ controller parameters](#bdaq-controller-parameters-bdaqcfgjson)
 
-## Examples
+### Examples
 
 Running with BDAQ controller should be the same as with any other hardware controller, just watch out for the hardware controller configuration file. Here are some examples:
 
 
-### Digital scan
+#### Digital scan
 
 ```
 bin/scanConsole -r configs/controller/bdaqCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json -p -m 1
 ```
 
-### Analog scan
+#### Analog scan
 
 ```
 bin/scanConsole -r configs/controller/bdaqCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_analogscan.json -p
 ```
 
-### Threshold scan
+#### Threshold scan
 
 ```
 bin/scanConsole -r configs/controller/bdaqCfg.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_thresholdscan.json -p
 ```
 
-# Firmware
+## Firmware
 
 BDAQ controller works with the original BDAQ firmware. Below one can find links for the firmware bitstream (firmware building output) download, placed here for convenience. These links point to the official BDAQ repository. For more information, refer to: https://gitlab.cern.ch/silab/bdaq53/-/releases
 
 - (**Recommended**) **v1.2**, 640 Mbps, 1-lane per chip: [1.2.0_BDAQ53_1LANE_RX640](https://gitlab.cern.ch/silab/bdaq53/uploads/936860f3e449cb8cd1a8fecc4f215318/1.2.0_BDAQ53_1LANE_RX640.tar.gz)
 - **v1.2**, 1.28 Gbps, 1-lane per chip, [1.2.0_BDAQ53_1LANE_RX1280](https://gitlab.cern.ch/silab/bdaq53/uploads/f085eba35ff1760250f829c62147c8d7/1.2.0_BDAQ53_1LANE_RX1280.tar.gz)
 
-## Firmware Installation
+### Firmware Installation
 - Firmware installation instructions: https://gitlab.cern.ch/silab/bdaq53/-/wikis/Bdaq-firmware-manager
 
-# Connectivity
+## Connectivity
 
 When running [*scanConsole*](scanconsole.md), the [connectivity configuration file ](scanconsole.md#command-line-arguments) must reflect your setup according to the mappings shown below:
 
 For Module Testing connectivity hints, refer to: [Module Testing](#module-testing) in this document, as well as the [RD53A](rd53a.md) main document.
 
-## Command Driver (transmitter) mapping
+### Command Driver (transmitter) mapping
 
 BDAQ has only one Command Driver, thus "tx" : 0 is always used.
 
@@ -95,7 +95,7 @@ BDAQ has only one Command Driver, thus "tx" : 0 is always used.
 |       "tx" : 0      |     DP 2    | CMD (AUX) |
 |       "tx" : 0      |     DP 3    | CMD (AUX) |
 
-## Aurora Receivers mapping
+### Aurora Receivers mapping
 
 BDAQ has 7 Aurora receivers in total, 4 for Multi-lane DisplayPort (DP0), and 1 for each of the single-lane DisplayPorts (DP1, DP2 and DP3). The software identifier to the Aurora receiver mapping is as follows:
 
@@ -113,7 +113,7 @@ Refer to the figure below to identify the DisplayPort connectors in the BDAQ har
 
 ![BDAQ Connectivity](./images/bdaqConn.jpg)
 
-# RD53A registers configuration
+## RD53A registers configuration
 
 To match the BDAQ hardware/firmware configuration, the RD53A Clock and Data Recovery (CDR) circuitry and the Aurora transmitters must be configured as follows:
 
@@ -133,11 +133,12 @@ To match the BDAQ hardware/firmware configuration, the RD53A Clock and Data Reco
 "CdrSelSerClk": 0
 ```
 
-# RD53B registers configuration
+## RD53B registers configuration
 
 To set the correct configuration registers please see the configuration in RD53B.md(Active Lanes).
 So in case one RD53B SCC is used set the following registers:
- ```
+
+```
 "AuroraActiveLanes": 1,
 "DataMergeOutMux0": 3,
 "DataMergeOutMux1": 2,
@@ -160,7 +161,7 @@ In addition the following registers have to be set:
 ```
 
 
-# Trigger Frequency
+## Trigger Frequency
 
 When running with a single chip, the default trigger frequencies, set in the scan configuration files, should work out-of-the-box. However, when reading out **more than 1 chip**, at the same time, the **trigger frequency should be reduced**.
 
@@ -168,14 +169,14 @@ One possibility is to **divide** the trigger frequency **by the number of chips 
 
 The achievable trigger frequency is a function of the entire DAQ system ability to read-out chip data, without letting it overrun. The DAQ computer specifications, system load, network activity, etc will have an impact into this ability. If you are experiencing errors such as **"[ error  ][Rd53aDataProcessor]: [0] Received data not valid:"**, a too high trigger frequency setting is a potential culprit. If possible, **use a dedicated network interface for BDAQ**.
 
-# Module Testing
+## Module Testing
 Below one can find the connectivity settings for module testing with either the [1DP Adapter](#1dp-adapter) or the [4DP Adapter](#4dp-adapter).
 
-## 1DP Adapter
+### 1DP Adapter
 
 With the [Osaka 1DP Adapter](https://gitlab.cern.ch/itk-pixel-hybrid/rd53a_testboard_japan/-/blob/master/1DP_Adapter_Board_V3.pdf), only ***DP 0*** of the BDAQ hardware can be used. The command driver and receivers mappings are shown in the tables below:
 
-### Command Driver (transmitter) mapping
+#### Command Driver (transmitter) mapping
 
 BDAQ has only one Command Driver, thus "tx" : 0 is always used.
 
@@ -186,7 +187,7 @@ BDAQ has only one Command Driver, thus "tx" : 0 is always used.
 |       "tx" : 0      |     DP 0    | CMD (AUX) | Chip 3, CMD (AUX) |
 |       "tx" : 0      |     DP 0    | CMD (AUX) | Chip 4, CMD (AUX) |
 
-### Aurora Receivers mapping
+#### Aurora Receivers mapping
 
 | Software Identifier | DisplayPort | BDAQ RX |  1DP Adapter  |
 |:-------------------:|:-----------:|:-------:|:-------------:|
@@ -195,7 +196,7 @@ BDAQ has only one Command Driver, thus "tx" : 0 is always used.
 |       "rx" : 2      |     DP 0    |   RX 2  | Chip 3, GTX 0 |
 |       "rx" : 3      |     DP 0    |   RX 3  | Chip 4, GTX 0 |
 
-### Sample connectivity configuration file for the 1DP Adapter:
+#### Sample connectivity configuration file for the 1DP Adapter:
 ```bash
 {
     "chipType" : "RD53A",
@@ -233,11 +234,11 @@ BDAQ has only one Command Driver, thus "tx" : 0 is always used.
 }
 ```
 
-## 4DP Adapter
+### 4DP Adapter
 
 A suggested setup is connecting ***DisplayPort 1***, ***DisplayPort 2***, ***DisplayPort 3*** and ***DisplayPort 4***, of the [Osaka 4DP Adapter](https://gitlab.cern.ch/itk-pixel-hybrid/rd53a_testboard_japan/-/blob/master/Adapter_Board_V3.pdf), respectively, to ***DP 0***, ***DP 1***, ***DP 2*** and ***DP 3*** of the BDAQ hardware. With this setup, the command driver and receivers mappings are as follows:
 
-### Command Driver (transmitter) mapping
+#### Command Driver (transmitter) mapping
 
 BDAQ has only one Command Driver, thus "tx" : 0 is always used.
 
@@ -248,7 +249,7 @@ BDAQ has only one Command Driver, thus "tx" : 0 is always used.
 |       "tx" : 0      |     DP 2    | CMD (AUX) | Chip 3, CMD (AUX) |
 |       "tx" : 0      |     DP 3    | CMD (AUX) | Chip 4, CMD (AUX) |
 
-### Aurora Receivers mapping
+#### Aurora Receivers mapping
 
 | Software Identifier | DisplayPort | BDAQ RX |  4DP Adapter  |
 |:-------------------:|:-----------:|:-------:|:-------------:|
@@ -260,9 +261,9 @@ BDAQ has only one Command Driver, thus "tx" : 0 is always used.
 |       "rx" : 5      |     DP 2    |   RX 0  | Chip 3, GTX 0 |
 |       "rx" : 6      |     DP 3    |   RX 0  | Chip 4, GTX 0 |
 
-*The ***GTX 1***, ***GTX 2*** and ***GTX 3***, for all the Chips, are indeed not reachable.
+The **GTX 1**, **GTX 2** and **GTX 3**, for all the Chips, are indeed not reachable.
 
-### Sample connectivity configuration file for the 4DP Adapter:
+#### Sample connectivity configuration file for the 4DP Adapter:
 ```bash
 {
     "chipType" : "RD53A",
@@ -301,9 +302,9 @@ BDAQ has only one Command Driver, thus "tx" : 0 is always used.
 ```
 
 
-## ITkpix Quad module operation:
+### ITkPix Quad module operation:
 
-### Sample connectivity configuration file:
+#### Sample connectivity configuration file:
 
 ```bash
 {
@@ -341,7 +342,7 @@ BDAQ has only one Command Driver, thus "tx" : 0 is always used.
 }
 ```
 
-### chip configuration files:
+#### chip configuration files:
 
 set the following configurations for all the chips:
 ```
@@ -367,7 +368,7 @@ in addition set the following configurations:
 
 for ``CdrClkSel`` register, set it to same clock used in the firmware with the following values (``0`` : 1280Mbps, ``1`` : 640Mbps, ``2`` : 320Mbps, ``3`` : 160Mbps)
 
-# BDAQ controller parameters (bdaqCfg.json)
+## BDAQ controller parameters (bdaqCfg.json)
 
 Some parameters from BDAQ controller might be configured via the hardware controller configuration file, under ***configs/controller/bdaqCfg.json***. The table below shows a brief explanation of those parameters.
 
@@ -385,22 +386,22 @@ Some parameters from BDAQ controller might be configured via the hardware contro
 | "controlAddr" | "0x2100" | FPGA GPIO controller address. |
 | "chipType" | "RD53B" | Type of the chip under operation. 
 
-# Troubleshooting
+## Troubleshooting
 
 Here is a compilation of potential issues, with their solutions.
 
-## No Aurora Synchronization
+### No Aurora Synchronization
 - Confirm these [RD53A register settings](#rd53a-registers-configuration)
 - Confirm proper settings for RD53A **"SldoAnalogTrim"** and **"SldoDigitalTrim"** registers
 - Disable the Si570 configuration by setting **"configSi570"** to **false**, [more details](#bdaq-controller-parameters-bdaqcfgjson)
 
-## Errors like: **[ error  ][Rd53aDataProcessor]: [0] Received data not valid:**
+### Errors like: **[ error  ][Rd53aDataProcessor]: [0] Received data not valid:**
 - Confirm scan [trigger frequency settings](#trigger-frequency)
 - Confirm proper settings for RD53A **"SldoAnalogTrim"** and **"SldoDigitalTrim"** registers
 - If BDAQ is not running with a dedicated network interface, try setting a direct route...
 - DAQ computer might be overloaded
   
-## Hit patterns in digital scans
+### Hit patterns in digital scans
 
 Hit patterns similar to the one below:
 

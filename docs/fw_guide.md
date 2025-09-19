@@ -209,7 +209,11 @@ In order to power correctly the adapter card, a jumper needs to be added to **3V
 
 When the board is powered correctly, a red LED should light up. More information about the adapter card can be found [Multi Chip Adapter Card](https://twiki.cern.ch/twiki/bin/viewauth/RD53/RD53ATesting#Multi_Chip_FMC).
 
-On a SCC [Single Chip Card](https://twiki.cern.ch/twiki/bin/viewauth/RD53/RD53ATesting#RD53A_Single_Chip_Card_SCC) the CMD line is AC coupled. On the older Ohio card (before 2019 and serial number < 200) there is additional AC coupling as shown on the picture. This is corrected for the newer Ohio cards from 2019 on with serial number starting from 200.
+##### Modifications
+
+On a SCC [Single Chip Card](https://twiki.cern.ch/twiki/bin/viewauth/RD53/RD53ATesting#RD53A_Single_Chip_Card_SCC) the CMD line is AC coupled.
+On the older Ohio card (before 2019 and serial number < 200) there is additional AC coupling as shown on the picture.
+This is corrected for the newer Ohio cards from 2019 on with serial number starting from 200.
 
 ![Ohio Unmodified CMD ](images/OhioUnmodified_Cmd.png)
 
