@@ -214,7 +214,7 @@ function(YARR_ADD_SPDLOG)
             message(STATUS "Using system provided spdlog")
 
             add_library(yarrspdlog INTERFACE)
-            target_link_libraries(yarrspdlog INTERFACE spdlog::spdlog)
+            target_link_libraries(yarrspdlog INTERFACE spdlog::spdlog_header_only)
             target_compile_definitions(yarrspdlog INTERFACE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_${YARR_ACTIVE_LOGGER_LEVEL})
             
             # Prevent spdlog::spdlog from being treated as transitive for install
@@ -223,7 +223,7 @@ function(YARR_ADD_SPDLOG)
             )
         
             target_link_libraries(yarrspdlog INTERFACE
-                $<BUILD_INTERFACE:spdlog::spdlog>
+                $<BUILD_INTERFACE:spdlog::spdlog_header_only>
             )
             
             install(TARGETS yarrspdlog EXPORT YarrTargets)
@@ -240,7 +240,7 @@ function(YARR_ADD_SPDLOG)
        FetchContent_Declare(
            spdlog
            GIT_REPOSITORY  https://github.com/gabime/spdlog.git
-           GIT_TAG v1.15.2
+           GIT_TAG v1.15.3
        )
     
        FetchContent_Populate(spdlog)

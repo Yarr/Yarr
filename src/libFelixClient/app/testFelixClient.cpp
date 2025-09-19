@@ -11,6 +11,7 @@
 #include <fstream>
 #include <string>
 #include <cstdlib>
+#include <unistd.h>
 
 auto logger = logging::make_log("testFelixClient");
 
