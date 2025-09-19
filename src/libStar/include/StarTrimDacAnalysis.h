@@ -76,6 +76,12 @@ class StarTrimDacAnalysis : public AnalysisAlgorithm {
 	bool m_targetThresholdPerChip = true; //!< Configuration flag to decide whether one computes an overall target threshold for all chips or for each chip individually
 
 	std::vector<int> getTrimRanges(const std::map<unsigned, std::map<TrimRangeTrimDac, double> > & mapThresholdVsTrimDacVsChannelNumber) const; //Returns the list of trim ranges used in inputs
+
+  /// @brief Write trim values to chip configuration
+  /// @param chip Chip index
+  /// @param range BTRANGE
+  /// @param mapOfTrims map of channel index to TrimDAC value
+  void writeTrimsToChipConfig(unsigned chip, int range, const std::map<unsigned,int> & mapOfTrims);
 };
 
 #endif

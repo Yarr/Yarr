@@ -10,6 +10,7 @@
 #include "AllAnalyses.h"
 #include "GraphErrors.h"
 #include "Histo1d.h"
+#include "StarCfg.h"
 #include "StarJsonData.h"
 #include "StdParameterAction.h"
 
@@ -338,6 +339,8 @@ void StarTrimDacAnalysis::end() {
             }
           }
           makeSummaryPlotsForChip(mapThresholdVsTrimDacVsChannelNumber, bestTrimRangeForChip[iChip], mapOfBestTrims[iChip], *outJD, iChip);
+
+          writeTrimsToChipConfig(iChip, bestTrimRangeForChip[iChip], mapOfBestTrims[iChip]);
         }
 
         //Dumping full JsonData
@@ -438,4 +441,16 @@ unsigned int StarTrimDacAnalysis::getChannelMultReachingTarget(const std::map<un
                 }
         }
         return mult;
+}
+
+void StarTrimDacAnalysis::writeTrimsToChipConfig(unsigned chip, int range, const std::map<unsigned,int> & mapOfTrims) {
+  auto starCfg = dynamic_cast<StarCfg*>(feCfg);
+  auto &abcCfg = starCfg->abcForHistoChip(chip);
+  abcCfg.setSubRegisterValue(ABCStarSubRegister::BTRANGE, range);
+  for (const auto& trim : mapOfTrims) {
+    unsigned channel = trim.first % 256; // channel number within chip
+    int trimDAC = trim.second;
+    uint8_t trimOrder = abcCfg.trimRegOrderFromChannel(channel);
+    abcCfg.setTrimDACRaw(trimOrder, trimDAC);
+  }
 }

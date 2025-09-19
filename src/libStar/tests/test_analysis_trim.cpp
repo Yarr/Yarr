@@ -5,6 +5,7 @@
 #include "GraphErrors.h"
 #include "Histo1d.h"
 #include "JsonData.h"
+#include "StarChips.h"
 #include "ScanFactory.h"
 
 #include "EmptyHw.h"
@@ -25,13 +26,19 @@ TEST_CASE("StarTrimDacAnalysis", "[Analysis][Star][Trim]") {
 
     json analysisCfg;
 
-    int chip_count = 1;
-
-    SECTION ("Default") {
+    int chip_count = 0;
+    std::vector<int> abcIDs;
+    std::vector<int> hccInputChannels;
+    SECTION ("One Chip") {
+      chip_count = 1;
+      abcIDs = {0};
+      hccInputChannels = {0};
     }
 
-    SECTION ("More chips") {
+    SECTION ("Two Chips") {
       chip_count = 2;
+      abcIDs = {3, 5};
+      hccInputChannels = {2, 8};
     }
 
     // TODO: test more things? Add trigger loop to get trig count from
@@ -46,7 +53,32 @@ TEST_CASE("StarTrimDacAnalysis", "[Analysis][Star][Trim]") {
     EmptyHw empty;
     Bookkeeper bookie(&empty, &empty);
 
-    int rx_channel = 0;
+    unsigned rx_channel = 0;
+    auto frontEnd = std::make_unique<StarChips>(1, 1);
+    frontEnd->setActive(true);
+    for (size_t i = 0; i < chip_count; i++) {
+      frontEnd->addABCchipID(abcIDs[i], hccInputChannels[i]);
+    }
+    int icMask = 0;
+    for (int inputChannel : hccInputChannels) {
+      icMask |= (1 << inputChannel);
+    }
+    frontEnd->hcc().setSubRegisterValue(HCCStarSubRegister::ICENABLE, icMask);
+    bookie.addFe(std::move(frontEnd), rx_channel);
+
+    auto starCfg = dynamic_cast<StarCfg*>(bookie.getFeCfg(rx_channel));
+    std::vector<AbcCfg*> abcCfgs;
+    for (int hccChannel : hccInputChannels) {
+        abcCfgs.push_back(&starCfg->abcForInputChannel(hccChannel));
+    }
+    
+    {
+      // by default the trim DAC is 15
+      for (auto &abcCfg : abcCfgs) {
+        CAPTURE(abcCfg->getABCchipID());
+        CHECK(abcCfg->getTrimDACRaw(0) == 15);
+      }
+    }
 
     // This is for one FE
     AnalysisProcessor analysis(rx_channel);
@@ -60,6 +92,8 @@ TEST_CASE("StarTrimDacAnalysis", "[Analysis][Star][Trim]") {
       REQUIRE (ana);
 
       ana->loadConfig(analysisCfg);
+
+      ana->setConfig(bookie.getFeCfg(rx_channel));
 
       ana->setMapSize(nCol, nRow);
 
@@ -155,6 +189,14 @@ TEST_CASE("StarTrimDacAnalysis", "[Analysis][Star][Trim]") {
                 std::stringstream ss; ss << j; return ss.str(); }());
 
             // CHECK (false);
+        }
+
+        {
+          // now the trim DAC is 0 given the dummy data used as input
+          for (auto &abcCfg : abcCfgs) {
+            CAPTURE(abcCfg->getABCchipID());
+            REQUIRE(abcCfg->getTrimDACRaw(0) == 0);
+          }
         }
     }
 
