@@ -296,7 +296,7 @@ Example:
   "n_count": 2
 },
 ```
-A list of analysis can be found [here](todo).
+A list of analysis can be found [here](scan_analyses.md).
 
 2. Histogrammer
    
@@ -328,7 +328,7 @@ Example:
   "n_count": 5
 }
 ```
-A list of histogrammers and what they do can be found here [here](todo).
+A list of histogrammers and what they do can be found here [here](scan_histogrammers.md).
 
 3. Loop Actions and pre scan
 

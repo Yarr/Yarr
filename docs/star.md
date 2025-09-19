@@ -184,7 +184,7 @@ An example of the occupancy map after a successful noise occupancy scan for a hy
 ![Occupancy map Noise Occupancy](images/MGF_star_noiseoccupancy_OccupancyMap-14.png)
 
 An example of the occupancy map after a successful noise occupancy scan for a full module is also given.
-![Occupancy map Noise Occupancy, Full Module](images/MGF_star_fullmodule_noiseoccupancy_OccupancyMap-14.png)
+![Occupancy map Noise Occupancy, Full Module](images/MGF_star_fullmodule_noiseoccupancy_OccupancyMap-25.png)
 
 
 
