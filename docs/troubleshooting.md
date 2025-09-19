@@ -171,7 +171,7 @@ $ lspci
     - Series 7 FPGA: 
         - If the FPGA is not fully programmed at boot time, the system might not enumerate it. Try performing a 'soft-reboot' where the power is not cut and the FPGA stays programmed.
         - Try reprogramming the firmware in case something went wrong during the firmware setup stage.
-        - It has been observed that some machiens seem to be FPGA unfriendly, specifically DELL and HP computers. A list of compatible motherboards can be found [here](compatability.md)
+        - It has been observed that some machiens seem to be FPGA unfriendly, specifically DELL and HP computers. A list of compatible motherboards can be found [here](hw_guide.md)
 
 ### Check if the DMA transfers works correctly
 
@@ -211,7 +211,7 @@ $ bin/specComTest
 ...
 
 ## RD53B Troubleshooting
-see [RD53A Troubleshooting](#RD53A-troubleshooting)
+see [RD53A Troubleshooting](#rd53a-troubleshooting)
 
 Note that the SLDO trim registers are named ``SldoTrimA`` and ``SldoTrimD``, respectively, for RD53B.
 

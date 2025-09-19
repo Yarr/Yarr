@@ -61,7 +61,7 @@ All subsequent scans assume single chip operation; however, when testing triplet
 Here are some things to be mindful of as you are planning on running with multiple RD53a:
 
 - multiple PCIexpress cards: each PCIexpress card has its own `specNum`; therefore, the user needs to creat one specCfg-rd53a.json per PCIExpress card.
-- setting up the configuration for whether each RD53a receives its own command or will share a command line. Both of these instances are described in [ScanConsole](scanconsole).
+- setting up the configuration for whether each RD53a receives its own command or will share a command line. Both of these instances are described in [ScanConsole](scanconsole.md).
 - setting up the correct chipId for each RD53a in a triplet or a quad. After running a scan or just running scanConsole without running a scan, a configuration for each chip will be created. The `ChipId` for each FE will be set to 0 (default). You must change this value to match the wire-bonded value in each configuration. 
 
 ### Running scans with multiple chips
@@ -73,11 +73,11 @@ In the above example, chip with tx/rx 1 did not receive valid data.
 
 ### Additional configuration changes for quad modules
 
-To run quad modules, you need to set up the chips such that all 4 chips share one command line. This is further described in [ScanConsole](scanconsole). In order to distinguish different chips, communication is done via chip IDs which are set via wirebonds on a quad module. The corresponding values have to be set in the chip configurations as well:
+To run quad modules, you need to set up the chips such that all 4 chips share one command line. This is further described in [ScanConsole](scanconsole.md). In order to distinguish different chips, communication is done via chip IDs which are set via wirebonds on a quad module. The corresponding values have to be set in the chip configurations as well:
 
 - `ChipId`: the ChipId for each chip should be set according to wirebonding map and the silk screen on the module PCB (Chip1: `1`, Chip2: `2`, Chip3: `3`, Chip4: `4`)
 
-Depending on how many lanes per chip you read out, the correct [firmware](fw_guide/#channel-configuration) is needed too. On an RD53A quad module PCB only 3 out of 4 lanes per chip are connected.
+Depending on how many lanes per chip you read out, the correct [firmware](fw_guide.md#channel-configuration) is needed too. On an RD53A quad module PCB only 3 out of 4 lanes per chip are connected.
 
 If you have a 4-display port adaptor card, the correct controller configuration file shall be used to read out all connected lanes:
 ``specCfg-rd53a-4x3.json``
@@ -108,9 +108,9 @@ To create the default chip configuration without running a scan:
 bin/scanConsole -r configs/controller/specCfg-rd53a.json -c configs/connectivity/example_rd53a_setup.json
 ```
 
-More general information about how to use the scanConsole, can be found on the main page: [ScanConsole](scanconsole). This page details each of the configuration settings. 
+More general information about how to use the scanConsole, can be found on the main page: [ScanConsole](scanconsole.md). This page details each of the configuration settings. 
 
-In case you run into problems or have abnormal results please consult the troubleshooting page here: [Troubleshooting](troubleshooting)
+In case you run into problems or have abnormal results please consult the troubleshooting page here: [Troubleshooting](troubleshooting.md)
 
 ### Tuning routine
 
@@ -128,7 +128,7 @@ Basics tuning routine:
 - `lin_retune_pixelthreshold.json` (1000e again)
 - `lin_tune_finepixelthreshold.json` (1000e again)
 - `syn_tune_globalthreshold.json` (can be as low as 1000e, but keep noise occupancy in check)
-- `std_thresholdscan.json` (verify thresholds, use root plot script for nice plots, see [here](rootscripts))
+- `std_thresholdscan.json` (verify thresholds, use plotting tools for nice plots, see [here](plotting.md))
 - `std_totscan.json` (with target charge equal to MIP, e.g. 12ke)
 - `std_noisescan.json` (measure noise occupancy, will mask noisy pixels, might fail if too noisy)
 
@@ -151,7 +151,7 @@ If you also want to tune the ToT conversion we need to insert those tunings and 
 - `syn_tune_globalthreshold.json` (can be as low as 1000e, but keep noise occupancy in check)
 - `syn_tune_globalpreamp.json` (use mid of the range ToT values, e.g. 10000e at 8ToT)
 - `syn_tune_globalthreshold.json` (can be as low as 1000e, but keep noise occupancy in check)
-- `std_thresholdscan.json` (verify thresholds, use root plot script for nice plots, see [here](rootscripts))
+- `std_thresholdscan.json` (verify thresholds, use plotting tools for nice plots, see [here](plotting.md))
 - `std_totscan.json` (with target charge equal to MIP, e.g. 12ke)
 - `std_noisescan.json` (measure noise occupancy, will mask noisy pixels, might fail if too noisy)
 
@@ -165,7 +165,7 @@ Some general tips when operating RD53A with YARR:
 
 ### Scans
 
-For generic RD53 scans see [this](../rd53/#scans) section.
+For generic RD53 scans see [this](rd53.md#scans) section.
 
 #### Analog scan for only one analog FrontEnd
 
@@ -196,7 +196,7 @@ There are 3 different possibilities for a source scan:
  
 #### Random Trigger
 
-For a random trigger source scan one has to mask digital and analog bad pixels and noisy pixels by running digital, analog and noise scans: run `std_digitalscan` with the `-m 1` option to reset the pixel enable mask (see [commandline arguments](#command-line-arguments)), followed by `std_analogscan` and `std_noisescan` before a source scan with random trigger.
+For a random trigger source scan one has to mask digital and analog bad pixels and noisy pixels by running digital, analog and noise scans: run `std_digitalscan` with the `-m 1` option to reset the pixel enable mask (see [commandline arguments](scanconsole.md#command-line-arguments)), followed by `std_analogscan` and `std_noisescan` before a source scan with random trigger.
 
 When taking data with a radioactive source, modify in `std_noisescan.json`: `"createMask": false` to prevent changing the enable mask, and adjust `"time": 600` in seconds to set the scan duration.
 
@@ -216,7 +216,7 @@ The trigger loop in this scan does not sent an ECR signal during the scan. The s
 
 #### Hit-Or ("self-trigger")
 
-For the "self-triggering" source scan using Hit-Or as a trigger, a second DP-miniDP cable is needed to connect to the second DP port in the SCC and port B on the Ohio card, which should have the [modifications](ohio-rd53a-multi-module-adapter) on port B. The corresponding firmware has to be used and can be obtained from firmware [v0.9.2](https://github.com/Yarr/Yarr-fw/tree/v0.9.2) as the bit files which do not end with ``_4chip.bit``. For the controller configuration, instead of the `specCfg-rd53a.json` `specCfgExtTrigger.json` is to be used. The Hit-Or lines have to be enabled in the chip config:
+For the "self-triggering" source scan using Hit-Or as a trigger, a second DP-miniDP cable is needed to connect to the second DP port in the SCC and port B on the Ohio card, which should have the [modifications](fw_guide.md#modifications) on port B. The corresponding firmware has to be used and can be obtained from firmware [v0.9.2](https://github.com/Yarr/Yarr-fw/tree/v0.9.2) as the bit files which do not end with ``_4chip.bit``. For the controller configuration, instead of the `specCfg-rd53a.json` `specCfgExtTrigger.json` is to be used. The Hit-Or lines have to be enabled in the chip config:
 ```
 "HitOr0MaskDiff0": 65535,
 "HitOr0MaskDiff1": 1,

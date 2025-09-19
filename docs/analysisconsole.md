@@ -45,4 +45,4 @@ need for the connectivity configuration file.
 - **-p** : Enable plotting of results (generate png files).
 - **-o ``<dir>``** : Base output directory. (Default ./data/)
 - **-m ``<int>``** : 0 = disable pixel masking, 1 = reset pixel masking, default = enable pixel masking
-- **-l ``<path>``** => Logger config : this points to a json file to configure the [logging](logging.json) system. The default is to print info, warnings and errors to the console with appropriate colorization.
+- **-l ``<path>``** => Logger config : this points to a json file to configure the [logging](logging.md) system. The default is to print info, warnings and errors to the console with appropriate colorization.
