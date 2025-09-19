@@ -202,10 +202,6 @@ function(YARR_ADD_SPDLOG)
         target_link_libraries(yarrspdlog INTERFACE spdlog::spdlog)
         target_compile_definitions(yarrspdlog INTERFACE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_${YARR_ACTIVE_LOGGER_LEVEL})
         
-        # Prevent spdlog::spdlog from being treated as transitive for install
-        set_property(TARGET yarrspdlog PROPERTY
-            INTERFACE_LINK_LIBRARIES ""
-        )
         
         target_link_libraries(yarrspdlog INTERFACE
             $<BUILD_INTERFACE:spdlog::spdlog>
@@ -226,16 +222,6 @@ function(YARR_ADD_SPDLOG)
             add_library(yarrspdlog INTERFACE)
             target_link_libraries(yarrspdlog INTERFACE spdlog::spdlog_header_only)
             target_compile_definitions(yarrspdlog INTERFACE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_${YARR_ACTIVE_LOGGER_LEVEL})
-            
-            # Prevent spdlog::spdlog from being treated as transitive for install
-            set_property(TARGET yarrspdlog PROPERTY
-                INTERFACE_LINK_LIBRARIES ""
-            )
-        
-            target_link_libraries(yarrspdlog INTERFACE
-                $<BUILD_INTERFACE:spdlog::spdlog_header_only>
-            )
-            
             install(TARGETS yarrspdlog EXPORT YarrTargets)
             
             set(YARR_HAS_BUILTIN_SPDLOG FALSE CACHE INTERNAL "Whether Yarr provides its own spdlog")    
