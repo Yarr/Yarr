@@ -54,30 +54,55 @@ function(detect_in_tree_install OUT_VAR)
     endif()
 endfunction()
 
+function(detect_in_tdaq_install OUT_VAR)
+    # Checking for configuration of "CMTCONFIG"
+    if(YARR_INSTALL_BIN_CONFIG)
+        set(${OUT_VAR} TRUE PARENT_SCOPE)
+    else()
+        set(${OUT_VAR} FALSE PARENT_SCOPE)
+    endif()
+endfunction()
+
 # debug symbol stripping ---------------------------------------------------------------------------------------
 function(post_build_debug_library name)
+  detect_in_tdaq_install(IS_TDAQ_INSTALL)
+  set(our_debug_name lib${name}.so.debug)
+  if(IS_TDAQ_INSTALL)
+    set(lib_dest ${CMAKE_INSTALL_LIBDIR}/.debug)
+  else()
+    set(lib_dest ${CMAKE_INSTALL_LIBDIR})
+  endif()
+
   add_custom_command(TARGET ${name}
     POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:${name}> ${CMAKE_CURRENT_BINARY_DIR}/lib${name}.so.debug
+    COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:${name}> ${CMAKE_CURRENT_BINARY_DIR}/${our_debug_name}
     COMMAND ${CMAKE_STRIP} --strip-debug --strip-unneeded $<TARGET_FILE:${name}>
-    COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=lib${name}.so.debug $<TARGET_FILE:${name}>
+    COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=${our_debug_name} $<TARGET_FILE:${name}>
   )
 
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lib${name}.so.debug
-	  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${our_debug_name}
+	  DESTINATION ${lib_dest}
     )
 endfunction(post_build_debug_library)
 
 function(post_build_debug_executable name)
+  detect_in_tdaq_install(IS_TDAQ_INSTALL)
+  set(our_debug_name ${name}.debug)
+  if(IS_TDAQ_INSTALL)
+    set(bin_dest ${CMAKE_INSTALL_BINDIR}/.debug)
+  else()
+    set(bin_dest ${CMAKE_INSTALL_BINDIR})
+  endif()
+
   add_custom_command(TARGET ${name}
     POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:${name}> ${CMAKE_CURRENT_BINARY_DIR}/${name}.debug
+    COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:${name}> ${CMAKE_CURRENT_BINARY_DIR}/${our_debug_name}
     COMMAND ${CMAKE_STRIP} --strip-debug --strip-unneeded $<TARGET_FILE:${name}>
-    COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=${name}.debug $<TARGET_FILE:${name}>
+    COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=${our_debug_name} $<TARGET_FILE:${name}>
   )
 
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${name}.debug
-	  DESTINATION ${CMAKE_INSTALL_BINDIR}
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${our_debug_name}
+	  DESTINATION ${bin_dest}
     )
 endfunction(post_build_debug_executable)
 # debug symbol stripping ---------------------------------------------------------------------------------------
