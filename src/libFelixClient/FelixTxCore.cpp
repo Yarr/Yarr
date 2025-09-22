@@ -651,7 +651,12 @@ FelixClientThread::Reply FelixTxCore::accessFelixRegister(
   auto status_summary = fclient->send_cmd(fids, cmd, cmd_args, replies);
 
   if (replies.empty()) {
+#ifdef YARR_CONFIG_FELIX_PROXY
+    // enum
+    ftlog->warn("Status: {}", (int)(status_summary));
+#else
     ftlog->warn("Status: {}", FelixClientThread::to_string(status_summary));
+#endif
     throw std::runtime_error("No replies.");
   }
 
@@ -668,7 +673,11 @@ bool FelixTxCore::checkReply(const FelixClientThread::Reply& reply) {
   bool goodReply = reply.status == FelixClientThread::Status::OK;
 
   if (not goodReply) {
+#ifdef YARR_CONFIG_FELIX_PROXY
+    ftlog->warn("Status: {}", (int)(reply.status));
+#else
     ftlog->warn("Status: {}", FelixClientThread::to_string(reply.status));
+#endif
     ftlog->warn(reply.message);
   } else {
     //status OK
