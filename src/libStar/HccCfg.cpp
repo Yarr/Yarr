@@ -248,7 +248,7 @@ std::array<uint8_t, Star::MaxABCsPerHCC> HccCfg::histoChipMap() const {
   chip_map.fill(HCC_INPUT_CHANNEL_BAD_SLOT);
 
   // logger->trace("Build map from mask: {}", input_enables);
-  for(int index=0; index<Star::MaxABCsPerHCC; index++) {
+  for(unsigned int index=0; index<Star::MaxABCsPerHCC; index++) {
     int ic = version_1?index:(10-index);
     int mask = 1<<ic;
     if(mask & input_enables) {
