@@ -122,6 +122,16 @@ function(YARR_ADD_FELIX)
 endfunction()
 
 function(YARR_ADD_FELIX_CLIENT)
+    if (TARGET tdaq::felix_proxy)
+        message(STATUS "TDAQ is available, using felix-proxy instead")
+
+        set(YARR_FELIX_BACKEND "FELIX_PROXY" PARENT_SCOPE)
+        # Just works, with tdaq_add_library tdaq::felix_proxy
+        return()
+    endif()
+
+    set(YARR_FELIX_BACKEND "FELIX_CLIENT" PARENT_SCOPE)
+
     # FELIX Client Thread
     FetchContent_Declare (
         felixclientthread

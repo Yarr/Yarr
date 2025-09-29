@@ -6,8 +6,12 @@
 #include <thread>
 
 // felix client
+#ifdef YARR_CONFIG_FELIX_PROXY
+#include "felix_proxy/ClientThread.h"
+using FelixClientThread = felix_proxy::ClientThread;
+#else
 #include "felix/felix_client_thread.hpp"
-#include "felix/felix_client_properties.h"
+#endif
 
 #include "FelixTools.h"
 #include "RawData.h"

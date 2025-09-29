@@ -1,7 +1,12 @@
 #ifndef FELIXRXCORE_H
 #define FELIXRXCORE_H
 
+#ifdef YARR_CONFIG_FELIX_PROXY
+#include "felix_proxy/ClientThread.h"
+using FelixClientThread = felix_proxy::ClientThread;
+#else
 #include "felix/felix_client_thread.hpp"
+#endif
 
 #include "storage.hpp"
 

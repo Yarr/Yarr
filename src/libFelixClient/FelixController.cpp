@@ -1,4 +1,8 @@
+#ifdef YARR_CONFIG_FELIX_PROXY
+#include "felix_proxy/ClientThread.h"
+#else
 #include "felix/felix_client_thread.hpp"
+#endif
 #include "felix/felix_client_properties.h"
 
 #include "AllHwControllers.h"
