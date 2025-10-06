@@ -1,43 +1,53 @@
-# Star FrontEnd
+# `libStar`
 
-The support for Strips ASICs is via the Star FrontEnd. This represents
-one HCC and the ABCs it supports.
+`libStar` provides FrontEnd classes, loop actions, analyses, and standalone applications for use with ITk Strips ASICs.
 
-## Test program
+## Applications
 
-There is a standalone test program, which can do various low level tests.
+`libStar` provides a few standalone applications.
+Available programs and some basic information about each can be seen below.
 
-For instance writing ASIC registers, and reading back data packet. By default
-this also provides some checks.
+### `test_star`
 
-The primary argument is for the controller configuration (as elsewhere):
+`test_star` is a program that provides various test suites for front-end communication.
+
+The primary argument is for the controller configuration:
 
 ```bash
 bin/test_star configs/controller/felix_client_strips.json
 ```
 
-In order to give useful results, you will need to provide a valid rx channel(s):
+In order to obtain useful results, you will need to provide valid rx channels:
 
 ```bash
 bin/test_star -r 0 2 4 configs/controller/emuCfg_star.json
 ```
 
-By default, the full of tests will be run. Parts of tests can also be run
-individually:
+By default, the full suite of tests will be run. Parts of tests can also be run individually:
 
 ```bash
 bin/test_star -r 0 2 4 -s checkHPRs configs/controller/emuCfg_star.json
 ```
 
-For more information see the help:
+For more information (and a list of available tests) see the help message:
 
 ```bash
 bin/test_star --help
 ```
 
+### `printStarSubRegisters`
+
+Prints out all registers and subregisters in human-readable format from a chip config file.
+Especially useful to examine post-scan configs for specific subregister values.
+
+### `makeLCBSequence`
+
+Creates an LCB sequence from a list of commands.
+
 ## Loop Actions
 
-List of available loop actions and their configuration parameters.
+`libStar` provides a set of strips-specific loop actions.
+Available loop actions and their configuration parameters can be seen below.
 
 ### StarTriggerLoop
 
