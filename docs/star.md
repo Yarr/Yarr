@@ -44,6 +44,85 @@ Especially useful to examine post-scan configs for specific subregister values.
 
 Creates an LCB sequence from a list of commands.
 
+### `lcbL0a`
+
+Sends a fully-configurable L0A and/or BCR.
+Requires a hardware controller configuration file for front-end communication.
+
+A basic L0A (mask `0b0001`, tag `0x00`, no BCR) can be sent on Tx channel 1 with:
+
+```
+./bin/lcbL0a controller_config.json --tag 0 --mask 1
+```
+
+To send a more complex L0A (mask `0b1101`, tag `0x18`, BCR) on Tx channel 6, use e.g.
+
+```
+./bin/lcbL0a controller_config.json --tx 6 --tag 0x18 --mask 1101 --bcr
+```
+
+The L0A tag can be provided in hex (with the prefix `0x`) or decimal.
+
+### `lcbFastCommand`
+
+Sends a user-specified fast command.
+Requires a hardware controller configuration file for front-end communication.
+
+Fast command types can either be specified by a string identifier or a numerical identifier, e.g.
+
+```
+./bin/lcbFastCommand controller_config.json logic-reset
+```
+
+and
+
+```
+./bin/lcbFastCommand controller_config.json 2
+```
+
+will produce the same results.
+A list of all available fast commands (and their numerical codes) can be seen by running
+
+```
+./bin/lcbFastCommand --show-fast-commands
+```
+
+Fast command delays can be set with the `--delay` argument.
+
+
+### `lcbRegisterCommand`
+
+Sends a user-specified HCC/ABC register read/write command.
+Requires a hardware controller configuration file for front-end communication.
+
+The general format of the command is
+
+```
+./bin/lcbRegisterCommand <controller-config> <read|write> <hcc|abc> <other-options>
+```
+
+where `read` or `write` are used to specify the action to use, and `hcc` or `abc` are used to specify the chip type.
+
+For example, to send a register read for register 40 to an ABC with chip ID 2 through and HCC on Tx channel `0x46`, Rx channel `0x40` with HCC ID 0:
+
+```
+./bin/lcbRegisterCommand controller_config.json read abc --tx 0x46 --rx 0x40 --hcc-id 0 --abc-id 2 --address 40
+```
+
+To broadcast across ABCs or HCCs, set `--abc-id`/`--hcc-id` to 15 (or omit it, as the default for each is 15).
+
+Note that if the `write` action is specified, you must also specify a value, e.g.
+
+```
+./bin/lcbRegisterCommand controller_config.json write hcc --hcc-id 10 --address 40 --value 0xdeadbeef
+```
+
+will write register 40 on HCC with ID 10 on Tx channel 1 with the value `0xdeadbeef`.
+Register values (and all other arguments) can be supplied in hex (with the prefix `0x`) or decimal.
+
+Register read commands will read all data received within the specified timeout period (`--timeout`, default 1 second), which allows for all packets to be processed from broadcasted reads.
+The data collection can also be disabled entirely with `--send-only`.
+
 ## Loop Actions
 
 `libStar` provides a set of strips-specific loop actions.
