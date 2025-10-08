@@ -1,6 +1,7 @@
 #include <cstdint>
 #include <string>
 #include <iomanip>
+#include <iostream>
 #include <unistd.h>
 
 #include <filesystem>

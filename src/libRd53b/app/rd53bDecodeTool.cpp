@@ -4,6 +4,7 @@
 #include <fstream>
 #include <vector>
 #include <memory>
+#include <iostream>
 
 #include "LUT_PlainHMapToColRow.h"
 #include "RawData.h"
