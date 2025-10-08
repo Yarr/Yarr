@@ -10,6 +10,7 @@
 #include "logging.h"
 #include "LoggingConfig.h"
 
+#include <iostream>
 #include <getopt.h>
 
 // Compare for example
