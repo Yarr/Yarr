@@ -46,12 +46,17 @@ target_link_libraries(FelixClient PUBLIC Yarr_interface Util_interface
   ${YARR_FELIX_LIB}
   )
 
-LIST(APPEND apps readWriteLpGBTRegister testFelixClient felixRegister elinkConfig)
+LIST(APPEND apps readWriteLpGBTRegister testFelixClient felixRegister elinkConfig felix_client_bridge)
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)
     target_link_libraries(${target} Yarr FelixClient)
     post_build_debug_executable(${target})
 endforeach ()
+
+# Extra library for felix-server
+target_link_libraries(felix_client_bridge
+  felix::felix-server-lib
+)
 
 if (BUILD_TESTS)
     add_subdirectory(tests)
