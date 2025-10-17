@@ -48,6 +48,44 @@ struct AppSettings {
   std::string logCfgPath;
 };
 
+template<typename Publish>
+void send_packet(std::span<uint32_t> data, uint32_t addr, Publish &publisher) {
+  logger->debug("Send RxCore->Publish: (buf adr words) {:08x} {} {}", data[0], addr, data.size());
+
+  for (uint32_t &d: data) {
+    logger->trace(" 0x{:08x}", d);
+  }
+
+  // Map to fid
+  uint64_t fid_tag = addr;
+  fid_tag |= 1ULL<<60;
+
+  // Want data in uint8_t, from RxCore uint32_t
+  std::vector<uint8_t> outdata(data.size() * 4);
+
+  for(size_t i=0; i<data.size(); i++) {
+    uint32_t val = data[i];
+    for (size_t b=0; b<4; b++) {
+      outdata[i*4 + b] = (val >> (b*8)) & 0xff;
+    }
+  }
+
+  bool retry_flag = true;
+  auto status = publisher.publish(fid_tag, outdata, retry_flag);
+  if(status != netio3::NetioPublisherStatus::OK) {
+    logger->warn("send_packet: publish response is not OK {}", status);
+  }
+}
+
+template<typename Publish>
+void send_packets_from_rx_core_to_publisher(RxCore& rx_core, Publish &publisher)
+{
+  std::vector<RawDataPtr> dataVec = rx_core.readData();
+  for (auto data : dataVec) {
+    send_packet({data->getBuf(), data->getSize()}, data->getAdr(), publisher);
+  }
+}
+
 void printHelp()
 {
   std::cout << "Use felix-server to set up a server running a YARR controller\n";
@@ -210,6 +248,15 @@ int main(int argc, char** argv)
   }
 
   auto message_receiver = server.create_receiver(recv_settings, recv_tags);
+
+  std::atomic<bool> continue_threads = true;
+
+  std::jthread publish_thread([&]() {
+    while(continue_threads) {
+      send_packets_from_rx_core_to_publisher(*hwCtrl, publisher);
+    }
+    logger->info("Shutdown RxCore publisher thread");
+  });
   
   // While server is alive we keep running
   logger->info("Wait for user to finish (Ctrl-C or SIGUSR1 (kill -10))");
@@ -225,6 +272,8 @@ int main(int argc, char** argv)
       break;
     }
   }
+
+  continue_threads = false;
 
   logger->info("Main loop complete {}", my_signalled_flag);
 
