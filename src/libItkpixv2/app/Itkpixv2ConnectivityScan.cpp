@@ -62,7 +62,7 @@ auto container_printer =  [](auto const & l) {
 
 int main(int argc, char **argv) {
     // Setup logger with some defaults
-    std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
+    auto defaultLogPattern = logging::defaultLogPattern;
     spdlog::set_pattern(defaultLogPattern);
     json j; // empty
     j["pattern"] = defaultLogPattern;

@@ -3,7 +3,6 @@
 #include "logging.h"
 #include "LoggingConfig.h"
 #include "ScanHelper.h"
-#include "ScanOpts.h"
 
 #include <cstdint>
 #include <fstream>
@@ -31,12 +30,7 @@ namespace {
 int main(int argc, char **argv) {
     // Configure logger
     // default
-    ScanOpts options;
-    json jlog;
-    jlog["pattern"] = options.defaultLogPattern;
-    jlog["log_config"][0]["name"] = "all";
-    jlog["log_config"][0]["level"] = "info";
-    logging::setupLoggers(jlog);
+    logging::setupLoggers(logging::defaultConfig());
 
     int c = 0;
     std::string hw_controller_filename = "";

@@ -7,7 +7,6 @@
 #include <string>
 
 struct ScanOpts {
-    std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";
     bool scan_config_provided = false;
     /// Backend configuration service to use
     std::string configurationType="File";

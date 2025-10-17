@@ -33,12 +33,7 @@ void printHelp() {
 }
 
 Config parseOptions(int argc, char* argv[]) {
-    json loggerConfig;
-    loggerConfig["pattern"] = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";
-    loggerConfig["log_config"][0]["name"] = "all";
-    loggerConfig["log_config"][0]["level"] = "info";
-    loggerConfig["outputDir"] = "";
-    logging::setupLoggers(loggerConfig);
+    logging::setupLoggers(logging::defaultConfig());
 
     Config config;
 

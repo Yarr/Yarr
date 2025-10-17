@@ -45,12 +45,7 @@ void printHelp() {
 }
 
 int main(int argc, char *argv[]) {
-    json loggerConfig;
-    loggerConfig["pattern"] = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";
-    loggerConfig["log_config"][0]["name"] = "all";
-    loggerConfig["log_config"][0]["level"] = "info";
-    loggerConfig["outputDir"] = "";
-    logging::setupLoggers(loggerConfig);
+    logging::setupLoggers(logging::defaultConfig());
 
     const struct option long_options[] = {
       {"help", no_argument, nullptr, 'h'},
