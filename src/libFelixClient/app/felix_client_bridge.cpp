@@ -86,6 +86,36 @@ void send_packets_from_rx_core_to_publisher(RxCore& rx_core, Publish &publisher)
   }
 }
 
+void receive_packets_to_tx_core(TxCore &tx_core, std::uint64_t tag, std::span<const std::uint8_t> data, std::uint8_t status)
+{
+  uint32_t tx_id = tag;
+  // Turn off direction bit
+  tx_id &= ~0x8000;
+
+  // Tell TxCore which channel this is
+  tx_core.setCmdEnable(tx_id);
+
+  // Read data
+  logger->trace(" words to TxCore (chan {}):", tx_id);
+
+  // Extracting 32-bit, so strip low 2 bits
+  size_t len = data.size()&~3;
+
+  for (size_t i=0; i<len; i+=4) {
+    // Converting byte array into unsigned int
+    uint32_t word =
+      data[i] << 24
+      | data[i+1] << 16
+      | data[i+2] << 8
+      | data[i+3] << 0;
+    logger->trace(" 0x{:08x}", word);
+
+    tx_core.writeFifo(word);
+  }
+
+  tx_core.releaseFifo();
+}
+
 void printHelp()
 {
   std::cout << "Use felix-server to set up a server running a YARR controller\n";
@@ -235,12 +265,14 @@ int main(int argc, char** argv)
   recv_settings.buffered = true;
 
   // vs on_buffer is for complete buffer
-  recv_settings.on_msg = [](std::uint64_t tag, std::span<const std::uint8_t> data, std::uint8_t status) {
+  recv_settings.on_msg = [&](std::uint64_t tag, std::span<const std::uint8_t> data, std::uint8_t status) {
     logger->info("Received message from tag {:#x} {}, status {}, size {}",
                  tag, FelixTools::print_fid(tag), status, data.size());
 
     auto to_hex = [] (auto &d) { return std::format("{:02x}", d); };
     logger->debug(" Message: {}", data | std::views::transform(to_hex));
+
+    receive_packets_to_tx_core(*hwCtrl, tag, data, status);
   };
 
   for(auto &t: recv_tags) {
