@@ -1,7 +1,9 @@
+#include <deque>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <tuple>
 
 #include <getopt.h>
 
@@ -24,6 +26,9 @@ namespace {
 auto logger = logging::make_log("felix_client_bridge");
 
 volatile sig_atomic_t my_signalled_flag = 0;
+
+std::deque<std::tuple<uint64_t, std::vector<uint8_t>>> to_be_published;
+std::mutex published_mutex;
 }
 
 /// Our application options, common between felix receiver and publisher
@@ -68,6 +73,11 @@ void send_packet(std::span<uint32_t> data, uint32_t addr, Publish &publisher) {
     for (size_t b=0; b<4; b++) {
       outdata[i*4 + b] = (val >> (b*8)) & 0xff;
     }
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(published_mutex);
+    to_be_published.push_back(std::make_pair(fid_tag, outdata));
   }
 
   bool retry_flag = true;
@@ -301,7 +311,30 @@ int main(int argc, char** argv)
     }
     logger->info("Shutdown RxCore publisher thread");
   });
-  
+
+  // TODO Check whether this indirection is needed
+  auto publish_timer_func = [&publisher]() {
+    bool retry_flag = false;
+
+    std::lock_guard<std::mutex> lock(published_mutex);
+    while(!to_be_published.empty()) {
+      auto [pub_tag, pub_data] = to_be_published[0];
+      logger->trace("send_packet: publish packet in thread (tag {:016x})", pub_tag);
+      to_be_published.pop_front();
+
+      auto status = publisher.publish(pub_tag, pub_data, retry_flag);
+
+      if(status != netio3::NetioPublisherStatus::OK) {
+        logger->warn("send_packet: publish packet from thread failed {}", status);
+      }
+    }
+  };
+
+  auto publish_timer = server.create_timer(publish_timer_func);
+
+  // Use background thread to send packets
+  publish_timer.start(1ms);
+
   // While server is alive we keep running
   logger->info("Wait for user to finish (Ctrl-C or SIGUSR1 (kill -10))");
 
@@ -317,6 +350,8 @@ int main(int argc, char** argv)
     }
   }
 
+  // Explicitly stop (side effect of keeping alive
+  publish_timer.stop();
   publish_thread.get_stop_source().request_stop();
   publish_thread.join();
 
