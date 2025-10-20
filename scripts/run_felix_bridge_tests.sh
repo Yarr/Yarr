@@ -9,7 +9,9 @@ echo "TESTS: Check Felix Bus"
 find /tmp/bus -type f
 find /tmp/bus -name "*.ndjson" | xargs cat
 
-HW_CONTROLLER=configs/controller/felix_client_strips.json
+HW_CONTROLLER_IN=configs/controller/felix_client_strips.json
+HW_CONTROLLER=configs/controller/felix_client_strips_patch.json
+jq '.ctrlCfg.cfg.FelixClient.skipFelixReg = true' ${HW_CONTROLLER_IN} > ${HW_CONTROLLER}
 EMU_CONNECTIVITY=configs/connectivity/example_star_setup.json
 
 # Run scans with the FelixClient controller

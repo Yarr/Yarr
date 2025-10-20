@@ -776,7 +776,17 @@ void FelixTxCore::loadFWMode() {
   }
 }
 
+void FelixTxCore::setSkipRegFlag(bool skip_flx_reg_in)
+{
+  m_tx_skip_felix_reg = skip_flx_reg_in;
+}
+
 FelixTools::FELIX_FW_MODE FelixTxCore::fwMode() {
+  if(m_tx_skip_felix_reg) {
+    // Currently only needed for tests where mode is not used
+    m_fwMode = FelixTools::FELIX_FW_MODE::ITK_Strip;
+  }
+
   if (m_fwMode == FelixTools::FELIX_FW_MODE::Unknown) {
     loadFWMode();
   }

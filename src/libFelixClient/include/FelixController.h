@@ -323,6 +323,9 @@ protected:
 private:
   std::vector<std::unique_ptr<OptoDevice>> m_opto_dev_list;
 
+  /// If true, don't try to use felix_reg interface
+  bool skip_felix_reg{false};
+
   /*
   E-Link control utilities
   */

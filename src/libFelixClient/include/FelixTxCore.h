@@ -68,6 +68,8 @@ protected:
   void writeConfig(json& j); 		         // write configuration to json
   void setClient(const FelixClientThread::ConfigV2& fcConfig); // set Felix client
 
+  void setSkipRegFlag(bool skip_flx_reg_in);
+
   using FelixID_t = FelixTools::FelixID_t;
 
   // Channel control
@@ -120,6 +122,9 @@ protected:
   bool m_broadcast {true};
   uint32_t m_numEnabledChns {0};
   enum FelixTools::FELIX_FW_MODE m_fwMode {FelixTools::FELIX_FW_MODE::Unknown};
+
+  /// Copy of skip_felix_reg from FelixController (don't access felix regs)
+  bool m_tx_skip_felix_reg{false};
 
   // GBT link and e-link number for broadcasting
   static constexpr unsigned BroadcastLink = 0x1f;

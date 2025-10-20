@@ -21,6 +21,11 @@ void FelixController::loadConfig(const json &j) {
   // FelixClientThread configuration
   auto clientCfg = j["FelixClient"];
 
+  if(clientCfg.contains("skipFelixReg")) {
+    skip_felix_reg = clientCfg["skipFelixReg"];
+    FelixTxCore::setSkipRegFlag(skip_felix_reg);
+  }
+
   FelixClientThread::ConfigV2 fcConfig;
   // Properties
   // See https://gitlab.cern.ch/atlas-tdaq-felix/felix-interface/-/blob/master/felix/felix_client_properties.h
@@ -172,6 +177,11 @@ void FelixController::loadConfig(const json &j) {
 const json FelixController::getStatus() {
   fclog->debug("getStatus");
   json j_status;
+
+  if(skip_felix_reg) {
+    j_status["status"] = "Felix register access skipped due to config";
+    return j_status;
+  }
 
   uint64_t reg_value;
 
