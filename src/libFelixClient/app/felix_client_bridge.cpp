@@ -54,6 +54,32 @@ struct AppSettings {
 };
 
 template<typename Publish>
+void publish_and_report_failure(Publish &publisher, uint64_t fid_tag, std::span<uint8_t> data)
+{
+  bool retry_flag = true;
+  auto status = publisher.publish(fid_tag, data, retry_flag);
+  switch(status) {
+  case netio3::NetioPublisherStatus::OK:
+    // Expected result
+    logger->trace("send_packet: publish response is OK (tag {:016x})", fid_tag);
+    break;
+  case netio3::NetioPublisherStatus::NO_RESOURCES:
+  case netio3::NetioPublisherStatus::FAILED:
+  case netio3::NetioPublisherStatus::PARTIALLY_FAILED:
+    logger->warn("send_packet: publish response is not OK {} (tag {:016x})", (int)status, fid_tag);
+    break;
+  case netio3::NetioPublisherStatus::NO_SUBSCRIPTIONS:
+    logger->warn("send_packet: publish response is 'no subscription' (to tag {:016x})", fid_tag);
+    break;
+  default:
+    logger->warn("send_packet: publish response is unknown {} (tag {:016x})", (int)status, fid_tag);
+    break;
+  }
+
+  logger->info("send_packet: publish {} bytes done to tag {:016x})", data.size(), fid_tag);
+}
+
+template<typename Publish>
 void send_packet(std::span<uint32_t> data, uint32_t addr, Publish &publisher) {
   logger->debug("Send RxCore->Publish: (buf adr words) {:08x} {} {}", data[0], addr, data.size());
 
@@ -80,25 +106,8 @@ void send_packet(std::span<uint32_t> data, uint32_t addr, Publish &publisher) {
     to_be_published.push_back(std::make_pair(fid_tag, outdata));
   }
 
-  bool retry_flag = true;
-  auto status = publisher.publish(fid_tag, outdata, retry_flag);
-  switch(status) {
-  case netio3::NetioPublisherStatus::OK:
-    // Expected result
-    logger->trace("send_packet: publish response is OK (tag {:016x})", fid_tag);
-    break;
-  case netio3::NetioPublisherStatus::NO_RESOURCES:
-  case netio3::NetioPublisherStatus::FAILED:
-  case netio3::NetioPublisherStatus::PARTIALLY_FAILED:
-    logger->warn("send_packet: publish response is not OK {} (tag {:016x})", status, fid_tag);
-    break;
-  case netio3::NetioPublisherStatus::NO_SUBSCRIPTIONS:
-    logger->warn("send_packet: publish response is 'no subscription' (to tag {:016x})", fid_tag);
-    break;
-  default:
-    logger->warn("send_packet: publish response is unknown {} (tag {:016x})", status, fid_tag);
-    break;
-  }
+  // Doesn't work in this thread?
+  // publish_and_report_failure(publisher, fid_tag, outdata);
 }
 
 template<typename Publish>
@@ -314,19 +323,13 @@ int main(int argc, char** argv)
 
   // TODO Check whether this indirection is needed
   auto publish_timer_func = [&publisher]() {
-    bool retry_flag = false;
-
     std::lock_guard<std::mutex> lock(published_mutex);
     while(!to_be_published.empty()) {
       auto [pub_tag, pub_data] = to_be_published[0];
       logger->trace("send_packet: publish packet in thread (tag {:016x})", pub_tag);
       to_be_published.pop_front();
 
-      auto status = publisher.publish(pub_tag, pub_data, retry_flag);
-
-      if(status != netio3::NetioPublisherStatus::OK) {
-        logger->warn("send_packet: publish packet from thread failed {}", status);
-      }
+      publish_and_report_failure(publisher, pub_tag, pub_data);
     }
   };
 
