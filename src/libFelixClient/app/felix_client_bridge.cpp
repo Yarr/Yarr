@@ -72,8 +72,22 @@ void send_packet(std::span<uint32_t> data, uint32_t addr, Publish &publisher) {
 
   bool retry_flag = true;
   auto status = publisher.publish(fid_tag, outdata, retry_flag);
-  if(status != netio3::NetioPublisherStatus::OK) {
-    logger->warn("send_packet: publish response is not OK {}", status);
+  switch(status) {
+  case netio3::NetioPublisherStatus::OK:
+    // Expected result
+    logger->trace("send_packet: publish response is OK (tag {:016x})", fid_tag);
+    break;
+  case netio3::NetioPublisherStatus::NO_RESOURCES:
+  case netio3::NetioPublisherStatus::FAILED:
+  case netio3::NetioPublisherStatus::PARTIALLY_FAILED:
+    logger->warn("send_packet: publish response is not OK {} (tag {:016x})", status, fid_tag);
+    break;
+  case netio3::NetioPublisherStatus::NO_SUBSCRIPTIONS:
+    logger->warn("send_packet: publish response is 'no subscription' (to tag {:016x})", fid_tag);
+    break;
+  default:
+    logger->warn("send_packet: publish response is unknown {} (tag {:016x})", status, fid_tag);
+    break;
   }
 }
 
