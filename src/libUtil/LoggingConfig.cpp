@@ -1,5 +1,8 @@
 #include "LoggingConfig.h"
 
+#include "LoadJson.h"
+
+#include <filesystem>
 #include <optional>
 #include <iostream>
 
@@ -33,6 +36,18 @@ static std::string_view level_string(int lvl) {
 }
 
 namespace logging {
+
+json defaultConfig() {
+    std::string default_name = "config/logging/default.json";
+    if(std::filesystem::exists(default_name)) {
+      return JsonHelper::openJsonFile(default_name);
+    }
+    json j;
+    j["pattern"] = defaultLogPattern;
+    j["log_config"][0]["name"] = "all";
+    j["log_config"][0]["level"] = "info";
+    return j;
+}
 
 spdlog::sink_ptr default_sink;
 void setupLoggers(const json &j, const std::string &path) {

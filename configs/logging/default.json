@@ -1,0 +1,10 @@
+{
+    "pattern": "[%T:%e]%^[%=8l][%=15n][%t]: %$ %v",
+    "level": "info",
+    "log_config": [
+        {
+            "name": "all",
+            "level": "info"
+        }
+    ]
+}
