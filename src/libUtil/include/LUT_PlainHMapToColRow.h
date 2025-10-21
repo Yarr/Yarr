@@ -1,5 +1,8 @@
 #ifndef LUT_PlainHMapToColRow_H
 #define LUT_PlainHMapToColRow_H
+
+#include <cstdint>
+
 namespace RD53BDecoding{
 	static constexpr uint8_t _LUT_PlainHMap_To_ColRow[65536][16] = {
 		{},
