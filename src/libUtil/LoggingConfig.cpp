@@ -139,7 +139,17 @@ void setupLoggers(const json &j, const std::string &path) {
             }
 
             auto logger_apply = [&](std::shared_ptr<spdlog::logger> l) {
-                l->sinks().push_back(sink);
+                // Only if this sink is not already in list
+                bool already_present = false;
+                for(auto &ll: l->sinks()) {
+                  if(ll == sink) {
+                    already_present = true;
+                  }
+                }
+
+                if(!already_present) {
+                  l->sinks().push_back(sink);
+                }
                 if(opt_level) {
                     l->set_level(*opt_level);
                 }
