@@ -39,6 +39,9 @@ class StdDataLoop: public LoopActionBase, public StdDataAction {
         std::chrono::microseconds m_averageDataProcessingTime{100};
         uint32_t m_triggersLostTolerance = 0; // allowed number of lost triggers
 
+        /// If set, publish histograms on data flow
+        bool m_doReportHistograms{false};
+
         /// Record of stats per loop
         std::unique_ptr<StdDataLoopDetail::Stats> m_stats;
 };
