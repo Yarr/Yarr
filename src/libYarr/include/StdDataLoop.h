@@ -32,6 +32,7 @@ class StdDataLoop: public LoopActionBase, public StdDataAction {
         void end() override;
         void execPart1() override;
         void execPart2() override;
+        void closeOut() override;
 
         uint32_t ntriggersToReceive = 0;
         std::chrono::microseconds m_maxIterationTime{5000000}; // in microseconds
