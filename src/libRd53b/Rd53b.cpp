@@ -358,16 +358,16 @@ yarrStatus Rd53b::writeNamedRegister(std::string name, const uint16_t value) {
     if(regMap.find(name) != regMap.end()) {
         logger->debug("Write named register {} -> {}", name, value);
         this->writeRegister(regMap[name], value);
-	while(!core->isCmdEmpty()){;}
-	std::this_thread::sleep_for(std::chrono::microseconds(100));
+        while(!core->isCmdEmpty()){;}
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
         return yarrSuccess;
     }
     
     if(virtRegMap.find(name) != virtRegMap.end()) {
         logger->debug("Write named virtual register {} -> {}", name, value);
         this->writeRegister(virtRegMap[name], value);
-	while(!core->isCmdEmpty()){;}
-	std::this_thread::sleep_for(std::chrono::microseconds(100));
+        while(!core->isCmdEmpty()){;}
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
         return yarrSuccess;
     } 
 
@@ -449,7 +449,7 @@ yarrStatus Rd53b::checkCom() {
     this->sendRdReg(m_chipId, regAddr);
     while(!core->isCmdEmpty()){;} // Required by the rdRegister() above 
                                   // (when relying on isCmdEmpty() to actually send commands).
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     // TODO not happy about this, rx knowledge should not be here
     std::vector<RawDataPtr> dataVec = m_rxcore->readData();
@@ -579,7 +579,7 @@ itkpix_efuse_codec::EfuseData Rd53b::readEfuses() {
     //
     this->writeRegister(&Rd53b::EfuseConfig, 0x0f0f);
     while(!core->isCmdEmpty()) {}
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));     
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));     
     
     //
     // send E-fuse circuit the reset signal to halt any other state (reset E-fuse block FSM)
@@ -619,7 +619,7 @@ uint32_t Rd53b::readEfusesRaw() {
     //
     this->writeRegister(&Rd53b::EfuseConfig, 0x0f0f);
     while(!core->isCmdEmpty()) {}
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     //
     // send E-fuse circuit the reset signal to halt any other state (reset E-fuse block FSM)
