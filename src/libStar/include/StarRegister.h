@@ -1,6 +1,7 @@
 #ifndef STAR_REGISTER_INCLUDE
 #define STAR_REGISTER_INCLUDE
 
+#include <cstdint>
 #include <stdexcept>
 #include <map>
 #include <memory>
