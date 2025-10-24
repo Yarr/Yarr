@@ -62,10 +62,8 @@ auto container_printer =  [](auto const & l) {
 
 int main(int argc, char **argv) {
     // Setup logger with some defaults
-    auto defaultLogPattern = logging::defaultLogPattern;
-    spdlog::set_pattern(defaultLogPattern);
     json j; // empty
-    j["pattern"] = defaultLogPattern;
+    j["pattern"] = logging::defaultLogPattern;
     j["log_config"][0]["name"] = "all";
     j["log_config"][0]["level"] = "info";
     // switch this logger off due to always using default global config

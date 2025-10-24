@@ -33,7 +33,6 @@ void print_help() {
 
 int main(int argc, char **argv) {
     // Setup logger with some defaults
-    spdlog::set_pattern(loggin::defaultLogPattern);
     logging::setupLoggers(logging::defaultConfig());
     int c;
     

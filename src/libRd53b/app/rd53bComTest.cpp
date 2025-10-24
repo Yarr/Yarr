@@ -57,7 +57,6 @@ namespace rd53bTest {
 
 int main (int argc, char *argv[]) {
     // Setup logger with some defaults
-    spdlog::set_pattern(logging::defaultLogPattern);
     logging::setupLoggers(logging::defaultConfig());
  
     logger->info("\033[1;31m###################\033[0m");

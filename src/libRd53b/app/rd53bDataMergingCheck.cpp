@@ -61,7 +61,6 @@ std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn
 
 int main(int argc, char **argv) {
     // Setup logger with some defaults
-    spdlog::set_pattern(logging::defaultLogPattern);
     logging::setupLoggers(logging::defaultConfig());
     
     // Init spec

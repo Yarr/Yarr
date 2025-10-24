@@ -80,6 +80,9 @@ void setupLoggers(const json &j, const std::string &path) {
         default_pattern = j["pattern"];
     }
 
+    // This should be overriden by what's done below, but here just in case
+    spdlog::set_pattern(default_pattern);
+
     if(j.contains("sinks")) {
       for(auto &jl: j["sinks"]) {
         if(!jl.contains("name")) {

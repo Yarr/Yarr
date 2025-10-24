@@ -223,10 +223,8 @@ std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn
 
 int main (int argc, char *argv[]) {
     // Setup logger with some defaults
-    std::string defaultLogPattern = logging::defaultLogPattern);
-    spdlog::set_pattern(defaultLogPattern);
     json j; // empty
-    j["pattern"] = defaultLogPattern;
+    j["pattern"] = logging::defaultLogPattern;
     j["log_config"][0]["name"] = "all";
     j["log_config"][0]["level"] = "info";
     j["log_config"][1]["name"] = "all";
@@ -237,7 +235,7 @@ int main (int argc, char *argv[]) {
     j["sinks"][0]["name"]="file";
     j["sinks"][0]["level"]="info";
     j["sinks"][0]["file_name"]="console_column.log";
-    j["sinks"][0]["pattern"]=defaultLogPattern;
+    j["sinks"][0]["pattern"]=logging::defaultLogPattern;
     logging::setupLoggers(j);
 
     logger->info("Parsing command line parameters ...");

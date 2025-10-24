@@ -74,7 +74,6 @@ std::unique_ptr<FrontEnd> init_fe1(std::unique_ptr<HwController>& hw, json &jcon
 
 std::unique_ptr<FrontEnd> init_fe2(std::unique_ptr<HwController>& hw, json &jconn, int fe_num) {
     // Setup logger with some defaults
-    spdlog::set_pattern(logging::defaultLogPattern);
     logging::setupLoggers(logging::defaultConfig());
 
     // Init spec

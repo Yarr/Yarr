@@ -10,7 +10,6 @@
 
 int main(int argc, char*argv[]) {
 	// Setup logger with some defaults
-	spdlog::set_pattern(logging::defaultLogPattern);
 	logging::setupLoggers(logging::defaultConfig());
 
 	if (argc < 2 || argc > 2) {
