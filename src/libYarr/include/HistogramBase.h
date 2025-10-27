@@ -97,5 +97,24 @@ protected:
     std::string xAxisTitle {"x"};
     std::string yAxisTitle {"y"};
     std::string zAxisTitle {"z"};
+
+    /// @brief Create a filename for this histogram
+    /// @param prefix Prefix to add to filename
+    /// @param dir Output directory to put file in
+    /// @param jsonType If true, use .json extension, otherwise .dat
+    /// @return Full path to file
+    std::string createFilename(const std::string &prefix, const std::string &dir, bool jsonType) const {
+        std::string filename = dir + prefix + "_" + name;
+        if (!lStat.toString().empty()) {
+            filename += "_" + lStat.toString();
+        }
+
+        if (jsonType) {
+            filename += ".json";
+        } else {
+            filename += ".dat";
+        }
+        return filename;
+    }
 };
 #endif

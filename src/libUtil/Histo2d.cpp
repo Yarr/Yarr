@@ -280,18 +280,11 @@ void Histo2d::toJson(json &j) const{
 }
 
 void Histo2d::toFile(const std::string &prefix, const std::string &dir, bool jsonType) const{
-    std::string filename = dir + prefix + "_" + HistogramBase::name;
-    json j;
-    for (unsigned i=0; i<lStat.size(); i++)
-        filename += "_" + std::to_string(lStat.get(i));
-
-    if (jsonType) {
-        filename += ".json";
-    } else {
-        filename += ".dat";
-    }
+    std::string filename = createFilename(prefix, dir, jsonType);
     std::fstream file(filename, std::fstream::out | std::fstream::trunc);
+
     // jsonType
+    json j;
     if (jsonType) {
        toJson(j);
        file << std::setw(4) << j;
