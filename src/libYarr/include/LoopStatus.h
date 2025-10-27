@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bitset>
 #include <map>
 #include <stdexcept>
 #include <vector>
@@ -47,6 +48,10 @@ class LoopStatus {
         size_t statCount{};
         std::array<unsigned, MAX_LOOP_SIZE> statVec;
         std::array<LoopStyle, MAX_LOOP_SIZE> styleVec;
+        std::bitset<MAX_LOOP_SIZE> enabledVec; ///< true if the loop is enabled, only used in uniqueID and toString
+                                               ///< this allows us to ignore certain loops in the ID and string representation
+                                               ///< while still keeping the full loop information in the object.
+                                               ///< initialized to all true in constructor
 
     public:
         /** Create LoopStatus */
@@ -59,6 +64,7 @@ class LoopStatus {
             }
             std::copy(vec.begin(), vec.end(), statVec.begin());
             std::copy(vec_s.begin(), vec_s.end(), styleVec.begin());
+            enabledVec.set(); // all enabled by default
         }
 
         LoopStatus(const std::vector<unsigned> &vec, const std::vector<LoopStyle> &vec_s) : statCount(vec.size())
@@ -68,56 +74,70 @@ class LoopStatus {
             }
             std::copy(vec.begin(), vec.end(), statVec.begin());
             std::copy(vec_s.begin(), vec_s.end(), styleVec.begin());
+            enabledVec.set(); // all enabled by default
         }
 
         size_t size() const { return statCount; }
         unsigned get(unsigned i) const { return statVec[i]; }
         LoopStyle getStyle(unsigned i) const { return styleVec[i]; }
 
+        /// @brief Enable only the specified loops for UID and toString representation (disable all others)
+        /// @param loopsToEnable Vector of loop indices to enable
+        void setEnabledLoops(const std::vector<size_t> &loopsToEnable) {
+            enabledVec.reset();
+            for (size_t i = 0; i < loopsToEnable.size(); ++i) {
+                if(loopsToEnable[i] < MAX_LOOP_SIZE) {
+                    enabledVec[loopsToEnable[i]] = true;
+                }
+            }
+        }
+
+        /// @brief Disable the specified loops for UID and toString representation (enable all others)
+        /// @param loopsToDisable Vector of loop indices to disable
+        void setDisabledLoops(const std::vector<size_t> &loopsToDisable) {
+            enabledVec.set();
+            for (size_t i = 0; i < loopsToDisable.size(); ++i) {
+                if(loopsToDisable[i] < MAX_LOOP_SIZE) {
+                    enabledVec[loopsToDisable[i]] = false;
+                }
+            }
+        }
+
         using UID = std::array<unsigned, MAX_LOOP_SIZE>;
 
         /// @brief Create a unique ID from the current loop status
         /// e.g. to be used as the key for a std::map in an analysis.
-        /// Look at maskedUniqueID() if you need to ignore specific loops (e.g. POI loops)
+        /// Output is dependent on which loops are enabled via setEnabledLoops or setDisabledLoops.
         /// @return Unique loop status ID
         UID uniqueID() const {
-            // the original statVec array may have uninitialized values which we do not want,
-            // so we first initialize this uid to zero and don't copy the uninitialized bits
-            UID uid{};
-            std::copy(statVec.begin(), statVec.begin() + statCount, uid.begin());
-            return uid;
-        }
-
-        /// @brief Create a unique ID, ignoring the specified loop index
-        /// Useful for masking out loops that an analysis keeps track of on its own, like POI loops
-        /// @param loopToMask Loop index to mask from the UID
-        /// @return Masked unique loop status ID
-        UID maskedUniqueID(size_t loopToMask) const {
-            UID uid = uniqueID();
-            uid[loopToMask] = 0;
-            return uid;
-        }
-
-        /// @brief Create a unique ID, ignoring the specified loop indices
-        /// Useful for masking out loops that an analysis keeps track of on its own, like POI loops
-        /// @param loopsToMask Loop indices to mask from the UID
-        /// @return Masked unique loop status ID
-        UID maskedUniqueID(const std::vector<size_t> &loopsToMask) const {
-            UID uid = uniqueID();
-            for (auto loop : loopsToMask) {
-                uid[loop] = 0;
+            UID uid;
+            for (size_t i = 0; i < statCount; i++) {
+                if (enabledVec[i]) {
+                    uid[i] = statVec[i];
+                } else {
+                    uid[i] = 0;
+                }
             }
+
+            // explicitly zero-initialize the rest
+            for (size_t i = statCount; i < MAX_LOOP_SIZE; i++) {
+                uid[i] = 0;
+            }
+
             return uid;
         }
 
         /// @brief Create a dash-separated loop status string
         /// e.g. to be added to the name of a histogram
+        /// Output is dependent on which loops are enabled via setEnabledLoops or setDisabledLoops.
         /// @return Loop status string
         std::string toString() const {
             std::string result;
             for (size_t i = 0; i < statCount; ++i) {
-                result += std::to_string(statVec[i]);
-                result += "-";
+                if (enabledVec[i]) {
+                    result += std::to_string(statVec[i]);
+                    result += "-";
+                }
             }
             if (!result.empty()) {
                 result.pop_back();  // Remove trailing dash

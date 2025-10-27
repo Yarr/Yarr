@@ -45,7 +45,8 @@ TEST_CASE("LoopStatus Masked UID", "[Yarr][LoopStatus]") {
     size_t loopToMask = 1;
 
     LoopStatus stat(loops, styles);
-    LoopStatus::UID id = stat.maskedUniqueID(loopToMask);
+    stat.setDisabledLoops({loopToMask});
+    LoopStatus::UID id = stat.uniqueID();
 
     LoopStatus::UID expected{};
     for (size_t i = 0; i < loops.size(); i++) {
@@ -63,7 +64,8 @@ TEST_CASE("LoopStatus Masked UID", "[Yarr][LoopStatus]") {
     std::vector<size_t> loopsToMask = {0, 2};
 
     LoopStatus stat(loops, styles);
-    LoopStatus::UID id = stat.maskedUniqueID(loopsToMask);
+    stat.setDisabledLoops(loopsToMask);
+    LoopStatus::UID id = stat.uniqueID();
 
     LoopStatus::UID expected{};
     for (size_t i = 0; i < loops.size(); i++) {
@@ -76,11 +78,42 @@ TEST_CASE("LoopStatus Masked UID", "[Yarr][LoopStatus]") {
     }
     REQUIRE(id == expected);
   }
+
+  SECTION("Multiple Loop Enabled") {
+    std::vector<unsigned> loops = {293, 90530, 38921, 1234, 5678};
+    std::vector<LoopStyle> styles(loops.size(), LOOP_STYLE_PARAMETER);
+    std::vector<size_t> loopsToEnable = {1, 3};
+
+    LoopStatus stat(loops, styles);
+    stat.setEnabledLoops(loopsToEnable);
+    LoopStatus::UID id = stat.uniqueID();
+
+    LoopStatus::UID expected{};
+    for (size_t i = 0; i < loops.size(); i++) {
+      if (std::find(loopsToEnable.begin(), loopsToEnable.end(), i) ==
+          loopsToEnable.end()) {
+        continue;
+      }
+      expected[i] = loops[i];
+    }
+    REQUIRE(id == expected);
+  }
 }
 
 TEST_CASE("LoopStatus String", "[Yarr][LoopStatus]") {
-  std::vector<unsigned> loops = {1, 2, 3};
-  std::vector<LoopStyle> styles = {LOOP_STYLE_PARAMETER, LOOP_STYLE_DATA, LOOP_STYLE_TRIGGER};
-  LoopStatus stat(loops, styles);
-  REQUIRE(stat.toString() == "1-2-3");
+  SECTION("Basic String") {
+    std::vector<unsigned> loops = {1, 2, 3};
+    std::vector<LoopStyle> styles = {LOOP_STYLE_PARAMETER, LOOP_STYLE_DATA,
+                                    LOOP_STYLE_TRIGGER};
+    LoopStatus stat(loops, styles);
+    REQUIRE(stat.toString() == "1-2-3");
+  }
+
+  SECTION("Masked String") {
+    std::vector<unsigned> loops = {1, 2, 3, 4, 5};
+    std::vector<LoopStyle> styles(loops.size(), LOOP_STYLE_PARAMETER);
+    LoopStatus stat(loops, styles);
+    stat.setDisabledLoops({1, 3});
+    REQUIRE(stat.toString() == "1-3-5");
+  }
 }
