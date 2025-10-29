@@ -477,8 +477,7 @@ int main(int argc, char** argv)
   if (logCfgPath.empty()) {
     // default setting
     json j;
-    std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
-    j["pattern"] = defaultLogPattern;
+    j["pattern"] = logging::defaultLogPattern;
     j["log_config"][0]["name"] = "netio_bridge";
     if (app_settings.verbosity > 2) {
       j["log_config"][0]["level"] = "trace";

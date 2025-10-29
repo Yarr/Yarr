@@ -9,6 +9,7 @@ add_library(Util SHARED
         lmcurve.cpp
         lmmin.cpp
         scurvegauss.cpp
+        LoadJson.cpp
         LoggingConfig.cpp
         SerialCom.cpp
         catch_amalgamated.cpp

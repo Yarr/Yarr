@@ -71,12 +71,7 @@ std::shared_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, std::string
 
 int main(int argc, char* argv[]) {
     // Setup logger
-    json loggerConfig;
-    loggerConfig["pattern"] = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";
-    loggerConfig["log_config"][0]["name"] = "all";
-    loggerConfig["log_config"][0]["level"] = "info";
-    loggerConfig["outputDir"] = "";
-    logging::setupLoggers(loggerConfig);
+    logging::setupLoggers(logging::defaultConfig());
 
     std::string hw_controller_filename = "";
     std::string connectivity_filename = "";

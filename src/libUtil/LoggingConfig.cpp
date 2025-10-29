@@ -1,5 +1,8 @@
 #include "LoggingConfig.h"
 
+#include "LoadJson.h"
+
+#include <filesystem>
 #include <optional>
 #include <iostream>
 
@@ -34,6 +37,18 @@ static std::string_view level_string(int lvl) {
 
 namespace logging {
 
+json defaultConfig() {
+    std::string default_name = "config/logging/default.json";
+    if(std::filesystem::exists(default_name)) {
+      return JsonHelper::openJsonFile(default_name);
+    }
+    json j;
+    j["pattern"] = defaultLogPattern;
+    j["log_config"][0]["name"] = "all";
+    j["log_config"][0]["level"] = "info";
+    return j;
+}
+
 spdlog::sink_ptr default_sink;
 void setupLoggers(const json &j, const std::string &path) {
     // initialized logger only once
@@ -64,6 +79,9 @@ void setupLoggers(const json &j, const std::string &path) {
     if(j.contains("pattern")) {
         default_pattern = j["pattern"];
     }
+
+    // This should be overriden by what's done below, but here just in case
+    spdlog::set_pattern(default_pattern);
 
     if(j.contains("sinks")) {
       for(auto &jl: j["sinks"]) {
@@ -124,7 +142,17 @@ void setupLoggers(const json &j, const std::string &path) {
             }
 
             auto logger_apply = [&](std::shared_ptr<spdlog::logger> l) {
-                l->sinks().push_back(sink);
+                // Only if this sink is not already in list
+                bool already_present = false;
+                for(auto &ll: l->sinks()) {
+                  if(ll == sink) {
+                    already_present = true;
+                  }
+                }
+
+                if(!already_present) {
+                  l->sinks().push_back(sink);
+                }
                 if(opt_level) {
                     l->set_level(*opt_level);
                 }

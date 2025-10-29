@@ -79,12 +79,7 @@ Config parseOptions(int argc, char* argv[]) {
 std::atomic<bool> stop_signalled{false};
 
 int main(int argc, char* argv[]) {
-    json loggerConfig;
-    loggerConfig["pattern"] = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";
-    loggerConfig["log_config"][0]["name"] = "all";
-    loggerConfig["log_config"][0]["level"] = "info";
-    loggerConfig["outputDir"] = "";
-    logging::setupLoggers(loggerConfig);
+    logging::setupLoggers(logging::defaultConfig());
 
     Config c = parseOptions(argc, argv);
 

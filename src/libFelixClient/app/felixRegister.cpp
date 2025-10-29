@@ -2,7 +2,6 @@
 #include "logging.h"
 #include "LoggingConfig.h"
 #include "ScanHelper.h"
-#include "ScanOpts.h"
 
 #include <iostream>
 #include <unistd.h>
@@ -59,21 +58,17 @@ int main(int argc, char **argv) {
   }
 
   // Configure logger
-  if (logCfg.empty()) { // default
-    ScanOpts options;
+  try {
     json jlog;
-    jlog["pattern"] = options.defaultLogPattern;
-    jlog["log_config"][0]["name"] = "all";
-    jlog["log_config"][0]["level"] = "info";
-    logging::setupLoggers(jlog);
-  } else {
-    try {
-      auto jlog = ScanHelper::openJsonFile(logCfg);
-      logging::setupLoggers(jlog);
-    } catch (std::runtime_error &e) {
-      spdlog::error("Failed to load logger config: {}", e.what());
-      return -1;
+    if (logCfg.empty()) { // default
+      jlog = logging::defaultConfig();
+    } else {
+      jlog = ScanHelper::openJsonFile(logCfg);
     }
+    logging::setupLoggers(jlog);
+  } catch (std::runtime_error &e) {
+    spdlog::error("Failed to load logger config: {}", e.what());
+    return -1;
   }
 
   // Configure controller

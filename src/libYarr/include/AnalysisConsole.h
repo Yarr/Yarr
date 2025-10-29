@@ -5,7 +5,6 @@
 #include <vector>
 
 struct AnalysisOpts {
-    std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";
     std::string logCfgPath;
     std::string scanFile;
     std::string chipConfigPath;

@@ -411,7 +411,7 @@ TEST_CASE("StarStrobeDelayFeedback", "[Analysis][Star][SD]") {
 
         REQUIRE (stat.size() == 1);
 
-        logger->trace("Current loop status: {} {} {}",
+        logger->trace("Current loop status: {}",
                       stat.get(0));
 
         auto feedbackData = std::make_unique<Histo2d>("feedback", chip_count, 0, chip_count, 1, 0, 1);

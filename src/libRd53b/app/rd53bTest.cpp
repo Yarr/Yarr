@@ -44,13 +44,7 @@ namespace rd53bTest {
 
 int main (int argc, char *argv[]) {
     // Setup logger with some defaults
-    std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
-    spdlog::set_pattern(defaultLogPattern);
-    json j; // empty
-    j["pattern"] = defaultLogPattern;
-    j["log_config"][0]["name"] = "all";
-    j["log_config"][0]["level"] = "info";
-    logging::setupLoggers(j);
+    logging::setupLoggers(logging::defaultConfig());
  
     logger->info("\033[1;31m###################\033[0m");
     logger->info("\033[1;31m# RD53B Test Tool #\033[0m");

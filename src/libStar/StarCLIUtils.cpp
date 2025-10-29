@@ -23,8 +23,7 @@ namespace StarCLIUtils {
 
 void setLoggingDefaults(const std::string &programName) {
   json j;
-  std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
-  j["pattern"] = defaultLogPattern;
+  j["pattern"] = logging::defaultLogPattern;
   j["log_config"][0]["name"] = programName;
   j["log_config"][0]["level"] = "info";
   j["log_config"][1]["name"] = "StarCLIUtils";

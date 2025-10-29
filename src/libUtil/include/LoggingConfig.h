@@ -6,6 +6,15 @@
 
 namespace logging {
 
+constexpr const char *defaultLogPattern = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";
+
+/// Build default logging config.
+/**
+ * If configs/logging/default.json exists, this is used.
+ * Otherwise create simple config.
+ */
+json defaultConfig();
+
 /// Setup loggers according to configuration in json file
 void setupLoggers(const json &j, const std::string &path="");
 
