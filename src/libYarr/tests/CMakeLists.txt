@@ -8,6 +8,7 @@ add_executable(testYarr
         test_json_access.cpp       
         test_l1dist.cpp
         test_l13d.cpp
+        test_loop_engine.cpp
         test_occupancy.cpp
         test_raw_data.cpp
         test_raw_data_histogrammer.cpp
