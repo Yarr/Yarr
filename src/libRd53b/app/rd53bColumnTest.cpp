@@ -183,7 +183,8 @@ void writeConfig(json &jconn, int fe_num, std::vector<int> results){
   for (int ivar=0; ivar<4; ivar++){
     chip_register_json[chip_type]["GlobalConfig"][varNames[ivar]]=results[ivar];
   }
-  std::ofstream outputFile(chip_register_file_path);
+  std::string chip_register_file_path_str = chip_register_file_path.get<std::string>();
+  std::ofstream outputFile(chip_register_file_path_str);
   outputFile << chip_register_json << std::endl;
   outputFile.close();
   return;
