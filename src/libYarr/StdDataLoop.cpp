@@ -55,43 +55,6 @@ void StdDataLoop::init() {
     SPDLOG_LOGGER_TRACE(sdllog, "");
 }
 
-void StdDataLoop::end() {
-    SPDLOG_LOGGER_TRACE(sdllog, "");
-
-    if(m_doReportHistograms) {
-        auto loopCount = m_stats->loop_stats.size();
-        const size_t STAT_COUNT = 4;
-
-        std::array<std::unique_ptr<Histo1d>, STAT_COUNT> histos
-          {std::make_unique<Histo1d>("StdDataLoop_DataSize",
-                                     loopCount, -0.5, loopCount - 0.5),
-           std::make_unique<Histo1d>("StdDataLoop_DataCount",
-                                     loopCount, -0.5, loopCount - 0.5),
-           std::make_unique<Histo1d>("StdDataLoop_ReadCount",
-                                     loopCount, -0.5, loopCount - 0.5),
-           std::make_unique<Histo1d>("StdDataLoop_LoopTime",
-                                     loopCount, -0.5, loopCount - 0.5),
-          };
-
-        for(size_t l=0; l<loopCount; l++) {
-            auto &loop_stat = m_stats->loop_stats[l];
-            std::array<float, STAT_COUNT> d
-              {
-                (float)loop_stat.raw_data_count,
-                (float)loop_stat.rx_block_read_count,
-                (float)loop_stat.rx_read_iterations,
-                (float)loop_stat.loop_time_us,
-              };
-            for(size_t s=0; s<STAT_COUNT; s++) {
-                histos[s]->fill(l, d[s]);
-            }
-        }
-        for(size_t s=0; s<STAT_COUNT; s++) {
-            loopHistos->pushData(std::move(histos[s]));
-        }
-    }
-}
-
 void StdDataLoop::execPart1() {
     SPDLOG_LOGGER_TRACE(sdllog, "");
     if (g_tx->getTrigEnable() == 0)
@@ -350,5 +313,45 @@ void StdDataLoop::loadConfig(const json &config) {
 
     if (config.contains("reportHistograms")) {
         m_doReportHistograms = config["reportHistograms"];
+    }
+}
+
+void StdDataLoop::end() {
+    SPDLOG_LOGGER_TRACE(sdllog, "");
+}
+
+void StdDataLoop::closeOut() {
+    if(m_doReportHistograms) {
+        SPDLOG_LOGGER_TRACE(sdllog, "");
+        auto loopCount = m_stats->loop_stats.size();
+        const size_t STAT_COUNT = 4;
+
+        std::array<std::unique_ptr<Histo1d>, STAT_COUNT> histos
+        {std::make_unique<Histo1d>("StdDataLoop_DataSize",
+                loopCount, -0.5, loopCount - 0.5),
+            std::make_unique<Histo1d>("StdDataLoop_DataCount",
+                    loopCount, -0.5, loopCount - 0.5),
+            std::make_unique<Histo1d>("StdDataLoop_ReadCount",
+                    loopCount, -0.5, loopCount - 0.5),
+            std::make_unique<Histo1d>("StdDataLoop_LoopTime",
+                    loopCount, -0.5, loopCount - 0.5),
+        };
+
+        for(size_t l=0; l<loopCount; l++) {
+            auto &loop_stat = m_stats->loop_stats[l];
+            std::array<float, STAT_COUNT> d
+            {
+                (float)loop_stat.raw_data_count,
+                    (float)loop_stat.rx_block_read_count,
+                    (float)loop_stat.rx_read_iterations,
+                    (float)loop_stat.loop_time_us,
+            };
+            for(size_t s=0; s<STAT_COUNT; s++) {
+                histos[s]->fill(l, d[s]);
+            }
+        }
+        for(size_t s=0; s<STAT_COUNT; s++) {
+            loopHistos->pushData(std::move(histos[s]));
+        }
     }
 }

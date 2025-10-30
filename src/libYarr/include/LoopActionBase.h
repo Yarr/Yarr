@@ -51,6 +51,11 @@ class LoopActionBase : public LoopActionBaseInfo {
          * @param k Reference to bookkeeper.
          */
         void setup(LoopStatusMaster *stat, Bookkeeper *k);
+        
+        /**
+         * Executed once after all loops have finished.
+         */
+        virtual void closeOut() {}
 
         /// Set the inner loop
         void setNext(std::shared_ptr<LoopActionBase>& ptr);
