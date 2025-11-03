@@ -548,6 +548,15 @@ bool Rd53bDataProcessor::getNextDataBlock() {
 
     // Upate the data pointer.
     _data = _data_t;
+
+    
+    #if USE_ITKPIX_DEBUG_BUFFER > 0
+	    _debugBuffer[_debugIdx] = _data[0];
+	    _debugIdx = (_debugIdx + 1) % ITKPIX_DEBUG_BUFFERSIZE;
+	    _debugBuffer[_debugIdx] = _data[1];
+	    _debugIdx = (_debugIdx + 1) % ITKPIX_DEBUG_BUFFERSIZE;
+    #endif
+    
     _dataPtrCpy = _dataPtrCpy_t;
     return good;
 }
@@ -666,12 +675,6 @@ bool Rd53bDataProcessor::getNextDataBlockImpl()
     _data_t = &_curInV->data[_rawDataIdx]->get(_wordIdx);
     _dataPtrCpy_t = _curInV->data[_rawDataIdx];
 
-#if USE_ITKPIX_DEBUG_BUFFER > 0
-    _debugBuffer[_debugIdx] = _data[0];
-    _debugIdx = (_debugIdx + 1) % ITKPIX_DEBUG_BUFFERSIZE;
-    _debugBuffer[_debugIdx] = _data[1];
-    _debugIdx = (_debugIdx + 1) % ITKPIX_DEBUG_BUFFERSIZE;
-#endif
 
     // Return success code
     return true;
