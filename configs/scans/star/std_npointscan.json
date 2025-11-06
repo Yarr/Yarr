@@ -52,8 +52,6 @@
           "trig_frequency": 10000,
           "trig_time": 0,
           "l0_latency": 20,
-          "verbose": true,
-          "extTrigger": false,
           "noInject": false      
         },
         "loopAction": "StarTriggerLoop"
@@ -76,7 +74,6 @@
       "HCC_STOPHPR": 1,
       "ABCs_PR_ENABLE": 1,
       "ABCs_LP_ENABLE": 1,
-      "ABCs_DETMODE": 0,
       "ABCs_CALPULSE_ENABLE": 1,
       "ABCs_CALPULSE_POLARITY": 0
     }
