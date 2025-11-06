@@ -4,7 +4,9 @@
       "0": {
         "algorithm": "StarStrobeDelayAnalysis",
         "config": {
-          "parametersOfInterest": ["ABCs_STR_DEL"],
+          "parametersOfInterest": [
+            "ABCs_STR_DEL"
+          ],
           "dumpDebugSDPlots": false
         }
       },
@@ -35,17 +37,24 @@
       },
       {
         "config": {
-          "trig_count": 1000,
-          "trig_frequency": 500,
+          "trig_count": 100,
+          "trig_frequency": 1000,
           "trig_time": 0,
-          "l0_latency": 19,
-          "verbose": false,
+          "l0_latency": 20,
+          "noInject": false,
+          "globalTricklePulse": false,
           "extTrigger": false,
-          "noInject": false
+          "useHitCount": false
         },
         "loopAction": "StarTriggerLoop"
       },
       {
+        "___config": {
+          "total_iteration_time_us": 500000,
+          "triggersLostTolerance": 0,
+          "n_consecutive_rx_reads_before_processing": 1,
+          "average_data_processing_time_us": 10
+        },
         "loopAction": "StdDataLoop"
       }
     ],
@@ -56,11 +65,13 @@
       "HCC_MASKHPR": 1,
       "HCC_STOPHPR": 1,
       "ABCs_BCAL": 114,
-      "ABCs_BVT":  61,
+      "ABCs_BVT": 61,
+      "ABCs_PR_ENABLE": 1,
       "ABCs_LP_ENABLE": 1,
       "ABCs_DETMODE": 2,
       "ABCs_CALPULSE_ENABLE": 1,
-      "ABCs_CALPULSE_POLARITY":  0,
+      "ABCs_CALPULSE_POLARITY": 0,
+      "ABCs_CURRDRIV": 4,
       "ABCs_STR_DEL_R": 3
     }
   }

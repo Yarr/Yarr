@@ -1,11 +1,15 @@
 {
   "scan": {
+    "processor": {
+      "config": {"use_template": true}
+    },
     "analysis": {
       "0": {
         "algorithm": "ScurveFitter",
         "config": {
           "reverse": true,
-          "parametersOfInterest": ["ABCs_BVT"]
+          "parametersOfInterest": ["ABCs_BVT"],
+          "dumpDebugScurvePlots": false
         }
       },
       "1": {
@@ -55,8 +59,8 @@
       },
       {
         "config": {
-          "trig_count": 50,
-          "trig_frequency": 500,
+          "trig_count": 250,
+          "trig_frequency": 10000,
           "trig_time": 0,
           "l0_latency": 20,
           "extTrigger": false,
