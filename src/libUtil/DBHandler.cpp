@@ -46,10 +46,6 @@ void DBHandler::initialize(std::string i_db_cfg_path, std::string i_command, boo
     m_interactive = i_interactive;
 
     /// db command
-    std::string cmd;
-    std::size_t pathPos;
-    if ( i_command.find('/')!=std::string::npos) pathPos = i_command.find_last_of('/');
-    else pathPos = i_command.size();
     m_upload_command   = "localdbtool-upload";
     m_retrieve_command = "localdbtool-retrieve";
     m_influx_command   = "influxdbtool-retrieve";
