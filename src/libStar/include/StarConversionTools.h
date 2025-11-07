@@ -189,7 +189,7 @@ public:
 private:
 
   /// A helper function to load calibrations from json configuration
-  bool loadCalJsonToVec(const json& jcal, std::vector<float>& vec, std::vector<std::pair<int,float>>& vec_pair, unsigned length);
+  bool loadCalJsonToVec(const json& jcal, std::vector<float>& vec, std::vector<std::pair<unsigned int,float>>& vec_pair, unsigned length);
 
   /// Number of BVT values for the threshold setting.
   /// This is determined by the number of bits of BVT in AbcCfg.
@@ -207,14 +207,14 @@ private:
   std::vector<float> m_thrCal;
 
   /// A vector of {BVT, voltage} pair if the calibration is only provided for a few points
-  std::vector<std::pair<int, float>> m_thrCalPoints;
+  std::vector<std::pair<unsigned int, float>> m_thrCalPoints;
 
   /// Charge injection calibration for converting BCAL to V.
   /// The index of the vector is BCAL DAC counts, the entry is the corresponding voltage in V for charge injection.
   std::vector<float> m_injCal;
 
   /// A vector of {BCAL, voltage} pair if the calibration is only provided for a few points
-  std::vector<std::pair<int, float>> m_injCalPoints;
+  std::vector<std::pair<unsigned int, float>> m_injCalPoints;
 
   // Capacitance fF of the charge injection capacitor
   float injCapfF {60};

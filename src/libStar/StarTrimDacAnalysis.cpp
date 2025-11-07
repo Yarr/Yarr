@@ -179,7 +179,7 @@ std::map<int, double> StarTrimDacAnalysis::findTargetThresholds(const std::map<u
         //Will collect the list of TrimRanges to scan
         std::vector<int> trimRanges = getTrimRanges(mapThresholdVsTrimDacVsChannelNumber);
 
-        std::map<double,int> multForAllChips;//Will collect info for all chips together in case we want an overall target
+        std::map<double,unsigned int> multForAllChips;//Will collect info for all chips together in case we want an overall target
         //Probing target thresholds using 60 steps between 0 and the max reachable target (not magic under the '60', just a historical number)
         double minThr = listThresholds[listThresholds.size()-1];
         double maxThr = listThresholds[0];
@@ -328,7 +328,7 @@ void StarTrimDacAnalysis::end() {
         std::map<unsigned, std::map<unsigned,int>> mapOfBestTrims;
         std::map<unsigned,int> bestTrimRangeForChip;
         for (unsigned int iChip=0; iChip<(nCol/Star::StripsPerABCRow); iChip++) {
-          int bestMultForChip=0;
+          unsigned int bestMultForChip=0;
           const std::vector<int> trimRanges = getTrimRanges(mapThresholdVsTrimDacVsChannelNumber);
           for (auto trimRange : trimRanges) {
             std::map<unsigned,int> mapOfTrims;

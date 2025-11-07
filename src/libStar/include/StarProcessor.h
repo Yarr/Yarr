@@ -123,14 +123,14 @@ bool StarProcessPacket(const uint8_t *b, const uint8_t *e, StarProcessor t)
         continue_parsing = false;
       } else if((word&0x7ff) == 0x3fe) {
         // No cluster (from ABC)
-        int input_channel = (word >> 11) & 0xf;
+        unsigned int input_channel = (word >> 11) & 0xf;
         t.data_no_cluster(input_channel);
         // Ignore this cluster
         iW += 2;
       } else {
         uint16_t raw_cluster = word & 0x7ff;
 
-        int input_channel = (word >> 11) & 0xf;
+        unsigned int input_channel = (word >> 11) & 0xf;
         int address = (raw_cluster >> 3) & 0xff;
         int next = raw_cluster & 0x7;
 
@@ -175,8 +175,8 @@ struct EmptyProc {
   void end_error_block() {}
 
   void data_header(bool, uint8_t, bool, uint8_t, int) {}
-  void data_no_cluster(int) {}
-  void data_raw_cluster(int, uint16_t) {}
+  void data_no_cluster(unsigned int) {}
+  void data_raw_cluster(unsigned int, uint16_t) {}
   void data_cluster(int, uint8_t, int) {}
   void data_end() {}
 
@@ -221,17 +221,17 @@ struct SeqProc<P, T...> {
     tt.data_header(pr_not_lp, bcid, parity, l0id, flag);
   }
 
-  void data_no_cluster(int ic) {
+  void data_no_cluster(unsigned int ic) {
     pp.data_no_cluster(ic);
     tt.data_no_cluster(ic);
   }
 
-  void data_raw_cluster(int ic, uint16_t cl_raw) {
+  void data_raw_cluster(unsigned int ic, uint16_t cl_raw) {
     pp.data_raw_cluster(ic, cl_raw);
     tt.data_raw_cluster(ic, cl_raw);
   }
 
-  void data_cluster(int ic, uint8_t addr, int hits) {
+  void data_cluster(unsigned int ic, uint8_t addr, unsigned int hits) {
     pp.data_cluster(ic, addr, hits);
     tt.data_cluster(ic, addr, hits);
   }
@@ -241,11 +241,11 @@ struct SeqProc<P, T...> {
     tt.data_end();
   }
 
-  void abc_read(bool hpr_not_rr, int ic, int address, int value, int status) {
+  void abc_read(bool hpr_not_rr, unsigned int ic, uint8_t address, uint32_t value, uint16_t status) {
     pp.abc_read(hpr_not_rr, ic, address, value, status);
     tt.abc_read(hpr_not_rr, ic, address, value, status);
   }
-  void hcc_read(bool hpr_not_rr, int address, int value) {
+  void hcc_read(bool hpr_not_rr, uint8_t address, uint32_t value) {
     pp.hcc_read(hpr_not_rr, address, value);
     tt.hcc_read(hpr_not_rr, address, value);
   }

@@ -52,7 +52,7 @@ void StarCfg::enableAll() {
 
 int StarCfg::hccChannelForABCchipID(unsigned int chipID) const {
   auto itr = std::find_if(m_ABCchips.begin(), m_ABCchips.end(),
-                        [this, chipID](auto &it) { return it.second.getABCchipID() == chipID; });
+      [chipID](auto &it) { return it.second.getABCchipID() == chipID; });
   return itr->first;
   //return std::distance(m_ABCchips.begin(), itr);
 }
@@ -78,7 +78,7 @@ void StarCfg::setABCRegisterByID(ABCStarRegister addr, uint32_t val, int32_t chi
 int StarCfg::inputChannelForHistoChip(unsigned histo_abc) const
 {
     auto chip_map = hcc().histoChipMap();
-    for(int i=0; i<chip_map.size(); i++) {
+    for(size_t i=0; i<chip_map.size(); i++) {
         if(chip_map[i] == histo_abc) {
             return i;
         }
@@ -133,7 +133,7 @@ const AbcCfg &StarCfg::abcForHistoChip(unsigned histo_chip) const
 void StarCfg::logMappings() const
 {
     auto chip_map = hcc().histoChipMap();
-    for(int i=0; i<chip_map.size(); i++) {
+    for(size_t i=0; i<chip_map.size(); i++) {
         logger->trace("IC map: {} {}", i, chip_map[i]);
     }
 }
