@@ -34,6 +34,12 @@ target_include_directories(Star PUBLIC
 target_link_libraries(Star PUBLIC Scan)
 target_link_libraries(Star PRIVATE Yarr_interface)
 
+target_compile_options(
+    Star
+  PRIVATE
+    $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wall>
+)
+
 LIST(APPEND apps test_star makeLCBSequence benchmark_data_processor_star printStarSubRegisters lcbL0a lcbFastCommand lcbRegisterCommand)
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)

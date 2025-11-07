@@ -11,6 +11,12 @@ target_include_directories(StarEmu PUBLIC
 )
 target_link_libraries(StarEmu Star Emu Yarr_interface Util_interface)
 
+target_compile_options(
+    StarEmu
+  PRIVATE
+    $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wall>
+)
+
 if (BUILD_TESTS)
     add_subdirectory(tests)
 endif ()
