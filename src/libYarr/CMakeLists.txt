@@ -15,6 +15,12 @@ target_link_options(Yarr PUBLIC -Wl,--no-as-needed)
 
 post_build_debug_library(Yarr)
 
+target_compile_options(
+    Yarr
+  PRIVATE
+    $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wall>
+)
+
 install(TARGETS Yarr
     EXPORT YarrTargets
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -89,6 +95,12 @@ target_include_directories(Scan PUBLIC
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 target_link_libraries(Scan Util)
+
+target_compile_options(
+    Scan
+  PRIVATE
+    $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wall>
+)
 
 post_build_debug_library(Scan)
 
