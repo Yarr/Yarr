@@ -374,15 +374,16 @@ void StarTrimDacAnalysis::loadConfig(const json &j) {
   \param mapThresholdVsTrimDacVsChannelNumber Input map of TrimDac vs Threshold result vs channel
   \param target Target threshold each channel aims at reaching by optimizing the TrimDAC value
   \param mapOfTrims Output map of TrimDac values for each channel that are best to reach the 'target' threshold
-  \param iChip If >=0 the function will return the multiplicity only for the chip #iChip, otherwise will return it for all chips overall (feature not used)
+  \param iChip If < 11 the function will return the multiplicity only for the chip #iChip
+         otherwise will return it for all chips overall (feature not used)
 */
-unsigned int StarTrimDacAnalysis::getChannelMultReachingTarget(const std::map<unsigned, std::map<TrimRangeTrimDac, double> > mapThresholdVsTrimDacVsChannelNumber, const int & trimRange, const double & target, std::map<unsigned,int> & mapOfTrims, const int & iChip) const {
+unsigned int StarTrimDacAnalysis::getChannelMultReachingTarget(const std::map<unsigned, std::map<TrimRangeTrimDac, double> > mapThresholdVsTrimDacVsChannelNumber, const unsigned int & trimRange, const double & target, std::map<unsigned,int> & mapOfTrims, const unsigned int & iChip) const {
         unsigned int mult = 0;
         //Looping over channels
         for (auto vals : mapThresholdVsTrimDacVsChannelNumber) {
                 unsigned channel = vals.first;
                 //In case we're interested only in channels from a specific chip (i.e. iChip!=-1), skipping other channels
-                if (iChip!=-1 && channel / Star::StripsPerABC != iChip)
+                if (iChip >= Star::MaxABCsPerHCC && channel / Star::StripsPerABC != iChip)
                   continue;
                 //Looping over TrimDac in decreasing order to find the closest to target
                 int bestTrimDacForChannel = -999;
