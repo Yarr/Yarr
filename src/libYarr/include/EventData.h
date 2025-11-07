@@ -68,7 +68,10 @@ class FrontEndEvent {
             nHits++;
         }
         void addHit(unsigned arg_row, unsigned arg_col, unsigned arg_timing) {
-            hits.push_back(FrontEndHit{static_cast<uint16_t>(arg_col), static_cast<uint16_t>(arg_row), static_cast<uint16_t>(arg_timing)});
+            uint16_t c = arg_col;
+            uint16_t r = arg_row;
+            uint16_t t = arg_timing;
+            hits.push_back(FrontEndHit{c, r, t});
             nHits++;
         }
 

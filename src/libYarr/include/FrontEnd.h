@@ -40,7 +40,7 @@ typedef struct FeedbackProcessingInfo
 } FeedbackProcessingInfo;
 
 class Bookkeeper;
-class FrontEndClipBoards;
+struct FrontEndClipBoards;
 class FrontEndConnectivity;
 
 /**
