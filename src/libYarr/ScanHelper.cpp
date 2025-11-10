@@ -500,7 +500,7 @@ namespace ScanHelper {
                 };
 
                 if(histoCfg.contains("n_count")) {
-                    int nHistos = histoCfg["n_count"];
+                    unsigned int nHistos = histoCfg["n_count"];
 
                     for (unsigned int j=0; j<nHistos; j++) {
                         std::string algo_name = histoCfg[std::to_string(j)]["algorithm"];
@@ -699,7 +699,7 @@ namespace ScanHelper {
         // Algorithm indices
         std::deque<int> indices(nAnas);
         std::iota(std::begin(indices), std::end(indices), 0);
-        int loopcnt = 0;
+        unsigned int loopcnt = 0;
 
         while (not indices.empty()) {
             int j = indices.front();

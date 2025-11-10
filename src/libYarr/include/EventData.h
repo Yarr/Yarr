@@ -71,7 +71,7 @@ class FrontEndEvent {
             uint16_t c = arg_col;
             uint16_t r = arg_row;
             uint16_t t = arg_timing;
-            hits.push_back(FrontEndHit{c, r, t});
+            hits.push_back(FrontEndHit{c, r, {t}});
             nHits++;
         }
 
