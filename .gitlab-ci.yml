@@ -127,7 +127,7 @@ job_build_clang:
     - mkdir -p build
     - cd build
     - CXXFLAGS=-Werror cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang
-    - make install -j$(nproc)
+    - make install -k -j$(nproc)
     - CTEST_OUTPUT_ON_FAILURE=1 make test
     - cd ..
     - bin/scanConsole -k

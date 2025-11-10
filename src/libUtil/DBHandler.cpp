@@ -19,7 +19,7 @@ namespace {
 
 DBHandler::DBHandler():
 m_db_cfg_path(""), m_output_dir(""), m_upload_command(""),
-m_db_version(1.0), m_qc(false), m_interactive(false)
+  m_qc(false), m_interactive(false)
 {
 #if DBDEBUG
     std::cout << "DBHandler: DBHandler" << std::endl;
