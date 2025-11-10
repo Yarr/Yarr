@@ -70,7 +70,7 @@ const std::vector<hccsubregdef> s_hccsubregdefs_common = {
   {HCCStarSubRegister::DATACLKENPRE             ,39	,19	,1}	,
   {HCCStarSubRegister::DATACLKENABLE            ,39	,20	,1}	,
   {HCCStarSubRegister::ICENABLE                 ,40	,0	,11}	,
-  {HCCStarSubRegister::ICTRANSSEL               ,40	,16	,3}	,
+  {HCCStarSubRegister::ICTRANSSEL               ,40	,16	,4}	,
   {HCCStarSubRegister::TRIGMODE                 ,41	,0	,1}	,
   {HCCStarSubRegister::ROSPEED                  ,41	,4	,1}	,
   {HCCStarSubRegister::OPMODE                   ,41	,8	,2}	,
