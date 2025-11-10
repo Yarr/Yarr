@@ -219,6 +219,10 @@ namespace ScanHelper {
           }
           chip["__global_config_path__"] = globalConfigPath;
 
+          if(pullFromDb) {
+              shlog->warn("Pulling from DB not implemented");
+          }
+
           // Load config
           shlog->info("Loading config file: {}", chipConfigPath);
           json cfg = configuration->getFrontEndConfig(chipConfigPath);
@@ -462,7 +466,6 @@ namespace ScanHelper {
         bhlog->info("Loading histogrammer ...");
 
         const json &histoCfg = scanCfg["scan"]["histogrammer"];
-        const json &anaCfg = scanCfg["scan"]["analysis"];
 
         for (unsigned id=0; id<bookie.getNumOfEntries(); id++) {
             auto fe = bookie.getFe(id);
@@ -497,15 +500,15 @@ namespace ScanHelper {
                 };
 
                 if(histoCfg.contains("n_count")) {
-                    int nHistos = histoCfg["n_count"];
+                    unsigned int nHistos = histoCfg["n_count"];
 
-                    for (int j=0; j<nHistos; j++) {
+                    for (unsigned int j=0; j<nHistos; j++) {
                         std::string algo_name = histoCfg[std::to_string(j)]["algorithm"];
                         add_histo(algo_name, histoCfg[std::to_string(j)]["config"]);
                     }
                 } else {
                     std::size_t nHistos = histoCfg.size();
-                    for (int j=0; j<nHistos; j++) {
+                    for (unsigned int j=0; j<nHistos; j++) {
                         std::string algo_name = histoCfg[j]["algorithm"];
                         add_histo(algo_name, histoCfg[j]["config"]);
                     }
@@ -636,23 +639,6 @@ namespace ScanHelper {
             throw(std::runtime_error("buildAnalyses failure"));
         }
 
-        bool indexed;
-
-        // Is this an array of objects, or "n_count" + indexed by string "0"
-        if (anaCfg.contains("n_count")) {
-            indexed = true;
-        } else {
-            indexed = false;
-        }
-
-        auto get_algorithm = [indexed, &anaCfg](int index) {
-            if(indexed) {
-                return anaCfg[std::to_string(index)];
-            } else {
-                return anaCfg[index];
-            }
-        };
-
         for (unsigned id=0; id<bookie.getNumOfEntries(); id++ ) {
             auto fe = bookie.getFe(id);
             if (fe->isActive()) {
@@ -693,7 +679,7 @@ namespace ScanHelper {
             }
         };
 
-        int nAnas = indexed ? (size_t)anaCfg["n_count"] : anaCfg.size();
+        unsigned int nAnas = indexed ? (size_t)anaCfg["n_count"] : anaCfg.size();
 
         balog->debug("Found {} analysis!", nAnas);
 
@@ -713,7 +699,7 @@ namespace ScanHelper {
         // Algorithm indices
         std::deque<int> indices(nAnas);
         std::iota(std::begin(indices), std::end(indices), 0);
-        int loopcnt = 0;
+        unsigned int loopcnt = 0;
 
         while (not indices.empty()) {
             int j = indices.front();

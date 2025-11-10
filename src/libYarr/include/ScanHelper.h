@@ -25,7 +25,7 @@ class AnalysisDataProcessor;
 class Bookkeeper;
 class FeDataProcessor;
 class FrontEndCfg;
-class FrontEndGeometry;
+struct FrontEndGeometry;
 class HistoDataProcessor;
 class HwController;
 class ScanBase;

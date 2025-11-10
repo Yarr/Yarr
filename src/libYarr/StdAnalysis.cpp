@@ -186,7 +186,7 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
         }
 
         // Core Column Mask:
-        int nColsInCCol = 8;
+        unsigned int nColsInCCol = 8;
         int nBadPixelsInCCol;
         if (coreColMask){
             feCfg->enableAll();
@@ -540,7 +540,7 @@ void TotAnalysis::end() {
         std::unique_ptr<Histo2d> measQRMSOut ( new Histo2d("measQRMSOut", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5) );
         for (unsigned n=0; n<nCol*nRow; n++) {
             if (feCfg->getPixelEn((n/nRow), (n%nRow)) == 0) { //if pixel isn't masked
-                int anyzero = 0;
+                // int anyzero = 0;
                 for (unsigned k=0; k<avgTotVsCharge->size(); k++) {
                     double q = feCfg->toCharge(vcalMin+k*vcalStep, useScap, useLcap);
                     double avgTot = pixelTotMap->getBin(pixelTotMap->binNum(n, q));
@@ -932,7 +932,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
         }
         prevOuter = outerIdent;
         alog->info("[{}] --> Sending feedback #{}", this->id, outerIdent);
-        fb->feedback(this->id, std::move(std::make_unique<Histo2d>(*(step[outerIdent].get()))));
+        fb->feedback(this->id, std::make_unique<Histo2d>(*(step[outerIdent].get())));
     }
 }
 
