@@ -7,7 +7,7 @@
 
 HitMapGenerator::HitMapGenerator(const uint nCol, const uint nRow, const uint nColInCCol, const uint nRowInQRow, const uint seed)
   : m_seed(seed),
-    m_nCol(nCol), m_nRow(nRow), m_nColInCCol(nColInCCol), m_nRowInQRow(nRowInQRow)
+    m_nColInCCol(nColInCCol), m_nRowInQRow(nRowInQRow)
 {
     //initialize the pdfs for assigning a hit and for
     //the ToT value of that hit
