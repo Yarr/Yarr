@@ -19,7 +19,7 @@ namespace {
 
 DBHandler::DBHandler():
 m_db_cfg_path(""), m_output_dir(""), m_upload_command(""),
-m_db_version(1.0), m_qc(false), m_interactive(false)
+  m_qc(false), m_interactive(false)
 {
 #if DBDEBUG
     std::cout << "DBHandler: DBHandler" << std::endl;
@@ -46,10 +46,6 @@ void DBHandler::initialize(std::string i_db_cfg_path, std::string i_command, boo
     m_interactive = i_interactive;
 
     /// db command
-    std::string cmd;
-    std::size_t pathPos;
-    if ( i_command.find('/')!=std::string::npos) pathPos = i_command.find_last_of('/');
-    else pathPos = i_command.size();
     m_upload_command   = "localdbtool-upload";
     m_retrieve_command = "localdbtool-retrieve";
     m_influx_command   = "influxdbtool-retrieve";
@@ -76,7 +72,6 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path) {
 #if DBDEBUG
     std::cout << "DBHandler: Set DCS config: " << i_dcs_path << std::endl;
 #endif
-    char path[1000];
     std::string log_path = this->getAbsPath(i_scanlog_path);
     std::size_t pathPos = log_path.find_last_of('/');
     log_path = log_path.substr(0, pathPos);
@@ -147,7 +142,6 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir, bool i_back, bo
 #if DBDEBUG
     std::cout << "DBHandler: Clean Up." << std::endl;
 #endif
-    char path[1000];
     std::string result_dir;
     if (i_dir=="") {
         result_dir = m_output_dir;
@@ -192,6 +186,9 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir, bool i_back, bo
 		    result += buffer.data();
 	    }
 	    auto rc = pclose(pipe);
+	    if(rc) {
+	        dlog->warn("Ignoring non-zero return code from pclose {}", rc);
+	    }
 
 	    if( std::atoi( result.c_str() ) <= 2 ) {
 		break;
@@ -449,7 +446,7 @@ std::string DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_pat
     for (unsigned i=0; i<log_lines.size(); i++) {
         log_ifs.getline(tmp, 1000);
         cnt = 0;
-        for (const auto s_tmp : split(tmp, separator)) {
+        for (const auto &s_tmp : split(tmp, separator)) {
             // check the first column
             if (i!=4&&columns==0&&s_tmp!=log_lines[i]) {
                 std::string message = "Set "+log_lines[i]+" in the "+std::to_string(i+1)+ "th line: "+i_log_path;

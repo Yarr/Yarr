@@ -40,7 +40,7 @@ class HitMapGenerator{
 
 
         //geometry and config
-        uint m_seed, m_nCol, m_nRow, m_nCCol, m_nQRow, m_nColInCCol, m_nRowInQRow;
+        uint m_seed, m_nCCol, m_nQRow, m_nColInCCol, m_nRowInQRow;
         float m_occupancy;
 
         //output

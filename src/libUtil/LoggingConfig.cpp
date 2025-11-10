@@ -51,6 +51,8 @@ json defaultConfig() {
 
 spdlog::sink_ptr default_sink;
 void setupLoggers(const json &j, const std::string &path) {
+    static bool initialized = false;
+
     // initialized logger only once
     if(initialized) return;
     if(j.contains("default_sink") && j["default_sink"] == "ringbuffer") {
