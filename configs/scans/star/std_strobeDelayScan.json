@@ -46,15 +46,6 @@
           "useHitCount": false
         },
         "loopAction": "StarTriggerLoop"
-      },
-      {
-        "___config": {
-          "total_iteration_time_us": 500000,
-          "triggersLostTolerance": 0,
-          "n_consecutive_rx_reads_before_processing": 1,
-          "average_data_processing_time_us": 10
-        },
-        "loopAction": "StdDataLoop"
       }
     ],
     "name": "strobeDelayScan",
