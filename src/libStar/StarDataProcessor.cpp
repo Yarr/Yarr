@@ -176,7 +176,7 @@ public:
         curOut.newEvent(l0id, l0id, bcid);
     }
 
-    void data_cluster(int input_channel, uint8_t address, int next)
+    void data_cluster(unsigned int input_channel, uint8_t address, int next)
     {
         curStatus.n_clusters++;
 

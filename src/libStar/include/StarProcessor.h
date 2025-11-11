@@ -177,7 +177,7 @@ struct EmptyProc {
   void data_header(bool, uint8_t, bool, uint8_t, int) {}
   void data_no_cluster(unsigned int) {}
   void data_raw_cluster(unsigned int, uint16_t) {}
-  void data_cluster(int, uint8_t, int) {}
+  void data_cluster(unsigned int, uint8_t, int) {}
   void data_end() {}
 
   void abc_read(bool, int, int, int, int) {}
@@ -328,7 +328,7 @@ struct PrintProc : public EmptyProc {
     os << "  -) Empty chip (" << ic << ")\n";
   }
 
-  void data_cluster(int ic, uint8_t addr, int next_map) {
+  void data_cluster(unsigned int ic, uint8_t addr, int next_map) {
     if(cluster_count == 0) {
       os << "Packet's abc clusters are:\n";
     } else if(cluster_count == -1) {

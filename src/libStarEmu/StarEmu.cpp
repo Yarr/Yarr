@@ -179,7 +179,7 @@ void StarEmu::executeLoop() {
         logger->debug("{}: -----------------------------------------------------------", __PRETTY_FUNCTION__);
 
         // get data
-        uint16_t d0_r3l1, d1_r3l1;
+        uint16_t d0_r3l1{}, d1_r3l1{};
         if (m_txRingBuffer2) {
             uint32_t d_r3l1 = m_txRingBuffer2->read32();
             d0_r3l1 = (d_r3l1 >> 16) & 0xffff;

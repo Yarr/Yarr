@@ -59,7 +59,7 @@ class RingBuffer  {
             if(isEmpty()) return 0;
             std::unique_lock<std::mutex> lk(mtx);
             uint32_t current_size = size.load();
-            for(int i=0;i<current_size;++i) {
+            for(unsigned i=0;i<current_size;++i) {
                 buf.push_back(buffer.front());
                 buffer.pop();
             }
@@ -68,10 +68,10 @@ class RingBuffer  {
             return current_size;
         }
 
-		inline uint32_t readBlock32(uint32_t *buf, uint32_t length){
+	inline uint32_t readBlock32(uint32_t *buf, uint32_t length){
             std::unique_lock<std::mutex> lk(mtx);
             cv.wait(lk, [&] { return size.load()>=length; });
-            for(int i=0;i<length;++i) {
+            for(unsigned i=0;i<length;++i) {
                 buf[i]=buffer.front();
                 buffer.pop();
             }

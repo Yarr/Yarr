@@ -207,7 +207,7 @@ void StarConversionTools::writeConfig(json& j) const {
 
 std::pair<float, float> StarConversionTools::convertBVTtomVwithError(float thrDAC, float err_thrDAC) const {
 
-  auto thrBin = static_cast<int>(thrDAC);
+  auto thrBin = static_cast<unsigned int>(thrDAC);
   float thrConverted = -1., err_thrConverted = -1.;
   if((thrBin >= 0) && (thrBin < 256)){
     if(convertBVTtomV(thrBin) > -1.){

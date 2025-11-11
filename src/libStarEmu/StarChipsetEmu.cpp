@@ -84,7 +84,7 @@ public:
     auto enables = getCalEnables(abc);
 
     // Loop over each strip
-    for (int istrip = 0; istrip < NStrips; ++istrip) {
+    for (unsigned istrip = 0; istrip < NStrips; ++istrip) {
       // TrimDAC
       uint8_t TrimDAC = abc.getTrimDACRaw(istrip);
 
@@ -140,7 +140,7 @@ public:
     }
 
     // Loop over each strip
-    for (int istrip = 0; istrip < NStrips; ++istrip) {
+    for (unsigned istrip = 0; istrip < NStrips; ++istrip) {
       bool stripHit = dis(gen) < occupancy;
       hits.set(istrip, stripHit);
     }
@@ -190,7 +190,7 @@ public:
       auto lo_val = (lo_reg_value >> lo_offset) & 0xf;
       auto hi_val = (hi_reg_value >> hi_offset) & 1;
 
-      int trim_val = (hi_val<<4) | lo_val;
+      unsigned int trim_val = (hi_val<<4) | lo_val;
 
       float occupancy = 0.0f;
 
@@ -209,11 +209,11 @@ StarChipsetEmu::StarChipsetEmu(ClipBoard<RawData>* rx,
                                std::unique_ptr<StarCfg> regCfg,
                                unsigned hpr_period, int abc_version, int hcc_version)
   : m_rxbuffer ( rx )
+  , m_ndata_l0buf(0)
   , HPRPERIOD( hpr_period )
   , m_abc_version( abc_version )
   , m_hcc_version( hcc_version )
   , m_starCfg (std::move(regCfg))
-  , m_ndata_l0buf(0)
 {
   // set the Addressing register
   // HCC docs:
@@ -1016,7 +1016,7 @@ void StarChipsetEmu::doPRLP(uint8_t mask, uint8_t l0tag) {
       // access event buffer via l0tag
       auto evtdata = m_evtbuffers_lite[abcId][l0tag];
       // bottom 8 bits are BCID@L0A
-      uint8_t bcl0 = evtdata.to_ulong() & 0xff;
+      // uint8_t bcl0 = evtdata.to_ulong() & 0xff;
       // top 9 bits are L0 buffer address
       uint16_t l0addr = (evtdata>>8).to_ulong();
 
@@ -1325,7 +1325,7 @@ std::pair<uint8_t, StripData> StarChipsetEmu::generateFEData_TestPulse(const Abc
 
         // Use testpatt1 bit if a channel is unmasked
         // otherwise use testpatt2 bit
-        hits = ~masks & patt1_ibit | masks & patt2_ibit;
+        hits = (~masks & patt1_ibit) | (masks & patt2_ibit);
 
         bcid += ibit;// assert(bcid == (l0addr&0xff));
         break;

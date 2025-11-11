@@ -17,7 +17,7 @@
 #include "RawData.h"
 #include "HccCfg.h"
 
-class StarDataProcessorImpl;
+struct StarDataProcessorImpl;
 
 /**
    Process Star front-end data to generate hits.
