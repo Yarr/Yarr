@@ -13,7 +13,12 @@ for instance [NetIO](netio.md).
 
 Just want to install the latest version of the YARR software? Follow the quick install instructions here. In case of a new machine, or if you're not sure, follow the more detailed instructions below.
 
-<details> <summary> If using CentOS 7 or 8, enable GCC version 9.0 or higher</summary>:
+The main dependency is the compiler. Builds under clang are supported, but
+with no particular version restriction. For gcc, we require at least gcc
+version 9 and the build is currently tested against gcc 15 system. Anything
+in between is expected to work.
+
+<details> <summary> On rpm based systems you can install a particular gcc version...</summary>
 
 ```bash
 # Source the setup script
@@ -22,6 +27,14 @@ $ source /opt/rh/devtoolset-9/enable
 $ echo "source /opt/rh/devtoolset-9/enable" >> ~/.bash_profile
 ```
 </details>
+
+<details> <summary> From CVMFS you can install a particular gcc version...</summary>
+
+```bash
+source /cvmfs/sft.cern.ch/lcg/contrib/gcc/15/x86_64-el9/setup.sh
+```
+</details>
+
 
 Clone the YARR repository to your local machine: 
 ```bash
@@ -49,45 +62,6 @@ In case of issues, please refer to the more detailed instructions below, or cons
 - On a machine which already has the PCIe kernel driver installed, proceed to [Flashing the firmware](fw_guide.md)
 
 ## Software installation
-
-### Dependencies for Centos 7
-
-- Make sure you have GCC version 9.0 or higher installed:
-
-```bash
-$ g++ --version
-g++ (GCC) 9.3.1 20200408 (Red Hat 9.3.1-2)
-```
-
-- By default an older version of GCC is installed on CentOs7, you can install newer GCC versions via:
-
-```bash
-# 1. Install a package with repository for your system:
-
-# On CentOS, install package centos-release-scl available in CentOS repository:
-$ sudo yum install centos-release-scl
-
-# On RHEL, enable RHSCL repository for you system:
-$ sudo yum-config-manager --enable rhel-server-rhscl-9-rpms
-
-# 2. Install the collection:
-$ sudo yum install devtoolset-9
-```
-
-- In order to use this newer version instead of your default one execute:
-
-```bash
-# Source the setup script
-$ source /opt/rh/devtoolset-9/enable
-# Add it to your bash_profile to enable it by default
-$ echo "source /opt/rh/devtoolset-9/enable" >> ~/.bash_profile
-```
-
-- If not installed before, you need some standard packages:
-
-```bash
-$ sudo yum install gnuplot texlive-epstopdf cmake3 zeromq zeromq-devel 
-```
 
 ### Dependencies for Centos 8
 
@@ -188,7 +162,7 @@ one can provide an OR'ed chain of their names to the `SELECT_LIBS` CMake variabl
 - Expert note: you can choose a specific toolchain via:
 ```bash
 $ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang # requires clang installed on Linux
-$ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc # gcc 4.8 or higher
+$ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
 $ cmake3 ..  -DCMAKE_TOOLCHAIN_FILE=../cmake/macos-clang # MacOS build
 ```
 - As before, finally compile the software: 
