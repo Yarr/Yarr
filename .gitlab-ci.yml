@@ -35,7 +35,7 @@ image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_alma9_build
   image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
   parallel:
     matrix:
-      - ARCH: ['cc7', 'alma9']
+      - ARCH: ['alma9']
 .test:
   stage: test
   extends: .rules
@@ -711,8 +711,8 @@ job_test_netio:
     - job: job_build_all
       parallel:
         matrix:
-          - ARCH: ['cc7']
-  image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_cc7_build
+          - ARCH: ['alma9']
+  image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_alma9_build
   script:
     # Launch netio_bridge to connect an emulator to NetIO
     - bin/netio_bridge -p 12340 -q 12350 -f configs/controller/emuCfg_star.json & pid_bridge=($!)
