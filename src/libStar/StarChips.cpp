@@ -244,7 +244,10 @@ bool StarChips::writeRegisters(){
 }
 
 //Will write value for setting name for the HCC if name starts with "HCC_" otherwise will write the setting for all ABCs if name starts with "ABCs_"
-yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_value) {
+yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_value){
+  return writeNamedRegister(name, reg_value, false);
+}
+yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_value, bool bcr) {
   std::string strPrefix = name.substr (0,4);
   //if we deal with a setting for the HCC, look up in register map.
   if (strPrefix=="HCC_") {
@@ -310,6 +313,10 @@ yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_va
           setAndWriteABCSubRegister(abcRegEnum, cfg, reg_value);
         });
     }
+  }
+  if (bcr){
+    logger->debug("Sending lonely_BCR after register write");
+    sendCmd(LCB::lonely_bcr());
   }
   return yarrSuccess;
 }
