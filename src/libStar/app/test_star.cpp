@@ -203,6 +203,8 @@ void enableConnectedChannels(HwController& hwCtrl, std::vector<Hybrid>& hccStars
   hwCtrl.disableCmd();
   hwCtrl.disableRx();
 
+  logger->debug("Setting enables for {} hybrids", hccStars.size());
+
   if (hccStars.empty())
     return;
 
@@ -210,6 +212,7 @@ void enableConnectedChannels(HwController& hwCtrl, std::vector<Hybrid>& hccStars
   std::set<uint32_t> rxChns;
 
   for (auto& hcc : hccStars) {
+    logger->debug("Enabling tx {} rx {}", hcc.tx, hcc.rx);
     txChns.insert(hcc.tx);
     rxChns.insert(hcc.rx);
   }
@@ -946,6 +949,10 @@ bool testHCCRegisterAccess(HwController& hwCtrl, const std::vector<Hybrid>& hccS
 
   bool success = not hccStars.empty();
 
+  if(hccStars.empty()) {
+    logger->debug("No configured Hybrids for testHCCRegisterAccess");
+  }
+
   for (const auto& hcc : hccStars) {
     // Register ErrCfg
     success &= testRegisterReadWrite(hwCtrl, (uint32_t)HCCStarRegister::ErrCfg, 0xdeadbeef, hcc.rx, hcc.hcc_id);
@@ -962,6 +969,10 @@ bool testABCRegisterAccess(HwController& hwCtrl, StarCfg& cfg, const std::vector
   sendCommand(star.write_abc_register(addr_rr, val_rr), hwCtrl);
 
   bool success = not hccStars.empty();
+
+  if(hccStars.empty()) {
+    logger->debug("No configured Hybrids for testABCRegisterAccess");
+  }
 
   for (const auto& hcc : hccStars) {
     if (hcc.abcs.empty())
@@ -1400,10 +1411,16 @@ int main(int argc, char *argv[]) {
     hwCtrl->setTrigEnable(0);
 
     // Enable Tx channels
+    for(auto t: txChannels) {
+      logger->debug("Enable tx {}", t);
+    }
     hwCtrl->setCmdEnable(txChannels);
 
     // Enable Rx channels
     hwCtrl->disableRx();
+    for(auto r: rxChannels) {
+      logger->debug("Enable rx {}", r);
+    }
     hwCtrl->initRxChannels(rxChannels);
     hwCtrl->setRxEnable(rxChannels);
 
@@ -1484,6 +1501,18 @@ int main(int argc, char *argv[]) {
       return 1;
     }
 
+    if(hccStars.empty()) {
+      logger->debug("No hybrid configuration, start with broadcast");
+
+      for(auto t: txChannels) {
+        for(auto r: rxChannels) {
+          logger->debug("Speculative read-write pair TX {} RX {}", t, r);
+          Hybrid h{t, r, 15, {{15, 15}}};
+          hccStars.push_back(h);
+        }
+      }
+    }
+
     if(isupper(testSequence[0])) {
       if(sequenceMap.find(testSequence) != sequenceMap.end()) {
         logger->info("Running test sequence {}", testSequence);
@@ -1519,6 +1548,9 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    for(auto r: rxChannels) {
+      logger->debug("Disable Rx channels");
+    }
     hwCtrl->disableRx();
 
     if (not success) {
