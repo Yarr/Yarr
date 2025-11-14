@@ -1411,10 +1411,16 @@ int main(int argc, char *argv[]) {
     hwCtrl->setTrigEnable(0);
 
     // Enable Tx channels
+    for(auto t: txChannels) {
+      logger->debug("Enable tx {}", t);
+    }
     hwCtrl->setCmdEnable(txChannels);
 
     // Enable Rx channels
     hwCtrl->disableRx();
+    for(auto r: rxChannels) {
+      logger->debug("Enable rx {}", r);
+    }
     hwCtrl->initRxChannels(rxChannels);
     hwCtrl->setRxEnable(rxChannels);
 
@@ -1542,6 +1548,9 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    for(auto r: rxChannels) {
+      logger->debug("Disable Rx channels");
+    }
     hwCtrl->disableRx();
 
     if (not success) {
