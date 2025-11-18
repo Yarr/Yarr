@@ -118,6 +118,7 @@ void Rd53bCoreColLoop::end() {
         iChannel++;
         while(!g_tx->isCmdEmpty()) {}
     }
+    g_tx->setCmdEnable(keeper->getTxMask());
 }
 
 void Rd53bCoreColLoop::writeConfig(json &j) {

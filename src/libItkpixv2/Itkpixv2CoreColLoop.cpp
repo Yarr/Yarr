@@ -120,6 +120,7 @@ void Itkpixv2CoreColLoop::end() {
         iChannel++;
         while(!g_tx->isCmdEmpty()) {}
     }
+    g_tx->setCmdEnable(keeper->getTxMask());
 }
 
 void Itkpixv2CoreColLoop::writeConfig(json &j) {
