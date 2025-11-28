@@ -7,7 +7,7 @@ namespace {
     auto alog = logging::make_log("StarConversionTools");
 }
 
-bool StarConversionTools::loadCalJsonToVec(const json& jcal, std::vector<float>& vec, std::vector<std::pair<unsigned int,float>>& vec_pair, unsigned length) {
+bool StarConversionTools::loadCalJsonToVec(const json& jcal, std::vector<float>& vec, std::vector<std::pair<int,float>>& vec_pair, unsigned length) {
   vec.clear();
   vec_pair.clear();
 
@@ -61,7 +61,7 @@ bool StarConversionTools::loadCalJsonToVec(const json& jcal, std::vector<float>&
     auto calPoint_high = vec_pair[1];
 
     vec.resize(length, -1);
-    for (unsigned dac=0; dac<length; dac++) {
+    for (int dac=0; dac<(int)length; dac++) {
       if (dac > calPoint_high.first and iCalPoint+2 < npoints) {
         // Move to the next interval
         iCalPoint++;
