@@ -377,7 +377,7 @@ void StarTrimDacAnalysis::loadConfig(const json &j) {
   \param iChip If < 11 the function will return the multiplicity only for the chip #iChip
          otherwise will return it for all chips overall (feature not used)
 */
-unsigned int StarTrimDacAnalysis::getChannelMultReachingTarget(const std::map<unsigned, std::map<TrimRangeTrimDac, double> > mapThresholdVsTrimDacVsChannelNumber, const unsigned int & trimRange, const double & target, std::map<unsigned,int> & mapOfTrims, const unsigned int & iChip) const {
+unsigned int StarTrimDacAnalysis::getChannelMultReachingTarget(const std::map<unsigned, std::map<TrimRangeTrimDac, double> > & mapThresholdVsTrimDacVsChannelNumber, const unsigned int & trimRange, const double & target, std::map<unsigned,int> & mapOfTrims, const unsigned int & iChip) const {
         unsigned int mult = 0;
         //Looping over channels
         for (auto vals : mapThresholdVsTrimDacVsChannelNumber) {
