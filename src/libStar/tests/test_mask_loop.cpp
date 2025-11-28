@@ -51,7 +51,7 @@ std::unique_ptr<CapturePacketsTxCore> runWithConfig(json &j) {
   std::unique_ptr<MyHwController> hw(new MyHwController);
   Bookkeeper bk(&*hw, &*hw);
 
-  CapturePacketsTxCore &tx = *hw;
+  // CapturePacketsTxCore &tx = *hw;
 
   auto fe = StdDict::getFrontEnd("Star");
   {

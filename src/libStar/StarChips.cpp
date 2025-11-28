@@ -191,9 +191,6 @@ void StarChips::sendCmd(std::array<uint16_t, 9> cmd){
 
 bool StarChips::writeTrims(){
     //Write only TrimDAC registers so we don't overwrite the prescan when doing a trim
-    auto num_abc = numABCs();
-    int hccId = getHCCchipID();
-
     // Then each ABC
     eachAbc([&](auto &abc) {
             int this_chipID = abc.getABCchipID();

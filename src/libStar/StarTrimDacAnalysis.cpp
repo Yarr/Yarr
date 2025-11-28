@@ -179,7 +179,7 @@ std::map<int, double> StarTrimDacAnalysis::findTargetThresholds(const std::map<u
         //Will collect the list of TrimRanges to scan
         std::vector<int> trimRanges = getTrimRanges(mapThresholdVsTrimDacVsChannelNumber);
 
-        std::map<double,int> multForAllChips;//Will collect info for all chips together in case we want an overall target
+        std::map<double,unsigned int> multForAllChips;//Will collect info for all chips together in case we want an overall target
         //Probing target thresholds using 60 steps between 0 and the max reachable target (not magic under the '60', just a historical number)
         double minThr = listThresholds[listThresholds.size()-1];
         double maxThr = listThresholds[0];
@@ -328,7 +328,7 @@ void StarTrimDacAnalysis::end() {
         std::map<unsigned, std::map<unsigned,int>> mapOfBestTrims;
         std::map<unsigned,int> bestTrimRangeForChip;
         for (unsigned int iChip=0; iChip<(nCol/Star::StripsPerABCRow); iChip++) {
-          int bestMultForChip=0;
+          unsigned int bestMultForChip=0;
           const std::vector<int> trimRanges = getTrimRanges(mapThresholdVsTrimDacVsChannelNumber);
           for (auto trimRange : trimRanges) {
             std::map<unsigned,int> mapOfTrims;
@@ -374,15 +374,16 @@ void StarTrimDacAnalysis::loadConfig(const json &j) {
   \param mapThresholdVsTrimDacVsChannelNumber Input map of TrimDac vs Threshold result vs channel
   \param target Target threshold each channel aims at reaching by optimizing the TrimDAC value
   \param mapOfTrims Output map of TrimDac values for each channel that are best to reach the 'target' threshold
-  \param iChip If >=0 the function will return the multiplicity only for the chip #iChip, otherwise will return it for all chips overall (feature not used)
+  \param iChip If < 11 the function will return the multiplicity only for the chip #iChip
+         otherwise will return it for all chips overall (feature not used)
 */
-unsigned int StarTrimDacAnalysis::getChannelMultReachingTarget(const std::map<unsigned, std::map<TrimRangeTrimDac, double> > mapThresholdVsTrimDacVsChannelNumber, const int & trimRange, const double & target, std::map<unsigned,int> & mapOfTrims, const int & iChip) const {
+unsigned int StarTrimDacAnalysis::getChannelMultReachingTarget(const std::map<unsigned, std::map<TrimRangeTrimDac, double> > & mapThresholdVsTrimDacVsChannelNumber, const unsigned int & trimRange, const double & target, std::map<unsigned,int> & mapOfTrims, const unsigned int & iChip) const {
         unsigned int mult = 0;
         //Looping over channels
         for (auto vals : mapThresholdVsTrimDacVsChannelNumber) {
                 unsigned channel = vals.first;
                 //In case we're interested only in channels from a specific chip (i.e. iChip!=-1), skipping other channels
-                if (iChip!=-1 && channel / Star::StripsPerABC != iChip)
+                if (iChip >= Star::MaxABCsPerHCC && channel / Star::StripsPerABC != iChip)
                   continue;
                 //Looping over TrimDac in decreasing order to find the closest to target
                 int bestTrimDacForChannel = -999;

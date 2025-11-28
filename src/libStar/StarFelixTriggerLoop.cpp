@@ -17,8 +17,8 @@ namespace {
 
 StarFelixTriggerLoop::StarFelixTriggerLoop()
   : LoopActionBase(LOOP_STYLE_TRIGGER),
-    m_nTrigsTrickle(0),
-    m_trigWord{}
+    m_trigWord{},
+    m_nTrigsTrickle(0)
 {
   setTrigCnt(50); // Maximum number of triggers to send
   min = 0;
@@ -491,17 +491,17 @@ void StarFelixTriggerLoop::makeTrickleSequence() {
 
   // The trigger burst can be repeated to fill up the trickle memory
   // Max number of repetitions allowed by size
-  int nBurstMax = (TRICKLE_MEM_SIZE - trickleSeq_pre.size() - trickleSeq_post.size()) / trickleSeq_burst.size();
+  unsigned int nBurstMax = (TRICKLE_MEM_SIZE - trickleSeq_pre.size() - trickleSeq_post.size()) / trickleSeq_burst.size();
 
   if (nBurstMax < 1) {
     logger->error("No triggers are written to the trickle memory!");
   }
 
   // Number of trickleSeq_burst needed to send the required number of triggers
-  int nBurstNeed = std::ceil(static_cast<float>(getTrigCnt()) / ntrig_per_burst);
+  unsigned int nBurstNeed = std::ceil(static_cast<float>(getTrigCnt()) / ntrig_per_burst);
 
   // The actual number of times to repeat trickleSeq_burst in the trickle memory
-  int nBurst = std::min(nBurstNeed, nBurstMax);
+  unsigned int nBurst = std::min(nBurstNeed, nBurstMax);
 
   logger->debug("nBurstNeed = {}", nBurstNeed);
   logger->debug("nBurstMax = {}", nBurstMax);

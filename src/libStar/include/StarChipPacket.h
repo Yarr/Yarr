@@ -62,10 +62,10 @@ static std::map<PacketType, std::string> packet_type_names = {
 
 /// ABC cluster object holding relevant information
 struct Cluster{
-  int input_channel = 0;
-  int raw_cluster = 0;
-  int address = 0;
-  int next = 0;
+  uint8_t input_channel = 0;
+  uint8_t raw_cluster = 0;
+  uint8_t address = 0;
+  uint8_t next = 0;
 };
 
 /// Definition of equality for clusters

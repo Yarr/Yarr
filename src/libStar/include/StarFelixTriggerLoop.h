@@ -47,7 +47,7 @@ private:
   StarSeqGenerator m_seqGen{true};
 
   unsigned m_nTrigsTrickle; // number of triggers stored in the trickle memory
-  unsigned m_nPulse; // number of times to iterate over the trickle memory
+  unsigned m_nPulse{}; // number of times to iterate over the trickle memory
 
   unsigned m_seqMemAddrWidth {12}; // Address width of the trickle memory
 

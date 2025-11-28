@@ -61,7 +61,7 @@ bool StarConversionTools::loadCalJsonToVec(const json& jcal, std::vector<float>&
     auto calPoint_high = vec_pair[1];
 
     vec.resize(length, -1);
-    for (int dac=0; dac<length; dac++) {
+    for (int dac=0; dac<(int)length; dac++) {
       if (dac > calPoint_high.first and iCalPoint+2 < npoints) {
         // Move to the next interval
         iCalPoint++;
@@ -207,7 +207,7 @@ void StarConversionTools::writeConfig(json& j) const {
 
 std::pair<float, float> StarConversionTools::convertBVTtomVwithError(float thrDAC, float err_thrDAC) const {
 
-  auto thrBin = static_cast<int>(thrDAC);
+  auto thrBin = static_cast<unsigned int>(thrDAC);
   float thrConverted = -1., err_thrConverted = -1.;
   if((thrBin >= 0) && (thrBin < 256)){
     if(convertBVTtomV(thrBin) > -1.){
