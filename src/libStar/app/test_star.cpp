@@ -505,16 +505,16 @@ void configureHCC(HwController& hwCtrl, StarCfg& cfg, bool reset, uint32_t ic_en
   logger->info("Broadcast HCCStar configurations");
 
   // Register Delay1: delays for signals to ABCStars
-  uint32_t val_delay1 = 0x02400000;
+  uint32_t val_delay1 = 0x02900020;
   uint32_t addr_delay1 = updateHCCRegister(HCCStarRegister::Delay1, val_delay1, cfg);
   sendCommand(star.write_hcc_register(addr_delay1, val_delay1), hwCtrl);
 
   // Register Delay2, Delay3: delays for data from ABCStar
-  uint32_t val_delay2 = 0x44444444;
+  uint32_t val_delay2 = 0xaaaaaaaa;
   uint32_t addr_delay2 = updateHCCRegister(HCCStarRegister::Delay2, val_delay2, cfg);
   sendCommand(star.write_hcc_register(addr_delay2, val_delay2), hwCtrl);
 
-  uint32_t val_delay3 = 0x00000444;
+  uint32_t val_delay3 = 0x00000aaa;
   uint32_t addr_delay3 = updateHCCRegister(HCCStarRegister::Delay3, val_delay3, cfg);
   sendCommand(star.write_hcc_register(addr_delay3, val_delay3), hwCtrl);
 
