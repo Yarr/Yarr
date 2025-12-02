@@ -129,6 +129,9 @@ namespace {
   struct TestData {
     unsigned inChannel = 0;
 
+    /// All expected IC enables.
+    unsigned icEnablesMask = 0x7ff;
+
     std::unique_ptr<StarCfg> starCfg;
     bool setHccId = false;
     bool doResets = false;
@@ -192,12 +195,25 @@ void printHelp() {
   std::cout << " -t <channel1> [<channel2> ...] : Tx channels to enable. Can take multiple arguments.\n";
   std::cout << " -l <log_config> : Configure loggers.\n";
   std::cout << " -d : Modify HCCStar IDs when probing.\n";
+  std::cout << " -i : All expected ICs (default all: 0x7ff).\n";
   std::cout << " -R : Send reset commands.\n";
   std::cout << " -v : Report carried data between actions (diagnostic).\n";
   std::cout << " -s <test_preset> : Type of test (lower case), or sequence (UpperCase) to run, use bad to list. Default: Full\n";
   std::cout << " -c <input channel> : HCC input channel. Only used if HCCs are set to full transparent mode.\n";
   std::cout << " -V <chip_version> : Versions of the HCCStar and ABCStar chips. Possible options are: Star, Star_vH0A0, Star_vH0A1, Star_vH1A1. Default: Star (equivalent to Star_vH0A0)\n";
   std::cout << " -T : Run internal cross-checks.\n";
+  std::cout << "\n";
+  std::cout << "NB in most cases you can run without setting the enables mask\n";
+  std::cout << " Otherwise use the following settings:\n";
+  std::cout << "   Barrel: 0x7fe\n";
+  std::cout << "   R0H0/1: 0x7f8 / 0x1ff\n";
+  std::cout << "   R1H0/1: 0x7fe / 0x7ff\n";
+  std::cout << "   R2:     0x7e0\n";
+  std::cout << "   R3H0/1: 0x7f0\n";
+  std::cout << "   R3H2/3: 0x07f\n";
+  std::cout << "   R4:     0x7f8\n";
+  std::cout << "   R5:     0x7fc\n";
+  std::cout << "\n";
 
   std::set<std::string> allSequenceTestNames;
   std::cout << "Available sequences\n";
@@ -479,7 +495,7 @@ bool isPacketType(RawData& data, PacketType packet_type, bool isPacketTransp=fal
 
 // Configure chips
 // Different register values for different HCCStar versions?
-void configureHCC(HwController& hwCtrl, StarCfg& cfg, bool reset) {
+void configureHCC(HwController& hwCtrl, StarCfg& cfg, bool reset, uint32_t ic_enables) {
   // Configure HCCStars to enable communications with ABCStars
   if (reset) {
     logger->info("Sending HCCStar register reset command");
@@ -508,7 +524,7 @@ void configureHCC(HwController& hwCtrl, StarCfg& cfg, bool reset) {
   sendCommand(star.write_hcc_register(addr_drv1, val_drv1), hwCtrl);
 
   // Register ICenable: enable input channels
-  uint32_t val_icen = 0x000007ff;
+  uint32_t val_icen = ic_enables;
   uint32_t addr_icen = updateHCCRegister(HCCStarRegister::ICenable, val_icen, cfg);
   sendCommand(star.write_hcc_register(addr_icen, val_icen), hwCtrl);
 
@@ -524,8 +540,8 @@ void configureHCC(HwController& hwCtrl, StarCfg& cfg, bool reset) {
   }
 }
 
-void configureHCC_PacketTransp(HwController& hwCtrl, StarCfg& cfg, bool reset) {
-  configureHCC(hwCtrl, cfg, reset);
+void configureHCC_PacketTransp(HwController& hwCtrl, StarCfg& cfg, bool reset, unsigned icEnablesMask) {
+  configureHCC(hwCtrl, cfg, reset, icEnablesMask);
 
   // Set to packet transparent mode
   logger->info("Set HCCs to Packet Transparent mode");
@@ -539,12 +555,15 @@ void configureHCC_PacketTransp(HwController& hwCtrl, StarCfg& cfg, bool reset) {
   sendCommand(star.write_hcc_register(addr_modec, val_mode), hwCtrl);
 }
 
-void configureHCC_FullTransp(HwController& hwCtrl, StarCfg& cfg, bool reset, unsigned inChn) {
-  configureHCC(hwCtrl, cfg, reset);
+void configureHCC_FullTransp(HwController& hwCtrl, StarCfg& cfg, bool reset, unsigned inChn, unsigned icEnablesMask) {
+  configureHCC(hwCtrl, cfg, reset, icEnablesMask);
 
   // Select the input channel: IC_transSelect
   // Register ICenable
   inChn = inChn & 0xf;
+  if(((1<<inChn) & icEnablesMask) == 0) {
+    logger->error("Selected IC {} is outside enables mask {}!", inChn, icEnablesMask);
+  }
   unsigned val_icen = (inChn << 16) + (1 << inChn);
   uint32_t addr_icen = updateHCCRegister(HCCStarRegister::ICenable, val_icen, cfg);
   sendCommand(star.write_hcc_register(addr_icen, val_icen), hwCtrl);
@@ -869,7 +888,7 @@ bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccSt
   return receivedABCHPR and hprGood;
 }
 
-bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars) {
+bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars, unsigned icEnablesMask) {
   bool hasABCStar = false;
 
   for (auto& hcc : hccStars) {
@@ -920,18 +939,22 @@ bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars
       }
 
       // Update the active input channel mask
-      activeInChannels |= (1 << abc_chn);
+      unsigned newInMask = (1 << abc_chn);
+      if(newInMask & icEnablesMask) {
+        activeInChannels |= newInMask;
 
-      // efuseID
-      uint32_t abcFuseID = packet.value & 0x00ffffff; // lowest 24 bits
-      //uint32_t abcStarVer = (packet.value & 0xff000000) >> 28; // top 8 bits
-      logger->info(" Found ABCStar on HCCStar {}: Input channel = {} ABC ID = {} eFuse = 0x{:06x}", hcc.hcc_id, abc_chn, abcid, abcFuseID);
-      logger_id->trace(" ABCStar: Input channel = {} ABC ID = {} eFuse = 0x{:06x}", abc_chn, abcid, abcFuseID);
+        // efuseID
+        uint32_t abcFuseID = packet.value & 0x00ffffff; // lowest 24 bits
+        //uint32_t abcStarVer = (packet.value & 0xff000000) >> 28; // top 8 bits
+        logger->info(" Found ABCStar on HCCStar {}: Input channel = {} ABC ID = {} eFuse = 0x{:06x}", hcc.hcc_id, abc_chn, abcid, abcFuseID);
+        logger_id->trace(" ABCStar: Input channel = {} ABC ID = {} eFuse = 0x{:06x}", abc_chn, abcid, abcFuseID);
+      } else {
+        logger->debug(" Ignoring ABCStar on HCCStar {}: Input channel = {}, outside IC mask {:03x}", hcc.hcc_id, abc_chn, icEnablesMask);
+      }
     } // end of data container loop
 
     if (activeInChannels) {
       hasABCStar = true;
-
       // Update HCC register ICenable
       logger->debug("Set register ICenable on HCCStar {} to 0x{:08x}", hcc.hcc_id, activeInChannels);
       uint32_t addr_en = updateHCCRegister(HCCStarRegister::ICenable, activeInChannels, cfg);
@@ -1451,11 +1474,26 @@ int main(int argc, char *argv[]) {
         {nullptr, 0, nullptr, 0}};
 
     int c;
-    while ((c = getopt_long(argc, argv, "hvTl:r:t:dRs:c:V:", long_options, nullptr)) != -1) {
+    while ((c = getopt_long(argc, argv, "hvTi:l:r:t:dRs:c:V:", long_options, nullptr)) != -1) {
       switch(c) {
       case 'h':
         printHelp();
         return 0;
+      case 'i':
+        try {
+          // Allow hex
+          size_t pos = 0;
+          testData.icEnablesMask = std::stoul(optarg, &pos, 0);
+          if(pos != strlen(optarg)) {
+            spdlog::error("Failed to parse ic enables mask: {}", optarg);
+            return 1;
+          }
+        } catch(std::exception &e) {
+          // stoul throws if no digits at all 
+          spdlog::error("Failed to parse ic enables mask: {}", optarg);
+          return 1;
+        }
+        break;
       case 'l':
         logCfgPath = std::string(optarg);
         break;
@@ -1693,17 +1731,17 @@ std::map<std::string, std::function<bool (HwController&)>> TestData::buildTests 
       {"testHCCRegister", [&](auto &h) {return testHCCRegisterAccess(h, hccStars);}},
 
       // Configure HCCs to enable communications with ABCs
-      {"configureHCC", [&](auto &h) {configureHCC(h, *starCfg, doResets); return true;}},
-      {"configureHCCIfReset", [&](auto &h) {if(doResets) configureHCC(h, *starCfg, doResets); return true;}},
+      {"configureHCC", [&](auto &h) {configureHCC(h, *starCfg, doResets, icEnablesMask); return true;}},
+      {"configureHCCIfReset", [&](auto &h) {if(doResets) configureHCC(h, *starCfg, doResets, icEnablesMask); return true;}},
       // configure HCC into the Packet Transparent mode
-      {"configureHCCForPacketTransp", [&](auto &h) {configureHCC_PacketTransp(h, *starCfg, doResets); return true; }},
-      {"configureHCCForFullTransp", [&](auto &h) {configureHCC_FullTransp(h, *starCfg, doResets, inChannel); return true; }},
+      {"configureHCCForPacketTransp", [&](auto &h) {configureHCC_PacketTransp(h, *starCfg, doResets, icEnablesMask); return true; }},
+      {"configureHCCForFullTransp", [&](auto &h) {configureHCC_FullTransp(h, *starCfg, doResets, inChannel, icEnablesMask); return true; }},
 
       // Probe ABCStars via reading ABCStar HPRs
       // Check ABCStar HPRs
       {"checkABCHPRs", [&](auto &h) {return checkABCHPRs(h, *starCfg, hccStars, doResets);}},
       // Probe ABCStars on each HCCStar
-      {"probeABCs", [&](auto &h) {return probeABCs(h, *starCfg, hccStars);}},
+      {"probeABCs", [&](auto &h) {return probeABCs(h, *starCfg, hccStars, icEnablesMask);}},
       // Read many ABC registers
       {"readMoreABCRegisters", [&](auto &h) {return readMoreABCRegisters(h);}},
       // Test ABCStar register read and write
