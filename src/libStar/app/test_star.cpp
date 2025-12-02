@@ -66,6 +66,14 @@ namespace {
         }},
 
       /*
+        Read regsiters
+      */
+      {"MoreRegisters", {
+          "readMoreHCCRegisters",
+          "readMoreABCRegisters",
+        }},
+
+      /*
         Test reading data packets
       */
       {"DataPacket", {
@@ -724,6 +732,52 @@ bool probeHCCs(
   return true;
 }
 
+bool readMoreHCCRegisters(HwController& hwCtrl)
+{
+  unsigned read_count = 0;
+
+  // Loop over some register addresses
+  // Not all, but relevant for low level diagnostics
+  for (auto ra: std::vector<uint8_t>{3, 4, 5, 6, 7, 8, 9, 15, 17, 32, 33, 34, 35, 38, 39, 40, 41, 43}) {
+    // Send register read command
+    logger->debug("Broadcast read HCC Reg 0x{:02x} ({:12})",
+                  ra, HccNames::regToString((HCCStarRegister)ra));
+    sendCommand(star.read_hcc_register((int)ra), hwCtrl);
+
+    uint32_t timeout = 1000; // milliseconds
+
+    auto rdc_rr = readAllData
+      (
+       // auto data = readData(
+       hwCtrl,
+       [](RawData& d) { return isPacketType(d, TYP_HCC_RR); },
+       timeout
+       );
+
+    for (unsigned c = 0; c < rdc_rr.size(); c++) {
+      RawDataPtr data = rdc_rr.data[c];
+
+      auto rx = data->getAdr();
+
+      StarChipPacket packet;
+      if (packetFromRawData(packet, *data)) {
+        logger->error("Packet parse failed");
+      } else {
+        read_count ++;
+        uint32_t value = packet.value;
+        uint32_t addr = packet.address;
+
+        std::string name = HccNames::regToString((HCCStarRegister)addr);
+
+        logger->info(" HCCStar Reg 0x{:02x} ({:12}) @ RX {}: 0x{:08x}",
+                     addr, name, rx, value);
+      }
+    } // Loop over data
+  } // Loop over registers
+
+  return read_count > 0;
+}
+
 bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars, bool reset) {
   bool receivedABCHPR = false;
   bool hprGood = true;
@@ -895,6 +949,57 @@ bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars
   enableConnectedChannels(hwCtrl, hccStars);
 
   return hasABCStar;
+}
+
+bool readMoreABCRegisters(HwController& hwCtrl) {
+  unsigned read_count = 0;
+
+  // Loop over a set of interesting ABC registers
+  // Most cfg and status + 1 of each mask
+  for (auto ra : std::vector<uint8_t>{1, 2, 3, 16, 32, 33, 34, 48, 49, 50, 51, 63, 64, 96, 104, 128}) {
+    // Broadcast the read register command
+    logger->debug("Broadcast read ABC Reg 0x{:02x} ({:12})",
+                  ra, AbcNames::regToString((ABCStarRegister)ra));
+    sendCommand(star.read_abc_register(ra), hwCtrl);
+
+    // Read all the RR packets
+    uint32_t timeout = 1000; // milliseconds
+    auto rdc_rr = readAllData
+      (
+       hwCtrl,
+       [&](RawData& d) {return isPacketType(d, TYP_ABC_RR);},
+       timeout
+       );
+
+    for (unsigned c = 0; c < rdc_rr.size(); c++) {
+      RawDataPtr d = rdc_rr.data[c];
+
+      auto rx = d->getAdr();
+
+      StarChipPacket packet;
+      if ( packetFromRawData(packet, *d) ) {
+        logger->error("Packet parse failed");
+        continue;
+      }
+
+      read_count ++;
+
+      // check the input channel
+      uint32_t abc_chn = packet.channel_abc;
+      // get the chipID from the top four bits of the 16-bit status word
+      uint32_t abcid = (packet.abc_status >> 12) & 0xf;
+
+      uint32_t value = packet.value;
+      uint32_t addr = packet.address;
+
+      std::string name = AbcNames::regToString((ABCStarRegister)addr);
+
+      logger->info(" ABCStar Reg 0x{:02x} ({:12}) @ RX {}: IC {} ABC ID {}: 0x{:08x} 0x{:04x}",
+		   addr, name, rx, abc_chn, abcid, value, packet.abc_status);
+    } // end of data container loop
+  } // Loop over registers
+
+  return read_count > 0;
 }
 
 bool testRegisterReadWrite(HwController& hwCtrl, uint32_t regAddr, uint32_t write_value, uint32_t rx, int hccId, int abcId=-1) {
@@ -1582,6 +1687,8 @@ std::map<std::string, std::function<bool (HwController&)>> TestData::buildTests 
       {"checkHCCHPRs", [&](auto &h) {return checkHCCHPRs(h, rxChannels, doResets);}},
       // Probe HCCs
       {"probeHCCs", [&](auto &h) {return probeHCCs(h, hccStars, txChannels, rxChannels, setHccId);}},
+      // Read many HCC registers
+      {"readMoreHCCRegisters", [&](auto &h) {return readMoreHCCRegisters(h);}},
       // Test HCCStar register read and write
       {"testHCCRegister", [&](auto &h) {return testHCCRegisterAccess(h, hccStars);}},
 
@@ -1597,6 +1704,8 @@ std::map<std::string, std::function<bool (HwController&)>> TestData::buildTests 
       {"checkABCHPRs", [&](auto &h) {return checkABCHPRs(h, *starCfg, hccStars, doResets);}},
       // Probe ABCStars on each HCCStar
       {"probeABCs", [&](auto &h) {return probeABCs(h, *starCfg, hccStars);}},
+      // Read many ABC registers
+      {"readMoreABCRegisters", [&](auto &h) {return readMoreABCRegisters(h);}},
       // Test ABCStar register read and write
       {"testABCRegister", [&](auto &h) {return testABCRegisterAccess(h, *starCfg, hccStars);}},
 
