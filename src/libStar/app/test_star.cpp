@@ -110,6 +110,25 @@ namespace {
         }},
     };
 
+  /**
+   * Implementation of test actions.
+   *
+   * Also stores common data that is passed between actions.
+   */
+  struct TestData {
+    unsigned inChannel = 0;
+
+    std::unique_ptr<StarCfg> starCfg;
+    bool setHccId = false;
+    bool doResets = false;
+
+    // Original Spec version
+    std::vector<uint32_t> rxChannels = {6};
+    std::vector<uint32_t> txChannels = {0xFFFF};
+
+    std::vector<Hybrid> hccStars;
+  };
+
 void printHelp() {
   std::cout << "Usage: test_star HW_CONFIG [OPTIONS] ... \n";
   std::cout << "   Run Star FE tests with HardwareController configuration from HW_CONFIG\n";
@@ -1262,13 +1281,9 @@ int main(int argc, char *argv[]) {
     std::string controller;
     std::string controllerType;
 
-    // Original Spec version
-    std::vector<uint32_t> rxChannels = {6};
-    std::vector<uint32_t> txChannels = {0xFFFF};
-    bool setHccId = false;
-    bool doResets = false;
+    TestData testData;
+
     std::string testSequence("Full");
-    unsigned inChannel = 0;
     std::string chipVersion("Star");
 
     // logger config path
@@ -1289,42 +1304,42 @@ int main(int argc, char *argv[]) {
         logCfgPath = std::string(optarg);
         break;
       case 'r':
-        rxChannels.clear();
+        testData.rxChannels.clear();
         optind -= 1;
         for (; optind < argc && *argv[optind] != '-'; optind += 1) {
           try {
             // Try parsing as number and throw if not
-            rxChannels.push_back( std::stoi(argv[optind]) );
+            testData.rxChannels.push_back( std::stoi(argv[optind]) );
           } catch(std::exception &e) {
             break;
           }
         }
         break;
       case 't':
-        txChannels.clear();
+        testData.txChannels.clear();
         optind -= 1;
         for (; optind < argc && *argv[optind] != '-'; optind += 1) {
           try {
             // Try parsing as number and throw if not
-            txChannels.push_back( std::stoi(argv[optind]) );
+            testData.txChannels.push_back( std::stoi(argv[optind]) );
           } catch(std::exception &e) {
             break;
           }
         }
         break;
       case 'd':
-        setHccId = true;
+        testData.setHccId = true;
         break;
       case 'R':
-        doResets = true;
+        testData.doResets = true;
         break;
       case 's':
         testSequence = std::string(optarg);
         break;
       case 'c':
-        inChannel = atoi(optarg);
-        if (inChannel > Star::MaxABCsPerHCC) {
-          spdlog::error("Invalid HCC input channel: {}", inChannel);
+        testData.inChannel = atoi(optarg);
+        if (testData.inChannel > Star::MaxABCsPerHCC) {
+          spdlog::error("Invalid HCC input channel: {}", testData.inChannel);
           return 1;
         }
         break;
@@ -1375,9 +1390,9 @@ int main(int argc, char *argv[]) {
     }
 
     // A global StarCfg with dummy chip configs
-    StarCfg starCfg(abc_version, hcc_version);
-    starCfg.setHCCChipId(0xf);
-    starCfg.addABCchipID(0xf);
+    testData.starCfg = std::make_unique<StarCfg>(abc_version, hcc_version);
+    testData.starCfg->setHCCChipId(0xf);
+    testData.starCfg->addABCchipID(0xf);
 
     // Controller
     if (optind != argc) {
@@ -1411,23 +1426,29 @@ int main(int argc, char *argv[]) {
     hwCtrl->setTrigEnable(0);
 
     // Enable Tx channels
-    for(auto t: txChannels) {
+    for(auto t: testData.txChannels) {
       logger->debug("Enable tx {}", t);
     }
-    hwCtrl->setCmdEnable(txChannels);
+    hwCtrl->setCmdEnable(testData.txChannels);
 
     // Enable Rx channels
     hwCtrl->disableRx();
-    for(auto r: rxChannels) {
+    for(auto r: testData.rxChannels) {
       logger->debug("Enable rx {}", r);
     }
-    hwCtrl->initRxChannels(rxChannels);
-    hwCtrl->setRxEnable(rxChannels);
+    hwCtrl->initRxChannels(testData.rxChannels);
+    hwCtrl->setRxEnable(testData.rxChannels);
 
     // Tests
     bool success = true;
 
-    std::vector<Hybrid> hccStars;
+    auto &hccStars = testData.hccStars;
+    auto &rxChannels = testData.rxChannels;
+    auto &txChannels = testData.txChannels;
+    auto &setHccId = testData.setHccId;
+    auto &doResets = testData.doResets;
+    auto &inChannel = testData.inChannel;
+    auto &starCfg = *testData.starCfg;
 
     std::map<std::string, std::function<bool (HwController&)>>
       tests = {
@@ -1548,7 +1569,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    for(auto r: rxChannels) {
+    for(auto r: testData.rxChannels) {
       logger->debug("Disable Rx channels");
     }
     hwCtrl->disableRx();
