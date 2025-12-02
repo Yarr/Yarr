@@ -35,6 +35,8 @@ namespace {
     std::map<uint32_t,uint32_t> abcs; // key: channel; value: chipID
   };
 
+  static const std::map<uint32_t,uint32_t> BROADCAST_ABCS{{15, 15}};
+
   /**
      Map of sequences to lists of tests.
 
@@ -179,7 +181,7 @@ namespace {
         for(auto t: txChannels) {
           for(auto r: rxChannels) {
             logger->debug("Speculative read-write pair TX {} RX {}", t, r);
-            Hybrid h{t, r, 15, {{15, 15}}};
+            Hybrid h{t, r, 15, BROADCAST_ABCS};
             hccStars.push_back(h);
           }
         }
@@ -728,7 +730,8 @@ bool probeHCCs(
           hccID = nHCC;
         }
 
-        Hybrid h{tx, rx, hccID, {}};
+        // Define HCC, but still use broadcast for ABCs
+        Hybrid h{tx, rx, hccID, BROADCAST_ABCS};
         HCCs.push_back(h);
 
         nHCC++;
@@ -843,6 +846,11 @@ bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccSt
       if ( hcc.abcs.find(abc_chn) != hcc.abcs.end() ) {
         // already reported the HPR on this channel. skip.
         continue;
+      }
+
+      if(hcc.abcs == BROADCAST_ABCS) {
+        // Remove broadcast now we know better
+        hcc.abcs.clear();
       }
 
       // HPR from a new channel
