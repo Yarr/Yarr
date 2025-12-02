@@ -9,6 +9,7 @@
 #include "HccNames.h"
 #include "StarCmd.h"
 #include "StarCfg.h"
+#include "StarConstants.h"
 #include "LCBUtils.h"
 #include "LoggingConfig.h"
 #include "ScanHelper.h"
@@ -17,6 +18,8 @@
 #include "LoopStatus.h"
 
 #include <getopt.h>
+
+#include "spdlog/fmt/fmt.h"
 
 namespace {
   auto logger = logging::make_log("test_star");
@@ -130,6 +133,31 @@ namespace {
 
     std::map<std::string, std::function<bool (HwController&)>> buildTests();
 
+    /// Report on things carried between test actions
+    void report() {
+      logger->info("Report inter-action config");
+      logger->info(" Selected input channel: {}", inChannel);
+
+      logger->info(" HCC ID: {}", starCfg->getHCCchipID());
+      for(unsigned i=0; i<Star::MaxABCsPerHCC; i++) {
+        if(!(starCfg->isAbcForInputChannel(i))) {
+          continue;
+        }
+        const auto &abc = starCfg->abcForInputChannel(i);
+
+        logger->info("  For IC {}: {}", i, abc.getABCchipID());
+      }
+
+      logger->info(" Hybrid tx rx hcc (chan,abcID)");
+      for(auto &h: hccStars) {
+        std::string abcs;
+        for(auto &a: h.abcs) {
+          abcs += fmt::format(" ({}, {})", a.first, a.second);
+        }
+        logger->info("  {} {} {} {}", h.tx, h.rx, h.hcc_id, abcs);
+      }
+    }
+
     /// Update things based on overall provided configuration
     void validate() {
       if(hccStars.empty()) {
@@ -155,6 +183,7 @@ void printHelp() {
   std::cout << " -l <log_config> : Configure loggers.\n";
   std::cout << " -d : Modify HCCStar IDs when probing.\n";
   std::cout << " -R : Send reset commands.\n";
+  std::cout << " -v : Report carried data between actions (diagnostic).\n";
   std::cout << " -s <test_preset> : Type of test (lower case), or sequence (UpperCase) to run, use bad to list. Default: Full\n";
   std::cout << " -c <input channel> : HCC input channel. Only used if HCCs are set to full transparent mode.\n";
   std::cout << " -V <chip_version> : Versions of the HCCStar and ABCStar chips. Possible options are: Star, Star_vH0A0, Star_vH0A1, Star_vH1A1. Default: Star (equivalent to Star_vH0A0)\n";
@@ -1305,6 +1334,7 @@ int main(int argc, char *argv[]) {
 
     // logger config path
     std::string logCfgPath = "";
+    bool doReport = false;
 
     const struct option long_options[] =
       {
@@ -1312,7 +1342,7 @@ int main(int argc, char *argv[]) {
         {nullptr, 0, nullptr, 0}};
 
     int c;
-    while ((c = getopt_long(argc, argv, "hl:r:t:dRs:c:V:", long_options, nullptr)) != -1) {
+    while ((c = getopt_long(argc, argv, "hvl:r:t:dRs:c:V:", long_options, nullptr)) != -1) {
       switch(c) {
       case 'h':
         printHelp();
@@ -1349,6 +1379,9 @@ int main(int argc, char *argv[]) {
         break;
       case 'R':
         testData.doResets = true;
+        break;
+      case 'v':
+        doReport = true;
         break;
       case 's':
         testSequence = std::string(optarg);
@@ -1498,9 +1531,15 @@ int main(int argc, char *argv[]) {
     if(isupper(testSequence[0])) {
       if(sequenceMap.find(testSequence) != sequenceMap.end()) {
         logger->info("Running test sequence {}", testSequence);
+        if(doReport) {
+          testData.report();
+        }
         for(auto &t: sequenceMap[testSequence]) {
           logger->info("Running test {}", t);
           success &= tests[t](*hwCtrl);
+          if(doReport) {
+            testData.report();
+          }
         }
       } else {
         logger->error("Unknown test sequence: {}", testSequence);
@@ -1516,7 +1555,13 @@ int main(int argc, char *argv[]) {
     } else {
       if(tests.find(testSequence) != tests.end()) {
         logger->info("Running test {}", testSequence);
+        if(doReport) {
+          testData.report();
+        }
         success &= tests[testSequence](*hwCtrl);
+        if(doReport) {
+          testData.report();
+        }
       } else {
         logger->error("Unknown test: {}", testSequence);
 
