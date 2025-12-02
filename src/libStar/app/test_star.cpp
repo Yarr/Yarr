@@ -134,6 +134,9 @@ namespace {
     /// All expected IC enables.
     unsigned icEnablesMask = 0x7ff;
 
+    /// Timeout for read operations
+    unsigned timeout_ms = 100;
+
     std::unique_ptr<StarCfg> starCfg;
     bool setHccId = false;
     bool doResets = false;
@@ -200,6 +203,7 @@ void printHelp() {
   std::cout << " -i : All expected ICs (default all: 0x7ff).\n";
   std::cout << " -R : Send reset commands.\n";
   std::cout << " -v : Report carried data between actions (diagnostic).\n";
+  std::cout << " -w <timeout_ms> : General timeout in milliseconds.\n";
   std::cout << " -s <test_preset> : Type of test (lower case), or sequence (UpperCase) to run, use bad to list. Default: Full\n";
   std::cout << " -c <input channel> : HCC input channel. Only used if HCCs are set to full transparent mode.\n";
   std::cout << " -V <chip_version> : Versions of the HCCStar and ABCStar chips. Possible options are: Star, Star_vH0A0, Star_vH0A1, Star_vH1A1. Default: Star (equivalent to Star_vH0A0)\n";
@@ -347,7 +351,7 @@ int packetFromRawData(StarChipPacket& packet, RawData& data) {
 RawDataPtr readData(
   HwController& hwCtrl,
   std::function<bool(RawData&)> filter_cb,
-  uint32_t timeout=1000)
+  uint32_t timeout)
 {
   bool nodata = true;
   bool done = false;
@@ -397,7 +401,7 @@ RawDataPtr readData(
 RawDataContainer readAllData(
   HwController& hwCtrl,
   std::function<bool(RawData&)> filter_cb,
-  uint32_t timeout=2000)
+  uint32_t timeout)
 {
   //  bool nodata = true;
 
@@ -620,14 +624,12 @@ void configureABC(HwController& hwCtrl, StarCfg& cfg, bool reset) {
 
 // Test steps
 bool checkHCCHPRs(HwController& hwCtrl,
-               const std::vector<uint32_t>& rxChannels,
-               bool reset)
+                  const std::vector<uint32_t>& rxChannels,
+                  bool reset, unsigned timeout_ms)
 {
   if (reset) {
     sendCommand( LCB::fast_command(LCB::HCC_REG_RESET, 0), hwCtrl );
   }
-
-  uint32_t timeout = 1000; // milliseconds
 
   bool hprOK = false;
 
@@ -642,7 +644,7 @@ bool checkHCCHPRs(HwController& hwCtrl,
       return isPacketType(d, TYP_HCC_HPR) and isFromChannel(d, rx);
     };
 
-    auto data = readData(hwCtrl, filter_hpr, timeout);
+    auto data = readData(hwCtrl, filter_hpr, timeout_ms);
     if (data) {
       logger->info(" Received an HPR packet from HCCStar on Rx channel {}", rx);
       // print
@@ -680,7 +682,8 @@ bool probeHCCs(
   std::vector<Hybrid>& HCCs,
   const std::vector<uint32_t>& txChannels,
   const std::vector<uint32_t>& rxChannels,
-  bool setID)
+  bool setID,
+  unsigned timeout_ms)
 {
   HCCs.clear();
   uint32_t nHCC = 0;
@@ -704,7 +707,8 @@ bool probeHCCs(
         hwCtrl,
         [rx](RawData& d) {
           return isPacketType(d, TYP_HCC_RR) and isFromChannel(d, rx);
-        }
+        },
+        timeout_ms
         );
 
       if (not data) {
@@ -754,7 +758,7 @@ bool probeHCCs(
   return true;
 }
 
-bool readMoreHCCRegisters(HwController& hwCtrl)
+bool readMoreHCCRegisters(HwController& hwCtrl, unsigned timeout_ms)
 {
   unsigned read_count = 0;
 
@@ -766,14 +770,12 @@ bool readMoreHCCRegisters(HwController& hwCtrl)
                   ra, HccNames::regToString((HCCStarRegister)ra));
     sendCommand(star.read_hcc_register((int)ra), hwCtrl);
 
-    uint32_t timeout = 1000; // milliseconds
-
     auto rdc_rr = readAllData
       (
        // auto data = readData(
        hwCtrl,
        [](RawData& d) { return isPacketType(d, TYP_HCC_RR); },
-       timeout
+       timeout_ms
        );
 
     for (unsigned c = 0; c < rdc_rr.size(); c++) {
@@ -800,7 +802,7 @@ bool readMoreHCCRegisters(HwController& hwCtrl)
   return read_count > 0;
 }
 
-bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars, bool reset) {
+bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars, bool reset, unsigned timeout_ms) {
   bool receivedABCHPR = false;
   bool hprGood = true;
 
@@ -822,9 +824,8 @@ bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccSt
     std::function<bool(RawData&)> filter_abchpr = [&hcc](RawData& d) {
       return isPacketType(d, TYP_ABC_HPR) and isFromChannel(d, hcc.rx);
     };
-    uint32_t timeout = 1000; // milliseconds
 
-    auto rdc = readAllData(hwCtrl, filter_abchpr, timeout);
+    auto rdc = readAllData(hwCtrl, filter_abchpr, timeout_ms);
 
     for (unsigned c = 0; c < rdc.size(); c++) {
       RawDataPtr d = rdc.data[c];
@@ -896,7 +897,7 @@ bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccSt
   return receivedABCHPR and hprGood;
 }
 
-bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars, unsigned icEnablesMask) {
+bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars, unsigned icEnablesMask, unsigned timeout_ms) {
   bool hasABCStar = false;
 
   for (auto& hcc : hccStars) {
@@ -919,11 +920,10 @@ bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars
     sendCommand(star.read_abc_register(stat2), hwCtrl);
 
     // Read all the RR packets
-    uint32_t timeout = 1000; // milliseconds
     auto rdc_rr = readAllData(
       hwCtrl,
       [&](RawData& d) {return isPacketType(d, TYP_ABC_RR) and isFromChannel(d, hcc.rx);},
-      timeout
+      timeout_ms
     );
 
     for (unsigned c = 0; c < rdc_rr.size(); c++) {
@@ -982,7 +982,7 @@ bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars
   return hasABCStar;
 }
 
-bool readMoreABCRegisters(HwController& hwCtrl) {
+bool readMoreABCRegisters(HwController& hwCtrl, unsigned timeout_ms) {
   unsigned read_count = 0;
 
   // Loop over a set of interesting ABC registers
@@ -994,12 +994,11 @@ bool readMoreABCRegisters(HwController& hwCtrl) {
     sendCommand(star.read_abc_register(ra), hwCtrl);
 
     // Read all the RR packets
-    uint32_t timeout = 1000; // milliseconds
     auto rdc_rr = readAllData
       (
        hwCtrl,
        [&](RawData& d) {return isPacketType(d, TYP_ABC_RR);},
-       timeout
+       timeout_ms
        );
 
     for (unsigned c = 0; c < rdc_rr.size(); c++) {
@@ -1033,7 +1032,7 @@ bool readMoreABCRegisters(HwController& hwCtrl) {
   return read_count > 0;
 }
 
-bool testRegisterReadWrite(HwController& hwCtrl, uint32_t regAddr, uint32_t write_value, uint32_t rx, int hccId, int abcId=-1) {
+bool testRegisterReadWrite(HwController& hwCtrl, unsigned timeout_ms, uint32_t regAddr, uint32_t write_value, uint32_t rx, int hccId, int abcId=-1) {
   bool isHCC = abcId < 0;
 
   ////
@@ -1064,7 +1063,8 @@ bool testRegisterReadWrite(HwController& hwCtrl, uint32_t regAddr, uint32_t writ
   // Read data
   auto data = readData(
     hwCtrl,
-    [&](RawData& d) {return isPacketType(d, ptype) and isFromChannel(d, rx);}
+    [&](RawData& d) {return isPacketType(d, ptype) and isFromChannel(d, rx);},
+    timeout_ms
     );
 
   if (data) {
@@ -1108,7 +1108,8 @@ bool testRegisterReadWrite(HwController& hwCtrl, uint32_t regAddr, uint32_t writ
   // Read data
   auto wdata = readData(
     hwCtrl,
-    [&](RawData& d) {return isPacketType(d, ptype) and isFromChannel(d, rx);}
+    [&](RawData& d) {return isPacketType(d, ptype) and isFromChannel(d, rx);},
+    timeout_ms
     );
 
   if (wdata) {
@@ -1148,7 +1149,7 @@ bool testRegisterReadWrite(HwController& hwCtrl, uint32_t regAddr, uint32_t writ
   return regAccessGood;
 }
 
-bool testHCCRegisterAccess(HwController& hwCtrl, const std::vector<Hybrid>& hccStars) {
+bool testHCCRegisterAccess(HwController& hwCtrl, const std::vector<Hybrid>& hccStars, unsigned timeout_ms) {
   logger->info("Test HCCStar register read & write");
 
   bool success = not hccStars.empty();
@@ -1159,13 +1160,13 @@ bool testHCCRegisterAccess(HwController& hwCtrl, const std::vector<Hybrid>& hccS
 
   for (const auto& hcc : hccStars) {
     // Register ErrCfg
-    success &= testRegisterReadWrite(hwCtrl, (uint32_t)HCCStarRegister::ErrCfg, 0xdeadbeef, hcc.rx, hcc.hcc_id);
+    success &= testRegisterReadWrite(hwCtrl, timeout_ms, (uint32_t)HCCStarRegister::ErrCfg, 0xdeadbeef, hcc.rx, hcc.hcc_id);
   }
 
   return success;
 }
 
-bool testABCRegisterAccess(HwController& hwCtrl, StarCfg& cfg, const std::vector<Hybrid>& hccStars) {
+bool testABCRegisterAccess(HwController& hwCtrl, StarCfg& cfg, const std::vector<Hybrid>& hccStars, unsigned timeout_ms) {
   logger->info("Test ABCStar register read & write");
 
   // Set RR mode to 1
@@ -1185,14 +1186,14 @@ bool testABCRegisterAccess(HwController& hwCtrl, StarCfg& cfg, const std::vector
     for (const auto& abc : hcc.abcs) {
       // Register MaskInput0
       uint32_t mr = (uint32_t)ABCStarRegister::MaskInput0;
-      success &= testRegisterReadWrite(hwCtrl, mr, 0xabadcafe, hcc.rx, hcc.hcc_id, abc.second);
+      success &= testRegisterReadWrite(hwCtrl, timeout_ms, mr, 0xabadcafe, hcc.rx, hcc.hcc_id, abc.second);
     }
   }
 
   return success;
 }
 
-bool testHitCounts(HwController& hwCtrl, StarCfg& cfg) {
+bool testHitCounts(HwController& hwCtrl, StarCfg& cfg, unsigned timeout_ms) {
   logger->info("Test ABCStar hit counters");
 
   // Enable hit counters
@@ -1240,7 +1241,8 @@ bool testHitCounts(HwController& hwCtrl, StarCfg& cfg) {
 
   auto data = readData(
     hwCtrl,
-    [](RawData& d) {return isPacketType(d, TYP_ABC_RR);}
+    [](RawData& d) {return isPacketType(d, TYP_ABC_RR);},
+    timeout_ms
     );
 
   hwCtrl.flushBuffer();
@@ -1274,7 +1276,7 @@ bool testHitCounts(HwController& hwCtrl, StarCfg& cfg) {
   return true;
 }
 
-bool testDataPacketsStatic(HwController& hwCtrl, StarCfg& cfg) {
+bool testDataPacketsStatic(HwController& hwCtrl, StarCfg& cfg, unsigned timeout_ms) {
   logger->info("Read ABCStar data packets in static mode");
 
   // Static test mode first
@@ -1306,7 +1308,8 @@ bool testDataPacketsStatic(HwController& hwCtrl, StarCfg& cfg) {
 
   // Read the data packets
   auto rdc = readAllData(
-    hwCtrl, [](RawData& d) {return isPacketType(d, TYP_LP);}
+    hwCtrl, [](RawData& d) {return isPacketType(d, TYP_LP);},
+    timeout_ms
     );
 
   hwCtrl.flushBuffer();
@@ -1326,7 +1329,7 @@ bool testDataPacketsStatic(HwController& hwCtrl, StarCfg& cfg) {
   return true;
 }
 
-bool testDataPacketsPulse(HwController& hwCtrl, StarCfg& cfg) {
+bool testDataPacketsPulse(HwController& hwCtrl, StarCfg& cfg, unsigned timeout_ms) {
   logger->info("Read ABCStar data packets in test pulse mode");
 
   // Test pulse mode
@@ -1380,7 +1383,8 @@ bool testDataPacketsPulse(HwController& hwCtrl, StarCfg& cfg) {
 
   // Read the data packets
   auto rdc = readAllData(
-    hwCtrl, [](RawData& d) {return isPacketType(d, TYP_LP);}
+    hwCtrl, [](RawData& d) {return isPacketType(d, TYP_LP);},
+    timeout_ms
     );
 
   hwCtrl.flushBuffer();
@@ -1400,7 +1404,7 @@ bool testDataPacketsPulse(HwController& hwCtrl, StarCfg& cfg) {
   return true;
 }
 
-bool readABCRegisters(HwController& hwCtrl) {
+bool readABCRegisters(HwController& hwCtrl, unsigned timeout_ms) {
 
   bool success = false;
 
@@ -1410,7 +1414,8 @@ bool readABCRegisters(HwController& hwCtrl) {
   logger->info("Reading an HPR packet from ABCStar");
   auto data_abchpr = readData(
     hwCtrl,
-    [](RawData& d) {return isPacketType(d, TYP_ABC_HPR);}
+    [](RawData& d) {return isPacketType(d, TYP_ABC_HPR);},
+    timeout_ms
     );
   if (data_abchpr) {
     logger->info("Received an ABCStar HPR packet.");
@@ -1427,7 +1432,8 @@ bool readABCRegisters(HwController& hwCtrl) {
   sendCommand(star.read_abc_register(mr3), hwCtrl);
   auto data_abcrr = readData(
     hwCtrl,
-    [](RawData& d) {return isPacketType(d, TYP_ABC_RR);}
+    [](RawData& d) {return isPacketType(d, TYP_ABC_RR);},
+    timeout_ms
     );
   if (data_abcrr) {
     logger->info("Received an ABCStar RR packet.");
@@ -1441,12 +1447,12 @@ bool readABCRegisters(HwController& hwCtrl) {
   return success;
 }
 
-bool diagnosticsReport(HwController &hwCtrl) {
+bool diagnosticsReport(HwController &hwCtrl, unsigned timeout_ms) {
   // try reading everything for 1 seconds
   auto rdc = readAllData(
         hwCtrl,
         [](RawData& d) {return true;}, // no filter on data packet type
-        1000 // ms
+        timeout_ms
         );
 
   for (unsigned c = 0; c < rdc.size(); c++) {
@@ -1479,10 +1485,11 @@ int main(int argc, char *argv[]) {
     const struct option long_options[] =
       {
         {"help", no_argument, nullptr, 'h'},
+        {"timeout", no_argument, nullptr, 'w'},
         {nullptr, 0, nullptr, 0}};
 
     int c;
-    while ((c = getopt_long(argc, argv, "hvTi:l:r:t:dRs:c:V:", long_options, nullptr)) != -1) {
+    while ((c = getopt_long(argc, argv, "hvTi:l:r:t:dRs:c:w:V:", long_options, nullptr)) != -1) {
       switch(c) {
       case 'h':
         printHelp();
@@ -1527,6 +1534,14 @@ int main(int argc, char *argv[]) {
           } catch(std::exception &e) {
             break;
           }
+        }
+        break;
+      case 'w':
+        try {
+          testData.timeout_ms = std::stoul(optarg);
+        } catch(std::exception &e) {
+          spdlog::error("Failed to parse timeout: {}", optarg);
+          return 1;
         }
         break;
       case 'd':
@@ -1730,13 +1745,13 @@ std::map<std::string, std::function<bool (HwController&)>> TestData::buildTests 
   std::map<std::string, std::function<bool (HwController&)>>
       tests = {
       // Read HCCStar HPRs
-      {"checkHCCHPRs", [&](auto &h) {return checkHCCHPRs(h, rxChannels, doResets);}},
+      {"checkHCCHPRs", [&](auto &h) {return checkHCCHPRs(h, rxChannels, doResets, timeout_ms);}},
       // Probe HCCs
-      {"probeHCCs", [&](auto &h) {return probeHCCs(h, hccStars, txChannels, rxChannels, setHccId);}},
+      {"probeHCCs", [&](auto &h) {return probeHCCs(h, hccStars, txChannels, rxChannels, setHccId, timeout_ms);}},
       // Read many HCC registers
-      {"readMoreHCCRegisters", [&](auto &h) {return readMoreHCCRegisters(h);}},
+      {"readMoreHCCRegisters", [&](auto &h) {return readMoreHCCRegisters(h, timeout_ms);}},
       // Test HCCStar register read and write
-      {"testHCCRegister", [&](auto &h) {return testHCCRegisterAccess(h, hccStars);}},
+      {"testHCCRegister", [&](auto &h) {return testHCCRegisterAccess(h, hccStars, timeout_ms);}},
 
       // Configure HCCs to enable communications with ABCs
       {"configureHCC", [&](auto &h) {configureHCC(h, *starCfg, doResets, icEnablesMask); return true;}},
@@ -1747,28 +1762,28 @@ std::map<std::string, std::function<bool (HwController&)>> TestData::buildTests 
 
       // Probe ABCStars via reading ABCStar HPRs
       // Check ABCStar HPRs
-      {"checkABCHPRs", [&](auto &h) {return checkABCHPRs(h, *starCfg, hccStars, doResets);}},
+      {"checkABCHPRs", [&](auto &h) {return checkABCHPRs(h, *starCfg, hccStars, doResets, timeout_ms);}},
       // Probe ABCStars on each HCCStar
-      {"probeABCs", [&](auto &h) {return probeABCs(h, *starCfg, hccStars, icEnablesMask);}},
+      {"probeABCs", [&](auto &h) {return probeABCs(h, *starCfg, hccStars, icEnablesMask, timeout_ms);}},
       // Read many ABC registers
-      {"readMoreABCRegisters", [&](auto &h) {return readMoreABCRegisters(h);}},
+      {"readMoreABCRegisters", [&](auto &h) {return readMoreABCRegisters(h, timeout_ms);}},
       // Test ABCStar register read and write
-      {"testABCRegister", [&](auto &h) {return testABCRegisterAccess(h, *starCfg, hccStars);}},
+      {"testABCRegister", [&](auto &h) {return testABCRegisterAccess(h, *starCfg, hccStars, timeout_ms);}},
 
       // Configure ABCs
       {"configureABC", [&](auto &h) {configureABC(h, *starCfg, doResets); return true;}},
 
       // Read ABC hit counters
-      {"testHitCounts", [&](auto &h) {return testHitCounts(h, *starCfg);}},
+      {"testHitCounts", [&](auto &h) {return testHitCounts(h, *starCfg, timeout_ms);}},
 
       // Read ABC data packets
-      {"readABCRegisters", readABCRegisters},
+      {"readABCRegisters", [&](auto &h) {return readABCRegisters(h, timeout_ms);}},
 
       // More involved tests, put FrontEnd in mode and check response
-      {"testDataPacketsStatic", [&](auto &h) {return testDataPacketsStatic(h, *starCfg);}},
-      {"testDataPacketsPulse", [&](auto &h) {return testDataPacketsPulse(h, *starCfg);}},
+      {"testDataPacketsStatic", [&](auto &h) {return testDataPacketsStatic(h, *starCfg, timeout_ms);}},
+      {"testDataPacketsPulse", [&](auto &h) {return testDataPacketsPulse(h, *starCfg, timeout_ms);}},
 
-      {"diagnosticsReport", [&](auto &h) {return diagnosticsReport(h);}},
+      {"diagnosticsReport", [&](auto &h) {return diagnosticsReport(h, timeout_ms);}},
     };
 
   return tests;
