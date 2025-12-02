@@ -128,6 +128,8 @@ namespace {
 
     std::vector<Hybrid> hccStars;
 
+    std::map<std::string, std::function<bool (HwController&)>> buildTests();
+
     /// Update things based on overall provided configuration
     void validate() {
       if(hccStars.empty()) {
@@ -1457,53 +1459,7 @@ int main(int argc, char *argv[]) {
     // Tests
     bool success = true;
 
-    auto &hccStars = testData.hccStars;
-    auto &rxChannels = testData.rxChannels;
-    auto &txChannels = testData.txChannels;
-    auto &setHccId = testData.setHccId;
-    auto &doResets = testData.doResets;
-    auto &inChannel = testData.inChannel;
-    auto &starCfg = *testData.starCfg;
-
-    std::map<std::string, std::function<bool (HwController&)>>
-      tests = {
-      // Read HCCStar HPRs
-      {"checkHCCHPRs", [&](auto &h) {return checkHCCHPRs(h, rxChannels, doResets);}},
-      // Probe HCCs
-      {"probeHCCs", [&](auto &h) {return probeHCCs(h, hccStars, txChannels, rxChannels, setHccId);}},
-      // Test HCCStar register read and write
-      {"testHCCRegister", [&](auto &h) {return testHCCRegisterAccess(h, hccStars);}},
-
-      // Configure HCCs to enable communications with ABCs
-      {"configureHCC", [&](auto &h) {configureHCC(h, starCfg, doResets); return true;}},
-      {"configureHCCIfReset", [&](auto &h) {if(doResets) configureHCC(h, starCfg, doResets); return true;}},
-      // configure HCC into the Packet Transparent mode
-      {"configureHCCForPacketTransp", [&](auto &h) {configureHCC_PacketTransp(h, starCfg, doResets); return true; }},
-      {"configureHCCForFullTransp", [&](auto &h) {configureHCC_FullTransp(h, starCfg, doResets, inChannel); return true; }},
-
-      // Probe ABCStars via reading ABCStar HPRs
-      // Check ABCStar HPRs
-      {"checkABCHPRs", [&](auto &h) {return checkABCHPRs(h, starCfg, hccStars, doResets);}},
-      // Probe ABCStars on each HCCStar
-      {"probeABCs", [&](auto &h) {return probeABCs(h, starCfg, hccStars);}},
-      // Test ABCStar register read and write
-      {"testABCRegister", [&](auto &h) {return testABCRegisterAccess(h, starCfg, hccStars);}},
-
-      // Configure ABCs
-      {"configureABC", [&](auto &h) {configureABC(h, starCfg, doResets); return true;}},
-
-      // Read ABC hit counters
-      {"testHitCounts", [&](auto &h) {return testHitCounts(h, starCfg);}},
-
-      // Read ABC data packets
-      {"readABCRegisters", readABCRegisters},
-
-      // More involved tests, put FrontEnd in mode and check response
-      {"testDataPacketsStatic", [&](auto &h) {return testDataPacketsStatic(h, starCfg);}},
-      {"testDataPacketsPulse", [&](auto &h) {return testDataPacketsPulse(h, starCfg);}},
-
-      {"diagnosticsReport", [&](auto &h) {return diagnosticsReport(h);}},
-    };
+    auto tests = testData.buildTests();
 
     // Cross-validation between tests and sequenceMap
     // Mostly here so we can be sure the list from printHelp is accurate
@@ -1587,3 +1543,48 @@ int main(int argc, char *argv[]) {
     logger->info("Success!");
     return 0;
 }
+
+std::map<std::string, std::function<bool (HwController&)>> TestData::buildTests () {
+  std::map<std::string, std::function<bool (HwController&)>>
+      tests = {
+      // Read HCCStar HPRs
+      {"checkHCCHPRs", [&](auto &h) {return checkHCCHPRs(h, rxChannels, doResets);}},
+      // Probe HCCs
+      {"probeHCCs", [&](auto &h) {return probeHCCs(h, hccStars, txChannels, rxChannels, setHccId);}},
+      // Test HCCStar register read and write
+      {"testHCCRegister", [&](auto &h) {return testHCCRegisterAccess(h, hccStars);}},
+
+      // Configure HCCs to enable communications with ABCs
+      {"configureHCC", [&](auto &h) {configureHCC(h, *starCfg, doResets); return true;}},
+      {"configureHCCIfReset", [&](auto &h) {if(doResets) configureHCC(h, *starCfg, doResets); return true;}},
+      // configure HCC into the Packet Transparent mode
+      {"configureHCCForPacketTransp", [&](auto &h) {configureHCC_PacketTransp(h, *starCfg, doResets); return true; }},
+      {"configureHCCForFullTransp", [&](auto &h) {configureHCC_FullTransp(h, *starCfg, doResets, inChannel); return true; }},
+
+      // Probe ABCStars via reading ABCStar HPRs
+      // Check ABCStar HPRs
+      {"checkABCHPRs", [&](auto &h) {return checkABCHPRs(h, *starCfg, hccStars, doResets);}},
+      // Probe ABCStars on each HCCStar
+      {"probeABCs", [&](auto &h) {return probeABCs(h, *starCfg, hccStars);}},
+      // Test ABCStar register read and write
+      {"testABCRegister", [&](auto &h) {return testABCRegisterAccess(h, *starCfg, hccStars);}},
+
+      // Configure ABCs
+      {"configureABC", [&](auto &h) {configureABC(h, *starCfg, doResets); return true;}},
+
+      // Read ABC hit counters
+      {"testHitCounts", [&](auto &h) {return testHitCounts(h, *starCfg);}},
+
+      // Read ABC data packets
+      {"readABCRegisters", readABCRegisters},
+
+      // More involved tests, put FrontEnd in mode and check response
+      {"testDataPacketsStatic", [&](auto &h) {return testDataPacketsStatic(h, *starCfg);}},
+      {"testDataPacketsPulse", [&](auto &h) {return testDataPacketsPulse(h, *starCfg);}},
+
+      {"diagnosticsReport", [&](auto &h) {return diagnosticsReport(h);}},
+    };
+
+  return tests;
+}
+
