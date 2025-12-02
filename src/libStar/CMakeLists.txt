@@ -47,6 +47,7 @@ foreach (target IN LISTS apps)
     post_build_debug_executable(${target})
 endforeach ()
 
+add_test(NAME CrossCheck_test_star_list COMMAND test_star -T)
 
 if (BUILD_TESTS)
     add_subdirectory(tests)

@@ -158,6 +158,8 @@ namespace {
       }
     }
 
+    bool crossCheck();
+
     /// Update things based on overall provided configuration
     void validate() {
       if(hccStars.empty()) {
@@ -187,6 +189,7 @@ void printHelp() {
   std::cout << " -s <test_preset> : Type of test (lower case), or sequence (UpperCase) to run, use bad to list. Default: Full\n";
   std::cout << " -c <input channel> : HCC input channel. Only used if HCCs are set to full transparent mode.\n";
   std::cout << " -V <chip_version> : Versions of the HCCStar and ABCStar chips. Possible options are: Star, Star_vH0A0, Star_vH0A1, Star_vH1A1. Default: Star (equivalent to Star_vH0A0)\n";
+  std::cout << " -T : Run internal cross-checks.\n";
 
   std::set<std::string> allSequenceTestNames;
   std::cout << "Available sequences\n";
@@ -1335,6 +1338,7 @@ int main(int argc, char *argv[]) {
     // logger config path
     std::string logCfgPath = "";
     bool doReport = false;
+    bool doCrossCheck = false;
 
     const struct option long_options[] =
       {
@@ -1342,7 +1346,7 @@ int main(int argc, char *argv[]) {
         {nullptr, 0, nullptr, 0}};
 
     int c;
-    while ((c = getopt_long(argc, argv, "hvl:r:t:dRs:c:V:", long_options, nullptr)) != -1) {
+    while ((c = getopt_long(argc, argv, "hvTl:r:t:dRs:c:V:", long_options, nullptr)) != -1) {
       switch(c) {
       case 'h':
         printHelp();
@@ -1393,12 +1397,26 @@ int main(int argc, char *argv[]) {
           return 1;
         }
         break;
+      case 'T':
+        doCrossCheck = true;
+        break;
       case 'V':
         chipVersion = std::string(optarg);
         break;
       default:
         spdlog::critical("Error while parsing command line parameters!");
         return -1;
+      }
+    }
+
+    if(doCrossCheck) {
+      auto tests = testData.buildTests();
+
+      if(!testData.crossCheck()) {
+        return 1;
+      } else {
+        std::cout << "Sequence/test cross-check passed\n";
+        return 0;
       }
     }
 
@@ -1493,38 +1511,6 @@ int main(int argc, char *argv[]) {
     bool success = true;
 
     auto tests = testData.buildTests();
-
-    // Cross-validation between tests and sequenceMap
-    // Mostly here so we can be sure the list from printHelp is accurate
-    std::set<std::string> allTestNames;
-    for(auto &tt: tests) {
-      allTestNames.insert(tt.first);
-    }
-
-    std::set<std::string> allSequenceTestNames;
-    for(auto &ss: sequenceMap) {
-      for(auto &tn: ss.second) {
-        allSequenceTestNames.insert(tn);
-      }
-    }
-
-    if(allTestNames != allSequenceTestNames) {
-      std::cout << "Internal error, list of tests does not match list of tests in sequences\n";
-      for(auto &tt: allTestNames) {
-        std::cout << " " << tt;
-        if(allSequenceTestNames.find(tt) == allSequenceTestNames.end()) {
-          std::cout << " (only in tests)\n";
-        }
-        std::cout << "\n";
-      }
-      for(auto &tt: allSequenceTestNames) {
-        if(allTestNames.find(tt) != allTestNames.end()) {
-          continue;
-        }
-        std::cout << " " << tt << " (only in sequence tests)\n";
-      }
-      return 1;
-    }
 
     testData.validate();
 
@@ -1633,3 +1619,38 @@ std::map<std::string, std::function<bool (HwController&)>> TestData::buildTests 
   return tests;
 }
 
+bool TestData::crossCheck() {
+    // Cross-validation between tests and sequenceMap
+    // Mostly here so we can be sure the list from printHelp is accurate
+    std::set<std::string> allTestNames;
+    for(auto &tt: buildTests()) {
+      allTestNames.insert(tt.first);
+    }
+
+    std::set<std::string> allSequenceTestNames;
+    for(auto &ss: sequenceMap) {
+      for(auto &tn: ss.second) {
+        allSequenceTestNames.insert(tn);
+      }
+    }
+
+    if(allTestNames != allSequenceTestNames) {
+      std::cout << "Internal error, list of tests does not match list of tests in sequences\n";
+      for(auto &tt: allTestNames) {
+        std::cout << " " << tt;
+        if(allSequenceTestNames.find(tt) == allSequenceTestNames.end()) {
+          std::cout << " (only in tests)\n";
+        }
+        std::cout << "\n";
+      }
+      for(auto &tt: allSequenceTestNames) {
+        if(allTestNames.find(tt) != allTestNames.end()) {
+          continue;
+        }
+        std::cout << " " << tt << " (only in sequence tests)\n";
+      }
+      return false;
+    }
+
+    return true;
+}
