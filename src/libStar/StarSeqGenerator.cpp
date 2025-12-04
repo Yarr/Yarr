@@ -71,7 +71,7 @@ void StarSeqGenerator::addIdle(unsigned nframes) {
 void StarSeqGenerator::addIdle(const std::vector<std::string>& cmd_tokens) {
   // idle <number of frames>
   //assert(cmd_tokens.at(0) == "idle");
-  unsigned nframes = std::stoi(cmd_tokens.at(1), nullptr, 0); //auto-detect base
+  unsigned nframes = std::stoul(cmd_tokens.at(1), nullptr, 0); //auto-detect base
   addIdle(nframes);
 }
 
@@ -89,8 +89,8 @@ void StarSeqGenerator::addL0(uint8_t mask, uint8_t tag, bool bcr) {
 void StarSeqGenerator::addL0(const std::vector<std::string>& cmd_tokens) {
   // l0 <4-bit mask in binary> <7-bit tag> [BCR]
   //assert(cmd_tokens.at(0) == "l0")
-  uint8_t mask = std::stoi(cmd_tokens.at(1), nullptr, 2) & 0xf; // base 2
-  uint8_t tag = std::stoi(cmd_tokens.at(2), nullptr, 0) & 0x7f; // auto-detect base
+  uint8_t mask = std::stoul(cmd_tokens.at(1), nullptr, 2) & 0xf; // base 2
+  uint8_t tag = std::stoul(cmd_tokens.at(2), nullptr, 0) & 0x7f; // auto-detect base
   bool bcr = false;
   if (cmd_tokens.size() >= 4) {
     bcr = cmd_tokens[3] == "bcr" or cmd_tokens[3] == "BCR";
@@ -113,8 +113,8 @@ void StarSeqGenerator::addFastCmd(const std::vector<std::string>& cmd_tokens) {
   // fast <cmd type> <delay>
   //assert(cmd_tokens.at(0) == "fast")
   addFastCmd(
-    std::stoi(cmd_tokens.at(1), nullptr, 0), // auto-detect base
-    std::stoi(cmd_tokens.at(2), nullptr, 0) // auto-detect base
+    std::stoul(cmd_tokens.at(1), nullptr, 0), // auto-detect base
+    std::stoul(cmd_tokens.at(2), nullptr, 0) // auto-detect base
   );
 }
 
@@ -171,31 +171,31 @@ void StarSeqGenerator::addRegCmd(const std::vector<std::string>& cmd_tokens) {
     throw std::invalid_argument("Unknown access type for register command: "+access);
   }
 
-  unsigned addr = std::stoi(cmd_tokens.at(3), nullptr, 0); // auto-detect base
+  unsigned addr = std::stoul(cmd_tokens.at(3), nullptr, 0); // auto-detect base
 
   if (isWrite) {
-    unsigned value = std::stoi(cmd_tokens.at(4), nullptr, 0); // auto-detect base
+    unsigned value = std::stoul(cmd_tokens.at(4), nullptr, 0); // auto-detect base
     // HCC ID if specified otherwise broadcast by default
     unsigned hccID = 0xf;
     if (cmd_tokens.size() > 5) {
-      hccID = std::stoi(cmd_tokens[5], nullptr, 0); // auto-detect base
+      hccID = std::stoul(cmd_tokens[5], nullptr, 0); // auto-detect base
     }
     // ABC ID if specified otherwise broadcast by default
     unsigned  abcID = 0xf;
     if (cmd_tokens.size() > 6) {
-      abcID = std::stoi(cmd_tokens[6], nullptr, 0); // auto-detect base
+      abcID = std::stoul(cmd_tokens[6], nullptr, 0); // auto-detect base
     }
     addRegWrCmd(isABC, addr, value, hccID, abcID);
   } else {
     // HCC ID if specified otherwise broadcast by default
     unsigned hccID = 0xf;
     if (cmd_tokens.size() > 4) {
-      hccID = std::stoi(cmd_tokens[4], nullptr, 0); // auto-detect base
+      hccID = std::stoul(cmd_tokens[4], nullptr, 0); // auto-detect base
     }
     // ABC ID if specified otherwise broadcast by default
     unsigned  abcID = 0xf;
     if (cmd_tokens.size() > 5) {
-      abcID = std::stoi(cmd_tokens[5], nullptr, 0); // auto-detect base
+      abcID = std::stoul(cmd_tokens[5], nullptr, 0); // auto-detect base
     }
     addRegRdCmd(isABC, addr, hccID, abcID);
   }
@@ -313,7 +313,7 @@ void StarSeqGenerator::load(std::istream &is, bool reset) {
     }
 
     // hex
-    m_sequence.push_back(std::stoi(line, nullptr, 16));
+    m_sequence.push_back(std::stoul(line, nullptr, 16));
   }
 }
 
