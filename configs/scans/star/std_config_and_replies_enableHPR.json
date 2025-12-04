@@ -1,0 +1,65 @@
+{
+    "scan": {
+      "analysis": {
+        "0": {
+          "algorithm": "OccupancyAnalysis",
+          "config": {}
+        },
+        "n_count": 0
+      },
+      "histogrammer": {
+        "0": {
+          "algorithm": "OccupancyMap",
+          "config": {}
+        },
+        "n_count": 0
+      },
+      "loops": [
+        {
+          "config": {
+            "max": 44,
+            "min": 40,
+            "step": 2,
+            "parameter": "ABCs_BVT"
+          },
+          "loopAction": "StdParameterLoop"
+        },
+        {
+          "config": {
+            "trig_count": 10,
+            "trig_frequency": 1000,
+            "trig_time": 0,
+            "l0_latency": 20,
+            "noInject": true
+          },
+          "loopAction": "StarTriggerLoop"
+        },
+        {
+          "config": {
+            "maxIterationTime": 10001000,
+            "triggersLostTolerance": 0,
+            "maxConsecutiveRxReads": 100,
+            "maxConsecutivePushes":  10,
+            "average_data_processing_time_us": 10
+          },
+          "loopAction": "StdDataLoop"
+        }
+      ],
+      "name": "stdConfigAndReplies",
+      "prescan": {
+        "ABCs_MASKHPR": 0,
+        "ABCs_STOPHPR": 0,
+        "HCC_MASKHPR": 0,
+        "HCC_STOPHPR": 0,
+        "#HCC_MASKHPR": 0,
+        "#HCC_STOPHPR": 0,
+        "ABCs_BCAL": 0,
+        "ABCs_PR_ENABLE": 1,
+        "ABCs_LP_ENABLE": 1,
+        "ABCs_DETMODE": 0,
+        "ABCs_CALPULSE_ENABLE": 1,
+        "ABCs_CALPULSE_POLARITY": 0
+      }
+    }
+  }
+  

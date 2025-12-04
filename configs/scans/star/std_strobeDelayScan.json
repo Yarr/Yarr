@@ -4,7 +4,9 @@
       "0": {
         "algorithm": "StarStrobeDelayAnalysis",
         "config": {
-          "parametersOfInterest": ["ABCs_STR_DEL"],
+          "parametersOfInterest": [
+            "ABCs_STR_DEL"
+          ],
           "dumpDebugSDPlots": false
         }
       },
@@ -35,13 +37,13 @@
       },
       {
         "config": {
-          "trig_count": 1000,
-          "trig_frequency": 500,
+          "trig_count": 100,
+          "trig_frequency": 1000,
           "trig_time": 0,
-          "l0_latency": 19,
-          "verbose": false,
+          "l0_latency": 20,
+          "noInject": false,
           "extTrigger": false,
-          "noInject": false
+          "useHitCount": false
         },
         "loopAction": "StarTriggerLoop"
       },
@@ -56,11 +58,11 @@
       "HCC_MASKHPR": 1,
       "HCC_STOPHPR": 1,
       "ABCs_BCAL": 114,
-      "ABCs_BVT":  61,
+      "ABCs_BVT": 61,
       "ABCs_LP_ENABLE": 1,
       "ABCs_DETMODE": 2,
       "ABCs_CALPULSE_ENABLE": 1,
-      "ABCs_CALPULSE_POLARITY":  0,
+      "ABCs_CALPULSE_POLARITY": 0,
       "ABCs_STR_DEL_R": 3
     }
   }

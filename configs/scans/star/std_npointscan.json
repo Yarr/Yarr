@@ -5,13 +5,16 @@
         "algorithm": "ScurveFitter",
         "config": {
           "reverse": true,
-          "parametersOfInterest": ["ABCs_BVT"]
+          "parametersOfInterest": ["ABCs_BVT"],
+	        "dumpDebugScurvePlots": false
         }
       },
       "1": {
         "algorithm": "StarNPointGainAnalysis",
         "config": {
-          "parametersOfInterest": ["ABCs_BCAL"]
+          "parametersOfInterest": ["ABCs_BCAL"],
+          "fitFunction": "linear",
+          "convertBVTtomV": true
         },
         "dependOn": ["ScurveFitter"]
       },
@@ -36,7 +39,7 @@
       },
       {
         "config": {
-          "max": 110,
+          "max": 100,
           "min": 0,
           "step": 2,
           "parameter":"ABCs_BVT"
@@ -45,15 +48,21 @@
       },
       {
         "config": {
-          "trig_count": 100,
-          "trig_frequency": 500,
+          "trig_count": 500,
+          "trig_frequency": 10000,
           "trig_time": 0,
           "l0_latency": 20,
-          "noInject": false       
+          "noInject": false      
         },
         "loopAction": "StarTriggerLoop"
       },
       {
+	"config": {
+      "maxIterationTime": 5000000,
+      "triggersLostTolerance": 0,
+      "maxConsecutiveRxReads": 1,
+      "averageDataProcessingTime": 10
+	},
         "loopAction": "StdDataLoop"
       }
     ],
@@ -70,3 +79,4 @@
     }
   }
 }
+
