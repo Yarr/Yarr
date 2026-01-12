@@ -463,6 +463,9 @@ void Itkpixv2DataProcessor::process_core()
                             {
                                 // This is now possible if the event is so long that it spreads over raw data containers
                                 // logger->warn("[{}] No header in data fragment!", _channel);
+                                if (!_curOut) {
+                                    _curOut = std::make_unique<FrontEndData>(_curInV->stat);
+                                }
                                 _curOut->newEvent(_tag, _l1id, _bcid);
                                 _events++;
                                 _splitEventsCnt++;
@@ -516,6 +519,9 @@ void Itkpixv2DataProcessor::process_core()
                         {
                             // This is now possible if an event is so long that it spread over raw data containers
                             // logger->warn("[{}] No header in data fragment!", _channel);
+                            if (!_curOut) {
+                                _curOut = std::make_unique<FrontEndData>(_curInV->stat);
+                            }
                             _curOut->newEvent(_tag, _l1id, _bcid);
                             _events++;
                             _splitEventsCnt++;
