@@ -578,15 +578,17 @@ bool Itkpixv2DataProcessor::getNextDataBlockImpl()
         }
         _wordIdx += 2; // Increase block index
 
-        // Segfault will happen at the next line, print circular buffer results
-        if (unlikely(_curInV->data.size() <= _rawDataIdx)) {
-            logger->error("[{}] DataProcessor is entering segfault case! _curInV size {}, _rawDataIdx {}, 0x{:x} 0x{:x}", m_feCfg->getName(), _curInV->data.size(), _rawDataIdx, _data[0], _data[1]);
+        // Guard against out-of-range raw data access before dereferencing.
+        if (unlikely(_rawDataIdx >= static_cast<int>(_curInV->data.size()))) {
+            logger->error("[{}] DataProcessor reached end of raw data container. _curInV size {}, _rawDataIdx {}, 0x{:x} 0x{:x}", m_feCfg->getName(), _curInV->data.size(), _rawDataIdx, _data[0], _data[1]);
 #if USE_ITKPIX_DEBUG_BUFFER > 0
             dumpDebugBuffer();
 #endif
+            // Force the "cannot get more data" path below.
+            _rawDataIdx = _curInV->size();
         }
 
-        if (_wordIdx >= _curInV->data[_rawDataIdx]->getSize())
+        if (_rawDataIdx < static_cast<int>(_curInV->data.size()) && _wordIdx >= _curInV->data[_rawDataIdx]->getSize())
         {
             _rawDataIdx++;
             _wordIdx = 0;
