@@ -158,16 +158,20 @@ int main(int argc, char **argv) {
     int wait = time*10000000;
     std::cout << std::fixed << std::setprecision(2);
 
+    int min=std::floor(count);
+    int max=std::ceil(count);
+
     std::vector<unsigned> lanes;
     if (mode=="4-to-1"){
         count = count * 4;
+        min = min * 4;
+        max = max * 4;
     } else if (mode=="2-to-1"){
         count = count * 3;
+        min = min * 3;
+        max = max * 3;
     }
     
-    int min=std::floor(count)-1;
-    int max=std::ceil(count)+1;
-
     logger->info("Setting up configuration for all chips...");
 
     // Set up all chips 
