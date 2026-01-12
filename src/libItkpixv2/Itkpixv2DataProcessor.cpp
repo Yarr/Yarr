@@ -294,6 +294,9 @@ void Itkpixv2DataProcessor::process_core()
             }
             // Create a new event
             // RD53C can return l1id/bcid values according to chip config registers
+            if (!_curOut) {
+                _curOut = std::make_unique<FrontEndData>(_curInV->stat);
+            }
             _curOut->newEvent(_tag, _l1id, _bcid);
             _events++;
             sendFeedback(_tag, _bcid);
