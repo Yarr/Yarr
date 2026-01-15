@@ -82,7 +82,7 @@ RawDataPtr EmuRxCore<FE>::readData(uint32_t chn) {
     std::vector<uint32_t> in;
     m_coms[chn]->readAll(in);
     data = std::make_shared<RawData>(chn, std::move(in));
-    return std::move(data);
+    return data;
 }
 
 template<class FE>
