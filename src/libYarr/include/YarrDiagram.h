@@ -9,8 +9,8 @@
 #include "FeDataProcessor.h"
 #include "HistoDataProcessor.h"
 
-class Node;
-class Line;
+struct Node;
+struct Line;
 
 class YarrDiagram {
 
