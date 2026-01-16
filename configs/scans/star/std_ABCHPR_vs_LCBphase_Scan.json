@@ -1,0 +1,46 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "StarRRvParamAnalysis",
+        "config": {
+          "parametersOfInterest": ["HCC_HFD_LCBA_FINEDELAY"],
+          "registerOfInterest": "HPR (Register 63)"
+        }
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "StarABCRRDist",
+        "config": {}
+      },
+      "n_count": 1
+    },
+    "loops": [
+      {
+        "config": {
+          "max": 15,
+          "min": 0,
+          "step": 1,
+          "parameter":"HCC_HFD_LCBA_FINEDELAY"
+        },
+        "loopAction": "StdParameterLoop"
+      },
+      {
+        "config": {
+          "trig_count": 40,
+          "fpath_sequence": "configs/scans/star/patterns/ABCHPR_read_bytes.txt"
+        },
+        "loopAction": "StarTriggerLoop"
+      },
+      {
+        "config": {
+            "maxIterationTime": 5000
+        },
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "ABCHPR_vs_LCBphase_Scan"
+  }
+}

@@ -28,6 +28,8 @@ class StarRegDump: public LoopActionBase {
 
     private:
         int    m_addr;
+        std::vector<int> m_ABCaddrList;
+        std::vector<int> m_HCCaddrList;
         void init() override;
         void end() override;
         void execPart1() override;

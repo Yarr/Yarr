@@ -1,0 +1,8 @@
+{
+    "commands": [
+        "idle 4",
+        "reg abc read 63",
+        "idle 1"],
+    "firmware": false,
+    "output": "configs/triggers/ABCHPR_read_bytes.txt"
+  }

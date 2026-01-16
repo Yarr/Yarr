@@ -1,0 +1,8 @@
+{
+    "commands": [
+        "idle 4",
+        "reg hcc read 40",
+        "idle 1"],
+    "firmware": false,
+    "output": "configs/triggers/HCCIC_read_bytes.txt"
+  }

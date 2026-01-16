@@ -1,0 +1,22 @@
+{
+    "commands": [
+        "idle 4",
+        "reg abc write 16 0x55555555",
+        "idle 4",
+        "reg abc write 16 0x5f8000fa 2 0",
+        "reg abc write 16 0x5f4000fa 2 1",
+        "reg abc write 16 0x5f2000fa 2 2",
+        "reg abc write 16 0x5f1000fa 2 3",
+        "reg abc write 16 0x5f0800fa 2 4",
+        "reg abc write 16 0x5f0400fa 2 5",
+        "reg abc write 16 0x5f0200fa 2 6",
+        "reg abc write 16 0x5f0100fa 2 7",
+        "reg abc write 16 0x5f0080fa 2 8",
+        "reg abc write 16 0x5f0040fa 2 9",
+        "reg abc write 16 0x5f0020fa 2 10",
+        "idle 4",
+        "reg abc read 16",
+        "idle 1"],
+    "firmware": false,
+    "output": "configs/triggers/ABC_ID_Check_bytes.txt"
+  }

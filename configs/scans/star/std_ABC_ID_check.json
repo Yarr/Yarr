@@ -1,0 +1,36 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "StarRRvParamAnalysis",
+        "config": {
+          "registerOfInterest": "Input Mask 0 (Register 16)"
+        }
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "StarABCRRDist",
+        "config": {}
+      },
+      "n_count": 1
+    },
+    "loops": [
+      {
+        "config": {
+          "trig_count": 10,
+          "fpath_sequence": "configs/scans/star/patterns/ABC_ID_Check_bytes.txt"
+        },
+        "loopAction": "StarTriggerLoop"
+      },
+      {
+        "config": {
+            "maxIterationTime": 5000
+        },
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "ABC_ID_check"
+  }
+}

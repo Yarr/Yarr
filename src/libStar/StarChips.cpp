@@ -249,7 +249,17 @@ yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_va
   //if we deal with a setting for the HCC, look up in register map.
   if (strPrefix=="HCC_") {
     auto subRegName = name.substr(4);
-    if(!HccNames::subRegStringIsValid(subRegName)) {
+    if(subRegName == "FD_DATAIN_FINEDELAY") {
+      // Write the same value to all FD_DATAIN_FINEDELAY sub regs
+      logger->trace("Writing {} to all FD_DATAIN_FINEDELAY sub-registers.", reg_value);
+
+      for(size_t i = 0; i < Star::MaxABCsPerHCC; i++){
+        auto subRegName_i = subRegName.substr(0,9) + std::to_string(i) + subRegName.substr(9);
+        auto subRegEnum_i = HccNames::subRegFromString(subRegName_i).value();
+        setAndWriteHCCSubRegister(subRegEnum_i, reg_value);
+      }
+    }
+    else if(!HccNames::subRegStringIsValid(subRegName)) {
       logger->error(" --> Error: Could not find HCC sub-register \"{}\"", subRegName);
       return yarrFailure;
     } else {

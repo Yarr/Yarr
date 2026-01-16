@@ -19,6 +19,8 @@ add_library(Star SHARED
         StarNPointGainAnalysis.cpp
         StarParamFeedback.cpp
         StarRegDump.cpp
+        StarRRHistogrammer.cpp
+        StarRRvParamAnalysis.cpp
         StarSeqGenerator.cpp
         StarStrobeDelayAnalysis.cpp
         StarTriggerLoop.cpp

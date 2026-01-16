@@ -1,0 +1,19 @@
+{
+    "commands": [
+        "idle 1",
+        "fast 11 1",
+        "idle 1",
+        "fast 2 0",
+        "idle 4",
+        "l0 0001 1",
+        "l0 0010 2",
+        "l0 0000 3",
+        "l0 0101 16",
+        "l0 1011 17",
+        "l0 1111 18",
+        "idle 42",
+        "reg hcc read 10",
+        "fast 11 1"],
+    "firmware": false,
+    "output": "configs/triggers/HCC_trigger_test_read_bytes.txt"
+  }
