@@ -1,0 +1,36 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "StarRRvParamAnalysis",
+        "config": {
+          "registerOfInterest": "ICenable (Register 40)"
+        }
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "StarHCCRRDist",
+        "config": {}
+      },
+      "n_count": 1
+    },
+    "loops": [
+      {
+        "config": {
+          "trig_count": 10,
+          "fpath_sequence": "configs/scans/star/patterns/HCC_ID_Check_bytes.txt"
+        },
+        "loopAction": "StarTriggerLoop"
+      },
+      {
+        "config": {
+            "maxIterationTime": 5000
+        },
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "HCC_ID_Check"
+  }
+}

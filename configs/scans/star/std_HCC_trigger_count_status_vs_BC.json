@@ -1,0 +1,46 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "StarRRvParamAnalysis",
+        "config": {
+          "parametersOfInterest": ["HCC_CFD_BC_FINEDELAY"],
+          "registerOfInterest": "Readout Request Queue Occupancy (Register 10)"
+        }
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "StarHCCRRDist",
+        "config": {}
+      },
+      "n_count": 1
+    },
+    "loops": [
+      {
+        "config": {
+          "max": 15,
+          "min": 0,
+          "step": 1,
+          "parameter":"HCC_CFD_BC_FINEDELAY"
+        },
+        "loopAction": "StdParameterLoop"
+      },
+      {
+        "config": {
+          "trig_count": 1,
+          "fpath_sequence": "configs/scans/star/patterns/HCC_trigger_test_read_bytes.txt"
+        },
+        "loopAction": "StarTriggerLoop"
+      },
+      {
+          "config": {
+            "maxIterationTime": 5000
+        },
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "HCC_trigger_count_status_vs_BC"
+  }
+}

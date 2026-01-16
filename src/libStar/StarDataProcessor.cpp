@@ -150,9 +150,9 @@ void StarDataProcessor::process_core() {
         if (curInV == nullptr)
             continue;
 
-        auto curOut = statusFb
-	  ?process_event_core(*curInV, [&](auto fb) {statusFb->pushData(std::move(fb));})
-	  :process_event_core(*curInV, [&](auto fb) {});
+        auto curOut = statusFb 
+        ?process_event_core(*curInV, [&](auto fb) {statusFb->pushData(std::move(fb));})
+        :process_event_core(*curInV, [&](auto fb) {});
 
         output->pushData(std::move(curOut));
         // dataCnt++;
@@ -372,6 +372,22 @@ void process_data(RawData &curIn,
                                              packet.channel_abc*Star::StripsPerABCRow+( ((channel>>1)&0x7f)+1), 1);
             }
         }
+        else{
+          
+          logger->trace("Adding contents of RR to FrontEndData object");
+
+          // Not event data
+          curOut.newEvent(0xffffffff, 0xffffffff, 0xffffffff);
+
+          // Split reg value between row and column data, put rest of information in tot
+          FrontEndHit d{};
+          d.row = (packet.value >> 16) & 0xffff; 
+          d.col = (packet.value) & 0xffff;
+          d.tot = 0x8000 | ((packetType & 0x7) << 12) | ((packet.address & 0xff) << 4) | (packet.channel_abc << 0);
+          // Starts with a 1 always, followed by 3 bits for packet type, followed by 8 bits for reg addr, followed by 4 bits for abc ch
+          curOut.curEvent->addHit(d);
+        }
+
     } else if (packetType == TYP_ABC_HPR || packetType == TYP_HCC_HPR) {
         curStatus.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_Control;
         if(logger->should_log(spdlog::level::trace)) {

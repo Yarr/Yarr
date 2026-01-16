@@ -44,6 +44,14 @@ Especially useful to examine post-scan configs for specific subregister values.
 
 Creates an LCB sequence from a list of commands.
 
+LCB sequences are particularly useful when including a `StarTriggerLoop` in your scan (e.g. in a `StarRRvParamAnalysis` scan). Read-able commands can be written into a json file and then fed into `makeLCBSequence` to produce a txt file with the LCB sequence. Examples of both the json and txt files can be found in `configs/scans/star/patterns`. To produce a txt file from a json file, use the following command:
+
+```
+bin/makeLCBSequence -j configs/scans/star/patterns/<read-able_commands_file>.json
+```
+
+The scan config then needs to contain a `StarTriggerLoop` where `fpath_sequence` is set to this file.
+
 ### `lcbL0a`
 
 Sends a fully-configurable L0A and/or BCR.
