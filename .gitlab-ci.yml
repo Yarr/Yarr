@@ -131,7 +131,6 @@ job_build_clang:
     - CTEST_OUTPUT_ON_FAILURE=1 make test
     - cd ..
     - bin/scanConsole -k
-  allow_failure: true
 
 job_build_none:
   extends: .build_matrix

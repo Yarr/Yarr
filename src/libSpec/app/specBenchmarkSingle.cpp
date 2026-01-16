@@ -5,6 +5,8 @@
 #include <sys/time.h>
 #include <string>
 #include <cstdint>
+#include <array>
+#include <cstring>
 
 int main(void) {
     SpecCom mySpec(0);
@@ -12,25 +14,29 @@ int main(void) {
     std::fstream file_write("benchmarkSingle_write.out", std::ios::out);
     std::fstream file_read("benchmarkSingle_read.out", std::ios::out);
   
-    int maxCycles = 50;
-    int maxLoops = 1024;
+    constexpr int maxCycles = 50;
+    constexpr int maxLoops = 1024;
 
     double overall_time = 0;
     double overall_data = 0;
     
     timeval start, end;
+    
+    constexpr size_t MAX_WORDS = 2 * (maxCycles+1);
+    std::array<uint32_t, MAX_WORDS> data_buf{};
+        
     std::cout << std::endl << "==========================================" << std::endl;
     std::cout << "Starting Write Benchmark:" << std::endl;
     for (int cycles=0; cycles<maxCycles; cycles++) {
-        const size_t size = 2*(cycles+1);
-        uint32_t data[size];
+        const size_t size = 2 * (cycles + 1);
+
         // Prepare data pattern
-        memset(data, 0x5A, size*4);
+        std::memset(data_buf.data(), 0x5A, size*4);
         
         // Write to Spec
         gettimeofday(&start, NULL);
         for(int loops=0; loops<maxLoops; loops++) {
-            mySpec.writeBlock(0x20000, data, size);
+            mySpec.writeBlock(0x20000, data_buf.data(), size);
         }
         gettimeofday(&end, NULL);
 
@@ -53,14 +59,12 @@ int main(void) {
     std::cout << "===========================================" << std::endl;
     std::cout << "Starting Read Benchmark:" << std::endl;
     for (int cycles=0; cycles<maxCycles; cycles++) {
-        const size_t size = 2*(cycles+1);
-        uint32_t data[size];
+        const size_t size = 2 * (cycles + 1);
         
         // Read from Spec
-        maxLoops = 1024;
         gettimeofday(&start, NULL);
         for(int loops=0; loops<maxLoops; loops++) {
-            mySpec.readBlock(0x20000, data, size);
+            mySpec.readBlock(0x20000, data_buf.data(), size);
         }
         gettimeofday(&end, NULL);
 
