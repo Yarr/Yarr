@@ -143,6 +143,9 @@ namespace {
     /// Default to 640
     bool mode640 = true;
 
+    /// Default to updating IDs once readout success
+    bool setNotBroadcastIds = true;
+
     // Original Spec version
     std::vector<uint32_t> rxChannels = {6};
     std::vector<uint32_t> txChannels = {0xFFFF};
@@ -204,6 +207,7 @@ void printHelp() {
   std::cout << " -d : Modify HCCStar IDs when probing.\n";
   std::cout << " -i : All expected ICs (default all: 0x7ff).\n";
   std::cout << " -3 : Configure HCC for 320 instead of 640 (default).\n";
+  std::cout << " -b : Always use broadcast for read/write (default is to update map based on HPR).\n";
   std::cout << " -R : Send reset commands.\n";
   std::cout << " -v : Report carried data between actions (diagnostic).\n";
   std::cout << " -w <timeout_ms> : General timeout in milliseconds.\n";
@@ -320,8 +324,10 @@ void enableConnectedChannels(HwController& hwCtrl, std::vector<Hybrid>& hccStars
 
   logger->debug("Setting enables for {} hybrids", hccStars.size());
 
-  if (hccStars.empty())
+  if (hccStars.empty()) {
+    logger->error("Hybrid communication mapping empty, not enabling streams!");
     return;
+  }
 
   std::set<uint32_t> txChns;
   std::set<uint32_t> rxChns;
@@ -691,9 +697,13 @@ bool probeHCCs(
   const std::vector<uint32_t>& txChannels,
   const std::vector<uint32_t>& rxChannels,
   bool setID,
-  unsigned timeout_ms)
+  unsigned timeout_ms,
+  bool setNotBroadcastIds)
 {
-  HCCs.clear();
+  if(setNotBroadcastIds) {
+    HCCs.clear();
+  }
+
   uint32_t nHCC = 0;
 
   for (auto tx : txChannels) {
@@ -742,9 +752,11 @@ bool probeHCCs(
           hccID = nHCC;
         }
 
-        // Define HCC, but still use broadcast for ABCs
-        Hybrid h{tx, rx, hccID, BROADCAST_ABCS};
-        HCCs.push_back(h);
+        if(setNotBroadcastIds) {
+          // Define HCC, but still use broadcast for ABCs
+          Hybrid h{tx, rx, hccID, BROADCAST_ABCS};
+          HCCs.push_back(h);
+        }
 
         nHCC++;
       }
@@ -755,7 +767,7 @@ bool probeHCCs(
     }
   } // end of tx channel loop
 
-  if (HCCs.empty()) {
+  if (HCCs.empty() && setNotBroadcastIds) {
     logger->error("No HCCs found");
     return false;
   }
@@ -810,7 +822,7 @@ bool readMoreHCCRegisters(HwController& hwCtrl, unsigned timeout_ms)
   return read_count > 0;
 }
 
-bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars, bool reset, unsigned timeout_ms) {
+bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars, bool reset, unsigned timeout_ms, bool setNotBroadcastIds) {
   bool receivedABCHPR = false;
   bool hprGood = true;
 
@@ -857,9 +869,11 @@ bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccSt
         continue;
       }
 
-      if(hcc.abcs == BROADCAST_ABCS) {
-        // Remove broadcast now we know better
-        hcc.abcs.clear();
+      if(setNotBroadcastIds) {
+        if(hcc.abcs == BROADCAST_ABCS) {
+          // Remove broadcast now we know better
+          hcc.abcs.clear();
+        }
       }
 
       // HPR from a new channel
@@ -905,7 +919,7 @@ bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccSt
   return receivedABCHPR and hprGood;
 }
 
-bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars, unsigned icEnablesMask, unsigned timeout_ms) {
+bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars, unsigned icEnablesMask, unsigned timeout_ms, bool setNotBroadcastIds) {
   bool hasABCStar = false;
 
   for (auto& hcc : hccStars) {
@@ -949,9 +963,11 @@ bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars
       // get the chipID from the top four bits of the 16-bit status word
       uint32_t abcid = (packet.abc_status >> 12) & 0xf;
 
-      // Add abcid to hcc.abcs in case checkABCHPRs has not been called previously
-      if ( hcc.abcs.find(abc_chn) == hcc.abcs.end() ) {
-        hcc.abcs[abc_chn] = abcid;
+      if(setNotBroadcastIds) {
+        // Add abcid to hcc.abcs in case checkABCHPRs has not been called previously
+        if ( hcc.abcs.find(abc_chn) == hcc.abcs.end() ) {
+          hcc.abcs[abc_chn] = abcid;
+        }
       }
 
       // Update the active input channel mask
@@ -1497,13 +1513,16 @@ int main(int argc, char *argv[]) {
         {nullptr, 0, nullptr, 0}};
 
     int c;
-    while ((c = getopt_long(argc, argv, "3hvTi:l:r:t:dRs:c:w:V:", long_options, nullptr)) != -1) {
+    while ((c = getopt_long(argc, argv, "3hbvTi:l:r:t:dRs:c:w:V:", long_options, nullptr)) != -1) {
       switch(c) {
       case 'h':
         printHelp();
         return 0;
       case '3':
         testData.mode640 = false;
+        break;
+      case 'b':
+        testData.setNotBroadcastIds = false;
         break;
       case 'i':
         try {
@@ -1634,9 +1653,10 @@ int main(int argc, char *argv[]) {
       return 1;
     }
 
-    logger->debug("Run with{}reset, speed {}{}",
+    logger->debug("Run with{}reset, speed {} ({}){}",
                   testData.doResets?" ":"-out ",
                   testData.mode640?"640":"320",
+                  testData.setNotBroadcastIds?"will update IDs":"always use broadcast",
                   testData.setHccId?", and set HCC IDs":""
                   );
 
@@ -1764,7 +1784,7 @@ std::map<std::string, std::function<bool (HwController&)>> TestData::buildTests 
       // Read HCCStar HPRs
       {"checkHCCHPRs", [&](auto &h) {return checkHCCHPRs(h, rxChannels, doResets, timeout_ms);}},
       // Probe HCCs
-      {"probeHCCs", [&](auto &h) {return probeHCCs(h, hccStars, txChannels, rxChannels, setHccId, timeout_ms);}},
+      {"probeHCCs", [&](auto &h) {return probeHCCs(h, hccStars, txChannels, rxChannels, setHccId, timeout_ms, setNotBroadcastIds);}},
       // Read many HCC registers
       {"readMoreHCCRegisters", [&](auto &h) {return readMoreHCCRegisters(h, timeout_ms);}},
       // Test HCCStar register read and write
@@ -1779,9 +1799,9 @@ std::map<std::string, std::function<bool (HwController&)>> TestData::buildTests 
 
       // Probe ABCStars via reading ABCStar HPRs
       // Check ABCStar HPRs
-      {"checkABCHPRs", [&](auto &h) {return checkABCHPRs(h, *starCfg, hccStars, doResets, timeout_ms);}},
+      {"checkABCHPRs", [&](auto &h) {return checkABCHPRs(h, *starCfg, hccStars, doResets, timeout_ms, setNotBroadcastIds);}},
       // Probe ABCStars on each HCCStar
-      {"probeABCs", [&](auto &h) {return probeABCs(h, *starCfg, hccStars, icEnablesMask, timeout_ms);}},
+      {"probeABCs", [&](auto &h) {return probeABCs(h, *starCfg, hccStars, icEnablesMask, timeout_ms, setNotBroadcastIds);}},
       // Read many ABC registers
       {"readMoreABCRegisters", [&](auto &h) {return readMoreABCRegisters(h, timeout_ms);}},
       // Test ABCStar register read and write
