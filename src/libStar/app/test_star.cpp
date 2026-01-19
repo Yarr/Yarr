@@ -140,6 +140,8 @@ namespace {
     std::unique_ptr<StarCfg> starCfg;
     bool setHccId = false;
     bool doResets = false;
+    /// Default to 640
+    bool mode640 = true;
 
     // Original Spec version
     std::vector<uint32_t> rxChannels = {6};
@@ -201,6 +203,7 @@ void printHelp() {
   std::cout << " -l <log_config> : Configure loggers.\n";
   std::cout << " -d : Modify HCCStar IDs when probing.\n";
   std::cout << " -i : All expected ICs (default all: 0x7ff).\n";
+  std::cout << " -3 : Configure HCC for 320 instead of 640 (default).\n";
   std::cout << " -R : Send reset commands.\n";
   std::cout << " -v : Report carried data between actions (diagnostic).\n";
   std::cout << " -w <timeout_ms> : General timeout in milliseconds.\n";
@@ -293,6 +296,20 @@ uint32_t updateABCRegister(ABCStarRegister reg, uint32_t value, StarCfg& cfg) {
     });
 
   return addr;
+}
+
+void setOpMode(int packetMode, bool mode640, HwController &hwCtrl, StarCfg& cfg) {
+  // Register OPmode/OPmodeC
+  // NB 41/42 are the same, so don't need to set ROSPEEDC
+  if(mode640) {
+    updateHCCSubRegister(HCCStarSubRegister::ROSPEED, 1, cfg);
+  }
+
+  auto [addr, val] = updateHCCSubRegister(HCCStarSubRegister::OPMODE, packetMode, cfg);
+
+  // We happen to know that 41 + 1 is 42
+  sendCommand(star.write_hcc_register(addr, val), hwCtrl);
+  sendCommand(star.write_hcc_register(addr + 1, val), hwCtrl);
 }
 
 // Enable Tx and Rx channels that are connected to HCCs
@@ -501,7 +518,7 @@ bool isPacketType(RawData& data, PacketType packet_type, bool isPacketTransp=fal
 
 // Configure chips
 // Different register values for different HCCStar versions?
-void configureHCC(HwController& hwCtrl, StarCfg& cfg, bool reset, uint32_t ic_enables) {
+void configureHCC(HwController& hwCtrl, StarCfg& cfg, bool reset, uint32_t ic_enables, bool mode640) {
   // Configure HCCStars to enable communications with ABCStars
   if (reset) {
     logger->info("Sending HCCStar register reset command");
@@ -534,6 +551,9 @@ void configureHCC(HwController& hwCtrl, StarCfg& cfg, bool reset, uint32_t ic_en
   uint32_t addr_icen = updateHCCRegister(HCCStarRegister::ICenable, val_icen, cfg);
   sendCommand(star.write_hcc_register(addr_icen, val_icen), hwCtrl);
 
+  // Set normal readout using OPmode/OPmodeC
+  setOpMode(0, mode640, hwCtrl, cfg);
+
   if (reset) {
     // Register ExtRst/ExtRstC: external reset for ABCStars
     uint32_t val_extrst = 0x00000001;
@@ -546,23 +566,17 @@ void configureHCC(HwController& hwCtrl, StarCfg& cfg, bool reset, uint32_t ic_en
   }
 }
 
-void configureHCC_PacketTransp(HwController& hwCtrl, StarCfg& cfg, bool reset, unsigned icEnablesMask) {
-  configureHCC(hwCtrl, cfg, reset, icEnablesMask);
+void configureHCC_PacketTransp(HwController& hwCtrl, StarCfg& cfg, bool reset, unsigned icEnablesMask, bool mode640) {
+  configureHCC(hwCtrl, cfg, reset, icEnablesMask, mode640);
 
   // Set to packet transparent mode
   logger->info("Set HCCs to Packet Transparent mode");
-  // Register OPmode/OPmodeC
-  uint32_t val_mode = 0x00020201;
 
-  uint32_t addr_mode = updateHCCRegister(HCCStarRegister::OPmode, val_mode, cfg);
-  uint32_t addr_modec = updateHCCRegister(HCCStarRegister::OPmodeC, val_mode, cfg);
-
-  sendCommand(star.write_hcc_register(addr_mode, val_mode), hwCtrl);
-  sendCommand(star.write_hcc_register(addr_modec, val_mode), hwCtrl);
+  setOpMode(2, mode640, hwCtrl, cfg);
 }
 
-void configureHCC_FullTransp(HwController& hwCtrl, StarCfg& cfg, bool reset, unsigned inChn, unsigned icEnablesMask) {
-  configureHCC(hwCtrl, cfg, reset, icEnablesMask);
+void configureHCC_FullTransp(HwController& hwCtrl, StarCfg& cfg, bool reset, unsigned inChn, unsigned icEnablesMask, bool mode640) {
+  configureHCC(hwCtrl, cfg, reset, icEnablesMask, mode640);
 
   // Select the input channel: IC_transSelect
   // Register ICenable
@@ -576,14 +590,8 @@ void configureHCC_FullTransp(HwController& hwCtrl, StarCfg& cfg, bool reset, uns
 
   // Set to full transparent mode
   logger->info("Set HCCs to Full Transparent mode");
-  // Register OPmode/OPmodeC
-  uint32_t val_mode = 0x00020301;
 
-  uint32_t addr_mode = updateHCCRegister(HCCStarRegister::OPmode, val_mode, cfg);
-  uint32_t addr_modec = updateHCCRegister(HCCStarRegister::OPmodeC, val_mode, cfg);
-
-  sendCommand(star.write_hcc_register(addr_mode, val_mode), hwCtrl);
-  sendCommand(star.write_hcc_register(addr_modec, val_mode), hwCtrl);
+  setOpMode(3, mode640, hwCtrl, cfg);
 }
 
 void configureABC(HwController& hwCtrl, StarCfg& cfg, bool reset) {
@@ -1489,11 +1497,14 @@ int main(int argc, char *argv[]) {
         {nullptr, 0, nullptr, 0}};
 
     int c;
-    while ((c = getopt_long(argc, argv, "hvTi:l:r:t:dRs:c:w:V:", long_options, nullptr)) != -1) {
+    while ((c = getopt_long(argc, argv, "3hvTi:l:r:t:dRs:c:w:V:", long_options, nullptr)) != -1) {
       switch(c) {
       case 'h':
         printHelp();
         return 0;
+      case '3':
+        testData.mode640 = false;
+        break;
       case 'i':
         try {
           // Allow hex
@@ -1622,6 +1633,12 @@ int main(int argc, char *argv[]) {
       logger->error("Unknown Star chip version! Possible options are: Star, Star_vH0A0, Star_vH0A1, Star_vH1A1");
       return 1;
     }
+
+    logger->debug("Run with{}reset, speed {}{}",
+                  testData.doResets?" ":"-out ",
+                  testData.mode640?"640":"320",
+                  testData.setHccId?", and set HCC IDs":""
+                  );
 
     // A global StarCfg with dummy chip configs
     testData.starCfg = std::make_unique<StarCfg>(abc_version, hcc_version);
@@ -1754,11 +1771,11 @@ std::map<std::string, std::function<bool (HwController&)>> TestData::buildTests 
       {"testHCCRegister", [&](auto &h) {return testHCCRegisterAccess(h, hccStars, timeout_ms);}},
 
       // Configure HCCs to enable communications with ABCs
-      {"configureHCC", [&](auto &h) {configureHCC(h, *starCfg, doResets, icEnablesMask); return true;}},
-      {"configureHCCIfReset", [&](auto &h) {if(doResets) configureHCC(h, *starCfg, doResets, icEnablesMask); return true;}},
+      {"configureHCC", [&](auto &h) {configureHCC(h, *starCfg, doResets, icEnablesMask, mode640); return true;}},
+      {"configureHCCIfReset", [&](auto &h) {if(doResets) configureHCC(h, *starCfg, doResets, icEnablesMask, mode640); return true;}},
       // configure HCC into the Packet Transparent mode
-      {"configureHCCForPacketTransp", [&](auto &h) {configureHCC_PacketTransp(h, *starCfg, doResets, icEnablesMask); return true; }},
-      {"configureHCCForFullTransp", [&](auto &h) {configureHCC_FullTransp(h, *starCfg, doResets, inChannel, icEnablesMask); return true; }},
+      {"configureHCCForPacketTransp", [&](auto &h) {configureHCC_PacketTransp(h, *starCfg, doResets, icEnablesMask, mode640); return true; }},
+      {"configureHCCForFullTransp", [&](auto &h) {configureHCC_FullTransp(h, *starCfg, doResets, inChannel, icEnablesMask, mode640); return true; }},
 
       // Probe ABCStars via reading ABCStar HPRs
       // Check ABCStar HPRs
