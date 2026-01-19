@@ -121,6 +121,11 @@ namespace {
       {"ReadData", {
           "diagnosticsReport",
         }},
+      {"ResetAll", {
+          "resetHCC",
+          "resetABCFromHCC",
+          "resetABC",
+        }},
     };
 
   /**
@@ -520,6 +525,30 @@ bool isPacketType(RawData& data, PacketType packet_type, bool isPacketTransp=fal
       return packet.getType() == packet_type;
     }
   }
+}
+
+// Reset HCC (regardless of reset flag)
+void resetHCC(HwController& hwCtrl, StarCfg& cfg) {
+  // Configure HCCStars to enable communications with ABCStars
+  logger->info("Sending HCCStar register reset command");
+  sendCommand(LCB::fast_command(LCB::HCC_REG_RESET, 0), hwCtrl);
+}
+
+void resetABCFromHCC(HwController& hwCtrl, StarCfg& cfg) {
+    // Register ExtRst/ExtRstC: external reset for ABCStars
+    uint32_t val_extrst = 0x00000001;
+
+    uint32_t addr_extrst = updateHCCRegister(HCCStarRegister::ExtRst, val_extrst, cfg);
+    uint32_t addr_extrstc = updateHCCRegister(HCCStarRegister::ExtRstC, val_extrst, cfg);
+
+    sendCommand(star.write_hcc_register(addr_extrst, val_extrst), hwCtrl);
+    sendCommand(star.write_hcc_register(addr_extrstc, val_extrst), hwCtrl);
+}
+
+void resetABC(HwController& hwCtrl, StarCfg& cfg) {
+    logger->info("Sending ABCStar register reset commands");
+    sendCommand(LCB::fast_command(LCB::ABC_REG_RESET, 0), hwCtrl);
+    sendCommand(LCB::fast_command(LCB::ABC_SLOW_COMMAND_RESET, 0), hwCtrl);
 }
 
 // Configure chips
@@ -1797,6 +1826,9 @@ std::map<std::string, std::function<bool (HwController&)>> TestData::buildTests 
       {"configureHCCForPacketTransp", [&](auto &h) {configureHCC_PacketTransp(h, *starCfg, doResets, icEnablesMask, mode640); return true; }},
       {"configureHCCForFullTransp", [&](auto &h) {configureHCC_FullTransp(h, *starCfg, doResets, inChannel, icEnablesMask, mode640); return true; }},
 
+      {"resetHCC", [&](auto &h) {resetHCC(h, *starCfg); return true;}},
+      {"resetABCFromHCC", [&](auto &h) {resetABCFromHCC(h, *starCfg); return true;}},
+
       // Probe ABCStars via reading ABCStar HPRs
       // Check ABCStar HPRs
       {"checkABCHPRs", [&](auto &h) {return checkABCHPRs(h, *starCfg, hccStars, doResets, timeout_ms, setNotBroadcastIds);}},
@@ -1809,6 +1841,8 @@ std::map<std::string, std::function<bool (HwController&)>> TestData::buildTests 
 
       // Configure ABCs
       {"configureABC", [&](auto &h) {configureABC(h, *starCfg, doResets); return true;}},
+
+      {"resetABC", [&](auto &h) {resetABC(h, *starCfg); return true;}},
 
       // Read ABC hit counters
       {"testHitCounts", [&](auto &h) {return testHitCounts(h, *starCfg, timeout_ms);}},
