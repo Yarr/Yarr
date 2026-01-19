@@ -89,10 +89,16 @@ namespace {
         Probe the front end ASICs
       */
       {"Probe", {
-          "checkHCCHPRs", "probeHCCs",
-          // In case resets were sent, HCCs need to be reconfigured to talk to ABCs
-          "configureHCCIfReset", // only if doResets set
-          "checkABCHPRs", "probeABCs",
+          // Note that if resets are sent, this happens both in the check*HPRs actions
+          // And probe* actions
+          "checkHCCHPRs",
+          // Read HCC fuse register can be done immediately after reset
+          "probeHCCs",
+          // If reset, both HCCs and ABCs need to be reconfigured to talk to ABCs
+          "configureHCCIfReset",
+          "configureABCIfReset",
+          "checkABCHPRs",
+          "probeABCs",
         }},
 
       /*
@@ -1841,6 +1847,7 @@ std::map<std::string, std::function<bool (HwController&)>> TestData::buildTests 
 
       // Configure ABCs
       {"configureABC", [&](auto &h) {configureABC(h, *starCfg, doResets); return true;}},
+      {"configureABCIfReset", [&](auto &h) {if(doResets) configureABC(h, *starCfg, doResets); return true;}},
 
       {"resetABC", [&](auto &h) {resetABC(h, *starCfg); return true;}},
 
