@@ -178,17 +178,20 @@ unsigned ScanConsoleImpl::getRunNumber() const {
 int ScanConsoleImpl::setupScan() {    
 	ScanHelper::banner(logger,"Setup Scan");
 
-    //check if correct scan using the loop registry
-    //FEI4B needs special treatment, since the correct loops don't contain the trailing B,
-    //contrary to the RD53A/B case
+    // check if correct scan using the loop registry
+    // FEI4B needs special treatment, since the correct loops don't contain the trailing B,
+    // contrary to the RD53A/B case
+    // Star_H0A1 and Star_H1A1 are similar
     std::string chipTypeCheck = chipType == "FEI4B" ? "FEI4" : chipType;
+    chipTypeCheck = chipType == "Star_vH0A1" ? "Star" : chipTypeCheck;
+    chipTypeCheck = chipType == "Star_vH1A1" ? "Star" : chipTypeCheck;
     for (unsigned int i=0; i<scanCfg["scan"]["loops"].size(); i++) {
 	    std::string loopAction = scanCfg["scan"]["loops"][i]["loopAction"];
 	    std::shared_ptr<LoopActionBase> action = StdDict::getLoopAction(loopAction);
 	    if (action == nullptr) {
 	    	logger->error("This scan contains an unbuilt loop {}, aborting!", loopAction);
 	    	return -1;
-	    }else if (std::search(loopAction.begin(), loopAction.end(), chipTypeCheck.begin(), chipTypeCheck.end(), [](char a, char b){return std::tolower(a) == std::tolower(b);}) == loopAction.end() && loopAction.find("Std") == std::string::npos){
+	    } else if (std::search(loopAction.begin(), loopAction.end(), chipTypeCheck.begin(), chipTypeCheck.end(), [](char a, char b){return std::tolower(a) == std::tolower(b);}) == loopAction.end() && loopAction.find("Std") == std::string::npos){
 	    	logger->error("This scan contains incorrect loop {} for chipType {} (standard loops assumed to contain Std), aborting!", loopAction, chipType);
 	    	return -1;
 	    }
