@@ -87,10 +87,6 @@ class FrontEnd {
     
         // Write register to memory and chip
         virtual yarrStatus writeNamedRegister(std::string name, const uint16_t value) = 0;
-        virtual yarrStatus writeNamedRegister(std::string name, const uint16_t value, bool bcr) {
-            // By default, ignore 'bcr' and just call the standard version
-            return writeNamedRegister(name, value);
-        }
         // Read register from chip to memory and return value through reference
         virtual yarrStatus readNamedRegister(std::string name, uint16_t &value) {return yarrFailure;};
         // Read register from chip to memory, write register to memory, and then to chip

@@ -59,7 +59,10 @@ void StdParameterLoop::writePar() {
         keeper->getGlobalFe()->writeNamedRegister(parName, m_cur);
         if (m_secondaryParName != ""){
             SPDLOG_LOGGER_DEBUG(spllog, "Writing to global FE for secondary parameter {}, set value to {}", m_secondaryParName, m_cur + m_secondaryOffset);
-            keeper->getGlobalFe()->writeNamedRegister(m_secondaryParName, m_cur + m_secondaryOffset, m_bcr);
+            if (m_bcr){
+                m_secondaryParName += "+BCR";
+            }
+            keeper->getGlobalFe()->writeNamedRegister(m_secondaryParName, m_cur + m_secondaryOffset);
         }
     }
     else {
@@ -72,7 +75,10 @@ void StdParameterLoop::writePar() {
                 fe->writeNamedRegister(parName, m_cur);
                 if (m_secondaryParName != ""){
                     SPDLOG_LOGGER_DEBUG(spllog, "Writing to active FE for secondary parameter {}, set value to {}", m_secondaryParName, m_cur + m_secondaryOffset);
-                    fe->writeNamedRegister(m_secondaryParName, m_cur + m_secondaryOffset, m_bcr);
+                    if (m_bcr){
+                        m_secondaryParName += "+BCR";
+                    }
+                    fe->writeNamedRegister(m_secondaryParName, m_cur + m_secondaryOffset);
                 }
             }
         }
