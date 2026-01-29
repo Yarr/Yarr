@@ -224,7 +224,7 @@ void printHelp() {
   std::cout << " -w <timeout_ms> : General timeout in milliseconds.\n";
   std::cout << " -s <test_preset> : Type of test (lower case), or sequence (UpperCase) to run, use bad to list. Default: Full\n";
   std::cout << " -c <input channel> : HCC input channel. Only used if HCCs are set to full transparent mode.\n";
-  std::cout << " -V <chip_version> : Versions of the HCCStar and ABCStar chips. Possible options are: Star, Star_vH0A0, Star_vH0A1, Star_vH1A1. Default: Star (equivalent to Star_vH0A0)\n";
+  std::cout << " -V <chip_version> : Versions of the HCCStar and ABCStar chips. Possible options are: Star, Star_vH0A0, Star_vH0A1, Star_vH1A1. Default: Star_vH1A1)\n";
   std::cout << " -T : Run internal cross-checks.\n";
   std::cout << "\n";
   std::cout << "NB in most cases you can run without setting the enables mask\n";
@@ -1534,7 +1534,7 @@ int main(int argc, char *argv[]) {
     TestData testData;
 
     std::string testSequence("Full");
-    std::string chipVersion("Star");
+    std::string chipVersion("Star_vH1A1");
 
     // logger config path
     std::string logCfgPath = "";
