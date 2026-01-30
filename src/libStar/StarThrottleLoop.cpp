@@ -7,7 +7,7 @@
 #include "logging.h"
 
 namespace {
-    auto logger = logging::make_log("StarThrottleLoop");
+    auto logger = logging::make_log("StarThrottleLoop.Experimental");
 }
 
 
