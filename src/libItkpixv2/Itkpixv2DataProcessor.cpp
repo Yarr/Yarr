@@ -740,3 +740,19 @@ void Itkpixv2DataProcessor::sendFeedback(unsigned tag, unsigned bcid)
 
     return;
 }
+
+json Itkpixv2DataProcessor::getLog() {
+    json log;
+    log["Chip tag bitflips"] = _chipTagBitFlipCnt;
+    log["Chip unrecognized tags"] = _chipTagErrorCnt;
+    log["Unfinished streams (no EOS)"] = _unfinishedStreamErrorCnt;
+    log["Unfinished streams (w/ EOS)"] = _unfinishedStreamEOSErrorCnt;
+    log["Corrupt streams"] = _corruptStreamErrorCnt;
+    log["Split events count"] = _splitEventsCnt;
+    log["Any errors"] = _chipTagBitFlipCnt 
+        + _chipTagErrorCnt 
+        + _unfinishedStreamErrorCnt 
+        + _unfinishedStreamEOSErrorCnt 
+        + _corruptStreamErrorCnt;
+    return log;
+}

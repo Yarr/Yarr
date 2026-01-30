@@ -598,13 +598,21 @@ void ScanConsoleImpl::run() {
 
     scan_done = std::chrono::steady_clock::now();
     logger->info("Waiting for processors to finish ...");
-    // Join Fei4DataProcessor
+    // Join FeDataProcessor
     for( auto& proc : procs ) {
       proc.second->join();
     }
     processor_done = std::chrono::steady_clock::now();
-    logger->info("Processor done, waiting for histogrammer ...");
+    // Get logs
+    for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
+        auto fe = bookie->getFe(id);
+        auto feCfg = bookie->getFeCfg(id);
+        if (fe->isActive()) {
+              scanLog["FeDataProcessorLog"][feCfg->getName()] = procs[id]->getLog();
+        }
+    }
 
+    logger->info("Processor done, waiting for histogrammer ...");
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
         auto fe = bookie->getFe(id);
         if (fe->isActive()) {
