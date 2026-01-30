@@ -18,6 +18,16 @@
     "loops": [
       {
         "config": {
+          "max": 0,
+          "min": 0,
+          "step": 1,
+          "checkActiveLoop": true,
+          "parameter": "ABCs_BCAL"
+        },
+        "loopAction": "StdParameterLoop"
+      },
+      {
+        "config": {
           "max": 30,
           "min": 30,
           "step": 1,
@@ -30,19 +40,25 @@
           "max": 17,
           "min": 15,
           "step": 1,
-          "activeLoop": true,
-          "parameter": "ABCs_LATENCY"
+          "checkActiveLoop": true,
+          "parameter": "ABCs_LATENCY",
+          "sendBCR": true,
+          "secondary": {
+            "parameter": "HCC_BCIDRSTDELAY",
+            "offset": -1
+          }
         },
         "loopAction": "StdParameterLoop"
       },
       {
         "config": {
-          "trig_count": 50,
+          "trig_count": 1000,
           "trig_frequency": 50000,
           "trig_time": 0,
           "l0_latency": 20,
           "noInject": false,
-	        "useHitCount": false
+	        "useHitCount": false,
+          "sequence_address_width": 12
         },
         "loopAction": "StarFelixTriggerLoop"
       },
@@ -66,7 +82,8 @@
       "ABCs_LP_ENABLE": 1,
       "ABCs_DETMODE": 1,
       "ABCs_CALPULSE_ENABLE": 1,
-      "ABCs_CALPULSE_POLARITY": 0
+      "ABCs_CALPULSE_POLARITY": 0,
+      "ABCs_BCAL": 96
     }
   }
 }
