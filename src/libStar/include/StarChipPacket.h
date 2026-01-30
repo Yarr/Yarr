@@ -271,10 +271,10 @@ class StarChipPacket{
     for(unsigned int iW=0; iW < clusters.size(); ++iW){
       Cluster cluster = clusters.at(iW);
       std::string next_binary = std::bitset<3>(cluster.next).to_string();
-      os << "  " << iW << ") InputChannel: " << cluster.input_channel
+      os << "  " << iW << ") InputChannel: " << (int)cluster.input_channel
          << ", Address: 0x";
       os << std::hex << std::setfill('0');
-      os << std::setw(2) << cluster.address;
+      os << std::setw(2) << (int)cluster.address;
       os << std::dec << std::setfill(' ');
       os << ", Next Strip Pattern: " << next_binary << ".\n";
     }

@@ -339,7 +339,7 @@ job_test_strips:
         matrix:
           - ARCH: ['alma9']
   script:
-    - bin/test_star configs/controller/emuCfg_star.json -r 0 -t 0
+    - bin/test_star configs/controller/emuCfg_star.json -r 0 -t 0 -V Star_vH0A0
     # Run a few scans
     - bash scripts/test_star_scans_emu.sh
 
