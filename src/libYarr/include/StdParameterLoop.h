@@ -32,7 +32,6 @@ class StdParameterLoop : public LoopActionBase, public StdParameterAction {
         bool m_checkActiveLoop;
         std::string m_secondaryParName = "";
         int m_secondaryOffset;
-        bool m_bcr;
 };
 
 #endif

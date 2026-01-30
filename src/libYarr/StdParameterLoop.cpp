@@ -59,9 +59,6 @@ void StdParameterLoop::writePar() {
         keeper->getGlobalFe()->writeNamedRegister(parName, m_cur);
         if (m_secondaryParName != ""){
             SPDLOG_LOGGER_DEBUG(spllog, "Writing to global FE for secondary parameter {}, set value to {}", m_secondaryParName, m_cur + m_secondaryOffset);
-            if (m_bcr){
-                m_secondaryParName += "+BCR";
-            }
             keeper->getGlobalFe()->writeNamedRegister(m_secondaryParName, m_cur + m_secondaryOffset);
         }
     }
@@ -75,9 +72,6 @@ void StdParameterLoop::writePar() {
                 fe->writeNamedRegister(parName, m_cur);
                 if (m_secondaryParName != ""){
                     SPDLOG_LOGGER_DEBUG(spllog, "Writing to active FE for secondary parameter {}, set value to {}", m_secondaryParName, m_cur + m_secondaryOffset);
-                    if (m_bcr){
-                        m_secondaryParName += "+BCR";
-                    }
                     fe->writeNamedRegister(m_secondaryParName, m_cur + m_secondaryOffset);
                 }
             }
@@ -100,7 +94,6 @@ void StdParameterLoop::writeConfig(json &j) {
         {"parameter", m_secondaryParName},
         {"offset", m_secondaryOffset}
     };
-    j["sendBCR"] = m_bcr;
 }
 
 void StdParameterLoop::loadConfig(const json &j) {
@@ -123,6 +116,4 @@ void StdParameterLoop::loadConfig(const json &j) {
         m_secondaryParName = j["secondary"]["parameter"];
         m_secondaryOffset = j["secondary"]["offset"];
     }
-    if (j.contains("sendBCR"))
-        m_bcr = j["sendBCR"];
 }

@@ -42,9 +42,8 @@
           "step": 1,
           "checkActiveLoop": true,
           "parameter": "ABCs_LATENCY",
-          "sendBCR": true,
           "secondary": {
-            "parameter": "HCC_BCIDRSTDELAY",
+            "parameter": "HCC_BCIDRSTDELAY+BCR",
             "offset": -1
           }
         },
