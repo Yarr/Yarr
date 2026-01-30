@@ -857,13 +857,9 @@ bool readMoreHCCRegisters(HwController& hwCtrl, unsigned timeout_ms)
   return read_count > 0;
 }
 
-bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars, bool reset, unsigned timeout_ms, bool setNotBroadcastIds) {
+bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars, unsigned timeout_ms, bool setNotBroadcastIds) {
   bool receivedABCHPR = false;
   bool hprGood = true;
-
-  if (reset) {
-    sendCommand(LCB::fast_command(LCB::ABC_REG_RESET, 0), hwCtrl);
-  }
 
   for (auto& hcc : hccStars) {
     logger->info("Reading HPR packets from ABCStars on HCCStar {}", hcc.hcc_id);
@@ -1837,7 +1833,7 @@ std::map<std::string, std::function<bool (HwController&)>> TestData::buildTests 
 
       // Probe ABCStars via reading ABCStar HPRs
       // Check ABCStar HPRs
-      {"checkABCHPRs", [&](auto &h) {return checkABCHPRs(h, *starCfg, hccStars, doResets, timeout_ms, setNotBroadcastIds);}},
+      {"checkABCHPRs", [&](auto &h) {return checkABCHPRs(h, *starCfg, hccStars, timeout_ms, setNotBroadcastIds);}},
       // Probe ABCStars on each HCCStar
       {"probeABCs", [&](auto &h) {return probeABCs(h, *starCfg, hccStars, icEnablesMask, timeout_ms, setNotBroadcastIds);}},
       // Read many ABC registers
