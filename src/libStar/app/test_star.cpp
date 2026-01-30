@@ -320,6 +320,10 @@ void setOpMode(int packetMode, bool mode640, HwController &hwCtrl, StarCfg& cfg)
     updateHCCSubRegister(HCCStarSubRegister::ROSPEED, 1, cfg);
   }
 
+  // Make sure we're in 8b10b mode
+  updateHCCSubRegister(HCCStarSubRegister::ENCODECNTL, 1, cfg);
+  updateHCCSubRegister(HCCStarSubRegister::ENCODE8B10B, 1, cfg);
+
   auto [addr, val] = updateHCCSubRegister(HCCStarSubRegister::OPMODE, packetMode, cfg);
 
   // We happen to know that 41 + 1 is 42
