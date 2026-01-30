@@ -649,16 +649,16 @@ void configureABC(HwController& hwCtrl, StarCfg& cfg, bool reset) {
 
   logger->info("Broadcast ABCStar configurations");
 
+  // Need a non-zero drive current to see data from ABC
+  auto [addr_c, val_c] = updateABCSubRegister(ABCStarSubRegister::CURRDRIV, 4, cfg);
   // Set RR mode to 1
   auto [addr_rr, val_rr] = updateABCSubRegister(ABCStarSubRegister::RRMODE, 1, cfg);
-  sendCommand(star.write_abc_register(addr_rr, val_rr), hwCtrl);
-
   // Enable LP
   auto [addr_lp, val_lp] = updateABCSubRegister(ABCStarSubRegister::LP_ENABLE, 1, cfg);
-  sendCommand(star.write_abc_register(addr_lp, val_lp), hwCtrl);
-
   // Enable PR
   auto [addr_pr, val_pr] = updateABCSubRegister(ABCStarSubRegister::PR_ENABLE, 1, cfg);
+
+  // All above are the same register, so send just once
   sendCommand(star.write_abc_register(addr_pr, val_pr), hwCtrl);
 
   // Set some mask registers to some nonzero value
