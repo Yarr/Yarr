@@ -82,6 +82,9 @@ namespace {
         StdDict::registerAnalysis("HistogramArchiver",
                 []() { return std::unique_ptr<AnalysisAlgorithm>(new HistogramArchiver());});
 
+    bool throt_registered = 
+        StdDict::registerAnalysis("TriggerThrottleAnalysis",
+                []() { return std::unique_ptr<AnalysisAlgorithm>(new TriggerThrottleAnalysis());});
 }
 
 void HistogramArchiver::init(const ScanLoopInfo *s) {
@@ -2087,4 +2090,145 @@ void ParameterAnalysis::end() {
         }
         output->pushData(std::move(paramMaps[i]));
     }
+}
+
+void TriggerThrottleAnalysis::init(const ScanLoopInfo *s) {
+    n_count = 1;
+    target_occ = 128;
+    current_inj = 0;
+    // int receivers;
+    for (unsigned n=0; n<s->size(); n++) {
+        auto l = s->getLoop(n);
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
+            loops.push_back(n);
+            loopMax.push_back((unsigned)l->getMax());
+        } else {
+            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
+            if (cnt == 0)
+                cnt = 1;
+            n_count = n_count*cnt;
+        }
+
+        if (l->isTriggerLoop()) {
+            trigLoop = dynamic_cast<const StdTriggerAction*>(l);
+            if(trigLoop == nullptr) {
+                alog->error("TriggerThrottleAnalysis");
+            } else {
+                start_inj = trigLoop->getTrigCnt();
+                injections = start_inj;
+            }
+        }
+
+        if (l->isGlobalFeedbackLoop()) {
+            fb.reset(new GlobalFeedbackSender(feedback));
+            if(fb == nullptr) {
+                alog->error("TriggerThrottleAnalysis");
+            }
+        }
+    }
+}
+
+void TriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
+    // Check if right Histogram
+    if (h->getName() != OccupancyMap::outputName())
+        return;
+
+    // Select correct output container
+    unsigned ident = 0;
+    unsigned offset = 0;
+
+    // Determine identifier
+    std::string name = "OccupancyMap";
+    std::string name2 = "OuterOccupancyMap";
+    for (unsigned n=0; n<loops.size(); n++) {
+        ident += h->getStat().get(loops[n])+offset;
+        offset += loopMax[n];
+        name += "-" + std::to_string(h->getStat().get(loops[n]));
+        name2 += "-" + std::to_string(h->getStat().get(loops[n]));
+    }
+
+    // Check if Histogram exists
+    if (occMaps[ident] == NULL) {
+        Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
+        hh->setXaxisTitle("Column");
+        hh->setYaxisTitle("Row");
+        hh->setZaxisTitle("Hits");
+        occMaps[ident].reset(hh);
+        innerCnt[ident] = 0;
+    }
+
+    if (outerOccMaps[ident] == NULL) {
+        Histo2d *hh = new Histo2d(name2, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
+        hh->setXaxisTitle("Column");
+        hh->setYaxisTitle("Row");
+        hh->setZaxisTitle("Hits");
+        outerOccMaps[ident].reset(hh);
+    }
+
+    // Add up Histograms
+    occMaps[ident]->add(*(Histo2d*)h);
+    outerOccMaps[ident]->add(*(Histo2d*)h);
+    innerCnt[ident]++;
+
+    // Got all data, finish up Analysis
+    if (innerCnt[ident] == n_count) {
+
+        double sign = 1;
+
+        for(unsigned i=0; i<occMaps[ident]->size(); i++) {
+            double occupancy = (occMaps[ident]->getBin(i))/(double)target_occ;
+            if (sign == 1 && occupancy > 0.5)
+                sign = 0;
+            if (sign >= 0 && occupancy > 1.5) {
+                sign = -1;
+                break;
+            }
+        }        
+        current_inj += injections;
+        bool done = current_inj >= target_inj;
+        alog->trace("Throttling trigger with {} injections, sign {}. Total inj {}. Target {}.",injections,sign, current_inj, target_inj);
+        if (sign == 1) {
+            injections *= 2;
+
+            alog->warn("Trigger throttle wants to change trigger count {} {}",
+                       trigLoop->getTrigCnt(),
+                       injections);
+            // trigLoop->setTrigCnt(injections);
+        } else if (sign == -1) {
+            injections /= 2;
+        }
+        if (done) {
+            current_inj = 0;
+            injections = start_inj;
+            output->pushData(std::move(outerOccMaps[ident]));
+            outerOccMaps[ident] = nullptr;
+        } else if (injections+current_inj > target_inj) {
+            injections = target_inj - current_inj;
+        }
+
+        alog->warn("Trigger throttle wants to change trigger count {} {}",
+                   trigLoop->getTrigCnt(),
+                   injections);
+        // trigLoop->setTrigCnt(injections);
+        fb->feedback(this->id, sign, done);
+
+        //output->pushData(std::move(occMaps[ident]));
+        innerCnt[ident] = 0;
+        //delete occMaps[ident];
+        occMaps[ident] = nullptr;
+    }
+}
+
+void TriggerThrottleAnalysis::end() {
+
+}
+
+void TriggerThrottleAnalysis::loadConfig(const json &j) {
+    if (!j["target_occ"].empty()) {
+        target_occ = j["target_occ"];
+    }
+    if (!j["target_trigs"].empty()) {
+        target_inj = j["target_trigs"];
+    } else 
+        target_inj = 10000;
 }

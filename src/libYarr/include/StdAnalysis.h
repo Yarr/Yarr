@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "AnalysisAlgorithm.h"
+#include "StdTriggerAction.h"
 
 // Need size to make unique_ptr destructors
 #include "Histo1d.h"
@@ -501,6 +502,31 @@ class ParameterAnalysis : public AnalysisAlgorithm {
         std::map<unsigned, std::unique_ptr<Histo2d>> paramMaps;
 
         bool m_createMap = false;
+};
+
+class TriggerThrottleAnalysis : public AnalysisAlgorithm {
+     public:
+ TriggerThrottleAnalysis() : AnalysisAlgorithm() {};
+    ~TriggerThrottleAnalysis() {};
+    
+    void init(const ScanLoopInfo *s) override;
+    void processHistogram(HistogramBase *h) override;
+    void end() override;
+    void loadConfig(const json &config) override;
+ private:
+    std::vector<unsigned> loops;
+    std::vector<unsigned> loopMax;
+    std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
+    std::map<unsigned, std::unique_ptr<Histo2d>> outerOccMaps;
+    std::map<unsigned, unsigned> innerCnt;
+    unsigned target_occ, target_inj, current_inj;
+    unsigned n_count;
+    int injections, start_inj;
+    std::unique_ptr<GlobalFeedbackSender> fb;
+
+    /// Save pointer to trigger loop to be adjusted
+    // TODO make this possible
+    const StdTriggerAction* trigLoop;
 };
 
 #endif
