@@ -245,10 +245,12 @@ bool StarChips::writeRegisters(){
 
 //Will write value for setting name for the HCC if name starts with "HCC_" otherwise will write the setting for all ABCs if name starts with "ABCs_"
 yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_value) {
-  std::string strPrefix = name.substr (0,4);
+  auto plusPos = name.find('+');
+  std::string name_reg = name.substr(0, plusPos); 
+  std::string strPrefix = name_reg.substr (0,4);
   //if we deal with a setting for the HCC, look up in register map.
   if (strPrefix=="HCC_") {
-    auto subRegName = name.substr(4);
+    auto subRegName = name_reg.substr(4);
     if(subRegName == "FD_DATAIN_FINEDELAY") {
       // Write the same value to all FD_DATAIN_FINEDELAY sub regs
       logger->trace("Writing {} to all FD_DATAIN_FINEDELAY sub-registers.", reg_value);
@@ -267,7 +269,7 @@ yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_va
       setAndWriteHCCSubRegister(subRegEnum, reg_value);
     }
   } else  if (strPrefix=="ABCs") {
-    auto subRegName = name.substr(5); // Including _
+    auto subRegName = name_reg.substr(5); // Including _
     if(subRegName == "MASKs") {
       // Special case for digitial scan
       uint32_t val = (reg_value == 0)?0:0xffffffff;
@@ -310,6 +312,10 @@ yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_va
           setAndWriteABCSubRegister(abcRegEnum, cfg, reg_value);
         });
     }
+  }
+  if (plusPos != std::string::npos && name.substr(plusPos) == "+BCR") {
+    logger->debug("Sending lonely_BCR after register write");
+    sendCmd(LCB::lonely_bcr());
   }
   return yarrSuccess;
 }
