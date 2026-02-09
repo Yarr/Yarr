@@ -155,7 +155,7 @@ bool testScanConfig(const json &scanConfig) {
 }
 
 int checkJsonFE(json &jsonConfig, const std::string& fe_name) {
-  auto fe = std::move(StdDict::getFrontEnd(fe_name));
+  auto fe = StdDict::getFrontEnd(fe_name);
   if (!fe) {
     std::cout << "FrontEnd not found: " << fe_name << "!\n";
     return 2;
