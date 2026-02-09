@@ -28,6 +28,12 @@ foreach (target IN LISTS tools)
     post_build_debug_executable(${target})
     target_link_libraries(${target} Yarr)
     target_link_libraries(${target} Scan)
+
+    target_compile_options(
+        ${target}
+      PRIVATE
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wall>
+    )
 endforeach ()
 
 foreach (target hw_read_test hw_write_test)
