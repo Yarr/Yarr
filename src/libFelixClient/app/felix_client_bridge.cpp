@@ -56,7 +56,8 @@ struct AppSettings {
 template<typename Publish>
 void publish_and_report_failure(Publish &publisher, uint64_t fid_tag, std::span<uint8_t> data)
 {
-  bool retry_flag = true;
+  // This is a flag to indicate that this is a retry (after NO_RESOURCES)
+  bool retry_flag = false;
   auto status = publisher.publish(fid_tag, data, retry_flag);
   switch(status) {
   case netio3::NetioPublisherStatus::OK:
@@ -265,10 +266,11 @@ int main(int argc, char** argv)
   pub_settings.bus_group = settings.common.bus_group;
   pub_settings.bus_filename = settings.common.bus_filename + "_PUB";
 
-  // Not common
-  pub_settings.buffer_count = 10;
-  pub_settings.buffer_timeout = 100;
-  
+  // Not common (publisher)
+  pub_settings.buffer_count = 128;
+  // Need timeout in order to flush packets to network
+  pub_settings.buffer_timeout = 1;
+
   pub_settings.on_sub = [](std::uint64_t tag, const netio3::EndPointAddress& address) {
     logger->info("Received subscription to tag {:x} {} from {}:{}", tag, FelixTools::print_fid(tag), address.address(), address.port());
   };
