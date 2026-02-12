@@ -9,6 +9,12 @@ add_library(FelixClient SHARED
         OptoUtils.cpp
         )
 
+target_compile_options(
+    FelixClient
+  PRIVATE
+    $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-Wall>
+)
+
 if(YARR_FELIX_BACKEND STREQUAL "FELIX_PROXY")
   message(STATUS "Using felix-proxy for access to FelixClientThread")
   target_compile_definitions(FelixClient PUBLIC YARR_CONFIG_FELIX_PROXY=1)

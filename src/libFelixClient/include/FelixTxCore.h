@@ -109,7 +109,7 @@ protected:
 
   bool m_flip {false};
   bool m_pixFwTrigger{false};
-  int m_bufferSize {0};
+  size_t m_bufferSize {0};
   bool m_broadcast {true};
   uint32_t m_numEnabledChns {0};
   enum FelixTools::FELIX_FW_MODE m_fwMode {FelixTools::FELIX_FW_MODE::Unknown};
