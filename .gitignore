@@ -20,3 +20,8 @@ analogHits_analogHits.png
 configs/fei4b_test.json
 configs/rd53a_test.json
 doxygen
+/outputs
+
+# pixi environments
+.pixi
+__pycache__
