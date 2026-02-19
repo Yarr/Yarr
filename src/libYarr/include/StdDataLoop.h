@@ -35,13 +35,14 @@ class StdDataLoop: public LoopActionBase, public StdDataAction {
         void closeOut() override;
 
         uint32_t ntriggersToReceive = 0;
-        std::chrono::microseconds m_maxIterationTime{5000000}; // in microseconds
+        uint32_t nDataTimeOuts = 0; // counter for the number of times the data taking loop timed out
+        std::chrono::microseconds m_maxIterationTime{0}; // in microseconds (0 means it defaults to g_rx->getWaitTime)
         uint32_t m_maxConsecutiveRxReads = 2; // the same logic as in StdDataGatherer: we don't want to stuck in a continuous stream of Rx Data
         std::chrono::microseconds m_averageDataProcessingTime{100};
         uint32_t m_triggersLostTolerance = 0; // allowed number of lost triggers
 
         /// If set, publish histograms on data flow
-        bool m_doReportHistograms{false};
+        bool m_doReportHistograms{true};
 
         /// Record of stats per loop
         std::unique_ptr<StdDataLoopDetail::Stats> m_stats;

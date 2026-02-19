@@ -31,6 +31,7 @@ namespace StdDataLoopDetail {
     unsigned rx_block_read_count;
     unsigned rx_read_iterations;
     long loop_time_us;
+    unsigned timeouts;
   };
 
   struct Stats {
@@ -53,6 +54,9 @@ void StdDataLoop::init() {
     auto trigAction = keeper->getTriggerAction();
     if (trigAction != nullptr) ntriggersToReceive = trigAction->getExpEvents() - m_triggersLostTolerance;
     SPDLOG_LOGGER_TRACE(sdllog, "");
+    m_maxIterationTime = g_rx->getTimeoutTime(); // default to the Rx wait time
+    SPDLOG_LOGGER_DEBUG(sdllog, "Using RX maxIterationTime: {} [us]", m_maxIterationTime.count());
+    nDataTimeOuts = 0;
 }
 
 void StdDataLoop::execPart1() {
@@ -85,6 +89,9 @@ void StdDataLoop::execPart2() {
         channelReceivedControlCnt[id]  = 0;
     }
 
+    //! initial wait before reading data
+    std::this_thread::sleep_for(g_rx->getWaitTime());
+
     // to keep track of max time for the iteration
     std::chrono::microseconds timeElapsed;
     std::chrono::time_point<Clock> timeStart = Clock::now();
@@ -93,13 +100,11 @@ void StdDataLoop::execPart2() {
     bool receivedAllTriggers = true;
     bool thereIsStillTime = false;
 
-    //! initial wait before reading data
-    std::this_thread::sleep_for(g_rx->getWaitTime());
-
     SPDLOG_LOGGER_DEBUG(sdllog, "Reading Rx data...");
 
     //! Rx read cycle: read the data from RxCore, push to data processors, check feedback
     bool receivingRxData = true;
+
     // just to make the debug printouts more useful, handle the case of empty cycles when the triggers are lost
     // "empty" cycle is when we receive no new RawData from the RxCore, and neither new feedback from DataProcessors
     // when some triggers are lost beyond the set tolerance, StdDataLoop will spin in empty cycles,
@@ -163,6 +168,8 @@ void StdDataLoop::execPart2() {
             SPDLOG_LOGGER_DEBUG(sdllog, "\033[1m\033[31m--> Received {} words in {} iterations up to now, but 0 new ones! Trying to read more...\033[0m", allRawDataCount, nAllRxReadIterations);
         } else {
           SPDLOG_LOGGER_DEBUG(sdllog, "--> Received {} words in {} iterations!", allRawDataCount, nAllRxReadIterations);
+          // Received data, reset timeout clock
+          timeStart = Clock::now();
         }
 
         // check for any feedback from data processing
@@ -197,7 +204,8 @@ void StdDataLoop::execPart2() {
                         channelReceivedControlCnt[chan_id] += 1;
                         iterationNctrl++;
                     }
-                    else { // SPDLOG_LOGGER_DEBUG(sdllog, "--> StdDataLoop::execPart2 feedback received an unexpected trigger tag {}", params->trigger_tag);
+                    else { 
+                        // SPDLOG_LOGGER_DEBUG(sdllog, "--> StdDataLoop::execPart2 feedback received an unexpected trigger tag {}", params->trigger_tag);
                         iterationNerrs++;
                     }
                 }
@@ -231,21 +239,24 @@ void StdDataLoop::execPart2() {
         }
         receivedAllTriggers = channelsWithAllTrigsN >= keeper->getNumOfEntries();
 
-        // test whether there is still time for this iteration
+        // Timeout should occur at fixed time after last receiving data
         timeElapsed =
             std::chrono::duration_cast<std::chrono::microseconds>(Clock::now() - timeStart);
         thereIsStillTime = timeElapsed.count() < m_maxIterationTime.count(); // the time limit for each iteration in StdDataLoop
+        SPDLOG_LOGGER_DEBUG(sdllog, "Time elapsed since last data {} [us]", timeElapsed.count());
 
         // Check if trigger is done
         triggerIsDone = g_tx->isTrigDone();
 
         // Whether to execute another Rx cycle:
         receivingRxData = !triggerIsDone || (thereIsStillTime && !receivedAllTriggers);
-        
+
         if (!thereIsStillTime) {
             for (auto &[id, receivedTriggers] : channelReceivedTriggersCnt) {
-                if (receivedTriggers < ntriggersToReceive)
+                if (receivedTriggers < ntriggersToReceive) {
                     SPDLOG_LOGGER_ERROR(sdllog, "Data taking loop timed out, only received {} of {} events for channel with id {}!", receivedTriggers, ntriggersToReceive, id);
+                    nDataTimeOuts++;
+                }
             }
         }
         
@@ -276,7 +287,7 @@ void StdDataLoop::execPart2() {
     }
 
     // Record stats array (published by end())
-    m_stats->loop_stats.push_back({allRawDataCount, nAllRxReadBlocks, nAllRxReadIterations, timeElapsed.count()});
+    m_stats->loop_stats.push_back({allRawDataCount, nAllRxReadBlocks, nAllRxReadIterations, timeElapsed.count(), nDataTimeOuts});
 
     // report the average channel occupancy data
     for (auto &[id, receivedTriggers] : channelReceivedTriggersCnt) {
@@ -290,11 +301,6 @@ void StdDataLoop::execPart2() {
 }
 
 void StdDataLoop::loadConfig(const json &config) {
-
-    if (config.contains("maxIterationTime")) {
-        m_maxIterationTime = std::chrono::microseconds(config["maxIterationTime"]);
-        SPDLOG_LOGGER_INFO(sdllog, "Configured StdDataLoop: maxIterationTime: {} [us]", m_maxIterationTime.count());
-    }
 
     if (config.contains("maxConsecutiveRxReads")) {
         m_maxConsecutiveRxReads = config["maxConsecutiveRxReads"];
@@ -324,7 +330,7 @@ void StdDataLoop::closeOut() {
     if(m_doReportHistograms) {
         SPDLOG_LOGGER_TRACE(sdllog, "");
         auto loopCount = m_stats->loop_stats.size();
-        const size_t STAT_COUNT = 4;
+        const size_t STAT_COUNT = 5;
 
         std::array<std::unique_ptr<Histo1d>, STAT_COUNT> histos
         {std::make_unique<Histo1d>("StdDataLoop_DataSize",
@@ -334,6 +340,8 @@ void StdDataLoop::closeOut() {
             std::make_unique<Histo1d>("StdDataLoop_ReadCount",
                     loopCount, -0.5, loopCount - 0.5),
             std::make_unique<Histo1d>("StdDataLoop_LoopTime",
+                    loopCount, -0.5, loopCount - 0.5),
+            std::make_unique<Histo1d>("StdDataLoop_Timeouts",
                     loopCount, -0.5, loopCount - 0.5),
         };
 
@@ -345,6 +353,7 @@ void StdDataLoop::closeOut() {
                     (float)loop_stat.rx_block_read_count,
                     (float)loop_stat.rx_read_iterations,
                     (float)loop_stat.loop_time_us,
+                    (float)loop_stat.timeouts,
             };
             for(size_t s=0; s<STAT_COUNT; s++) {
                 histos[s]->fill(l, d[s]);
