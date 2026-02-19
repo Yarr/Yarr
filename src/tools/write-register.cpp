@@ -165,7 +165,6 @@ int main(int argc, char* argv[]) {
             std::cerr << "WARNING: Chip config for chip at index " << ichip << " in connectivity file does not exist, skipping (" << chip_register_file_path << ")" << std::endl;
             continue;
         }
-
         auto fe = init_fe(hw, jconn, ichip);
         if(!fe) {
             std::cerr << "WARNING: Skipping chip at index " << ichip << " in connectivity file" << std::endl;
@@ -175,6 +174,7 @@ int main(int argc, char* argv[]) {
         std::string current_chip_name = cfg->getName();
         if (!use_chip_name) {
             if ( chip_idx.size() == 0 || (std::find(chip_idx.begin(), chip_idx.end(), ichip)!= chip_idx.end()) ) {
+                hw->initRxChannels({cfg->getRegRxChannel()});
                 hw->setCmdEnable(cfg->getTxChannel());
                 hw->setRxEnable(cfg->getRegRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
@@ -185,13 +185,13 @@ int main(int argc, char* argv[]) {
                         fe->writeNamedRegister(register_name, register_value);
                     }
                     error_cnt++;
+                }else{
+                    fe->writeNamedRegister(register_name, register_value);
                 }
-		else{
-		  fe->writeNamedRegister(register_name, register_value);
-		}
-	    }
+	        }
         } else {
             if (std::find(chip_name.begin(), chip_name.end(), current_chip_name) != chip_name.end()) {
+                hw->initRxChannels({cfg->getRegRxChannel()});
                 hw->setCmdEnable(cfg->getTxChannel());
                 hw->setRxEnable(cfg->getRegRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
@@ -202,10 +202,9 @@ int main(int argc, char* argv[]) {
                         fe->writeNamedRegister(register_name, register_value);
                     }
                     error_cnt++;
+                }else{
+                    fe->writeNamedRegister(register_name, register_value);
                 }
-		else{
-		  fe->writeNamedRegister(register_name, register_value);
-		}
             }
         }
     }
