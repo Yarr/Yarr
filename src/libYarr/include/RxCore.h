@@ -41,9 +41,8 @@ class RxCore {
         /// How much data is available to be be read.
         virtual uint32_t getCurCount() {return 0;};
         virtual bool isBridgeEmpty() = 0;
-        std::chrono::microseconds getWaitTime() {
-            return m_waitTime;
-        }
+        std::chrono::microseconds getWaitTime() { return m_waitTime; }
+        std::chrono::microseconds getTimeoutTime() { return m_timeoutTime; }
 
         // Controller firmware register access
         // return true if operation is successful, otherwise false
@@ -54,7 +53,8 @@ class RxCore {
         RxCore()=default;
         virtual ~RxCore()=default;
 
-        std::chrono::microseconds m_waitTime{100}; // typical latency in the HW controller RX path
+        std::chrono::microseconds m_waitTime{100000}; // typical latency in the HW controller RX path
+        std::chrono::microseconds m_timeoutTime{1000000}; // max time without new data arriving
 };
 
 #endif

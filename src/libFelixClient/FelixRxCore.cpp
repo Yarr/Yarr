@@ -233,6 +233,11 @@ void FelixRxCore::loadConfig(const json &j) {
     m_waitTime = std::chrono::microseconds(j["waitTime"]);
     frlog->info(" rx wait time = {} microseconds", m_waitTime.count());
   }
+  
+  if (j.contains("timeoutTime")) {
+    m_timeoutTime = std::chrono::microseconds(j["timeoutTime"]);
+    frlog->info(" rx timeout time = {} microseconds", m_timeoutTime.count());
+  }
 
   if (j.contains("nthreads")) {
     m_nThreads = j["nthreads"];
