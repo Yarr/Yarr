@@ -120,7 +120,7 @@ int main(int argc, char* argv[]) {
     if (debug) {
         auto loggerConfig = logging::defaultConfig();
         logging::setupLoggers(loggerConfig);
-        spdlog::set_level(spdlog::level::debug);
+        spdlog::set_level(spdlog::level::trace);
     }
 
     register_name = argv[optind++];
