@@ -201,6 +201,7 @@ int main(int argc, char* argv[]) {
                     error_cnt++;
                 }else{
                     fe->writeNamedRegister(register_name, register_value);
+                    while(!hw->isCmdEmpty());
                 }
 	        }
         } else {
