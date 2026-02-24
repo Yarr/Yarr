@@ -1,0 +1,46 @@
+{
+  "scan": {
+    "analysis": {
+      "0": {
+        "algorithm": "StarRRvParamAnalysis",
+        "config": {
+          "parametersOfInterest": ["HCC_ICENABLE"],
+          "registerOfInterest": "ICenable (Register 40)"
+        }
+      },
+      "n_count": 1
+    },
+    "histogrammer": {
+      "0": {
+        "algorithm": "StarHCCRRDist",
+        "config": {}
+      },
+      "n_count": 1
+    },
+    "loops": [
+      {
+        "config": {
+          "max": 16,
+          "min": 0,
+          "step": 1,
+          "parameter":"HCC_ICENABLE"
+        },
+        "loopAction": "StdParameterLoop"
+      },
+      {
+        "config": {
+          "trig_count": 40,
+          "fpath_sequence": "configs/scans/star/patterns/HCCIC_read_bytes.txt"
+        },
+        "loopAction": "StarTriggerLoop"
+      },
+      {
+        "config": {
+            "maxIterationTime": 5000
+        },
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "HCC_register_write_check_Scan"
+  }
+}

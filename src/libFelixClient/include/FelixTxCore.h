@@ -3,8 +3,14 @@
 
 #include "TxCore.h"
 #include "FelixTools.h"
+#include "OptoUtils.h"
 
+#ifdef YARR_CONFIG_FELIX_PROXY
+#include "felix_proxy/ClientThread.h"
+using FelixClientThread = felix_proxy::ClientThread;
+#else
 #include "felix/felix_client_thread.hpp"
+#endif
 #include "storage.hpp"
 
 #include <cstdint>
@@ -46,9 +52,8 @@ public:
   void resetTriggerLogic() override; 	// reset the trigger logic
   uint32_t getTrigInCount() override; 	// get the number of triggers in
 
-  // virtual here so they can be overriden in a dummy class for the unit test
-  virtual bool readFelixRegister(const std::string&, uint64_t&);
-  virtual bool writeFelixRegister(const std::string&, const std::string&);
+  bool readFwRegister(const std::string&, uint64_t&) override;
+  bool writeFwRegister(const std::string&, const uint64_t&) override;
 
   void loadFWMode(); // retrieve firmware mode from the FELIX register
   FelixTools::FELIX_FW_MODE fwMode(); // get the FELIX firmware mode
@@ -61,7 +66,7 @@ protected:
 
   void loadConfig(const json &j); 		     // read configuration from json
   void writeConfig(json& j); 		         // write configuration to json
-  void setClient(std::shared_ptr<FelixClientThread> client); // set Felix client
+  void setClient(const FelixClientThread::Config& fcConfig); // set Felix client
 
   using FelixID_t = FelixTools::FelixID_t;
 
@@ -69,6 +74,7 @@ protected:
   void enableChannel(FelixID_t fid);
   void disableChannel(FelixID_t fid);
   bool checkChannel(FelixID_t fid);
+  bool channelIsEnabled(FelixID_t fid) { return m_enables[fid]; }
 
   void fillFifo(std::vector<uint8_t>& fifo, uint32_t value);
   void prepareFifo(std::vector<uint8_t>& fifo);
@@ -103,7 +109,7 @@ protected:
 
   bool m_flip {false};
   bool m_pixFwTrigger{false};
-  int m_bufferSize {0};
+  size_t m_bufferSize {0};
   bool m_broadcast {true};
   uint32_t m_numEnabledChns {0};
   enum FelixTools::FELIX_FW_MODE m_fwMode {FelixTools::FELIX_FW_MODE::Unknown};
@@ -125,7 +131,12 @@ protected:
   uint8_t m_protocol {0}; // protocol ID
   unsigned m_isCmdEmptyWaitTime {100}; // in milliseconds
 
-  std::shared_ptr<FelixClientThread> fclient;
+  std::unique_ptr<FelixClientThread> fclient;
+
+  /// @brief Send a command over an IC channel, useful for example in LpGBT register writing
+  /// @param fid The FIC of the IC channel (uint64_t)
+  /// @param data The dataframe to be sent (const std::vector<uint8_t>&)
+  void sendIC(uint64_t fid, const std::vector<uint8_t> dataframe);
 };
 
 #endif

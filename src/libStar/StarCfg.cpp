@@ -4,6 +4,7 @@
 // # Comment: Star Config class
 // ################################
 
+#include "StarConstants.h"
 #include "StarCfg.h"
 #include "StarPreset.h"
 
@@ -51,7 +52,7 @@ void StarCfg::enableAll() {
 
 int StarCfg::hccChannelForABCchipID(unsigned int chipID) const {
   auto itr = std::find_if(m_ABCchips.begin(), m_ABCchips.end(),
-                        [this, chipID](auto &it) { return it.second.getABCchipID() == chipID; });
+      [chipID](auto &it) { return it.second.getABCchipID() == chipID; });
   return itr->first;
   //return std::distance(m_ABCchips.begin(), itr);
 }
@@ -74,10 +75,10 @@ void StarCfg::setABCRegisterByID(ABCStarRegister addr, uint32_t val, int32_t chi
   abc.setRegisterValue(addr, val);
 }
 
-int StarCfg::inputChannelForHistoChip(int histo_abc) const
+int StarCfg::inputChannelForHistoChip(unsigned histo_abc) const
 {
     auto chip_map = hcc().histoChipMap();
-    for(int i=0; i<chip_map.size(); i++) {
+    for(size_t i=0; i<chip_map.size(); i++) {
         if(chip_map[i] == histo_abc) {
             return i;
         }
@@ -101,7 +102,7 @@ uint32_t StarCfg::getHCCSubRegisterParentValue(HCCStarSubRegister subReg)
     return m_hcc.getSubRegisterParentValue(subReg);
 }
 
-uint32_t StarCfg::getABCSubRegisterParentValue(int input_channel, ABCStarSubRegister subReg)
+uint32_t StarCfg::getABCSubRegisterParentValue(unsigned input_channel, ABCStarSubRegister subReg)
 {
     if (isAbcForInputChannel(input_channel)) {
         return abcForInputChannel(input_channel).getSubRegisterParentValue(subReg);
@@ -111,19 +112,19 @@ uint32_t StarCfg::getABCSubRegisterParentValue(int input_channel, ABCStarSubRegi
     return 0;
 }
 
-bool StarCfg::isAbcForHistoChip(int histo_chip) const
+bool StarCfg::isAbcForHistoChip(unsigned histo_chip) const
 {
     auto ic = inputChannelForHistoChip(histo_chip);
     return ic != -1;
 }
 
-AbcCfg &StarCfg::abcForHistoChip(int histo_chip)
+AbcCfg &StarCfg::abcForHistoChip(unsigned histo_chip)
 {
     auto ic = inputChannelForHistoChip(histo_chip);
     return abcForInputChannel(ic);
 }
 
-const AbcCfg &StarCfg::abcForHistoChip(int histo_chip) const
+const AbcCfg &StarCfg::abcForHistoChip(unsigned histo_chip) const
 {
     auto ic = inputChannelForHistoChip(histo_chip);
     return abcForInputChannel(ic);
@@ -132,7 +133,7 @@ const AbcCfg &StarCfg::abcForHistoChip(int histo_chip) const
 void StarCfg::logMappings() const
 {
     auto chip_map = hcc().histoChipMap();
-    for(int i=0; i<chip_map.size(); i++) {
+    for(size_t i=0; i<chip_map.size(); i++) {
         logger->trace("IC map: {} {}", i, chip_map[i]);
     }
 }
@@ -222,9 +223,9 @@ void StarCfg::writeConfig(json &j) {
             }
         }
 
-        std::array<uint8_t, 256> trims;
+        std::array<uint8_t, Star::StripsPerABC> trims;
         bool sameTrims = true;
-        for(int m=0; m<256; m++) {
+        for(unsigned int m=0; m<Star::StripsPerABC; m++) {
             trims[m] = abc.getTrimDACRaw(m);
             if(m!=0 && (trims[m] != trims[m-1])) sameTrims = false;
             if(!abc.isMasked(m)) {
@@ -236,7 +237,7 @@ void StarCfg::writeConfig(json &j) {
         if(sameTrims) {
             j["ABCs"]["trims"][histo_index] = trims[0];
         } else {
-            for(int m=0; m<256; m++) {
+            for(unsigned int m=0; m<Star::StripsPerABC; m++) {
                 j["ABCs"]["trims"][histo_index][m] = trims[m];
             }
         }
@@ -340,7 +341,6 @@ void StarCfg::loadConfig(const json &j) {
 
             try {
                 auto addr = HccNames::regFromString(regName).value();
-                logger->trace("Set HCC value {} {}", addr, regValue);
                 m_hcc.setRegisterValue(addr, regValue);
                 auto value = m_hcc.getRegisterValue(addr);
                 logger->trace("From JSON: Set HCC {} reg {} to {:08x} check {:08x}",
@@ -380,7 +380,7 @@ void StarCfg::loadConfig(const json &j) {
     auto chip_map = m_hcc.histoChipMap();
 
     // Count enabled chips for later consistency check
-    int enables_count = 0;
+    unsigned enables_count = 0;
     for(auto &i: chip_map) {
       if(i==HCC_INPUT_CHANNEL_BAD_SLOT)
         continue;
@@ -404,13 +404,13 @@ void StarCfg::loadConfig(const json &j) {
     if (abcs.contains("IDs")) {
         auto &ids = abcs["IDs"];
         abc_arr_length = ids.size();
-        for (int iABC = 0; iABC < ids.size(); iABC++) {
+        for (unsigned int iABC = 0; iABC < ids.size(); iABC++) {
             auto &id = ids[iABC];
             if (id.is_null())
                 continue;
 
             int ic_abc = -1;
-            for(int i=0; i<chip_map.size(); i++) {
+            for(unsigned int i=0; i<chip_map.size(); i++) {
               if(chip_map[i] == iABC) {
                 ic_abc = i;
               }
@@ -427,7 +427,7 @@ void StarCfg::loadConfig(const json &j) {
     if (abcs.contains("fuse_ids")) {
         auto &ids = abcs["fuse_ids"];
         abc_arr_length = ids.size();
-        for (int iABC = 0; iABC < ids.size(); iABC++) {
+        for (unsigned int iABC = 0; iABC < ids.size(); iABC++) {
             auto &id = ids[iABC];
             if (id.is_null())
                 continue;
@@ -513,7 +513,7 @@ void StarCfg::loadConfig(const json &j) {
             }
 
             int ic_abc = -1;
-            for(int i=0; i<chip_map.size(); i++) {
+            for(unsigned int i=0; i<chip_map.size(); i++) {
               if(chip_map[i] == iABC) {
                 ic_abc = i;
               }
@@ -560,7 +560,7 @@ void StarCfg::loadConfig(const json &j) {
             }
 
             int ic_abc = -1;
-            for(int i=0; i<chip_map.size(); i++) {
+            for(unsigned int i=0; i<chip_map.size(); i++) {
               if(chip_map[i] == iABC) {
                 ic_abc = i;
               }
@@ -598,7 +598,7 @@ void StarCfg::loadConfig(const json &j) {
             auto &maskedStrips = maskArray[iABC];
 
             int ic_abc = -1;
-            for(int i=0; i<chip_map.size(); i++) {
+            for(unsigned int i=0; i<chip_map.size(); i++) {
               if(chip_map[i] == iABC) {
                 ic_abc = i;
               }
@@ -625,7 +625,7 @@ void StarCfg::loadConfig(const json &j) {
                 continue;
 
             int ic_abc = -1;
-            for(int i=0; i<chip_map.size(); i++) {
+            for(unsigned int i=0; i<chip_map.size(); i++) {
               if(chip_map[i] == iABC) {
                 ic_abc = i;
               }
@@ -636,12 +636,12 @@ void StarCfg::loadConfig(const json &j) {
             auto &chipValue = trimArray[iABC];
             if(chipValue.is_number()) {
                 int trim = chipValue;
-                for(int m=0; m<256; m++) {
+                for(unsigned int m=0; m<Star::StripsPerABC; m++) {
                     abc.setTrimDACRaw(m, trim);
                 }
             } else {
                 // Not the same
-                for(int m=0; m<256; m++) {
+                for(unsigned int m=0; m<Star::StripsPerABC; m++) {
                   int trim = chipValue[m];
                   abc.setTrimDACRaw(m, trim);
                 }
@@ -660,7 +660,7 @@ void StarCfg::loadConfig(const json &j) {
     auto fe = dynamic_cast<FrontEnd*>(this);
     if(fe) {
       // Make histo size match number of configured ABCs
-      fe->geo.nCol = 128 * numABCs();
+      fe->geo.nCol = Star::StripsPerABCRow * numABCs();
     }    
 }
 

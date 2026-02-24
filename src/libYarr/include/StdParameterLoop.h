@@ -10,6 +10,8 @@
 #include "LoopActionBase.h"
 #include "StdParameterAction.h"
 
+#include <chrono>
+
 class StdParameterLoop : public LoopActionBase, public StdParameterAction {
     public:
         StdParameterLoop();
@@ -27,6 +29,9 @@ class StdParameterLoop : public LoopActionBase, public StdParameterAction {
 
         unsigned m_cur;
         std::chrono::microseconds m_waitTime;
+        bool m_checkActiveLoop;
+        std::string m_secondaryParName = "";
+        int m_secondaryOffset;
 };
 
 #endif

@@ -80,41 +80,6 @@ namespace ScanHelper {
         return runCounter;
     }
 
-    // Open file and parse into json object
-    json openJsonFile(const std::string& file_location) {
-        std::string filepath = file_location;
-        auto frag_p = filepath.find('#');
-        std::string frag;
-        if (frag_p != std::string::npos) {
-            frag = filepath.substr(frag_p + 1);
-            filepath = filepath.substr(0, frag_p);
-        }
-
-        std::ifstream file(filepath);
-        if (!file) {
-            throw std::runtime_error("could not open file: " + filepath);
-        }
-        json j;
-        try {
-            j = json::parse(file);
-        } catch (json::parse_error &e) {
-            throw std::runtime_error(e.what());
-            throw std::runtime_error(e.what());
-        }
-        file.close();
-        // variant produces null for some parse errors
-        if(j.is_null()) {
-            throw std::runtime_error("Parsing json file produced null");
-        }
-
-        if(frag.empty()) {
-            return j;
-        } else {
-            // Use `at` so it throws if the entry is not found
-            return j.at(json::json_pointer(frag));
-        }
-    }
-
     // Load controller config and return fully loaded object
     std::unique_ptr<HwController> loadController(const json &ctrlCfg) {
         std::unique_ptr<HwController> hwCtrl = nullptr;
@@ -254,6 +219,10 @@ namespace ScanHelper {
           }
           chip["__global_config_path__"] = globalConfigPath;
 
+          if(pullFromDb) {
+              shlog->warn("Pulling from DB not implemented");
+          }
+
           // Load config
           shlog->info("Loading config file: {}", chipConfigPath);
           json cfg = configuration->getFrontEndConfig(chipConfigPath);
@@ -376,6 +345,25 @@ namespace ScanHelper {
                     locked = (int)chip["locked"];
                 feCfg->setLocked(locked);
             }
+            if (chip.contains("active")) {
+                bool active = false;
+                if (!chip["active"].is_boolean()) {
+                    shlog->warn("WARNING 'active' flag should be a boolean");
+                } else {
+                    active = chip["active"];
+                }
+                bookie.getLastFe()->setActive(active);
+            }
+
+            if (chip.contains("activeLoop")) {
+                bool activeLoop = false;
+                if (!chip["activeLoop"].is_boolean()) {
+                    shlog->warn("WARNING 'activeLoop' flag should be a boolean");
+                } else {
+                    activeLoop = chip["activeLoop"];
+                }
+                bookie.getLastFe()->setActiveLoop(activeLoop);
+            }
 
             // Check for hidden clipboard monitor parameter, and start them if true
             if (chip.contains("clipboardMonitor")) {
@@ -478,7 +466,6 @@ namespace ScanHelper {
         bhlog->info("Loading histogrammer ...");
 
         const json &histoCfg = scanCfg["scan"]["histogrammer"];
-        const json &anaCfg = scanCfg["scan"]["analysis"];
 
         for (unsigned id=0; id<bookie.getNumOfEntries(); id++) {
             auto fe = bookie.getFe(id);
@@ -513,15 +500,15 @@ namespace ScanHelper {
                 };
 
                 if(histoCfg.contains("n_count")) {
-                    int nHistos = histoCfg["n_count"];
+                    unsigned int nHistos = histoCfg["n_count"];
 
-                    for (int j=0; j<nHistos; j++) {
+                    for (unsigned int j=0; j<nHistos; j++) {
                         std::string algo_name = histoCfg[std::to_string(j)]["algorithm"];
                         add_histo(algo_name, histoCfg[std::to_string(j)]["config"]);
                     }
                 } else {
                     std::size_t nHistos = histoCfg.size();
-                    for (int j=0; j<nHistos; j++) {
+                    for (unsigned int j=0; j<nHistos; j++) {
                         std::string algo_name = histoCfg[j]["algorithm"];
                         add_histo(algo_name, histoCfg[j]["config"]);
                     }
@@ -652,23 +639,6 @@ namespace ScanHelper {
             throw(std::runtime_error("buildAnalyses failure"));
         }
 
-        bool indexed;
-
-        // Is this an array of objects, or "n_count" + indexed by string "0"
-        if (anaCfg.contains("n_count")) {
-            indexed = true;
-        } else {
-            indexed = false;
-        }
-
-        auto get_algorithm = [indexed, &anaCfg](int index) {
-            if(indexed) {
-                return anaCfg[std::to_string(index)];
-            } else {
-                return anaCfg[index];
-            }
-        };
-
         for (unsigned id=0; id<bookie.getNumOfEntries(); id++ ) {
             auto fe = bookie.getFe(id);
             if (fe->isActive()) {
@@ -709,7 +679,7 @@ namespace ScanHelper {
             }
         };
 
-        int nAnas = indexed ? (size_t)anaCfg["n_count"] : anaCfg.size();
+        unsigned int nAnas = indexed ? (size_t)anaCfg["n_count"] : anaCfg.size();
 
         balog->debug("Found {} analysis!", nAnas);
 
@@ -729,7 +699,7 @@ namespace ScanHelper {
         // Algorithm indices
         std::deque<int> indices(nAnas);
         std::iota(std::begin(indices), std::end(indices), 0);
-        int loopcnt = 0;
+        unsigned int loopcnt = 0;
 
         while (not indices.empty()) {
             int j = indices.front();
@@ -935,12 +905,6 @@ namespace ScanHelper {
         }
     }
 
-    void listScans() {
-        for(std::string &scan_name: StdDict::listScans()) {
-            std::cout << "  " << scan_name << "\n";
-        }
-    }
-
     void listControllers() {
         for(auto &h: StdDict::listHwControllers()) {
             std::cout << "  " << h << std::endl;
@@ -968,9 +932,6 @@ namespace ScanHelper {
 
         std::cout << " Known histogram algorithms:\n";
         listHistogrammers();
-
-        std::cout << " Known Scans:\n";
-        listScans();
 
         std::cout << " Known ScanLoop actions:\n";
         listScanLoopActions();

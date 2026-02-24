@@ -7,6 +7,8 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
+#include <unistd.h>
+
 #include "SpecCom.h"
 #include "logging.h"
 #include "LoggingConfig.h"
@@ -25,16 +27,16 @@ constexpr const char* COLOR_GREEN = "\033[32m";
 constexpr const char* COLOR_RESET = "\033[0m";
 
 void printHelp() {
-       std::cout << "Usage: ./bin/eyeDiagram [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-t <test_size>] [-s]\n\n"
-              << "Options:\n"
-              << "  -h                   Display this help message.\n"
-              << "  -r <hw_controller_file>   Specify hardware controller JSON path.\n"
-              << "  -c <connectivity_file>    Specify connectivity config JSON path.\n"
-              << "  -t <test_size>            Specify the error counter test size. Default 1 x 10^6\n"
-              << "  -s                   Skip chip configuration.\n"
-              << "  -n                   Don't update the controller condfig with the best delay values\n" 
-              << "  -v                   Print out and store raw error counter values.\n"; 
-            
+    std::cout << "Usage: ./bin/eyeDiagram [-h] [-r <hw_controller_file>] [-c <connectivity_file>] [-t <test_size>] [-s]\n\n"
+        << "Options:\n"
+        << "  -h                   Display this help message.\n"
+        << "  -r <hw_controller_file>   Specify hardware controller JSON path.\n"
+        << "  -c <connectivity_file>    Specify connectivity config JSON path.\n"
+        << "  -t <test_size>            Specify the error counter test size. Default 1 x 10^6\n"
+        << "  -s                   Skip chip configuration.\n"
+        << "  -n                   Don't update the controller condfig with the best delay values\n" 
+        << "  -v                   Print out and store raw error counter values.\n"; 
+
 }
 
 std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn, int fe_num) {
@@ -50,7 +52,7 @@ std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn
     auto chip_config = chip_configs[fe_num];
     unsigned regRx = chip_config["rx"];
     if(chip_config.contains("regRx"))
-      regRx = chip_config["regRx"];
+        regRx = chip_config["regRx"];
     fe->init(&*hw, FrontEndConnectivity(chip_config["tx"], chip_config["rx"], regRx));
     auto chip_register_file_path = chip_config["__config_path__"];
     fs::path pconfig{chip_register_file_path};
@@ -70,19 +72,13 @@ std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn
 
 int main(int argc, char **argv) {
     // Setup logger with some defaults
-    std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
-    spdlog::set_pattern(defaultLogPattern);
-    json j; // empty
-    j["pattern"] = defaultLogPattern;
-    j["log_config"][0]["name"] = "all";
-    j["log_config"][0]["level"] = "info";
-    logging::setupLoggers(j);
-    
+    logging::setupLoggers(logging::defaultConfig());
+
     // Init spec
     logger->info("Init spec");
     int c;	
     int specNum = 0;
-    int n_lanes= 16;
+    uint32_t n_lanes= 16;
     std::string hw_controller_filename = "";
     std::string connectivity_filename = "";
     uint32_t test_size = 1000000;
@@ -95,31 +91,31 @@ int main(int argc, char **argv) {
 
     while ((c = getopt(argc, argv, "hr:c:t:nsv")) != -1) {
         switch (c) {
-        case 'h':
-            printHelp();
-            return 0;
-		case 'r':
-            hw_controller_filename = optarg;
-            break;
-        case 'c' :
-            connectivity_filename = optarg;
-            break;
-        case 't' :
-            test_size = std::stoi(optarg);
-            break;
-        case 'n' :
-            save_delay = false;
-            break;    
-        case 's' :
-            skip_config = true;
-            break;   
-        case 'v' :
-            print_raw_value = true;
-            break;   
-		default:
-            logger->critical("Invalid command line parameter(s) given!");
-            return -1;
-	    }
+            case 'h':
+                printHelp();
+                return 0;
+            case 'r':
+                hw_controller_filename = optarg;
+                break;
+            case 'c' :
+                connectivity_filename = optarg;
+                break;
+            case 't' :
+                test_size = std::stoi(optarg);
+                break;
+            case 'n' :
+                save_delay = false;
+                break;    
+            case 's' :
+                skip_config = true;
+                break;   
+            case 'v' :
+                print_raw_value = true;
+                break;   
+            default:
+                logger->critical("Invalid command line parameter(s) given!");
+                return -1;
+        }
     }
 
 
@@ -197,24 +193,24 @@ int main(int argc, char **argv) {
     }
 
     double clk_speed=37.5;
-    double readout_speed=clk_speed*32*10e6/(cdrclksel+1);
- 
+    double readout_speed=clk_speed*32*1e6/(cdrclksel+1);
+
     double time=0.0;
     time=1/readout_speed*66*test_size;
-    double clkcycles = 1/(clk_speed*10e6);
+    double clkcycles = 1/(clk_speed*1e6);
     double count=time/clkcycles/(serblckperiod*2+1);
     int min=std::floor(count);
     int max=std::ceil(count);
-    int wait = time*10000000;
+    int wait = time*1e6*1.1;
 
     std::ofstream file;
     file.open("results.txt");
 
-	// Enable manual delay control
-	mySpec.writeSingle(0x2 << 14 | 0x6, 0xffff); 
+    // Enable manual delay control
+    mySpec.writeSingle(0x2 << 14 | 0x6, 0xffff); 
 
-	mySpec.writeSingle(0x2 << 14 | 0x8, test_size); 
-	mySpec.writeSingle(0x2 << 14 | 0x9, 0); 
+    mySpec.writeSingle(0x2 << 14 | 0x8, test_size); 
+    mySpec.writeSingle(0x2 << 14 | 0x9, 0); 
 
     std::vector<std::vector<double> > resultVec;
     resultVec.resize(n_lanes);
@@ -235,20 +231,20 @@ int main(int argc, char **argv) {
             mySpec.writeSingle(0x2 << 14 | 0x4, j); 
             mySpec.writeSingle(0x2 << 14 | 0x5, i); 
         }
-            
+
         // Reset and restart error counter
         mySpec.writeSingle(0x2 << 14 | 0xb, 1); 
         mySpec.writeSingle(0x2 << 14 | 0xb, 0); 
-        
+
         std::this_thread::sleep_for(std::chrono::microseconds(wait));
-        
+
         for (uint32_t j = 0 ; j<n_lanes; j++) {
-		    mySpec.writeSingle(0x2 << 14 | 0xa, j); 
-		    uint32_t errors = 0;
-		    errors = mySpec.readSingle(0x2<<14 | 0xb);
-            double error_count = 0;
-            double value=0;
-            double link_quality=0;
+            mySpec.writeSingle(0x2 << 14 | 0xa, j); 
+            uint32_t errors = 0;
+            errors = mySpec.readSingle(0x2<<14 | 0xb);
+            double error_count = -1;
+            double value=-1;
+            double link_quality=-1;
             if (((errors>>31)&0x1)) {
                 error_count = (0x7FFFFFFF & errors);
                 if (error_count>=min && error_count<=max+1 ){ 
@@ -262,15 +258,15 @@ int main(int argc, char **argv) {
             resultVec[j][i] = value;
             if (link_quality==1){
                 if (print_raw_value){
-                    std::cout << COLOR_GREEN << std::setw(4) << error_count << COLOR_RESET << " | ";
+                    std::cout << COLOR_GREEN << std::setw(10) << error_count << COLOR_RESET << " | ";
                 } else {
-                    std::cout << COLOR_GREEN << std::setw(4) << link_quality << COLOR_RESET << " | ";
+                    std::cout << COLOR_GREEN << std::setw(5) << link_quality << COLOR_RESET << " | ";
                 }
             } else {            
                 if (print_raw_value){
-                    std::cout << std::setw(4) << error_count << " | ";
+                    std::cout << std::setw(10) << error_count << " | ";
                 } else {
-                    std::cout << std::setw(4) << link_quality << " | ";
+                    std::cout << std::setw(5) << link_quality << " | ";
                 }
             }
             if (print_raw_value){
@@ -283,9 +279,9 @@ int main(int argc, char **argv) {
         std::cout << std::endl;
     }
     file << s;
-	logger->info("Done scanning!  \n");
+    logger->info("Done scanning!  \n");
 
-	logger->info("Determining delay settings:");
+    logger->info("Determining delay settings:");
 
     std::vector<int> delayVec;
     delayVec.resize(n_lanes);

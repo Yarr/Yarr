@@ -70,7 +70,7 @@ const std::vector<hccsubregdef> s_hccsubregdefs_common = {
   {HCCStarSubRegister::DATACLKENPRE             ,39	,19	,1}	,
   {HCCStarSubRegister::DATACLKENABLE            ,39	,20	,1}	,
   {HCCStarSubRegister::ICENABLE                 ,40	,0	,11}	,
-  {HCCStarSubRegister::ICTRANSSEL               ,40	,16	,3}	,
+  {HCCStarSubRegister::ICTRANSSEL               ,40	,16	,4}	,
   {HCCStarSubRegister::TRIGMODE                 ,41	,0	,1}	,
   {HCCStarSubRegister::ROSPEED                  ,41	,4	,1}	,
   {HCCStarSubRegister::OPMODE                   ,41	,8	,2}	,
@@ -234,7 +234,7 @@ void HccCfg::setupMaps(int version) {
   }
 }
 
-std::array<uint8_t, HCC_INPUT_CHANNEL_COUNT> HccCfg::histoChipMap() const {
+std::array<uint8_t, Star::MaxABCsPerHCC> HccCfg::histoChipMap() const {
   // On HCCv0, input channel numbers are reversed
   // On HCCv1, we map histogram slots based on increasing IC number
 
@@ -244,11 +244,11 @@ std::array<uint8_t, HCC_INPUT_CHANNEL_COUNT> HccCfg::histoChipMap() const {
 
   size_t offset = 0;
 
-  std::array<uint8_t, HCC_INPUT_CHANNEL_COUNT> chip_map{};
+  std::array<uint8_t, Star::MaxABCsPerHCC> chip_map{};
   chip_map.fill(HCC_INPUT_CHANNEL_BAD_SLOT);
 
   // logger->trace("Build map from mask: {}", input_enables);
-  for(int index=0; index<11; index++) {
+  for(unsigned int index=0; index<Star::MaxABCsPerHCC; index++) {
     int ic = version_1?index:(10-index);
     int mask = 1<<ic;
     if(mask & input_enables) {
@@ -290,7 +290,7 @@ uint32_t HccCfg::getRegisterValue(HCCStarRegister addr) const {
   try {
     return getRegister(addr).getValue();
   } catch(std::out_of_range &e) {
-    logger->info("Failed request for get HCC reg: {}", addr);
+    logger->info("Failed request for get HCC reg: {}", HccNames::regToString(addr));
     for(auto &rm: m_registerMap) {
       logger->debug("Have: {}", rm.first);
     }
@@ -303,7 +303,7 @@ void HccCfg::setRegisterValue(HCCStarRegister addr, uint32_t val) {
   try {
     getRegister(addr).setValue(val);
   } catch(std::out_of_range &e) {
-    logger->info("Failed request for set HCC reg: {}", addr);
+    logger->info("Failed request for set HCC reg: {}", HccNames::regToString(addr));
     for(auto &rm: m_registerMap) {
       logger->debug("Have: {}", rm.first);
     }

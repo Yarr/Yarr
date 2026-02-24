@@ -59,11 +59,9 @@ FelixTxCore::FelixID_t FelixTxCore::fid_from_channel(uint32_t chn) {
 
 FelixTxCore::FelixID_t FelixTxCore::ic_fid_from_channel(uint32_t chn) {
   // Compute FelixID from did, cid, channel number
-  // for IC in the tx direction (to-flx), we shift the elink by 17 and scale by 64 * the link number
+  // for IC in the tx direction (to-flx), we shift the elink by 17
   uint16_t link_id = FelixTools::link_from_chn(chn);
-  uint8_t link_multiplier = 64;
-  uint8_t elink_offset = 17;
-  uint8_t elink = link_id * link_multiplier+ elink_offset;
+  uint8_t elink = 17;
 
   bool is_virtual = false;
   uint8_t sid = 0;
@@ -80,7 +78,7 @@ bool FelixTxCore::checkChannel(FelixID_t fid) {
     switch(fwMode()){
     case FelixTools::FELIX_FW_MODE::ITK_Pixel: //ITk Pixel firmware
     case FelixTools::FELIX_FW_MODE::ITK_Strip: //ITk Strip firmware
-      fclient->send_data(fid, static_cast<const unsigned char*>(&(m_idleWords[0])), m_idleWords.size(), true); 
+      fclient->send_data(fid, static_cast<const unsigned char*>(&(m_idleWords[0])), m_idleWords.size(), true);
       break;
     default:
       ftlog->error("FELIX firmware version not supported in YARR. Try again...");
@@ -119,7 +117,7 @@ void FelixTxCore::updateFelixBroadcastRegs() {
   for (const auto& [linkId, bRegValue] : broadcastRegValueMaps) {
     std::stringstream brdcstRegName;
     brdcstRegName << "BROADCAST_ENABLE_" << std::setfill('0') << std::setw(2) << linkId;
-    writeFelixRegister( brdcstRegName.str(), std::to_string(bRegValue.to_ullong()) );
+    writeFwRegister( brdcstRegName.str(), bRegValue.to_ullong() );
   }
 }
 
@@ -250,7 +248,7 @@ void FelixTxCore::sendFifo(FelixID_t fid, std::vector<uint8_t>& fifo) {
   }
 
   bool flush = true;
-  //fclient->init_send_data(fid);
+  //fclient->getClient()->init_send_data(fid);
   fclient->send_data(fid, fifo.data(), fifo.size(), flush);
 
   // clear the fifo
@@ -362,7 +360,7 @@ int FelixTxCore::getMaxTrigWordLength(){
 
 void FelixTxCore::setTrigWord(uint32_t *words, uint32_t size) {
   m_trigWords.clear();
-  int maxLength = getMaxTrigWordLength();
+  unsigned maxLength = getMaxTrigWordLength();
   if (size > maxLength && m_pixFwTrigger){
     ftlog->error("Size of {} is greater than the maximum allowed length for this controller {}; note RD53A scans are not compatible with FELIX FW Triggers", size, maxLength);
   }
@@ -490,6 +488,9 @@ void FelixTxCore::doTriggerCnt() {
 	std::this_thread::sleep_until(last_trigger);
       }
       break;
+    default:
+      // Ignore non-ITK modes
+      break;
     }
   }
 
@@ -550,7 +551,7 @@ void FelixTxCore::trigger() {
       for (const auto& word : buffer) {
         ftlog->trace(" {:02x}", word&0xff);
       }
-      
+
       bool flush = true;
       int nRetriesIfFails=0;
       while (nRetriesIfFails<3) {
@@ -636,8 +637,8 @@ void FelixTxCore::writeConfig(json& j) {
   j["isCmdEmptyWaitTime"] = m_isCmdEmptyWaitTime;
 }
 
-void FelixTxCore::setClient(std::shared_ptr<FelixClientThread> client) {
-  fclient = client;
+void FelixTxCore::setClient(const FelixClientThread::Config& fcConfig) {
+  fclient = std::make_unique<FelixClientThread>(fcConfig);
 }
 
 FelixClientThread::Reply FelixTxCore::accessFelixRegister(
@@ -653,7 +654,12 @@ FelixClientThread::Reply FelixTxCore::accessFelixRegister(
   auto status_summary = fclient->send_cmd(fids, cmd, cmd_args, replies);
 
   if (replies.empty()) {
+#ifdef YARR_CONFIG_FELIX_PROXY
+    // enum
+    ftlog->warn("Status: {}", (int)(status_summary));
+#else
     ftlog->warn("Status: {}", FelixClientThread::to_string(status_summary));
+#endif
     throw std::runtime_error("No replies.");
   }
 
@@ -670,7 +676,11 @@ bool FelixTxCore::checkReply(const FelixClientThread::Reply& reply) {
   bool goodReply = reply.status == FelixClientThread::Status::OK;
 
   if (not goodReply) {
+#ifdef YARR_CONFIG_FELIX_PROXY
+    ftlog->warn("Status: {}", (int)(reply.status));
+#else
     ftlog->warn("Status: {}", FelixClientThread::to_string(reply.status));
+#endif
     ftlog->warn(reply.message);
   } else {
     //status OK
@@ -682,7 +692,7 @@ bool FelixTxCore::checkReply(const FelixClientThread::Reply& reply) {
   return goodReply;
 }
 
-bool FelixTxCore::readFelixRegister(
+bool FelixTxCore::readFwRegister(
   const std::string& registerName, uint64_t& value)
 {
   ftlog->debug("Read FELIX register {}", registerName);
@@ -704,16 +714,16 @@ bool FelixTxCore::readFelixRegister(
   return success;
 }
 
-bool FelixTxCore::writeFelixRegister(
-  const std::string& registerName, const std::string& regValue
+bool FelixTxCore::writeFwRegister(
+  const std::string& registerName, const uint64_t& regValue
 )
 {
-  ftlog->debug("Write value {} to FELIX register {}", regValue, registerName);
+  ftlog->debug("Write value 0x{:x} to FELIX register {}", regValue, registerName);
 
   bool success = false;
 
   try {
-    auto reply = accessFelixRegister(FelixClientThread::Cmd::SET, {registerName, regValue});
+    auto reply = accessFelixRegister(FelixClientThread::Cmd::SET, {registerName, std::to_string(regValue)});
     success = checkReply(reply);
   } catch (std::runtime_error &e) {
     ftlog->error(e.what());
@@ -728,7 +738,7 @@ bool FelixTxCore::writeFelixRegister(
 
 void FelixTxCore::loadFWMode() {
   uint64_t regValue;
-  bool success = readFelixRegister("FIRMWARE_MODE", regValue);
+  bool success = readFwRegister("FIRMWARE_MODE", regValue);
   if (success) {
     m_fwMode = static_cast<FelixTools::FELIX_FW_MODE>(regValue);
   } else {
@@ -741,4 +751,23 @@ FelixTools::FELIX_FW_MODE FelixTxCore::fwMode() {
     loadFWMode();
   }
   return m_fwMode;
+}
+
+void FelixTxCore::sendIC(uint64_t fid, const std::vector<uint8_t> dataframe){
+  /*
+    Based on itk-ic-over-netio-next communication wrapper, 
+    source: https://gitlab.cern.ch/itk-felix-sw/itk-ic-over-netio-next/-/blob/master/src/itk-ic-over-netio-next.cc?ref_type=heads
+  */
+  bool flush = true;
+
+  if (m_enables[fid] == false){
+    enableChannel(fid);
+  }
+  try {
+    fclient->send_data(fid, dataframe.data(), dataframe.size(), flush);
+  }
+  catch (FelixClientResourceNotAvailableException &e) {
+	  ftlog->warn("Exception from FelixClient::send_data: {}. Retrying.", e.what());
+	  std::this_thread::sleep_for(std::chrono::microseconds(m_isCmdEmptyWaitTime));
+ }
 }

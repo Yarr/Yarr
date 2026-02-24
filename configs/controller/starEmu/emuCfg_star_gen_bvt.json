@@ -1,0 +1,11 @@
+{
+    "ctrlCfg" : {
+        "type": "emu_Star",
+        "cfg" : {
+            "hccVersion": 1,
+            "abcVersion": 1,
+            "feCfg" : "configs/emulator/emu_star_gen_bvt.json",
+            "chipCfg" : "configs/connectivity/example_star_setup_ppb.json"
+        }
+    }
+}

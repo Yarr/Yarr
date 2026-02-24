@@ -55,6 +55,10 @@ namespace {
       StdDict::registerHistogrammer("TagDist",
                                 []() { return std::unique_ptr<HistogramAlgorithm>(new TagDist());});
 
+    bool tag_occupancy_registered =
+      StdDict::registerHistogrammer("TagOccupancyMap",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new TagOccupancyMap());});
+
     bool l13d_registered =
       StdDict::registerHistogrammer("L13d",
                                 []() { return std::unique_ptr<HistogramAlgorithm>(new L13d());});
@@ -62,6 +66,10 @@ namespace {
     bool hpe_registered =
       StdDict::registerHistogrammer("HitsPerEvent",
                                 []() { return std::unique_ptr<HistogramAlgorithm>(new HitsPerEvent());});
+
+    bool raw_registered =
+      StdDict::registerHistogrammer("RawData",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new RawDataHistogram());});
 }
 
 bool DataArchiver::open(std::string filename) {
@@ -204,6 +212,44 @@ void TagMap::processEvent(FrontEndData *data) {
     }
 }
 
+void TagOccupancyMap::loadConfig(const json &cfg)
+{
+  try {
+    cfg.at("tag_count").get_to(tag_count);
+  } catch(json::out_of_range &) {
+    // Leave at default
+  }
+
+  if(tag_count > 256) {
+    // Hard-coded by 8-bit mask in processEvent
+    alog->warn("TagOccupancyMap: Fixing limit of tag_count to 256");
+    tag_count = 256;
+  }
+}
+
+void TagOccupancyMap::create(const LoopStatus &stat) {
+    h = new Histo3d(outputName(),
+                    nCol, 0.5, nCol+0.5,
+                    nRow, 0.5, nRow+0.5,
+                    tag_count, -0.5, tag_count - 0.5,
+                    stat);
+    h->setXaxisTitle("Column");
+    h->setYaxisTitle("Row");
+    h->setZaxisTitle("Tag");
+    r.reset(h);
+}
+
+void TagOccupancyMap::processEvent(FrontEndData *data) {
+    for (const FrontEndEvent &curEvent: data->events) {
+        if (curEvent.nHits > 0) {
+            for (const FrontEndHit &curHit: curEvent.hits) {
+                if(curHit.tot > 0)
+                    h->fill(curHit.col, curHit.row, curEvent.tag & 0xff);
+            }
+        }
+    }
+}
+
 void L1Dist::create(const LoopStatus &stat) {
     h = new Histo1d(outputName(), 16, -0.5, 15.5, stat);
     h->setXaxisTitle("L1A");
@@ -287,5 +333,67 @@ void HitsPerEvent::processEvent(FrontEndData *data) {
     // Event Loop
     for (const FrontEndEvent &curEvent: data->events) {
         h->fill(curEvent.nHits);
+    }
+}
+
+void RawDataHistogram::loadConfig(const json &config)
+{
+    try {
+        config.at("width").get_to(width);
+    } catch(json::out_of_range &) {}
+    try {
+        config.at("offset").get_to(offset);
+    } catch(json::out_of_range &) {}
+}
+
+void RawDataHistogram::create(const LoopStatus &stat) {
+    h = new Histo1d(outputName(), width, offset - 0.5, offset + width - 0.5, stat);
+    h->setXaxisTitle("Bits");
+    h->setYaxisTitle("Accumulator");
+    r.reset(h);
+}
+
+void RawDataHistogram::processEvent(FrontEndData *data) {
+    size_t word_start = offset / 32;
+    size_t word_end = (offset+width+31) / 32;
+    size_t bit_first = offset % 32;
+    size_t bit_last = ((offset+width-1) % 32) + 1;
+
+    for (const FrontEndEvent &curEvent: data->events) {
+        auto h_size = curEvent.hits.size();
+        if(h_size < word_start) {
+          continue;
+        }
+
+        size_t w_start = word_start;
+        size_t w_end = word_end;
+        size_t b_first = bit_first;
+        size_t b_last = bit_last;
+
+        if(h_size <= word_end) {
+          w_end = h_size;
+          if(h_size < word_end) {
+            b_last = 32;
+          } else if(b_last != 32) {
+            b_last = std::min(((offset+31) % 32) + 1, b_last);
+          }
+        }
+
+        for(size_t word_index = w_start; word_index < w_end; word_index ++) {
+            const FrontEndHit &curHit = curEvent.hits[word_index];
+            uint32_t word = curHit.row;
+            word = (word << 16) | curHit.col;
+
+            size_t bit_start = word_index == w_start
+              ? b_first : 0;
+            size_t bit_end = word_index == (w_end-1)
+              ? b_last : 32;
+
+            for(uint32_t bit=bit_start; bit<bit_end; bit++) {
+                if(word & (1<<(31-bit))) {
+                    h->fill(word_index * 32 + bit);
+                }
+            }
+        }
     }
 }

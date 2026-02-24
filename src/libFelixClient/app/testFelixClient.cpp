@@ -11,6 +11,7 @@
 #include <fstream>
 #include <string>
 #include <cstdlib>
+#include <unistd.h>
 
 auto logger = logging::make_log("testFelixClient");
 
@@ -112,13 +113,15 @@ int main(int argc, char **argv) {
   if (loggerCfg.empty()) {
     // default
     json jlog;
-    jlog["pattern"] = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
+    jlog["pattern"] = logging::defaultLogPattern;
     jlog["log_config"][0]["name"] = "testFelixClient";
     jlog["log_config"][0]["level"] = "info";
     jlog["log_config"][1]["name"] = "FelixTxCore";
     jlog["log_config"][1]["level"] = "info";
     jlog["log_config"][2]["name"] = "FelixRxCore";
     jlog["log_config"][2]["level"] = "info";
+    jlog["log_config"][3]["name"] = "FelixRxThread";
+    jlog["log_config"][3]["level"] = "info";
     logging::setupLoggers(jlog);
   } else {
     try {
@@ -166,6 +169,7 @@ int main(int argc, char **argv) {
   // Subscribe to elinks
   if (not elinks_rx.empty()) {
     try {
+      hwCtrl->initRxChannels(elinks_rx);
       hwCtrl->setRxEnable(elinks_rx);
     } catch (std::runtime_error& e) {
       logger->error("Fail to subscribe: {}", e.what());

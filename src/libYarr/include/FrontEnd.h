@@ -40,9 +40,12 @@ typedef struct FeedbackProcessingInfo
 } FeedbackProcessingInfo;
 
 class Bookkeeper;
-class FrontEndClipBoards;
+struct FrontEndClipBoards;
 class FrontEndConnectivity;
 
+/**
+ * Representation of a FrontEnd ASIC.
+ */
 class FrontEnd {
     public:
         FrontEnd();
@@ -50,13 +53,25 @@ class FrontEnd {
         
         virtual void init(HwController *arg_core, const FrontEndConnectivity& fe_cfg)=0;
 
+        /** Synonym for isActive */
         bool getActive() const;
-		bool isActive() const;
-		void setActive(bool active);
+
+        /** Is this chip active */
+        bool isActive() const;
+        /** Change active state */
+        void setActive(bool active);
+
+        /** Is this chip active (for parameter loops) */
+        bool isActiveLoop() const;
+        /** Change active state (for parameter loops) */
+        void setActiveLoop(bool activeLoop);
+
+        /** Make this represent a global ASIC */
         virtual void makeGlobal(){};
         virtual std::unique_ptr<FrontEnd> getGlobal();
         virtual void connectBookkeeper(Bookkeeper* k){};
        
+        /** Send configuration to FrontEnd ASIC(s). */
         virtual void configure()=0;
         virtual yarrStatus checkCom() {return yarrSuccess;}
         virtual yarrStatus hasValidName() { return yarrSuccess; }
@@ -89,6 +104,7 @@ class FrontEnd {
     protected:
         std::unique_ptr<FrontEndClipBoards> m_clipboards;
         bool active;
+        bool activeLoop;
         RxCore *m_rxcore;
 };
 

@@ -41,5 +41,16 @@ void LoopEngine::execute() {
 
 // What has to be done after execution
 void LoopEngine::end() {
+    Engine::loop_list_type::iterator it = m_list.begin();
+   
+    stat.init(m_list.size());
+    
+    unsigned i = 0;
+    while(m_list.end() != it) {
+        stat.addLoop(i, (*it).get(), (*it).get()->getStyle());
+        i++;
+        (*it)->closeOut();
+        ++it;
+    }
 
 }

@@ -4,27 +4,46 @@ nav:
     - Home: index.md
     - Hardware/PC guide: hw_guide.md
     - SW Installation: install.md
+    - Using YARR as a library: consuming_yarr.md
     - Kernel Driver: kernel_driver.md
     - PCIe Firmware/Hardware: fw_guide.md
     - Updating to 1.28 Gbps: updating_firmware.md
     - Firmware Trigger Tagging Guide: trigger_tagging.md
     - External PCIe: pcie_ext.md
-    - ScanConsole: scanconsole.md
-    - FE-I4: fei4.md
-    - FE65-P2: fe65p2.md
-    - RD53A: rd53a.md
-    - RD53B: rd53b.md
-    - ITkPixV2: itkpixv2.md
-    - Star: star.md
+    - Scan Console:
+          - ScanConsole Command: scanconsole.md
+          - Scan Loops: scan_loops.md
+          - Scan Histograms: scan_histogrammers.md
+          - Scan Analyses: scan_analyses.md
+    - FrontEnds:
+          - FE-I4: fei4.md
+          - FE65-P2: fe65p2.md
+          - RD53A: rd53a.md
+          - RD53B (ITkPix v1): rd53b.md
+          - RD53C (ITkPix v2): itkpixv2.md
+          - RD53 common info: rd53.md
+          - Star: star.md
     - LocalDB: https://atlas-itk-pixel-localdb.docs.cern.ch/
     - Plotting Tools: plotting.md
     - Logging configuration: logging.md
-    - FelixClient: felixclient.md
-    - NetIO: netio.md
-    - BDAQ Hardware: bdaq.md
-    - ITSDAQ FW: itsdaq.md
+    - Hardware controllers:
+          - FelixClient: felixclient.md
+          - NetIO: netio.md
+          - BDAQ Hardware: bdaq.md
+          - ITSDAQ FW: itsdaq.md
     - AnalysisConsole: analysisconsole.md
     - Troubleshooting: troubleshooting.md
     - Emulator: emulator.md
     - Version Log: version.md
 theme: readthedocs
+
+markdown_extensions:
+    # Built-in
+    - markdown.extensions.abbr:
+    - markdown.extensions.admonition:
+    - markdown.extensions.attr_list:
+    - markdown.extensions.footnotes:
+    - markdown.extensions.meta:
+    - markdown.extensions.tables:
+    - markdown.extensions.toc:
+          permalink: true

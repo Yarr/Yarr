@@ -5,13 +5,16 @@
         "algorithm": "ScurveFitter",
         "config": {
           "reverse": true,
-          "parametersOfInterest": ["ABCs_BVT"]
+          "parametersOfInterest": ["ABCs_BVT"],
+	        "dumpDebugScurvePlots": false
         }
       },
       "1": {
         "algorithm": "StarNPointGainAnalysis",
         "config": {
-          "parametersOfInterest": ["ABCs_BCAL"]
+          "parametersOfInterest": ["ABCs_BCAL"],
+          "fitFunction": "linear",
+          "convertBVTtomV": true
         },
         "dependOn": ["ScurveFitter"]
       },
@@ -27,48 +30,53 @@
     "loops": [
       {
         "config": {
-          "max": 140,
-          "min": 100,
-          "step": 20,
+          "max": 74,
+          "min": 22,
+          "step": 26,
           "parameter":"ABCs_BCAL"
         },
         "loopAction": "StdParameterLoop"
       },
       {
         "config": {
-          "max": 110,
-          "min": 65,
-          "step": 5,
+          "max": 100,
+          "min": 0,
+          "step": 2,
           "parameter":"ABCs_BVT"
         },
         "loopAction": "StdParameterLoop"
       },
       {
         "config": {
-          "trig_count": 50,
-          "trig_frequency": 100,
+          "trig_count": 500,
+          "trig_frequency": 10000,
           "trig_time": 0,
-          "l0_latency": 5,
-          "verbose": true,
-          "extTrigger": false,
-          "noInject": false       
+          "l0_latency": 20,
+          "noInject": false      
         },
         "loopAction": "StarTriggerLoop"
       },
       {
+	"config": {
+      "maxIterationTime": 5000000,
+      "triggersLostTolerance": 0,
+      "maxConsecutiveRxReads": 1,
+      "averageDataProcessingTime": 10
+	},
         "loopAction": "StdDataLoop"
       }
     ],
     "name": "nPointScan",
     "prescan": {
+      "ABCs_MASKHPR": 1,
+      "ABCs_STOPHPR": 1,
+      "HCC_MASKHPR": 1,
+      "HCC_STOPHPR": 1,
       "ABCs_PR_ENABLE": 1,
       "ABCs_LP_ENABLE": 1,
-      "ABCs_RRMODE": 1,
-      "ABCs_TM": 0,
-      "ABCs_CALPULSE_ENABLE":    1,
-      "ABCs_CALPULSE_POLARITY":    0,
-      "ABCs_MAX_CLUSTER_ENABLE": 0,
-      "ABCs_LATENCY": 5
+      "ABCs_CALPULSE_ENABLE": 1,
+      "ABCs_CALPULSE_POLARITY": 0
     }
   }
 }
+

@@ -10,6 +10,7 @@
 #include "logging.h"
 #include "LoggingConfig.h"
 
+#include <iostream>
 #include <getopt.h>
 
 // Compare for example
@@ -594,9 +595,7 @@ int AnalysisConsoleImpl::init() {
         loggerConfig["outputDir"] = options.outputDir;
     } else {
         // default log setting
-        loggerConfig["pattern"] = options.defaultLogPattern;
-        loggerConfig["log_config"][0]["name"] = "all";
-        loggerConfig["log_config"][0]["level"] = "info";
+        loggerConfig = logging::defaultConfig();
         loggerConfig["outputDir"]="";
     }
     spdlog::info("Configuring logger ...");

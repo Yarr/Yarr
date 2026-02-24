@@ -153,6 +153,33 @@ class TagMap : public HistogramAlgorithm {
         Histo2d *h;
 };
 
+/**
+ * Occupancy histogram distributed by tag.
+ *
+ * Build a 3d histogram with the z axis being the L0tag.
+ * The z-axis (Tag) can be limited by setting "tag_count"
+ * to avoid requiring large amount of memory unnecessarily.
+ */
+class TagOccupancyMap : public HistogramAlgorithm {
+    public:
+        TagOccupancyMap() : HistogramAlgorithm() {
+            r = nullptr;
+            h = nullptr;
+        }
+        ~TagOccupancyMap() override = default;
+
+        void create(const LoopStatus &stat) override;
+
+        void loadConfig(const json &cfg) override;
+
+        void processEvent(FrontEndData *data) override;
+
+        static const std::string outputName()  { return "TagOccupancyMap"; }
+    private:
+        unsigned tag_count{256};
+        Histo3d *h;
+};
+
 class L1Dist : public HistogramAlgorithm {
     public:
         L1Dist() : HistogramAlgorithm() {
@@ -212,5 +239,32 @@ class HitsPerEvent : public HistogramAlgorithm {
         static std::string outputName() { return "HitDist"; }
     private:
         Histo1d *h;
+};
+
+/**
+ * Build histogram of event data interpreted from raw bits.
+ */
+class RawDataHistogram : public HistogramAlgorithm {
+    public:
+        RawDataHistogram() : HistogramAlgorithm() {
+            r = nullptr;
+        }
+
+        ~RawDataHistogram() override = default;
+
+        void create(const LoopStatus &stat) override;
+
+        void processEvent(FrontEndData *data) override;
+
+        void loadConfig(const json &config) override;
+
+        static std::string outputName() { return "RawData"; }
+
+    private:
+        Histo1d *h{};
+
+        /// Width in bits
+        size_t width{32};
+        size_t offset{0};
 };
 #endif

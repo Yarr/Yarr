@@ -62,7 +62,7 @@ class StarTrimDacAnalysis : public AnalysisAlgorithm {
 	unsigned parTrimRange_loopindex=0;                        //!< LoopStatus parameter index of TrimRange during scan
 	unsigned parTrimDac_loopindex=0;                          //!< LoopStatus parameter index of TrimDac during scan
 
-	unsigned int getChannelMultReachingTarget(const std::map<unsigned, std::map<TrimRangeTrimDac, double> > mapThresholdVsTrimDacVsChannelNumber, const int & trimRange, const double & target, std::map<unsigned,int> & mapOfTrims, const int & iChip) const; //!< Returns the channel multiplicity (i.e. the number of strips able to reach a given threshold using any value of TrimDAC) for a given threshold 'target' according to the scans input passed in mapThresholdVsTrimDacVsChannelNumber in a given trimDacRange and fills the corresponding TrimDac values in mapOfTrims, doing it for all chips together or only channels of a given chip #iChip
+	unsigned int getChannelMultReachingTarget(const std::map<unsigned, std::map<TrimRangeTrimDac, double> > & mapThresholdVsTrimDacVsChannelNumber, const unsigned int & trimRange, const double & target, std::map<unsigned,int> & mapOfTrims, const unsigned int & iChip) const; //!< Returns the channel multiplicity (i.e. the number of strips able to reach a given threshold using any value of TrimDAC) for a given threshold 'target' according to the scans input passed in mapThresholdVsTrimDacVsChannelNumber in a given trimDacRange and fills the corresponding TrimDac values in mapOfTrims, doing it for all chips together or only channels of a given chip #iChip
 
 	std::unique_ptr<StarJsonData> initOutputJsonData() const; //!< Initializes an output JsonData object that will store the obtained TrimDAC values
 
@@ -76,6 +76,12 @@ class StarTrimDacAnalysis : public AnalysisAlgorithm {
 	bool m_targetThresholdPerChip = true; //!< Configuration flag to decide whether one computes an overall target threshold for all chips or for each chip individually
 
 	std::vector<int> getTrimRanges(const std::map<unsigned, std::map<TrimRangeTrimDac, double> > & mapThresholdVsTrimDacVsChannelNumber) const; //Returns the list of trim ranges used in inputs
+
+  /// @brief Write trim values to chip configuration
+  /// @param chip Chip index
+  /// @param range BTRANGE
+  /// @param mapOfTrims map of channel index to TrimDAC value
+  void writeTrimsToChipConfig(unsigned chip, int range, const std::map<unsigned,int> & mapOfTrims);
 };
 
 #endif

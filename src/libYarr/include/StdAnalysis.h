@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "AnalysisAlgorithm.h"
+#include "StdTriggerAction.h"
 
 // Need size to make unique_ptr destructors
 #include "Histo1d.h"
@@ -208,7 +209,7 @@ class NPointGain : public AnalysisAlgorithm {
         using NPGRespFuncT = double (*)(double, const double *);
         NPGRespFuncT m_respFunc;
         NPGRespFuncT m_gainConvFunc;
-        int m_respFuncNParams;
+        unsigned int m_respFuncNParams;
         std::string m_respFuncName;
         std::map<std::string, NPGRespFuncT> m_respFuncMap = { // response functions
             {"linear", [](double x, const double *par){return par[0] + x*par[1];}},
@@ -489,20 +490,43 @@ class ParameterAnalysis : public AnalysisAlgorithm {
     private:
         std::vector<unsigned> loops;
         std::vector<unsigned> loopMax;
-        unsigned n_count;
         unsigned injections;
-        unsigned paramLoopNo;
+        unsigned paramLoopNo{0xffffffff};
         unsigned paramMin;
         unsigned paramMax;
         unsigned paramStep;
         unsigned paramBins;
-        unsigned count;
         std::string paramName;
         std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
         std::map<unsigned, std::unique_ptr<Histo2d>> paramCurves;
         std::map<unsigned, std::unique_ptr<Histo2d>> paramMaps;
 
         bool m_createMap = false;
+};
+
+class TriggerThrottleAnalysis : public AnalysisAlgorithm {
+     public:
+ TriggerThrottleAnalysis() : AnalysisAlgorithm() {};
+    ~TriggerThrottleAnalysis() {};
+    
+    void init(const ScanLoopInfo *s) override;
+    void processHistogram(HistogramBase *h) override;
+    void end() override;
+    void loadConfig(const json &config) override;
+ private:
+    std::vector<unsigned> loops;
+    std::vector<unsigned> loopMax;
+    std::map<unsigned, std::unique_ptr<Histo2d>> occMaps;
+    std::map<unsigned, std::unique_ptr<Histo2d>> outerOccMaps;
+    std::map<unsigned, unsigned> innerCnt;
+    unsigned target_occ, target_inj, current_inj;
+    unsigned n_count;
+    int injections, start_inj;
+    std::unique_ptr<GlobalFeedbackSender> fb;
+
+    /// Save pointer to trigger loop to be adjusted
+    // TODO make this possible
+    const StdTriggerAction* trigLoop;
 };
 
 #endif

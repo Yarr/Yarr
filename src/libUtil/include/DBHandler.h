@@ -168,7 +168,6 @@ class DBHandler {
 
         std::vector<std::string> m_histo_names;
 
-        double m_db_version;
         bool m_qc;
         bool m_interactive;
 };

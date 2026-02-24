@@ -1,6 +1,6 @@
 #include "AbcCfg.h"
-
 #include "AbcNames.h"
+#include "StarConstants.h"
 
 #include "logging.h"
 
@@ -301,7 +301,7 @@ void AbcCfg::setDefaults(int version) {
 }
 
 void AbcCfg::setTrimDACRaw(unsigned channel, int value) {
-    if (channel >= 256 || value < 0 || value > 31) {
+    if (channel >= Star::StripsPerABC || value < 0 || value > 31) {
         logger->error("Could not set Trim DAC for out of range channel {} value {}",
                       channel, value);
         return;
@@ -330,7 +330,7 @@ void AbcCfg::setTrimDACRaw(unsigned channel, int value) {
 }
 
 int AbcCfg::getTrimDACRaw(unsigned channel) const {
-    if (channel >= 256) {
+    if (channel >= Star::StripsPerABC) {
         logger->error("Could not get Trim DAC for out of range channel {}",
                       channel);
         return 0;
@@ -366,7 +366,7 @@ AbcStarRegInfo::SubInfoPtr AbcStarRegInfo::subRegFromEnum(ABCStarSubRegister sub
     } catch(std::out_of_range &e) {
         logger->info("Failed request for subReg: {}", AbcNames::subRegToString(subReg));
         for(auto &sr: abcSubRegisterMap_all) {
-            logger->debug(" Have: {}", sr.first);
+            logger->debug(" Have: {}", AbcNames::subRegToString(sr.first));
         }
         throw std::out_of_range("Attempt to get info for bad ABC sub register");
     }

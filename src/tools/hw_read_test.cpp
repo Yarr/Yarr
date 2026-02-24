@@ -56,7 +56,7 @@ Config parseOptions(int argc, char* argv[]) {
                 for (; optind < argc && *argv[optind] != '-'; optind += 1) {
                   try {
                     // Try parsing as number and throw if not
-                    config.read_channels.push_back(std::stoi(optarg));
+                    config.read_channels.push_back(std::stoi(argv[optind]));
                   } catch(std::exception &e) {
                     break;
                   }
@@ -79,12 +79,7 @@ Config parseOptions(int argc, char* argv[]) {
 std::atomic<bool> stop_signalled{false};
 
 int main(int argc, char* argv[]) {
-    json loggerConfig;
-    loggerConfig["pattern"] = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";
-    loggerConfig["log_config"][0]["name"] = "all";
-    loggerConfig["log_config"][0]["level"] = "info";
-    loggerConfig["outputDir"] = "";
-    logging::setupLoggers(loggerConfig);
+    logging::setupLoggers(logging::defaultConfig());
 
     Config c = parseOptions(argc, argv);
 
@@ -124,6 +119,7 @@ int main(int argc, char* argv[]) {
         logger->info("Received signal {}, stopping...", signum);
     });
 
+    rxCore.initRxChannels(c.read_channels);
     rxCore.setRxEnable(c.read_channels);
 
     using clk = std::chrono::steady_clock;

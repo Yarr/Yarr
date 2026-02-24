@@ -62,10 +62,10 @@ static std::map<PacketType, std::string> packet_type_names = {
 
 /// ABC cluster object holding relevant information
 struct Cluster{
-  int input_channel = 0;
-  int raw_cluster = 0;
-  int address = 0;
-  int next = 0;
+  uint8_t input_channel = 0;
+  uint8_t raw_cluster = 0;
+  uint8_t address = 0;
+  uint8_t next = 0;
 };
 
 /// Definition of equality for clusters
@@ -271,10 +271,10 @@ class StarChipPacket{
     for(unsigned int iW=0; iW < clusters.size(); ++iW){
       Cluster cluster = clusters.at(iW);
       std::string next_binary = std::bitset<3>(cluster.next).to_string();
-      os << "  " << iW << ") InputChannel: " << cluster.input_channel
+      os << "  " << iW << ") InputChannel: " << (int)cluster.input_channel
          << ", Address: 0x";
       os << std::hex << std::setfill('0');
-      os << std::setw(2) << cluster.address;
+      os << std::setw(2) << (int)cluster.address;
       os << std::dec << std::setfill(' ');
       os << ", Next Strip Pattern: " << next_binary << ".\n";
     }

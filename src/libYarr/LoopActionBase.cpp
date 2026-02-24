@@ -32,6 +32,7 @@ void LoopActionBase::setup(LoopStatusMaster *stat, Bookkeeper *k) {
     g_tx = k->tx;
     g_rx = k->rx;
 	keeper = k;
+    loopHistos = &k->getLoopHistograms();
 }
 
 void LoopActionBase::setNext(std::shared_ptr<LoopActionBase>& ptr) {

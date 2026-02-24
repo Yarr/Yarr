@@ -54,26 +54,69 @@ job_build_all:
       - bin
       - lib
       - python
+  before_script:
+    - git config --global user.email "ci@example.com"
+    - git config --global user.name "CI Runner"
   script:
     - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+    - |
+      if [ "$ARCH" = "cc7" ]; then
+        yum -y install autoconf automake libtool glibc-headers kernel-headers glibc-devel
+      else
+        dnf -y install autoconf automake libtool
+      fi
     - mkdir  build
     - cd build
-    - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DENABLE_PYTHON=On
+    - |
+      if [ "$ARCH" = "cc7" ]; then
+        cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DENABLE_PYTHON=On -DLIBFABRIC_CONFIGURE_OPTS="--disable-lpp" -DYARR_ENABLE_PYTHON=off
+      else
+        cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DENABLE_PYTHON=On -DLIBFABRIC_CONFIGURE_OPTS="--disable-lpp" -DYARR_ENABLE_PYTHON=on
+      fi
     - make install -j$(nproc)
     - CTEST_OUTPUT_ON_FAILURE=1 make test
-    - bin/scanConsole -k
     - cd ..
+    - bin/scanConsole -k
 
 job_build_and_test_out_of_source:
   extends: .build_matrix
   stage: build
   script:
     - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-    - CXXFLAGS=-Werror cmake3 -S . -B /tmp/build -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=cmake/linux-gcc
-    - cmake3 --build /tmp/build -j$(nproc)
-    - cmake3 --install /tmp/build
-    - CTEST_OUTPUT_ON_FAILURE=1 cmake3 --build /tmp/build --target test
-    - /tmp/build/bin/scanConsole -k
+    - |
+      if [ "$ARCH" = "cc7" ]; then
+        yum -y install autoconf automake libtool glibc-headers kernel-headers glibc-devel
+      else
+        dnf -y install autoconf automake libtool
+      fi
+    - cmake3 --version
+    - export YARR_PROJECT_DIR=`pwd`
+    - CXXFLAGS=-Werror cmake3 -S . -B /tmp/build-yarr -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=cmake/linux-gcc -DCMAKE_INSTALL_PREFIX=/tmp/install-yarr
+    - cmake3 --build /tmp/build-yarr -j$(nproc)
+    - cmake3 --install /tmp/build-yarr
+    - export Yarr_DIR=/tmp/install-yarr/cmake
+    - ctest --output-on-failure --test-dir /tmp/build-yarr/
+    - /tmp/install-yarr/bin/scanConsole -k
+    - mkdir /tmp/build-YarrFindPackageTest
+    - cmake3 -S tests/find_package_test -B /tmp/build-YarrFindPackageTest -DCMAKE_TOOLCHAIN_FILE=../../cmake/linux-gcc  -DCMAKE_INSTALL_PREFIX=/tmp/install-YarrFindPackageTest
+    - cmake3 --build /tmp/build-YarrFindPackageTest -j$(nproc)
+    - cmake3 --install /tmp/build-YarrFindPackageTest/
+    - /tmp/install-YarrFindPackageTest/bin/YarrFindPackageTest
+    - mkdir /tmp/build-YarrAddSubdirectoryTest
+    - cmake3 -S tests/add_subdirectory_test -B /tmp/build-YarrAddSubdirectoryTest -DCMAKE_TOOLCHAIN_FILE=../../cmake/linux-gcc  -DCMAKE_INSTALL_PREFIX=/tmp/install-YarrAddSubdirectoryTest
+    - cmake3 --build /tmp/build-YarrAddSubdirectoryTest -j$(nproc)
+    - cmake3 --install /tmp/build-YarrAddSubdirectoryTest/
+    - /tmp/install-YarrAddSubdirectoryTest/bin/YarrAddSubdirectoryTest
+    - mkdir /tmp/build-YarrExternalSuperbuildTest
+    - cmake3 -S tests/external_project_superbuild_test -B /tmp/build-YarrExternalSuperbuildTest -DCMAKE_TOOLCHAIN_FILE=../../cmake/linux-gcc  -DCMAKE_INSTALL_PREFIX=/tmp/install-YarrExternalSuperbuildTest -DYARR_PROJECT_DIR=$YARR_PROJECT_DIR
+    - cmake3 --build /tmp/build-YarrExternalSuperbuildTest -j$(nproc)
+    - cmake3 --install /tmp/build-YarrExternalSuperbuildTest/
+    - /tmp/install-YarrExternalSuperbuildTest/bin/YarrConsumerTest
+    - mkdir /tmp/build-YarrFetchContentTest
+    - cmake3 -S tests/fetch_content_test -B /tmp/build-YarrFetchContentTest -DCMAKE_TOOLCHAIN_FILE=../../cmake/linux-gcc  -DCMAKE_INSTALL_PREFIX=/tmp/install-YarrFetchContentTest -DYARR_PROJECT_DIR=$YARR_PROJECT_DIR
+    - cmake3 --build /tmp/build-YarrFetchContentTest -j$(nproc)
+    - cmake3 --install /tmp/build-YarrFetchContentTest/
+    - /tmp/install-YarrFetchContentTest/bin/YarrFetchContentTest
 
 job_build_clang:
   extends: .build_matrix
@@ -84,7 +127,7 @@ job_build_clang:
     - mkdir -p build
     - cd build
     - CXXFLAGS=-Werror cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang
-    - make install -j$(nproc)
+    - make install -k -j$(nproc)
     - CTEST_OUTPUT_ON_FAILURE=1 make test
     - cd ..
     - bin/scanConsole -k
@@ -98,6 +141,26 @@ job_build_none:
     - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD= -DYARR_FRONT_ENDS_TO_BUILD= -DYARR_ACTIVE_LOGGER_LEVEL=OFF
     - make install -j$(nproc)
     - CTEST_OUTPUT_ON_FAILURE=1 make test
+    - cd ..
+    - bin/scanConsole -k
+
+# Run build with latest gcc and no other dependencies
+job_build_test_gcc_15:
+  extends: .rules
+  stage: build
+  image: registry.cern.ch/docker.io/library/gcc:15
+  script:
+    - apt-get update
+    - apt-get install -y cmake make
+    - mkdir build
+    - cd build
+    # Excluding bdaq as boost is missing
+    # Excluding felix/netio due to tbb and libfabric messages
+    - export CONTROLLERS="Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Itkpixv2Emu;ItsdaqFW"
+    - cmake .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=${CONTROLLERS} -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=OFF
+    - make install -j$(nproc)
+    - CTEST_OUTPUT_ON_FAILURE=1 make test
+    - cd ..
     - bin/scanConsole -k
 
 .build_felix:
@@ -112,10 +175,10 @@ job_build_none:
     - git clone https://gitlab.cern.ch/atlas-tdaq-felix/cmake_tdaq
     - source cmake_tdaq/bin/setup.sh
     - mkdir installed
-    - cmake -S . -B build -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;StarEmu;Rd53aEmu;FelixClient" -DYARR_FRONT_ENDS_TO_BUILD="Rd53a;Star;Rd53b;Itkpixv2" -DDISABLE_PLOTTING_TOOLS=On -DYARR_EMULATORS_TO_BUILD="StarEmu;Rd53aEmu"  -DENABLE_PYTHON=On  ..
+    - cmake -S . -B build -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;StarEmu;Rd53aEmu;FelixClient" -DYARR_FRONT_ENDS_TO_BUILD="Rd53a;Star;Rd53b;Itkpixv2" -DDISABLE_PLOTTING_TOOLS=On -DYARR_EMULATORS_TO_BUILD="StarEmu;Rd53aEmu"  -DYARR_ENABLE_PYTHON=On  ..
     - cmake --build build -j$(nproc)
     - cmake --install build
-    - cp -r Dockerfile bin lib python installed/
+    - cp -r Dockerfile bin lib64 python installed/
 
 job_build_felix:
   extends: .build_felix
@@ -133,6 +196,7 @@ job_build_felix_check:
     paths:
       - cc_tests
   script:
+    - date
     - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
     - mkdir  build
     - cd build
@@ -267,6 +331,309 @@ job_test_pixel:
     - NUM100=`cat ./data/000002_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
     - if ["$NUM100" != "76800"]; then exit 2; fi
 
+job_test_pixel-on-hardware-berkeley-eye-diagram:
+  extends: .test
+  tags:
+    - nakedsnail
+  variables:
+    TEST_STAND: "nakedsnail"
+  resource_group: hardware-$TEST_STAND
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['alma9']
+  when: manual
+  script:
+    # list runner IDs
+    - echo "TEST_STAND = $TEST_STAND"
+    - echo "CI_RUNNER_ID = $CI_RUNNER_ID"
+    - echo "CI_RUNNER_DESCRIPTION = $CI_RUNNER_DESCRIPTION"
+    - echo "CI_RUNNER_TAGS = $CI_RUNNER_TAGS"
+    #set PS
+    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-voltage 3
+    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-current 6.5
+    #power on PS
+    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-on
+    # Clone the test data repo
+    - echo "Fetching test data..."
+    - git clone https://gitlab.cern.ch/YARR/utilities/yarr-ci-test-data.git test-data
+    # Check that the test data is correct
+    - ls test-data
+    # Run eye diagram
+    - echo "Run Eye Diagram..."
+    - pwd
+    - ./bin/eyeDiagram -r ./test-data/$TEST_STAND/controller/specCfg-rd53b-16x1.json -c ./test-data/$TEST_STAND/ci-module/20UPIM13710116_L1_warm.json | tee test-data/eye_output.log
+    - echo "Checking for valid delay settings for lanes 0-3..."
+    - |
+      if [ $(grep -E "Delay setting for lane [0-3]" test-data/eye_output.log | wc -l) -ge 4 ]; then
+        echo "Success!"
+      else
+        echo "Failure...less than 4 valid delay settings"
+        exit 1
+      fi
+    #power off PS
+    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-off
+  artifacts:
+    paths:
+      - ./test-data
+    expire_in: 1 day
+
+job_test_pixel-on-hardware-berkeley-digital-scan:
+  extends: .test
+  variables:
+    TEST_STAND: "nakedsnail"
+  resource_group: hardware-$TEST_STAND
+  tags:
+    - nakedsnail
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['alma9']
+    - job: job_test_pixel-on-hardware-berkeley-eye-diagram
+      artifacts: true
+  script:
+    # keep yarr scan number deterministic
+    - truncate $HOME/.yarr/runCounter --size=0
+    #set PS
+    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-voltage 3
+    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-current 6.5
+    #power on PS
+    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-on
+    # Run Digital Scan
+    - echo "Run Digital Scan..."
+    - pwd
+    - mkdir -p ./outputs/digital-scan
+    - ./bin/scanConsole -r ./test-data/$TEST_STAND/controller/specCfg-rd53b-16x1.json -c ./test-data/$TEST_STAND/ci-module/20UPIM13710116_L1_warm.json -o ./outputs/digital-scan -s ./configs/scans/itkpixv2/std_digitalscan.json -p
+    #power off PS
+    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-off
+  artifacts:
+    paths:
+      - ./outputs/digital-scan
+    expire_in: 1 month
+
+job_test_pixel-on-hardware-berkeley-analog-scan:
+  extends: .test
+  tags:
+    - nakedsnail
+  variables:
+    TEST_STAND: "nakedsnail"
+  resource_group: hardware-$TEST_STAND
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['alma9']
+    - job: job_test_pixel-on-hardware-berkeley-eye-diagram
+      artifacts: true
+  script:
+    # keep yarr scan number deterministic
+    - truncate $HOME/.yarr/runCounter --size=0
+    #set PS
+    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-voltage 3
+    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-current 6.5
+    #power on PS
+    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-on
+    # Run Analog Scan
+    - echo "Run Analog Scan..."
+    - pwd
+    - mkdir -p ./outputs/analog-scan
+    - ./bin/scanConsole -r ./test-data/$TEST_STAND/controller/specCfg-rd53b-16x1.json -c ./test-data/$TEST_STAND/ci-module/20UPIM13710116_L1_warm.json -o ./outputs/analog-scan -s ./configs/scans/itkpixv2/std_analogscan.json -p
+    #power off PS
+    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-off
+  artifacts:
+    paths:
+      - ./outputs/analog-scan
+    expire_in: 1 month
+
+job_test_pixel-on-hardware-berkeley-threshold-hr-scan:
+  extends: .test
+  variables:
+    TEST_STAND: "nakedsnail"
+  tags:
+    - nakedsnail
+  resource_group: hardware-$TEST_STAND
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['alma9']
+    - job: job_test_pixel-on-hardware-berkeley-eye-diagram
+      artifacts: true
+  script:
+    # keep yarr scan number deterministic
+    - truncate $HOME/.yarr/runCounter --size=0
+    #set PS
+    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-voltage 3
+    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-current 6.5
+    #power on PS
+    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-on
+    # Run Threshold Scan
+    - echo "Run Threshold Scan..."
+    - pwd
+    - mkdir -p ./outputs/threshold-scan
+    - ./bin/scanConsole -r ./test-data/$TEST_STAND/controller/specCfg-rd53b-16x1.json -c ./test-data/$TEST_STAND/ci-module/20UPIM13710116_L1_warm.json -o ./outputs/threshold-scan -s ./configs/scans/itkpixv2/std_thresholdscan_hr.json -p
+    #power off PS
+    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-off
+  artifacts:
+    paths:
+      - ./outputs/threshold-scan
+    expire_in: 1 month
+
+job_test_pixel-on-hardware-eye-diagram:
+  extends: .test
+  tags:
+    - scipp
+  variables:
+    TEST_STAND: "scipp"
+  resource_group: hardware-$TEST_STAND
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['alma9']
+  when: manual
+  script:
+    # list runner IDs
+    - echo "TEST_STAND = $TEST_STAND"
+    - echo "CI_RUNNER_ID = $CI_RUNNER_ID"
+    - echo "CI_RUNNER_DESCRIPTION = $CI_RUNNER_DESCRIPTION"
+    - echo "CI_RUNNER_TAGS = $CI_RUNNER_TAGS"
+    # Clone the test data repo
+    - echo "Fetching test data..."
+    - git clone https://gitlab.cern.ch/YARR/utilities/yarr-ci-test-data.git test-data
+    # Check that the test data is correct
+    - ls test-data
+    # Run eye diagram
+    - echo "Run Eye Diagram..."
+    - pwd
+    - ./bin/eyeDiagram -r ./configs/controller/specCfg-rd53b-16x1.json -c ./test-data/$TEST_STAND/ci-module/connectivity.json | tee test-data/eye_output.log
+    - echo "Checking for valid delay settings for lanes 0-3..."
+    - |
+      if [ $(grep -E "Delay setting for lane [0-3]" test-data/eye_output.log | wc -l) -ge 4 ]; then
+        echo "Success!"
+      else
+        echo "Failure...less than 4 valid delay settings"
+        exit 1
+      fi
+  artifacts:
+    paths:
+      - ./test-data
+    expire_in: 1 day
+
+job_test_pixel-on-hardware-digital-scan:
+  extends: .test
+  variables:
+    TEST_STAND: "scipp"
+  resource_group: hardware-$TEST_STAND
+  tags:
+    - scipp
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['alma9']
+    - job: job_test_pixel-on-hardware-eye-diagram
+      artifacts: true
+  script:
+    # keep yarr scan number deterministic
+    - truncate $HOME/.yarr/runCounter --size=0
+    # Run Digital Scan
+    - echo "Run Digital Scan..."
+    - pwd
+    - mkdir -p ./outputs/digital-scan
+    - ./bin/scanConsole -r ./configs/controller/specCfg-rd53b-16x1.json -c ./test-data/$TEST_STAND/ci-module/connectivity.json -o ./outputs/digital-scan -s ./configs/scans/itkpixv2/std_digitalscan.json -p
+  artifacts:
+    paths:
+      - ./outputs/digital-scan
+    expire_in: 1 month
+
+job_test_pixel-on-hardware-analog-scan:
+  extends: .test
+  tags:
+    - scipp
+  variables:
+    TEST_STAND: "scipp"
+  resource_group: hardware-$TEST_STAND
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['alma9']
+    - job: job_test_pixel-on-hardware-eye-diagram
+      artifacts: true
+  script:
+    # keep yarr scan number deterministic
+    - truncate $HOME/.yarr/runCounter --size=0
+    # Run Analog Scan
+    - echo "Run Analog Scan..."
+    - pwd
+    - mkdir -p ./outputs/analog-scan
+    - ./bin/scanConsole -r ./configs/controller/specCfg-rd53b-16x1.json -c ./test-data/$TEST_STAND/ci-module/connectivity.json -o ./outputs/analog-scan -s ./configs/scans/itkpixv2/std_analogscan.json -p
+  artifacts:
+    paths:
+      - ./outputs/analog-scan
+    expire_in: 1 month
+
+job_test_pixel-on-hardware-threshold-hr-scan:
+  extends: .test
+  variables:
+    TEST_STAND: "scipp"
+  tags:
+    - scipp
+  resource_group: hardware-$TEST_STAND
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['alma9']
+    - job: job_test_pixel-on-hardware-eye-diagram
+      artifacts: true
+  script:
+    # keep yarr scan number deterministic
+    - truncate $HOME/.yarr/runCounter --size=0
+    # Run Threshold Scan
+    - echo "Run Threshold Scan..."
+    - pwd
+    - mkdir -p ./outputs/threshold-scan
+    - ./bin/scanConsole -r ./configs/controller/specCfg-rd53b-16x1.json -c ./test-data/$TEST_STAND/ci-module/connectivity.json -o ./outputs/threshold-scan -s ./configs/scans/itkpixv2/std_thresholdscan_hr.json -p
+  artifacts:
+    paths:
+      - ./outputs/threshold-scan
+    expire_in: 1 month
+
+job_test_pixel_evaluation:
+  extends: .test
+  variables:
+    TEST_STAND: "scipp"
+  tags:
+    - scipp
+  image: registry.cern.ch/ghcr.io/prefix-dev/pixi:latest
+  needs:
+    - job: job_test_pixel-on-hardware-digital-scan
+      artifacts: true
+    - job: job_test_pixel-on-hardware-analog-scan
+      artifacts: true
+    - job: job_test_pixel-on-hardware-threshold-hr-scan
+      artifacts: true
+    - job: job_test_pixel-on-hardware-eye-diagram
+      artifacts: true
+  before_script:
+    - curl -fsSL https://pixi.sh/install.sh | bash
+    - source ~/.bashrc
+    - pixi install
+  script:
+    # Run python analysis scripts
+    - pixi run pytest --junit-xml=report.xml tests --stand scipp
+  artifacts:
+    when: always
+    reports:
+      junit: report.xml
+    paths:
+      - ./outputs/*.png
+    expire_in: 1 month
+
 job_test_strips:
   extends: .test
   needs:
@@ -275,9 +642,9 @@ job_test_strips:
         matrix:
           - ARCH: ['alma9']
   script:
-    - bin/test_star configs/controller/emuCfg_star.json -r 0 -t 0
-    # Run a scan involving trim feedback
-    - bin/scanConsole -r configs/controller/emuCfg_star.json -c configs/connectivity/example_star_setup.json -s configs/scans/star/std_tune_trim_at_pedestal.json
+    - bin/test_star configs/controller/emuCfg_star.json -r 0 -t 0 -V Star_vH0A0
+    # Run a few scans
+    - bash scripts/test_star_scans_emu.sh
 
 job_test_benchmark:
   extends: .test
@@ -288,6 +655,7 @@ job_test_benchmark:
           - ARCH: ['alma9']
   script:
     - bin/testUtil '[!benchmark]' > testUtils.benchmark
+    - bin/testYarr '[!benchmark]' > testYarr.benchmark
     - . scripts/run_strips_benchmarks.sh > star_processor_benchmarks.benchmark
   artifacts:
     paths:
@@ -315,7 +683,7 @@ job_test_json_parsing:
     - (for file in $(find configs/defaults -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t FRONT_END || exit; done)
     - (for file in $(find configs/connectivity -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t CONNECTIVITY || exit; done)
     - (for file in $(find configs/controller -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t CONTROLLER || exit; done)
-    - (for file in $(find configs/scans/* -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t SCAN_CONFIG || exit; done)
+    - (for file in $(find configs/scans/* -name patterns -prune -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t SCAN_CONFIG || exit; done)
 
 job_test_netio:
   extends: .test

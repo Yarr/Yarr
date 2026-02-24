@@ -85,19 +85,37 @@ For further information for the questionnaire see the section below for more inf
 
 #### Trenz TEF1001
 
-The Trenz TEF1001 comes in two revisions which can be identified by the label on the card.
+The Trenz TEF1001 comes in three revisions which can be identified by the label on the card.
 Specific information about the cards can be found on their [wiki](https://wiki.trenz-electronic.de/display/PD/TEF1001+TRM).
 
+##### TEF1001-01 (revision 1)
+
 ![TEF1001_R1](images/tef1001_R1.jpg)
+
 Revision 1 specifics:
 
-* Requires to be powered via the PCIe Molex connector.
+- Requires to be powered via the PCIe Molex connector.
+- Serial numbers 50xxxx -- 52xxxx
+
+##### TEF1001-02 (revision 2)
 
 ![TEF1001_R2](images/tef1001_R2.jpg)
+
 Revision 2 specifics:
 
-* Can be powered via PCIe Molex or directly from PCIe.
-* DIP switches should be set to ``0,1,0,0`` (where the bits are ordered like this ``4,3,2,1``, same setting as in the picture) which is ``VCC_IO`` of 1.8V
+- Can be powered via PCIe Molex or directly from PCIe.
+- DIP switches should be set to `0,0,1,0` (left, left, right, left) from top to bottom, same setting as in the picture, which is ``VCC_IO`` of 1.8V
+- Serial numbers 56xxxx -- 86xxxx
+
+##### TEF1001-03 (revision 3)
+
+![TEF1001_R3](images/tef1001_R3.jpg)
+
+Revision 3 specifics:
+
+- Power and DIP switches same as above for rev2
+- Uses the same firmware for `tef1001_R2`
+- Serial numbers 95xxxx
 
 #### PLDA XpressK7
 
@@ -191,7 +209,11 @@ In order to power correctly the adapter card, a jumper needs to be added to **3V
 
 When the board is powered correctly, a red LED should light up. More information about the adapter card can be found [Multi Chip Adapter Card](https://twiki.cern.ch/twiki/bin/viewauth/RD53/RD53ATesting#Multi_Chip_FMC).
 
-On a SCC [Single Chip Card](https://twiki.cern.ch/twiki/bin/viewauth/RD53/RD53ATesting#RD53A_Single_Chip_Card_SCC) the CMD line is AC coupled. On the older Ohio card (before 2019 and serial number < 200) there is additional AC coupling as shown on the picture. This is corrected for the newer Ohio cards from 2019 on with serial number starting from 200.
+##### Modifications
+
+On a SCC [Single Chip Card](https://twiki.cern.ch/twiki/bin/viewauth/RD53/RD53ATesting#RD53A_Single_Chip_Card_SCC) the CMD line is AC coupled.
+On the older Ohio card (before 2019 and serial number < 200) there is additional AC coupling as shown on the picture.
+This is corrected for the newer Ohio cards from 2019 on with serial number starting from 200.
 
 ![Ohio Unmodified CMD ](images/OhioUnmodified_Cmd.png)
 

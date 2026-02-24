@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <filesystem>
 namespace fs = std::filesystem;
+#include <unistd.h>
 
 #include "storage.hpp"
 #include "logging.h"
@@ -183,7 +184,8 @@ void writeConfig(json &jconn, int fe_num, std::vector<int> results){
   for (int ivar=0; ivar<4; ivar++){
     chip_register_json[chip_type]["GlobalConfig"][varNames[ivar]]=results[ivar];
   }
-  std::ofstream outputFile(chip_register_file_path);
+  std::string chip_register_file_path_str = chip_register_file_path.get<std::string>();
+  std::ofstream outputFile(chip_register_file_path_str);
   outputFile << chip_register_json << std::endl;
   outputFile.close();
   return;
@@ -222,10 +224,8 @@ std::unique_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, json &jconn
 
 int main (int argc, char *argv[]) {
     // Setup logger with some defaults
-    std::string defaultLogPattern = "[%T:%e]%^[%=8l][%=15n]:%$ %v";
-    spdlog::set_pattern(defaultLogPattern);
     json j; // empty
-    j["pattern"] = defaultLogPattern;
+    j["pattern"] = logging::defaultLogPattern;
     j["log_config"][0]["name"] = "all";
     j["log_config"][0]["level"] = "info";
     j["log_config"][1]["name"] = "all";
@@ -236,7 +236,7 @@ int main (int argc, char *argv[]) {
     j["sinks"][0]["name"]="file";
     j["sinks"][0]["level"]="info";
     j["sinks"][0]["file_name"]="console_column.log";
-    j["sinks"][0]["pattern"]=defaultLogPattern;
+    j["sinks"][0]["pattern"]=logging::defaultLogPattern;
     logging::setupLoggers(j);
 
     logger->info("Parsing command line parameters ...");

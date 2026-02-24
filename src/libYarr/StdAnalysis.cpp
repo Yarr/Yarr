@@ -82,6 +82,9 @@ namespace {
         StdDict::registerAnalysis("HistogramArchiver",
                 []() { return std::unique_ptr<AnalysisAlgorithm>(new HistogramArchiver());});
 
+    bool throt_registered = 
+        StdDict::registerAnalysis("TriggerThrottleAnalysis",
+                []() { return std::unique_ptr<AnalysisAlgorithm>(new TriggerThrottleAnalysis());});
 }
 
 void HistogramArchiver::init(const ScanLoopInfo *s) {
@@ -186,7 +189,7 @@ void OccupancyAnalysis::processHistogram(HistogramBase *h) {
         }
 
         // Core Column Mask:
-        int nColsInCCol = 8;
+        unsigned int nColsInCCol = 8;
         int nBadPixelsInCCol;
         if (coreColMask){
             feCfg->enableAll();
@@ -246,7 +249,7 @@ void TotAnalysis::loadConfig(const json &config) {
 
     // check for valid ToT histogram bin configuration
     if (config.contains("tot_bins")) {
-        auto j_bins = config["tot_bins"];
+        auto &j_bins = config["tot_bins"];
         if(j_bins.contains("n_bins") && j_bins.contains("x_lo") && j_bins.contains("x_hi")) {
             tot_bins_n = static_cast<unsigned>(j_bins["n_bins"]);
             tot_bins_x_lo = static_cast<float>(j_bins["x_lo"]);
@@ -261,7 +264,7 @@ void TotAnalysis::loadConfig(const json &config) {
 
     // check for valid ToT sigma histogram bin configuration
     if (config.contains("tot_sigma_bins")) {
-        auto j_bins = config["tot_sigma_bins"];
+        auto &j_bins = config["tot_sigma_bins"];
         if(j_bins.contains("n_bins") && j_bins.contains("x_lo") && j_bins.contains("x_hi")) {
             tot_sigma_bins_n = static_cast<unsigned>(j_bins["n_bins"]);
             tot_sigma_bins_x_lo = static_cast<float>(j_bins["x_lo"]);
@@ -540,7 +543,7 @@ void TotAnalysis::end() {
         std::unique_ptr<Histo2d> measQRMSOut ( new Histo2d("measQRMSOut", nRow*nCol, 0, nRow*nCol, 15, 0.5, 15.5) );
         for (unsigned n=0; n<nCol*nRow; n++) {
             if (feCfg->getPixelEn((n/nRow), (n%nRow)) == 0) { //if pixel isn't masked
-                int anyzero = 0;
+                // int anyzero = 0;
                 for (unsigned k=0; k<avgTotVsCharge->size(); k++) {
                     double q = feCfg->toCharge(vcalMin+k*vcalStep, useScap, useLcap);
                     double avgTot = pixelTotMap->getBin(pixelTotMap->binNum(n, q));
@@ -932,7 +935,7 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
         }
         prevOuter = outerIdent;
         alog->info("[{}] --> Sending feedback #{}", this->id, outerIdent);
-        fb->feedback(this->id, std::move(std::make_unique<Histo2d>(*(step[outerIdent].get()))));
+        fb->feedback(this->id, std::make_unique<Histo2d>(*(step[outerIdent].get())));
     }
 }
 
@@ -1308,7 +1311,7 @@ void OccPixelThresholdTune::loadConfig(const json &j){
             return;
         }
         m_occLowCut.clear();
-        for(auto i: j["occLowCut"]){
+        for(auto &i: j["occLowCut"]){
             m_occLowCut.push_back(i);
         }
     }
@@ -1318,7 +1321,7 @@ void OccPixelThresholdTune::loadConfig(const json &j){
             return;
         }
         m_occHighCut.clear();
-        for(auto i: j["occHighCut"]){
+        for(auto &i: j["occHighCut"]){
           m_occHighCut.push_back(i);
         }
     }
@@ -1978,28 +1981,23 @@ void ParameterAnalysis::loadConfig(const json &j){
     if (j.contains("createMap")){
         m_createMap = j["createMap"];
     }
+    if (j.contains("targetLoopIndex")){
+        paramLoopNo = j["targetLoopIndex"];
+    }
 }
 
 void ParameterAnalysis::init(const ScanLoopInfo *s) {
-    n_count = 1;
     alog->info("ParameterAnalysis init");
+    paramName = "UnknownParam";
     for (unsigned n=0; n<s->size(); n++) {
         auto l = s->getLoop(n);
-        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || l->isParameterLoop())) {
+        if (!(paramLoopNo == n || l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop() || l->isParameterLoop())) {
             loops.push_back(n);
             loopMax.push_back((unsigned)l->getMax());
-        } else {
-            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
-            if (l->isParameterLoop()) {
-                cnt++; // Parameter loop interval is inclusive
-            }
-            if (cnt == 0)
-                cnt = 1;
-            n_count = n_count*cnt;
         }
 
-        // Parameter Loop
-        if (l->isParameterLoop()) {
+        // Parameter loop of interest
+        if (l->isParameterLoop() || paramLoopNo == n) {
             paramLoopNo = n;
             paramMax = l->getMax();
             paramMin = l->getMin();
@@ -2007,7 +2005,9 @@ void ParameterAnalysis::init(const ScanLoopInfo *s) {
             paramBins = (paramMax-paramMin)/paramStep;
             auto paramLoop = dynamic_cast<const StdParameterAction*>(l);
             if(paramLoop == nullptr) {
-                alog->error("ParameterAnalysis: loop declared as parameter loop does not have a name");
+                // In case targetLoopIndex points to non-parameter loop
+                alog->info("ParameterAnalysis: loop declared as parameter loop does not have a name");
+                paramName = "Loop"+std::to_string(paramLoopNo);
             } else {
                 paramName = paramLoop->getParName();
             }
@@ -2022,6 +2022,11 @@ void ParameterAnalysis::init(const ScanLoopInfo *s) {
             }
         }
     }
+
+    if(paramLoopNo >= s->size()) {
+      paramLoopNo = 0xffffffff;
+      alog->error("ParameterAnalysis: no parameter loop found");
+    }
 }
 
 void ParameterAnalysis::processHistogram(HistogramBase *h) {
@@ -2029,13 +2034,20 @@ void ParameterAnalysis::processHistogram(HistogramBase *h) {
     if (h->getName() != OccupancyMap::outputName())
         return;
 
+    if(paramLoopNo == 0xffffffff) {
+        // Already printed error in init
+        return;
+    }
+
     Histo2d *hh = (Histo2d*) h;
 
     unsigned long outerIdent = 0;
     unsigned long outerOffset = 1;
+    std::string postfix;
     for (unsigned n=0; n<loops.size(); n++) {
         outerIdent += hh->getStat().get(loops[n])*outerOffset;
         outerOffset *= loopMax[n];
+        postfix += "-" + std::to_string(h->getStat().get(loops[n]));
     }
 
     for(unsigned col=1; col<=nCol; col++) {
@@ -2047,14 +2059,14 @@ void ParameterAnalysis::processHistogram(HistogramBase *h) {
 
                 // Check if Histogram exists
                 if (paramMaps[outerIdent] == nullptr) {
-                    Histo2d *hhh = new Histo2d(paramName, paramBins+1, paramMin-((double)paramStep/2.0), paramMax+((double)paramStep/2.0), injections-1, 0.5, injections-0.5);
+                    Histo2d *hhh = new Histo2d(paramName+postfix, paramBins+1, paramMin-((double)paramStep/2.0), paramMax+((double)paramStep/2.0), injections-1, 0.5, injections-0.5);
                     hhh->setXaxisTitle(paramName);
                     hhh->setYaxisTitle("Occupancy");
                     hhh->setZaxisTitle("Number of pixels");
                     paramMaps[outerIdent].reset(hhh);
                 }
                 if (paramCurves[outerIdent] == nullptr) {
-                    Histo2d *hhh = new Histo2d(paramName + "_Map", nCol*nRow, -0.5, nCol*nRow-0.5, paramBins+1, paramMin-((double)paramStep/2.0), paramMax+((double)paramStep/2.0));
+                    Histo2d *hhh = new Histo2d(paramName + "_Map"+postfix, nCol*nRow, -0.5, nCol*nRow-0.5, paramBins+1, paramMin-((double)paramStep/2.0), paramMax+((double)paramStep/2.0));
                     hhh->setXaxisTitle("Channel Number");
                     hhh->setYaxisTitle(paramName);
                     hhh->setZaxisTitle("Number of Hits");
@@ -2078,4 +2090,145 @@ void ParameterAnalysis::end() {
         }
         output->pushData(std::move(paramMaps[i]));
     }
+}
+
+void TriggerThrottleAnalysis::init(const ScanLoopInfo *s) {
+    n_count = 1;
+    target_occ = 128;
+    current_inj = 0;
+    // int receivers;
+    for (unsigned n=0; n<s->size(); n++) {
+        auto l = s->getLoop(n);
+        if (!(l->isTriggerLoop() || l->isMaskLoop() || l->isDataLoop())) {
+            loops.push_back(n);
+            loopMax.push_back((unsigned)l->getMax());
+        } else {
+            unsigned cnt = (l->getMax() - l->getMin())/l->getStep();
+            if (cnt == 0)
+                cnt = 1;
+            n_count = n_count*cnt;
+        }
+
+        if (l->isTriggerLoop()) {
+            trigLoop = dynamic_cast<const StdTriggerAction*>(l);
+            if(trigLoop == nullptr) {
+                alog->error("TriggerThrottleAnalysis");
+            } else {
+                start_inj = trigLoop->getTrigCnt();
+                injections = start_inj;
+            }
+        }
+
+        if (l->isGlobalFeedbackLoop()) {
+            fb.reset(new GlobalFeedbackSender(feedback));
+            if(fb == nullptr) {
+                alog->error("TriggerThrottleAnalysis");
+            }
+        }
+    }
+}
+
+void TriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
+    // Check if right Histogram
+    if (h->getName() != OccupancyMap::outputName())
+        return;
+
+    // Select correct output container
+    unsigned ident = 0;
+    unsigned offset = 0;
+
+    // Determine identifier
+    std::string name = "OccupancyMap";
+    std::string name2 = "OuterOccupancyMap";
+    for (unsigned n=0; n<loops.size(); n++) {
+        ident += h->getStat().get(loops[n])+offset;
+        offset += loopMax[n];
+        name += "-" + std::to_string(h->getStat().get(loops[n]));
+        name2 += "-" + std::to_string(h->getStat().get(loops[n]));
+    }
+
+    // Check if Histogram exists
+    if (occMaps[ident] == NULL) {
+        Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
+        hh->setXaxisTitle("Column");
+        hh->setYaxisTitle("Row");
+        hh->setZaxisTitle("Hits");
+        occMaps[ident].reset(hh);
+        innerCnt[ident] = 0;
+    }
+
+    if (outerOccMaps[ident] == NULL) {
+        Histo2d *hh = new Histo2d(name2, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
+        hh->setXaxisTitle("Column");
+        hh->setYaxisTitle("Row");
+        hh->setZaxisTitle("Hits");
+        outerOccMaps[ident].reset(hh);
+    }
+
+    // Add up Histograms
+    occMaps[ident]->add(*(Histo2d*)h);
+    outerOccMaps[ident]->add(*(Histo2d*)h);
+    innerCnt[ident]++;
+
+    // Got all data, finish up Analysis
+    if (innerCnt[ident] == n_count) {
+
+        double sign = 1;
+
+        for(unsigned i=0; i<occMaps[ident]->size(); i++) {
+            double occupancy = (occMaps[ident]->getBin(i))/(double)target_occ;
+            if (sign == 1 && occupancy > 0.5)
+                sign = 0;
+            if (sign >= 0 && occupancy > 1.5) {
+                sign = -1;
+                break;
+            }
+        }        
+        current_inj += injections;
+        bool done = current_inj >= target_inj;
+        alog->trace("Throttling trigger with {} injections, sign {}. Total inj {}. Target {}.",injections,sign, current_inj, target_inj);
+        if (sign == 1) {
+            injections *= 2;
+
+            alog->warn("Trigger throttle wants to change trigger count {} {}",
+                       trigLoop->getTrigCnt(),
+                       injections);
+            // trigLoop->setTrigCnt(injections);
+        } else if (sign == -1) {
+            injections /= 2;
+        }
+        if (done) {
+            current_inj = 0;
+            injections = start_inj;
+            output->pushData(std::move(outerOccMaps[ident]));
+            outerOccMaps[ident] = nullptr;
+        } else if (injections+current_inj > target_inj) {
+            injections = target_inj - current_inj;
+        }
+
+        alog->warn("Trigger throttle wants to change trigger count {} {}",
+                   trigLoop->getTrigCnt(),
+                   injections);
+        // trigLoop->setTrigCnt(injections);
+        fb->feedback(this->id, sign, done);
+
+        //output->pushData(std::move(occMaps[ident]));
+        innerCnt[ident] = 0;
+        //delete occMaps[ident];
+        occMaps[ident] = nullptr;
+    }
+}
+
+void TriggerThrottleAnalysis::end() {
+
+}
+
+void TriggerThrottleAnalysis::loadConfig(const json &j) {
+    if (!j["target_occ"].empty()) {
+        target_occ = j["target_occ"];
+    }
+    if (!j["target_trigs"].empty()) {
+        target_inj = j["target_trigs"];
+    } else 
+        target_inj = 10000;
 }

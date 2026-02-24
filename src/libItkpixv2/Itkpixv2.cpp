@@ -12,6 +12,8 @@
 #include "logging.h"
 #include "HwController.h"
 
+#include <thread>
+
 // Create logger
 namespace {
   auto logger = logging::make_log("Itkpixv2");
@@ -275,41 +277,67 @@ yarrStatus Itkpixv2::readRegister(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref, ui
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     // go through the incoming data stream and get the register read data
-    std::vector<RawDataPtr> dataVec = m_rxcore->readData();
+    std::vector<RawDataPtr> dataVec;
     RawDataPtr data;
-    if (dataVec.size() > 0) {
-        for(auto const &v : dataVec) {
-            // Find raw data for this address
-            if (rxChannel != v->getAdr())
-                continue;
+    bool found = false;
+    double check_seconds = 0.;
 
-            if (v->get(0) != 0xffffdead) {
-                data = v;
-                if(!(data->getSize() >= 2)) {
-                    logger->error("readRegister failed, received wrong number of words ({}) for FE with chipId {}", data->getSize(), m_chipId);
+    logger->debug("Reading register data for chip ID {} on channel {}", m_chipId, regRxChannel);
+    std::chrono::steady_clock::time_point comm_t0 = std::chrono::steady_clock::now();
+
+    do {
+        dataVec = m_rxcore->readData();
+        if (dataVec.size() > 0) {
+            for(auto const &v : dataVec) {
+                // Find raw data for this address
+                if (regRxChannel != v->getAdr()){
+                    logger->debug("Data doesn't belong to the regRx channel {}, instead comes from channel {}", regRxChannel, v->getAdr());
                     continue;
                 }
 
-                auto [id, received_address, register_value] = Itkpixv2::decodeSingleRegReadID(data->get(0), data->get(1));
-                chipId = id; // chipId is read from the chip wirebonded ID, m_chipId is set in the chip config file
-                if(m_chipId > 15 || id == (m_chipId&0x3)) { // only compare if not broadcasting
-                    if(received_address != (this->*ref).addr()) {
-                        logger->error("readRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
-                        return yarrFailure;
+                if (v->get(0) != 0xffffdead) {
+                    data = v;
+                    if(!(data->getSize() >= 2)) {
+                        logger->error("readRegister failed, received wrong number of words ({}) for FE with chipId {}", data->getSize(), m_chipId);
+                        continue;
                     }
-                    // Update memory
-                    m_cfg[(this->*ref).addr()] = register_value;
-                    // Return value
-                    value = (this->*ref).read();
-                    return yarrSuccess;
-                } else {
-                    logger->info("readRegister 0x{:x} 0x{:x} -> ID {} {}, addr 0x{:x} val 0x{:x}", data->get(0), data->get(1), id, m_chipId&0x3, received_address, register_value);
+
+                    auto [id, received_address, register_value] = Itkpixv2::decodeSingleRegReadID(data->get(0), data->get(1));
+                    chipId = id; // chipId is read from the chip wirebonded ID, m_chipId is set in the chip config file
+                    if(m_chipId > 15 || id == (m_chipId&0x3)) { // only compare if not broadcasting
+                        if(received_address != (this->*ref).addr()) {
+                            logger->error("readRegister failed, returned data is for unexpected register address (received address: {}, expected address {})", received_address, (this->*ref).addr());
+                            continue;
+                        }
+                        logger->debug("readRegister successful for register address {} with value {} from chip with chipId {}", (this->*ref).addr(), register_value, m_chipId);
+                        found = true;
+                        // Update memory
+                        m_cfg[(this->*ref).addr()] = register_value;
+                        // Return value
+                        value = (this->*ref).read();
+                        return yarrSuccess;
+                    } else {
+                        logger->info("readRegister 0x{:x} 0x{:x} -> ID {} {}, addr 0x{:x} val 0x{:x}", data->get(0), data->get(1), id, m_chipId&0x3, received_address, register_value);
+                        logger->info("Sending another readRegister command.");
+                        m_rxcore->flushBuffer();
+                        this->sendRdReg(m_chipId, (this->*ref).addr());
+                        while(!core->isCmdEmpty()) {}
+                        break;
+                    }
                 }
             }
+        } else {
+            logger->debug("No raw data received.");
         }
-    }
 
-    logger->error("readRegister failed, did not receive register readback data from chip with chipId {}", m_chipId);
+        std::chrono::steady_clock::time_point comm_t1 = std::chrono::steady_clock::now();
+        check_seconds = std::chrono::duration_cast<std::chrono::seconds>(comm_t1 - comm_t0).count();
+        if(!found)
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    } while(!found && check_seconds<3.);
+
+    logger->error("readRegister failed, did not receive register readback data for address {} from chip with chipId {}", (this->*ref).addr(), m_chipId);
+    value = 65535;
     return yarrFailure;
 }
 
@@ -436,6 +464,8 @@ yarrStatus Itkpixv2::checkCom() {
     logger->debug("Checking communication for {} by reading a register ...", this->name);
     uint32_t regAddr = 21;
     uint32_t regValue = m_cfg[regAddr];
+
+    m_rxcore->flushBuffer();
     this->sendRdReg(m_chipId, regAddr);
     while(!core->isCmdEmpty()){;} // Required by the rdRegister() above 
                                   // (when relying on isCmdEmpty() to actually send commands).
@@ -444,7 +474,7 @@ yarrStatus Itkpixv2::checkCom() {
     // TODO not happy about this, rx knowledge should not be here
     std::vector<RawDataPtr> dataVec = m_rxcore->readData();
     RawDataPtr data;
-    if (dataVec.size() > 0) {
+    if (dataVec.size() > 0 && dataVec[0]->getAdr() == regRxChannel) {
         data = dataVec[0];
     }
 
@@ -553,6 +583,7 @@ itkpix_efuse_codec::EfuseData Itkpixv2::readEfuses() {
     //
     this->writeRegister(&Itkpixv2::EfuseConfig, 0x0f0f);
     while(!core->isCmdEmpty()) {}
+    std::this_thread::sleep_for(std::chrono::milliseconds(10)); 
 
     //
     // send E-fuse circuit the reset signal to halt any other state (reset E-fuse block FSM)
@@ -592,6 +623,7 @@ uint32_t Itkpixv2::readEfusesRaw() {
     //
     this->writeRegister(&Itkpixv2::EfuseConfig, 0x0f0f);
     while(!core->isCmdEmpty()) {}
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     //
     // send E-fuse circuit the reset signal to halt any other state (reset E-fuse block FSM)

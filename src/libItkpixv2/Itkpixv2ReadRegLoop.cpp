@@ -163,7 +163,7 @@ void Itkpixv2ReadRegLoop::execPart1()
             std::string feName = dynamic_cast<FrontEndCfg *>(fe)->getName();
             Itkpixv2 *feItkpixv2 = dynamic_cast<Itkpixv2 *>(fe);
 
-            logger->info("Measuring for FE {} on Rx {}", feName, id);
+            logger->info("Measuring for FE {} on Rx {}", feName, dynamic_cast<FrontEndCfg*>(fe)->getRegRxChannel());
 
             // Reading Standard Registers
             for (auto Reg : m_STDReg) {

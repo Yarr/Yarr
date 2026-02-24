@@ -1,3 +1,141 @@
+# RD53C / ITkPixV2 emulator
+
+ITkPixV2 emulator covers range of the real chip functionality. From the DAQ perspective, there's no difference between the two. The emulator receives commands and sends outputs via a virtual controller. Internally, it holds a full SW representation of the chip registers, an encoder and command interpreter. Currently supported functionality includes
+- All flavours of register writing
+    - Single write in global registers
+    - Single / multiple write in pixel registers, including row-auto increase
+    - Core column broadcasting
+- Register reading
+    - Single-register read
+- Calibration charge injection
+    - Digital / analog response to Cal command
+- Triggering
+
+With the functionality above, one can run digital, analog and threshold scans as well as full threshold tuning.
+
+## Quickstart
+
+All scans can be run through scanConsole, using the usual scan configurations and the emulator's controller under configs/controller/emuCfg_itkpixv2.json, e. g.:
+
+```
+./bin/scanConsole -r configs/controller/emuCfg_itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/std_digitalscan.json -p
+```
+for a digital scan, or
+```
+./bin/scanConsole -r configs/controller/emuCfg_itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/std_digitalscan.json -p
+```
+for an analog scan. Example outputs of mean ToT maps for the digital and analog scans are shown below.
+
+<figure class="image">
+<img src="images/emulator/Itkpixv2Emu_digitalScanExample.png" alt="ITkPixV2 emulator: Digital scan" width="250">
+<img src="images/emulator/Itkpixv2Emu_analogScanExample.png" alt="ITkPixV2 emulator: analog scan" width="250">
+<figcaption>Digital (left) and analog (right) scan ToT maps in the ITkPixV2 emulator.</figcaption>
+</figure>
+
+As illustrated in the analog scan result above, the emulator introduces a random variation of the analog FE response in each pixel. The (Gaussian) generation of this variation is seeded with a unique ID of the emulated chip, and is therefore constant and reproducible in time.
+
+This randomness, mimicking a non-ideal chip, is further pronounced in threshold scan:
+```
+./bin/scanConsole -r configs/controller/emuCfg_itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/std_thresholdscan.json -p
+```
+For an untuned chip, the threshold distribution is wide due to the per-pixel threshold variations and noise (emulated as Gauss(0, 50e)). The figures below show the untuned threshold distribution and map.
+
+<figure class="image">
+<img src="images/emulator/Itkpixv2Emu_untunedThresholdDist.png" alt="ITkPixV2 emulator: Untuned threshold distribution" width="250">
+<img src="images/emulator/Itkpixv2Emu_untunedThresholdMap.png" alt="ITkPixV2 emulator: Untuned threshold map" width="250">
+<figcaption>Untuned threshold distribution (left) and map (right), obtained with the ITkPixV2 emulator.</figcaption>
+</figure>
+
+One can tune the global threshold, resulting in an overall shift of the threshold distribution to average at the desired value, as well as pixel threshold tuning, which compensates for the non-idealness in each pixel. Figures below show the results of such tuning, which can be emulated with:
+```
+./bin/scanConsole -r configs/controller/emuCfg_itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/std_tune_globalthreshold.json -p -t 2000
+```
+and
+```
+./bin/scanConsole -r configs/controller/emuCfg_itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/std_tune_pixelthreshold.json -p -t 2000
+```
+<figure class="image">
+<img src="images/emulator/Itkpixv2Emu_tunedThresholdDist.png" alt="ITkPixV2 emulator: Untuned threshold distribution" width="250">
+<img src="images/emulator/Itkpixv2Emu_tunedThresholdMap.png" alt="ITkPixV2 emulator: Untuned threshold map" width="250">
+<figcaption>Tuned (except for the first core column) threshold distribution (left) and map (right), obtained with the ITkPixV2 emulator.</figcaption>
+</figure>
+
+## Inner structure
+The emulator interacts with the outside through the `Itkpixv2Emu` class. `Itkpixv2Emu` instantiates two functional modules - `Itkpixv2EmuCommandInterpreter` and `Itkpixv2EmuCommandExe`. At the highest level, `Itkpixv2Emu` runs a loop that listens to the Tx and performs command interpretation and execution upon reception of data. This loop runs until stopped from the outside. The loop is sketched in the figure below.
+
+<figure class="image">
+<img src="images/emulator/Itkpixv2EmuTopLevelLoop.png" alt="" width="">
+<figcaption>Top-level emulator loop.</figcaption>
+</figure>
+
+### Command interpretation
+All command interpretation is handled by the `Itkpixv2EmuCommandInterpreter` class. It is attached to the input Tx and for conveniece pre-buffers the incoming stream in 8-bit blocks. Depending on the header of each command, appropriate number of 8-bit blocks is processed at a time. Whenever needed, the block is 8-to-5 decoded through a LUT. Finally, a `Cmd` struct is formed:
+
+```
+struct Cmd {
+    uint8_t header   = 0;
+    uint8_t id       = 0;
+    uint32_t address = 0;
+    uint32_t data    = 0;
+}
+```
+
+These interpreted commands are then passed through a FIFO to the `Itkpixv2EmuCommandExe`, which takes the appropriate action. A diagram of `Itkpixv2EmuCommandInterpreter` functionality is shown in the figure below.
+
+<figure class="image">
+<img src="images/emulator/Itkpixv2EmuCommandInterpreterSchematics.png" alt="" width="">
+<figcaption>Diagram of Itkpixv2EmuCommandInterpreter class functionality</figcaption>
+</figure>
+
+
+### Carrying out commands
+`Cmd` structs form the input to the `Itkpixv2EmuCommandExe`, which decides what action to take based on the `Cmd` header. `Itkpixv2EmuCommandExe` holds instances of several helper classes, such as `Itkpixv2Encoder` for producing the output streams, `Itkpixv2Cfg` to represent the chip registers and `ItkpixLayout` to represent ToT in the chip matrix. In the current state, commands are carried out serially, but the development was done with consideration of potential future multi-threading.
+
+The following actions are taken for each command -
+
+- `WrReg`  - write provided value to the addressed register. All flavours are supported (global, pixel, broadcast, multiple write, ...).
+- `RdReg`  - Output the value of the desired register in a service block. Only one register is written out per service block, and only on request (no autoread).
+- `Cal`    - Generate analog or digital signals in the pixels.
+- `Trig`   - Encode the generated hits and send them out as the encoded stream with the appropriate trigger tag.
+- `PLLock` - no action
+- `Clear`  - no action
+
+<figure class="image">
+<img src="images/emulator/Itkpixv2EmuCommandExeSchematics.png" alt="" width="">
+<figcaption>Diagram of Itkpixv2EmuCommandExe class functionality</figcaption>
+</figure>
+
+
+
+## Calibrations
+Several calibrations based on real-chip measurements are used to translate between DAC, charge and ToT.
+
+### Injection charge (DAC to e)
+The injection charge is set in DACs in the chip registers, and is translated into electrons through a linear relation provided in `Itkpixv2Cfg::toCharge` function.
+
+### Global threshold (DAC to e)
+The global threshold calibration assumes linear translation between DAC and charge with 2200 e at 300 DAC (with no offset).
+
+### Pixel threshold (TDAC to e)
+Depending on the TDAC sign, a linear relation is taken with slopes given by 1000 e at + 15 TDAC (positive TDAC) and -1400 e at -15 TDAC (negative TDAC). No offset is assumed in either case.
+
+<img src="images/emulator/Itkpixv2EmuTDACvsCharge.png" alt="" width="300">
+<figcaption>TDAC vs. threshold measurement used for emulator calibration</figcaption>
+</figure>
+
+
+### Charge to ToT (e to bits)
+Very coarse linear calibration dividing 14 non-zero ToTs equally over 33000 e charge over threshold is used. The calibration function `Itkpixv2EmuUtils::chargeToToT` returns ToT + 1, so that serves both as ToT and an indication of a hit in case Tot is `0x0`. The lowest output value is therefore `0x1`. More realistic calibration (e. g. accounting for preamp settings) is currently not implemented.
+
+<img src="images/emulator/Itkpixv2EmuChargevsToT.png" alt="" width="300">
+<figcaption>Charge vs. ToT measurement used as a basis for emulator response calibration</figcaption>
+</figure>
+
+
+### Noise
+Gaussian noise with mean 0 e and RMS of 50 e is generated and added to the injected charge before subtracting the threshold.
+
+
 # RD53A emulator
 
 ## Usage

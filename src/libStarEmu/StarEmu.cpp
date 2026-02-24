@@ -69,7 +69,7 @@ void StarEmu::decodeLCB(LCB::Frame frame) {
     if (LCB::is_valid(frame)) {
         SPDLOG_LOGGER_TRACE(logger, "Raw LCB frame = 0x{:x} BC = {}", frame, m_bccnt);
     } else {
-        logger->debug("Invalid LCB frame received: 0x{:x} @ BC = {}", frame, m_bccnt);
+        logger->warn("Invalid LCB frame received: 0x{:x} @ BC = {}", frame, m_bccnt);
         logger->debug("Skip decoding");
         return;
     }
@@ -139,7 +139,7 @@ void StarEmu::decodeR3L1(uint16_t frame) {
 
         // check if they are valid 8b code before decoding
         if ( not (SixEight::is_valid(code0) and SixEight::is_valid(code1)) ) {
-            logger->debug("Invalid 8-bit code received: code0 = 0x{:x}, code1 = 0x{:x}", code0, code1);
+            logger->warn("Invalid 8-bit code received: code0 = 0x{:x}, code1 = 0x{:x}", code0, code1);
             logger->debug("Skip decoding");
             return;
         }
@@ -179,7 +179,7 @@ void StarEmu::executeLoop() {
         logger->debug("{}: -----------------------------------------------------------", __PRETTY_FUNCTION__);
 
         // get data
-        uint16_t d0_r3l1, d1_r3l1;
+        uint16_t d0_r3l1{}, d1_r3l1{};
         if (m_txRingBuffer2) {
             uint32_t d_r3l1 = m_txRingBuffer2->read32();
             d0_r3l1 = (d_r3l1 >> 16) & 0xffff;

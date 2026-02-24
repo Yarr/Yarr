@@ -177,7 +177,7 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
 #if USE_ITKPIX_DEBUG_BUFFER > 1
                     dumpDebugBuffer();
 #endif
-                    logger->error("[{}] The ES bit is 1 while the core column number read is non-zero ({} [{}]). Data processed so far are corrupted... Last block {:x}{:x} (status {})", m_feCfg->getName(), variable, _bitIdx, _data[0], _data[1], _status);
+                    logger->error("[{}] The ES bit is 1 while the core column number read is non-zero ({} [{}]). Data processed so far are corrupted... Last block {:x}{:x} (status {})", m_feCfg->getName(), variable, _bitIdx, _data[0], _data[1], std::to_string(_status));
                     _unfinishedStreamEOSErrorCnt++;
                 }
                 _bitIdx = 64;
@@ -190,7 +190,7 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
 #if USE_ITKPIX_DEBUG_BUFFER > 1
                 dumpDebugBuffer();
 #endif
-                logger->error("[{}] Expected unfinished stream while ES = 1: 0x{:x}{:x} [{} - {}]. Will start a new event... (status {})", m_feCfg->getName(), _data[0], _data[1], _bitIdx, length, _status);
+                logger->error("[{}] Expected unfinished stream while ES = 1: 0x{:x}{:x} [{} - {}]. Will start a new event... (status {})", m_feCfg->getName(), _data[0], _data[1], _bitIdx, length, std::to_string(_status));
                 _unfinishedStreamErrorCnt++;
                 _status = INIT;
                 return false;
@@ -739,4 +739,20 @@ void Itkpixv2DataProcessor::sendFeedback(unsigned tag, unsigned bcid)
     if (statusFb != nullptr) statusFb->pushData(std::move(stat));
 
     return;
+}
+
+json Itkpixv2DataProcessor::getLog() {
+    json log;
+    log["Chip tag bitflips"] = _chipTagBitFlipCnt;
+    log["Chip unrecognized tags"] = _chipTagErrorCnt;
+    log["Unfinished streams (no EOS)"] = _unfinishedStreamErrorCnt;
+    log["Unfinished streams (w/ EOS)"] = _unfinishedStreamEOSErrorCnt;
+    log["Corrupt streams"] = _corruptStreamErrorCnt;
+    log["Split events count"] = _splitEventsCnt;
+    log["Any errors"] = _chipTagBitFlipCnt 
+        + _chipTagErrorCnt 
+        + _unfinishedStreamErrorCnt 
+        + _unfinishedStreamEOSErrorCnt 
+        + _corruptStreamErrorCnt;
+    return log;
 }

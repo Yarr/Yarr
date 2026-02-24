@@ -17,7 +17,7 @@
 #include "RawData.h"
 #include "HccCfg.h"
 
-class StarDataProcessorImpl;
+struct StarDataProcessorImpl;
 
 /**
    Process Star front-end data to generate hits.
@@ -59,7 +59,7 @@ class StarDataProcessor : public FeDataProcessor {
         std::unique_ptr<std::thread> thread_ptr;
 
         /// Map from HCC input channel (0-10) number to histogram slot
-        std::array<uint8_t, HCC_INPUT_CHANNEL_COUNT> chip_map;
+        std::array<uint8_t, Star::MaxABCsPerHCC> chip_map;
 
         std::unique_ptr<StarDataProcessorImpl> pimpl;
 };

@@ -1,5 +1,6 @@
 #include "catch.hpp"
 
+#include <iostream>
 #include <filesystem>
 
 #include "ScanHelper.h"

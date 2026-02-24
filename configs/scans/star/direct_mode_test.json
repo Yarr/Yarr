@@ -1,0 +1,50 @@
+{
+  "scan": {
+    "processor": {
+      "config": {
+        "raw_bits": true
+      }
+    },
+    "analysis": [
+      {
+        "algorithm": "ParameterAnalysis",
+        "config": {
+          "createMap": true
+        }
+      }
+    ],
+    "histogrammer": [
+      {
+        "algorithm": "OccupancyMap",
+        "config": {}
+      }
+    ],
+    "loops": [
+      {
+        "config": {
+          "startSourceMask": 4
+        },
+        "loopAction": "FelixDirectMode"
+      },
+      {
+        "config": {
+          "trig_count": 50,
+          "trig_frequency": 1000,
+          "trig_time": 0,
+          "l0_latency": 30,
+          "extTrigger": false,
+          "noInject": true
+        },
+        "loopAction": "StarTriggerLoop"
+      },
+      {
+        "loopAction": "StdDataLoop"
+      }
+    ],
+    "name": "DirectModeScanTest",
+    "prescan": {
+      "ABCs_PR_ENABLE": 1,
+      "ABCs_LP_ENABLE": 1
+    }
+  }
+}

@@ -25,8 +25,8 @@ private:
   unsigned data_npoints;
 
   std::vector<double> data_x;
-  std::vector<double> data_xerr;
   std::vector<double> data_y;
+  std::vector<double> data_xerr;
   std::vector<double> data_yerr;
 
   bool hasXerrs() const;

@@ -57,6 +57,23 @@ uint64_t FelixTools::get_fid(
   return fid.to_ullong();
 }
 
+std::string FelixTools::print_fid(uint64_t fid)
+{
+  std::stringstream ss;
+
+  ss << "ver: " << (fid >> FELIXID_VER_SHIFT) << ", ";
+  ss << "did: " << ((fid >> FELIXID_DID_SHIFT) & ((1<<FELIXID_DID_NBITS) - 1)) << ", ";
+  ss << "cid: " << ((fid >> FELIXID_CID_SHIFT) & ((1<<FELIXID_CID_NBITS) - 1)) << ", ";
+  ss << "virt: " << ((fid >> FELIXID_ISVIRT_SHIFT) & 1) << ", ";
+  ss << "link: " << ((fid >> FELIXID_LINKID_SHIFT) & ((1<<FELIXID_LINKID_NBITS) - 1)) << ", ";
+  ss << "elink: " << ((fid >> FELIXID_ELINK_SHIFT) & ((1<<FELIXID_ELINK_NBITS) - 1)) << ", ";
+  ss << "dir: " << ((fid >> FELIXID_TOFLX_SHIFT) & 1) << ", ";
+  ss << "proto: " << ((fid >> FELIXID_PROTO_SHIFT) & ((1<<FELIXID_PROTO_NBITS) - 1)) << ", ";
+  ss << "stream: " << ((fid >> FELIXID_STREAM_SHIFT) & ((1<<FELIXID_STREAM_NBITS) - 1));
+
+  return ss.str();
+}
+
 std::tuple<uint16_t,uint8_t,uint8_t> FelixTools::linkInfo_from_chn(uint32_t chn, bool toflx, FelixTools::FELIX_FW_MODE fwmode) {
   uint16_t linkId = FelixTools::link_from_chn(chn);
   uint8_t elink = FelixTools::elink_from_chn(chn);

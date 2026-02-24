@@ -1,15 +1,20 @@
 #ifndef FELIXRXCORE_H
 #define FELIXRXCORE_H
 
+#ifdef YARR_CONFIG_FELIX_PROXY
+#include "felix_proxy/ClientThread.h"
+using FelixClientThread = felix_proxy::ClientThread;
+#else
 #include "felix/felix_client_thread.hpp"
+#endif
+
 #include "storage.hpp"
 
 #include "RxCore.h"
 #include "RawData.h"
 #include "ClipBoard.h"
 #include "FelixTools.h"
-
-#include <thread>
+#include "FelixRxThread.h"
 
 class FelixRxCore : virtual public RxCore {
 
@@ -18,12 +23,19 @@ public:
   FelixRxCore();
   ~FelixRxCore() override;
 
+  /// Register all Rx channels and distribute them to threads
+  void initRxChannels(const std::vector<uint32_t>& channels) override;
+
   void setRxEnable(uint32_t val) override;
   void setRxEnable(std::vector<uint32_t> channels) override;
   void disableRx() override;
   void maskRxEnable(uint32_t val, uint32_t mask) override;
 
   void flushBuffer() override;
+
+  // Clears out the m_rawData vector
+  // This vector stores incoming data read in the onData() function
+  void clearRawData();
   std::vector<RawDataPtr> readData() override;
 
   uint32_t getDataRate() override;
@@ -42,21 +54,16 @@ protected:
 
   void writeConfig(json &j);
   void loadConfig(const json &j);
-  void setClient(std::shared_ptr<FelixClientThread> client); // set Felix client
-
-  // on data callback
-  void on_data(FelixID_t fid, const uint8_t* data, size_t size, uint8_t status);
-  // on connect/disconnect callbacks
-  void on_connect(FelixID_t fid);
-  void on_disconnect(FelixID_t fid);
+  void setClient(const FelixClientThread::Config& fcConfig); // set Felix clients
 
   // Channel control
   void enableChannel(FelixID_t fid);
   void disableChannel(FelixID_t fid);
 
-  std::map<FelixID_t, bool> m_enables; // enable flag for each elink
+  bool channelIsEnabled(FelixID_t fid) {
+    return m_rxThreads[m_fidThreadMap[fid]]->channelIsEnabled(fid);
+  }
 
-  std::atomic<bool> m_doFlushBuffer {false};
   unsigned m_flushWaitTime {50}; // in milliseconds
 
   // For Felix ID
@@ -64,28 +71,19 @@ protected:
   uint16_t m_cid {0}; // connector ID; 0x0000 reserved for local IDs
   uint8_t m_protocol {0}; // protocol ID
 
-  // Data container
-  ClipBoard<RawData> m_rawData;
+  // Felix clients
+  unsigned m_nThreads {1};
+  std::vector<std::unique_ptr<FelixRxThread>> m_rxThreads;
+  FelixClientThread::Config m_fcConfig; // Felix client configuration
+  std::map<FelixID_t, unsigned> m_fidThreadMap; // map of Felix ID to thread index
 
-  // Receiver queue status
-  std::atomic<uint64_t> m_total_data_in {0}; // total number of data received
-  std::atomic<uint64_t> m_total_data_out {0}; // total number of data read out
-  std::atomic<uint64_t> m_total_bytes_in {0};
-  std::atomic<uint64_t> m_total_bytes_out {0};
-
-  // Per channel statistics
-  std::map<FelixID_t, FelixTools::QueueStatistics> m_qStats;
-
+  // Monitoring
   std::thread m_monitor_thread;
   std::atomic<bool> m_runMonitor {false};
   uint32_t m_interval_ms {1000}; // monitoring interval in ms
   uint64_t m_queue_limit {4000}; // MB
   size_t m_maxMessageSize {0}; // if set to >0, on_data drops messages with larger sizes
-
-  double msg_rate {-1}; // message rate
-  double byte_rate {-1}; // total data rate
   std::chrono::steady_clock::time_point m_t0; // clock used for time measurement
-
-  std::shared_ptr<FelixClientThread> fclient;
 };
+
 #endif

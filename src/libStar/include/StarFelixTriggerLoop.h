@@ -47,7 +47,9 @@ private:
   StarSeqGenerator m_seqGen{true};
 
   unsigned m_nTrigsTrickle; // number of triggers stored in the trickle memory
-  unsigned m_nPulse; // number of times to iterate over the trickle memory
+  unsigned m_nPulse{}; // number of times to iterate over the trickle memory
+
+  unsigned m_seqMemAddrWidth {12}; // Address width of the trickle memory
 
   // Sequence of bytes to be written to the trickle memory
   std::vector<uint8_t> m_trickleSeq;
@@ -57,6 +59,7 @@ private:
   std::vector<uint8_t> getHitCounterSegment();
   void makeTrickleSequence();
   void makeTrickleSequenceFromFile();
+  bool checkSequenceMemSize();
 
   void init() override;
   void end() override;

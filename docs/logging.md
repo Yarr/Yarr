@@ -24,6 +24,17 @@ You can list all available loggers (that can be enabled/disabled) as part of:
 
 ``scanConsole -k``
 
+## Default configuration
+
+For most applications the same default is used (report all info level messages).
+Additionally, the file `configs/logging/default.json` (NB relative to current
+directory) is loaded.
+
+For several other applications, a custom configuration is used (for instance to
+only output from specific loggers).
+
+In both cases, a default format pattern is used.
+
 ## Logger configuration
 
 Most units in YARR create a logger with a particular name and send messages

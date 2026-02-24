@@ -4,7 +4,6 @@
 
 #include "logging.h"
 #include "LoggingConfig.h"
-#include "ScanOpts.h"
 #include "ScanHelper.h"
 #include "AllHwControllers.h"
 #include "FelixController.h"
@@ -160,10 +159,9 @@ namespace {
     }
   }
 
-  void setupDefaultLoggers(bool verbose) {
-    ScanOpts options;
+  json setupDefaultLoggers(bool verbose) {
     json jlog;
-    jlog["pattern"] = options.defaultLogPattern;
+    jlog["pattern"] = logging::defaultLogPattern;
 
     jlog["log_config"][0]["name"] = "elinkConfig";
     jlog["log_config"][0]["level"] = verbose ? "debug" : "info";
@@ -182,7 +180,7 @@ namespace {
       jlog["log_config"][4]["level"] = "info";
     }
 
-    logging::setupLoggers(jlog);
+    return jlog;
   }
 
 } // end of namespace
@@ -268,16 +266,17 @@ int main(int argc, char **argv) {
   }
 
   // configure logger
-  if (logCfg.empty()) { // default
-    setupDefaultLoggers(verbose);
-  } else {
-    try {
-      auto jlog = ScanHelper::openJsonFile(logCfg);
-      logging::setupLoggers(jlog);
-    } catch (std::runtime_error &e) {
-      spdlog::error("Failed to load logger config: {}", e.what());
-      return -1;
+  try {
+    json jlog;
+    if (logCfg.empty()) { // default
+      jlog = setupDefaultLoggers(verbose);
+    } else {
+      jlog = ScanHelper::openJsonFile(logCfg);
     }
+    logging::setupLoggers(jlog);
+  } catch (std::runtime_error &e) {
+    spdlog::error("Failed to load logger config: {}", e.what());
+    return -1;
   }
 
   //////

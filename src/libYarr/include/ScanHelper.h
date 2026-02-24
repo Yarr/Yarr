@@ -17,6 +17,7 @@
 
 #include "storage.hpp"
 #include "logging.h"
+#include "LoadJson.h"
 
 #include "ScanOpts.h"
 
@@ -24,7 +25,7 @@ class AnalysisDataProcessor;
 class Bookkeeper;
 class FeDataProcessor;
 class FrontEndCfg;
-class FrontEndGeometry;
+struct FrontEndGeometry;
 class HistoDataProcessor;
 class HwController;
 class ScanBase;
@@ -36,7 +37,7 @@ namespace ScanHelper {
         /// Get a new run number, such that it's different next time
         unsigned newRunCounter();
 
-        json openJsonFile(const std::string& filepath);
+        using JsonHelper::openJsonFile;
         std::unique_ptr<HwController> loadController(const json &ctrlCfg);
         std::string buildChips(const json &j, Bookkeeper &bookie, HwController *hwCtrl,
                                std::map<unsigned, std::array<std::string, 2>> &feCfgMap);
@@ -123,7 +124,6 @@ namespace ScanHelper {
        void banner(std::shared_ptr<spdlog::logger> &logger, const std::string &msg);
        void listChips();
        void listProcessors();
-       void listScans();
        void listControllers();
        void listScanLoopActions();
        void listKnown();

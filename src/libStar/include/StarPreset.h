@@ -99,7 +99,7 @@ namespace StarPreset {
     // Connectivity config
     systemCfg["chipType"] = chipName;
 
-    for (int i=0; i<modules.size(); i++) {
+    for (unsigned int i=0; i<modules.size(); i++) {
       std::string mName(chipName+"_"+modules[i].name);
       systemCfg["chips"][i]["config"] = mName+".json";
       systemCfg["chips"][i]["tx"] = modules[i].tx;

@@ -13,6 +13,7 @@
 
 #include "HwController.h"
 #include "AllChips.h"
+#include "AllPlotters.h"
 #include "AllProcessors.h"
 #include "AllStdActions.h"
 #include "Bookkeeper.h"
@@ -29,20 +30,41 @@
 
 auto logger = logging::make_log("ScanConsole");
 
+class DefaultPlotter : public Plotter {
+public:
+  void makePlots(bool doPlots, const std::string &outputDir,
+                 const std::string &feName,
+                 const HistogramBase &histo)
+  {
+    // only create the image files if asked to
+    if(doPlots) {
+        histo.plot(feName, outputDir);
+    }
+    // always dump the data
+    histo.toFile(feName, outputDir);
+  }
+};
+
+namespace DefaultPlotting {
+bool default_plotting_registered =
+StdDict::registerPlotter
+  ("Default", []() { return std::unique_ptr<Plotter>(new DefaultPlotter); });
+}
+
 ScanConsoleImpl::ScanConsoleImpl() = default;
 
 std::string ScanConsoleImpl::parseConfig(const std::vector<std::string> &args) {
     json result;
     result["status"] = "failed";
     int argc = args.size();
-    char *argv[argc+1];
+    std::vector<char *> argv(argc+1);
     for (int i = 0; i < argc; i++) {
         argv[i] = (char *) args[i].c_str();
     }
     argv[argc] = nullptr; // should be a null terminated array
     ScanOpts options;
     json scanConsoleConfig;
-    int res = ScanHelper::parseOptions(argc, argv, options);
+    int res = ScanHelper::parseOptions(argc, argv.data(), options);
     if (res==1) {
         res = ScanHelper::loadConfigFile(options, false, scanConsoleConfig);
         if (res>=0) {
@@ -64,12 +86,12 @@ int ScanConsoleImpl::init(int argc, char *argv[]) {
 
 int ScanConsoleImpl::init(const std::vector<std::string> &args) {
     int argc =  args.size();
-    char *argv[argc];
+    std::vector<char *> argv(argc);
     for(int i = 0;i<argc; i++) {
         argv[i] = (char *) args[i].c_str();
     }
     ScanOpts options;
-    int res=ScanHelper::parseOptions(argc,argv,options);
+    int res=ScanHelper::parseOptions(argc,argv.data(),options);
     if(res<=0) return res;
     return init(options);
 }
@@ -82,10 +104,7 @@ int ScanConsoleImpl::init(ScanOpts options) {
         loggerConfig["outputDir"]=scanOpts.outputDir;
     } else {
         // default log setting
-        loggerConfig["pattern"] = scanOpts.defaultLogPattern;
-        loggerConfig["log_config"][0]["name"] = "all";
-        loggerConfig["log_config"][0]["level"] = "info";
-        loggerConfig["outputDir"]="";
+        loggerConfig = logging::defaultConfig();
     }
     spdlog::info("Configuring logger ...");
     logging::setupLoggers(loggerConfig);
@@ -137,10 +156,7 @@ int ScanConsoleImpl::loadConfig() {
 
 // load scan config from a JSON string
 int ScanConsoleImpl::loadConfig(const char *config){
-    loggerConfig["pattern"] = scanOpts.defaultLogPattern;
-    loggerConfig["log_config"][0]["name"] = "all";
-    loggerConfig["log_config"][0]["level"] = "info";
-    loggerConfig["outputDir"]="";
+    loggerConfig = logging::defaultConfig();
     spdlog::info("Configuring logger ...");
     logging::setupLoggers(loggerConfig);
     json j = json::parse(config);
@@ -159,9 +175,28 @@ unsigned ScanConsoleImpl::getRunNumber() const {
 }
 
 
-int ScanConsoleImpl::setupScan() {
-    ScanHelper::banner(logger,"Setup Scan");
+int ScanConsoleImpl::setupScan() {    
+	ScanHelper::banner(logger,"Setup Scan");
 
+    // check if correct scan using the loop registry
+    // FEI4B needs special treatment, since the correct loops don't contain the trailing B,
+    // contrary to the RD53A/B case
+    // Star_H0A1 and Star_H1A1 are similar
+    std::string chipTypeCheck = chipType == "FEI4B" ? "FEI4" : chipType;
+    chipTypeCheck = chipType == "Star_vH0A1" ? "Star" : chipTypeCheck;
+    chipTypeCheck = chipType == "Star_vH1A1" ? "Star" : chipTypeCheck;
+    for (unsigned int i=0; i<scanCfg["scan"]["loops"].size(); i++) {
+	    std::string loopAction = scanCfg["scan"]["loops"][i]["loopAction"];
+	    std::shared_ptr<LoopActionBase> action = StdDict::getLoopAction(loopAction);
+	    if (action == nullptr) {
+	    	logger->error("This scan contains an unbuilt loop {}, aborting!", loopAction);
+	    	return -1;
+	    } else if (std::search(loopAction.begin(), loopAction.end(), chipTypeCheck.begin(), chipTypeCheck.end(), [](char a, char b){return std::tolower(a) == std::tolower(b);}) == loopAction.end() && loopAction.find("Std") == std::string::npos){
+	    	logger->error("This scan contains incorrect loop {} for chipType {} (standard loops assumed to contain Std), aborting!", loopAction, chipType);
+	    	return -1;
+	    }
+    }
+    
     // Make backup of scan config
 
     // Create backup of current config
@@ -296,6 +331,10 @@ int ScanConsoleImpl::configure() {
     // Wait for rx to sync with FE stream
     // TODO Check RX sync
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
+
+    // Initialize Rx channels
+    hwCtrl->initRxChannels(bookie->getRxMaskUnique());
+
     hwCtrl->flushBuffer();
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
         auto fe = bookie->getFe(id);
@@ -467,14 +506,16 @@ void ScanConsoleImpl::cleanup() {
         }
         while(!output.empty()) {
             auto histo = output.popData();
-            // only create the image files if asked to
-            if(scanOpts.doPlots) {
-                histo->plot(name, scanOpts.outputDir);
-            }
-            // always dump the data
-            histo->toFile(name, scanOpts.outputDir);
+
+            runOutputHistogramCallback(name, *histo);
         } // while
     } // i
+
+    auto &lh = bookie->getLoopHistograms();
+    while(!lh.empty()) {
+      auto histo = lh.popData();
+      runOutputHistogramCallback("LoopPlot", *histo);
+    } // while
 
     logger->info("Finishing run: {}", runCounter);
     // Register test info into database
@@ -489,6 +530,14 @@ void ScanConsoleImpl::cleanup() {
             diagram.toPlot(scanOpts.outputDir + "diagram.png");
         }
     }
+}
+
+void ScanConsoleImpl::runOutputHistogramCallback(const std::string &name,
+                                                 const HistogramBase &histo)
+{
+    auto pp = StdDict::getPlotter(scanOpts.plottingType);
+
+    pp->makePlots(scanOpts.doPlots, scanOpts.outputDir, name, histo);
 }
 
 std::string ScanConsoleImpl::getResults() {
@@ -549,13 +598,21 @@ void ScanConsoleImpl::run() {
 
     scan_done = std::chrono::steady_clock::now();
     logger->info("Waiting for processors to finish ...");
-    // Join Fei4DataProcessor
+    // Join FeDataProcessor
     for( auto& proc : procs ) {
       proc.second->join();
     }
     processor_done = std::chrono::steady_clock::now();
-    logger->info("Processor done, waiting for histogrammer ...");
+    // Get logs
+    for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
+        auto fe = bookie->getFe(id);
+        auto feCfg = bookie->getFeCfg(id);
+        if (fe->isActive()) {
+              scanLog["FeDataProcessorLog"][feCfg->getName()] = procs[id]->getLog();
+        }
+    }
 
+    logger->info("Processor done, waiting for histogrammer ...");
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
         auto fe = bookie->getFe(id);
         if (fe->isActive()) {
@@ -610,6 +667,11 @@ void ScanConsoleImpl::run() {
     scanLog["stopwatch"]["scan"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(scan_done-scan_start).count();
     scanLog["stopwatch"]["processing"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(processor_done-scan_done).count();
     scanLog["stopwatch"]["analysis"] = (uint32_t) std::chrono::duration_cast<std::chrono::milliseconds>(all_done-processor_done).count();
+
+    if(hwCtrl->hasFeature(HwControllerFeatures::STATS_IN_STATUS)) {
+      scanLog["ctrlPostScanStatus"] = hwCtrl->getStatus();
+    }
+
     hwCtrl.reset();
     scanLog["finishTime"] = (int)std::time(nullptr);
 
@@ -621,11 +683,7 @@ void ScanConsoleImpl::dump() {
 }
 
 void ScanConsoleImpl::setupLogger(const char *config) {
-    json loggerConfig;
-    loggerConfig["pattern"] = "[%T:%e]%^[%=8l][%=15n][%t]:%$ %v";
-    loggerConfig["log_config"][0]["name"] = "all";
-    loggerConfig["log_config"][0]["level"] = "info";
-    loggerConfig["outputDir"] = "";
+    json loggerConfig = logging::defaultConfig();
     if (config) {
         try {
             loggerConfig = json::parse(config);

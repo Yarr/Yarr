@@ -4,7 +4,7 @@
 
 TEST_CASE("CheckBuildHistoMap", "[star][histo_map]") {
   int hcc_version = 0;
-  std::array<uint8_t, 11> expected_chip_map;
+  std::array<uint8_t, Star::MaxABCsPerHCC> expected_chip_map;
   int hcc_input_enables = 0;
 
   SECTION("Empty") {

@@ -4,6 +4,7 @@
 // # Comment: StarChip FrontEnd class
 // ################################
 
+#include "StarConstants.h"
 #include "StarChips.h"
 #include "StarChipsBroadcast.h"
 
@@ -43,8 +44,8 @@ StarChips::StarChips(int abc_version, int hcc_version)
 {
 	m_txcore  = nullptr;
 	active = false;
-	geo.nRow = 2;
-	geo.nCol = 128;
+	geo.nRow = Star::RowsPerABC;
+	geo.nCol = Star::StripsPerABCRow;
 
 
 	//Create dummy configuration as placeholder for globalFe in preScan routines
@@ -83,17 +84,17 @@ void StarChips::setHccId(unsigned hccID) {
 }
 
 void StarChips::resetHCCStars() {
-    logger->debug("Sending fast command #{} HCC_REG_RESET", LCB::HCC_REG_RESET);
+    logger->debug("Sending fast command #{} HCC_REG_RESET", std::to_string(LCB::HCC_REG_RESET));
     this->sendCmd(LCB::fast_command(LCB::HCC_REG_RESET, 0) );
 }
 
 void StarChips::resetABCStars() {
 	uint8_t delay = 0; //2 bits BC delay
 
-	logger->debug("Sending fast command #{} ABC_REG_RESET", LCB::ABC_REG_RESET);
+	logger->debug("Sending fast command #{} ABC_REG_RESET", std::to_string(LCB::ABC_REG_RESET));
 	sendCmd(LCB::fast_command(LCB::ABC_REG_RESET, delay) );
 
-	logger->debug("Sending fast command #{} ABC_SLOW_COMMAND_RESET", LCB::ABC_SLOW_COMMAND_RESET);
+	logger->debug("Sending fast command #{} ABC_SLOW_COMMAND_RESET", std::to_string(LCB::ABC_SLOW_COMMAND_RESET));
 	sendCmd(LCB::fast_command(LCB::ABC_SLOW_COMMAND_RESET, delay) );
 
 	// TODO: This should be done somewhere, but only after we're
@@ -105,7 +106,7 @@ void StarChips::resetABCStars() {
 void StarChips::resetAllHard(){
 	logger->info("Global reseting all HCC and ABC on the same LCB control segment");
 
-    logger->debug("Sending fast command #{} LOGIC_RESET", LCB::LOGIC_RESET);
+    logger->debug("Sending fast command #{} LOGIC_RESET", std::to_string(LCB::LOGIC_RESET));
     sendCmd(LCB::fast_command(LCB::LOGIC_RESET, 0) );
 
     // Reset HCCs
@@ -129,7 +130,7 @@ void StarChips::resetAllHard(){
     resetABCStars();
 
     // Star PR&LP to ABCs
-    logger->debug("Sending fast command #{} HCC_START_PRLP", LCB::HCC_START_PRLP);
+    logger->debug("Sending fast command #{} HCC_START_PRLP", std::to_string(LCB::HCC_START_PRLP));
 	sendCmd(LCB::fast_command(LCB::HCC_START_PRLP, 0) );
 }
 
@@ -142,14 +143,14 @@ void StarChips::configure() {
 
 	this->writeRegisters();
 
-    logger->debug("Sending fast command #{} LOGIC_RESET", LCB::LOGIC_RESET);
+    logger->debug("Sending fast command #{} LOGIC_RESET", std::to_string(LCB::LOGIC_RESET));
     sendCmd(LCB::fast_command(LCB::LOGIC_RESET, 0) );
 
     logger->debug("Sending lonely_BCR");
     sendCmd(LCB::lonely_bcr());
 
     // Make histo size match number of configured ABCs
-    geo.nCol = 128 * numABCs();
+    geo.nCol = Star::StripsPerABCRow * numABCs();
 }
 
 void StarChips::sendCmd(uint16_t cmd){
@@ -190,9 +191,6 @@ void StarChips::sendCmd(std::array<uint16_t, 9> cmd){
 
 bool StarChips::writeTrims(){
     //Write only TrimDAC registers so we don't overwrite the prescan when doing a trim
-    auto num_abc = numABCs();
-    int hccId = getHCCchipID();
-
     // Then each ABC
     eachAbc([&](auto &abc) {
             int this_chipID = abc.getABCchipID();
@@ -247,11 +245,23 @@ bool StarChips::writeRegisters(){
 
 //Will write value for setting name for the HCC if name starts with "HCC_" otherwise will write the setting for all ABCs if name starts with "ABCs_"
 yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_value) {
-  std::string strPrefix = name.substr (0,4);
+  auto plusPos = name.find('+');
+  std::string name_reg = name.substr(0, plusPos); 
+  std::string strPrefix = name_reg.substr (0,4);
   //if we deal with a setting for the HCC, look up in register map.
   if (strPrefix=="HCC_") {
-    auto subRegName = name.substr(4);
-    if(!HccNames::subRegStringIsValid(subRegName)) {
+    auto subRegName = name_reg.substr(4);
+    if(subRegName == "FD_DATAIN_FINEDELAY") {
+      // Write the same value to all FD_DATAIN_FINEDELAY sub regs
+      logger->trace("Writing {} to all FD_DATAIN_FINEDELAY sub-registers.", reg_value);
+
+      for(size_t i = 0; i < Star::MaxABCsPerHCC; i++){
+        auto subRegName_i = subRegName.substr(0,9) + std::to_string(i) + subRegName.substr(9);
+        auto subRegEnum_i = HccNames::subRegFromString(subRegName_i).value();
+        setAndWriteHCCSubRegister(subRegEnum_i, reg_value);
+      }
+    }
+    else if(!HccNames::subRegStringIsValid(subRegName)) {
       logger->error(" --> Error: Could not find HCC sub-register \"{}\"", subRegName);
       return yarrFailure;
     } else {
@@ -259,7 +269,7 @@ yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_va
       setAndWriteHCCSubRegister(subRegEnum, reg_value);
     }
   } else  if (strPrefix=="ABCs") {
-    auto subRegName = name.substr(5); // Including _
+    auto subRegName = name_reg.substr(5); // Including _
     if(subRegName == "MASKs") {
       // Special case for digitial scan
       uint32_t val = (reg_value == 0)?0:0xffffffff;
@@ -280,7 +290,7 @@ yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_va
 
       // Set trim registers in memory
       eachAbc([&](auto &cfg) {
-          for (unsigned chan=0; chan<256; chan++) {
+          for (unsigned chan=0; chan<Star::StripsPerABC; chan++) {
               cfg.setTrimDACRaw(chan, reg_value);
           }
       });
@@ -302,6 +312,10 @@ yarrStatus StarChips::writeNamedRegister(std::string name, const uint16_t reg_va
           setAndWriteABCSubRegister(abcRegEnum, cfg, reg_value);
         });
     }
+  }
+  if (plusPos != std::string::npos && name.substr(plusPos) == "+BCR") {
+    logger->debug("Sending lonely_BCR after register write");
+    sendCmd(LCB::lonely_bcr());
   }
   return yarrSuccess;
 }

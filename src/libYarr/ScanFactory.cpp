@@ -126,34 +126,4 @@ void ScanFactory::loadConfig(const json &scanCfg) {
             sflog->warn("~~~ Config empty.");
         }
     }
-                    
-
-}
-
-namespace StdDict {
-    typedef ClassRegistry<ScanBase, Bookkeeper *> OurRegistry;
-
-    static OurRegistry &registry() {
-        static OurRegistry instance;
-        return instance;
-    }
-
-    bool registerScan(std::string name,
-                      std::function<std::unique_ptr<ScanBase>(Bookkeeper *k)> f)
-    {
-      return registry().registerClass(name, f);
-
-    }
-
-    std::unique_ptr<ScanBase> getScan(std::string name, Bookkeeper *b) {
-        auto result = registry().makeClass(name, b);
-        if(result == nullptr) {
-            sflog->error("No Scan class matching '{}' found", name);
-        }
-        return result;
-    }
-
-    std::vector<std::string> listScans() {
-        return registry().listClasses();
-    }
 }

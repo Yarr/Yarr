@@ -9,6 +9,7 @@
 #include "HccNames.h"
 #include "StarCmd.h"
 #include "StarCfg.h"
+#include "StarConstants.h"
 #include "LCBUtils.h"
 #include "LoggingConfig.h"
 #include "ScanHelper.h"
@@ -17,6 +18,8 @@
 #include "LoopStatus.h"
 
 #include <getopt.h>
+
+#include "spdlog/fmt/fmt.h"
 
 namespace {
   auto logger = logging::make_log("test_star");
@@ -31,6 +34,8 @@ namespace {
     uint32_t hcc_id;
     std::map<uint32_t,uint32_t> abcs; // key: channel; value: chipID
   };
+
+  static const std::map<uint32_t,uint32_t> BROADCAST_ABCS{{15, 15}};
 
   /**
      Map of sequences to lists of tests.
@@ -63,6 +68,14 @@ namespace {
         }},
 
       /*
+        Read regsiters
+      */
+      {"MoreRegisters", {
+          "readMoreHCCRegisters",
+          "readMoreABCRegisters",
+        }},
+
+      /*
         Test reading data packets
       */
       {"DataPacket", {
@@ -76,10 +89,16 @@ namespace {
         Probe the front end ASICs
       */
       {"Probe", {
-          "checkHCCHPRs", "probeHCCs",
-          // In case resets were sent, HCCs need to be reconfigured to talk to ABCs
-          "configureHCCIfReset", // only if doResets set
-          "checkABCHPRs", "probeABCs",
+          // Note that if resets are sent, this happens both in the check*HPRs actions
+          // And probe* actions
+          "checkHCCHPRs",
+          // Read HCC fuse register can be done immediately after reset
+          "probeHCCs",
+          // If reset, both HCCs and ABCs need to be reconfigured to talk to ABCs
+          "configureHCCIfReset",
+          "configureABCIfReset",
+          "checkABCHPRs",
+          "probeABCs",
         }},
 
       /*
@@ -108,7 +127,86 @@ namespace {
       {"ReadData", {
           "diagnosticsReport",
         }},
+      {"ResetAll", {
+          "resetHCC",
+          "resetABCFromHCC",
+          "resetABC",
+        }},
     };
+
+  /**
+   * Implementation of test actions.
+   *
+   * Also stores common data that is passed between actions.
+   */
+  struct TestData {
+    unsigned inChannel = 0;
+
+    /// All expected IC enables.
+    unsigned icEnablesMask = 0x7ff;
+
+    /// Timeout for read operations
+    unsigned timeout_ms = 100;
+
+    std::unique_ptr<StarCfg> starCfg;
+    bool setHccId = false;
+    bool doResets = false;
+    /// Default to 640
+    bool mode640 = true;
+
+    /// Default to updating IDs once readout success
+    bool setNotBroadcastIds = true;
+
+    // Original Spec version
+    std::vector<uint32_t> rxChannels = {6};
+    std::vector<uint32_t> txChannels = {0xFFFF};
+
+    std::vector<Hybrid> hccStars;
+
+    std::map<std::string, std::function<bool (HwController&)>> buildTests();
+
+    /// Report on things carried between test actions
+    void report() {
+      logger->info("Report inter-action config");
+      logger->info(" Selected input channel: {}", inChannel);
+
+      logger->info(" HCC ID: {}", starCfg->getHCCchipID());
+      for(unsigned i=0; i<Star::MaxABCsPerHCC; i++) {
+        if(!(starCfg->isAbcForInputChannel(i))) {
+          continue;
+        }
+        const auto &abc = starCfg->abcForInputChannel(i);
+
+        logger->info("  For IC {}: {}", i, abc.getABCchipID());
+      }
+
+      logger->info(" Hybrid tx rx hcc (chan,abcID)");
+      for(auto &h: hccStars) {
+        std::string abcs;
+        for(auto &a: h.abcs) {
+          abcs += fmt::format(" ({}, {})", a.first, a.second);
+        }
+        logger->info("  {} {} {} {}", h.tx, h.rx, h.hcc_id, abcs);
+      }
+    }
+
+    bool crossCheck();
+
+    /// Update things based on overall provided configuration
+    void validate() {
+      if(hccStars.empty()) {
+        logger->debug("No hybrid configuration, start with broadcast");
+
+        for(auto t: txChannels) {
+          for(auto r: rxChannels) {
+            logger->debug("Speculative read-write pair TX {} RX {}", t, r);
+            Hybrid h{t, r, 15, BROADCAST_ABCS};
+            hccStars.push_back(h);
+          }
+        }
+      }
+    }
+  };
 
 void printHelp() {
   std::cout << "Usage: test_star HW_CONFIG [OPTIONS] ... \n";
@@ -118,10 +216,28 @@ void printHelp() {
   std::cout << " -t <channel1> [<channel2> ...] : Tx channels to enable. Can take multiple arguments.\n";
   std::cout << " -l <log_config> : Configure loggers.\n";
   std::cout << " -d : Modify HCCStar IDs when probing.\n";
+  std::cout << " -i : All expected ICs (default all: 0x7ff).\n";
+  std::cout << " -3 : Configure HCC for 320 instead of 640 (default).\n";
+  std::cout << " -b : Always use broadcast for read/write (default is to update map based on HPR).\n";
   std::cout << " -R : Send reset commands.\n";
+  std::cout << " -v : Report carried data between actions (diagnostic).\n";
+  std::cout << " -w <timeout_ms> : General timeout in milliseconds.\n";
   std::cout << " -s <test_preset> : Type of test (lower case), or sequence (UpperCase) to run, use bad to list. Default: Full\n";
   std::cout << " -c <input channel> : HCC input channel. Only used if HCCs are set to full transparent mode.\n";
-  std::cout << " -V <chip_version> : Versions of the HCCStar and ABCStar chips. Possible options are: Star, Star_vH0A0, Star_vH0A1, Star_vH1A1. Default: Star (equivalent to Star_vH0A0)\n";
+  std::cout << " -V <chip_version> : Versions of the HCCStar and ABCStar chips. Possible options are: Star, Star_vH0A0, Star_vH0A1, Star_vH1A1. Default: Star_vH1A1)\n";
+  std::cout << " -T : Run internal cross-checks.\n";
+  std::cout << "\n";
+  std::cout << "NB in most cases you can run without setting the enables mask\n";
+  std::cout << " Otherwise use the following settings:\n";
+  std::cout << "   Barrel: 0x7fe\n";
+  std::cout << "   R0H0/1: 0x7f8 / 0x1ff\n";
+  std::cout << "   R1H0/1: 0x7fe / 0x7ff\n";
+  std::cout << "   R2:     0x7e0\n";
+  std::cout << "   R3H0/1: 0x7f0\n";
+  std::cout << "   R3H2/3: 0x07f\n";
+  std::cout << "   R4:     0x7f8\n";
+  std::cout << "   R5:     0x7fc\n";
+  std::cout << "\n";
 
   std::set<std::string> allSequenceTestNames;
   std::cout << "Available sequences\n";
@@ -197,19 +313,42 @@ uint32_t updateABCRegister(ABCStarRegister reg, uint32_t value, StarCfg& cfg) {
   return addr;
 }
 
+void setOpMode(int packetMode, bool mode640, HwController &hwCtrl, StarCfg& cfg) {
+  // Register OPmode/OPmodeC
+  // NB 41/42 are the same, so don't need to set ROSPEEDC
+  if(mode640) {
+    updateHCCSubRegister(HCCStarSubRegister::ROSPEED, 1, cfg);
+  }
+
+  // Make sure we're in 8b10b mode
+  updateHCCSubRegister(HCCStarSubRegister::ENCODECNTL, 1, cfg);
+  updateHCCSubRegister(HCCStarSubRegister::ENCODE8B10B, 1, cfg);
+
+  auto [addr, val] = updateHCCSubRegister(HCCStarSubRegister::OPMODE, packetMode, cfg);
+
+  // We happen to know that 41 + 1 is 42
+  sendCommand(star.write_hcc_register(addr, val), hwCtrl);
+  sendCommand(star.write_hcc_register(addr + 1, val), hwCtrl);
+}
+
 // Enable Tx and Rx channels that are connected to HCCs
 void enableConnectedChannels(HwController& hwCtrl, std::vector<Hybrid>& hccStars) {
   // Turn all channels off first
   hwCtrl.disableCmd();
   hwCtrl.disableRx();
 
-  if (hccStars.empty())
+  logger->debug("Setting enables for {} hybrids", hccStars.size());
+
+  if (hccStars.empty()) {
+    logger->error("Hybrid communication mapping empty, not enabling streams!");
     return;
+  }
 
   std::set<uint32_t> txChns;
   std::set<uint32_t> rxChns;
 
   for (auto& hcc : hccStars) {
+    logger->debug("Enabling tx {} rx {}", hcc.tx, hcc.rx);
     txChns.insert(hcc.tx);
     rxChns.insert(hcc.rx);
   }
@@ -250,7 +389,7 @@ int packetFromRawData(StarChipPacket& packet, RawData& data) {
 RawDataPtr readData(
   HwController& hwCtrl,
   std::function<bool(RawData&)> filter_cb,
-  uint32_t timeout=1000)
+  uint32_t timeout)
 {
   bool nodata = true;
   bool done = false;
@@ -294,15 +433,15 @@ RawDataPtr readData(
     logger->debug("No data met the requirement");
   }
 
-  return std::move(data);
+  return data;
 }
 
 RawDataContainer readAllData(
   HwController& hwCtrl,
   std::function<bool(RawData&)> filter_cb,
-  uint32_t timeout=2000)
+  uint32_t timeout)
 {
-  bool nodata = true;
+  //  bool nodata = true;
 
   RawDataContainer rdc(LoopStatus{});
   
@@ -398,9 +537,33 @@ bool isPacketType(RawData& data, PacketType packet_type, bool isPacketTransp=fal
   }
 }
 
+// Reset HCC (regardless of reset flag)
+void resetHCC(HwController& hwCtrl, StarCfg& cfg) {
+  // Configure HCCStars to enable communications with ABCStars
+  logger->info("Sending HCCStar register reset command");
+  sendCommand(LCB::fast_command(LCB::HCC_REG_RESET, 0), hwCtrl);
+}
+
+void resetABCFromHCC(HwController& hwCtrl, StarCfg& cfg) {
+    // Register ExtRst/ExtRstC: external reset for ABCStars
+    uint32_t val_extrst = 0x00000001;
+
+    uint32_t addr_extrst = updateHCCRegister(HCCStarRegister::ExtRst, val_extrst, cfg);
+    uint32_t addr_extrstc = updateHCCRegister(HCCStarRegister::ExtRstC, val_extrst, cfg);
+
+    sendCommand(star.write_hcc_register(addr_extrst, val_extrst), hwCtrl);
+    sendCommand(star.write_hcc_register(addr_extrstc, val_extrst), hwCtrl);
+}
+
+void resetABC(HwController& hwCtrl, StarCfg& cfg) {
+    logger->info("Sending ABCStar register reset commands");
+    sendCommand(LCB::fast_command(LCB::ABC_REG_RESET, 0), hwCtrl);
+    sendCommand(LCB::fast_command(LCB::ABC_SLOW_COMMAND_RESET, 0), hwCtrl);
+}
+
 // Configure chips
 // Different register values for different HCCStar versions?
-void configureHCC(HwController& hwCtrl, StarCfg& cfg, bool reset) {
+void configureHCC(HwController& hwCtrl, StarCfg& cfg, bool reset, uint32_t ic_enables, bool mode640) {
   // Configure HCCStars to enable communications with ABCStars
   if (reset) {
     logger->info("Sending HCCStar register reset command");
@@ -410,16 +573,16 @@ void configureHCC(HwController& hwCtrl, StarCfg& cfg, bool reset) {
   logger->info("Broadcast HCCStar configurations");
 
   // Register Delay1: delays for signals to ABCStars
-  uint32_t val_delay1 = 0x02400000;
+  uint32_t val_delay1 = 0x02900020;
   uint32_t addr_delay1 = updateHCCRegister(HCCStarRegister::Delay1, val_delay1, cfg);
   sendCommand(star.write_hcc_register(addr_delay1, val_delay1), hwCtrl);
 
   // Register Delay2, Delay3: delays for data from ABCStar
-  uint32_t val_delay2 = 0x44444444;
+  uint32_t val_delay2 = 0xaaaaaaaa;
   uint32_t addr_delay2 = updateHCCRegister(HCCStarRegister::Delay2, val_delay2, cfg);
   sendCommand(star.write_hcc_register(addr_delay2, val_delay2), hwCtrl);
 
-  uint32_t val_delay3 = 0x00000444;
+  uint32_t val_delay3 = 0x00000aaa;
   uint32_t addr_delay3 = updateHCCRegister(HCCStarRegister::Delay3, val_delay3, cfg);
   sendCommand(star.write_hcc_register(addr_delay3, val_delay3), hwCtrl);
 
@@ -429,9 +592,12 @@ void configureHCC(HwController& hwCtrl, StarCfg& cfg, bool reset) {
   sendCommand(star.write_hcc_register(addr_drv1, val_drv1), hwCtrl);
 
   // Register ICenable: enable input channels
-  uint32_t val_icen = 0x000007ff;
+  uint32_t val_icen = ic_enables;
   uint32_t addr_icen = updateHCCRegister(HCCStarRegister::ICenable, val_icen, cfg);
   sendCommand(star.write_hcc_register(addr_icen, val_icen), hwCtrl);
+
+  // Set normal readout using OPmode/OPmodeC
+  setOpMode(0, mode640, hwCtrl, cfg);
 
   if (reset) {
     // Register ExtRst/ExtRstC: external reset for ABCStars
@@ -445,41 +611,32 @@ void configureHCC(HwController& hwCtrl, StarCfg& cfg, bool reset) {
   }
 }
 
-void configureHCC_PacketTransp(HwController& hwCtrl, StarCfg& cfg, bool reset) {
-  configureHCC(hwCtrl, cfg, reset);
+void configureHCC_PacketTransp(HwController& hwCtrl, StarCfg& cfg, bool reset, unsigned icEnablesMask, bool mode640) {
+  configureHCC(hwCtrl, cfg, reset, icEnablesMask, mode640);
 
   // Set to packet transparent mode
   logger->info("Set HCCs to Packet Transparent mode");
-  // Register OPmode/OPmodeC
-  uint32_t val_mode = 0x00020201;
 
-  uint32_t addr_mode = updateHCCRegister(HCCStarRegister::OPmode, val_mode, cfg);
-  uint32_t addr_modec = updateHCCRegister(HCCStarRegister::OPmodeC, val_mode, cfg);
-
-  sendCommand(star.write_hcc_register(addr_mode, val_mode), hwCtrl);
-  sendCommand(star.write_hcc_register(addr_modec, val_mode), hwCtrl);
+  setOpMode(2, mode640, hwCtrl, cfg);
 }
 
-void configureHCC_FullTransp(HwController& hwCtrl, StarCfg& cfg, bool reset, unsigned inChn) {
-  configureHCC(hwCtrl, cfg, reset);
+void configureHCC_FullTransp(HwController& hwCtrl, StarCfg& cfg, bool reset, unsigned inChn, unsigned icEnablesMask, bool mode640) {
+  configureHCC(hwCtrl, cfg, reset, icEnablesMask, mode640);
 
   // Select the input channel: IC_transSelect
   // Register ICenable
   inChn = inChn & 0xf;
+  if(((1<<inChn) & icEnablesMask) == 0) {
+    logger->error("Selected IC {} is outside enables mask {}!", inChn, icEnablesMask);
+  }
   unsigned val_icen = (inChn << 16) + (1 << inChn);
   uint32_t addr_icen = updateHCCRegister(HCCStarRegister::ICenable, val_icen, cfg);
   sendCommand(star.write_hcc_register(addr_icen, val_icen), hwCtrl);
 
   // Set to full transparent mode
   logger->info("Set HCCs to Full Transparent mode");
-  // Register OPmode/OPmodeC
-  uint32_t val_mode = 0x00020301;
 
-  uint32_t addr_mode = updateHCCRegister(HCCStarRegister::OPmode, val_mode, cfg);
-  uint32_t addr_modec = updateHCCRegister(HCCStarRegister::OPmodeC, val_mode, cfg);
-
-  sendCommand(star.write_hcc_register(addr_mode, val_mode), hwCtrl);
-  sendCommand(star.write_hcc_register(addr_modec, val_mode), hwCtrl);
+  setOpMode(3, mode640, hwCtrl, cfg);
 }
 
 void configureABC(HwController& hwCtrl, StarCfg& cfg, bool reset) {
@@ -492,16 +649,16 @@ void configureABC(HwController& hwCtrl, StarCfg& cfg, bool reset) {
 
   logger->info("Broadcast ABCStar configurations");
 
+  // Need a non-zero drive current to see data from ABC
+  auto [addr_c, val_c] = updateABCSubRegister(ABCStarSubRegister::CURRDRIV, 4, cfg);
   // Set RR mode to 1
   auto [addr_rr, val_rr] = updateABCSubRegister(ABCStarSubRegister::RRMODE, 1, cfg);
-  sendCommand(star.write_abc_register(addr_rr, val_rr), hwCtrl);
-
   // Enable LP
   auto [addr_lp, val_lp] = updateABCSubRegister(ABCStarSubRegister::LP_ENABLE, 1, cfg);
-  sendCommand(star.write_abc_register(addr_lp, val_lp), hwCtrl);
-
   // Enable PR
   auto [addr_pr, val_pr] = updateABCSubRegister(ABCStarSubRegister::PR_ENABLE, 1, cfg);
+
+  // All above are the same register, so send just once
   sendCommand(star.write_abc_register(addr_pr, val_pr), hwCtrl);
 
   // Set some mask registers to some nonzero value
@@ -520,14 +677,12 @@ void configureABC(HwController& hwCtrl, StarCfg& cfg, bool reset) {
 
 // Test steps
 bool checkHCCHPRs(HwController& hwCtrl,
-               const std::vector<uint32_t>& rxChannels,
-               bool reset)
+                  const std::vector<uint32_t>& rxChannels,
+                  bool reset, unsigned timeout_ms)
 {
   if (reset) {
     sendCommand( LCB::fast_command(LCB::HCC_REG_RESET, 0), hwCtrl );
   }
-
-  uint32_t timeout = 1000; // milliseconds
 
   bool hprOK = false;
 
@@ -542,7 +697,7 @@ bool checkHCCHPRs(HwController& hwCtrl,
       return isPacketType(d, TYP_HCC_HPR) and isFromChannel(d, rx);
     };
 
-    auto data = readData(hwCtrl, filter_hpr, timeout);
+    auto data = readData(hwCtrl, filter_hpr, timeout_ms);
     if (data) {
       logger->info(" Received an HPR packet from HCCStar on Rx channel {}", rx);
       // print
@@ -580,9 +735,14 @@ bool probeHCCs(
   std::vector<Hybrid>& HCCs,
   const std::vector<uint32_t>& txChannels,
   const std::vector<uint32_t>& rxChannels,
-  bool setID)
+  bool setID,
+  unsigned timeout_ms,
+  bool setNotBroadcastIds)
 {
-  HCCs.clear();
+  if(setNotBroadcastIds) {
+    HCCs.clear();
+  }
+
   uint32_t nHCC = 0;
 
   for (auto tx : txChannels) {
@@ -604,7 +764,8 @@ bool probeHCCs(
         hwCtrl,
         [rx](RawData& d) {
           return isPacketType(d, TYP_HCC_RR) and isFromChannel(d, rx);
-        }
+        },
+        timeout_ms
         );
 
       if (not data) {
@@ -630,8 +791,11 @@ bool probeHCCs(
           hccID = nHCC;
         }
 
-        Hybrid h{tx, rx, hccID, {}};
-        HCCs.push_back(h);
+        if(setNotBroadcastIds) {
+          // Define HCC, but still use broadcast for ABCs
+          Hybrid h{tx, rx, hccID, BROADCAST_ABCS};
+          HCCs.push_back(h);
+        }
 
         nHCC++;
       }
@@ -642,7 +806,7 @@ bool probeHCCs(
     }
   } // end of tx channel loop
 
-  if (HCCs.empty()) {
+  if (HCCs.empty() && setNotBroadcastIds) {
     logger->error("No HCCs found");
     return false;
   }
@@ -653,13 +817,53 @@ bool probeHCCs(
   return true;
 }
 
-bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars, bool reset) {
+bool readMoreHCCRegisters(HwController& hwCtrl, unsigned timeout_ms)
+{
+  unsigned read_count = 0;
+
+  // Loop over some register addresses
+  // Not all, but relevant for low level diagnostics
+  for (auto ra: std::vector<uint8_t>{3, 4, 5, 6, 7, 8, 9, 15, 17, 32, 33, 34, 35, 38, 39, 40, 41, 43}) {
+    // Send register read command
+    logger->debug("Broadcast read HCC Reg 0x{:02x} ({:12})",
+                  ra, HccNames::regToString((HCCStarRegister)ra));
+    sendCommand(star.read_hcc_register((int)ra), hwCtrl);
+
+    auto rdc_rr = readAllData
+      (
+       // auto data = readData(
+       hwCtrl,
+       [](RawData& d) { return isPacketType(d, TYP_HCC_RR); },
+       timeout_ms
+       );
+
+    for (unsigned c = 0; c < rdc_rr.size(); c++) {
+      RawDataPtr data = rdc_rr.data[c];
+
+      auto rx = data->getAdr();
+
+      StarChipPacket packet;
+      if (packetFromRawData(packet, *data)) {
+        logger->error("Packet parse failed");
+      } else {
+        read_count ++;
+        uint32_t value = packet.value;
+        uint32_t addr = packet.address;
+
+        std::string name = HccNames::regToString((HCCStarRegister)addr);
+
+        logger->info(" HCCStar Reg 0x{:02x} ({:12}) @ RX {}: 0x{:08x}",
+                     addr, name, rx, value);
+      }
+    } // Loop over data
+  } // Loop over registers
+
+  return read_count > 0;
+}
+
+bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars, unsigned timeout_ms, bool setNotBroadcastIds) {
   bool receivedABCHPR = false;
   bool hprGood = true;
-
-  if (reset) {
-    sendCommand(LCB::fast_command(LCB::ABC_REG_RESET, 0), hwCtrl);
-  }
 
   for (auto& hcc : hccStars) {
     logger->info("Reading HPR packets from ABCStars on HCCStar {}", hcc.hcc_id);
@@ -675,9 +879,8 @@ bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccSt
     std::function<bool(RawData&)> filter_abchpr = [&hcc](RawData& d) {
       return isPacketType(d, TYP_ABC_HPR) and isFromChannel(d, hcc.rx);
     };
-    uint32_t timeout = 1000; // milliseconds
 
-    auto rdc = readAllData(hwCtrl, filter_abchpr, timeout);
+    auto rdc = readAllData(hwCtrl, filter_abchpr, timeout_ms);
 
     for (unsigned c = 0; c < rdc.size(); c++) {
       RawDataPtr d = rdc.data[c];
@@ -699,6 +902,13 @@ bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccSt
       if ( hcc.abcs.find(abc_chn) != hcc.abcs.end() ) {
         // already reported the HPR on this channel. skip.
         continue;
+      }
+
+      if(setNotBroadcastIds) {
+        if(hcc.abcs == BROADCAST_ABCS) {
+          // Remove broadcast now we know better
+          hcc.abcs.clear();
+        }
       }
 
       // HPR from a new channel
@@ -744,7 +954,7 @@ bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccSt
   return receivedABCHPR and hprGood;
 }
 
-bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars) {
+bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars, unsigned icEnablesMask, unsigned timeout_ms, bool setNotBroadcastIds) {
   bool hasABCStar = false;
 
   for (auto& hcc : hccStars) {
@@ -767,11 +977,10 @@ bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars
     sendCommand(star.read_abc_register(stat2), hwCtrl);
 
     // Read all the RR packets
-    uint32_t timeout = 1000; // milliseconds
     auto rdc_rr = readAllData(
       hwCtrl,
       [&](RawData& d) {return isPacketType(d, TYP_ABC_RR) and isFromChannel(d, hcc.rx);},
-      timeout
+      timeout_ms
     );
 
     for (unsigned c = 0; c < rdc_rr.size(); c++) {
@@ -789,24 +998,30 @@ bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars
       // get the chipID from the top four bits of the 16-bit status word
       uint32_t abcid = (packet.abc_status >> 12) & 0xf;
 
-      // Add abcid to hcc.abcs in case checkABCHPRs has not been called previously
-      if ( hcc.abcs.find(abc_chn) == hcc.abcs.end() ) {
-        hcc.abcs[abc_chn] = abcid;
+      if(setNotBroadcastIds) {
+        // Add abcid to hcc.abcs in case checkABCHPRs has not been called previously
+        if ( hcc.abcs.find(abc_chn) == hcc.abcs.end() ) {
+          hcc.abcs[abc_chn] = abcid;
+        }
       }
 
       // Update the active input channel mask
-      activeInChannels |= (1 << abc_chn);
+      unsigned newInMask = (1 << abc_chn);
+      if(newInMask & icEnablesMask) {
+        activeInChannels |= newInMask;
 
-      // efuseID
-      uint32_t abcFuseID = packet.value & 0x00ffffff; // lowest 24 bits
-      //uint32_t abcStarVer = (packet.value & 0xff000000) >> 28; // top 8 bits
-      logger->info(" Found ABCStar on HCCStar {}: Input channel = {} ABC ID = {} eFuse = 0x{:06x}", hcc.hcc_id, abc_chn, abcid, abcFuseID);
-      logger_id->trace(" ABCStar: Input channel = {} ABC ID = {} eFuse = 0x{:06x}", abc_chn, abcid, abcFuseID);
+        // efuseID
+        uint32_t abcFuseID = packet.value & 0x00ffffff; // lowest 24 bits
+        //uint32_t abcStarVer = (packet.value & 0xff000000) >> 28; // top 8 bits
+        logger->info(" Found ABCStar on HCCStar {}: Input channel = {} ABC ID = {} eFuse = 0x{:06x}", hcc.hcc_id, abc_chn, abcid, abcFuseID);
+        logger_id->trace(" ABCStar: Input channel = {} ABC ID = {} eFuse = 0x{:06x}", abc_chn, abcid, abcFuseID);
+      } else {
+        logger->debug(" Ignoring ABCStar on HCCStar {}: Input channel = {}, outside IC mask {:03x}", hcc.hcc_id, abc_chn, icEnablesMask);
+      }
     } // end of data container loop
 
     if (activeInChannels) {
       hasABCStar = true;
-
       // Update HCC register ICenable
       logger->debug("Set register ICenable on HCCStar {} to 0x{:08x}", hcc.hcc_id, activeInChannels);
       uint32_t addr_en = updateHCCRegister(HCCStarRegister::ICenable, activeInChannels, cfg);
@@ -826,7 +1041,57 @@ bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars
   return hasABCStar;
 }
 
-bool testRegisterReadWrite(HwController& hwCtrl, uint32_t regAddr, uint32_t write_value, uint32_t rx, int hccId, int abcId=-1) {
+bool readMoreABCRegisters(HwController& hwCtrl, unsigned timeout_ms) {
+  unsigned read_count = 0;
+
+  // Loop over a set of interesting ABC registers
+  // Most cfg and status + 1 of each mask
+  for (auto ra : std::vector<uint8_t>{1, 2, 3, 16, 32, 33, 34, 48, 49, 50, 51, 63, 64, 96, 104, 128}) {
+    // Broadcast the read register command
+    logger->debug("Broadcast read ABC Reg 0x{:02x} ({:12})",
+                  ra, AbcNames::regToString((ABCStarRegister)ra));
+    sendCommand(star.read_abc_register(ra), hwCtrl);
+
+    // Read all the RR packets
+    auto rdc_rr = readAllData
+      (
+       hwCtrl,
+       [&](RawData& d) {return isPacketType(d, TYP_ABC_RR);},
+       timeout_ms
+       );
+
+    for (unsigned c = 0; c < rdc_rr.size(); c++) {
+      RawDataPtr d = rdc_rr.data[c];
+
+      auto rx = d->getAdr();
+
+      StarChipPacket packet;
+      if ( packetFromRawData(packet, *d) ) {
+        logger->error("Packet parse failed");
+        continue;
+      }
+
+      read_count ++;
+
+      // check the input channel
+      uint32_t abc_chn = packet.channel_abc;
+      // get the chipID from the top four bits of the 16-bit status word
+      uint32_t abcid = (packet.abc_status >> 12) & 0xf;
+
+      uint32_t value = packet.value;
+      uint32_t addr = packet.address;
+
+      std::string name = AbcNames::regToString((ABCStarRegister)addr);
+
+      logger->info(" ABCStar Reg 0x{:02x} ({:12}) @ RX {}: IC {} ABC ID {}: 0x{:08x} 0x{:04x}",
+		   addr, name, rx, abc_chn, abcid, value, packet.abc_status);
+    } // end of data container loop
+  } // Loop over registers
+
+  return read_count > 0;
+}
+
+bool testRegisterReadWrite(HwController& hwCtrl, unsigned timeout_ms, uint32_t regAddr, uint32_t write_value, uint32_t rx, int hccId, int abcId=-1) {
   bool isHCC = abcId < 0;
 
   ////
@@ -857,7 +1122,8 @@ bool testRegisterReadWrite(HwController& hwCtrl, uint32_t regAddr, uint32_t writ
   // Read data
   auto data = readData(
     hwCtrl,
-    [&](RawData& d) {return isPacketType(d, ptype) and isFromChannel(d, rx);}
+    [&](RawData& d) {return isPacketType(d, ptype) and isFromChannel(d, rx);},
+    timeout_ms
     );
 
   if (data) {
@@ -901,7 +1167,8 @@ bool testRegisterReadWrite(HwController& hwCtrl, uint32_t regAddr, uint32_t writ
   // Read data
   auto wdata = readData(
     hwCtrl,
-    [&](RawData& d) {return isPacketType(d, ptype) and isFromChannel(d, rx);}
+    [&](RawData& d) {return isPacketType(d, ptype) and isFromChannel(d, rx);},
+    timeout_ms
     );
 
   if (wdata) {
@@ -941,20 +1208,24 @@ bool testRegisterReadWrite(HwController& hwCtrl, uint32_t regAddr, uint32_t writ
   return regAccessGood;
 }
 
-bool testHCCRegisterAccess(HwController& hwCtrl, const std::vector<Hybrid>& hccStars) {
+bool testHCCRegisterAccess(HwController& hwCtrl, const std::vector<Hybrid>& hccStars, unsigned timeout_ms) {
   logger->info("Test HCCStar register read & write");
 
   bool success = not hccStars.empty();
 
+  if(hccStars.empty()) {
+    logger->debug("No configured Hybrids for testHCCRegisterAccess");
+  }
+
   for (const auto& hcc : hccStars) {
     // Register ErrCfg
-    success &= testRegisterReadWrite(hwCtrl, (uint32_t)HCCStarRegister::ErrCfg, 0xdeadbeef, hcc.rx, hcc.hcc_id);
+    success &= testRegisterReadWrite(hwCtrl, timeout_ms, (uint32_t)HCCStarRegister::ErrCfg, 0xdeadbeef, hcc.rx, hcc.hcc_id);
   }
 
   return success;
 }
 
-bool testABCRegisterAccess(HwController& hwCtrl, StarCfg& cfg, const std::vector<Hybrid>& hccStars) {
+bool testABCRegisterAccess(HwController& hwCtrl, StarCfg& cfg, const std::vector<Hybrid>& hccStars, unsigned timeout_ms) {
   logger->info("Test ABCStar register read & write");
 
   // Set RR mode to 1
@@ -963,6 +1234,10 @@ bool testABCRegisterAccess(HwController& hwCtrl, StarCfg& cfg, const std::vector
 
   bool success = not hccStars.empty();
 
+  if(hccStars.empty()) {
+    logger->debug("No configured Hybrids for testABCRegisterAccess");
+  }
+
   for (const auto& hcc : hccStars) {
     if (hcc.abcs.empty())
       success = false;
@@ -970,14 +1245,14 @@ bool testABCRegisterAccess(HwController& hwCtrl, StarCfg& cfg, const std::vector
     for (const auto& abc : hcc.abcs) {
       // Register MaskInput0
       uint32_t mr = (uint32_t)ABCStarRegister::MaskInput0;
-      success &= testRegisterReadWrite(hwCtrl, mr, 0xabadcafe, hcc.rx, hcc.hcc_id, abc.second);
+      success &= testRegisterReadWrite(hwCtrl, timeout_ms, mr, 0xabadcafe, hcc.rx, hcc.hcc_id, abc.second);
     }
   }
 
   return success;
 }
 
-bool testHitCounts(HwController& hwCtrl, StarCfg& cfg) {
+bool testHitCounts(HwController& hwCtrl, StarCfg& cfg, unsigned timeout_ms) {
   logger->info("Test ABCStar hit counters");
 
   // Enable hit counters
@@ -1025,7 +1300,8 @@ bool testHitCounts(HwController& hwCtrl, StarCfg& cfg) {
 
   auto data = readData(
     hwCtrl,
-    [](RawData& d) {return isPacketType(d, TYP_ABC_RR);}
+    [](RawData& d) {return isPacketType(d, TYP_ABC_RR);},
+    timeout_ms
     );
 
   hwCtrl.flushBuffer();
@@ -1059,7 +1335,7 @@ bool testHitCounts(HwController& hwCtrl, StarCfg& cfg) {
   return true;
 }
 
-bool testDataPacketsStatic(HwController& hwCtrl, StarCfg& cfg) {
+bool testDataPacketsStatic(HwController& hwCtrl, StarCfg& cfg, unsigned timeout_ms) {
   logger->info("Read ABCStar data packets in static mode");
 
   // Static test mode first
@@ -1091,7 +1367,8 @@ bool testDataPacketsStatic(HwController& hwCtrl, StarCfg& cfg) {
 
   // Read the data packets
   auto rdc = readAllData(
-    hwCtrl, [](RawData& d) {return isPacketType(d, TYP_LP);}
+    hwCtrl, [](RawData& d) {return isPacketType(d, TYP_LP);},
+    timeout_ms
     );
 
   hwCtrl.flushBuffer();
@@ -1111,7 +1388,7 @@ bool testDataPacketsStatic(HwController& hwCtrl, StarCfg& cfg) {
   return true;
 }
 
-bool testDataPacketsPulse(HwController& hwCtrl, StarCfg& cfg) {
+bool testDataPacketsPulse(HwController& hwCtrl, StarCfg& cfg, unsigned timeout_ms) {
   logger->info("Read ABCStar data packets in test pulse mode");
 
   // Test pulse mode
@@ -1165,7 +1442,8 @@ bool testDataPacketsPulse(HwController& hwCtrl, StarCfg& cfg) {
 
   // Read the data packets
   auto rdc = readAllData(
-    hwCtrl, [](RawData& d) {return isPacketType(d, TYP_LP);}
+    hwCtrl, [](RawData& d) {return isPacketType(d, TYP_LP);},
+    timeout_ms
     );
 
   hwCtrl.flushBuffer();
@@ -1185,7 +1463,7 @@ bool testDataPacketsPulse(HwController& hwCtrl, StarCfg& cfg) {
   return true;
 }
 
-bool readABCRegisters(HwController& hwCtrl) {
+bool readABCRegisters(HwController& hwCtrl, unsigned timeout_ms) {
 
   bool success = false;
 
@@ -1195,7 +1473,8 @@ bool readABCRegisters(HwController& hwCtrl) {
   logger->info("Reading an HPR packet from ABCStar");
   auto data_abchpr = readData(
     hwCtrl,
-    [](RawData& d) {return isPacketType(d, TYP_ABC_HPR);}
+    [](RawData& d) {return isPacketType(d, TYP_ABC_HPR);},
+    timeout_ms
     );
   if (data_abchpr) {
     logger->info("Received an ABCStar HPR packet.");
@@ -1212,7 +1491,8 @@ bool readABCRegisters(HwController& hwCtrl) {
   sendCommand(star.read_abc_register(mr3), hwCtrl);
   auto data_abcrr = readData(
     hwCtrl,
-    [](RawData& d) {return isPacketType(d, TYP_ABC_RR);}
+    [](RawData& d) {return isPacketType(d, TYP_ABC_RR);},
+    timeout_ms
     );
   if (data_abcrr) {
     logger->info("Received an ABCStar RR packet.");
@@ -1226,12 +1506,12 @@ bool readABCRegisters(HwController& hwCtrl) {
   return success;
 }
 
-bool diagnosticsReport(HwController &hwCtrl) {
+bool diagnosticsReport(HwController &hwCtrl, unsigned timeout_ms) {
   // try reading everything for 1 seconds
   auto rdc = readAllData(
         hwCtrl,
         [](RawData& d) {return true;}, // no filter on data packet type
-        1000 // ms
+        timeout_ms
         );
 
   for (unsigned c = 0; c < rdc.size(); c++) {
@@ -1251,71 +1531,105 @@ int main(int argc, char *argv[]) {
     std::string controller;
     std::string controllerType;
 
-    // Original Spec version
-    std::vector<uint32_t> rxChannels = {6};
-    std::vector<uint32_t> txChannels = {0xFFFF};
-    bool setHccId = false;
-    bool doResets = false;
+    TestData testData;
+
     std::string testSequence("Full");
-    unsigned inChannel = 0;
-    std::string chipVersion("Star");
+    std::string chipVersion("Star_vH1A1");
 
     // logger config path
     std::string logCfgPath = "";
+    bool doReport = false;
+    bool doCrossCheck = false;
 
     const struct option long_options[] =
       {
         {"help", no_argument, nullptr, 'h'},
+        {"timeout", no_argument, nullptr, 'w'},
         {nullptr, 0, nullptr, 0}};
 
     int c;
-    while ((c = getopt_long(argc, argv, "hl:r:t:dRs:c:V:", long_options, nullptr)) != -1) {
+    while ((c = getopt_long(argc, argv, "3hbvTi:l:r:t:dRs:c:w:V:", long_options, nullptr)) != -1) {
       switch(c) {
       case 'h':
         printHelp();
         return 0;
+      case '3':
+        testData.mode640 = false;
+        break;
+      case 'b':
+        testData.setNotBroadcastIds = false;
+        break;
+      case 'i':
+        try {
+          // Allow hex
+          size_t pos = 0;
+          testData.icEnablesMask = std::stoul(optarg, &pos, 0);
+          if(pos != strlen(optarg)) {
+            spdlog::error("Failed to parse ic enables mask: {}", optarg);
+            return 1;
+          }
+        } catch(std::exception &e) {
+          // stoul throws if no digits at all 
+          spdlog::error("Failed to parse ic enables mask: {}", optarg);
+          return 1;
+        }
+        break;
       case 'l':
         logCfgPath = std::string(optarg);
         break;
       case 'r':
-        rxChannels.clear();
+        testData.rxChannels.clear();
         optind -= 1;
         for (; optind < argc && *argv[optind] != '-'; optind += 1) {
           try {
             // Try parsing as number and throw if not
-            rxChannels.push_back( std::stoi(argv[optind]) );
+            testData.rxChannels.push_back( std::stoi(argv[optind]) );
           } catch(std::exception &e) {
             break;
           }
         }
         break;
       case 't':
-        txChannels.clear();
+        testData.txChannels.clear();
         optind -= 1;
         for (; optind < argc && *argv[optind] != '-'; optind += 1) {
           try {
             // Try parsing as number and throw if not
-            txChannels.push_back( std::stoi(argv[optind]) );
+            testData.txChannels.push_back( std::stoi(argv[optind]) );
           } catch(std::exception &e) {
             break;
           }
         }
         break;
+      case 'w':
+        try {
+          testData.timeout_ms = std::stoul(optarg);
+        } catch(std::exception &e) {
+          spdlog::error("Failed to parse timeout: {}", optarg);
+          return 1;
+        }
+        break;
       case 'd':
-        setHccId = true;
+        testData.setHccId = true;
         break;
       case 'R':
-        doResets = true;
+        testData.doResets = true;
+        break;
+      case 'v':
+        doReport = true;
         break;
       case 's':
         testSequence = std::string(optarg);
         break;
       case 'c':
-        inChannel = atoi(optarg);
-        if (inChannel > 11) {
-          spdlog::error("Invalid HCC input channel: {}", inChannel);
+        testData.inChannel = atoi(optarg);
+        if (testData.inChannel > Star::MaxABCsPerHCC) {
+          spdlog::error("Invalid HCC input channel: {}", testData.inChannel);
           return 1;
         }
+        break;
+      case 'T':
+        doCrossCheck = true;
         break;
       case 'V':
         chipVersion = std::string(optarg);
@@ -1323,6 +1637,17 @@ int main(int argc, char *argv[]) {
       default:
         spdlog::critical("Error while parsing command line parameters!");
         return -1;
+      }
+    }
+
+    if(doCrossCheck) {
+      auto tests = testData.buildTests();
+
+      if(!testData.crossCheck()) {
+        return 1;
+      } else {
+        std::cout << "Sequence/test cross-check passed\n";
+        return 0;
       }
     }
 
@@ -1363,10 +1688,17 @@ int main(int argc, char *argv[]) {
       return 1;
     }
 
+    logger->debug("Run with{}reset, speed {} ({}){}",
+                  testData.doResets?" ":"-out ",
+                  testData.mode640?"640":"320",
+                  testData.setNotBroadcastIds?"will update IDs":"always use broadcast",
+                  testData.setHccId?", and set HCC IDs":""
+                  );
+
     // A global StarCfg with dummy chip configs
-    StarCfg starCfg(abc_version, hcc_version);
-    starCfg.setHCCChipId(0xf);
-    starCfg.addABCchipID(0xf);
+    testData.starCfg = std::make_unique<StarCfg>(abc_version, hcc_version);
+    testData.starCfg->setHCCChipId(0xf);
+    testData.starCfg->addABCchipID(0xf);
 
     // Controller
     if (optind != argc) {
@@ -1400,61 +1732,146 @@ int main(int argc, char *argv[]) {
     hwCtrl->setTrigEnable(0);
 
     // Enable Tx channels
-    hwCtrl->setCmdEnable(txChannels);
+    for(auto t: testData.txChannels) {
+      logger->debug("Enable tx {}", t);
+    }
+    hwCtrl->setCmdEnable(testData.txChannels);
 
     // Enable Rx channels
     hwCtrl->disableRx();
-    hwCtrl->setRxEnable(rxChannels);
+    for(auto r: testData.rxChannels) {
+      logger->debug("Enable rx {}", r);
+    }
+    hwCtrl->initRxChannels(testData.rxChannels);
+    hwCtrl->setRxEnable(testData.rxChannels);
 
     // Tests
     bool success = true;
 
-    std::vector<Hybrid> hccStars;
+    auto tests = testData.buildTests();
 
-    std::map<std::string, std::function<bool (HwController&)>>
+    testData.validate();
+
+    if(isupper(testSequence[0])) {
+      if(sequenceMap.find(testSequence) != sequenceMap.end()) {
+        logger->info("Running test sequence {}", testSequence);
+        if(doReport) {
+          testData.report();
+        }
+        for(auto &t: sequenceMap[testSequence]) {
+          logger->info("Running test {}", t);
+          success &= tests[t](*hwCtrl);
+          if(doReport) {
+            testData.report();
+          }
+        }
+      } else {
+        logger->error("Unknown test sequence: {}", testSequence);
+
+        logger->info("Available preset test sequences:");
+
+        for(auto &s: sequenceMap) {
+          logger->info("  {}", s.first);
+        }
+
+        success = false;
+      }
+    } else {
+      if(tests.find(testSequence) != tests.end()) {
+        logger->info("Running test {}", testSequence);
+        if(doReport) {
+          testData.report();
+        }
+        success &= tests[testSequence](*hwCtrl);
+        if(doReport) {
+          testData.report();
+        }
+      } else {
+        logger->error("Unknown test: {}", testSequence);
+
+        logger->info("Available test presets:");
+
+        for(auto &s: tests) {
+          logger->info("  {}", s.first);
+        }
+
+        success = false;
+      }
+    }
+
+    for(auto r: testData.rxChannels) {
+      logger->debug("Disable Rx channels");
+    }
+    hwCtrl->disableRx();
+
+    if (not success) {
+      logger->error("Tests failed");
+      return 1;
+    }
+
+    logger->info("Success!");
+    return 0;
+}
+
+std::map<std::string, std::function<bool (HwController&)>> TestData::buildTests () {
+  std::map<std::string, std::function<bool (HwController&)>>
       tests = {
       // Read HCCStar HPRs
-      {"checkHCCHPRs", [&](auto &h) {return checkHCCHPRs(h, rxChannels, doResets);}},
+      {"checkHCCHPRs", [&](auto &h) {return checkHCCHPRs(h, rxChannels, doResets, timeout_ms);}},
       // Probe HCCs
-      {"probeHCCs", [&](auto &h) {return probeHCCs(h, hccStars, txChannels, rxChannels, setHccId);}},
+      {"probeHCCs", [&](auto &h) {return probeHCCs(h, hccStars, txChannels, rxChannels, setHccId, timeout_ms, setNotBroadcastIds);}},
+      // Read many HCC registers
+      {"readMoreHCCRegisters", [&](auto &h) {return readMoreHCCRegisters(h, timeout_ms);}},
       // Test HCCStar register read and write
-      {"testHCCRegister", [&](auto &h) {return testHCCRegisterAccess(h, hccStars);}},
+      {"testHCCRegister", [&](auto &h) {return testHCCRegisterAccess(h, hccStars, timeout_ms);}},
 
       // Configure HCCs to enable communications with ABCs
-      {"configureHCC", [&](auto &h) {configureHCC(h, starCfg, doResets); return true;}},
-      {"configureHCCIfReset", [&](auto &h) {if(doResets) configureHCC(h, starCfg, doResets); return true;}},
+      {"configureHCC", [&](auto &h) {configureHCC(h, *starCfg, doResets, icEnablesMask, mode640); return true;}},
+      {"configureHCCIfReset", [&](auto &h) {if(doResets) configureHCC(h, *starCfg, doResets, icEnablesMask, mode640); return true;}},
       // configure HCC into the Packet Transparent mode
-      {"configureHCCForPacketTransp", [&](auto &h) {configureHCC_PacketTransp(h, starCfg, doResets); return true; }},
-      {"configureHCCForFullTransp", [&](auto &h) {configureHCC_FullTransp(h, starCfg, doResets, inChannel); return true; }},
+      {"configureHCCForPacketTransp", [&](auto &h) {configureHCC_PacketTransp(h, *starCfg, doResets, icEnablesMask, mode640); return true; }},
+      {"configureHCCForFullTransp", [&](auto &h) {configureHCC_FullTransp(h, *starCfg, doResets, inChannel, icEnablesMask, mode640); return true; }},
+
+      {"resetHCC", [&](auto &h) {resetHCC(h, *starCfg); return true;}},
+      {"resetABCFromHCC", [&](auto &h) {resetABCFromHCC(h, *starCfg); return true;}},
 
       // Probe ABCStars via reading ABCStar HPRs
       // Check ABCStar HPRs
-      {"checkABCHPRs", [&](auto &h) {return checkABCHPRs(h, starCfg, hccStars, doResets);}},
+      {"checkABCHPRs", [&](auto &h) {return checkABCHPRs(h, *starCfg, hccStars, timeout_ms, setNotBroadcastIds);}},
       // Probe ABCStars on each HCCStar
-      {"probeABCs", [&](auto &h) {return probeABCs(h, starCfg, hccStars);}},
+      {"probeABCs", [&](auto &h) {return probeABCs(h, *starCfg, hccStars, icEnablesMask, timeout_ms, setNotBroadcastIds);}},
+      // Read many ABC registers
+      {"readMoreABCRegisters", [&](auto &h) {return readMoreABCRegisters(h, timeout_ms);}},
       // Test ABCStar register read and write
-      {"testABCRegister", [&](auto &h) {return testABCRegisterAccess(h, starCfg, hccStars);}},
+      {"testABCRegister", [&](auto &h) {return testABCRegisterAccess(h, *starCfg, hccStars, timeout_ms);}},
 
       // Configure ABCs
-      {"configureABC", [&](auto &h) {configureABC(h, starCfg, doResets); return true;}},
+      {"configureABC", [&](auto &h) {configureABC(h, *starCfg, doResets); return true;}},
+      {"configureABCIfReset", [&](auto &h) {if(doResets) configureABC(h, *starCfg, doResets); return true;}},
+
+      {"resetABC", [&](auto &h) {resetABC(h, *starCfg); return true;}},
 
       // Read ABC hit counters
-      {"testHitCounts", [&](auto &h) {return testHitCounts(h, starCfg);}},
+      {"testHitCounts", [&](auto &h) {return testHitCounts(h, *starCfg, timeout_ms);}},
 
       // Read ABC data packets
-      {"readABCRegisters", readABCRegisters},
+      {"readABCRegisters", [&](auto &h) {return readABCRegisters(h, timeout_ms);}},
 
       // More involved tests, put FrontEnd in mode and check response
-      {"testDataPacketsStatic", [&](auto &h) {return testDataPacketsStatic(h, starCfg);}},
-      {"testDataPacketsPulse", [&](auto &h) {return testDataPacketsPulse(h, starCfg);}},
+      {"testDataPacketsStatic", [&](auto &h) {return testDataPacketsStatic(h, *starCfg, timeout_ms);}},
+      {"testDataPacketsPulse", [&](auto &h) {return testDataPacketsPulse(h, *starCfg, timeout_ms);}},
 
-      {"diagnosticsReport", [&](auto &h) {return diagnosticsReport(h);}},
+      {"diagnosticsReport", [&](auto &h) {return diagnosticsReport(h, timeout_ms);}},
     };
 
+  return tests;
+}
+
+bool TestData::crossCheck() {
     // Cross-validation between tests and sequenceMap
     // Mostly here so we can be sure the list from printHelp is accurate
     std::set<std::string> allTestNames;
-    for(auto &tt: tests) {
+    for(auto &tt: buildTests()) {
       allTestNames.insert(tt.first);
     }
 
@@ -1480,51 +1897,8 @@ int main(int argc, char *argv[]) {
         }
         std::cout << " " << tt << " (only in sequence tests)\n";
       }
-      return 1;
+      return false;
     }
 
-    if(isupper(testSequence[0])) {
-      if(sequenceMap.find(testSequence) != sequenceMap.end()) {
-        logger->info("Running test sequence {}", testSequence);
-        for(auto &t: sequenceMap[testSequence]) {
-          logger->info("Running test {}", t);
-          success &= tests[t](*hwCtrl);
-        }
-      } else {
-        logger->error("Unknown test sequence: {}", testSequence);
-
-        logger->info("Available preset test sequences:");
-
-        for(auto &s: sequenceMap) {
-          logger->info("  {}", s.first);
-        }
-
-        success = false;
-      }
-    } else {
-      if(tests.find(testSequence) != tests.end()) {
-        logger->info("Running test {}", testSequence);
-        success &= tests[testSequence](*hwCtrl);
-      } else {
-        logger->error("Unknown test: {}", testSequence);
-
-        logger->info("Available test presets:");
-
-        for(auto &s: tests) {
-          logger->info("  {}", s.first);
-        }
-
-        success = false;
-      }
-    }
-
-    hwCtrl->disableRx();
-
-    if (not success) {
-      logger->error("Tests failed");
-      return 1;
-    }
-
-    logger->info("Success!");
-    return 0;
+    return true;
 }

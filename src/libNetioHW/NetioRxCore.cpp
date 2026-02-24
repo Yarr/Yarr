@@ -171,5 +171,8 @@ void NetioRxCore::loadConfig(const json &j) {
   if (j["NetIO"].contains("rxWaitTime")) {
     m_waitTime = std::chrono::microseconds(j["NetIO"]["rxWaitTime"]);
   }
+  if (j["NetIO"].contains("rxTimeoutTime")) {
+    m_timeoutTime = std::chrono::microseconds(j["NetIO"]["rxTimeoutTime"]);
+  }
 }
 
