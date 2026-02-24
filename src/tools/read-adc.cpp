@@ -16,6 +16,7 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 #include <memory> // unique_ptr
+#include <spdlog/spdlog.h>
 
 // YARR
 #include "HwController.h"
@@ -23,6 +24,8 @@ namespace fs = std::filesystem;
 #include "AllChips.h"
 #include "ScanHelper.h" // openJson
 #include "Utils.h"
+#include "logging.h"
+#include "LoggingConfig.h"
 
 void print_usage(char* argv[]) {
     std::cerr << " read-adc" << std::endl;
@@ -36,6 +39,7 @@ void print_usage(char* argv[]) {
     std::cerr << "   -s          Assume FE's have shared vmux, and set MonitorV register to this value (high-Z) on all FE's when not reading" << std::endl;
     std::cerr << "   -I          Measure current through vmux pad" << std::endl;
     std::cerr << "   -R          Return raw ADC count" << std::endl;
+    std::cerr << "   -d          Enable debug print out." << std::endl;
     std::cerr << "   -h|--help   Print this help message and exit" << std::endl;
     std::cerr << std::endl;
 }
@@ -78,9 +82,10 @@ int main(int argc, char* argv[]) {
     bool return_count = false;
     int high_z = -1;
     bool shared_vmux = false;
+    bool debug = false;
 
     int c = 0;
-    while (( c = getopt(argc, argv, "r:c:i:n:s:IRh")) != -1) {
+    while (( c = getopt(argc, argv, "r:c:i:n:s:IRdh")) != -1) {
         switch (c) {
             case 'r' :
                 hw_controller_filename = optarg;
@@ -118,6 +123,9 @@ int main(int argc, char* argv[]) {
             case 'R' :
                 return_count = true;
                 break;
+            case 'd' :
+                debug = true;
+                break;
             default :
                 std::cerr << "Invalid option '" << c << "' supplied, aborting" << std::endl;
                 return 1;
@@ -127,6 +135,12 @@ int main(int argc, char* argv[]) {
     if (optind > argc - 1) {
         std::cerr << "ERROR: Missing positional arguments" << std::endl;
         return 1;
+    }
+
+    if (debug) {
+        auto loggerConfig = logging::defaultConfig();
+        logging::setupLoggers(loggerConfig);
+        spdlog::set_level(spdlog::level::trace);
     }
 
     try {
@@ -193,17 +207,20 @@ int main(int argc, char* argv[]) {
         if (shared_vmux){
             auto cfg = dynamic_cast<FrontEndCfg*>(fe.get());
             hw->setCmdEnable(cfg->getTxChannel()); 
+            hw->initRxChannels({cfg->getRegRxChannel()});
             hw->setRxEnable(cfg->getRegRxChannel());
             hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-	    while(!hw->isCmdEmpty());
-	    std::this_thread::sleep_for(std::chrono::microseconds(100));
+            while(!hw->isCmdEmpty());
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
 
-	    if (fe->readUpdateWriteNamedRegister("MonitorV", high_z) != yarrSuccess) {
-	      std::cerr << "ERROR: failed to readUpdateWrite register for " << ichip << "!" << std::endl;
-	      error_cnt++;
+            if (fe->readUpdateWriteNamedRegister("MonitorV", high_z) != yarrSuccess) {
+                std::cerr << "ERROR: failed to readUpdateWrite register for " << ichip << "!" << std::endl;
+                error_cnt++;
             }
+            while(!hw->isCmdEmpty());
             fe->writeNamedRegister("MonitorV", high_z);
-	}
+            while(!hw->isCmdEmpty());
+	    }
         fes.push_back(std::make_pair(ichip, std::move(fe)));
     }
 
@@ -215,20 +232,23 @@ int main(int argc, char* argv[]) {
         if (!use_chip_name) {
             if ( chip_idx.size() == 0 || (std::find(chip_idx.begin(), chip_idx.end(), ichip)!= chip_idx.end()) ) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
+                hw->initRxChannels({cfg->getRegRxChannel()});
                 hw->setRxEnable(cfg->getRegRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-		while(!hw->isCmdEmpty());
-		std::this_thread::sleep_for(std::chrono::microseconds(100));
+                while(!hw->isCmdEmpty());
+                std::this_thread::sleep_for(std::chrono::microseconds(100));
 
                 if (fe->confAdc(monitorV, meas_curr) != yarrSuccess) {
                     std::cerr << "ERROR: failed to configure ADC for " << current_chip_name << "!" << std::endl;
                     error_cnt++;
                 }
+                while(!hw->isCmdEmpty());
                 uint16_t res = 0;
                 if (fe->readNamedRegister("MonitoringDataAdc", res) != yarrSuccess) {
-		  std::cerr << "ERROR: failed to read register for " << current_chip_name << "!" << std::endl;
-		  error_cnt++;
+                    std::cerr << "ERROR: failed to read register for " << current_chip_name << "!" << std::endl;
+                    error_cnt++;
                 }
+                while(!hw->isCmdEmpty());
                 if (return_count) std::cout << res << std::endl;
                 else{
                     std::pair<float, std::string> convertedAdc = cfg->convertAdc(res, meas_curr);
@@ -238,20 +258,23 @@ int main(int argc, char* argv[]) {
         } else {
             if (std::find(chip_name.begin(), chip_name.end(), current_chip_name) != chip_name.end()) {
                 hw->setCmdEnable(cfg->getTxChannel()); 
+                hw->initRxChannels({cfg->getRegRxChannel()});
                 hw->setRxEnable(cfg->getRegRxChannel());
                 hw->checkRxSync(); // Must be done per fe (Aurora link) and after setRxEnable().
-		while(!hw->isCmdEmpty());
-		std::this_thread::sleep_for(std::chrono::microseconds(100));
+                while(!hw->isCmdEmpty());
+                std::this_thread::sleep_for(std::chrono::microseconds(100));
 
                 if (fe->confAdc(monitorV, meas_curr) != yarrSuccess) {
                     std::cerr << "ERROR: failed to configure ADC for " << current_chip_name << "!" << std::endl;
                     error_cnt++;
                 }
+                while(!hw->isCmdEmpty());
                 uint16_t res = 0;
                 if (fe->readNamedRegister("MonitoringDataAdc", res) != yarrSuccess) {
-		  std::cerr << "ERROR: failed to read register for " << current_chip_name << "!" << std::endl;
-		  error_cnt++;
+                    std::cerr << "ERROR: failed to read register for " << current_chip_name << "!" << std::endl;
+                    error_cnt++;
                 }
+                while(!hw->isCmdEmpty());
                 if (return_count) std::cout << res << std::endl;
                 else{
                     std::pair<float, std::string> convertedAdc = cfg->convertAdc(res, meas_curr);
