@@ -146,6 +146,8 @@ std::vector<uint32_t> Bookkeeper::getRxMaskUnique() {
     for (BookEntry &entry : bookEntries) {
         if (entry.active) {
             uniqueChannels.insert(entry.rxChannel);
+            if (entry.regRxChannel)
+                uniqueChannels.insert(entry.regRxChannel);
         }
     }
 

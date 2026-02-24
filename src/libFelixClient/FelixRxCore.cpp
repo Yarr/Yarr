@@ -30,6 +30,7 @@ void FelixRxCore::initRxChannels(const std::vector<uint32_t>& channels) {
   }
 
   // Start threads to subscribe to channels
+  m_rxThreads.clear();
   for (unsigned i=0; i<m_nThreads; i++) {
     // skip in case there are more threads than fids
     if (fid_lists[i].empty()) continue;
@@ -63,7 +64,8 @@ void FelixRxCore::initRxChannels(const std::vector<uint32_t>& channels) {
 void FelixRxCore::enableChannel(FelixID_t fid) {
   frlog->debug("Enable Rx link: 0x{:x}", fid);
   try {
-    m_rxThreads[m_fidThreadMap[fid]]->enableChannel(fid);
+    size_t threadIdx = m_fidThreadMap.at(fid);
+    m_rxThreads.at(threadIdx)->enableChannel(fid);
   } catch (const std::out_of_range& e) {
     frlog->error("Failed to enable channel: unknown FelixID 0x{:x}", fid);
   }
