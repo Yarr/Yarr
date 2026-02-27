@@ -2,42 +2,45 @@ function(get_git_version_info)
 execute_process(
         COMMAND git rev-parse HEAD
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE YARR_GIT_HASH
+        OUTPUT_VARIABLE EXTRACT_GIT_HASH
         OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 execute_process(
         COMMAND git rev-parse --abbrev-ref HEAD
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE YARR_GIT_BRANCH
+        OUTPUT_VARIABLE EXTRACT_GIT_BRANCH
         OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 execute_process(
         COMMAND git describe --tag
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE YARR_GIT_TAG
+        OUTPUT_VARIABLE EXTRACT_GIT_TAG
         OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 execute_process(
         COMMAND git log -1 --format=%ad --date=iso
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE YARR_GIT_DATE
+        OUTPUT_VARIABLE EXTRACT_GIT_DATE
         OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 execute_process(
         COMMAND git log -1 --format=%s
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE YARR_GIT_SUBJECT
+        OUTPUT_VARIABLE EXTRACT_GIT_SUBJECT
         OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-message(STATUS "Using YARR tag: ${YARR_GIT_TAG}")
-configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/libYarr/include/yarr_version.h.in
-        ${CMAKE_CURRENT_BINARY_DIR}/src/libYarr/include/yarr_version.h
-)
 string(TIMESTAMP BUILD_TIME "%Y-%m-%d %H:%M:%S UTC" UTC)
 
-string(REGEX MATCH "^v([0-9]+)\\.([0-9]+)\\.([0-9]+)" _ ${YARR_GIT_TAG})
+message(STATUS "Using YARR tag: ${EXTRACT_GIT_TAG}")
+
+set(YARR_GIT_HASH "${EXTRACT_GIT_HASH}" PARENT_SCOPE)
+set(YARR_GIT_BRANCH "${EXTRACT_GIT_BRANCH}" PARENT_SCOPE)
+set(YARR_GIT_TAG "${EXTRACT_GIT_TAG}" PARENT_SCOPE)
+set(YARR_GIT_DATE "${EXTRACT_GIT_DATE}" PARENT_SCOPE)
+set(YARR_GIT_SUBJECT "${EXTRACT_GIT_SUBJECT}" PARENT_SCOPE)
+
+string(REGEX MATCH "^v([0-9]+)\\.([0-9]+)\\.([0-9]+)" _ ${EXTRACT_GIT_TAG})
 
 set(YARR_VERSION_MAJOR "${CMAKE_MATCH_1}" PARENT_SCOPE)
 set(YARR_VERSION_MINOR "${CMAKE_MATCH_2}" PARENT_SCOPE)
