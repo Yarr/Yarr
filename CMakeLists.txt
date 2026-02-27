@@ -1,8 +1,11 @@
 cmake_minimum_required (VERSION 3.14)
 
-project (YARR LANGUAGES CXX VERSION 1.5.4)
-
 include(cmake/SupportFunctionsLibrary.cmake)
+# Fetch version information from GIT (for yarr_version.h)
+get_git_version_info()
+message(STATUS "Recording YARR version: ${YARR_VERSION_MAJOR}.${YARR_VERSION_MINOR}.${YARR_VERSION_PATCH}")
+
+project (YARR LANGUAGES CXX VERSION "${YARR_VERSION_MAJOR}.${YARR_VERSION_MINOR}.${YARR_VERSION_PATCH}")
 
 # compiler settings ---------------------------------------------------------------------------------------
 
@@ -81,16 +84,6 @@ if(NOT DEFINED YARR_HAS_BUILTIN_SPDLOG)
 endif()
 
 # internal global state tracking variables  ---------------------------------------------------------------------------------------
-
-# get version information from GIT ---------------------------------------------------------------------------------------
-
-get_git_version_info()
-string(TIMESTAMP BUILD_TIME "%Y-%m-%d %H:%M:%S UTC" UTC)
-configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/libYarr/include/yarr_version.h.in
-        ${CMAKE_CURRENT_BINARY_DIR}/src/libYarr/include/yarr_version.h
-)
-# get version information from GIT ---------------------------------------------------------------------------------------
 
 # setting install paths and RPATH  ---------------------------------------------------------------------------------------
 # Standard install dir layout

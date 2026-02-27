@@ -29,6 +29,20 @@ execute_process(
         OUTPUT_VARIABLE YARR_GIT_SUBJECT
         OUTPUT_STRIP_TRAILING_WHITESPACE
 )
+
+message(STATUS "Using YARR tag: ${YARR_GIT_TAG}")
+configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/libYarr/include/yarr_version.h.in
+        ${CMAKE_CURRENT_BINARY_DIR}/src/libYarr/include/yarr_version.h
+)
+string(TIMESTAMP BUILD_TIME "%Y-%m-%d %H:%M:%S UTC" UTC)
+
+string(REGEX MATCH "^v([0-9]+)\\.([0-9]+)\\.([0-9]+)" _ ${YARR_GIT_TAG})
+
+set(YARR_VERSION_MAJOR "${CMAKE_MATCH_1}" PARENT_SCOPE)
+set(YARR_VERSION_MINOR "${CMAKE_MATCH_2}" PARENT_SCOPE)
+set(YARR_VERSION_PATCH "${CMAKE_MATCH_3}" PARENT_SCOPE)
+
 endfunction()
 
 function(detect_in_tree_install OUT_VAR)
