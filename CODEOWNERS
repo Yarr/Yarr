@@ -1,27 +1,27 @@
 # YARR Codeowners file to steer MR approval
 
-/cmake/ @bgallop @wittgen @theim
-/configs/ @bgallop @ztao @mamirono @rquinn @theim
+/cmake/ @bgallop @theim @arummler
+/configs/ @bgallop @rquinn @theim @dfellers
 /docker/ @bgallop @wittgen @theim
-/docs/ @bgallop @ztao @mamirono @theim @rquinn @arastogi
-/scripts/ @bgallop @wittgen @theim
+/docs/ @bgallop @rquinn @theim @dfellers @lmeng
+/scripts/ @bgallop @theim 
 
 /src/libBdaq/ @wlkakhi
-/src/libEmu/ @bgallop @rquinn @ztao
-/src/libFei4/ @mamirono @theim
-/src/libFei4Emu/ @mamirono @theim
-/src/libFelixClient/ @arastogi @bgallop @rquinn @ztao 
-/src/libItkpixv2/ @mamirono @theim
-/src/libItkpixv2Emu/ @theim
+/src/libEmu/ @bgallop @rquinn
+/src/libFei4/ @theim
+/src/libFei4Emu/ @theim
+/src/libFelixClient/ @bgallop @rquinn @dfellers
+/src/libItkpixv2/ @theim @dfellers
+/src/libItkpixv2Emu/ @theim @dfellers
 /src/libItsdaqFW/ @bgallop
-/src/libNetioHW @ztao @arastogi @rquinn @bgallop
-/src/libRd53a/ @mamirono @theim
-/src/libRd53aEmu/ @mamirono @theim
-/src/libRd53b/ @mamirono @theim
-/src/libSpec/ @mamirono @theim
-/src/libStar/ @bgallop @ztao @rquinn
-/src/libStarEmu/ @ztao @bgallop @rquinn
-/src/libUtil/ @bgallop @wittgen @theim
+/src/libNetioHW @rquinn @bgallop @dfellers
+/src/libRd53a/ @theim
+/src/libRd53aEmu/ @theim
+/src/libRd53b/ @dfellers @theim
+/src/libSpec/ @dfellers @theim
+/src/libStar/ @bgallop @rquinn
+/src/libStarEmu/ @bgallop @rquinn
+/src/libUtil/ @bgallop @theim
 /src/libYarr/ @bgallop @theim
-/src/python/ @wittgen @bgallop @theim
-/src/tools/ @bgallop @mamirono @rquinn @theim @ztao @arastogi
+/src/python/ @bgallop @theim
+/src/tools/ @bgallop @dfellers @rquinn @theim
