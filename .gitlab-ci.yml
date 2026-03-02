@@ -77,6 +77,7 @@ job_build_all:
     - CTEST_OUTPUT_ON_FAILURE=1 make test
     - cd ..
     - bin/scanConsole -k
+    - bin/scanConsole --version
 
 job_build_and_test_out_of_source:
   extends: .build_matrix
