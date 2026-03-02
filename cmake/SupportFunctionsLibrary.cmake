@@ -24,7 +24,7 @@ execute_process(
         OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 execute_process(
-        COMMAND git log -1 --format=%s
+        COMMAND git log -1 --format=%f
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         OUTPUT_VARIABLE EXTRACT_GIT_SUBJECT
         OUTPUT_STRIP_TRAILING_WHITESPACE
