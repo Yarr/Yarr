@@ -1,32 +1,32 @@
 function(get_git_version_info)
 execute_process(
         COMMAND git rev-parse HEAD
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         OUTPUT_VARIABLE EXTRACT_GIT_HASH
         OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 execute_process(
         COMMAND git rev-parse --abbrev-ref HEAD
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         OUTPUT_VARIABLE EXTRACT_GIT_BRANCH
         OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 execute_process(
         COMMAND git describe --tag
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         OUTPUT_VARIABLE EXTRACT_GIT_TAG
         OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 execute_process(
         COMMAND git log -1 --format=%ad --date=iso
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         OUTPUT_VARIABLE EXTRACT_GIT_DATE
         OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 execute_process(
         # %f generates sanitized subject line, so we can put it in a string
         COMMAND git log -1 --format=%f
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         OUTPUT_VARIABLE EXTRACT_GIT_SUBJECT
         OUTPUT_STRIP_TRAILING_WHITESPACE
 )
