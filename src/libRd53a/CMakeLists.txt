@@ -23,6 +23,10 @@ target_include_directories(Rd53a PUBLIC
 )
 target_link_libraries(Rd53a PUBLIC Scan Yarr_interface Util_interface)
 
+# Apps (Spec only)
+# rd53aReadRegister
+# rd53aReadRingosc
+
 install(TARGETS Rd53a
     EXPORT Yarr_Rd53aTargets
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
