@@ -60,7 +60,8 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
 While developing, it might be useful to run some unit tests. These are run
 by default in the CI on gitlab, but can also be run locally:
 
-- ``cd build``
-- ``make test``
+- ``$ cd build``
+- ``$ cmake -DBUILD_TESTS=on ..``
+- ``$ make test``
 
 This runs the test_main binary, which gathers the tests found in src/tests.
