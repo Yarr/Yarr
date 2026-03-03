@@ -48,10 +48,14 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
 ### Building additional controllers
 
 - In order to build with more controllers execute cmake with extra options
-    - For all controllers:
-        - ``$ cmake -DYARR_CONTROLLERS_TO_BUILD=all ..``
-    - For NetIO:
-        - ``$ cmake -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;NetioHW" ..``
+    - For all front-ends & controllers:
+        - ``$ cmake -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_CONTROLLERS_TO_BUILD=all ..``
+    - To add FELIX support:
+        - ``$ cmake -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;FelixClient" ..``
+    - List of all possible front-ends:
+        - ``Fei4;Rd53a;Star;Rd53b;Itkpixv2``
+    - List of all possible controllers:
+        - ``Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Itkpixv2Emu;Bdaq;NetioHW;FelixClient;ItsdaqFW``
 
 While developing, it might be useful to run some unit tests. These are run
 by default in the CI on gitlab, but can also be run locally:
