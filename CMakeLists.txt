@@ -9,9 +9,10 @@ project (YARR LANGUAGES CXX VERSION "${YARR_VERSION_MAJOR}.${YARR_VERSION_MINOR}
 
 # compiler settings ---------------------------------------------------------------------------------------
 
-# set C++ version as 17 - CMake does not support to set a minimum version globally (only per target) but
+# set C++ version as 20 - CMake does not support to set a minimum version globally (only per target) but
 # if a higher version is requested by setting CMAKE_CXX_STANDARD it will be used instead
-set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to use")
+set(CMAKE_CXX_STANDARD 20 CACHE STRING "C++ standard to use")
+# Note that we could say that lower versions are allowed in previous compilers
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
