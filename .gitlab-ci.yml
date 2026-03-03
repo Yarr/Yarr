@@ -211,6 +211,23 @@ job_build_felix_check:
   # If build doesn't work for some reason it might make sense to ignore
   # allow_failure: true
 
+job_build_felix_release_52:
+  extends: .rules
+  stage: build
+  image: gitlab-registry.cern.ch/atlas-tdaq-software/tdaq_ci:x86_64-el9
+  tags:
+    - cvmfs
+  artifacts:
+    paths:
+      - installed
+  variables:
+    FELIX_PATH: /cvmfs/atlas-online-nightlies.cern.ch/felix/releases/felix-05-02-00-rm5-stand-alone/x86_64-el9-gcc15-opt
+  script:
+    - source /cvmfs/atlas.cern.ch/repo/sw/tdaq/tools/cmake_tdaq/bin/cm_setup.sh tdaq-12-03-00 x86_64-el9-gcc15-opt
+    - gcc --version
+    - cmake -B build -DFELIX_ROOT=${FELIX_PATH} -DBUILD_TESTS=on -DYARR_CONTROLLERS_TO_BUILD=FelixClient -DYARR_ENABLE_PYTHON=OFF
+    - cmake --build build -j$(nproc)
+    - cmake --install build
 
 .job_code_coverage:
   stage: build
