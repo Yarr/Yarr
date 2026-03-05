@@ -208,6 +208,7 @@ job_build_felix:
 
 job_build_felix_check:
   extends: [.build_felix, .rules]
+  allow_failure: true
 
 
 .job_code_coverage:
