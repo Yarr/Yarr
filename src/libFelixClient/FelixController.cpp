@@ -85,8 +85,15 @@ void FelixController::loadConfig(const json &j) {
     }
   }
 
-}
+  json j_status = getStatus();
+  std::istringstream ss(j_status.dump(4));
+  std::string line;
 
+  fclog->info("Controller status:");
+  while(std::getline(ss, line)) {
+    fclog->info(" ~~~ {}", line);
+  }
+}
 
 const json FelixController::getStatus() {
   fclog->debug("getStatus");
@@ -123,12 +130,14 @@ const json FelixController::getStatus() {
     j_status["register_map_version"] = std::to_string(major)+"."+std::to_string(minor);
   }
 
-  /*
+  
   // firmware git hash
   if ( readFwRegister("GIT_HASH", reg_value) ) {
     j_status["firmware_git_hash"] = Utils::hexify(reg_value);
   }
 
+  /*
+  This doesn't seem to be a problem anymore?
   The above would crash in client->send_cmd:
      terminate called after throwing an instance of 'simdjson::simdjson_error'
      what():  The JSON number is too large or too small to fit within the requested type.
