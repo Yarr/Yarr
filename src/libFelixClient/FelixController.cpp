@@ -220,7 +220,7 @@ const json FelixController::getStatus() {
   // XADC temperature monitor for the FPGA CORE
   if ( readFwRegister("FPGA_CORE_TEMP", reg_value) ) {
     float temp_C = ((reg_value* 502.9098)/4096)-273.8195;
-    j_status["fpga_core_temperature"] = temp_C;
+    j_status["fpga_core_temperature_celsius"] = temp_C;
   }
 
   return j_status;
