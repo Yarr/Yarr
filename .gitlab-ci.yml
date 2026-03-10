@@ -208,7 +208,8 @@ job_build_felix:
 
 job_build_felix_check:
   extends: [.build_felix, .rules]
-  allow_failure: true
+  # If build doesn't work for some reason it might make sense to ignore
+  # allow_failure: true
 
 
 .job_code_coverage:
