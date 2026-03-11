@@ -106,7 +106,7 @@ void SpecTxCore::setTrigWordLength(uint32_t length) {
 
 void SpecTxCore::setTrigWord(uint32_t *word, uint32_t length) {
     for (unsigned i=0; i<length; i++) {
-        SPDLOG_LOGGER_TRACE(stxlog, "[{}] = {0:x}", i, word[i]);
+        SPDLOG_LOGGER_TRACE(stxlog, "[{}] = {:x}", i, word[i]);
     }
 
     for (unsigned i=0; i<length; i++) {
