@@ -137,7 +137,6 @@ The following CMake targets are exported by Yarr (executables not listed; fully 
 | Yarr::     | Bdaq                | dynamic library            |                                                              | Bdaq        |
 | Yarr::     | Emu                 | dynamic library            |                                                              | Emu         |
 | Yarr::     | FelixClient         | dynamic library            |                                                              | FelixClient |
-| Yarr::     | NetioHW             | dynamic library            |                                                              | NetioHW     |
 | Yarr::     | Spec                | dynamic library            |                                                              | Spec        |
 | Yarr::     | Fei4                | dynamic library            |                                                              | Fei4        |
 | Yarr::     | Fei4Emu             | dynamic library            |                                                              | Fei4Emu     |

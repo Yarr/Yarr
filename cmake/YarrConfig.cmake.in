@@ -7,7 +7,6 @@ set(_YARR_KNOWN_COMPONENTS
     Bdaq
     FelixClient
     ItsdaqFW
-    NetioHW
     StarEmu
     Fei4Emu
     Rd53aEmu

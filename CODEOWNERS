@@ -14,7 +14,6 @@
 /src/libItkpixv2/ @theim @dfellers
 /src/libItkpixv2Emu/ @theim @dfellers
 /src/libItsdaqFW/ @bgallop
-/src/libNetioHW @rquinn @bgallop @dfellers
 /src/libRd53a/ @theim
 /src/libRd53aEmu/ @theim
 /src/libRd53b/ @dfellers @theim

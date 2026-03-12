@@ -27,7 +27,6 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
 - GCC version 11 or higher, C++20
 - Some misc packages (can be installed via yum):
     - gnuplot, texlive-epstopdf (for built-in plotting)
-    - zeromq, zeromq-devel (for netio controller)
     - boost-devel (for BDAQ)
 
 ## Quick minimal Install Guide:

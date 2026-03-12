@@ -62,7 +62,7 @@ job_build_all:
     - dnf -y install autoconf automake libtool
     - mkdir  build
     - cd build
-    - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DENABLE_PYTHON=On -DLIBFABRIC_CONFIGURE_OPTS="--disable-lpp" -DYARR_ENABLE_PYTHON=on
+    - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DENABLE_PYTHON=On -DYARR_ENABLE_PYTHON=on
     - make install -j$(nproc)
     - CTEST_OUTPUT_ON_FAILURE=1 make test
     - cd ..
@@ -141,7 +141,7 @@ job_build_test_gcc_15:
     - mkdir build
     - cd build
     # Excluding bdaq as boost is missing
-    # Excluding felix/netio due to tbb and libfabric messages
+    # Excluding felix as required deps are are not present
     - export CONTROLLERS="Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Itkpixv2Emu;ItsdaqFW"
     - cmake .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=${CONTROLLERS} -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=OFF
     - make install -j$(nproc)
@@ -160,7 +160,7 @@ job_build_test_gcc_9:
     - mkdir build
     - cd build
     # Excluding bdaq as boost is missing
-    # Excluding felix/netio due to tbb and libfabric messages
+    # Excluding felix as required deps are are not present
     - export CONTROLLERS="Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Itkpixv2Emu;ItsdaqFW"
     - cmake .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=${CONTROLLERS} -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=OFF
     - make install -j$(nproc)
@@ -708,24 +708,6 @@ job_test_json_parsing:
     - (for file in $(find configs/connectivity -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t CONNECTIVITY || exit; done)
     - (for file in $(find configs/controller -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t CONTROLLER || exit; done)
     - (for file in $(find configs/scans/* -name patterns -prune -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t SCAN_CONFIG || exit; done)
-
-job_test_netio:
-  extends: .test
-  needs:
-    - job: job_build_all
-      parallel:
-        matrix:
-          - ARCH: ['alma9']
-  image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_alma9_build
-  script:
-    # Launch netio_bridge to connect an emulator to NetIO
-    - bin/netio_bridge -p 12340 -q 12350 -f configs/controller/emuCfg_star.json & pid_bridge=($!)
-    - sleep 1
-    # Run scans with the NetIO controller
-    - bin/scanConsole -r configs/controller/felix_netio_strips.json -c configs/connectivity/example_star_setup.json -s configs/scans/star/std_regDump.json
-    - bin/scanConsole -r configs/controller/felix_netio_strips.json -c configs/connectivity/example_star_setup.json -s configs/scans/star/std_latencyScan.json -p
-    # Terminate netio_bridge
-    - kill ${pid_bridge}
 
 job_test_json:
   extends: .test
