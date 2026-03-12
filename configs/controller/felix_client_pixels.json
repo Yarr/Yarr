@@ -7,8 +7,8 @@
         "busDir": "/tmp/bus",
         "busGroupName": "FELIX",
         "verboseBus": false,
-        "useASIOevloop": "false",
-        "useThreadUnsafeNetio": "false"
+        "useASIOevloop": true,
+        "useThreadUnsafeNetio": true
       },
       "ToFLX": {
         "detectorID": 0,

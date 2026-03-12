@@ -28,8 +28,8 @@ void FelixController::loadConfig(const json &j) {
   fcConfig.property[FELIX_CLIENT_BUS_DIR] = clientCfg["busDir"];
   fcConfig.property[FELIX_CLIENT_BUS_GROUP_NAME] = clientCfg["busGroupName"];
   fcConfig.property[FELIX_CLIENT_VERBOSE_BUS] = clientCfg["verboseBus"] ? "True" : "False";
-  fcConfig.property[FELIX_CLIENT_USE_ASIO_EVLOOP] = clientCfg["useASIOevloop"];
-  fcConfig.property[FELIX_CLIENT_USE_THREAD_UNSAFE_NETIO] = clientCfg["useThreadUnsafeNetio"]; 
+  fcConfig.property[FELIX_CLIENT_USE_ASIO_EVLOOP] = clientCfg["useASIOevloop"]  ? "True" : "False";
+  fcConfig.property[FELIX_CLIENT_USE_THREAD_UNSAFE_NETIO] = clientCfg["useThreadUnsafeNetio"]  ? "True" : "False"; 
       try {
     auto txCfg = j["ToFLX"];
     FelixTxCore::loadConfig(txCfg);
