@@ -66,7 +66,7 @@ protected:
 
   void loadConfig(const json &j); 		     // read configuration from json
   void writeConfig(json& j); 		         // write configuration to json
-  void setClient(const FelixClientThread::Config& fcConfig); // set Felix client
+  void setClient(const FelixClientThread::ConfigV2& fcConfig); // set Felix client
 
   using FelixID_t = FelixTools::FelixID_t;
 

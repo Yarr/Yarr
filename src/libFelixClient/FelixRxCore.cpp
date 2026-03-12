@@ -42,7 +42,10 @@ void FelixRxCore::initRxChannels(const std::vector<uint32_t>& channels) {
     frt->run();
   }
 
+  /* Deion: This loop hangs forever, because I think the on_connect callback does not work for synchronous calls
   // Wait all fids to be connected
+  const std::chrono::seconds timeout_duration{10};
+  auto start_time = std::chrono::steady_clock::now();
   while (true) {
     bool all_connected = true;
     for (auto& frt : m_rxThreads) {
@@ -52,9 +55,20 @@ void FelixRxCore::initRxChannels(const std::vector<uint32_t>& channels) {
       }
     }
     if (all_connected) break;
+    // Check if we have exceeded the timeout_duration
+    auto current_time = std::chrono::steady_clock::now();
+    if (current_time - start_time > timeout_duration) {
+      frlog->error("Did not connect to all Rx channels within the 10s time duration");
+      m_rxThreads[0]->reportStatistics();
+      break;
+    }
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
   frlog->debug("All channels connected");
+  */
+
+  // Deion: without this wait, FE register reads fail
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
   if (m_runMonitor) {
     runMonitor();
@@ -247,7 +261,7 @@ void FelixRxCore::loadConfig(const json &j) {
   }
 }
 
-void FelixRxCore::setClient(const FelixClientThread::Config& fcConfig) {
+void FelixRxCore::setClient(const FelixClientThread::ConfigV2& fcConfig) {
   m_fcConfig = fcConfig;
 }
 

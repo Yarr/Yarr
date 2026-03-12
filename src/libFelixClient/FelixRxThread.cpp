@@ -9,15 +9,17 @@ namespace {
   auto frtlog = logging::make_log("FelixRxThread");
 }
 
+std::chrono::milliseconds FELIX_timeout(5000);
+
 FelixRxThread::FelixRxThread(
-  FelixClientThread::Config fcConfig, // make a copy
+  FelixClientThread::ConfigV2 fcConfig, // make a copy
   const std::vector<FelixID_t>& fid_list,
   size_t maxMessageSize
 ) : m_maxMessageSize(maxMessageSize)
 {
   // Callbacks
   fcConfig.on_init_callback = std::bind(&FelixRxThread::on_init, this);
-  fcConfig.on_data_callback = std::bind(&FelixRxThread::on_data_received, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+  fcConfig.on_data_callback = std::bind(&FelixRxThread::on_data_received, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
   fcConfig.on_connect_callback = std::bind(&FelixRxThread::on_connect, this, std::placeholders::_1);
   fcConfig.on_disconnect_callback = std::bind(&FelixRxThread::on_disconnect, this, std::placeholders::_1);
 
@@ -36,7 +38,7 @@ FelixRxThread::~FelixRxThread() {
 
   // Unsubscribe from all links
   for (const auto& [fid, stats] : m_fidStats) {
-    m_client->unsubscribe(fid);
+    m_client->unsubscribe(fid, FELIX_timeout);
   }
 
   // Clean up
@@ -73,7 +75,7 @@ void FelixRxThread::subscribe() {
     m_fidStats[fid].reset_errors();
     m_fidStats[fid].reset_counters();
 
-    m_client->subscribe(fid);
+    m_client->subscribe(fid, FELIX_timeout);
   }
 }
 
@@ -83,7 +85,7 @@ void FelixRxThread::unsubscribe() {
 
   for (const auto& [fid, stats] : m_fidStats) {
     frtlog->debug("Thread {} unsubscribing from fid 0x{:x}", thread_ss.str(), fid);
-    m_client->unsubscribe(fid);
+    m_client->unsubscribe(fid, FELIX_timeout);
   }
 }
 
@@ -143,9 +145,12 @@ void FelixRxThread::on_disconnect(FelixID_t fid) {
   frtlog->debug("Thread {} disconnected from fid 0x{:x}", thread_ss.str(), fid);
 }
 
-void FelixRxThread::on_data_received(FelixID_t fid, const uint8_t* data, size_t size, uint8_t status) {
+void FelixRxThread::on_data_received(FelixID_t fid, std::span<const uint8_t> data_span, uint8_t status) {
   // skip if the channel is disabled
   if (not m_enables[fid]) return;
+
+  const uint8_t* data = data_span.data();
+  size_t size = data_span.size();
 
   std::stringstream thread_ss;
   thread_ss << "0x" << std::hex << std::this_thread::get_id();

@@ -5,6 +5,7 @@
 #include <sstream>
 #include <iomanip>
 #include <iostream>
+#include <span>
 
 namespace {
   auto ftlog = logging::make_log("FelixTxCore");
@@ -78,7 +79,7 @@ bool FelixTxCore::checkChannel(FelixID_t fid) {
     switch(fwMode()){
     case FelixTools::FELIX_FW_MODE::ITK_Pixel: //ITk Pixel firmware
     case FelixTools::FELIX_FW_MODE::ITK_Strip: //ITk Strip firmware
-      fclient->send_data(fid, static_cast<const unsigned char*>(&(m_idleWords[0])), m_idleWords.size(), true);
+      fclient->send_data(fid, std::span{m_idleWords}, true);
       break;
     default:
       ftlog->error("FELIX firmware version not supported in YARR. Try again...");
@@ -249,7 +250,7 @@ void FelixTxCore::sendFifo(FelixID_t fid, std::vector<uint8_t>& fifo) {
 
   bool flush = true;
   //fclient->getClient()->init_send_data(fid);
-  fclient->send_data(fid, fifo.data(), fifo.size(), flush);
+  fclient->send_data(fid, std::span{fifo}, flush);
 
   // clear the fifo
   fifo.clear();
@@ -530,16 +531,16 @@ void FelixTxCore::trigger() {
     int nRetriesIfFails=0;
     while (nRetriesIfFails<3) {
       try {
-	fclient->send_data(fid_broadcast, m_trigFifo[fid_broadcast].data(), m_trigFifo[fid_broadcast].size(), flush);
+	fclient->send_data(fid_broadcast, std::span{m_trigFifo[fid_broadcast]}, flush);
 	break;
-      } catch (FelixClientResourceNotAvailableException &e) {
+      } catch (felix::ResourceNotAvailableException &e) {
 	ftlog->warn("Exception from FelixClient::send_data: {}. Retrying.", e.what());
 	std::this_thread::sleep_for(std::chrono::microseconds(m_isCmdEmptyWaitTime));
 	nRetriesIfFails++;
       }
     }
     if(nRetriesIfFails==3){
-      ftlog->error("Could not send data due to FelixClientResourceNotAvailableException, even after 3 attempts. Exiting now...");
+      ftlog->error("Could not send data due to felix::ResourceNotAvailableException, even after 3 attempts. Exiting now...");
       exit(1);
     }
 
@@ -556,16 +557,16 @@ void FelixTxCore::trigger() {
       int nRetriesIfFails=0;
       while (nRetriesIfFails<3) {
 	try {
-	  fclient->send_data(chn, buffer.data(), buffer.size(), flush);
+	  fclient->send_data(chn, std::span{buffer}, flush);
 	  break;
-	} catch (FelixClientResourceNotAvailableException &e) {
+	} catch (felix::ResourceNotAvailableException &e) {
 	  ftlog->warn("Exception from FelixClient::send_data: {}. Retrying.", e.what());
 	  std::this_thread::sleep_for(std::chrono::microseconds(m_isCmdEmptyWaitTime));
 	  nRetriesIfFails++;
 	}
       }
       if(nRetriesIfFails==3){
-	ftlog->error("Could not send data due to FelixClientResourceNotAvailableException, even after 3 attempts. Exiting now...");
+	ftlog->error("Could not send data due to felix::ResourceNotAvailableException, even after 3 attempts. Exiting now...");
 	exit(1);
       }
     }
@@ -637,7 +638,7 @@ void FelixTxCore::writeConfig(json& j) {
   j["isCmdEmptyWaitTime"] = m_isCmdEmptyWaitTime;
 }
 
-void FelixTxCore::setClient(const FelixClientThread::Config& fcConfig) {
+void FelixTxCore::setClient(const FelixClientThread::ConfigV2& fcConfig) {
   fclient = std::make_unique<FelixClientThread>(fcConfig);
 }
 
@@ -764,9 +765,9 @@ void FelixTxCore::sendIC(uint64_t fid, const std::vector<uint8_t> dataframe){
     enableChannel(fid);
   }
   try {
-    fclient->send_data(fid, dataframe.data(), dataframe.size(), flush);
+    fclient->send_data(fid, std::span{dataframe}, flush);
   }
-  catch (FelixClientResourceNotAvailableException &e) {
+  catch (felix::ResourceNotAvailableException &e) {
 	  ftlog->warn("Exception from FelixClient::send_data: {}. Retrying.", e.what());
 	  std::this_thread::sleep_for(std::chrono::microseconds(m_isCmdEmptyWaitTime));
  }

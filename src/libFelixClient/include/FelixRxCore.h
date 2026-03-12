@@ -54,7 +54,7 @@ protected:
 
   void writeConfig(json &j);
   void loadConfig(const json &j);
-  void setClient(const FelixClientThread::Config& fcConfig); // set Felix clients
+  void setClient(const FelixClientThread::ConfigV2& fcConfig); // set Felix clients
 
   // Channel control
   void enableChannel(FelixID_t fid);
@@ -74,7 +74,7 @@ protected:
   // Felix clients
   unsigned m_nThreads {1};
   std::vector<std::unique_ptr<FelixRxThread>> m_rxThreads;
-  FelixClientThread::Config m_fcConfig; // Felix client configuration
+  FelixClientThread::ConfigV2 m_fcConfig; // Felix client configuration
   std::map<FelixID_t, unsigned> m_fidThreadMap; // map of Felix ID to thread index
 
   // Monitoring

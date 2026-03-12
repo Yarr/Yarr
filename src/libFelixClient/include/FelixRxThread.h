@@ -4,7 +4,7 @@
 #include <memory>
 #include <map>
 #include <thread>
-
+#include <span>
 // felix client
 #ifdef YARR_CONFIG_FELIX_PROXY
 #include "felix_proxy/ClientThread.h"
@@ -23,7 +23,7 @@ class FelixRxThread {
 
     using FelixID_t = FelixTools::FelixID_t;
 
-    FelixRxThread(FelixClientThread::Config fcConfig, const std::vector<FelixID_t>& fid_list, size_t maxMessageSize);
+    FelixRxThread(FelixClientThread::ConfigV2 fcConfig, const std::vector<FelixID_t>& fid_list, size_t maxMessageSize);
     ~FelixRxThread();
 
     void run();
@@ -94,7 +94,7 @@ class FelixRxThread {
     void on_init();
     void on_connect(FelixID_t fid);
     void on_disconnect(FelixID_t fid);
-    void on_data_received(FelixID_t fid, const uint8_t* data, size_t size, uint8_t status);
+    void on_data_received(FelixID_t fid, std::span<const uint8_t>, uint8_t status);
 };
 
 #endif

@@ -21,19 +21,16 @@ void FelixController::loadConfig(const json &j) {
   // FelixClientThread configuration
   auto clientCfg = j["FelixClient"];
 
-  FelixClientThread::Config fcConfig;
+  FelixClientThread::ConfigV2 fcConfig;
   // Properties
   // See https://gitlab.cern.ch/atlas-tdaq-felix/felix-interface/-/blob/master/felix/felix_client_properties.h
   fcConfig.property[FELIX_CLIENT_LOCAL_IP_OR_INTERFACE] = clientCfg["localIPorInterface"];
-  fcConfig.property[FELIX_CLIENT_LOG_LEVEL] = clientCfg["logLevel"];
   fcConfig.property[FELIX_CLIENT_BUS_DIR] = clientCfg["busDir"];
   fcConfig.property[FELIX_CLIENT_BUS_GROUP_NAME] = clientCfg["busGroupName"];
   fcConfig.property[FELIX_CLIENT_VERBOSE_BUS] = clientCfg["verboseBus"] ? "True" : "False";
-  fcConfig.property[FELIX_CLIENT_TIMEOUT] = std::to_string(unsigned(clientCfg["timeout"]));
-  fcConfig.property[FELIX_CLIENT_NETIO_PAGES] = std::to_string(unsigned(clientCfg["netioPages"]));
-  fcConfig.property[FELIX_CLIENT_NETIO_PAGESIZE] = std::to_string(unsigned(clientCfg["netioPagesize"]));
-
-  try {
+  fcConfig.property[FELIX_CLIENT_USE_ASIO_EVLOOP] = clientCfg["useASIOevloop"];
+  fcConfig.property[FELIX_CLIENT_USE_THREAD_UNSAFE_NETIO] = clientCfg["useThreadUnsafeNetio"]; 
+      try {
     auto txCfg = j["ToFLX"];
     FelixTxCore::loadConfig(txCfg);
     FelixTxCore::setClient(fcConfig);
