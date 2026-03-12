@@ -409,6 +409,15 @@ int ScanConsoleImpl::initHardware() {
     scanLog["ctrlCfg"] = ctrlCfg;
     scanLog["ctrlStatus"] = hwCtrl->getStatus();
 
+    // Log controller status
+    std::istringstream ss(scanLog["ctrlStatus"].dump(4));
+    std::string line;
+
+    logger->info("Controller status:");
+    while(std::getline(ss, line)) {
+        logger->info(" ~~~ {}", line);
+    }
+
     hwCtrl->setupMode();
 
     // Disable trigger in-case
