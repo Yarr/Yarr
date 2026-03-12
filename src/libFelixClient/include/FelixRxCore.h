@@ -25,6 +25,7 @@ public:
 
   /// Register all Rx channels and distribute them to threads
   void initRxChannels(const std::vector<uint32_t>& channels) override;
+  void checkRxSync() override;
 
   void setRxEnable(uint32_t val) override;
   void setRxEnable(std::vector<uint32_t> channels) override;

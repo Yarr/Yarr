@@ -26,6 +26,7 @@ void FelixTxCore::enableChannel(FelixID_t fid) {
 
   if (m_fifo.find(fid) == m_fifo.end()) { // new fid
     // check communication only if new fid
+    fclient->init_send_data(fid, std::chrono::milliseconds(m_isCmdEmptyWaitTime));
     if (checkChannel(fid)) {
       m_fifo[fid]; // create buffer
     } else {
@@ -249,7 +250,7 @@ void FelixTxCore::sendFifo(FelixID_t fid, std::vector<uint8_t>& fifo) {
   }
 
   bool flush = true;
-  //fclient->getClient()->init_send_data(fid);
+  //fclient->init_send_data(fid, std::chrono::milliseconds(m_isCmdEmptyWaitTime));
   fclient->send_data(fid, std::span{fifo}, flush);
 
   // clear the fifo

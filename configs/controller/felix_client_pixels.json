@@ -16,10 +16,10 @@
         "protocol": 0,
         "flip": false,
         "broadcast": false,
-	"pixFwTrigger": false,
-	"bufferSize": 1024,
-	"idleWords": [170,170],
-	"isCmdEmptyWaitTime": 500
+        "pixFwTrigger": false,
+        "bufferSize": 1024,
+        "idleWords": [170,170],
+        "isCmdEmptyWaitTime": 500
       },
       "ToHost": {
         "detectorID": 0,
@@ -29,7 +29,7 @@
         "enableMonitor": false,
         "monitorInterval": 1000,
         "queueLimitMB": 4000,
-        "waitTime": 500
+        "waitTime": 10
       }
     }
   }
