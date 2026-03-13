@@ -13,8 +13,7 @@ FelixRxCore::~FelixRxCore()
 }
 
 void FelixRxCore::checkRxSync() {
-  // without this wait, register-read executable often fails
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));  
+  // should put something there that verifies we are ready to read data
 }
 
 
@@ -47,6 +46,9 @@ void FelixRxCore::initRxChannels(const std::vector<uint32_t>& channels) {
   for (auto& frt : m_rxThreads) {
     frt->run();
   }
+
+  // without this wait, scanConsole and register-read executable fail to read data
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
   if (m_runMonitor) {
     runMonitor();
