@@ -24,7 +24,7 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
 
 - Alma 9
 - cmake 3.14 or higher
-- GCC version 9 or higher
+- GCC version 11 or higher, C++20
 - Some misc packages (can be installed via yum):
     - gnuplot, texlive-epstopdf (for built-in plotting)
     - zeromq, zeromq-devel (for netio controller)
