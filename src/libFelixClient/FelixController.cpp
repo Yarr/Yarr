@@ -84,13 +84,12 @@ void FelixController::loadConfig(const json &j) {
       m_opto_dev_list.emplace_back(std::make_unique<OptoDevice>(version, i2c_addr, dev_addr, dev_primary_addr, type, tx_fid, rx_fid));
     }
   }
-  
+
   if(j.contains("FelixConfigure")){
     //Default configuration: enable all 12 links
     uint32_t link_bitmask = 0xFFF;
     std::vector<uint8_t> dec_egroup_masks(24, 0x3F);
     std::vector<uint8_t> enc_egroup_masks(24, 0xF);
-    bool overloadEnableAllEgroups = false;
 
     auto configureCfg = j["FelixConfigure"];
     if (configureCfg.contains("linkBitmask"))
@@ -98,12 +97,10 @@ void FelixController::loadConfig(const json &j) {
     else{
       fclog->warn("No link bitmask specified in config, defaulting to enabling all links (bitmask 0xFFF)");
     }
-    if (configureCfg.contains("overloadEnableAllEgroups") && configureCfg["overloadEnableAllEgroups"].get<bool>())
-      overloadEnableAllEgroups = true;
-    if (overloadEnableAllEgroups && configureCfg.contains("decEgroupMasks") && configureCfg["decEgroupMasks"].is_array()){
+    if (configureCfg.contains("decEgroupMasks") && configureCfg["decEgroupMasks"].is_array()){
       dec_egroup_masks = configureCfg["decEgroupMasks"].get<std::vector<uint8_t>>();
     }
-    if (overloadEnableAllEgroups && configureCfg.contains("encEgroupMasks") && configureCfg["encEgroupMasks"].is_array()){
+    if (configureCfg.contains("encEgroupMasks") && configureCfg["encEgroupMasks"].is_array()){
       enc_egroup_masks = configureCfg["encEgroupMasks"].get<std::vector<uint8_t>>();
     }
 
