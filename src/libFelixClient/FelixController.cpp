@@ -84,16 +84,7 @@ void FelixController::loadConfig(const json &j) {
       m_opto_dev_list.emplace_back(std::make_unique<OptoDevice>(version, i2c_addr, dev_addr, dev_primary_addr, type, tx_fid, rx_fid));
     }
   }
-
-  json j_status = getStatus();
-  std::istringstream ss(j_status.dump(4));
-  std::string line;
-
-  fclog->info("Controller status:");
-  while(std::getline(ss, line)) {
-    fclog->info(" ~~~ {}", line);
-  }
-
+  
   if(j.contains("FelixConfigure")){
     //Default configuration: enable all 12 links
     uint32_t link_bitmask = 0xFFF;
