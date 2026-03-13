@@ -5,8 +5,8 @@ include(FetchContent)
 include(cmake/SupportFunctionsLibrary.cmake)
 
 set(USE_SYSTEM_FELIX OFF)
-set(FELIX_ROOT "" CACHE PATH "Path to pre-compiled FELIX")
-if (NOT "${FELIX_ROOT}" STREQUAL "")
+set(Felix_ROOT "" CACHE PATH "Path to pre-compiled FELIX")
+if (NOT "${Felix_ROOT}" STREQUAL "")
     set(USE_SYSTEM_FELIX ON)
 endif()
 
@@ -139,8 +139,8 @@ function(YARR_ADD_FELIX_CLIENT)
     set(YARR_FELIX_BACKEND "FELIX_CLIENT" PARENT_SCOPE)
 
     if (USE_SYSTEM_FELIX)
-        message(STATUS "Using pre-compiled FELIX from ${FELIX_ROOT}")
-        find_package(Felix REQUIRED COMPONENTS felix-client-thread felix-interface HINTS "${FELIX_ROOT}")
+        message(STATUS "Using pre-compiled FELIX from ${Felix_ROOT}")
+        find_package(Felix REQUIRED COMPONENTS felix-client-thread felix-interface HINTS "${Felix_ROOT}")
         # Create ALIASES so the rest of Yarr doesn't need to care 
         # about the double-colon namespace vs. local names
         if(NOT TARGET felix-client-thread)
