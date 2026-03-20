@@ -181,6 +181,17 @@ std::string FelixTools::getELinkWidthRegName(FelixID_t fid, FELIX_FW_MODE fwmode
   return getELinkRegName(fid, fwmode, "WIDTH");
 }
 
+std::string FelixTools::getLinkPathEncodingRegName(unsigned linkId, unsigned egroup, bool toflx) {
+  std::stringstream regName;
+  if (toflx) {
+    regName << "ENCODING_LINK";
+  } else {
+    regName << "DECODING_LINK";
+  }
+  regName << std::setfill('0') << std::setw(2) << linkId << "_EGROUP" << egroup << "_CTRL_PATH_" << "ENCODING";
+  return regName.str();
+}
+
 std::vector<std::string> FelixTools::getAllICEnableRegNames(bool toflx) {
   std::vector<std::string> allRegNames;
   for (unsigned l = 0; l < FelixTools::FLX_LINKS; ++l) {

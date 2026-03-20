@@ -126,6 +126,11 @@ public:
   /// @return Elink width in Mbps
   unsigned getELinkWidthMbps(uint64_t fid);
 
+  /// @brief Get the path encoding
+  /// @param fid 64-bit FELIX ID
+  /// @return Path encoding
+  unsigned getPathEncoding(uint64_t fid);
+
   /// @brief Enable or disable an elink
   /// @param fid 64-bit FELIX ID
   /// @param enable Set to true to enable the elink, false to disable it. Default: true
@@ -171,6 +176,17 @@ public:
   /// @param bandwidth Elink bandwidth in Mbps
   /// @return True if the operation is successful
   bool setELinkWidthMbps(const std::vector<uint64_t>& fids, unsigned bandwidth);
+
+  /// @brief Set the path encoding for a specific FELIX ID
+  /// @param fid 64-bit FELIX ID
+  /// @param encoding The encoding to set
+  /// @return True if the operation is successful, false otherwise
+  bool setPathEncoding(uint64_t fid, unsigned encoding);
+
+  /// @brief Set the path encoding for a list of FELIX IDs
+  /// @param fids A vector of FELIX IDs
+  /// @param encoding The encoding to set
+  bool setPathEncoding(const std::vector<uint64_t>& fids, unsigned encoding);
 
   /*
   Optoboard device communication
@@ -334,13 +350,12 @@ private:
   /// @param link_bitmask A bitmask of the links to enable. For example, if we want to enable elink 0, 2 and 4, the bitmask should be 0b00010101 (or 0x15 in hex). Maximum number of links on a device is 12 or 0xFFF in hex.
   /// @param dec_egroup_masks A vector corresponding to decoding egroup masks per link. 6 egroups per link, so each mask should have a maximum 0x3F value.
   /// @param enc_egroup_masks A vector corresponding to encoding egroup masks per link. 4 elinks per group, so each mask should have a maximum 0xF value.
-  bool configureFelixCard(uint32_t link_bitmask, std::vector<uint8_t> dec_egroup_masks, std::vector<uint8_t> enc_egroup_masks);
+  bool configureFelixCard(uint32_t link_bitmask, std::vector<uint8_t> dec_egroup_masks, std::vector<uint8_t> enc_egroup_masks, uint8_t encodingLinkEncoding, uint8_t decodingLinkEncoding, uint8_t encodingLinkWidth, uint8_t decodingLinkWidth);
  
-  /// @brief Configure all the FELIX card elinks and their associated EC and IC channels
-  bool configureFelixCard();
-
   //Configure the encoding/decoding for an individual link and associated egroups
-  bool configureEncodingDecodingLink(uint8_t link, bool enable_link, uint8_t dec_egroup_mask, uint8_t enc_egroup_mask);
+  bool configureEncodingDecodingLink(uint8_t link, bool enable_link, uint8_t dec_egroup_mask, uint8_t enc_egroup_mask, uint8_t encodingLinkEncoding, uint8_t decodingLinkEncoding, uint8_t encodingLinkWidth, uint8_t decodingLinkWidth);
+
+  bool configureEncodingDecoding(std::vector<FelixTools::FelixID_t> rx_fids, std::vector<FelixTools::FelixID_t> tx_fids, uint8_t rx_width, uint8_t tx_width);
   /*
   Optoboard device communication
   */

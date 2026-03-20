@@ -97,6 +97,23 @@ namespace {
     if (allGood) logger->info(" All e-links are {} Mbps!", bandwidth);
   }
 
+  void checkPathEncoding(FelixController* flx, const std::vector<FelixTools::FelixID_t>& fids, unsigned encoding, const std::string& label) {
+    if (fids.empty()) return;
+
+    logger->info("Checking e-link ({}) path encoding...", label);
+    bool allGood {true};
+
+    for (const auto& fid : fids) {
+      unsigned encoding_fid = flx->getPathEncoding(fid);
+      if (encoding_fid != encoding) {
+        allGood = false;
+        logger->warn(" FID 0x{:x} path encoding is {} instead of {}!", fid, encoding_fid, encoding);
+      }
+    }
+
+    if (allGood) logger->info(" All e-links have path encoding {}!", encoding);
+  }
+
   void checkELinkEnable(FelixController* flx, const std::vector<FelixTools::FelixID_t>& fids, const std::string& label, bool exclusive) {
     if (fids.empty()) return;
 
@@ -148,6 +165,15 @@ namespace {
     }
   }
 
+  void setPathEncoding(FelixController* flx, const std::vector<FelixTools::FelixID_t>& fids, unsigned encoding, const std::string& label) {
+    if (fids.empty()) return;
+
+    logger->info("Setting e-link ({}) path encoding to {}...", label, encoding);
+    if ( flx->setPathEncoding(fids, encoding) ) {
+      logger->info(" ...done!");
+    }
+  }
+
   void enableELinks(FelixController* flx, const std::vector<FelixTools::FelixID_t>& fids, const std::string& label, bool exclusive) {
     if (fids.empty()) return;
 
@@ -194,6 +220,8 @@ int main(int argc, char **argv) {
   bool exclusive {false};
   bool includeIC {false};
   bool includeEC {false};
+  bool includeEncoding {false};
+  uint8_t downlinkEncoding {3}; // Default is TTC
   bool verbose {false};
 
   if (argc < 3) {
@@ -369,6 +397,11 @@ int main(int argc, char **argv) {
       checkELinkBandWidth(flxCtrlPtr, vfids_rx, rxBandWidth, "Rx");
     }
 
+    if(includeEncoding){
+      checkPathEncoding(flxCtrlPtr, vfids_tx, downlinkEncoding, "Tx");
+      checkPathEncoding(flxCtrlPtr, vfids_rx, downlinkEncoding, "Rx");
+    }
+
     checkELinkEnable(flxCtrlPtr, vfids_tx, "Tx", exclusive);
     checkELinkEnable(flxCtrlPtr, vfids_rx, "Rx", exclusive);
   }
@@ -385,6 +418,11 @@ int main(int argc, char **argv) {
 
     if (rxBandWidth > 0) {
       setELinkBandWidth(flxCtrlPtr, vfids_rx, rxBandWidth, "Rx");
+    }
+
+    if(includeEncoding){
+      setPathEncoding(flxCtrlPtr, vfids_tx, downlinkEncoding, "Tx");
+      setPathEncoding(flxCtrlPtr, vfids_rx, flxCtrlPtr->fwMode(), "Rx");
     }
 
     enableELinks(flxCtrlPtr, vfids_tx, "Tx", exclusive);
