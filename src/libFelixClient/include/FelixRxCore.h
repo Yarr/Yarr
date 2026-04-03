@@ -65,7 +65,7 @@ protected:
     return m_rxThreads[m_fidThreadMap[fid]]->channelIsEnabled(fid);
   }
 
-  unsigned m_flushWaitTime {50}; // in milliseconds
+  unsigned m_flushWaitTime {0}; // in milliseconds
 
   // For Felix ID
   uint8_t m_did {0};  // detector ID; 0x00 reserved for local IDs

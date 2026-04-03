@@ -17,13 +17,13 @@
         "flip": false,
         "broadcast": true,
         "idleWords": [120, 85, 120, 85],
-        "isCmdEmptyWaitTime": 500
+        "isCmdEmptyWaitTime": 0
       },
       "ToHost": {
         "detectorID": 0,
         "connectorID": 0,
         "protocol": 0,
-        "flushWaitTime": 50,
+        "flushWaitTime": 0,
         "enableMonitor": true,
         "monitorInterval": 1000,
         "queueLimitMB": 4000,
