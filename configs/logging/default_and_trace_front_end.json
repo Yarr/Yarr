@@ -1,7 +1,7 @@
 {
     "pattern": "[%T:%e]%^[%=8l][%=15n]:%$ %v",
     "log_config": [
-        {"name": "all", "level": "info"},
+        {"name": "all", "level": "debug"},
         {"name": "Fei4", "level": "trace"},
         {"name": "Fei4Cmd", "level": "trace"},
         {"name": "Rd53a", "level": "trace"},
