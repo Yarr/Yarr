@@ -157,7 +157,7 @@ function(YARR_ADD_FELIX_CLIENT)
     FetchContent_Declare (
         felixclientthread
         GIT_REPOSITORY https://gitlab.cern.ch/atlas-tdaq-felix/felix-client-thread.git
-        GIT_TAG 5.2.x-ext
+        GIT_TAG master
         UPDATE_COMMAND ""
         PATCH_COMMAND 
              cp ${PROJECT_SOURCE_DIR}/cmake/felix-client-threadpatches/CMakeLists.txt.felix-client-thread CMakeLists.txt &&
