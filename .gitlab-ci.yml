@@ -59,20 +59,10 @@ job_build_all:
     - git config --global user.name "CI Runner"
   script:
     - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-    - |
-      if [ "$ARCH" = "cc7" ]; then
-        yum -y install autoconf automake libtool glibc-headers kernel-headers glibc-devel
-      else
-        dnf -y install autoconf automake libtool
-      fi
+    - dnf -y install autoconf automake libtool
     - mkdir  build
     - cd build
-    - |
-      if [ "$ARCH" = "cc7" ]; then
-        cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DENABLE_PYTHON=On -DLIBFABRIC_CONFIGURE_OPTS="--disable-lpp" -DYARR_ENABLE_PYTHON=off
-      else
-        cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DENABLE_PYTHON=On -DLIBFABRIC_CONFIGURE_OPTS="--disable-lpp" -DYARR_ENABLE_PYTHON=on
-      fi
+    - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DENABLE_PYTHON=On -DLIBFABRIC_CONFIGURE_OPTS="--disable-lpp" -DYARR_ENABLE_PYTHON=on
     - make install -j$(nproc)
     - CTEST_OUTPUT_ON_FAILURE=1 make test
     - cd ..
@@ -84,12 +74,7 @@ job_build_and_test_out_of_source:
   stage: build
   script:
     - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-    - |
-      if [ "$ARCH" = "cc7" ]; then
-        yum -y install autoconf automake libtool glibc-headers kernel-headers glibc-devel
-      else
-        dnf -y install autoconf automake libtool
-      fi
+    - dnf -y install autoconf automake libtool
     - cmake3 --version
     - export YARR_PROJECT_DIR=`pwd`
     - CXXFLAGS=-Werror cmake3 -S . -B /tmp/build-yarr -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=cmake/linux-gcc -DCMAKE_INSTALL_PREFIX=/tmp/install-yarr
