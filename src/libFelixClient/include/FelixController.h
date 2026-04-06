@@ -129,7 +129,7 @@ public:
   /// @brief Get the path encoding
   /// @param fid 64-bit FELIX ID
   /// @return Path encoding
-  unsigned getPathEncoding(uint64_t fid);
+  unsigned getPathEncodingDecoding(uint64_t fid);
 
   /// @brief Enable or disable an elink
   /// @param fid 64-bit FELIX ID
@@ -177,16 +177,23 @@ public:
   /// @return True if the operation is successful
   bool setELinkWidthMbps(const std::vector<uint64_t>& fids, unsigned bandwidth);
 
+  /// @brief Set the encoding/decoding for a specific egroup.
+  /// @param linkId The link ID of the egroup
+  /// @param egroup the egroup number
+  /// @param toflx the link direction
+  /// @param encoding The encoding to set
+  bool setEgroupEncodingDecoding(uint16_t linkId, uint8_t egroup, bool toflx, unsigned encoding);
+
   /// @brief Set the path encoding for a specific FELIX ID
   /// @param fid 64-bit FELIX ID
   /// @param encoding The encoding to set
   /// @return True if the operation is successful, false otherwise
-  bool setPathEncoding(uint64_t fid, unsigned encoding);
+  bool setPathEncodingDecoding(uint64_t fid, unsigned encoding);
 
   /// @brief Set the path encoding for a list of FELIX IDs
   /// @param fids A vector of FELIX IDs
   /// @param encoding The encoding to set
-  bool setPathEncoding(const std::vector<uint64_t>& fids, unsigned encoding);
+  bool setPathEncodingDecoding(const std::vector<uint64_t>& fids, unsigned encoding);
 
   /*
   Optoboard device communication

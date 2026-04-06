@@ -36,7 +36,11 @@
         "txEncoding": 4,
         "rxDecoding": 3,
         "txBandWidth": 160,
-        "rxBandWidth": 1280
+        "rxBandWidth": 1280,
+
+        "Reg": {
+          "DECODING_REVERSE_10B" : "0x1"
+        }
       }
     }
   }

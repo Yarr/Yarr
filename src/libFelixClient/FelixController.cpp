@@ -87,14 +87,27 @@ void FelixController::loadConfig(const json &j) {
 
   //Necesary to decode data from epaths:
   writeFwRegister("DECODING_MASK64B66BKBLOCK", 0x0);
-
+  writeFwRegister("LPGBT_FEC", 0xFFFFFFFFFFFF);
   if(j.contains("Card")){
-    fclog->info("Card configuration, loading...");
+    fclog->info("Configuring FELIX card");
     auto cardCfg = j["Card"];
 
     if(cardCfg.contains("configureEncodingDecoding")){     
-      fclog->info("Configuring encoding/decoding...");
-      if(cardCfg["configureEncodingDecoding"]){
+        if(cardCfg["configureEncodingDecoding"]){
+        //Must set the path encoding/decoding registers to 0x0 for per-link control as done with configureChannel 
+        //This is opposed to the default register value which is 0x11111111
+        fclog->info("Resetting encoding and decoding patterns");
+        uint8_t LINK_MAX = 12;
+        uint8_t DEC_EGORUP_MAX = 7;
+        uint8_t ENC_EGROUP_MAX = 5;
+        for(uint8_t li = 0; li < LINK_MAX; ++li){
+          for(uint8_t ei = 0; ei < DEC_EGORUP_MAX; ++ei){
+            setEgroupEncodingDecoding(li, ei, false, 0x0);
+          }
+          for(uint8_t ei = 0; ei < ENC_EGROUP_MAX; ++ei){
+            setEgroupEncodingDecoding(li, ei, true, 0x0);
+          }
+        }
         m_configureEncoding = true;
         m_configureDecoding = true;
         if(cardCfg.contains("txEncoding")){
@@ -143,7 +156,20 @@ void FelixController::loadConfig(const json &j) {
     }else{
       fclog->info("configureEncodingDecoding not specified, skipping...");
     }
+
+    fclog->info("Setting provided FELIX registers");
+    if(cardCfg.contains("Reg")){
+      for(auto& [regName, regValue] : cardCfg["Reg"].items()){
+        if(regValue.is_string()){
+          regValue = std::stoull(regValue.get<std::string>(), 0, 0);
+        }
+        if(!writeFwRegister(regName, regValue.get<uint64_t>())){
+          fclog->error("Failed to write register {} with value {}", regName, regValue.get<uint64_t>());
+        }
+      }
+    }
   }
+
 }
 
 const json FelixController::getStatus() {
@@ -415,13 +441,13 @@ unsigned FelixController::getELinkWidthMbps(uint64_t fid) {
   return getELinkWidthNBits(fid) * 40;
 }
 
-unsigned FelixController::getPathEncoding(uint64_t fid) {
+unsigned FelixController::getPathEncodingDecoding(uint64_t fid) {
   fclog->debug("Get FID 0x{:x} path encoding:", fid);
 
   unsigned encoding {0};
   auto [linkId, egroup, epath, toflx] = linkInfo_from_fid(fid, fwMode());
 
-  std::string regName = FelixTools::getLinkPathEncodingRegName(linkId, egroup, toflx);
+  std::string regName = FelixTools::getEgroupEncodingDecodingRegName(linkId, egroup, toflx);
   uint64_t regValue;
   if ( readFwRegister(regName, regValue) ) {
     fclog->debug(" {} = 0x{:x}", regName, regValue);
@@ -627,11 +653,19 @@ bool FelixController::setELinkWidthMbps(const std::vector<uint64_t>& fids, unsig
   return setELinkWidthNBits(fids, bandwidth/40);
 }
 
-bool FelixController::setPathEncoding(uint64_t fid, unsigned encoding){
+bool FelixController::setEgroupEncodingDecoding(uint16_t linkId, uint8_t egroup, bool toflx, unsigned encoding){
+  fclog->debug("Set link {}, egroup {} path encoding to 0x{:x}", linkId, egroup, encoding);
+
+  std::string regName = FelixTools::getEgroupEncodingDecodingRegName(linkId, egroup, toflx);
+
+  return setRegValue(regName, encoding);
+}
+
+bool FelixController::setPathEncodingDecoding(uint64_t fid, unsigned encoding){
   fclog->debug("Set FID 0x{:x} path encoding to 0x{:x}", fid, encoding);
 
   auto [linkId, egroup, epath, toflx] = FelixTools::linkInfo_from_fid(fid, fwMode());
-  std::string regName = FelixTools::getLinkPathEncodingRegName(linkId, egroup, toflx);
+  std::string regName = FelixTools::getEgroupEncodingDecodingRegName(linkId, egroup, toflx);
 
   unsigned shift = 4 * epath;
   unsigned value = (encoding & 0xF) << shift;
@@ -640,10 +674,10 @@ bool FelixController::setPathEncoding(uint64_t fid, unsigned encoding){
   return setRegValue(regName, value, mask);  
 }
 
-bool FelixController::setPathEncoding(const std::vector<uint64_t>& fids, unsigned encoding){
+bool FelixController::setPathEncodingDecoding(const std::vector<uint64_t>& fids, unsigned encoding){
  fclog->debug("Set path encoding to 0x{:x}", encoding);
  for(size_t i=0; i<fids.size(); ++i){
-    if(!setPathEncoding(fids[i], encoding)){
+    if(!setPathEncodingDecoding(fids[i], encoding)){
       fclog->error("Failed to set path encoding for FID 0x{:x}", fids[i]);
       return false;
     }
@@ -838,13 +872,13 @@ bool FelixController::configureChannel(FelixTools::FelixID_t fid, uint16_t bandw
 
   if(!setELinkEnable(fid, enable)) return false;
   if(!setELinkWidthMbps(fid, bandwidth)) return false;
-  if(!setPathEncoding(fid, pattern)) return false;  
+  if(!setPathEncodingDecoding(fid, pattern)) return false;  
 
   return true;
 } 
 
 
-}
+
 
 /*
 Optoboard communication functions

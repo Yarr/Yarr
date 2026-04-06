@@ -109,7 +109,7 @@ namespace {
     bool allGood {true};
 
     for (const auto& fid : fids) {
-      unsigned encoding_fid = flx->getPathEncoding(fid);
+      unsigned encoding_fid = flx->getPathEncodingDecoding(fid);
       if (encoding_fid != encoding) {
         allGood = false;
         logger->warn(" FID 0x{:x} path encoding is 0x{:X} instead of 0x{:x}!", fid, encoding_fid, encoding);
@@ -174,7 +174,7 @@ namespace {
     if (fids.empty()) return;
 
     logger->info("Setting e-link ({}) path encoding to 0x{:x}...", label, encoding);
-    if ( flx->setPathEncoding(fids, encoding) ) {
+    if ( flx->setPathEncodingDecoding(fids, encoding) ) {
       logger->info(" ...done!");
     }
   }
@@ -225,7 +225,7 @@ int main(int argc, char **argv) {
   bool exclusive {false};
   bool includeIC {false};
   bool includeEC {false};
-  bool includeEncoding {false};
+  bool includeEncodingDecoding {false};
   uint8_t txEncoding;
   uint8_t rxDecoding;
   bool verbose {false};
@@ -290,8 +290,8 @@ int main(int argc, char **argv) {
     case 'E':
       includeEC = true;
       break;
-    case 'En':
-      includeEncoding = true;
+    case 'ED':
+      includeEncodingDecoding = true;
       break;
     case 'v':
       verbose = true;
@@ -413,7 +413,7 @@ int main(int argc, char **argv) {
       checkELinkBandWidth(flxCtrlPtr, vfids_rx, rxBandWidth, "Rx");
     }
 
-    if(includeEncoding){
+    if(includeEncodingDecoding){
       checkPathEncoding(flxCtrlPtr, vfids_tx, txEncoding, "Tx");
       checkPathEncoding(flxCtrlPtr, vfids_rx, rxDecoding, "Rx");
     }
@@ -436,7 +436,7 @@ int main(int argc, char **argv) {
       setELinkBandWidth(flxCtrlPtr, vfids_rx, rxBandWidth, "Rx");
     }
 
-    if(includeEncoding){
+    if(includeEncodingDecoding){
       setPathEncoding(flxCtrlPtr, vfids_tx, txEncoding, "Tx");
       setPathEncoding(flxCtrlPtr, vfids_rx, rxDecoding, "Rx");
     }

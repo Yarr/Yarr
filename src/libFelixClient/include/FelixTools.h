@@ -233,7 +233,7 @@ namespace FelixTools {
   /// @param egroup Egroup number
   /// @param toflx Link direction
   /// @return Elink width register name
-  std::string getLinkPathEncodingRegName(unsigned linkId, unsigned egroup, bool toflx);
+  std::string getEgroupEncodingDecodingRegName(unsigned linkId, unsigned egroup, bool toflx);
 
   /* Overload using FELIX ID */
   /// @brief Get the IC enable register name associated with a link
