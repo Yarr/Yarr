@@ -24,7 +24,13 @@ FelixTxCore::~FelixTxCore()
 void FelixTxCore::enableChannel(FelixID_t fid) {
   ftlog->debug("Enable Tx link: 0x{:x}", fid);
 
-  if (m_fifo.find(fid) == m_fifo.end()) { // new fid
+  if(m_configureEncoding) {
+    if(!configureChannel(fid, m_encodingBandWidth, m_encodingPattern, true)){
+      ftlog->error("Failed to configure encoding for channel 0x{:x}", fid);
+    }
+  }
+
+  if (m_fifo.find(fid) == m_fifo.end()) { // new fid  
     // check communication only if new fid
     fclient->init_send_data(fid, std::chrono::milliseconds(m_isCmdEmptyWaitTime));
     if (checkChannel(fid)) {
@@ -34,7 +40,6 @@ void FelixTxCore::enableChannel(FelixID_t fid) {
       return;
     }
   }
-
   m_enables[fid] = true;
 }
 

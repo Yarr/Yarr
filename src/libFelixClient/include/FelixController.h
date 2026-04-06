@@ -344,18 +344,13 @@ private:
 
   /// Initiate a map with all elink enable register names on a FELIX device and set their value to 0
   void initAllELinkEnableRegMap(std::map<std::string, unsigned>& regMap, bool toflx, bool tohost);
-
-  // FELIX card configuration upon initialization
-  /// @brief Configure the FELIX card by enabling the elinks and their associated EC and IC channels
-  /// @param link_bitmask A bitmask of the links to enable. For example, if we want to enable elink 0, 2 and 4, the bitmask should be 0b00010101 (or 0x15 in hex). Maximum number of links on a device is 12 or 0xFFF in hex.
-  /// @param dec_egroup_masks A vector corresponding to decoding egroup masks per link. 6 egroups per link, so each mask should have a maximum 0x3F value.
-  /// @param enc_egroup_masks A vector corresponding to encoding egroup masks per link. 4 elinks per group, so each mask should have a maximum 0xF value.
-  bool configureFelixCard(uint32_t link_bitmask, std::vector<uint8_t> dec_egroup_masks, std::vector<uint8_t> enc_egroup_masks, uint8_t encodingLinkEncoding, uint8_t decodingLinkEncoding, uint8_t encodingLinkWidth, uint8_t decodingLinkWidth);
  
-  //Configure the encoding/decoding for an individual link and associated egroups
-  bool configureEncodingDecodingLink(uint8_t link, bool enable_link, uint8_t dec_egroup_mask, uint8_t enc_egroup_mask, uint8_t encodingLinkEncoding, uint8_t decodingLinkEncoding, uint8_t encodingLinkWidth, uint8_t decodingLinkWidth);
-
-  bool configureEncodingDecoding(std::vector<FelixTools::FelixID_t> rx_fids, std::vector<FelixTools::FelixID_t> tx_fids, uint8_t rx_width, uint8_t tx_width);
+  // FELIX card configuration utility for a channel
+  /// @brief Enable, set the bandwidth, and the encoding/decoding pattern for a specific channel identified by the FELIX ID
+  /// @param fid FELIX ID of the channel to configure
+  /// @param bandwidth Bandwidth to set for the channel in Mbps.
+  /// @param pattern Encoding/decoding pattern to set for the channel
+  bool configureChannel(FelixTools::FelixID_t fid, uint16_t bandwidth, uint8_t pattern, bool enable=true) override;
   /*
   Optoboard device communication
   */

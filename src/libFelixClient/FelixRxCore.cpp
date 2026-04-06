@@ -32,6 +32,13 @@ void FelixRxCore::initRxChannels(const std::vector<uint32_t>& channels) {
     fid_lists[ithread%m_nThreads].push_back(fid);
     m_fidThreadMap[fid] = ithread%m_nThreads;
     ithread++;
+
+    //Set FELIX registers to set IC communication and decoding pattern
+    if(m_configureDecoding) {
+     if(!configureChannel(fid, m_decodingBandWidth, m_decodingPattern, true)){
+       frlog->error("Failed to configure decoding for channel 0x{:x}", fid);
+      }
+    }
   }
 
   // Start threads to subscribe to channels
@@ -56,7 +63,6 @@ void FelixRxCore::initRxChannels(const std::vector<uint32_t>& channels) {
 }
 
 void FelixRxCore::enableChannel(FelixID_t fid) {
-  frlog->debug("Enable Rx link: 0x{:x}", fid);
   try {
     size_t threadIdx = m_fidThreadMap.at(fid);
     m_rxThreads.at(threadIdx)->enableChannel(fid);

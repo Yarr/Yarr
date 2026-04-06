@@ -69,7 +69,6 @@ class FelixRxThread {
       ss << "0x" << std::hex << thread_ptr->get_id();
       return ss.str();
     }
-
   private:
 
     std::unique_ptr<std::thread> thread_ptr;

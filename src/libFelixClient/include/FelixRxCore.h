@@ -60,10 +60,17 @@ protected:
   // Channel control
   void enableChannel(FelixID_t fid);
   void disableChannel(FelixID_t fid);
-
+  
   bool channelIsEnabled(FelixID_t fid) {
     return m_rxThreads[m_fidThreadMap[fid]]->channelIsEnabled(fid);
   }
+
+  //Used to enable configuraring encoding/decoding for every rx channel in enableChannel()
+  bool m_configureDecoding {false};
+  uint16_t m_decodingBandWidth {0};
+  uint8_t m_decodingPattern {0};
+  // Function to be set by FelixController to configure encoding/decoding for every rx channel
+  virtual bool configureChannel(FelixTools::FelixID_t fid, uint16_t bandwidth, uint8_t pattern, bool enable) = 0;
 
   unsigned m_flushWaitTime {0}; // in milliseconds
 

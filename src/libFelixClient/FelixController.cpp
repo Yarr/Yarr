@@ -85,56 +85,64 @@ void FelixController::loadConfig(const json &j) {
     }
   }
 
-  if(j.contains("FelixConfigure")){
-    //Default configuration: enable all 12 links
-    uint32_t link_bitmask = 0xFFF;
-    std::vector<uint8_t> dec_egroup_masks(24, 0x3F);
-    std::vector<uint8_t> enc_egroup_masks(24, 0xF);
-    uint8_t decodingLinkEncoding = 3; // Default is TTC
-    uint8_t encodingLinkEncoding;
-    uint8_t decodingLinkWidth, encodingLinkWidth;
+  //Necesary to decode data from epaths:
+  writeFwRegister("DECODING_MASK64B66BKBLOCK", 0x0);
 
-    auto configureCfg = j["FelixConfigure"];
-    if (configureCfg.contains("linkBitmask"))
-      link_bitmask = configureCfg["linkBitmask"];
-    else{
-      fclog->warn("No link bitmask specified in config, defaulting to enabling all links (bitmask 0xFFF)");
-    }
-    if (configureCfg.contains("decEgroupMasks") && configureCfg["decEgroupMasks"].is_array()){
-      dec_egroup_masks = configureCfg["decEgroupMasks"].get<std::vector<uint8_t>>();
-    }
-    if (configureCfg.contains("encEgroupMasks") && configureCfg["encEgroupMasks"].is_array()){
-      enc_egroup_masks = configureCfg["encEgroupMasks"].get<std::vector<uint8_t>>();
-    }
-    if (configureCfg.contains("decodingLinkEncoding")){
-      decodingLinkEncoding = configureCfg["decodingLinkEncoding"];
-    }
-    if(configureCfg.contains("encodingLinkEncoding")){
-      encodingLinkEncoding = configureCfg["encodingLinkEncoding"];
-    }else{
-      fclog->error("No uplink encoding specified in config, cannot configure FELIX path encoding without it");
-      throw std::runtime_error("No uplink encoding specified in ConfigureFelix config");
-    }
-    if(configureCfg.contains("decodingLinkWidth")){
-      decodingLinkWidth = configureCfg["decodingLinkWidth"];
-    }else{
-      fclog->error("No decoding link width specified in config, cannot configure FELIX path encoding without it");
-      throw std::runtime_error("No decoding link width specified in ConfigureFelix config");
-     }
-    if(configureCfg.contains("encodingLinkWidth")){
-      encodingLinkWidth = configureCfg["encodingLinkWidth"];
-    }else{
-      fclog->error("No encoding link width specified in config, cannot configure FELIX path encoding without it");
-      throw std::runtime_error("No encoding link width specified in ConfigureFelix config");
-    }
-    fclog->info("Configuring encoding and decoding for FELIX card...");
-    if(!configureFelixCard(link_bitmask, dec_egroup_masks, enc_egroup_masks, encodingLinkEncoding, decodingLinkEncoding, encodingLinkWidth, decodingLinkWidth)){
-      fclog->error("Failed to configure encoding and decoding for FELIX card");
-      throw std::runtime_error("Failed to configure encoding and decoding for FELIX card");
-    }
+  if(j.contains("Card")){
+    fclog->info("Card configuration, loading...");
+    auto cardCfg = j["Card"];
 
-    
-    fclog->info("Configured encoding and decoding for FELIX card");
+    if(cardCfg.contains("configureEncodingDecoding")){     
+      fclog->info("Configuring encoding/decoding...");
+      if(cardCfg["configureEncodingDecoding"]){
+        m_configureEncoding = true;
+        m_configureDecoding = true;
+        if(cardCfg.contains("txEncoding")){
+          m_encodingPattern = cardCfg["txEncoding"];
+        }
+        else{
+          fclog->warn("Set to configure encoding/decoding but txEncoding not specified, using default value of 0");
+          m_encodingPattern = 0;
+        }
+        if(cardCfg.contains("rxDecoding")){
+          m_decodingPattern = cardCfg["rxDecoding"];
+        }
+        else{
+          fclog->warn("Set to configure encoding/decoding but rxDecoding not specified, using default value of 0");
+          m_decodingPattern = 0;
+        }
+
+        auto checkBandwidth = [](uint16_t bw) {
+          uint16_t possible_bandwidths[] = {80, 160, 320, 640, 1280};
+          if(std::find(std::begin(possible_bandwidths), std::end(possible_bandwidths), bw) == std::end(possible_bandwidths)){
+            fclog->warn("Bandwidth value of {} is not a possible bandwidth from {{80, 160, 320, 640, 1280}}, rounding to nearest valid bandwidth");
+            auto closest = std::min_element(std::begin(possible_bandwidths), std::end(possible_bandwidths), [bw](uint16_t a, uint16_t b) {
+              return std::abs(static_cast<int>(a) - static_cast<int>(bw)) < std::abs(static_cast<int>(b) - static_cast<int>(bw));
+            });
+            return *closest;
+          }
+          return bw;
+        };
+        if(cardCfg.contains("txBandWidth")){
+          uint16_t txBandWidth = cardCfg["txBandWidth"];
+          m_encodingBandWidth = checkBandwidth(txBandWidth);
+        }
+        else{
+          fclog->warn("Set to configure encoding/decoding but txBandWidth not specified, using default value of 80");
+          m_encodingBandWidth = 80;
+        }
+        if(cardCfg.contains("rxBandWidth")){
+          uint16_t rxBandWidth = cardCfg["rxBandWidth"];
+          m_decodingBandWidth = checkBandwidth(rxBandWidth);
+        }
+        else{
+          fclog->warn("Set to configure encoding/decoding but rxBandWidth not specified, using default value of 80");
+          m_decodingBandWidth = 80;
+        }
+      }
+    }else{
+      fclog->info("configureEncodingDecoding not specified, skipping...");
+    }
   }
 }
 
@@ -824,85 +832,18 @@ void FelixController::initAllELinkEnableRegMap(std::map<std::string, unsigned>& 
   }
 }
 
-bool FelixController::configureFelixCard(uint32_t link_bitmask, std::vector<uint8_t> dec_egroup_masks, std::vector<uint8_t> enc_egroup_masks, uint8_t encodingLinkEncoding, uint8_t decodingLinkEncoding, uint8_t encodingLinkWidth, uint8_t decodingLinkWidth){
-  writeFwRegister("LPGBT_FEC", 0xFFFFFFFFFFFF); 
-  for(int i = 0; i < 12; i++){
-    if(!(link_bitmask & (1 << i)))
-        continue; //skip this link if not activated in bitmask
+bool FelixController::configureChannel(FelixTools::FelixID_t fid, uint16_t bandwidth, uint8_t pattern, bool enable){
+  if(!setICEnable(fid, enable)) return false;
+  if(!setECEnable(fid, enable)) return false;
 
-    if(!configureEncodingDecodingLink(i, true, dec_egroup_masks[i], enc_egroup_masks[i], encodingLinkEncoding, decodingLinkEncoding, encodingLinkWidth, decodingLinkWidth))
-      return false;
-  }
-  return true;
-}
-
-bool FelixController::configureEncodingDecodingLink(uint8_t link, bool enable_link, uint8_t dec_egroup_mask, uint8_t enc_egroup_mask, uint8_t encodingLinkEncoding, uint8_t decodingLinkEncoding, uint8_t encodingLinkWidth, uint8_t decodingLinkWidth){
-  auto twoDigitString = [](int value) {
-    std::ostringstream oss;
-    oss << std::setw(2) << std::setfill('0') << value;
-    return oss.str();
-  };
-
-  const std::string il2 = twoDigitString(link);
-  const uint64_t mini_enable = enable_link ? 0x1 : 0x0;
-
-  if (!writeFwRegister("MINI_EGROUP_FROMHOST_" + il2 + "_EC_ENABLE", mini_enable)) return false;
-  if (!writeFwRegister("MINI_EGROUP_TOHOST_"   + il2 + "_EC_ENABLE", mini_enable)) return false;
-  if (!writeFwRegister("MINI_EGROUP_FROMHOST_" + il2 + "_IC_ENABLE", mini_enable)) return false;
-  if (!writeFwRegister("MINI_EGROUP_TOHOST_"   + il2 + "_IC_ENABLE", mini_enable)) return false;
-
-  for (int ig = 0; ig < 6; ++ig) {
-    bool dec_enabled = enable_link && ((dec_egroup_mask >> ig) & 0x1);
-
-    std::string base =
-      "DECODING_LINK" + il2 + "_EGROUP" + std::to_string(ig) + "_CTRL_";
-
-    //
-    if (!writeFwRegister(base + "EPATH_ENA",     dec_enabled ? 0x3  : 0x0)) return false;
-    if (!writeFwRegister(base + "EPATH_WIDTH",   dec_enabled ? decodingLinkWidth : 0x0)) return false;
-    if (!writeFwRegister(base + "PATH_ENCODING", dec_enabled ? decodingLinkEncoding : 0x0)) return false;
-    
-
-    fclog->debug("Set decoding link {} egroup {} to {}", link, ig, dec_enabled ? "enabled" : "disabled");
-  }
-
-  for (int ig = 0; ig < 4; ++ig) {
-    bool enc_enabled = enable_link && ((enc_egroup_mask >> ig) & 0x1);
-
-    std::string base =
-      "ENCODING_LINK" + il2 + "_EGROUP" + std::to_string(ig) + "_CTRL_";
-
-    if (!writeFwRegister(base + "EPATH_ENA",     enc_enabled ? 0x5    : 0x0)) return false;
-    if (!writeFwRegister(base + "EPATH_WIDTH",   enc_enabled ? encodingLinkWidth    : 0x0)) return false;
-    if (!writeFwRegister(base + "PATH_ENCODING", enc_enabled ? encodingLinkEncoding : 0x0)) return false;
-
-    fclog->debug("Set encoding link {} egroup {} to {}", link, ig, enc_enabled ? "enabled" : "disabled");
-  }
+  if(!setELinkEnable(fid, enable)) return false;
+  if(!setELinkWidthMbps(fid, bandwidth)) return false;
+  if(!setPathEncoding(fid, pattern)) return false;  
 
   return true;
-}
+} 
 
 
-bool FelixController::configureEncodingDecoding(std::vector<FelixTools::FelixID_t> rx_fids, std::vector<FelixTools::FelixID_t> tx_fids, uint8_t rx_width, uint8_t tx_width){
-  for(size_t i = 0; i < rx_fids.size(); i++){
-    if(!setICEnable(rx_fids[i], true)) return false;
-    if(!setECEnable(rx_fids[i], true)) return false;
-
-    if(!setELinkEnable(rx_fids[i], true)) return false;
-    if(!setELinkWidthNBits(rx_fids[i], rx_width)) return false;
-    if(!setPathEncoding(rx_fids[i], fwMode())) return false;
-  }
-  for(size_t i = 0; i < tx_fids.size(); i++){
-    if(!setICEnable(tx_fids[i], true)) return false;
-    if(!setECEnable(tx_fids[i], true)) return false;
-
-    if(!setELinkEnable(tx_fids[i], true)) return false;
-    if(!setELinkWidthNBits(tx_fids[i], tx_width)) return false;
-    if(!setPathEncoding(tx_fids[i], 3)) return false;
-    //Encoding 3 refers to the TTC Encoding. See https://atlas-project-felix.web.cern.ch/atlas-project-felix/user/regmap/registers-5.0.pdf page 10
-  }
-
-  return true;
 }
 
 /*

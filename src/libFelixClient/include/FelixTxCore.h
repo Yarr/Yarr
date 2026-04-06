@@ -76,6 +76,13 @@ protected:
   bool checkChannel(FelixID_t fid);
   bool channelIsEnabled(FelixID_t fid) { return m_enables[fid]; }
 
+  //Used to enable configuraring encoding/decoding for every tx channel in enableChannel()
+  bool m_configureEncoding {false};
+  uint16_t m_encodingBandWidth {0};
+  uint8_t m_encodingPattern {0};
+  // Function to be set by FelixController to configure encoding/decoding for every tx channel
+  virtual bool configureChannel(FelixTools::FelixID_t fid, uint16_t bandwidth, uint8_t pattern, bool enable) = 0;
+
   void fillFifo(std::vector<uint8_t>& fifo, uint32_t value);
   void prepareFifo(std::vector<uint8_t>& fifo);
   void sendFifo(FelixID_t fid, std::vector<uint8_t>& fifo);

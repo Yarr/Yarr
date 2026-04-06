@@ -27,6 +27,9 @@ namespace {
     std::cout << " -e : Channels specifeid in options are enabled exclusively. All other channels are disabled." << std::endl;
     std::cout << " -I : Include IC channels" << std::endl;
     std::cout << " -E : Include EC channels" << std::endl;
+    std::cout << " -ED : Include path encoding/decoding" << std::endl;
+    std::cout << " -EV : Value of the tx encoding type" << std::endl;
+    std::cout << " -DV : Value of the rx decoding type" << std::endl;
     std::cout << " -l LOG_CONFIG : Configuration for the logger." << std::endl;
     std::cout << " -v : Verbose mode. Set logging level to 'debug'. Overwritten by '-l LOG_CONFIG' if a logging configuration is provided." << std::endl;
     std::cout << "Examples:" << std::endl;
@@ -36,6 +39,8 @@ namespace {
     std::cout << "  bin/elinkConfig set configs/controller/felix_client.json -c <connectivity.json> -e -I -E" << std::endl;
     std::cout << "* To turn off all elinks in a connectivity config:" << std::endl;
     std::cout << "  bin/elinkConfig off -c <connectivity.json>" << std::endl;
+    std::cout << "* To set the encoding and decoding patterns for the specified Tx and Rx channels:" << std::endl;
+    std::cout << "  bin/elinkConfig set configs/controller/felix_client.json -t 0 1 2 3 -r 0 2 4 6 -ED -EV 4 -DV 3" << std::endl;
 
     //std::cout << " -L LINK_NUMBERS :  A list of link numbers for considering other channels that are not specified via -t, -r, or -c. Default is including all 12 links on a logical FLX device."
   }
@@ -107,7 +112,7 @@ namespace {
       unsigned encoding_fid = flx->getPathEncoding(fid);
       if (encoding_fid != encoding) {
         allGood = false;
-        logger->warn(" FID 0x{:x} path encoding is {} instead of {}!", fid, encoding_fid, encoding);
+        logger->warn(" FID 0x{:x} path encoding is 0x{:X} instead of 0x{:x}!", fid, encoding_fid, encoding);
       }
     }
 
@@ -168,7 +173,7 @@ namespace {
   void setPathEncoding(FelixController* flx, const std::vector<FelixTools::FelixID_t>& fids, unsigned encoding, const std::string& label) {
     if (fids.empty()) return;
 
-    logger->info("Setting e-link ({}) path encoding to {}...", label, encoding);
+    logger->info("Setting e-link ({}) path encoding to 0x{:x}...", label, encoding);
     if ( flx->setPathEncoding(fids, encoding) ) {
       logger->info(" ...done!");
     }
@@ -221,7 +226,8 @@ int main(int argc, char **argv) {
   bool includeIC {false};
   bool includeEC {false};
   bool includeEncoding {false};
-  uint8_t downlinkEncoding {3}; // Default is TTC
+  uint8_t txEncoding;
+  uint8_t rxDecoding;
   bool verbose {false};
 
   if (argc < 3) {
@@ -284,6 +290,9 @@ int main(int argc, char **argv) {
     case 'E':
       includeEC = true;
       break;
+    case 'En':
+      includeEncoding = true;
+      break;
     case 'v':
       verbose = true;
       break;
@@ -329,6 +338,12 @@ int main(int argc, char **argv) {
   }
   auto hwCtrl = ScanHelper::loadController(jctrl);
   auto* flxCtrlPtr = dynamic_cast<FelixController*>(hwCtrl.get());
+  if(jctrl["ctrlCfg"].contains("Card")){
+    auto cardCfg = jctrl["ctrlCfg"]["Card"];
+    txEncoding = cardCfg["txEncoding"];
+    rxDecoding = cardCfg["rxDecoding"];
+    rxBandWidth = cardCfg["rxBandWidth"];
+  }
 
   //////
   // Parse connectivity config if provided
@@ -382,6 +397,7 @@ int main(int argc, char **argv) {
   std::vector<FelixTools::FelixID_t> vfids_tx (fids_tx.begin(), fids_tx.end());
   std::vector<FelixTools::FelixID_t> vfids_rx (fids_rx.begin(), fids_rx.end());
 
+
   if (cmd == "get" or cmd == "GET") {
     if (includeIC) {
       checkICEnable(flxCtrlPtr, vfids_tx, "Tx", exclusive);
@@ -398,8 +414,8 @@ int main(int argc, char **argv) {
     }
 
     if(includeEncoding){
-      checkPathEncoding(flxCtrlPtr, vfids_tx, downlinkEncoding, "Tx");
-      checkPathEncoding(flxCtrlPtr, vfids_rx, downlinkEncoding, "Rx");
+      checkPathEncoding(flxCtrlPtr, vfids_tx, txEncoding, "Tx");
+      checkPathEncoding(flxCtrlPtr, vfids_rx, rxDecoding, "Rx");
     }
 
     checkELinkEnable(flxCtrlPtr, vfids_tx, "Tx", exclusive);
@@ -421,8 +437,8 @@ int main(int argc, char **argv) {
     }
 
     if(includeEncoding){
-      setPathEncoding(flxCtrlPtr, vfids_tx, downlinkEncoding, "Tx");
-      setPathEncoding(flxCtrlPtr, vfids_rx, flxCtrlPtr->fwMode(), "Rx");
+      setPathEncoding(flxCtrlPtr, vfids_tx, txEncoding, "Tx");
+      setPathEncoding(flxCtrlPtr, vfids_rx, rxDecoding, "Rx");
     }
 
     enableELinks(flxCtrlPtr, vfids_tx, "Tx", exclusive);

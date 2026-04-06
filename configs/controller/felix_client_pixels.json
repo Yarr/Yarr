@@ -30,6 +30,13 @@
         "queueLimitMB": 4000,
         "waitTime": 10,
         "flushWaitTime": 0
+      },
+      "Card": {
+        "configureEncodingDecoding": false,
+        "txEncoding": 4,
+        "rxDecoding": 3,
+        "txBandWidth": 160,
+        "rxBandWidth": 1280
       }
     }
   }
