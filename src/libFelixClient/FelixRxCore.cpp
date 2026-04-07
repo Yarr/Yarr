@@ -63,6 +63,7 @@ void FelixRxCore::initRxChannels(const std::vector<uint32_t>& channels) {
 }
 
 void FelixRxCore::enableChannel(FelixID_t fid) {
+  frlog->debug("Enable Rx link: 0x{:x}", fid);
   try {
     size_t threadIdx = m_fidThreadMap.at(fid);
     m_rxThreads.at(threadIdx)->enableChannel(fid);
