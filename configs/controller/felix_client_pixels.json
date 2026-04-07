@@ -32,7 +32,7 @@
         "flushWaitTime": 0
       },
       "Card": {
-        "configureEncodingDecoding": false,
+        "configureEncodingDecodingOnLoad": false,
         "txEncoding": 4,
         "rxDecoding": 3,
         "txBandWidth": 160,

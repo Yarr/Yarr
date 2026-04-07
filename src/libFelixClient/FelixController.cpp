@@ -92,8 +92,8 @@ void FelixController::loadConfig(const json &j) {
     fclog->info("Configuring FELIX card");
     auto cardCfg = j["Card"];
 
-    if(cardCfg.contains("configureEncodingDecoding")){     
-        if(cardCfg["configureEncodingDecoding"]){
+    if(cardCfg.contains("configureEncodingDecodingOnLoad")){     
+        if(cardCfg["configureEncodingDecodingOnLoad"]){
         //Must set the path encoding/decoding registers to 0x0 for per-link control as done with configureChannel 
         //This is opposed to the default register value which is 0x11111111
         fclog->info("Resetting encoding and decoding patterns");
@@ -154,7 +154,7 @@ void FelixController::loadConfig(const json &j) {
         }
       }
     }else{
-      fclog->info("configureEncodingDecoding not specified, skipping...");
+      fclog->info("configureEncodingDecodingOnLoad not specified, skipping...");
     }
 
     fclog->info("Setting provided FELIX registers");
