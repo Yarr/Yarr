@@ -38,7 +38,7 @@ static std::string_view level_string(int lvl) {
 namespace logging {
 
 json defaultConfig() {
-    std::string default_name = "config/logging/default.json";
+    std::string default_name = "configs/logging/default.json";
     if(std::filesystem::exists(default_name)) {
       return JsonHelper::openJsonFile(default_name);
     }
