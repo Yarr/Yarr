@@ -211,10 +211,7 @@ set(CONTROLLERS "")
 
 # only build those controllers specified in YARR_CONTROLLERS_TO_BUILD
 if(YARR_CONTROLLERS_TO_BUILD STREQUAL "all")
-  if(Felix_ROOT STREQUAL "" OR CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0) # do not build felixclient with "all" if these conditions are not met
-    set(CONTROLLERS "Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Itkpixv2Emu;Bdaq;NetioHW;ItsdaqFW")
-  else()
-    set(CONTROLLERS "Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Itkpixv2Emu;Bdaq;NetioHW;FelixClient;ItsdaqFW")
+  set(CONTROLLERS "Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Itkpixv2Emu;Bdaq;NetioHW;FelixClient;ItsdaqFW")
 else()
   foreach(ctrl IN LISTS YARR_CONTROLLERS_TO_BUILD )
     if(NOT ${ctrl} IN_LIST CONTROLLERS)
