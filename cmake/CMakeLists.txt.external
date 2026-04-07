@@ -5,7 +5,7 @@ include(FetchContent)
 include(cmake/SupportFunctionsLibrary.cmake)
 
 set(USE_SYSTEM_FELIX OFF)
-set(Felix_ROOT "/cvmfs/atlas-online-nightlies.cern.ch/felix/releases/felix-05-02-00-rm5-stand-alone/x86_64-el9-gcc15-opt" CACHE PATH "Path to pre-compiled FELIX")
+set(Felix_ROOT "" CACHE PATH "Path to pre-compiled FELIX")
 if (NOT "${Felix_ROOT}" STREQUAL "")
     set(USE_SYSTEM_FELIX ON)
 endif()
