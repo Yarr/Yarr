@@ -23,13 +23,13 @@ namespace {
     std::cout << " -t TX_CHANNELS : A list of Tx channels to be configured." << std::endl;
     std::cout << " -r RX_CHANNELS : A list of Rx channels to be configured." << std::endl;
     std::cout << " -c CHIP_CONFIG : Connectivity configuration file." << std::endl;
-    std::cout << " -b BANDWIDTH : Rx bandwidth in Mbps." << std::endl;
+    std::cout << " -b BANDWIDTH : Rx bandwidth in Mbps. Overrides the value if specified in the \"Card\" field of the controller file" << std::endl;
     std::cout << " -e : Channels specifeid in options are enabled exclusively. All other channels are disabled." << std::endl;
     std::cout << " -I : Include IC channels" << std::endl;
     std::cout << " -E : Include EC channels" << std::endl;
     std::cout << " -ED : Include path encoding/decoding" << std::endl;
-    std::cout << " -EV : Value of the tx encoding type" << std::endl;
-    std::cout << " -DV : Value of the rx decoding type" << std::endl;
+    std::cout << " -EV ENCODING_VALUE : Value of the tx encoding type. Overrides the value if specified in the \"Card\" field of the controller file." << std::endl;
+    std::cout << " -DV DECODING_VALUE : Value of the rx decoding type. Overrides the value if specified in the \"Card\" field of the controller file." << std::endl;
     std::cout << " -l LOG_CONFIG : Configuration for the logger." << std::endl;
     std::cout << " -v : Verbose mode. Set logging level to 'debug'. Overwritten by '-l LOG_CONFIG' if a logging configuration is provided." << std::endl;
     std::cout << "Examples:" << std::endl;
@@ -41,6 +41,8 @@ namespace {
     std::cout << "  bin/elinkConfig off -c <connectivity.json>" << std::endl;
     std::cout << "* To set the encoding and decoding patterns for the specified Tx and Rx channels:" << std::endl;
     std::cout << "  bin/elinkConfig set configs/controller/felix_client.json -t 0 1 2 3 -r 0 2 4 6 -ED -EV 4 -DV 3" << std::endl;
+    std::cout << "* Can also specify the rx/tx channels via the connectivity file" << std::endl;
+    std::cout << "  bin/elinkConfig set configs/controller/felix_client.json -c <connectivity.json> -ED -EV 4 -DV 3" << std::endl;
 
     //std::cout << " -L LINK_NUMBERS :  A list of link numbers for considering other channels that are not specified via -t, -r, or -c. Default is including all 12 links on a logical FLX device."
   }
@@ -222,12 +224,15 @@ int main(int argc, char **argv) {
   std::vector<unsigned> rxChannels;
   std::vector<unsigned> txChannels;
   unsigned rxBandWidth {0}; // Mbps
+  bool rxBandWidthProvided {false};
   bool exclusive {false};
   bool includeIC {false};
   bool includeEC {false};
   bool includeEncodingDecoding {false};
-  uint8_t txEncoding;
-  uint8_t rxDecoding;
+  uint8_t txEncoding {0};
+  bool txEncodingProvided {false};
+  uint8_t rxDecoding {0};
+  bool rxDecodingProvided {false};
   bool verbose {false};
 
   if (argc < 3) {
@@ -280,6 +285,7 @@ int main(int argc, char **argv) {
       break;
     case 'b':
       rxBandWidth = std::stoi(optarg);
+      rxBandWidthProvided = true;
       break;
     case 'e':
       exclusive = true;
@@ -293,6 +299,13 @@ int main(int argc, char **argv) {
     case 'ED':
       includeEncodingDecoding = true;
       break;
+    case 'EV':
+      txEncoding = std::stoi(optarg);
+      txEncodingProvided = true;
+      break;
+    case 'DV':
+      rxDecoding = std::stoi(optarg);
+      rxDecodingProvided = true;
     case 'v':
       verbose = true;
       break;
@@ -340,9 +353,10 @@ int main(int argc, char **argv) {
   auto* flxCtrlPtr = dynamic_cast<FelixController*>(hwCtrl.get());
   if(jctrl["ctrlCfg"].contains("Card")){
     auto cardCfg = jctrl["ctrlCfg"]["Card"];
-    txEncoding = cardCfg["txEncoding"];
-    rxDecoding = cardCfg["rxDecoding"];
-    rxBandWidth = cardCfg["rxBandWidth"];
+    // Command line arguments override config file parameters
+    txEncoding = txEncodingProvided ? txEncoding : cardCfg["txEncoding"].get<uint8_t>();
+    rxDecoding = rxDecodingProvided ? rxDecoding : cardCfg["rxDecoding"].get<uint8_t>();
+    rxBandWidth = rxBandWidthProvided ? rxBandWidth : cardCfg["rxBandWidth"].get<uint16_t>();
   }
 
   //////
