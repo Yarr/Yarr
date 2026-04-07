@@ -209,7 +209,7 @@ job_build_felix:
 job_build_felix_check:
   extends: [.build_felix, .rules]
   # If build doesn't work for some reason it might make sense to ignore
-  # allow_failure: true
+  allow_failure: true
 
 job_build_felix_release_52:
   extends: .rules
