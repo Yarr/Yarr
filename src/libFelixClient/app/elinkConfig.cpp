@@ -27,9 +27,9 @@ namespace {
     std::cout << " -e : Channels specifeid in options are enabled exclusively. All other channels are disabled." << std::endl;
     std::cout << " -I : Include IC channels" << std::endl;
     std::cout << " -E : Include EC channels" << std::endl;
-    std::cout << " -ED : Include path encoding/decoding" << std::endl;
-    std::cout << " -EV ENCODING_VALUE : Value of the tx encoding type. Overrides the value if specified in the \"Card\" field of the controller file." << std::endl;
-    std::cout << " -DV DECODING_VALUE : Value of the rx decoding type. Overrides the value if specified in the \"Card\" field of the controller file." << std::endl;
+    std::cout << " --ED : Include path encoding/decoding" << std::endl;
+    std::cout << " --tx-encoding ENCODING_VALUE : Value of the tx encoding type. Overrides the value if specified in the \"Card\" field of the controller file." << std::endl;
+    std::cout << " --rx-decoding DECODING_VALUE : Value of the rx decoding type. Overrides the value if specified in the \"Card\" field of the controller file." << std::endl;
     std::cout << " -l LOG_CONFIG : Configuration for the logger." << std::endl;
     std::cout << " -v : Verbose mode. Set logging level to 'debug'. Overwritten by '-l LOG_CONFIG' if a logging configuration is provided." << std::endl;
     std::cout << "Examples:" << std::endl;
@@ -40,9 +40,9 @@ namespace {
     std::cout << "* To turn off all elinks in a connectivity config:" << std::endl;
     std::cout << "  bin/elinkConfig off -c <connectivity.json>" << std::endl;
     std::cout << "* To set the encoding and decoding patterns for the specified Tx and Rx channels:" << std::endl;
-    std::cout << "  bin/elinkConfig set configs/controller/felix_client.json -t 0 1 2 3 -r 0 2 4 6 -ED -EV 4 -DV 3" << std::endl;
+    std::cout << "  bin/elinkConfig set configs/controller/felix_client.json -t 0 1 2 3 -r 0 2 4 6 --ED --tx-encoding 4 --rx-decoding 3" << std::endl;
     std::cout << "* Can also specify the rx/tx channels via the connectivity file" << std::endl;
-    std::cout << "  bin/elinkConfig set configs/controller/felix_client.json -c <connectivity.json> -ED -EV 4 -DV 3" << std::endl;
+    std::cout << "  bin/elinkConfig set configs/controller/felix_client.json -c <connectivity.json> --ED --tx-encoding 4 --rx-decoding 3" << std::endl;
 
     //std::cout << " -L LINK_NUMBERS :  A list of link numbers for considering other channels that are not specified via -t, -r, or -c. Default is including all 12 links on a logical FLX device."
   }
@@ -246,7 +246,11 @@ int main(int argc, char **argv) {
 
   const struct option long_options[] = {
     {"help", no_argument, nullptr, 'h'},
+    {"tx-encoding", required_argument, nullptr, 'T'},
+    {"rx-decoding", required_argument, nullptr, 'R'},
+    {"ED", no_argument, nullptr, 'C'},
     {nullptr, 0, nullptr, 0}
+
     };
 
   int opt;
@@ -296,16 +300,17 @@ int main(int argc, char **argv) {
     case 'E':
       includeEC = true;
       break;
-    case 'ED':
+    case 'C':
       includeEncodingDecoding = true;
       break;
-    case 'EV':
+    case 'T':
       txEncoding = std::stoi(optarg);
       txEncodingProvided = true;
       break;
-    case 'DV':
+    case 'R':
       rxDecoding = std::stoi(optarg);
       rxDecodingProvided = true;
+      break;
     case 'v':
       verbose = true;
       break;
