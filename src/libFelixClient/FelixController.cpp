@@ -85,9 +85,6 @@ void FelixController::loadConfig(const json &j) {
     }
   }
 
-  //Necesary to decode data from epaths:
-  writeFwRegister("DECODING_MASK64B66BKBLOCK", 0x0);
-  writeFwRegister("LPGBT_FEC", 0xFFFFFFFFFFFF);
   if(j.contains("Card")){
     fclog->info("Configuring FELIX card");
     auto cardCfg = j["Card"];

@@ -39,7 +39,9 @@
         "rxBandWidth": 1280,
 
         "Reg": {
-          "DECODING_REVERSE_10B" : "0x1"
+          "DECODING_REVERSE_10B" : "0x1",
+          "DECODING_MASK64B66BKBLOCK" : "0x0",
+          "LPGBT_FEC" : "0xFFFFFFFFFFFF"
         }
       }
     }
