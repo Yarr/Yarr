@@ -10,24 +10,6 @@ if (NOT "${Felix_ROOT}" STREQUAL "")
     set(USE_SYSTEM_FELIX ON)
 endif()
 
-function(YARR_ADD_FELIX)
-    if (TARGET felixbase4 OR USE_SYSTEM_FELIX)
-        return()
-    endif()
-    
-    # FELIX
-    FetchContent_Declare (
-        felixbase4
-        GIT_REPOSITORY https://:@gitlab.cern.ch:8443/atlas-tdaq-felix/felixbase.git
-        GIT_TAG felix-4.0.x
-        PATCH_COMMAND
-           cp ${PROJECT_SOURCE_DIR}/cmake/felixbase4patches/CMakeLists.txt.felixbase4 CMakeLists.txt &&
-           cp ${PROJECT_SOURCE_DIR}/cmake/felixbase4patches/felixbase4Config.cmake.in felixbase4Config.cmake.in
-        )
-
-    FetchContent_MakeAvailable(felixbase4)
-endfunction()
-
 function(YARR_ADD_FELIX_CLIENT)
     if (TARGET tdaq::felix_proxy)
         message(STATUS "TDAQ is available, using felix-proxy instead")

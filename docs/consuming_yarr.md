@@ -149,17 +149,10 @@ The following CMake targets are exported by Yarr (executables not listed; fully 
 | Yarr::     | Star                | dynamic library            |                                                              | Star        |
 | Yarr::     | StarEmu             | dynamic library            |                                                              | StarEmu     |
 | Yarr::     | _pyyarr             | dynamic library            |                                                              |             |
-|            | felixbase4          | imported interface library | needed for NetioHW                                           |             |
 |            | felix-interface     | imported interface library | needed for FelixCLient                                       |             |
-| tbb::      | tbb                 | imported static library    | needed for NetioHW                                           |             |
-| tbb::      | malloc              | imported static library    | needed for NetioHW                                           |             |
-| tbb::      | malloc_proxy        | imported static library    | needed for NetioHW                                           |             |
 |            | felix-client-thread | imported dynamic library   | needed for FelixClient                                       |             |
-|            | netio               | imported dynamic library   | needed for NetioHW                                           |             |
 |            | pybind11_headers    | imported interface library | only if python bindings are enabled                          |             |
 |            | yarrspdlog          | imported interface library | needed by Yarr, currently modified version                   |             |
-|            | tbb_2020            | utility target             | for ExternalProject_Add only; makes tbb:: available          |             |
-|            | libfabric_ext_build | utility target             | for ExternalProject_Add only; if built-in libfabric for NetioHW |          |
 
 These are organized into CMake components, so one can selectively request them using find_package(Yarr COMPONENTS ...).
 
@@ -178,17 +171,5 @@ YARR is using currently a patched spdlog version. It defines an own target ALIAS
 If the python bindings are enabled by "YARR_ENABLE_PYTHON" pybind11 is downloaded and added to the YARR project making it directly available. Installation is called by the internal function "YARR_ADD_PYBIND11()".
 ## BDAQ
 BDAQ requires the BOOST::system library.
-## NetioHW
-NetioHW depends on felixbase4, netio4 and tbb. A patched cmake build file is used for most dependencies. netio4 depends on libfabric and some tests depend on ZeroMQ. Tests are by default not built and have to be enabled using the option "NETIO4_BUILD_TESTS" which means that ZeroMQ is be fault not required. felixbase4 depends also on its own directly on netio4.
-
-If a target libfabric::libfabric is provided by a parent project it will be used. This target has been defined here as libfabric is autotools based and does not provide any cmake integration. Otherwise it tries to find an installed version of the libfabric library using the PKG system (can be steered by adjusting PKG_CONFIG_PATH) or searching standard system paths as fallback. If the library is not found on the system or if the option "NETIO4_FORCE_USE_BUILTIN_LIBFABRIC" is set to true, a standalone version will be downloaded and built and the target libfabric::libfabric will provide the static version to the netio4 library. Neither the libfabric library nor its target are installed and only used by netio4.
-
-For ZeroMQ a similar strategy is used although it is simpler as ZeroMQ is cmake based and offers proper export functionality. If the standard ZeroMQ target libzmq is found - provided by a parent project - then it will be used. Otherwise it will be attempted to find a system version of the library unless the variable "NETIO4_FORCE_USE_BUILTIN_ZEROMQ" is set. As a last ressort the library will be downloaded, built and installed. An internal target netio4zmq is defined in all cases but neither netio4zmq nor libzmq are exported.
-
-The netio library's target netio and the targets for the test binaries (if requested to be built) are exported and be used be downstream consumers. A namespace netio:: is defined. Installation of netio is defined in cmake/CMakeLists.txt.external and encapsulated in a function which is called by "YARR_ADD_NETIO()". Multiple calls are harmless.
-
-tbb in the 2020 version before oneAPI is downloaded and built using the function "YARR_ADD_TBB()". The build system is completely patched as it did not support cmake export in that version yet. Three targets are defined: tbb::tbb, tbb::tbbmalloc and tbb::tbbmalloc_proxy providing the static version. The targets are not made available to downstream users.
-
-felixbase4 depends on netio4. It is downloaded and installed using the function "YARR_ADD_FELIX()". The target felixbase4 in the namespace felixbase4 is defined and made available to downstream users.
 ## FelixClient
 FelixClient depends on felix-client-thread which is installed by the function "YARR_ADD_FELIX_CLIENT()" together with its dependency felix-interface. Both of the build systems are patched and the export the targets "felix-client-thread" and "felix-interface" both within the namespace "felix::".

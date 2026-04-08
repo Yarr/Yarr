@@ -4,7 +4,6 @@
 YARR is a readout system based around the concept of moving intelligence from the FPGA firmware into the host computer software. The role of the FPGA is the one of a reconfigurable I/O interface and not anymore the one of a hardware accelerator. YARR supports multiple types of FPGA platforms:
 
 * Simple PCIe Carrier Cards (SPEC): XpressK7 160/325, Trenz TEF1001 R1/R2, Numato Nereid K7 and Xilinx KC705
-* FELIX + NETIO
 * FELIX-STAR + NETIO-NEXT
 * BDAQ Hardware
 
@@ -49,7 +48,6 @@ Support for YARR can be found in the [YARR Matter Most channel.](https://matterm
 │   ├── libItkpixv2 : ITkPixV2 front-end library
 │   ├── libItkpixv2Emu : ITkPixV2 emulator
 │   ├── libItsdaqFW : ITSDAQ platform controller
-│   ├── libNetioHW : FELIX NetIO platform controller
 │   ├── libRd53a : RD53A fron-end library
 │   ├── libRd53aEmu : RD53A emulator
 │   ├── libRd53b : RD53B front-end library

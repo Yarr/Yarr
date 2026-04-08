@@ -54,7 +54,7 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
     - List of all possible front-ends:
         - ``Fei4;Rd53a;Star;Rd53b;Itkpixv2``
     - List of all possible controllers:
-        - ``Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Itkpixv2Emu;Bdaq;NetioHW;FelixClient;ItsdaqFW``
+        - ``Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Itkpixv2Emu;Bdaq;FelixClient;ItsdaqFW``
 
 While developing, it might be useful to run some unit tests. These are run
 by default in the CI on gitlab, but can also be run locally:
