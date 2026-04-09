@@ -254,7 +254,7 @@ job_build_felix_release_52:
   script:
     - source /cvmfs/atlas.cern.ch/repo/sw/tdaq/tools/cmake_tdaq/bin/cm_setup.sh tdaq-12-03-00 x86_64-el9-gcc15-opt
     - gcc --version
-    - cmake -B build -DFelix_ROOT=${FELIX_PATH} -DBUILD_TESTS=on -DYARR_CONTROLLERS_TO_BUILD=FelixClient -DYARR_FRONT_ENDS_TO_BUILD=Emu -DYARR_ENABLE_PYTHON=OFF -DCMAKE_CXX_STANDARD=20
+    - cmake -B build -DFelix_ROOT=${FELIX_PATH} -DBUILD_TESTS=on -DYARR_CONTROLLERS_TO_BUILD=FelixClient -DYARR_FRONT_ENDS_TO_BUILD=Emu -DYARR_ENABLE_PYTHON=OFF -DCMAKE_CXX_STANDARD=20 -DYARR_ENABLE_FELIX_CLIENT_BRIDGE=ON
     - cmake --build build -j$(nproc)
     - cmake --install build
 

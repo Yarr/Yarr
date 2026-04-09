@@ -257,6 +257,8 @@ endif()
 
 option(YARR_ENABLE_PYTHON "Build python bindings" OFF)
 
+option(YARR_ENABLE_FELIX_CLIENT_BRIDGE "Build felix_client_bridge (if FelixClient controller is enabled)" OFF)
+
 # setting build options ---------------------------------------------------------------------------------------
 
 # finally include all source, create package config files and install ---------------------------------------------------------------

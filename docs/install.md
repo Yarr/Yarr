@@ -185,6 +185,7 @@ Some of the options and dependencies are described in [the instructions how to u
 | YARR_DEBUG_PRINT_TARGETS:BOOL | ON | Prints all targets and their properties. Useful for debugging and for writing a dependency on Yarr. | |
 | YARR_EMULATORS_TO_BUILD:STRING | "StarEmu;Fei4Emu;Rd53aEmu;Itkpixv2Emu" | Front-end specific emulators to build (if Emu in controller list). | Emu in YARR_CONTROLLERS_TO_BUILD |
 | YARR_ENABLE_PYTHON:BOOL | ON | Build python bindings | |
+| YARR_ENABLE_FELIX_CLIENT_BRIDGE:BOOL | OFF | Build felix_client_bridge app | |
 | YARR_FORCE_FETCHCONTENT_SPDLOG:BOOL | OFF | Force built-in spdlog | |
 | YARR_FORCE_OWN_INSTALL_PREFIX:BOOL | OFF | Force Yarr to use own install prefix even as subdirectory | |
 | YARR_FRONT_ENDS_TO_BUILD:STRING | "Fei4;Rd53a;Star;Rd53b;Itkpixv2" | Semicolon-separated list of controllers to build, or "all" | |
