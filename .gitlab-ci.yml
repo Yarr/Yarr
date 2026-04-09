@@ -252,7 +252,8 @@ job_build_felix_release_52:
   variables:
     FELIX_PATH: /cvmfs/atlas-online-nightlies.cern.ch/felix/releases/felix-05-02-00-rm5-stand-alone/x86_64-el9-gcc15-opt
   script:
-    - source /cvmfs/atlas.cern.ch/repo/sw/tdaq/tools/cmake_tdaq/bin/cm_setup.sh tdaq-12-03-00 x86_64-el9-gcc15-opt
+    # FELIX Release is mostly standalone, but refers to some other things for felix-server component
+    - . /cvmfs/sft.cern.ch/lcg/views/LCG_108a/x86_64-el9-gcc15-opt/setup.sh
     - gcc --version
     - cmake -B build -DFelix_ROOT=${FELIX_PATH} -DBUILD_TESTS=on -DYARR_CONTROLLERS_TO_BUILD=FelixClient -DYARR_FRONT_ENDS_TO_BUILD=Emu -DYARR_ENABLE_PYTHON=OFF -DCMAKE_CXX_STANDARD=20 -DYARR_ENABLE_FELIX_CLIENT_BRIDGE=ON
     - cmake --build build -j$(nproc)
