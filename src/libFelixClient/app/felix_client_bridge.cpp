@@ -19,6 +19,8 @@
 
 namespace {
 auto logger = logging::make_log("felix_client_bridge");
+
+volatile sig_atomic_t my_signalled_flag = 0;
 }
 
 void help()
@@ -111,6 +113,23 @@ int main(int argc, char** argv)
   std::vector<uint64_t> pub_tags{};
   felix_server::BufferedPublisher::Settings pub_settings;
   auto publisher{server.create_buffered_publisher(pub_settings, pub_tags)};
+
+  // While server is alive we keep running
+  logger->info("Wait for user to finish (Ctrl-C or SIGUSR1 (kill -10))");
+
+  my_signalled_flag = 0;
+
+  signal(SIGINT, [](int signum){my_signalled_flag = signum;});
+  signal(SIGUSR1, [](int signum){my_signalled_flag = signum;});
+
+  while (true) {
+    if(my_signalled_flag != 0) {
+      logger->info("Finish main loop due to signal {}", my_signalled_flag);
+      break;
+    }
+  }
+
+  logger->info("Main loop complete {}", my_signalled_flag);
 
   return 0;
 }
