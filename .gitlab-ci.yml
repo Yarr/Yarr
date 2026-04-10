@@ -259,6 +259,12 @@ job_build_felix_release_52:
     - cmake --build build -j$(nproc)
     - cmake --install build
 
+job_test_felix_client:
+    stage: test
+    needs: ["job_build_felix_release_52"]
+    script:
+      - bash scripts/run_felix_bridge_tests.sh
+
 .job_code_coverage:
   stage: build
   artifacts:
