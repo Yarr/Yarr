@@ -1,6 +1,7 @@
 
 # Launch felix_client_bridge to connect an emulator to FelixClient
-bin/felix_client_bridge -f configs/controller/emuCfg_star.json & pid_bridge=($!)
+# Bus paths match hw controller config
+bin/felix_client_bridge --bus-dir /tmp/bus --bus-groupname FELIX -f configs/controller/emuCfg_star.json & pid_bridge=($!)
 echo "TESTS: WAITING for FCB (on PID ${pid_bridge}) to start"
 sleep 3
 

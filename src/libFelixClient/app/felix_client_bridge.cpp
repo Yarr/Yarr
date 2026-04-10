@@ -156,6 +156,8 @@ void printHelp()
   std::cout << "Options:\n";
   std::cout << "\t-f FILE\tConfiguration of Yarr controller to use (defaults to emu)\n";
   std::cout << "\t-l LOGCONFIG\tLogger configuration file\n";
+  std::cout << "\t--bus-dir BUS_PATH Specify felix bus path\n";
+  std::cout << "\t--bus-groupname BUS_GROUP Specify felix bus group name\n";
   std::cout << "\t-H HOST Specify Host to connect to (not implemented)\n";
   std::cout << "\t-h\tReport this usage info\n";
   std::cout << "\n";
@@ -169,10 +171,18 @@ AppSettings parseArgs(int argc, char** argv)
   char opt;
   const struct option long_options[] = {
     {"help", no_argument, nullptr, 'h'},
+    {"bus-dir", required_argument, nullptr, 'B'},
+    {"bus-groupname", required_argument, nullptr, 'G'},
     {nullptr, 0, nullptr, 0}
     };
   while ((opt = getopt_long(argc, argv, "H:f:l:h", long_options, nullptr)) != -1) {
     switch (opt) {
+    case 'B':
+      settings.common.bus_path = std::string(optarg);
+      break;
+    case 'G':
+      settings.common.bus_group = std::string(optarg);
+      break;
     case 'H':
       settings.common.ip = optarg;
       break;
@@ -243,6 +253,8 @@ int main(int argc, char** argv)
   std::unique_ptr<HwController> hwCtrl = StdDict::getHwController(type);
 
   hwCtrl->loadConfig(ctrlCfg["ctrlCfg"]["cfg"]);
+
+  logger->info("Felix bus: {} {} {}", settings.common.bus_path, settings.common.bus_group, settings.common.bus_filename);
 
   felix_server::FelixServer server{felix_server::EventLoopType::epoll};
 
