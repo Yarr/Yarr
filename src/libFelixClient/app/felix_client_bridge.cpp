@@ -52,7 +52,10 @@ int main(int argc, char** argv)
       logCfgPath = std::string(optarg);
       break;
     case 'h':
+      help();
+      return 0;
     default:
+      std::cout << "Bad parameter flag '" << opt << "'\n";
       help();
       return -1;
     }
