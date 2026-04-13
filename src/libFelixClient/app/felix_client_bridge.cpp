@@ -77,7 +77,7 @@ void publish_and_report_failure(Publish &publisher, uint64_t fid_tag, std::span<
     break;
   }
 
-  logger->info("send_packet: publish {} bytes done to tag {:016x})", data.size(), fid_tag);
+  logger->trace("send_packet: publish {} bytes done to tag {:016x})", data.size(), fid_tag);
 }
 
 template<typename Publish>
@@ -313,7 +313,7 @@ int main(int argc, char** argv)
 
   // vs on_buffer is for complete buffer
   recv_settings.on_msg = [&](std::uint64_t tag, std::span<const std::uint8_t> data, std::uint8_t status) {
-    logger->info("Received message from tag {:#x} {}, status {}, size {}",
+    logger->trace("Received message from tag {:#x} {}, status {}, size {}",
                  tag, FelixTools::print_fid(tag), status, data.size());
 
     auto to_hex = [] (auto &d) { return std::format("{:02x}", d); };
