@@ -257,7 +257,16 @@ endif()
 
 option(YARR_ENABLE_PYTHON "Build python bindings" OFF)
 
-option(YARR_ENABLE_FELIX_CLIENT_BRIDGE "Build felix_client_bridge (if FelixClient controller is enabled)" OFF)
+include(CMakeDependentOption)
+
+# Declare option even if FelixClient not present
+cmake_dependent_option(
+  YARR_ENABLE_FELIX_CLIENT_BRIDGE
+  "Build felix_client_bridge (if FelixClient controller is enabled)"
+  OFF
+  "FelixClient IN_LIST CONTROLLERS"
+  OFF
+)
 
 # setting build options ---------------------------------------------------------------------------------------
 
