@@ -4,13 +4,20 @@ include(FetchContent)
 
 include(cmake/SupportFunctionsLibrary.cmake)
 
+if(YARR_FELIX_BACKEND)
+    # It has been already included previously.
+    return()
+endif()
+
 set(USE_SYSTEM_FELIX OFF)
 set(Felix_ROOT "" CACHE PATH "Path to pre-compiled FELIX")
 if (NOT "${Felix_ROOT}" STREQUAL "")
     set(USE_SYSTEM_FELIX ON)
+    set(YARR_FELIX_BACKEND "NONE" PARENT_SCOPE)
 endif()
 
 function(YARR_ADD_FELIX_CLIENT)
+    set(YARR_FELIX_BACKEND "NONE" PARENT_SCOPE)
     if (TARGET tdaq::felix_proxy)
         message(STATUS "TDAQ is available, using felix-proxy instead")
 
@@ -19,37 +26,45 @@ function(YARR_ADD_FELIX_CLIENT)
         return()
     endif()
 
-    set(YARR_FELIX_BACKEND "FELIX_CLIENT" PARENT_SCOPE)
-
     if (USE_SYSTEM_FELIX)
         message(STATUS "Using pre-compiled FELIX from ${Felix_ROOT}")
         find_package(Felix REQUIRED COMPONENTS felix-client-thread felix-interface HINTS "${Felix_ROOT}")
-        # Create ALIASES so the rest of Yarr doesn't need to care 
-        # about the double-colon namespace vs. local names
-        if(NOT TARGET felix-client-thread)
-            add_library(felix-client-thread ALIAS felix-client-thread::felix-client-thread)
-        endif()
-        if(NOT TARGET felix-interface)
-            add_library(felix-interface ALIAS felix-interface::felix-interface)
-        endif()
-        set(YARR_FELIX_BACKEND "FELIX_CLIENT" PARENT_SCOPE)
+        set(YARR_FELIX_BACKEND "FELIX_CLIENT_SYSTEM" PARENT_SCOPE)
         return()
     endif()
 
-    # FELIX Client Thread
-    FetchContent_Declare (
-        felixclientthread
-        GIT_REPOSITORY https://gitlab.cern.ch/atlas-tdaq-felix/felix-client-thread.git
-        GIT_TAG master
-        UPDATE_COMMAND ""
-        PATCH_COMMAND 
-             cp ${PROJECT_SOURCE_DIR}/cmake/felix-client-threadpatches/CMakeLists.txt.felix-client-thread CMakeLists.txt &&
-             cp ${PROJECT_SOURCE_DIR}/cmake/felix-client-threadpatches/felix-client-threadConfig.cmake.in felix-client-threadConfig.cmake.in &&
-             cp ${PROJECT_SOURCE_DIR}/cmake/felix-client-threadpatches/CMakeLists.txt.felix-interface felix-interface/CMakeLists.txt &&
-             cp ${PROJECT_SOURCE_DIR}/cmake/felix-client-threadpatches/felix-interfaceConfig.cmake.in felix-interface/felix-interfaceConfig.cmake.in
-        )
+   if((CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0) AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
+        message(STATUS "Cannot build FELIX with GCC version < 15.")
+   else()
+     # FELIX Client Thread
+     FetchContent_Declare (
+          felixinterface
+          GIT_REPOSITORY https://gitlab.cern.ch/atlas-tdaq-felix/felix-interface.git
+          GIT_TAG master
+          UPDATE_COMMAND ""
+          PATCH_COMMAND 
+               cp ${PROJECT_SOURCE_DIR}/cmake/felix-interface-patches/CMakeLists.txt.felix-interface CMakeLists.txt &&
+               cp ${PROJECT_SOURCE_DIR}/cmake/felix-interface-patches/felix-interfaceConfig.cmake.in felix-interfaceConfig.cmake.in
+          )
         
-   FetchContent_MakeAvailable(felixclientthread)
+      FetchContent_MakeAvailable(felixinterface)
+    
+      FetchContent_Declare (
+          felixclientthread
+          GIT_REPOSITORY https://gitlab.cern.ch/atlas-tdaq-felix/felix-client-thread.git
+          GIT_TAG master
+          UPDATE_COMMAND ""
+          PATCH_COMMAND 
+               cp ${PROJECT_SOURCE_DIR}/cmake/felix-client-thread-patches/CMakeLists.txt.felix-client-thread CMakeLists.txt &&
+               cp ${PROJECT_SOURCE_DIR}/cmake/felix-client-thread-patches/felix-client-threadConfig.cmake.in felix-client-threadConfig.cmake.in
+          )
+        
+       FetchContent_MakeAvailable(felixclientthread)
+       set(YARR_FELIX_BACKEND "FELIX_CLIENT_EMBEDDED" PARENT_SCOPE)
+       return()
+    endif()
+    
+    message(WARNING "Attempt to get any version of FELIX failed.")
 
 endfunction()
 

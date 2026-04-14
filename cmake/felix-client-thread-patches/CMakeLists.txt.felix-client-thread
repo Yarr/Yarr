@@ -1,0 +1,130 @@
+cmake_minimum_required(VERSION 3.15)
+
+project(felix-client-thread VERSION 0.0.1 LANGUAGES CXX)
+
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+set(CMAKE_CONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/felix-client-thread")
+
+option(FELIX_CLIENT_THREAD_ALLOW_FETCHCONTENT_FELIX_INTERFACE
+  "Allow felix-client-thread to fetch felix-interface if it is neither already present as a target nor found by find_package()"
+  OFF
+)
+
+option(FELIX_CLIENT_THREAD_FORCE_FETCHCONTENT_FELIX_INTERFACE
+  "Force felix-client-thread to fetch felix-interface instead of using an existing target or find_package()"
+  OFF
+)
+
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+find_package(Threads REQUIRED)
+
+set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+
+# Resolve dependency: existing target -> find_package() -> optional FetchContent
+if(TARGET felix-interface::felix-interface)
+  set(_felix_interface_found TRUE)
+elseif(NOT FELIX_CLIENT_THREAD_FORCE_FETCHCONTENT_FELIX_INTERFACE)
+  find_package(felix-interface CONFIG QUIET)
+  if(TARGET felix-interface::felix-interface)
+    set(_felix_interface_found TRUE)
+  endif()
+endif()
+
+if(NOT _felix_interface_found AND
+   (FELIX_CLIENT_THREAD_FORCE_FETCHCONTENT_FELIX_INTERFACE OR
+    FELIX_CLIENT_THREAD_ALLOW_FETCHCONTENT_FELIX_INTERFACE))
+  include(FetchContent)
+
+  FetchContent_Declare(
+    felix-interface
+    GIT_REPOSITORY https://gitlab.cern.ch/atlas-tdaq-felix/felix-interface.git
+    GIT_TAG master
+  )
+
+  FetchContent_MakeAvailable(felix-interface)
+
+  if(TARGET felix-interface::felix-interface)
+    set(_felix_interface_found TRUE)
+  endif()
+endif()
+
+if(NOT _felix_interface_found)
+  message(FATAL_ERROR
+    "Could not resolve dependency felix-interface.\n"
+    "Tried, in order:\n"
+    "  1) existing target felix-interface::felix-interface\n"
+    "  2) find_package(felix-interface CONFIG)\n"
+    "  3) optional FetchContent fallback\n"
+    "Provide felix-interface as a subproject, install it so find_package() can locate it,\n"
+    "or enable FELIX_CLIENT_THREAD_ALLOW_FETCHCONTENT_FELIX_INTERFACE."
+  )
+endif()
+
+add_library(felix-client-thread SHARED
+  src/felix_client_thread.cpp
+)
+
+add_library(felix-client-thread::felix-client-thread ALIAS felix-client-thread)
+
+target_compile_features(felix-client-thread PUBLIC cxx_std_20)
+
+target_link_libraries(felix-client-thread
+  PUBLIC
+    ${CMAKE_DL_LIBS}
+    Threads::Threads
+    felix-interface::felix-interface
+)
+
+target_include_directories(felix-client-thread
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
+install(
+  TARGETS felix-client-thread
+  EXPORT felix-client-threadTargets
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(
+  DIRECTORY felix
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  FILES_MATCHING
+    PATTERN "*.h"
+    PATTERN "*.hh"
+    PATTERN "*.hpp"
+    PATTERN "*.hxx"
+)
+
+install(
+  EXPORT felix-client-threadTargets
+  NAMESPACE felix-client-thread::
+  FILE felix-client-threadTargets.cmake
+  DESTINATION ${CMAKE_CONFIG_INSTALL_DIR}
+)
+
+write_basic_package_version_file(
+  "${CMAKE_CURRENT_BINARY_DIR}/felix-client-threadConfigVersion.cmake"
+  VERSION ${PROJECT_VERSION}
+  COMPATIBILITY SameMajorVersion
+)
+
+configure_package_config_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/felix-client-threadConfig.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/felix-client-threadConfig.cmake"
+  INSTALL_DESTINATION "${CMAKE_CONFIG_INSTALL_DIR}"
+)
+
+install(
+  FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/felix-client-threadConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/felix-client-threadConfigVersion.cmake"
+  DESTINATION "${CMAKE_CONFIG_INSTALL_DIR}"
+)

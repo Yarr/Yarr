@@ -1,0 +1,63 @@
+cmake_minimum_required(VERSION 3.15)
+
+project(felix-interface VERSION 0.0.1 LANGUAGES CXX)
+
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+set(CMAKE_CONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/felix-interface")
+
+
+add_library(felix-interface INTERFACE)
+add_library(felix-interface::felix-interface ALIAS felix-interface)
+
+target_compile_features(felix-interface INTERFACE cxx_std_20)
+
+target_include_directories(felix-interface
+  INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
+install(
+  TARGETS felix-interface
+  EXPORT felix-interfaceTargets
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+message(${CMAKE_INSTALL_PREFIX})
+message(${CMAKE_INSTALL_INCLUDEDIR})
+install(
+  DIRECTORY felix
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  FILES_MATCHING
+    PATTERN "*.h"
+    PATTERN "*.hh"
+    PATTERN "*.hpp"
+    PATTERN "*.hxx"
+)
+
+install(
+  EXPORT felix-interfaceTargets
+  NAMESPACE felix-interface::
+  FILE felix-interfaceTargets.cmake
+  DESTINATION ${CMAKE_CONFIG_INSTALL_DIR}
+)
+
+write_basic_package_version_file(
+  "${CMAKE_CURRENT_BINARY_DIR}/felix-interfaceConfigVersion.cmake"
+  VERSION ${PROJECT_VERSION}
+  COMPATIBILITY SameMajorVersion
+)
+
+configure_package_config_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/felix-interfaceConfig.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/felix-interfaceConfig.cmake"
+  INSTALL_DESTINATION "${CMAKE_CONFIG_INSTALL_DIR}"
+)
+
+install(
+  FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/felix-interfaceConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/felix-interfaceConfigVersion.cmake"
+  DESTINATION "${CMAKE_CONFIG_INSTALL_DIR}"
+)
