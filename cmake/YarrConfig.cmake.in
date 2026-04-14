@@ -1,5 +1,8 @@
 @PACKAGE_INIT@
 
+# always necessary includes
+include(CMakeFindDependencyMacro)
+
 # List of known components
 set(_YARR_KNOWN_COMPONENTS
     Spec
@@ -21,12 +24,13 @@ set(_YARR_KNOWN_COMPONENTS
 # dependencies that are always needed
 find_package(Threads REQUIRED)
 
+# persisten information about the build
 set(YARR_HAS_BUILTIN_SPDLOG @YARR_HAS_BUILTIN_SPDLOG@)
+set(YARR_FELIX_BACKEND "@YARR_FELIX_BACKEND@")
 
 if(YARR_HAS_BUILTIN_SPDLOG)
   message(STATUS "This YARR comes with an integrated spdlog library.")
 else()
-  include(CMakeFindDependencyMacro)
   message(STATUS "YARR has not been built with an integrated spdlog. This dependency has to be provided separately.")
   find_dependency(spdlog REQUIRED)
 endif()
@@ -41,6 +45,23 @@ foreach(comp IN LISTS _YARR_KNOWN_COMPONENTS)
     if(EXISTS "${_comp_file}")
         if("${comp}" STREQUAL "Bdaq")
            find_package(Boost REQUIRED COMPONENTS system) 
+        endif()
+        if("${comp}" STREQUAL "FelixClient")
+            if(YARR_FELIX_BACKEND STREQUAL "FELIX_PROXY")
+                find_dependency(tdaq REQUIRED COMPONENTS felix_proxy)
+            elseif(YARR_FELIX_BACKEND STREQUAL "FELIX_CLIENT_SYSTEM")
+                find_dependency(Felix REQUIRED COMPONENTS felix-client-thread felix-interface)
+            elseif(YARR_FELIX_BACKEND STREQUAL "FELIX_CLIENT_EMBEDDED")
+                find_dependency(felix-interface REQUIRED)
+                find_dependency(felix-client-thread REQUIRED)
+            elseif(YARR_FELIX_BACKEND STREQUAL "NONE")
+                message(FATAL_ERROR
+                    "YARR FelixClient component was installed, but YARR_FELIX_BACKEND=NONE."
+                    "This indicates an inconsistent installation.")
+            else()
+                message(FATAL_ERROR
+                    "Unknown YARR_FELIX_BACKEND='${YARR_FELIX_BACKEND}' in installed YARR package.")
+            endif()
         endif()
         include("${_comp_file}")
         set(YARR_${comp}_FOUND TRUE)
