@@ -248,22 +248,30 @@ job_build_felix_release_52:
     - cvmfs
   artifacts:
     paths:
-      - installed
+      - lib64
+      - bin
   variables:
     FELIX_PATH: /cvmfs/atlas-online-nightlies.cern.ch/felix/releases/felix-05-02-00-rm5-stand-alone/x86_64-el9-gcc15-opt
   script:
     # FELIX Release is mostly standalone, but refers to some other things for felix-server component
     - . /cvmfs/sft.cern.ch/lcg/views/LCG_108a/x86_64-el9-gcc15-opt/setup.sh
     - gcc --version
-    - cmake -B build -DFelix_ROOT=${FELIX_PATH} -DBUILD_TESTS=on -DYARR_CONTROLLERS_TO_BUILD=FelixClient -DYARR_FRONT_ENDS_TO_BUILD=Emu -DYARR_ENABLE_PYTHON=OFF -DCMAKE_CXX_STANDARD=20 -DYARR_ENABLE_FELIX_CLIENT_BRIDGE=ON
+    - cmake -B build -DFelix_ROOT=${FELIX_PATH} -DBUILD_TESTS=on "-DYARR_CONTROLLERS_TO_BUILD=FelixClient;Emu" -DYARR_FRONT_ENDS_TO_BUILD=Star -DYARR_EMULATORS_TO_BUILD=StarEmu -DYARR_ENABLE_PYTHON=OFF -DCMAKE_CXX_STANDARD=20 -DYARR_ENABLE_FELIX_CLIENT_BRIDGE=ON
     - cmake --build build -j$(nproc)
     - cmake --install build
 
 job_test_felix_client:
-    stage: test
-    needs: ["job_build_felix_release_52"]
-    script:
-      - bash scripts/run_felix_bridge_tests.sh
+  extends: .rules
+  stage: test
+  needs: ["job_build_felix_release_52"]
+  image: gitlab-registry.cern.ch/atlas-tdaq-software/tdaq_ci:x86_64-el9
+  tags:
+    - cvmfs
+  variables:
+    FELIX_PATH: /cvmfs/atlas-online-nightlies.cern.ch/felix/releases/felix-05-02-00-rm5-stand-alone/x86_64-el9-gcc15-opt
+  script:
+    - . ${FELIX_PATH}/setup.sh
+    - bash scripts/run_felix_bridge_tests.sh
 
 .job_code_coverage:
   stage: build
