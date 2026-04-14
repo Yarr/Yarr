@@ -70,13 +70,16 @@ void FelixRxThread::subscribe() {
   std::stringstream thread_ss;
   thread_ss << "0x" << std::hex << std::this_thread::get_id();
 
-  for (const auto& [fid, stats] : m_fidStats) {
+  std::vector<FelixID_t> fid_vec;
+  for (auto& [fid, stats] : m_fidStats) {
     frtlog->debug("Thread {} subscribing to fid 0x{:x}", thread_ss.str(), fid);
-    m_fidStats[fid].reset_errors();
-    m_fidStats[fid].reset_counters();
-
-    m_client->subscribe(fid, FELIX_timeout);
+    stats.reset_errors();
+    stats.reset_counters();
+    fid_vec.push_back(fid);
   }
+
+  // Subscribe to all FIDs in parallel (vector overload blocks until all are connected)
+  m_client->subscribe(fid_vec, FELIX_timeout);
 }
 
 void FelixRxThread::unsubscribe() {

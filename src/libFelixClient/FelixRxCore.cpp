@@ -54,8 +54,10 @@ void FelixRxCore::initRxChannels(const std::vector<uint32_t>& channels) {
     frt->run();
   }
 
-  // without this wait, scanConsole and register-read executable fail to read data
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  // Join subscribe threads — blocks until all FIDs are subscribed before proceeding
+  for (auto& frt : m_rxThreads) {
+    frt->stop();
+  }
 
   if (m_runMonitor) {
     runMonitor();
