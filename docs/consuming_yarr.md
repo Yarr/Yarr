@@ -151,8 +151,12 @@ The following CMake targets are exported by Yarr (executables not listed; fully 
 | Yarr::     | _pyyarr             | dynamic library            |                                                              |             |
 |            | felix-interface     | imported interface library | needed for FelixCLient                                       |             |
 |            | felix-client-thread | imported dynamic library   | needed for FelixClient                                       |             |
+| felix-interface::    | felix-interface     | imported interface library | only for FELIX client backends using felix-interface         |   |
+| felix-client-thread::    | felix-client-thread | imported shared library    | only for FELIX client backends using felix-client-thread |   |
+| tdaq::     | felix_interface     | imported interface target            | only for FELIX client backends using TDAQ proxy              |             |
+| tdaq::     | felix_proxy         | imported imported target            | only for FELIX client backends using TDAQ proxy              |             |
 |            | pybind11_headers    | imported interface library | only if python bindings are enabled                          |             |
-|            | yarrspdlog          | imported interface library | needed by Yarr, currently modified version                   |             |
+|            | yarrspdlog          | imported interface library | needed by Yarr                                               |             |
 
 These are organized into CMake components, so one can selectively request them using find_package(Yarr COMPONENTS ...).
 
@@ -172,4 +176,35 @@ If the python bindings are enabled by "YARR_ENABLE_PYTHON" pybind11 is downloade
 ## BDAQ
 BDAQ requires the BOOST::system library.
 ## FelixClient
-FelixClient depends on felix-client-thread which is installed by the function "YARR_ADD_FELIX_CLIENT()" together with its dependency felix-interface. Both of the build systems are patched and the export the targets "felix-client-thread" and "felix-interface" both within the namespace "felix::".
+`FelixClient` is optional and is only built if this controller has been selected and at least one supported FELIX backend is available.
+
+The backend selection is resolved internally by `YARR_ADD_FELIX_CLIENT()` in the following order:
+
+1. **TDAQ proxy backend** 
+   If the target `tdaq::felix_proxy` is already available, Yarr uses the TDAQ FELIX proxy backend.
+
+2. **System FELIX client backend** 
+   If `USE_SYSTEM_FELIX` is enabled, Yarr looks for a pre-installed FELIX package via `find_package(Felix ...)`, typically using `Felix_ROOT`.
+
+3. **Embedded/self-built FELIX client backend** 
+   Otherwise Yarr fetches and builds `felix-interface` and `felix-client-thread` via `FetchContent`.
+
+The resolved backend is exposed internally through `YARR_FELIX_BACKEND`, currently one of:
+
+- `FELIX_PROXY`
+- `FELIX_CLIENT_SYSTEM`
+- `FELIX_CLIENT_EMBEDDED`
+- `NONE`
+
+Downstream projects should normally link only against `Yarr::FelixClient`. They should not rely on a specific backend unless they intentionally want to integrate with the backend directly.
+
+Depending on the selected backend, the following additional imported targets may be present (but not deliberately re-exported):
+
+- `tdaq::felix_proxy`
+- `tdaq::felix_interface`
+- `felix-interface::felix-interface`
+- `felix-client-thread::felix-client-thread`
+
+These backend targets are implementation details of the `FelixClient` component and may differ between build environments.
+
+Depending on the selected backend, Yarr::FelixClient may internally rely on backend-specific dependency targets such as tdaq::felix_proxy, felix::felix-interface, or felix::felix-client-thread. In add_subdirectory() or FetchContent() based integrations, and in some installed-package setups, these targets may also be visible to downstream CMake code, but they are not part of the stable Yarr public interface.
