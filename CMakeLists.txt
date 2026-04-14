@@ -1,6 +1,7 @@
 cmake_minimum_required (VERSION 3.14)
 
 include(cmake/SupportFunctionsLibrary.cmake)
+include(cmake/CMakeLists.txt.external)
 # Fetch version information from GIT
 get_git_version_info()
 message(STATUS "Recording YARR version: ${YARR_VERSION_MAJOR}.${YARR_VERSION_MINOR}.${YARR_VERSION_PATCH}")
@@ -211,7 +212,14 @@ set(CONTROLLERS "")
 
 # only build those controllers specified in YARR_CONTROLLERS_TO_BUILD
 if(YARR_CONTROLLERS_TO_BUILD STREQUAL "all")
-   set(CONTROLLERS "Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Itkpixv2Emu;Bdaq;FelixClient;ItsdaqFW")
+    # This is not elegant as it is a duplication but we have to check whether there is a FELIX backend before adding calling its CMakeLists.txt due to linking in libYarr.
+    YARR_ADD_FELIX_CLIENT()
+    if(YARR_FELIX_BACKEND STREQUAL "NONE")
+        message(STATUS "Trying to build all controllers but cannot add FelixClient as no FELIX backend available.")
+        set(CONTROLLERS "Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Itkpixv2Emu;Bdaq;ItsdaqFW")
+    else()
+        set(CONTROLLERS "Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Itkpixv2Emu;Bdaq;FelixClient;ItsdaqFW")
+    endif()
 else()
   foreach(ctrl IN LISTS YARR_CONTROLLERS_TO_BUILD )
     if(NOT ${ctrl} IN_LIST CONTROLLERS)
@@ -252,7 +260,6 @@ option(YARR_ENABLE_PYTHON "Build python bindings" OFF)
 # setting build options ---------------------------------------------------------------------------------------
 
 # finally include all source, create package config files and install ---------------------------------------------------------------
-include(cmake/CMakeLists.txt.external)
 add_subdirectory(src)
 
 include(CMakePackageConfigHelpers)

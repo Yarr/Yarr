@@ -1,4 +1,17 @@
 YARR_ADD_FELIX_CLIENT()
+
+if(YARR_FELIX_BACKEND STREQUAL "FELIX_PROXY")
+    message(STATUS "Building FelixClient with TDAQ FELIX proxy backend")
+elseif(YARR_FELIX_BACKEND STREQUAL "FELIX_CLIENT_SYSTEM")
+    message(STATUS "Building FelixClient with system wide installed FELIX client backend")
+elseif(YARR_FELIX_BACKEND STREQUAL "FELIX_CLIENT_EMBEDDED")
+    message(STATUS "Building FelixClient with embedded FELIX client backend")
+else()
+    message(STATUS "No FELIX backend available - FelixClient will not be built.")
+    LIST(REMOVE_ITEM CONTROLLERS "FelixClient")
+    return()
+endif()
+
 add_library(FelixClient SHARED
         FelixController.cpp
         FelixDirectMode.cpp
@@ -21,7 +34,7 @@ if(YARR_FELIX_BACKEND STREQUAL "FELIX_PROXY")
 
   set(YARR_FELIX_LIB tdaq::felix_proxy tdaq::felix-interface)
 else()
-  set(YARR_FELIX_LIB felix-client-thread)
+  set(YARR_FELIX_LIB felix-client-thread::felix-client-thread)
 endif()
 
 #add_dependencies(FelixClient felixclientthread)
