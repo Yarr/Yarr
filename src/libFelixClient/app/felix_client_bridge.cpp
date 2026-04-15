@@ -249,10 +249,8 @@ int main(int argc, char** argv)
 
   auto message_receiver = server.create_receiver(recv_settings, recv_tags);
 
-  std::atomic<bool> continue_threads = true;
-
-  std::jthread publish_thread([&]() {
-    while(continue_threads) {
+  std::jthread publish_thread([&](std::stop_token stoken) {
+    while(!stoken.stop_requested()) {
       send_packets_from_rx_core_to_publisher(*hwCtrl, publisher);
     }
     logger->info("Shutdown RxCore publisher thread");
@@ -273,7 +271,8 @@ int main(int argc, char** argv)
     }
   }
 
-  continue_threads = false;
+  publish_thread.get_stop_source().request_stop();
+  publish_thread.join();
 
   logger->info("Main loop complete {}", my_signalled_flag);
 
