@@ -255,8 +255,21 @@ void FelixTxCore::sendFifo(FelixID_t fid, std::vector<uint8_t>& fifo) {
   }
 
   bool flush = true;
-  //fclient->init_send_data(fid, std::chrono::milliseconds(m_isCmdEmptyWaitTime));
-  fclient->send_data(fid, std::span{fifo}, flush);
+  int nRetriesIfFails = 0;
+  while (nRetriesIfFails < 3) {
+    try {
+      fclient->send_data(fid, std::span{fifo}, flush);
+      break;
+    } catch (felix::ResourceNotAvailableException &e) {
+      nRetriesIfFails++;
+      ftlog->warn("Exception from FelixClient::send_data: {}. Attempt #{} of 3. Retrying.", e.what(), nRetriesIfFails);
+      std::this_thread::sleep_for(std::chrono::microseconds(10));
+    }
+  }
+  if (nRetriesIfFails == 3) {
+    ftlog->error("Could not send data due to felix::ResourceNotAvailableException, even after 3 attempts. Exiting now...");
+    exit(1);
+  }
 
   // clear the fifo
   fifo.clear();
