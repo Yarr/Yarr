@@ -300,6 +300,7 @@ job_run_codechecker:
     paths:
       - checks
       - gl-code-quality-report.json
+      - intermediate_report.json
     reports:
       codequality: gl-code-quality-report.json
 
