@@ -273,3 +273,32 @@ Available options:
 ## TODO
 
 Support for Pixel readout chips.
+
+## Felix Client Bridge
+
+In order to test the FelixClient code without using FELIX HW,
+felix_client_bridge has been added. This allows access to (for instance) the
+emulator code via the FelixClient controller.
+
+### Installation
+
+Note that the build for this has to be enabled specifically as the 5.2 release
+doesn't find the dependencies quite as easily as other components.
+
+As of the current release, in order to find some external packages, it is
+suggested to set up LCG SW before building.
+
+```bash
+FELIX_PATH=/cvmfs/atlas-online-nightlies.cern.ch/felix/releases/felix-05-02-00-rm5-stand-alone/x86_64-el9-gcc15-opt
+. /cvmfs/sft.cern.ch/lcg/views/LCG_108a/x86_64-el9-gcc15-opt/setup.sh
+cmake -DYARR_ENABLE_FELIX_CLIENT_BRIDGE=ON -DFelix_ROOT=${FELIX_PATH}
+```
+
+### Usage
+
+In order to communicate with the hardware the software needs to be run in the background.
+See `scripts/run_felix_bridge_tests.sh` for a working example.
+
+```bash
+bin/felix_client_bridge --bus-dir /tmp/bus -f configs/controller/emuCfg_star.json
+```
