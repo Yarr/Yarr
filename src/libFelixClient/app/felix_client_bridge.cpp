@@ -18,7 +18,7 @@
 #include "felix-server/FelixServer.hpp"
 
 namespace {
-auto logger = logging::make_log("felix_server_bridge");
+auto logger = logging::make_log("felix_client_bridge");
 }
 
 void help()
