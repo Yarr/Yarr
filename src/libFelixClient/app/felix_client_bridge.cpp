@@ -29,6 +29,11 @@ volatile sig_atomic_t my_signalled_flag = 0;
 
 std::deque<std::tuple<uint64_t, std::vector<uint8_t>>> to_be_published;
 std::mutex published_mutex;
+
+size_t packets_sent{};
+size_t packets_received{};
+size_t bytes_sent{};
+size_t bytes_received{};
 }
 
 /// Our application options, common between felix receiver and publisher
@@ -63,6 +68,8 @@ void publish_and_report_failure(Publish &publisher, uint64_t fid_tag, std::span<
   case netio3::NetioPublisherStatus::OK:
     // Expected result
     logger->trace("send_packet: publish response is OK (tag {:016x})", fid_tag);
+    packets_sent ++;
+    bytes_sent += data.size();
     break;
   case netio3::NetioPublisherStatus::NO_RESOURCES:
   case netio3::NetioPublisherStatus::FAILED:
@@ -319,6 +326,9 @@ int main(int argc, char** argv)
     auto to_hex = [] (auto &d) { return std::format("{:02x}", d); };
     logger->debug(" Message: {}", data | std::views::transform(to_hex));
 
+    packets_received ++;
+    bytes_received += data.size();
+
     receive_packets_to_tx_core(*hwCtrl, tag, data, status);
   };
 
@@ -372,7 +382,8 @@ int main(int argc, char** argv)
   publish_thread.get_stop_source().request_stop();
   publish_thread.join();
 
-  logger->info("Main loop complete {}", my_signalled_flag);
+  logger->info("Main loop complete received {} in {} packets, sent {} in {} packets",
+               bytes_received, packets_received, bytes_sent, packets_sent);
 
   return 0;
 }
