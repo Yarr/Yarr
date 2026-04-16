@@ -437,7 +437,7 @@ void FelixTxCore::prepareTrigger(std::vector<uint8_t>& trigFifo) {
       int e1 = (L > 128) ? std::min(16256, (L / 128) * 128) : L;
       int e2 = L - e1;
 
-      // Generate hardware words
+      // Generate long idle words
       uint16_t w1 = (e1 <= 128) ? (0x1300 + e1) : (0x1380 + (e1 / 128));
       uint16_t w2 = (e2 <= 128) ? (0x1300 + e2) : (0x1380 + (e2 / 128));
 
@@ -462,13 +462,13 @@ void FelixTxCore::prepareTrigger(std::vector<uint8_t>& trigFifo) {
       uint32_t write_buffer = (0xAAAA << 16) | 0x1000; // tack on a single idle so that fillFifo can process it (expects 32 bit word)
       fillFifo(trigFifo, write_buffer);
 
+      fillFifo(trigFifo,long_idles); // add the long idle words first so the synchs that come with them occur before the trigger words
+
       // Now send the trigger words.
       // Need to send the last word in m_trigWords first (Because of the way TriggerLoop sets up the trigger words)
       for (int j=m_trigWords.size()-1; j>=0; j--) {
         fillFifo(trigFifo, m_trigWords[j]);
       }
-
-      fillFifo(trigFifo,long_idles); // tack on the long idle words
 
       uint32_t process_buffer = (0xAAAA << 16) | (0x11 << 8) | (m_trigCnt & 0xFF); // finally send a process command that tells the buffer to process N times
       fillFifo(trigFifo, process_buffer);
@@ -526,28 +526,27 @@ void FelixTxCore::doTriggerCnt() {
     switch(fwMode()){
     case FelixTools::FELIX_FW_MODE::ITK_Pixel:
       if (m_pixFwTrigger){
-	// send a single command that will start the firmware-based trigger sequence for ITk pixel
-	trigs=m_trigCnt;
-	trigger();
+        // send a single command that will start the firmware-based trigger sequence for ITk pixel
+        trigs=m_trigCnt;
+        trigger();
       }
       else{ //software-based trigger sequence for ITk pixel
-	for(uint32_t i=0; i<m_trigCnt; i++) {
-	  if(m_trigEnabled==false) break;
-	  trigs++;
-	  trigger();
-	  last_trigger += delta;
-	  std::this_thread::sleep_until(last_trigger);
-	}
+        for(uint32_t i=0; i<m_trigCnt; i++) {
+          if(m_trigEnabled==false) break;
+          trigs++;
+          trigger();
+          last_trigger += delta;
+          std::this_thread::sleep_until(last_trigger);
+        }
       }
       break;
-
     case FelixTools::FELIX_FW_MODE::ITK_Strip:
       for(uint32_t i=0; i<m_trigCnt; i++) {
-	if(m_trigEnabled==false) break;
-	trigs++;
-	trigger();
-	last_trigger += delta;
-	std::this_thread::sleep_until(last_trigger);
+        if(m_trigEnabled==false) break;
+        trigs++;
+        trigger();
+        last_trigger += delta;
+        std::this_thread::sleep_until(last_trigger);
       }
       break;
     default:
