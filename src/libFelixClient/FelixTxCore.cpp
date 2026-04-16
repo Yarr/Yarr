@@ -87,8 +87,6 @@ bool FelixTxCore::checkChannel(FelixID_t fid) {
     try {
       switch(fwMode()){
       case FelixTools::FELIX_FW_MODE::ITK_Pixel: //ITk Pixel firmware
-          fclient->send_data(fid, std::span{m_idleWords}, true);
-        break;
       case FelixTools::FELIX_FW_MODE::ITK_Strip: //ITk Strip firmware
         fclient->send_data(fid, std::span{m_idleWords}, true);
         break;
