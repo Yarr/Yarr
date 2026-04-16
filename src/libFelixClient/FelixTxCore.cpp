@@ -32,7 +32,8 @@ void FelixTxCore::enableChannel(FelixID_t fid) {
 
   if (m_fifo.find(fid) == m_fifo.end()) { // new fid  
     // check communication only if new fid
-    fclient->init_send_data(fid, std::chrono::milliseconds(m_isCmdEmptyWaitTime));
+    fclient->init_send_data(fid, std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10)); // need to wait a bit for new fid to be available
     if (checkChannel(fid)) {
       m_fifo[fid]; // create buffer
     } else {
@@ -81,18 +82,29 @@ FelixTxCore::FelixID_t FelixTxCore::ic_fid_from_channel(uint32_t chn) {
 bool FelixTxCore::checkChannel(FelixID_t fid) {
   ftlog->debug("Try sending data to Tx link: 0x{:x}",fid);
 
-  try {
-    switch(fwMode()){
-    case FelixTools::FELIX_FW_MODE::ITK_Pixel: //ITk Pixel firmware
-    case FelixTools::FELIX_FW_MODE::ITK_Strip: //ITk Strip firmware
-      fclient->send_data(fid, std::span{m_idleWords}, true);
+  int nRetriesIfFails = 0;
+  while (nRetriesIfFails < 3) {
+    try {
+      switch(fwMode()){
+      case FelixTools::FELIX_FW_MODE::ITK_Pixel: //ITk Pixel firmware
+          fclient->send_data(fid, std::span{m_idleWords}, true);
+        break;
+      case FelixTools::FELIX_FW_MODE::ITK_Strip: //ITk Strip firmware
+        fclient->send_data(fid, std::span{m_idleWords}, true);
+        break;
+      default:
+        ftlog->error("FELIX firmware version not supported in YARR. Try again...");
+        exit(1);
+      }
       break;
-    default:
-      ftlog->error("FELIX firmware version not supported in YARR. Try again...");
-      exit(1);
+    } catch (std::runtime_error& e) {
+      nRetriesIfFails++;
+      ftlog->warn("Fail to send to Tx link 0x{:x}: {}, Attempt #{} of 3. Retrying.", fid, e.what(), nRetriesIfFails);
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
-  } catch (std::runtime_error& e) {
-    ftlog->warn("Fail to send to Tx link 0x{:x}: {}", fid, e.what());
+  }
+  if (nRetriesIfFails == 3) {
+    ftlog->error("Fail to send to Tx link 0x{:x} even after 3 attempts. Exiting now...", fid);
     return false;
   }
 
