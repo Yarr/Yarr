@@ -320,6 +320,7 @@ void FelixTxCore::setTrigEnable(uint32_t value) {
 
   if (value == 0) {
     m_trigEnabled = false;
+    m_fwTrigActive = false;
   } else {
     m_trigEnabled = true;
     switch (m_trigCfg) {
@@ -341,7 +342,7 @@ void FelixTxCore::setTrigEnable(uint32_t value) {
 }
 
 uint32_t FelixTxCore::getTrigEnable() {
-  return m_trigEnabled;
+  return m_trigEnabled || m_fwTrigActive;
 }
 
 void FelixTxCore::maskTrigEnable(uint32_t value, uint32_t mask) { // never used
@@ -528,6 +529,7 @@ void FelixTxCore::doTriggerCnt() {
       if (m_pixFwTrigger){
         // send a single command that will start the firmware-based trigger sequence for ITk pixel
         trigs=m_trigCnt;
+        m_fwTrigActive = true;
         trigger();
       }
       else{ //software-based trigger sequence for ITk pixel

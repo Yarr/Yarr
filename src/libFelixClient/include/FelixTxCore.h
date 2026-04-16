@@ -111,6 +111,7 @@ protected:
   enum TRIG_CONF_VALUE m_trigCfg;          // trigger config
   std::vector<uint32_t> m_trigWords;       // the trigger words
   std::atomic<bool> m_trigEnabled {false}; // trigger is enabled
+  std::atomic<bool> m_fwTrigActive {false};// FW is autonomously managing triggers
   uint32_t m_trigCnt {0};                  // number of triggers
   uint32_t m_trigTime {0};                 // trigger time
   uint32_t m_trigFreq {1};                 // trigger frequency
