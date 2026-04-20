@@ -18,13 +18,6 @@ endif()
 
 function(YARR_ADD_FELIX_CLIENT)
     set(YARR_FELIX_BACKEND "NONE" PARENT_SCOPE)
-    if (TARGET tdaq::felix_proxy)
-        message(STATUS "TDAQ is available, using felix-proxy instead")
-
-        set(YARR_FELIX_BACKEND "FELIX_PROXY" PARENT_SCOPE)
-        # Just works, with tdaq_add_library tdaq::felix_proxy
-        return()
-    endif()
 
     if (USE_SYSTEM_FELIX)
         message(STATUS "Using pre-compiled FELIX from ${Felix_ROOT}")
@@ -36,6 +29,14 @@ function(YARR_ADD_FELIX_CLIENT)
                      REQUIRED COMPONENTS ${YARR_FELIX_COMPONENTS}
                      HINTS "${Felix_ROOT}")
         set(YARR_FELIX_BACKEND "FELIX_CLIENT_SYSTEM" PARENT_SCOPE)
+        return()
+    endif()
+
+    if (TARGET tdaq::felix_proxy)
+        message(STATUS "TDAQ is available, using felix-proxy instead")
+
+        set(YARR_FELIX_BACKEND "FELIX_PROXY" PARENT_SCOPE)
+        # Just works, with tdaq_add_library tdaq::felix_proxy
         return()
     endif()
 
