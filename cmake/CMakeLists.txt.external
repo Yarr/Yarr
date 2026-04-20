@@ -28,7 +28,13 @@ function(YARR_ADD_FELIX_CLIENT)
 
     if (USE_SYSTEM_FELIX)
         message(STATUS "Using pre-compiled FELIX from ${Felix_ROOT}")
-        find_package(Felix REQUIRED COMPONENTS felix-client-thread felix-interface felix-server HINTS "${Felix_ROOT}")
+        set(YARR_FELIX_COMPONENTS felix-client-thread felix-interface)
+        if(YARR_ENABLE_FELIX_CLIENT_BRIDGE)
+            list(APPEND YARR_FELIX_COMPONENTS felix-server)
+        endif()
+        find_package(Felix
+                     REQUIRED COMPONENTS ${YARR_FELIX_COMPONENTS}
+                     HINTS "${Felix_ROOT}")
         set(YARR_FELIX_BACKEND "FELIX_CLIENT_SYSTEM" PARENT_SCOPE)
         return()
     endif()
