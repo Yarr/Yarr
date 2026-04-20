@@ -13,7 +13,7 @@ set(USE_SYSTEM_FELIX OFF)
 set(Felix_ROOT "" CACHE PATH "Path to pre-compiled FELIX")
 if (NOT "${Felix_ROOT}" STREQUAL "")
     set(USE_SYSTEM_FELIX ON)
-    set(YARR_FELIX_BACKEND "NONE" PARENT_SCOPE)
+    set(YARR_FELIX_BACKEND "NONE")
 endif()
 
 function(YARR_ADD_FELIX_CLIENT)
