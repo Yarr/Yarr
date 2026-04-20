@@ -154,24 +154,35 @@ void FelixController::loadConfig(const json &j) {
           fclog->warn("Set to configure encoding/decoding but rxBandWidth not specified, using default value of 80");
           m_decodingBandWidth = 80;
         }
+      }else{
+        fclog->info("\"configureEpathOnLoad\" parameter set to false in \"Card\" configuration field, skipping...");
       }
     }else{
       fclog->info("\"configureEpathOnLoad\" parameter not specified in \"Card\" configuration field, skipping...");
     }
 
-    fclog->info("Setting provided FELIX registers");
-    if(cardCfg.contains("Reg")){
-      for(auto& [regName, regValue] : cardCfg["Reg"].items()){
-        if(regValue.is_string()){
-          regValue = std::stoull(regValue.get<std::string>(), 0, 0);
+    if(cardCfg.contains("WriteFelixRegsOnLoad")){
+      if(cardCfg["WriteFelixRegsOnLoad"]){
+        fclog->info("Setting provided FELIX registers");
+        if(cardCfg.contains("Reg")){
+          for(auto& [regName, regValue] : cardCfg["Reg"].items()){
+            if(regValue.is_string()){
+              regValue = std::stoull(regValue.get<std::string>(), 0, 0);
+            }
+            if(!writeFwRegister(regName, regValue.get<uint64_t>())){
+              fclog->error("Failed to write register {} with value {}", regName, regValue.get<uint64_t>());
+            }
+          }
+        }else{
+          fclog->warn("The \"Reg\" parameter is not defined in the \"Card\" configuration field even though \"WriteFelixRegsOnLoad\" is set to true. No registers to write.");
         }
-        if(!writeFwRegister(regName, regValue.get<uint64_t>())){
-          fclog->error("Failed to write register {} with value {}", regName, regValue.get<uint64_t>());
-        }
-      }
+      }else{
+        fclog->info("\"WriteFelixRegsOnLoad\" parameter set to false in \"Card\" configuration field, skipping...");
+      }   
+    }else{
+      fclog->info("\"WriteFelixRegsOnLoad\" parameter not specified in \"Card\" configuration field, skipping...");
     }
   }
-
 }
 
 const json FelixController::getStatus() {

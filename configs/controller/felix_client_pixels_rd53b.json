@@ -38,10 +38,34 @@
         "txBandWidth": 160,
         "rxBandWidth": 1280,
 
+        "WriteFelixRegsOnLoad": true,
         "Reg": {
           "DECODING_REVERSE_10B" : "0x1",
           "DECODING_MASK64B66BKBLOCK" : "0x0",
-          "LPGBT_FEC" : "0xFFFFFFFFFFFF"
+          "ITKPIX_VERSION_00": "0x0000",
+          "ITKPIX_VERSION_01": "0x0000",
+          "ITKPIX_VERSION_02": "0x0000",
+          "ITKPIX_VERSION_03": "0x0000",
+          "ITKPIX_VERSION_04": "0x0000",
+          "ITKPIX_VERSION_05": "0x0000",
+          "ITKPIX_VERSION_06": "0x0000",
+          "ITKPIX_VERSION_07": "0x0000",
+          "ITKPIX_VERSION_08": "0x0000",
+          "ITKPIX_VERSION_09": "0x0000",
+          "ITKPIX_VERSION_10": "0x0000",
+          "ITKPIX_VERSION_11": "0x0000",
+          "ITKPIX_VERSION_12": "0x0000",
+          "ITKPIX_VERSION_13": "0x0000",
+          "ITKPIX_VERSION_14": "0x0000",
+          "ITKPIX_VERSION_15": "0x0000",
+          "ITKPIX_VERSION_16": "0x0000",
+          "ITKPIX_VERSION_17": "0x0000",
+          "ITKPIX_VERSION_18": "0x0000",
+          "ITKPIX_VERSION_19": "0x0000",
+          "ITKPIX_VERSION_20": "0x0000",
+          "ITKPIX_VERSION_21": "0x0000",
+          "ITKPIX_VERSION_22": "0x0000",
+          "ITKPIX_VERSION_23": "0x0000"
         }
       }
     }
