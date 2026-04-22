@@ -18,8 +18,8 @@
         "broadcast": false,
         "pixFwTrigger": true,
         "bufferSize": 1024,
-        "idleWords": [170,170],
-        "isCmdEmptyWaitTime": 0
+        "idleWords": [18,0,170,170],
+        "isCmdEmptyWaitTime": 1
       },
       "ToHost": {
         "detectorID": 0,
