@@ -115,6 +115,7 @@ protected:
   uint32_t m_trigCnt {0};                  // number of triggers
   uint32_t m_trigTime {0};                 // trigger time
   uint32_t m_trigFreq {1};                 // trigger frequency
+  double   m_trigFreq_FW {0};              // Actual FW trigger frequency
   uint32_t m_trigWordLength {4};           // number of trigger words
 
   bool m_flip {false};
