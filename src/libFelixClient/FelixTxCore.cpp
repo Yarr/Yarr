@@ -11,27 +11,6 @@ namespace {
   auto ftlog = logging::make_log("FelixTxCore");
 }
 
-// TEMPORARY FIX 
-// For some reason, it seems like these functions do not have implemenation (see https://gitlab.cern.ch/atlas-tdaq-felix/felix-interface/-/blob/master/felix/felix_client_thread_extension520.hpp?ref_type=heads#L22) causing build issues
-// Ad hoc for now and SHOULD BE REMOVED once the underlying issue is found/fixed
-namespace felix{
-  const std::string& BitFieldRecord::get_decoded_value() const {
-      return decoded_value;
-  }
-
-  const std::string& BitFieldRecord::get_unit() const {
-      return unit;
-  }
-
-  std::uint64_t BitFieldRecord::get_raw_value() const {
-      return raw_value;
-  }
-
-  const BitFieldRecordValue& BitFieldRecord::get_value() const {
-      return value;
-  }
-}
-
 using clk = std::chrono::steady_clock;
 
 FelixTxCore::FelixTxCore() = default;

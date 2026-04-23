@@ -34,7 +34,7 @@ if(YARR_FELIX_BACKEND STREQUAL "FELIX_PROXY")
 
   set(YARR_FELIX_LIB tdaq::felix_proxy tdaq::felix-interface)
 else()
-  set(YARR_FELIX_LIB felix-client-thread::felix-client-thread)
+  set(YARR_FELIX_LIB felix-client-thread::felix-client-thread felix-io-client::felix-io-client)
 endif()
 
 #add_dependencies(FelixClient felixclientthread)

@@ -21,7 +21,7 @@ function(YARR_ADD_FELIX_CLIENT)
 
     if (USE_SYSTEM_FELIX)
         message(STATUS "Using pre-compiled FELIX from ${Felix_ROOT}")
-        set(YARR_FELIX_COMPONENTS felix-client-thread felix-interface)
+        set(YARR_FELIX_COMPONENTS felix-client-thread felix-interface felix-io-client)
         if(YARR_ENABLE_FELIX_CLIENT_BRIDGE)
             list(APPEND YARR_FELIX_COMPONENTS felix-server)
         endif()
@@ -66,7 +66,18 @@ function(YARR_ADD_FELIX_CLIENT)
                cp ${PROJECT_SOURCE_DIR}/cmake/felix-client-thread-patches/felix-client-threadConfig.cmake.in felix-client-threadConfig.cmake.in
           )
         
-       FetchContent_MakeAvailable(felixclientthread)
+      FetchContent_MakeAvailable(felixclientthread)
+      FetchContent_Declare (
+          felixioclient
+          GIT_REPOSITORY https://gitlab.cern.ch/atlas-tdaq-felix/felix-io-client.git
+          GIT_TAG master
+          UPDATE_COMMAND ""
+          PATCH_COMMAND 
+               cp ${PROJECT_SOURCE_DIR}/cmake/felix-client-thread-patches/CMakeLists.txt.felix-io-client CMakeLists.txt &&
+               cp ${PROJECT_SOURCE_DIR}/cmake/felix-client-thread-patches/felix-io-clientConfig.cmake.in felix-io-clientConfig.cmake.in
+          )
+        
+       FetchContent_MakeAvailable(felixioclient)
        set(YARR_FELIX_BACKEND "FELIX_CLIENT_EMBEDDED" PARENT_SCOPE)
        return()
     endif()
