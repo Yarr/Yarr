@@ -17,7 +17,7 @@
         "flip": false,
         "broadcast": true,
         "idleWords": [120, 85, 120, 85],
-        "isCmdEmptyWaitTime": 1
+        "isCmdEmptyWaitTime": 20
       },
       "ToHost": {
         "detectorID": 0,

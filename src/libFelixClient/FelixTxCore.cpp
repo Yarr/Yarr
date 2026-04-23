@@ -207,7 +207,12 @@ bool FelixTxCore::isCmdEmpty() {
     if (not buffer.empty()){
       is_buffer_empty = false;
       sendFifo(chn, m_fifo[chn]);
-      std::this_thread::sleep_for(std::chrono::milliseconds(m_isCmdEmptyWaitTime));
+      // Now wait for a few microseconds by using a while busy loop
+      auto start = std::chrono::high_resolution_clock::now();
+      auto wait_duration = std::chrono::microseconds(m_isCmdEmptyWaitTime);
+      while (std::chrono::high_resolution_clock::now() - start < wait_duration) {
+        // Do nothing here, just burn CPU cycles for a precise few microsecond wait
+      }
     }
   }
 
@@ -723,7 +728,7 @@ void FelixTxCore::loadConfig(const json &j) {
 
   if (j.contains("isCmdEmptyWaitTime")) {
     m_isCmdEmptyWaitTime = j["isCmdEmptyWaitTime"];
-    ftlog->info(" isCmdEmpty() wait time = {} ms", m_isCmdEmptyWaitTime);
+    ftlog->info(" isCmdEmpty() wait time = {} us", m_isCmdEmptyWaitTime);
   }
 }
 

@@ -19,7 +19,7 @@
         "pixFwTrigger": true,
         "bufferSize": 1024,
         "idleWords": [18,0,170,170],
-        "isCmdEmptyWaitTime": 1
+        "isCmdEmptyWaitTime": 20
       },
       "ToHost": {
         "detectorID": 0,
