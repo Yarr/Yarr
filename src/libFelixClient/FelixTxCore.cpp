@@ -1,5 +1,6 @@
 #include "FelixTxCore.h"
 #include "felix/felix_client_exception.hpp"
+#include "felix/felix_fid.h"
 #include "logging.h"
 
 #include <sstream>
@@ -756,10 +757,17 @@ bool FelixTxCore::readFwRegister(
 
   bool success = true;
 
-  // A dummy fid made from the correct did and cid, but arbitrary link number
-  // translate will map this to the proper device id for register access
-  std::vector<uint64_t> fids = {FelixTxCore::fid_from_channel(42)};
-  std::map<felix::DeviceId, std::vector<std::uint64_t>> device_id_to_fid = fclient->translate(fids);
+  std::vector<uint64_t> fids = {get_fid_from_ids(/*did=*/m_did, /*cid=*/m_cid, /*elink=*/IO_LINK,
+                                                   /*sid=*/0, /*vid=*/1, /*is_fromhost=*/0, /*is_virtual=*/1)};
+  std::map<felix::DeviceId, std::vector<std::uint64_t>> device_id_to_fid;
+  try {
+    device_id_to_fid = fclient->translate(fids);
+  } catch (felix::BusException& e) {
+    ftlog->error("translate() failed: {}", e.what());
+    ftlog->error("  m_did=0x{:x} m_cid=0x{:x} IO_LINK=0x{:x} FID=0x{:x}",
+                 m_did, m_cid, IO_LINK, fids[0]);
+    return false;
+  }
 
   if (device_id_to_fid.empty()) {
     ftlog->error("No device ID found for FIDs");
@@ -791,10 +799,17 @@ bool FelixTxCore::writeFwRegister(
 
   bool success = true;
 
-  // A dummy fid made from the correct did and cid, but arbitrary link number
-  // translate will map this to the proper device id for register access
-  std::vector<uint64_t> fids = {FelixTxCore::fid_from_channel(42)};
-  std::map<felix::DeviceId, std::vector<std::uint64_t>> device_id_to_fid = fclient->translate(fids);
+  std::vector<uint64_t> fids = {get_fid_from_ids(/*did=*/m_did, /*cid=*/m_cid, /*elink=*/IO_LINK,
+                                                   /*sid=*/0, /*vid=*/1, /*is_fromhost=*/0, /*is_virtual=*/1)};
+  std::map<felix::DeviceId, std::vector<std::uint64_t>> device_id_to_fid;
+  try {
+    device_id_to_fid = fclient->translate(fids);
+  } catch (felix::BusException& e) {
+    ftlog->error("translate() failed: {}", e.what());
+    ftlog->error("  m_did=0x{:x} m_cid=0x{:x} IO_LINK=0x{:x} FID=0x{:x}",
+                 m_did, m_cid, IO_LINK, fids[0]);
+    return false;
+  }
 
   if (device_id_to_fid.empty()) {
     ftlog->error("No device ID found for FIDs");
