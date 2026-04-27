@@ -207,7 +207,9 @@ bool FelixTxCore::isCmdEmpty() {
     if (not buffer.empty()){
       is_buffer_empty = false;
       sendFifo(chn, m_fifo[chn]);
-      // Now wait for a few microseconds by using a while busy loop
+      // Now wait for a few microseconds by using a while busy loop.
+      // This wait was found to be necessary to avoid overflowing the Felix downlink fifo (CRFROMHOST_FIFO)
+      // during command-heavy scans (like merged-bump scans) when running with more than one pixel FE.
       auto start = std::chrono::high_resolution_clock::now();
       auto wait_duration = std::chrono::microseconds(m_isCmdEmptyWaitTime);
       while (std::chrono::high_resolution_clock::now() - start < wait_duration) {
