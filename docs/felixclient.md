@@ -119,6 +119,44 @@ Where each LpGBT or GBCR object can be added under the field `"OptoDevices"`.  E
 Note that the tx and rx fids for ic communication can be determined using the functions: 
 `FelixTxCore::ic_fid_from_channel(tx_value)` and `FelixRxCore::ic_fid_from_channel(rx_value)`
 
+Optionally, if a user desires to configure felix registers through Yarr, an extra field (`Card`) can be added to the controller configuration, as follows:
+```json
+{
+  "ctrlCfg": {
+    "type": "FelixClient",
+    "cfg": {
+      ...
+      "Card": {
+        "configureEpathOnLoad": false,
+        "txEncoding": 4,
+        "rxDecoding": 3,
+        "txBandWidth": 160,
+        "rxBandWidth": 1280,
+
+        "WriteFelixRegsOnLoad": false,
+        "Reg": {
+          "DECODING_REVERSE_10B" : "0x1",
+          "DECODING_MASK64B66BKBLOCK" : "0x3",
+          "ITKPIX_VERSION_00": "0xFFFF",
+        }
+      }
+    }
+  }
+}
+```
+
+`configureEpathOnLoad` - If true, configures the felix encoding/decoding links for Tx and Rx links specified in the connectivity file upon controller config loading. The ling configuration is defined by the following 4 paramters:
+
+`txEncoding` -  Set the txEncoding pattern as specified by FELIX FW regmap
+
+`rxDecoding` - Set the rxDecoding pattern as specified by FELIX FW regmap
+
+`txBandWidth` - tx bandwidth. Possible values are: [80, 160, 320, 640, 1280]
+
+`rxBandWidth` - rx bandwidth. Possible values are: [80, 160, 320, 640, 1280]
+
+`WriteFelixRegsOnLoad` - If true, writes all Felix register name-value pairs defined in the `Reg` list upon controller config loading.
+
 
 Assuming e-link 0 and 1 are valid Rx and Tx channels, respectively, and are both enabled:
 
@@ -214,7 +252,7 @@ bin/felixRegister configs/controller/felix_client.json BROADCAST_ENABLE_00 0xabc
 
 To run:
 ```
-bin/elinkConfig COMMAND configs/controller/felix_client.json [OPTIONS...]
+./bin/elinkConfig COMMAND configs/controller/felix_client.json [OPTIONS...]
 ```
 
 `COMMAND` can be one of the following:
@@ -231,6 +269,9 @@ Available options:
  -e : Channels specifeid in options are enabled exclusively. All other channels are disabled.
  -I : Include IC channels
  -E : Include EC channels
+ --ED : Include path encoding/decoding
+ --tx-encoding ENCODING_VALUE : Value of the tx encoding type. Overrides the value if specified in the "Card" field of the controller file.
+ --rx-decoding DECODING_VALUE : Value of the rx decoding type. Overrides the value if specified in the "Card" field of the controller file.
  -l LOG_CONFIG : Configuration for the logger.
  -v : Verbose mode. Set logging level to 'debug'. Overwritten by '-l LOG_CONFIG' if a logging configuration is provided.
 ```
@@ -248,6 +289,14 @@ bin/elinkConfig set configs/controller/felix_client.json -c <connectivity.json> 
 - Turn off all elinks in a connectivity config:
 ```
 bin/elinkConfig off -c <connectivity.json>
+```
+- To set the encoding and decoding patterns for the specified Tx and Rx channels:
+```
+bin/elinkConfig set configs/controller/felix_client.json -t 0 1 2 3 -r 0 2 4 6 --ED --tx-encoding 4 --rx-decoding 3
+```
+- Can also specify the rx/tx channels via the connectivity file
+```
+bin/elinkConfig set configs/controller/felix_client.json -c <connectivity.json> --ED --tx-encoding 4 --rx-decoding 3
 ```
 
 #### [readWriteLpGBTRegister](../src/libFelixClient/app/readWriteLpGBTRegister.cpp)
