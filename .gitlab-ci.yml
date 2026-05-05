@@ -415,301 +415,49 @@ job_test_pixel:
     - NUM100=`cat ./data/000002_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
     - if ["$NUM100" != "76800"]; then exit 2; fi
 
-job_test_pixel-on-hardware-berkeley-eye-diagram:
+# Shared template for hardware pixel scan jobs (digital/analog/threshold).
+# Concrete jobs extend this and set TEST_STAND, CONTROLLER_CFG, CONNECTIVITY_CFG,
+# SCAN_CONFIG, SCAN_TYPE, and OUTPUT_DIR, plus their own needs and artifacts.
+.hw_pixel_scan:
   extends: .test
-  tags:
-    - nakedsnail
-  variables:
-    TEST_STAND: "nakedsnail"
   resource_group: hardware-$TEST_STAND
-  needs:
-    - job: job_build_all
-      parallel:
-        matrix:
-          - ARCH: ['alma9']
-  when: manual
-  script:
-    # list runner IDs
-    - echo "TEST_STAND = $TEST_STAND"
-    - echo "CI_RUNNER_ID = $CI_RUNNER_ID"
-    - echo "CI_RUNNER_DESCRIPTION = $CI_RUNNER_DESCRIPTION"
-    - echo "CI_RUNNER_TAGS = $CI_RUNNER_TAGS"
-    # set PS
-    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-voltage 3
-    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-current 6.5
-    # power on PS
-    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-on
-    # Clone the test data repo
-    - echo "Fetching test data..."
-    - git clone https://gitlab.cern.ch/YARR/utilities/yarr-ci-test-data.git test-data
-    # Check that the test data is correct
-    - ls test-data
-    # Run eye diagram
-    - echo "Run Eye Diagram..."
-    - pwd
-    - ./bin/eyeDiagram -r ./test-data/$TEST_STAND/controller/specCfg-rd53b-16x1.json -c ./test-data/$TEST_STAND/ci-module/20UPIM13710116_L1_warm.json | tee test-data/eye_output.log
-    - echo "Checking for valid delay settings for lanes 0-3..."
+  after_script:
+    # Always runs even if scan fails - ensures power is turned off
     - |
-      if [ $(grep -E "Delay setting for lane [0-3]" test-data/eye_output.log | wc -l) -ge 4 ]; then
-        echo "Success!"
-      else
-        echo "Failure...less than 4 valid delay settings"
-        exit 1
+      if [ "$TEST_STAND" = "nakedsnail" ]; then
+        /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n HV power-off
+        /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-off
       fi
-    # power off PS
-    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-off
-  artifacts:
-    paths:
-      - ./test-data
-    expire_in: 1 day
-
-job_test_pixel-on-hardware-berkeley-digital-scan:
-  extends: .test
-  variables:
-    TEST_STAND: "nakedsnail"
-  resource_group: hardware-$TEST_STAND
-  tags:
-    - nakedsnail
-  needs:
-    - job: job_build_all
-      parallel:
-        matrix:
-          - ARCH: ['alma9']
-    - job: job_test_pixel-on-hardware-berkeley-eye-diagram
-      artifacts: true
   script:
-    # keep yarr scan number deterministic
+    # Keep yarr scan number deterministic
     - truncate $HOME/.yarr/runCounter --size=0
-    # set PS
-    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-voltage 3
-    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-current 6.5
-    # power on PS
-    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-on
-    # Run Digital Scan
-    - echo "Run Digital Scan..."
-    - pwd
-    - mkdir -p ./outputs/digital-scan
-    - ./bin/scanConsole -r ./test-data/$TEST_STAND/controller/specCfg-rd53b-16x1.json -c ./test-data/$TEST_STAND/ci-module/20UPIM13710116_L1_warm.json -o ./outputs/digital-scan -s ./configs/scans/itkpixv2/std_digitalscan.json -p
-    # power off PS
-    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-off
-  artifacts:
-    paths:
-      - ./outputs/digital-scan
-    expire_in: 1 month
-
-job_test_pixel-on-hardware-berkeley-analog-scan:
-  extends: .test
-  tags:
-    - nakedsnail
-  variables:
-    TEST_STAND: "nakedsnail"
-  resource_group: hardware-$TEST_STAND
-  needs:
-    - job: job_build_all
-      parallel:
-        matrix:
-          - ARCH: ['alma9']
-    - job: job_test_pixel-on-hardware-berkeley-eye-diagram
-      artifacts: true
-  script:
-    # keep yarr scan number deterministic
-    - truncate $HOME/.yarr/runCounter --size=0
-    # set PS
-    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-voltage 3
-    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-current 6.5
-    # power on PS
-    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-on
-    # Run Analog Scan
-    - echo "Run Analog Scan..."
-    - pwd
-    - mkdir -p ./outputs/analog-scan
-    - ./bin/scanConsole -r ./test-data/$TEST_STAND/controller/specCfg-rd53b-16x1.json -c ./test-data/$TEST_STAND/ci-module/20UPIM13710116_L1_warm.json -o ./outputs/analog-scan -s ./configs/scans/itkpixv2/std_analogscan.json -p
-    # power off PS
-    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-off
-  artifacts:
-    paths:
-      - ./outputs/analog-scan
-    expire_in: 1 month
-
-job_test_pixel-on-hardware-berkeley-threshold-hr-scan:
-  extends: .test
-  variables:
-    TEST_STAND: "nakedsnail"
-  tags:
-    - nakedsnail
-  resource_group: hardware-$TEST_STAND
-  needs:
-    - job: job_build_all
-      parallel:
-        matrix:
-          - ARCH: ['alma9']
-    - job: job_test_pixel-on-hardware-berkeley-eye-diagram
-      artifacts: true
-  script:
-    # keep yarr scan number deterministic
-    - truncate $HOME/.yarr/runCounter --size=0
-    # set PS
-    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-voltage 3
-    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-current 6.5
-    # power on PS
-    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-on
-    # Run Threshold Scan
-    - echo "Run Threshold Scan..."
-    - pwd
-    - mkdir -p ./outputs/threshold-scan
-    - ./bin/scanConsole -r ./test-data/$TEST_STAND/controller/specCfg-rd53b-16x1.json -c ./test-data/$TEST_STAND/ci-module/20UPIM13710116_L1_warm.json -o ./outputs/threshold-scan -s ./configs/scans/itkpixv2/std_thresholdscan_hr.json -p
-    # power off PS
-    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-off
-  artifacts:
-    paths:
-      - ./outputs/threshold-scan
-    expire_in: 1 month
-
-job_test_pixel-on-hardware-eye-diagram:
-  extends: .test
-  tags:
-    - scipp
-  variables:
-    TEST_STAND: "scipp"
-  resource_group: hardware-$TEST_STAND
-  needs:
-    - job: job_build_all
-      parallel:
-        matrix:
-          - ARCH: ['alma9']
-  when: manual
-  script:
-    # list runner IDs
-    - echo "TEST_STAND = $TEST_STAND"
-    - echo "CI_RUNNER_ID = $CI_RUNNER_ID"
-    - echo "CI_RUNNER_DESCRIPTION = $CI_RUNNER_DESCRIPTION"
-    - echo "CI_RUNNER_TAGS = $CI_RUNNER_TAGS"
-    # Clone the test data repo
-    - echo "Fetching test data..."
-    - git clone https://gitlab.cern.ch/YARR/utilities/yarr-ci-test-data.git test-data
-    # Check that the test data is correct
-    - ls test-data
-    # Run eye diagram
-    - echo "Run Eye Diagram..."
-    - pwd
-    - ./bin/eyeDiagram -r ./configs/controller/specCfg-rd53b-16x1.json -c ./test-data/$TEST_STAND/ci-module/connectivity.json | tee test-data/eye_output.log
-    - echo "Checking for valid delay settings for lanes 0-3..."
+    # Power on LV then HV (nakedsnail only)
     - |
-      if [ $(grep -E "Delay setting for lane [0-3]" test-data/eye_output.log | wc -l) -ge 4 ]; then
-        echo "Success!"
-      else
-        echo "Failure...less than 4 valid delay settings"
-        exit 1
+      if [ "$TEST_STAND" = "nakedsnail" ]; then
+        /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-voltage 3
+        /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-current 6.5
+        /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-on
+        /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n HV set-voltage -- -80
+        /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n HV power-on
+        sleep 2
       fi
-  artifacts:
-    paths:
-      - ./test-data
-    expire_in: 1 day
-
-job_test_pixel-on-hardware-digital-scan:
-  extends: .test
-  variables:
-    TEST_STAND: "scipp"
-  resource_group: hardware-$TEST_STAND
-  tags:
-    - scipp
-  needs:
-    - job: job_build_all
-      parallel:
-        matrix:
-          - ARCH: ['alma9']
-    - job: job_test_pixel-on-hardware-eye-diagram
-      artifacts: true
-  script:
-    # keep yarr scan number deterministic
-    - truncate $HOME/.yarr/runCounter --size=0
-    # Run Digital Scan
-    - echo "Run Digital Scan..."
+    - echo "Run $SCAN_TYPE Scan..."
     - pwd
-    - mkdir -p ./outputs/digital-scan
-    - ./bin/scanConsole -r ./configs/controller/specCfg-rd53b-16x1.json -c ./test-data/$TEST_STAND/ci-module/connectivity.json -o ./outputs/digital-scan -s ./configs/scans/itkpixv2/std_digitalscan.json -p
-  artifacts:
-    paths:
-      - ./outputs/digital-scan
-    expire_in: 1 month
+    - mkdir -p $OUTPUT_DIR
+    - ./bin/scanConsole -r $CONTROLLER_CFG -c $CONNECTIVITY_CFG -o $OUTPUT_DIR -s $SCAN_CONFIG -p
+    # Power off is handled in after_script
 
-job_test_pixel-on-hardware-analog-scan:
+# Shared template for hardware pixel evaluation jobs.
+# Concrete jobs extend this and set TEST_STAND, plus their own needs.
+.hw_pixel_evaluation:
   extends: .test
-  tags:
-    - scipp
-  variables:
-    TEST_STAND: "scipp"
-  resource_group: hardware-$TEST_STAND
-  needs:
-    - job: job_build_all
-      parallel:
-        matrix:
-          - ARCH: ['alma9']
-    - job: job_test_pixel-on-hardware-eye-diagram
-      artifacts: true
-  script:
-    # keep yarr scan number deterministic
-    - truncate $HOME/.yarr/runCounter --size=0
-    # Run Analog Scan
-    - echo "Run Analog Scan..."
-    - pwd
-    - mkdir -p ./outputs/analog-scan
-    - ./bin/scanConsole -r ./configs/controller/specCfg-rd53b-16x1.json -c ./test-data/$TEST_STAND/ci-module/connectivity.json -o ./outputs/analog-scan -s ./configs/scans/itkpixv2/std_analogscan.json -p
-  artifacts:
-    paths:
-      - ./outputs/analog-scan
-    expire_in: 1 month
-
-job_test_pixel-on-hardware-threshold-hr-scan:
-  extends: .test
-  variables:
-    TEST_STAND: "scipp"
-  tags:
-    - scipp
-  resource_group: hardware-$TEST_STAND
-  needs:
-    - job: job_build_all
-      parallel:
-        matrix:
-          - ARCH: ['alma9']
-    - job: job_test_pixel-on-hardware-eye-diagram
-      artifacts: true
-  script:
-    # keep yarr scan number deterministic
-    - truncate $HOME/.yarr/runCounter --size=0
-    # Run Threshold Scan
-    - echo "Run Threshold Scan..."
-    - pwd
-    - mkdir -p ./outputs/threshold-scan
-    - ./bin/scanConsole -r ./configs/controller/specCfg-rd53b-16x1.json -c ./test-data/$TEST_STAND/ci-module/connectivity.json -o ./outputs/threshold-scan -s ./configs/scans/itkpixv2/std_thresholdscan_hr.json -p
-  artifacts:
-    paths:
-      - ./outputs/threshold-scan
-    expire_in: 1 month
-
-job_test_pixel_evaluation:
-  extends: .test
-  variables:
-    TEST_STAND: "scipp"
-  tags:
-    - scipp
   image: registry.cern.ch/ghcr.io/prefix-dev/pixi:latest
-  needs:
-    - job: job_test_pixel-on-hardware-digital-scan
-      artifacts: true
-    - job: job_test_pixel-on-hardware-analog-scan
-      artifacts: true
-    - job: job_test_pixel-on-hardware-threshold-hr-scan
-      artifacts: true
-    - job: job_test_pixel-on-hardware-eye-diagram
-      artifacts: true
   before_script:
     - curl -fsSL https://pixi.sh/install.sh | bash
     - source ~/.bashrc
     - pixi install
   script:
-    # Run python analysis scripts
-    - pixi run pytest --junit-xml=report.xml tests --stand scipp
+    - pixi run pytest --junit-xml=report.xml tests --stand $TEST_STAND -s
   artifacts:
     when: always
     reports:
@@ -717,6 +465,282 @@ job_test_pixel_evaluation:
     paths:
       - ./outputs/*.png
     expire_in: 1 month
+
+# Eye diagram: merged matrix job covering both test stands.
+# This is the manual entry point for hardware pixel tests on each stand.
+job_test_pixel-on-hardware-eye-diagram:
+  extends: .test
+  tags:
+    - $TEST_STAND
+  resource_group: hardware-$TEST_STAND
+  when: manual
+  parallel:
+    matrix:
+      - TEST_STAND: scipp
+        CONTROLLER_CFG: "./configs/controller/specCfg-rd53b-16x1.json"
+        CONNECTIVITY_CFG: "./test-data/scipp/ci-module/connectivity.json"
+      - TEST_STAND: nakedsnail
+        CONTROLLER_CFG: "./test-data/nakedsnail/controller/specCfg-rd53b-16x1.json"
+        CONNECTIVITY_CFG: "./test-data/nakedsnail/ci-module/20UPIM13710116_L1_warm.json"
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['alma9']
+  after_script:
+    # Always runs even if eye diagram fails - ensures power is turned off
+    - |
+      if [ "$TEST_STAND" = "nakedsnail" ]; then
+        /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n HV power-off
+        /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-off
+      fi
+  script:
+    # List runner IDs
+    - echo "TEST_STAND = $TEST_STAND"
+    - echo "CI_RUNNER_ID = $CI_RUNNER_ID"
+    - echo "CI_RUNNER_DESCRIPTION = $CI_RUNNER_DESCRIPTION"
+    - echo "CI_RUNNER_TAGS = $CI_RUNNER_TAGS"
+    # Power on LV then HV (nakedsnail only)
+    - |
+      if [ "$TEST_STAND" = "nakedsnail" ]; then
+        /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-voltage 3
+        /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-current 6.5
+        /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-on
+        /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n HV set-voltage -- -80
+        /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n HV power-on
+        sleep 2
+      fi
+    # Clone the test data repo
+    - echo "Fetching test data..."
+    - git clone https://gitlab.cern.ch/YARR/utilities/yarr-ci-test-data.git test-data
+    - ls test-data
+    # Run eye diagram
+    - echo "Run Eye Diagram..."
+    - pwd
+    - ./bin/eyeDiagram -r $CONTROLLER_CFG -c $CONNECTIVITY_CFG | tee test-data/eye_output.log
+    - echo "Checking for valid delay settings for lanes 0-3..."
+    - |
+      if [ $(grep -E "Delay setting for lane [0-3]" test-data/eye_output.log | wc -l) -ge 4 ]; then
+        echo "Success!"
+      else
+        echo "Failure...less than 4 valid delay settings"
+        exit 1
+      fi
+    # Power off is handled in after_script
+  artifacts:
+    paths:
+      - ./test-data
+    expire_in: 1 month
+
+job_test_pixel-on-hardware-scipp-digital-scan:
+  extends: .hw_pixel_scan
+  tags:
+    - scipp
+  variables:
+    TEST_STAND: "scipp"
+    SCAN_TYPE: "Digital"
+    CONTROLLER_CFG: "./configs/controller/specCfg-rd53b-16x1.json"
+    CONNECTIVITY_CFG: "./test-data/scipp/ci-module/connectivity.json"
+    SCAN_CONFIG: "./configs/scans/itkpixv2/std_digitalscan.json"
+    OUTPUT_DIR: "./outputs/digital-scan"
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['alma9']
+    - job: job_test_pixel-on-hardware-eye-diagram
+      parallel:
+        matrix:
+          - TEST_STAND: scipp
+            CONTROLLER_CFG: "./configs/controller/specCfg-rd53b-16x1.json"
+            CONNECTIVITY_CFG: "./test-data/scipp/ci-module/connectivity.json"
+      artifacts: true
+  artifacts:
+    paths:
+      - ./outputs/digital-scan
+    expire_in: 1 month
+
+job_test_pixel-on-hardware-nakedsnail-digital-scan:
+  extends: .hw_pixel_scan
+  tags:
+    - nakedsnail
+  variables:
+    TEST_STAND: "nakedsnail"
+    SCAN_TYPE: "Digital"
+    CONTROLLER_CFG: "./test-data/nakedsnail/controller/specCfg-rd53b-16x1.json"
+    CONNECTIVITY_CFG: "./test-data/nakedsnail/ci-module/20UPIM13710116_L1_warm.json"
+    SCAN_CONFIG: "./configs/scans/itkpixv2/std_digitalscan.json"
+    OUTPUT_DIR: "./outputs/digital-scan"
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['alma9']
+    - job: job_test_pixel-on-hardware-eye-diagram
+      parallel:
+        matrix:
+          - TEST_STAND: nakedsnail
+            CONTROLLER_CFG: "./test-data/nakedsnail/controller/specCfg-rd53b-16x1.json"
+            CONNECTIVITY_CFG: "./test-data/nakedsnail/ci-module/20UPIM13710116_L1_warm.json"
+      artifacts: true
+  artifacts:
+    paths:
+      - ./outputs/digital-scan
+    expire_in: 1 month
+
+job_test_pixel-on-hardware-scipp-analog-scan:
+  extends: .hw_pixel_scan
+  tags:
+    - scipp
+  variables:
+    TEST_STAND: "scipp"
+    SCAN_TYPE: "Analog"
+    CONTROLLER_CFG: "./configs/controller/specCfg-rd53b-16x1.json"
+    CONNECTIVITY_CFG: "./test-data/scipp/ci-module/connectivity.json"
+    SCAN_CONFIG: "./configs/scans/itkpixv2/std_analogscan.json"
+    OUTPUT_DIR: "./outputs/analog-scan"
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['alma9']
+    - job: job_test_pixel-on-hardware-eye-diagram
+      parallel:
+        matrix:
+          - TEST_STAND: scipp
+            CONTROLLER_CFG: "./configs/controller/specCfg-rd53b-16x1.json"
+            CONNECTIVITY_CFG: "./test-data/scipp/ci-module/connectivity.json"
+      artifacts: true
+  artifacts:
+    paths:
+      - ./outputs/analog-scan
+    expire_in: 1 month
+
+job_test_pixel-on-hardware-nakedsnail-analog-scan:
+  extends: .hw_pixel_scan
+  tags:
+    - nakedsnail
+  variables:
+    TEST_STAND: "nakedsnail"
+    SCAN_TYPE: "Analog"
+    CONTROLLER_CFG: "./test-data/nakedsnail/controller/specCfg-rd53b-16x1.json"
+    CONNECTIVITY_CFG: "./test-data/nakedsnail/ci-module/20UPIM13710116_L1_warm.json"
+    SCAN_CONFIG: "./configs/scans/itkpixv2/std_analogscan.json"
+    OUTPUT_DIR: "./outputs/analog-scan"
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['alma9']
+    - job: job_test_pixel-on-hardware-eye-diagram
+      parallel:
+        matrix:
+          - TEST_STAND: nakedsnail
+            CONTROLLER_CFG: "./test-data/nakedsnail/controller/specCfg-rd53b-16x1.json"
+            CONNECTIVITY_CFG: "./test-data/nakedsnail/ci-module/20UPIM13710116_L1_warm.json"
+      artifacts: true
+  artifacts:
+    paths:
+      - ./outputs/analog-scan
+    expire_in: 1 month
+
+job_test_pixel-on-hardware-scipp-threshold-hr-scan:
+  extends: .hw_pixel_scan
+  tags:
+    - scipp
+  variables:
+    TEST_STAND: "scipp"
+    SCAN_TYPE: "Threshold HR"
+    CONTROLLER_CFG: "./configs/controller/specCfg-rd53b-16x1.json"
+    CONNECTIVITY_CFG: "./test-data/scipp/ci-module/connectivity.json"
+    SCAN_CONFIG: "./configs/scans/itkpixv2/std_thresholdscan_hr.json"
+    OUTPUT_DIR: "./outputs/threshold-scan"
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['alma9']
+    - job: job_test_pixel-on-hardware-eye-diagram
+      parallel:
+        matrix:
+          - TEST_STAND: scipp
+            CONTROLLER_CFG: "./configs/controller/specCfg-rd53b-16x1.json"
+            CONNECTIVITY_CFG: "./test-data/scipp/ci-module/connectivity.json"
+      artifacts: true
+  artifacts:
+    paths:
+      - ./outputs/threshold-scan
+    expire_in: 1 month
+
+job_test_pixel-on-hardware-nakedsnail-threshold-hr-scan:
+  extends: .hw_pixel_scan
+  tags:
+    - nakedsnail
+  variables:
+    TEST_STAND: "nakedsnail"
+    SCAN_TYPE: "Threshold HR"
+    CONTROLLER_CFG: "./test-data/nakedsnail/controller/specCfg-rd53b-16x1.json"
+    CONNECTIVITY_CFG: "./test-data/nakedsnail/ci-module/20UPIM13710116_L1_warm.json"
+    SCAN_CONFIG: "./configs/scans/itkpixv2/std_thresholdscan_hr.json"
+    OUTPUT_DIR: "./outputs/threshold-scan"
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['alma9']
+    - job: job_test_pixel-on-hardware-eye-diagram
+      parallel:
+        matrix:
+          - TEST_STAND: nakedsnail
+            CONTROLLER_CFG: "./test-data/nakedsnail/controller/specCfg-rd53b-16x1.json"
+            CONNECTIVITY_CFG: "./test-data/nakedsnail/ci-module/20UPIM13710116_L1_warm.json"
+      artifacts: true
+  artifacts:
+    paths:
+      - ./outputs/threshold-scan
+    expire_in: 1 month
+
+job_test_pixel-on-hardware-scipp-evaluation:
+  extends: .hw_pixel_evaluation
+  tags:
+    - scipp
+  variables:
+    TEST_STAND: "scipp"
+  needs:
+    - job: job_test_pixel-on-hardware-scipp-digital-scan
+      artifacts: true
+    - job: job_test_pixel-on-hardware-scipp-analog-scan
+      artifacts: true
+    - job: job_test_pixel-on-hardware-scipp-threshold-hr-scan
+      artifacts: true
+    - job: job_test_pixel-on-hardware-eye-diagram
+      parallel:
+        matrix:
+          - TEST_STAND: scipp
+            CONTROLLER_CFG: "./configs/controller/specCfg-rd53b-16x1.json"
+            CONNECTIVITY_CFG: "./test-data/scipp/ci-module/connectivity.json"
+      artifacts: true
+
+job_test_pixel-on-hardware-nakedsnail-evaluation:
+  extends: .hw_pixel_evaluation
+  tags:
+    - nakedsnail
+  variables:
+    TEST_STAND: "nakedsnail"
+  needs:
+    - job: job_test_pixel-on-hardware-nakedsnail-digital-scan
+      artifacts: true
+    - job: job_test_pixel-on-hardware-nakedsnail-analog-scan
+      artifacts: true
+    - job: job_test_pixel-on-hardware-nakedsnail-threshold-hr-scan
+      artifacts: true
+    - job: job_test_pixel-on-hardware-eye-diagram
+      parallel:
+        matrix:
+          - TEST_STAND: nakedsnail
+            CONTROLLER_CFG: "./test-data/nakedsnail/controller/specCfg-rd53b-16x1.json"
+            CONNECTIVITY_CFG: "./test-data/nakedsnail/ci-module/20UPIM13710116_L1_warm.json"
+      artifacts: true
 
 job_test_strips:
   extends: .test
