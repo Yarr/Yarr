@@ -4,124 +4,34 @@ include(FetchContent)
 
 include(cmake/SupportFunctionsLibrary.cmake)
 
-# TBB
-function(YARR_ADD_TBB)
-    if (TARGET tbb_2020)
-        message(WARNING "already defined")
-        return()
-    endif()
+if(YARR_FELIX_BACKEND)
+    # It has been already included previously.
+    return()
+endif()
 
-    #needed as otherwise the directory does not exist during configure step and cmake throws an error as it has not been built/installed yet
-    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include")
-    
-    # -- Generate helper CMake script
-    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/copy_tbb_libs.cmake
-    "
-    file(GLOB_RECURSE TBB_STATIC_LIBS
-        \"${CMAKE_CURRENT_BINARY_DIR}/external/src/tbb_2020/build/*/*.a\"
-    )
-
-    file(MAKE_DIRECTORY \"${CMAKE_CURRENT_BINARY_DIR}/lib\")
-
-    foreach(LIB \${TBB_STATIC_LIBS})
-        file(COPY \${LIB} DESTINATION \"${CMAKE_CURRENT_BINARY_DIR}/lib\")
-    endforeach()
-    ")
-
-    ExternalProject_Add(
-        tbb_2020
-        PATCH_COMMAND git apply ${PROJECT_SOURCE_DIR}/cmake/0001-TBB-GCC13.patch
-        GIT_REPOSITORY https://github.com/intel/tbb.git
-        GIT_TAG 2020_U2
-        UPDATE_COMMAND ""
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ${CMAKE_COMMAND} -E chdir <SOURCE_DIR> make -j4 ${TBB_COMP} ${TBB_ARCH} extra_inc=big_iron.inc
-        INSTALL_COMMAND 
-            ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/include
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/lib
-            COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/include/tbb ${CMAKE_CURRENT_BINARY_DIR}/include/tbb
-            COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/copy_tbb_libs.cmake
-        PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
-    )
-
-    # Create an imported target manually
-    add_library(tbb::tbb STATIC IMPORTED GLOBAL)
-
-    # Tell CMake where to find the library + includes once the build is done
-    set_target_properties(tbb::tbb PROPERTIES
-       IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/lib/libtbb.a"
-       INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_BINARY_DIR}/include"
-    )
-    
-    add_library(tbb::tbbmalloc STATIC IMPORTED GLOBAL)
-    add_library(tbb::tbbmalloc_proxy STATIC IMPORTED GLOBAL)
-
-    set_target_properties(tbb::tbbmalloc PROPERTIES
-       IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/lib/libtbbmalloc.a"
-       INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_BINARY_DIR}/include"
-    )
-
-    set_target_properties(tbb::tbbmalloc_proxy PROPERTIES
-       IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/lib/libtbbmalloc_proxy.a"
-       INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_BINARY_DIR}/include"
-    )
-    
-    add_dependencies(tbb::tbb tbb_2020)
-    add_dependencies(tbb::tbbmalloc tbb_2020)
-    add_dependencies(tbb::tbbmalloc_proxy tbb_2020)
-
-endfunction()
-
-function(YARR_ADD_NETIO)
-    if (TARGET netio)
-        return()
-    endif()
-
-    # NetIO
-    FetchContent_Declare (
-        netio
-        GIT_REPOSITORY https://:@gitlab.cern.ch:8443/atlas-tdaq-felix/netio.git
-        GIT_TAG netio-11-01-00
-        UPDATE_COMMAND ""
-        PATCH_COMMAND
-            git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch001.txt &&
-            git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch002.txt &&
-            git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch003.txt &&
-            git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch004.txt &&
-            git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch005.txt &&
-            git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch006.txt &&
-            git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch007.txt &&
-            git apply ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netio-patch008.txt &&
-            cp ${PROJECT_SOURCE_DIR}/cmake/netio4patches/CMakeLists.txt.netio CMakeLists.txt &&
-            cp ${PROJECT_SOURCE_DIR}/cmake/netio4patches/netioConfig.cmake.in netioConfig.cmake.in &&
-            cp ${PROJECT_SOURCE_DIR}/cmake/netio4patches/FindLIBFABRIC.cmake FindLIBFABRIC.cmake
-        CMAKE_ARGS "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}" -DCMAKE_CXX_FLAGS=-fPIC
-        )
-     FetchContent_MakeAvailable(netio)
-endfunction()
-
-function(YARR_ADD_FELIX)
-    if (TARGET felixbase4)
-        return()
-    endif()
-    
-    # Ensure netio is added before felixbase4
-    YARR_ADD_NETIO()
-
-    # FELIX
-    FetchContent_Declare (
-        felixbase4
-        GIT_REPOSITORY https://:@gitlab.cern.ch:8443/atlas-tdaq-felix/felixbase.git
-        GIT_TAG felix-4.0.x
-        PATCH_COMMAND
-           cp ${PROJECT_SOURCE_DIR}/cmake/felixbase4patches/CMakeLists.txt.felixbase4 CMakeLists.txt &&
-           cp ${PROJECT_SOURCE_DIR}/cmake/felixbase4patches/felixbase4Config.cmake.in felixbase4Config.cmake.in
-        )
-
-    FetchContent_MakeAvailable(felixbase4)
-endfunction()
+set(USE_SYSTEM_FELIX OFF)
+set(Felix_ROOT "" CACHE PATH "Path to pre-compiled FELIX")
+if (NOT "${Felix_ROOT}" STREQUAL "")
+    set(USE_SYSTEM_FELIX ON)
+    set(YARR_FELIX_BACKEND "NONE")
+endif()
 
 function(YARR_ADD_FELIX_CLIENT)
+    set(YARR_FELIX_BACKEND "NONE" PARENT_SCOPE)
+
+    if (USE_SYSTEM_FELIX)
+        message(STATUS "Using pre-compiled FELIX from ${Felix_ROOT}")
+        set(YARR_FELIX_COMPONENTS felix-client-thread felix-interface)
+        if(YARR_ENABLE_FELIX_CLIENT_BRIDGE)
+            list(APPEND YARR_FELIX_COMPONENTS felix-server)
+        endif()
+        find_package(Felix
+                     REQUIRED COMPONENTS ${YARR_FELIX_COMPONENTS}
+                     HINTS "${Felix_ROOT}")
+        set(YARR_FELIX_BACKEND "FELIX_CLIENT_SYSTEM" PARENT_SCOPE)
+        return()
+    endif()
+
     if (TARGET tdaq::felix_proxy)
         message(STATUS "TDAQ is available, using felix-proxy instead")
 
@@ -130,22 +40,38 @@ function(YARR_ADD_FELIX_CLIENT)
         return()
     endif()
 
-    set(YARR_FELIX_BACKEND "FELIX_CLIENT" PARENT_SCOPE)
-
-    # FELIX Client Thread
-    FetchContent_Declare (
-        felixclientthread
-        GIT_REPOSITORY https://gitlab.cern.ch/atlas-tdaq-felix/felix-client-thread.git
-        GIT_TAG 5.1.x
-        UPDATE_COMMAND ""
-        PATCH_COMMAND 
-             cp ${PROJECT_SOURCE_DIR}/cmake/felix-client-threadpatches/CMakeLists.txt.felix-client-thread CMakeLists.txt &&
-             cp ${PROJECT_SOURCE_DIR}/cmake/felix-client-threadpatches/felix-client-threadConfig.cmake.in felix-client-threadConfig.cmake.in &&
-             cp ${PROJECT_SOURCE_DIR}/cmake/felix-client-threadpatches/CMakeLists.txt.felix-interface felix-interface/CMakeLists.txt &&
-             cp ${PROJECT_SOURCE_DIR}/cmake/felix-client-threadpatches/felix-interfaceConfig.cmake.in felix-interface/felix-interfaceConfig.cmake.in
-        )
+   if((CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0) AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
+        message(STATUS "Cannot build FELIX with GCC version < 15.")
+   else()
+     # FELIX Client Thread
+     FetchContent_Declare (
+          felixinterface
+          GIT_REPOSITORY https://gitlab.cern.ch/atlas-tdaq-felix/felix-interface.git
+          GIT_TAG master
+          UPDATE_COMMAND ""
+          PATCH_COMMAND 
+               cp ${PROJECT_SOURCE_DIR}/cmake/felix-interface-patches/CMakeLists.txt.felix-interface CMakeLists.txt &&
+               cp ${PROJECT_SOURCE_DIR}/cmake/felix-interface-patches/felix-interfaceConfig.cmake.in felix-interfaceConfig.cmake.in
+          )
         
-   FetchContent_MakeAvailable(felixclientthread)
+      FetchContent_MakeAvailable(felixinterface)
+    
+      FetchContent_Declare (
+          felixclientthread
+          GIT_REPOSITORY https://gitlab.cern.ch/atlas-tdaq-felix/felix-client-thread.git
+          GIT_TAG master
+          UPDATE_COMMAND ""
+          PATCH_COMMAND 
+               cp ${PROJECT_SOURCE_DIR}/cmake/felix-client-thread-patches/CMakeLists.txt.felix-client-thread CMakeLists.txt &&
+               cp ${PROJECT_SOURCE_DIR}/cmake/felix-client-thread-patches/felix-client-threadConfig.cmake.in felix-client-threadConfig.cmake.in
+          )
+        
+       FetchContent_MakeAvailable(felixclientthread)
+       set(YARR_FELIX_BACKEND "FELIX_CLIENT_EMBEDDED" PARENT_SCOPE)
+       return()
+    endif()
+    
+    message(WARNING "Attempt to get any version of FELIX failed.")
 
 endfunction()
 

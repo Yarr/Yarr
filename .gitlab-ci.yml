@@ -35,7 +35,7 @@ image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_alma9_build
   image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_${ARCH}_build
   parallel:
     matrix:
-      - ARCH: ['cc7', 'alma9']
+      - ARCH: ['alma9']
 .test:
   stage: test
   extends: .rules
@@ -59,65 +59,94 @@ job_build_all:
     - git config --global user.name "CI Runner"
   script:
     - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-    - |
-      if [ "$ARCH" = "cc7" ]; then
-        yum -y install autoconf automake libtool glibc-headers kernel-headers glibc-devel
-      else
-        dnf -y install autoconf automake libtool
-      fi
+    - dnf -y install autoconf automake libtool
     - mkdir  build
     - cd build
-    - |
-      if [ "$ARCH" = "cc7" ]; then
-        cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DENABLE_PYTHON=On -DLIBFABRIC_CONFIGURE_OPTS="--disable-lpp" -DYARR_ENABLE_PYTHON=off
-      else
-        cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DENABLE_PYTHON=On -DLIBFABRIC_CONFIGURE_OPTS="--disable-lpp" -DYARR_ENABLE_PYTHON=on
-      fi
+    - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DYARR_ENABLE_PYTHON=on
     - make install -j$(nproc)
     - CTEST_OUTPUT_ON_FAILURE=1 make test
     - cd ..
     - bin/scanConsole -k
     - bin/scanConsole --version
 
-job_build_and_test_out_of_source:
+job_build_all_most_modern:
+  extends: .build_matrix
+  before_script:
+    - git config --global user.email "ci@example.com"
+    - git config --global user.name "CI Runner"
+  script:
+    - dnf -y install gcc-toolset-15.x86_64 gcc-toolset-15-gcc.x86_64 cmake make boost-devel
+    - source /opt/rh/gcc-toolset-15/enable
+    - mkdir build
+    - cd build
+    - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD="all" -DYARR_FRONT_ENDS_TO_BUILD="all" -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DYARR_ENABLE_PYTHON=on -DCMAKE_CXX_STANDARD=23
+    - make install -j$(nproc)
+    - CTEST_OUTPUT_ON_FAILURE=1 make test
+    - cd ..
+    - bin/scanConsole -k
+    - bin/scanConsole --version
+
+.out_of_source_base:
   extends: .build_matrix
   stage: build
-  script:
-    - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-    - |
-      if [ "$ARCH" = "cc7" ]; then
-        yum -y install autoconf automake libtool glibc-headers kernel-headers glibc-devel
-      else
-        dnf -y install autoconf automake libtool
-      fi
+  before_script:
+    - dnf -y install gcc-toolset-15.x86_64 gcc-toolset-15-gcc.x86_64 cmake make boost-devel
+    - source /opt/rh/gcc-toolset-15/enable
     - cmake3 --version
-    - export YARR_PROJECT_DIR=`pwd`
-    - CXXFLAGS=-Werror cmake3 -S . -B /tmp/build-yarr -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=cmake/linux-gcc -DCMAKE_INSTALL_PREFIX=/tmp/install-yarr
-    - cmake3 --build /tmp/build-yarr -j$(nproc)
-    - cmake3 --install /tmp/build-yarr
-    - export Yarr_DIR=/tmp/install-yarr/cmake
-    - ctest --output-on-failure --test-dir /tmp/build-yarr/
-    - /tmp/install-yarr/bin/scanConsole -k
-    - mkdir /tmp/build-YarrFindPackageTest
-    - cmake3 -S tests/find_package_test -B /tmp/build-YarrFindPackageTest -DCMAKE_TOOLCHAIN_FILE=../../cmake/linux-gcc  -DCMAKE_INSTALL_PREFIX=/tmp/install-YarrFindPackageTest
-    - cmake3 --build /tmp/build-YarrFindPackageTest -j$(nproc)
-    - cmake3 --install /tmp/build-YarrFindPackageTest/
-    - /tmp/install-YarrFindPackageTest/bin/YarrFindPackageTest
-    - mkdir /tmp/build-YarrAddSubdirectoryTest
-    - cmake3 -S tests/add_subdirectory_test -B /tmp/build-YarrAddSubdirectoryTest -DCMAKE_TOOLCHAIN_FILE=../../cmake/linux-gcc  -DCMAKE_INSTALL_PREFIX=/tmp/install-YarrAddSubdirectoryTest
-    - cmake3 --build /tmp/build-YarrAddSubdirectoryTest -j$(nproc)
-    - cmake3 --install /tmp/build-YarrAddSubdirectoryTest/
-    - /tmp/install-YarrAddSubdirectoryTest/bin/YarrAddSubdirectoryTest
-    - mkdir /tmp/build-YarrExternalSuperbuildTest
-    - cmake3 -S tests/external_project_superbuild_test -B /tmp/build-YarrExternalSuperbuildTest -DCMAKE_TOOLCHAIN_FILE=../../cmake/linux-gcc  -DCMAKE_INSTALL_PREFIX=/tmp/install-YarrExternalSuperbuildTest -DYARR_PROJECT_DIR=$YARR_PROJECT_DIR
-    - cmake3 --build /tmp/build-YarrExternalSuperbuildTest -j$(nproc)
-    - cmake3 --install /tmp/build-YarrExternalSuperbuildTest/
-    - /tmp/install-YarrExternalSuperbuildTest/bin/YarrConsumerTest
-    - mkdir /tmp/build-YarrFetchContentTest
-    - cmake3 -S tests/fetch_content_test -B /tmp/build-YarrFetchContentTest -DCMAKE_TOOLCHAIN_FILE=../../cmake/linux-gcc  -DCMAKE_INSTALL_PREFIX=/tmp/install-YarrFetchContentTest -DYARR_PROJECT_DIR=$YARR_PROJECT_DIR
-    - cmake3 --build /tmp/build-YarrFetchContentTest -j$(nproc)
-    - cmake3 --install /tmp/build-YarrFetchContentTest/
-    - /tmp/install-YarrFetchContentTest/bin/YarrFetchContentTest
+    - export YARR_PROJECT_DIR="$CI_PROJECT_DIR"
+    - export YARR_TOOLCHAIN_FILE="$YARR_PROJECT_DIR/cmake/linux-gcc"
+    - export YARR_WORK_DIR="$CI_BUILDS_DIR/work"
+    - mkdir -p "$YARR_WORK_DIR"
+
+job_test_find_package_consumer:
+  extends: .out_of_source_base
+  script:
+    - export YARR_BUILD_DIR="$YARR_WORK_DIR/build-yarr"
+    - echo "YARR build directory $YARR_BUILD_DIR"
+    - export YARR_INSTALL_DIR="$YARR_WORK_DIR/install-yarr"
+    - echo "YARR install directory $YARR_INSTALL_DIR"
+    - cmake3 -S "$YARR_PROJECT_DIR" -B "$YARR_BUILD_DIR" -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE="$YARR_TOOLCHAIN_FILE" -DCMAKE_INSTALL_PREFIX="$YARR_INSTALL_DIR" -DYARR_CONTROLLERS_TO_BUILD="all" -DYARR_FRONT_ENDS_TO_BUILD="all" -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DYARR_ENABLE_PYTHON=on -DCMAKE_CXX_STANDARD=20
+    - cmake3 --build "$YARR_BUILD_DIR" --parallel "$(nproc)"
+    - cmake3 --install "$YARR_BUILD_DIR"
+    - export Yarr_DIR="$YARR_INSTALL_DIR/cmake/Yarr"
+    - ctest --output-on-failure -j"$(nproc)" --test-dir "$YARR_BUILD_DIR"
+    - $YARR_INSTALL_DIR/bin/scanConsole -k
+    - export TEST_BUILD_DIR="$YARR_WORK_DIR/build-YarrFindPackageTest"
+    - export TEST_INSTALL_DIR="$YARR_WORK_DIR/install-YarrFindPackageTest"
+    - cmake3 -S "$YARR_PROJECT_DIR/tests/find_package_test" -B "$TEST_BUILD_DIR" -DCMAKE_TOOLCHAIN_FILE="$YARR_TOOLCHAIN_FILE" -DCMAKE_INSTALL_PREFIX="$TEST_INSTALL_DIR" -DYarr_DIR=$Yarr_DIR -Dfelix-interface_DIR="/builds/work/install-yarr/lib/cmake/felix-interface" -Dfelix-client-thread_DIR="/builds/work/install-yarr/lib/cmake/felix-client-thread"
+    - cmake3 --build "$TEST_BUILD_DIR" --parallel "$(nproc)"
+    - cmake3 --install "$TEST_BUILD_DIR"
+    - $TEST_INSTALL_DIR/bin/YarrFindPackageTest
+
+job_test_add_subdirectory_consumer:
+  extends: .out_of_source_base
+  script:
+    - export BUILD_DIR="$YARR_WORK_DIR/build-YarrAddSubdirectoryTest"
+    - export INSTALL_DIR="$YARR_WORK_DIR/install-YarrAddSubdirectoryTest"
+    - cmake3 -S "$YARR_PROJECT_DIR/tests/add_subdirectory_test" -B "$BUILD_DIR" -DCMAKE_TOOLCHAIN_FILE="$YARR_TOOLCHAIN_FILE" -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" -DYARR_CONTROLLERS_TO_BUILD="all" -DYARR_FRONT_ENDS_TO_BUILD="all" -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DYARR_ENABLE_PYTHON=on -DCMAKE_CXX_STANDARD=20
+    - cmake3 --build "$BUILD_DIR" --parallel "$(nproc)"
+    - cmake3 --install "$BUILD_DIR"
+    - $INSTALL_DIR/bin/YarrAddSubdirectoryTest
+
+job_test_external_project_consumer:
+  extends: .out_of_source_base
+  script:
+    - export BUILD_DIR="$YARR_WORK_DIR/build-YarrExternalSuperbuildTest"
+    - export INSTALL_DIR="$YARR_WORK_DIR/install-YarrExternalSuperbuildTest"
+    - cmake3 -S "$YARR_PROJECT_DIR/tests/external_project_superbuild_test" -B "$BUILD_DIR" -DCMAKE_TOOLCHAIN_FILE="$YARR_TOOLCHAIN_FILE" -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" -DYARR_PROJECT_DIR="$CI_PROJECT_DIR"
+    - cmake3 --build "$BUILD_DIR" --parallel "$(nproc)"
+    - cmake3 --install "$BUILD_DIR"
+    - $INSTALL_DIR/bin/YarrConsumerTest
+
+job_test_fetch_content_consumer:
+  extends: .out_of_source_base
+  script:
+    - export BUILD_DIR="$YARR_WORK_DIR/build-YarrFetchContentTest"
+    - export INSTALL_DIR="$YARR_WORK_DIR/install-YarrFetchContentTest"
+    - cmake3 -S "$YARR_PROJECT_DIR/tests/fetch_content_test" -B "$BUILD_DIR" -DCMAKE_TOOLCHAIN_FILE="$YARR_TOOLCHAIN_FILE" -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" -DYARR_PROJECT_DIR="$YARR_PROJECT_DIR" -DYARR_CONTROLLERS_TO_BUILD="all" -DYARR_FRONT_ENDS_TO_BUILD="all" -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DYARR_ENABLE_PYTHON=on -DCMAKE_CXX_STANDARD=20
+    - cmake3 --build "$BUILD_DIR" --parallel "$(nproc)"
+    - cmake3 --install "$BUILD_DIR"
+    - $INSTALL_DIR/bin/YarrFetchContentTest
 
 job_build_clang:
   extends: .build_matrix
@@ -156,7 +185,26 @@ job_build_test_gcc_15:
     - mkdir build
     - cd build
     # Excluding bdaq as boost is missing
-    # Excluding felix/netio due to tbb and libfabric messages
+    # Excluding felix as required deps are are not present
+    - export CONTROLLERS="Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Itkpixv2Emu;ItsdaqFW"
+    - cmake .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=${CONTROLLERS} -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=OFF
+    - make install -j$(nproc)
+    - CTEST_OUTPUT_ON_FAILURE=1 make test
+    - cd ..
+    - bin/scanConsole -k
+
+# Run build with oldest gcc and no other dependencies
+job_build_test_gcc_9:
+  extends: .rules
+  stage: build
+  image: registry.cern.ch/docker.io/library/gcc:9
+  script:
+    - apt-get update
+    - apt-get install -y cmake make
+    - mkdir build
+    - cd build
+    # Excluding bdaq as boost is missing
+    # Excluding felix as required deps are are not present
     - export CONTROLLERS="Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Itkpixv2Emu;ItsdaqFW"
     - cmake .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=${CONTROLLERS} -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=OFF
     - make install -j$(nproc)
@@ -173,7 +221,7 @@ job_build_test_gcc_15:
     paths:
       - installed
   script:
-    - git clone https://gitlab.cern.ch/atlas-tdaq-felix/cmake_tdaq -b 5.1.x
+    - git clone -b 5.2.x-ext https://gitlab.cern.ch/atlas-tdaq-felix/cmake_tdaq
     - source cmake_tdaq/bin/setup.sh
     - mkdir installed
     - cmake -S . -B build -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;StarEmu;Rd53aEmu;FelixClient" -DYARR_FRONT_ENDS_TO_BUILD="Rd53a;Star;Rd53b;Itkpixv2" -DDISABLE_PLOTTING_TOOLS=On -DYARR_EMULATORS_TO_BUILD="StarEmu;Rd53aEmu"  -DYARR_ENABLE_PYTHON=On  ..
@@ -189,7 +237,41 @@ job_build_felix:
 
 job_build_felix_check:
   extends: [.build_felix, .rules]
+  # If build doesn't work for some reason it might make sense to ignore
+  allow_failure: true
 
+job_build_felix_release_52:
+  extends: .rules
+  stage: build
+  image: gitlab-registry.cern.ch/atlas-tdaq-software/tdaq_ci:x86_64-el9
+  tags:
+    - cvmfs
+  artifacts:
+    paths:
+      - lib64
+      - bin
+  variables:
+    FELIX_PATH: /cvmfs/atlas-online-nightlies.cern.ch/felix/releases/felix-05-02-00-rm5-stand-alone/x86_64-el9-gcc15-opt
+  script:
+    # FELIX Release is mostly standalone, but refers to some other things for felix-server component
+    - . /cvmfs/sft.cern.ch/lcg/views/LCG_108a/x86_64-el9-gcc15-opt/setup.sh
+    - gcc --version
+    - cmake -B build -DFelix_ROOT=${FELIX_PATH} -DBUILD_TESTS=on "-DYARR_CONTROLLERS_TO_BUILD=FelixClient;Emu" -DYARR_FRONT_ENDS_TO_BUILD=Star -DYARR_EMULATORS_TO_BUILD=StarEmu -DYARR_ENABLE_PYTHON=OFF -DCMAKE_CXX_STANDARD=20 -DYARR_ENABLE_FELIX_CLIENT_BRIDGE=ON
+    - cmake --build build -j$(nproc)
+    - cmake --install build
+
+job_test_felix_client:
+  extends: .rules
+  stage: test
+  needs: ["job_build_felix_release_52"]
+  image: gitlab-registry.cern.ch/atlas-tdaq-software/tdaq_ci:x86_64-el9
+  tags:
+    - cvmfs
+  variables:
+    FELIX_PATH: /cvmfs/atlas-online-nightlies.cern.ch/felix/releases/felix-05-02-00-rm5-stand-alone/x86_64-el9-gcc15-opt
+  script:
+    - . ${FELIX_PATH}/setup.sh
+    - bash scripts/run_felix_bridge_tests.sh
 
 .job_code_coverage:
   stage: build
@@ -233,6 +315,7 @@ job_run_codechecker:
     paths:
       - checks
       - gl-code-quality-report.json
+      - intermediate_report.json
     reports:
       codequality: gl-code-quality-report.json
 
@@ -351,10 +434,10 @@ job_test_pixel-on-hardware-berkeley-eye-diagram:
     - echo "CI_RUNNER_ID = $CI_RUNNER_ID"
     - echo "CI_RUNNER_DESCRIPTION = $CI_RUNNER_DESCRIPTION"
     - echo "CI_RUNNER_TAGS = $CI_RUNNER_TAGS"
-    #set PS
+    # set PS
     - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-voltage 3
     - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-current 6.5
-    #power on PS
+    # power on PS
     - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-on
     # Clone the test data repo
     - echo "Fetching test data..."
@@ -373,7 +456,7 @@ job_test_pixel-on-hardware-berkeley-eye-diagram:
         echo "Failure...less than 4 valid delay settings"
         exit 1
       fi
-    #power off PS
+    # power off PS
     - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-off
   artifacts:
     paths:
@@ -397,17 +480,17 @@ job_test_pixel-on-hardware-berkeley-digital-scan:
   script:
     # keep yarr scan number deterministic
     - truncate $HOME/.yarr/runCounter --size=0
-    #set PS
+    # set PS
     - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-voltage 3
     - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-current 6.5
-    #power on PS
+    # power on PS
     - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-on
     # Run Digital Scan
     - echo "Run Digital Scan..."
     - pwd
     - mkdir -p ./outputs/digital-scan
     - ./bin/scanConsole -r ./test-data/$TEST_STAND/controller/specCfg-rd53b-16x1.json -c ./test-data/$TEST_STAND/ci-module/20UPIM13710116_L1_warm.json -o ./outputs/digital-scan -s ./configs/scans/itkpixv2/std_digitalscan.json -p
-    #power off PS
+    # power off PS
     - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-off
   artifacts:
     paths:
@@ -431,17 +514,17 @@ job_test_pixel-on-hardware-berkeley-analog-scan:
   script:
     # keep yarr scan number deterministic
     - truncate $HOME/.yarr/runCounter --size=0
-    #set PS
+    # set PS
     - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-voltage 3
     - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-current 6.5
-    #power on PS
+    # power on PS
     - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-on
     # Run Analog Scan
     - echo "Run Analog Scan..."
     - pwd
     - mkdir -p ./outputs/analog-scan
     - ./bin/scanConsole -r ./test-data/$TEST_STAND/controller/specCfg-rd53b-16x1.json -c ./test-data/$TEST_STAND/ci-module/20UPIM13710116_L1_warm.json -o ./outputs/analog-scan -s ./configs/scans/itkpixv2/std_analogscan.json -p
-    #power off PS
+    # power off PS
     - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-off
   artifacts:
     paths:
@@ -465,17 +548,17 @@ job_test_pixel-on-hardware-berkeley-threshold-hr-scan:
   script:
     # keep yarr scan number deterministic
     - truncate $HOME/.yarr/runCounter --size=0
-    #set PS
+    # set PS
     - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-voltage 3
     - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-current 6.5
-    #power on PS
+    # power on PS
     - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-on
     # Run Threshold Scan
     - echo "Run Threshold Scan..."
     - pwd
     - mkdir -p ./outputs/threshold-scan
     - ./bin/scanConsole -r ./test-data/$TEST_STAND/controller/specCfg-rd53b-16x1.json -c ./test-data/$TEST_STAND/ci-module/20UPIM13710116_L1_warm.json -o ./outputs/threshold-scan -s ./configs/scans/itkpixv2/std_thresholdscan_hr.json -p
-    #power off PS
+    # power off PS
     - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-off
   artifacts:
     paths:
@@ -685,24 +768,6 @@ job_test_json_parsing:
     - (for file in $(find configs/connectivity -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t CONNECTIVITY || exit; done)
     - (for file in $(find configs/controller -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t CONTROLLER || exit; done)
     - (for file in $(find configs/scans/* -name patterns -prune -iname "*.json"); do echo ${file}; bin/test_json -f ${file} -t SCAN_CONFIG || exit; done)
-
-job_test_netio:
-  extends: .test
-  needs:
-    - job: job_build_all
-      parallel:
-        matrix:
-          - ARCH: ['cc7']
-  image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_cc7_build
-  script:
-    # Launch netio_bridge to connect an emulator to NetIO
-    - bin/netio_bridge -p 12340 -q 12350 -f configs/controller/emuCfg_star.json & pid_bridge=($!)
-    - sleep 1
-    # Run scans with the NetIO controller
-    - bin/scanConsole -r configs/controller/felix_netio_strips.json -c configs/connectivity/example_star_setup.json -s configs/scans/star/std_regDump.json
-    - bin/scanConsole -r configs/controller/felix_netio_strips.json -c configs/connectivity/example_star_setup.json -s configs/scans/star/std_latencyScan.json -p
-    # Terminate netio_bridge
-    - kill ${pid_bridge}
 
 job_test_json:
   extends: .test

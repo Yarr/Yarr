@@ -25,6 +25,7 @@ public:
 
   /// Register all Rx channels and distribute them to threads
   void initRxChannels(const std::vector<uint32_t>& channels) override;
+  void checkRxSync() override;
 
   void setRxEnable(uint32_t val) override;
   void setRxEnable(std::vector<uint32_t> channels) override;
@@ -54,17 +55,24 @@ protected:
 
   void writeConfig(json &j);
   void loadConfig(const json &j);
-  void setClient(const FelixClientThread::Config& fcConfig); // set Felix clients
+  void setClient(const FelixClientThread::ConfigV2& fcConfig); // set Felix clients
 
   // Channel control
   void enableChannel(FelixID_t fid);
   void disableChannel(FelixID_t fid);
-
+  
   bool channelIsEnabled(FelixID_t fid) {
     return m_rxThreads[m_fidThreadMap[fid]]->channelIsEnabled(fid);
   }
 
-  unsigned m_flushWaitTime {50}; // in milliseconds
+  //Used to enable configuraring encoding/decoding for every rx channel in enableChannel()
+  bool m_configureDecoding {false};
+  uint16_t m_decodingBandWidth {0};
+  uint8_t m_decodingPattern {0};
+  // Function to be set by FelixController to configure encoding/decoding for every rx channel
+  virtual bool configureChannel(FelixTools::FelixID_t fid, uint16_t bandwidth, uint8_t pattern, bool enable) = 0;
+
+  unsigned m_flushWaitTime {0}; // in milliseconds
 
   // For Felix ID
   uint8_t m_did {0};  // detector ID; 0x00 reserved for local IDs
@@ -74,7 +82,7 @@ protected:
   // Felix clients
   unsigned m_nThreads {1};
   std::vector<std::unique_ptr<FelixRxThread>> m_rxThreads;
-  FelixClientThread::Config m_fcConfig; // Felix client configuration
+  FelixClientThread::ConfigV2 m_fcConfig; // Felix client configuration
   std::map<FelixID_t, unsigned> m_fidThreadMap; // map of Felix ID to thread index
 
   // Monitoring

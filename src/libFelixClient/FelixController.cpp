@@ -21,19 +21,21 @@ void FelixController::loadConfig(const json &j) {
   // FelixClientThread configuration
   auto clientCfg = j["FelixClient"];
 
-  FelixClientThread::Config fcConfig;
+  if(clientCfg.contains("skipFelixReg")) {
+    skip_felix_reg = clientCfg["skipFelixReg"];
+    FelixTxCore::setSkipRegFlag(skip_felix_reg);
+  }
+
+  FelixClientThread::ConfigV2 fcConfig;
   // Properties
   // See https://gitlab.cern.ch/atlas-tdaq-felix/felix-interface/-/blob/master/felix/felix_client_properties.h
   fcConfig.property[FELIX_CLIENT_LOCAL_IP_OR_INTERFACE] = clientCfg["localIPorInterface"];
-  fcConfig.property[FELIX_CLIENT_LOG_LEVEL] = clientCfg["logLevel"];
   fcConfig.property[FELIX_CLIENT_BUS_DIR] = clientCfg["busDir"];
   fcConfig.property[FELIX_CLIENT_BUS_GROUP_NAME] = clientCfg["busGroupName"];
   fcConfig.property[FELIX_CLIENT_VERBOSE_BUS] = clientCfg["verboseBus"] ? "True" : "False";
-  fcConfig.property[FELIX_CLIENT_TIMEOUT] = std::to_string(unsigned(clientCfg["timeout"]));
-  fcConfig.property[FELIX_CLIENT_NETIO_PAGES] = std::to_string(unsigned(clientCfg["netioPages"]));
-  fcConfig.property[FELIX_CLIENT_NETIO_PAGESIZE] = std::to_string(unsigned(clientCfg["netioPagesize"]));
-
-  try {
+  fcConfig.property[FELIX_CLIENT_USE_ASIO_EVLOOP] = clientCfg["useASIOevloop"]  ? "True" : "False";
+  fcConfig.property[FELIX_CLIENT_USE_THREAD_UNSAFE_NETIO] = clientCfg["useThreadUnsafeNetio"]  ? "True" : "False"; 
+      try {
     auto txCfg = j["ToFLX"];
     FelixTxCore::loadConfig(txCfg);
     FelixTxCore::setClient(fcConfig);
@@ -88,12 +90,109 @@ void FelixController::loadConfig(const json &j) {
     }
   }
 
-}
+  if(j.contains("Card")){
+    fclog->info("Configuring FELIX card");
+    auto cardCfg = j["Card"];
 
+    if(cardCfg.contains("configureEpathOnLoad")){     
+        if(cardCfg["configureEpathOnLoad"]){
+        //Must set the path encoding/decoding registers to 0x0 for per-link control as done with configureChannel 
+        //This is opposed to the default register value which is 0x11111111
+        fclog->info("Resetting encoding and decoding patterns");
+        uint8_t LINK_MAX = 12;
+        uint8_t DEC_EGORUP_MAX = 7;
+        uint8_t ENC_EGROUP_MAX = 5;
+        for(uint8_t li = 0; li < LINK_MAX; ++li){
+          for(uint8_t ei = 0; ei < DEC_EGORUP_MAX; ++ei){
+            setEgroupEncodingDecoding(li, ei, false, 0x0);
+          }
+          for(uint8_t ei = 0; ei < ENC_EGROUP_MAX; ++ei){
+            setEgroupEncodingDecoding(li, ei, true, 0x0);
+          }
+        }
+        m_configureEncoding = true;
+        m_configureDecoding = true;
+        if(cardCfg.contains("txEncoding")){
+          m_encodingPattern = cardCfg["txEncoding"];
+        }
+        else{
+          fclog->warn("Set to configure encoding/decoding but txEncoding not specified, using default value of 0");
+          m_encodingPattern = 0;
+        }
+        if(cardCfg.contains("rxDecoding")){
+          m_decodingPattern = cardCfg["rxDecoding"];
+        }
+        else{
+          fclog->warn("Set to configure encoding/decoding but rxDecoding not specified, using default value of 0");
+          m_decodingPattern = 0;
+        }
+
+        auto checkBandwidth = [](uint16_t bw) {
+          uint16_t possible_bandwidths[] = {80, 160, 320, 640, 1280};
+          if(std::find(std::begin(possible_bandwidths), std::end(possible_bandwidths), bw) == std::end(possible_bandwidths)){
+            fclog->warn("Bandwidth value of {} is not a possible bandwidth from {{80, 160, 320, 640, 1280}}, rounding to nearest valid bandwidth");
+            auto closest = std::min_element(std::begin(possible_bandwidths), std::end(possible_bandwidths), [bw](uint16_t a, uint16_t b) {
+              return std::abs(static_cast<int>(a) - static_cast<int>(bw)) < std::abs(static_cast<int>(b) - static_cast<int>(bw));
+            });
+            return *closest;
+          }
+          return bw;
+        };
+        if(cardCfg.contains("txBandWidth")){
+          uint16_t txBandWidth = cardCfg["txBandWidth"];
+          m_encodingBandWidth = checkBandwidth(txBandWidth);
+        }
+        else{
+          fclog->warn("Set to configure encoding/decoding but txBandWidth not specified, using default value of 80");
+          m_encodingBandWidth = 80;
+        }
+        if(cardCfg.contains("rxBandWidth")){
+          uint16_t rxBandWidth = cardCfg["rxBandWidth"];
+          m_decodingBandWidth = checkBandwidth(rxBandWidth);
+        }
+        else{
+          fclog->warn("Set to configure encoding/decoding but rxBandWidth not specified, using default value of 80");
+          m_decodingBandWidth = 80;
+        }
+      }else{
+        fclog->info("\"configureEpathOnLoad\" parameter set to false in \"Card\" configuration field, skipping...");
+      }
+    }else{
+      fclog->info("\"configureEpathOnLoad\" parameter not specified in \"Card\" configuration field, skipping...");
+    }
+
+    if(cardCfg.contains("WriteFelixRegsOnLoad")){
+      if(cardCfg["WriteFelixRegsOnLoad"]){
+        fclog->info("Setting provided FELIX registers");
+        if(cardCfg.contains("Reg")){
+          for(auto& [regName, regValue] : cardCfg["Reg"].items()){
+            if(regValue.is_string()){
+              regValue = std::stoull(regValue.get<std::string>(), 0, 0);
+            }
+            if(!writeFwRegister(regName, regValue.get<uint64_t>())){
+              fclog->error("Failed to write register {} with value {}", regName, regValue.get<uint64_t>());
+            }
+          }
+        }else{
+          fclog->warn("The \"Reg\" parameter is not defined in the \"Card\" configuration field even though \"WriteFelixRegsOnLoad\" is set to true. No registers to write.");
+        }
+      }else{
+        fclog->info("\"WriteFelixRegsOnLoad\" parameter set to false in \"Card\" configuration field, skipping...");
+      }   
+    }else{
+      fclog->info("\"WriteFelixRegsOnLoad\" parameter not specified in \"Card\" configuration field, skipping...");
+    }
+  }
+}
 
 const json FelixController::getStatus() {
   fclog->debug("getStatus");
   json j_status;
+
+  if(skip_felix_reg) {
+    j_status["status"] = "Felix register access skipped due to config";
+    return j_status;
+  }
 
   uint64_t reg_value;
 
@@ -126,12 +225,14 @@ const json FelixController::getStatus() {
     j_status["register_map_version"] = std::to_string(major)+"."+std::to_string(minor);
   }
 
-  /*
+  
   // firmware git hash
   if ( readFwRegister("GIT_HASH", reg_value) ) {
     j_status["firmware_git_hash"] = Utils::hexify(reg_value);
   }
 
+  /*
+  This doesn't seem to be a problem anymore on felix-distribution SW 5.1.4
   The above would crash in client->send_cmd:
      terminate called after throwing an instance of 'simdjson::simdjson_error'
      what():  The JSON number is too large or too small to fit within the requested type.
@@ -184,7 +285,7 @@ const json FelixController::getStatus() {
   // XADC temperature monitor for the FPGA CORE
   if ( readFwRegister("FPGA_CORE_TEMP", reg_value) ) {
     float temp_C = ((reg_value* 502.9098)/4096)-273.8195;
-    j_status["fpga_core_temperature"] = temp_C;
+    j_status["fpga_core_temperature_celsius"] = temp_C;
   }
 
   return j_status;
@@ -356,6 +457,21 @@ unsigned FelixController::getELinkWidthNBits(uint64_t fid) {
 
 unsigned FelixController::getELinkWidthMbps(uint64_t fid) {
   return getELinkWidthNBits(fid) * 40;
+}
+
+unsigned FelixController::getPathEncodingDecoding(uint64_t fid) {
+  fclog->debug("Get FID 0x{:x} path encoding:", fid);
+
+  unsigned encoding {0};
+  auto [linkId, egroup, epath, toflx] = linkInfo_from_fid(fid, fwMode());
+
+  std::string regName = FelixTools::getEgroupEncodingDecodingRegName(linkId, egroup, toflx);
+  uint64_t regValue;
+  if ( readFwRegister(regName, regValue) ) {
+    fclog->debug(" {} = 0x{:x}", regName, regValue);
+    encoding = (regValue >> (4 * epath)) & 0xF;
+  }
+  return encoding;
 }
 
 //////
@@ -555,6 +671,38 @@ bool FelixController::setELinkWidthMbps(const std::vector<uint64_t>& fids, unsig
   return setELinkWidthNBits(fids, bandwidth/40);
 }
 
+bool FelixController::setEgroupEncodingDecoding(uint16_t linkId, uint8_t egroup, bool toflx, unsigned encoding){
+  fclog->debug("Set link {}, egroup {} path encoding to 0x{:x}", linkId, egroup, encoding);
+
+  std::string regName = FelixTools::getEgroupEncodingDecodingRegName(linkId, egroup, toflx);
+
+  return setRegValue(regName, encoding);
+}
+
+bool FelixController::setPathEncodingDecoding(uint64_t fid, unsigned encoding){
+  fclog->debug("Set FID 0x{:x} path encoding to 0x{:x}", fid, encoding);
+
+  auto [linkId, egroup, epath, toflx] = FelixTools::linkInfo_from_fid(fid, fwMode());
+  std::string regName = FelixTools::getEgroupEncodingDecodingRegName(linkId, egroup, toflx);
+
+  unsigned shift = 4 * epath;
+  unsigned value = (encoding & 0xF) << shift;
+  unsigned mask  = 0xF << shift;
+
+  return setRegValue(regName, value, mask);  
+}
+
+bool FelixController::setPathEncodingDecoding(const std::vector<uint64_t>& fids, unsigned encoding){
+ fclog->debug("Set path encoding to 0x{:x}", encoding);
+ for(size_t i=0; i<fids.size(); ++i){
+    if(!setPathEncodingDecoding(fids[i], encoding)){
+      fclog->error("Failed to set path encoding for FID 0x{:x}", fids[i]);
+      return false;
+    }
+  }
+  return true;
+}
+
 void FelixController::updateRegMap(std::map<std::string, unsigned>& regMap, const std::string& regName, unsigned value, bool overwrite) {
   // check if regName is already in the map
   if (regMap.find(regName) != regMap.end()) {
@@ -735,6 +883,20 @@ void FelixController::initAllELinkEnableRegMap(std::map<std::string, unsigned>& 
     }
   }
 }
+
+bool FelixController::configureChannel(FelixTools::FelixID_t fid, uint16_t bandwidth, uint8_t pattern, bool enable){
+  if(!setICEnable(fid, enable)) return false;
+  if(!setECEnable(fid, enable)) return false;
+
+  if(!setELinkEnable(fid, enable)) return false;
+  if(!setELinkWidthMbps(fid, bandwidth)) return false;
+  if(!setPathEncodingDecoding(fid, pattern)) return false;  
+
+  return true;
+} 
+
+
+
 
 /*
 Optoboard communication functions

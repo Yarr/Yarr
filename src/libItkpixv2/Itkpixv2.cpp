@@ -686,7 +686,7 @@ yarrStatus Itkpixv2::confAdc(uint16_t MONMUX, bool doCur) {
     success = success && (this->writeRegister(&Itkpixv2::MonitorEnable, 1) == yarrSuccess); // Enabling monitoring
     while(!core->isCmdEmpty()){;}
 
-    success = success && (this->writeRegister(&Itkpixv2::GlobalPulseConf, 0x40) == yarrSuccess); // Reset ADC
+    success = success && (this->writeRegister(&Itkpixv2::GlobalPulseConf, 0x100) == yarrSuccess); // Reset ADC
     success = success && (this->writeRegister(&Itkpixv2::GlobalPulseWidth, 4) == yarrSuccess);   // Duration = 4 inherited from RD53A
     while(!core->isCmdEmpty()){;}
     std::this_thread::sleep_for(std::chrono::microseconds(100));

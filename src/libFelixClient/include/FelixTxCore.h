@@ -66,7 +66,9 @@ protected:
 
   void loadConfig(const json &j); 		     // read configuration from json
   void writeConfig(json& j); 		         // write configuration to json
-  void setClient(const FelixClientThread::Config& fcConfig); // set Felix client
+  void setClient(const FelixClientThread::ConfigV2& fcConfig); // set Felix client
+
+  void setSkipRegFlag(bool skip_flx_reg_in);
 
   using FelixID_t = FelixTools::FelixID_t;
 
@@ -75,6 +77,13 @@ protected:
   void disableChannel(FelixID_t fid);
   bool checkChannel(FelixID_t fid);
   bool channelIsEnabled(FelixID_t fid) { return m_enables[fid]; }
+
+  //Used to enable configuraring encoding/decoding for every tx channel in enableChannel()
+  bool m_configureEncoding {false};
+  uint16_t m_encodingBandWidth {0};
+  uint8_t m_encodingPattern {0};
+  // Function to be set by FelixController to configure encoding/decoding for every tx channel
+  virtual bool configureChannel(FelixTools::FelixID_t fid, uint16_t bandwidth, uint8_t pattern, bool enable) = 0;
 
   void fillFifo(std::vector<uint8_t>& fifo, uint32_t value);
   void prepareFifo(std::vector<uint8_t>& fifo);
@@ -102,9 +111,11 @@ protected:
   enum TRIG_CONF_VALUE m_trigCfg;          // trigger config
   std::vector<uint32_t> m_trigWords;       // the trigger words
   std::atomic<bool> m_trigEnabled {false}; // trigger is enabled
+  std::atomic<bool> m_fwTrigActive {false};// FW is autonomously managing triggers
   uint32_t m_trigCnt {0};                  // number of triggers
   uint32_t m_trigTime {0};                 // trigger time
   uint32_t m_trigFreq {1};                 // trigger frequency
+  double   m_trigFreq_FW {0};              // Actual FW trigger frequency
   uint32_t m_trigWordLength {4};           // number of trigger words
 
   bool m_flip {false};
@@ -113,6 +124,9 @@ protected:
   bool m_broadcast {true};
   uint32_t m_numEnabledChns {0};
   enum FelixTools::FELIX_FW_MODE m_fwMode {FelixTools::FELIX_FW_MODE::Unknown};
+
+  /// Copy of skip_felix_reg from FelixController (don't access felix regs)
+  bool m_tx_skip_felix_reg{false};
 
   // GBT link and e-link number for broadcasting
   static constexpr unsigned BroadcastLink = 0x1f;
@@ -129,7 +143,7 @@ protected:
   uint8_t m_did {0};  // detector ID; 0x00 reserved for local IDs
   uint16_t m_cid {0}; // connector ID; 0x0000 reserved for local IDs
   uint8_t m_protocol {0}; // protocol ID
-  unsigned m_isCmdEmptyWaitTime {100}; // in milliseconds
+  unsigned m_isCmdEmptyWaitTime {0}; // in microseconds
 
   std::unique_ptr<FelixClientThread> fclient;
 

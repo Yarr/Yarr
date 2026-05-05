@@ -126,6 +126,11 @@ public:
   /// @return Elink width in Mbps
   unsigned getELinkWidthMbps(uint64_t fid);
 
+  /// @brief Get the path encoding
+  /// @param fid 64-bit FELIX ID
+  /// @return Path encoding
+  unsigned getPathEncodingDecoding(uint64_t fid);
+
   /// @brief Enable or disable an elink
   /// @param fid 64-bit FELIX ID
   /// @param enable Set to true to enable the elink, false to disable it. Default: true
@@ -171,6 +176,24 @@ public:
   /// @param bandwidth Elink bandwidth in Mbps
   /// @return True if the operation is successful
   bool setELinkWidthMbps(const std::vector<uint64_t>& fids, unsigned bandwidth);
+
+  /// @brief Set the encoding/decoding for a specific egroup.
+  /// @param linkId The link ID of the egroup
+  /// @param egroup the egroup number
+  /// @param toflx the link direction
+  /// @param encoding The encoding to set
+  bool setEgroupEncodingDecoding(uint16_t linkId, uint8_t egroup, bool toflx, unsigned encoding);
+
+  /// @brief Set the path encoding for a specific FELIX ID
+  /// @param fid 64-bit FELIX ID
+  /// @param encoding The encoding to set
+  /// @return True if the operation is successful, false otherwise
+  bool setPathEncodingDecoding(uint64_t fid, unsigned encoding);
+
+  /// @brief Set the path encoding for a list of FELIX IDs
+  /// @param fids A vector of FELIX IDs
+  /// @param encoding The encoding to set
+  bool setPathEncodingDecoding(const std::vector<uint64_t>& fids, unsigned encoding);
 
   /*
   Optoboard device communication
@@ -300,6 +323,9 @@ protected:
 private:
   std::vector<std::unique_ptr<OptoDevice>> m_opto_dev_list;
 
+  /// If true, don't try to use felix_reg interface
+  bool skip_felix_reg{false};
+
   /*
   E-Link control utilities
   */
@@ -328,7 +354,13 @@ private:
 
   /// Initiate a map with all elink enable register names on a FELIX device and set their value to 0
   void initAllELinkEnableRegMap(std::map<std::string, unsigned>& regMap, bool toflx, bool tohost);
-
+ 
+  // FELIX card configuration utility for a channel
+  /// @brief Enable, set the bandwidth, and the encoding/decoding pattern for a specific channel identified by the FELIX ID
+  /// @param fid FELIX ID of the channel to configure
+  /// @param bandwidth Bandwidth to set for the channel in Mbps.
+  /// @param pattern Encoding/decoding pattern to set for the channel
+  bool configureChannel(FelixTools::FelixID_t fid, uint16_t bandwidth, uint8_t pattern, bool enable=true) override;
   /*
   Optoboard device communication
   */

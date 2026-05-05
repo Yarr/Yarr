@@ -54,7 +54,7 @@ class RxCore {
         virtual ~RxCore()=default;
 
         std::chrono::microseconds m_waitTime{100000}; // typical latency in the HW controller RX path
-        std::chrono::microseconds m_timeoutTime{1000000}; // max time without new data arriving
+        std::chrono::microseconds m_timeoutTime{50000}; // max time without new data arriving
 };
 
 #endif

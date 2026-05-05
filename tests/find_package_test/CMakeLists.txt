@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 project(YarrFindPackageTest)
 
-find_package(Yarr REQUIRED COMPONENTS Yarr Spec Util)
+find_package(Yarr CONFIG REQUIRED COMPONENTS Yarr Spec Util)
 
 set(CMAKE_BUILD_RPATH_USE_ORIGIN TRUE)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)

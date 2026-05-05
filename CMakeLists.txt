@@ -1,6 +1,7 @@
 cmake_minimum_required (VERSION 3.14)
 
 include(cmake/SupportFunctionsLibrary.cmake)
+include(cmake/CMakeLists.txt.external)
 # Fetch version information from GIT
 get_git_version_info()
 message(STATUS "Recording YARR version: ${YARR_VERSION_MAJOR}.${YARR_VERSION_MINOR}.${YARR_VERSION_PATCH}")
@@ -9,9 +10,10 @@ project (YARR LANGUAGES CXX VERSION "${YARR_VERSION_MAJOR}.${YARR_VERSION_MINOR}
 
 # compiler settings ---------------------------------------------------------------------------------------
 
-# set C++ version as 17 - CMake does not support to set a minimum version globally (only per target) but
+# set C++ version as 20 - CMake does not support to set a minimum version globally (only per target) but
 # if a higher version is requested by setting CMAKE_CXX_STANDARD it will be used instead
-set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to use")
+set(CMAKE_CXX_STANDARD 20 CACHE STRING "C++ standard to use")
+# Note that we could say that lower versions are allowed in previous compilers
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -210,7 +212,14 @@ set(CONTROLLERS "")
 
 # only build those controllers specified in YARR_CONTROLLERS_TO_BUILD
 if(YARR_CONTROLLERS_TO_BUILD STREQUAL "all")
-   set(CONTROLLERS "Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Itkpixv2Emu;Bdaq;NetioHW;FelixClient;ItsdaqFW")
+    # This is not elegant as it is a duplication but we have to check whether there is a FELIX backend before adding calling its CMakeLists.txt due to linking in libYarr.
+    YARR_ADD_FELIX_CLIENT()
+    if(YARR_FELIX_BACKEND STREQUAL "NONE")
+        message(STATUS "Trying to build all controllers but cannot add FelixClient as no FELIX backend available.")
+        set(CONTROLLERS "Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Itkpixv2Emu;Bdaq;ItsdaqFW")
+    else()
+        set(CONTROLLERS "Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Itkpixv2Emu;Bdaq;FelixClient;ItsdaqFW")
+    endif()
 else()
   foreach(ctrl IN LISTS YARR_CONTROLLERS_TO_BUILD )
     if(NOT ${ctrl} IN_LIST CONTROLLERS)
@@ -248,10 +257,20 @@ endif()
 
 option(YARR_ENABLE_PYTHON "Build python bindings" OFF)
 
+include(CMakeDependentOption)
+
+# Declare option even if FelixClient not present
+cmake_dependent_option(
+  YARR_ENABLE_FELIX_CLIENT_BRIDGE
+  "Build felix_client_bridge (if FelixClient controller is enabled)"
+  OFF
+  "FelixClient IN_LIST CONTROLLERS"
+  OFF
+)
+
 # setting build options ---------------------------------------------------------------------------------------
 
 # finally include all source, create package config files and install ---------------------------------------------------------------
-include(cmake/CMakeLists.txt.external)
 add_subdirectory(src)
 
 include(CMakePackageConfigHelpers)

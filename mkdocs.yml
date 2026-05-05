@@ -28,7 +28,6 @@ nav:
     - Logging configuration: logging.md
     - Hardware controllers:
           - FelixClient: felixclient.md
-          - NetIO: netio.md
           - BDAQ Hardware: bdaq.md
           - ITSDAQ FW: itsdaq.md
     - AnalysisConsole: analysisconsole.md

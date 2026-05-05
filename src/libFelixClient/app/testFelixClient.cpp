@@ -248,7 +248,7 @@ int main(int argc, char **argv) {
       }
     }
 
-    logger->info("Received {} data", rdc.size());
+    logger->info("Received {} blocks of data", rdc.size());
     logger->info("Rate: {} B/s", hwCtrl->getDataRate());
 
     for (auto rdp : rdc.data) {

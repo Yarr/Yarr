@@ -22,16 +22,12 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
 
 ### Software:
 
-- CentOS 7/8, Alma 9
+- Alma 9
 - cmake 3.14 or higher
-- GCC version 9
-    - for example from devtoolset-9
+- GCC version 11 or higher, C++20
 - Some misc packages (can be installed via yum):
-    - gnuplot
-    - texlive-epstopdf
-    - zeromq, zeromq-devel (for netio controller)
-    - boost-devel for BDAQ
-    - ROOT for plotting tools
+    - gnuplot, texlive-epstopdf (for built-in plotting)
+    - boost-devel (for BDAQ)
 
 ## Quick minimal Install Guide:
 
@@ -39,27 +35,32 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
 - Build recipes for other OS can be found in docker/<OS>/Dockerfile
 - Clone from git
 	- ``$ git clone https://gitlab.cern.ch/YARR/YARR.git Yarr``
-- Compilation:
-    - ``$ source scl_source enable devtoolset-9``
-    - ``cd Yarr``
-    - ``$ cmake3 -S ./ -B build`` or ``$ cmake3 -S ./ -B build -DYARR_CONTROLLERS_TO_BUILD=all``
-    - ``$ cmake3 --build build -j4``
-    - ``$ cmake3 --install build -j4``
+- Compilation (default front-end and controller classes):
+    - ``$ cd Yarr``
+    - ``$ mkdir build & cd build``
+    - ``$ cmake ..``
+    - ``$ make -j12 install``
 - Running
-    - execute programs from the repository top folder
+    - execute programs from the repository top folder like:
+    - ``$ bin/scanConsole <...>``
 
 ### Building additional controllers
 
 - In order to build with more controllers execute cmake with extra options
-    - For all controllers:
-        - ``-DYARR_CONTROLLERS_TO_BUILD=all``
-    - For NetIO:
-        - ``-DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;NetioHW"``
+    - For all front-ends & controllers:
+        - ``$ cmake -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_CONTROLLERS_TO_BUILD=all ..``
+    - To add FELIX support:
+        - ``$ cmake -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;FelixClient" ..``
+    - List of all possible front-ends:
+        - ``Fei4;Rd53a;Star;Rd53b;Itkpixv2``
+    - List of all possible controllers:
+        - ``Spec;Emu;StarEmu;Fei4Emu;Rd53aEmu;Itkpixv2Emu;Bdaq;FelixClient;ItsdaqFW``
 
 While developing, it might be useful to run some unit tests. These are run
 by default in the CI on gitlab, but can also be run locally:
 
-- ``cd build``
-- ``make test``
+- ``$ cd build``
+- ``$ cmake -DBUILD_TESTS=on ..``
+- ``$ make test``
 
 This runs the test_main binary, which gathers the tests found in src/tests.

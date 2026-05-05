@@ -1056,6 +1056,10 @@ void NPointGain::loadConfig(const json &j) {
         m_respFuncName = "linear";
     }
 
+    if (j.contains("produceValidationPlots")) {
+        m_produceValidationHistos = j["produceValidationPlots"];
+    }
+
     m_respFunc = m_respFuncMap[m_respFuncName];
     m_gainConvFunc = m_gainConvFuncMap[m_respFuncName];
     m_respFuncNParams = m_respFuncNParamsMap[m_respFuncName];
@@ -1067,7 +1071,7 @@ void NPointGain::processHistogram(HistogramBase *h) {
     std::string prefix = hname.substr(0, hname.find("-"));
 
     // pick storage container based on input histogram
-    InjectionDataMap* container;
+    InjectionDataContainer* container;
     if (prefix == "ThresholdMap") {
         container = &m_thresholdMap;
     } else if (prefix == "NoiseMap") {
@@ -1138,16 +1142,7 @@ void NPointGain::fitResponseCurve(const std::vector<double>& thresholds, std::ve
     }
 }
 
-void NPointGain::end() {
-    // get injections vector for fitting, needs to be double for lmcurve
-    // it is already sorted because it came from a map!
-    for (const auto& pair : m_thresholdMap) {
-        m_injections.push_back(pair.first);
-    }
-
-    // output histograms
-    // injectionHisto maps index in 3rd histo dimension to injection value for
-    // thresholdHisto, input/outputNoiseHisto, and gainCurveHisto
+void NPointGain::writeOutputHistograms() {
     auto injectionHisto = std::make_unique<Histo1d>("InjectionValues",
         m_injections.size(), -0.5, m_injections.size()-0.5);
     auto fitParamsHisto = std::make_unique<Histo3dT<float>>("ResponseFitParams",
@@ -1165,36 +1160,27 @@ void NPointGain::end() {
     auto inputNoiseHisto = std::make_unique<Histo3dT<float>>("InputNoise",
         nCol, -0.5, nCol-0.5, nRow, -0.5, nRow-0.5,
         m_injections.size(), -0.5, m_injections.size()-0.5);
-    
-    // run response curve fit for each channel
+
+    for (unsigned injIdx = 0; injIdx < m_injections.size(); injIdx++) {
+        double inj = m_injections[injIdx];
+        injectionHisto->fill(injIdx, inj);
+    }
+
     for (unsigned col = 0; col < nCol; col++) {
         for (unsigned row = 0; row < nRow; row++) {
-            auto thresholds = createResponseCurve(col, row);
-            std::vector<double> fitParams = guessInitialFitParams(thresholds);
-            fitResponseCurve(thresholds, fitParams);
-
+            const auto& fitParams = m_responseParamMap[col][row];
             for (unsigned parIdx = 0; parIdx < m_respFuncNParams; parIdx++) {
                 fitParamsHisto->fill(col, row, parIdx, fitParams[parIdx]);
             }
 
             for (unsigned injIdx = 0; injIdx < m_injections.size(); injIdx++) {
                 double inj = m_injections[injIdx];
-                double gain = m_gainConvFunc(inj, fitParams.data());
-                double outputNoise = m_outputNoiseMap[inj][col][row];
-
                 thresholdHisto->fill(col, row, injIdx, m_thresholdMap[inj][col][row]);
-                outputNoiseHisto->fill(col, row, injIdx, outputNoise);
-                gainCurveHisto->fill(col, row, injIdx, gain);
-
-                if (gain > 0){
-                    inputNoiseHisto->fill(col, row, injIdx, convertInputNoiseUnit(outputNoise / gain));
-                }
+                outputNoiseHisto->fill(col, row, injIdx, m_outputNoiseMap[inj][col][row]);
+                gainCurveHisto->fill(col, row, injIdx, m_gainMap[inj][col][row]);
+                inputNoiseHisto->fill(col, row, injIdx, m_inputNoiseMap[inj][col][row]);
             }
         }
-    }
-
-    for (unsigned injIdx = 0; injIdx < m_injections.size(); injIdx++) {
-        injectionHisto->fill(injIdx, m_injections[injIdx]);
     }
 
     output->pushData(std::move(injectionHisto));
@@ -1203,6 +1189,100 @@ void NPointGain::end() {
     output->pushData(std::move(outputNoiseHisto));
     output->pushData(std::move(gainCurveHisto));
     output->pushData(std::move(inputNoiseHisto));
+}
+
+void NPointGain::writeValidationHistograms() {
+    // determine global min/max for histogram ranges
+    double thresholdMax = -1e9, thresholdMin = 1e9;
+    double outputNoiseMax = -1e9, outputNoiseMin = 1e9;
+    double gainMax = -1e9, gainMin = 1e9;
+    double inputNoiseMax = -1e9, inputNoiseMin = 1e9;
+    for (const auto& inj : m_injections) {
+        for (unsigned col = 0; col < nCol; col++) {
+            for (unsigned row = 0; row < nRow; row++) {
+                double threshold = m_thresholdMap[inj][col][row];
+                if (threshold > thresholdMax) thresholdMax = threshold;
+                if (threshold < thresholdMin) thresholdMin = threshold;
+
+                double outputNoise = m_outputNoiseMap[inj][col][row];
+                if (outputNoise > outputNoiseMax) outputNoiseMax = outputNoise;
+                if (outputNoise < outputNoiseMin) outputNoiseMin = outputNoise;
+
+                double gain = m_gainMap[inj][col][row];
+                if (gain > gainMax) gainMax = gain;
+                if (gain < gainMin) gainMin = gain;
+
+                double inputNoise = m_inputNoiseMap[inj][col][row];
+                if (inputNoise > inputNoiseMax) inputNoiseMax = inputNoise;
+                if (inputNoise < inputNoiseMin) inputNoiseMin = inputNoise;
+            }
+        }
+    }
+
+    for (unsigned injIdx = 0; injIdx < m_injections.size(); injIdx++) {
+        auto thresholdHisto = std::make_unique<Histo1d>(
+            "Thresholds-Injection-" + std::to_string(injIdx),
+            40, thresholdMin, thresholdMax);
+        auto outputNoiseHisto = std::make_unique<Histo1d>(
+            "OutputNoise-Injection-" + std::to_string(injIdx),
+            40, outputNoiseMin, outputNoiseMax);
+        auto gainHisto = std::make_unique<Histo1d>(
+            "Gain-Injection-" + std::to_string(injIdx),
+            40, gainMin, gainMax);
+        auto inputNoiseHisto = std::make_unique<Histo1d>(
+            "InputNoise-Injection-" + std::to_string(injIdx),
+            40, inputNoiseMin, inputNoiseMax);
+
+        double inj = m_injections[injIdx];
+        for (unsigned col = 0; col < nCol; col++) {
+            for (unsigned row = 0; row < nRow; row++) {
+                thresholdHisto->fill(m_thresholdMap[inj][col][row]);
+                outputNoiseHisto->fill(m_outputNoiseMap[inj][col][row]);
+                gainHisto->fill(m_gainMap[inj][col][row]);
+                inputNoiseHisto->fill(m_inputNoiseMap[inj][col][row]);
+            }
+        }
+
+        output->pushData(std::move(thresholdHisto));
+        output->pushData(std::move(outputNoiseHisto));
+        output->pushData(std::move(gainHisto));
+        output->pushData(std::move(inputNoiseHisto));
+    }
+}
+
+void NPointGain::end() {
+    // get injections vector for fitting, needs to be double for lmcurve
+    // it is already sorted because it came from a map!
+    // also might as well initialize storage maps here
+    for (const auto& pair : m_thresholdMap) {
+        double inj = pair.first;
+        m_injections.push_back(inj);
+        m_gainMap[inj] = std::vector<std::vector<double>>(nCol, std::vector<double>(nRow));
+        m_inputNoiseMap[inj] = std::vector<std::vector<double>>(nCol, std::vector<double>(nRow));
+    }
+
+    // run response curve fit for each channel and fill storage maps
+    m_responseParamMap = std::vector<std::vector<std::vector<double>>>(nCol, std::vector<std::vector<double>>(nRow));
+    for (unsigned col = 0; col < nCol; col++) {
+        for (unsigned row = 0; row < nRow; row++) {
+            auto thresholds = createResponseCurve(col, row);
+            std::vector<double> fitParams = guessInitialFitParams(thresholds);
+            fitResponseCurve(thresholds, fitParams);
+            m_responseParamMap[col][row] = fitParams;
+
+            for (const auto& inj : m_injections) {
+                double gain = m_gainConvFunc(inj, fitParams.data());
+                m_gainMap[inj][col][row] = gain;
+                m_inputNoiseMap[inj][col][row] = gain > 0 ? convertInputNoiseUnit(m_outputNoiseMap[inj][col][row] / gain) : 0;
+            }
+        }
+    }
+
+    writeOutputHistograms();
+    if (m_produceValidationHistos) {
+        writeValidationHistograms();
+    }
+
 }
 
 void OccGlobalThresholdTune::init(const ScanLoopInfo *s) {

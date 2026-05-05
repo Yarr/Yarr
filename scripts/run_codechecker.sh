@@ -17,7 +17,8 @@ echo Running CodeChecker with ${jobs} jobs
 mkdir checks
 cmake3 -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=On
 CodeChecker version
-cmake --build build --parallel ${jobs}
+# Shouldn't need to run build to make compile DB
+# cmake --build build --parallel ${jobs}
 scripts/fix_cdb.py > checks/compilation_cmds_filtered.json
 CodeChecker analyze checks/compilation_cmds_filtered.json -i scripts/code_checker.ignore -j ${jobs} -o checks/results \
   --analyzers clang-tidy \
@@ -43,7 +44,10 @@ CodeChecker analyze checks/compilation_cmds_filtered.json -i scripts/code_checke
   --tidy-config scripts/tidy.config
 
 CodeChecker parse --trim-path-prefix $(pwd) -e html checks/results -o checks/html
-CodeChecker parse --trim-path-prefix $(pwd) -e codeclimate checks/results > gl-code-quality-report.json
+CodeChecker parse --trim-path-prefix $(pwd) -e codeclimate checks/results > intermediate_report.json
+
+echo "Stripping comments about external libraries"
+jq 'map(select(.location.path | test("^(build|src/libUtil/lm|src/libUtil/catch)") | not))' intermediate_report.json > gl-code-quality-report.json
 
 # Previous "parse" commands have non-zero exit code
 # Explicitly succeed for CI

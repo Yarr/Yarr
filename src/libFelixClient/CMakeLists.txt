@@ -1,4 +1,17 @@
 YARR_ADD_FELIX_CLIENT()
+
+if(YARR_FELIX_BACKEND STREQUAL "FELIX_PROXY")
+    message(STATUS "Building FelixClient with TDAQ FELIX proxy backend")
+elseif(YARR_FELIX_BACKEND STREQUAL "FELIX_CLIENT_SYSTEM")
+    message(STATUS "Building FelixClient with system wide installed FELIX client backend")
+elseif(YARR_FELIX_BACKEND STREQUAL "FELIX_CLIENT_EMBEDDED")
+    message(STATUS "Building FelixClient with embedded FELIX client backend")
+else()
+    message(STATUS "No FELIX backend available - FelixClient will not be built.")
+    LIST(REMOVE_ITEM CONTROLLERS "FelixClient")
+    return()
+endif()
+
 add_library(FelixClient SHARED
         FelixController.cpp
         FelixDirectMode.cpp
@@ -21,7 +34,7 @@ if(YARR_FELIX_BACKEND STREQUAL "FELIX_PROXY")
 
   set(YARR_FELIX_LIB tdaq::felix_proxy tdaq::felix-interface)
 else()
-  set(YARR_FELIX_LIB felix-client-thread)
+  set(YARR_FELIX_LIB felix-client-thread::felix-client-thread)
 endif()
 
 #add_dependencies(FelixClient felixclientthread)
@@ -34,11 +47,21 @@ target_link_libraries(FelixClient PUBLIC Yarr_interface Util_interface
   )
 
 LIST(APPEND apps readWriteLpGBTRegister testFelixClient felixRegister elinkConfig)
+if(YARR_ENABLE_FELIX_CLIENT_BRIDGE)
+  LIST(APPEND apps felix_client_bridge)
+endif()
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)
     target_link_libraries(${target} Yarr FelixClient)
     post_build_debug_executable(${target})
 endforeach ()
+
+if(YARR_ENABLE_FELIX_CLIENT_BRIDGE)
+  # Extra library for felix-server
+  target_link_libraries(felix_client_bridge
+    felix::felix-server-lib
+  )
+endif()
 
 if (BUILD_TESTS)
     add_subdirectory(tests)
