@@ -28,6 +28,7 @@ target_include_directories(felix-io-client
 target_link_libraries(felix-io-client
   PUBLIC
     felix-interface::felix-interface
+  PRIVATE
     nlohmann_json::nlohmann_json
 )
 
