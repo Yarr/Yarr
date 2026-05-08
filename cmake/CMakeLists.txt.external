@@ -67,7 +67,18 @@ function(YARR_ADD_FELIX_CLIENT)
           )
       FetchContent_MakeAvailable(felixclientthread)
 
-      # FELIX IO Client    
+      # nlohmann_json (required by felix-io-client)
+      if(NOT TARGET nlohmann_json::nlohmann_json)
+        FetchContent_Declare(
+            nlohmann_json
+            GIT_REPOSITORY https://github.com/nlohmann/json.git
+            GIT_TAG v3.11.3
+            UPDATE_COMMAND ""
+        )
+        FetchContent_MakeAvailable(nlohmann_json)
+      endif()
+
+      # FELIX IO Client
       FetchContent_Declare (
           felixioclient
           GIT_REPOSITORY https://gitlab.cern.ch/atlas-tdaq-felix/felix-io-client.git

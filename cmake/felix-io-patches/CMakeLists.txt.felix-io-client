@@ -9,45 +9,20 @@ set(CMAKE_CONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/felix-io-client")
 
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
-# Resolve dependency: felix-interface
-if(NOT TARGET felix-interface::felix-interface)
-  find_package(felix-interface CONFIG QUIET)
-endif()
-
-if(NOT TARGET felix-interface::felix-interface)
-  message(FATAL_ERROR "Could not resolve dependency felix-interface for felix-io-client.")
-endif()
-
-# Resolve dependency: nlohmann_json
-if(NOT TARGET nlohmann_json::nlohmann_json)
-  find_package(nlohmann_json QUIET)
-endif()
-
-if(NOT TARGET nlohmann_json::nlohmann_json)
-  include(FetchContent)
-  FetchContent_Declare(
-    nlohmann_json
-    GIT_REPOSITORY https://github.com/nlohmann/json.git
-    GIT_TAG v3.11.3
-  )
-  FetchContent_MakeAvailable(nlohmann_json)
-endif()
-
-# Collect sources (pre-generated, committed to repo)
-file(GLOB FELIX_IO_CLIENT_SOURCES "src/*.cpp")
-
-add_library(felix-io-client SHARED ${FELIX_IO_CLIENT_SOURCES})
+add_library(felix-io-client SHARED
+  src/BitFieldRecord.cpp
+  src/FelixIoApi.cpp
+)
 add_library(felix-io-client::felix-io-client ALIAS felix-io-client)
 
 target_compile_features(felix-io-client PUBLIC cxx_std_20)
 
-# src/ is used for internal headers by the source files
 target_include_directories(felix-io-client
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 target_link_libraries(felix-io-client
