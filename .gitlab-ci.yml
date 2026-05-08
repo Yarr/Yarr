@@ -251,7 +251,7 @@ job_build_felix_release_52:
       - lib64
       - bin
   variables:
-    FELIX_PATH: /cvmfs/atlas-online-nightlies.cern.ch/felix/releases/felix-05-02-00-rm5-stand-alone/x86_64-el9-gcc15-opt
+    FELIX_PATH: /cvmfs/atlas-online-nightlies.cern.ch/felix/releases/felix-05-02-01-rm5-stand-alone/x86_64-el9-gcc15-opt
   script:
     # FELIX Release is mostly standalone, but refers to some other things for felix-server component
     - . /cvmfs/sft.cern.ch/lcg/views/LCG_108a/x86_64-el9-gcc15-opt/setup.sh
