@@ -43,7 +43,7 @@ function(YARR_ADD_FELIX_CLIENT)
    if((CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0) AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
         message(STATUS "Cannot build FELIX with GCC version < 15.")
    else()
-     # FELIX Client Thread
+     # FELIX Interface
      FetchContent_Declare (
           felixinterface
           GIT_REPOSITORY https://gitlab.cern.ch/atlas-tdaq-felix/felix-interface.git
@@ -53,9 +53,9 @@ function(YARR_ADD_FELIX_CLIENT)
                cp ${PROJECT_SOURCE_DIR}/cmake/felix-interface-patches/CMakeLists.txt.felix-interface CMakeLists.txt &&
                cp ${PROJECT_SOURCE_DIR}/cmake/felix-interface-patches/felix-interfaceConfig.cmake.in felix-interfaceConfig.cmake.in
           )
-        
       FetchContent_MakeAvailable(felixinterface)
-    
+
+      # FELIX Client Thread    
       FetchContent_Declare (
           felixclientthread
           GIT_REPOSITORY https://gitlab.cern.ch/atlas-tdaq-felix/felix-client-thread.git
@@ -65,19 +65,20 @@ function(YARR_ADD_FELIX_CLIENT)
                cp ${PROJECT_SOURCE_DIR}/cmake/felix-client-thread-patches/CMakeLists.txt.felix-client-thread CMakeLists.txt &&
                cp ${PROJECT_SOURCE_DIR}/cmake/felix-client-thread-patches/felix-client-threadConfig.cmake.in felix-client-threadConfig.cmake.in
           )
-        
       FetchContent_MakeAvailable(felixclientthread)
+
+      # FELIX IO Client    
       FetchContent_Declare (
           felixioclient
           GIT_REPOSITORY https://gitlab.cern.ch/atlas-tdaq-felix/felix-io-client.git
           GIT_TAG master
           UPDATE_COMMAND ""
-          PATCH_COMMAND 
-               cp ${PROJECT_SOURCE_DIR}/cmake/felix-client-thread-patches/CMakeLists.txt.felix-io-client CMakeLists.txt &&
-               cp ${PROJECT_SOURCE_DIR}/cmake/felix-client-thread-patches/felix-io-clientConfig.cmake.in felix-io-clientConfig.cmake.in
+          PATCH_COMMAND
+               cp ${PROJECT_SOURCE_DIR}/cmake/felix-io-patches/CMakeLists.txt.felix-io-client CMakeLists.txt &&
+               cp ${PROJECT_SOURCE_DIR}/cmake/felix-io-patches/felix-io-clientConfig.cmake.in felix-io-clientConfig.cmake.in
           )
-        
        FetchContent_MakeAvailable(felixioclient)
+
        set(YARR_FELIX_BACKEND "FELIX_CLIENT_EMBEDDED" PARENT_SCOPE)
        return()
     endif()
