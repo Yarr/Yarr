@@ -2,6 +2,5 @@
 
 include(CMakeFindDependencyMacro)
 find_dependency(felix-interface CONFIG)
-find_dependency(nlohmann_json)
 
 include("${CMAKE_CURRENT_LIST_DIR}/felix-io-clientTargets.cmake")
