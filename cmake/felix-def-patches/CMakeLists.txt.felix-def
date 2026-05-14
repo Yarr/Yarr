@@ -42,7 +42,7 @@ write_basic_package_version_file(
 )
 
 configure_package_config_file(
-  "${CMAKE_CURRENT_SOURCE_DIR}/felix-defConfig.cmake.in"
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Config.cmake.in"
   "${CMAKE_CURRENT_BINARY_DIR}/felix-defConfig.cmake"
   INSTALL_DESTINATION "${CMAKE_CONFIG_INSTALL_DIR}"
 )
