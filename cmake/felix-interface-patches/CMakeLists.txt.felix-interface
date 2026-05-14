@@ -11,6 +11,18 @@ set(CMAKE_CONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/felix-interface")
 add_library(felix-interface INTERFACE)
 add_library(felix-interface::felix-interface ALIAS felix-interface)
 
+# felix-def provides felix_fid.h, felix_ports.h, etc.
+# It will already be available as a target when built via YARR's FetchContent chain
+if(TARGET felix-def::felix-def)
+  target_link_libraries(felix-interface INTERFACE felix-def::felix-def)
+else()
+  # Fallback: if used standalone, find or fetch felix-def
+  find_package(felix-def CONFIG QUIET)
+  if(TARGET felix-def::felix-def)
+    target_link_libraries(felix-interface INTERFACE felix-def::felix-def)
+  endif()
+endif()
+
 target_compile_features(felix-interface INTERFACE cxx_std_20)
 
 target_include_directories(felix-interface
@@ -24,8 +36,8 @@ install(
   EXPORT felix-interfaceTargets
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
-message(${CMAKE_INSTALL_PREFIX})
-message(${CMAKE_INSTALL_INCLUDEDIR})
+
+
 install(
   DIRECTORY felix
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
