@@ -50,10 +50,12 @@ foreach(comp IN LISTS _YARR_KNOWN_COMPONENTS)
             if(YARR_FELIX_BACKEND STREQUAL "FELIX_PROXY")
                 find_dependency(tdaq REQUIRED COMPONENTS felix_proxy)
             elseif(YARR_FELIX_BACKEND STREQUAL "FELIX_CLIENT_SYSTEM")
-                find_dependency(Felix REQUIRED COMPONENTS felix-client-thread felix-interface)
+                find_dependency(Felix REQUIRED COMPONENTS felix-def felix-client-thread felix-interface felix-io-client)
             elseif(YARR_FELIX_BACKEND STREQUAL "FELIX_CLIENT_EMBEDDED")
+                find_dependency(felix-def REQUIRED)
                 find_dependency(felix-interface REQUIRED)
                 find_dependency(felix-client-thread REQUIRED)
+                find_dependency(felix-io-client REQUIRED)
             elseif(YARR_FELIX_BACKEND STREQUAL "NONE")
                 message(FATAL_ERROR
                     "YARR FelixClient component was installed, but YARR_FELIX_BACKEND=NONE."

@@ -113,7 +113,7 @@ job_test_find_package_consumer:
     - $YARR_INSTALL_DIR/bin/scanConsole -k
     - export TEST_BUILD_DIR="$YARR_WORK_DIR/build-YarrFindPackageTest"
     - export TEST_INSTALL_DIR="$YARR_WORK_DIR/install-YarrFindPackageTest"
-    - cmake3 -S "$YARR_PROJECT_DIR/tests/find_package_test" -B "$TEST_BUILD_DIR" -DCMAKE_TOOLCHAIN_FILE="$YARR_TOOLCHAIN_FILE" -DCMAKE_INSTALL_PREFIX="$TEST_INSTALL_DIR" -DYarr_DIR=$Yarr_DIR -Dfelix-interface_DIR="/builds/work/install-yarr/lib/cmake/felix-interface" -Dfelix-client-thread_DIR="/builds/work/install-yarr/lib/cmake/felix-client-thread"
+    - cmake3 -S "$YARR_PROJECT_DIR/tests/find_package_test" -B "$TEST_BUILD_DIR" -DCMAKE_TOOLCHAIN_FILE="$YARR_TOOLCHAIN_FILE" -DCMAKE_INSTALL_PREFIX="$TEST_INSTALL_DIR" -DYarr_DIR=$Yarr_DIR -Dfelix-def_DIR="/builds/work/install-yarr/lib/cmake/felix-def" -Dfelix-interface_DIR="/builds/work/install-yarr/lib/cmake/felix-interface" -Dfelix-client-thread_DIR="/builds/work/install-yarr/lib/cmake/felix-client-thread" -Dfelix-io-client_DIR="/builds/work/install-yarr/lib/cmake/felix-io-client"
     - cmake3 --build "$TEST_BUILD_DIR" --parallel "$(nproc)"
     - cmake3 --install "$TEST_BUILD_DIR"
     - $TEST_INSTALL_DIR/bin/YarrFindPackageTest

@@ -43,6 +43,17 @@ function(YARR_ADD_FELIX_CLIENT)
    if((CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0) AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
         message(STATUS "Cannot build FELIX with GCC version < 15.")
    else()
+      # FELIX Def (provides felix_fid.h, felix_ports.h, felix_protocols.h, etc.)
+     FetchContent_Declare(
+         felixdef
+         GIT_REPOSITORY https://gitlab.cern.ch/atlas-tdaq-felix/felix-def.git
+         GIT_TAG master
+         UPDATE_COMMAND ""
+         PATCH_COMMAND
+              cp ${PROJECT_SOURCE_DIR}/cmake/felix-def-patches/CMakeLists.txt.felix-def CMakeLists.txt
+      )
+     FetchContent_MakeAvailable(felixdef)
+
      # FELIX Interface
      FetchContent_Declare (
           felixinterface
