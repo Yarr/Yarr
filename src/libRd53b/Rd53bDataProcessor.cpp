@@ -714,3 +714,14 @@ void Rd53bDataProcessor::sendFeedback(unsigned tag, unsigned bcid)
 
     return;
 }
+
+json Rd53bDataProcessor::getLog() {
+    json log;
+    log["Unfinished streams (no NS)"] = _unfinishedStreamErrorCnt;
+    log["Expected New Stream"] = _expectNewStreamErrorCnt;
+    log["Out of range Req"] = _outOfRangeBitsCnt;
+    log["Split events count"] = _splitEventsCnt;
+    log["Any errors"] = _unfinishedStreamErrorCnt 
+        + _expectNewStreamErrorCnt;
+    return log;
+}

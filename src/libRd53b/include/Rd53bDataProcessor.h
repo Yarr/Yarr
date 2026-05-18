@@ -43,6 +43,8 @@ public:
     void join() override;
     void process() override;
 
+    json getLog() override;
+
     uint32_t *_data; // Pointer to one data block
     RawDataPtr _dataPtrCpy; // Copy of shared pointer to data object _data points to
     uint32_t *_data_t;     // Internal state variable
