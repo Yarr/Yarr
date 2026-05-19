@@ -1,0 +1,93 @@
+{
+    "scan": {
+        "analysis": {
+            "0": {
+                "algorithm": "OccupancyAnalysis",
+                "config": {
+                    "createMask": true
+                }
+            },
+            "1": {
+                "algorithm": "TagAnalysis"
+            },
+            "2": {
+                "algorithm": "TotAnalysis",
+                "config": {}
+            },
+            "n_count": 3
+        },
+        "histogrammer": {
+            "0": {
+                "algorithm": "OccupancyMap",
+                "config": {}
+            },
+            "1": {
+                "algorithm": "TotMap",
+                "config": {}
+            },
+            "2": {
+                "algorithm": "Tot2Map",
+                "config": {}
+            },
+            "3": {
+                "algorithm": "TagDist",
+                "config": {}
+            },
+            "4": {
+                "algorithm": "TagMap",
+                "config": {}
+            },
+            "5": {
+                "algorithm": "HitsPerEvent",
+                "config": {}
+            },
+            "6": {
+                "algorithm": "DataArchiver",
+                "config": {}
+            },
+            "n_count": 5
+        },
+        "loops": [
+        {
+            "config": {
+                "max": 64,
+                "min": 0,
+                "step": 1
+            },
+            "loopAction": "Itkpixv2ParMaskLoop"
+        },
+        {
+            "config": {
+                "max": 50,
+                "min": 0,
+                "step": 1,
+                "nSteps": 5
+            },
+            "loopAction": "Itkpixv2CoreColLoop"
+        },
+            {
+                "config": {
+                    "count": 100,
+                    "delay": 56,
+                    "extTrigger": false,
+                    "frequency": 5000,
+                    "noInject": false,
+                    "time": 0,
+                    "edgeMode": false
+                },
+                "loopAction": "Itkpixv2TriggerLoop"
+            },
+            {
+                "loopAction": "StdDataLoop"
+            }
+        ],
+        "name": "AnalogScan",
+        "prescan": {
+            "InjVcalRange": 1,
+            "InjVcalMed": 200,
+            "InjVcalHigh": 3000,
+            "InjDigEn": 0,
+            "Latency": 60
+        }
+    }
+}
