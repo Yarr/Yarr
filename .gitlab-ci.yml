@@ -436,9 +436,11 @@ job_test_itkpixv2_emu:
     - ls ./data/000001_std_digitalscan/
     - cat ./data/000001_std_digitalscan/*_OccupancyMap.json
     - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
-    - if [ "$NUM100" != "76800" ]; then exit 2; fi
+    - if [ "$NUM100" != "153600" ]; then exit 2; fi
     - bin/scanConsole -r configs/controller/emuCfg_itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/std_analogscan.json
     - ls ./data/000002_std_analogscan/
+    - NUM100=`cat ./data/000002_std_analogscan/*_OccupancyMap.json | grep -o 100 | wc -l`
+    - if [ "$NUM100" != "153600" ]; then exit 2; fi
 
 # Shared template for hardware pixel scan jobs (digital/analog/threshold).
 # Concrete jobs extend this and set TEST_STAND, CONTROLLER_CFG, CONNECTIVITY_CFG,
@@ -621,6 +623,25 @@ job_test_pixel-on-hardware-evaluation:
       artifacts: true
     - job: job_test_pixel-on-hardware-eye-diagram
       artifacts: true
+
+job_test_itkpixv2_emu:
+  extends: .test
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['alma9']
+  script:
+    # Reset global run counter so output directories are predictable (000001, 000002, ...)
+    - truncate $HOME/.yarr/runCounter --size=0
+    - bin/scanConsole -r configs/controller/emuCfg_itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/std_digitalscan.json
+    # Verify all 153600 pixels (384 rows * 400 cols) responded with 100 hits
+    - NUM100=$(grep -o '"100"' ./data/000001_std_digitalscan/*_OccupancyMap.json | wc -l)
+    - if [ "$NUM100" != "153600" ]; then echo "Digital scan FAILED: expected 153600 pixels at 100, got $NUM100"; exit 2; fi
+    - bin/scanConsole -r configs/controller/emuCfg_itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/std_analogscan.json
+    # Verify all 153600 pixels responded with 100 hits in the analog scan
+    - NUM100=$(grep -o '"100"' ./data/000002_std_analogscan/*_OccupancyMap.json | wc -l)
+    - if [ "$NUM100" != "153600" ]; then echo "Analog scan FAILED: expected 153600 pixels at 100, got $NUM100"; exit 2; fi
 
 job_test_strips:
   extends: .test
