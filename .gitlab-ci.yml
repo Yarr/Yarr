@@ -432,15 +432,18 @@ job_test_itkpixv2_emu:
         matrix:
           - ARCH: ['alma9']
   script:
+    # digital scan
     - bin/scanConsole -r configs/controller/emuCfg_itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/std_digitalscan.json
     - ls ./data/000001_std_digitalscan/
     - cat ./data/000001_std_digitalscan/*_OccupancyMap.json
-    - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
-    - if [ "$NUM100" != "153600" ]; then exit 2; fi
+    - NUM100d=`cat ./data/000001_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
+    - if [ "$NUM100d" != "153600" ]; then exit 2; fi
+    # analog scan
     - bin/scanConsole -r configs/controller/emuCfg_itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/std_analogscan.json
     - ls ./data/000002_std_analogscan/
-    - NUM100=`cat ./data/000002_std_analogscan/*_OccupancyMap.json | grep -o 100 | wc -l`
-    - if [ "$NUM100" != "153600" ]; then exit 2; fi
+    - cat ./data/000002_std_analogscan/*_OccupancyMap.json
+    - NUM100a=`cat ./data/000002_std_analogscan/*_OccupancyMap.json | grep -o 100 | wc -l`
+    - if [ "$NUM100a" != "153600" ]; then exit 2; fi
 
 # Shared template for hardware pixel scan jobs (digital/analog/threshold).
 # Concrete jobs extend this and set TEST_STAND, CONTROLLER_CFG, CONNECTIVITY_CFG,
