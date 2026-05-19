@@ -424,6 +424,22 @@ job_test_pixel:
     - NUM100=`cat ./data/000002_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
     - if ["$NUM100" != "76800"]; then exit 2; fi
 
+job_test_itkpixv2_emu:
+  extends: .test
+  needs:
+    - job: job_build_all
+      parallel:
+        matrix:
+          - ARCH: ['alma9']
+  script:
+    - bin/scanConsole -r configs/controller/emuCfg_itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/std_digitalscan.json
+    - ls ./data/000001_std_digitalscan/
+    - cat ./data/000001_std_digitalscan/*_OccupancyMap.json
+    - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
+    - if [ "$NUM100" != "76800" ]; then exit 2; fi
+    - bin/scanConsole -r configs/controller/emuCfg_itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/std_analogscan.json
+    - ls ./data/000002_std_analogscan/
+
 # Shared template for hardware pixel scan jobs (digital/analog/threshold).
 # Concrete jobs extend this and set TEST_STAND, CONTROLLER_CFG, CONNECTIVITY_CFG,
 # SCAN_CONFIG, SCAN_TYPE, and OUTPUT_DIR, plus their own needs and artifacts.
