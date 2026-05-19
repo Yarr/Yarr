@@ -190,4 +190,4 @@ Some of the options and dependencies are described in [the instructions how to u
 | YARR_FORCE_OWN_INSTALL_PREFIX:BOOL | OFF | Force Yarr to use own install prefix even as subdirectory | |
 | YARR_FRONT_ENDS_TO_BUILD:STRING | "Fei4;Rd53a;Star;Rd53b;Itkpixv2" | Semicolon-separated list of controllers to build, or "all" | |
 | YARR_USE_FETCHCONTENT_SPDLOG:BOOL | ON | Use FetchContent to get spdlog if not found. | |
-| Felix_ROOT | "" | path to pre-compiled FELIX, like /felix-05-02-00-rm5-stand-alone/x86_64-el9-gcc15-opt (default "" will build from git) | |
+| Felix_ROOT | "" | path to pre-compiled FELIX, like /felix-05-02-01-rm5-stand-alone/x86_64-el9-gcc15-opt (default "" will build from git) | |

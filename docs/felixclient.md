@@ -338,7 +338,7 @@ As of the current release, in order to find some external packages, it is
 suggested to set up LCG SW before building.
 
 ```bash
-FELIX_PATH=/cvmfs/atlas-online-nightlies.cern.ch/felix/releases/felix-05-02-00-rm5-stand-alone/x86_64-el9-gcc15-opt
+FELIX_PATH=/cvmfs/atlas-online-nightlies.cern.ch/felix/releases/felix-05-02-01-rm5-stand-alone/x86_64-el9-gcc15-opt
 . /cvmfs/sft.cern.ch/lcg/views/LCG_108a/x86_64-el9-gcc15-opt/setup.sh
 cmake -DYARR_ENABLE_FELIX_CLIENT_BRIDGE=ON -DFelix_ROOT=${FELIX_PATH}
 ```

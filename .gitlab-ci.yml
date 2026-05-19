@@ -268,7 +268,7 @@ job_test_felix_client:
   tags:
     - cvmfs
   variables:
-    FELIX_PATH: /cvmfs/atlas-online-nightlies.cern.ch/felix/releases/felix-05-02-00-rm5-stand-alone/x86_64-el9-gcc15-opt
+    FELIX_PATH: /cvmfs/atlas-online-nightlies.cern.ch/felix/releases/felix-05-02-01-rm5-stand-alone/x86_64-el9-gcc15-opt
   script:
     - . ${FELIX_PATH}/setup.sh
     - bash scripts/run_felix_bridge_tests.sh
