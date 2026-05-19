@@ -50,7 +50,7 @@
     "loops": [
       {
         "config": {
-          "max": 64,
+          "max": 1,
           "min": 0,
           "step": 1
         },
@@ -60,7 +60,7 @@
         "config": {
           "max": 50,
           "min": 0,
-          "step": 1,
+          "step": 5,
           "nSteps": 5
         },
         "loopAction": "Itkpixv2CoreColLoop"
