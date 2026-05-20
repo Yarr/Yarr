@@ -289,8 +289,11 @@ int ScanConsoleImpl::configure() {
     }
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
         auto feCfg = bookie->getFeCfg(id);
-        if(scanOpts.doOutput)
-            ScanHelper::writeFeConfig(feCfg, scanOpts.outputDir + feCfgMap.at(id)[1] + ".before");
+        if(scanOpts.doOutput) {
+            std::string config_before_path = scanOpts.outputDir + feCfgMap.at(id)[1] + ".before";
+            logger->info("Writing copy of initial FE config for ID {} to {}", id, config_before_path);
+            ScanHelper::writeFeConfig(feCfg, config_before_path);
+        }
     }
     bookie->initGlobalFe(chipType);
     bookie->getGlobalFe()->init(&*hwCtrl, FrontEndConnectivity(0,0));
@@ -443,33 +446,6 @@ int ScanConsoleImpl::initHardware() {
         scanLog["connectivity"].push_back(config);
     }
 
-
-    // Initial setting local DBHandler
-    if (scanOpts.dbUse) {
-        database = std::make_unique<DBHandler>();
-        ScanHelper::banner(logger,"Set Database");
-        database->initialize(scanOpts.dbCfgPath, scanOpts.progName, scanOpts.setQCMode, scanOpts.setInteractiveMode);
-        if (database->checkConfigs(scanOpts.dbUserCfgPath, scanOpts.dbSiteCfgPath, scanOpts.cConfigPaths)==1)
-            return -1;
-        scanLog["dbCfg"] = dbCfg;
-        scanLog["userCfg"] = userCfg;
-        scanLog["siteCfg"] = siteCfg;
-    }
-
-    // Reset masks
-    if (scanOpts.mask_opt == 1) {
-        for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
-            auto feCfg = bookie->getFeCfg(id);
-            feCfg->enableAll();
-        }
-    }
-    for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
-        auto feCfg = bookie->getFeCfg(id);
-        if(scanOpts.doOutput)
-            ScanHelper::writeFeConfig(feCfg, scanOpts.outputDir + feCfgMap.at(id)[1] + ".before");
-    }
-    bookie->initGlobalFe(chipType);
-    bookie->getGlobalFe()->init(&*hwCtrl, FrontEndConnectivity(0,0));
     return 0;
 }
 
