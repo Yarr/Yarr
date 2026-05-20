@@ -6,6 +6,7 @@
 #include <memory>
 #include <numeric>
 #include <getopt.h>
+#include <thread>
 #include <filesystem>
 namespace fs = std::filesystem;
 
@@ -811,11 +812,13 @@ namespace ScanHelper {
     }
 
     void writeFeConfig(FrontEndCfg *feCfg, const std::string &filename) {
-        std::ofstream backupCfgFile(filename);
-        json backupCfg;
-        feCfg->writeConfig(backupCfg);
-        backupCfgFile << std::setw(4) << backupCfg;
-        backupCfgFile.close();
+        std::thread([feCfg, filename]() {
+            json backupCfg;
+            feCfg->writeConfig(backupCfg);
+            std::ofstream backupCfgFile(filename);
+            backupCfgFile << std::setw(4) << backupCfg;
+            backupCfgFile.close();
+        }).detach(); 
     }
 
     void writeScanLog(json scanLog, const std::string &filename) {
