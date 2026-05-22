@@ -237,6 +237,7 @@ int main(int argc, char **argv) {
             } else if (mode=="2-to-1"){
                 fe->writeNamedRegister("ServiceBlockEn", 1);
                 if (chip_id==12 || chip_id==14){ // Secondaries
+                    fe->writeNamedRegister("AuroraActiveLanes", 3);
                     fe->writeNamedRegister("CdrClkSel", 2);
                     fe->writeNamedRegister("CmlBias0", 500);
                     fe->writeNamedRegister("CmlBias1", 0);
