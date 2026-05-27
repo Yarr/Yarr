@@ -133,6 +133,8 @@ lcov -r $output_folder.info "*src/external/src/*"  \
         -r $output_folder.info "*libUtil/include/lmcurve.h" \
         -r $output_folder.info "*libUtil/include/lmmin.h" \
         -r $output_folder.info "*libUtil/include/lmstruct.h" \
+        -r $output_folder.info "*/_deps/*" \
+        -r $output_folder.info "*/usr/include/*" \
      -o ${output_folder}n.info
 ec=$?
 if [ $ec -ne 0 ]; then
