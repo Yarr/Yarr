@@ -6,6 +6,17 @@ stages:
   - test
   - deploy
 
+variables:
+  YARR_CMAKE_FLAGS: >-
+    -DBUILD_TESTS=on
+    -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
+    -DYARR_CONTROLLERS_TO_BUILD=all
+    -DYARR_FRONT_ENDS_TO_BUILD=all
+    -DYARR_ACTIVE_LOGGER_LEVEL=TRACE
+    -DYARR_ENABLE_PYTHON=on
+  YARR_GCC9_ENABLE: "source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null"
+  YARR_LLVM11_ENABLE: "source scl_source enable llvm-toolset-11.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null"
+
 # If the pipeline is triggered by:
 #    A merge request, run a merge request pipeline. For example, a merge request pipeline can be triggered by a push to a branch with an associated open merge request.
 #    A change to a branch, but a merge request is open for that branch, do not run a branch pipeline.
@@ -17,6 +28,17 @@ stages:
     - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
       when: never
     - if: '$CI_COMMIT_BRANCH'
+
+.rules_devel_or_master:
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "devel"'
+    - if: '$CI_COMMIT_BRANCH == "master"'
+
+.rules_devel_or_tags:
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "devel"'
+    - if: '$CI_COMMIT_TAG'
+
 .tag:
   stage: tag
   image: gitlab-registry.cern.ch/ci-tools/docker-builder/tools
@@ -36,6 +58,10 @@ image: gitlab-registry.cern.ch/yarr/yarr_container:yarr_alma9_build
   parallel:
     matrix:
       - ARCH: ['alma9']
+  before_script:
+    - git config --global user.email "ci@example.com"
+    - git config --global user.name "CI Runner"
+
 .test:
   stage: test
   extends: .rules
@@ -54,15 +80,12 @@ job_build_all:
       - bin
       - lib
       - python
-  before_script:
-    - git config --global user.email "ci@example.com"
-    - git config --global user.name "CI Runner"
   script:
-    - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+    - eval "$YARR_GCC9_ENABLE"
     - dnf -y install autoconf automake libtool
-    - mkdir  build
+    - mkdir build
     - cd build
-    - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD=all -DYARR_FRONT_ENDS_TO_BUILD=all -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DYARR_ENABLE_PYTHON=on
+    - cmake3 .. $YARR_CMAKE_FLAGS
     - make install -j$(nproc)
     - CTEST_OUTPUT_ON_FAILURE=1 make test
     - cd ..
@@ -71,15 +94,12 @@ job_build_all:
 
 job_build_all_most_modern:
   extends: .build_matrix
-  before_script:
-    - git config --global user.email "ci@example.com"
-    - git config --global user.name "CI Runner"
   script:
     - dnf -y install gcc-toolset-15.x86_64 gcc-toolset-15-gcc.x86_64 cmake make boost-devel
     - source /opt/rh/gcc-toolset-15/enable
     - mkdir build
     - cd build
-    - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD="all" -DYARR_FRONT_ENDS_TO_BUILD="all" -DYARR_ACTIVE_LOGGER_LEVEL=TRACE -DYARR_ENABLE_PYTHON=on -DCMAKE_CXX_STANDARD=23
+    - cmake3 .. $YARR_CMAKE_FLAGS -DCMAKE_CXX_STANDARD=23
     - make install -j$(nproc)
     - CTEST_OUTPUT_ON_FAILURE=1 make test
     - cd ..
@@ -90,6 +110,8 @@ job_build_all_most_modern:
   extends: .build_matrix
   stage: build
   before_script:
+    - git config --global user.email "ci@example.com"
+    - git config --global user.name "CI Runner"
     - dnf -y install gcc-toolset-15.x86_64 gcc-toolset-15-gcc.x86_64 cmake make boost-devel
     - source /opt/rh/gcc-toolset-15/enable
     - cmake3 --version
@@ -152,8 +174,8 @@ job_build_clang:
   extends: .build_matrix
   stage: build
   script:
-    - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-    - source scl_source enable llvm-toolset-11.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+    - eval "$YARR_GCC9_ENABLE"
+    - eval "$YARR_LLVM11_ENABLE"
     - mkdir -p build
     - cd build
     - CXXFLAGS=-Werror cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-clang
@@ -165,7 +187,7 @@ job_build_clang:
 job_build_none:
   extends: .build_matrix
   script:
-    - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+    - eval "$YARR_GCC9_ENABLE"
     - mkdir build
     - cd build
     - cmake3 .. -DBUILD_TESTS=on -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc -DYARR_CONTROLLERS_TO_BUILD= -DYARR_FRONT_ENDS_TO_BUILD= -DYARR_ACTIVE_LOGGER_LEVEL=OFF
@@ -230,10 +252,7 @@ job_build_test_gcc_9:
     - cp -r Dockerfile bin lib64 python installed/
 
 job_build_felix:
-  extends: .build_felix
-  only:
-    - devel
-    - tags
+  extends: [.build_felix, .rules_devel_or_tags]
 
 job_build_felix_check:
   extends: [.build_felix, .rules]
@@ -280,14 +299,13 @@ job_test_felix_client:
       - cc_tests
   script:
     - date
-    - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-    - mkdir  build
+    - eval "$YARR_GCC9_ENABLE"
+    - mkdir build
     - cd build
     - cmake3 .. -DBUILD_TESTS=on -DCMAKE_BUILD_TYPE=Coverage -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-gcc
     - make install -j$(nproc)
-    - /bin/pwd
     - cd ../
-    - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+    - eval "$YARR_GCC9_ENABLE"
     - scripts/cc_tool.sh
   coverage: '/  lines......: \d+(?:\.\d+)?/'
 
@@ -295,19 +313,16 @@ job_code_coverage:
   extends: [".job_code_coverage", ".rules"]
 
 job_code_coverage_deploy:
-  extends: .job_code_coverage
-  only:
-    - devel
-    - master
+  extends: [.job_code_coverage, .rules_devel_or_master]
 
 job_run_codechecker:
   stage: build
   timeout: 3 hours
-  only:
-    - merge_requests
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
   script:
-    - source scl_source enable devtoolset-9 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
-    - source scl_source enable llvm-toolset-11.0 || echo ignoring exit code so CI does not bomb when it should not > /dev/null
+    - eval "$YARR_GCC9_ENABLE"
+    - eval "$YARR_LLVM11_ENABLE"
     - scripts/run_codechecker.sh -j$(nproc)
   after_script:
     - cat gl-code-quality-report.json
@@ -340,10 +355,7 @@ job_build_doxygen:
   extends: [".job_build_doxygen", ".rules"]
 
 job_build_doxygen_deploy:
-  extends: .job_build_doxygen
-  only:
-    - devel
-    - master
+  extends: [.job_build_doxygen, .rules_devel_or_master]
 
 .build_docs:
   stage: build
@@ -361,10 +373,7 @@ build_docs:
   extends: [".build_docs", ".rules"]
 
 build_docs_deploy:
-  extends: .build_docs
-  only:
-    - devel
-    - master
+  extends: [.build_docs, .rules_devel_or_master]
 
 #################
 # Package Stage #
@@ -372,9 +381,9 @@ build_docs_deploy:
 
 build_container:
   stage: package
-  only:
-    - devel
-    - tags
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "devel"'
+    - if: '$CI_COMMIT_TAG'
   trigger:
     include:
       - project: 'ci-tools/docker-builder'
@@ -400,20 +409,30 @@ job_test_pixel:
         matrix:
           - ARCH: ['alma9']
   script:
+    # fei4 digitalscan
     - bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p -l configs/logging/trace_all.json
-    - ls
-    - ls ./data/
     - ls ./data/000001_std_digitalscan/
     - cat ./data/000001_std_digitalscan/*_OccupancyMap.json
     - NUM100=`cat ./data/000001_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
     - if ["$NUM100" != "26880"]; then exit 2; fi
+    # rd53a digitalscan
     - bin/scanConsole  -r configs/controller/emuCfg_rd53a.json -c configs/connectivity/example_rd53a_setup.json -s configs/scans/rd53a/std_digitalscan.json
-    - ls
-    - ls ./data/
     - ls ./data/000002_std_digitalscan/
     - cat ./data/000002_std_digitalscan/*_OccupancyMap.json
     - NUM100=`cat ./data/000002_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
     - if ["$NUM100" != "76800"]; then exit 2; fi
+    # itkpixv2 digital scan
+    - bin/scanConsole -r configs/controller/emuCfg_itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/std_digitalscan.json
+    - ls ./data/000003_std_digitalscan/
+    - cat ./data/000003_std_digitalscan/*_OccupancyMap.json
+    - NUM100=`cat ./data/000003_std_digitalscan/*_OccupancyMap.json | grep -o 100 | wc -l`
+    - if [ "$NUM100" != "153600" ]; then exit 2; fi
+    # itkpixv2 analog scan
+    - bin/scanConsole -r configs/controller/emuCfg_itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/std_analogscan.json
+    - ls ./data/000004_std_analogscan/
+    - cat ./data/000004_std_analogscan/*_OccupancyMap.json
+    - NUM100=`cat ./data/000004_std_analogscan/*_OccupancyMap.json | grep -o 100 | wc -l`
+    - if [ "$NUM100" != "153600" ]; then exit 2; fi
 
 # Shared template for hardware pixel scan jobs (digital/analog/threshold).
 # Concrete jobs extend this and set TEST_STAND, CONTROLLER_CFG, CONNECTIVITY_CFG,
@@ -466,57 +485,38 @@ job_test_pixel:
       - ./outputs/*.png
     expire_in: 1 month
 
-# Eye diagram: merged matrix job covering both test stands.
-# This is the manual entry point for hardware pixel tests on each stand.
 job_test_pixel-on-hardware-eye-diagram:
   extends: .test
   tags:
-    - $TEST_STAND
+    - nakedsnail
+  variables:
+    TEST_STAND: "nakedsnail"
+    CONTROLLER_CFG: "./test-data/nakedsnail/controller/specCfg-rd53b-16x1.json"
+    CONNECTIVITY_CFG: "./test-data/nakedsnail/ci-module/20UPIM13710116_L1_warm.json"
   resource_group: hardware-$TEST_STAND
   when: manual
-  parallel:
-    matrix:
-      - TEST_STAND: scipp
-        CONTROLLER_CFG: "./configs/controller/specCfg-rd53b-16x1.json"
-        CONNECTIVITY_CFG: "./test-data/scipp/ci-module/connectivity.json"
-      - TEST_STAND: nakedsnail
-        CONTROLLER_CFG: "./test-data/nakedsnail/controller/specCfg-rd53b-16x1.json"
-        CONNECTIVITY_CFG: "./test-data/nakedsnail/ci-module/20UPIM13710116_L1_warm.json"
   needs:
     - job: job_build_all
       parallel:
         matrix:
           - ARCH: ['alma9']
   after_script:
-    # Always runs even if eye diagram fails - ensures power is turned off
-    - |
-      if [ "$TEST_STAND" = "nakedsnail" ]; then
-        /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n HV power-off
-        /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-off
-      fi
+    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n HV power-off
+    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-off
   script:
-    # List runner IDs
-    - echo "TEST_STAND = $TEST_STAND"
     - echo "CI_RUNNER_ID = $CI_RUNNER_ID"
     - echo "CI_RUNNER_DESCRIPTION = $CI_RUNNER_DESCRIPTION"
     - echo "CI_RUNNER_TAGS = $CI_RUNNER_TAGS"
-    # Power on LV then HV (nakedsnail only)
-    - |
-      if [ "$TEST_STAND" = "nakedsnail" ]; then
-        /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-voltage 3
-        /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-current 6.5
-        /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-on
-        /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n HV set-voltage -- -80
-        /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n HV power-on
-        sleep 2
-      fi
-    # Clone the test data repo
+    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-voltage 3
+    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS set-current 6.5
+    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n PS power-on
+    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n HV set-voltage -- -80
+    - /opt/local/pixel/labRemote/build/bin/powersupply -e /opt/local/pixel/input-hw-nakedsnail.json -n HV power-on
+    - sleep 2
     - echo "Fetching test data..."
     - git clone https://gitlab.cern.ch/YARR/utilities/yarr-ci-test-data.git test-data
     - ls test-data
-    # Run eye diagram
     - echo "Run Eye Diagram..."
-    - pwd
     - ./bin/eyeDiagram -r $CONTROLLER_CFG -c $CONNECTIVITY_CFG | tee test-data/eye_output.log
     - echo "Checking for valid delay settings for lanes 0-3..."
     - |
@@ -526,41 +526,12 @@ job_test_pixel-on-hardware-eye-diagram:
         echo "Failure...less than 4 valid delay settings"
         exit 1
       fi
-    # Power off is handled in after_script
   artifacts:
     paths:
       - ./test-data
     expire_in: 1 month
 
-job_test_pixel-on-hardware-scipp-digital-scan:
-  extends: .hw_pixel_scan
-  tags:
-    - scipp
-  variables:
-    TEST_STAND: "scipp"
-    SCAN_TYPE: "Digital"
-    CONTROLLER_CFG: "./configs/controller/specCfg-rd53b-16x1.json"
-    CONNECTIVITY_CFG: "./test-data/scipp/ci-module/connectivity.json"
-    SCAN_CONFIG: "./configs/scans/itkpixv2/std_digitalscan.json"
-    OUTPUT_DIR: "./outputs/digital-scan"
-  needs:
-    - job: job_build_all
-      parallel:
-        matrix:
-          - ARCH: ['alma9']
-    - job: job_test_pixel-on-hardware-eye-diagram
-      parallel:
-        matrix:
-          - TEST_STAND: scipp
-            CONTROLLER_CFG: "./configs/controller/specCfg-rd53b-16x1.json"
-            CONNECTIVITY_CFG: "./test-data/scipp/ci-module/connectivity.json"
-      artifacts: true
-  artifacts:
-    paths:
-      - ./outputs/digital-scan
-    expire_in: 1 month
-
-job_test_pixel-on-hardware-nakedsnail-digital-scan:
+job_test_pixel-on-hardware-digital-scan:
   extends: .hw_pixel_scan
   tags:
     - nakedsnail
@@ -577,46 +548,13 @@ job_test_pixel-on-hardware-nakedsnail-digital-scan:
         matrix:
           - ARCH: ['alma9']
     - job: job_test_pixel-on-hardware-eye-diagram
-      parallel:
-        matrix:
-          - TEST_STAND: nakedsnail
-            CONTROLLER_CFG: "./test-data/nakedsnail/controller/specCfg-rd53b-16x1.json"
-            CONNECTIVITY_CFG: "./test-data/nakedsnail/ci-module/20UPIM13710116_L1_warm.json"
       artifacts: true
   artifacts:
     paths:
       - ./outputs/digital-scan
     expire_in: 1 month
 
-job_test_pixel-on-hardware-scipp-analog-scan:
-  extends: .hw_pixel_scan
-  tags:
-    - scipp
-  variables:
-    TEST_STAND: "scipp"
-    SCAN_TYPE: "Analog"
-    CONTROLLER_CFG: "./configs/controller/specCfg-rd53b-16x1.json"
-    CONNECTIVITY_CFG: "./test-data/scipp/ci-module/connectivity.json"
-    SCAN_CONFIG: "./configs/scans/itkpixv2/std_analogscan.json"
-    OUTPUT_DIR: "./outputs/analog-scan"
-  needs:
-    - job: job_build_all
-      parallel:
-        matrix:
-          - ARCH: ['alma9']
-    - job: job_test_pixel-on-hardware-eye-diagram
-      parallel:
-        matrix:
-          - TEST_STAND: scipp
-            CONTROLLER_CFG: "./configs/controller/specCfg-rd53b-16x1.json"
-            CONNECTIVITY_CFG: "./test-data/scipp/ci-module/connectivity.json"
-      artifacts: true
-  artifacts:
-    paths:
-      - ./outputs/analog-scan
-    expire_in: 1 month
-
-job_test_pixel-on-hardware-nakedsnail-analog-scan:
+job_test_pixel-on-hardware-analog-scan:
   extends: .hw_pixel_scan
   tags:
     - nakedsnail
@@ -633,46 +571,13 @@ job_test_pixel-on-hardware-nakedsnail-analog-scan:
         matrix:
           - ARCH: ['alma9']
     - job: job_test_pixel-on-hardware-eye-diagram
-      parallel:
-        matrix:
-          - TEST_STAND: nakedsnail
-            CONTROLLER_CFG: "./test-data/nakedsnail/controller/specCfg-rd53b-16x1.json"
-            CONNECTIVITY_CFG: "./test-data/nakedsnail/ci-module/20UPIM13710116_L1_warm.json"
       artifacts: true
   artifacts:
     paths:
       - ./outputs/analog-scan
     expire_in: 1 month
 
-job_test_pixel-on-hardware-scipp-threshold-hr-scan:
-  extends: .hw_pixel_scan
-  tags:
-    - scipp
-  variables:
-    TEST_STAND: "scipp"
-    SCAN_TYPE: "Threshold HR"
-    CONTROLLER_CFG: "./configs/controller/specCfg-rd53b-16x1.json"
-    CONNECTIVITY_CFG: "./test-data/scipp/ci-module/connectivity.json"
-    SCAN_CONFIG: "./configs/scans/itkpixv2/std_thresholdscan_hr.json"
-    OUTPUT_DIR: "./outputs/threshold-scan"
-  needs:
-    - job: job_build_all
-      parallel:
-        matrix:
-          - ARCH: ['alma9']
-    - job: job_test_pixel-on-hardware-eye-diagram
-      parallel:
-        matrix:
-          - TEST_STAND: scipp
-            CONTROLLER_CFG: "./configs/controller/specCfg-rd53b-16x1.json"
-            CONNECTIVITY_CFG: "./test-data/scipp/ci-module/connectivity.json"
-      artifacts: true
-  artifacts:
-    paths:
-      - ./outputs/threshold-scan
-    expire_in: 1 month
-
-job_test_pixel-on-hardware-nakedsnail-threshold-hr-scan:
+job_test_pixel-on-hardware-threshold-hr-scan:
   extends: .hw_pixel_scan
   tags:
     - nakedsnail
@@ -689,57 +594,26 @@ job_test_pixel-on-hardware-nakedsnail-threshold-hr-scan:
         matrix:
           - ARCH: ['alma9']
     - job: job_test_pixel-on-hardware-eye-diagram
-      parallel:
-        matrix:
-          - TEST_STAND: nakedsnail
-            CONTROLLER_CFG: "./test-data/nakedsnail/controller/specCfg-rd53b-16x1.json"
-            CONNECTIVITY_CFG: "./test-data/nakedsnail/ci-module/20UPIM13710116_L1_warm.json"
       artifacts: true
   artifacts:
     paths:
       - ./outputs/threshold-scan
     expire_in: 1 month
 
-job_test_pixel-on-hardware-scipp-evaluation:
-  extends: .hw_pixel_evaluation
-  tags:
-    - scipp
-  variables:
-    TEST_STAND: "scipp"
-  needs:
-    - job: job_test_pixel-on-hardware-scipp-digital-scan
-      artifacts: true
-    - job: job_test_pixel-on-hardware-scipp-analog-scan
-      artifacts: true
-    - job: job_test_pixel-on-hardware-scipp-threshold-hr-scan
-      artifacts: true
-    - job: job_test_pixel-on-hardware-eye-diagram
-      parallel:
-        matrix:
-          - TEST_STAND: scipp
-            CONTROLLER_CFG: "./configs/controller/specCfg-rd53b-16x1.json"
-            CONNECTIVITY_CFG: "./test-data/scipp/ci-module/connectivity.json"
-      artifacts: true
-
-job_test_pixel-on-hardware-nakedsnail-evaluation:
+job_test_pixel-on-hardware-evaluation:
   extends: .hw_pixel_evaluation
   tags:
     - nakedsnail
   variables:
     TEST_STAND: "nakedsnail"
   needs:
-    - job: job_test_pixel-on-hardware-nakedsnail-digital-scan
+    - job: job_test_pixel-on-hardware-digital-scan
       artifacts: true
-    - job: job_test_pixel-on-hardware-nakedsnail-analog-scan
+    - job: job_test_pixel-on-hardware-analog-scan
       artifacts: true
-    - job: job_test_pixel-on-hardware-nakedsnail-threshold-hr-scan
+    - job: job_test_pixel-on-hardware-threshold-hr-scan
       artifacts: true
     - job: job_test_pixel-on-hardware-eye-diagram
-      parallel:
-        matrix:
-          - TEST_STAND: nakedsnail
-            CONTROLLER_CFG: "./test-data/nakedsnail/controller/specCfg-rd53b-16x1.json"
-            CONNECTIVITY_CFG: "./test-data/nakedsnail/ci-module/20UPIM13710116_L1_warm.json"
       artifacts: true
 
 job_test_strips:
@@ -859,17 +733,19 @@ deploy_coverage:
 
 tag_latest_devel_container:
   extends: .tag
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "devel"'
   needs:
     - build_container
   script:
     - /kaniko/auth.sh
     - crane tag "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}" "devel"
     - crane validate --remote "${CI_REGISTRY_IMAGE}:devel"
-  only:
-    - devel
 
 tag_latest_release_container:
   extends: .tag
+  rules:
+    - if: '$CI_COMMIT_TAG'
   needs:
     - build_container
   script:
@@ -878,5 +754,3 @@ tag_latest_release_container:
     - crane validate --remote "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}"
     - crane tag "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}" "latest"
     - crane validate --remote "${CI_REGISTRY_IMAGE}:latest"
-  only:
-    - tags
