@@ -680,18 +680,19 @@ yarrStatus Rd53b::confAdc(uint16_t MONMUX, bool doCur) {
 
     success = success && (this->writeRegister(&Rd53b::MonitorEnable, 1) == yarrSuccess); // Enabling monitoring
     while(!core->isCmdEmpty()){;}
+    std::this_thread::sleep_for(std::chrono::microseconds(1000));
 
     success = success && (this->writeRegister(&Rd53b::GlobalPulseConf, 0x40) == yarrSuccess); // Reset ADC
     success = success && (this->writeRegister(&Rd53b::GlobalPulseWidth, 4) == yarrSuccess);   // Duration = 4 inherited from RD53A
     while(!core->isCmdEmpty()){;}
-    std::this_thread::sleep_for(std::chrono::microseconds(100));
+    std::this_thread::sleep_for(std::chrono::microseconds(1000));
 
     this->sendGlobalPulse(m_chipId);
     std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Need to wait long enough for ADC to reset
 
     success = success && (this->writeRegister(&Rd53b::GlobalPulseConf, 0x1000) == yarrSuccess); //Trigger ADC Conversion
     while (!core->isCmdEmpty()){;}
-    std::this_thread::sleep_for(std::chrono::microseconds(100));
+    std::this_thread::sleep_for(std::chrono::microseconds(1000));
 
     this->sendGlobalPulse(m_chipId);
     std::this_thread::sleep_for(std::chrono::microseconds(1000)); //This is neccessary to clean. This might be controller dependent.
@@ -702,10 +703,11 @@ yarrStatus Rd53b::confAdc(uint16_t MONMUX, bool doCur) {
     success = success && (this->writeRegister(&Rd53b::MonitorV, OriginalMonitorV) == yarrSuccess);
     success = success && (this->writeRegister(&Rd53b::MonitorI, OriginalMonitorI) == yarrSuccess);
     while (!core->isCmdEmpty()){;}
-    std::this_thread::sleep_for(std::chrono::microseconds(100));
+    std::this_thread::sleep_for(std::chrono::microseconds(1000));
 
     return (success ? yarrSuccess : yarrFailure);
 }
+
 
 void Rd53b::runRingOsc(uint16_t duration, bool isBankB) {
     uint16_t OriginalGlobalRT = this->GlobalPulseConf.read();
