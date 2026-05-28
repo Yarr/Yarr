@@ -707,7 +707,6 @@ yarrStatus Rd53b::confAdc(uint16_t MONMUX, bool doCur) {
     return (success ? yarrSuccess : yarrFailure);
 }
 
-
 void Rd53b::runRingOsc(uint16_t duration, bool isBankB) {
     uint16_t OriginalGlobalRT = this->GlobalPulseConf.read();
 
