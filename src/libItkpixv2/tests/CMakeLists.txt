@@ -1,7 +1,8 @@
-add_executable(testItkpixv2        
+add_executable(testItkpixv2
         test_data_processor.cpp
         test_data_processor_edgecases.cpp
         test_data_processor_errors.cpp
+        test_data_processor_bugs.cpp
 )
 target_link_libraries(testItkpixv2 PUBLIC Yarr)
 target_link_libraries(testItkpixv2 PRIVATE mainTest)
