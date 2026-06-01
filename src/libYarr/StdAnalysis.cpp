@@ -100,7 +100,7 @@ void HistogramArchiver::loadConfig(const json &j){
 }
 
 void HistogramArchiver::setOutputDirectory(std::string dir) {
-    output_dir = dir;
+    output_dir = std::move(dir);
 }
 
 void OccupancyAnalysis::init(const ScanLoopInfo *s) {
@@ -525,7 +525,8 @@ void TotAnalysis::end() {
             double injQ = feCfg->toCharge(vcalMin+k*vcalStep, useScap, useLcap);
             double sum = 0;
             double entries = 0;
-            for (float measToT=0.0; measToT<=16.0; measToT+=0.1) {
+            for (int iToT=0; iToT<=160; iToT++) {
+                double measToT = iToT * 0.1;
                 int n = chargeVsTotMap->binNum(injQ, measToT);
                 sum += (chargeVsTotMap->getBin(n))*(measToT);
                 entries += chargeVsTotMap->getBin(n);
@@ -1309,7 +1310,7 @@ void OccGlobalThresholdTune::init(const ScanLoopInfo *s) {
         }
 
         if (l->isGlobalFeedbackLoop()) {
-            fb.reset(new GlobalFeedbackSender(feedback));
+            fb = std::make_unique<GlobalFeedbackSender>(feedback);
         }
     }
 }
@@ -1431,7 +1432,7 @@ void OccPixelThresholdTune::init(const ScanLoopInfo *s) {
         }
 
         if (l->isPixelFeedbackLoop()) {
-            fb.reset(new PixelFeedbackSender(feedback));
+            fb = std::make_unique<PixelFeedbackSender>(feedback);
             if(fb == nullptr) {
                 alog->error("OccPixelThresholdTune: loop declared as pixel feedback does not implement feedback");
             }
@@ -1731,18 +1732,18 @@ void TotDistPlotter::processHistogram(HistogramBase *h) {
 
 void NoiseAnalysis::init(const ScanLoopInfo *s) {
     // We assume the nosie scan only has one trigger and data loop
-    occ.reset(new Histo2d("Occupancy", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
+    occ = std::make_unique<Histo2d>("Occupancy", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
     occ->setXaxisTitle("Col");
     occ->setYaxisTitle("Row");
     occ->setZaxisTitle("Hits");
-    tag.reset(new Histo1d("TagDist", 257, -0.5, 256.5));
+    tag = std::make_unique<Histo1d>("TagDist", 257, -0.5, 256.5);
     tag->setXaxisTitle("Tag");
     tag->setYaxisTitle("Hits");
-    tot.reset(new Histo2d("TotMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5));
+    tot = std::make_unique<Histo2d>("TotMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
     tot->setXaxisTitle("Col");
     tot->setYaxisTitle("Row");
     tot->setZaxisTitle("Averaged ToT");
-    totDist.reset(new Histo1d("TotDist", 16, 0.5, 16.5));
+    totDist = std::make_unique<Histo1d>("TotDist", 16, 0.5, 16.5);
     totDist->setXaxisTitle("ToT [bc]");
     totDist->setYaxisTitle("Hits");
     n_trigger = 0;
@@ -2200,7 +2201,7 @@ void TriggerThrottleAnalysis::init(const ScanLoopInfo *s) {
         }
 
         if (l->isGlobalFeedbackLoop()) {
-            fb.reset(new GlobalFeedbackSender(feedback));
+            fb = std::make_unique<GlobalFeedbackSender>(feedback);
             if(fb == nullptr) {
                 alog->error("TriggerThrottleAnalysis");
             }
@@ -2228,7 +2229,7 @@ void TriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
     }
 
     // Check if Histogram exists
-    if (occMaps[ident] == NULL) {
+    if (occMaps[ident] == nullptr) {
         Histo2d *hh = new Histo2d(name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
@@ -2237,7 +2238,7 @@ void TriggerThrottleAnalysis::processHistogram(HistogramBase *h) {
         innerCnt[ident] = 0;
     }
 
-    if (outerOccMaps[ident] == NULL) {
+    if (outerOccMaps[ident] == nullptr) {
         Histo2d *hh = new Histo2d(name2, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
