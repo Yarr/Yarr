@@ -18,7 +18,7 @@ namespace StdDict {
     bool registerDataProcessor(std::string name,
                               std::function<std::unique_ptr<FeDataProcessor>()> f)
     {
-        return registry().registerClass(name, f);
+        return registry().registerClass(std::move(name), std::move(f));
     }
 
     std::unique_ptr<FeDataProcessor> getDataProcessor(std::string name) {

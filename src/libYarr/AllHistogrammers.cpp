@@ -18,7 +18,7 @@ namespace StdDict {
     bool registerHistogrammer(std::string name,
                               std::function<std::unique_ptr<HistogramAlgorithm>()> f)
     {
-        return registry().registerClass(name, f);
+        return registry().registerClass(std::move(name), std::move(f));
     }
 
     std::unique_ptr<HistogramAlgorithm> getHistogrammer(std::string name) {

@@ -18,7 +18,7 @@ namespace StdDict {
     bool registerConfiguration(std::string name,
                                std::function<std::unique_ptr<Configuration>()> f)
     {
-        return registry().registerClass(name, f);
+        return registry().registerClass(std::move(name), std::move(f));
     }
 
     std::unique_ptr<Configuration> getConfiguration(std::string name) {

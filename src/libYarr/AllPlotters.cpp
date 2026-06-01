@@ -19,7 +19,7 @@ namespace StdDict {
 bool registerPlotter(std::string name,
                      std::function<std::unique_ptr<Plotter>()> f)
 {
-    return registry().registerClass(name, f);
+    return registry().registerClass(std::move(name), std::move(f));
 }
 
 std::unique_ptr<Plotter> getPlotter(std::string name) {
