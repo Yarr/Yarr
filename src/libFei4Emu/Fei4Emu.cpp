@@ -19,7 +19,7 @@ namespace {
 }
 
 Fei4Emu::Fei4Emu(const json &model_cfg, EmuCom *rx, EmuCom *tx) {
-    srand(time(NULL));
+    srand(time(nullptr));
 
     m_feId = 0x00;
     m_l1IdCnt = 0x00;

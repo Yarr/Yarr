@@ -95,7 +95,7 @@ uint32_t* Fei4PixelCfg::getCfg(unsigned bit, unsigned dc) {
             return m_FDAC[dc][3].getStream();
             break;
         default:
-            return NULL;
+            return nullptr;
             break;
     }
 }
