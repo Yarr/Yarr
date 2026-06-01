@@ -55,7 +55,7 @@ Histo3dT<DataT>::Histo3dT(std::string arg_name, unsigned arg_xbins, double arg_x
         unsigned arg_ybins, double arg_ylow, double arg_yhigh, 
         unsigned arg_zbins, double arg_zlow, double arg_zhigh, 
         const LoopStatus &stat)
-  : HistogramBase(arg_name, stat)
+  : HistogramBase(std::move(arg_name), stat)
 {
     xbins = arg_xbins;
     xlow = arg_xlow;
@@ -444,8 +444,10 @@ void Histo3dT<DataT>::plot(const std::string &prefix, const std::string &dir) co
     FILE *gnu = popen(cmd.c_str(), "w");
     std::stringstream ss;
     toStream(ss);
-    fprintf(gnu,"%s",ss.str().c_str());
-    pclose(gnu);
+    if (fprintf(gnu,"%s",ss.str().c_str()) < 0)
+        hlog->warn("Failed to write histogram data to gnuplot");
+    if (pclose(gnu) != 0)
+        hlog->warn("gnuplot exited with error while plotting {}", name);
 }
 
 template<typename DataT>

@@ -79,7 +79,7 @@ using RawDataPtr = std::shared_ptr<RawData>;
 class RawDataContainer {
     public:
         /** Create empty container */
-        RawDataContainer(LoopStatus &&s) : stat(s) {}
+        RawDataContainer(const LoopStatus &s) : stat(s) {}
         
         /** Destroy attached RawData. */
         ~RawDataContainer()=default;

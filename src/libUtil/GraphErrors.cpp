@@ -221,8 +221,10 @@ void GraphErrors::plot(const std::string &prefix, const std::string &dir) const 
   FILE *gnu = popen(cmd.c_str(), "w");
   std::stringstream ss;
   toStream(ss);
-  fprintf(gnu, "%s", ss.str().c_str());
-  pclose(gnu);
+  if (fprintf(gnu, "%s", ss.str().c_str()) < 0)
+      gelog->warn("Failed to write graph data to gnuplot");
+  if (pclose(gnu) != 0)
+      gelog->warn("gnuplot exited with error while plotting {}", getName());
 }
 
 bool GraphErrors::hasXerrs() const {

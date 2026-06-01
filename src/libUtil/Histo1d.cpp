@@ -286,8 +286,10 @@ void Histo1d::plot(const std::string &prefix, const std::string &dir) const {
     FILE *gnu = popen(cmd.c_str(), "w");
     std::stringstream ss;
     toStream(ss);
-    fprintf(gnu,"%s",ss.str().c_str());
-    pclose(gnu);
+    if (fprintf(gnu,"%s",ss.str().c_str()) < 0)
+        hlog->warn("Failed to write histogram data to gnuplot");
+    if (pclose(gnu) != 0)
+        hlog->warn("gnuplot exited with error while plotting {}", name);
 }
 
 int Histo1d::binNum(double x) const {
