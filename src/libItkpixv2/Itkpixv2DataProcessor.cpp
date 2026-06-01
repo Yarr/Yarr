@@ -294,6 +294,9 @@ void Itkpixv2DataProcessor::process_core()
             }
             // Create a new event
             // RD53C can return l1id/bcid values according to chip config registers
+            if (!_curOut) {
+                _curOut = std::make_unique<FrontEndData>(_curInV->stat);
+            }
             _curOut->newEvent(_tag, _l1id, _bcid);
             _events++;
             sendFeedback(_tag, _bcid);
@@ -460,6 +463,9 @@ void Itkpixv2DataProcessor::process_core()
                             {
                                 // This is now possible if the event is so long that it spreads over raw data containers
                                 // logger->warn("[{}] No header in data fragment!", _channel);
+                                if (!_curOut) {
+                                    _curOut = std::make_unique<FrontEndData>(_curInV->stat);
+                                }
                                 _curOut->newEvent(_tag, _l1id, _bcid);
                                 _events++;
                                 _splitEventsCnt++;
@@ -513,6 +519,9 @@ void Itkpixv2DataProcessor::process_core()
                         {
                             // This is now possible if an event is so long that it spread over raw data containers
                             // logger->warn("[{}] No header in data fragment!", _channel);
+                            if (!_curOut) {
+                                _curOut = std::make_unique<FrontEndData>(_curInV->stat);
+                            }
                             _curOut->newEvent(_tag, _l1id, _bcid);
                             _events++;
                             _splitEventsCnt++;
@@ -578,15 +587,17 @@ bool Itkpixv2DataProcessor::getNextDataBlockImpl()
         }
         _wordIdx += 2; // Increase block index
 
-        // Segfault will happen at the next line, print circular buffer results
-        if (unlikely(_curInV->data.size() <= _rawDataIdx)) {
-            logger->error("[{}] DataProcessor is entering segfault case! _curInV size {}, _rawDataIdx {}, 0x{:x} 0x{:x}", m_feCfg->getName(), _curInV->data.size(), _rawDataIdx, _data[0], _data[1]);
+        // Guard against out-of-range raw data access before dereferencing.
+        if (unlikely(_rawDataIdx >= static_cast<int>(_curInV->data.size()))) {
+            logger->error("[{}] DataProcessor reached end of raw data container. _curInV size {}, _rawDataIdx {}, 0x{:x} 0x{:x}", m_feCfg->getName(), _curInV->data.size(), _rawDataIdx, _data[0], _data[1]);
 #if USE_ITKPIX_DEBUG_BUFFER > 0
             dumpDebugBuffer();
 #endif
+            // Force the "cannot get more data" path below.
+            _rawDataIdx = _curInV->size();
         }
 
-        if (_wordIdx >= _curInV->data[_rawDataIdx]->getSize())
+        if (_rawDataIdx < static_cast<int>(_curInV->data.size()) && _wordIdx >= _curInV->data[_rawDataIdx]->getSize())
         {
             _rawDataIdx++;
             _wordIdx = 0;
