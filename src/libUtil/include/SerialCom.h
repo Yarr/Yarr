@@ -9,12 +9,12 @@ class SerialCom {
         SerialCom();
         SerialCom(std::string deviceName);
         ~SerialCom();
-    
-        void init(std::string deviceName);
+
+        void init(const std::string& deviceName);
         void config();
         
         int write(char *buf, size_t length) const;
-        int write(std::string buf) const;
+        int write(const std::string& buf) const;
         int read(char *buf, size_t length) const;
         int read(std::string &buf) const;
     
@@ -24,8 +24,8 @@ class SerialCom {
         int dev;
 
         speed_t baudrate;
-        struct termios tty;
-        struct termios tty_old;
+        struct termios tty = {};
+        struct termios tty_old = {};
 };
 
 #endif

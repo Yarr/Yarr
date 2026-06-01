@@ -55,7 +55,7 @@ class ScanBase : public ScanLoopInfo {
 
     protected:
         LoopEngine engine;
-        void addLoop(std::shared_ptr<LoopActionBase> l);
+        void addLoop(const std::shared_ptr<LoopActionBase>& l);
         TxCore *g_tx;
         RxCore *g_rx;
         Bookkeeper *g_bk;

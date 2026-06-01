@@ -76,10 +76,10 @@ class Fei4GlobalCfg {
         void loadConfig(const json &j);
     public:
         static const unsigned numRegs = 36;
-        uint16_t cfg[numRegs];
+        uint16_t cfg[numRegs] = {};
         Fei4GlobalCfg();
 
-        void toFilePlain(std::string filename) const;
+        void toFilePlain(const std::string& filename) const;
         void fromFilePlain(std::string filename);
 
         void setValue(Fei4Register Fei4GlobalCfg::*ref, const uint16_t& cfgBits) {

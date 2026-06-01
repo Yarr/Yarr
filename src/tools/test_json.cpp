@@ -51,7 +51,7 @@ std::ostream &operator <<(std::ostream &os, ConfigType &ct) {
   return os;
 }
 
-ConfigType fromString(std::string s) {
+ConfigType fromString(const std::string& s) {
   if(s == "CONNECTIVITY") return ConfigType::CONNECTIVITY;
   if(s == "CONTROLLER") return ConfigType::CONTROLLER;
   if(s == "FRONT_END") return ConfigType::FRONT_END;
@@ -154,7 +154,7 @@ bool testScanConfig(const json &scanConfig) {
   }
 }
 
-int checkJsonFE(json &jsonConfig, std::string fe_name) {
+int checkJsonFE(json &jsonConfig, const std::string& fe_name) {
   auto fe = std::move(StdDict::getFrontEnd(fe_name));
   if(!fe) {
     std::cout << "FrontEnd not found: " << fe_name << "!\n";

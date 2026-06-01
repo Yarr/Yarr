@@ -325,7 +325,7 @@ void Rd53aReadRegLoop::loadConfig(const json &config) {
     }
 
     if (config.contains("VoltMux"))
-        for(auto Reg : config["VoltMux"])
+        for(const auto& Reg : config["VoltMux"])
         {
             if( ( int(Reg) >=3 && int(Reg)<=8) || (int(Reg)>=14 && int(Reg)<=15) )
                 m_TempMux.push_back(Reg);
@@ -333,11 +333,11 @@ void Rd53aReadRegLoop::loadConfig(const json &config) {
                 m_VoltMux.push_back(Reg);
         }
     if (config.contains("CurMux"))
-        for(auto Reg : config["CurMux"])
+        for(const auto& Reg : config["CurMux"])
             m_CurMux.push_back(Reg);
 
     if (config.contains("Registers"))
-        for (auto Reg: config["Registers"]) {
+        for (const auto& Reg: config["Registers"]) {
             m_STDReg.push_back(Reg);
 
             // If Reg is ALL, instead loop over all registers

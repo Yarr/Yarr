@@ -151,8 +151,8 @@ void StarTrimDacAnalysis::fillOneTrimDacInfoFromThreshold(TrimRangeTrimDac key, 
 */
 std::vector<int> StarTrimDacAnalysis::getTrimRanges(const std::map<unsigned, std::map<TrimRangeTrimDac, double> > & mapThresholdVsTrimDacVsChannelNumber) const {
   std::vector<int> trimRanges;
-  for (auto thVsTRvsTDVsCh : mapThresholdVsTrimDacVsChannelNumber){
-    for (auto thVsTRvsTD : thVsTRvsTDVsCh.second) {
+  for (const auto& thVsTRvsTDVsCh : mapThresholdVsTrimDacVsChannelNumber){
+    for (const auto& thVsTRvsTD : thVsTRvsTDVsCh.second) {
       int trimRange = thVsTRvsTD.first.range();
       if (std::find(trimRanges.begin(), trimRanges.end(), trimRange) == trimRanges.end())
         trimRanges.push_back(trimRange);
@@ -191,7 +191,8 @@ std::map<int, double> StarTrimDacAnalysis::findTargetThresholds(const std::map<u
           hNTrimmable->setXaxisTitle("Threshold [e]");
           hNTrimmable->setYaxisTitle("Number of trimmable channels");
           double targetThr=-1; int maxMultOverAllThresholds=-1;
-          for (double thr=maxThr; thr>=minThr; thr-=stepThr) {
+          for (int iStep=0; iStep<=nStepsThr; iStep++) {
+              double thr = maxThr - iStep * stepThr;
                 std::map<unsigned,int> mapOfTrims;
                 int maxMultForChipOverTrimRanges = 0.;
                 for (auto trimRange : trimRanges) {

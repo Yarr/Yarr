@@ -28,7 +28,7 @@ class LoopEngine : public Engine {
         ~LoopEngine();
         
         /** Add loop action to this engine */
-        void addAction(Engine::element_value_type el);
+        void addAction(const Engine::element_value_type& el);
         
         /** Initialise all the layers of the scan */
         void init();

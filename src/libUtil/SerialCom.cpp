@@ -22,7 +22,7 @@ SerialCom::~SerialCom() {
         close(dev);
 }
 
-void SerialCom::init(std::string deviceName) {
+void SerialCom::init(const std::string& deviceName) {
     dev = open(deviceName.c_str(), O_RDWR | O_NOCTTY);
     this->config();
 }
@@ -64,7 +64,7 @@ int SerialCom::read(char *buf, size_t length) const {
     return ::read(dev, buf, length);
 }
 
-int SerialCom::write(std::string buf) const {
+int SerialCom::write(const std::string& buf) const {
     //std::cout << __PRETTY_FUNCTION__ << " : " << buf << std::endl;
     return ::write(dev, buf.c_str(), buf.size());
 }

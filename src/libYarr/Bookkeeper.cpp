@@ -194,7 +194,7 @@ void Bookkeeper::joinFeClipboardMonitor() {
     clipboardMonitorThread_ptr->join();
 }
 
-void Bookkeeper::addFeClipboardMonitor(unsigned arg_id, std::string arg_name) {
+void Bookkeeper::addFeClipboardMonitor(unsigned arg_id, const std::string& arg_name) {
     clipboardMonitorFeIDs.push_back(arg_id);
     clipboardMonitorFeNames.push_back(arg_name);
 }

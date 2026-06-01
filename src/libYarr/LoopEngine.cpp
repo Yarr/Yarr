@@ -15,7 +15,7 @@ LoopEngine::LoopEngine(Bookkeeper *k) {
 LoopEngine::~LoopEngine() = default;
 
 // Add an item/loop to the engine
-void LoopEngine::addAction(Engine::element_value_type el){
+void LoopEngine::addAction(const Engine::element_value_type& el){
     m_list.push_back(el);
 }
 

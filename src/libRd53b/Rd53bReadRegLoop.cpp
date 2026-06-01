@@ -386,15 +386,15 @@ void Rd53bReadRegLoop::loadConfig(const json &config)
         m_RingOscDur = config["RingOscDur"];
 
     if (config.contains("VoltMux"))
-        for (auto Reg : config["VoltMux"])
+        for (const auto& Reg : config["VoltMux"])
             m_VoltMux.push_back(Reg);
 
     if (config.contains("CurMux"))
-        for (auto Reg : config["CurMux"])
+        for (const auto& Reg : config["CurMux"])
             m_CurMux.push_back(Reg);
 
     if (config.contains("Registers"))
-        for (auto Reg : config["Registers"])
+        for (const auto& Reg : config["Registers"])
         {
             m_STDReg.push_back(Reg);
 
@@ -413,10 +413,10 @@ void Rd53bReadRegLoop::loadConfig(const json &config)
         }
     
     if (config.contains("TempSensors"))
-        for (auto Reg : config["TempSensors"])
+        for (const auto& Reg : config["TempSensors"])
             m_TempSensors.push_back(Reg);
 
     if (config.contains("RadSensors"))
-        for (auto Reg : config["RadSensors"])
+        for (const auto& Reg : config["RadSensors"])
             m_RadSensors.push_back(Reg);                
 }

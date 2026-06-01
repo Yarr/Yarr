@@ -33,7 +33,7 @@ int _bitIdx = 0;
 uint32_t *_data = NULL;
 std::unique_ptr<RawData> _curIn;
 
-void printHelp(const std::string exe)
+void printHelp(const std::string& exe)
 {
     std::cout << "Usage: " << exe << " [options]" << std::endl;
     std::cout << "Allowed options:" << std::endl;
@@ -53,13 +53,13 @@ public:
         outputStream.clear();
         auxStream1.clear();
     }
-    void fill(std::string input, const std::string output, const std::string name, const bool startNewLine = false);
-    void save(const std::string outputFileName);
+    void fill(std::string input, const std::string& output, const std::string& name, const bool startNewLine = false);
+    void save(const std::string& outputFileName);
     void block(const uint64_t blockStream);
-    void remain(const std::string input);
+    void remain(const std::string& input);
 
 private:
-    std::string decorate(const std::string str, const unsigned length, const char separator);
+    std::string decorate(const std::string& str, const unsigned length, const char separator);
     std::vector<std::stringstream *> inputStream;
     std::vector<std::stringstream *> outputStream;
     std::vector<std::stringstream *> auxStream1;
@@ -68,7 +68,7 @@ private:
     std::string _remain;
 };
 
-void Rd53bDecodeHelper::fill(std::string input, const std::string output, const std::string name, const bool startNewLine)
+void Rd53bDecodeHelper::fill(std::string input, const std::string& output, const std::string& name, const bool startNewLine)
 {
     if (startNewLine)
     {
@@ -89,7 +89,7 @@ void Rd53bDecodeHelper::fill(std::string input, const std::string output, const 
     *auxStream2.back() << decorate("", maxLength, '_');
 }
 
-std::string Rd53bDecodeHelper::decorate(const std::string str, const unsigned length, const char separator)
+std::string Rd53bDecodeHelper::decorate(const std::string& str, const unsigned length, const char separator)
 {
     unsigned left = (length - str.length()) / 2;
     unsigned right = length - str.length() - left;
@@ -102,7 +102,7 @@ std::string Rd53bDecodeHelper::decorate(const std::string str, const unsigned le
     return output;
 }
 
-void Rd53bDecodeHelper::save(const std::string outputFileName)
+void Rd53bDecodeHelper::save(const std::string& outputFileName)
 {
     std::ofstream fout(outputFileName);
     for (int is = 0; is < inputStream.size(); is++)
@@ -124,7 +124,7 @@ void Rd53bDecodeHelper::block(const uint64_t blockStream)
     *auxStream3.back() << std::bitset<64>(blockStream);
 }
 
-void Rd53bDecodeHelper::remain(const std::string input)
+void Rd53bDecodeHelper::remain(const std::string& input)
 {
     fill(input, "", "Remain");
     _remain = input;
@@ -250,13 +250,14 @@ uint16_t readRow(Rd53bDecodeHelper *h)
                 nShift[lv + 1][nRead[lv + 1]++] = nShift[lv][ir] + _LUT_BinaryTreeMaskSize[lv];
                 nShift[lv + 1][nRead[lv + 1]++] = nShift[lv][ir];
                 break;
+            default: break;
             }
         }
     }
     return hitmap;
 }
 
-int readInData(std::string inputStreamFileName, int nStream = -1)
+int readInData(const std::string& inputStreamFileName, int nStream = -1)
 {
     std::cout << "Reading encoded data...";
     uint32_t address = 0xFFFFFFFF;

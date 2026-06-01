@@ -153,7 +153,7 @@ void Fei4GlobalCfg::init() {
 }
 
 
-void Fei4GlobalCfg::toFilePlain(std::string filename) const {
+void Fei4GlobalCfg::toFilePlain(const std::string& filename) const {
     std::fstream file(filename, std::fstream::out | std::fstream::trunc);
     
     file << "# FEI4B-global-config" << std::endl;
@@ -173,8 +173,7 @@ void Fei4GlobalCfg::toFilePlain(std::string filename) const {
 
 
 void Fei4GlobalCfg::writeConfig(json &j) {
-    typedef std::map<std::string, Fei4Register Fei4GlobalCfg::*>::iterator it_type;
-    for(it_type iterator = regMap.begin(); iterator != regMap.end(); iterator++) {
+    for(auto iterator = regMap.begin(); iterator != regMap.end(); iterator++) {
          j["FE-I4B"]["GlobalConfig"][iterator->first] = (this->*iterator->second).value();
     }
 
@@ -184,9 +183,8 @@ void Fei4GlobalCfg::loadConfig(const json &j) {
     if (!j.contains("FE-I4B") || !j["FE-I4B"].contains("GlobalConfig")) {
         return;
     }
-    typedef std::map<std::string, Fei4Register Fei4GlobalCfg::*>::iterator it_type;
     auto &jconfig = j["FE-I4B"]["GlobalConfig"];
-    for(it_type iterator = regMap.begin(); iterator != regMap.end(); iterator++) {
+    for(auto iterator = regMap.begin(); iterator != regMap.end(); iterator++) {
         if (jconfig.contains(iterator->first))
             (this->*iterator->second).write((uint16_t) jconfig[iterator->first]);
     }

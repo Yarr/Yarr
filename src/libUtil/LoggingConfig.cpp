@@ -143,7 +143,7 @@ void setupLoggers(const json &j, const std::string &path) {
                 sink = other_sinks[sink_name];
             }
 
-            auto logger_apply = [&](std::shared_ptr<spdlog::logger> l) {
+            auto logger_apply = [&](const std::shared_ptr<spdlog::logger>& l) {
                 // Only if this sink is not already in list
                 bool already_present = false;
                 for(auto &ll: l->sinks()) {
@@ -195,7 +195,7 @@ void setupLoggers(const json &j, const std::string &path) {
 void listLoggers(bool print_details) {
     std::string_view def_name = "(default)";
     std::vector<std::string> log_list;
-    spdlog::apply_all([&](std::shared_ptr<spdlog::logger> l) {
+    spdlog::apply_all([&](const std::shared_ptr<spdlog::logger>& l) {
         if(l->name().empty()) {
             log_list.push_back("(default)");
         } else {

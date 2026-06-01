@@ -209,7 +209,7 @@ void StarSeqGenerator::addCommand(const std::string& command) {
     std::istream_iterator<std::string>{cmd_ss}, std::istream_iterator<std::string>{}
   };
 
-  std::string cmd_type = tokens.at(0);
+  const std::string& cmd_type = tokens.at(0);
 
   if (cmd_type == "idle") {
     addIdle(tokens);

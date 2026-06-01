@@ -205,7 +205,7 @@ void Itkpixv2ReadRegLoop::execPart1()
                 }
             }
 
-            for (auto Reg : m_RadSensors) {
+            for (const auto& Reg : m_RadSensors) {
                 if (Reg == "BJT") {
                     float RadValDSLDO = ReadTransSensor(feItkpixv2, DSLDO, BJT, Itkpixv2Cfg::Other);
                     float RadValASLDO = ReadTransSensor(feItkpixv2, ASLDO, BJT, Itkpixv2Cfg::Other);
@@ -384,15 +384,15 @@ void Itkpixv2ReadRegLoop::loadConfig(const json &config)
         m_RingOscDur = config["RingOscDur"];
 
     if (config.contains("VoltMux"))
-        for (auto Reg : config["VoltMux"])
+        for (const auto& Reg : config["VoltMux"])
             m_VoltMux.push_back(Reg);
 
     if (config.contains("CurMux"))
-        for (auto Reg : config["CurMux"])
+        for (const auto& Reg : config["CurMux"])
             m_CurMux.push_back(Reg);
 
     if (config.contains("Registers"))
-        for (auto Reg : config["Registers"])
+        for (const auto& Reg : config["Registers"])
         {
             m_STDReg.push_back(Reg);
 
@@ -411,10 +411,10 @@ void Itkpixv2ReadRegLoop::loadConfig(const json &config)
         }
     
     if (config.contains("TempSensors"))
-        for (auto Reg : config["TempSensors"])
+        for (const auto& Reg : config["TempSensors"])
             m_TempSensors.push_back(Reg);
 
     if (config.contains("RadSensors"))
-        for (auto Reg : config["RadSensors"])
+        for (const auto& Reg : config["RadSensors"])
             m_RadSensors.push_back(Reg);                
 }

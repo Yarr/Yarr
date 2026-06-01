@@ -142,7 +142,7 @@ class Bookkeeper {
         /** Configure the clipboard monitor thread. */
         void setFeClipboardMonitorRefreshTime(unsigned arg_clipboardMonitorRefreshTime);
         /** Add FrontEnd to clipboard monitor thread. */
-        void addFeClipboardMonitor(unsigned arg_id, std::string arg_name);
+        void addFeClipboardMonitor(unsigned arg_id, const std::string& arg_name);
 
         ClipBoard<HistogramBase> &getLoopHistograms();
 
@@ -157,13 +157,13 @@ class Bookkeeper {
         std::map<unsigned, std::vector<unsigned>> rxToIdMap;
         std::shared_ptr<StdTriggerAction> m_trigLoop = nullptr;
 
-        int target_tot;
-        int target_threshold;
-        int target_charge;
+        int target_tot = 0;
+        int target_threshold = 0;
+        int target_charge = 0;
 
         // Clipboard monitoring thread/variables
-        unsigned clipboardMonitorRefreshTime;
-        bool runClipboardMonitor;
+        unsigned clipboardMonitorRefreshTime = 0;
+        bool runClipboardMonitor = false;
 
         std::unique_ptr<ClipBoard<HistogramBase>> loop_histograms;
         std::unique_ptr<std::thread> clipboardMonitorThread_ptr;

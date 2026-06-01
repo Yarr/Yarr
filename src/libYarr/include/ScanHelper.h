@@ -101,7 +101,7 @@ namespace ScanHelper {
                                   int target_tot, int target_charge);
 
         void buildAnalyses( std::map<unsigned, std::vector<std::unique_ptr<AnalysisDataProcessor>> >& analyses,
-                            const json& scanType, Bookkeeper& bookie, const ScanLoopInfo* s, FeedbackClipboardMap *fbMap, int mask_opt, std::string outputDir,
+                            const json& scanType, Bookkeeper& bookie, const ScanLoopInfo* s, FeedbackClipboardMap *fbMap, int mask_opt, const std::string& outputDir,
                             int target_tot, int target_charge);
         void buildAnalysisHierarchy(AlgoTieredIndex& indexTiers,
                                     const json &anaCfg);
