@@ -43,6 +43,7 @@ int main(int argc, char* argv[])
         case 'o':
             outputDir = std::string(optarg) + std::string("/");
             break;
+        default: break;
         }
     }
 
