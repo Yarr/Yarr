@@ -26,9 +26,9 @@ class PeripheralI2C {
         int readData(uint32_t *value);
         int sendNack();
     private:
-        SpecCom *spec;
-        uint32_t last_dev_addr;
-        uint32_t last_reg_addr;
+        SpecCom *spec = nullptr;
+        uint32_t last_dev_addr = 0;
+        uint32_t last_reg_addr = 0;
         //uint32_t last_rw;
         int checkTip();
 };

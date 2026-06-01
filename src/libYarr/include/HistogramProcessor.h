@@ -40,8 +40,8 @@ class HistogrammerProcessor : public HistoDataProcessor {
         void publish();
 
     private:
-        ClipBoard<EventDataBase> *input;
-        ClipBoard<HistogramBase> *output;
+        ClipBoard<EventDataBase> *input = nullptr;
+        ClipBoard<HistogramBase> *output = nullptr;
         std::unique_ptr<std::thread> thread_ptr;
 
         std::vector<std::unique_ptr<HistogramAlgorithm>> algorithms;

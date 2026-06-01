@@ -25,7 +25,7 @@ class Rd53bCoreColLoop : public LoopActionBase {
         unsigned m_maxCore;
         bool m_usePToT;
         bool m_disUnused;
-        bool m_resetAtEnd;
+        bool m_resetAtEnd = false;
         bool m_ignoreDis;
         bool m_skipDis;
 

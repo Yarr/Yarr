@@ -173,7 +173,7 @@ Rd53bEncodingTool::StatusCode Rd53bEncodingTool::createStream(Rd53bChipMap &chip
           //h.row = phi;
           //h.tot = tots.at(el-1);
           //m_truthHits.push_back(h);
-          FrontEndHit feHit;
+          FrontEndHit feHit = {};
           feHit.col = eta + 1;
           feHit.row = phi + 1;
           feHit.tot = tots.at(el - 1) - 1;

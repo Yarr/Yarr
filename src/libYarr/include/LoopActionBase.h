@@ -92,19 +92,19 @@ class LoopActionBase : public LoopActionBaseInfo {
         /// Is loop complete
         virtual bool done();
 
-        bool m_done;
+        bool m_done = false;
 
-        double progress;
+        double progress = 0.0;
 
-        LoopStatusMaster *g_stat;
-        FrontEnd *g_fe;
-        TxCore *g_tx;
-        RxCore *g_rx;
-		Bookkeeper *keeper;
+        LoopStatusMaster *g_stat = nullptr;
+        FrontEnd *g_fe = nullptr;
+        TxCore *g_tx = nullptr;
+        RxCore *g_rx = nullptr;
+		Bookkeeper *keeper = nullptr;
 
         std::type_index loopType;
 
-        ClipBoard<HistogramBase> *loopHistos;
+        ClipBoard<HistogramBase> *loopHistos = nullptr;
 
     private:
         void execStep();

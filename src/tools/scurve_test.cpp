@@ -21,15 +21,15 @@ int main(int argc, char* argv[]) {
     const double step_size = 10;
     const unsigned steps = 300;
     const unsigned n_samples = 1000;
-    std::array<std::array<double, steps>, n_samples> sample;
+    std::array<std::array<double, steps>, n_samples> sample = {};
     for (unsigned i=0; i<n_samples; i++) {
         for (unsigned j=0; j<steps; j++) {
             sample[i][j] = 0;
         }
     }
-    
-    
-    std::array<double, steps> x;
+
+
+    std::array<double, steps> x = {};
     for (unsigned i=0; i<steps; i++) {
         x[i] = i*step_size;
     }

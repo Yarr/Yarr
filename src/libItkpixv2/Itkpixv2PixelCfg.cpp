@@ -22,7 +22,7 @@ Itkpixv2PixelCfg::Itkpixv2PixelCfg() {
 }
 
 void Itkpixv2PixelCfg::setReg(unsigned col, unsigned row, unsigned en, unsigned injen, unsigned hitbus, int tdac) {
-    Itkpixv2PixelCfg::pixelBits reg;
+    Itkpixv2PixelCfg::pixelBits reg = {};
     reg.s.en = en;
     reg.s.injen = injen;
     reg.s.hitbus = hitbus;
@@ -53,7 +53,7 @@ void Itkpixv2PixelCfg::setHitbus(unsigned col, unsigned row, unsigned v) {
 }
 
 void Itkpixv2PixelCfg::setTDAC(unsigned col, unsigned row, int v) {
-    Itkpixv2PixelCfg::pixelBits reg;
+    Itkpixv2PixelCfg::pixelBits reg = {};
     reg.u8 = (pixRegs[col/2][row] >> ((col&0x1)*8)) & 0xFF;
     reg.s.tdac = abs(v);
     reg.s.sign = (v < 0) ? 0x1 : 0x0;
@@ -74,7 +74,7 @@ unsigned Itkpixv2PixelCfg::getHitbus(unsigned col, unsigned row) {
 }
 
 int Itkpixv2PixelCfg::getTDAC(unsigned col, unsigned row) {
-    Itkpixv2PixelCfg::pixelBits reg;
+    Itkpixv2PixelCfg::pixelBits reg = {};
     reg.u8 = (pixRegs[col/2][row] >> ((col&0x1)*8)) & 0xFF;
     return ((int)reg.s.tdac * (reg.s.sign == 0 ? +1 : -1));
 }

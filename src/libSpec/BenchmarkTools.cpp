@@ -8,22 +8,22 @@
 
 namespace BenchmarkTools {
    double measureWriteTime(SpecCom *spec, uint32_t addr, uint32_t *data, size_t size, int repetitions) {
-       timeval start, end;
-       gettimeofday(&start, NULL);
+       timeval start = {}, end = {};
+       gettimeofday(&start, nullptr);
        for (int loop = 0; loop<repetitions; loop++)
            if (spec->writeDma(addr, data, size)) return -1;
-       gettimeofday(&end, NULL);
+       gettimeofday(&end, nullptr);
        double time = (end.tv_sec - start.tv_sec) * 1000.0; //msecs
        time += (end.tv_usec - start.tv_usec) / 1000.0; //usecst
        return time;
    }
 
    double measureReadTime(SpecCom *spec, uint32_t addr, uint32_t *data, size_t size, int repetitions) {
-       timeval start, end;
-       gettimeofday(&start, NULL);
+       timeval start = {}, end = {};
+       gettimeofday(&start, nullptr);
        for (int loop = 0; loop<repetitions; loop++)
            if (spec->readDma(addr, data, size)) return -1;
-       gettimeofday(&end, NULL);
+       gettimeofday(&end, nullptr);
        double time = (end.tv_sec - start.tv_sec) * 1000.0; //msecs
        time += (end.tv_usec - start.tv_usec) / 1000.0; //usecst
        return time;

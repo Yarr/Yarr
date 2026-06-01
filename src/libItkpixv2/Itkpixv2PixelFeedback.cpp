@@ -95,7 +95,7 @@ void Itkpixv2PixelFeedback::init() {
             auto fe = keeper->getFe(id);
             if (fe->getActive()) {
                 auto itkpix = dynamic_cast<Itkpixv2*>(fe);
-                m_fb[id] = NULL;
+                m_fb[id] = nullptr;
                 for (unsigned col=1; col<=Itkpixv2::n_Col; col++) {
                     for (unsigned row=1; row<=Itkpixv2::n_Row; row++) {
                         //Initial TDAC in mid of the range

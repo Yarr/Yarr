@@ -17,7 +17,7 @@ LMK61E2::LMK61E2(SimpleI2C &i2c, uint8_t dev) : m_i2c(i2c)
 
 uint8_t LMK61E2::readRegister(uint8_t addr)
 {
-	uint8_t ret;
+	uint8_t ret = 0;
 
 	// set register address
 	m_i2c.write(m_dev, &addr, 1);
@@ -42,7 +42,7 @@ void LMK61E2::writeRegister(uint8_t addr, uint8_t value)
 
 uint16_t LMK61E2::getVendor()
 {
-	uint16_t ret;
+	uint16_t ret = 0;
 
 	ret = (uint16_t) readRegister(LMK61E2_VNDRID_BY1) << 8;
 	ret |= (uint16_t) readRegister(LMK61E2_VNDRID_BY0);
@@ -62,7 +62,7 @@ uint8_t LMK61E2::getRevision(void)
 
 LMK61E2::LMK61E2ClockConfig LMK61E2::getConfiguration()
 {
-	LMK61E2::LMK61E2ClockConfig config;
+	LMK61E2::LMK61E2ClockConfig config = {};
 
 	// get reference doubling
 	config.refDoubling = readRegister(LMK61E2_PLL_CTRL0) & 0x20;
@@ -186,7 +186,7 @@ double LMK61E2::setOutputFrequency(double outputFrequencyMHz, bool useRefDoublin
 	std::cout << "best config: outputDivider=" << outputDivider_best << ", integer=" << pllInteger_best << ", num=" << pllNumerator_best << ", den=" << pllDenominator_best << std::endl;
 
 	// update configuration
-	LMK61E2::LMK61E2ClockConfig config;
+	LMK61E2::LMK61E2ClockConfig config = {};
 	config.refDoubling = useRefDoubling;
 	config.pllInteger = pllInteger_best;
 	config.pllNumerator = pllNumerator_best;

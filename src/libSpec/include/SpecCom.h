@@ -144,11 +144,11 @@ class SpecCom {
         uint32_t getSpecIdentLaneCfg(uint32_t fw_ident);
    
     private:
-        unsigned int specId;
-        bool is_initialized;
-        bool do_reset;
-        SpecDevice *spec;
-        void *bar0, *bar4;
+        unsigned int specId = 0;
+        bool is_initialized = false;
+        bool do_reset = true;
+        SpecDevice *spec = nullptr;
+        void *bar0 = nullptr, *bar4 = nullptr;
 
         void init();
         void configure();

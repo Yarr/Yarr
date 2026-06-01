@@ -27,11 +27,11 @@ class StdParameterLoop : public LoopActionBase, public StdParameterAction {
         void execPart1() override;
         void execPart2() override;
 
-        unsigned m_cur;
-        std::chrono::microseconds m_waitTime;
-        bool m_checkActiveLoop;
+        unsigned m_cur = 0;
+        std::chrono::microseconds m_waitTime = {};
+        bool m_checkActiveLoop = false;
         std::string m_secondaryParName = "";
-        int m_secondaryOffset;
+        int m_secondaryOffset = 0;
 };
 
 #endif

@@ -33,10 +33,10 @@ class StarThrottleLoop : public LoopActionBase, public GlobalFeedbackReceiver {
         void feedbackBinary(unsigned channel, double sign, bool last) override {}
 
     private:
-        Register StarCfg::*parPtr;
-        SubRegister* StarCfg::*subRegPtr;
+        Register StarCfg::*parPtr = nullptr;
+        SubRegister* StarCfg::*subRegPtr = nullptr;
         std::string m_subRegName;
-        unsigned m_iters, m_trigs, max_iters, m_curStep;
+        unsigned m_iters = 0, m_trigs = 0, max_iters = 0, m_curStep = 0;
 
         std::mutex m_fbMutex;
         std::map<unsigned, int> m_values;

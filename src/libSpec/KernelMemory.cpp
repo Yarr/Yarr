@@ -26,7 +26,7 @@ using namespace specDriver;
  */
 KernelMemory::KernelMemory(SpecDevice& dev, unsigned int size)
 {
-	void *m_ptr = NULL;
+	void *m_ptr = nullptr;
 	kmem_handle_t kh = {0};
 	int dev_handle = 0;
 	
@@ -53,7 +53,7 @@ KernelMemory::KernelMemory(SpecDevice& dev, unsigned int size)
 		goto pd_allockm_err;
 	
 	m_ptr = mmap( 0, size, PROT_WRITE | PROT_READ, MAP_SHARED, dev_handle, 0 );
-	if ((m_ptr == MAP_FAILED) || (m_ptr == NULL))
+	if ((m_ptr == MAP_FAILED) || (m_ptr == nullptr))
 		goto pd_allockm_err;
 
 	this->mem = m_ptr;

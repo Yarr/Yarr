@@ -49,7 +49,7 @@ class Rd53bPixelCfg {
         
         using PixelArray = std::array<std::array<uint16_t, n_Row>, n_DC>;
 
-        PixelArray pixRegs;
+        PixelArray pixRegs = {};
         static uint16_t getPixelBit(PixelArray &input, unsigned col, unsigned row, unsigned bit);
         static uint16_t toTenBitMask(uint16_t pixReg);
 

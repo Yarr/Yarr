@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) {
     txCore.setCmdEnable(c.write_channels);
 
     static const size_t BUFFER_SIZE = 1000; 
-    std::array<uint8_t, BUFFER_SIZE> buffer;
+    std::array<uint8_t, BUFFER_SIZE> buffer = {};
 
     using clk = std::chrono::steady_clock;
     clk::time_point start_time = std::chrono::steady_clock::now();
@@ -138,7 +138,7 @@ int main(int argc, char* argv[]) {
         struct {
                 uint32_t adr;
                 uint32_t size;
-        } header;
+        } header = {};
 
         data_file.read((char *)&header, sizeof(header));
 

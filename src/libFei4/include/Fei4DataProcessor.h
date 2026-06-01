@@ -38,16 +38,16 @@ class Fei4DataProcessor : public FeDataProcessor {
 
     private:
         std::unique_ptr<std::thread> thread_ptr;
-        ClipBoard<RawDataContainer> *input;
-        ClipBoard<EventDataBase> *output;
+        ClipBoard<RawDataContainer> *input = nullptr;
+        ClipBoard<EventDataBase> *output = nullptr;
         ClipBoard<FeedbackProcessingInfo> *statusFb = nullptr;
-        unsigned hitDiscCfg;
-        std::array<std::array<unsigned, 16>, 3> totCode;
-        unsigned tag;
-        unsigned l1id;
-        unsigned bcid;
-        unsigned wordCount;
-        unsigned hits;        
+        unsigned hitDiscCfg = 0;
+        std::array<std::array<unsigned, 16>, 3> totCode = {};
+        unsigned tag = 0;
+        unsigned l1id = 0;
+        unsigned bcid = 0;
+        unsigned wordCount = 0;
+        unsigned hits = 0;        
         inline void sendFeedback(unsigned tag, unsigned bcid);
 };
 

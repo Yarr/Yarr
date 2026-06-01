@@ -54,7 +54,7 @@ SpecCom::SpecCom(unsigned int id, bool do_reset_arg) {
 
 SpecCom::~SpecCom() {
     spec->unmapBAR(0, bar0);
-    if (bar4 != NULL)
+    if (bar4 != nullptr)
         spec->unmapBAR(4, bar4);
     spec->close();
     delete spec;
@@ -132,7 +132,7 @@ int SpecCom::writeDma(uint32_t off, uint32_t *data, size_t words) {
         }
 
         // Ackowledge interrupt
-        if (bar4 != NULL) {
+        if (bar4 != nullptr) {
             volatile uint32_t irq_ack = this->read32(bar4, GNGPIO_INT_STATUS/4);
             (void) irq_ack;
         }
@@ -163,7 +163,7 @@ int SpecCom::readDma(uint32_t off, uint32_t *data, size_t words) {
         }
         
         // Ackowledge interrupt
-        if (bar4 != NULL) {
+        if (bar4 != nullptr) {
             volatile uint32_t irq_ack = this->read32(bar4, GNGPIO_INT_STATUS/4);
             (void) irq_ack;
         }
@@ -206,7 +206,7 @@ void SpecCom::init() {
         throw Exception(Exception::INIT_FAILED);
         return;
     }
-    bar4 = NULL;
+    bar4 = nullptr;
 
     // Get FW info
     fw_vers = readSingle(SPEC_GREG | SPEC_GREG_FWVERS);

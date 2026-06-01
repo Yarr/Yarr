@@ -35,16 +35,16 @@ class Fei4TriggerLoop: public LoopActionBase, public StdTriggerAction {
         
         uint32_t getExpEvents() override;
     private:
-        unsigned m_trigDelay;
-        float m_trigFreq;
-        float m_trigTime;
-        uint32_t m_trigWord[4];
-        uint32_t m_trigWordLength;
+        unsigned m_trigDelay = 0;
+        float m_trigFreq = 0.0f;
+        float m_trigTime = 0.0f;
+        uint32_t m_trigWord[4] = {};
+        uint32_t m_trigWordLength = 0;
 
-        bool m_noInject; // TODO implement in init
-        bool m_extTrigger; // TODO implement in init
+        bool m_noInject = false; // TODO implement in init
+        bool m_extTrigger = false; // TODO implement in init
 
-        bool isInner;
+        bool isInner = false;
 
         void init() override;
         void end() override;

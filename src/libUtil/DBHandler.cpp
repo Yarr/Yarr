@@ -177,7 +177,7 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir, bool i_back, bo
 	auto wait { 1000 };
 
 	while( true ) {
-	    std::array<char, 128> buffer;
+	    std::array<char, 128> buffer = {};
 	    std::string result;
 
 	    auto pipe = popen( ( "ps ux | grep \"" + m_upload_command + " " + i_option + "\" | wc -l " ).c_str(), "r" );
