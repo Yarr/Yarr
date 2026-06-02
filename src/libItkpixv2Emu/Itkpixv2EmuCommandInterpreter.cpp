@@ -141,6 +141,8 @@ void Itkpixv2EmuCommandInterpreter::readCommand(EmuCom* tx){
 
                     break;
                 }
+                default:
+                    break;
             }
             break;
         }

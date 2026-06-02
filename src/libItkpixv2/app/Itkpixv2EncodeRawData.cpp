@@ -82,6 +82,8 @@ int main(int argc, char** argv) {
         case 'h':
             usage(argv);
             return -1;
+        default:
+            break;
         }
     }
 

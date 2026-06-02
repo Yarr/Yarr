@@ -51,7 +51,7 @@ void Rd53aPixelFeedback::loadConfig(const json &j) {
         m_resetTdac = j["resetTdac"];
     if (j.contains("steps")) {
         m_steps.clear();
-        for(auto i: j["steps"])
+        for(const auto& i: j["steps"])
             m_steps.push_back(i);
         logger->debug("Got {} steps!", m_steps.size());
     }

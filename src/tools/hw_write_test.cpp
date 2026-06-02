@@ -114,7 +114,7 @@ int main(int argc, char* argv[]) {
 
     TxCore &txCore = *hwCtrl;
 
-    signal(SIGINT, [](int signum){
+    (void)signal(SIGINT, [](int signum){
         stop_signalled = true;
         logger->info("Received signal {}, stopping...", signum);
     });

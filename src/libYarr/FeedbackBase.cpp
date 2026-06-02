@@ -140,8 +140,7 @@ void GlobalFeedbackSender::feedback(unsigned channel, double sign, bool last)
     GlobalFeedbackParams params{sign, last};
     FeedbackParams::Variant v(params);
 
-    auto fbParams = std::unique_ptr<FeedbackParams>
-      (new FeedbackParams(false, false, std::move(v)));
+    auto fbParams = std::make_unique<FeedbackParams>(false, false, std::move(v));
 
     clip->pushData(std::move(fbParams));
 }

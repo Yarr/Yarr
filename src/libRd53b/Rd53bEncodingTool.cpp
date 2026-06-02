@@ -15,8 +15,8 @@ Rd53bEncodingTool::Rd53bEncodingTool() : m_addresscompression(true),
                                          m_debug(false)
 {
   m_testStreamsStr.clear();
-  m_chipMap = std::unique_ptr<Rd53bChipMap>(new Rd53bChipMap(400, 384, 8, 2));
-  m_truthData = std::unique_ptr<FrontEndData>(new FrontEndData());
+  m_chipMap = std::make_unique<Rd53bChipMap>(400, 384, 8, 2);
+  m_truthData = std::make_unique<FrontEndData>();
 }
 
 Rd53bEncodingTool::StatusCode Rd53bEncodingTool::saveDataStream()

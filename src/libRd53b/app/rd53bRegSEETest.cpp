@@ -189,7 +189,7 @@ void saveCfgFile(Rd53b &rd53b, const std::string& cfgFilePath, json globSEU)
     std::ofstream newCfgFile(cfgFilePath.c_str());
     json cfg;
     rd53b.writeConfig(cfg);
-    cfg["GlobalSEU"] = globSEU;
+    cfg["GlobalSEU"] = std::move(globSEU);
     newCfgFile << std::setw(4) << cfg;
     newCfgFile.close();
     logger->info("Output file {} saved.", cfgFilePath.c_str());
@@ -393,9 +393,9 @@ int main(int argc, char *argv[])
         for (unsigned idx = 0; idx < nRead; idx++)
         {
             /* Start files documenting bad pixels and raw data */
-            rawdata.reset(new std::ofstream(outputPrefix_stage + "_rawdata" + std::to_string(idx) + ".txt", std::ofstream::binary));
-            badpix.reset(new std::ofstream(outputPrefix_stage + "_badpix" + std::to_string(idx) + ".txt"));
-            badglob.reset(new std::ofstream(outputPrefix_stage + "_badglob" + std::to_string(idx) + ".txt"));
+            rawdata = std::make_unique<std::ofstream>(outputPrefix_stage + "_rawdata" + std::to_string(idx) + ".txt", std::ofstream::binary);
+            badpix = std::make_unique<std::ofstream>(outputPrefix_stage + "_badpix" + std::to_string(idx) + ".txt");
+            badglob = std::make_unique<std::ofstream>(outputPrefix_stage + "_badglob" + std::to_string(idx) + ".txt");
             /* Read back pixel registers */
             unsigned counter = 0;
             std::vector<std::pair<uint16_t, uint16_t>> address;

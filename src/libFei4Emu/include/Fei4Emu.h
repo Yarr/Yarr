@@ -78,7 +78,7 @@ class Fei4Emu {
         uint32_t m_l1IdCnt;
         uint32_t m_bcIdCnt;
 
-	PixelModel* m_pixelModelObjects[80][336];
+	PixelModel* m_pixelModelObjects[80][336] = {};
 	void initializePixelModelsFromFile(const json &cfg);
 
         // this is the file path to output the pixel model configuration

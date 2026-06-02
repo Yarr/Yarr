@@ -182,7 +182,7 @@ void Bookkeeper::startFeClipboardMonitor() {
 
     // start clipboard monitoring thread
     runClipboardMonitor = true;
-    clipboardMonitorThread_ptr.reset(new std::thread(&Bookkeeper::feClipboardMonitor, this));
+    clipboardMonitorThread_ptr = std::make_unique<std::thread>(&Bookkeeper::feClipboardMonitor, this);
 }
 
 void Bookkeeper::setFeClipboardMonitorRefreshTime(unsigned arg_clipboardMonitorRefreshTime) {

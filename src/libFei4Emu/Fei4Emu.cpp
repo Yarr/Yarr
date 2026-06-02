@@ -121,13 +121,15 @@ void Fei4Emu::executeLoop() {
     //                        printf("recieved a RunMode command\n");
                             handleRunMode(chipid, command);
                             break;
+                        default:
+                            break;
                     }
 
                     break;
                 case 0:
                     break;
                 default:
-                    fprintf(stderr, "ERROR - unknown type recieved, %x\n", type);
+                    (void)fprintf(stderr, "ERROR - unknown type recieved, %x\n", type);
                     break;
             }
         }
@@ -158,6 +160,8 @@ void Fei4Emu::handleGlobalPulse(uint32_t chipid) {
                 break;
             case 3:
                 dc_step = 1;
+                break;
+            default:
                 break;
         }
 
@@ -199,6 +203,8 @@ void Fei4Emu::handleGlobalPulse(uint32_t chipid) {
             case 3:
                 dc_step = 1;
                 break;
+            default:
+                break;
         }
 
         // loop through the 40 double columns
@@ -233,6 +239,8 @@ void Fei4Emu::handleGlobalPulse(uint32_t chipid) {
                 break;
             case 3:
                 dc_step = 1;
+                break;
+            default:
                 break;
         }
 
@@ -340,7 +348,7 @@ void Fei4Emu::handleTrigger() {
                     }
 
                     if (digital_tot && analog_tot) {
-                        fprintf(stderr, "ERROR - doing both a digital and an analog hit, this should not happen!\n");
+                        (void)fprintf(stderr, "ERROR - doing both a digital and an analog hit, this should not happen!\n");
                     }
 
                     if (digital_tot >= analog_tot) {
@@ -384,6 +392,7 @@ void Fei4Emu::decodeCommand(uint8_t *cmdStream, std::size_t size) {
           case 0x2: processECR(); break;
           case 0x4: processCAL(); break;
           case 0x8: processSLOW(cmdPtr); break;
+          default: break;
         }
         }; break;
       default: {

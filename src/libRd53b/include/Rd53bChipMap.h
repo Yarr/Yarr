@@ -50,7 +50,7 @@ public:
   int getCcolsRegion() {return m_cols_core;}
   int getQrowsRegion() {return m_rows_quar;}  
 
-  int getRegionIndex(int eta, int phi);
+  int getRegionIndex(int eta, int phi) const;
   int getCcol(int eta) const;
   int getQrow(int phi) const;
   int getRegion(int ccol, int qrow) const;

@@ -52,7 +52,7 @@ KernelMemory::KernelMemory(SpecDevice& dev, unsigned int size)
 	if (ioctl(dev_handle, SPECDRIVER_IOC_MMAP_MODE, SPECDRIVER_MMAP_KMEM) != 0)
 		goto pd_allockm_err;
 	
-	m_ptr = mmap( 0, size, PROT_WRITE | PROT_READ, MAP_SHARED, dev_handle, 0 );
+	m_ptr = mmap( nullptr, size, PROT_WRITE | PROT_READ, MAP_SHARED, dev_handle, 0 );
 	if ((m_ptr == MAP_FAILED) || (m_ptr == nullptr))
 		goto pd_allockm_err;
 

@@ -25,7 +25,7 @@ void Rd53bChipMap::fillChipMap(int eta, int phi, int tot) {
   m_nfired_pixels++;
 }
 
-int Rd53bChipMap::getRegionIndex(int eta, int phi) {
+int Rd53bChipMap::getRegionIndex(int eta, int phi) const {
 
   int myccol = getCcol(eta);
   int myqrow = getQrow(phi);

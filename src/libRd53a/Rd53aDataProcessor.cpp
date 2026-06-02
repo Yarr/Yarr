@@ -32,7 +32,7 @@ void Rd53aDataProcessor::init() {
 void Rd53aDataProcessor::run() {
     SPDLOG_LOGGER_TRACE(logger, "");
 
-    thread_ptr.reset(new std::thread(&Rd53aDataProcessor::process, this));
+    thread_ptr = std::make_unique<std::thread>(&Rd53aDataProcessor::process, this);
 }
 
 void Rd53aDataProcessor::join() {

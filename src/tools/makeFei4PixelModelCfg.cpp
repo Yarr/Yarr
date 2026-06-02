@@ -9,7 +9,7 @@ int main(int argc, char * argv[])
 {
 	if (argc == 1)
 	{
-		fprintf(stderr, "ERROR - too few arguments provided\n");
+		(void)fprintf(stderr, "ERROR - too few arguments provided\n");
 		printf("usage: %s filename.json\n", argv[0]);
 		return 1;
 	}
@@ -18,7 +18,7 @@ int main(int argc, char * argv[])
 
 	if (output_file.size() == 0)
 	{
-		fprintf(stderr, "ERROR - output_file not provided\n");
+		(void)fprintf(stderr, "ERROR - output_file not provided\n");
 		return 1;
 	}
 

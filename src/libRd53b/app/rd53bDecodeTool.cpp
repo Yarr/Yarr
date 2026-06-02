@@ -25,7 +25,7 @@ struct option longopts[] = {
     {"output", required_argument, nullptr, 'o'},
     {"ne", required_argument, nullptr, 'n'},
     {"help", no_argument, nullptr, 'h'},
-    {0, 0, 0, 0}};
+    {nullptr, 0, nullptr, 0}};
 
 std::vector<uint32_t> _buffer;
 int _blockIdx = 0;
@@ -314,13 +314,13 @@ int main(int argc, char **argv)
             printHelp(argv[0]);
             return 0;
         case ':': /* missing option argument */
-            fprintf(stderr, "%s: option `-%c' requires an argument\n",
+            (void)fprintf(stderr, "%s: option `-%c' requires an argument\n",
                     argv[0], optopt);
             printHelp(argv[0]);
             return 0;
         case '?':
         default:
-            fprintf(stderr, "%s: option `-%c' is invalid: ignored\n",
+            (void)fprintf(stderr, "%s: option `-%c' is invalid: ignored\n",
                     argv[0], optopt);
             printHelp(argv[0]);
             return 0;

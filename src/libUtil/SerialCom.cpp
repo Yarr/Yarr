@@ -6,8 +6,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-SerialCom::SerialCom() {
-}
+SerialCom::SerialCom() = default;
 
 SerialCom::SerialCom(const std::string& deviceName) {
     this->init(deviceName);

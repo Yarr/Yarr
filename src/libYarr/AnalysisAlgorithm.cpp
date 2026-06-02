@@ -69,7 +69,7 @@ void AnalysisProcessor::init() {
 
 void AnalysisProcessor::run() {
     SPDLOG_LOGGER_TRACE(alog, "");
-    thread_ptr.reset( new std::thread( &AnalysisProcessor::process, this ) );
+    thread_ptr = std::make_unique<std::thread>( &AnalysisProcessor::process, this );
 }
 
 void AnalysisProcessor::loadConfig(const json &j){
