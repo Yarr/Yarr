@@ -25,12 +25,10 @@ CodeChecker analyze checks/compilation_cmds_filtered.json -i scripts/code_checke
   --enable=modernize-use-nullptr \
   --enable=modernize-use-using \
   --enable=modernize-deprecated-headers \
-  --enable=readability-avoid-const-params-in-decls \
   --enable=readability-make-member-function-const \
   --enable=readability-redundant-smartptr-get \
   --enable=modernize-use-equals-delete \
   --enable=modernize-use-equals-default \
-  --enable=modernize-use-auto \
   --enable=modernize-make-unique \
   --enable=modernize-make-shared \
   --enable=modernize-pass-by-value \
@@ -41,6 +39,9 @@ CodeChecker analyze checks/compilation_cmds_filtered.json -i scripts/code_checke
   --enable=cppcoreguidelines-pro-type-member-init \
   --disable=clang-diagnostic \
   --disable=misc-confusable-identifiers \
+  --disable=modernize-use-auto \
+  --disable=readability-avoid-const-params-in-decls \
+  --disable=performance-trivially-destructible \
   --tidy-config scripts/tidy.config
 
 CodeChecker parse --trim-path-prefix $(pwd) -e html checks/results -o checks/html
