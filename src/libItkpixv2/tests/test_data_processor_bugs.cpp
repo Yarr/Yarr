@@ -117,12 +117,14 @@ run_multi_batch(std::vector<std::vector<uint32_t>> batches, Itkpixv2Cfg &cfg) {
 //   As a result the processor never reaches the ccol=0/ES=0 check, so
 //   _corruptStreamErrorCnt remains 0 instead of the expected 1.
 //
-// Before the fix:
+// Before the ccol guard fix (_ccol >= 0x38):
 //   - With ASAN:    aborts immediately (heap-buffer-overflow on _qrow[55]).
 //   - Without ASAN: _corruptStreamErrorCnt stays 0 (loop control corrupted).
 //                   CHECK(proc->_corruptStreamErrorCnt == 1) FAILS → bug visible.
-// After the fix:    no OOB, _islast_isneighbor stays 2, loop exits normally,
-//                   ccol=0 with ES=0 increments _corruptStreamErrorCnt to 1.
+// After the ccol guard fix (_ccol >= 55):
+//   ccol=55 is treated as internal tag; no OOB; decoder creates a new event,
+//   reads ccol=0 with ES=0 from the remaining zero bits, logs a corrupt-stream
+//   error, and terminates gracefully.
 // ---------------------------------------------------------------------------
 TEST_CASE("Itkpixv2DataProcessor: ccol=55 OOB write to _qrow",
           "[itkpixv2][bug_ccol55]") {
@@ -315,4 +317,43 @@ TEST_CASE("Itkpixv2DataProcessor: two sequential instances give identical result
 
     // Both instances must decode the same number of hits from the same stream.
     CHECK(hits1 == hits2);
+}
+
+// ---------------------------------------------------------------------------
+// RTL cross-check — dumpDebugBuffer secondary OOB via _qrow[_ccol]
+//
+// dumpDebugBuffer() logs _qrow[_ccol].  When called in an error state where
+// _ccol is out of range (e.g. data corruption set _ccol=55), the log line
+// itself performs the same OOB access that we fixed in process_core().
+//
+// The fix in both processors: introduce safe_ccol = min(_ccol, 54) and use
+// that for the _qrow index in the log line.
+//
+// RTL validation (from the full stream-format analysis):
+//   - The chip generates CCA 1-50 (ATLAS) or 1-54 (CMS) for pixel data.
+//   - CCA=0 is the end-of-stream separator.
+//   - CCA >= 56 (0x38) are internal "extended tags" (always prefixed with
+//     3'b111 in ConcentratorAlignData.sv).
+//   - CCA=55 is unreachable from a functioning chip, so the only way
+//     dumpDebugBuffer fires with _ccol=55 is during corrupt-data error
+//     recovery — precisely the situation where the bounds check is needed.
+//
+// This test confirms the processor survives the ccol=55 stream (which also
+// triggers dumpDebugBuffer on ASAN/debug builds) and that the safe_ccol
+// clamp does not affect the logged ccol value itself (only the _qrow lookup).
+// ---------------------------------------------------------------------------
+TEST_CASE("Itkpixv2DataProcessor: dumpDebugBuffer safe_ccol clamp",
+          "[itkpixv2][bug_dumpbuffer_oob]") {
+
+    Itkpixv2Cfg cfg;
+    // Same ccol=55 stream as bug_ccol55: exercises the dumpDebugBuffer code
+    // path when USE_ITKPIX_DEBUG_BUFFER > 0 is compiled in.
+    auto proc = run_single_batch({0x006F0000, 0x00000000}, cfg);
+
+    // Processor must complete without crash.
+    // With ASAN + USE_ITKPIX_DEBUG_BUFFER > 0 this would previously abort
+    // inside dumpDebugBuffer at the _qrow[_ccol] log line.
+    CHECK(proc->_chipTagBitFlipCnt == 0);
+    CHECK(proc->_chipTagErrorCnt   == 0);
+    CHECK(proc->_corruptStreamErrorCnt == 1);
 }

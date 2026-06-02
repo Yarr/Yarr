@@ -70,9 +70,13 @@ Itkpixv2DataProcessor::Itkpixv2DataProcessor()
     // Status
     _status = INIT;
 
-    // Debug buffer
-    _debugBuffer.resize(ITKPIX_DEBUG_BUFFERSIZE << 1);
+    // Debug buffer (sized exactly to the number of slots actually written/read)
+    _debugBuffer.resize(ITKPIX_DEBUG_BUFFERSIZE);
     _debugIdx = 0;
+
+    // PToT mask-loop state — per-instance so concurrent processors don't share
+    _maskLoopIndex = 0;
+    _checkMaskLoopIndex = true;
 }
 
 Itkpixv2DataProcessor::~Itkpixv2DataProcessor()= default;
@@ -220,9 +224,13 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
 // Debug function
 void Itkpixv2DataProcessor::dumpDebugBuffer() {
     logger->error("[{}] Dumping last {} data blocks, in hex:", m_feCfg->getName(), ITKPIX_DEBUG_BUFFERSIZE);
+    // _qrow has 55 elements (indices 0-54). Guard against OOB when _ccol is out of
+    // range (corrupted data), which is exactly the situation dumpDebugBuffer is
+    // called in.
+    const uint64_t safe_ccol = (_ccol < 55) ? _ccol : 54;
     logger->error(
         "[{}] wordIdx={}, bitIdx={}, rawDataIdx={}, wordCount={}, tag={}, ccol={}, qrow={}, islast_isneighbor={}, hitmap={}",
-        m_feCfg->getName(), _wordIdx, _bitIdx, _rawDataIdx, _wordCount, _tag, _ccol, _qrow[_ccol], _islast_isneighbor, _hitmap
+        m_feCfg->getName(), _wordIdx, _bitIdx, _rawDataIdx, _wordCount, _tag, _ccol, _qrow[safe_ccol], _islast_isneighbor, _hitmap
     );
     logger->error("[{}]", m_feCfg->getName());
 
@@ -345,7 +353,7 @@ void Itkpixv2DataProcessor::process_core()
                 _status = BCIDL1; // Go back to newEvent / BCIDL1 assignment
                 continue;
             }
-            else if (_ccol >= 0x38) // Internal tag
+            else if (_ccol >= 55) // Internal tag (valid ccol range is 1-54; 55 is unphysical)
             {
                 // Internal tag is 11-bit. So need to retrieve 5 more bits
                 uint64_t temp = 0;
@@ -471,22 +479,20 @@ void Itkpixv2DataProcessor::process_core()
                                 _splitEventsCnt++;
                             }
 
-                            // Reverse enginner the pixel address using mask staging
-                            static unsigned maskLoopIndex = 0;
-                            static bool check_loop_index = true;
-                            if (check_loop_index)
+                            // Reverse engineer the pixel address using mask staging
+                            if (_checkMaskLoopIndex)
                             {
                                 for (unsigned loop = 0; loop < _curOut->lStat.size(); loop++)
                                 {
                                     if (_curOut->lStat.getStyle(loop) == LOOP_STYLE_MASK)
                                     {
-                                        maskLoopIndex = loop;
-                                        check_loop_index = false;
+                                        _maskLoopIndex = loop;
+                                        _checkMaskLoopIndex = false;
                                         break;
                                     }
                                 }
                             }
-                            const unsigned step = _curOut->lStat.get(maskLoopIndex);
+                            const unsigned step = _curOut->lStat.get(_maskLoopIndex);
                             const uint16_t pix_col = (_ccol - 1) * 8 + PToT_maskStaging[step % 4][ibus] + 1;
                             const uint16_t pix_row = step / 2 + 1;
 
@@ -719,26 +725,28 @@ bool Itkpixv2DataProcessor::getNextDataBlockImpl()
 
 void Itkpixv2DataProcessor::getPreviousDataBlock()
 {
-    // Correct raw data index and processed raw data size if needed
-    _wordIdx -= 2;
-    if (_wordIdx < 0)
-    {
-        // Special case that we need to go back to the previous raw data container
-        if (--_rawDataIdx < 0)
+    // Iterative: skip 0xFFFFDEAD sentinel words and wrong-chip-ID blocks without
+    // risking stack overflow on large runs of such words.
+    while (true) {
+        _wordIdx -= 2;
+        if (_wordIdx < 0)
         {
-            _data = _data_pre;
-            return;
+            if (--_rawDataIdx < 0)
+            {
+                _data = _data_pre;
+                return;
+            }
+            _wordIdx = _curInV->data[_rawDataIdx]->getSize() - 2;
         }
-        _wordIdx = _curInV->data[_rawDataIdx]->getSize() - 2;
-    }
-    _data = &_curInV->data[_rawDataIdx]->get(_wordIdx); // Also roll back the block index and data word pointer
-    _dataPtrCpy = _curInV->data[_rawDataIdx];
+        _data = &_curInV->data[_rawDataIdx]->get(_wordIdx);
+        _dataPtrCpy = _curInV->data[_rawDataIdx];
 
-    // Recursive `getPreviousDataBlock` is bounded by size of data container, < 1 million (~segfault threshold)
-    if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
-        getPreviousDataBlock();
-    if (((_data[0] >> 29) & 0x3) != _chipId && _enChipId)
-        getPreviousDataBlock();
+        if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
+            continue;
+        if (((_data[0] >> 29) & 0x3) != _chipId && _enChipId)
+            continue;
+        break;
+    }
 }
 
 void Itkpixv2DataProcessor::sendFeedback(unsigned tag, unsigned bcid)

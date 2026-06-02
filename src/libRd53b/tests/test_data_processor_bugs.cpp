@@ -197,6 +197,21 @@ TEST_CASE("Rd53bDataProcessor: _outOfRangeBitsCnt never incremented (Issue #7)",
 }
 
 // ---------------------------------------------------------------------------
+// RTL cross-check — dumpDebugBuffer secondary OOB via _qrow[_ccol]
+// (mirrors the Itkpixv2 test; same root cause, same fix)
+// ---------------------------------------------------------------------------
+TEST_CASE("Rd53bDataProcessor: dumpDebugBuffer safe_ccol clamp",
+          "[rd53b][bug_dumpbuffer_oob]") {
+
+    Rd53bCfg cfg;
+    // NS=1, tag=0, ccol=55, islast=1, isneighbor=0
+    auto proc = run_single_batch({0x806F0000, 0x00000000}, cfg);
+
+    CHECK(proc->_expectNewStreamErrorCnt  == 0);
+    CHECK(proc->_unfinishedStreamErrorCnt == 0);
+}
+
+// ---------------------------------------------------------------------------
 // Issue #5 — unbounded recursion in getPreviousDataBlock()
 //
 // getPreviousDataBlock() calls itself recursively to skip FFFFDEAD words and

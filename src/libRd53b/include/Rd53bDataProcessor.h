@@ -89,6 +89,10 @@ private:
     std::vector<uint32_t> _debugBuffer;
     unsigned _debugIdx; // position in debug buffer
 
+    // PToT mask-loop index — instance variable so multiple processors don't share state
+    unsigned _maskLoopIndex;
+    bool _checkMaskLoopIndex;
+
     // Inline functions frequently used
     inline bool retrieve(uint64_t &variable, const unsigned length, const bool checkEOS = false, const bool skipNSCheck = false);	// Retrieve bit string with length
     inline void rollBack(const unsigned length);									// Roll back bit index
