@@ -292,6 +292,7 @@ void Rd53bDataProcessor::process_core()
         // RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
         if (!_curOut) {
             _curOut = std::make_unique<FrontEndData>(_curInV->stat);
+            _curOut->events.reserve(128);
         }
         _curOut->newEvent(_tag, _l1id, _bcid);
         _events++;
@@ -335,6 +336,7 @@ void Rd53bDataProcessor::process_core()
                 // RD53B does not have L1 ID and BCID output in data stream, so these are dummy values for now
                 if (!_curOut) {
                     _curOut = std::make_unique<FrontEndData>(_curInV->stat);
+                    _curOut->events.reserve(128);
                 }
                 _curOut->newEvent(_tag, _l1id, _bcid);
                 _events++;
@@ -355,6 +357,7 @@ void Rd53bDataProcessor::process_core()
                 // There is no L1ID and BCID in RD53B data stream. Currently put dummy values
                 if (!_curOut) {
                     _curOut = std::make_unique<FrontEndData>(_curInV->stat);
+                    _curOut->events.reserve(128);
                 }
                 _curOut->newEvent(_tag, _l1id, _bcid);
                 _events++;
@@ -387,9 +390,13 @@ void Rd53bDataProcessor::process_core()
                 if (_islast_isneighbor & 0x1)
                     ++_qrow[_ccol];
 
-                // Otherwise read the qrow value
-                else if (!retrieve(_qrow[_ccol], 8))
-                    return;
+                // Otherwise read the qrow value (retrieve needs uint64_t; cast down after)
+                else {
+                    uint64_t tmp = 0;
+                    if (!retrieve(tmp, 8))
+                        return;
+                    _qrow[_ccol] = static_cast<uint16_t>(tmp);
+                }
             case HMAP1:
                 _status = HMAP1;
                 // logger->warn("Read hitmap 1");
@@ -447,6 +454,8 @@ void Rd53bDataProcessor::process_core()
                     if (!retrieve(_ToT, _LUT_PlainHMap_To_ColRow_ArrSize[_hitmap] << 2))
                         return;
 
+                    if (_LUT_PlainHMap_To_ColRow_ArrSize[_hitmap] > 0 && _curOut->curEvent->hits.empty())
+                        _curOut->curEvent->hits.reserve(std::max(16u, static_cast<unsigned>(_LUT_PlainHMap_To_ColRow_ArrSize[_hitmap])));
                     int idx = 0;
                     for (unsigned ibus = 0; ibus < 4; ibus++)
                     {
@@ -473,6 +482,7 @@ void Rd53bDataProcessor::process_core()
                                 // logger->warn("[{}] No header in data fragment!", _channel);
                                 if (!_curOut) {
                                     _curOut = std::make_unique<FrontEndData>(_curInV->stat);
+                                    _curOut->events.reserve(128);
                                 }
                                 _curOut->newEvent(_tag, _l1id, _bcid);
                                 _events++;
@@ -513,6 +523,8 @@ void Rd53bDataProcessor::process_core()
                     {
                         logger->warn("Received fragment with no ToT! ({} , {})", _ccol, _qrow[_ccol]);
                     }
+                    if (_LUT_PlainHMap_To_ColRow_ArrSize[_hitmap] > 0 && _curOut->curEvent->hits.empty())
+                        _curOut->curEvent->hits.reserve(std::max(16u, static_cast<unsigned>(_LUT_PlainHMap_To_ColRow_ArrSize[_hitmap])));
                     for (unsigned ihit = 0; ihit < _LUT_PlainHMap_To_ColRow_ArrSize[_hitmap]; ++ihit)
                     {
                         const uint8_t pix_tot = (_ToT >> (ihit << 2)) & 0xF;
@@ -527,6 +539,7 @@ void Rd53bDataProcessor::process_core()
                             // logger->warn("[{}] No header in data fragment!", _channel);
                             if (!_curOut) {
                                 _curOut = std::make_unique<FrontEndData>(_curInV->stat);
+                                _curOut->events.reserve(128);
                             }
                             _curOut->newEvent(_tag, _l1id, _bcid);
                             _events++;
@@ -657,6 +670,7 @@ bool Rd53bDataProcessor::getNextDataBlockImpl()
                 
                 // Reinitalize _curOut buffer
                 _curOut = std::make_unique<FrontEndData>(pushedStat);
+                _curOut->events.reserve(128);
             }
             else
             {
@@ -687,6 +701,7 @@ bool Rd53bDataProcessor::getNextDataBlockImpl()
 
         if(_curOut==nullptr) {
             _curOut = std::make_unique<FrontEndData>(_curInV->stat);
+            _curOut->events.reserve(128);
             _events = 0;
         }
 
@@ -732,13 +747,11 @@ void Rd53bDataProcessor::getPreviousDataBlock()
 
 void Rd53bDataProcessor::sendFeedback(unsigned tag, unsigned bcid)
 {
-    std::unique_ptr<FeedbackProcessingInfo> stat(new FeedbackProcessingInfo{.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_ERROR});
-    FeedbackProcessingInfo &curStatus = *stat;
-    curStatus.trigger_tag = tag;
-    curStatus.bcid = bcid;
-    if (statusFb != nullptr) statusFb->pushData(std::move(stat));
-
-    return;
+    if (statusFb == nullptr) return;
+    auto stat = std::make_unique<FeedbackProcessingInfo>();
+    stat->trigger_tag = tag;
+    stat->bcid = bcid;
+    statusFb->pushData(std::move(stat));
 }
 
 json Rd53bDataProcessor::getLog() {
