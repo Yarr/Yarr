@@ -290,6 +290,8 @@ void Fei4Emu::handleWrFrontEnd(uint32_t chipid, uint32_t bitstream[21]) {
         case 3:
             dc_step = 1;
             break;
+        default:
+            break;
     }
 
     // loop through the 40 double columns
@@ -320,6 +322,8 @@ void Fei4Emu::handleTrigger() {
             break;
         case 3:
             dc_step = 1;
+            break;
+        default:
             break;
     }
 
