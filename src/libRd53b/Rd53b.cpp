@@ -691,7 +691,7 @@ yarrStatus Rd53b::confAdc(uint16_t MONMUX, bool doCur) {
 
     success = success && (this->writeRegister(&Rd53b::GlobalPulseConf, 0x1000) == yarrSuccess); //Trigger ADC Conversion
     while (!core->isCmdEmpty()){;}
-    std::this_thread::sleep_for(std::chrono::microseconds(100));
+    std::this_thread::sleep_for(std::chrono::microseconds(1000));
 
     this->sendGlobalPulse(m_chipId);
     std::this_thread::sleep_for(std::chrono::microseconds(1000)); //This is neccessary to clean. This might be controller dependent.
@@ -702,7 +702,7 @@ yarrStatus Rd53b::confAdc(uint16_t MONMUX, bool doCur) {
     success = success && (this->writeRegister(&Rd53b::MonitorV, OriginalMonitorV) == yarrSuccess);
     success = success && (this->writeRegister(&Rd53b::MonitorI, OriginalMonitorI) == yarrSuccess);
     while (!core->isCmdEmpty()){;}
-    std::this_thread::sleep_for(std::chrono::microseconds(100));
+    std::this_thread::sleep_for(std::chrono::microseconds(1000));
 
     return (success ? yarrSuccess : yarrFailure);
 }
