@@ -20,6 +20,17 @@ CodeChecker version
 # Shouldn't need to run build to make compile DB
 # cmake --build build --parallel ${jobs}
 scripts/fix_cdb.py > checks/compilation_cmds_filtered.json
+# Checks evaluated but not yet enabled:
+#   bugprone-use-after-move          -- high value, no known noise
+#   bugprone-spurious-wake-up        -- relevant to threaded DataProcessor/ClipBoard
+#   modernize-use-override           -- catches silent breakage on base signature changes
+#   modernize-use-emplace            -- low-risk modernization
+#   modernize-loop-convert           -- mechanical, needs dedicated pass
+#   misc-unused-parameters           -- some noise expected in virtual override signatures
+#   readability-identifier-naming    -- ~7700 violations; needs mass rename first
+#   readability-magic-numbers        -- too noisy (hardware register addresses/bit masks)
+#   cppcoreguidelines-pro-bounds-*   -- too noisy (raw array indexing in pixel data path)
+#   clang-format (separate tool)     -- formatting not yet enforced; needs .clang-format config first
 CodeChecker analyze checks/compilation_cmds_filtered.json -i scripts/code_checker.ignore -j ${jobs} -o checks/results \
   --analyzers clang-tidy \
   --enable=modernize-use-nullptr \
