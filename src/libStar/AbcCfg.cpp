@@ -15,7 +15,7 @@ std::shared_ptr<const AbcStarRegInfo> AbcStarRegInfo::instance(int version) {
   else version = 0;
 
   if(!instance_var[version]) {
-    instance_var[version].reset(new AbcStarRegInfo(version));
+    instance_var[version] = std::make_shared<AbcStarRegInfo>(version);
   }
 
   return instance_var[version];

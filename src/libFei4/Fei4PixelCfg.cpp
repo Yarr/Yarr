@@ -30,7 +30,7 @@ void DoubleColumnBit::setPixel(const unsigned n, uint32_t val) {
 }
 
 uint32_t* DoubleColumnBit::getStream() {
-    return &storage[0];
+    return storage.data();
 }
 
 uint32_t DoubleColumnBit::getPixel(const unsigned n) {

@@ -542,7 +542,7 @@ void ScanConsoleImpl::cleanup() {
 }
 
 void ScanConsoleImpl::runOutputHistogramCallback(const std::string &name,
-                                                 const HistogramBase &histo)
+                                                 const HistogramBase &histo) const
 {
     auto pp = StdDict::getPlotter(scanOpts.plottingType);
 

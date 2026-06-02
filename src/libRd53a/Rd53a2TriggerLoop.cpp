@@ -99,7 +99,7 @@ void Rd53a2TriggerLoop::doubleCmdInject(){
 }
 
 
-void Rd53a2TriggerLoop::verifyParameters(){
+void Rd53a2TriggerLoop::verifyParameters() const {
     if(m_doubleDelay>=16){
         if (!((m_trigDelay >= 8) && (m_trigDelay2 >=8) && (m_trigDelay + m_trigDelay2 <= 168))) {
           SPDLOG_LOGGER_ERROR(logger, "Both delay and delay2 must be a value equal or greater than 8, and their sum must not exceed 168.");
@@ -210,7 +210,7 @@ void Rd53a2TriggerLoop::init(){
 
     g_tx->setTrigFreq(m_trigFreq);
     g_tx->setTrigCnt(getTrigCnt());
-    g_tx->setTrigWord(&m_trigWord[0], m_trigWordLength);
+    g_tx->setTrigWord(m_trigWord.data(), m_trigWordLength);
     g_tx->setTrigWordLength(m_trigWordLength);
     g_tx->setTrigTime(m_trigTime);
 

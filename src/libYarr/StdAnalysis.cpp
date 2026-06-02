@@ -840,12 +840,12 @@ void ScurveFitter::processHistogram(HistogramBase *h) {
 
                     if (use_scurvegauss) {
                         // mean and sigma calculated rather than fitted, implementation libUtil/scurvegauss.cpp
-                        scurvegauss(par, vcalBins, &x[0], histos[ident]->getData());
+                        scurvegauss(par, vcalBins, x.data(), histos[ident]->getData());
                     }
                     else if (reverse) {
-                        lmcurve(n_par, par, vcalBins, &x[0], histos[ident]->getData(), reverseScurveFct, &control, &status);
+                        lmcurve(n_par, par, vcalBins, x.data(), histos[ident]->getData(), reverseScurveFct, &control, &status);
                     } else {
-                        lmcurve(n_par, par, vcalBins, &x[0], histos[ident]->getData(), scurveFct, &control, &status);
+                        lmcurve(n_par, par, vcalBins, x.data(), histos[ident]->getData(), scurveFct, &control, &status);
                     }
 
                     end = std::chrono::high_resolution_clock::now();

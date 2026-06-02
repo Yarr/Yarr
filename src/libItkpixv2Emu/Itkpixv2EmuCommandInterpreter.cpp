@@ -13,9 +13,7 @@ namespace {
     auto rlog = logging::make_log("Itkpixv2EmuCommandInterpreter");
 }
 
-Itkpixv2EmuCommandInterpreter::Itkpixv2EmuCommandInterpreter(){
-    
-}
+Itkpixv2EmuCommandInterpreter::Itkpixv2EmuCommandInterpreter() = default;
 
 std::queue<Itkpixv2EmuUtils::Cmd>* Itkpixv2EmuCommandInterpreter::getBuffer(){
     return &m_commandsOut;

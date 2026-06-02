@@ -1,14 +1,13 @@
 #include "Rd53bChipMap.h"
 
-#include <math.h>
+#include <cmath>
 #include <bitset>
 #include <tuple>
 #include <random>
-#include <iostream> 
-#include <time.h>       /* clock_t, clock, CLOCKS_PER_SEC */
+#include <iostream>
+#include <ctime>
 
-Rd53bChipMap::~Rd53bChipMap(){
-}
+Rd53bChipMap::~Rd53bChipMap() = default;
 
 void Rd53bChipMap::reset(){
   //just reproduce the constructor functionality, so that we don't have to
@@ -36,20 +35,20 @@ int Rd53bChipMap::getRegionIndex(int eta, int phi) {
   return getRegion(myccol, myqrow);  
 }
 
-int Rd53bChipMap::getCcol(int eta) {
+int Rd53bChipMap::getCcol(int eta) const {
   return eta/m_cols_core;
 }
 
-int Rd53bChipMap::getQrow(int phi) {
+int Rd53bChipMap::getQrow(int phi) const {
   return phi/m_rows_quar;
 }
 
-int Rd53bChipMap::getRegion(int ccol, int qrow) {
+int Rd53bChipMap::getRegion(int ccol, int qrow) const {
   return (qrow*m_ccols+ccol);
 }
 
-int Rd53bChipMap::getTotalChannels() {
-  return m_cols*m_rows; 
+int Rd53bChipMap::getTotalChannels() const {
+  return m_cols*m_rows;
 }
 
 void Rd53bChipMap::fillRegions() {

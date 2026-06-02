@@ -27,7 +27,7 @@ void LoopEngine::init() {
     
     unsigned i = 0;
     while(m_list.end() != it) {
-        stat.addLoop(i, (*it).get(), (*it).get()->getStyle());
+        stat.addLoop(i, (*it).get(), (*it)->getStyle());
         i++;
         (*it)->setup(&stat, g_bk);
         ++it;
@@ -47,7 +47,7 @@ void LoopEngine::end() {
     
     unsigned i = 0;
     while(m_list.end() != it) {
-        stat.addLoop(i, (*it).get(), (*it).get()->getStyle());
+        stat.addLoop(i, (*it).get(), (*it)->getStyle());
         i++;
         (*it)->closeOut();
         ++it;

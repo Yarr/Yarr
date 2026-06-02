@@ -7,7 +7,7 @@ namespace {
     auto aplog = logging::make_log("ProcRegistry");
 }
 
-typedef ClassRegistry<FeDataProcessor> OurRegistry;
+using OurRegistry = ClassRegistry<FeDataProcessor>;
 
 static OurRegistry &registry() {
     static OurRegistry instance;

@@ -6,7 +6,7 @@
 namespace {
     auto aplog = logging::make_log("PlottingRegistry");
 
-    typedef ClassRegistry<Plotter> OurRegistry;
+    using OurRegistry = ClassRegistry<Plotter>;
 
     static OurRegistry &registry() {
         static OurRegistry instance;

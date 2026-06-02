@@ -7,7 +7,7 @@ namespace {
     auto aalog = logging::make_log("AnalysisRegistry");
 }
 
-typedef ClassRegistry<AnalysisAlgorithm> OurRegistry;
+using OurRegistry = ClassRegistry<AnalysisAlgorithm>;
 
 static OurRegistry &registry() {
     static OurRegistry instance;

@@ -14,7 +14,7 @@ namespace {
 }
 
 #include <functional>
-typedef ClassRegistry<LoopActionBase> OurRegistry;
+using OurRegistry = ClassRegistry<LoopActionBase>;
 
 static OurRegistry &registry() {
   static OurRegistry instance;

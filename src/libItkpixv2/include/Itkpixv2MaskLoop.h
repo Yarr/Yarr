@@ -39,7 +39,7 @@ class Itkpixv2MaskLoop: public LoopActionBase {
         std::array< std::array<int, 8>, 12> m_mask_size = {};
 
         bool getNeighboursMap(int col, int row, int sensorType, int maskSize, std::vector<std::pair<int, int>> &neighbours);
-        bool ignorePixel(int col, int row);
+        bool ignorePixel(int col, int row) const;
 
         
         void init() override;

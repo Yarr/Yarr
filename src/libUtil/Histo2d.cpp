@@ -403,7 +403,7 @@ void Histo2d::plot(const std::string &prefix, const std::string &dir) const{
 
     std::string cmd="gnuplot  -e "+input+" > "+output+"\n";
     FILE *gnu = popen(cmd.c_str(), "w");
-    if (fwrite(&data[0], sizeof(float), data.size(), gnu) != data.size())
+    if (fwrite(data.data(), sizeof(float), data.size(), gnu) != data.size())
         hlog->warn("Failed to write histogram data to gnuplot");
     if (pclose(gnu) != 0)
         hlog->warn("gnuplot exited with error while plotting {}", name);

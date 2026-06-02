@@ -119,7 +119,7 @@ void run_with_clipboard(StarCfg &cfg, FeDataProcessor &proc, int iterations, std
 
     std::thread proc_thread([&proc]() { proc.process(); });
 
-    uint32_t data_count = *((uint32_t *) &buffer[0]);
+    uint32_t data_count = *((uint32_t *) buffer.data());
 
     std::size_t nbits{};
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
@@ -201,7 +201,7 @@ void run_without_clipboard(StarCfg &cfg, FeDataProcessor &proc, int iterations, 
     std::size_t done_count = 0;
     auto last_log = std::chrono::steady_clock::now();
 
-    uint32_t n_buffer = *((uint32_t *) &buffer[0]);
+    uint32_t n_buffer = *((uint32_t *) buffer.data());
     unsigned expected = n_buffer * iterations;
 
     auto check_log = [&]() {

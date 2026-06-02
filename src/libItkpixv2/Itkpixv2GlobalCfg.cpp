@@ -65,7 +65,7 @@ void Itkpixv2GlobalCfg::init() {
     }
 
     //0
-    PixPortal.init          (  0, &m_cfg[  0], 0, 16, 0); regMap["PixPortal"] = &Itkpixv2GlobalCfg::PixPortal;
+    PixPortal.init          (  0, m_cfg.data(), 0, 16, 0); regMap["PixPortal"] = &Itkpixv2GlobalCfg::PixPortal;
     //1
     PixRegionCol.init       (  1, &m_cfg[  1], 0, 16, 0); regMap["PixRegionCol"] = &Itkpixv2GlobalCfg::PixRegionCol;
     //2

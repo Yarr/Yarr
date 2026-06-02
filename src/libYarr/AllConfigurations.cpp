@@ -6,7 +6,7 @@
 namespace {
     auto aclog = logging::make_log("ConfigRegistry");
 
-    typedef ClassRegistry<Configuration> OurRegistry;
+    using OurRegistry = ClassRegistry<Configuration>;
 
     static OurRegistry &registry() {
         static OurRegistry instance;

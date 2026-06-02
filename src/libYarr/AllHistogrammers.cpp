@@ -7,7 +7,7 @@ namespace {
     auto ahlog = logging::make_log("HistogammerRegistry");
 }
 
-typedef ClassRegistry<HistogramAlgorithm> OurRegistry;
+using OurRegistry = ClassRegistry<HistogramAlgorithm>;
 
 static OurRegistry &registry() {
     static OurRegistry instance;

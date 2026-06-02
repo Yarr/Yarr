@@ -65,7 +65,7 @@ void Rd53bGlobalCfg::init() {
     }
 
     //0
-    PixPortal.init          (  0, &m_cfg[  0], 0, 16, 0); regMap["PixPortal"] = &Rd53bGlobalCfg::PixPortal;
+    PixPortal.init          (  0, m_cfg.data(), 0, 16, 0); regMap["PixPortal"] = &Rd53bGlobalCfg::PixPortal;
     //1
     PixRegionCol.init       (  1, &m_cfg[  1], 0, 16, 0); regMap["PixRegionCol"] = &Rd53bGlobalCfg::PixRegionCol;
     //2

@@ -38,7 +38,7 @@ public:
             m_nfired_pixels_in_ccol =  std::vector<int>(m_ccols, 0);
           };
 
-  ~Rd53bChipMap();
+  ~Rd53bChipMap() = default;
   
   void fillChipMap(int eta, int phi, int tot);
   void fillRegions();
@@ -51,10 +51,10 @@ public:
   int getQrowsRegion() {return m_rows_quar;}  
 
   int getRegionIndex(int eta, int phi);
-  int getCcol(int eta);
-  int getQrow(int phi);
-  int getRegion(int ccol, int qrow);
-  int getTotalChannels();
+  int getCcol(int eta) const;
+  int getQrow(int phi) const;
+  int getRegion(int ccol, int qrow) const;
+  int getTotalChannels() const;
   std::string getBitTreeString(int myccol, int myqrow, bool do_compression=true);
   std::string getToTBitsString(int myccol, int myqrow, std::vector<int>& tots);
   void readMapFile(const std::string& inputMapFileName);

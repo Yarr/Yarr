@@ -82,7 +82,7 @@ void Rd53bDecodeHelper::fill(std::string input, const std::string& output, const
         input = "(" + _remain + ")" + input.substr(_remain.length());
         _remain = "";
     }
-    const unsigned maxLength = std::max(std::max(input.length(), output.length()), name.length()) + 1;
+    const unsigned maxLength = std::max({input.length(), output.length(), name.length()}) + 1;
     *inputStream.back() << decorate(input, maxLength, ' ');
     *outputStream.back() << decorate(output, maxLength, ' ');
     *auxStream1.back() << decorate(name, maxLength, ' ');
@@ -283,7 +283,7 @@ int readInData(const std::string& inputStreamFileName, int nStream = -1)
     _buffer.push_back(0);
 
     std::unique_ptr<RawData> data(new RawData(address, words));
-    std::copy(&_buffer[0], &_buffer[words-1], data->getBuf());
+    std::copy(_buffer.data(), _buffer.data() + (words-1), data->getBuf());
     _curIn = std::move(data);
     std::cout << "Done." << std::endl;
     return words;

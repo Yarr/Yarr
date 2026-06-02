@@ -224,7 +224,7 @@ int main(int argc, char** argv) {
             if (dumpWords) {
                 auto w_elt = k->getWords();
                 // std::ofstream fout(outputDir + chipname + "_data.binary", ios::binary);
-                fout.write((char*)&w_elt[0], w_elt.size() * sizeof(w_elt[0]));
+                fout.write((char*)w_elt.data(), w_elt.size() * sizeof(w_elt[0]));
             }
             k->getWords().clear();
 

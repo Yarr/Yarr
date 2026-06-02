@@ -52,12 +52,12 @@ class Fei4Emu {
         uint8_t getToTCode(uint8_t dec_tot);
 
         void addServiceRecord(bool isInfoSR);
-        void startFrame();
-        void endFrame();
-        void addDataHeader(bool hasErrorFlags);
-        void addDataRecord(uint16_t col, uint16_t row, uint8_t tot1, uint8_t tot2);
-        void addAddressRecord(uint16_t address, bool isGR);
-        void addValueRecord(uint16_t value);
+        void startFrame() const;
+        void endFrame() const;
+        void addDataHeader(bool hasErrorFlags) const;
+        void addDataRecord(uint16_t col, uint16_t row, uint8_t tot1, uint8_t tot2) const;
+        void addAddressRecord(uint16_t address, bool isGR) const;
+        void addValueRecord(uint16_t value) const;
 
         void processL1A();
         void processBCR();

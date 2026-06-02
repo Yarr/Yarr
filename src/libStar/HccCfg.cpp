@@ -15,7 +15,7 @@ std::shared_ptr<const HccStarRegInfo> HccStarRegInfo::instance(int version) {
   else version = 0;
 
   if(!instance_var[version]) {
-    instance_var[version].reset(new HccStarRegInfo(version));
+    instance_var[version] = std::make_shared<HccStarRegInfo>(version);
   }
 
   return instance_var[version];

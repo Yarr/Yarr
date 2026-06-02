@@ -434,27 +434,27 @@ void Fei4Emu::addServiceRecord(bool isInfoSR) {
 
 }
 
-void Fei4Emu::startFrame() {
+void Fei4Emu::startFrame() const {
   pushOutput( (m_feId << 24) | 0xfc );
 }
 
-void Fei4Emu::endFrame() {
+void Fei4Emu::endFrame() const {
   pushOutput( (m_feId << 24) | 0xbc );
 }
 
-void Fei4Emu::addDataHeader(bool hasErrorFlags) {
+void Fei4Emu::addDataHeader(bool hasErrorFlags) const {
   pushOutput( (m_feId << 24) | (0xe9 << 16) | (((uint32_t)hasErrorFlags) << 15) | ((m_l1IdCnt&0x1F) << 10) | (m_bcIdCnt&0x3FF) );
 }
 
-void Fei4Emu::addDataRecord(uint16_t col, uint16_t row, uint8_t tot1, uint8_t tot2) {
+void Fei4Emu::addDataRecord(uint16_t col, uint16_t row, uint8_t tot1, uint8_t tot2) const {
   pushOutput( (m_feId << 24) | ((col&0x7F) << 17) | ((row&0x1FF) << 8) | ((tot1&0xF) << 4) | (tot2&0xF) );
 }
 
-void Fei4Emu::addAddressRecord(uint16_t address, bool isGR) {
+void Fei4Emu::addAddressRecord(uint16_t address, bool isGR) const {
   pushOutput( (0xea << 16) | (((uint32_t)isGR) << 15) | (address&0x7FFFF) );
 }
 
-void Fei4Emu::addValueRecord(uint16_t value) {
+void Fei4Emu::addValueRecord(uint16_t value) const {
   pushOutput( (0xec << 16) | value );
 }
 

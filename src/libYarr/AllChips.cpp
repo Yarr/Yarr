@@ -7,7 +7,7 @@ namespace {
     auto aclog = logging::make_log("ChipRegistry");
 }
 
-typedef ClassRegistry<FrontEnd> OurRegistry;
+using OurRegistry = ClassRegistry<FrontEnd>;
 
 static OurRegistry &registry() {
     static OurRegistry instance;

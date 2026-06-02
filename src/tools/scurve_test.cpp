@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
         control.verbosity = 0;
         double par[3] = {100, 5, 50};
         // Do fit
-        lmcurve(3, par, steps, &x[0], &sample[i][0], scurve, &control, &status);
+        lmcurve(3, par, steps, x.data(), sample[i].data(), scurve, &control, &status);
         //std::cout << par[0] << " " << par[1] << " " << par[2] << std::endl;
         sum_thr += par[0];
         sum_noise += par[1];

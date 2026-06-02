@@ -77,7 +77,7 @@ class AnalysisConsoleImpl {
     clk::time_point all_done;
 
   public:
-    AnalysisConsoleImpl(const AnalysisOpts &opts);
+    AnalysisConsoleImpl(AnalysisOpts opts);
 
     int init();
 
@@ -236,8 +236,8 @@ int AnalysisConsole::parseOptions(int argc, char *argv[], AnalysisOpts &anOpts) 
     return 1;
 }
 
-AnalysisConsoleImpl::AnalysisConsoleImpl(const AnalysisOpts &opts)
-  : options(opts)
+AnalysisConsoleImpl::AnalysisConsoleImpl(AnalysisOpts opts)
+  : options(std::move(opts))
 {
 }
 

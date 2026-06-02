@@ -88,7 +88,7 @@ class PixelModel {
 public:
     uint8_t  m_register;
     AnalogFE m_analogFEModel;
-    typedef AnalogFE AnalogFEType;
+    using AnalogFEType = AnalogFE;
 };
 
 

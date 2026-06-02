@@ -10,7 +10,7 @@ namespace {
     auto ahwlog = logging::make_log("HwRegistry");
 }
 
-typedef ClassRegistry<HwController> OurRegistry;
+using OurRegistry = ClassRegistry<HwController>;
 
 static OurRegistry &registry() {
     static OurRegistry instance;

@@ -49,7 +49,7 @@ class FrontEndConnectivity;
 class FrontEnd {
     public:
         FrontEnd();
-        virtual ~FrontEnd();
+        virtual ~FrontEnd() = default;
         
         virtual void init(HwController *arg_core, const FrontEndConnectivity& fe_cfg)=0;
 
