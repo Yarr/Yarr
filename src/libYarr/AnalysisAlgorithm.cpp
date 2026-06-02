@@ -51,10 +51,10 @@ bool AnalysisAlgorithm::isPOILoop(const LoopActionBaseInfo *l) {
     }
 }
 
-AnalysisProcessor::AnalysisProcessor() : id(0), input(nullptr), output(nullptr), feedback(nullptr), scan_info(nullptr), storeInputHisto(false), thread_ptr(nullptr) {}
+AnalysisProcessor::AnalysisProcessor() : id(0), input(nullptr), output(nullptr), feedback(nullptr), scan_info(nullptr), thread_ptr(nullptr), storeInputHisto(false) {}
 
 AnalysisProcessor::AnalysisProcessor(unsigned uid)
-  : id(uid), input(nullptr), output(nullptr), feedback(nullptr), scan_info(nullptr), storeInputHisto(false), thread_ptr(nullptr)
+  : id(uid), input(nullptr), output(nullptr), feedback(nullptr), scan_info(nullptr), thread_ptr(nullptr), storeInputHisto(false)
 {
 }
 
