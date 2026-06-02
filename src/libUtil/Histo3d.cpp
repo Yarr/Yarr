@@ -51,11 +51,11 @@ Histo3dT<DataT>::Histo3dT(const std::string &arg_name, unsigned arg_xbins, doubl
 }
 
 template<typename DataT>
-Histo3dT<DataT>::Histo3dT(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
-        unsigned arg_ybins, double arg_ylow, double arg_yhigh, 
-        unsigned arg_zbins, double arg_zlow, double arg_zhigh, 
+Histo3dT<DataT>::Histo3dT(const std::string& arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh,
+        unsigned arg_ybins, double arg_ylow, double arg_yhigh,
+        unsigned arg_zbins, double arg_zlow, double arg_zhigh,
         const LoopStatus &stat)
-  : HistogramBase(std::move(arg_name), stat)
+  : HistogramBase(arg_name, stat)
 {
     xbins = arg_xbins;
     xlow = arg_xlow;

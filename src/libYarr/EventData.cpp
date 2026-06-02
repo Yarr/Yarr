@@ -21,13 +21,13 @@ void FrontEndEvent::fromFileBinary(std::fstream &handle) {
     handle.read((char*)&bcid, sizeof(uint16_t));
     handle.read((char*)&t_hits, sizeof(uint16_t));
     for (unsigned ii = 0; ii < t_hits; ii++) {
-        FrontEndHit hit = {};
+        FrontEndHit hit{};
         handle.read((char*)&hit, sizeof(FrontEndHit));
         this->addHit(hit);
     } // ii
 }
 
-void FrontEndData::toFile(std::string filename) {
+void FrontEndData::toFile(const std::string& filename) {
     std::fstream file(filename, std::fstream::out | std::fstream::app);
     file << events.size() << std::endl;
     for (auto &event : events) {

@@ -412,10 +412,10 @@ void Rd53bGlobalCfg::init() {
 }
 
 void Rd53bGlobalCfg::writeConfig(json &j) {
-    for(auto it : regMap) {
+    for(const auto& it : regMap) {
         logger->debug("Writing reg: {}", it.first);
         j["RD53B"]["GlobalConfig"][it.first] = (this->*it.second).read();
-    }    
+    }
 }
 
 void Rd53bGlobalCfg::loadConfig(json const &j) {
@@ -424,7 +424,7 @@ void Rd53bGlobalCfg::loadConfig(json const &j) {
         return;
     }
     auto &jconfig = j["RD53B"]["GlobalConfig"];
-    for (auto it : regMap) {
+    for (const auto& it : regMap) {
         if (jconfig.contains(it.first)) {
             (this->*it.second).write(jconfig[it.first]);
         } else {

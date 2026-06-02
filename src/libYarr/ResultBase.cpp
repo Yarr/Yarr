@@ -29,10 +29,10 @@ std::string ResultBase::getName() {
     return name;
 }
 
-void ResultBase::setAxisTitle(std::string x, std::string y, std::string z) {
-    xAxisTitle = std::move(x);
-    yAxisTitle = std::move(y);
-    zAxisTitle = std::move(z);
+void ResultBase::setAxisTitle(const std::string& x, const std::string& y, const std::string& z) {
+    xAxisTitle = x;
+    yAxisTitle = y;
+    zAxisTitle = z;
 }
 
 std::string ResultBase::getXaxisTitle() {
@@ -47,14 +47,14 @@ std::string ResultBase::getZaxisTitle() {
     return zAxisTitle;
 }
 
-void ResultBase::setXaxisTitle(std::string name) {
-    xAxisTitle = std::move(name);
+void ResultBase::setXaxisTitle(const std::string& name) {
+    xAxisTitle = name;
 }
 
-void ResultBase::setYaxisTitle(std::string name) {
-    yAxisTitle = std::move(name);
+void ResultBase::setYaxisTitle(const std::string& name) {
+    yAxisTitle = name;
 }
 
-void ResultBase::setZaxisTitle(std::string name) {
-    zAxisTitle = std::move(name);
+void ResultBase::setZaxisTitle(const std::string& name) {
+    zAxisTitle = name;
 }

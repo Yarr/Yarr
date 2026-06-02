@@ -101,10 +101,10 @@ void Rd53aPixelFeedback::init() {
     }
     if (m_resetTdac) {
         for(unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-            auto fe = keeper->getFe(id);
+            const auto& fe = keeper->getFe(id);
             if (fe->getActive()) {
                 auto rd53a = dynamic_cast<Rd53a*>(fe);
-                m_fb[id] = NULL;
+                m_fb[id] = nullptr;
                 int linCnt = 0;
                 int diffCnt = 0;
                 for (unsigned col=1; col<=Rd53a::n_Col; col++) {

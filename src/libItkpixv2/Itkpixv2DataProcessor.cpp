@@ -36,6 +36,8 @@ bool itkpixv2_proc_registered =
 Itkpixv2DataProcessor::Itkpixv2DataProcessor()
 {
     m_input = nullptr;
+    m_out = nullptr;
+    m_feCfg = nullptr;
 
     _wordIdx = 0; // Index of the first 64-bit block. Starting from 0
     _bitIdx = 0;   // Index of the first bit within the 64-bit block. Starting from 0

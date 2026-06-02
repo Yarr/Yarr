@@ -80,7 +80,7 @@ class Fei4GlobalCfg {
         Fei4GlobalCfg();
 
         void toFilePlain(const std::string& filename) const;
-        void fromFilePlain(std::string filename);
+        void fromFilePlain(const std::string& filename);
 
         void setValue(Fei4Register Fei4GlobalCfg::*ref, const uint16_t& cfgBits) {
                 (this->*ref).write(cfgBits);

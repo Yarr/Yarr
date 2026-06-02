@@ -204,7 +204,7 @@ AbcStarRegInfo::AbcStarRegInfo(int version) {
         auto addr = std::get<1>(def);
         auto offset = std::get<2>(def);
         auto width = std::get<3>(def);
-        auto reg_info = regMap.at(addr);
+        const auto& reg_info = regMap.at(addr);
         abcSubRegisterMap_all[reg_id] = reg_info->addSubRegister(subregname, offset, width);
     }
 

@@ -69,11 +69,11 @@ class Fei4Emu {
         EmuCom * m_rxRingBuffer;
         std::shared_ptr<Fei4Cfg> m_feCfg;
 
-        uint32_t m_modeBits;
-        uint32_t m_shiftRegisterBuffer[40][21];
+        uint32_t m_modeBits = 0;
+        uint32_t m_shiftRegisterBuffer[40][21] = {};
 
         // these are not quite used - they are just set to 0
-	FrontEndGeometry m_feGeo; // todo: put as template arguments (or at least tie to config type
+	FrontEndGeometry m_feGeo = {}; // todo: put as template arguments (or at least tie to config type
         uint8_t m_feId;
         uint32_t m_l1IdCnt;
         uint32_t m_bcIdCnt;

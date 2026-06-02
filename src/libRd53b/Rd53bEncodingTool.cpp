@@ -24,7 +24,7 @@ Rd53bEncodingTool::StatusCode Rd53bEncodingTool::saveDataStream()
   addOrphanBits(); // Add orphanBits
 
   // Split the stream strings into 63-bit blocks and prepend NS bit, making it a full 64-bit block
-  for (auto stream : m_testStreamsStr)
+  for (const auto& stream : m_testStreamsStr)
   {
     //NS bits are not there yet, so all we have now is 63 bits of the actual data, hence the division by 63
     

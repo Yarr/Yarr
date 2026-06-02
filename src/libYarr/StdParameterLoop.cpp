@@ -22,7 +22,6 @@ StdParameterLoop::StdParameterLoop() : LoopActionBase(LOOP_STYLE_PARAMETER) {
     min = 0;
     max = 100;
     step = 1;
-    m_waitTime = std::chrono::microseconds(0);
     m_cur = 0;
     m_checkActiveLoop = false;
 }

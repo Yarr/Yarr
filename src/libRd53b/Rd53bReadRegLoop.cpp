@@ -21,7 +21,7 @@ Rd53bReadRegLoop::Rd53bReadRegLoop() : LoopActionBase(LOOP_STYLE_NOP)
 
 //Configures the ADC, reads the register returns the first recieved register.
 uint16_t Rd53bReadRegLoop::ReadADC(unsigned short Reg, bool doCur, Rd53b *fe) {
-    if (fe == NULL)
+    if (fe == nullptr)
         return 0;
 
     fe->confAdc(Reg, doCur);
@@ -35,7 +35,7 @@ uint16_t Rd53bReadRegLoop::ReadADC(unsigned short Reg, bool doCur, Rd53b *fe) {
 
 float Rd53bReadRegLoop::ReadNTCTemp(Rd53b *fe, bool in_kelvin) {
     //Sensor Config
-    if (fe == NULL)
+    if (fe == nullptr)
         return 0;
 
     float voltage = fe->adcToV(this->ReadADC(2, false, fe));
@@ -46,7 +46,7 @@ float Rd53bReadRegLoop::ReadNTCTemp(Rd53b *fe, bool in_kelvin) {
 
 float Rd53bReadRegLoop::ReadResistTemp(Rd53b *fe, bool in_kelvin) {
     //Sensor Config
-    if (fe == NULL)
+    if (fe == nullptr)
         return 0;
     
     // Read top sensor: toggle Vref to top
@@ -84,7 +84,7 @@ float Rd53bReadRegLoop::ReadResistTemp(Rd53b *fe, bool in_kelvin) {
 float Rd53bReadRegLoop::ReadTransSensor(Rd53b *fe, TransSensorLocation loc, TransSensorType type, Rd53bCfg::TransSensor sensor, bool in_kelvin)
 {
     //Sensor Config
-    if (fe == NULL)
+    if (fe == nullptr)
         return 0;
 
     // enable sensor, and switch off bias
@@ -164,7 +164,7 @@ void Rd53bReadRegLoop::execPart1()
             logger->info("Measuring for FE {} on Rx {}", feName, dynamic_cast<FrontEndCfg*>(fe)->getRegRxChannel());
 
             // Reading Standard Registers
-            for (auto Reg : m_STDReg) {
+            for (const auto& Reg : m_STDReg) {
                 if (feRd53b->regMap.find(Reg) != feRd53b->regMap.end()) {
                     uint16_t StoredVal = (feRd53b->*(feRd53b->regMap[Reg])).read();
                     
@@ -184,13 +184,13 @@ void Rd53bReadRegLoop::execPart1()
             }
 
             // Reading Voltage  ADC
-            for (auto Reg : m_VoltMux) {
+            for (const auto& Reg : m_VoltMux) {
                 uint16_t ADCVal = ReadADC(Reg, false, feRd53b);
                 logger->info("[{}][{}] MON MUX_V: {}, Value: {} => {} V", id, feName, Reg, ADCVal, dynamic_cast<Rd53b *>(fe)->adcToV(ADCVal));
             }
 
             // Reading Temperature sensors from the ADC
-            for (auto Reg : m_TempSensors) {
+            for (const auto& Reg : m_TempSensors) {
                 if (Reg == "NTC") {
                     float TempVal = ReadNTCTemp(feRd53b, false);
                     logger->info("[{}][{}] MON NTC: {} C", id, feName, TempVal);
@@ -205,7 +205,7 @@ void Rd53bReadRegLoop::execPart1()
                 }
             }
 
-            for (auto Reg : m_RadSensors) {
+            for (const auto& Reg : m_RadSensors) {
                 if (Reg == "BJT") {
                     float RadValDSLDO = ReadTransSensor(feRd53b, DSLDO, BJT, Rd53bCfg::Other);
                     float RadValASLDO = ReadTransSensor(feRd53b, ASLDO, BJT, Rd53bCfg::Other);
@@ -215,7 +215,7 @@ void Rd53bReadRegLoop::execPart1()
             }
 
             // Reading Current ADC
-            for (auto Reg : m_CurMux) {
+            for (const auto& Reg : m_CurMux) {
                 uint16_t ADCVal = ReadADC(Reg, true, feRd53b);
                 logger->info("[{}][{}] MON MUX_C: {} Value: {} => {} uA", id, feName, Reg, ADCVal, dynamic_cast<Rd53b *>(fe)->adcToI(ADCVal)/1e-6);
             }

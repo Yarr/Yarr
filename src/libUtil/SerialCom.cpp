@@ -7,14 +7,10 @@
 #include <unistd.h>
 
 SerialCom::SerialCom() {
-    dev = 0;
-    baudrate = B115200;
 }
 
-SerialCom::SerialCom(std::string deviceName) {
-    dev = 0;
-    baudrate = B115200;
-    this->init(deviceName); 
+SerialCom::SerialCom(const std::string& deviceName) {
+    this->init(deviceName);
 }
 
 SerialCom::~SerialCom() {

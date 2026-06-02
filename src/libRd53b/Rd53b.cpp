@@ -219,6 +219,7 @@ void Rd53b::configurePixelMaskParallel() {
         this->writeRegister(&Rd53b::PixRegionCol, dc);
         this->writeRegister(&Rd53b::PixRegionRow, 0);
         std::array<uint16_t, n_Row> maskBits = {};
+        maskBits = {};
         for (unsigned row=0; row<n_Row; row++) {
             maskBits[row] = toTenBitMask(pixRegs[dc][row]);
         }
@@ -412,7 +413,7 @@ Rd53bRegDefault Rd53bGlobalCfg::*  Rd53b::getNamedRegisterObject(std::string nam
     } else {
         logger->error("Trying to get named register, register not found: {}", name);
     }
-    return NULL;
+    return nullptr;
 }
 
 yarrStatus Rd53b::setNamedRegister(std::string name, const uint16_t value){
@@ -459,8 +460,8 @@ yarrStatus Rd53b::checkCom() {
         data = dataVec[0];
     }
 
-    if (data != NULL) {
-        unsigned size = data->getSize();       
+    if (data != nullptr) {
+        unsigned size = data->getSize();
         if (!(size == 2 || size == 4 || size == 8 || size == 12 || size == 6)) {
             logger->error("Received wrong number of words ({}) for {}", data->getSize(), this->name);
             return yarrFailure;

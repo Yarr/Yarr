@@ -47,6 +47,8 @@ class HitMapGenerator{
         HitMap m_hitMap;
         FrontEndEvent m_truthEvt;
         uint m_nGenerated = 0;
+        uint m_currCCol = 0;
+        uint m_currQRow = 0;
 };
 
 #endif

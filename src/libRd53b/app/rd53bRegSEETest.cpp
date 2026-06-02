@@ -108,7 +108,7 @@ std::vector<uint16_t> readData(RawData *data)
 void decodePix(std::vector<RawData> dataList, Rd53b &rd53b, std::vector<std::pair<uint16_t, uint16_t>> &address)
 {
     std::vector<uint16_t> result;
-    for (auto data : dataList)
+    for (auto& data : dataList)
     {
         std::vector<uint16_t> tmp = readData(&data);
         result.insert(result.end(), tmp.begin(), tmp.end());
@@ -152,7 +152,7 @@ void decodePix(std::vector<RawData> dataList, Rd53b &rd53b, std::vector<std::pai
         // std::cout << dc << " " << row << " " << pix1.s.en << " " << pix1.s.hitbus << " " << pix1.s.injen << " " << pix1.s.tdac * (pix1.s.sign == 0 ? +1 : -1) << std::endl;
         // std::cout << dc << " " << row << " " << pix2.s.en << " " << pix2.s.hitbus << " " << pix2.s.injen << " " << pix2.s.tdac * (pix2.s.sign == 0 ? +1 : -1) << std::endl;
         // getchar();
-        Rd53bPixelCfg::pixelBits pix1, pix2;
+        Rd53bPixelCfg::pixelBits pix1 = {}, pix2 = {};
         pix1.u8 = (val & 0xFF);
         pix2.u8 = (val >> 8) & 0xFF;
         rd53b.setReg(dc * 2, row, pix1.s.en, pix1.s.injen, pix1.s.hitbus, pix1.s.tdac * (pix1.s.sign == 0 ? +1 : -1));
@@ -166,7 +166,7 @@ void decodePix(std::vector<RawData> dataList, Rd53b &rd53b, std::vector<std::pai
 uint16_t decodeGlob(std::vector<RawData> dataList, int address)
 {
     std::vector<uint16_t> result;
-    for (auto data : dataList)
+    for (auto& data : dataList)
     {
         std::vector<uint16_t> tmp = readData(&data);
         result.insert(result.end(), tmp.begin(), tmp.end());
@@ -184,7 +184,7 @@ uint16_t decodeGlob(std::vector<RawData> dataList, int address)
     return result[0];
 }
 
-void saveCfgFile(Rd53b &rd53b, std::string cfgFilePath, json globSEU)
+void saveCfgFile(Rd53b &rd53b, const std::string& cfgFilePath, json globSEU)
 {
     std::ofstream newCfgFile(cfgFilePath.c_str());
     json cfg;

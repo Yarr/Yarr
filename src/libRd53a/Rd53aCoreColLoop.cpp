@@ -145,7 +145,7 @@ void Rd53aCoreColLoop::loadConfig(const json &j) {
     max = m_impl->nSteps;
     if (j.contains("delayArray")) {
         m_delayArray.clear();
-        for(auto i: j["delayArray"])
+        for(const auto& i: j["delayArray"])
             m_delayArray.push_back(i);
         logger->debug("Number of injection delay array elements is {}", m_delayArray.size());
     }

@@ -986,11 +986,11 @@ namespace ScanHelper {
         scanOpts.progName=argv[0];
         const struct option long_options[] =
         {
-            {"help", no_argument, 0, 'h'},
-            {"version", no_argument, 0, 'v'},
-            {"skip-config", no_argument, 0, 'y'},
-            {"skip-reset", no_argument, 0, 'z'},
-            {0, 0, 0, 0}};
+            {"help", no_argument, nullptr, 'h'},
+            {"version", no_argument, nullptr, 'v'},
+            {"skip-config", no_argument, nullptr, 'y'},
+            {"skip-reset", no_argument, nullptr, 'z'},
+            {nullptr, 0, nullptr, 0}};
         int c;
         while (true) {
             int opt_index=0;

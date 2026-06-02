@@ -46,14 +46,14 @@ void Itkpixv2PixelFeedback::loadConfig(const json &j) {
         m_rstPixelReg = j["rstPixelReg"];
     if (j.contains("steps")) {
         m_steps.clear();
-        for(auto i: j["steps"])
+        for(const auto& i: j["steps"])
             m_steps.push_back(i);
         logger->debug("Got {} steps!", m_steps.size());
     }
 }
 
 void Itkpixv2PixelFeedback::feedback(unsigned id, std::unique_ptr<Histo2d> h) {
-    // TODO Check on NULL pointer
+    // TODO Check on nullptr pointer
     if (h->size() != Itkpixv2::n_Row*Itkpixv2::n_Col) {
         logger->error("Wrong type of feedback histogram on ID {}", id);
         fbDoneMap[id] = true;

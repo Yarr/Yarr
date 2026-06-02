@@ -19,17 +19,17 @@ class Rd53bCoreColLoop : public LoopActionBase {
         void loadConfig(const json &j) override;
 
     private:
-        unsigned m_cur;
-        unsigned m_nSteps;
-        unsigned m_minCore;
-        unsigned m_maxCore;
-        bool m_usePToT;
-        bool m_disUnused;
+        unsigned m_cur = 0;
+        unsigned m_nSteps = 0;
+        unsigned m_minCore = 0;
+        unsigned m_maxCore = 0;
+        bool m_usePToT = false;
+        bool m_disUnused = false;
         bool m_resetAtEnd = false;
-        bool m_ignoreDis;
-        bool m_skipDis;
+        bool m_ignoreDis = false;
+        bool m_skipDis = false;
 
-        std::array<uint16_t, 4> m_coreCols;
+        std::array<uint16_t, 4> m_coreCols = {};
         std::vector<std::array<uint16_t, 4>> m_initCoreColsAllChips;
 
         void init() override;

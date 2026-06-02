@@ -19,7 +19,7 @@ namespace {
     auto blog = logging::make_log("Bookkeeper");
 }
 
-Bookkeeper::Bookkeeper(TxCore *arg_tx, RxCore *arg_rx) {
+Bookkeeper::Bookkeeper(TxCore *arg_tx, RxCore *arg_rx) : clipboardMonitorRefreshTime(0), runClipboardMonitor(false) {
     tx = arg_tx;
     rx = arg_rx;
     g_fe.reset();

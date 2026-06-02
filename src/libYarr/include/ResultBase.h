@@ -34,13 +34,13 @@ class ResultBase {
         virtual void plot(std::string basename) {}
         
         /** Set axes titles */
-        void setAxisTitle(std::string x, std::string y="y", std::string z="z");
+        void setAxisTitle(const std::string& x, const std::string& y="y", const std::string& z="z");
         /** Set X-axis title */
-        void setXaxisTitle(std::string);
+        void setXaxisTitle(const std::string&);
         /** Set Y-axis title */
-        void setYaxisTitle(std::string);
+        void setYaxisTitle(const std::string&);
         /** Set Z-axis title */
-        void setZaxisTitle(std::string);
+        void setZaxisTitle(const std::string&);
 
         /** Retrieve X-axis title */
         std::string getXaxisTitle();

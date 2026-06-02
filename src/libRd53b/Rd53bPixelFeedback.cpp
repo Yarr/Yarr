@@ -46,7 +46,7 @@ void Rd53bPixelFeedback::loadConfig(const json &j) {
         m_rstPixelReg = j["rstPixelReg"];
     if (j.contains("steps")) {
         m_steps.clear();
-        for(auto i: j["steps"])
+        for(const auto& i: j["steps"])
             m_steps.push_back(i);
         logger->debug("Got {} steps!", m_steps.size());
     }
@@ -92,10 +92,10 @@ void Rd53bPixelFeedback::init() {
     }
     if (m_rstPixelReg) {
         for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-            auto fe = keeper->getFe(id);
+            const auto& fe = keeper->getFe(id);
             if (fe->getActive()) {
                 auto rd53b = dynamic_cast<Rd53b*>(fe);
-                m_fb[id] = NULL;
+                m_fb[id] = nullptr;
                 for (unsigned col=1; col<=Rd53b::n_Col; col++) {
                     for (unsigned row=1; row<=Rd53b::n_Row; row++) {
                         //Initial TDAC in mid of the range

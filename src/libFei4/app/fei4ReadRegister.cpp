@@ -100,8 +100,8 @@ int main(int argc, char *argv[]) {
       if (dataVec.size() > 0)
           data = dataVec[0];
       while(!mySpec.isCmdEmpty()) {}
-      while (data != NULL) {
-          if (data != NULL) {
+      while (data != nullptr) {
+          if (data != nullptr) {
               uint32_t greg = 99;
               uint32_t value = 0;
               for (unsigned j=0; j<data->getSize();j++) {
@@ -166,8 +166,8 @@ int main(int argc, char *argv[]) {
       if (dataVec.size() > 0)
           data = dataVec[0];
       while(!mySpec.isCmdEmpty()) {}
-      while (data != NULL) {
-	if (data != NULL) {
+      while (data != nullptr) {
+	if (data != nullptr) {
 	  for (unsigned j=0; j<data->getSize();j++) {
 
 	    if ((data->get(j) & 0x00FF0000) == 0x00ef0000) {

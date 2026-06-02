@@ -103,7 +103,7 @@ void Fei4DataProcessor::process_core() {
                     wordCount++;
                     if (__builtin_expect((value == 0xDEADBEEF), 0)) {
                         flog->error("[{}] Noticed readout error: 0x{:x}", channel, value);
-                    } else if (__builtin_expect((curOut == NULL), 0)) {
+                    } else if (__builtin_expect((curOut == nullptr), 0)) {
                         flog->error("Received data for channel {} but storage not initiliazed!", channel);
                     } else if (header == 0xe9) {
                         // Pixel Header

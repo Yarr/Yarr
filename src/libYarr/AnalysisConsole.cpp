@@ -54,7 +54,7 @@ class BasicScanInfo : public ScanLoopInfo {
                statVec.push_back(0);
            }
 
-           return {std::move(statVec), styleVec};
+           return {statVec, styleVec};
         }
 };
 
@@ -143,8 +143,8 @@ int AnalysisConsole::parseOptions(int argc, char *argv[], AnalysisOpts &anOpts) 
     anOpts.progName=argv[0];
     const struct option long_options[] =
       {
-        {"help", no_argument, 0, 'h'},
-        {0, 0, 0, 0}};
+        {"help", no_argument, nullptr, 'h'},
+        {nullptr, 0, nullptr, 0}};
 
     int c;
     while (true) {

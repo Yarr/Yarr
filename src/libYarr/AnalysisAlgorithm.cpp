@@ -51,10 +51,10 @@ bool AnalysisAlgorithm::isPOILoop(const LoopActionBaseInfo *l) {
     }
 }
 
-AnalysisProcessor::AnalysisProcessor() = default;
+AnalysisProcessor::AnalysisProcessor() : id(0), input(nullptr), output(nullptr), feedback(nullptr), scan_info(nullptr), storeInputHisto(false), thread_ptr(nullptr) {}
 
 AnalysisProcessor::AnalysisProcessor(unsigned uid)
-  : id(uid)
+  : id(uid), input(nullptr), output(nullptr), feedback(nullptr), scan_info(nullptr), storeInputHisto(false), thread_ptr(nullptr)
 {
 }
 

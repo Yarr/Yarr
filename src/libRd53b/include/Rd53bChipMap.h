@@ -57,7 +57,7 @@ public:
   int getTotalChannels();
   std::string getBitTreeString(int myccol, int myqrow, bool do_compression=true);
   std::string getToTBitsString(int myccol, int myqrow, std::vector<int>& tots);
-  void readMapFile(std::string inputMapFileName);
+  void readMapFile(const std::string& inputMapFileName);
   void generateRndmEvent(const double occupancy, const int clusterSize, const int clusterOrientation);
   std::string isHalfFired(int min_eta, int max_eta, int min_phi, int max_phi);
   std::string getPlainHitMap(int myccol, int myqrow);

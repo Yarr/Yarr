@@ -52,10 +52,10 @@ std::ostream &operator <<(std::ostream &os, ConfigType &ct) {
 }
 
 ConfigType fromString(const std::string& s) {
-  if(s == "CONNECTIVITY") return ConfigType::CONNECTIVITY;
-  if(s == "CONTROLLER") return ConfigType::CONTROLLER;
-  if(s == "FRONT_END") return ConfigType::FRONT_END;
-  if(s == "SCAN_CONFIG") return ConfigType::SCAN_CONFIG;
+  if (s == "CONNECTIVITY") return ConfigType::CONNECTIVITY;
+  if (s == "CONTROLLER") return ConfigType::CONTROLLER;
+  if (s == "FRONT_END") return ConfigType::FRONT_END;
+  if (s == "SCAN_CONFIG") return ConfigType::SCAN_CONFIG;
   return ConfigType::UNKNOWN;
 }
 
@@ -156,12 +156,12 @@ bool testScanConfig(const json &scanConfig) {
 
 int checkJsonFE(json &jsonConfig, const std::string& fe_name) {
   auto fe = std::move(StdDict::getFrontEnd(fe_name));
-  if(!fe) {
+  if (!fe) {
     std::cout << "FrontEnd not found: " << fe_name << "!\n";
     return 2;
   }
   FrontEndCfg *cfg = dynamic_cast<FrontEndCfg*>(fe.get());
-  if(cfg == nullptr) {
+  if (cfg == nullptr) {
     std::cout << "FrontEnd: " << fe_name << " does not implement FrontEndCfg!\n";
     return 2;
   }
@@ -176,16 +176,16 @@ int checkJsonFE(json &jsonConfig) {
   {
     auto b = std::begin(jsonConfig);
     auto e = std::end(jsonConfig);
-    for(auto i=b; i!=e; i++) {
+    for (auto i=b; i!=e; i++) {
       name = i.key();
       count ++;
     }
   }
-  if(count != 1) {
-    if(jsonConfig.contains("HCC") && jsonConfig.contains("ABCs")) {
+  if (count != 1) {
+    if (jsonConfig.contains("HCC") && jsonConfig.contains("ABCs")) {
       bool pass_all = true;
       bool pass_one = false;
-      for(auto &n: {"Star", "Star_vH0A1", "Star_vH1A1"}) {
+      for (const auto& n: {"Star", "Star_vH0A1", "Star_vH1A1"}) {
         try {
           int ret_val = checkJsonFE(jsonConfig, n);
           if(ret_val != 0) {

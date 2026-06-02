@@ -21,7 +21,7 @@ Itkpixv2ReadRegLoop::Itkpixv2ReadRegLoop() : LoopActionBase(LOOP_STYLE_NOP)
 
 //Configures the ADC, reads the register returns the first recieved register.
 uint16_t Itkpixv2ReadRegLoop::ReadADC(unsigned short Reg, bool doCur, Itkpixv2 *fe) {
-    if (fe == NULL)
+    if (fe == nullptr)
         return 0;
 
     fe->confAdc(Reg, doCur);
@@ -35,7 +35,7 @@ uint16_t Itkpixv2ReadRegLoop::ReadADC(unsigned short Reg, bool doCur, Itkpixv2 *
 
 float Itkpixv2ReadRegLoop::ReadNTCTemp(Itkpixv2 *fe, bool in_kelvin) {
     //Sensor Config
-    if (fe == NULL)
+    if (fe == nullptr)
         return 0;
 
     float voltage = fe->adcToV(this->ReadADC(2, false, fe));
@@ -46,7 +46,7 @@ float Itkpixv2ReadRegLoop::ReadNTCTemp(Itkpixv2 *fe, bool in_kelvin) {
 
 float Itkpixv2ReadRegLoop::ReadResistTemp(Itkpixv2 *fe, bool in_kelvin) {
     //Sensor Config
-    if (fe == NULL)
+    if (fe == nullptr)
         return 0;
     
     // Read current
@@ -86,7 +86,7 @@ float Itkpixv2ReadRegLoop::ReadResistTemp(Itkpixv2 *fe, bool in_kelvin) {
 float Itkpixv2ReadRegLoop::ReadTransSensor(Itkpixv2 *fe, TransSensorLocation loc, TransSensorType type, Itkpixv2Cfg::TransSensor sensor, bool in_kelvin)
 {
     //Sensor Config
-    if (fe == NULL)
+    if (fe == nullptr)
         return 0;
 
     // enable sensor, and switch off bias
@@ -184,13 +184,13 @@ void Itkpixv2ReadRegLoop::execPart1()
             }
 
             // Reading Voltage  ADC
-            for (auto Reg : m_VoltMux) {
+            for (const auto& Reg : m_VoltMux) {
                 uint16_t ADCVal = ReadADC(Reg, false, feItkpixv2);
                 logger->info("[{}][{}] MON MUX_V: {}, Value: {} => {} V", id, feName, Reg, ADCVal, dynamic_cast<Itkpixv2 *>(fe)->adcToV(ADCVal));
             }
 
             // Reading Temperature sensors from the ADC
-            for (auto Reg : m_TempSensors) {
+            for (const auto& Reg : m_TempSensors) {
                 if (Reg == "NTC") {
                     float TempVal = ReadNTCTemp(feItkpixv2, false);
                     logger->info("[{}][{}] MON NTC: {} C", id, feName, TempVal);
@@ -215,7 +215,7 @@ void Itkpixv2ReadRegLoop::execPart1()
             }
 
             // Reading Current ADC
-            for (auto Reg : m_CurMux) {
+            for (const auto& Reg : m_CurMux) {
                 uint16_t ADCVal = ReadADC(Reg, true, feItkpixv2);
                 logger->info("[{}][{}] MON MUX_C: {} Value: {} => {} uA", id, feName, Reg, ADCVal, dynamic_cast<Itkpixv2 *>(fe)->adcToI(ADCVal)/1e-6);
             }

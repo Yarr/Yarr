@@ -7,7 +7,7 @@
 class SerialCom {
     public:
         SerialCom();
-        SerialCom(std::string deviceName);
+        SerialCom(const std::string& deviceName);
         ~SerialCom();
 
         void init(const std::string& deviceName);
@@ -21,9 +21,9 @@ class SerialCom {
     private:
 
         const unsigned MAX_READ = 4096;
-        int dev;
+        int dev = 0;
 
-        speed_t baudrate;
+        speed_t baudrate = B115200;
         struct termios tty = {};
         struct termios tty_old = {};
 };

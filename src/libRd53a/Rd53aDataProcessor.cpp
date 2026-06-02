@@ -20,7 +20,7 @@ bool rd53a_proc_registered =
     StdDict::registerDataProcessor("RD53A", []() { return std::unique_ptr<FeDataProcessor>(new Rd53aDataProcessor());});
 
 Rd53aDataProcessor::Rd53aDataProcessor()  {
-    m_input = NULL;
+    m_input = nullptr;
 }
 
 Rd53aDataProcessor::~Rd53aDataProcessor() = default;

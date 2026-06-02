@@ -233,7 +233,7 @@ void TriggerFeedbackSender::feedbackTrigger(unsigned channel, uint32_t info)
     logger->trace("Trigger feedback on channel {}", channel);
     TriggerFeedbackParams params{info};
 
-    auto fbParams = std::make_unique<FeedbackParams>(false, false, std::move(params));
+    auto fbParams = std::make_unique<FeedbackParams>(false, false, params);
 
     clip->pushData(std::move(fbParams));
 }

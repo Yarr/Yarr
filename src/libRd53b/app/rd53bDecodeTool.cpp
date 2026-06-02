@@ -21,16 +21,16 @@ static constexpr uint8_t _LUT_BinaryTreeMask[3][8] = {
 };
 
 struct option longopts[] = {
-    {"input", required_argument, NULL, 'i'},
-    {"output", required_argument, NULL, 'o'},
-    {"ne", required_argument, NULL, 'n'},
-    {"help", no_argument, NULL, 'h'},
+    {"input", required_argument, nullptr, 'i'},
+    {"output", required_argument, nullptr, 'o'},
+    {"ne", required_argument, nullptr, 'n'},
+    {"help", no_argument, nullptr, 'h'},
     {0, 0, 0, 0}};
 
 std::vector<uint32_t> _buffer;
 int _blockIdx = 0;
 int _bitIdx = 0;
-uint32_t *_data = NULL;
+uint32_t *_data = nullptr;
 std::unique_ptr<RawData> _curIn;
 
 void printHelp(const std::string& exe)
@@ -295,7 +295,7 @@ int main(int argc, char **argv)
     std::string outputFileName = "decoded.txt";
     bool compressed = true;
     int oc;
-    while ((oc = getopt_long(argc, argv, ":i:o:c:h", longopts, NULL)) != -1)
+    while ((oc = getopt_long(argc, argv, ":i:o:c:h", longopts, nullptr)) != -1)
     {
         switch (oc)
         {

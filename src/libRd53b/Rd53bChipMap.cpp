@@ -189,7 +189,7 @@ std::vector< std::tuple < int, int, int, int> > Rd53bChipMap::doSplit(std::vecto
   return new_extremes;
 }
 
-void Rd53bChipMap::readMapFile(std::string inputMapFileName){
+void Rd53bChipMap::readMapFile(const std::string& inputMapFileName){
   std::ifstream fin(inputMapFileName);
   std::string line;
   bool startEvt = false;
