@@ -7,8 +7,6 @@
 #include <iostream>
 #include <ctime>
 
-Rd53bChipMap::~Rd53bChipMap() = default;
-
 void Rd53bChipMap::reset(){
   //just reproduce the constructor functionality, so that we don't have to
   //create new instance for each generated event
