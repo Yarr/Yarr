@@ -257,7 +257,7 @@ void Itkpixv2EmuCommandExe::doRdReg(const Itkpixv2EmuUtils::Cmd& cmd){
     serviceBlock |= (value << 26);
 
     m_rx->write32(serviceBlock >> 32);
-    m_rx->write32(serviceBlock & 0xFFFFFFFF);
+    m_rx->write32(static_cast<uint32_t>(serviceBlock));
     
 }
 
