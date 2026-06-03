@@ -83,8 +83,7 @@
         "HCC_STOPHPR":     1,
         "ABCs_BCAL":       0,
         "ABCs_CALPULSE_ENABLE":    1,
-        "ABCs_CALPULSE_POLARITY":  0,
-        "ABCs_CURRDRIV": 4
+        "ABCs_CALPULSE_POLARITY":  0
     }
   }
 }

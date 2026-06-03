@@ -15,9 +15,9 @@
         "connectorID": 0,
         "protocol": 0,
         "flip": false,
-        "broadcast": true,
+        "broadcast": false,
         "idleWords": [120, 85, 120, 85],
-        "isCmdEmptyWaitTime": 20
+        "isCmdEmptyWaitTime": 0
       },
       "ToHost": {
         "detectorID": 0,
@@ -28,26 +28,7 @@
         "monitorInterval": 1000,
         "queueLimitMB": 4000,
         "waitTime": 10000
-      },
-      "OptoDevices": [
-        {
-          "version": 1,
-          "devAddr": 113,
-          "devPrimaryAddr": 113,
-          "type": "lpgbt",
-          "txFid": "0x1000000001558000",
-          "rxFid": "0x10000000015d0000"
-        },
-        {
-          "version": 1,
-          "i2cAddr": 2,
-          "devAddr": 112,
-          "devPrimaryAddr": 113,
-          "type": "lpgbt",
-          "txFid": "0x1000000001558000",
-          "rxFid": "0x10000000019d0000"
-        }
-      ]
+      }
     }
   }
 }
