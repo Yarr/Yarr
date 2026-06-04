@@ -48,7 +48,7 @@ def load_yaml(path: Path) -> dict:
 
 def git_contributors(repo_root: Path, since: Optional[str]) -> dict[str, dict]:
     """Return {git_entry: {count, first, last}} for commits since `since`."""
-    cmd = ["git", "log", "--format=%aN|%aE|%ad", "--date=short"]
+    cmd = ["git", "log", "--format=%aN|%aE|%cd", "--date=short"]
     if since:
         cmd.append(f"--since={since}")
     result = subprocess.run(cmd, capture_output=True, text=True, cwd=repo_root, check=True)
@@ -150,7 +150,7 @@ def main() -> None:
         help="Check entire git history regardless of date",
     )
     parser.add_argument(
-        "--min-commits", type=int, default=1,
+        "--min-commits", type=int, default=3,
         help="Minimum commit count to be reported (default: %(default)s)",
     )
     parser.add_argument(
@@ -180,6 +180,7 @@ def main() -> None:
 
     contributors = git_contributors(repo_root, since)
 
+    # --- Contributors not in AUTHORS.yaml ---
     unmatched = []
     for entry, stats in contributors.items():
         if stats["count"] < args.min_commits:
@@ -190,33 +191,50 @@ def main() -> None:
             continue
         unmatched.append((entry, stats))
 
-    if not unmatched:
-        print("All contributors in the selected period are in AUTHORS.yaml.")
-        sys.exit(0)
-
     unmatched.sort(key=lambda x: x[1]["count"], reverse=True)
 
-    print(f"Contributors NOT in AUTHORS.yaml ({len(unmatched)} found):")
-    print(f"{'Name / git identity':<50} {'Commits':>7}  {'First':>10}  {'Last':>10}")
-    print("-" * 83)
-    for entry, stats in unmatched:
-        display = entry.split("<")[0].strip()
-        print(f"{entry:<50} {stats['count']:>7}  {stats['first']:>10}  {stats['last']:>10}")
-
-    print()
-    print("Suggested AUTHORS.yaml snippets (fill in affiliation and verify name order):")
-    print()
-    seen_displays: set[str] = set()
-    for entry, stats in unmatched:
-        display = entry.split("<")[0].strip()
-        if display in seen_displays:
-            continue
-        seen_displays.add(display)
-        print(yaml_snippet(display, entry))
+    if unmatched:
+        print(f"Contributors NOT in AUTHORS.yaml ({len(unmatched)} found, >= {args.min_commits} commits):")
+        print(f"{'Name / git identity':<50} {'Commits':>7}  {'First':>10}  {'Last':>10}")
+        print("-" * 83)
+        for entry, stats in unmatched:
+            print(f"{entry:<50} {stats['count']:>7}  {stats['first']:>10}  {stats['last']:>10}")
+        print()
+        print("Suggested AUTHORS.yaml snippets (fill in affiliation and verify name order):")
+        print()
+        seen_displays: set[str] = set()
+        for entry, stats in unmatched:
+            display = entry.split("<")[0].strip()
+            if display in seen_displays:
+                continue
+            seen_displays.add(display)
+            print(yaml_snippet(display, entry))
+            print()
+    else:
+        print(f"All contributors with >= {args.min_commits} commits are in AUTHORS.yaml.")
         print()
 
-    # Exit 1 so the CI job is visibly non-green, but allow_failure keeps it advisory.
-    sys.exit(1)
+    # --- Authors with no commits in the selected period ---
+    # Useful for identifying authors who no longer actively contribute.
+    # Note: some authors support the project without committing code directly.
+    inactive = []
+    for author in authors:
+        if not any(matches_author(entry, author) for entry in contributors):
+            inactive.append(author["name"])
+
+    if inactive:
+        print(f"Authors in AUTHORS.yaml with NO commits in {period_label} ({len(inactive)} found):")
+        print("(These may contribute non-code support; review before removing.)")
+        for name in inactive:
+            print(f"  {name}")
+        print()
+    else:
+        print(f"All authors in AUTHORS.yaml have commits in {period_label}.")
+        print()
+
+    if unmatched or inactive:
+        # Exit 1 so the CI job is visibly non-green, but allow_failure keeps it advisory.
+        sys.exit(1)
 
 
 if __name__ == "__main__":

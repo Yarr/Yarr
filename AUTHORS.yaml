@@ -48,6 +48,7 @@ excluded_git_names:
   - "root <Francesco"
   - "hirose <hirose@localhost"
   - "syamagay"
+  - "ITk Strips SR1 Team"
 
 # Author list for Zenodo.
 # Format: name in "Last, First" order (Zenodo standard).
@@ -72,7 +73,7 @@ authors:
 
   - name: "Abel, Koji"
     affiliation: "Lawrence Berkeley National Lab"
-    orcid: "https://orcid.org/0009-0007-3158-9742"
+    orcid: "0009-0007-3158-9742"
     git_names:
       - "Koji Abel"
 
@@ -93,11 +94,12 @@ authors:
     git_names:
       - "Francesco Crescioli"
 
-  - name: "Deion Fellers"
+  - name: "Fellers, Deion"
     affiliation: "Lawrence Berkeley National Laboratory"
     orcid: "0000-0003-2934-0626"
-    git names:
+    git_names:
       - "Deion"
+      - "Deion Elgin Fellers"
       - "dfellers"
 
   - name: "Foster, Liam"
@@ -141,6 +143,8 @@ authors:
 
   - name: "Mironova, Maria"
     affiliation: "Lawrence Berkeley National Laboratory"
+    git_names:
+      - "Maria Miranova"
 
   - name: "Pagan Griso, Simone"
     affiliation: "Lawrence Berkeley National Laboratory"
@@ -155,7 +159,7 @@ authors:
       - "Elisabetta Pianori"
       - "epianori"
 
-  - name: "Karolos Potamianos"
+  - name: "Potamianos, Karolos"
     affiliation: "Warwick University"
     orcid: "0000-0001-7839-9785"
 
@@ -171,6 +175,12 @@ authors:
       - "Angira Rastogi"
       - "arastogi"
 
+  - name: "Roberts, Ryan"
+    affiliation: "University of Chicago"
+    # orcid: "0000-0000-0000-0000"
+    git_names:
+      - "Ryan Roberts"
+
   - name: "Rummler, Andre"
     affiliation: "European Organization for Nuclear Research"
     git_names:
@@ -181,6 +191,12 @@ authors:
     orcid: "0000-0002-3765-1320"
     git_names:
       - "Matthias Saimpert"
+
+  - name: "Stark, Giordon Holtsberg"
+    affiliation: "University of California, Santa Cruz"
+    orcid: "0000-0001-6616-3433"
+    git_names:
+      - "Giordon Holtsberg Stark"
 
   - name: "Tao, Zhengcheng"
     affiliation: "University of British Columbia"
