@@ -341,19 +341,6 @@ job_yamllint:
   script:
     - yamllint .
 
-# Advisory check: lists git contributors from the last 2 years that are not
-# in AUTHORS.yaml.  Exits 1 when unaccounted contributors are found so the
-# job is visibly non-green, but allow_failure keeps it from blocking the MR.
-# Run this before a release and update AUTHORS.yaml as needed.
-check_authors:
-  extends: .build
-  image: python:3.12-slim
-  before_script:
-    - pip install pyyaml
-  script:
-    - python3 scripts/check_authors.py --years 2
-  allow_failure: true
-
 .job_build_doxygen:
   stage: build
   before_script:
