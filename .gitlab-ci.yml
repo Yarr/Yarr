@@ -678,6 +678,21 @@ job_test_json:
 # Deploy Stage #
 ################
 
+# Publish to Zenodo when a version tag is pushed to master.
+# Requires ZENODO_TOKEN to be set as a protected CI/CD variable in GitLab.
+# Before tagging, run scripts/check_authors.py locally and update AUTHORS.yaml.
+deploy_zenodo:
+  extends: .deploy
+  rules:
+    - if: '$CI_COMMIT_TAG && $CI_PROJECT_PATH == "YARR/YARR"'
+  image: python:3.12-slim
+  before_script:
+    - pip install requests pyyaml
+  script:
+    - python3 scripts/zenodo_publish.py --tag "$CI_COMMIT_TAG"
+  variables:
+    ZENODO_TOKEN: $ZENODO_TOKEN
+
 deploy_master:
   extends: .deploy
   dependencies: ["build_docs_deploy"]
