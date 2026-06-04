@@ -16,7 +16,7 @@ fi
 
 #  First 2 default parameters:
 binary_folder=build/src
-test_script_params="scripts/cc_tests.sh"
+test_script_params="scripts/ci/cc_tests.sh"
 
 args=("$@")
 iarg=-1
