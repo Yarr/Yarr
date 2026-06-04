@@ -287,7 +287,7 @@ void Rd53bGlobalCfg::init() {
     AuroraCBWait0.init      ( 83, &m_cfg[ 83], 4, 12, 4095); regMap["AuroraCBWait0"] = &Rd53bGlobalCfg::AuroraCBWait0;
     AuroraCBSend.init       ( 83, &m_cfg[ 83], 0,  4, 0); regMap["AuroraCBSend"] = &Rd53bGlobalCfg::AuroraCBSend;
     //84
-    AuroraInitWait.init     ( 84, &m_cfg[ 84], 0, 11, 32); regMap["AuroraInitWait"] = &Rd53bGlobalCfg::AuroraInitWait;
+    AuroraInitWait.init     ( 84, &m_cfg[ 84], 0, 11, 0); regMap["AuroraInitWait"] = &Rd53bGlobalCfg::AuroraInitWait;
     //85
     GpValReg.init           ( 85, &m_cfg[ 85], 9,  4, 5); regMap["GpValReg"] = &Rd53bGlobalCfg::GpValReg;
     GpCmosEn.init           ( 85, &m_cfg[ 85], 8,  1, 1); regMap["GpCmosEn"] = &Rd53bGlobalCfg::GpCmosEn;

@@ -309,7 +309,7 @@ void Itkpixv2GlobalCfg::init() {
     AuroraCBWait0.init      ( 94, &m_cfg[ 94], 4, 12, 4095); regMap["AuroraCBWait0"] = &Itkpixv2GlobalCfg::AuroraCBWait0;
     AuroraCBSend.init       ( 94, &m_cfg[ 94], 0,  4, 0); regMap["AuroraCBSend"] = &Itkpixv2GlobalCfg::AuroraCBSend;
     //95
-    AuroraInitWait.init     ( 95, &m_cfg[ 95], 0, 11, 32); regMap["AuroraInitWait"] = &Itkpixv2GlobalCfg::AuroraInitWait;
+    AuroraInitWait.init     ( 95, &m_cfg[ 95], 0, 11, 0); regMap["AuroraInitWait"] = &Itkpixv2GlobalCfg::AuroraInitWait;
     //96-97
     AuroraAltOutput1.init   ( 96, &m_cfg[ 96], 0, 4, 0); regMap["AuroraAltOutput1"] = &Itkpixv2GlobalCfg::AuroraAltOutput1;
     AuroraAltOutput0.init   ( 97, &m_cfg[ 97], 0, 16, 0); regMap["AuroraAltOutput0"] = &Itkpixv2GlobalCfg::AuroraAltOutput0;
