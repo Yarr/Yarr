@@ -107,8 +107,8 @@ def update_chip_dbconfig(connectivity_file,controller_file):
             data_chip[chip_type]["GlobalConfig"]["CmlBias1"]=0
             data_chip[chip_type]["GlobalConfig"]["SerEnTap"]=0
             data_chip[chip_type]["GlobalConfig"]["SerInvTap"]=0
-            data_chip[chip_type]["GlobalConfig"]["ServiceBlockEn"]=0
-            data_chip[chip_type]["Parameter"]["EnforceNameIdCheck"] = False
+            data_chip[chip_type]["GlobalConfig"]["ServiceBlockEn"]=1
+            data_chip[chip_type]["Parameter"]["EnforceNameIdCheck"] = True
             if (current_type== "quad"):
                 #only the lane corresponding to the chip should be enabled
                 #first set all to 3, then find which one to enable to 1
