@@ -48,7 +48,7 @@
       },
       {
         "config": {
-          "trig_count": 500,
+          "trig_count": 250,
           "trig_frequency": 10000,
           "trig_time": 0,
           "l0_latency": 20,

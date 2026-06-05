@@ -15,9 +15,9 @@
         "connectorID": 0,
         "protocol": 0,
         "flip": false,
-        "broadcast": true,
+        "broadcast": false,
         "idleWords": [120, 85, 120, 85],
-        "isCmdEmptyWaitTime": 20
+        "isCmdEmptyWaitTime": 0
       },
       "ToHost": {
         "detectorID": 0,
