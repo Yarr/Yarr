@@ -306,7 +306,7 @@ job_test_felix_client:
     - make install -j$(nproc)
     - cd ../
     - eval "$YARR_GCC9_ENABLE"
-    - scripts/cc_tool.sh
+    - scripts/ci/cc_tool.sh
   coverage: '/  lines......: \d+(?:\.\d+)?/'
 
 job_code_coverage:
@@ -323,7 +323,7 @@ job_run_codechecker:
   script:
     - eval "$YARR_GCC9_ENABLE"
     - eval "$YARR_LLVM11_ENABLE"
-    - scripts/run_codechecker.sh -j$(nproc)
+    - scripts/ci/run_codechecker.sh -j$(nproc)
   after_script:
     - cat gl-code-quality-report.json
   artifacts:
@@ -680,7 +680,7 @@ job_test_json:
 
 # Publish to Zenodo when a version tag is pushed to master.
 # Requires ZENODO_TOKEN to be set as a protected CI/CD variable in GitLab.
-# Before tagging, run scripts/check_authors.py locally and update AUTHORS.yaml.
+# Before tagging, run scripts/ci/check_authors.py locally and update AUTHORS.yaml.
 deploy_zenodo:
   extends: .deploy
   rules:
@@ -689,7 +689,7 @@ deploy_zenodo:
   before_script:
     - pip install requests pyyaml
   script:
-    - python3 scripts/zenodo_publish.py --tag "$CI_COMMIT_TAG"
+    - python3 scripts/ci/zenodo_publish.py --tag "$CI_COMMIT_TAG"
   variables:
     ZENODO_TOKEN: $ZENODO_TOKEN
 
