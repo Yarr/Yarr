@@ -259,7 +259,7 @@ job_build_felix_release_520:
     - cmake -B build -DFelix_ROOT=${FELIX_PATH} -DBUILD_TESTS=on "-DYARR_CONTROLLERS_TO_BUILD=FelixClient;Emu" -DYARR_FRONT_ENDS_TO_BUILD=Star -DYARR_EMULATORS_TO_BUILD=StarEmu -DYARR_ENABLE_PYTHON=OFF -DCMAKE_CXX_STANDARD=20 -DYARR_ENABLE_FELIX_CLIENT_BRIDGE=ON
     - cmake --build build -j$(nproc)
     - cmake --install build
-    
+
 job_build_felix_release_52:
   extends: .rules
   stage: build
