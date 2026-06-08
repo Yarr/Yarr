@@ -27,7 +27,7 @@ function(YARR_ADD_FELIX_CLIENT)
         endif()
         find_package(Felix
                      REQUIRED COMPONENTS ${YARR_FELIX_COMPONENTS}
-                     OPTIONAL COMPONENTS  felix-io-client
+                     OPTIONAL_COMPONENTS  felix-io-client
                      HINTS "${Felix_ROOT}")
         if(NOT TARGET felix-io-client)
             message(STATUS "SYSTEM FELIX does not offer felix-io-client. Assuming <=05.02.00. Trying to find package directly.")
