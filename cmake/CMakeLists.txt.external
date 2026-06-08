@@ -27,16 +27,17 @@ function(YARR_ADD_FELIX_CLIENT)
         endif()
         find_package(Felix
                      REQUIRED COMPONENTS ${YARR_FELIX_COMPONENTS}
-                     OPTIONAL_COMPONENTS  felix-io-client
                      HINTS "${Felix_ROOT}")
-        if(NOT TARGET felix-io-client)
+        if(TARGET felix::felix-io-client)
+            message(STATUS "Using felix-io-client target provided by Felix")
+        else()
             message(STATUS "SYSTEM FELIX does not offer felix-io-client. Assuming <=05.02.00. Trying to find package directly.")
             find_package(felix-io-client
                      REQUIRED
                      CONFIG
                      HINTS "${Felix_ROOT}")
         endif()
-        if(NOT TARGET felix-io-client)
+        if(NOT (TARGET felix::felix-io-client OR TARGET felix-io-client::felix-io-client))
             message(FATAL_ERROR
                 "Could not find required target felix-io-client, "
                 "neither via Felix nor via standalone felix-io-client package"
