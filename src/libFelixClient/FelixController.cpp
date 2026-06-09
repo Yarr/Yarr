@@ -18,6 +18,10 @@ namespace {
 
 void FelixController::loadConfig(const json &j) {
 
+  if (j.contains("nthreads_output")) {
+    m_plotterThreads = j["nthreads_output"];
+  }
+
   // FelixClientThread configuration
   auto clientCfg = j["FelixClient"];
 

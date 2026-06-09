@@ -2,6 +2,7 @@
   "ctrlCfg": {
     "type": "FelixClient",
     "cfg": {
+      "nthreads_output": 4,
       "FelixClient": {
         "localIPorInterface": "lo",
         "busDir": "/tmp/bus",

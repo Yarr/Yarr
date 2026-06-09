@@ -811,16 +811,6 @@ namespace ScanHelper {
         return s;
     }
 
-    void writeFeConfig(FrontEndCfg *feCfg, const std::string &filename) {
-        std::thread([feCfg, filename]() {
-            json backupCfg;
-            feCfg->writeConfig(backupCfg);
-            std::ofstream backupCfgFile(filename);
-            backupCfgFile << std::setw(4) << backupCfg;
-            backupCfgFile.close();
-        }).detach(); 
-    }
-
     void writeScanLog(json scanLog, const std::string &filename) {
         if (scanLog.contains("ctrlCfg")
           && scanLog["ctrlCfg"].contains("ctrlCfg")

@@ -30,14 +30,19 @@ class HwController : virtual public TxCore, virtual public RxCore {
     public:
         /** Configure controller */
         virtual void loadConfig(const json &j) = 0 ;
-        
+
+        size_t getPlotterThreads() const { return m_plotterThreads; }
+
         virtual void setupMode() {}
         virtual void runMode() {}
         virtual const json getStatus() { return json{}; };
 
         virtual bool hasFeature(const std::string &feature) { return false; }
-  
+
         ~HwController() override = default;
+
+    protected:
+        size_t m_plotterThreads{4};
 };
 
 #endif
