@@ -658,6 +658,8 @@ job_test_benchmark:
   script:
     - bin/testUtil '[!benchmark]' > testUtils.benchmark
     - bin/testYarr '[!benchmark]' > testYarr.benchmark
+    - bin/testRd53b '[!benchmark]' > testRd53b.benchmark
+    - bin/testItkpixv2 '[!benchmark]' > testItkpixv2.benchmark
     - . scripts/run_strips_benchmarks.sh > star_processor_benchmarks.benchmark
   artifacts:
     paths:
