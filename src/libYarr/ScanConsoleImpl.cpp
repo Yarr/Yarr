@@ -503,12 +503,9 @@ void ScanConsoleImpl::cleanup() {
             continue;
         }
 
-        // Collect all histograms for this FE into one task
-        std::vector<std::unique_ptr<HistogramBase>> histos;
         while(!output.empty()) {
-            histos.push_back(output.popData());
+            plot_futures.push_back(m_plotter->makePlots(scanOpts.doPlots, scanOpts.outputDir, name, output.popData(), *m_pool));
         }
-        plot_futures.push_back(m_plotter->makePlotsForFe(scanOpts.doPlots, scanOpts.outputDir, name, std::move(histos), *m_pool));
     } // i
 
     for (auto &f : cfg_futures) {

@@ -28,25 +28,6 @@ public:
         });
     }
 
-    // One task per FE; takes ownership of histos and processes them serially in that task.
-    std::future<void> makePlotsForFe(bool doPlots, const std::string &outputDir,
-                                     const std::string &fe_name,
-                                     std::vector<std::unique_ptr<HistogramBase>> histos,
-                                     ThreadPool &pool)
-    {
-        if (histos.empty()) {
-            std::promise<void> p;
-            p.set_value();
-            return p.get_future();
-        }
-        return pool.enqueue([this, doPlots, outputDir, fe_name, histos = std::move(histos)]() mutable {
-            for (auto &histo : histos) {
-                this->implToFile(outputDir, fe_name, *histo);
-                if (doPlots) this->implPlot(outputDir, fe_name, *histo);
-            }
-        });
-    }
-
     std::future<void> writeFeConfig(FrontEndCfg *feCfg, const std::string &filename, ThreadPool &pool) {
         return pool.enqueue([feCfg, filename]() {
             json backupCfg;
