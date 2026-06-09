@@ -135,7 +135,7 @@ job_test_find_package_consumer:
     - $YARR_INSTALL_DIR/bin/scanConsole -k
     - export TEST_BUILD_DIR="$YARR_WORK_DIR/build-YarrFindPackageTest"
     - export TEST_INSTALL_DIR="$YARR_WORK_DIR/install-YarrFindPackageTest"
-    - cmake3 -S "$YARR_PROJECT_DIR/tests/find_package_test" -B "$TEST_BUILD_DIR" -DCMAKE_TOOLCHAIN_FILE="$YARR_TOOLCHAIN_FILE" -DCMAKE_INSTALL_PREFIX="$TEST_INSTALL_DIR" -DYarr_DIR=$Yarr_DIR -Dfelix-interface_DIR="/builds/work/install-yarr/lib/cmake/felix-interface" -Dfelix-client-thread_DIR="/builds/work/install-yarr/lib/cmake/felix-client-thread"
+    - cmake3 -S "$YARR_PROJECT_DIR/tests/find_package_test" -B "$TEST_BUILD_DIR" -DCMAKE_TOOLCHAIN_FILE="$YARR_TOOLCHAIN_FILE" -DCMAKE_INSTALL_PREFIX="$TEST_INSTALL_DIR" -DYarr_DIR=$Yarr_DIR -Dfelix-def_DIR="/builds/work/install-yarr/lib/cmake/felix-def" -Dfelix-interface_DIR="/builds/work/install-yarr/lib/cmake/felix-interface" -Dfelix-client-thread_DIR="/builds/work/install-yarr/lib/cmake/felix-client-thread" -Dfelix-io-client_DIR="/builds/work/install-yarr/lib/cmake/felix-io-client"
     - cmake3 --build "$TEST_BUILD_DIR" --parallel "$(nproc)"
     - cmake3 --install "$TEST_BUILD_DIR"
     - $TEST_INSTALL_DIR/bin/YarrFindPackageTest
@@ -259,7 +259,7 @@ job_build_felix_check:
   # If build doesn't work for some reason it might make sense to ignore
   allow_failure: true
 
-job_build_felix_release_52:
+job_build_felix_release_520:
   extends: .rules
   stage: build
   image: gitlab-registry.cern.ch/atlas-tdaq-software/tdaq_ci:x86_64-el9
@@ -279,6 +279,26 @@ job_build_felix_release_52:
     - cmake --build build -j$(nproc)
     - cmake --install build
 
+job_build_felix_release_52:
+  extends: .rules
+  stage: build
+  image: gitlab-registry.cern.ch/atlas-tdaq-software/tdaq_ci:x86_64-el9
+  tags:
+    - cvmfs
+  artifacts:
+    paths:
+      - lib64
+      - bin
+  variables:
+    FELIX_PATH: /cvmfs/atlas-online-nightlies.cern.ch/felix/releases/felix-05-02-01-rm5-stand-alone/x86_64-el9-gcc15-opt
+  script:
+    # FELIX Release is mostly standalone, but refers to some other things for felix-server component
+    - . /cvmfs/sft.cern.ch/lcg/views/LCG_108a/x86_64-el9-gcc15-opt/setup.sh
+    - gcc --version
+    - cmake -B build -DFelix_ROOT=${FELIX_PATH} -DBUILD_TESTS=on "-DYARR_CONTROLLERS_TO_BUILD=FelixClient;Emu" -DYARR_FRONT_ENDS_TO_BUILD=Star -DYARR_EMULATORS_TO_BUILD=StarEmu -DYARR_ENABLE_PYTHON=OFF -DCMAKE_CXX_STANDARD=20 -DYARR_ENABLE_FELIX_CLIENT_BRIDGE=ON
+    - cmake --build build -j$(nproc)
+    - cmake --install build
+
 job_test_felix_client:
   extends: .rules
   stage: test
@@ -287,7 +307,7 @@ job_test_felix_client:
   tags:
     - cvmfs
   variables:
-    FELIX_PATH: /cvmfs/atlas-online-nightlies.cern.ch/felix/releases/felix-05-02-00-rm5-stand-alone/x86_64-el9-gcc15-opt
+    FELIX_PATH: /cvmfs/atlas-online-nightlies.cern.ch/felix/releases/felix-05-02-01-rm5-stand-alone/x86_64-el9-gcc15-opt
   script:
     - . ${FELIX_PATH}/setup.sh
     - bash scripts/run_felix_bridge_tests.sh

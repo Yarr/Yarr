@@ -38,7 +38,7 @@
         "txBandWidth": 160,
         "rxBandWidth": 1280,
 
-        "WriteFelixRegsOnLoad": false,
+        "WriteFelixRegsOnLoad": true,
         "Reg": {
           "DECODING_REVERSE_10B" : "0x1",
           "DECODING_MASK64B66BKBLOCK" : "0x0",
