@@ -551,7 +551,6 @@ void ScanConsoleImpl::cleanup() {
 
 }
 
-
 std::string ScanConsoleImpl::getResults() {
     json result;
     getResults(result);

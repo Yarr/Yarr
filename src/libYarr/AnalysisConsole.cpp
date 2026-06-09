@@ -64,7 +64,7 @@ class AnalysisConsoleImpl {
     AnalysisOpts options;
 
     std::unique_ptr<FrontEnd> frontEnd;
-    ThreadPool m_pool{4};
+    ThreadPool m_pool{4}; // hardcoded to 4 threads as not easily configurable and only used for testing
 
     ClipBoard<HistogramBase> clipHistoInput;
     std::vector<std::unique_ptr<ClipBoard<HistogramBase>> > clipResultOutput;

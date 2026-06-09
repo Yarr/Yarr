@@ -6,7 +6,6 @@
 #include <memory>
 #include <numeric>
 #include <getopt.h>
-#include <thread>
 #include <filesystem>
 namespace fs = std::filesystem;
 
