@@ -65,9 +65,34 @@ def process_catch_bench(fname):
         if t == "Test results":
             print_test_lines(test_name, block)
 
+def process_logging_bench(fname, prefix):
+    """
+    Process data from star data processor benchmark.
+
+    Strips out the part with a known logger name.
+    """
+    for l in open(fname):
+        if l.startswith("Running"):
+            test_packet_type = l.split(":")[1]
+            test_packet_type = test_packet_type.strip()
+            continue
+
+        # Logger name used to output info
+        if "benchmark_dataprocessing_star" not in l:
+            continue
+
+        if "Throughput" in l:
+            info_split = l.split()
+            bench_type = info_split[-3]
+            number = info_split[-1]
+            print(f"bench_{prefix}_{test_packet_type}_{bench_type} {number}")
+
 def main():
     process_catch_bench("testUtils.benchmark")
     process_catch_bench("testYarr.benchmark")
+
+    process_logging_bench("star_processor_benchmarks.benchmark",
+                          "star_dataprocessor")
 
 if __name__ == "__main__":
     main()
