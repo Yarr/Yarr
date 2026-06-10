@@ -153,10 +153,6 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
                 SpecRxCore::m_rxActiveLanes = j["rxActiveLanes"];
             }
 
-            if (j.contains("nthreads_output")) {
-                m_plotterThreads = j["nthreads_output"];
-            }
-
             // Configure RX delay
             SpecCom::writeSingle(RX_ADDR | RX_MANUAL_DELAY, 0xFFFF);    
             if (j.contains("delay")) {

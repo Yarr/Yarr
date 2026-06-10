@@ -416,9 +416,9 @@ int ScanConsoleImpl::initHardware() {
         logger->critical("Error opening or loading controller config: {}", e.what());
         return -1;
     }
-    m_pool = std::make_unique<ThreadPool>(hwCtrl->getPlotterThreads());
+    m_pool = std::make_unique<ThreadPool>(scanOpts.nThreadsOutput);
     m_plotter = StdDict::getPlotter(scanOpts.plottingType);
-    logger->info("Plotter thread pool size: {}", hwCtrl->getPlotterThreads());
+    logger->info("Plotter thread pool size: {}", scanOpts.nThreadsOutput);
     // Add to scan log
     scanLog["ctrlCfg"] = ctrlCfg;
     scanLog["ctrlStatus"] = hwCtrl->getStatus();

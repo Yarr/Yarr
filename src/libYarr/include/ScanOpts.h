@@ -34,5 +34,6 @@ struct ScanOpts {
     bool doResetBeforeScan = true;
     bool doConfigureBeforeScan = true;
     bool makeGraph = false;
+    unsigned nThreadsOutput = 4;
 };
 #endif //YARR_SCANOPTS_H
