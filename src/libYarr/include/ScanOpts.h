@@ -3,6 +3,7 @@
 //
 #ifndef YARR_SCANOPTS_H
 #define YARR_SCANOPTS_H
+#include <thread>
 #include <vector>
 #include <string>
 
@@ -34,5 +35,9 @@ struct ScanOpts {
     bool doResetBeforeScan = true;
     bool doConfigureBeforeScan = true;
     bool makeGraph = false;
+    unsigned nThreadsOutput = [] {
+        unsigned n = std::thread::hardware_concurrency();
+        return n ? n : 4;
+    }(); // if hardware_concurrency() returns 0, then default to 4 threads
 };
 #endif //YARR_SCANOPTS_H
