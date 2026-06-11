@@ -1,6 +1,9 @@
 
 #include <string>
 #include <chrono>
+#include <fstream>
+#include <iomanip>
+#include <stdexcept>
 #include <thread>
 #include <vector>
 #include <map>
@@ -31,20 +34,30 @@
 auto logger = logging::make_log("ScanConsole");
 
 class DefaultPlotter : public Plotter {
-protected:
-  void implToFile(const std::string &outputDir,
-                  const std::string &feName,
-                  const HistogramBase &histo) override
-  {
-    histo.toFile(feName, outputDir);
-  }
+public:
+    std::future<void> makePlots(bool doPlots, const std::string &outputDir,
+                                const std::string &fe_name,
+                                std::unique_ptr<HistogramBase> histo,
+                                ThreadPool &pool) override
+    {
+        return pool.enqueue([doPlots, outputDir, fe_name, h = std::move(histo)]() {
+            h->toFile(fe_name, outputDir);
+            if (doPlots) h->plot(fe_name, outputDir);
+        });
+    }
 
-  void implPlot(const std::string &outputDir,
-                const std::string &feName,
-                const HistogramBase &histo) override
-  {
-    histo.plot(feName, outputDir);
-  }
+    std::future<void> writeFeConfig(FrontEndCfg *feCfg, const std::string &filename,
+                                    ThreadPool &pool) override
+    {
+        return pool.enqueue([feCfg, filename]() {
+            json backupCfg;
+            feCfg->writeConfig(backupCfg);
+            std::ofstream backupCfgFile(filename);
+            if (!backupCfgFile.is_open())
+                throw std::runtime_error("Failed to open config file for writing: " + filename);
+            backupCfgFile << std::setw(4) << backupCfg;
+        });
+    }
 };
 
 namespace DefaultPlotting {

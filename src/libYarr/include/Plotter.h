@@ -4,49 +4,21 @@
 #include "HistogramBase.h"
 #include "ThreadPool.h"
 #include "FrontEndCfg.h"
-#include "storage.hpp"
+#include <memory>
 #include <string>
 #include <future>
-#include <fstream>
-#include <iomanip>
-#include <stdexcept>
 
 class Plotter {
 public:
     virtual ~Plotter() = default;
 
-    // One task per histogram (for individually independent plots, e.g. loop histograms).
-    // Takes ownership of histo to avoid dangling reference across thread boundary.
-    std::future<void> makePlots(bool doPlots, const std::string &outputDir,
-                                const std::string &fe_name,
-                                std::unique_ptr<HistogramBase> histo,
-                                ThreadPool &pool)
-    {
-        return pool.enqueue([this, doPlots, outputDir, fe_name, h = std::move(histo)]() {
-            this->implToFile(outputDir, fe_name, *h);
-            if (doPlots) this->implPlot(outputDir, fe_name, *h);
-        });
-    }
+    virtual std::future<void> makePlots(bool doPlots, const std::string &outputDir,
+                                        const std::string &fe_name,
+                                        std::unique_ptr<HistogramBase> histo,
+                                        ThreadPool &pool) = 0;
 
-    std::future<void> writeFeConfig(FrontEndCfg *feCfg, const std::string &filename, ThreadPool &pool) {
-        return pool.enqueue([feCfg, filename]() {
-            json backupCfg;
-            feCfg->writeConfig(backupCfg);
-            std::ofstream backupCfgFile(filename);
-            if (!backupCfgFile.is_open())
-                throw std::runtime_error("Failed to open config file for writing: " + filename);
-            backupCfgFile << std::setw(4) << backupCfg;
-        });
-    }
-
-protected:
-    virtual void implToFile(const std::string &outputDir,
-                            const std::string &fe_name,
-                            const HistogramBase &histo) = 0;
-
-    virtual void implPlot(const std::string &outputDir,
-                          const std::string &fe_name,
-                          const HistogramBase &histo) = 0;
+    virtual std::future<void> writeFeConfig(FrontEndCfg *feCfg, const std::string &filename,
+                                            ThreadPool &pool) = 0;
 };
 
 #endif
