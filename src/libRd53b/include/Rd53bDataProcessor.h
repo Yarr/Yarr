@@ -89,6 +89,10 @@ private:
     std::vector<uint32_t> _debugBuffer;
     unsigned _debugIdx; // position in debug buffer
 
+    // PToT mask-loop index — instance variable so multiple processors don't share state
+    unsigned _maskLoopIndex;
+    bool _checkMaskLoopIndex;
+
     // Inline functions frequently used
     inline bool retrieve(uint64_t &variable, const unsigned length, const bool checkEOS = false, const bool skipNSCheck = false);	// Retrieve bit string with length
     inline void rollBack(const unsigned length);									// Roll back bit index
@@ -101,7 +105,7 @@ private:
     void dumpDebugBuffer();
     // Data stream components
     uint64_t _ccol;
-    uint64_t _qrow[55] = {}; // One counter for each core column. Use 54 as total number of core columns to be compatible with CMS chip geometry. Note core column index starts from 1.
+    uint16_t _qrow[55] = {}; // One counter for each core column. Use 54 as total number of core columns to be compatible with CMS chip geometry. Note core column index starts from 1.
     uint64_t _islast_isneighbor;
     uint64_t _hitmap;
     uint64_t _ToT;

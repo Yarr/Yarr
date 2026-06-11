@@ -72,9 +72,13 @@ Itkpixv2DataProcessor::Itkpixv2DataProcessor()
     // Status
     _status = INIT;
 
-    // Debug buffer
-    _debugBuffer.resize(ITKPIX_DEBUG_BUFFERSIZE << 1);
+    // Debug buffer (sized exactly to the number of slots actually written/read)
+    _debugBuffer.resize(ITKPIX_DEBUG_BUFFERSIZE);
     _debugIdx = 0;
+
+    // PToT mask-loop state — per-instance so concurrent processors don't share
+    _maskLoopIndex = 0;
+    _checkMaskLoopIndex = true;
 }
 
 Itkpixv2DataProcessor::~Itkpixv2DataProcessor()= default;
@@ -222,9 +226,13 @@ bool Itkpixv2DataProcessor::retrieve(uint64_t &variable, const unsigned length, 
 // Debug function
 void Itkpixv2DataProcessor::dumpDebugBuffer() {
     logger->error("[{}] Dumping last {} data blocks, in hex:", m_feCfg->getName(), ITKPIX_DEBUG_BUFFERSIZE);
+    // _qrow has 55 elements (indices 0-54). Guard against OOB when _ccol is out of
+    // range (corrupted data), which is exactly the situation dumpDebugBuffer is
+    // called in.
+    const uint64_t safe_ccol = (_ccol < 55) ? _ccol : 54;
     logger->error(
         "[{}] wordIdx={}, bitIdx={}, rawDataIdx={}, wordCount={}, tag={}, ccol={}, qrow={}, islast_isneighbor={}, hitmap={}",
-        m_feCfg->getName(), _wordIdx, _bitIdx, _rawDataIdx, _wordCount, _tag, _ccol, _qrow[_ccol], _islast_isneighbor, _hitmap
+        m_feCfg->getName(), _wordIdx, _bitIdx, _rawDataIdx, _wordCount, _tag, _ccol, _qrow[safe_ccol], _islast_isneighbor, _hitmap
     );
     logger->error("[{}]", m_feCfg->getName());
 
@@ -296,6 +304,10 @@ void Itkpixv2DataProcessor::process_core()
             }
             // Create a new event
             // RD53C can return l1id/bcid values according to chip config registers
+            if (!_curOut) {
+                _curOut = std::make_unique<FrontEndData>(_curInV->stat);
+                _curOut->events.reserve(128);
+            }
             _curOut->newEvent(_tag, _l1id, _bcid);
             _events++;
             sendFeedback(_tag, _bcid);
@@ -344,7 +356,7 @@ void Itkpixv2DataProcessor::process_core()
                 _status = BCIDL1; // Go back to newEvent / BCIDL1 assignment
                 continue;
             }
-            else if (_ccol >= 0x38) // Internal tag
+            else if (_ccol >= 55) // Internal tag (valid ccol range is 1-54; 55 is unphysical)
             {
                 // Internal tag is 11-bit. So need to retrieve 5 more bits
                 uint64_t temp = 0;
@@ -378,9 +390,13 @@ void Itkpixv2DataProcessor::process_core()
                 if (_islast_isneighbor & 0x1)
                     ++_qrow[_ccol];
 
-                // Otherwise read the qrow value
-                else if (!retrieve(_qrow[_ccol], 8))
-                    return;
+                // Otherwise read the qrow value (retrieve needs uint64_t; cast down after)
+                else {
+                    uint64_t tmp = 0;
+                    if (!retrieve(tmp, 8))
+                        return;
+                    _qrow[_ccol] = static_cast<uint16_t>(tmp);
+                }
 
             case HMAP1:
                 _status = HMAP1;
@@ -438,6 +454,8 @@ void Itkpixv2DataProcessor::process_core()
                     if (!retrieve(_ToT, _LUT_PlainHMap_To_ColRow_ArrSize[_hitmap] << 2))
                         return;
 
+                    if (_events > 0 && _LUT_PlainHMap_To_ColRow_ArrSize[_hitmap] > 0 && _curOut->curEvent->hits.empty())
+                        _curOut->curEvent->hits.reserve(std::max(16u, static_cast<unsigned>(_LUT_PlainHMap_To_ColRow_ArrSize[_hitmap])));
                     int idx = 0;
                     for (unsigned ibus = 0; ibus < 4; ibus++)
                     {
@@ -462,27 +480,29 @@ void Itkpixv2DataProcessor::process_core()
                             {
                                 // This is now possible if the event is so long that it spreads over raw data containers
                                 // logger->warn("[{}] No header in data fragment!", _channel);
+                                if (!_curOut) {
+                                    _curOut = std::make_unique<FrontEndData>(_curInV->stat);
+                                    _curOut->events.reserve(128);
+                                }
                                 _curOut->newEvent(_tag, _l1id, _bcid);
                                 _events++;
                                 _splitEventsCnt++;
                             }
 
-                            // Reverse enginner the pixel address using mask staging
-                            static unsigned maskLoopIndex = 0;
-                            static bool check_loop_index = true;
-                            if (check_loop_index)
+                            // Reverse engineer the pixel address using mask staging
+                            if (_checkMaskLoopIndex)
                             {
                                 for (unsigned loop = 0; loop < _curOut->lStat.size(); loop++)
                                 {
                                     if (_curOut->lStat.getStyle(loop) == LOOP_STYLE_MASK)
                                     {
-                                        maskLoopIndex = loop;
-                                        check_loop_index = false;
+                                        _maskLoopIndex = loop;
+                                        _checkMaskLoopIndex = false;
                                         break;
                                     }
                                 }
                             }
-                            const unsigned step = _curOut->lStat.get(maskLoopIndex);
+                            const unsigned step = _curOut->lStat.get(_maskLoopIndex);
                             const uint16_t pix_col = (_ccol - 1) * 8 + PToT_maskStaging[step % 4][ibus] + 1;
                             const uint16_t pix_row = step / 2 + 1;
 
@@ -503,6 +523,11 @@ void Itkpixv2DataProcessor::process_core()
                     {
                         logger->warn("Received fragment with no ToT! ({} , {})", _ccol, _qrow[_ccol]);
                     }
+                    // Seed hits capacity on first non-empty qcore so push_back doubles
+                    // from a sensible base. Skips the allocation for empty events entirely.
+                    // Guard _events > 0: after a batch boundary, _curOut is fresh and curEvent is uninitialised.
+                    if (_events > 0 && _LUT_PlainHMap_To_ColRow_ArrSize[_hitmap] > 0 && _curOut->curEvent->hits.empty())
+                        _curOut->curEvent->hits.reserve(std::max(16u, static_cast<unsigned>(_LUT_PlainHMap_To_ColRow_ArrSize[_hitmap])));
                     for (unsigned ihit = 0; ihit < _LUT_PlainHMap_To_ColRow_ArrSize[_hitmap]; ++ihit)
                     {
                         const uint8_t pix_tot = ((_ToT >> (ihit << 2)) & 0xF);
@@ -515,7 +540,12 @@ void Itkpixv2DataProcessor::process_core()
                         {
                             // This is now possible if an event is so long that it spread over raw data containers
                             // logger->warn("[{}] No header in data fragment!", _channel);
+                            if (!_curOut) {
+                                _curOut = std::make_unique<FrontEndData>(_curInV->stat);
+                                _curOut->events.reserve(128);
+                            }
                             _curOut->newEvent(_tag, _l1id, _bcid);
+                            _curOut->curEvent->hits.reserve(16);
                             _events++;
                             _splitEventsCnt++;
                         }
@@ -580,15 +610,17 @@ bool Itkpixv2DataProcessor::getNextDataBlockImpl()
         }
         _wordIdx += 2; // Increase block index
 
-        // Segfault will happen at the next line, print circular buffer results
-        if (unlikely(_curInV->data.size() <= _rawDataIdx)) {
-            logger->error("[{}] DataProcessor is entering segfault case! _curInV size {}, _rawDataIdx {}, 0x{:x} 0x{:x}", m_feCfg->getName(), _curInV->data.size(), _rawDataIdx, _data[0], _data[1]);
+        // Guard against out-of-range raw data access before dereferencing.
+        if (unlikely(_rawDataIdx >= static_cast<int>(_curInV->data.size()))) {
+            logger->error("[{}] DataProcessor reached end of raw data container. _curInV size {}, _rawDataIdx {}, 0x{:x} 0x{:x}", m_feCfg->getName(), _curInV->data.size(), _rawDataIdx, _data[0], _data[1]);
 #if USE_ITKPIX_DEBUG_BUFFER > 0
             dumpDebugBuffer();
 #endif
+            // Force the "cannot get more data" path below.
+            _rawDataIdx = _curInV->size();
         }
 
-        if (_wordIdx >= _curInV->data[_rawDataIdx]->getSize())
+        if (_rawDataIdx < static_cast<int>(_curInV->data.size()) && _wordIdx >= _curInV->data[_rawDataIdx]->getSize())
         {
             _rawDataIdx++;
             _wordIdx = 0;
@@ -641,6 +673,7 @@ bool Itkpixv2DataProcessor::getNextDataBlockImpl()
 
                 // Reinitalize _curOut buffer
                 _curOut = std::make_unique<FrontEndData>(pushedStat);
+                _curOut->events.reserve(128);
             }
             else
             {
@@ -686,6 +719,7 @@ bool Itkpixv2DataProcessor::getNextDataBlockImpl()
 
         if(_curOut == nullptr) {
             _curOut = std::make_unique<FrontEndData>(_curInV->stat);
+            _curOut->events.reserve(128);
             _events = 0;
         }
 
@@ -710,37 +744,37 @@ bool Itkpixv2DataProcessor::getNextDataBlockImpl()
 
 void Itkpixv2DataProcessor::getPreviousDataBlock()
 {
-    // Correct raw data index and processed raw data size if needed
-    _wordIdx -= 2;
-    if (_wordIdx < 0)
-    {
-        // Special case that we need to go back to the previous raw data container
-        if (--_rawDataIdx < 0)
+    // Iterative: skip 0xFFFFDEAD sentinel words and wrong-chip-ID blocks without
+    // risking stack overflow on large runs of such words.
+    while (true) {
+        _wordIdx -= 2;
+        if (_wordIdx < 0)
         {
-            _data = _data_pre;
-            return;
+            if (--_rawDataIdx < 0)
+            {
+                _data = _data_pre;
+                return;
+            }
+            _wordIdx = _curInV->data[_rawDataIdx]->getSize() - 2;
         }
-        _wordIdx = _curInV->data[_rawDataIdx]->getSize() - 2;
-    }
-    _data = &_curInV->data[_rawDataIdx]->get(_wordIdx); // Also roll back the block index and data word pointer
-    _dataPtrCpy = _curInV->data[_rawDataIdx];
+        _data = &_curInV->data[_rawDataIdx]->get(_wordIdx);
+        _dataPtrCpy = _curInV->data[_rawDataIdx];
 
-    // Recursive `getPreviousDataBlock` is bounded by size of data container, < 1 million (~segfault threshold)
-    if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
-        getPreviousDataBlock();
-    if (((_data[0] >> 29) & 0x3) != _chipId && _enChipId)
-        getPreviousDataBlock();
+        if (_data[0] == 0xFFFFDEAD && _data[1] == 0xFFFFDEAD)
+            continue;
+        if (((_data[0] >> 29) & 0x3) != _chipId && _enChipId)
+            continue;
+        break;
+    }
 }
 
 void Itkpixv2DataProcessor::sendFeedback(unsigned tag, unsigned bcid)
 {
-    std::unique_ptr<FeedbackProcessingInfo> stat(new FeedbackProcessingInfo{.trigger_tag = PROCESSING_FEEDBACK_TRIGGER_TAG_ERROR});
-    FeedbackProcessingInfo &curStatus = *stat;
-    curStatus.trigger_tag = tag;
-    curStatus.bcid = bcid;
-    if (statusFb != nullptr) statusFb->pushData(std::move(stat));
-
-    return;
+    if (statusFb == nullptr) return;
+    auto stat = std::make_unique<FeedbackProcessingInfo>();
+    stat->trigger_tag = tag;
+    stat->bcid = bcid;
+    statusFb->pushData(std::move(stat));
 }
 
 json Itkpixv2DataProcessor::getLog() {
