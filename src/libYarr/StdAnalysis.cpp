@@ -525,7 +525,7 @@ void TotAnalysis::end() {
             double injQ = feCfg->toCharge(vcalMin+k*vcalStep, useScap, useLcap);
             double sum = 0;
             double entries = 0;
-            for (int iToT=0; iToT<=160; iToT++) {
+            for (unsigned iToT=0; iToT<=160; iToT++) {
                 double measToT = iToT * 0.1;
                 int n = chargeVsTotMap->binNum(injQ, measToT);
                 sum += (chargeVsTotMap->getBin(n))*(measToT);

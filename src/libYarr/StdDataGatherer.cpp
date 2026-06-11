@@ -59,8 +59,12 @@ void StdDataGatherer::execPart2() {
     unsigned nAllRxReadIterations = 0;
 
     signaled = 0;
-    (void)signal(SIGINT, [](int /*signum*/){signaled = 1;});
-    (void)signal(SIGUSR1, [](int /*signum*/){signaled = 1;});
+    if (signal(SIGINT, [](int /*signum*/){signaled = 1;}) == SIG_ERR) {
+        SPDLOG_LOGGER_ERROR(sdglog, "Failed to install SIGINT handler");
+    }
+    if (signal(SIGUSR1, [](int /*signum*/){signaled = 1;}) == SIG_ERR) {
+        SPDLOG_LOGGER_ERROR(sdglog, "Failed to install SIGUSR1 handler");
+    }
 
     //! initial wait before reading data
     std::this_thread::sleep_for(g_rx->getWaitTime());
