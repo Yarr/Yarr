@@ -19,9 +19,9 @@
 class ResultBase {
     public:
         /** Named result */
-        ResultBase(std::string arg_name);
+        ResultBase(const std::string& arg_name);
         /** Named result associated with point of scan */
-        ResultBase(std::string arg_name, LoopStatus &stat);
+        ResultBase(const std::string& arg_name, LoopStatus &stat);
         /** Destructor */
         virtual ~ResultBase();
 
