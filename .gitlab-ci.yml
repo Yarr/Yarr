@@ -659,7 +659,10 @@ job_test_benchmark:
     - bin/testUtil '[!benchmark]' > testUtils.benchmark
     - bin/testYarr '[!benchmark]' > testYarr.benchmark
     - . scripts/run_strips_benchmarks.sh > star_processor_benchmarks.benchmark
+    - python3 scripts/ci/process_metrics.py > metrics.txt
   artifacts:
+    reports:
+      metrics: metrics.txt
     paths:
       - '*.benchmark'
 
