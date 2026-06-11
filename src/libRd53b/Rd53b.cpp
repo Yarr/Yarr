@@ -219,7 +219,6 @@ void Rd53b::configurePixelMaskParallel() {
         this->writeRegister(&Rd53b::PixRegionCol, dc);
         this->writeRegister(&Rd53b::PixRegionRow, 0);
         std::array<uint16_t, n_Row> maskBits = {};
-        maskBits = {};
         for (unsigned row=0; row<n_Row; row++) {
             maskBits[row] = toTenBitMask(pixRegs[dc][row]);
         }
