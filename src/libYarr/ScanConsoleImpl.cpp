@@ -41,7 +41,9 @@ public:
                                 ThreadPool &pool) override
     {
         return pool.enqueue([doPlots, outputDir, fe_name, h = std::move(histo)]() {
+            // always dump the data
             h->toFile(fe_name, outputDir);
+            // only create the image files if asked to
             if (doPlots) h->plot(fe_name, outputDir);
         });
     }
