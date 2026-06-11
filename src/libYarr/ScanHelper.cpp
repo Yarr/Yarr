@@ -958,7 +958,7 @@ namespace ScanHelper {
         std::cout << " -i <site.json> : Provide site configuration. (Default " << dbSiteCfgPath << ")" << std::endl;
         std::cout << " -l <log_cfg.json> : Provide logger configuration." << std::endl;
         std::cout << " -m <int> : 0 = pixel masking disabled, 1 = start with fresh pixel mask, default = pixel masking enabled" << std::endl;
-        std::cout << " -n <int> : Number of threads used to write and plot output files. (Default 4)" << std::endl;
+        std::cout << " -n <int> : Number of threads used to write and plot output files. (Default: hardware concurrency, fallback 4)" << std::endl;
         std::cout << " -o <dir> : Output directory. (Default ./data/)" << std::endl;
         std::cout << " -r <ctrl.json> Provide controller configuration." << std::endl;
         std::cout << " -s <scan_type> : Scan config" << std::endl;
