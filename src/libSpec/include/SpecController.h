@@ -152,7 +152,7 @@ class SpecController : public HwController, public SpecTxCore, public SpecRxCore
                 this->setRxActiveLanes(j["rxActiveLanes"]);
                 SpecRxCore::m_rxActiveLanes = j["rxActiveLanes"];
             }
- 
+
             // Configure RX delay
             SpecCom::writeSingle(RX_ADDR | RX_MANUAL_DELAY, 0xFFFF);    
             if (j.contains("delay")) {

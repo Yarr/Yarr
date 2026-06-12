@@ -1,6 +1,9 @@
 
 #include <string>
 #include <chrono>
+#include <fstream>
+#include <iomanip>
+#include <stdexcept>
 #include <thread>
 #include <vector>
 #include <map>
@@ -32,17 +35,31 @@ auto logger = logging::make_log("ScanConsole");
 
 class DefaultPlotter : public Plotter {
 public:
-  void makePlots(bool doPlots, const std::string &outputDir,
-                 const std::string &feName,
-                 const HistogramBase &histo)
-  {
-    // only create the image files if asked to
-    if(doPlots) {
-        histo.plot(feName, outputDir);
+    std::future<void> makePlots(bool doPlots, const std::string &outputDir,
+                                const std::string &fe_name,
+                                std::unique_ptr<HistogramBase> histo,
+                                ThreadPool &pool) override
+    {
+        return pool.enqueue([doPlots, outputDir, fe_name, h = std::move(histo)]() {
+            // always dump the data
+            h->toFile(fe_name, outputDir);
+            // only create the image files if asked to
+            if (doPlots) h->plot(fe_name, outputDir);
+        });
     }
-    // always dump the data
-    histo.toFile(feName, outputDir);
-  }
+
+    std::future<void> writeFeConfig(FrontEndCfg *feCfg, const std::string &filename,
+                                    ThreadPool &pool) override
+    {
+        return pool.enqueue([feCfg, filename]() {
+            json backupCfg;
+            feCfg->writeConfig(backupCfg);
+            std::ofstream backupCfgFile(filename);
+            if (!backupCfgFile.is_open())
+                throw std::runtime_error("Failed to open config file for writing: " + filename);
+            backupCfgFile << std::setw(4) << backupCfg;
+        });
+    }
 };
 
 namespace DefaultPlotting {
@@ -287,10 +304,19 @@ int ScanConsoleImpl::configure() {
             feCfg->enableAll();
         }
     }
+    std::vector<std::future<void>> cfg_before_futures;
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
         auto feCfg = bookie->getFeCfg(id);
-        if(scanOpts.doOutput)
-            ScanHelper::writeFeConfig(feCfg, scanOpts.outputDir + feCfgMap.at(id)[1] + ".before");
+        if(scanOpts.doOutput) {
+            std::string config_before_path = scanOpts.outputDir + feCfgMap.at(id)[1] + ".before";
+            logger->info("Writing copy of initial FE config for ID {} to {}", id, config_before_path);
+            cfg_before_futures.push_back(m_plotter->writeFeConfig(feCfg, config_before_path, *m_pool));
+        }
+    }
+    for (auto &f : cfg_before_futures) {
+        try { f.get(); } catch (const std::exception &e) {
+            logger->error("Failed to write initial FE config: {}", e.what());
+        }
     }
     bookie->initGlobalFe(chipType);
     bookie->getGlobalFe()->init(&*hwCtrl, FrontEndConnectivity(0,0));
@@ -405,6 +431,9 @@ int ScanConsoleImpl::initHardware() {
         logger->critical("Error opening or loading controller config: {}", e.what());
         return -1;
     }
+    m_pool = std::make_unique<ThreadPool>(scanOpts.nThreadsOutput);
+    m_plotter = StdDict::getPlotter(scanOpts.plottingType);
+    logger->info("Plotter thread pool size: {}", scanOpts.nThreadsOutput);
     // Add to scan log
     scanLog["ctrlCfg"] = ctrlCfg;
     scanLog["ctrlStatus"] = hwCtrl->getStatus();
@@ -443,33 +472,6 @@ int ScanConsoleImpl::initHardware() {
         scanLog["connectivity"].push_back(config);
     }
 
-
-    // Initial setting local DBHandler
-    if (scanOpts.dbUse) {
-        database = std::make_unique<DBHandler>();
-        ScanHelper::banner(logger,"Set Database");
-        database->initialize(scanOpts.dbCfgPath, scanOpts.progName, scanOpts.setQCMode, scanOpts.setInteractiveMode);
-        if (database->checkConfigs(scanOpts.dbUserCfgPath, scanOpts.dbSiteCfgPath, scanOpts.cConfigPaths)==1)
-            return -1;
-        scanLog["dbCfg"] = dbCfg;
-        scanLog["userCfg"] = userCfg;
-        scanLog["siteCfg"] = siteCfg;
-    }
-
-    // Reset masks
-    if (scanOpts.mask_opt == 1) {
-        for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
-            auto feCfg = bookie->getFeCfg(id);
-            feCfg->enableAll();
-        }
-    }
-    for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
-        auto feCfg = bookie->getFeCfg(id);
-        if(scanOpts.doOutput)
-            ScanHelper::writeFeConfig(feCfg, scanOpts.outputDir + feCfgMap.at(id)[1] + ".before");
-    }
-    bookie->initGlobalFe(chipType);
-    bookie->getGlobalFe()->init(&*hwCtrl, FrontEndConnectivity(0,0));
     return 0;
 }
 
@@ -480,6 +482,8 @@ void ScanConsoleImpl::cleanup() {
 
     // Cleanup
     //delete scanBase;
+    std::vector<std::future<void>> cfg_futures;
+    std::vector<std::future<void>> plot_futures;
     for (unsigned id=0; id<bookie->getNumOfEntries(); id++) {
         auto fe = bookie->getFe(id);
         if(!fe->isActive()) continue;
@@ -490,14 +494,14 @@ void ScanConsoleImpl::cleanup() {
             const std::string &filename=feCfgMap.at(id)[0];
             logger->info("Saving config of FE {} to {}",
                          feCfg->getName(), filename);
-            ScanHelper::writeFeConfig(feCfg, filename);
+            cfg_futures.push_back(m_plotter->writeFeConfig(feCfg, filename, *m_pool));
         } else {
             logger->warn("Not saving config for FE {} as it is protected!", feCfg->getName());
         }
 
         // Save extra config in data folder
         if(scanOpts.doOutput)
-            ScanHelper::writeFeConfig(feCfg, scanOpts.outputDir + feCfgMap.at(id)[1] + ".after");
+            cfg_futures.push_back(m_plotter->writeFeConfig(feCfg, scanOpts.outputDir + feCfgMap.at(id)[1] + ".after", *m_pool));
 
         // Plot
         // store output results (if any)
@@ -513,18 +517,35 @@ void ScanConsoleImpl::cleanup() {
                     name);
             continue;
         }
-        while(!output.empty()) {
-            auto histo = output.popData();
 
-            runOutputHistogramCallback(name, *histo);
-        } // while
+        while(!output.empty()) {
+            plot_futures.push_back(m_plotter->makePlots(scanOpts.doPlots, scanOpts.outputDir, name, output.popData(), *m_pool));
+        }
     } // i
 
+    for (auto &f : cfg_futures) {
+        try { f.get(); } catch (const std::exception &e) {
+            logger->error("Failed to write FE config: {}", e.what());
+        }
+    }
+    for (auto &f : plot_futures) {
+        try { f.get(); } catch (const std::exception &e) {
+            logger->error("Failed to plot histograms for FE: {}", e.what());
+        }
+    }
+
+    // Loop histograms are independent so each gets its own task;
+    // ownership is transferred into the task to avoid dangling references.
     auto &lh = bookie->getLoopHistograms();
+    std::vector<std::future<void>> loop_plot_futures;
     while(!lh.empty()) {
-      auto histo = lh.popData();
-      runOutputHistogramCallback("LoopPlot", *histo);
-    } // while
+        loop_plot_futures.push_back(m_plotter->makePlots(scanOpts.doPlots, scanOpts.outputDir, "LoopPlot", lh.popData(), *m_pool));
+    }
+    for (auto &f : loop_plot_futures) {
+        try { f.get(); } catch (const std::exception &e) {
+            logger->error("Failed to plot loop histogram: {}", e.what());
+        }
+    }
 
     logger->info("Finishing run: {}", runCounter);
     // Register test info into database
@@ -539,14 +560,7 @@ void ScanConsoleImpl::cleanup() {
             diagram.toPlot(scanOpts.outputDir + "diagram.png");
         }
     }
-}
 
-void ScanConsoleImpl::runOutputHistogramCallback(const std::string &name,
-                                                 const HistogramBase &histo)
-{
-    auto pp = StdDict::getPlotter(scanOpts.plottingType);
-
-    pp->makePlots(scanOpts.doPlots, scanOpts.outputDir, name, histo);
 }
 
 std::string ScanConsoleImpl::getResults() {

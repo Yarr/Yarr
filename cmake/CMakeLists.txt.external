@@ -28,6 +28,21 @@ function(YARR_ADD_FELIX_CLIENT)
         find_package(Felix
                      REQUIRED COMPONENTS ${YARR_FELIX_COMPONENTS}
                      HINTS "${Felix_ROOT}")
+        if(TARGET felix::felix-io-client)
+            message(STATUS "Using felix-io-client target provided by Felix")
+        else()
+            message(STATUS "SYSTEM FELIX does not offer felix-io-client. Assuming <=05.02.00. Trying to find package directly.")
+            find_package(felix-io-client
+                     REQUIRED
+                     CONFIG
+                     HINTS "${Felix_ROOT}")
+        endif()
+        if(NOT (TARGET felix::felix-io-client OR TARGET felix-io-client::felix-io-client))
+            message(FATAL_ERROR
+                "Could not find required target felix-io-client, "
+                "neither via Felix nor via standalone felix-io-client package"
+            )
+        endif()        
         set(YARR_FELIX_BACKEND "FELIX_CLIENT_SYSTEM" PARENT_SCOPE)
         return()
     endif()
@@ -43,7 +58,18 @@ function(YARR_ADD_FELIX_CLIENT)
    if((CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0) AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
         message(STATUS "Cannot build FELIX with GCC version < 15.")
    else()
-     # FELIX Client Thread
+      # FELIX Def (provides felix_fid.h, felix_ports.h, felix_protocols.h, etc.)
+     FetchContent_Declare(
+         felixdef
+         GIT_REPOSITORY https://gitlab.cern.ch/atlas-tdaq-felix/felix-def.git
+         GIT_TAG master
+         UPDATE_COMMAND ""
+         PATCH_COMMAND
+              cp ${PROJECT_SOURCE_DIR}/cmake/felix-def-patches/CMakeLists.txt.felix-def CMakeLists.txt
+      )
+     FetchContent_MakeAvailable(felixdef)
+
+     # FELIX Interface
      FetchContent_Declare (
           felixinterface
           GIT_REPOSITORY https://gitlab.cern.ch/atlas-tdaq-felix/felix-interface.git
@@ -53,9 +79,9 @@ function(YARR_ADD_FELIX_CLIENT)
                cp ${PROJECT_SOURCE_DIR}/cmake/felix-interface-patches/CMakeLists.txt.felix-interface CMakeLists.txt &&
                cp ${PROJECT_SOURCE_DIR}/cmake/felix-interface-patches/felix-interfaceConfig.cmake.in felix-interfaceConfig.cmake.in
           )
-        
       FetchContent_MakeAvailable(felixinterface)
-    
+
+      # FELIX Client Thread    
       FetchContent_Declare (
           felixclientthread
           GIT_REPOSITORY https://gitlab.cern.ch/atlas-tdaq-felix/felix-client-thread.git
@@ -65,8 +91,31 @@ function(YARR_ADD_FELIX_CLIENT)
                cp ${PROJECT_SOURCE_DIR}/cmake/felix-client-thread-patches/CMakeLists.txt.felix-client-thread CMakeLists.txt &&
                cp ${PROJECT_SOURCE_DIR}/cmake/felix-client-thread-patches/felix-client-threadConfig.cmake.in felix-client-threadConfig.cmake.in
           )
-        
-       FetchContent_MakeAvailable(felixclientthread)
+      FetchContent_MakeAvailable(felixclientthread)
+
+      # nlohmann_json (required by felix-io-client)
+      if(NOT TARGET nlohmann_json::nlohmann_json)
+        FetchContent_Declare(
+            nlohmann_json
+            GIT_REPOSITORY https://github.com/nlohmann/json.git
+            GIT_TAG v3.11.3
+            UPDATE_COMMAND ""
+        )
+        FetchContent_MakeAvailable(nlohmann_json)
+      endif()
+
+      # FELIX IO Client
+      FetchContent_Declare (
+          felixioclient
+          GIT_REPOSITORY https://gitlab.cern.ch/atlas-tdaq-felix/felix-io-client.git
+          GIT_TAG master
+          UPDATE_COMMAND ""
+          PATCH_COMMAND
+               cp ${PROJECT_SOURCE_DIR}/cmake/felix-io-patches/CMakeLists.txt.felix-io-client CMakeLists.txt &&
+               cp ${PROJECT_SOURCE_DIR}/cmake/felix-io-patches/felix-io-clientConfig.cmake.in felix-io-clientConfig.cmake.in
+          )
+       FetchContent_MakeAvailable(felixioclient)
+
        set(YARR_FELIX_BACKEND "FELIX_CLIENT_EMBEDDED" PARENT_SCOPE)
        return()
     endif()

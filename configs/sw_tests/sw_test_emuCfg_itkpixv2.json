@@ -1,0 +1,17 @@
+{
+    "ctrlCfg" : {
+        "type": "emu_Itkpixv2",
+        "cfg" : {
+            "type" : "itkpixv2",
+            "tx" : {
+                "id" : 1337,
+                "size" : 256
+            },
+            "rx" : {
+                "id" : 1338,
+                "size" : 256
+            }
+        },
+        "seed" : "fixed"
+    }
+}

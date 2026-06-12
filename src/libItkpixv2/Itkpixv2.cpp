@@ -696,7 +696,7 @@ yarrStatus Itkpixv2::confAdc(uint16_t MONMUX, bool doCur) {
 
     success = success && (this->writeRegister(&Itkpixv2::GlobalPulseConf, 0x1000) == yarrSuccess); //Trigger ADC Conversion
     while (!core->isCmdEmpty()){;}
-    std::this_thread::sleep_for(std::chrono::microseconds(100));
+    std::this_thread::sleep_for(std::chrono::microseconds(1000));
 
     this->sendGlobalPulse(m_chipId);
     std::this_thread::sleep_for(std::chrono::microseconds(1000)); //This is neccessary to clean. This might be controller dependent.
@@ -707,7 +707,7 @@ yarrStatus Itkpixv2::confAdc(uint16_t MONMUX, bool doCur) {
     success = success && (this->writeRegister(&Itkpixv2::MonitorV, OriginalMonitorV) == yarrSuccess);
     success = success && (this->writeRegister(&Itkpixv2::MonitorI, OriginalMonitorI) == yarrSuccess);
     while (!core->isCmdEmpty()){;}
-    std::this_thread::sleep_for(std::chrono::microseconds(100));
+    std::this_thread::sleep_for(std::chrono::microseconds(1000));
 
     return (success ? yarrSuccess : yarrFailure);
 }

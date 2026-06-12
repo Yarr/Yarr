@@ -1,0 +1,232 @@
+---
+# Zenodo publication metadata for YARR
+# Concept DOI: https://doi.org/10.5281/zenodo.15007378
+#
+# To add a new author: append an entry to the authors list below.
+# To update affiliations or ORCIDs: edit the relevant entry.
+# The CI will flag git contributors whose names do not match any entry here.
+# Add git_names aliases if someone commits under a different name than their
+# formal publication name.
+
+metadata:
+  title: "Yarr (Yet Another Rapid Readout)"
+  description: |
+    <p>Yet Another Rapid Readout (Yarr) software package contains calibration
+    and data taking applications to operate and perform data acquisition on
+    ATLAS Inner Tracker (ITk) Pixel and Strip modules. This framework supports
+    characterization, quality control measurements, system testing and test beam
+    operations. The framework provides an abstraction layer between the hardware
+    interface (DAQ card) and the detector front-end modules, allowing a unified
+    codebase to work with multiple hardware controllers (Spec, FELIX, emulators)
+    and front-end ASICs (RD53B/ITkPixV2, RD53A, FEI4, Star/ABC).</p>
+  license: "gpl-2.0"
+  keywords:
+    - ATLAS
+    - ITk
+    - pixel detector
+    - strip detector
+    - data acquisition
+    - DAQ
+    - YARR
+    - CERN
+    - RD53
+  communities:
+    - identifier: "atlas-experiment"
+
+# Git author names/emails to skip during contributor crosscheck.
+# Add patterns for bots, shared test accounts, and CI users.
+# Matching is case-insensitive substring match on "Name <email>".
+excluded_git_names:
+  - "ATLASJ Silicon"
+  - "Saclay ITk"
+  - "itkdaq"
+  - "itkfelixstrips"
+  - "pixeluser"
+  - "user21"
+  - "CI Runner"
+  - "ci@example.com"
+  - "root <Francesco"
+  - "hirose <hirose@localhost"
+  - "syamagay"
+  - "ITk Strips SR1 Team"
+
+# Author list for Zenodo.
+# Format: name in "Last, First" order (Zenodo standard).
+# orcid: ORCID identifier without the URL prefix (https://orcid.org/register).
+# affiliation: current or most recent institutional affiliation.
+# git_names: list of name strings as they appear in git log, for contributor
+#   crosscheck. Needed when git name differs from the formal publication name.
+authors:
+  - name: "Heim, Timon"
+    affiliation: "Lawrence Berkeley National Laboratory"
+    orcid: "0000-0002-7669-5318"
+    git_names:
+      - "Timon Heim"
+      - "theim"
+      - "pixel"
+
+  - name: "Gallop, Bruce"
+    affiliation: "Rutherford Appleton Laboratory"
+    git_names:
+      - "Bruce Gallop"
+      - "Bruce Joseph Gallop"
+
+  - name: "Abel, Koji"
+    affiliation: "Lawrence Berkeley National Lab"
+    orcid: "0009-0007-3158-9742"
+    git_names:
+      - "Koji Abel"
+
+  - name: "Alkakhi, Wael"
+    affiliation: "II. Physikalisches Institut Georg-August-Universitaet Goettingen"
+    orcid: "0000-0001-9355-4245"
+    git_names:
+      - "Wael Alkakhi"
+      - "walkakhi"
+
+  - name: "Arnaez, Olivier"
+    affiliation: "Universite Savoie Mont Blanc"
+    orcid: "0000-0002-6096-0893"
+
+  - name: "Crescioli, Francesco"
+    affiliation: "Laboratoire de Physique Nucleaire et de Hautes Energies"
+    orcid: "0000-0001-6457-2575"
+    git_names:
+      - "Francesco Crescioli"
+
+  - name: "Fellers, Deion"
+    affiliation: "Lawrence Berkeley National Laboratory"
+    orcid: "0000-0003-2934-0626"
+    git_names:
+      - "Deion"
+      - "Deion Elgin Fellers"
+      - "dfellers"
+
+  - name: "Foster, Liam"
+    affiliation: "University of California, Berkeley"
+
+  - name: "Huiberts, Simon"
+    affiliation: "University of Bergen"
+    git_names:
+      - "Simon Kristian Huiberts"
+      - "shuibert"
+
+  - name: "Hultquist, Charles Elliott"
+    affiliation: "Lawrence Berkeley National Laboratory"
+    git_names:
+      - "Charles Elliott Hultquist"
+
+  - name: "Kovanda, Ondrej"
+    affiliation: "University of Oregon"
+    git_names:
+      - "Ondrej Kovanda"
+      - "Ondra Kovanda"
+      - "okovanda"
+
+  - name: "Le Boulicaut, Elise"
+    affiliation: "Yale University"
+    git_names:
+      - "Elise Maria Le Boulicaut Ennis"
+      - "Elise Le Boulicaut"
+
+  - name: "Le Pottier, Luc"
+    affiliation: "Lawrence Berkeley National Laboratory"
+    orcid: "0000-0002-2625-5648"
+    git_names:
+      - "Luc Le Pottier"
+      - "luc le pottier"
+      - "luclepot"
+
+  - name: "Meng, Lingxin"
+    affiliation: "Lancaster University"
+    orcid: "0000-0002-2901-6589"
+
+  - name: "Mironova, Maria"
+    affiliation: "Lawrence Berkeley National Laboratory"
+    git_names:
+      - "Maria Miranova"
+
+  - name: "Pagan Griso, Simone"
+    affiliation: "Lawrence Berkeley National Laboratory"
+    orcid: "0000-0003-0999-5019"
+    git_names:
+      - "Simone Pagan Griso"
+
+  - name: "Pianori, Elisabetta"
+    affiliation: "SLAC National Accelerator Laboratory"
+    orcid: "0000-0001-9233-5892"
+    git_names:
+      - "Elisabetta Pianori"
+      - "epianori"
+
+  - name: "Potamianos, Karolos"
+    affiliation: "Warwick University"
+    orcid: "0000-0001-7839-9785"
+
+  - name: "Nosler, Laura"
+    affiliation: "Lawrence Berkeley National Laboratory"
+
+  - name: "Quinn, Ryan"
+    affiliation: "University of British Columbia"
+
+  - name: "Rastogi, Angira"
+    affiliation: "Lawrence Berkeley National Laboratory"
+    git_names:
+      - "Angira Rastogi"
+      - "arastogi"
+
+  - name: "Roberts, Ryan"
+    affiliation: "University of Chicago"
+    # orcid: "0000-0000-0000-0000"
+    git_names:
+      - "Ryan Roberts"
+
+  - name: "Rummler, Andre"
+    affiliation: "European Organization for Nuclear Research"
+    orcid: "0000-0001-8945-8760"
+    git_names:
+      - "Andre Rummler"
+
+  - name: "Saimpert, Matthias"
+    affiliation: "IRFU, Saclay"
+    orcid: "0000-0002-3765-1320"
+    git_names:
+      - "Matthias Saimpert"
+
+  - name: "Stark, Giordon Holtsberg"
+    affiliation: "University of California, Santa Cruz"
+    orcid: "0000-0001-6616-3433"
+    git_names:
+      - "Giordon Holtsberg Stark"
+
+  - name: "Tao, Zhengcheng"
+    affiliation: "University of British Columbia"
+    orcid: "0000-0003-0362-8795"
+    git_names:
+      - "Zhengcheng Tao"
+
+  - name: "Thompson, Emily"
+    affiliation: "Lawrence Berkeley National Laboratory"
+    git_names:
+      - "Emily Anne Thompson"
+      - "Emily Thompson"
+
+  - name: "Toldaiev, Oleksii"
+    affiliation: "Indiana University"
+    orcid: "0000-0002-8286-8780"
+    git_names:
+      - "Alex Toldaiev"
+      - "Oleksii Toldaiev"
+      - "alex.toldaiev"
+
+  - name: "Wittgen, Matthias"
+    affiliation: "SLAC National Accelerator Laboratory"
+    git_names:
+      - "Matthias Wittgen"
+      - "Wittgen"
+
+  - name: "Zanzottera, Riccardo"
+    affiliation: "INFN Milan"
+    orcid: "0009-0006-5900-2539"
+    git_names:
+      - "Riccardo Zanzottera"

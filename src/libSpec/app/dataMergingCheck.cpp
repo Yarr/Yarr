@@ -218,9 +218,15 @@ int main(int argc, char **argv) {
                         fe->writeNamedRegister("DataMergeOutMux1", 0);
                         fe->writeNamedRegister("DataMergeOutMux2", 1);
                         fe->writeNamedRegister("DataMergeOutMux3", 2);
+                        fe->writeNamedRegister("SerSelOut0", 3);
                         fe->writeNamedRegister("SerSelOut1", 1);
+                        fe->writeNamedRegister("SerSelOut2", 3);
+                        fe->writeNamedRegister("SerSelOut3", 3);
                     } else if (chip_id==13 || chip_id==14){ // Secondary 
+                        fe->writeNamedRegister("SerSelOut0", 3);
+                        fe->writeNamedRegister("SerSelOut1", 3);
                         fe->writeNamedRegister("SerSelOut2", 1);
+                        fe->writeNamedRegister("SerSelOut3", 3);
                         fe->writeNamedRegister("DataMergeOutMux0", 2);
                         fe->writeNamedRegister("DataMergeOutMux1", 3);
                         fe->writeNamedRegister("DataMergeOutMux2", 0);
@@ -237,11 +243,16 @@ int main(int argc, char **argv) {
             } else if (mode=="2-to-1"){
                 fe->writeNamedRegister("ServiceBlockEn", 1);
                 if (chip_id==12 || chip_id==14){ // Secondaries
+                    fe->writeNamedRegister("AuroraActiveLanes", 3);
                     fe->writeNamedRegister("CdrClkSel", 2);
                     fe->writeNamedRegister("CmlBias0", 500);
                     fe->writeNamedRegister("CmlBias1", 0);
+                    fe->writeNamedRegister("SerEnTap", 0);
+                    fe->writeNamedRegister("SerInvTap", 0);
                     fe->writeNamedRegister("SerSelOut0", 1);
                     fe->writeNamedRegister("SerSelOut1", 1);
+                    fe->writeNamedRegister("SerSelOut2", 3);
+                    fe->writeNamedRegister("SerSelOut3", 3);
                     fe->writeNamedRegister("DataMergeOutMux0", 1);
                     fe->writeNamedRegister("DataMergeOutMux1", 0);
                     fe->writeNamedRegister("DataMergeOutMux2", 2);

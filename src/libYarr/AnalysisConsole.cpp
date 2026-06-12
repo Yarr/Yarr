@@ -2,10 +2,12 @@
 
 #include "AllAnalyses.h"
 #include "AllChips.h"
+#include "AllPlotters.h"
 #include "AllStdActions.h"
 #include "ClipBoard.h"
 #include "FrontEndCfg.h"
 #include "ScanHelper.h"
+#include "ThreadPool.h"
 
 #include "logging.h"
 #include "LoggingConfig.h"
@@ -62,6 +64,7 @@ class AnalysisConsoleImpl {
     AnalysisOpts options;
 
     std::unique_ptr<FrontEnd> frontEnd;
+    ThreadPool m_pool{4}; // hardcoded to 4 threads as not easily configurable and only used for testing
 
     ClipBoard<HistogramBase> clipHistoInput;
     std::vector<std::unique_ptr<ClipBoard<HistogramBase>> > clipResultOutput;
@@ -515,7 +518,8 @@ void AnalysisConsoleImpl::saveAndPlot() {
         const std::string filename = options.outputDir + "config_post_analysis.json";
         logger->info("Saving config of FE {} to {}",
                      feCfg->getName(), filename);
-        ScanHelper::writeFeConfig(feCfg, filename);
+        auto plotter = StdDict::getPlotter("Default");
+        plotter->writeFeConfig(feCfg, filename, m_pool);
     }
 
     // Save the output of the final level of output

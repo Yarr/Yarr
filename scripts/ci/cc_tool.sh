@@ -16,7 +16,7 @@ fi
 
 #  First 2 default parameters:
 binary_folder=build/src
-test_script_params="scripts/cc_tests.sh"
+test_script_params="scripts/ci/cc_tests.sh"
 
 args=("$@")
 iarg=-1
@@ -133,6 +133,8 @@ lcov -r $output_folder.info "*src/external/src/*"  \
         -r $output_folder.info "*libUtil/include/lmcurve.h" \
         -r $output_folder.info "*libUtil/include/lmmin.h" \
         -r $output_folder.info "*libUtil/include/lmstruct.h" \
+        -r $output_folder.info "*/_deps/*" \
+        -r $output_folder.info "*/usr/include/*" \
      -o ${output_folder}n.info
 ec=$?
 if [ $ec -ne 0 ]; then

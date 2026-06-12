@@ -1,5 +1,6 @@
 #include "FelixTxCore.h"
 #include "felix/felix_client_exception.hpp"
+#include "felix/felix_fid.h"
 #include "logging.h"
 
 #include <sstream>
@@ -749,70 +750,38 @@ void FelixTxCore::setClient(const FelixClientThread::ConfigV2& fcConfig) {
   fclient = std::make_unique<FelixClientThread>(fcConfig);
 }
 
-FelixClientThread::Reply FelixTxCore::accessFelixRegister(
-  FelixClientThread::Cmd cmd, const std::vector<std::string>& cmd_args)
-{
-  // A dummy fid made from the correct did and cid, but arbitrary link number
-  // send_cmd will map this to the proper fid for register access
-  std::vector<uint64_t> fids = {FelixTxCore::fid_from_channel(42)};
-
-  // felix-register can potentially serve multiple devices
-  std::vector<FelixClientThread::Reply> replies;
-
-  auto status_summary = fclient->send_cmd(fids, cmd, cmd_args, replies);
-
-  if (replies.empty()) {
-#ifdef YARR_CONFIG_FELIX_PROXY
-    // enum
-    ftlog->warn("Status: {}", (int)(status_summary));
-#else
-    ftlog->warn("Status: {}", FelixClientThread::to_string(status_summary));
-#endif
-    throw std::runtime_error("No replies.");
-  }
-
-  // The current setup assumes the controller only handles one FELIX device (with m_did and m_cid)
-  // replies.size() should also be the same as fids.size() for send_cmd()
-  assert(replies.size()==1);
-  const auto& reply = replies[0];
-
-  return reply;
-}
-
-bool FelixTxCore::checkReply(const FelixClientThread::Reply& reply) {
-
-  bool goodReply = reply.status == FelixClientThread::Status::OK;
-
-  if (not goodReply) {
-#ifdef YARR_CONFIG_FELIX_PROXY
-    ftlog->warn("Status: {}", (int)(reply.status));
-#else
-    ftlog->warn("Status: {}", FelixClientThread::to_string(reply.status));
-#endif
-    ftlog->warn(reply.message);
-  } else {
-    //status OK
-    ftlog->debug("OK from 0x{:x}", reply.ctrl_fid);
-    ftlog->debug("Register value = 0x{:x}", reply.value);
-    if (not reply.message.empty()) ftlog->debug("message: {}", reply.message);
-  }
-
-  return goodReply;
-}
-
 bool FelixTxCore::readFwRegister(
   const std::string& registerName, uint64_t& value)
 {
   ftlog->debug("Read FELIX register {}", registerName);
 
-  bool success = false;
+  bool success = true;
+
+  std::vector<uint64_t> fids = {get_fid_from_ids(/*did=*/m_did, /*cid=*/m_cid, /*elink=*/IO_LINK,
+                                                   /*sid=*/0, /*vid=*/1, /*is_fromhost=*/0, /*is_virtual=*/1)};
+  std::map<felix::DeviceId, std::vector<std::uint64_t>> device_id_to_fid;
+  try {
+    device_id_to_fid = fclient->translate(fids);
+  } catch (felix::BusException& e) {
+    ftlog->error("translate() failed: {}", e.what());
+    ftlog->error("  m_did=0x{:x} m_cid=0x{:x} IO_LINK=0x{:x} FID=0x{:x}",
+                 m_did, m_cid, IO_LINK, fids[0]);
+    return false;
+  }
+
+  if (device_id_to_fid.empty()) {
+    ftlog->error("No device ID found for FIDs");
+    return false;
+  }
 
   try {
-    auto reply = accessFelixRegister(FelixClientThread::Cmd::GET, {registerName});
-    success = checkReply(reply);
-    value = reply.value;
+    std::map<std::string, std::vector<felix::BitFieldRecord>> results = fclient->read_register(device_id_to_fid.begin()->first, registerName);
+    assert(results.size()==1); // The current setup assumes the controller only handles one FELIX device (with m_did and m_cid)
+    auto result = results.begin();
+    value = result->second.front().get_raw_value();
   } catch (std::runtime_error &e) {
     ftlog->error(e.what());
+    success = false;
   }
 
   if (not success) {
@@ -828,13 +797,30 @@ bool FelixTxCore::writeFwRegister(
 {
   ftlog->debug("Write value 0x{:x} to FELIX register {}", regValue, registerName);
 
-  bool success = false;
+  bool success = true;
+
+  std::vector<uint64_t> fids = {get_fid_from_ids(/*did=*/m_did, /*cid=*/m_cid, /*elink=*/IO_LINK,
+                                                   /*sid=*/0, /*vid=*/1, /*is_fromhost=*/0, /*is_virtual=*/1)};
+  std::map<felix::DeviceId, std::vector<std::uint64_t>> device_id_to_fid;
+  try {
+    device_id_to_fid = fclient->translate(fids);
+  } catch (felix::BusException& e) {
+    ftlog->error("translate() failed: {}", e.what());
+    ftlog->error("  m_did=0x{:x} m_cid=0x{:x} IO_LINK=0x{:x} FID=0x{:x}",
+                 m_did, m_cid, IO_LINK, fids[0]);
+    return false;
+  }
+
+  if (device_id_to_fid.empty()) {
+    ftlog->error("No device ID found for FIDs");
+    return false;
+  }
 
   try {
-    auto reply = accessFelixRegister(FelixClientThread::Cmd::SET, {registerName, std::to_string(regValue)});
-    success = checkReply(reply);
+    fclient->write_register(device_id_to_fid.begin()->first, registerName, regValue);
   } catch (std::runtime_error &e) {
     ftlog->error(e.what());
+    success = false;
   }
 
   if (not success) {
