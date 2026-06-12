@@ -13,11 +13,16 @@ def load_json(filename):
 
 def test_threshold_scan(chip_label, chip_id, golden_image_path, stand_config):
     #define new and golden path files
-    new_file = f"./outputs/threshold-scan/000001_std_thresholdscan_hr/{chip_id}_ThresholdMap-0_0-500-0-0-0.json"
+    scan_dir = pathlib.Path(f"./outputs/threshold-scan/000001_std_thresholdscan_hr")
+    matches = list(scan_dir.glob(f"{chip_id}_ThresholdMap-*.json")) if scan_dir.exists() else []
+    assert len(matches) == 1, (
+        f"Expected exactly one ThresholdMap file for {chip_id} in {scan_dir}, found: {matches}"
+    )
+    new_file = matches[0]
     gold_file = golden_image_path / f"{chip_id}_ThresholdMap_golden.json"
 
     #before moving on, check that both file paths exist!
-    assert pathlib.Path(new_file).exists(), f"Missing new scan: {new_file}"
+    assert new_file.exists(), f"Missing new scan: {new_file}"
     assert pathlib.Path(gold_file).exists(), f"Missing golden scan: {gold_file}"
 
     #load in the json files we want to compare, and only take the "Data" portion of the raw json file
