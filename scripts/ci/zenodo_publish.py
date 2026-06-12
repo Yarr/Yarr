@@ -20,7 +20,7 @@ import yaml
 ZENODO_API = "https://zenodo.org/api"
 SANDBOX_API = "https://sandbox.zenodo.org/api"
 CONCEPT_RECID = "15007378"
-AUTHORS_FILE = Path(__file__).parent.parent / "AUTHORS.yaml"
+AUTHORS_FILE = Path(__file__).parent.parent.parent / "AUTHORS.yaml"
 
 
 def load_yaml(path: Path) -> dict:
@@ -140,7 +140,7 @@ def main() -> None:
         parser.error("--token or ZENODO_TOKEN env var is required (or use --dry-run)")
 
     base = SANDBOX_API if args.sandbox else ZENODO_API
-    repo_root = Path(__file__).parent.parent
+    repo_root = Path(__file__).parent.parent.parent
 
     import json
 
