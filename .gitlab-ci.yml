@@ -716,8 +716,6 @@ deploy_zenodo:
     - pip install requests pyyaml
   script:
     - python3 scripts/ci/zenodo_publish.py --tag "$CI_COMMIT_TAG"
-  variables:
-    ZENODO_TOKEN: $ZENODO_TOKEN
 
 deploy_master:
   extends: .deploy
