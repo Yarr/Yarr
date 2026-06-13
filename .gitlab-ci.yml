@@ -715,7 +715,7 @@ deploy_zenodo:
     - apt-get update -qq && apt-get install -y -qq git
     - pip install requests pyyaml
   script:
-    - python3 scripts/ci/zenodo_publish.py --tag "$CI_COMMIT_TAG"
+    - python3 scripts/ci/zenodo_publish.py --tag "$CI_COMMIT_TAG" --token "$ZENODO_TOKEN"
 
 deploy_master:
   extends: .deploy
