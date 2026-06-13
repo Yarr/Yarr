@@ -136,6 +136,8 @@ def main() -> None:
                         help="Build archive and print metadata without uploading anything")
     args = parser.parse_args()
 
+    if args.token:
+        args.token = args.token.strip()
     if not args.dry_run and not args.token:
         parser.error("--token or ZENODO_TOKEN env var is required (or use --dry-run)")
 
