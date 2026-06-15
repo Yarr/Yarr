@@ -560,6 +560,7 @@ void ScanConsoleImpl::cleanup() {
             diagram.toPlot(scanOpts.outputDir + "diagram.png");
         }
     }
+}
 
 void ScanConsoleImpl::runOutputHistogramCallback(const std::string &name,
                                                  const HistogramBase &histo) const {
