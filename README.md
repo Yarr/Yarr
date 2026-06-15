@@ -1,6 +1,6 @@
 ![logo](docs/images/logo_blue_inv.png)
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15007379.svg)](https://doi.org/10.5281/zenodo.15007379)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15007378.svg)](https://doi.org/10.5281/zenodo.15007378)
 
 # YARR: Yet Another Rapid Readout
 
