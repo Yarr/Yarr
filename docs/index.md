@@ -9,12 +9,11 @@ YARR is a readout system based around the concept of moving intelligence from th
 
 The currently supported readout chips are:
 
-* FE-I4B
-* FE65-P2
-* RD53A
-* ITkPixV1 (RD53B)
 * ITkPixV2 (RD53C)
+* ITkPixV1 (RD53B)
+* RD53A
 * ABC/HCC STAR
+* FE-I4B
 
 ## Support
 
