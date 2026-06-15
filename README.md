@@ -31,15 +31,16 @@ Developers and potential developers please refer to [Contribution](CONTRIBUTING.
 
 ## Quick minimal Install Guide:
 
-- Builds spec and emu controller for mininmal dependencies on Centos 7
+- Builds spec and emu controllers with minimal dependencies on Alma 9
 - Build recipes for other OS can be found in docker/<OS>/Dockerfile
 - Clone from git
 	- ``$ git clone https://gitlab.cern.ch/YARR/YARR.git Yarr``
 - Compilation (default front-end and controller classes):
     - ``$ cd Yarr``
-    - ``$ mkdir build & cd build``
+    - ``$ mkdir build && cd build``
     - ``$ cmake ..``
-    - ``$ make -j12 install``
+    - ``$ make -j$(nproc) install``
+    - ``$ cd ..``
 - Running
     - execute programs from the repository top folder like:
     - ``$ bin/scanConsole <...>``
@@ -61,6 +62,6 @@ by default in the CI on gitlab, but can also be run locally:
 
 - ``$ cd build``
 - ``$ cmake -DBUILD_TESTS=on ..``
-- ``$ make test``
-
-This runs the test_main binary, which gathers the tests found in src/tests.
+- ``$ make -j$(nproc) install``
+- ``$ cd ..``
+- ``$ bin/testYarr && bin/testUtil``
