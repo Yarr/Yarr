@@ -13,17 +13,25 @@ cd ..
 
 ## Running the tests
 
-Two test binaries are produced:
+The following test binaries are produced (all require `BUILD_TESTS=on`):
+
+| Binary | Library | What it covers |
+|---|---|---|
+| `bin/testYarr` | libYarr | Scan engine, loop actions, data processors |
+| `bin/testUtil` | libUtil | Histo1d/2d/3d, JSON helpers, logging |
+| `bin/testEmu` | libEmu | ClipBoard/queue internals |
+| `bin/testFei4` | libFei4 | FEI4 feedback loop |
+| `bin/testStarEmu` | libStarEmu | Star emulator, broadcast, packet encoding |
+| `bin/testStar` | libStar | Star/ABC analysis, chip config, scan loops, data processor |
+| `bin/testItkpixv2` | libItkpixv2 | ITkPixV2 data processor (including edge cases, error handling, benchmarks) |
+| `bin/testRd53b` | libRd53b | RD53B data processor (including edge cases and benchmarks) |
+| `bin/testFelix` | libFelixClient | FELIX elink control (only built when a FELIX backend is available) |
+
+Run all unconditional tests:
 
 ```bash
-bin/testYarr   # tests for libYarr (scan engine, loop actions, data processors)
-bin/testUtil   # tests for libUtil (Histo1d/2d/3d, JSON helpers, logging)
-```
-
-Run both:
-
-```bash
-bin/testYarr && bin/testUtil
+bin/testYarr && bin/testUtil && bin/testEmu && bin/testFei4 && \
+bin/testStarEmu && bin/testStar && bin/testItkpixv2 && bin/testRd53b
 ```
 
 ### Filtering by tag or name
@@ -55,7 +63,7 @@ bin/scanConsole \
 For Star/ABC strip emulator tests:
 
 ```bash
-bin/star_test configs/controller/emuCfg_star.json -r 0 -t 0 -V Star_vH0A0
+bin/test_star configs/controller/emuCfg_star.json -r 0 -t 0 -V Star_vH0A0
 bash scripts/test_star_scans_emu.sh
 ```
 

@@ -9,7 +9,7 @@ The framework is built around four abstract interfaces defined in `src/libYarr/`
 | Class | Role |
 |---|---|
 | `HwController` | Combines `TxCore` (send commands) and `RxCore` (receive data). One instance per DAQ card or emulator. |
-| `FrontEnd` | Represents one chip ASIC. Holds the chip configuration and translates high-level commands into register writes via `TxCore`. |
+| `FrontEnd` | Represents a detector end-point handled as one object inside the DAQ. Holds the chip configuration and translates high-level commands into register writes via `TxCore`. |
 | `LoopActionBase` | One level in a nested scan loop. `execPart1()` injects/triggers; inner loops run; `execPart2()` collects data. |
 | `DataProcessor` | Processes raw data from a `ClipBoard<T>` queue in a separate thread (histogrammers and analysis algorithms). |
 
