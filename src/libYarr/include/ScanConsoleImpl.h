@@ -46,8 +46,6 @@ public:
     void run();
     void dump();
 
-    void runOutputHistogramCallback(const std::string &name,
-                                    const HistogramBase &histo) const;
     static void setupLogger(const char *config = nullptr);
     ~ScanConsoleImpl() = default;
 
