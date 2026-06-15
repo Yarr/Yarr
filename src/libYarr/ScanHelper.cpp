@@ -810,14 +810,6 @@ namespace ScanHelper {
         return s;
     }
 
-    void writeFeConfig(FrontEndCfg *feCfg, const std::string &filename) {
-        std::ofstream backupCfgFile(filename);
-        json backupCfg;
-        feCfg->writeConfig(backupCfg);
-        backupCfgFile << std::setw(4) << backupCfg;
-        backupCfgFile.close();
-    }
-
     void writeScanLog(json scanLog, const std::string &filename) {
         if (scanLog.contains("ctrlCfg")
           && scanLog["ctrlCfg"].contains("ctrlCfg")
@@ -967,6 +959,7 @@ namespace ScanHelper {
         std::cout << " -i <site.json> : Provide site configuration. (Default " << dbSiteCfgPath << ")" << std::endl;
         std::cout << " -l <log_cfg.json> : Provide logger configuration." << std::endl;
         std::cout << " -m <int> : 0 = pixel masking disabled, 1 = start with fresh pixel mask, default = pixel masking enabled" << std::endl;
+        std::cout << " -n <int> : Number of threads used to write and plot output files. (Default: hardware concurrency, fallback 4)" << std::endl;
         std::cout << " -o <dir> : Output directory. (Default ./data/)" << std::endl;
         std::cout << " -r <ctrl.json> Provide controller configuration." << std::endl;
         std::cout << " -s <scan_type> : Scan config" << std::endl;
@@ -994,7 +987,7 @@ namespace ScanHelper {
         int c;
         while (true) {
             int opt_index=0;
-            c = getopt_long(argc, argv, "ghkpvyzIQc:d:i:l:m:o:r:s:t:u:W:", long_options, &opt_index);
+            c = getopt_long(argc, argv, "ghkpvyzIQc:d:i:l:m:n:o:r:s:t:u:W:", long_options, &opt_index);
             int count = 0;
             if(c == -1) break;
             switch (c) {
@@ -1043,6 +1036,9 @@ namespace ScanHelper {
                     break;
                 case 'm':
                     scanOpts.mask_opt = atoi(optarg);
+                    break;
+                case 'n':
+                    scanOpts.nThreadsOutput = static_cast<unsigned>(atoi(optarg));
                     break;
                 case 'o':
                     scanOpts.outputDir = std::string(optarg);

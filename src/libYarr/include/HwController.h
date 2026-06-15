@@ -30,13 +30,13 @@ class HwController : virtual public TxCore, virtual public RxCore {
     public:
         /** Configure controller */
         virtual void loadConfig(const json &j) = 0 ;
-        
+
         virtual void setupMode() {}
         virtual void runMode() {}
         virtual const json getStatus() { return json{}; };
 
         virtual bool hasFeature(const std::string &feature) { return false; }
-  
+
         ~HwController() override = default;
 };
 
