@@ -294,6 +294,9 @@ void StdDataLoop::execPart2() {
         float avSizes    = ((float) channelReceivedPacketSize[id]) / ((float) receivedTriggers);
         float avClusters = ((float) channelReceivedNClusters[id])  / ((float) receivedTriggers);
         SPDLOG_LOGGER_DEBUG(sdllog, "channel {} received {} triggers, in packets sizes {} with {} clusters", id, receivedTriggers, avSizes, avClusters);
+        if (receivedTriggers > ntriggersToReceive) { 
+            SPDLOG_LOGGER_ERROR(sdllog, "Received more triggers than expected: received {} of {} events for channel with id {}!", receivedTriggers, ntriggersToReceive, id);
+        }
     }
 
     m_done = true;
