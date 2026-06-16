@@ -62,20 +62,21 @@ In case of issues, please refer to the more detailed instructions below, or cons
 
 ## Software installation
 
+### Dependencies for Alma 9
+- If not installed before, you need some standard packages:
+```bash
+$ sudo yum install gnuplot texlive-epstopdf cmake
+```
+
 ### Dependencies for Centos 7/8
 
+- CC7/8 are not officially supported anymore and test against, your mileage might vary
 - If not installed before, you need some standard packages:
 
 ```bash
 $ sudo yum install gnuplot texlive-epstopdf cmake3 elfutils-libelf-devel
 ```
 
-
-### Dependencies for Alma 9
-- If not installed before, you need some standard packages:
-```bash
-$ sudo yum install gnuplot texlive-epstopdf cmake
-```
 
 
 ### Initialise repository
