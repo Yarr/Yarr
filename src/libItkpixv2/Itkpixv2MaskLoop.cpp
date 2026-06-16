@@ -362,7 +362,7 @@ bool Itkpixv2MaskLoop::getNeighboursMap(int col, int row,int sensorType, int mas
 }
 
 
-bool Itkpixv2MaskLoop::ignorePixel(int col, int row){
+bool Itkpixv2MaskLoop::ignorePixel(int col, int row) const {
 
     //if checking bump bonding connections for rectangular sensors, only use (0,0) pixel
     if ( m_includedPixels == only00CornerForBumpBonding){

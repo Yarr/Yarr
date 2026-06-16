@@ -29,7 +29,7 @@ unsigned ScanBase::size() const {
     return loops.size();
 }
 
-void ScanBase::addLoop(std::shared_ptr<LoopActionBase> l) {
+void ScanBase::addLoop(const std::shared_ptr<LoopActionBase>& l) {
     loops.push_back(l);
     engine.addAction(l);
 }

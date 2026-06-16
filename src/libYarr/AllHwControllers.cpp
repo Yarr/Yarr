@@ -10,7 +10,7 @@ namespace {
     auto ahwlog = logging::make_log("HwRegistry");
 }
 
-typedef ClassRegistry<HwController> OurRegistry;
+using OurRegistry = ClassRegistry<HwController>;
 
 static OurRegistry &registry() {
     static OurRegistry instance;
@@ -21,7 +21,7 @@ namespace StdDict {
     bool registerHwController(std::string name,
                               std::function<std::unique_ptr<HwController>()> f)
     {
-        return registry().registerClass(name, f);
+        return registry().registerClass(std::move(name), std::move(f));
     }
 
     std::unique_ptr<HwController> getHwController(std::string name) {

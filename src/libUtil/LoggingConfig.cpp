@@ -143,10 +143,10 @@ void setupLoggers(const json &j, const std::string &path) {
                 sink = other_sinks[sink_name];
             }
 
-            auto logger_apply = [&](std::shared_ptr<spdlog::logger> l) {
+            auto logger_apply = [&](const std::shared_ptr<spdlog::logger>& l) {
                 // Only if this sink is not already in list
                 bool already_present = false;
-                for(auto &ll: l->sinks()) {
+                for(const auto& ll: l->sinks()) {
                   if(ll == sink) {
                     already_present = true;
                   }
@@ -195,7 +195,7 @@ void setupLoggers(const json &j, const std::string &path) {
 void listLoggers(bool print_details) {
     std::string_view def_name = "(default)";
     std::vector<std::string> log_list;
-    spdlog::apply_all([&](std::shared_ptr<spdlog::logger> l) {
+    spdlog::apply_all([&](const std::shared_ptr<spdlog::logger>& l) {
         if(l->name().empty()) {
             log_list.push_back("(default)");
         } else {
@@ -205,7 +205,7 @@ void listLoggers(bool print_details) {
 
     std::sort(log_list.begin(), log_list.end());
 
-    for(auto &l: log_list) {
+    for(const auto& l: log_list) {
         std::cout << "  " << l << "\n";
 
         if(!print_details)
@@ -215,7 +215,7 @@ void listLoggers(bool print_details) {
         if(l == def_name) {
           ll = "";
         }
-        
+
         auto curr = spdlog::get(ll);
         std::cout << "    Sends to sinks at level " << curr->level();
         auto lvl = level_string(curr->level());
@@ -226,7 +226,7 @@ void listLoggers(bool print_details) {
         }
         std::cout << "    Has " << curr->sinks().size() << " sinks\n";
 
-        for(auto &s: curr->sinks()) {
+        for(const auto& s: curr->sinks()) {
           auto lvl = level_string(s->level());
           std::cout << "      Reports at level " << s->level();
           if(!lvl.empty()) {

@@ -27,7 +27,7 @@ int main (void) {
 
     const size_t size = 256*100; // 1kB
     
-    srand(time(NULL));
+    srand(time(nullptr));
 
     std::cout << "==================================" << std::endl;
     std::cout << "Starting error check:" << std::endl;

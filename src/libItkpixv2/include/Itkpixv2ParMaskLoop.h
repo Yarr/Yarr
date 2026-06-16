@@ -25,10 +25,10 @@ class Itkpixv2ParMaskLoop: public LoopActionBase {
         void loadConfig(const json &j) override;
 
     private:
-        unsigned m_cur;
+        unsigned m_cur = 0;
         std::map<FrontEnd*, std::array<std::array<uint16_t, Itkpixv2::n_Row>, Itkpixv2::n_DC> > m_pixRegs;
-        int m_maskType;
-        bool m_applyEnMask;
+        int m_maskType = 0;
+        bool m_applyEnMask = false;
 
         void init() override;
         void end() override;

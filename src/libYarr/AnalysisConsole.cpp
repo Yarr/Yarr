@@ -56,7 +56,7 @@ class BasicScanInfo : public ScanLoopInfo {
                statVec.push_back(0);
            }
 
-           return {std::move(statVec), styleVec};
+           return {statVec, styleVec};
         }
 };
 
@@ -80,7 +80,7 @@ class AnalysisConsoleImpl {
     clk::time_point all_done;
 
   public:
-    AnalysisConsoleImpl(const AnalysisOpts &opts);
+    AnalysisConsoleImpl(AnalysisOpts opts);
 
     int init();
 
@@ -146,8 +146,8 @@ int AnalysisConsole::parseOptions(int argc, char *argv[], AnalysisOpts &anOpts) 
     anOpts.progName=argv[0];
     const struct option long_options[] =
       {
-        {"help", no_argument, 0, 'h'},
-        {0, 0, 0, 0}};
+        {"help", no_argument, nullptr, 'h'},
+        {nullptr, 0, nullptr, 0}};
 
     int c;
     while (true) {
@@ -239,8 +239,8 @@ int AnalysisConsole::parseOptions(int argc, char *argv[], AnalysisOpts &anOpts) 
     return 1;
 }
 
-AnalysisConsoleImpl::AnalysisConsoleImpl(const AnalysisOpts &opts)
-  : options(opts)
+AnalysisConsoleImpl::AnalysisConsoleImpl(AnalysisOpts opts)
+  : options(std::move(opts))
 {
 }
 

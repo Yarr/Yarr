@@ -72,7 +72,7 @@ namespace {
                                 []() { return std::unique_ptr<HistogramAlgorithm>(new RawDataHistogram());});
 }
 
-bool DataArchiver::open(std::string filename) {
+bool DataArchiver::open(const std::string& filename) {
     fileHandle.open(filename.c_str(), std::fstream::out | std::fstream::binary | std::fstream::trunc);
     return fileHandle.good();
 }

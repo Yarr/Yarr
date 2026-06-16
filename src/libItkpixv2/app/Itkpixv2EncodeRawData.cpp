@@ -82,6 +82,8 @@ int main(int argc, char** argv) {
         case 'h':
             usage(argv);
             return -1;
+        default:
+            break;
         }
     }
 
@@ -202,9 +204,9 @@ int main(int argc, char** argv) {
             k->addToStream(hitMap, (uint8_t)(evo.tag & 0xFF));
             auto this_words = k->getWords().size();
             n_words += this_words;
-            words.fill(this_words/2);
+            words.fill(this_words / 2.0);
             hits.fill(evo.hits.size());
-            wordsVsHits.fill(this_words/2, evo.hits.size());
+            wordsVsHits.fill(this_words / 2.0, evo.hits.size());
 
             if(evo.hits.size() > 0) {
                 float wph = 32*(((float)this_words) / (float)evo.hits.size());
@@ -224,7 +226,7 @@ int main(int argc, char** argv) {
             if (dumpWords) {
                 auto w_elt = k->getWords();
                 // std::ofstream fout(outputDir + chipname + "_data.binary", ios::binary);
-                fout.write((char*)&w_elt[0], w_elt.size() * sizeof(w_elt));
+                fout.write((char*)w_elt.data(), w_elt.size() * sizeof(w_elt[0]));
             }
             k->getWords().clear();
 

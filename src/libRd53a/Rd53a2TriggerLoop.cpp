@@ -99,7 +99,7 @@ void Rd53a2TriggerLoop::doubleCmdInject(){
 }
 
 
-void Rd53a2TriggerLoop::verifyParameters(){
+void Rd53a2TriggerLoop::verifyParameters() const {
     if(m_doubleDelay>=16){
         if (!((m_trigDelay >= 8) && (m_trigDelay2 >=8) && (m_trigDelay + m_trigDelay2 <= 168))) {
           SPDLOG_LOGGER_ERROR(logger, "Both delay and delay2 must be a value equal or greater than 8, and their sum must not exceed 168.");
@@ -134,7 +134,7 @@ void Rd53a2TriggerLoop::flexibleTrigger(uint8_t offset, int injDelay, int trigge
     uint8_t trig_start_i = empty_trigs%8; //Index of the first trigger pulse in first frame containing trigger pulses
     int full_frames = floor(float(triggers-(8-trig_start_i)-1)/8); //Number of trigword frames filled with 8 trigger pulses
     uint8_t trig_end_i = (empty_trigs+triggers-1)%8; //Index of the last trigger pulse in the last trigword frame containing trigger pulses
-    for(uint8_t n=0; n<full_frames+2; n++){
+    for(int n=0; n<full_frames+2; n++){
         uint8_t trig_pattern = 0xFF;
         if(n==0) trig_pattern = trig_pattern << trig_start_i;
         if(n==full_frames+1) trig_pattern = trig_pattern & (0xFF >> (7-trig_end_i));
@@ -210,7 +210,7 @@ void Rd53a2TriggerLoop::init(){
 
     g_tx->setTrigFreq(m_trigFreq);
     g_tx->setTrigCnt(getTrigCnt());
-    g_tx->setTrigWord(&m_trigWord[0], m_trigWordLength);
+    g_tx->setTrigWord(m_trigWord.data(), m_trigWordLength);
     g_tx->setTrigWordLength(m_trigWordLength);
     g_tx->setTrigTime(m_trigTime);
 

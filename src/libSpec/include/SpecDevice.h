@@ -21,15 +21,15 @@ class UserMemory;
 	
 class SpecDevice {
 private:
-	unsigned int pagesize;
-	unsigned int pageshift;
-	unsigned int pagemask;
-    struct flock filelock;	
+	unsigned int pagesize = 0;
+	unsigned int pageshift = 0;
+	unsigned int pagemask = 0;
+    struct flock filelock = {};
 protected:
-	int handle;
-	int device;
+	int handle = -1;
+	int device = 0;
     std::string name;
-	pthread_mutex_t mmap_mutex;
+	pthread_mutex_t mmap_mutex = PTHREAD_MUTEX_INITIALIZER;
 public:
 	SpecDevice(int number);
 	~SpecDevice();

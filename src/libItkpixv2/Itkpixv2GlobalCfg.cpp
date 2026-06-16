@@ -65,7 +65,7 @@ void Itkpixv2GlobalCfg::init() {
     }
 
     //0
-    PixPortal.init          (  0, &m_cfg[  0], 0, 16, 0); regMap["PixPortal"] = &Itkpixv2GlobalCfg::PixPortal;
+    PixPortal.init          (  0, m_cfg.data(), 0, 16, 0); regMap["PixPortal"] = &Itkpixv2GlobalCfg::PixPortal;
     //1
     PixRegionCol.init       (  1, &m_cfg[  1], 0, 16, 0); regMap["PixRegionCol"] = &Itkpixv2GlobalCfg::PixRegionCol;
     //2
@@ -446,10 +446,10 @@ void Itkpixv2GlobalCfg::init() {
 }
 
 void Itkpixv2GlobalCfg::writeConfig(json &j) {
-    for(auto it : regMap) {
+    for(const auto& it : regMap) {
         logger->debug("Writing reg: {}", it.first);
         j["ITKPIXV2"]["GlobalConfig"][it.first] = (this->*it.second).read();
-    }    
+    }
 }
 
 void Itkpixv2GlobalCfg::loadConfig(json const &j) {
@@ -458,7 +458,7 @@ void Itkpixv2GlobalCfg::loadConfig(json const &j) {
         return;
     }
     auto &jconfig = j["ITKPIXV2"]["GlobalConfig"];
-    for (auto it : regMap) {
+    for (const auto& it : regMap) {
         if (jconfig.contains(it.first)) {
             (this->*it.second).write(jconfig[it.first]);
         } else {

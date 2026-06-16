@@ -41,12 +41,12 @@ class HitMapGenerator{
 
         //geometry and config
         uint m_seed, m_nCCol, m_nQRow, m_nColInCCol, m_nRowInQRow;
-        float m_occupancy;
+        float m_occupancy = 0.0f;
 
         //output
         HitMap m_hitMap;
         FrontEndEvent m_truthEvt;
-        uint m_nGenerated;
+        uint m_nGenerated = 0;
 };
 
 #endif

@@ -38,7 +38,7 @@ public:
             m_nfired_pixels_in_ccol =  std::vector<int>(m_ccols, 0);
           };
 
-  ~Rd53bChipMap();
+  ~Rd53bChipMap() = default;
   
   void fillChipMap(int eta, int phi, int tot);
   void fillRegions();
@@ -50,14 +50,14 @@ public:
   int getCcolsRegion() {return m_cols_core;}
   int getQrowsRegion() {return m_rows_quar;}  
 
-  int getRegionIndex(int eta, int phi);
-  int getCcol(int eta);
-  int getQrow(int phi);
-  int getRegion(int ccol, int qrow);
-  int getTotalChannels();
+  int getRegionIndex(int eta, int phi) const;
+  int getCcol(int eta) const;
+  int getQrow(int phi) const;
+  int getRegion(int ccol, int qrow) const;
+  int getTotalChannels() const;
   std::string getBitTreeString(int myccol, int myqrow, bool do_compression=true);
   std::string getToTBitsString(int myccol, int myqrow, std::vector<int>& tots);
-  void readMapFile(std::string inputMapFileName);
+  void readMapFile(const std::string& inputMapFileName);
   void generateRndmEvent(const double occupancy, const int clusterSize, const int clusterOrientation);
   std::string isHalfFired(int min_eta, int max_eta, int min_phi, int max_phi);
   std::string getPlainHitMap(int myccol, int myqrow);

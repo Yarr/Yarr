@@ -35,7 +35,9 @@ bool itkpixv2_proc_registered =
 
 Itkpixv2DataProcessor::Itkpixv2DataProcessor()
 {
-    m_input = NULL;
+    m_input = nullptr;
+    m_out = nullptr;
+    m_feCfg = nullptr;
 
     _wordIdx = 0; // Index of the first 64-bit block. Starting from 0
     _bitIdx = 0;   // Index of the first bit within the 64-bit block. Starting from 0
@@ -107,7 +109,7 @@ void Itkpixv2DataProcessor::run()
 {
     SPDLOG_LOGGER_TRACE(logger, "");
 
-    thread_ptr.reset(new std::thread(&Itkpixv2DataProcessor::process, this));
+    thread_ptr = std::make_unique<std::thread>(&Itkpixv2DataProcessor::process, this);
 }
 
 void Itkpixv2DataProcessor::join()

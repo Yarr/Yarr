@@ -31,9 +31,9 @@ class Rd53bGlobalFeedback : public LoopActionBase, public GlobalFeedbackReceiver
 
     protected:
     private:
-        Rd53bRegDefault Rd53bGlobalCfg::*parPtr;
+        Rd53bRegDefault Rd53bGlobalCfg::*parPtr = nullptr;
         std::string parName;
-        int m_cur;
+        int m_cur = 0;
 
         std::map<unsigned, unsigned> m_values;
         std::map<unsigned, unsigned> m_localStep;

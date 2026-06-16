@@ -31,13 +31,13 @@ class StdDataGatherer: public LoopActionBase, public StdDataAction {
 
     private:
         //ClipBoard<RawDataContainer> *storage;
-        unsigned counter;
+        unsigned counter = 0;
         void init() override;
         void end() override;
         void execPart1() override;
         void execPart2() override;
-        bool killswitch;
-        bool m_passData;
+        bool killswitch = false;
+        bool m_passData = false;
         uint32_t m_maxConsecutiveRxReads = 2048;
         uint32_t m_maxRxReadSize = 10*1024*1024/4; // 100MB
 };

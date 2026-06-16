@@ -51,10 +51,10 @@ bool AnalysisAlgorithm::isPOILoop(const LoopActionBaseInfo *l) {
     }
 }
 
-AnalysisProcessor::AnalysisProcessor() = default;
+AnalysisProcessor::AnalysisProcessor() : id(0), input(nullptr), output(nullptr), feedback(nullptr), scan_info(nullptr), thread_ptr(nullptr), storeInputHisto(false) {}
 
 AnalysisProcessor::AnalysisProcessor(unsigned uid)
-  : id(uid)
+  : id(uid), input(nullptr), output(nullptr), feedback(nullptr), scan_info(nullptr), thread_ptr(nullptr), storeInputHisto(false)
 {
 }
 
@@ -69,7 +69,7 @@ void AnalysisProcessor::init() {
 
 void AnalysisProcessor::run() {
     SPDLOG_LOGGER_TRACE(alog, "");
-    thread_ptr.reset( new std::thread( &AnalysisProcessor::process, this ) );
+    thread_ptr = std::make_unique<std::thread>( &AnalysisProcessor::process, this );
 }
 
 void AnalysisProcessor::loadConfig(const json &j){

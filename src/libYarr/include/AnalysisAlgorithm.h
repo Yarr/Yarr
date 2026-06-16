@@ -50,12 +50,12 @@ class AnalysisAlgorithm {
         void setMasking(bool val) {make_mask = val;}
 
     protected:
-        FrontEndCfg *feCfg;
-        unsigned id;
-        ClipBoard<HistogramBase> *output;
-        FeedbackClipboard *feedback;
-        bool make_mask;
-        unsigned nCol, nRow;
+        FrontEndCfg *feCfg = nullptr;
+        unsigned id = 0;
+        ClipBoard<HistogramBase> *output = nullptr;
+        FeedbackClipboard *feedback = nullptr;
+        bool make_mask = true;
+        unsigned nCol = 80, nRow = 336;
 
         std::vector<std::string> m_parametersOfInterest;
         bool isPOILoop(const LoopActionBaseInfo *l);
@@ -104,13 +104,13 @@ class AnalysisProcessor : public AnalysisDataProcessor {
         }
 
     private:
-        unsigned id;
-        ClipBoard<HistogramBase> *input;
-        ClipBoard<HistogramBase> *output;
-        FeedbackClipboard *feedback;
-        const ScanLoopInfo *scan_info;
+        unsigned id = 0;
+        ClipBoard<HistogramBase> *input = nullptr;
+        ClipBoard<HistogramBase> *output = nullptr;
+        FeedbackClipboard *feedback = nullptr;
+        const ScanLoopInfo *scan_info = nullptr;
         std::unique_ptr<std::thread> thread_ptr;
-        bool storeInputHisto;
+        bool storeInputHisto = false;
         
         std::vector<std::unique_ptr<AnalysisAlgorithm>> algorithms;
 };

@@ -7,7 +7,7 @@ namespace {
     auto aalog = logging::make_log("AnalysisRegistry");
 }
 
-typedef ClassRegistry<AnalysisAlgorithm> OurRegistry;
+using OurRegistry = ClassRegistry<AnalysisAlgorithm>;
 
 static OurRegistry &registry() {
     static OurRegistry instance;
@@ -18,7 +18,7 @@ namespace StdDict {
     bool registerAnalysis(std::string name,
                           std::function<std::unique_ptr<AnalysisAlgorithm>()> f)
     {
-        return registry().registerClass(name, f);
+        return registry().registerClass(std::move(name), std::move(f));
     }
 
     std::unique_ptr<AnalysisAlgorithm> getAnalysis(std::string name) {

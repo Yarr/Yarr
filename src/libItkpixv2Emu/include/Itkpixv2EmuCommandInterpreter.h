@@ -23,7 +23,7 @@ class Itkpixv2EmuCommandInterpreter {
     //              payload is what follows the command block in long commands
     
     public:
-        Itkpixv2EmuCommandInterpreter();
+        Itkpixv2EmuCommandInterpreter() = default;
 
         //Read the next command, and return a (header, payload)
         //pair, which is then digested by the command exe

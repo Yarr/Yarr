@@ -21,7 +21,8 @@ Itkpixv2ParameterLoop::Itkpixv2ParameterLoop() : LoopActionBase(LOOP_STYLE_PARAM
     min = 0;
     max = 100;
     step = 1;
-
+    parPtr = nullptr;
+    m_cur = 0;
 }
 
 Itkpixv2ParameterLoop::Itkpixv2ParameterLoop(Itkpixv2RegDefault Itkpixv2GlobalCfg::*ref) : LoopActionBase(LOOP_STYLE_PARAMETER), parPtr(ref) {
@@ -29,6 +30,7 @@ Itkpixv2ParameterLoop::Itkpixv2ParameterLoop(Itkpixv2RegDefault Itkpixv2GlobalCf
     min = 0;
     max = 100;
     step = 1;
+    m_cur = 0;
     //TODO parName not set
 
 }

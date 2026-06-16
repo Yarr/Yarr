@@ -6,7 +6,7 @@
 namespace {
     auto aclog = logging::make_log("ConfigRegistry");
 
-    typedef ClassRegistry<Configuration> OurRegistry;
+    using OurRegistry = ClassRegistry<Configuration>;
 
     static OurRegistry &registry() {
         static OurRegistry instance;
@@ -18,7 +18,7 @@ namespace StdDict {
     bool registerConfiguration(std::string name,
                                std::function<std::unique_ptr<Configuration>()> f)
     {
-        return registry().registerClass(name, f);
+        return registry().registerClass(std::move(name), std::move(f));
     }
 
     std::unique_ptr<Configuration> getConfiguration(std::string name) {

@@ -23,6 +23,8 @@ Itkpixv2ParMaskLoop::Itkpixv2ParMaskLoop() : LoopActionBase(LOOP_STYLE_MASK) {
     m_cur = 0;
     loopType = typeid(this);
     m_done = false;
+    m_maskType = 0;
+    m_applyEnMask = false;
 }
 
 void Itkpixv2ParMaskLoop::init() {

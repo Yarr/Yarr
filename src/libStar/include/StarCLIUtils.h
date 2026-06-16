@@ -84,7 +84,7 @@ bool isPacketType(RawData &data, PacketType packet_type);
 /// @param timeout Timeout in milliseconds to wait for the expected data.
 /// @return A vector of raw data pointers.
 std::vector<RawDataPtr> readData(HwController &hwCtrl,
-                                 std::function<bool(RawData &)> filter_cb,
+                                 const std::function<bool(RawData &)>& filter_cb,
                                  uint32_t timeout = 1000);
 
 } // namespace StarCLIUtils

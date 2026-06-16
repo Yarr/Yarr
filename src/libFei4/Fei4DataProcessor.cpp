@@ -16,7 +16,7 @@ bool fei4_proc_registered =
 
 Fei4DataProcessor::Fei4DataProcessor(unsigned arg_hitDiscCfg) : FeDataProcessor(){
     SPDLOG_LOGGER_TRACE(flog, "");
-    input = NULL;
+    input = nullptr;
     hitDiscCfg = arg_hitDiscCfg;
     totCode = {{{{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 14, 0}},
         {{2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 1, 0}},
@@ -32,7 +32,7 @@ void Fei4DataProcessor::init() {
 }
 
 void Fei4DataProcessor::run() {
-    thread_ptr.reset( new std::thread(&Fei4DataProcessor::process, this) );
+    thread_ptr = std::make_unique<std::thread>(&Fei4DataProcessor::process, this);
 }
 
 void Fei4DataProcessor::join() {
@@ -103,7 +103,7 @@ void Fei4DataProcessor::process_core() {
                     wordCount++;
                     if (__builtin_expect((value == 0xDEADBEEF), 0)) {
                         flog->error("[{}] Noticed readout error: 0x{:x}", channel, value);
-                    } else if (__builtin_expect((curOut == NULL), 0)) {
+                    } else if (__builtin_expect((curOut == nullptr), 0)) {
                         flog->error("Received data for channel {} but storage not initiliazed!", channel);
                     } else if (header == 0xe9) {
                         // Pixel Header

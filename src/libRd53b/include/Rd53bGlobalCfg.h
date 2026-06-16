@@ -140,7 +140,7 @@ class Rd53bGlobalCfg {
         std::map<std::string, Rd53bRegDefault Rd53bGlobalCfg::*> virtRegMap;
     protected:
         static constexpr unsigned numRegs = 138;
-        std::array<uint16_t, numRegs> m_cfg;
+        std::array<uint16_t, numRegs> m_cfg = {};
 
         void writeConfig(json &j);
         void loadConfig(const json &j);

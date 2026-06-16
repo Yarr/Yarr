@@ -65,10 +65,10 @@ int main (int argc, char *argv[]) {
     logger->info("Do not use unless you know what you are doing!");
     logger->info("Do not ask questions related to this tool, as you should know what you are doing!");
     
-    std::time_t now = std::time(NULL);
+    std::time_t now = std::time(nullptr);
     struct tm *lt = std::localtime(&now);
     char c_timestamp[20];
-    strftime(c_timestamp, 20, "%F_%H:%M:%S", lt);
+    (void)strftime(c_timestamp, 20, "%F_%H:%M:%S", lt);
     logger->info("Timestamp: {}", c_timestamp);
     std::string timestamp = c_timestamp;
 

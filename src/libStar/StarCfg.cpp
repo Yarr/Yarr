@@ -223,7 +223,7 @@ void StarCfg::writeConfig(json &j) {
             }
         }
 
-        std::array<uint8_t, Star::StripsPerABC> trims;
+        std::array<uint8_t, Star::StripsPerABC> trims = {};
         bool sameTrims = true;
         for(unsigned int m=0; m<Star::StripsPerABC; m++) {
             trims[m] = abc.getTrimDACRaw(m);

@@ -311,10 +311,10 @@ private:
      * Chip-internal state: timing counter after CAL
      */
 
-    unsigned calTiming;
-    unsigned injectTiming;
-    uint32_t l1id;
-    uint32_t bcid;
+    unsigned calTiming = 0;
+    unsigned injectTiming = 0;
+    uint32_t l1id = 0;
+    uint32_t bcid = 0;
 
     /** container for async processing */
     std::unique_ptr<ThreadPool>     m_pool;

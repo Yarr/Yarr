@@ -18,7 +18,7 @@ class ClassRegistry {
 
     bool registerClass(std::string name,
                        FunctionType func) {
-        registry[name] = func;
+        registry[std::move(name)] = std::move(func);
         return true;
     }
 

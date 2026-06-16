@@ -36,15 +36,15 @@ class Rd53aDataProcessor : public FeDataProcessor {
 
     private:
         std::unique_ptr<std::thread> thread_ptr;
-        ClipBoard<RawDataContainer> *m_input;
-        ClipBoard<EventDataBase> *m_output;
+        ClipBoard<RawDataContainer> *m_input = nullptr;
+        ClipBoard<EventDataBase> *m_output = nullptr;
         ClipBoard<FeedbackProcessingInfo> *statusFb = nullptr;
-        
-        unsigned tag;
-        unsigned l1id;
-        unsigned bcid;
-        unsigned wordCount;
-        unsigned hits;
+
+        unsigned tag = 0;
+        unsigned l1id = 0;
+        unsigned bcid = 0;
+        unsigned wordCount = 0;
+        unsigned hits = 0;
 
         void process_core();
         inline void sendFeedback(unsigned tag, unsigned bcid);

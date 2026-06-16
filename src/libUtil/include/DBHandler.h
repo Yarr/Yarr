@@ -35,8 +35,8 @@ class DBHandler {
           - port: opened port number of Local DB server
           - dbName: database name of Local DB (default: localdb)
         ***/
-        void initialize(std::string /*i_db_cfg_path*/,
-                        std::string /*i_command*/,
+        void initialize(const std::string& /*i_db_cfg_path*/,
+                        const std::string& /*i_command*/,
                         bool isQC=false,
                         bool i_interactive=false);
 
@@ -46,9 +46,9 @@ class DBHandler {
         * i_message: alert message
         * i_type: error->abort, warning->continue
         ***/
-        void alert(std::string i_function,
-                   std::string i_message="Something wrong.",
-                   std::string i_type="error");
+        void alert(const std::string& i_function,
+                   const std::string& i_message="Something wrong.",
+                   const std::string& i_type="error");
 
         /***
         Setting function for using Database
@@ -61,102 +61,102 @@ class DBHandler {
         - Config: requires config file and information to set config data
         - Attachment: requires dat file and information to set dat data
         ***/
-        void setDCSCfg(std::string /*i_dcs_path*/,
-                       std::string /*i_scanlog_path*/);
+        void setDCSCfg(const std::string& /*i_dcs_path*/,
+                       const std::string& /*i_scanlog_path*/);
         /***
         Clean up veriables after scanConsole
         ***/
-        void cleanUp(std::string /*i_option*/,
-                     std::string /*i_dir*/,
+        void cleanUp(const std::string& /*i_option*/,
+                     const std::string& /*i_dir*/,
                      //bool        i_back=true);
                      bool        i_back=false,
                      bool        i_interactive=true,
-		     std::string tag = "");
+		     const std::string& tag = "");
 
         /***
         Upload unuploaded test cache data into Local DB
         ***/
-        int setCache(std::string /*i_user_cfg_path*/,
-                     std::string /*i_site_cfg_path*/);
+        int setCache(const std::string& /*i_user_cfg_path*/,
+                     const std::string& /*i_site_cfg_path*/);
 
         /***
         Registere modules into Local DB
         ***/
-        int setComponent(std::string /*i_conn_path*/,
-                         std::string /*i_user_cfg_path*/,
-                         std::string /*i_site_cfg_path*/);
+        int setComponent(const std::string& /*i_conn_path*/,
+                         const std::string& /*i_user_cfg_path*/,
+                         const std::string& /*i_site_cfg_path*/);
 
         /***
         Check the connection to Local DB
         ***/
-        int checkConnection(std::string i_opt="upload");
+        int checkConnection(const std::string& i_opt="upload");
 
         /***
         Check the test log in Local DB
         ***/
-        int checkLog(std::string i_user="",
-                     std::string i_site="",
-                     std::string i_chip="");
+        int checkLog(const std::string& i_user="",
+                     const std::string& i_site="",
+                     const std::string& i_chip="");
 
         /***
         Check registered modules in Local DB and create module list in ~/.yarr/localdb/${HOSTNAME}_modules.csv
         ***/
-        int checkConfigs(std::string /*i_user_cfg_path*/,
-                         std::string /*i_site_cfg_path*/,
-                         std::vector<std::string> /*i_conn_cfg_paths*/);
+        int checkConfigs(const std::string& /*i_user_cfg_path*/,
+                         const std::string& /*i_site_cfg_path*/,
+                         const std::vector<std::string>& /*i_conn_cfg_paths*/);
 
         /***
         retrieve DCS data from InfluxDB
         ***/
-        int retrieveFromInflux(std::string /*influx_conn_path*/,
-                               std::string /*chipname*/,
-                               std::string /*i_scanlog_path*/);
+        int retrieveFromInflux(const std::string& /*influx_conn_path*/,
+                               const std::string& /*chipname*/,
+                               const std::string& /*i_scanlog_path*/);
         /***
         retrieve data
         ***/
-        int retrieveData(std::string i_comp_name="",
-                         std::string i_path="",
-                         std::string i_dir="");
+        int retrieveData(const std::string& i_comp_name="",
+                         const std::string& i_path="",
+                         const std::string& i_dir="");
         void cleanDataDir();
 
 
     protected:
         /// check data function
-        void checkFile(std::string /*i_file_path*/,
-                       std::string i_description="");
+        void checkFile(const std::string& /*i_file_path*/,
+                       const std::string& i_description="");
         void checkEmpty(bool /*i_empty*/,
-                        std::string /*i_key*/,
-                        std::string /*i_file_path*/,
-                        std::string i_description="");
+                        const std::string& /*i_key*/,
+                        const std::string& /*i_file_path*/,
+                        const std::string& i_description="");
         void checkNumber(bool /*i_number*/,
-                         std::string /*i_key*/,
-                         std::string /*i_file_path*/);
-        void checkList(std::vector<std::string> /*i_list*/,
-                       std::string /*i_value*/,
-                       std::string /*i_list_path*/,
-                       std::string /*i_file_path*/);
-        json checkDBCfg(std::string /*i_db_path*/);
-        void checkDCSCfg(std::string /*i_dcs_path*/,
-                         std::string /*i_num*/,
+                         const std::string& /*i_key*/,
+                         const std::string& /*i_file_path*/);
+        void checkList(const std::vector<std::string>& /*i_list*/,
+                       const std::string& /*i_value*/,
+                       const std::string& /*i_list_path*/,
+                       const std::string& /*i_file_path*/);
+        json checkDBCfg(const std::string& /*i_db_path*/);
+        void checkDCSCfg(const std::string& /*i_dcs_path*/,
+                         const std::string& /*i_num*/,
                          json /*i_json*/);
-        std::string checkDCSLog(std::string /*i_log_path*/,
-                                std::string /*i_dcs_path*/,
-                                std::string /*i_key*/,
+        std::string checkDCSLog(const std::string& /*i_log_path*/,
+                                const std::string& /*i_dcs_path*/,
+                                const std::string& /*i_key*/,
                                 int /*i_num*/);
-        int checkCommand(std::string i_opt="upload");
-        std::string getAbsPath(std::string /*i_path*/);
+        int checkCommand(const std::string& i_opt="upload");
+        std::string getAbsPath(const std::string& /*i_path*/);
 
         /// check json
-        json toJson(std::string /*i_file_path*/);
-        void writeJson(std::string /*i_key*/,
-                       std::string /*i_value*/,
-                       std::string /*i_file_path*/,
+        json toJson(const std::string& /*i_file_path*/);
+        void writeJson(const std::string& /*i_key*/,
+                       const std::string& /*i_value*/,
+                       const std::string& /*i_file_path*/,
                        json /*i_json*/);
 
         /// split function
-        std::vector<std::string> split(std::string /*str*/,
+        std::vector<std::string> split(const std::string& /*str*/,
                                        char /*del*/);
-        void mkdir(std::string /*i_dir_path*/);
+        void mkdir(const std::string& /*i_dir_path*/);
 
     private:
         std::string m_db_cfg_path;

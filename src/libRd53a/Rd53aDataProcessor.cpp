@@ -20,7 +20,7 @@ bool rd53a_proc_registered =
     StdDict::registerDataProcessor("RD53A", []() { return std::unique_ptr<FeDataProcessor>(new Rd53aDataProcessor());});
 
 Rd53aDataProcessor::Rd53aDataProcessor()  {
-    m_input = NULL;
+    m_input = nullptr;
 }
 
 Rd53aDataProcessor::~Rd53aDataProcessor() = default;
@@ -32,7 +32,7 @@ void Rd53aDataProcessor::init() {
 void Rd53aDataProcessor::run() {
     SPDLOG_LOGGER_TRACE(logger, "");
 
-    thread_ptr.reset(new std::thread(&Rd53aDataProcessor::process, this));
+    thread_ptr = std::make_unique<std::thread>(&Rd53aDataProcessor::process, this);
 }
 
 void Rd53aDataProcessor::join() {

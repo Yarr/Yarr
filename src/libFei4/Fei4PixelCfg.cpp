@@ -30,7 +30,7 @@ void DoubleColumnBit::setPixel(const unsigned n, uint32_t val) {
 }
 
 uint32_t* DoubleColumnBit::getStream() {
-    return &storage[0];
+    return storage.data();
 }
 
 uint32_t DoubleColumnBit::getPixel(const unsigned n) {
@@ -95,7 +95,7 @@ uint32_t* Fei4PixelCfg::getCfg(unsigned bit, unsigned dc) {
             return m_FDAC[dc][3].getStream();
             break;
         default:
-            return NULL;
+            return nullptr;
             break;
     }
 }

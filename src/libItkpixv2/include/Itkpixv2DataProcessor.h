@@ -44,55 +44,55 @@ public:
     void process() override;
     json getLog() override;
 
-    uint32_t *_data; // Pointer to one data block
+    uint32_t *_data = nullptr; // Pointer to one data block
     RawDataPtr _dataPtrCpy; // Copy of shared pointer to data object _data points to
-    uint32_t *_data_t; // Internal state var
+    uint32_t *_data_t = nullptr; // Internal state var
     RawDataPtr _dataPtrCpy_t; // Copy of shared pointer to data object _data_t points to
 
-    int _wordIdx;          // Index of the word under processing
-    unsigned _bitIdx;	   // Index of the first bit in datablock which is not processed yet. It starts from 0. The first half thus ends at 31, and the 2nd starts at 32
-    int _rawDataIdx;       // Index of the raw data within each raw data container. Note it can be negative (means going back to previous container)
+    int _wordIdx = 0;          // Index of the word under processing
+    unsigned _bitIdx = 0;	   // Index of the first bit in datablock which is not processed yet. It starts from 0. The first half thus ends at 31, and the 2nd starts at 32
+    int _rawDataIdx = 0;       // Index of the raw data within each raw data container. Note it can be negative (means going back to previous container)
 
     std::unique_ptr<RawDataContainer> _curInV; // Current raw data container
-    uint32_t _data_pre[2];                    // Last 64 bit of data from previous raw data container
+    uint32_t _data_pre[2] = {};                // Last 64 bit of data from previous raw data container
     std::unique_ptr<FrontEndData> _curOut; // Output data container
-    int _events;                           // Output number of events    
+    int _events = 0;                       // Output number of events
 
-    unsigned _chipTagBitFlipCnt; // Number of tags with value 216-219 (chip tag bit flip detected)
-    unsigned _chipTagErrorCnt; // Number of tags with value 220-223 (chip tag unreadable)
-    unsigned _unfinishedStreamErrorCnt; // Number of "expect unfinished stream while ES=1" (without check EOS on)
-    unsigned _unfinishedStreamEOSErrorCnt; // Number of "expect unfinished stream while ES=1" (with check EOS on)
-    unsigned _corruptStreamErrorCnt; // Number of ES=0, but CCOL=0 instances (implies corrupted stream)
-    unsigned _splitEventsCnt; // Number of times we add a hit to a new event with the same tag as a previous event
+    unsigned _chipTagBitFlipCnt = 0; // Number of tags with value 216-219 (chip tag bit flip detected)
+    unsigned _chipTagErrorCnt = 0; // Number of tags with value 220-223 (chip tag unreadable)
+    unsigned _unfinishedStreamErrorCnt = 0; // Number of "expect unfinished stream while ES=1" (without check EOS on)
+    unsigned _unfinishedStreamEOSErrorCnt = 0; // Number of "expect unfinished stream while ES=1" (with check EOS on)
+    unsigned _corruptStreamErrorCnt = 0; // Number of ES=0, but CCOL=0 instances (implies corrupted stream)
+    unsigned _splitEventsCnt = 0; // Number of times we add a hit to a new event with the same tag as a previous event
 
     void setCompressedHitmap(bool flag) { _isCompressedHitmap = flag; }
     void setDropToT(bool flag){_dropToT = flag;}
 
 private:
     std::unique_ptr<std::thread> thread_ptr;
-    ClipBoard<RawDataContainer> *m_input;
-    ClipBoard<EventDataBase> *m_out;
+    ClipBoard<RawDataContainer> *m_input = nullptr;
+    ClipBoard<EventDataBase> *m_out = nullptr;
     ClipBoard<FeedbackProcessingInfo> *statusFb = nullptr;
-    Itkpixv2Cfg *m_feCfg;
+    Itkpixv2Cfg *m_feCfg = nullptr;
 
-    uint16_t _tag;
-    uint16_t _l1id;
-    uint16_t _bcid;
-    unsigned long _wordCount;
-    unsigned long _hits;
+    uint16_t _tag = 0;
+    uint16_t _l1id = 0;
+    uint16_t _bcid = 0;
+    unsigned long _wordCount = 0;
+    unsigned long _hits = 0;
 
-    bool _isCompressedHitmap; // Flag for toggle hitmap type, true for compressed, false for raw
-    bool _dropToT;
-    bool _enChipId;
-    bool _enBcid; // Flag for BCID read enable
-    bool _enL1id; // Flag for Level-1 read enable
-    bool _readBcL1; // OR 
-    unsigned _chipIdShift;
-    unsigned _chipId;
-    unsigned long _streamMask;
+    bool _isCompressedHitmap = false; // Flag for toggle hitmap type, true for compressed, false for raw
+    bool _dropToT = false;
+    bool _enChipId = false;
+    bool _enBcid = false; // Flag for BCID read enable
+    bool _enL1id = false; // Flag for Level-1 read enable
+    bool _readBcL1 = false; // OR
+    unsigned _chipIdShift = 0;
+    unsigned _chipId = 0;
+    unsigned long _streamMask = 0;
 
     std::vector<uint32_t> _debugBuffer;
-    unsigned _debugIdx; // position in debug buffer
+    unsigned _debugIdx = 0; // position in debug buffer
 
     // PToT mask-loop index — instance variable so multiple processors don't share state
     unsigned _maskLoopIndex;
@@ -111,7 +111,7 @@ private:
 
     // Data stream components
     uint64_t _ccol;
-    uint16_t _qrow[55]; // One counter for each core column. Use 54 as total number of core columns to be compatible with CMS chip geometry. Note core column index starts from 1.
+    uint16_t _qrow[55] = {}; // One counter for each core column. Use 54 as total number of core columns to be compatible with CMS chip geometry. Note core column index starts from 1.
     uint64_t _islast_isneighbor;
     uint64_t _hitmap;
     uint64_t _ToT;

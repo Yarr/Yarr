@@ -22,7 +22,7 @@ Rd53bPixelCfg::Rd53bPixelCfg() {
 }
 
 void Rd53bPixelCfg::setReg(unsigned col, unsigned row, unsigned en, unsigned injen, unsigned hitbus, int tdac) {
-    Rd53bPixelCfg::pixelBits reg;
+    Rd53bPixelCfg::pixelBits reg = {};
     reg.s.en = en;
     reg.s.injen = injen;
     reg.s.hitbus = hitbus;
@@ -53,7 +53,7 @@ void Rd53bPixelCfg::setHitbus(unsigned col, unsigned row, unsigned v) {
 }
 
 void Rd53bPixelCfg::setTDAC(unsigned col, unsigned row, int v) {
-    Rd53bPixelCfg::pixelBits reg;
+    Rd53bPixelCfg::pixelBits reg = {};
     reg.u8 = (pixRegs[col/2][row] >> ((col&0x1)*8)) & 0xFF;
     reg.s.tdac = abs(v);
     reg.s.sign = (v < 0) ? 0x1 : 0x0;
@@ -74,7 +74,7 @@ unsigned Rd53bPixelCfg::getHitbus(unsigned col, unsigned row) {
 }
 
 int Rd53bPixelCfg::getTDAC(unsigned col, unsigned row) {
-    Rd53bPixelCfg::pixelBits reg;
+    Rd53bPixelCfg::pixelBits reg = {};
     reg.u8 = (pixRegs[col/2][row] >> ((col&0x1)*8)) & 0xFF;
     return ((int)reg.s.tdac * (reg.s.sign == 0 ? +1 : -1));
 }

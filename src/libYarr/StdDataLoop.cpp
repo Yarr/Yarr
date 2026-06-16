@@ -280,7 +280,7 @@ void StdDataLoop::execPart2() {
     LoopStatus loopStatusIterationEnd({0}, {LoopStyle::LOOP_STYLE_GLOBAL_FEEDBACK});
     loopStatusIterationEnd.is_end_of_iteration = true;
     for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
-        std::unique_ptr<RawDataContainer> cIterEnd = std::make_unique<RawDataContainer>(std::move(loopStatusIterationEnd));
+        std::unique_ptr<RawDataContainer> cIterEnd = std::make_unique<RawDataContainer>(loopStatusIterationEnd);
         auto &cp = keeper->getEntry(id).fe->clipboards();
         cp.clipRawData.pushData(std::move(cIterEnd));
         cp.clipProcFeedback.reset();
