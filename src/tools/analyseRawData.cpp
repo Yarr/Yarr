@@ -135,7 +135,7 @@ int main(int argc, char* argv[])
 
     // Loop over input files
     int skipped = 0;
-    for (int i=0; i<inputFiles.size(); i++) {
+    for (size_t i=0; i<inputFiles.size(); i++) {
 
         std::cout << "Opening file: " << inputFiles[i] << std::endl;
         std::fstream file(inputFiles[i], std::fstream::in | std::fstream::binary);
@@ -156,7 +156,6 @@ int main(int argc, char* argv[])
         int n_truncated = 0;
         int l1_offset   = 0;
         int l1_count    = 0;
-        int old_l1id    = 0;
         int max_bcid    = 0;
         int error       = 0;
         int nonZero_cnt = 0;
@@ -193,7 +192,6 @@ int main(int argc, char* argv[])
             }
 
             old_offset = l1_offset;
-            old_l1id = event->l1id;
 
             if (mod_l1id == 0 or mod_l1id == 16) {
               trigger++;

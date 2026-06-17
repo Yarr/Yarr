@@ -75,7 +75,6 @@ int main(int argc, char* argv[]) {
     std::vector<int> chip_idx;
     std::vector<std::string> chip_name;
     std::string register_name = "";
-    uint32_t register_value = 0;
     bool use_chip_name = false;
     bool debug = false;
 
