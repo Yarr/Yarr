@@ -14,7 +14,22 @@ Build a 3D histogram of hits in events with the same trigger number.
 
 ## L1Dist
 
-Build a histogram of L1 distribution.
+Build a histogram of trigger separation. This histograms the delta
+between two BCIDs.
+
+## L1Hist
+
+Histogram of raw L0ID as recorded in the FrontEnd event.
+
+In order to adjust for different FrontEnd types, the modulo divisor is
+given in the scan configuration.
+
+## BcHist
+
+Histogram of raw BCID as recorded in the FrontEnd event.
+
+In order to adjust for different FrontEnd types, the modulo divisor is
+given in the scan configuration.
 
 ## OccupancyMap
 
