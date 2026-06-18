@@ -47,6 +47,10 @@ namespace {
       StdDict::registerHistogrammer("L1Dist",
                                 []() { return std::unique_ptr<HistogramAlgorithm>(new L1Dist());});
     
+    bool l1hist_registered =
+      StdDict::registerHistogrammer("L1Hist",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new L1Dist());});
+
     bool tag_registered =
       StdDict::registerHistogrammer("TagMap",
                                 []() { return std::unique_ptr<HistogramAlgorithm>(new TagMap());});
@@ -66,6 +70,10 @@ namespace {
     bool hpe_registered =
       StdDict::registerHistogrammer("HitsPerEvent",
                                 []() { return std::unique_ptr<HistogramAlgorithm>(new HitsPerEvent());});
+
+    bool bc_hist_registered =
+      StdDict::registerHistogrammer("BcHist",
+                                []() { return std::unique_ptr<HistogramAlgorithm>(new BcHist());});
 
     bool raw_registered =
       StdDict::registerHistogrammer("RawData",
@@ -285,6 +293,26 @@ void L1Dist::processEvent(FrontEndData *data) {
     }
 }
 
+void L1Hist::loadConfig(const json &config)
+{
+    try {
+        config.at("Divisor").get_to(divisor);
+    } catch(json::out_of_range &) {}
+}
+
+void L1Hist::create(const LoopStatus &stat) {
+    h = new Histo1d(outputName(), divisor, -0.5, divisor - 0.5, stat);
+    h->setXaxisTitle("L1A%" + std::to_string(divisor));
+    h->setYaxisTitle("Count");
+    r.reset(h);
+}
+
+void L1Hist::processEvent(FrontEndData *data) {
+    for (const FrontEndEvent &curEvent: data->events) {
+        h->fill(curEvent.l1id % divisor);
+    }
+}
+
 void L13d::create(const LoopStatus &stat) {
     h = new Histo3d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, 16, -0.5, 15.5, stat);
     h->setXaxisTitle("Column");
@@ -319,6 +347,26 @@ void L13d::processEvent(FrontEndData *data) {
                     h->fill(curHit.col, curHit.row, curEvent.l1id%16);
             }
         }
+    }
+}
+
+void BcHist::loadConfig(const json &config)
+{
+    try {
+        config.at("Divisor").get_to(divisor);
+    } catch(json::out_of_range &) {}
+}
+
+void BcHist::create(const LoopStatus &stat) {
+    h = new Histo1d(outputName(), 16, -0.5, 15.5, stat);
+    h->setXaxisTitle("BCID%" + std::to_string(divisor));
+    h->setYaxisTitle("Count");
+    r.reset(h);
+}
+
+void BcHist::processEvent(FrontEndData *data) {
+    for (const FrontEndEvent &curEvent: data->events) {
+        h->fill(curEvent.bcid % divisor);
     }
 }
 
