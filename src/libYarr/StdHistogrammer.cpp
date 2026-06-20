@@ -8,9 +8,7 @@
 #include "StdHistogrammer.h"
 
 #include "AllHistogrammers.h"
-#include "Histo1d.h"
-#include "Histo2d.h"
-#include "Histo3d.h"
+#include "Histograms.h"
 
 #include "logging.h"
 
@@ -94,11 +92,11 @@ void DataArchiver::processEvent(FrontEndData *data) {
 }
 
 void OccupancyMap::create(const LoopStatus &stat) {
-    h = new Histo2d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, stat);
-    h->setXaxisTitle("Column");
-    h->setYaxisTitle("Row");
-    h->setZaxisTitle("Hits");
-    r.reset(h);
+    auto h2 = createHistoMap(outputName(), "Hits", nCol, nRow, stat);
+    // Save the 2d pointer for filling
+    h = h2.get();
+    // Record histogram to push
+    r = std::move(h2);
 }
 
 void OccupancyMap::processEvent(FrontEndData *data) {
@@ -113,11 +111,9 @@ void OccupancyMap::processEvent(FrontEndData *data) {
 }
 
 void TotMap::create(const LoopStatus &stat) {
-    h = new Histo2d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, stat);
-    h->setXaxisTitle("Column");
-    h->setYaxisTitle("Row");
-    h->setZaxisTitle("Total ToT");
-    r.reset(h);
+    auto h2 = createHistoMap(outputName(), "Total ToT", nCol, nRow, stat);
+    h = h2.get();
+    r = std::move(h2);
 }
 
 void TotMap::processEvent(FrontEndData *data) {
@@ -132,11 +128,9 @@ void TotMap::processEvent(FrontEndData *data) {
 }
 
 void Tot2Map::create(const LoopStatus &stat) {
-    h = new Histo2d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, stat);
-    h->setXaxisTitle("Column");
-    h->setYaxisTitle("Row");
-    h->setZaxisTitle("Total ToT2");
-    r.reset(h);
+    auto h2 = createHistoMap(outputName(), "Total ToT2", nCol, nRow, stat);
+    h = h2.get();
+    r = std::move(h2);
 }
 
 void Tot2Map::processEvent(FrontEndData *data) {
@@ -151,10 +145,9 @@ void Tot2Map::processEvent(FrontEndData *data) {
 }
 
 void TotDist::create(const LoopStatus &stat) {
-    h = new Histo1d(outputName(), 16, 0.5, 16.5, stat);
-    h->setXaxisTitle("ToT [bc]");
-    h->setYaxisTitle("# of Hits");
-    r.reset(h);
+    auto h1 = createHisto1d(outputName(), "ToT [bc]", 16, 0.5, 16.5, "# of Hits", stat);
+    h = h1.get();
+    r = std::move(h1);
 }
 
 void TotDist::processEvent(FrontEndData *data) {
@@ -169,11 +162,9 @@ void TotDist::processEvent(FrontEndData *data) {
 }
 
 void Tot3d::create(const LoopStatus &stat) {
-    h = new Histo3d("Tot3d", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, 16, 0.5, 16.5, stat);
-    h->setXaxisTitle("Column");
-    h->setYaxisTitle("Row");
-    h->setZaxisTitle("ToT");
-    r.reset(h);
+    auto h3 = createHistoMap3d<uint16_t>("Tot3d", nCol, nRow, "ToT", 16, 0.5, 16.5, stat);
+    h = h3.get();
+    r = std::move(h3);
 }
 
 void Tot3d::processEvent(FrontEndData *data) {
@@ -188,10 +179,9 @@ void Tot3d::processEvent(FrontEndData *data) {
 }
 
 void TagDist::create(const LoopStatus &stat) {
-    h = new Histo1d(outputName(), 257, -0.5, 256.5, stat);
-    h->setXaxisTitle("Tag");
-    h->setYaxisTitle("Hits");
-    r.reset(h);
+    auto h1 = createHisto1d(outputName(), "Tag", 257, -0.5, 256.5, "Hits", stat);
+    h = h1.get();
+    r = std::move(h1);
 }
 
 void TagDist::processEvent(FrontEndData *data) {
@@ -202,11 +192,9 @@ void TagDist::processEvent(FrontEndData *data) {
 }
 
 void TagMap::create(const LoopStatus &stat) {
-    h = new Histo2d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, stat);
-    h->setXaxisTitle("Column");
-    h->setYaxisTitle("Row");
-    h->setZaxisTitle("Tag");
-    r.reset(h);
+    auto h2 = createHistoMap(outputName(), "Tag2", nCol, nRow, stat);
+    h = h2.get();
+    r = std::move(h2);
 }
 
 void TagMap::processEvent(FrontEndData *data) {
@@ -259,10 +247,10 @@ void TagOccupancyMap::processEvent(FrontEndData *data) {
 }
 
 void L1Dist::create(const LoopStatus &stat) {
-    h = new Histo1d(outputName(), 16, -0.5, 15.5, stat);
-    h->setXaxisTitle("L1A");
-    h->setYaxisTitle("Hits");
-    r.reset(h);
+    auto h1 = createHisto1d(outputName(), "L1A", 16, -0.5, 15.5, "Hits", stat);
+
+    h = h1.get();
+    r = std::move(h1);
     l1id = 33;
     bcid_offset = 0;
 }
@@ -314,11 +302,9 @@ void L1Hist::processEvent(FrontEndData *data) {
 }
 
 void L13d::create(const LoopStatus &stat) {
-    h = new Histo3d(outputName(), nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5, 16, -0.5, 15.5, stat);
-    h->setXaxisTitle("Column");
-    h->setYaxisTitle("Row");
-    h->setZaxisTitle("L1A");
-    r.reset(h);
+    auto h3 = createHistoMap3d<uint16_t>(outputName(), nCol, nRow, "L1A", 16, -0.5, 15.5, stat);
+    h = h3.get();
+    r = std::move(h3);
     l1id = 33;
     bcid_offset = 0;
 }
@@ -371,10 +357,9 @@ void BcHist::processEvent(FrontEndData *data) {
 }
 
 void HitsPerEvent::create(const LoopStatus &stat) {
-    h = new Histo1d(outputName(), 1000, -0.5, 999.5, stat);
-    h->setXaxisTitle("Number of Hits");
-    h->setYaxisTitle("Events");
-    r.reset(h);
+    auto h1 = createHisto1d(outputName(), "Number of Hits", 1000, -0.5, 999.5, "Events", stat);
+    h = h1.get();
+    r = std::move(h1);
 }
 
 void HitsPerEvent::processEvent(FrontEndData *data) {
