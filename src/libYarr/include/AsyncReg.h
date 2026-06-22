@@ -46,7 +46,8 @@ namespace AsyncAccess {
     AsyncReg(AsyncContext &ctxt,
              std::function<void (TxCore &)> send,
              std::function<bool (const RawData &)> filter,
-             std::function<void (const RawData &)> process);
+             std::function<void (const RawData &)> process,
+             std::chrono::milliseconds ms_timeout = std::chrono::milliseconds(100));
     std::future<void> result;
   };
 

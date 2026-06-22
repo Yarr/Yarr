@@ -4,6 +4,7 @@
 
 #include "RxCore.h"
 #include "TxCore.h"
+#include "logging.h"
 
 namespace {
 auto logger = logging::make_log("AsyncReg");
@@ -15,26 +16,37 @@ enum class ReadRegSM {
   READY_FOR_DATA,
   FOUND_DATA,
   READ_COMPLETE,
+
+  TIMEOUT,
 };
 
 /// State for one read register command
 struct ReadRegState {
+  using clk = std::chrono::steady_clock;
+
   std::unique_ptr<std::atomic<ReadRegSM>> state;
+
+  clk::time_point last_state_change;
 
   std::function<void (TxCore &)> send_cb;
   std::function<bool (const RawData &)> filter_cb;
   std::function<void (const RawData &)> process_cb;
+
+  std::chrono::milliseconds ms_timeout;
 
   std::promise<void> promise;
 
   ReadRegState(std::function<void (TxCore &)> send,
                std::function<bool (const RawData &)> filter,
                std::function<void (const RawData &)> process,
+               std::chrono::milliseconds timeout,
                std::promise<void> &&promise)
     : state(std::make_unique<std::atomic<ReadRegSM>>(ReadRegSM::INIT)),
+      last_state_change{clk::now()},
       send_cb(send),
       filter_cb(filter),
       process_cb(process),
+      ms_timeout(timeout),
       promise(std::move(promise))
   {
     logger->trace("Init async read reg state");
@@ -46,12 +58,44 @@ struct ReadRegState {
   ReadRegState &operator=(const ReadRegState &) = delete;
   ReadRegState &operator=(ReadRegState &&rhs) = default;
 
+  void newState(ReadRegSM s) {
+    *state = s;
+    last_state_change = clk::now();
+
+    logger->trace("State: {}", stateName());
+  }
+
+  const char *stateName() const {
+    switch(*state) {
+    case ReadRegSM::INIT: return "INIT";
+    case ReadRegSM::READY_FOR_DATA: return "READY_FOR_DATA";
+    case ReadRegSM::FOUND_DATA: return "FOUND_DATA";
+    case ReadRegSM::READ_COMPLETE: return "READ_COMPLETE";
+    case ReadRegSM::TIMEOUT: return "TIMEOUT";
+    default: return "UNEXPECTED";
+    }
+  }
+
   void takeStep(TxCore &tx) {
     logger->trace("Async read reg step");
+
+    if((*state != ReadRegSM::TIMEOUT)
+       && (clk::now() - last_state_change) > ms_timeout) {
+      logger->trace("Async read reg timeout from {}", stateName());
+      try {
+        throw std::runtime_error("Timeout exception");
+      } catch(...) {
+        promise.set_exception(std::current_exception());
+        newState(ReadRegSM::TIMEOUT);
+        return;
+      }
+      logger->critical("Async read reg failed to set timeout");
+    }
+
     switch(*state) {
     case ReadRegSM::INIT:
       send_cb(tx);
-      *state = ReadRegSM::READY_FOR_DATA;
+      newState(ReadRegSM::READY_FOR_DATA);
       break;
     default:
       // READING handled elsewhere
@@ -63,13 +107,14 @@ struct ReadRegState {
     logger->trace("Async read reg check data");
     if(*state != ReadRegSM::READY_FOR_DATA) {
       // Not interested
+      logger->trace("Async read received data in wrong state");
       return false;
     }
     if(filter_cb(rawData)) {
-      *state = ReadRegSM::FOUND_DATA;
+      newState(ReadRegSM::FOUND_DATA);
       process_cb(rawData);
       promise.set_value();
-      *state = ReadRegSM::READ_COMPLETE;
+      newState(ReadRegSM::READ_COMPLETE);
       return true;
     }
     return false;
@@ -144,6 +189,13 @@ void AsyncAccess::detail::AsyncContextImpl::run(std::stop_token stoken)
 {
   logger->trace("Async read run thread");
   while(!stoken.stop_requested()) {
+    {
+      std::lock_guard<std::mutex> lk(sm_mutex);
+      for(auto &sm: allSMs) {
+        sm.takeStep(txCore);
+      }
+    }
+
     dispatchNewData(rxCore);
   }
   logger->trace("Async read thread complete");
@@ -162,7 +214,8 @@ AsyncContext::~AsyncContext() = default;
 AsyncReg::AsyncReg(AsyncContext &ctxt,
                    std::function<void (TxCore &)> send,
                    std::function<bool (const RawData &)> filter,
-                   std::function<void (const RawData &)> process)
+                   std::function<void (const RawData &)> process,
+                   std::chrono::milliseconds ms_timeout)
 {
   logger->trace("Async read creation");
   std::promise<void> result_promise;
@@ -172,6 +225,7 @@ AsyncReg::AsyncReg(AsyncContext &ctxt,
   ReadRegState state(
         send,
         filter, process,
+        ms_timeout,
         std::move(result_promise));
 
   ctxt.impl->dispatchRead(std::move(state));
