@@ -374,7 +374,14 @@ namespace ScanHelper {
             }
 
             std::size_t botDirPos = chipConfigPath.find_last_of('/');
-            std::string  cfgFile=chipConfigPath.substr(botDirPos, chipConfigPath.length());
+            std::string cfgFile;
+            if(botDirPos == std::string::npos) {
+              shlog->debug("Failed to extract name from path, using fe->getName() instead");
+              cfgFile = feCfg->getName();
+              shlog->debug(" {} -> {}", chipConfigPath, feCfg->getName());
+            } else {
+              cfgFile=chipConfigPath.substr(botDirPos, chipConfigPath.length());
+            }
             feCfgMap[last_id] = {chipConfigPath, cfgFile};
         }
 
