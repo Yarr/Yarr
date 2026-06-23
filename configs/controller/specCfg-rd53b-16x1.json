@@ -1,24 +1,25 @@
 {
-    "ctrlCfg" : {
-        "type": "spec",
-        "cfg" : {
-            "specNum" : 0,
-            "spiConfig" : 541200,
-            "rxPolarity" : 65535,
-            "txPolarity" : 0,
-            "rxActiveLanes" : 1,
-            "pulse" : {
-                "word" : 0,
-                "interval" : 500
+    "ctrlCfg": {
+        "cfg": {
+            "cmdPeriod": 6.25e-09,
+            "delay": [0, 0, 0, 0, 7, 0, 7, 8, 5, 13, 13, 13, 0, 0, 0, 0],
+            "idle": {
+                "word": 2863311530
             },
-            "sync" : {
-                "word" : 2172551550,
-                "interval" : 16
+            "pulse": {
+                "interval": 500,
+                "word": 0
             },
-            "idle" : {
-                "word" : 2863311530
+            "rxActiveLanes": 1,
+            "rxPolarity": 65535,
+            "specNum": 0,
+            "spiConfig": 541200,
+            "sync": {
+                "interval": 16,
+                "word": 2172551550
             },
-            "cmdPeriod" : 6.25e-9
-        }
+            "txPolarity": 0
+        },
+        "type": "spec"
     }
 }

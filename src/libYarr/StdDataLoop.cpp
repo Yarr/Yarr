@@ -298,7 +298,6 @@ void StdDataLoop::execPart2() {
             SPDLOG_LOGGER_ERROR(sdllog, "Received more triggers than expected: received {} of {} events for channel with id {}!", receivedTriggers, ntriggersToReceive, id);
         }
     }
-
     m_done = true;
     counter++;
 }
