@@ -125,7 +125,7 @@ run_multi_batch(std::vector<std::vector<uint32_t>> batches, Itkpixv2Cfg &cfg) {
 //   ccol=55 is caught by the internal tag path; 5 bits of temp are consumed to
 //   reconstruct the 11-bit value.  The format marker check (bits[10:8] must be
 //   0b111) fails for ccol=55 (produces 0b110), so a corrupt-stream error is
-//   logged and the processor resets to INIT without creating a new event.
+//   logged.
 //   Total: exactly one corrupt-stream error.
 // ---------------------------------------------------------------------------
 TEST_CASE("Itkpixv2DataProcessor: ccol=55 OOB write to _qrow",
@@ -168,7 +168,7 @@ TEST_CASE("Itkpixv2DataProcessor: ccol=55 OOB increment via isneighbor",
     Itkpixv2Cfg cfg;
     // ccol=55 is caught by the internal tag path before reaching the isneighbor
     // branch.  The format marker check (bits[10:8] must be 0b111) fails, logs
-    // one corrupt-stream error, and resets to INIT without touching _qrow.
+    // one corrupt-stream error.
     auto proc = run_single_batch({0x006EC000, 0x00000000}, cfg);
 
     CHECK(proc->_chipTagBitFlipCnt == 0);
