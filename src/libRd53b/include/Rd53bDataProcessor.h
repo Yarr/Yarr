@@ -74,6 +74,7 @@ private:
     Rd53bCfg *m_feCfg;
 
     uint16_t _tag;
+    uint16_t _prevTag;
     uint16_t _l1id;
     uint16_t _bcid;
     unsigned long _wordCount;

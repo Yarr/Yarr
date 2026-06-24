@@ -54,6 +54,7 @@ Rd53bDataProcessor::Rd53bDataProcessor()
     _expectNewStreamErrorCnt = 0;
     _outOfRangeBitsCnt = 0;
     _splitEventsCnt = 0;
+    _prevTag = 0xFFFF;
 
     // Data stream components
     _ccol = 0;
@@ -294,9 +295,14 @@ void Rd53bDataProcessor::process_core()
             _curOut = std::make_unique<FrontEndData>(_curInV->stat);
             _curOut->events.reserve(128);
         }
-        _curOut->newEvent(_tag, _l1id, _bcid);
-        _events++;
-        sendFeedback(_tag, _bcid);
+        if (_tag != _prevTag) {
+            _curOut->newEvent(_tag, _l1id, _bcid);
+            _events++;
+            sendFeedback(_tag, _bcid);
+            _prevTag = _tag;
+        } else {
+            _splitEventsCnt++;
+        }
     }
 
     // Start looping over data words in the current packet
@@ -338,10 +344,15 @@ void Rd53bDataProcessor::process_core()
                     _curOut = std::make_unique<FrontEndData>(_curInV->stat);
                     _curOut->events.reserve(128);
                 }
-                _curOut->newEvent(_tag, _l1id, _bcid);
-                _events++;
+                if (_tag != _prevTag) {
+                    _curOut->newEvent(_tag, _l1id, _bcid);
+                    _events++;
+                    sendFeedback(_tag, _bcid);
+                    _prevTag = _tag;
+                } else {
+                    _splitEventsCnt++;
+                }
                 _status = CCOL;
-                sendFeedback(_tag, _bcid);
                 continue;
             }
             else if (_ccol >= 55) // Internal tag (valid ccol range is 1-54; 55 is unphysical)
