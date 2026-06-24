@@ -355,7 +355,7 @@ TEST_CASE("Itkpixv2DataProcessor: dumpDebugBuffer safe_ccol clamp",
     // With ASAN + USE_ITKPIX_DEBUG_BUFFER > 0 this would previously abort
     // inside dumpDebugBuffer at the _qrow[_ccol] log line.
     // The format marker check now catches ccol=55 (bits[10:8]=0b110) and
-    // exactly one corrupt-stream error is logged.
+    // resets to INIT, so exactly one corrupt-stream error is logged.
     CHECK(proc->_chipTagBitFlipCnt == 0);
     CHECK(proc->_chipTagErrorCnt   == 0);
     CHECK(proc->_corruptStreamErrorCnt == 1);
