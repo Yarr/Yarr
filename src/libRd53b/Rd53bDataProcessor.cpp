@@ -355,7 +355,7 @@ void Rd53bDataProcessor::process_core()
                 _status = CCOL;
                 continue;
             }
-            else if (_ccol >= 55) // Internal tag (valid ccol range is 1-54; 55 is unphysical)
+            else if (_ccol >= 55) // Internal tag guard: valid range is 56-63 (0b111xxx per RTL); 55 is a format violation
             {
                 // Internal tag is 11-bit. So need to retrieve 5 more bits
                 uint64_t temp = 0;
@@ -363,6 +363,14 @@ void Rd53bDataProcessor::process_core()
                     return;
 
                 _tag = (_ccol << 5) | temp;
+
+                // Per the data format, the chip encodes internal tags with CCA >= 56 (0b111xxx),
+                // so bits[10:8] of the reconstructed 11-bit tag must be 0b111.
+                // CCA=55 (0b110111) is unreachable from a functioning chip and indicates corrupt data.
+                if ((_tag >> 8) != 0x7) {
+                    logger->error("[{}] Internal tag 0x{:03x} has invalid format marker (bits[10:8]=0b{:03b}, expected 0b111); data is corrupt",
+                                  m_feCfg->getName(), _tag, (_tag >> 8) & 0x7);
+                }
 
                 // Create a new event
                 // There is no L1ID and BCID in RD53B data stream. Currently put dummy values
