@@ -168,7 +168,7 @@ TEST_CASE("Itkpixv2DataProcessor: ccol=55 OOB increment via isneighbor",
     Itkpixv2Cfg cfg;
     // ccol=55 is caught by the internal tag path before reaching the isneighbor
     // branch.  The format marker check (bits[10:8] must be 0b111) fails, logs
-    // one corrupt-stream error.
+    // one corrupt-stream error, and resets to INIT without touching _qrow.
     auto proc = run_single_batch({0x006EC000, 0x00000000}, cfg);
 
     CHECK(proc->_chipTagBitFlipCnt == 0);
