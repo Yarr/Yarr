@@ -378,6 +378,8 @@ void Itkpixv2DataProcessor::process_core()
                     logger->error("[{}] Internal tag 0x{:03x} has invalid format marker (bits[10:8]=0b{:03b}, expected 0b111); data is corrupt",
                                   m_feCfg->getName(), _tag, (_tag >> 8) & 0x7);
                     _corruptStreamErrorCnt++;
+                    _status = INIT; // Reset to resync on the next stream header
+                    return;
                 }
 
                 _status = BCIDL1; // Go back to newEvent / BCIDL1 assignment
