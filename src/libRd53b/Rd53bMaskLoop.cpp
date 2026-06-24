@@ -363,7 +363,7 @@ bool Rd53bMaskLoop::getNeighboursMap(int col, int row,int sensorType, int maskSi
 }
 
 
-bool Rd53bMaskLoop::ignorePixel(int col, int row){
+bool Rd53bMaskLoop::ignorePixel(int col, int row) const {
 
     //if checking bump bonding connections for rectangular sensors, only use (0,0) pixel
     if ( m_includedPixels == only00CornerForBumpBonding){

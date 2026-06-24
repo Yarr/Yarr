@@ -24,9 +24,9 @@ class AD7995 : public PeripheralI2C {
         double getValue(unsigned arg_ch);
 
     private:
-        uint32_t dev_addr;
-        unsigned ch_cnt;
-        double ch_value[4];
+        uint32_t dev_addr = 0;
+        unsigned ch_cnt = 0;
+        double ch_value[4] = {};
 };
 
 #endif

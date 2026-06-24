@@ -60,7 +60,7 @@ void Rd53aGlobalFeedback::loadConfig(const json &j) {
     }
     if (j.contains("pixelRegs")) {
         m_pixelReg.clear();
-        for(auto i: j["pixelRegs"])
+        for(const auto& i: j["pixelRegs"])
             m_pixelReg.push_back(i);
         if (m_pixelReg.size() != 2) {
             logger->error("Expected 2 values, got {}", m_pixelReg.size());

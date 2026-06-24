@@ -388,7 +388,7 @@ int packetFromRawData(StarChipPacket& packet, RawData& data) {
 
 RawDataPtr readData(
   HwController& hwCtrl,
-  std::function<bool(RawData&)> filter_cb,
+  const std::function<bool(RawData&)>& filter_cb,
   uint32_t timeout)
 {
   bool nodata = true;
@@ -438,7 +438,7 @@ RawDataPtr readData(
 
 RawDataContainer readAllData(
   HwController& hwCtrl,
-  std::function<bool(RawData&)> filter_cb,
+  const std::function<bool(RawData&)>& filter_cb,
   uint32_t timeout)
 {
   //  bool nodata = true;

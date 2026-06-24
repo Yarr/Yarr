@@ -6,7 +6,7 @@
 namespace {
     auto aplog = logging::make_log("PlottingRegistry");
 
-    typedef ClassRegistry<Plotter> OurRegistry;
+    using OurRegistry = ClassRegistry<Plotter>;
 
     static OurRegistry &registry() {
         static OurRegistry instance;
@@ -19,7 +19,7 @@ namespace StdDict {
 bool registerPlotter(std::string name,
                      std::function<std::unique_ptr<Plotter>()> f)
 {
-    return registry().registerClass(name, f);
+    return registry().registerClass(std::move(name), std::move(f));
 }
 
 std::unique_ptr<Plotter> getPlotter(std::string name) {

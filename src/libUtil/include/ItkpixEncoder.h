@@ -43,8 +43,8 @@ class ItkpixEncoder{
     protected:
         // Output
         std::vector<uint32_t> m_words;
-        uint m_nEventsPerStream, m_currCCol, m_currQRow, m_currEvent;//, m_lastQRow;
-        uint8_t m_currStream;
+        uint m_nEventsPerStream, m_currCCol = 0, m_currQRow = 0, m_currEvent = 0;//, m_lastQRow;
+        uint8_t m_currStream = 0;
 
         // Encoding machinery
         uint64_t m_currBlock;

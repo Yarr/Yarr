@@ -19,7 +19,7 @@ namespace {
     auto blog = logging::make_log("Bookkeeper");
 }
 
-Bookkeeper::Bookkeeper(TxCore *arg_tx, RxCore *arg_rx) {
+Bookkeeper::Bookkeeper(TxCore *arg_tx, RxCore *arg_rx) : clipboardMonitorRefreshTime(0), runClipboardMonitor(false) {
     tx = arg_tx;
     rx = arg_rx;
     g_fe.reset();
@@ -182,7 +182,7 @@ void Bookkeeper::startFeClipboardMonitor() {
 
     // start clipboard monitoring thread
     runClipboardMonitor = true;
-    clipboardMonitorThread_ptr.reset(new std::thread(&Bookkeeper::feClipboardMonitor, this));
+    clipboardMonitorThread_ptr = std::make_unique<std::thread>(&Bookkeeper::feClipboardMonitor, this);
 }
 
 void Bookkeeper::setFeClipboardMonitorRefreshTime(unsigned arg_clipboardMonitorRefreshTime) {
@@ -194,7 +194,7 @@ void Bookkeeper::joinFeClipboardMonitor() {
     clipboardMonitorThread_ptr->join();
 }
 
-void Bookkeeper::addFeClipboardMonitor(unsigned arg_id, std::string arg_name) {
+void Bookkeeper::addFeClipboardMonitor(unsigned arg_id, const std::string& arg_name) {
     clipboardMonitorFeIDs.push_back(arg_id);
     clipboardMonitorFeNames.push_back(arg_name);
 }

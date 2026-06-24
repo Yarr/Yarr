@@ -21,19 +21,19 @@ static constexpr uint8_t _LUT_BinaryTreeMask[3][8] = {
 };
 
 struct option longopts[] = {
-    {"input", required_argument, NULL, 'i'},
-    {"output", required_argument, NULL, 'o'},
-    {"ne", required_argument, NULL, 'n'},
-    {"help", no_argument, NULL, 'h'},
-    {0, 0, 0, 0}};
+    {"input", required_argument, nullptr, 'i'},
+    {"output", required_argument, nullptr, 'o'},
+    {"ne", required_argument, nullptr, 'n'},
+    {"help", no_argument, nullptr, 'h'},
+    {nullptr, 0, nullptr, 0}};
 
 std::vector<uint32_t> _buffer;
 int _blockIdx = 0;
 int _bitIdx = 0;
-uint32_t *_data = NULL;
+uint32_t *_data = nullptr;
 std::unique_ptr<RawData> _curIn;
 
-void printHelp(const std::string exe)
+void printHelp(const std::string& exe)
 {
     std::cout << "Usage: " << exe << " [options]" << std::endl;
     std::cout << "Allowed options:" << std::endl;
@@ -53,13 +53,13 @@ public:
         outputStream.clear();
         auxStream1.clear();
     }
-    void fill(std::string input, const std::string output, const std::string name, const bool startNewLine = false);
-    void save(const std::string outputFileName);
+    void fill(std::string input, const std::string& output, const std::string& name, const bool startNewLine = false);
+    void save(const std::string& outputFileName);
     void block(const uint64_t blockStream);
-    void remain(const std::string input);
+    void remain(const std::string& input);
 
 private:
-    std::string decorate(const std::string str, const unsigned length, const char separator);
+    std::string decorate(const std::string& str, const unsigned length, const char separator);
     std::vector<std::stringstream *> inputStream;
     std::vector<std::stringstream *> outputStream;
     std::vector<std::stringstream *> auxStream1;
@@ -68,7 +68,7 @@ private:
     std::string _remain;
 };
 
-void Rd53bDecodeHelper::fill(std::string input, const std::string output, const std::string name, const bool startNewLine)
+void Rd53bDecodeHelper::fill(std::string input, const std::string& output, const std::string& name, const bool startNewLine)
 {
     if (startNewLine)
     {
@@ -82,14 +82,14 @@ void Rd53bDecodeHelper::fill(std::string input, const std::string output, const 
         input = "(" + _remain + ")" + input.substr(_remain.length());
         _remain = "";
     }
-    const unsigned maxLength = std::max(std::max(input.length(), output.length()), name.length()) + 1;
+    const unsigned maxLength = std::max({input.length(), output.length(), name.length()}) + 1;
     *inputStream.back() << decorate(input, maxLength, ' ');
     *outputStream.back() << decorate(output, maxLength, ' ');
     *auxStream1.back() << decorate(name, maxLength, ' ');
     *auxStream2.back() << decorate("", maxLength, '_');
 }
 
-std::string Rd53bDecodeHelper::decorate(const std::string str, const unsigned length, const char separator)
+std::string Rd53bDecodeHelper::decorate(const std::string& str, const unsigned length, const char separator)
 {
     unsigned left = (length - str.length()) / 2;
     unsigned right = length - str.length() - left;
@@ -102,7 +102,7 @@ std::string Rd53bDecodeHelper::decorate(const std::string str, const unsigned le
     return output;
 }
 
-void Rd53bDecodeHelper::save(const std::string outputFileName)
+void Rd53bDecodeHelper::save(const std::string& outputFileName)
 {
     std::ofstream fout(outputFileName);
     for (int is = 0; is < inputStream.size(); is++)
@@ -124,7 +124,7 @@ void Rd53bDecodeHelper::block(const uint64_t blockStream)
     *auxStream3.back() << std::bitset<64>(blockStream);
 }
 
-void Rd53bDecodeHelper::remain(const std::string input)
+void Rd53bDecodeHelper::remain(const std::string& input)
 {
     fill(input, "", "Remain");
     _remain = input;
@@ -250,13 +250,14 @@ uint16_t readRow(Rd53bDecodeHelper *h)
                 nShift[lv + 1][nRead[lv + 1]++] = nShift[lv][ir] + _LUT_BinaryTreeMaskSize[lv];
                 nShift[lv + 1][nRead[lv + 1]++] = nShift[lv][ir];
                 break;
+            default: break;
             }
         }
     }
     return hitmap;
 }
 
-int readInData(std::string inputStreamFileName, int nStream = -1)
+int readInData(const std::string& inputStreamFileName, int nStream = -1)
 {
     std::cout << "Reading encoded data...";
     uint32_t address = 0xFFFFFFFF;
@@ -282,7 +283,7 @@ int readInData(std::string inputStreamFileName, int nStream = -1)
     _buffer.push_back(0);
 
     std::unique_ptr<RawData> data(new RawData(address, words));
-    std::copy(&_buffer[0], &_buffer[words-1], data->getBuf());
+    std::copy(_buffer.data(), _buffer.data() + (words-1), data->getBuf());
     _curIn = std::move(data);
     std::cout << "Done." << std::endl;
     return words;
@@ -294,7 +295,7 @@ int main(int argc, char **argv)
     std::string outputFileName = "decoded.txt";
     bool compressed = true;
     int oc;
-    while ((oc = getopt_long(argc, argv, ":i:o:c:h", longopts, NULL)) != -1)
+    while ((oc = getopt_long(argc, argv, ":i:o:c:h", longopts, nullptr)) != -1)
     {
         switch (oc)
         {
@@ -313,13 +314,13 @@ int main(int argc, char **argv)
             printHelp(argv[0]);
             return 0;
         case ':': /* missing option argument */
-            fprintf(stderr, "%s: option `-%c' requires an argument\n",
+            (void)fprintf(stderr, "%s: option `-%c' requires an argument\n",
                     argv[0], optopt);
             printHelp(argv[0]);
             return 0;
         case '?':
         default:
-            fprintf(stderr, "%s: option `-%c' is invalid: ignored\n",
+            (void)fprintf(stderr, "%s: option `-%c' is invalid: ignored\n",
                     argv[0], optopt);
             printHelp(argv[0]);
             return 0;

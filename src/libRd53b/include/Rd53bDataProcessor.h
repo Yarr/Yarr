@@ -47,20 +47,20 @@ public:
 
     uint32_t *_data; // Pointer to one data block
     RawDataPtr _dataPtrCpy; // Copy of shared pointer to data object _data points to
-    uint32_t *_data_t;     // Internal state variable
+    uint32_t *_data_t = nullptr;     // Internal state variable
     RawDataPtr _dataPtrCpy_t; // Copy of shared pointer to data object _data points to
     int _wordIdx;          // Index of the word under processing
     unsigned _bitIdx;	   // Index of the first bit in datablock which is not processed yet. It starts from 0. The first half thus ends at 31, and the 2nd starts at 32
     int _rawDataIdx;       // Index of the raw data within each raw data container. Note it can be negative (means going back to previous container)
 
     std::unique_ptr<RawDataContainer> _curInV; // Current raw data container
-    uint32_t _data_pre[2];                    // Last 64 bit of data from previous raw data container
+    uint32_t _data_pre[2] = {};                // Last 64 bit of data from previous raw data container
     std::unique_ptr<FrontEndData> _curOut; // Output data container
-    int _events;                           // Output number of events    
+    int _events = 0;                       // Output number of events
 
     unsigned _unfinishedStreamErrorCnt; // Number of "expect unfinished stream while ES=1" (without check EOS on)
     unsigned _expectNewStreamErrorCnt; // Number of "expect new stream while NS=0"
-    unsigned _outOfRangeBitsCnt; // Number of times we requested past EOS for hitmap
+    unsigned _outOfRangeBitsCnt = 0; // Number of times we requested past EOS for hitmap
     unsigned _splitEventsCnt;
 
     void setCompressedHitmap(bool flag) { _isCompressedHitmap = flag; }
@@ -69,9 +69,9 @@ public:
 private:
     std::unique_ptr<std::thread> thread_ptr;
     ClipBoard<RawDataContainer> *m_input;
-    ClipBoard<EventDataBase> *m_out;
+    ClipBoard<EventDataBase> *m_out = nullptr;
     ClipBoard<FeedbackProcessingInfo> *statusFb = nullptr;
-    Rd53bCfg *m_feCfg;
+    Rd53bCfg *m_feCfg = nullptr;
 
     uint16_t _tag;
     uint16_t _prevTag;
@@ -106,7 +106,7 @@ private:
     void dumpDebugBuffer();
     // Data stream components
     uint64_t _ccol;
-    uint16_t _qrow[55]; // One counter for each core column. Use 54 as total number of core columns to be compatible with CMS chip geometry. Note core column index starts from 1.
+    uint16_t _qrow[55] = {}; // One counter for each core column. Use 54 as total number of core columns to be compatible with CMS chip geometry. Note core column index starts from 1.
     uint64_t _islast_isneighbor;
     uint64_t _hitmap;
     uint64_t _ToT;

@@ -7,7 +7,7 @@ namespace {
     auto aclog = logging::make_log("ChipRegistry");
 }
 
-typedef ClassRegistry<FrontEnd> OurRegistry;
+using OurRegistry = ClassRegistry<FrontEnd>;
 
 static OurRegistry &registry() {
     static OurRegistry instance;
@@ -18,7 +18,7 @@ namespace StdDict {
     bool registerFrontEnd(std::string name,
                               std::function<std::unique_ptr<FrontEnd>()> f)
     {
-        return registry().registerClass(name, f);
+        return registry().registerClass(std::move(name), std::move(f));
     }
 
     std::unique_ptr<FrontEnd> getFrontEnd(std::string name) {

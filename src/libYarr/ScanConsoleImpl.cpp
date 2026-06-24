@@ -560,8 +560,8 @@ void ScanConsoleImpl::cleanup() {
             diagram.toPlot(scanOpts.outputDir + "diagram.png");
         }
     }
-
 }
+
 
 std::string ScanConsoleImpl::getResults() {
     json result;

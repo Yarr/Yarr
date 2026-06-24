@@ -19,7 +19,7 @@ namespace {
 }
 
 Fei4Emu::Fei4Emu(const json &model_cfg, EmuCom *rx, EmuCom *tx) {
-    srand(time(NULL));
+    srand(time(nullptr));
 
     m_feId = 0x00;
     m_l1IdCnt = 0x00;
@@ -121,13 +121,15 @@ void Fei4Emu::executeLoop() {
     //                        printf("recieved a RunMode command\n");
                             handleRunMode(chipid, command);
                             break;
+                        default:
+                            break;
                     }
 
                     break;
                 case 0:
                     break;
                 default:
-                    fprintf(stderr, "ERROR - unknown type recieved, %x\n", type);
+                    (void)fprintf(stderr, "ERROR - unknown type recieved, %x\n", type);
                     break;
             }
         }
@@ -158,6 +160,8 @@ void Fei4Emu::handleGlobalPulse(uint32_t chipid) {
                 break;
             case 3:
                 dc_step = 1;
+                break;
+            default:
                 break;
         }
 
@@ -199,6 +203,8 @@ void Fei4Emu::handleGlobalPulse(uint32_t chipid) {
             case 3:
                 dc_step = 1;
                 break;
+            default:
+                break;
         }
 
         // loop through the 40 double columns
@@ -233,6 +239,8 @@ void Fei4Emu::handleGlobalPulse(uint32_t chipid) {
                 break;
             case 3:
                 dc_step = 1;
+                break;
+            default:
                 break;
         }
 
@@ -282,6 +290,8 @@ void Fei4Emu::handleWrFrontEnd(uint32_t chipid, uint32_t bitstream[21]) {
         case 3:
             dc_step = 1;
             break;
+        default:
+            break;
     }
 
     // loop through the 40 double columns
@@ -313,6 +323,8 @@ void Fei4Emu::handleTrigger() {
         case 3:
             dc_step = 1;
             break;
+        default:
+            break;
     }
 
     // loop through the 40 double columns
@@ -340,7 +352,7 @@ void Fei4Emu::handleTrigger() {
                     }
 
                     if (digital_tot && analog_tot) {
-                        fprintf(stderr, "ERROR - doing both a digital and an analog hit, this should not happen!\n");
+                        (void)fprintf(stderr, "ERROR - doing both a digital and an analog hit, this should not happen!\n");
                     }
 
                     if (digital_tot >= analog_tot) {
@@ -384,6 +396,7 @@ void Fei4Emu::decodeCommand(uint8_t *cmdStream, std::size_t size) {
           case 0x2: processECR(); break;
           case 0x4: processCAL(); break;
           case 0x8: processSLOW(cmdPtr); break;
+          default: break;
         }
         }; break;
       default: {
@@ -434,27 +447,27 @@ void Fei4Emu::addServiceRecord(bool isInfoSR) {
 
 }
 
-void Fei4Emu::startFrame() {
+void Fei4Emu::startFrame() const {
   pushOutput( (m_feId << 24) | 0xfc );
 }
 
-void Fei4Emu::endFrame() {
+void Fei4Emu::endFrame() const {
   pushOutput( (m_feId << 24) | 0xbc );
 }
 
-void Fei4Emu::addDataHeader(bool hasErrorFlags) {
+void Fei4Emu::addDataHeader(bool hasErrorFlags) const {
   pushOutput( (m_feId << 24) | (0xe9 << 16) | (((uint32_t)hasErrorFlags) << 15) | ((m_l1IdCnt&0x1F) << 10) | (m_bcIdCnt&0x3FF) );
 }
 
-void Fei4Emu::addDataRecord(uint16_t col, uint16_t row, uint8_t tot1, uint8_t tot2) {
+void Fei4Emu::addDataRecord(uint16_t col, uint16_t row, uint8_t tot1, uint8_t tot2) const {
   pushOutput( (m_feId << 24) | ((col&0x7F) << 17) | ((row&0x1FF) << 8) | ((tot1&0xF) << 4) | (tot2&0xF) );
 }
 
-void Fei4Emu::addAddressRecord(uint16_t address, bool isGR) {
+void Fei4Emu::addAddressRecord(uint16_t address, bool isGR) const {
   pushOutput( (0xea << 16) | (((uint32_t)isGR) << 15) | (address&0x7FFFF) );
 }
 
-void Fei4Emu::addValueRecord(uint16_t value) {
+void Fei4Emu::addValueRecord(uint16_t value) const {
   pushOutput( (0xec << 16) | value );
 }
 

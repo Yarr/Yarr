@@ -16,9 +16,7 @@ FrontEnd::FrontEnd()
 {
 }
 
-FrontEnd::~FrontEnd()
-{
-}
+FrontEnd::~FrontEnd() = default;
 
 bool FrontEnd::isActive() const {
 	return active;

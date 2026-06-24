@@ -15,8 +15,8 @@ Rd53bEncodingTool::Rd53bEncodingTool() : m_addresscompression(true),
                                          m_debug(false)
 {
   m_testStreamsStr.clear();
-  m_chipMap = std::unique_ptr<Rd53bChipMap>(new Rd53bChipMap(400, 384, 8, 2));
-  m_truthData = std::unique_ptr<FrontEndData>(new FrontEndData());
+  m_chipMap = std::make_unique<Rd53bChipMap>(400, 384, 8, 2);
+  m_truthData = std::make_unique<FrontEndData>();
 }
 
 Rd53bEncodingTool::StatusCode Rd53bEncodingTool::saveDataStream()
@@ -24,7 +24,7 @@ Rd53bEncodingTool::StatusCode Rd53bEncodingTool::saveDataStream()
   addOrphanBits(); // Add orphanBits
 
   // Split the stream strings into 63-bit blocks and prepend NS bit, making it a full 64-bit block
-  for (auto stream : m_testStreamsStr)
+  for (const auto& stream : m_testStreamsStr)
   {
     //NS bits are not there yet, so all we have now is 63 bits of the actual data, hence the division by 63
     
@@ -173,7 +173,7 @@ Rd53bEncodingTool::StatusCode Rd53bEncodingTool::createStream(Rd53bChipMap &chip
           //h.row = phi;
           //h.tot = tots.at(el-1);
           //m_truthHits.push_back(h);
-          FrontEndHit feHit;
+          FrontEndHit feHit = {};
           feHit.col = eta + 1;
           feHit.row = phi + 1;
           feHit.tot = tots.at(el - 1) - 1;

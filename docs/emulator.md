@@ -22,7 +22,7 @@ All scans can be run through scanConsole, using the usual scan configurations an
 ```
 for a digital scan, or
 ```
-./bin/scanConsole -r configs/controller/emuCfg_itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/std_digitalscan.json -p
+./bin/scanConsole -r configs/controller/emuCfg_itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/std_analogscan.json -p
 ```
 for an analog scan. Example outputs of mean ToT maps for the digital and analog scans are shown below.
 

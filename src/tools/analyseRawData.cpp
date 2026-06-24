@@ -43,6 +43,7 @@ int main(int argc, char* argv[])
         case 'o':
             outputDir = std::string(optarg) + std::string("/");
             break;
+        default: break;
         }
     }
 
@@ -94,7 +95,7 @@ int main(int argc, char* argv[])
     clusterRowWidth.setXaxisTitle("Cluster Row Width");
     clusterRowWidth.setYaxisTitle("# of Clusters");
 
-    Histo2d *eventScreen = NULL;
+    Histo2d *eventScreen = nullptr;
 
     Histo2d clusterWidthLengthCorr("clusterWidthLengthCorr", 11, -0.5, 10.5, 11, -0.5, 10.5);
     clusterWidthLengthCorr.setXaxisTitle("Cluster Col Length");
@@ -198,7 +199,7 @@ int main(int argc, char* argv[])
               trigger++;
             }
 
-            if (multiEvent == NULL) {
+            if (multiEvent == nullptr) {
                 multiEvent = event;
             } else {
                 multiEvent->addEvent(*event);
@@ -233,10 +234,10 @@ int main(int argc, char* argv[])
             // Fill histos and start new multi-event container after 16 events
             if (mod_l1id == 31 || !file) {
 
-                if(multiEvent != 0){
+                if(multiEvent != nullptr){
                     hitsPerEvent.fill(multiEvent->nHits);
                 }else{
-                    multiEvent = NULL;
+                    multiEvent = nullptr;
                     l1_count = 0;
                     continue;
                 }
@@ -264,7 +265,7 @@ int main(int argc, char* argv[])
                     }
                 }
 
-                for (auto &cluster : clusters) {
+                for (auto& cluster : clusters) {
                     hitsPerCluster.fill(cluster.nHits);
                     if (cluster.nHits > 1) {
                         clusterColLength.fill(cluster.getColLength());
@@ -274,14 +275,14 @@ int main(int argc, char* argv[])
                 }
 
                 if (clusters.size() > 0 && plotIt < 100) {
-                    if (eventScreen == NULL) {
+                    if (eventScreen == nullptr) {
                         eventScreen = new Histo2d((std::to_string(nonZero_cnt) + "-eventScreen"), 400, 0.5, 400.5, 192, 0.5, 192.5);
                         eventScreen->setXaxisTitle("Column");
                         eventScreen->setYaxisTitle("Row");
                         eventScreen->setZaxisTitle("ToT");
                     }
-                    for (auto &cluster: clusters) {
-                        for (auto hit : cluster.hits) {
+                    for (auto& cluster: clusters) {
+                        for (const auto& hit : cluster.hits) {
                             eventScreen->fill(hit->col, hit->row, hit->tot);
                         }
                     }
@@ -296,7 +297,7 @@ int main(int argc, char* argv[])
                     plotIt++;
                 }
 
-                multiEvent = NULL;
+                multiEvent = nullptr;
                 l1_count = 0;
             }
         }

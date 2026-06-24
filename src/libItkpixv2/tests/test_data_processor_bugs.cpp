@@ -121,10 +121,12 @@ run_multi_batch(std::vector<std::vector<uint32_t>> batches, Itkpixv2Cfg &cfg) {
 //   - With ASAN:    aborts immediately (heap-buffer-overflow on _qrow[55]).
 //   - Without ASAN: _corruptStreamErrorCnt stays 0 (loop control corrupted).
 //                   CHECK(proc->_corruptStreamErrorCnt == 1) FAILS → bug visible.
-// After the ccol guard fix (_ccol >= 55):
-//   ccol=55 is treated as internal tag; no OOB; decoder creates a new event,
-//   reads ccol=0 with ES=0 from the remaining zero bits, logs a corrupt-stream
-//   error, and terminates gracefully.
+// After the ccol guard fix (_ccol >= 55) with format marker check:
+//   ccol=55 is caught by the internal tag path; 5 bits of temp are consumed to
+//   reconstruct the 11-bit value.  The format marker check (bits[10:8] must be
+//   0b111) fails for ccol=55 (produces 0b110), so a corrupt-stream error is
+//   logged.
+//   Total: exactly one corrupt-stream error.
 // ---------------------------------------------------------------------------
 TEST_CASE("Itkpixv2DataProcessor: ccol=55 OOB write to _qrow",
           "[itkpixv2][bug_ccol55]") {
@@ -140,9 +142,8 @@ TEST_CASE("Itkpixv2DataProcessor: ccol=55 OOB write to _qrow",
     CHECK(proc->_chipTagBitFlipCnt == 0);
     CHECK(proc->_chipTagErrorCnt   == 0);
 
-    // After the fix: OOB eliminated, loop terminates correctly, ccol=0 with
-    // ES=0 is read, exactly one corrupt-stream error is logged.
-    // Before the fix: this CHECK FAILS (count stays 0 due to corrupted loop).
+    // The format marker check fires on the invalid internal tag (ccol=55 →
+    // bits[10:8]=0b110), logging exactly one corrupt-stream error.
     CHECK(proc->_corruptStreamErrorCnt == 1);
 }
 
@@ -165,9 +166,9 @@ TEST_CASE("Itkpixv2DataProcessor: ccol=55 OOB increment via isneighbor",
           "[itkpixv2][bug_ccol55_neighbor]") {
 
     Itkpixv2Cfg cfg;
-    // First islast/isneighbor = 0b01 (isneighbor=1 → ++_qrow[55], OOB)
-    // Second iteration: islast/isneighbor = 0b10 (islast=1) → exits loop
-    // Remaining zero bits → ccol=0 with ES=0 → _corruptStreamErrorCnt=1
+    // ccol=55 is caught by the internal tag path before reaching the isneighbor
+    // branch.  The format marker check (bits[10:8] must be 0b111) fails, logs
+    // one corrupt-stream error.
     auto proc = run_single_batch({0x006EC000, 0x00000000}, cfg);
 
     CHECK(proc->_chipTagBitFlipCnt == 0);
@@ -353,6 +354,8 @@ TEST_CASE("Itkpixv2DataProcessor: dumpDebugBuffer safe_ccol clamp",
     // Processor must complete without crash.
     // With ASAN + USE_ITKPIX_DEBUG_BUFFER > 0 this would previously abort
     // inside dumpDebugBuffer at the _qrow[_ccol] log line.
+    // The format marker check now catches ccol=55 (bits[10:8]=0b110) and
+    // exactly one corrupt-stream error is logged.
     CHECK(proc->_chipTagBitFlipCnt == 0);
     CHECK(proc->_chipTagErrorCnt   == 0);
     CHECK(proc->_corruptStreamErrorCnt == 1);

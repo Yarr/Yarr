@@ -160,7 +160,7 @@ bool isPacketType(RawData &data, PacketType packet_type) {
 }
 
 std::vector<RawDataPtr> readData(HwController &hwCtrl,
-                    std::function<bool(RawData &)> filter_cb,
+                    const std::function<bool(RawData &)>& filter_cb,
                     uint32_t timeout) {
   logger->info("Reading data");
   bool nodata = true;

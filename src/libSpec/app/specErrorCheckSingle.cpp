@@ -24,7 +24,7 @@ int main (void) {
     
     const size_t size = 33; // 1kB
     
-    srand(time(NULL));
+    srand(time(nullptr));
 
     for (int loop = 0; loop<maxLoops; loop++) {
         std::cout << std::endl << "==================================" << std::endl;

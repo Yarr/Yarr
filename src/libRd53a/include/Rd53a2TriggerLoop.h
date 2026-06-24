@@ -27,7 +27,7 @@ class Rd53a2TriggerLoop: public LoopActionBase, public StdTriggerAction {
         void setTrigFreq(double freq) {m_trigFreq = freq;}
         void setTrigDelay(uint32_t delay);
         uint32_t getTrigCnt() const override {return m_trigCnt*2;}
-        void verifyParameters();
+        void verifyParameters() const;
 
         void setAutozeroPulse();
         void setNoInject();

@@ -15,7 +15,7 @@ auto flog = logging::make_log("Fei4Cmd");
 }
 
 Fei4Cmd::Fei4Cmd() {
-    core = NULL;
+    core = nullptr;
 }
 
 void Fei4Cmd::setCore(TxCore *arg_core) {

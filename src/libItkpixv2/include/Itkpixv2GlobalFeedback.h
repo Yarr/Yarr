@@ -31,16 +31,16 @@ class Itkpixv2GlobalFeedback : public LoopActionBase, public GlobalFeedbackRecei
 
     protected:
     private:
-        Itkpixv2RegDefault Itkpixv2GlobalCfg::*parPtr;
+        Itkpixv2RegDefault Itkpixv2GlobalCfg::*parPtr = nullptr;
         std::string parName;
-        int m_cur;
+        int m_cur = 0;
 
         std::map<unsigned, unsigned> m_values;
         std::map<unsigned, unsigned> m_localStep;
         std::map<unsigned, int> m_oldSign;
 
-        bool m_rstPixelReg;
-        int m_pixelReg;
+        bool m_rstPixelReg = false;
+        int m_pixelReg = 0;
 
         void writePar();
         

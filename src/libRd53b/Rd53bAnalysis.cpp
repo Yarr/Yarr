@@ -135,7 +135,7 @@ void FrontEndScopeAnalysis::processHistogram(HistogramBase* h) {
     //
     // Initialize histograms for this ID
     //
-    if(h_occMaps[id] == NULL) {
+    if(h_occMaps[id] == nullptr) {
         Histo2d* hist = new Histo2d(occ_name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
         hist->setXaxisTitle("Column");
         hist->setYaxisTitle("Row");
@@ -223,7 +223,7 @@ void FrontEndScopeAnalysis::processHistogram(HistogramBase* h) {
         //
         // PULSE SHAPE MAP
         //
-        if(m_has_threshold_loop && m_doPulseShapeMap && h_pulseShapeMap == NULL) {
+        if(m_has_threshold_loop && m_doPulseShapeMap && h_pulseShapeMap == nullptr) {
             m_pulseShape_ylo = m_threshold_min;
             m_pulseShape_yhi = 1.15 * m_threshold_max;
             m_pulseShape_nybins = int( (m_pulseShape_yhi - m_pulseShape_ylo) / (m_threshold_step) );
@@ -233,7 +233,7 @@ void FrontEndScopeAnalysis::processHistogram(HistogramBase* h) {
         }
 
         // loop over all pixels
-        if(m_has_threshold_loop && m_doPulseShapeMap && h_pulseShapeMap != NULL) {
+        if(m_has_threshold_loop && m_doPulseShapeMap && h_pulseShapeMap != nullptr) {
             for(unsigned ii = 0; ii < h_meanPToAMap->size(); ii++) {
 
                 // only fill for those thresholds where we have 100% occupancy
@@ -278,7 +278,7 @@ void FrontEndScopeAnalysis::processHistogram(HistogramBase* h) {
 }
 
 void FrontEndScopeAnalysis::end() {
-    if(h_pulseShapeMap != NULL) {
+    if(h_pulseShapeMap != nullptr) {
         output->pushData(std::move(h_pulseShapeMap));
     }
 }
@@ -386,7 +386,7 @@ void ToaAnalysis::processHistogram(HistogramBase *h) {
     // initialize histograms
     //
     // occupancy map
-    if(h_occMaps[ident] == NULL) {
+    if(h_occMaps[ident] == nullptr) {
         Histo2d* hh = new Histo2d(occ_name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
@@ -396,7 +396,7 @@ void ToaAnalysis::processHistogram(HistogramBase *h) {
     }
 
     // PToA map
-    if(h_ptoaMaps[ident] == NULL) {
+    if(h_ptoaMaps[ident] == nullptr) {
         Histo2d* hh = new Histo2d(ptoaMap_name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
@@ -406,7 +406,7 @@ void ToaAnalysis::processHistogram(HistogramBase *h) {
     }
 
     // PToA2 map
-    if(h_ptoa2Maps[ident] == NULL) {
+    if(h_ptoa2Maps[ident] == nullptr) {
         Histo2d* hh = new Histo2d(ptoa2Map_name, nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
         hh->setXaxisTitle("Column");
         hh->setYaxisTitle("Row");
@@ -416,7 +416,7 @@ void ToaAnalysis::processHistogram(HistogramBase *h) {
     }
 
     // ToA vs charge
-    if(m_hasVcalLoop && h_chargeVsToaMap == NULL) {
+    if(m_hasVcalLoop && h_chargeVsToaMap == nullptr) {
         auto cfg = feCfg;
         double chargeMin = cfg->toCharge(m_vcalMin);
         double chargeMax = cfg->toCharge(m_vcalMax);
@@ -539,7 +539,7 @@ void ToaAnalysis::processHistogram(HistogramBase *h) {
 }
 
 void ToaAnalysis::end() {
-    if (m_hasVcalLoop && h_chargeVsToaMap != NULL) {
+    if (m_hasVcalLoop && h_chargeVsToaMap != nullptr) {
         output->pushData(std::move(h_chargeVsToaMap));
     }
 }

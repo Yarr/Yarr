@@ -22,9 +22,9 @@ class Histo3dT : public HistogramBase {
         Histo3dT(const std::string &arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh,
                 unsigned arg_ybins, double arg_ylow, double arg_yhigh,
                 unsigned arg_zbins, double arg_zlow, double arg_zhigh);
-        Histo3dT(std::string arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh, 
-                unsigned arg_ybins, double arg_ylow, double arg_yhigh, 
-                unsigned arg_zbins, double arg_zlow, double arg_zhigh, 
+        Histo3dT(const std::string& arg_name, unsigned arg_xbins, double arg_xlow, double arg_xhigh,
+                unsigned arg_ybins, double arg_ylow, double arg_yhigh,
+                unsigned arg_zbins, double arg_zlow, double arg_zhigh,
                 const LoopStatus &stat);
         Histo3dT(Histo3dT *h);
         ~Histo3dT() override;

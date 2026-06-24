@@ -21,7 +21,7 @@ class Rd53aPixelCfg {
         static constexpr unsigned n_DC= 200;
         static constexpr unsigned n_Col = 400;
         static constexpr unsigned n_Row = 192;
-        std::array<uint16_t, n_DC*n_Row> pixRegs;
+        std::array<uint16_t, n_DC*n_Row> pixRegs = {};
     private:
 
         inline uint16_t maskBits(uint16_t val, unsigned mask);

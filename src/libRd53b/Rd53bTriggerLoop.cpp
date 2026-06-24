@@ -127,7 +127,7 @@ void Rd53bTriggerLoop::init() {
     }
     g_tx->setTrigFreq(m_trigFreq);
     g_tx->setTrigCnt(getTrigCnt());
-    g_tx->setTrigWord(&m_trigWord[0],m_trigWordLength);
+    g_tx->setTrigWord(m_trigWord.data(),m_trigWordLength);
     g_tx->setTrigWordLength(m_trigWordLength);
     g_tx->setTrigTime(m_trigTime);
     g_tx->setCmdEnable(keeper->getTxMask());
@@ -172,7 +172,7 @@ void Rd53bTriggerLoop::execPart2() {
         this->setEdgeMode(2);
         g_tx->setTrigFreq(800000);
         g_tx->setTrigCnt(100);
-        g_tx->setTrigWord(&m_trigWord[0], m_maxTrigWordLength);
+        g_tx->setTrigWord(m_trigWord.data(), m_maxTrigWordLength);
         g_tx->setTrigWordLength(m_maxTrigWordLength);
         g_tx->setTrigConfig(INT_COUNT);
 

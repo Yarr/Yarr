@@ -45,9 +45,9 @@ Compile the minimal build, for more specific compilation options, see below.
 $ cd Yarr/
 $ mkdir build
 $ cd build
-$ cmake3 ../
+$ cmake ../
 <Some text>
-$ make -j4
+$ make -j$(nproc)
 <Lots of text>
 $ make install
 $ cd ..
@@ -62,20 +62,21 @@ In case of issues, please refer to the more detailed instructions below, or cons
 
 ## Software installation
 
-### Dependencies for Centos 8
+### Dependencies for Alma 9
+- If not installed before, you need some standard packages:
+```bash
+$ sudo yum install gnuplot texlive-epstopdf cmake
+```
 
+### Dependencies for Centos 7/8
+
+- CC7/8 are not officially supported anymore and test against, your mileage might vary
 - If not installed before, you need some standard packages:
 
 ```bash
 $ sudo yum install gnuplot texlive-epstopdf cmake3 elfutils-libelf-devel
 ```
 
-
-### Dependencies for Alma 9
-- If not installed before, you need some standard packages:
-```bash
-$ sudo yum install gnuplot texlive-epstopdf cmake
-```
 
 
 ### Initialise repository
@@ -129,9 +130,9 @@ For the minimal build, simply execute the following:
 $ cd Yarr/
 $ mkdir build
 $ cd build
-$ cmake3 ../
+$ cmake ../
 <Some text>
-$ make -j4
+$ make -j$(nproc)
 <Lots of text>
 $ make install
 $ cd ..
@@ -145,9 +146,9 @@ $ cd ..
 
 - In order to build with more controllers execute cmake with extra options
     - For all controllers: 
-        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD=all ..``
+        - ``$ cmake -DYARR_CONTROLLERS_TO_BUILD=all ..``
     - Enable SPEC, FELIX and emulator:
-        - ``$ cmake3 -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;FelixClient"``
+        - ``$ cmake -DYARR_CONTROLLERS_TO_BUILD="Spec;Emu;FelixClient"``
 
 - In order to specify specific hardware controller and/or front-end libraries to build,
 one can provide an OR'ed chain of their names to the `SELECT_LIBS` CMake variable. For example, if the default list of hardware controllers is `YARR_CONTROLLERS_TO_BUILD="Spec;Emu;FelixClient"` and the default list of front-ends to build is `YARR_FRONT_ENDS_TO_BUILD="Fei4;Star;Rd53a;Rd53b"` one can specify that only the `Spec` hardware controller and `Rd53b` front-end libraries are built by doing:

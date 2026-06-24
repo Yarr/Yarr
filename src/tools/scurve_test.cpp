@@ -21,15 +21,15 @@ int main(int argc, char* argv[]) {
     const double step_size = 10;
     const unsigned steps = 300;
     const unsigned n_samples = 1000;
-    std::array<std::array<double, steps>, n_samples> sample;
+    std::array<std::array<double, steps>, n_samples> sample{};
     for (unsigned i=0; i<n_samples; i++) {
         for (unsigned j=0; j<steps; j++) {
             sample[i][j] = 0;
         }
     }
-    
-    
-    std::array<double, steps> x;
+
+
+    std::array<double, steps> x{};
     for (unsigned i=0; i<steps; i++) {
         x[i] = i*step_size;
     }
@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
         control.verbosity = 0;
         double par[3] = {100, 5, 50};
         // Do fit
-        lmcurve(3, par, steps, &x[0], &sample[i][0], scurve, &control, &status);
+        lmcurve(3, par, steps, x.data(), sample[i].data(), scurve, &control, &status);
         //std::cout << par[0] << " " << par[1] << " " << par[2] << std::endl;
         sum_thr += par[0];
         sum_noise += par[1];

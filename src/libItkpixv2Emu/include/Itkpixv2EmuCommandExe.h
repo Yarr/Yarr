@@ -90,7 +90,7 @@ class Itkpixv2EmuCommandExe {
 
         //encoder
         std::shared_ptr<Itkpixv2Encoder> m_encoder;
-        bool m_hitMapFilled;
+        bool m_hitMapFilled = false;
 
         //random number generator
         std::mt19937 m_rng;

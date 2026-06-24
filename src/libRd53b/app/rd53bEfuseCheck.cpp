@@ -41,7 +41,7 @@ void print_usage(char* argv[]) {
 
 auto logger = logging::make_log("rd53bEfuseCheck");
 
-std::shared_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, std::string config, int fe_num) {
+std::shared_ptr<FrontEnd> init_fe(std::unique_ptr<HwController>& hw, const std::string& config, int fe_num) {
     json jconn = ScanHelper::openJsonFile(config);
     std::string chip_type = jconn["chipType"];
     auto fe = StdDict::getFrontEnd(chip_type);

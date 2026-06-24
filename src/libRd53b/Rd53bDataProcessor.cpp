@@ -35,7 +35,7 @@ bool rd53b_proc_registered =
 
 Rd53bDataProcessor::Rd53bDataProcessor()
 {
-    m_input = NULL;
+    m_input = nullptr;
 
     _wordIdx = 0; // Index of the first 64-bit block. Starting from 0
     _bitIdx = 0;   // Index of the first bit within the 64-bit block. Starting from 0
@@ -103,7 +103,7 @@ void Rd53bDataProcessor::run()
 {
     SPDLOG_LOGGER_TRACE(logger, "");
 
-    thread_ptr.reset(new std::thread(&Rd53bDataProcessor::process, this));
+    thread_ptr = std::make_unique<std::thread>(&Rd53bDataProcessor::process, this);
 }
 
 void Rd53bDataProcessor::join()

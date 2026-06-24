@@ -8,7 +8,7 @@
 
 #include "ResultBase.h"
 
-ResultBase::ResultBase(std::string arg_name, LoopStatus &stat)
+ResultBase::ResultBase(const std::string& arg_name, LoopStatus &stat)
   : lStat(stat) {
     name = arg_name;
     xAxisTitle = "x";
@@ -16,7 +16,7 @@ ResultBase::ResultBase(std::string arg_name, LoopStatus &stat)
     zAxisTitle = "z";
 }
 
-ResultBase::ResultBase(std::string arg_name) {
+ResultBase::ResultBase(const std::string& arg_name) {
     name = arg_name;
     xAxisTitle = "x";
     yAxisTitle = "y";
@@ -29,7 +29,7 @@ std::string ResultBase::getName() {
     return name;
 }
 
-void ResultBase::setAxisTitle(std::string x, std::string y, std::string z) {
+void ResultBase::setAxisTitle(const std::string& x, const std::string& y, const std::string& z) {
     xAxisTitle = x;
     yAxisTitle = y;
     zAxisTitle = z;
@@ -47,14 +47,14 @@ std::string ResultBase::getZaxisTitle() {
     return zAxisTitle;
 }
 
-void ResultBase::setXaxisTitle(std::string name) {
+void ResultBase::setXaxisTitle(const std::string& name) {
     xAxisTitle = name;
 }
 
-void ResultBase::setYaxisTitle(std::string name) {
+void ResultBase::setYaxisTitle(const std::string& name) {
     yAxisTitle = name;
 }
 
-void ResultBase::setZaxisTitle(std::string name) {
+void ResultBase::setZaxisTitle(const std::string& name) {
     zAxisTitle = name;
 }

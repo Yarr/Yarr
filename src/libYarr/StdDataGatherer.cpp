@@ -25,7 +25,7 @@ namespace {
     auto sdglog = logging::make_log("StdDataGatherer");
 }
 
-StdDataGatherer::StdDataGatherer() : LoopActionBase(LOOP_STYLE_DATA) {
+StdDataGatherer::StdDataGatherer() : LoopActionBase(LOOP_STYLE_DATA), killswitch(false) {
     loopType = typeid(this);
     min = 0;
     max = 0;
@@ -59,8 +59,12 @@ void StdDataGatherer::execPart2() {
     unsigned nAllRxReadIterations = 0;
 
     signaled = 0;
-    signal(SIGINT, [](int signum){signaled = 1;});
-    signal(SIGUSR1, [](int signum){signaled = 1;});
+    if (signal(SIGINT, [](int /*signum*/){signaled = 1;}) == SIG_ERR) {
+        SPDLOG_LOGGER_ERROR(sdglog, "Failed to install SIGINT handler");
+    }
+    if (signal(SIGUSR1, [](int /*signum*/){signaled = 1;}) == SIG_ERR) {
+        SPDLOG_LOGGER_ERROR(sdglog, "Failed to install SIGUSR1 handler");
+    }
 
     //! initial wait before reading data
     std::this_thread::sleep_for(g_rx->getWaitTime());
@@ -111,7 +115,7 @@ void StdDataGatherer::execPart2() {
                         LoopStatus loopStatusIterationEnd({0}, {LoopStyle::LOOP_STYLE_GLOBAL_FEEDBACK});
                         loopStatusIterationEnd.is_end_of_iteration = true;
                         // Send EoI
-                        std::unique_ptr<RawDataContainer> cIterEnd = std::make_unique<RawDataContainer>(std::move(loopStatusIterationEnd));
+                        std::unique_ptr<RawDataContainer> cIterEnd = std::make_unique<RawDataContainer>(loopStatusIterationEnd);
                         cp.clipRawData.pushData(std::move(cIterEnd));
                         cp.clipProcFeedback.clearData();
                     }
@@ -157,7 +161,7 @@ void StdDataGatherer::execPart2() {
         for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
             LoopStatus loopStatusIterationEnd({0}, {LoopStyle::LOOP_STYLE_GLOBAL_FEEDBACK});
             loopStatusIterationEnd.is_end_of_iteration = true;
-            std::unique_ptr<RawDataContainer> cIterEnd = std::make_unique<RawDataContainer>(std::move(loopStatusIterationEnd));
+            std::unique_ptr<RawDataContainer> cIterEnd = std::make_unique<RawDataContainer>(loopStatusIterationEnd);
             auto &cp = keeper->getEntry(id).fe->clipboards();
             cp.clipRawData.pushData(std::move(cIterEnd));
             cp.clipProcFeedback.clearData();

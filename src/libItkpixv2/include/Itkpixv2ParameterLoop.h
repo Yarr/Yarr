@@ -21,10 +21,10 @@ class Itkpixv2ParameterLoop : public LoopActionBase {
         void loadConfig(const json &j) override;
 
     private:
-        Itkpixv2RegDefault Itkpixv2GlobalCfg::*parPtr;
+        Itkpixv2RegDefault Itkpixv2GlobalCfg::*parPtr = nullptr;
         std::string parName;
         void writePar();
-        unsigned m_cur;
+        unsigned m_cur = 0;
 
         void init() override;
         void end() override;

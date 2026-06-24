@@ -265,7 +265,7 @@ yarrStatus Rd53a::checkCom() {
         data = dataVec[0];
     }
 
-    if (data != NULL) {
+    if (data != nullptr) {
         if (!(data->getSize() == 2 || data->getSize() == 4 || data->getSize() == 8 || data->getSize() == 12 || data->getSize() == 6)) {
             logger->error("Received wrong number of words ({}) for {}", data->getSize(), this->name);
             return yarrFailure;

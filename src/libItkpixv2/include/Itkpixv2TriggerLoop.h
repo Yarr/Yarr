@@ -34,7 +34,7 @@ class Itkpixv2TriggerLoop : public LoopActionBase, public StdTriggerAction {
         uint32_t m_calEdgeDelay;
         float m_trigTime;
         float m_trigFreq;
-        std::array<uint32_t, 32> m_trigWord;
+        std::array<uint32_t, 32> m_trigWord = {};
         uint32_t m_trigWordLength;
         int m_maxTrigWordLength;
         bool m_noInject;

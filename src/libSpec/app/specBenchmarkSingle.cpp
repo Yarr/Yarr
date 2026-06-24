@@ -20,7 +20,7 @@ int main(void) {
     double overall_time = 0;
     double overall_data = 0;
     
-    timeval start, end;
+    timeval start = {}, end = {};
     
     constexpr size_t MAX_WORDS = 2 * (maxCycles+1);
     std::array<uint32_t, MAX_WORDS> data_buf{};
@@ -34,11 +34,11 @@ int main(void) {
         std::memset(data_buf.data(), 0x5A, size*4);
         
         // Write to Spec
-        gettimeofday(&start, NULL);
+        gettimeofday(&start, nullptr);
         for(int loops=0; loops<maxLoops; loops++) {
             mySpec.writeBlock(0x20000, data_buf.data(), size);
         }
-        gettimeofday(&end, NULL);
+        gettimeofday(&end, nullptr);
 
         // Analyze time
         double total_data = size*4*maxLoops/1024.0/1024.0;
@@ -62,11 +62,11 @@ int main(void) {
         const size_t size = 2 * (cycles + 1);
         
         // Read from Spec
-        gettimeofday(&start, NULL);
+        gettimeofday(&start, nullptr);
         for(int loops=0; loops<maxLoops; loops++) {
             mySpec.readBlock(0x20000, data_buf.data(), size);
         }
-        gettimeofday(&end, NULL);
+        gettimeofday(&end, nullptr);
 
         // Analyze time
         double total_data = size*4*maxLoops/1024.0/1024.0;

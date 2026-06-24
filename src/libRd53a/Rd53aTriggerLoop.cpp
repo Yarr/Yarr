@@ -117,7 +117,7 @@ void Rd53aTriggerLoop::init() {
     }
     g_tx->setTrigFreq(m_trigFreq);
     g_tx->setTrigCnt(getTrigCnt());
-    g_tx->setTrigWord(&m_trigWord[0], 32);
+    g_tx->setTrigWord(m_trigWord.data(), 32);
     g_tx->setTrigWordLength(m_trigWordLength);
     g_tx->setTrigTime(m_trigTime);
 

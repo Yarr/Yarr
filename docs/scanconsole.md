@@ -1,22 +1,23 @@
 # ScanConsole
 
 The ScanConsole is the main program which should be used to perform scans on FrontEnd ASICs.
-It currently supports three types of FrontEnds:
-    
-- FE-I4B
-- FE65-P2
+It currently supports the following FrontEnds:
+
+- ITkPixV2 (RD53C)
+- RD53B (ITkPixV1)
 - RD53A
 - ABC/HCC STAR
+- FE-I4B
 
 ## Quick Start
 
 If you just want to see something running, execute the following:
 
 ```bash
-$ bin/scanConsole -r configs/controller/emuCfg.json -c configs/connectivity/example_fei4b_setup.json -s configs/scans/fei4/std_digitalscan.json -p
+$ bin/scanConsole -r configs/controller/emuCfg_itkpixv2.json -c configs/connectivity/example_itkpixv2_setup.json -s configs/scans/itkpixv2/std_digitalscan.json -p
 ```
 
-This runs a digitalscan with the FE-I4B emulator. This does not use or require any hardware and will run purely in software.
+This runs a digital scan with the ITkPixV2 software emulator. It does not require any hardware and runs purely in software. See [Emulator](emulator.md) for more emulator-based scan examples including threshold scans and tuning.
 
 ## Command Line Arguments
 
@@ -91,7 +92,7 @@ The `path` can be as following ([MR](https://gitlab.cern.ch/YARR/YARR/-/merge_re
 
 In the above example, the chip using tx 0 and rx 0 is enabled, meaning that transmission and reception will be established with that chip using the display port cable located in slot 0. Tx refers to transmission to the FE chip, while rx refers to reception of data from the FE chip. That chip will have a default configuration file made, called `rd53a_test.json`, located in the `configs/` folder. The chip on the tx/rx line 1 is ignored. 
 
-The `chipType` can be one of three: `RD53A`, `FEI4B`, or `FE65P2`.
+The `chipType` can be one of: `Itkpixv2`, `RD53B`, `RD53A`, `Star`, or `FEI4B`.
 "chips" contains an array of chips, each element needs to contain the path to the config, and the tx and rx channel/link. Each chip can be read out individually by toggling "enable". The chip config can be prevented from overwriting if it is locked.
 
 #### Configuration for multiple FE chips with each FE receiving its own command line
@@ -379,9 +380,11 @@ Example:
 The 'prescan' config includes specific FrontEnd registers which are necessary for the scan and overwrite whatever is in the chip config (however these values will not be transferred into the chip config, they only exist for the time of the scan). Register names in the 'prescan' need to match those in the chip configuration.
 Loop actions are specific to the FrontEnd type and are listed on the respective FrontEnd page:
     
+- [ITkPixV2](itkpixv2.md)
+- [RD53B](rd53b.md)
 - [RD53A](rd53a.md)
 - [FE-I4](fei4.md)
-- [FE65-P2](fe65p2.md)
+- [Star/ABC](star.md)
 
 **Important Notes:**
     

@@ -52,12 +52,12 @@ class Fei4Emu {
         uint8_t getToTCode(uint8_t dec_tot);
 
         void addServiceRecord(bool isInfoSR);
-        void startFrame();
-        void endFrame();
-        void addDataHeader(bool hasErrorFlags);
-        void addDataRecord(uint16_t col, uint16_t row, uint8_t tot1, uint8_t tot2);
-        void addAddressRecord(uint16_t address, bool isGR);
-        void addValueRecord(uint16_t value);
+        void startFrame() const;
+        void endFrame() const;
+        void addDataHeader(bool hasErrorFlags) const;
+        void addDataRecord(uint16_t col, uint16_t row, uint8_t tot1, uint8_t tot2) const;
+        void addAddressRecord(uint16_t address, bool isGR) const;
+        void addValueRecord(uint16_t value) const;
 
         void processL1A();
         void processBCR();
@@ -69,16 +69,16 @@ class Fei4Emu {
         EmuCom * m_rxRingBuffer;
         std::shared_ptr<Fei4Cfg> m_feCfg;
 
-        uint32_t m_modeBits;
-        uint32_t m_shiftRegisterBuffer[40][21];
+        uint32_t m_modeBits = 0;
+        uint32_t m_shiftRegisterBuffer[40][21] = {};
 
         // these are not quite used - they are just set to 0
-	FrontEndGeometry m_feGeo; // todo: put as template arguments (or at least tie to config type
+	FrontEndGeometry m_feGeo = {}; // todo: put as template arguments (or at least tie to config type
         uint8_t m_feId;
         uint32_t m_l1IdCnt;
         uint32_t m_bcIdCnt;
 
-	PixelModel* m_pixelModelObjects[80][336];
+	PixelModel* m_pixelModelObjects[80][336] = {};
 	void initializePixelModelsFromFile(const json &cfg);
 
         // this is the file path to output the pixel model configuration

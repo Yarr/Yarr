@@ -1,14 +1,11 @@
 #include "Rd53bChipMap.h"
 
-#include <math.h>
+#include <cmath>
 #include <bitset>
 #include <tuple>
 #include <random>
-#include <iostream> 
-#include <time.h>       /* clock_t, clock, CLOCKS_PER_SEC */
-
-Rd53bChipMap::~Rd53bChipMap(){
-}
+#include <iostream>
+#include <ctime>
 
 void Rd53bChipMap::reset(){
   //just reproduce the constructor functionality, so that we don't have to
@@ -28,7 +25,7 @@ void Rd53bChipMap::fillChipMap(int eta, int phi, int tot) {
   m_nfired_pixels++;
 }
 
-int Rd53bChipMap::getRegionIndex(int eta, int phi) {
+int Rd53bChipMap::getRegionIndex(int eta, int phi) const {
 
   int myccol = getCcol(eta);
   int myqrow = getQrow(phi);
@@ -36,20 +33,20 @@ int Rd53bChipMap::getRegionIndex(int eta, int phi) {
   return getRegion(myccol, myqrow);  
 }
 
-int Rd53bChipMap::getCcol(int eta) {
+int Rd53bChipMap::getCcol(int eta) const {
   return eta/m_cols_core;
 }
 
-int Rd53bChipMap::getQrow(int phi) {
+int Rd53bChipMap::getQrow(int phi) const {
   return phi/m_rows_quar;
 }
 
-int Rd53bChipMap::getRegion(int ccol, int qrow) {
+int Rd53bChipMap::getRegion(int ccol, int qrow) const {
   return (qrow*m_ccols+ccol);
 }
 
-int Rd53bChipMap::getTotalChannels() {
-  return m_cols*m_rows; 
+int Rd53bChipMap::getTotalChannels() const {
+  return m_cols*m_rows;
 }
 
 void Rd53bChipMap::fillRegions() {
@@ -189,7 +186,7 @@ std::vector< std::tuple < int, int, int, int> > Rd53bChipMap::doSplit(std::vecto
   return new_extremes;
 }
 
-void Rd53bChipMap::readMapFile(std::string inputMapFileName){
+void Rd53bChipMap::readMapFile(const std::string& inputMapFileName){
   std::ifstream fin(inputMapFileName);
   std::string line;
   bool startEvt = false;

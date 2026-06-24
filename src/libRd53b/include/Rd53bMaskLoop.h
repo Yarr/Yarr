@@ -25,21 +25,21 @@ class Rd53bMaskLoop: public LoopActionBase {
         void loadConfig(const json &j) override;
 
     private:
-        unsigned m_cur;
+        unsigned m_cur = 0;
         std::map<FrontEnd*, std::array<std::array<uint16_t, Rd53b::n_Row>, Rd53b::n_DC> > m_pixRegs;
-        int m_maskType;
-        bool m_applyEnMask;
-        int m_maskSize;
-        int m_sensorType;
-        int m_includedPixels;
+        int m_maskType = 0;
+        bool m_applyEnMask = false;
+        int m_maskSize = 0;
+        int m_sensorType = 0;
+        int m_includedPixels = 0;
 
         //Needed for cross-talk mask
         std::map< std:: string,  std::array< std::array<   std::pair<int, int> , 8 >, 2>    > AllNeighboursCoordinates;
 
-        std::array< std::array<int, 8>, 12> m_mask_size;
+        std::array< std::array<int, 8>, 12> m_mask_size = {};
 
         bool getNeighboursMap(int col, int row, int sensorType, int maskSize, std::vector<std::pair<int, int>> &neighbours);
-        bool ignorePixel(int col, int row);
+        bool ignorePixel(int col, int row) const;
 
         
         void init() override;

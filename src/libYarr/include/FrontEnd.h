@@ -99,13 +99,13 @@ class FrontEnd {
 
         FrontEndClipBoards &clipboards() { return *m_clipboards; }
 
-        FrontEndGeometry geo;
+        FrontEndGeometry geo = {};
 
     protected:
         std::unique_ptr<FrontEndClipBoards> m_clipboards;
-        bool active;
-        bool activeLoop;
-        RxCore *m_rxcore;
+        bool active = false;
+        bool activeLoop = false;
+        RxCore *m_rxcore = nullptr;
 };
 
 #endif

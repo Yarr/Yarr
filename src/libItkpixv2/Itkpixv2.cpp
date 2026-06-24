@@ -226,7 +226,7 @@ void Itkpixv2::configurePixelMaskParallel() {
     for (unsigned dc=0; dc<4; dc++) {
         this->writeRegister(&Itkpixv2::PixRegionCol, dc);
         this->writeRegister(&Itkpixv2::PixRegionRow, 0);
-        std::array<uint16_t, n_Row> maskBits;
+        std::array<uint16_t, n_Row> maskBits = {};
         for (unsigned row=0; row<n_Row; row++) {
             maskBits[row] = toTenBitMask(pixRegs[dc][row]);
         }
@@ -452,7 +452,7 @@ Itkpixv2RegDefault Itkpixv2GlobalCfg::*  Itkpixv2::getNamedRegisterObject(std::s
     } else {
         logger->error("Trying to get named register object, register not found: {}", name);
     }
-    return NULL;
+    return nullptr;
 }
 
 yarrStatus Itkpixv2::checkCom() {
@@ -478,7 +478,7 @@ yarrStatus Itkpixv2::checkCom() {
         data = dataVec[0];
     }
 
-    if (data != NULL) {
+    if (data != nullptr) {
         unsigned size = data->getSize();       
         if (!(size == 2 || size == 4 || size == 8 || size == 12 || size == 6)) {
             logger->error("Received wrong number of words ({}) for {}", data->getSize(), this->name);

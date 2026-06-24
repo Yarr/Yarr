@@ -126,7 +126,7 @@ public:
       logger->error("No occupancies for simple occupancy config");
       throw std::runtime_error("Bad 'occupancies' emu config");
     }
-    auto occs = cfg["occupancies"];
+    const auto& occs = cfg["occupancies"];
     occupancy_map = occs.template get<std::vector<float>>();
   }
 
@@ -164,13 +164,13 @@ public:
       logger->error("No occupancies for simple trim occupancy config");
       throw std::runtime_error("Bad 'occupancies' emu config");
     }
-    auto occs = cfg["occupancies"];
+    const auto& occs = cfg["occupancies"];
     occupancy_map = occs.template get<std::vector<float>>();
   }
 
   void fill_hits(StripData &hits, const AbcCfg &abc, bool cal_pulse) override {
-    std::array<uint32_t, 32> lo_trim;
-    std::array<uint32_t, 8> hi_trim;
+    std::array<uint32_t, 32> lo_trim = {};
+    std::array<uint32_t, 8> hi_trim = {};
 
     for(size_t t=0; t<32; t++) {
       lo_trim[t] = abc.getRegisterValue(ABCStarRegisters::TrimLo(t));
@@ -700,6 +700,7 @@ void StarChipsetEmu::doFastCommand(uint8_t data6) {
   case LCB::HCC_START_PRLP :
     //std::cout << "Fast command: StartPRLP" << std::endl;
     break;
+  default: break;
   }
 }
 

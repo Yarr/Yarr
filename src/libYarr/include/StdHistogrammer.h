@@ -28,7 +28,7 @@ class DataArchiver : public HistogramAlgorithm {
         }
         ~DataArchiver() override { if(fileHandle.is_open()) fileHandle.close(); }
 
-        bool open(std::string filename);
+        bool open(const std::string& filename);
 
         void create(const LoopStatus &stat) override {}
 

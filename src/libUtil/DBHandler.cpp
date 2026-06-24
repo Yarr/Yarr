@@ -36,7 +36,7 @@ DBHandler::~DBHandler() {
 //*****************************************************************************************************
 // Public functions
 //
-void DBHandler::initialize(std::string i_db_cfg_path, std::string i_command, bool isQC, bool i_interactive) {
+void DBHandler::initialize(const std::string& i_db_cfg_path, const std::string& i_command, bool isQC, bool i_interactive) {
 #if DBDEBUG
     std::cout << "DBHandler: Initializing." << std::endl;
 #endif
@@ -53,7 +53,7 @@ void DBHandler::initialize(std::string i_db_cfg_path, std::string i_command, boo
     return;
 }
 
-void DBHandler::alert(std::string i_function, std::string i_message, std::string i_type) {
+void DBHandler::alert(const std::string& i_function, const std::string& i_message, const std::string& i_type) {
 #if DBDEBUG
     std::cout << "DBHandler: Alert '" << i_type << "'" << std::endl;
 #endif
@@ -68,7 +68,7 @@ void DBHandler::alert(std::string i_function, std::string i_message, std::string
     return;
 }
 
-void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path) {
+void DBHandler::setDCSCfg(const std::string& i_dcs_path, const std::string& i_scanlog_path) {
 #if DBDEBUG
     std::cout << "DBHandler: Set DCS config: " << i_dcs_path << std::endl;
 #endif
@@ -138,7 +138,7 @@ void DBHandler::setDCSCfg(std::string i_dcs_path, std::string i_scanlog_path) {
     return;
 }
 
-void DBHandler::cleanUp(std::string i_option, std::string i_dir, bool i_back, bool i_interactive, std::string tag) {
+void DBHandler::cleanUp(const std::string& i_option, const std::string& i_dir, bool i_back, bool i_interactive, const std::string& tag) {
 #if DBDEBUG
     std::cout << "DBHandler: Clean Up." << std::endl;
 #endif
@@ -177,7 +177,7 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir, bool i_back, bo
 	auto wait { 1000 };
 
 	while( true ) {
-	    std::array<char, 128> buffer;
+	    std::array<char, 128> buffer{};
 	    std::string result;
 
 	    auto pipe = popen( ( "ps ux | grep \"" + m_upload_command + " " + i_option + "\" | wc -l " ).c_str(), "r" );
@@ -222,7 +222,7 @@ void DBHandler::cleanUp(std::string i_option, std::string i_dir, bool i_back, bo
     return;
 }
 
-int DBHandler::setComponent(std::string i_conn_path, std::string i_user_cfg_path, std::string i_site_cfg_path) {
+int DBHandler::setComponent(const std::string& i_conn_path, const std::string& i_user_cfg_path, const std::string& i_site_cfg_path) {
 #if DBDEBUG
     std::cout << "DBHandler: Register Component Data." << std::endl;
 #endif
@@ -241,7 +241,7 @@ int DBHandler::setComponent(std::string i_conn_path, std::string i_user_cfg_path
     return 0;
 }
 
-int DBHandler::setCache(std::string i_user_cfg_path, std::string i_site_cfg_path) {
+int DBHandler::setCache(const std::string& i_user_cfg_path, const std::string& i_site_cfg_path) {
 #if DBDEBUG
     std::cout << "DBHandler: Upload Cache Data." << std::endl;
 #endif
@@ -261,7 +261,7 @@ int DBHandler::setCache(std::string i_user_cfg_path, std::string i_site_cfg_path
     return 0;
 }
 
-int DBHandler::checkConnection(std::string i_opt) {
+int DBHandler::checkConnection(const std::string& i_opt) {
 #if DBDEBUG
     std::cout << "DBHandler: Check the connection to Local DB." << std::endl;
 #endif
@@ -280,7 +280,7 @@ int DBHandler::checkConnection(std::string i_opt) {
     return system(cmd.c_str());
 }
 
-int DBHandler::checkLog(std::string i_user, std::string i_site, std::string i_chip) {
+int DBHandler::checkLog(const std::string& i_user, const std::string& i_site, const std::string& i_chip) {
 #if DBDEBUG
     std::cout << "DBHandler: Check the log in Local DB." << std::endl;
 #endif
@@ -297,7 +297,7 @@ int DBHandler::checkLog(std::string i_user, std::string i_site, std::string i_ch
     return system(cmd.c_str());
 }
 
-int DBHandler::checkConfigs(std::string i_user_cfg_path, std::string i_site_cfg_path, std::vector<std::string> i_conn_cfg_paths) {
+int DBHandler::checkConfigs(const std::string& i_user_cfg_path, const std::string& i_site_cfg_path, const std::vector<std::string>& i_conn_cfg_paths) {
 #if DBDEBUG
     std::cout << "DBHandler: Check config files for Local DB." << std::endl;
 #endif
@@ -324,7 +324,7 @@ int DBHandler::checkConfigs(std::string i_user_cfg_path, std::string i_site_cfg_
 //*****************************************************************************************************
 // Protected fuctions
 //
-void DBHandler::writeJson(std::string i_key, std::string i_value, std::string i_file_path, json i_json) {
+void DBHandler::writeJson(const std::string& i_key, const std::string& i_value, const std::string& i_file_path, json i_json) {
 #if DBDEBUG
     std::cout << "\tDBHandler: Cache log file: " << i_file_path << std::endl;
 #endif
@@ -339,7 +339,7 @@ void DBHandler::writeJson(std::string i_key, std::string i_value, std::string i_
 
 /////////////////
 // Check Function
-void DBHandler::checkFile(std::string i_file_path, std::string i_description) {
+void DBHandler::checkFile(const std::string& i_file_path, const std::string& i_description) {
 #if DBDEBUG
     std::cout << "\t\tDBHandler: Check file: " << i_file_path << std::endl;
 #endif
@@ -354,7 +354,7 @@ void DBHandler::checkFile(std::string i_file_path, std::string i_description) {
     return;
 }
 
-void DBHandler::checkEmpty(bool i_empty, std::string i_key, std::string i_file_path, std::string i_description) {
+void DBHandler::checkEmpty(bool i_empty, const std::string& i_key, const std::string& i_file_path, const std::string& i_description) {
 #if DBDEBUG
     std::cout << "\t\tDBHandler: Check empty: " << i_key << " in " << i_file_path << std::endl;
 #endif
@@ -367,7 +367,7 @@ void DBHandler::checkEmpty(bool i_empty, std::string i_key, std::string i_file_p
     return;
 }
 
-void DBHandler::checkNumber(bool i_number, std::string i_key, std::string i_file_path) {
+void DBHandler::checkNumber(bool i_number, const std::string& i_key, const std::string& i_file_path) {
 #if DBDEBUG
     std::cout << "\t\tDBHandler: Check number: " << i_key << " in " << i_file_path << std::endl;
 #endif
@@ -379,7 +379,7 @@ void DBHandler::checkNumber(bool i_number, std::string i_key, std::string i_file
     return;
 }
 
-void DBHandler::checkList(std::vector<std::string> i_list, std::string i_value, std::string i_list_path, std::string i_file_path) {
+void DBHandler::checkList(const std::vector<std::string>& i_list, const std::string& i_value, const std::string& i_list_path, const std::string& i_file_path) {
 #if DBDEBUG
     std::cout << "\t\tDBHandler: Check list: " << i_value << " in " << i_file_path << std::endl;
 #endif
@@ -392,7 +392,7 @@ void DBHandler::checkList(std::vector<std::string> i_list, std::string i_value, 
     return;
 }
 
-json DBHandler::checkDBCfg(std::string i_db_path) {
+json DBHandler::checkDBCfg(const std::string& i_db_path) {
 #if DBDEBUG
     std::cout << "\t\tDBHandler: Check database config: " << i_db_path << std::endl;
 #endif
@@ -400,7 +400,7 @@ json DBHandler::checkDBCfg(std::string i_db_path) {
     return db_json;
 }
 
-void DBHandler::checkDCSCfg(std::string i_dcs_path, std::string i_num, json i_json) {
+void DBHandler::checkDCSCfg(const std::string& i_dcs_path, const std::string& i_num, json i_json) {
 #if DBDEBUG
     std::cout << "\t\tDBHandler: Check DCS config: " << i_dcs_path << std::endl;
 #endif
@@ -413,7 +413,7 @@ void DBHandler::checkDCSCfg(std::string i_dcs_path, std::string i_num, json i_js
     return;
 }
 
-std::string DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_path, std::string i_key, int i_num) {
+std::string DBHandler::checkDCSLog(const std::string& i_log_path, const std::string& i_dcs_path, const std::string& i_key, int i_num) {
 #if DBDEBUG
     std::cout << "\t\tDBHandler: Check DCS log file: " << i_log_path << std::endl;
 #endif
@@ -505,7 +505,7 @@ std::string DBHandler::checkDCSLog(std::string i_log_path, std::string i_dcs_pat
     return extension;
 }
 
-int DBHandler::checkCommand(std::string i_opt) {
+int DBHandler::checkCommand(const std::string& i_opt) {
 #if DEBUG
     std::cout << "\t\tDBHandler: Check Comand: " << i_opt << std::endl;
 #endif
@@ -530,7 +530,7 @@ int DBHandler::checkCommand(std::string i_opt) {
     return 0;
 }
 
-std::string DBHandler::getAbsPath(std::string i_path) {
+std::string DBHandler::getAbsPath(const std::string& i_path) {
 #ifdef DEBUG
     std::cout << "\t\tDBHandler: Get Absolute Path: " << i_path << std::endl;
 #endif
@@ -551,7 +551,7 @@ std::string DBHandler::getAbsPath(std::string i_path) {
         o_path = i_path;
     }
     char buf[4096];
-    if (realpath(o_path.c_str(), buf)!=NULL) {
+    if (realpath(o_path.c_str(), buf)!=nullptr) {
         o_path = buf;
     } else {
         std::string message = "No such directory or file: " + i_path;
@@ -566,7 +566,7 @@ std::string DBHandler::getAbsPath(std::string i_path) {
 
 //////////
 // Others
-json DBHandler::toJson(std::string i_file_path) {
+json DBHandler::toJson(const std::string& i_file_path) {
 #if DBDEBUG
     std::cout << "\t\tDBHandler: Convert to json code from: " << i_file_path << std::endl;
 #endif
@@ -588,7 +588,7 @@ json DBHandler::toJson(std::string i_file_path) {
     return file_json;
 }
 
-std::vector<std::string> DBHandler::split(std::string str, char del) {
+std::vector<std::string> DBHandler::split(const std::string& str, char del) {
     std::size_t first = 0;
     std::size_t last = str.find_first_of(del);
     std::vector<std::string> result;
@@ -604,7 +604,7 @@ std::vector<std::string> DBHandler::split(std::string str, char del) {
     return result;
 }
 
-void DBHandler::mkdir(std::string i_dir_path) {
+void DBHandler::mkdir(const std::string& i_dir_path) {
     std::string cmd = "mkdir -p "+i_dir_path;
     if (system(cmd.c_str()) < 0) {
         std::string message = "Problem creating "+i_dir_path;
@@ -614,7 +614,7 @@ void DBHandler::mkdir(std::string i_dir_path) {
     return;
 }
 
-int DBHandler::retrieveFromInflux(std::string i_influx_conn_path, std::string chip_name, std::string i_scanlog_path) {
+int DBHandler::retrieveFromInflux(const std::string& i_influx_conn_path, const std::string& chip_name, const std::string& i_scanlog_path) {
     std::string log_path = this->getAbsPath(i_scanlog_path);
     std::string conn_path = this->getAbsPath(i_influx_conn_path);
 
@@ -636,7 +636,7 @@ int DBHandler::retrieveFromInflux(std::string i_influx_conn_path, std::string ch
     return 0;
 }
 
-int DBHandler::retrieveData(std::string i_comp_name, std::string i_path, std::string i_dir) {
+int DBHandler::retrieveData(const std::string& i_comp_name, const std::string& i_path, const std::string& i_dir) {
 #if DBDEBUG
     std::cout << "DBHandler: Retrieve Data from Local DB." << std::endl;
 #endif

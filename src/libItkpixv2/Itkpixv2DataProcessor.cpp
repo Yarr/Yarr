@@ -35,7 +35,9 @@ bool itkpixv2_proc_registered =
 
 Itkpixv2DataProcessor::Itkpixv2DataProcessor()
 {
-    m_input = NULL;
+    m_input = nullptr;
+    m_out = nullptr;
+    m_feCfg = nullptr;
 
     _wordIdx = 0; // Index of the first 64-bit block. Starting from 0
     _bitIdx = 0;   // Index of the first bit within the 64-bit block. Starting from 0
@@ -56,6 +58,7 @@ Itkpixv2DataProcessor::Itkpixv2DataProcessor()
     _unfinishedStreamEOSErrorCnt = 0;
     _corruptStreamErrorCnt = 0;
     _splitEventsCnt = 0;
+    _prevTag = 0xFFFF;
 
     // Data stream components
     _ccol = 0;
@@ -107,7 +110,7 @@ void Itkpixv2DataProcessor::run()
 {
     SPDLOG_LOGGER_TRACE(logger, "");
 
-    thread_ptr.reset(new std::thread(&Itkpixv2DataProcessor::process, this));
+    thread_ptr = std::make_unique<std::thread>(&Itkpixv2DataProcessor::process, this);
 }
 
 void Itkpixv2DataProcessor::join()
@@ -306,10 +309,15 @@ void Itkpixv2DataProcessor::process_core()
                 _curOut = std::make_unique<FrontEndData>(_curInV->stat);
                 _curOut->events.reserve(128);
             }
-            _curOut->newEvent(_tag, _l1id, _bcid);
-            _events++;
-            sendFeedback(_tag, _bcid);
-        
+            if (_tag != _prevTag) {
+                _curOut->newEvent(_tag, _l1id, _bcid);
+                _events++;
+                sendFeedback(_tag, _bcid);
+                _prevTag = _tag;
+            } else {
+                _splitEventsCnt++;
+            }
+
         case CCOL:
             _status = CCOL;
             // Start from getting core column index
@@ -354,7 +362,7 @@ void Itkpixv2DataProcessor::process_core()
                 _status = BCIDL1; // Go back to newEvent / BCIDL1 assignment
                 continue;
             }
-            else if (_ccol >= 55) // Internal tag (valid ccol range is 1-54; 55 is unphysical)
+            else if (_ccol >= 55) // Internal tag guard: valid range is 56-63 (0b111xxx per RTL); 55 is a format violation
             {
                 // Internal tag is 11-bit. So need to retrieve 5 more bits
                 uint64_t temp = 0;
@@ -362,6 +370,16 @@ void Itkpixv2DataProcessor::process_core()
                     return;
 
                 _tag = (_ccol << 5) | temp;
+
+                // Per the data format, the chip encodes internal tags with CCA >= 56 (0b111xxx),
+                // so bits[10:8] of the reconstructed 11-bit tag must be 0b111.
+                // CCA=55 (0b110111) is unreachable from a functioning chip and indicates corrupt data.
+                if ((_tag >> 8) != 0x7) {
+                    logger->error("[{}] Internal tag 0x{:03x} has invalid format marker (bits[10:8]=0b{:03b}, expected 0b111); data is corrupt",
+                                  m_feCfg->getName(), _tag, (_tag >> 8) & 0x7);
+                    _corruptStreamErrorCnt++;
+                }
+
                 _status = BCIDL1; // Go back to newEvent / BCIDL1 assignment
                 continue;
             }

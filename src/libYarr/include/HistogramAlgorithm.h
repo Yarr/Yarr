@@ -37,8 +37,8 @@ class HistogramAlgorithm {
         }
     protected:
         std::unique_ptr<HistogramBase> r;
-        unsigned nCol;
-        unsigned nRow;
+        unsigned nCol = 80;
+        unsigned nRow = 336;
 };
 
 #endif

@@ -125,6 +125,7 @@ void Itkpixv2EmuCommandExe::doCal(const Itkpixv2EmuUtils::Cmd& cmd){
                 m_tots(pixel) = 9;
                 break;
             }
+            default: break;
         }
 
     }
@@ -197,9 +198,11 @@ void Itkpixv2EmuCommandExe::doWrReg(const Itkpixv2EmuUtils::Cmd& cmd){
                             val = (val & 0xFF07) | ((cmd.data << 3) & 0x00F8);
                             break;
                         }
+                        default: break;
                     }
                     break;
                 }
+                default: break;
             }
             //if AutoRow is enabled, increase the current row
             if (m_cfg->PixAutoRow.read()) m_cfg->PixRegionRow.write(m_cfg->PixRegionRow.read() + 1);
@@ -254,7 +257,7 @@ void Itkpixv2EmuCommandExe::doRdReg(const Itkpixv2EmuUtils::Cmd& cmd){
     serviceBlock |= (value << 26);
 
     m_rx->write32(serviceBlock >> 32);
-    m_rx->write32(serviceBlock & 0xFFFFFFFF);
+    m_rx->write32(static_cast<uint32_t>(serviceBlock));
     
 }
 
@@ -296,7 +299,7 @@ void Itkpixv2EmuCommandExe::doTrigger(const Itkpixv2EmuUtils::Cmd& cmd){
             }
             else {
                 //Form the EoS + trigger tag and send the empty event
-                uint32_t emptyEvent = (1 << 31) | (0x00000000 & extendedTag << 23);
+                uint32_t emptyEvent = (1u << 31) | (static_cast<uint32_t>(extendedTag) << 23);
                 m_rx->write32({emptyEvent, 0x00000000});
             }
 

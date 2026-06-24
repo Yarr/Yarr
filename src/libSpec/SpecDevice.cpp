@@ -293,7 +293,7 @@ void *SpecDevice::mapBAR(unsigned int bar)
 	if (ioctl( handle, SPECDRIVER_IOC_MMAP_AREA, SPECDRIVER_BAR0+bar) != 0)
 		throw Exception(Exception::INTERNAL_ERROR);
 
-	mem = mmap(0, info.bar_length[bar], PROT_WRITE | PROT_READ, MAP_SHARED, handle, 0);
+	mem = mmap(nullptr, info.bar_length[bar], PROT_WRITE | PROT_READ, MAP_SHARED, handle, 0);
 	
 	mmap_unlock();
 
