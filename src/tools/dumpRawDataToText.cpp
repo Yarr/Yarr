@@ -56,9 +56,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-<<<<<<< HEAD
-    unsigned m_curBlock = 0;
-=======
     // Print Header
     std::cout << "EventCnt |    Tag |   L1ID |   BCID | Base/ExtTag | Tag(bin) | HitCount | Index" << std::endl;
     std::cout << "---------|---------|---------|---------|-------------|----------|----------|--------" << std::endl;
@@ -66,31 +63,15 @@ int main(int argc, char *argv[]) {
         std::cout << "  Col    |   Row   |   ToT" << std::endl;
         std::cout << "--------------------------" << std::endl;
     }
->>>>>>> 9282572a (add headders and new command line arguments to dataDumper)
 
     for(int n=optind; n<argc; n++) {
         std::fstream inputFile(argv[n], std::fstream::in | std::fstream::binary);
         if (!inputFile.good()) continue;
 
-<<<<<<< HEAD
-
-        int eventCnt = 0;
-
-        m_curBlock = 0;
-        
-        FrontEndEvent evo;
-        evo.fromFileBinary(inputFile);
-
-        int basetag = 0;
-        int exttag = 0;
-        int prev_basetag = 0;
-        unsigned i = 0;
-=======
         unsigned eventCnt = 0;
         unsigned m_curBlock = 0;
         int i = 0;
         int basetag = 0, exttag = 0, prev_basetag = 0;
->>>>>>> 9282572a (add headders and new command line arguments to dataDumper)
 
         while(inputFile) {
             FrontEndEvent event;
