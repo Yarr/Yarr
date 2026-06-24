@@ -370,6 +370,9 @@ void Rd53bDataProcessor::process_core()
                 if ((_tag >> 8) != 0x7) {
                     logger->error("[{}] Internal tag 0x{:03x} has invalid format marker (bits[10:8]=0b{:03b}, expected 0b111); data is corrupt",
                                   m_feCfg->getName(), _tag, (_tag >> 8) & 0x7);
+                    _corruptStreamErrorCnt++;
+                    _status = INIT; // Reset to resync on the next stream header
+                    return;
                 }
 
                 // Create a new event
