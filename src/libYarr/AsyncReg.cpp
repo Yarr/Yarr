@@ -5,6 +5,10 @@
 #include "RxCore.h"
 #include "TxCore.h"
 
+namespace {
+auto logger = logging::make_log("AsyncReg");
+}
+
 enum class ReadRegSM {
   INIT,
   // Wait for some data
@@ -32,7 +36,9 @@ struct ReadRegState {
       filter_cb(filter),
       process_cb(process),
       promise(std::move(promise))
-  {}
+  {
+    logger->trace("Init async read reg state");
+  }
 
   ReadRegState() = delete;
   ReadRegState(const ReadRegState &) = delete;
@@ -41,6 +47,7 @@ struct ReadRegState {
   ReadRegState &operator=(ReadRegState &&rhs) = default;
 
   void takeStep(TxCore &tx) {
+    logger->trace("Async read reg step");
     switch(*state) {
     case ReadRegSM::INIT:
       send_cb(tx);
@@ -53,6 +60,7 @@ struct ReadRegState {
   }
 
   bool checkData(RawData &rawData) {
+    logger->trace("Async read reg check data");
     if(*state != ReadRegSM::READY_FOR_DATA) {
       // Not interested
       return false;
@@ -134,9 +142,11 @@ void AsyncAccess::detail::AsyncContextImpl::dispatchRead(ReadRegState new_read)
 
 void AsyncAccess::detail::AsyncContextImpl::run(std::stop_token stoken)
 {
+  logger->trace("Async read run thread");
   while(!stoken.stop_requested()) {
     dispatchNewData(rxCore);
   }
+  logger->trace("Async read thread complete");
 }
 
 using namespace AsyncAccess;
@@ -154,6 +164,7 @@ AsyncReg::AsyncReg(AsyncContext &ctxt,
                    std::function<bool (const RawData &)> filter,
                    std::function<void (const RawData &)> process)
 {
+  logger->trace("Async read creation");
   std::promise<void> result_promise;
 
   result = result_promise.get_future();
@@ -164,4 +175,5 @@ AsyncReg::AsyncReg(AsyncContext &ctxt,
         std::move(result_promise));
 
   ctxt.impl->dispatchRead(std::move(state));
+  logger->trace("Async read submitted");
 }
