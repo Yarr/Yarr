@@ -11,13 +11,12 @@ TEST_CASE("AsyncReadRegister", "[Async]") {
 
   EmptyHw hw;
 
-  ReceiveRegisterScheduler sched(hw);
+  AsyncAccess::AsyncContext anon{hw, hw};
 
-  uint32_t channel = 2;
-  sched.readRegister(channel, [&](uint32_t reg_val) -> AsyncReply<uint32_t>
-		     {
-		       l << "Report reg data: " << reg_val << std::endl;
-		     }
-		     );
-  sched.run();
+  AsyncAccess::AsyncReg something(anon,
+                     [](TxCore &){},
+                     [](const RawData &){ return true; },
+                     [](const RawData &){});
+
+  something.result.get();
 }

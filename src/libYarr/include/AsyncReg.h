@@ -3,11 +3,16 @@
 
 #include <functional>
 #include <future>
+#include <memory>
 
 class RawData;
+class RxCore;
 class TxCore;
 
-namespace AsyncReg {
+namespace AsyncAccess {
+  namespace detail {
+    struct AsyncContextImpl;
+  }
 
   /**
    * Context for a bunch of async accesses.
@@ -20,6 +25,12 @@ namespace AsyncReg {
    * processed.
    */
   class AsyncContext {
+  public:
+    AsyncContext() = delete;
+    ~AsyncContext();
+    AsyncContext(TxCore &, RxCore &);
+
+    std::unique_ptr<detail::AsyncContextImpl> impl;
   };
 
   class AsyncReg {
@@ -40,4 +51,5 @@ namespace AsyncReg {
   };
 
 } // End namespace AsyncReg
+
 #endif
