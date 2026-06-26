@@ -224,7 +224,8 @@ AsyncContext::AsyncContext(TxCore&tx, RxCore&rx)
 // Define here due to unique_ptr to pimpl
 AsyncContext::~AsyncContext() = default;
 
-AsyncReg::AsyncReg(AsyncContext &ctxt,
+template<>
+AsyncReadData<void>::AsyncReadData(AsyncContext &ctxt,
                    std::function<void (TxCore &)> send,
                    std::function<bool (const RawData &)> filter,
                    std::function<void (const RawData &)> process,

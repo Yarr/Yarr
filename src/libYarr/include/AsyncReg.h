@@ -33,7 +33,8 @@ namespace AsyncAccess {
     std::unique_ptr<detail::AsyncContextImpl> impl;
   };
 
-  class AsyncReg {
+  template<typename Response>
+  class AsyncReadData {
   public:
     /// Send and read back register data
     /**
@@ -43,13 +44,15 @@ namespace AsyncAccess {
      * @param filter Return true if this packet is interesting.
      * @param process Process packet to extract register data.
      */
-    AsyncReg(AsyncContext &ctxt,
+    AsyncReadData(AsyncContext &ctxt,
              std::function<void (TxCore &)> send,
              std::function<bool (const RawData &)> filter,
-             std::function<void (const RawData &)> process,
+             std::function<Response (const RawData &)> process,
              std::chrono::milliseconds ms_timeout = std::chrono::milliseconds(100));
-    std::future<void> result;
+    std::future<Response> result;
   };
+
+  using AsyncReg = AsyncReadData<void>;
 
 } // End namespace AsyncReg
 
