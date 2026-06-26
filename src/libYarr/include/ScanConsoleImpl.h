@@ -57,6 +57,12 @@ private:
     json scanLog;
     std::unique_ptr<HwController> hwCtrl{};
     std::unique_ptr<Bookkeeper> bookie{};
+    /**
+     * Store info about where FE config came from.
+     *
+     * Map ID to (full_path, base_name). The first is used to update configuration file
+     * after the scan is complete. The second is used to write ".before" and ".after" files.
+     */
     std::map<unsigned, std::array<std::string, 2>> feCfgMap;
     std::unique_ptr<ScanBase> scanBase{};
     std::map<unsigned, std::unique_ptr<FeDataProcessor> > procs{};
