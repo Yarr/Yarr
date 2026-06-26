@@ -104,10 +104,10 @@ struct ReadRegState {
   }
 
   bool checkData(RawData &rawData) {
-    logger->trace("Async read reg check data");
+    // logger->trace("Async read reg check data");
     if(*state != ReadRegSM::READY_FOR_DATA) {
       // Not interested
-      logger->trace("Async read received data in wrong state {}", stateName());
+      // logger->trace("Async read received data in wrong state {}", stateName());
       return false;
     }
     if(filter_cb(rawData)) {
@@ -198,6 +198,14 @@ void AsyncAccess::detail::AsyncContextImpl::run(std::stop_token stoken)
       }
       for(auto &sm: allSMs) {
         sm.takeStep(txCore);
+      }
+      for(size_t i=0; i<allSMs.size(); i++) {
+        if((*allSMs[i].state == ReadRegSM::READ_COMPLETE)
+           || (*allSMs[i].state == ReadRegSM::READ_COMPLETE)) {
+          allSMs.erase(allSMs.begin() + i);
+          // // Only do one at a time
+          // break;
+        }
       }
     }
 
