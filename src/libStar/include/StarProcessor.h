@@ -26,7 +26,7 @@ enum StarPacketType {
  * Inputs are begin, end of packet data (excluding SOP/EOP).
  */
 template<typename StarProcessor>
-bool StarProcessPacket(const uint8_t *b, const uint8_t *e, StarProcessor t)
+bool StarProcessPacket(const uint8_t *b, const uint8_t *e, StarProcessor &t)
 {
   t.begin();
   size_t count = e-b;
