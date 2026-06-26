@@ -107,7 +107,7 @@ struct ReadRegState {
     logger->trace("Async read reg check data");
     if(*state != ReadRegSM::READY_FOR_DATA) {
       // Not interested
-      logger->trace("Async read received data in wrong state");
+      logger->trace("Async read received data in wrong state {}", stateName());
       return false;
     }
     if(filter_cb(rawData)) {
@@ -188,9 +188,14 @@ void AsyncAccess::detail::AsyncContextImpl::dispatchRead(ReadRegState new_read)
 void AsyncAccess::detail::AsyncContextImpl::run(std::stop_token stoken)
 {
   logger->trace("Async read run thread");
+  size_t list_size = 0;
   while(!stoken.stop_requested()) {
     {
       std::lock_guard<std::mutex> lk(sm_mutex);
+      if(list_size != allSMs.size()) {
+        logger->trace("New list size {} -> {}", list_size, allSMs.size());
+        list_size = allSMs.size();
+      }
       for(auto &sm: allSMs) {
         sm.takeStep(txCore);
       }
