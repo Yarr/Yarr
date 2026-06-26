@@ -5,6 +5,7 @@
 #include "AllProcessors.h"
 #include "StarCfg.h"
 #include "StarProcessor.h"
+#include "StarProcessorPrint.h"
 
 #include "EventData.h"
 #include <memory>
