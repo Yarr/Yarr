@@ -6,6 +6,7 @@
 #include "StarCfg.h"
 #include "StarProcessor.h"
 #include "StarProcessorPrint.h"
+#include "StarProcessorSimple.h"
 
 #include "EventData.h"
 #include <memory>
@@ -366,4 +367,240 @@ TEST_CASE("StarDataProcessorRaw", "[star][data_processor]") {
     // Marker
     CHECK (hit.tot == 0xffff);
   }
+}
+
+namespace {
+
+struct PktTC {
+  std::string name;
+  std::optional<int> expected_type;
+  std::vector<uint8_t> input_bytes;
+};
+
+}
+
+TEST_CASE("StarDataProcessorPacketType", "[star][data_processor]") {
+  auto tc = GENERATE
+    (
+     PktTC{"Data Header", {SPT_LP}, {
+         0x20, 0x06, // Header
+         0x6f, 0xed,  // Trailer
+     }},
+
+     PktTC{"ABC Read", {SPT_ABC_RR},
+         {
+           0x40, 0x33,
+           0x00, 0x00,
+           0x00, 0x00,
+           0xc9, 0x14,
+           0x10
+         }},
+
+     PktTC{"ABC HPR Read", {SPT_ABC_HPR},
+         {
+           0xd0, 0x3f,
+           0x07, 0x85,
+           0x51, 0xff,
+           0xf9, 0x14,
+           0x90,
+         }},
+
+     PktTC{"HCC Read", {SPT_HCC_RR},
+         {
+      0x80, 0x37,
+      0x4b, 0x78,
+      0x55, 0x70,
+         }},
+
+     PktTC{"HCC HPR Read", {SPT_HCC_HPR},
+         {
+           0xe0, 0xf5,
+           0x78, 0x50,
+           0x07, 0x90,
+         }},
+
+     PktTC{"Transparent", {SPT_ABC_TRANSP},
+         {
+           0x70, 0x22,
+           0x05, 0xbf,
+           0xe7, 0xff,
+           0x7f, 0xf7,
+           0xff,
+         }},
+
+     PktTC{"Nothing", {}, {}}
+    );
+
+  CAPTURE (tc.name);
+  CAPTURE (tc.input_bytes);
+
+  StarProcessors::PacketType proc;
+
+  StarProcessPacket(tc.input_bytes.data(),
+                    tc.input_bytes.data() + tc.input_bytes.size(),
+                    proc);
+
+  CAPTURE (tc.expected_type.value_or(-1));
+
+  auto output = proc.type;
+  CAPTURE (output.value_or(-1));
+  CHECK (output == tc.expected_type);
+}
+
+namespace {
+
+struct RHccTC {
+  std::string name;
+  std::optional<std::tuple<uint8_t, uint32_t>> expected{};
+  std::vector<uint8_t> input_bytes;
+};
+
+}
+
+TEST_CASE("StarDataProcessorReadHcc", "[star][data_processor]") {
+
+  auto tc = GENERATE
+    (
+     RHccTC{"Data Header", {}, {
+         0x20, 0x06, // Header
+         0x6f, 0xed,  // Trailer
+     }},
+
+     RHccTC{"HCC Read",
+            {
+              std::make_tuple(3, 0x74b78557)
+            },
+            {
+              0x80, 0x37,
+              0x4b, 0x78,
+              0x55, 0x70,
+            }},
+
+     RHccTC{"ABC Read",
+            // Not HCC
+            {},
+            {
+              0x40, 0x33,
+              0x00, 0x00,
+              0x00, 0x00,
+              0xc9, 0x14,
+              0x10
+            }},
+     RHccTC{"HCC HPR Read as register",
+            {
+              std::make_tuple(15, 0x57850079),
+            },
+            {
+              0x80, 0xf5,
+              0x78, 0x50,
+              0x07, 0x90,
+            }
+     },
+     RHccTC{"HCC HPR Read",
+      // Not a register read
+      {},
+      {
+        0xe0, 0xf5,
+        0x78, 0x50,
+        0x07, 0x90,
+      }},
+
+     RHccTC{"Nothing", {}, {}}
+    );
+
+  CAPTURE (tc.name);
+
+  auto &bytes = tc.input_bytes;
+  auto &expected = tc.expected;
+
+  CAPTURE (bytes);
+
+  StarProcessors::ReadHccRegister proc;
+
+  StarProcessPacket(bytes.data(), bytes.data() + bytes.size(), proc);
+
+  auto &output = proc.result;
+
+  auto [ea, ev] = (expected.value_or(std::make_tuple(-1, -1)));
+  CAPTURE(ea, ev);
+  auto [oa, ov] = (output.value_or(std::make_tuple(-1, -1)));
+  CAPTURE(oa, ov);
+
+  CHECK (output == expected);
+}
+
+namespace {
+
+struct RAbcTc {
+  std::string name;
+  std::optional<std::tuple<uint8_t, uint8_t, uint32_t, uint16_t>> expected;
+  std::vector<uint8_t> input_bytes;
+};
+
+}
+
+TEST_CASE("StarDataProcessorReadAbc", "[star][data_processor]") {
+
+  auto tc = GENERATE
+    (
+     RAbcTc{"Data Header", {}, {
+         0x20, 0x06, // Header
+         0x6f, 0xed,  // Trailer
+     }},
+
+     RAbcTc{"ABC Read",
+            {std::make_tuple(0, 51, 0xc, 0x9141)},
+            {
+              0x40, 0x33,
+              0x00, 0x00,
+              0x00, 0x00,
+              0xc9, 0x14,
+              0x10
+            }
+     },
+
+     RAbcTc{"ABC HPR Read as Register",
+            {std::make_tuple(0, 63, 0x78551fff, 0x9149)},
+            {
+                0x40, 0x3f,
+                0x07, 0x85,
+                0x51, 0xff,
+                0xf9, 0x14,
+                0x90,
+            }
+     },
+
+     RAbcTc{"ABC HPR Read",
+            {},
+            {
+                0xd0, 0x3f,
+                0x07, 0x85,
+                0x51, 0xff,
+                0xf9, 0x14,
+                0x90,
+            }
+     },
+
+     RAbcTc{"Nothing", {}, {}}
+    );
+
+  CAPTURE (tc.name);
+
+  auto &bytes = tc.input_bytes;
+  auto &expected = tc.expected;
+
+  CAPTURE (bytes);
+
+  StarProcessors::ReadAbcRegister proc;
+
+  StarProcessPacket(bytes.data(), bytes.data() + bytes.size(), proc);
+
+  auto &output = proc.result;
+
+  auto [ei, ea, ev, es] = (expected.value_or(std::make_tuple(-1, -1, -1, -1)));
+  CAPTURE(ei, ea, ev, es);
+  auto [oi, oa, ov, os] = (output.value_or(std::make_tuple(-1, -1, -1, -1)));
+  CAPTURE(oi, oa, ov, os);
+
+  CHECK (output == expected);
 }
