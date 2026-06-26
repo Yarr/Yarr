@@ -53,6 +53,7 @@ namespace AsyncAccess {
   };
 
   using AsyncReg = AsyncReadData<void>;
+  using AsyncReg32 = AsyncReadData<uint32_t>;
 
 } // End namespace AsyncReg
 

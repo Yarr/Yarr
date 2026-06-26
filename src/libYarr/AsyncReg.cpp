@@ -21,7 +21,7 @@ enum class ReadRegSM {
 };
 
 /// State for one read register command
-struct ReadRegState {
+struct ReadRegStateCommon {
   using clk = std::chrono::steady_clock;
 
   std::unique_ptr<std::atomic<ReadRegSM>> state;
@@ -30,33 +30,33 @@ struct ReadRegState {
 
   std::function<void (TxCore &)> send_cb;
   std::function<bool (const RawData &)> filter_cb;
-  std::function<void (const RawData &)> process_cb;
 
   std::chrono::milliseconds ms_timeout;
 
-  std::promise<void> promise;
-
-  ReadRegState(std::function<void (TxCore &)> send,
+  ReadRegStateCommon(std::function<void (TxCore &)> send,
                std::function<bool (const RawData &)> filter,
-               std::function<void (const RawData &)> process,
-               std::chrono::milliseconds timeout,
-               std::promise<void> &&promise)
+               std::chrono::milliseconds timeout)
     : state(std::make_unique<std::atomic<ReadRegSM>>(ReadRegSM::INIT)),
       last_state_change{clk::now()},
       send_cb(send),
       filter_cb(filter),
-      process_cb(process),
-      ms_timeout(timeout),
-      promise(std::move(promise))
+      ms_timeout(timeout)
   {
-    logger->trace("Init async read reg state");
+    logger->trace("Init async read reg state (common)");
   }
 
-  ReadRegState() = delete;
-  ReadRegState(const ReadRegState &) = delete;
-  ReadRegState(ReadRegState &&rhs) = default;
-  ReadRegState &operator=(const ReadRegState &) = delete;
-  ReadRegState &operator=(ReadRegState &&rhs) = default;
+  ReadRegStateCommon() = delete;
+  ReadRegStateCommon(const ReadRegStateCommon &) = delete;
+  ReadRegStateCommon(ReadRegStateCommon &&rhs) = default;
+  ReadRegStateCommon &operator=(const ReadRegStateCommon &) = delete;
+  ReadRegStateCommon &operator=(ReadRegStateCommon &&rhs) = default;
+  virtual ~ReadRegStateCommon() = default;
+
+  /// Set exception on promise
+  virtual void notifyTimeout() = 0;
+
+  /// Use call back and set promise
+  virtual void processData(RawData &) = 0;
 
   void newState(ReadRegSM s) {
     *state = s;
@@ -82,14 +82,8 @@ struct ReadRegState {
     if((*state != ReadRegSM::TIMEOUT)
        && (clk::now() - last_state_change) > ms_timeout) {
       logger->trace("Async read reg timeout from {}", stateName());
-      try {
-        throw std::runtime_error("Timeout exception");
-      } catch(...) {
-        promise.set_exception(std::current_exception());
-        newState(ReadRegSM::TIMEOUT);
-        return;
-      }
-      logger->critical("Async read reg failed to set timeout");
+      newState(ReadRegSM::TIMEOUT);
+      return notifyTimeout();
     }
 
     switch(*state) {
@@ -112,12 +106,54 @@ struct ReadRegState {
     }
     if(filter_cb(rawData)) {
       newState(ReadRegSM::FOUND_DATA);
-      process_cb(rawData);
-      promise.set_value();
+      processData(rawData);
       newState(ReadRegSM::READ_COMPLETE);
       return true;
     }
     return false;
+  }
+};
+
+template<typename RegType>
+struct ReadRegState : ReadRegStateCommon {
+  std::function<RegType (const RawData &)> process_cb;
+
+  std::promise<RegType> promise;
+
+  ReadRegState(std::function<void (TxCore &)> send,
+               std::function<bool (const RawData &)> filter,
+               std::function<RegType (const RawData &)> process,
+               std::chrono::milliseconds timeout,
+               std::promise<RegType> &&promise)
+    : ReadRegStateCommon(send, filter, timeout),
+      process_cb(process),
+      promise(std::move(promise))
+  {
+    logger->trace("Init async read reg state");
+  }
+
+  ReadRegState() = delete;
+  ReadRegState(const ReadRegState &) = delete;
+  ReadRegState(ReadRegState &&rhs) = default;
+  ReadRegState &operator=(const ReadRegState &) = delete;
+  ReadRegState &operator=(ReadRegState &&rhs) = default;
+
+  void notifyTimeout() override {
+    try {
+      throw std::runtime_error("Timeout exception");
+    } catch(...) {
+      promise.set_exception(std::current_exception());
+      return;
+    }
+  }
+
+  void processData(RawData &rawData) override {
+    if constexpr (std::is_void_v<RegType>) {
+      process_cb(rawData);
+      promise.set_value();
+    } else {
+      promise.set_value(process_cb(rawData));
+    }
   }
 };
 
@@ -133,14 +169,14 @@ namespace AsyncAccess {
       /// Thread
       void run(std::stop_token stoken);
 
-      void dispatchRead(ReadRegState new_read);
+      void dispatchRead(std::unique_ptr<ReadRegStateCommon> new_read);
 
       RxCore &rxCore;
       TxCore &txCore;
 
       /// Protect access to the list
       std::mutex sm_mutex;
-      std::vector<ReadRegState> allSMs;
+      std::vector<std::unique_ptr<ReadRegStateCommon>> allSMs;
 
       /// While this object exists the thread is running
       std::jthread thread;
@@ -169,7 +205,7 @@ void AsyncAccess::detail::AsyncContextImpl::dispatchNewData(RxCore &rxCore) {
   for(auto data : dataVec) {
     std::lock_guard<std::mutex> lk(sm_mutex);
     for(auto &sm: allSMs) {
-      bool good = sm.checkData(*data);
+      bool good = sm->checkData(*data);
       if (!good) {
         // Let the next sm look
         continue;
@@ -179,7 +215,7 @@ void AsyncAccess::detail::AsyncContextImpl::dispatchNewData(RxCore &rxCore) {
   }
 }
 
-void AsyncAccess::detail::AsyncContextImpl::dispatchRead(ReadRegState new_read)
+void AsyncAccess::detail::AsyncContextImpl::dispatchRead(std::unique_ptr<ReadRegStateCommon> new_read)
 {
   std::lock_guard<std::mutex> lm(sm_mutex);
   allSMs.push_back(std::move(new_read));
@@ -197,11 +233,12 @@ void AsyncAccess::detail::AsyncContextImpl::run(std::stop_token stoken)
         list_size = allSMs.size();
       }
       for(auto &sm: allSMs) {
-        sm.takeStep(txCore);
+        sm->takeStep(txCore);
       }
       for(size_t i=0; i<allSMs.size(); i++) {
-        if((*allSMs[i].state == ReadRegSM::READ_COMPLETE)
-           || (*allSMs[i].state == ReadRegSM::READ_COMPLETE)) {
+        auto &sm = *allSMs[i];
+        if((*sm.state == ReadRegSM::READ_COMPLETE)
+           || (*sm.state == ReadRegSM::READ_COMPLETE)) {
           allSMs.erase(allSMs.begin() + i);
           // // Only do one at a time
           // break;
@@ -232,16 +269,40 @@ AsyncReadData<void>::AsyncReadData(AsyncContext &ctxt,
                    std::chrono::milliseconds ms_timeout)
 {
   logger->trace("Async read creation");
+
   std::promise<void> result_promise;
 
   result = result_promise.get_future();
 
-  ReadRegState state(
+  auto state = std::make_unique<ReadRegState<void>>(
         send,
         filter, process,
         ms_timeout,
         std::move(result_promise));
 
   ctxt.impl->dispatchRead(std::move(state));
-  logger->trace("Async read submitted");
+  logger->trace("Async read (void) submitted");
+}
+
+template<>
+AsyncReadData<uint32_t>::AsyncReadData(AsyncContext &ctxt,
+                   std::function<void (TxCore &)> send,
+                   std::function<bool (const RawData &)> filter,
+                   std::function<uint32_t (const RawData &)> process,
+                   std::chrono::milliseconds ms_timeout)
+{
+  logger->trace("Async read creation");
+
+  std::promise<uint32_t> result_promise;
+
+  result = result_promise.get_future();
+
+  auto state = std::make_unique<ReadRegState<uint32_t>>(
+        send,
+        filter, process,
+        ms_timeout,
+        std::move(result_promise));
+
+  ctxt.impl->dispatchRead(std::move(state));
+  logger->trace("Async read (32) submitted");
 }
