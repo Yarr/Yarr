@@ -53,3 +53,39 @@ TEST_CASE("AsyncReadRegister", "[Async]") {
   something.result.get();
   logger->debug("++ Finish async test");
 }
+
+TEST_CASE("AsyncReadRegisterWithFilter", "[Async]") {
+  // For instance reads from multiple registers discriminate by address
+  auto l = spdlog::get("StarChips");
+
+  MyTestHw hw;
+
+  logger->debug("++ Make async");
+  AsyncAccess::AsyncContext anon{hw, hw};
+
+  logger->debug("++ Do async read");
+  uint32_t rx_channel = 0;
+  std::vector<AsyncAccess::AsyncReg> regs;
+
+  for(uint32_t idx=0; idx<10; idx++) {
+    regs.push_back
+      (
+       AsyncAccess::AsyncReg
+       (anon,
+        [&, idx](TxCore &) {
+          hw.data.push_back({std::make_unique<RawData>(rx_channel, std::vector<uint32_t>{idx, idx*2})});
+        },
+        // Filter out everything except what we expect
+        [idx](const RawData &d){ return d.getBuf()[0] == idx; },
+        // Check filtered data is correct
+        [idx](const RawData &d){ CHECK(d.getBuf()[1] == idx*2); }
+        ));
+  }
+
+  logger->debug("++ Async read in progress");
+
+  for(auto &r: regs) {
+    r.result.get();
+  }
+  logger->debug("++ Finish async test");
+}
