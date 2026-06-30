@@ -191,7 +191,6 @@ std::vector<RawDataPtr> BdaqRxCore::readData() {
              for (const uint32_t channelId : activeChannels) {
                  RawDataPtr data;
                  data = std::make_shared <RawData> (channelId, dataMap_copy[channelId]);
-                 data->getAdr() = channelId;  // set rx channel number as address for data
                  dataVec.push_back(data);
                  dataMap_copy[channelId].clear();
              }
@@ -286,7 +285,6 @@ std::vector<RawDataPtr> BdaqRxCore::readData() {
                  if(dataMap_copy[channelId].size() > 0){
                      RawDataPtr data;
                      data = std::make_shared <RawData> (channelId, dataMap_copy[channelId]);
-                     data->getAdr() = channelId;  // set rx channel number as address for data
                      dataVec.push_back(data);
                      dataMap_copy[channelId].clear();
                  }
