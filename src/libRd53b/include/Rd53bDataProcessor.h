@@ -74,6 +74,7 @@ private:
     Rd53bCfg *m_feCfg = nullptr;
 
     uint16_t _tag = 0;
+    uint16_t _prevTag = 0;
     uint16_t _l1id = 0;
     uint16_t _bcid = 0;
     unsigned long _wordCount = 0;
