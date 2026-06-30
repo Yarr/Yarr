@@ -1755,15 +1755,12 @@ int main(int argc, char *argv[]) {
     if(isupper(testSequence[0])) {
       if(sequenceMap.find(testSequence) != sequenceMap.end()) {
         logger->info("Running test sequence {}", testSequence);
-        if(doReport) {
-          testData.report();
-        }
         for(auto &t: sequenceMap[testSequence]) {
-          logger->info("Running test {}", t);
-          success &= tests[t](*hwCtrl);
           if(doReport) {
             testData.report();
           }
+          logger->info("Running test {}", t);
+          success &= tests[t](*hwCtrl);
         }
       } else {
         logger->error("Unknown test sequence: {}", testSequence);
@@ -1783,9 +1780,6 @@ int main(int argc, char *argv[]) {
           testData.report();
         }
         success &= tests[testSequence](*hwCtrl);
-        if(doReport) {
-          testData.report();
-        }
       } else {
         logger->error("Unknown test: {}", testSequence);
 
@@ -1797,6 +1791,10 @@ int main(int argc, char *argv[]) {
 
         success = false;
       }
+    }
+
+    if(doReport) {
+      testData.report();
     }
 
     for(auto r: testData.rxChannels) {
