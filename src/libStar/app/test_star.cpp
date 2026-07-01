@@ -1806,7 +1806,27 @@ int main(int argc, char *argv[]) {
 
     testData.validate();
 
-    if(isupper(testSequence[0])) {
+    if(testSequence.find(":") != std::string::npos) {
+      logger->info("Run custom sequence: {}", testSequence);
+      while(testSequence.size() > 0) {
+        auto firstColon = testSequence.find(":");
+        auto next_test = testSequence.substr(0, firstColon);
+        logger->info(" Run action in custom sequence: {}", next_test);
+
+        if(isupper(next_test[0])) {
+          runTestSequence(next_test, *hwCtrl, testData, doReport);
+        } else {
+          runSingleTest(next_test, *hwCtrl, testData, doReport);
+        }
+
+        if(firstColon == std::string::npos) {
+          testSequence.clear();
+        } else {
+          testSequence = testSequence.substr(firstColon + 1);
+        }
+        logger->info(" Remaining custom sequence: '{}'", testSequence);
+      }
+    } else if(isupper(testSequence[0])) {
       runTestSequence(testSequence, *hwCtrl, testData, doReport);
     } else {
       runSingleTest(testSequence, *hwCtrl, testData, doReport);
