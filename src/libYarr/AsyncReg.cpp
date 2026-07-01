@@ -261,48 +261,34 @@ AsyncContext::AsyncContext(TxCore&tx, RxCore&rx)
 // Define here due to unique_ptr to pimpl
 AsyncContext::~AsyncContext() = default;
 
-template<>
-AsyncReadData<void>::AsyncReadData(AsyncContext &ctxt,
+template<typename RegType>
+AsyncReadData<RegType>::AsyncReadData(AsyncContext &ctxt,
                    std::function<void (TxCore &)> send,
                    std::function<bool (const RawData &)> filter,
-                   std::function<void (const RawData &)> process,
+                   std::function<RegType (const RawData &)> process,
                    std::chrono::milliseconds ms_timeout)
 {
   logger->trace("Async read creation");
 
-  std::promise<void> result_promise;
+  std::promise<RegType> result_promise;
 
   result = result_promise.get_future();
 
-  auto state = std::make_unique<ReadRegState<void>>(
+  auto state = std::make_unique<ReadRegState<RegType>>(
         send,
         filter, process,
         ms_timeout,
         std::move(result_promise));
 
   ctxt.impl->dispatchRead(std::move(state));
-  logger->trace("Async read (void) submitted");
+  logger->trace("Async read submitted");
 }
 
-template<>
-AsyncReadData<uint32_t>::AsyncReadData(AsyncContext &ctxt,
-                   std::function<void (TxCore &)> send,
-                   std::function<bool (const RawData &)> filter,
-                   std::function<uint32_t (const RawData &)> process,
-                   std::chrono::milliseconds ms_timeout)
-{
-  logger->trace("Async read creation");
+namespace AsyncAccess {
 
-  std::promise<uint32_t> result_promise;
+// Instantiate some particular variants (matching ReadDataType)
+template class AsyncReadData<void>;
+template class AsyncReadData<uint16_t>;
+template class AsyncReadData<uint32_t>;
 
-  result = result_promise.get_future();
-
-  auto state = std::make_unique<ReadRegState<uint32_t>>(
-        send,
-        filter, process,
-        ms_timeout,
-        std::move(result_promise));
-
-  ctxt.impl->dispatchRead(std::move(state));
-  logger->trace("Async read (32) submitted");
 }
