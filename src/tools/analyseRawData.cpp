@@ -3,6 +3,8 @@
 #include <array>
 #include <memory>
 
+#include <getopt.h>
+
 #include "ClusterData.h"
 #include "EventData.h"
 #include "Histo1d.h"

@@ -4,6 +4,8 @@
 #include <iomanip>
 #include <bitset>
 
+#include <getopt.h>
+
 #include "EventData.h"
 
 void usage(char* argv[])
