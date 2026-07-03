@@ -163,11 +163,15 @@ namespace AsyncAccess {
     struct AsyncContextImpl {
       AsyncContextImpl() = delete;
       AsyncContextImpl(TxCore &tx, RxCore &rx);
+      ~AsyncContextImpl() {
+        thread_running = false;
+        thread.join();
+      }
 
       void dispatchNewData(RxCore &rxCore);
 
       /// Thread
-      void run(std::stop_token stoken);
+      void run(std::atomic<bool> &stoken);
 
       void dispatchRead(std::unique_ptr<ReadRegStateCommon> new_read);
 
@@ -179,7 +183,8 @@ namespace AsyncAccess {
       std::vector<std::unique_ptr<ReadRegStateCommon>> allSMs;
 
       /// While this object exists the thread is running
-      std::jthread thread;
+      std::atomic<bool> thread_running;
+      std::thread thread;
     };
   }
 }
@@ -188,9 +193,9 @@ AsyncAccess::detail::AsyncContextImpl::AsyncContextImpl(TxCore &tx, RxCore &rx)
   : rxCore(rx),
     txCore(tx),
     allSMs{},
-
+    thread_running{true},
     // Run last so we know everything else is set up
-    thread([this](std::stop_token stoken){ run(stoken); })
+    thread([this](){ run(thread_running); })
 {
 }
 
@@ -221,11 +226,11 @@ void AsyncAccess::detail::AsyncContextImpl::dispatchRead(std::unique_ptr<ReadReg
   allSMs.push_back(std::move(new_read));
 }
 
-void AsyncAccess::detail::AsyncContextImpl::run(std::stop_token stoken)
+void AsyncAccess::detail::AsyncContextImpl::run(std::atomic<bool> &running_flag)
 {
   logger->trace("Async read run thread");
   size_t list_size = 0;
-  while(!stoken.stop_requested()) {
+  while(running_flag) {
     {
       std::lock_guard<std::mutex> lk(sm_mutex);
       if(list_size != allSMs.size()) {
