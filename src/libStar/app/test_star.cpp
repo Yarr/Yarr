@@ -1814,9 +1814,9 @@ int main(int argc, char *argv[]) {
         logger->info(" Run action in custom sequence: {}", next_test);
 
         if(isupper(next_test[0])) {
-          runTestSequence(next_test, *hwCtrl, testData, doReport);
+          success &= runTestSequence(next_test, *hwCtrl, testData, doReport);
         } else {
-          runSingleTest(next_test, *hwCtrl, testData, doReport);
+          success &= runSingleTest(next_test, *hwCtrl, testData, doReport);
         }
 
         if(firstColon == std::string::npos) {
@@ -1827,9 +1827,9 @@ int main(int argc, char *argv[]) {
         logger->info(" Remaining custom sequence: '{}'", testSequence);
       }
     } else if(isupper(testSequence[0])) {
-      runTestSequence(testSequence, *hwCtrl, testData, doReport);
+      success &= runTestSequence(testSequence, *hwCtrl, testData, doReport);
     } else {
-      runSingleTest(testSequence, *hwCtrl, testData, doReport);
+      success &= runSingleTest(testSequence, *hwCtrl, testData, doReport);
     }
 
     if(doReport) {
