@@ -163,7 +163,7 @@ namespace {
 
     std::vector<Hybrid> hccStars;
 
-    std::map<std::string, std::function<bool (HwController&)>> buildTests();
+    std::map<std::string, std::function<bool (HwController&)>> &buildTests();
 
     /// Report on things carried between test actions
     void report() {
@@ -1524,6 +1524,60 @@ bool diagnosticsReport(HwController &hwCtrl, unsigned timeout_ms) {
   return true;
 }
 
+bool runTestSequence(std::string testSequence, HwController &hwCtrl, TestData &testData, bool doReport)
+{
+  bool success = true;
+
+  auto &tests = testData.buildTests();
+
+  if(sequenceMap.find(testSequence) != sequenceMap.end()) {
+    logger->info("Running test sequence {}", testSequence);
+    for(auto &t: sequenceMap[testSequence]) {
+      if(doReport) {
+        testData.report();
+      }
+      logger->info("Running test {}", t);
+      success &= tests[t](hwCtrl);
+    }
+  } else {
+    logger->error("Unknown test sequence: {}", testSequence);
+
+    logger->info("Available preset test sequences:");
+
+    for(auto &s: sequenceMap) {
+      logger->info("  {}", s.first);
+    }
+
+    success = false;
+  }
+  return success;
+}
+
+bool runSingleTest(std::string testName, HwController &hwCtrl, TestData &testData, bool doReport)
+{
+  bool success = true;
+
+  auto &tests = testData.buildTests();
+  if(tests.find(testName) != tests.end()) {
+    logger->info("Running test {}", testName);
+    if(doReport) {
+      testData.report();
+    }
+    success &= tests[testName](hwCtrl);
+  } else {
+    logger->error("Unknown test: {}", testName);
+
+    logger->info("Available test presets:");
+
+    for(auto &s: tests) {
+      logger->info("  {}", s.first);
+    }
+
+    success = false;
+  }
+  return success;
+}
+
 } // end of unnamed namespace
 
 //////////
@@ -1641,7 +1695,7 @@ int main(int argc, char *argv[]) {
     }
 
     if(doCrossCheck) {
-      auto tests = testData.buildTests();
+      auto &tests = testData.buildTests();
 
       if(!testData.crossCheck()) {
         return 1;
@@ -1748,55 +1802,38 @@ int main(int argc, char *argv[]) {
     // Tests
     bool success = true;
 
-    auto tests = testData.buildTests();
+    auto &tests = testData.buildTests();
 
     testData.validate();
 
-    if(isupper(testSequence[0])) {
-      if(sequenceMap.find(testSequence) != sequenceMap.end()) {
-        logger->info("Running test sequence {}", testSequence);
-        if(doReport) {
-          testData.report();
-        }
-        for(auto &t: sequenceMap[testSequence]) {
-          logger->info("Running test {}", t);
-          success &= tests[t](*hwCtrl);
-          if(doReport) {
-            testData.report();
-          }
-        }
-      } else {
-        logger->error("Unknown test sequence: {}", testSequence);
+    if(testSequence.find(":") != std::string::npos) {
+      logger->info("Run custom sequence: {}", testSequence);
+      while(testSequence.size() > 0) {
+        auto firstColon = testSequence.find(":");
+        auto next_test = testSequence.substr(0, firstColon);
+        logger->info(" Run action in custom sequence: {}", next_test);
 
-        logger->info("Available preset test sequences:");
-
-        for(auto &s: sequenceMap) {
-          logger->info("  {}", s.first);
+        if(isupper(next_test[0])) {
+          runTestSequence(next_test, *hwCtrl, testData, doReport);
+        } else {
+          runSingleTest(next_test, *hwCtrl, testData, doReport);
         }
 
-        success = false;
+        if(firstColon == std::string::npos) {
+          testSequence.clear();
+        } else {
+          testSequence = testSequence.substr(firstColon + 1);
+        }
+        logger->info(" Remaining custom sequence: '{}'", testSequence);
       }
+    } else if(isupper(testSequence[0])) {
+      runTestSequence(testSequence, *hwCtrl, testData, doReport);
     } else {
-      if(tests.find(testSequence) != tests.end()) {
-        logger->info("Running test {}", testSequence);
-        if(doReport) {
-          testData.report();
-        }
-        success &= tests[testSequence](*hwCtrl);
-        if(doReport) {
-          testData.report();
-        }
-      } else {
-        logger->error("Unknown test: {}", testSequence);
+      runSingleTest(testSequence, *hwCtrl, testData, doReport);
+    }
 
-        logger->info("Available test presets:");
-
-        for(auto &s: tests) {
-          logger->info("  {}", s.first);
-        }
-
-        success = false;
-      }
+    if(doReport) {
+      testData.report();
     }
 
     for(auto r: testData.rxChannels) {
@@ -1813,8 +1850,8 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-std::map<std::string, std::function<bool (HwController&)>> TestData::buildTests () {
-  std::map<std::string, std::function<bool (HwController&)>>
+std::map<std::string, std::function<bool (HwController&)>> &TestData::buildTests () {
+  static std::map<std::string, std::function<bool (HwController&)>>
       tests = {
       // Read HCCStar HPRs
       {"checkHCCHPRs", [&](auto &h) {return checkHCCHPRs(h, rxChannels, doResets, timeout_ms);}},
