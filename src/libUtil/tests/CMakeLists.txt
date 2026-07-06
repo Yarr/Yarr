@@ -1,8 +1,15 @@
 add_library(mainTest OBJECT
         main.cpp
+        ../catch_amalgamated.cpp
 )
 
 target_link_libraries(mainTest Util)
+
+target_compile_definitions(
+    mainTest
+  PRIVATE
+    CATCH_AMALGAMATED_CUSTOM_MAIN=1
+)
 
 add_executable(testUtil
         test_misc.cpp

@@ -12,7 +12,6 @@ add_library(Util SHARED
         LoadJson.cpp
         LoggingConfig.cpp
         SerialCom.cpp
-        catch_amalgamated.cpp
         ItkpixEncoder.cpp
         HitMapGenerator.cpp)
 
