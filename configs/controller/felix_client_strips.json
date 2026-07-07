@@ -8,7 +8,7 @@
         "busGroupName": "FELIX",
         "verboseBus": false,
         "useASIOevloop": true, 
-        "useThreadUnsafeNetio": true
+        "useThreadUnsafeNetio": false
       },
       "ToFLX": {
         "detectorID": 0,
