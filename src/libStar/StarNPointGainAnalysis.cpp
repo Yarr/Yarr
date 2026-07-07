@@ -9,7 +9,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <unistd.h> // needed to fix linker errors
  
 #include "AllAnalyses.h"
 #include "ScanLoopInfo.h"
