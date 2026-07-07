@@ -14,10 +14,6 @@
 #include "StdHistogrammer.h"
 #include "StdTriggerAction.h"
 
-// NB if we don't include this, it compiles, but we get a linker error,
-// presumably because it picks up names from C rather than C++
-#include <cmath>
-
 #include "lmcurve.h"
 #include "logging.h"
 

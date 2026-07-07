@@ -12,8 +12,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#include <unistd.h> // this is needed for magical unknown reasons
-#include <stdint.h>
+#include <cstdint>
 
 // YARR
 #include "EventDataBase.h"

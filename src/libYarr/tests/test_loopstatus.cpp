@@ -1,7 +1,6 @@
 #include "catch.hpp"
 
 #include "LoopStatus.h"
-#include "catch_amalgamated.hpp"
 
 #include <algorithm>
 #include <cstddef>

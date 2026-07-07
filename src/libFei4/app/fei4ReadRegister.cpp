@@ -5,6 +5,7 @@
 
 #include "SpecController.h"
 
+#include <getopt.h>
 
 #include "Fei4.h"
 
