@@ -44,6 +44,10 @@ def main():
     run_test_star()
     run_test_star(do_resets=True)
 
+    # Check that some HPRs are received and don't have bad flags
+    run_test_star(sequence="checkHCCHPRs")
+    run_test_star(sequence="checkABCHPRs")
+
 
 if __name__ == "__main__":
     main()
