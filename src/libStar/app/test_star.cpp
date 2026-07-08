@@ -28,15 +28,64 @@ namespace {
 
   StarCmd star;
 
+  static const std::map<uint32_t,uint32_t> BROADCAST_ABCS{{15, 15}};
+
   struct Hybrid {
+    Hybrid(uint32_t tx, uint32_t rx, uint32_t hcc_id, std::map<uint32_t,uint32_t> abcs)
+      : tx(tx), rx(rx), hcc_id(hcc_id), abcs(abcs) {}
+
+    // Allow for iterator to work
+    std::map<uint32_t, uint32_t>::const_iterator begin() const { return abcs.begin(); }
+    std::map<uint32_t, uint32_t>::iterator begin() { return abcs.begin(); }
+    std::map<uint32_t, uint32_t>::const_iterator end() const { return abcs.end(); }
+    std::map<uint32_t, uint32_t>::iterator end() { return abcs.end(); }
+
+    bool empty_abcs() const { return abcs.empty(); }
+    void clear_abcs() { abcs.clear(); }
+    void add_abc(uint32_t abc_chn, uint32_t abc_id) { abcs[abc_chn] = abc_id; }
+
+    bool have_abcs_chan(uint32_t abc_chn) const {
+      return abcs.find(abc_chn) != abcs.end();
+    }
+
+    bool is_broadcast() const {
+      return abcs == BROADCAST_ABCS;
+    }
+
     uint32_t tx;
     uint32_t rx;
     uint32_t hcc_id;
+
+  private:
     std::map<uint32_t,uint32_t> abcs; // key: channel; value: chipID
   };
 
-  static const std::map<uint32_t,uint32_t> BROADCAST_ABCS{{15, 15}};
+  /// Declare what operations can be applied to the mapping
+  class HybridMap {
+    std::vector<Hybrid> hccStars;
+  public:
 
+    // Allow for iterator to work
+    std::vector<Hybrid>::const_iterator begin() const { return hccStars.begin(); }
+    std::vector<Hybrid>::iterator begin() { return hccStars.begin(); }
+    std::vector<Hybrid>::const_iterator end() const { return hccStars.end(); }
+    std::vector<Hybrid>::iterator end() { return hccStars.end(); }
+
+    bool empty() const { return hccStars.empty(); }
+    size_t size() const { return hccStars.size(); }
+    void clear() { hccStars.clear(); }
+
+    void add_broadcast(uint32_t t, uint32_t r) {
+      Hybrid h{t, r, 15, BROADCAST_ABCS};
+      hccStars.push_back(h);
+    }
+
+    void add_broadcast_hcc(uint32_t t, uint32_t r, uint32_t hcc) {
+      Hybrid h{t, r, hcc, BROADCAST_ABCS};
+      hccStars.push_back(h);
+    }
+  };
+  
   /**
      Map of sequences to lists of tests.
 
@@ -161,7 +210,7 @@ namespace {
     std::vector<uint32_t> rxChannels = {6};
     std::vector<uint32_t> txChannels = {0xFFFF};
 
-    std::vector<Hybrid> hccStars;
+    HybridMap hccStars;
 
     std::map<std::string, std::function<bool (HwController&)>> &buildTests();
 
@@ -181,9 +230,9 @@ namespace {
       }
 
       logger->info(" Hybrid tx rx hcc (chan,abcID)");
-      for(auto &h: hccStars) {
+      for(const auto &h: hccStars) {
         std::string abcs;
-        for(auto &a: h.abcs) {
+        for(const auto &a: h) {
           abcs += fmt::format(" ({}, {})", a.first, a.second);
         }
         logger->info("  {} {} {} {}", h.tx, h.rx, h.hcc_id, abcs);
@@ -200,8 +249,7 @@ namespace {
         for(auto t: txChannels) {
           for(auto r: rxChannels) {
             logger->debug("Speculative read-write pair TX {} RX {}", t, r);
-            Hybrid h{t, r, 15, BROADCAST_ABCS};
-            hccStars.push_back(h);
+            hccStars.add_broadcast(t, r);
           }
         }
       }
@@ -332,7 +380,7 @@ void setOpMode(int packetMode, bool mode640, HwController &hwCtrl, StarCfg& cfg)
 }
 
 // Enable Tx and Rx channels that are connected to HCCs
-void enableConnectedChannels(HwController& hwCtrl, std::vector<Hybrid>& hccStars) {
+void enableConnectedChannels(HwController& hwCtrl, HybridMap& hccStars) {
   // Turn all channels off first
   hwCtrl.disableCmd();
   hwCtrl.disableRx();
@@ -347,7 +395,7 @@ void enableConnectedChannels(HwController& hwCtrl, std::vector<Hybrid>& hccStars
   std::set<uint32_t> txChns;
   std::set<uint32_t> rxChns;
 
-  for (auto& hcc : hccStars) {
+  for (const auto& hcc : hccStars) {
     logger->debug("Enabling tx {} rx {}", hcc.tx, hcc.rx);
     txChns.insert(hcc.tx);
     rxChns.insert(hcc.rx);
@@ -732,7 +780,7 @@ bool checkHCCHPRs(HwController& hwCtrl,
 
 bool probeHCCs(
   HwController& hwCtrl,
-  std::vector<Hybrid>& HCCs,
+  HybridMap& HCCs,
   const std::vector<uint32_t>& txChannels,
   const std::vector<uint32_t>& rxChannels,
   bool setID,
@@ -793,8 +841,7 @@ bool probeHCCs(
 
         if(setNotBroadcastIds) {
           // Define HCC, but still use broadcast for ABCs
-          Hybrid h{tx, rx, hccID, BROADCAST_ABCS};
-          HCCs.push_back(h);
+          HCCs.add_broadcast_hcc(tx, rx, hccID);
         }
 
         nHCC++;
@@ -861,7 +908,7 @@ bool readMoreHCCRegisters(HwController& hwCtrl, unsigned timeout_ms)
   return read_count > 0;
 }
 
-bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars, unsigned timeout_ms, bool setNotBroadcastIds) {
+bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, HybridMap& hccStars, unsigned timeout_ms, bool setNotBroadcastIds) {
   bool receivedABCHPR = false;
   bool hprGood = true;
 
@@ -899,20 +946,20 @@ bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccSt
       // get the chipID from the top four bits of the 16-bit status word
       uint32_t abcid = (packet.abc_status >> 12) & 0xf;
 
-      if ( hcc.abcs.find(abc_chn) != hcc.abcs.end() ) {
+      if ( hcc.have_abcs_chan(abc_chn) ) {
         // already reported the HPR on this channel. skip.
         continue;
       }
 
       if(setNotBroadcastIds) {
-        if(hcc.abcs == BROADCAST_ABCS) {
+        if(hcc.is_broadcast()) {
           // Remove broadcast now we know better
-          hcc.abcs.clear();
+          hcc.clear_abcs();
         }
       }
 
       // HPR from a new channel
-      hcc.abcs[abc_chn] = abcid;
+      hcc.add_abc(abc_chn, abcid);
       logger->info(" Received an HPR packet from the ABCStar on channel {} with chipID {}", abc_chn, abcid);
 
       // print the HPR packet
@@ -954,7 +1001,7 @@ bool checkABCHPRs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccSt
   return receivedABCHPR and hprGood;
 }
 
-bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars, unsigned icEnablesMask, unsigned timeout_ms, bool setNotBroadcastIds) {
+bool probeABCs(HwController& hwCtrl, StarCfg& cfg, HybridMap& hccStars, unsigned icEnablesMask, unsigned timeout_ms, bool setNotBroadcastIds) {
   bool hasABCStar = false;
 
   for (auto& hcc : hccStars) {
@@ -1000,8 +1047,8 @@ bool probeABCs(HwController& hwCtrl, StarCfg& cfg, std::vector<Hybrid>& hccStars
 
       if(setNotBroadcastIds) {
         // Add abcid to hcc.abcs in case checkABCHPRs has not been called previously
-        if ( hcc.abcs.find(abc_chn) == hcc.abcs.end() ) {
-          hcc.abcs[abc_chn] = abcid;
+        if ( !hcc.have_abcs_chan(abc_chn) ) {
+          hcc.add_abc(abc_chn, abcid);
         }
       }
 
@@ -1208,7 +1255,7 @@ bool testRegisterReadWrite(HwController& hwCtrl, unsigned timeout_ms, uint32_t r
   return regAccessGood;
 }
 
-bool testHCCRegisterAccess(HwController& hwCtrl, const std::vector<Hybrid>& hccStars, unsigned timeout_ms) {
+bool testHCCRegisterAccess(HwController& hwCtrl, const HybridMap& hccStars, unsigned timeout_ms) {
   logger->info("Test HCCStar register read & write");
 
   bool success = not hccStars.empty();
@@ -1225,7 +1272,7 @@ bool testHCCRegisterAccess(HwController& hwCtrl, const std::vector<Hybrid>& hccS
   return success;
 }
 
-bool testABCRegisterAccess(HwController& hwCtrl, StarCfg& cfg, const std::vector<Hybrid>& hccStars, unsigned timeout_ms) {
+bool testABCRegisterAccess(HwController& hwCtrl, StarCfg& cfg, const HybridMap& hccStars, unsigned timeout_ms) {
   logger->info("Test ABCStar register read & write");
 
   // Set RR mode to 1
@@ -1239,10 +1286,11 @@ bool testABCRegisterAccess(HwController& hwCtrl, StarCfg& cfg, const std::vector
   }
 
   for (const auto& hcc : hccStars) {
-    if (hcc.abcs.empty())
+    if (hcc.empty_abcs()) {
       success = false;
+    }
 
-    for (const auto& abc : hcc.abcs) {
+    for (const auto& abc : hcc) {
       // Register MaskInput0
       uint32_t mr = (uint32_t)ABCStarRegister::MaskInput0;
       success &= testRegisterReadWrite(hwCtrl, timeout_ms, mr, 0xabadcafe, hcc.rx, hcc.hcc_id, abc.second);
