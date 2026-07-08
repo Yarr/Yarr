@@ -1139,9 +1139,9 @@ bool testRegisterReadWrite(HwController& hwCtrl, unsigned timeout_ms, uint32_t r
       str.erase(str.end()-1); // strip the extra \n
       logger->debug(" Received RR packet: {}", str);
     }
-    logger->info("Register read: OK");
+    logger->info("Register read {} {} {} {} {}: OK", regAddr, isHCC?"HCC":"ABC", rx, hccId, abcId);
   } else {
-    logger->error("Register read: Fail");
+    logger->error("Register read {} {} {} {} {}: Fail", regAddr, isHCC?"HCC":"ABC", rx, hccId, abcId);
     return false;
   }
 
@@ -1186,9 +1186,9 @@ bool testRegisterReadWrite(HwController& hwCtrl, unsigned timeout_ms, uint32_t r
 
     // check if the value is what we wrote
     if (wpacket.value == write_value) {
-      logger->info("Register write: OK");
+      logger->info("Register write {} {} {} {} {}: OK", regAddr, isHCC?"HCC":"ABC", rx, hccId, abcId);
     } else {
-      logger->error("Register write: Fail");
+      logger->error("Register write {} {} {} {} {}: Fail", regAddr, isHCC?"HCC":"ABC", rx, hccId, abcId);
       logger->error("The value read back from register {} is: 0x{:08x}", regAddr, wpacket.value);
       regAccessGood = false;
     }
@@ -1824,11 +1824,13 @@ int main(int argc, char *argv[]) {
         } else {
           testSequence = testSequence.substr(firstColon + 1);
         }
-        logger->info(" Remaining custom sequence: '{}'", testSequence);
+        logger->trace(" Remaining custom sequence: '{}'", testSequence);
       }
     } else if(isupper(testSequence[0])) {
+      logger->info("Run test sequence: {}", testSequence);
       success &= runTestSequence(testSequence, *hwCtrl, testData, doReport);
     } else {
+      logger->info("Run single sequence: {}", testSequence);
       success &= runSingleTest(testSequence, *hwCtrl, testData, doReport);
     }
 
