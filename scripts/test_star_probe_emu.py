@@ -70,6 +70,10 @@ def main():
     run_test_star(sequence="probeHCCs", show_output=True, record_ids=True)
     run_test_star(sequence="probeABCs", show_output=True, record_ids=True)
 
+    run_test_star(sequence="Probe", show_output=True, record_ids=True)
+
+    run_test_star(sequence="configureHCC:configureABC:Register")
+
 
 if __name__ == "__main__":
     main()
