@@ -1046,6 +1046,11 @@ bool probeABCs(HwController& hwCtrl, StarCfg& cfg, HybridMap& hccStars, unsigned
       uint32_t abcid = (packet.abc_status >> 12) & 0xf;
 
       if(setNotBroadcastIds) {
+        if(hcc.is_broadcast()) {
+          // Remove broadcast now we know better
+          hcc.clear_abcs();
+        }
+
         // Add abcid to hcc.abcs in case checkABCHPRs has not been called previously
         if ( !hcc.have_abcs_chan(abc_chn) ) {
           hcc.add_abc(abc_chn, abcid);
