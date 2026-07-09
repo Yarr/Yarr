@@ -5,6 +5,8 @@
 #include <iomanip>
 #include <bitset>
 
+#include <getopt.h>
+
 #include "Itkpixv2Encoder.h"
 #include "ItkpixEncoder.h"
 #include "ItkpixLayout.h"

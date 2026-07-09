@@ -56,6 +56,10 @@ class SpecRawData : public RawData {
         inline uint32_t& getAdr() override {
             return adr;
         }
+
+        inline uint32_t getAdr() const override {
+            return adr;
+        }
         
         void setItAndOffset(uint32_t activeChannels, uint32_t channel) {
             m_activeChannels = activeChannels;

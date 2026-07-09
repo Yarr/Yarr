@@ -62,13 +62,13 @@ class Bookkeeper {
          *
          * Bookkeeper always takes the ownership of the FrontEnd object.
          */
-        void addFe(std::unique_ptr<FrontEnd> fe, const FrontEndConnectivity& cfg);
+        unsigned addFe(std::unique_ptr<FrontEnd> fe, const FrontEndConnectivity& cfg);
         /**
          * Attach FrontEnd to the same tx and rx channel.
          *
          * Bookkeeper always takes the ownership of the FrontEnd object.
          */
-        void addFe(std::unique_ptr<FrontEnd> fe, unsigned channel);
+        unsigned addFe(std::unique_ptr<FrontEnd> fe, unsigned channel);
 
         /**
          * Delete FrontEnd referenced by ID.
@@ -84,8 +84,6 @@ class Bookkeeper {
         /** Retrieve FrontEndCfg with ID. */
         FrontEndCfg* getFeCfg(unsigned id);
 
-        /** Retrieve most recently added FrontEnd. */
-        FrontEnd* getLastFe();
         /** Retrieve global FrontEnd */
         FrontEnd* getGlobalFe() const {
             return g_fe.get();

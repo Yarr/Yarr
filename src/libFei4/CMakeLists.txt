@@ -19,7 +19,10 @@ target_include_directories(Fei4 PUBLIC
 )
 target_link_libraries(Fei4 Scan Yarr_interface Util_interface)
 
-LIST(APPEND apps fei4ReadRegister)
+if(TARGET Spec)
+  LIST(APPEND apps fei4ReadRegister)
+endif()
+
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)
     target_link_libraries(${target} Yarr)

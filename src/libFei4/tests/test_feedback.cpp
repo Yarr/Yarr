@@ -63,8 +63,7 @@ TEST_CASE("FeedbackTestGlobal", "[Feedback]") {
     unsigned rx_channel = 0;
     FrontEndConnectivity fe_conn(0,rx_channel);
     fe->init(&empty, fe_conn);
-    bookie.addFe(std::move(fe), fe_conn);
-    unsigned feUid = bookie.getId(bookie.getLastFe());
+    unsigned feUid = bookie.addFe(std::move(fe), fe_conn);
 
     auto g_fe = StdDict::getFrontEnd("FEI4B");
     g_fe->makeGlobal();
@@ -140,8 +139,7 @@ TEST_CASE("FeedbackTestPixel", "[Feedback]") {
     fe->setActive(true);
     FrontEndConnectivity fe_conn(0,rx_channel);
     fe->init(&empty, fe_conn);
-    bookie.addFe(std::move(fe), fe_conn);
-    unsigned feUid = bookie.getId(bookie.getLastFe());
+    unsigned feUid = bookie.addFe(std::move(fe), fe_conn);
 
     auto g_fe = StdDict::getFrontEnd("FEI4B");
     g_fe->makeGlobal();

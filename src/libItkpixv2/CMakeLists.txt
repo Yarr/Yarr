@@ -25,11 +25,16 @@ target_link_libraries(Itkpixv2 Scan Yarr_interface Util_interface)
 
 LIST(APPEND apps
         Itkpixv2CheckPulse
-        Itkpixv2ConnectivityScan
         Itkpixv2ReadRingosc
         Itkpixv2ColumnTest
         Itkpixv2EncodeRawData
         )
+
+if(TARGET Spec)
+  LIST(APPEND apps
+    Itkpixv2ConnectivityScan
+  )
+endif()
 
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)

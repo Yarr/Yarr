@@ -48,7 +48,15 @@ class RawData {
             return adr;
         }
 
+        virtual inline uint32_t getAdr() const {
+            return adr;
+        }
+
         virtual inline uint32_t* getBuf() {
+            return buf.data();
+        }
+
+        virtual inline const uint32_t* getBuf() const {
             return buf.data();
         }
 

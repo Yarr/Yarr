@@ -8,7 +8,6 @@
 #include "StarSeqGenerator.h"
 
 #include "EmptyHw.h"
-#include "catch_amalgamated.hpp"
 
 namespace {
 

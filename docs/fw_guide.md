@@ -6,6 +6,8 @@ For the YARR readout, most commonly Series 7 FPGAs are used - specifically the T
 
 ![Supported PCIe cards](images/pcie_cards.png)
 
+For more information check the [FPGA board type](#fpga-board-type) section.
+
 ## Prerequisites
 
 * Xilinx Vivado Design Suite 2019.2 or latest Vivado Lab Solutions
@@ -46,7 +48,7 @@ Largely, case 1 should be applicable for getting the latest official firmware re
 - FMC card: FMC adapter card attached to the FPGA, most commonly the Ohio card is used
 - Readout speed: 1280 Mbps, 640 Mbps and 160 Mbps are supported, and 1280 Mpbs is the baseline readout speed
 
-Please check the [FPGA board types](#fpga-board-type) for more information!
+Please check the [FPGA board type](#fpga-board-type) for more information!
 
 Once you have flashed the firmware **reboot your PC**.
 
@@ -116,6 +118,7 @@ Revision 3 specifics:
 - Power and DIP switches same as above for rev2
 - Uses the same firmware for `tef1001_R2`
 - Serial numbers 95xxxx
+- The specific produce code we order is [TEF1001-03-B2IX4-K](https://www.trenz-electronic.de/en/PCIe-FMC-Carrier-with-AMD-Kintex-7-160T-DDR3-SODIMM-ECC-GTX-6-6-Gb-s/TEF1001-03-B2IX4-K)
 
 #### PLDA XpressK7
 

@@ -8,7 +8,7 @@
         "busGroupName": "FELIX",
         "verboseBus": false,
         "useASIOevloop": true,
-        "useThreadUnsafeNetio": true
+        "useThreadUnsafeNetio": false
       },
       "ToFLX": {
         "detectorID": 0,
@@ -19,7 +19,7 @@
         "pixFwTrigger": true,
         "bufferSize": 1024,
         "idleWords": [18,0,170,170],
-        "isCmdEmptyWaitTime": 20
+        "isCmdEmptyWaitTime": 0
       },
       "ToHost": {
         "detectorID": 0,
@@ -29,7 +29,8 @@
         "monitorInterval": 1000,
         "queueLimitMB": 4000,
         "waitTime": 10,
-        "flushWaitTime": 0
+        "flushWaitTime": 0,
+        "timeoutTime": 500000
       },
       "Card": {
         "configureEpathOnLoad": false,

@@ -9,6 +9,7 @@
 #include "StarConstants.h"
 #include "StarChipPacket.h"
 #include "StarProcessor.h"
+#include "StarProcessorPrint.h"
 #include "StarCfg.h"
 
 #include "EventData.h"

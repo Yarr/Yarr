@@ -42,7 +42,6 @@ int main (int argc, char *argv[]) {
     std::string outputDir = "configs/";
     std::string chipName = "JohnDoe";
     while ((c = getopt(argc, argv, "ht:s:o:n:")) != -1) {
-        int count = 0;
         switch (c) {
             case 'h':
                 printHelp();

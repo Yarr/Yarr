@@ -58,6 +58,7 @@ Itkpixv2DataProcessor::Itkpixv2DataProcessor()
     _unfinishedStreamEOSErrorCnt = 0;
     _corruptStreamErrorCnt = 0;
     _splitEventsCnt = 0;
+    _prevTag = 0xFFFF;
 
     // Data stream components
     _ccol = 0;
@@ -308,10 +309,15 @@ void Itkpixv2DataProcessor::process_core()
                 _curOut = std::make_unique<FrontEndData>(_curInV->stat);
                 _curOut->events.reserve(128);
             }
-            _curOut->newEvent(_tag, _l1id, _bcid);
-            _events++;
-            sendFeedback(_tag, _bcid);
-        
+            if (_tag != _prevTag) {
+                _curOut->newEvent(_tag, _l1id, _bcid);
+                _events++;
+                sendFeedback(_tag, _bcid);
+                _prevTag = _tag;
+            } else {
+                _splitEventsCnt++;
+            }
+
         case CCOL:
             _status = CCOL;
             // Start from getting core column index

@@ -43,7 +43,7 @@ void Bookkeeper::initGlobalFe(const std::string& chipType) {
     g_fe->connectBookkeeper(this);
 }
 
-void Bookkeeper::addFe(std::unique_ptr<FrontEnd> fe, const FrontEndConnectivity& cfg) {
+unsigned Bookkeeper::addFe(std::unique_ptr<FrontEnd> fe, const FrontEndConnectivity& cfg) {
     // Create new entry
     bookEntries.emplace_back();
     bookEntries.back().fe = std::move(fe);
@@ -61,10 +61,12 @@ void Bookkeeper::addFe(std::unique_ptr<FrontEnd> fe, const FrontEndConnectivity&
 
     // Using macro includes file/line info
     SPDLOG_LOGGER_INFO(blog, "Added FE: Tx({}), Rx({}), RegRx({}) under ID {}", cfg.getTxChannel(), cfg.getRxChannel(), cfg.getRegRxChannel(), uid);
+
+    return uid;
 }
 
-void Bookkeeper::addFe(std::unique_ptr<FrontEnd> fe, unsigned channel) {
-  this->addFe(std::move(fe), FrontEndConnectivity(channel,channel));
+unsigned Bookkeeper::addFe(std::unique_ptr<FrontEnd> fe, unsigned channel) {
+    return this->addFe(std::move(fe), FrontEndConnectivity(channel,channel));
 }
 
 void Bookkeeper::delFe(unsigned id) {
@@ -104,9 +106,6 @@ FrontEndCfg* Bookkeeper::getFeCfg(unsigned id) {
     }
 }
 
-FrontEnd* Bookkeeper::getLastFe() {
-    return bookEntries.back().fe.get();
-}
 
 std::vector<uint32_t> Bookkeeper::getTxMask() {
     std::vector<uint32_t> activeChannels;

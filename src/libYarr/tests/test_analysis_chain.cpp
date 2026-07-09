@@ -60,7 +60,7 @@ TEST_CASE("AnalysisChainIO", "[Analysis]") {
   REQUIRE ( fe->isActive() );
 
   unsigned channel = 42;
-  bookie.addFe(std::move(fe), channel);
+  unsigned last_id = bookie.addFe(std::move(fe), channel);
 
   // Create a dummy scan config with known analyses to test IO connections
   // The dependency here is for test only and is arbitrary and meaningless
@@ -86,7 +86,7 @@ TEST_CASE("AnalysisChainIO", "[Analysis]") {
   std::map<unsigned, std::vector<std::unique_ptr<AnalysisDataProcessor>> > analyses;
   ScanHelper::buildAnalyses(analyses, scanCfg, bookie, &scan, &fbData, -1, "./", -1, -1);
 
-  auto& AnalysisProcessors = analyses[bookie.getId(bookie.getLastFe())];
+  auto& AnalysisProcessors = analyses[last_id];
   
   // Check there are three analysis tiers
   REQUIRE (AnalysisProcessors.size() == 3);
@@ -97,14 +97,17 @@ TEST_CASE("AnalysisChainIO", "[Analysis]") {
     aproc->run();
   }
 
+  // Old fe has been moved to BK, get pointer
+  auto our_fe = bookie.getFe(last_id);
+  
   // Send an OccupancyMap histogram to the analysis chain
-  unsigned nCol = bookie.getLastFe()->geo.nCol;
-  unsigned nRow = bookie.getLastFe()->geo.nRow;
+  unsigned nCol = our_fe->geo.nCol;
+  unsigned nRow = our_fe->geo.nRow;
   Histo2d* occmap = new Histo2d("OccupancyMap", nCol, 0.5, nCol+0.5, nRow, 0.5, nRow+0.5);
   occmap->setBin(1, 43);
 
   std::unique_ptr<HistogramBase> h(occmap);
-  auto &cp = bookie.getLastFe()->clipboards();
+  auto &cp = our_fe->clipboards();
   cp.clipHisto.pushData(std::move(h));
 
   // The input histogram should be processed by the OccupancyAnalysis

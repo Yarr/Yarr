@@ -215,8 +215,7 @@ TEST_CASE("AnalysisPOILoops", "[Analysis]") {
   auto fe = std::make_unique<EmptyFrontEnd>();
   fe->setActive(true);
   unsigned channel = 42;
-  bookie.addFe(std::move(fe), channel);
-  unsigned uid = bookie.getId(bookie.getLastFe());
+  unsigned uid = bookie.addFe(std::move(fe), channel);
 
   // Global FE for scan
   auto g_fe = std::make_unique<EmptyFrontEnd>();

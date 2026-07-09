@@ -138,9 +138,9 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
   unsigned tx0 = connectivity["chips"][0]["tx"];
   unsigned rx0 = connectivity["chips"][0]["rx"];
   FrontEndConnectivity fe_conn0(tx0,rx0);
-  bk.addFe(StdDict::getFrontEnd("Star"), fe_conn0);
-  bk.getLastFe()->init(emu.get(), fe_conn0);
-  auto star1 = dynamic_cast<StarChips*>(bk.getLastFe());
+  unsigned last_id = bk.addFe(StdDict::getFrontEnd("Star"), fe_conn0);
+  bk.getFe(last_id)->init(emu.get(), fe_conn0);
+  auto star1 = dynamic_cast<StarChips*>(bk.getFe(last_id));
   REQUIRE(star1);
   star1->loadConfig(chipCfg1);
 
@@ -148,9 +148,9 @@ TEST_CASE("StarBroadcast", "[star][chips][emuulator]") {
   unsigned tx1 = connectivity["chips"][1]["tx"];
   unsigned rx1 = connectivity["chips"][1]["rx"];
   FrontEndConnectivity fe_conn1(tx1,rx1);
-  bk.addFe(StdDict::getFrontEnd("Star"), fe_conn1);
-  bk.getLastFe()->init(emu.get(), fe_conn1);
-  auto star2 = dynamic_cast<StarChips*>(bk.getLastFe());
+  last_id = bk.addFe(StdDict::getFrontEnd("Star"), fe_conn1);
+  bk.getFe(last_id)->init(emu.get(), fe_conn1);
+  auto star2 = dynamic_cast<StarChips*>(bk.getFe(last_id));
   REQUIRE(star2);
   star2->loadConfig(chipCfg2);
 

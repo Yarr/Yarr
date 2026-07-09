@@ -4,6 +4,8 @@
 #include <iomanip>
 #include <bitset>
 
+#include <getopt.h>
+
 #include "EventData.h"
 
 void usage(char* argv[])
@@ -46,7 +48,6 @@ int main(int argc, char *argv[]) {
 	    }
     }
 
-    unsigned globalEventCnt = 0;
     unsigned m_curBlock = 0;
 
     for(int n=1; n<argc; n++) {
@@ -60,7 +61,6 @@ int main(int argc, char *argv[]) {
         }
 
 
-        unsigned localEventCnt = 0;
         int eventCnt = 0;
 
         m_curBlock = 0;
@@ -70,7 +70,6 @@ int main(int argc, char *argv[]) {
 
         int basetag = 0;
         int exttag = 0;
-        int prev_tag = 0;
         int prev_basetag = 0;
         int i = 0;
         int basetag_jumps = 0;
@@ -128,7 +127,6 @@ int main(int argc, char *argv[]) {
                 m_curBlock = 0;
             }
 
-            prev_tag = event.tag;
             prev_basetag = basetag;
             i++;
         }   

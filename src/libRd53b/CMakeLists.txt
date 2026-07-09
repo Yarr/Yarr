@@ -28,7 +28,6 @@ target_include_directories(Rd53b PUBLIC
 target_link_libraries(Rd53b PUBLIC Scan Yarr_interface Util_interface)
 
 LIST(APPEND apps
-        rd53bConnectivityScan
         rd53bComTest
 	rd53bColumnTest
         rd53bDecodeTool
@@ -37,8 +36,16 @@ LIST(APPEND apps
         rd53bTest
         rd53bEfuseCheck
         rd53bSendGlobalPulse
-        rd53bDataMergingCheck_4to1
-        rd53bDataMergingCheck_2to1)
+)
+
+if(TARGET Spec)
+  LIST(APPEND apps
+       rd53bConnectivityScan
+       # rd53bDataMergingCheck
+       rd53bDataMergingCheck_4to1
+       rd53bDataMergingCheck_2to1
+  )
+endif()
 
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)
