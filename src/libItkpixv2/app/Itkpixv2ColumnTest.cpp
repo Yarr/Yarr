@@ -27,6 +27,9 @@ namespace fs = std::filesystem;
 #include "Itkpixv2.h"
 #include "Itkpixv2Cmd.h"
 #include "Utils.h"
+#include "AllProcessors.h"
+#include "EventData.h"
+#include "ClipBoard.h"
 
 
 auto logger = logging::make_log("itkpixv2ColumnTest");
@@ -116,57 +119,70 @@ void clear_and_flush(std::unique_ptr<HwController>& hwCtrl, int msec){
   return;
 }
 
-bool check_data(std::unique_ptr<HwController>& hwCtrl){
-  
+bool check_data(std::unique_ptr<HwController>& hwCtrl, FrontEndCfg *feCfg){
+
   std::vector<RawDataPtr> dataVec = hwCtrl->readData();
-  RawDataPtr data;
 
   //Case 1: No data received
-  if  (dataVec.size() <= 0) {
+  if (dataVec.empty()) {
     logger->critical("Didn't receive data back");
     clear_and_flush(hwCtrl,200);
     logger->info("Continuing test...");
     return false;
   }
- 
-  data= dataVec[0];
 
-  std::vector<int> tags(8);
-  int fill_count = 0;
-  std::vector<int> include_mask;
-  for (unsigned i=0; i<data->getSize();i+=2) {
-    uint32_t tag = (data->get(i) & 0x7F800000) >> 23; 
-    int include = data->get(i) >> 31;
-    include_mask.push_back(include);
+  // Decode the raw stream with the real chip decoder (same one used during
+  // normal scans) instead of hand-parsing bits, so we pick up every
+  // protocol-corruption mode the decoder already tracks.
+  auto proc = StdDict::getDataProcessor("ITKPIXV2");
+  ClipBoard<RawDataContainer> rd_cp;
+  ClipBoard<EventDataBase> em_cp;
+  proc->connect(feCfg, &rd_cp, &em_cp);
+  proc->init();
+  proc->run();
 
-    if (fill_count <= 7){
-      if(include){
-	tags.at(fill_count) = tag;
-	fill_count += 1;
-	int corecol = (data->get(i) & 0x7E0000) >> 17;
-	int is_last = (data->get(i) & 0x10000) >> 16;
-	int is_neighbor = (data->get(i) & 0x8000) >> 15;
-	int qrow = (data->get(i) & 0x7F80) >> 7;
-      } 
+  auto rdc = std::make_unique<RawDataContainer>(LoopStatus());
+  for (auto &rd : dataVec) {
+    rdc->add(rd);
+  }
+  rd_cp.pushData(std::move(rdc));
+  rd_cp.finish();
+  proc->join();
+
+  json log = proc->getLog();
+  int anyErrors = log["Any errors"].get<int>();
+
+  //Case 2: Decoder reports protocol-level corruption
+  if (anyErrors != 0) {
+    logger->error("Decoder reported corruption: {}", log.dump());
+    clear_and_flush(hwCtrl,100);
+    return false;
+  }
+
+  //Case 3: No decoder-reported corruption, but sanity-check the tag sequence
+  int ok = 0;
+  int nEvents = 0;
+  if (!em_cp.empty()) {
+    auto data = em_cp.popData();
+    auto *events = dynamic_cast<FrontEndData*>(data.get());
+    if (events != nullptr) {
+      nEvents = events->events.size();
+      for (int i=0; i<8 && i<nEvents; i++) {
+        if (events->events[i].tag == static_cast<uint32_t>(i)) ok++;
+      }
     }
   }
-  
-  int ok=0;
-  for (int i=0; i<8; i++){
-    if (tags.at(i)==i) ok++;
-  }
 
-  //Case 2: Data received, was wrong
-  if (ok != 8){
-    logger->error("Only {} of the tags were correct. {} tags were received. 8 tags were expected", ok, (data->getSize())/2);
+  if (ok != 8) {
+    logger->error("Only {} of the tags were correct. {} events were received. 8 tags were expected", ok, nEvents);
     clear_and_flush(hwCtrl,100);
-    return false; 
+    return false;
   }
 
-  //Case 3: Data received, was correct
+  //Case 4: Data received, was correct
   clear_and_flush(hwCtrl,20);
   return true;
-  
+
 }
 
 void writeConfig(json &jconn, int fe_num, std::vector<int> results){
@@ -439,42 +455,54 @@ int main (int argc, char *argv[]) {
 	    int valToSet = (int) pow(2, icol);
 	    int valHitOr = (int) (pow(2, numCols) - pow(2,icol))-1;
 	    
+	    bool regWriteOk = true;
 	    uint16_t init_ptot;
 	    stat = itkpixv2->readNamedRegister(colNamePtot, init_ptot);
+	    if (stat != yarrSuccess) regWriteOk = false;
 	    stat = itkpixv2->writeNamedRegister(colName,valToSet);
+	    if (stat != yarrSuccess) regWriteOk = false;
 
 	    logger->debug("Set {} from chip {} to {}",colName,ichip,valToSet);
 	    stat = itkpixv2->writeNamedRegister(colNameRes,valToSet);
+	    if (stat != yarrSuccess) regWriteOk = false;
 	    stat = itkpixv2->writeNamedRegister(colNameCal,valToSet);
+	    if (stat != yarrSuccess) regWriteOk = false;
 	    stat = itkpixv2->writeNamedRegister(colNameHitOr,valHitOr);
+	    if (stat != yarrSuccess) regWriteOk = false;
 
 	    logger->info("Set {} from chip {} to {}",colName,ichip,valToSet);
 
-	    //Read Efuses
-	    uint32_t efuse_data_raw = itkpixv2->readEfusesRaw();
-	    itkpix_efuse_codec::EfuseData efuse_data = itkpix_efuse_codec::EfuseData{itkpix_efuse_codec::decode(efuse_data_raw)};
-	    logger->info("Read efuses as 0x{:x}",efuse_data.chip_sn());
-	    //If efuse isn't read correctly, mark as bad column
-	    bool good_result = (efuse_data_original.chip_sn() == efuse_data.chip_sn());
-       
-	    if (good_result){
-	      //In case where there is a consistent issue with some dead pixel
-	      //often pixel region, try sending trigger 
-	      auto trigger1 = (uint32_t)Itkpixv2Cmd::genTrigger(0xF,0)[0] << 16;
-	      auto trigger2 = Itkpixv2Cmd::genTrigger(0xF,1)[0];
-	      hwCtrl->writeFifo(trigger1 | trigger2);
-	      hwCtrl->releaseFifo();
-
-	      while(!hwCtrl->isCmdEmpty());
-	      std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
-	    
-	      //Send and read triggers
-	      good_result = check_data(hwCtrl);
-	      if (!good_result) badCoreCols[ivar] += valToSet;
-	      if (good_result) logger->info("Can send and read triggers properly");
-	    } else {
+	    bool good_result = false;
+	    if (!regWriteOk) {
+	      logger->error("Register write/read failed while configuring core column {} in {} on chip {}", icol, colName, ichip);
 	      badCoreCols[ivar] += valToSet;
+	    } else {
+	      //Read Efuses
+	      uint32_t efuse_data_raw = itkpixv2->readEfusesRaw();
+	      itkpix_efuse_codec::EfuseData efuse_data = itkpix_efuse_codec::EfuseData{itkpix_efuse_codec::decode(efuse_data_raw)};
+	      logger->info("Read efuses as 0x{:x}",efuse_data.chip_sn());
+	      //If efuse isn't read correctly, mark as bad column
+	      good_result = (efuse_data_original.chip_sn() == efuse_data.chip_sn());
+
+	      if (good_result){
+	        //In case where there is a consistent issue with some dead pixel
+	        //often pixel region, try sending trigger
+	        auto trigger1 = (uint32_t)Itkpixv2Cmd::genTrigger(0xF,0)[0] << 16;
+	        auto trigger2 = Itkpixv2Cmd::genTrigger(0xF,1)[0];
+	        hwCtrl->writeFifo(trigger1 | trigger2);
+	        hwCtrl->releaseFifo();
+
+	        while(!hwCtrl->isCmdEmpty());
+	        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+
+	        //Send and read triggers
+	        good_result = check_data(hwCtrl, feCfg);
+	        if (!good_result) badCoreCols[ivar] += valToSet;
+	        if (good_result) logger->info("Can send and read triggers properly");
+	      } else {
+	        badCoreCols[ivar] += valToSet;
+	      }
 	    }
 
 	    //Reset
