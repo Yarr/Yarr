@@ -325,6 +325,10 @@ int main(int argc, char **argv) {
         logger->info("Writing to controller config {}", hw_controller_filename);
         jcontroller["ctrlCfg"]["cfg"]["delay"]=delayVec;
         std::ofstream outputFile(hw_controller_filename);
+        if (!outputFile.is_open()) {
+            logger->error("Failed to open file for writing: {}", hw_controller_filename);
+            return 1;
+        }
         outputFile << std::setw(4) << jcontroller << std::endl;
         outputFile.close();
         logger->info("All done! \n");
