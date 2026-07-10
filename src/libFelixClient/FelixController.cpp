@@ -32,9 +32,21 @@ void FelixController::loadConfig(const json &j) {
   fcConfig.property[FELIX_CLIENT_LOCAL_IP_OR_INTERFACE] = clientCfg["localIPorInterface"];
   fcConfig.property[FELIX_CLIENT_BUS_DIR] = clientCfg["busDir"];
   fcConfig.property[FELIX_CLIENT_BUS_GROUP_NAME] = clientCfg["busGroupName"];
-  fcConfig.property[FELIX_CLIENT_VERBOSE_BUS] = (clientCfg.contains("verboseBus") && clientCfg["verboseBus"].is_boolean() ? clientCfg["verboseBus"].get<bool>() : false) ? "True" : "False";
-  fcConfig.property[FELIX_CLIENT_USE_ASIO_EVLOOP] = (clientCfg.contains("useASIOevloop") && clientCfg["useASIOevloop"].is_boolean() ? clientCfg["useASIOevloop"].get<bool>() : false)  ? "True" : "False";
-  fcConfig.property[FELIX_CLIENT_USE_THREAD_UNSAFE_NETIO] = (clientCfg.contains("useThreadUnsafeNetio") && clientCfg["useThreadUnsafeNetio"].is_boolean() ? clientCfg["useThreadUnsafeNetio"].get<bool>() : false)  ? "True" : "False"; 
+  bool verboseBus = false;  // Default
+  if(clientCfg.contains("verboseBus") && clientCfg["verboseBus"].is_boolean()) {
+    verboseBus = clientCfg["verboseBus"].get<bool>();
+  }
+  fcConfig.property[FELIX_CLIENT_VERBOSE_BUS] = verboseBus ? "True" : "False";
+  bool useAsioEvloop = true;  // Default
+  if(clientCfg.contains("useASIOevloop") && clientCfg["useASIOevloop"].is_boolean()) {
+    useAisoEvloop= clientCfg["useASIOevloop"].get<bool>();
+  }
+  fcConfig.property[FELIX_CLIENT_USE_ASIO_EVLOOP] = useAsioEvloop ? "True" : "False";
+  bool useThreadUnsafeNetio = false;  // Default
+  if(clientCfg.contains("useThreadUnsafeNetio") && clientCfg["useThreadUnsafeNetio"].is_boolean()) {
+    useThreadUnsafeNetio = clientCfg["useThreadUnsafeNetio"].get<bool>();
+  }
+  fcConfig.property[FELIX_CLIENT_USE_THREAD_UNSAFE_NETIO] = useThreadUnsafeNetio ? "True" : "False"; 
       try {
     auto txCfg = j["ToFLX"];
     FelixTxCore::loadConfig(txCfg);
