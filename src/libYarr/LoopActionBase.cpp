@@ -9,6 +9,7 @@
 #include "Bookkeeper.h"
 
 #include "logging.h"
+#include "ScanProgress.h"
 
 namespace {
     auto llog = logging::make_log("LoopActionBase");
@@ -49,9 +50,15 @@ bool LoopActionBase::done() {
 
 void LoopActionBase::execStep() {
     this->execPart1();
-    
+
+    // Only mask/parameter loop levels drive the progress display; trigger/data
+    // loops iterate far too fast to recompute this on every step.
+    if (isMaskLoop() || isParameterLoop()) {
+        ScanProgress::instance().update(g_stat->record());
+    }
+
     if (m_inner) m_inner->execute();
-    
+
     this->execPart2();
 }
 

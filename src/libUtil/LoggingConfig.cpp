@@ -11,6 +11,8 @@
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/ringbuffer_sink.h"
 
+#include "ProgressAwareSink.h"
+
 // spdlog::level::level_enum, but then construction doesn't work?
 static const std::map<std::string, int> level_map = {
   {"off", SPDLOG_LEVEL_OFF},
@@ -60,7 +62,8 @@ void setupLoggers(const json &j, const std::string &path) {
         if(j.contains("ringbufer_size")) ringbuffer_size = j["ringbuffer_size"];
         default_sink = std::make_shared<spdlog::sinks::ringbuffer_sink_mt>(ringbuffer_size);
     }
-    else default_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+    else default_sink = std::make_shared<ProgressAwareSink>(
+        std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
     std::map<std::string, spdlog::sink_ptr> other_sinks;
 
     std::string default_pattern = "";

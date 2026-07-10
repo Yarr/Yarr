@@ -84,6 +84,7 @@ add_library(Scan SHARED
         ScanConsoleImpl.cpp
         ScanFactory.cpp
         ScanHelper.cpp
+        ScanProgress.cpp
         StdAnalysis.cpp
         StdDataGatherer.cpp
         StdDataLoop.cpp
