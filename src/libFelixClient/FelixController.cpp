@@ -41,13 +41,14 @@ void FelixController::loadConfig(const json &j) {
   if(clientCfg.contains("useASIOevloop") && clientCfg["useASIOevloop"].is_boolean()) {
     useAsioEvloop = clientCfg["useASIOevloop"].get<bool>();
   }
-  fcConfig.property[FELIX_CLIENT_USE_ASIO_EVLOOP] = useAsioEvloop ? "True" : "False";}
+  fcConfig.property[FELIX_CLIENT_USE_ASIO_EVLOOP] = useAsioEvloop ? "True" : "False";
   bool useThreadUnsafeNetio = false;  // Default
   if(clientCfg.contains("useThreadUnsafeNetio") && clientCfg["useThreadUnsafeNetio"].is_boolean()) {
     useThreadUnsafeNetio = clientCfg["useThreadUnsafeNetio"].get<bool>();
   }
-  fcConfig.property[FELIX_CLIENT_USE_THREAD_UNSAFE_NETIO] = useThreadUnsafeNetio ? "True" : "False"; 
-      try {
+  fcConfig.property[FELIX_CLIENT_USE_THREAD_UNSAFE_NETIO] = useThreadUnsafeNetio ? "True" : "False";
+  
+  try {
     auto txCfg = j["ToFLX"];
     FelixTxCore::loadConfig(txCfg);
     FelixTxCore::setClient(fcConfig);
