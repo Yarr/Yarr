@@ -39,9 +39,9 @@ void FelixController::loadConfig(const json &j) {
   fcConfig.property[FELIX_CLIENT_VERBOSE_BUS] = verboseBus ? "True" : "False";
   bool useAsioEvloop = true;  // Default
   if(clientCfg.contains("useASIOevloop") && clientCfg["useASIOevloop"].is_boolean()) {
-    useAisoEvloop= clientCfg["useASIOevloop"].get<bool>();
+    useAsioEvloop = clientCfg["useASIOevloop"].get<bool>();
   }
-  fcConfig.property[FELIX_CLIENT_USE_ASIO_EVLOOP] = useAsioEvloop ? "True" : "False";
+  fcConfig.property[FELIX_CLIENT_USE_ASIO_EVLOOP] = useAsioEvloop ? "True" : "False";}
   bool useThreadUnsafeNetio = false;  // Default
   if(clientCfg.contains("useThreadUnsafeNetio") && clientCfg["useThreadUnsafeNetio"].is_boolean()) {
     useThreadUnsafeNetio = clientCfg["useThreadUnsafeNetio"].get<bool>();
