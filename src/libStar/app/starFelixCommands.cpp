@@ -3,6 +3,7 @@
 #include "LCBFwUtils.h"
 #include "StarCLIUtils.h"
 #include "logging.h"
+#include "LoggingConfig.h"
 
 #include <getopt.h>
 #include <iomanip>
@@ -10,7 +11,7 @@
 
 namespace {
 
-auto logger = logging::make_log("lcbFastCommand");
+auto logger = logging::make_log("starFelixCommands");
 
 std::map<std::string, LCB_FELIX::ConfigReg> registerNames = {
   {"L0A_FRAME_PHASE", LCB_FELIX::L0A_FRAME_PHASE},
@@ -46,6 +47,15 @@ std::map<std::string, LCB_FELIX::ConfigReg> registerNames = {
   {"ABC_MASK_F", LCB_FELIX::ABC_MASK_F}
 };
 
+std::map<int, std::string> invertedRegistersMap()
+{
+  std::map<int, std::string> invMap;
+  for (const auto &cmd : registerNames) {
+    invMap[static_cast<int>(cmd.second)] = cmd.first;
+  }
+  return invMap;
+}
+
 struct Arguments {
   std::string controllerConfigPath = "";
   LCB_FELIX::ConfigReg reg = LCB_FELIX::L0A_FRAME_PHASE;
@@ -68,14 +78,7 @@ void showHelp() {
 }
 
 void showRegisterList() {
-  // kind of annoying, because the map is most useful with strings as keys
-  // but that means the output is sorted by the string! so we need to rebuild
-  // a map with the integer as key to get sorted output.
-
-  std::map<int, std::string> invMap;
-  for (const auto &cmd : registerNames) {
-    invMap[static_cast<int>(cmd.second)] = cmd.first;
-  }
+  auto invMap = invertedRegistersMap();
 
   // print our stuff
   std::cout << "Known register list:\n";
@@ -85,6 +88,27 @@ void showRegisterList() {
               << std::setw(0) << std::left << cmd.second << "\n";
   }
   std::cout << ss.str();
+}
+
+// Parse register argument as either int or string
+LCB_FELIX::ConfigReg parseRegisterName(const char* reg_string) {
+  try {
+    // Allow specifying as hex or int
+    unsigned regInt = std::stoul(optarg, nullptr, 0);
+    if (regInt < 0 || regInt > 0x1e) {
+      logger->error("Known registers between 0 and 30.");
+      showRegisterList();
+      exit(1);
+    }
+    return static_cast<LCB_FELIX::ConfigReg>(regInt);
+  } catch (std::invalid_argument &) {
+    if (registerNames.find(reg_string) == registerNames.end()) {
+      logger->error("Unknown register: {}", reg_string);
+      showRegisterList();
+      exit(1);
+    }
+    return registerNames[reg_string];
+  }
 }
 
 Arguments processArguments(int argc, char *argv[]) {
@@ -97,12 +121,13 @@ Arguments processArguments(int argc, char *argv[]) {
   const struct option long_options[] = {
       {"help", no_argument, nullptr, 'h'},
       {"show-registers", no_argument, nullptr, SHOW_REGISTERS_ARG},
+      {"register", required_argument, nullptr, 'r'},
       {"tx", required_argument, nullptr, 't'},
       {"delay", required_argument, nullptr, 'd'},
       {nullptr, 0, nullptr, 0}};
 
   int c;
-  while ((c = getopt_long(argc, argv, "ht:d:", long_options, nullptr)) != -1) {
+  while ((c = getopt_long(argc, argv, "hd:r:t:R:", long_options, nullptr)) != -1) {
     switch (c) {
     case 'h':
       showHelp();
@@ -110,39 +135,29 @@ Arguments processArguments(int argc, char *argv[]) {
     case SHOW_REGISTERS_ARG:
       showRegisterList();
       exit(0);
+    case 'd':
+      args.value = std::stoul(optarg, nullptr, 0);
+      break;
+    case 'r':
+      args.reg = parseRegisterName(optarg);
+      break;
     case 't':
       args.tx = std::stoi(optarg);
       break;
-    case 'd':
-      args.value = std::stoi(optarg);
+    case 'R':
+      args.controllerConfigPath = optarg;
       break;
     default:
       logger->error("Error while parsing command line arguments!");
+      showHelp();
       exit(1);
     }
   }
 
-  if (optind + 2 != argc) {
-    logger->error("Incorrect number of positional arguments.");
-    logger->error("Expect <controller-config-path> <fast-command>");
+  if (optind != argc) {
+    logger->error("Not expecting any positional arguments {}!", argc-optind);
+    showHelp();
     exit(1);
-  }
-
-  args.controllerConfigPath = argv[optind];
-
-  try {
-    int typeInt = std::stoi(argv[optind + 1]);
-    if (typeInt < 0 || typeInt > 0x1e) {
-      logger->error("Known Registers between 0 and 30.");
-      exit(1);
-    }
-    args.reg = static_cast<LCB_FELIX::ConfigReg>(typeInt);
-  } catch (std::invalid_argument &) {
-    if (registerNames.find(argv[optind + 1]) == registerNames.end()) {
-      logger->error("Unknown fast command: {}", argv[optind + 1]);
-      exit(1);
-    }
-    args.reg = registerNames[argv[optind + 1]];
   }
 
   return args;
@@ -151,14 +166,21 @@ Arguments processArguments(int argc, char *argv[]) {
 } // namespace
 
 int main(int argc, char *argv[]) {
-  //  StarCLIUtils::setLoggingDefaults("lcbFastCommand");
-  auto args = processArguments(argc, argv);
+  logging::setupLoggers(logging::defaultConfig());
 
-  std::unique_ptr<HwController> hwCtrl =
-      StarCLIUtils::createHwController(args.controllerConfigPath);
+  auto args = processArguments(argc, argv);
 
   auto elink_num = args.tx;
   auto [lcb_cfg, lcb_cmd, lcb_trkl] = FelixTools::lcbChns_from_chn(elink_num);
+
+  logger->trace("Fetch links for {} -> {} {} {}",
+                elink_num, lcb_cfg, lcb_cmd, lcb_trkl);
+
+  logger->info("Write register {} ({}) with value {} on tx {}",
+               invertedRegistersMap()[args.reg], static_cast<int>(args.reg), args.value, lcb_cmd);
+
+  std::unique_ptr<HwController> hwCtrl =
+      StarCLIUtils::createHwController(args.controllerConfigPath);
 
   // Enable configuration elink
   StarCLIUtils::prepareTx(*hwCtrl, lcb_cfg);
