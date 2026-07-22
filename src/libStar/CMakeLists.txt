@@ -44,8 +44,14 @@ target_compile_options(
 )
 
 LIST(APPEND apps test_star makeLCBSequence benchmark_data_processor_star printStarSubRegisters lcbL0a lcbFastCommand lcbRegisterCommand
-  starFelixCommands
 )
+
+if(TARGET FelixClient)
+  LIST(APPEND apps
+    starFelixCommands
+  )
+endif()
+
 foreach (target IN LISTS apps)
     add_executable(${target} app/${target}.cpp)
     target_link_libraries(${target} Yarr)
