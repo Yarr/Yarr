@@ -201,10 +201,17 @@ void GraphErrors::plot(const std::string &prefix, const std::string &dir) const 
   std::string output = dir + prefix + "_" + name;
   for (unsigned i=0; i<lStat.size(); i++)
     output += "_" + std::to_string(lStat.get(i));
-  output += ".png";
+
+  auto check_terminal = getenv("YARR_GNUPLOT_TERMINAL");
+  std::string term_name = "png";
+  if(check_terminal != nullptr) {
+    term_name = check_terminal;
+  }
+
+  output += "." + term_name;
 
   std::string input;
-  input += "\"set terminal png size 1280, 1024;";
+  input += "\"set terminal " + term_name + " size 1280, 1024;";
   input += "unset key;";
   input += "set title '" + name + "';";
   input += "set xlabel '" + xAxisTitle + "';";
