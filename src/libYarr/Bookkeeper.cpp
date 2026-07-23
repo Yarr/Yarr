@@ -6,6 +6,7 @@
 // # Comment: Global container for data
 // ################################
 
+#include <cstdio>
 #include <set>
 
 #include "Bookkeeper.h"
@@ -14,6 +15,7 @@
 #include "FrontEndClipBoards.h"
 
 #include "logging.h"
+#include "ProgressBar.h"
 
 namespace {
     auto blog = logging::make_log("Bookkeeper");
@@ -198,44 +200,66 @@ void Bookkeeper::addFeClipboardMonitor(unsigned arg_id, const std::string& arg_n
     clipboardMonitorFeNames.push_back(arg_name);
 }
 
+namespace {
+    /// Format a single "Stage: in N out N (backlog N)" fragment for one clipboard.
+    template <typename T>
+    std::string clipboardStat(const std::string &stage, const ClipBoard<T> &cp) {
+        long long in = cp.getNumDataIn();
+        long long out = cp.getNumDataOut();
+        char buf[96];
+        std::snprintf(buf, sizeof(buf), "%s: in %lld out %lld (backlog %d)",
+                      stage.c_str(), in, out, cp.size());
+        return std::string(buf);
+    }
+}
+
 void Bookkeeper::feClipboardMonitor() {
     if(clipboardMonitorFeIDs.size() == 0)
         return;
     for(unsigned i = 0; i < clipboardMonitorFeIDs.size(); i++)
         SPDLOG_LOGGER_INFO(blog, "[ ClipboardMonitor : {:^8} [{}] : Info ] Started clipboard monitor thread",  clipboardMonitorFeNames[i], clipboardMonitorFeIDs[i]);
     while(runClipboardMonitor) {
+        std::vector<std::string> lines;
         for(unsigned i = 0; i < clipboardMonitorFeIDs.size(); i++) {
             auto &cp = bookEntries[clipboardMonitorFeIDs[i]].fe->clipboards();
-            SPDLOG_LOGGER_INFO(
-                blog, "[ ClipboardMonitor : {:^8} [{}] : RawData  ] InCount:{:<8} OutCount:{:<8} QueueSize:{:<8}", 
+            SPDLOG_LOGGER_TRACE(
+                blog, "[ ClipboardMonitor : {:^8} [{}] : RawData  ] InCount:{:<8} OutCount:{:<8} QueueSize:{:<8}",
                 clipboardMonitorFeNames[i], clipboardMonitorFeIDs[i],
                 cp.clipRawData.getNumDataIn(),
                 cp.clipRawData.getNumDataOut(),
                 cp.clipRawData.size()
             );
-            SPDLOG_LOGGER_INFO(
-                blog, "[ ClipboardMonitor : {:^8} [{}] : ProcData ] InCount:{:<8} OutCount:{:<8} QueueSize:{:<8}", 
+            SPDLOG_LOGGER_TRACE(
+                blog, "[ ClipboardMonitor : {:^8} [{}] : ProcData ] InCount:{:<8} OutCount:{:<8} QueueSize:{:<8}",
                 clipboardMonitorFeNames[i], clipboardMonitorFeIDs[i],
                 cp.clipData.getNumDataIn(),
                 cp.clipData.getNumDataOut(),
                 cp.clipData.size()
             );
-            SPDLOG_LOGGER_INFO(
-                blog, "[ ClipboardMonitor : {:^8} [{}] : HistData ] InCount:{:<8} OutCount:{:<8} QueueSize:{:<8}", 
+            SPDLOG_LOGGER_TRACE(
+                blog, "[ ClipboardMonitor : {:^8} [{}] : HistData ] InCount:{:<8} OutCount:{:<8} QueueSize:{:<8}",
                 clipboardMonitorFeNames[i], clipboardMonitorFeIDs[i],
                 cp.clipHisto.getNumDataIn(),
                 cp.clipHisto.getNumDataOut(),
                 cp.clipHisto.size()
             );
-            SPDLOG_LOGGER_INFO(
-                blog, "[ ClipboardMonitor : {:^8} [{}] : Feedback ] InCount:{:<8} OutCount:{:<8} QueueSize:{:<8}", 
+            SPDLOG_LOGGER_TRACE(
+                blog, "[ ClipboardMonitor : {:^8} [{}] : Feedback ] InCount:{:<8} OutCount:{:<8} QueueSize:{:<8}",
                 clipboardMonitorFeNames[i], clipboardMonitorFeIDs[i],
                 cp.clipProcFeedback.getNumDataIn(),
                 cp.clipProcFeedback.getNumDataOut(),
                 cp.clipProcFeedback.size()
             );
+
+            lines.push_back(
+                clipboardMonitorFeNames[i] + "  " +
+                clipboardStat("Raw", cp.clipRawData) + "  " +
+                clipboardStat("Evt", cp.clipData) + "  " +
+                clipboardStat("Hist", cp.clipHisto)
+            );
         }
-        std::this_thread::sleep_for(std::chrono::microseconds(clipboardMonitorRefreshTime)); // microseconds  
+        ProgressBar::instance().setSection("clipboards", lines);
+        std::this_thread::sleep_for(std::chrono::microseconds(clipboardMonitorRefreshTime)); // microseconds
     }
     SPDLOG_LOGGER_INFO(blog, "Joined clipboard monitor thread");
 }

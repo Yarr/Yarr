@@ -366,11 +366,14 @@ namespace ScanHelper {
                 fe->setActiveLoop(activeLoop);
             }
 
-            // Check for hidden clipboard monitor parameter, and start them if true
+            // Check for hidden clipboard monitor parameter, enabled by default;
+            // set to false/0 to opt out for a given chip.
+            bool clipboardMonitor = true;
             if (chip.contains("clipboardMonitor")) {
-                if(chip["clipboardMonitor"] > 0) {
-                    bookie.addFeClipboardMonitor((unsigned)bookie.getNumOfEntries() - 1, feCfg->getName());
-                }
+                clipboardMonitor = chip["clipboardMonitor"] > 0;
+            }
+            if (clipboardMonitor) {
+                bookie.addFeClipboardMonitor((unsigned)bookie.getNumOfEntries() - 1, feCfg->getName());
             }
 
             std::size_t botDirPos = chipConfigPath.find_last_of('/');

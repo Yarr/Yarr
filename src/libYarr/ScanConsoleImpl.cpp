@@ -25,6 +25,8 @@
 #include "FrontEndClipBoards.h"
 #include "ScanBase.h"
 #include "DBHandler.h"
+#include "ScanProgress.h"
+#include "ProgressBar.h"
 
 #include "storage.hpp"
 #include "ScanConsoleImpl.h"
@@ -607,7 +609,9 @@ void ScanConsoleImpl::run() {
     ScanHelper::banner(logger,"Run Scan");
 
     scan_start = std::chrono::steady_clock::now();
+    ScanProgress::instance().init(*scanBase);
     scanBase->run();
+    ScanProgress::instance().finish();
     scanBase->postScan();
     logger->info("Scan done!");
 
@@ -668,6 +672,7 @@ void ScanConsoleImpl::run() {
     }
     // join clipboard monitor
     bookie->joinFeClipboardMonitor();
+    ProgressBar::instance().clearAll();
 
     all_done = std::chrono::steady_clock::now();
     logger->info("All done!");
