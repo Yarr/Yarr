@@ -125,6 +125,8 @@ protected:
   uint32_t m_numEnabledChns {0};
   enum FelixTools::FELIX_FW_MODE m_fwMode {FelixTools::FELIX_FW_MODE::Unknown};
 
+  unsigned m_maxRetries{3};
+
   /// Copy of skip_felix_reg from FelixController (don't access felix regs)
   bool m_tx_skip_felix_reg{false};
 
