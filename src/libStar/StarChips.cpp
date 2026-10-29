@@ -468,32 +468,37 @@ yarrStatus StarChips::checkCom() {
 
     logger->debug("Start check communication with Hybrid");
 
-    // Run commands in separate thread
-    AsyncAccess::AsyncContext ctxt(*m_txcore, *m_rxcore);
+    try {
+      // Run commands in separate thread
+      AsyncAccess::AsyncContext ctxt(*m_txcore, *m_rxcore);
 
-    // First read back HCC HPR reg
-    auto hcc_hpr = readHCCRegisterAsync(ctxt, HCCStarRegister::HPR);
+      // First read back HCC HPR reg
+      auto hcc_hpr = readHCCRegisterAsync(ctxt, HCCStarRegister::HPR);
 
-    uint32_t hpr_value = hcc_hpr.result.get();
+      uint32_t hpr_value = hcc_hpr.result.get();
 
-    logger->debug("Read back HCC HPR register: {:08x}", hpr_value);
+      logger->debug("Read back HCC HPR register: {:08x}", hpr_value);
 
-    if(hpr_value == 0) {
-      logger->error("Bad HCC HPR value {:08x}", hpr_value);
-      return yarrFailure;
-    }
-
-    std::vector<AsyncAccess::AsyncReg32> abc_vars;
-
-    eachAbc([&](auto &abc) { abc_vars.push_back(readABCRegisterAsync(ctxt, ABCStarRegister::HPR, abc.getABCchipID())); });
-
-    for(auto &aa: abc_vars) {
-      auto abc_value = aa.result.get();
-
-      if(abc_value == 0) {
-        logger->error("Bad ABC HPR value {:08x}", abc_value);
+      if(hpr_value == 0) {
+        logger->error("Bad HCC HPR value {:08x}", hpr_value);
         return yarrFailure;
       }
+
+      std::vector<AsyncAccess::AsyncReg32> abc_vars;
+
+      eachAbc([&](auto &abc) { abc_vars.push_back(readABCRegisterAsync(ctxt, ABCStarRegister::HPR, abc.getABCchipID())); });
+
+      for(auto &aa: abc_vars) {
+        auto abc_value = aa.result.get();
+
+        if(abc_value == 0) {
+          logger->error("Bad ABC HPR value {:08x}", abc_value);
+          return yarrFailure;
+        }
+      }
+    } catch(std::exception &e) {
+      logger->error("Check com failed due to exception: {}", e.what());
+      return yarrFailure;
     }
 
     return yarrSuccess;
