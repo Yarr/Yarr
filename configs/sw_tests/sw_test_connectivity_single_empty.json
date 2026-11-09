@@ -1,0 +1,12 @@
+{
+    "chipType" : "TestEmpty",
+    "chips" : [
+        {
+            "config": "configs/sw_tests/sw_test_config_empty.json",
+            "locked": true,
+            "enable": true,
+            "tx" : 0,
+            "rx" : 0
+        }
+    ]
+}

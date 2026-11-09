@@ -15,6 +15,7 @@ add_executable(testYarr
         test_raw_data.cpp
         test_raw_data_archiver.cpp
         test_raw_data_histogrammer.cpp
+        test_scan_console.cpp
         test_tag_occupancy.cpp
         test_tot3d.cpp
         test_tot_dist.cpp

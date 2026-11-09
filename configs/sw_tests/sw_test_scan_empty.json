@@ -1,0 +1,8 @@
+{
+    "scan": {
+	"analysis": [],
+	"histogrammer": [],
+	"loops": [],
+	"name": "EmptyScan"
+    }
+}
