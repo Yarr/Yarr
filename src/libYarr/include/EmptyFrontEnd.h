@@ -40,6 +40,9 @@ class EmptyFrontEnd : public FrontEnd, public EmptyFrontEndCfg {
 
         yarrStatus writeNamedRegister(std::string name, const uint16_t value) override {return yarrSuccess;}
         void setInjCharge(double, bool, bool) override {}
+        std::unique_ptr<FrontEnd> getGlobal() override {
+              return std::make_unique<EmptyFrontEnd>();
+        }
 };
 
 #endif
