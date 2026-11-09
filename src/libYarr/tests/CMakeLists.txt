@@ -1,6 +1,7 @@
 add_executable(testYarr
         test_analysis_throttle.cpp
         test_async.cpp
+        test_empty.cpp
         test_event_data.cpp
         test_front_end.cpp
         test_histogrammer.cpp
