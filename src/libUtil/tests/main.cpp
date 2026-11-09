@@ -2,10 +2,45 @@
 
 #include "catch.hpp"
 
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 
 #include "LoggingConfig.h"
+#include "logging.h"
+
+namespace {
+auto logger = logging::make_log("test_main");
+static const size_t ENV_BUFFER_SIZE = 256;
+// have to pass static array to putenv
+char env_update_buffer[ENV_BUFFER_SIZE];
+}
+
+void update_config_path() {
+    // Look up in dir hierarchy so we can run from anywhere in YARR directory
+    namespace fs = std::filesystem;
+    fs::path baseDir{fs::current_path()};
+    while(!fs::exists(baseDir/".git")) {
+        if(!baseDir.has_parent_path()) {
+            // Can't find file
+            logger->error("Can't find configs, no parent of {}", std::string(baseDir));
+            return;
+        }
+        if(baseDir == baseDir.parent_path()) {
+            // Can't find file
+            logger->error("Can't find configs from {}", std::string(baseDir));
+            return;
+        }
+        baseDir = baseDir.parent_path();
+    }
+
+    std::string update_string = "YARR_CONFIG_PATH=" + std::string(baseDir) + "/";
+    if(update_string.size() > ENV_BUFFER_SIZE-1) {
+      logger->critical("Path to configs too long, aborting: {}", update_string);
+    }
+    strncpy(env_update_buffer, update_string.c_str(), ENV_BUFFER_SIZE);
+    putenv(env_update_buffer);
+}
 
 int main( int argc, char* argv[] )
 {
@@ -52,6 +87,9 @@ int main( int argc, char* argv[] )
     }
   }
   logging::setupLoggers(lj);
+
+  // Always point to files in repo
+  update_config_path();
 
   return session.run();
 }

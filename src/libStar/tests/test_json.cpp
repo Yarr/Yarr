@@ -4,14 +4,6 @@
 
 #include "StarConstants.h"
 
-// Only one test needs std::filesystem
-#if defined(__clang__) || __GNUC__ > 7
-#include <filesystem>
-
-namespace fs = std::filesystem;
-
-#endif
-
 #include "AllChips.h"
 #include "FrontEndCfg.h"
 #include "LoadJson.h"
@@ -41,28 +33,9 @@ void bounce_check(json &j, std::string fe_name) {
   REQUIRE(jj.str() == outj.str());
 }
 
-// Need std::filesystem
-#if defined(__clang__) || __GNUC__ > 7
-
 // Check that the default configuration is loadable
 TEST_CASE("StarJsonDefault", "[star][json]") {
-  // Look up in dir hierarchy so we can run from anywhere in YARR directory
-  fs::path baseDir{fs::current_path()};
-  while(!fs::exists(baseDir/".git")) {
-    if(!baseDir.has_parent_path()) {
-      // Can't find file
-      std::cout << "Can't find default star config, no parent of " << baseDir << "\n";
-      return;
-    }
-    if(baseDir == baseDir.parent_path()) {
-      // Can't find file
-      std::cout << "Can't find default star config from " << baseDir << "\n";
-      return;
-    }
-    baseDir = baseDir.parent_path();
-  }
-
-  fs::path fileName = baseDir/"configs/defaults/default_star.json";
+  std::string fileName = "configs/defaults/default_star.json";
 
   // std::cout << "Loading json from " << fileName << "\n";
 
@@ -88,8 +61,6 @@ TEST_CASE("StarJsonDefault", "[star][json]") {
   // Should be the same if read and write again
   bounce_check(output, fe_name);
 }
-
-#endif
 
 // Minimal configuration (no ABCs)
 TEST_CASE("StarJsonMinimal", "[star][json]") {
