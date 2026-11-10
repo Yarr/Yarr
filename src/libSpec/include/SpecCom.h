@@ -98,6 +98,7 @@ const static std::string specIdentChCfg[] = {"undefined", "4x4", "16x1", "8x4", 
 const static uint32_t specIdentLaneCfg[] = {0, 4, 1, 4, 1, 4, 4, 1, 1};
 
 static std::map<uint32_t, std::string> specIdentFw = {
+    {0xe38fcb2, "v1.7.1"},
     {0xf70bc8d, "v1.7.0"},
     {0xacb87f4, "v1.6.0"},
     {0x7b14549, "v1.5.0"},
