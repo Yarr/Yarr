@@ -17,6 +17,12 @@ char env_update_buffer[ENV_BUFFER_SIZE];
 }
 
 void update_config_path() {
+    char *old_env = getenv("YARR_CONFIG_PATH");
+    if(old_env) {
+        // Don't overwrite
+        return;
+    }
+
     // Look up in dir hierarchy so we can run from anywhere in YARR directory
     namespace fs = std::filesystem;
     fs::path baseDir{fs::current_path()};
