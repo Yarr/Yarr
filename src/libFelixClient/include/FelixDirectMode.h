@@ -22,11 +22,16 @@ private:
   /// Set config for direct mode
   void setMode(int mask, int length);
 
-  // Set direct mode enable (on enabled links)
-  void setLinksEnable(int enable);
+  /// Set path encoding to direct mode
+  void setDirectMode();
 
-  uint16_t m_capture_length;
-  uint16_t m_start_source_mask;
+  /// Restore path encoding
+  void restoreEncoding();
+
+  std::map<std::string, uint64_t> m_reg_store;
+
+  uint16_t m_capture_length{1};
+  uint16_t m_start_source_mask{};
 };
 
 #endif
