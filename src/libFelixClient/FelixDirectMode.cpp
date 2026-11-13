@@ -53,13 +53,26 @@ void FelixDirectMode::end() {
 
 void FelixDirectMode::setMode(int mask, int length)
 {
+  uint64_t readback{};
+  bool success = g_tx->readFwRegister("DIRECT_MODE_CTRL_START_SOURCE_MASK", readback);
+  SPDLOG_LOGGER_DEBUG(logger, "Pre-read mask {:016x} good {}", readback, success);
+  success = g_tx->readFwRegister("DIRECT_MODE_CTRL_CAPTURE_LENGTH", readback);
+  SPDLOG_LOGGER_DEBUG(logger, "Pre-read capture {:016x} good {}", readback, success);
+
   // Assuming FELIX hardware and valid firmware
   g_tx->writeFwRegister("DIRECT_MODE_CTRL_START_SOURCE_MASK", mask);
   g_tx->writeFwRegister("DIRECT_MODE_CTRL_CAPTURE_LENGTH", length);
+
+  success = g_tx->readFwRegister("DIRECT_MODE_CTRL_START_SOURCE_MASK", readback);
+  SPDLOG_LOGGER_DEBUG(logger, "Read mask {:016x} good {}", readback, success);
+  success = g_tx->readFwRegister("DIRECT_MODE_CTRL_CAPTURE_LENGTH", readback);
+  SPDLOG_LOGGER_DEBUG(logger, "Read capture mask {:016x} good {}", readback, success);
 }
 
-void FelixDirectMode::setLinksEnable(int enable)
+void FelixDirectMode::setDirectMode()
 {
+  uint64_t path_mode = 0;
+
   for (unsigned id=0; id<keeper->getNumOfEntries(); id++) {
     auto &fe = keeper->getEntry(id);
 
@@ -72,7 +85,31 @@ void FelixDirectMode::setLinksEnable(int enable)
     std::string reg_name = fmt::format("DECODING_LINK{:02}_EGROUP{}_CTRL_PATH_ENCODING",
                                        link, egroup);
 
-    g_tx->writeFwRegister(reg_name, enable);
+    uint64_t path_reg{};
+    bool good = g_tx->readFwRegister(reg_name, path_reg);
+    SPDLOG_LOGGER_DEBUG(logger, "Read path_encoding before setting {} {:016x} good {}", reg_name, path_reg, good);
+
+    // Store so we can switch back
+    m_reg_store[reg_name] = path_reg;
+
+    g_tx->writeFwRegister(reg_name, path_mode);
+
+    g_tx->readFwRegister(reg_name, path_reg);
+    SPDLOG_LOGGER_DEBUG(logger, "Read path_encoding after setting {} (want {}) {:016x} good {}", reg_name, path_mode, path_reg, good);
+  }
+}
+
+void FelixDirectMode::restoreEncoding()
+{
+  for(auto &[reg_name, reg_value]: m_reg_store) {
+    uint64_t path_reg{};
+    bool good = g_tx->readFwRegister(reg_name, path_reg);
+    SPDLOG_LOGGER_DEBUG(logger, "Read path_encoding before restore {} {:016x} good {}", reg_name, path_reg, good);
+
+    g_tx->writeFwRegister(reg_name, reg_value);
+
+    g_tx->readFwRegister(reg_name, path_reg);
+    SPDLOG_LOGGER_DEBUG(logger, "Read path_encoding after setting {} (want {}) {:016x} good {}", reg_name, reg_value, path_reg, good);
   }
 }
 
@@ -84,7 +121,8 @@ void FelixDirectMode::execPart1() {
 
     setMode(m_start_source_mask, m_capture_length);
 
-    setLinksEnable(1);
+    // Switch to direct mode
+    setDirectMode();
 
     while(g_tx->isCmdEmpty() == 0) {
         // Not sure reg uses the same Tx
@@ -97,7 +135,8 @@ void FelixDirectMode::execPart2() {
 
     setMode(0, 0);
 
-    setLinksEnable(0);
+    // Switch back to how it was
+    restoreEncoding();
 
     while(g_tx->isCmdEmpty() == 0) {
         // Not sure reg uses the same Tx
@@ -146,7 +185,7 @@ void FelixDirectMode::loadConfig(const json &config) {
 
     logger->debug(" source mask bits {}", bit_string);
 
-    if(m_capture_length > 15) {
-        logger->warn("Capture length too big (0-15)");
+    if(m_capture_length > 3) {
+        logger->warn("Capture length (us) too big (0-3)");
     }
 }

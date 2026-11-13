@@ -7,9 +7,8 @@
     },
     "analysis": [
       {
-        "algorithm": "ParameterAnalysis",
+        "algorithm": "HistogramArchiver",
         "config": {
-          "createMap": true
         }
       }
     ],
@@ -22,7 +21,8 @@
     "loops": [
       {
         "config": {
-          "startSourceMask": 4
+          "captureLength": 1,
+          "startSourceMask": 32768
         },
         "loopAction": "FelixDirectMode"
       },
