@@ -133,10 +133,11 @@ void FelixDirectMode::execPart1() {
 void FelixDirectMode::execPart2() {
     SPDLOG_LOGGER_DEBUG(logger, " End Direct mode");
 
-    setMode(0, 0);
-
-    // Switch back to how it was
+    // Switch path encoding back to how it was
     restoreEncoding();
+
+    // Restore FW defaults
+    setMode(0, 1);
 
     while(g_tx->isCmdEmpty() == 0) {
         // Not sure reg uses the same Tx
