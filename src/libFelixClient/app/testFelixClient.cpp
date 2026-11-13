@@ -40,6 +40,36 @@ void printHelp() {
   std::cout << "* To send 10 words in a packet, repeated 20 times: bin/testFelixClient configs/controller/felix_client.json -t 1 -d 0x78557855 -b 10 -n 20" << std::endl;
 }
 
+std::vector<unsigned> build_data_tx(std::vector<unsigned> params, std::string file_data_tx, unsigned nblock_word_reps) {
+  std::vector<unsigned> data_tx = params;
+
+  if (not file_data_tx.empty()) {
+    // read data from a file
+    std::ifstream datafile(file_data_tx);
+    if (datafile.is_open()) {
+      std::string line;
+      while(std::getline(datafile, line)) {
+        data_tx.push_back( std::stoul(line, nullptr, 16) );
+      }
+      datafile.close();
+    } else {
+      logger->error("Cannot open data file {}", file_data_tx);
+    }
+  }
+
+  if(nblock_word_reps) {
+    std::vector<unsigned> data_init = data_tx;
+    while(nblock_word_reps > 1) {
+      nblock_word_reps --;
+      data_tx.insert(data_tx.end(), data_init.begin(), data_init.end());
+    }
+  }
+
+  logger->info("Built buffer of data with {} words", data_tx.size());
+
+  return data_tx;
+}
+
 int main(int argc, char **argv) {
 
   std::string controllerCfg;
@@ -48,7 +78,7 @@ int main(int argc, char **argv) {
   bool readFelixStatus = false;
 
   std::vector<unsigned> elinks_tx;
-  std::vector<unsigned> data_tx;
+  std::vector<unsigned> data_params;
   std::string file_data_tx;
   unsigned nrepetitions = 1;
   double trigFreq = 0;
@@ -76,7 +106,7 @@ int main(int argc, char **argv) {
     case 'd':
       optind -= 1;
       for (; optind < argc && *argv[optind] != '-'; optind += 1) {
-        data_tx.push_back( std::stoul(std::string(argv[optind]), nullptr, 16) );
+        data_params.push_back( std::stoul(std::string(argv[optind]), nullptr, 16) );
       }
       break;
     case 'f':
@@ -115,13 +145,6 @@ int main(int argc, char **argv) {
     controllerCfg = argv[optind];
   }
 
-  if(nblock_word_reps) {
-    std::vector<unsigned> data_init = data_tx;
-    while(nblock_word_reps > 1) {
-      nblock_word_reps --;
-      data_tx.insert(data_tx.end(), data_init.begin(), data_init.end());
-    }
-  }
   spdlog::info("Configuring logger ...");
   if (loggerCfg.empty()) {
     // default
@@ -145,6 +168,8 @@ int main(int argc, char **argv) {
       return -1;
     }
   }
+
+  std::vector<unsigned> data_tx = build_data_tx(data_params, file_data_tx, nblock_word_reps);
 
   // controller config
   json ctrlCfg;
@@ -195,26 +220,12 @@ int main(int argc, char **argv) {
   // Send data
   if (not elinks_tx.empty()) {
 
-    if (not file_data_tx.empty()) {
-      // read data from a file
-      std::ifstream datafile(file_data_tx);
-      if (datafile.is_open()) {
-        std::string line;
-        while(std::getline(datafile, line)) {
-          data_tx.push_back( std::stoul(line, nullptr, 16) );
-        }
-        datafile.close();
-      } else {
-        logger->error("Cannot open data file {}", file_data_tx);
-      }
-    }
-
     try {
       hwCtrl->setCmdEnable(elinks_tx);
 
       logger->info("Words to be sent to the enabled tx elinks {} times:", nrepetitions);
       for (unsigned word : data_tx) {
-        logger->info(" 0x{:x}", word);
+        logger->debug(" 0x{:x}", word);
       }
 
       if (trigFreq) {
