@@ -24,6 +24,7 @@ void printHelp() {
   std::cout << " -d <32b HEX WORD> [<32b HEX WORD> ...] : A list of data words in hex format to be sent." << std::endl;
   std::cout << " -f <FILE_NAME> : Name of a file containing data words to be sent. It is expected each line has one 32-bit hex integer." << std::endl;
   std::cout << " -n NUMBER : The number of times to send the data. Default: 1" << std::endl;
+  std::cout << " -b NUMBER : The number of times to repeat the data in a frame. Default: none" << std::endl;
   std::cout << " -q FREQUENCY : Trigger frequency in Hz. If non-zero, send the data using TxCore::trigger(). Otherwise, send the data using TxCore::releaseFifo(). Default: 0" << std::endl;
   std::cout << std::endl;
   std::cout << " -r <RX_ELINK1> [<RX_ELINK2> ...] : A list of rx elinks for receiving data." << std::endl;
@@ -36,6 +37,7 @@ void printHelp() {
   std::cout << "* To read FELIX status registers: bin/testFelixClient configs/controller/felix_client.json -s" << std::endl;
   std::cout << "* To send some data e.g. 0xdeadbeef to elinks 1, 6, 11, and 16 twice: bin/testFelixClient configs/controller/felix_client.json -t 1 6 11 16 -d 0xdeadbeef -n 2" << std::endl;
   std::cout << "* To receive data from elinks 0 and 2 for 5 seconds: bin/testFelixClient configs/controller/felix_client.json -r 0 2 -w 5" << std::endl;
+  std::cout << "* To send 10 words in a packet, repeated 20 times: bin/testFelixClient configs/controller/felix_client.json -t 1 -d 0x78557855 -b 10 -n 20" << std::endl;
 }
 
 int main(int argc, char **argv) {
@@ -53,9 +55,10 @@ int main(int argc, char **argv) {
 
   std::vector<unsigned> elinks_rx;
   unsigned waitTime = 1; // second
+  unsigned nblock_word_reps = 1;
 
   int opt;
-  while ((opt = getopt(argc, argv, "ht:d:f:n:q:r:w:sl:")) != -1) {
+  while ((opt = getopt(argc, argv, "ht:b:d:f:n:q:r:w:sl:")) != -1) {
     switch(opt) {
     case 'h':
       printHelp();
@@ -66,6 +69,9 @@ int main(int argc, char **argv) {
       for (; optind < argc && *argv[optind] != '-'; optind += 1) {
         elinks_tx.push_back( std::atoi(argv[optind]) );
       }
+      break;
+    case 'b':
+      nblock_word_reps = std::atoi(optarg);
       break;
     case 'd':
       optind -= 1;
@@ -109,6 +115,13 @@ int main(int argc, char **argv) {
     controllerCfg = argv[optind];
   }
 
+  if(nblock_word_reps) {
+    std::vector<unsigned> data_init = data_tx;
+    while(nblock_word_reps > 1) {
+      nblock_word_reps --;
+      data_tx.insert(data_tx.end(), data_init.begin(), data_init.end());
+    }
+  }
   spdlog::info("Configuring logger ...");
   if (loggerCfg.empty()) {
     // default
