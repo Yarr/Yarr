@@ -10,10 +10,25 @@ For more information check the [FPGA board type](#fpga-board-type) section.
 
 ## Prerequisites
 
-* Xilinx Vivado Design Suite 2019.2 or latest Vivado Lab Solutions
-* A JTAG programmer attached to the JTAG port to the PCIe card
-  * I can recommend the [Digilent JTAG HS3](https://www.digikey.com/product-detail/en/digilent-inc/210-299/1286-1047-ND/5015666)
-* Install the Xilinx cable driver, refer to [UG973](https://www.xilinx.com/support/documentation/sw_manuals/xilinx2016_4/ug973-vivado-release-notes-install-license.pdf)
+- Xilinx Vivado Design Suite 2019.2 or latest Vivado Lab Solutions
+- A JTAG programmer attached to the JTAG port to the PCIe card
+    - We can recommend the [Digilent JTAG HS3](https://www.digikey.com/product-detail/en/digilent-inc/210-299/1286-1047-ND/5015666) or
+    - [Digilent JTAG HS2](https://www.digikey.com/en/products/detail/digilent-inc/410-249/3902812) which is also compatible with BDAQ.
+- Install the Xilinx cable drivers:
+    - Navigate to `/opt/Xilinx/Vivado/2019.2/data/xicom/cable_drivers/lin64/install_script/install_drivers`
+    - Install all `install_*` and `setup_*` scripts from the files in this folder:
+```
+  .
+  ├── 52-xilinx-digilent-usb.rules
+  ├── 52-xilinx-ftdi-usb.rules
+  ├── 52-xilinx-pcusb.rules
+  ├── install_digilent.sh
+  ├── install_drivers
+  ├── setup_pcusb
+  └── setup_xilinx_ftdi
+
+```
+
 
 ## Setting up the Xilinx environment and flashing the firmware
 
