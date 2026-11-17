@@ -349,12 +349,16 @@ yarrStatus Itkpixv2::writeNamedRegister(std::string name, const uint16_t value) 
     if(regMap.find(name) != regMap.end()) {
         logger->debug("Write named register {} -> {}", name, value);
         this->writeRegister(regMap[name], value);
+        core->waitCmdEmpty();
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
         return yarrSuccess;
     }
 
     if(virtRegMap.find(name) != virtRegMap.end()) {
         logger->debug("Write named virtual register {} -> {}", name, value);
         this->writeRegister(virtRegMap[name], value);
+        core->waitCmdEmpty();
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
         return yarrSuccess;
     }
     
