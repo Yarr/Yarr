@@ -224,9 +224,9 @@ int ScanConsoleImpl::setupScan() {
             }
 
             bool loopMatchesChip = std::search(loopAction.begin(), loopAction.end(), chipTypeCheck.begin(), chipTypeCheck.end(), [](char a, char b){return std::tolower(a) == std::tolower(b);}) != loopAction.end();
-            bool loopMatchesStd = loopAction.find("Std") == std::string::npos;
+            bool loopMatchesStd = loopAction.find("Std") != std::string::npos;
             // Allow HwController specific scans as well, currently only Felix
-            bool loopMatchesFelix = loopAction.find("Felix") == std::string::npos;
+            bool loopMatchesFelix = loopAction.find("Felix") != std::string::npos;
 
             if (!(loopMatchesChip || loopMatchesStd || loopMatchesFelix)) {
 	    	logger->error("This scan contains incorrect loop {} for chipType {} (standard loops assumed to contain Std), aborting!", loopAction, chipType);
