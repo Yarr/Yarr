@@ -3,6 +3,7 @@
 
 #include "AllChips.h"
 #include "FrontEndCfg.h"
+#include "Rd53bCfg.h"
 
 // Check that loadConfig(writeConfig(x)) reproduces the same json, i.e.
 // that a freshly constructed config round-trips through json without loss.
@@ -30,4 +31,41 @@ TEST_CASE("Rd53bJsonBounce", "[rd53b][json]") {
   bouncedj << bounced;
 
   REQUIRE(writtenj.str() == bouncedj.str());
+}
+
+// Currents read through the ADC are shifted by ImuxGndOffset (mV): the ADC is
+// referenced to the Vmux ground, the current mux to the Imux ground.
+TEST_CASE("Rd53bImuxGndOffset", "[rd53b][json][adc]") {
+  auto fe = StdDict::getFrontEnd("RD53B");
+  auto cfg = dynamic_cast<Rd53bCfg*>(&*fe);
+  REQUIRE(cfg);
+
+  json j;
+  cfg->writeConfig(j);
+  // Default when the chip config doesn't set it
+  REQUIRE(j["RD53B"]["Parameter"]["ImuxGndOffset"] == Catch::Approx(2.4));
+
+  // 1000 counts -> 0.2 V with a 10 kOhm R_Imux
+  j["RD53B"]["Parameter"]["ADCcalPar"] = {0.0, 0.2, 10000.0};
+
+  SECTION("default offset") {
+    j["RD53B"]["Parameter"].erase("ImuxGndOffset");
+    cfg->loadConfig(j);
+    REQUIRE(cfg->adcToV(1000) == Catch::Approx(0.2));
+    REQUIRE(cfg->adcToI(1000) == Catch::Approx((0.2 + 2.4e-3) / 10000.0));
+    REQUIRE(cfg->convertAdc(1000, true).first == Catch::Approx((0.2 + 2.4e-3) / 10000.0 / 1e-6));
+  }
+
+  SECTION("offset from the chip config") {
+    j["RD53B"]["Parameter"]["ImuxGndOffset"] = 3.85;
+    cfg->loadConfig(j);
+    REQUIRE(cfg->adcToV(1000) == Catch::Approx(0.2));
+    REQUIRE(cfg->adcToI(1000) == Catch::Approx((0.2 + 3.85e-3) / 10000.0));
+  }
+
+  SECTION("zero offset") {
+    j["RD53B"]["Parameter"]["ImuxGndOffset"] = 0.0;
+    cfg->loadConfig(j);
+    REQUIRE(cfg->adcToI(1000) == Catch::Approx(0.2 / 10000.0));
+  }
 }
