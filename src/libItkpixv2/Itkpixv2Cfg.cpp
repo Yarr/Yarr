@@ -20,6 +20,7 @@ Itkpixv2Cfg::Itkpixv2Cfg() :
     m_chipId(15),
     m_vcalPar({{0.46, 0.2007}}),
     m_adcCalPar ( {{ 5.89435, 0.192043, 4.99e3 }} ),
+    m_imuxGndOffset(2.4),
     m_ntcCalPar({{7.489e-4, 2.769e-4, 7.0595e-8}}),
     m_nf({{1.264, 1.264, 1.264}}),
     m_injCap(7.5),
@@ -124,6 +125,7 @@ void Itkpixv2Cfg::writeConfig(json &j) {
     j["ITKPIXV2"]["Parameter"]["EnforceNameIdCheck"] = enforceChipIdInName;
     for(unsigned  i=0;i<m_adcCalPar.size();i++)  
         j["ITKPIXV2"]["Parameter"]["ADCcalPar"][i]= m_adcCalPar[i];
+    j["ITKPIXV2"]["Parameter"]["ImuxGndOffset"] = m_imuxGndOffset;
     for (unsigned i = 0; i < m_ntcCalPar.size(); i++)
         j["ITKPIXV2"]["Parameter"]["NtcCalPar"][i] = m_ntcCalPar[i];
     Itkpixv2GlobalCfg::writeConfig(j);
@@ -189,6 +191,9 @@ void Itkpixv2Cfg::loadConfig(const json &j) {
             }
         }
 
+        if (jparams.contains("ImuxGndOffset"))
+            m_imuxGndOffset = jparams["ImuxGndOffset"];
+
         if (jparams.contains("NtcCalPar")) {
             if (jparams["NtcCalPar"].size() == m_ntcCalPar.size()) {
                 for (unsigned i = 0; i < m_ntcCalPar.size(); i++) {
@@ -215,7 +220,8 @@ float Itkpixv2Cfg::adcToV(uint16_t ADC) {
 }
 
 float Itkpixv2Cfg::adcToI(uint16_t ADC) {
-    return adcToV(ADC)/m_adcCalPar[2];
+    // The ADC is referenced to the Vmux ground; currents are referenced to the Imux ground
+    return (adcToV(ADC) + m_imuxGndOffset*Unit::Milli)/m_adcCalPar[2];
 }
 
 std::pair<float, std::string> Itkpixv2Cfg::convertAdc(uint16_t ADC, bool meas_curr) {

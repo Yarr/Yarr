@@ -62,6 +62,7 @@ class Itkpixv2Cfg : public FrontEndCfg, public Itkpixv2GlobalCfg, public Itkpixv
         float m_injCap;                   //fF
         std::array<float, 2> m_vcalPar;   //mV, [0] + [1]*x
         std::array<float, 3> m_adcCalPar; //mV, [0] + [1]*x, R_IMUX = [2]
+        float m_imuxGndOffset;            //mV, Vmux ground (Vmux30) - Imux ground (Imux63), added to the ADC voltage before converting to current
         std::array<std::array<float, 2>, 3> m_radSenPar = {};  // Not used yet
         std::array<std::array<float, 2>, 3> m_tempSenPar = {};  // Not used yet
         std::array<float, 3> m_nf;               // MOS temperature sensor <digital SLDO, analog SLDO, center>
