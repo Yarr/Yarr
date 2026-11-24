@@ -349,12 +349,16 @@ yarrStatus Itkpixv2::writeNamedRegister(std::string name, const uint16_t value) 
     if(regMap.find(name) != regMap.end()) {
         logger->debug("Write named register {} -> {}", name, value);
         this->writeRegister(regMap[name], value);
+        core->waitCmdEmpty();
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
         return yarrSuccess;
     }
 
     if(virtRegMap.find(name) != virtRegMap.end()) {
         logger->debug("Write named virtual register {} -> {}", name, value);
         this->writeRegister(virtRegMap[name], value);
+        core->waitCmdEmpty();
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
         return yarrSuccess;
     }
     
@@ -685,7 +689,7 @@ yarrStatus Itkpixv2::confAdc(uint16_t MONMUX, bool doCur, unsigned adcSleep_us) 
     success = success && (this->writeRegister(&Itkpixv2::MonitorEnable, 1) == yarrSuccess); // Enabling monitoring
     core->waitCmdEmpty();
 
-    success = success && (this->writeRegister(&Itkpixv2::GlobalPulseConf, 0x100) == yarrSuccess); // Reset ADC
+    success = success && (this->writeRegister(&Itkpixv2::GlobalPulseConf, 0x200) == yarrSuccess); // Reset ADC
     success = success && (this->writeRegister(&Itkpixv2::GlobalPulseWidth, 4) == yarrSuccess);   // Duration = 4 inherited from RD53A
     core->waitCmdEmpty();
     std::this_thread::sleep_for(std::chrono::microseconds(100));

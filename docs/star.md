@@ -285,7 +285,7 @@ An example of the occupancy map after a successful noise occupancy scan for a fu
 
 
 
-### Pixel-like Throshold scan
+### Pixel-like Threshold scan
 The traditional approach for Threshold scans in the Strip community is to fix the injected charge to a module and vary the channel threshold, while the Pixel community follows the opposite approach, fixing the thresholds for each of the channela and then perform the scan varying the injected charge.
 
 The pixel-like approach enables to fit a non-reverse S-curve (differently from the strip-like approach) and, by fixing the thresholds in advance, allows to be less susceptible to noise, avoiding potential double-knees/shoulders in the S-curves.
@@ -297,6 +297,16 @@ An example of the reverse S-curve and the threshold (``ABCs_BVT``) occupancy map
 An example of the non-reverse S-curve and the charge (``ABCs_BCAL``) occupancy map after a successful pixel-like threshold scan for a full module is given below.
 ![S-curve pixel-like Th. scan](images/MGF_star_fullmodule_pixellikethresholdscan_ABCs_BCAL.png)
 ![Occupancy map pixel-like Th. scan](images/MGF_star_fullmodule_pixellikethresholdscan_ABCs_BCAL_Map.png)
+
+### Direct mode scan
+
+The scan config `direct_mode_test.json` will run a basic scan using the FELIX
+direct mode. The configuration of FelixDirectMode describes what data to capture:
+
+* captureLength: How wide a buffer to capture 1-3 microseconds or unlimited (0)
+* startSourceMask: Integer representing a bit mask see FLX-2455 for details.
+
+For example: bit 15 set is 32768 which captures when the mode is entered.
 
 ## Printing Subregister Values from Configuration Files
 

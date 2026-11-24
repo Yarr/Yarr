@@ -131,6 +131,8 @@ job_test_find_package_consumer:
     - cmake3 --build "$YARR_BUILD_DIR" --parallel "$(nproc)"
     - cmake3 --install "$YARR_BUILD_DIR"
     - export Yarr_DIR="$YARR_INSTALL_DIR/cmake/Yarr"
+    # Configs are installed
+    - export YARR_CONFIG_PATH="$YARR_INSTALL_DIR/"
     - ctest --output-on-failure -j"$(nproc)" --test-dir "$YARR_BUILD_DIR"
     - $YARR_INSTALL_DIR/bin/scanConsole -k
     - export TEST_BUILD_DIR="$YARR_WORK_DIR/build-YarrFindPackageTest"
